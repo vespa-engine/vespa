@@ -290,18 +290,13 @@ Schema::saveToFile(const vespalib::string & fileName) const
     FastOS_File s;
     s.OpenReadWrite(fileName.c_str());
     if (!s.IsOpened()) {
-        LOG(warning,
-            "Could not open schema file '%s' for fsync",
-            fileName.c_str());
+        LOG(warning, "Could not open schema file '%s' for fsync", fileName.c_str());
         return false;
     } else {
         if (!s.Sync()) {
-            LOG(warning,
-                "Could not fsync schema file '%s'",
-                fileName.c_str());
+            LOG(warning, "Could not fsync schema file '%s'", fileName.c_str());
             return false;
         }
-        s.Close();
     }
     return true;
 }

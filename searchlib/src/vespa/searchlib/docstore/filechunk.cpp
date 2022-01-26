@@ -101,7 +101,6 @@ FileChunk::FileChunk(FileId fileId, NameId nameId, const vespalib::string & base
             _diskFootprint += idxFile.GetSize();
             _modificationTime = FileKit::getModificationTime(_idxFileName);
         } else {
-            dataFile.Close();
             throw SummaryException("Failed opening idx file", idxFile, VESPA_STRLOC);
         }
     }

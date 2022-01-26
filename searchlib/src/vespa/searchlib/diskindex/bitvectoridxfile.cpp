@@ -22,7 +22,6 @@ readHeader(vespalib::FileHeader &h, const vespalib::string &name)
     Fast_BufferedFile file(32_Ki);
     file.OpenReadOnly(name.c_str());
     h.readFile(file);
-    file.Close();
 }
 
 }

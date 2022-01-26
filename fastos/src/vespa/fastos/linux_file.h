@@ -25,9 +25,7 @@ protected:
 
 public:
     FastOS_Linux_File (const char *filename = nullptr);
-    ~FastOS_Linux_File () {
-        Close();
-    }
+    ~FastOS_Linux_File ();
     bool GetDirectIORestrictions(size_t &memoryAlignment, size_t &transferGranularity, size_t &transferMaximum) override;
     bool DirectIOPadding(int64_t offset, size_t length, size_t &padBefore, size_t &padAfter) override;
     void EnableDirectIO() override;
@@ -38,8 +36,8 @@ public:
     void *AllocateDirectIOBuffer(size_t byteSize, void *&realPtr) override;
 
 
-    ssize_t Read(void *buffer, size_t len) override;
-    ssize_t Write2(const void *buffer, size_t len) override;
+    [[nodiscard]] ssize_t Read(void *buffer, size_t len) override;
+    [[nodiscard]] ssize_t Write2(const void *buffer, size_t len) override;
     bool Open(unsigned int openFlags, const char *filename) override;
 
     static bool InitializeClass();

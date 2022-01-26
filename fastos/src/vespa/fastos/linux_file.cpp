@@ -9,13 +9,14 @@
 
 #ifdef __linux__
 #include "file.h"
+#include "file_rw_ops.h"
 #include <sstream>
 #include <unistd.h>
 #include <fcntl.h>
-#include "file_rw_ops.h"
 #include <cstdio>
 #include <cstring>
 #include <system_error>
+#include <cassert>
 
 using fastos::File_RW_Ops;
 
@@ -27,6 +28,11 @@ FastOS_Linux_File::FastOS_Linux_File(const char *filename)
       _cachedSize(-1),
       _filePointer(-1)
 {
+}
+
+FastOS_Linux_File::~FastOS_Linux_File () {
+    bool ok = Close();
+    assert(ok);
 }
 
 #define DIRECTIOPOSSIBLE(buf, len, off) \
@@ -383,12 +389,14 @@ FastOS_Linux_File::Open(unsigned int openFlags, const char *filename)
             if (POSIX_FADV_NORMAL != fadviseOptions) {
                 rc = (posix_fadvise(_filedes, 0, 0, fadviseOptions) == 0);
                 if (!rc) {
-                    Close();
+                    bool close_ok = Close();
+                    assert(close_ok);
                 }
             }
         }
         if (rc) {
-            Sync();
+            bool sync_ok = Sync();
+            assert(sync_ok);
             _cachedSize = GetSize();
             _filePointer = 0;
         }
@@ -397,7 +405,8 @@ FastOS_Linux_File::Open(unsigned int openFlags, const char *filename)
         if (rc && (POSIX_FADV_NORMAL != getFAdviseOptions())) {
             rc = (posix_fadvise(_filedes, 0, 0, getFAdviseOptions()) == 0);
             if (!rc) {
-                Close();
+                bool close_ok = Close();
+                assert(close_ok);
             }
         }
     }

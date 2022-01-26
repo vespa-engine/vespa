@@ -110,7 +110,6 @@ Application::Main()
         std::cerr << e.getMessage() << std::endl;
         return EXIT_FAILURE;
     }
-    file.Close();
 
     if (_quiet) {
         printQuiet(header);

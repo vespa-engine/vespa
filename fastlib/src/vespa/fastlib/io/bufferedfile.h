@@ -107,7 +107,7 @@ public:
      * @param src The source buffer.
      * @param srclen The length of the source buffer.
      */
-    ssize_t Write2(const void*, size_t) override;
+    [[nodiscard]] ssize_t Write2(const void*, size_t) override;
     /**
      * Write a string to a buffered file, flushing to file
      * as necessary.
@@ -123,7 +123,7 @@ public:
      * @param dstlen The length of the destination buffer.
      * @return The number of bytes read.
      */
-    ssize_t Read(void *dst, size_t dstlen) override;
+    [[nodiscard]] ssize_t Read(void *dst, size_t dstlen) override;
     /**
      * Write one byte to the buffered file, flushing to
      * file if necessary.
@@ -186,7 +186,7 @@ public:
     /**
      * Force completion of pending disk writes (flush cache).
      */
-    bool Sync() override;
+    [[nodiscard]] bool Sync() override;
     /**
      * Get the time the file was last modified.
      *
@@ -208,7 +208,7 @@ public:
      * Flush the buffer, and close the file instance.
      * @return The result of the Close operation.
      */
-    bool Close () override;
+    [[nodiscard]] bool Close () override;
     /**
      * Get the buffered file position, in bytes.
      * This takes into account the data in the buffer, that has

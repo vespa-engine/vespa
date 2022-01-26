@@ -330,7 +330,6 @@ FileChecksum::FileChecksum(const vespalib::string &file_name)
         EVP_DigestUpdate(md_ctx.get(), buf.get(), thistime);
         remainder -= thistime;
     }
-    f.Close();
     EVP_DigestFinal_ex(md_ctx.get(), &_digest[0], &_digest_len);
     assert(_digest_len > 0u && _digest_len <= EVP_MAX_MD_SIZE);
 }

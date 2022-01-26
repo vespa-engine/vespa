@@ -17,7 +17,6 @@ bool writeHeader(const FileHeader &header, const vespalib::string &fileName) {
     if (!EXPECT_EQUAL(header.getSize(), header.writeFile(file))) {
         return false;
     }
-    file.Close();
     return true;
 }
 
@@ -30,7 +29,6 @@ vespalib::string readFile(const vespalib::string &fileName) {
     EXPECT_LESS(len, sizeof(buf)); // make sure we got everything
 
     vespalib::string str(buf, len);
-    file.Close();
     return str;
 }
 
