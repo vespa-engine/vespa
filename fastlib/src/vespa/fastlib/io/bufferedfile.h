@@ -186,7 +186,7 @@ public:
     /**
      * Force completion of pending disk writes (flush cache).
      */
-    bool Sync() override;
+    [[nodiscard]] bool Sync() override;
     /**
      * Get the time the file was last modified.
      *
@@ -208,7 +208,7 @@ public:
      * Flush the buffer, and close the file instance.
      * @return The result of the Close operation.
      */
-    bool Close () override;
+    [[nodiscard]] bool Close () override;
     /**
      * Get the buffered file position, in bytes.
      * This takes into account the data in the buffer, that has

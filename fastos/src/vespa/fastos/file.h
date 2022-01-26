@@ -309,7 +309,7 @@ public:
      * already is closed.
      * @return Boolean success/failure
      */
-    virtual bool Close() = 0;
+    [[nodiscard]] virtual bool Close() = 0;
 
     /**
      * Is the file currently opened?
@@ -439,7 +439,7 @@ public:
     /**
      * Force completion of pending disk writes (flush cache).
      */
-    virtual bool Sync() = 0;
+    [[nodiscard]] virtual bool Sync() = 0;
 
     /**
      * Are we in some kind of file read mode?
