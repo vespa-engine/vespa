@@ -53,7 +53,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -91,6 +91,7 @@ public final class ConfiguredApplication implements Application {
                                       new ComponentRegistry<>(),
                                       new ComponentRegistry<>());
     private final OsgiFramework restrictedOsgiFramework;
+    private final Phaser nonTerminatedContainerTracker = new Phaser(1);
     private HandlersConfigurerDi configurer;
     private Thread reconfigurerThread;
     private Thread portWatcher;
@@ -252,8 +253,7 @@ public final class ConfiguredApplication implements Application {
                            configurer.getComponent(ApplicationContext.class).discBindingsConfig);
         installServerProviders(builder);
 
-        DeactivatedContainer deactivated = activator.activateContainer(builder);
-        if (deactivated != null) deactivated.notifyTermination(cleanupTask);
+        activateContainer(builder, cleanupTask);
 
         startClients();
         startAndStopServers();
@@ -261,6 +261,20 @@ public final class ConfiguredApplication implements Application {
         log.info("Switching to the latest deployed set of configurations and components. " +
                  "Application config generation: " + configurer.generation());
         metric.set("application_generation", configurer.generation(), metric.createContext(Map.of()));
+    }
+
+    private void activateContainer(ContainerBuilder builder, Runnable onPreviousContainerTermination) {
+        DeactivatedContainer deactivated = activator.activateContainer(builder);
+        if (deactivated != null) {
+            nonTerminatedContainerTracker.register();
+            deactivated.notifyTermination(() -> {
+                try {
+                    onPreviousContainerTermination.run();
+                } finally {
+                    nonTerminatedContainerTracker.arriveAndDeregister();
+                }
+            });
+        }
     }
 
     private ContainerBuilder createBuilderWithGuiceBindings() {
@@ -377,22 +391,15 @@ public final class ConfiguredApplication implements Application {
         }
 
         log.info("Stop: Shutting container down");
-        CountDownLatch latch = new CountDownLatch(1);
-        activator.activateContainer(null)
-                .notifyTermination(() -> {
-                    configurer.shutdown();
-                    slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
-                    Container.get().shutdown();
-                    unregisterInSlobrok();
-                    LogSetup.cleanup();
-                    log.info("Stop: Finished");
-                    latch.countDown();
-                });
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            throw new UncheckedInterruptedException("Failed to wait for container deactivation to complete", e, true);
-        }
+        activateContainer(null, () -> {
+            configurer.shutdown();
+            slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
+            Container.get().shutdown();
+            unregisterInSlobrok();
+            LogSetup.cleanup();
+            log.info("Stop: Finished");
+        });
+        nonTerminatedContainerTracker.arriveAndAwaitAdvance();
     }
 
     private void shutdownReconfigurerThread() {
