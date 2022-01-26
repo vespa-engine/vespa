@@ -403,6 +403,7 @@ PageDict4FileSeqWrite::open(const vespalib::string &name,
 bool
 PageDict4FileSeqWrite::close()
 {
+    bool success = true;
     _pWriter->flush();
     uint64_t usedPBits = _pe.getWriteOffset();
     uint64_t usedSPBits = _spe.getWriteOffset();
@@ -415,28 +416,28 @@ PageDict4FileSeqWrite::close()
     _ssWriteContext.writeComprBuffer(true);
 
     _pWriteContext.dropComprBuf();
-    _pfile.Sync();
-    _pfile.Close();
+    success &= _pfile.Sync();
+    success &= _pfile.Close();
     _pWriteContext.setFile(nullptr);
     _spWriteContext.dropComprBuf();
-    _spfile.Sync();
-    _spfile.Close();
+    success &= _spfile.Sync();
+    success &= _spfile.Close();
     _spWriteContext.setFile(nullptr);
     _ssWriteContext.dropComprBuf();
-    _ssfile.Sync();
-    _ssfile.Close();
+    success &= _ssfile.Sync();
+    success &= _ssfile.Close();
     _ssWriteContext.setFile(nullptr);
 
     // Update file headers
-    updatePHeader(usedPBits);
-    updateSPHeader(usedSPBits);
-    updateSSHeader(usedSSBits);
+    success &= updatePHeader(usedPBits);
+    success &= updateSPHeader(usedSPBits);
+    success &= updateSSHeader(usedSSBits);
 
     _pWriter.reset();
     _spWriter.reset();
     _ssWriter.reset();
 
-    return true;
+    return success;
 }
 
 
@@ -548,7 +549,7 @@ PageDict4FileSeqWrite::makeSSHeader(const FileHeaderContext &fileHeaderContext)
 }
 
 
-void
+bool
 PageDict4FileSeqWrite::updatePHeader(uint64_t fileBitSize)
 {
     vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
@@ -560,12 +561,13 @@ PageDict4FileSeqWrite::updatePHeader(uint64_t fileBitSize)
     h.putTag(Tag("frozen", 1));
     h.putTag(Tag("fileBitSize", fileBitSize));
     h.rewriteFile(f);
-    f.Sync();
-    f.Close();
+    bool success = f.Sync();
+    success &= f.Close();
+    return success;
 }
 
 
-void
+bool
 PageDict4FileSeqWrite::updateSPHeader(uint64_t fileBitSize)
 {
     vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
@@ -577,12 +579,13 @@ PageDict4FileSeqWrite::updateSPHeader(uint64_t fileBitSize)
     h.putTag(Tag("frozen", 1));
     h.putTag(Tag("fileBitSize", fileBitSize));
     h.rewriteFile(f);
-    f.Sync();
-    f.Close();
+    bool success = f.Sync();
+    success &= f.Close();
+    return success;
 }
 
 
-void
+bool
 PageDict4FileSeqWrite::updateSSHeader(uint64_t fileBitSize)
 {
     vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
@@ -597,8 +600,9 @@ PageDict4FileSeqWrite::updateSSHeader(uint64_t fileBitSize)
     assert(wordNum <= _sse._numWordIds);
     h.putTag(Tag("numWordIds", wordNum));
     h.rewriteFile(f);
-    f.Sync();
-    f.Close();
+    bool success = f.Sync();
+    success &= f.Close();
+    return success;
 }
 
 

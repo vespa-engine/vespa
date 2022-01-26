@@ -258,7 +258,7 @@ Zc4PostingSeqWrite::makeHeader(const FileHeaderContext &fileHeaderContext)
 }
 
 
-void
+bool
 Zc4PostingSeqWrite::updateHeader()
 {
     vespalib::FileHeader h;
@@ -271,8 +271,9 @@ Zc4PostingSeqWrite::updateHeader()
     h.putTag(Tag("fileBitSize", _fileBitSize));
     h.putTag(Tag("numWords", _writer.get_num_words()));
     h.rewriteFile(f);
-    f.Sync();
-    f.Close();
+    bool success = f.Sync();
+    success &= f.Close();
+    return success;
 }
 
 
@@ -320,11 +321,11 @@ Zc4PostingSeqWrite::close()
     _writer.on_close(); // flush and pad
     auto &writeContext = _writer.get_write_context();
     writeContext.dropComprBuf();
-    _file.Sync();
-    _file.Close();
+    bool success = _file.Sync();
+    success &= _file.Close();
     writeContext.setFile(nullptr);
-    updateHeader();
-    return true;
+    success &= updateHeader();
+    return success;
 }
 
 void
