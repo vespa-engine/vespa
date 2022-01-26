@@ -20,10 +20,17 @@ namespace eval {
 namespace {
 
 vespalib::string number_to_expr(double value) { 
-    if (std::isnan(value)) {
+    if (std::isfinite(value)) {
+        return make_string("%g", value);
+    } else if (std::isnan(value)) {
         return {"(0/0)"};
+    } else { // -inf or inf
+        if (value < 0) {
+            return {"(-1/0)"};
+        } else {
+            return {"(1/0)"};
+        }
     }
-    return make_string("%g", value);
 }
 
 TensorSpec::Address extract_address(const slime::Inspector &address) {
