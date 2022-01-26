@@ -6,11 +6,11 @@ import com.yahoo.javacc.FastCharStream;
 /**
  * @author Simon Thoresen Hult
  */
-@SuppressWarnings("deprecation")
 public class SimpleCharStream extends FastCharStream implements com.yahoo.searchdefinition.parser.CharStream,
-                                                                com.yahoo.vespa.indexinglanguage.parser.CharStream
-{
+                                                                com.yahoo.vespa.indexinglanguage.parser.CharStream {
+
     public SimpleCharStream(String input) {
         super(input);
     }
+
 }

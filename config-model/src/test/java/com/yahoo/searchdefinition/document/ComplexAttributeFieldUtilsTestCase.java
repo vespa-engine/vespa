@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.document;
 
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -17,7 +17,7 @@ public class ComplexAttributeFieldUtilsTestCase {
         private final ImmutableSDField field;
 
         FixtureBase(String fieldName, String sdContent) throws ParseException {
-            Schema schema = SchemaBuilder.createFromString(sdContent).getSchema();
+            Schema schema = ApplicationBuilder.createFromString(sdContent).getSchema();
             field = schema.getConcreteField(fieldName);
         }
 

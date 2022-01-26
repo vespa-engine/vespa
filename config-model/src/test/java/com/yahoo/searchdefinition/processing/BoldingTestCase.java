@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
@@ -31,7 +31,7 @@ public class BoldingTestCase extends AbstractSchemaTestCase {
     @Test
     public void testBoldOnNonString() throws ParseException {
         try {
-            SchemaBuilder.createFromString(boldonnonstring);
+            ApplicationBuilder.createFromString(boldonnonstring);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals("'bolding: on' for non-text field 'year4' (datatype int (code: 0)) is not allowed",
@@ -52,7 +52,7 @@ public class BoldingTestCase extends AbstractSchemaTestCase {
     @Test
     public void testBoldOnArray() throws ParseException {
         try {
-            SchemaBuilder.createFromString(boldonarray);
+            ApplicationBuilder.createFromString(boldonarray);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals("'bolding: on' for non-text field 'myarray' (datatype Array<string> (code: -1486737430)) is not allowed",

@@ -1,11 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
@@ -20,7 +21,7 @@ public class EmptyRankProfileTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testDeriving() {
-        Schema schema = new Schema("test");
+        Schema schema = new Schema("test", MockApplicationPackage.createEmpty());
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
         SDDocumentType doc = new SDDocumentType("test");
         schema.addDocument(doc);
@@ -30,7 +31,7 @@ public class EmptyRankProfileTestCase extends AbstractSchemaTestCase {
         doc.addField(field);
         doc.addField(new SDField("c", DataType.STRING));
 
-        schema = SchemaBuilder.buildFromRawSchema(schema, rankProfileRegistry, new QueryProfileRegistry());
+        schema = ApplicationBuilder.buildFromRawSchema(schema, rankProfileRegistry, new QueryProfileRegistry());
         new DerivedConfiguration(schema, rankProfileRegistry);
     }
 

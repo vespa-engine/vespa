@@ -15,13 +15,13 @@ public class IndexingParsingTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void requireThatIndexingExpressionsCanBeParsed() throws Exception {
-        assertNotNull(SchemaBuilder.buildFromFile("src/test/examples/indexing.sd"));
+        assertNotNull(ApplicationBuilder.buildFromFile("src/test/examples/indexing.sd"));
     }
 
     @Test
     public void requireThatParseExceptionPositionIsCorrect() throws Exception {
         try {
-            SchemaBuilder.buildFromFile("src/test/examples/indexing_invalid_expression.sd");
+            ApplicationBuilder.buildFromFile("src/test/examples/indexing_invalid_expression.sd");
         } catch (ParseException e) {
             if (!e.getMessage().contains("at line 5, column 57.")) {
                 throw e;

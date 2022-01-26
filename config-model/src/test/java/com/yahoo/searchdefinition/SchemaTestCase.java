@@ -31,7 +31,7 @@ public class SchemaTestCase {
                     "  }" +
                     "}");
             DeployLoggerStub logger = new DeployLoggerStub();
-            SchemaBuilder.createFromStrings(logger, schema);
+            ApplicationBuilder.createFromStrings(logger, schema);
             assertEquals("schema 'test' inherits 'nonesuch', but this schema does not exist",
                          logger.entries.get(0).message);
             fail("Expected failure");
@@ -60,7 +60,7 @@ public class SchemaTestCase {
                     "    }" +
                     "  }" +
                     "}");
-            SchemaBuilder.createFromStrings(new DeployLoggerStub(), parent, child);
+            ApplicationBuilder.createFromStrings(new DeployLoggerStub(), parent, child);
         }
         catch (IllegalArgumentException e) {
             assertEquals("schema 'child' inherits 'parent', " +
@@ -166,12 +166,12 @@ public class SchemaTestCase {
                 "  import field parentschema_ref.name as child2_imported {}" +
                 "}");
 
-        SchemaBuilder builder = new SchemaBuilder(new DeployLoggerStub());
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
         builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
         builder.processorsToSkip().add(ImportedFieldsResolver.class); // Avoid discovering the document reference leads nowhere
-        builder.importString(parentLines);
-        builder.importString(child1Lines);
-        builder.importString(child2Lines);
+        builder.addSchema(parentLines);
+        builder.addSchema(child1Lines);
+        builder.addSchema(child2Lines);
         builder.build(true);
         var application = builder.application();
 
@@ -307,12 +307,12 @@ public class SchemaTestCase {
                 "  }" +
                 "}");
 
-        SchemaBuilder builder = new SchemaBuilder(new DeployLoggerStub());
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
         builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
         builder.processorsToSkip().add(ImportedFieldsResolver.class); // Avoid discovering the document reference leads nowhere
-        builder.importString(parentLines);
-        builder.importString(childLines);
-        builder.importString(grandchildLines);
+        builder.addSchema(parentLines);
+        builder.addSchema(childLines);
+        builder.addSchema(grandchildLines);
         builder.build(true);
         var application = builder.application();
 

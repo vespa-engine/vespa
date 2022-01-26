@@ -5,12 +5,10 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.DataTypeName;
 import com.yahoo.documentmodel.VespaDocumentType;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.parser.ParseException;
-import com.yahoo.searchdefinition.processing.ImportedFieldsResolver;
-import com.yahoo.searchdefinition.processing.OnnxModelTypeResolver;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.Test;
 
@@ -122,8 +120,8 @@ public class SDDocumentTypeTestCase extends AbstractSchemaTestCase {
                 "  }" +
                 "}");
 
-        SchemaBuilder builder = new SchemaBuilder(new DeployLoggerStub());
-        builder.importString(schemaLines);
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schemaLines);
         builder.build(true);
         var application = builder.application();
 

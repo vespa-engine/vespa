@@ -2,11 +2,12 @@
 package com.yahoo.vespa.model.search.test;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.document.DataType;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
@@ -40,7 +41,7 @@ public class SchemaClusterTest {
     public void testSdConfigLogical() {
         // sd1
         SDDocumentType sdt1 = new SDDocumentType("s1");
-        Schema schema1 = new Schema("s1");
+        Schema schema1 = new Schema("s1", MockApplicationPackage.createEmpty());
         SDField f1 = new SDField("f1", DataType.STRING);
         f1.addAttribute(new Attribute("f1", DataType.STRING));
         f1.setIndexingScript(new ScriptExpression(new StatementExpression(new AttributeExpression("f1"))));
@@ -49,17 +50,17 @@ public class SchemaClusterTest {
 
         // sd2
         SDDocumentType sdt2 = new SDDocumentType("s2");
-        Schema schema2 = new Schema("s2");
+        Schema schema2 = new Schema("s2", MockApplicationPackage.createEmpty());
         SDField f2=new SDField("f2", DataType.STRING);
         f2.addAttribute(new Attribute("f2", DataType.STRING));
         f2.setIndexingScript(new ScriptExpression(new StatementExpression(new AttributeExpression("f2"))));
         sdt2.addField(f2);
         schema2.addDocument(sdt2);
 
-        SchemaBuilder builder = new SchemaBuilder();
-        builder.importRawSchema(schema1);
-        builder.importRawSchema(schema2);
-        builder.build();
+        ApplicationBuilder builder = new ApplicationBuilder();
+        builder.add(schema1);
+        builder.add(schema2);
+        builder.build(true);
     }
 
     @Test

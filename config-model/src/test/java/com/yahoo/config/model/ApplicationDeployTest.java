@@ -18,7 +18,6 @@ import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.search.NamedSchema;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -55,19 +54,18 @@ public class ApplicationDeployTest {
     public void testVespaModel() throws SAXException, IOException {
         ApplicationPackageTester tester = ApplicationPackageTester.create(TESTDIR + "app1");
         new VespaModel(tester.app());
-        List<NamedSchema> schemas = tester.getSchemas();
+        List<Schema> schemas = tester.getSchemas();
         assertEquals(schemas.size(), 5);
-        for (NamedSchema searchDefinition : schemas) {
-            Schema s = searchDefinition.getSearch();
-            switch (s.getName()) {
+        for (Schema schema : schemas) {
+            switch (schema.getName()) {
                 case "music":
                 case "laptop":
                 case "pc":
                 case "sock":
                     break;
                 case "product":
-                    assertTrue(s instanceof DocumentOnlySchema);
-                    assertEquals(DataType.STRING, s.getDocument().getField("title").getDataType());
+                    assertTrue(schema instanceof DocumentOnlySchema);
+                    assertEquals(DataType.STRING, schema.getDocument().getField("title").getDataType());
                     break;
                 default:
                     fail();
@@ -95,8 +93,8 @@ public class ApplicationDeployTest {
 
         // Check that getFilename works
         ArrayList<String> sdFileNames = new ArrayList<>();
-        for (NamedSchema sd : schemas)
-            sdFileNames.add(sd.getFilename());
+        for (Schema schema : schemas)
+            sdFileNames.add(schema.getName() + ApplicationPackage.SD_NAME_SUFFIX);
         Collections.sort(sdFileNames);
         assertEquals("laptop.sd", sdFileNames.get(0));
         assertEquals("music.sd", sdFileNames.get(1));

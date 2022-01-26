@@ -30,7 +30,7 @@ public class DiversitySettingsValidator extends Processor {
     }
     private void validate(RankProfile rankProfile, RankProfile.DiversitySettings settings) {
         String attributeName = settings.getAttribute();
-        new AttributeValidator(schema.getName(), rankProfile.getName(),
+        new AttributeValidator(schema.getName(), rankProfile.name(),
                                schema.getAttribute(attributeName), attributeName).validate();
     }
 

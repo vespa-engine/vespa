@@ -2,12 +2,13 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.processing.Processing;
@@ -30,7 +31,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
      */
     @Test
     public void testLiteralBoost() {
-        Schema schema = new Schema("literalboost");
+        Schema schema = new Schema("literalboost", MockApplicationPackage.createEmpty());
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
         SDDocumentType document = new SDDocumentType("literalboost");
         schema.addDocument(document);
@@ -63,7 +64,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
      */
     @Test
     public void testNonDefaultRankLiteralBoost() {
-        Schema schema = new Schema("literalboost");
+        Schema schema = new Schema("literalboost", MockApplicationPackage.createEmpty());
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
         SDDocumentType document = new SDDocumentType("literalboost");
         schema.addDocument(document);
@@ -73,7 +74,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         rankProfileRegistry.add(other);
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
 
-        schema = SchemaBuilder.buildFromRawSchema(schema, rankProfileRegistry, new QueryProfileRegistry());
+        schema = ApplicationBuilder.buildFromRawSchema(schema, rankProfileRegistry, new QueryProfileRegistry());
         DerivedConfiguration derived = new DerivedConfiguration(schema, rankProfileRegistry);
 
         // Check il script addition
@@ -89,7 +90,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
     /** Tests literal boosts in two fields going to the same index */
     @Test
     public void testTwoLiteralBoostFields() {
-        Schema schema = new Schema("msb");
+        Schema schema = new Schema("msb", MockApplicationPackage.createEmpty());
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
         SDDocumentType document = new SDDocumentType("msb");
         schema.addDocument(document);
@@ -100,7 +101,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         field2.parseIndexingScript("{ summary | index }");
         field2.setLiteralBoost(20);
 
-        schema = SchemaBuilder.buildFromRawSchema(schema, rankProfileRegistry, new QueryProfileRegistry());
+        schema = ApplicationBuilder.buildFromRawSchema(schema, rankProfileRegistry, new QueryProfileRegistry());
         new DerivedConfiguration(schema, rankProfileRegistry);
         assertIndexing(Arrays.asList("clear_state | guard { input title | tokenize normalize stem:\"BEST\" | summary title | index title; }",
                                      "clear_state | guard { input body | tokenize normalize stem:\"BEST\" | summary body | index body; }",

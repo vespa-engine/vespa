@@ -25,8 +25,8 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     public void testConstants() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         QueryProfileRegistry queryProfileRegistry = new QueryProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
                         "        field a type string { \n" +
@@ -66,7 +66,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
                         "    }\n" +
                         "\n" +
                         "}\n");
-        builder.build();
+        builder.build(true);
         Schema s = builder.getSchema();
         RankProfile parent = rankProfileRegistry.get(s, "parent").compile(queryProfileRegistry, new ImportedMlModels());
         assertEquals("0.0", parent.getFirstPhaseRanking().getRoot().toString());
@@ -91,8 +91,8 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     @Test
     public void testNameCollision() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
                         "        field a type string { \n" +
@@ -110,7 +110,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
                         "    }\n" +
                         "\n" +
                         "}\n");
-        builder.build();
+        builder.build(true);
         Schema s = builder.getSchema();
         try {
             rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
@@ -125,8 +125,8 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     @Test
     public void testNegativeLiteralArgument() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
                         "        field a type string { \n" +
@@ -141,7 +141,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
                         "    }\n" +
                         "\n" +
                         "}\n");
-        builder.build();
+        builder.build(true);
         Schema s = builder.getSchema();
         RankProfile profile = rankProfileRegistry.get(s, "test");
         assertEquals("safeLog(popShareSlowDecaySignal,-9.21034037)", profile.getFunctions().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
@@ -150,8 +150,8 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     @Test
     public void testNegativeConstantArgument() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
                         "        field a type string { \n" +
@@ -169,7 +169,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
                         "    }\n" +
                         "\n" +
                         "}\n");
-        builder.build();
+        builder.build(true);
         Schema s = builder.getSchema();
         RankProfile profile = rankProfileRegistry.get(s, "test");
         assertEquals("safeLog(popShareSlowDecaySignal,myValue)", profile.getFunctions().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
@@ -180,8 +180,8 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     @Test
     public void testConstantDivisorInFunction() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
                         "    }\n" +
@@ -193,7 +193,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
                         "    }\n" +
                         "\n" +
                         "}\n");
-        builder.build();
+        builder.build(true);
         Schema s = builder.getSchema();
         RankProfile profile = rankProfileRegistry.get(s, "test");
         assertEquals("k1 + (k2 + k3) / 1.0E8",
@@ -203,8 +203,8 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     @Test
     public void test3() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
                         "        field rating_yelp type int {" +
@@ -219,7 +219,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
                         "    }\n" +
                         "\n" +
                         "}\n");
-        builder.build();
+        builder.build(true);
         Schema s = builder.getSchema();
         RankProfile profile = rankProfileRegistry.get(s, "test");
         assertEquals("0.5 + 50 * (attribute(rating_yelp) - 3)",

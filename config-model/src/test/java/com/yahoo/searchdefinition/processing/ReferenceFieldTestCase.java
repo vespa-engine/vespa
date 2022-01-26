@@ -6,7 +6,7 @@ import com.yahoo.document.Field;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.searchdefinition.DocumentGraphValidator;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Rule;
@@ -28,7 +28,7 @@ public class ReferenceFieldTestCase {
 
     @Test
     public void reference_fields_are_parsed_from_search_definition() throws ParseException {
-        SchemaBuilder builder = new SchemaBuilder();
+        ApplicationBuilder builder = new ApplicationBuilder();
         String campaignSdContent =
                 "search campaign {\n" +
                 "  document campaign {\n" +
@@ -46,10 +46,10 @@ public class ReferenceFieldTestCase {
                 "    field salesperson_ref type reference<salesperson> { indexing: attribute }\n" +
                 "  }\n" +
                 "}";
-        builder.importString(campaignSdContent);
-        builder.importString(salespersonSdContent);
-        builder.importString(adSdContent);
-        builder.build();
+        builder.addSchema(campaignSdContent);
+        builder.addSchema(salespersonSdContent);
+        builder.addSchema(adSdContent);
+        builder.build(true);
         Schema schema = builder.getSchema("ad");
         assertSearchContainsReferenceField("campaign_ref", "campaign", schema.getDocument());
         assertSearchContainsReferenceField("salesperson_ref", "salesperson", schema.getDocument());
@@ -57,7 +57,7 @@ public class ReferenceFieldTestCase {
 
     @Test
     public void cyclic_document_dependencies_are_detected() throws ParseException {
-        SchemaBuilder builder = new SchemaBuilder();
+        ApplicationBuilder builder = new ApplicationBuilder();
         String campaignSdContent =
                 "search campaign {\n" +
                         "  document campaign {\n" +
@@ -70,11 +70,11 @@ public class ReferenceFieldTestCase {
                         "    field campaign_ref type reference<campaign> { indexing: attribute }\n" +
                         "  }\n" +
                         "}";
-        builder.importString(campaignSdContent);
-        builder.importString(adSdContent);
+        builder.addSchema(campaignSdContent);
+        builder.addSchema(adSdContent);
         exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
         exceptionRule.expectMessage("Document dependency cycle detected: campaign->ad->campaign.");
-        builder.build();
+        builder.build(true);
     }
 
     private static void assertSearchContainsReferenceField(String expectedFieldname,
@@ -87,4 +87,5 @@ public class ReferenceFieldTestCase {
         ReferenceDataType refField = (ReferenceDataType) dataType;
         assertEquals(referencedDocType, refField.getTargetType().getName());
     }
+
 }

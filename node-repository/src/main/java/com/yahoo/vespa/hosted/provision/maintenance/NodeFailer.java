@@ -204,7 +204,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             return orchestrator.getApplicationInstanceStatus(node.allocation().get().owner())
                    == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN;
         } catch (ApplicationIdNotFoundException e) {
-            //Treat it as not suspended and allow to fail the node anyway
+            // Treat it as not suspended and allow to fail the node anyway
             return false;
         }
     }

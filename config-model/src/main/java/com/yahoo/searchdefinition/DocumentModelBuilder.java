@@ -48,12 +48,12 @@ public class DocumentModelBuilder {
 
     private final DocumentModel model;
 
-    public DocumentModelBuilder(DocumentModel model) {
-        this.model = model;
-        model.getDocumentManager().add(VespaDocumentType.INSTANCE);
+    public DocumentModelBuilder() {
+        this.model = new DocumentModel();
+        this.model.getDocumentManager().add(VespaDocumentType.INSTANCE);
     }
 
-    public void addToModel(Collection<Schema> schemaList) {
+    public DocumentModel build(Collection<Schema> schemaList) {
         List<SDDocumentType> docList = new LinkedList<>();
         for (Schema schema : schemaList) {
             docList.add(schema.getDocument());
@@ -65,6 +65,7 @@ public class DocumentModelBuilder {
              toAdd = tryAdd(schemaList)) {
             schemaList = toAdd;
         }
+        return model;
     }
 
     private List<SDDocumentType> sortDocumentTypes(List<SDDocumentType> docList) {
@@ -124,7 +125,7 @@ public class DocumentModelBuilder {
         return left;
     }
 
-    public void addToModel(Schema schema) {
+    private void addToModel(Schema schema) {
         // Then we add the search specific stuff
         SearchDef searchDef = new SearchDef(schema.getName());
         addSearchFields(schema.extraFieldList(), searchDef);
@@ -232,8 +233,7 @@ public class DocumentModelBuilder {
     @SuppressWarnings("deprecation")
     private static DataType resolveTemporariesRecurse(DataType type, DataTypeCollection repo,
                                                       Collection<NewDocumentType> docs,
-                                                      Set<TypeReplacement> replacements)
-    {
+                                                      Set<TypeReplacement> replacements) {
         DataType original = type;
         if (type instanceof TemporaryStructuredDataType) {
             DataType other = repo.getDataType(type.getId());
@@ -298,8 +298,7 @@ public class DocumentModelBuilder {
     }
 
     private static DataType specialHandleAnnotationReferenceRecurse(NewDocumentType docType, String fieldName,
-                                                                    DataType dataType)
-    {
+                                                                    DataType dataType) {
         if (dataType instanceof TemporaryAnnotationReferenceDataType) {
             TemporaryAnnotationReferenceDataType refType = (TemporaryAnnotationReferenceDataType)dataType;
             if (refType.getId() != 0) {
@@ -359,6 +358,7 @@ public class DocumentModelBuilder {
         addType(dt, s);
         return s;
     }
+
     private static boolean anyParentsHavePayLoad(SDAnnotationType sa, SDDocumentType sdoc) {
         if (sa.getInherits() != null) {
             AnnotationType tmp = sdoc.findAnnotation(sa.getInherits());
@@ -367,7 +367,7 @@ public class DocumentModelBuilder {
         }
         return false;
     }
-    @SuppressWarnings("deprecation")
+
     private NewDocumentType convert(SDDocumentType sdoc) {
         Map<AnnotationType, String> annotationInheritance = new HashMap<>();
         Map<StructDataType, String> structInheritance = new HashMap<>();
@@ -463,6 +463,7 @@ public class DocumentModelBuilder {
             }
         }
     }
+
     private static void extractNestedTypes(NewDocumentType dt, DataType type) {
         if (type instanceof StructDataType) {
             StructDataType tmp = (StructDataType) type;
@@ -484,8 +485,11 @@ public class DocumentModelBuilder {
             throw new IllegalArgumentException(type.toString());
         }
     }
+
     private static boolean testAddType(NewDocumentType dt, DataType type) { return internalAddType(dt, type, true); }
+
     private static boolean addType(NewDocumentType dt, DataType type) { return internalAddType(dt, type, false); }
+
     private static boolean internalAddType(NewDocumentType dt, DataType type, boolean dryRun) {
         DataType oldType = dt.getDataTypeRecursive(type.getId());
         if (oldType == null) {

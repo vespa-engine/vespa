@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.searchdefinition.document.SDDocumentType;
@@ -143,7 +144,7 @@ public class DocumentGraphValidatorTest {
     }
 
     private static Schema createSearchWithName(String name, Schema... parents) {
-        Schema campaignSchema = new Schema(name);
+        Schema campaignSchema = new Schema(name, MockApplicationPackage.createEmpty());
         SDDocumentType document = new SDDocumentType(name);
         campaignSchema.addDocument(document);
         document.setDocumentReferences(new DocumentReferences(Collections.emptyMap()));

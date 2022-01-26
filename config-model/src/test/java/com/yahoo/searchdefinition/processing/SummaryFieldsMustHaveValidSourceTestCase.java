@@ -5,7 +5,7 @@ import com.yahoo.config.model.application.provider.BaseDeployLogger;
 
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -21,7 +21,7 @@ public class SummaryFieldsMustHaveValidSourceTestCase extends AbstractSchemaTest
     @Test
     public void requireThatInvalidSourceIsCaught() throws IOException, ParseException {
         try {
-            SchemaBuilder.buildFromFile("src/test/examples/invalidsummarysource.sd");
+            ApplicationBuilder.buildFromFile("src/test/examples/invalidsummarysource.sd");
             fail("This should throw and never get here");
         } catch (IllegalArgumentException e) {
             assertEquals("For schema 'invalidsummarysource', summary class 'baz', summary field 'cox': there is no valid source 'nonexistingfield'.", e.getMessage());
@@ -31,7 +31,7 @@ public class SummaryFieldsMustHaveValidSourceTestCase extends AbstractSchemaTest
     @Test
     public void requireThatInvalidImplicitSourceIsCaught() throws IOException, ParseException {
         try {
-            SchemaBuilder.buildFromFile("src/test/examples/invalidimplicitsummarysource.sd");
+            ApplicationBuilder.buildFromFile("src/test/examples/invalidimplicitsummarysource.sd");
             fail("This should throw and never get here");
         } catch (IllegalArgumentException e) {
             assertEquals("For schema 'invalidsummarysource', summary class 'baz', summary field 'cox': there is no valid source 'cox'.", e.getMessage());
@@ -41,7 +41,7 @@ public class SummaryFieldsMustHaveValidSourceTestCase extends AbstractSchemaTest
     @Test
     public void requireThatInvalidSelfReferingSingleSource() throws IOException, ParseException {
         try {
-            SchemaBuilder.buildFromFile("src/test/examples/invalidselfreferringsummary.sd");
+            ApplicationBuilder.buildFromFile("src/test/examples/invalidselfreferringsummary.sd");
             fail("This should throw and never get here");
         } catch (IllegalArgumentException e) {
             assertEquals("For schema 'invalidselfreferringsummary', summary class 'withid', summary field 'w': there is no valid source 'w'.", e.getMessage());
@@ -50,7 +50,7 @@ public class SummaryFieldsMustHaveValidSourceTestCase extends AbstractSchemaTest
 
     @Test
     public void requireThatDocumentIdIsAllowedToPass() throws IOException, ParseException {
-        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/documentidinsummary.sd");
+        Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/documentidinsummary.sd");
         BaseDeployLogger deployLogger = new BaseDeployLogger();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         new SummaryFieldsMustHaveValidSource(schema, deployLogger, rankProfileRegistry, new QueryProfiles()).process(true, false);

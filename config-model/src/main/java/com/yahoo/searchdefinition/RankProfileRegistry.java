@@ -6,7 +6,6 @@ import com.yahoo.searchdefinition.document.SDDocumentType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,22 +43,22 @@ public class RankProfileRegistry {
 
     /** Adds a rank profile to this registry */
     public void add(RankProfile rankProfile) {
-        String searchName = extractName(rankProfile.getSearch());
-        if ( ! rankProfiles.containsKey(searchName)) {
-            rankProfiles.put(searchName, new LinkedHashMap<>());
+        String schemaName = extractName(rankProfile.schema());
+        if ( ! rankProfiles.containsKey(schemaName)) {
+            rankProfiles.put(schemaName, new LinkedHashMap<>());
         }
         checkForDuplicate(rankProfile);
-        rankProfiles.get(searchName).put(rankProfile.getName(), rankProfile);
+        rankProfiles.get(schemaName).put(rankProfile.name(), rankProfile);
     }
 
     private void checkForDuplicate(RankProfile rankProfile) {
-        String rankProfileName = rankProfile.getName();
-        RankProfile existingRankProfileWithSameName = rankProfiles.get(extractName(rankProfile.getSearch())).get(rankProfileName);
+        String rankProfileName = rankProfile.name();
+        RankProfile existingRankProfileWithSameName = rankProfiles.get(extractName(rankProfile.schema())).get(rankProfileName);
         if (existingRankProfileWithSameName == null) return;
 
         if ( ! overridableRankProfileNames.contains(rankProfileName)) {
             throw new IllegalArgumentException("Duplicate rank profile '" + rankProfileName + "' in " +
-                                               rankProfile.getSearch());
+                                               rankProfile.schema());
         }
     }
 

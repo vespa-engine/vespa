@@ -1,8 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
-import com.yahoo.config.model.deploy.TestProperties;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -145,10 +144,10 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     @Test
     public void testTensor2() throws IOException, ParseException {
         String dir = "src/test/derived/tensor2/";
-        SchemaBuilder builder = new SchemaBuilder();
-        builder.importFile(dir + "first.sd");
-        builder.importFile(dir + "second.sd");
-        builder.build();
+        ApplicationBuilder builder = new ApplicationBuilder();
+        builder.addSchemaFile(dir + "first.sd");
+        builder.addSchemaFile(dir + "second.sd");
+        builder.build(true);
         derive("tensor2", builder, builder.getSchema("second"));
         assertCorrectConfigFiles("tensor2");
     }
@@ -168,6 +167,11 @@ public class ExportingTestCase extends AbstractExportingTestCase {
         TestableDeployLogger logger = new TestableDeployLogger();
         assertCorrectDeriving("language", logger);
         assertEquals(0, logger.warnings.size());
+    }
+
+    @Test
+    public void testRankProfileModularity() throws IOException, ParseException {
+        assertCorrectDeriving("rankprofilemodularity");
     }
 
 }

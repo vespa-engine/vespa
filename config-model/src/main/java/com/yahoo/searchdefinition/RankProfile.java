@@ -57,11 +57,12 @@ public class RankProfile implements Cloneable {
 
     public final static String FIRST_PHASE = "firstphase";
     public final static String SECOND_PHASE = "secondphase";
+
     /** The search definition-unique name of this rank profile */
     private final String name;
 
-    /** The search definition owning this profile, or null if global (owned by a model) */
-    private final ImmutableSchema search;
+    /** The schema owning this profile, or null if global (owned by a model) */
+    private final ImmutableSchema schema;
 
     /** The name of the rank profile inherited by this */
     private String inheritedName = null;
@@ -132,20 +133,6 @@ public class RankProfile implements Cloneable {
     private final ApplicationPackage applicationPackage;
     private final DeployLogger deployLogger;
 
-    private static class CachedFunctions {
-        private final Map<String, RankingExpressionFunction> allRankingExpressionFunctions;
-        private final ImmutableMap<String, ExpressionFunction> allExpressionFunctions;
-        CachedFunctions(Map<String, RankingExpressionFunction> functions) {
-            allRankingExpressionFunctions = functions;
-            ImmutableMap.Builder<String,ExpressionFunction> mapBuilder = new ImmutableMap.Builder<>();
-            for (var entry : functions.entrySet()) {
-                ExpressionFunction function = entry.getValue().function();
-                mapBuilder.put(function.getName(), function);
-            }
-            allExpressionFunctions = mapBuilder.build();
-        }
-    }
-
     /**
      * Creates a new rank profile for a particular search definition
      *
@@ -156,7 +143,7 @@ public class RankProfile implements Cloneable {
      */
     public RankProfile(String name, Schema schema, RankProfileRegistry rankProfileRegistry, RankingConstants rankingConstants) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
-        this.search = Objects.requireNonNull(schema, "search cannot be null");
+        this.schema = Objects.requireNonNull(schema, "search cannot be null");
         this.onnxModels = null;
         this.rankingConstants = rankingConstants;
         this.rankProfileRegistry = rankProfileRegistry;
@@ -172,7 +159,7 @@ public class RankProfile implements Cloneable {
     public RankProfile(String name, ApplicationPackage applicationPackage, DeployLogger deployLogger,
                        RankProfileRegistry rankProfileRegistry, RankingConstants rankingConstants, OnnxModels onnxModels) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
-        this.search = null;
+        this.schema = null;
         this.rankProfileRegistry = rankProfileRegistry;
         this.rankingConstants = rankingConstants;
         this.onnxModels = onnxModels;
@@ -180,10 +167,10 @@ public class RankProfile implements Cloneable {
         this.deployLogger = deployLogger;
     }
 
-    public String getName() { return name; }
+    public String name() { return name; }
 
     /** Returns the search definition owning this, or null if it is global */
-    public ImmutableSchema getSearch() { return search; }
+    public ImmutableSchema schema() { return schema; }
 
     /** Returns the application this is part of */
     public ApplicationPackage applicationPackage() {
@@ -196,19 +183,19 @@ public class RankProfile implements Cloneable {
     }
 
     public Map<String, OnnxModel> onnxModels() {
-        return search != null ? search.onnxModels().asMap() : onnxModels.asMap();
+        return schema != null ? schema.onnxModels().asMap() : onnxModels.asMap();
     }
 
     private Stream<ImmutableSDField> allFields() {
-        if (search == null) return Stream.empty();
+        if (schema == null) return Stream.empty();
         if (allFieldsList == null) {
-            allFieldsList = search.allFieldsList();
+            allFieldsList = schema.allFieldsList();
         }
         return allFieldsList.stream();
     }
 
     private Stream<ImmutableSDField> allImportedFields() {
-        return search != null ? search.allImportedFields() : Stream.empty();
+        return schema != null ? schema.allImportedFields() : Stream.empty();
     }
 
     /**
@@ -228,9 +215,9 @@ public class RankProfile implements Cloneable {
         if (inherited == null) {
             inherited = resolveInherited();
             if (inherited == null) {
-                String msg = "rank-profile '" + getName() + "' inherits '" + inheritedName +
-                        "', but it does not exist anywhere in the inheritance of search '" +
-                        ((getSearch() != null) ? getSearch().getName() : " global rank profiles") + "'.";
+                String msg = "rank-profile '" + name() + "' inherits '" + inheritedName +
+                             "', but this is not found in " +
+                             ((schema() != null) ? schema() : " global rank profiles");
                 throw new IllegalArgumentException(msg);
             } else {
                 List<String> children = new ArrayList<>();
@@ -242,9 +229,9 @@ public class RankProfile implements Cloneable {
     }
 
     private String createFullyQualifiedName() {
-        return (search != null)
-                ? (search.getName() + "." + getName())
-                : getName();
+        return (schema != null)
+                ? (schema.getName() + "." + name())
+                : name();
     }
 
     private void verifyNoInheritanceCycle(List<String> children, RankProfile parent) {
@@ -275,8 +262,8 @@ public class RankProfile implements Cloneable {
 
     private RankProfile resolveInherited() {
         if (inheritedName == null) return null;
-        return (getSearch() != null)
-                ? resolveInherited(search)
+        return (schema() != null)
+                ? resolveInherited(schema)
                 : rankProfileRegistry.getGlobal(inheritedName);
     }
 
@@ -289,7 +276,7 @@ public class RankProfile implements Cloneable {
     public boolean inherits(String name) {
         RankProfile parent = getInherited();
         while (parent != null) {
-            if (parent.getName().equals(name))
+            if (parent.name().equals(name))
                 return true;
             parent = parent.getInherited();
         }
@@ -619,7 +606,7 @@ public class RankProfile implements Cloneable {
 
     @Override
     public String toString() {
-        return "rank profile '" + getName() + "'";
+        return "rank profile '" + name() + "'";
     }
 
     public int getRerankCount() {
@@ -819,14 +806,14 @@ public class RankProfile implements Cloneable {
 
     private ExpressionFunction parseRankingExpression(String name, List<String> arguments, String expression) throws ParseException {
         if (expression.trim().length() == 0)
-            throw new ParseException("Encountered an empty ranking expression in " + getName()+ ", " + name + ".");
+            throw new ParseException("Encountered an empty ranking expression in " + name() + ", " + name + ".");
 
         try (Reader rankingExpressionReader = openRankingExpressionReader(name, expression.trim())) {
             return new ExpressionFunction(name, arguments, new RankingExpression(name, rankingExpressionReader));
         }
         catch (com.yahoo.searchlib.rankingexpression.parser.ParseException e) {
             ParseException exception = new ParseException("Could not parse ranking expression '" + expression.trim() +
-                                                          "' in " + getName()+ ", " + name + ".");
+                                                          "' in " + name() + ", " + name + ".");
             throw (ParseException)exception.initCause(e);
         }
         catch (IOException e) {
@@ -848,10 +835,10 @@ public class RankProfile implements Cloneable {
         String fileName = extractFileName(expression);
         File file = new File(fileName);
         if (!file.isAbsolute() && file.getPath().contains("/")) // See ticket 4102122
-            throw new IllegalArgumentException("In " + getName() + ", " + expName + ", ranking references file '" + file +
-                    "' in subdirectory, which is not supported.");
+            throw new IllegalArgumentException("In " + name() + ", " + expName + ", ranking references file '" + file +
+                                               "' in subdirectory, which is not supported.");
 
-        return search.getRankingExpression(fileName);
+        return schema.getRankingExpression(fileName);
     }
 
     /** Shallow clones this */
@@ -888,7 +875,7 @@ public class RankProfile implements Cloneable {
             return compiled;
         }
         catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Rank profile '" + getName() + "' is invalid", e);
+            throw new IllegalArgumentException("Rank profile '" + name() + "' is invalid", e);
         }
     }
 
@@ -1317,6 +1304,24 @@ public class RankProfile implements Cloneable {
 
         public Map<String, String> getTypes() {
             return Collections.unmodifiableMap(types);
+        }
+
+    }
+
+    private static class CachedFunctions {
+
+        private final Map<String, RankingExpressionFunction> allRankingExpressionFunctions;
+
+        private final ImmutableMap<String, ExpressionFunction> allExpressionFunctions;
+
+        CachedFunctions(Map<String, RankingExpressionFunction> functions) {
+            allRankingExpressionFunctions = functions;
+            ImmutableMap.Builder<String,ExpressionFunction> mapBuilder = new ImmutableMap.Builder<>();
+            for (var entry : functions.entrySet()) {
+                ExpressionFunction function = entry.getValue().function();
+                mapBuilder.put(function.getName(), function);
+            }
+            allExpressionFunctions = mapBuilder.build();
         }
 
     }

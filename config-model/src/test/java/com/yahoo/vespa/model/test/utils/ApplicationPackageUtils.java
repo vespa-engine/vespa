@@ -11,10 +11,9 @@ import java.util.List;
  */
 public class ApplicationPackageUtils {
 
-    public static String generateSearchDefinition(String name, String field1, String field2) {
-        return "" +
-                "search " + name + "{" +
-                "  document " + name + "{" +
+    public static String generateSchema(String name, String field1, String field2) {
+        return  "schema " + name + " {" +
+                "  document " + name + " {" +
                 "    field " + field1 + " type string {\n" +
                 "      indexing: index | summary\n" +
                 "      summary: dynamic\n" +
@@ -51,7 +50,7 @@ public class ApplicationPackageUtils {
         List<String> sds = new ArrayList<>();
         int i = 0;
         for (String sdName : sdNames) {
-            sds.add(generateSearchDefinition(sdName, "f" + (i + 1), "f" + (i + 2)));
+            sds.add(generateSchema(sdName, "f" + (i + 1), "f" + (i + 2)));
             i = i + 2;
         }
         return sds;

@@ -16,8 +16,8 @@ public class RankingExpressionLoopDetectionTestCase {
     @Test
     public void testSelfLoop() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(
                 "search test {\n" +
                 "    document test { \n" +
                 "        field a type string { \n" +
@@ -36,7 +36,7 @@ public class RankingExpressionLoopDetectionTestCase {
                 "\n" +
                 "}\n");
         try {
-            builder.build();
+            builder.build(true);
             fail("Excepted exception");
         }
         catch (IllegalArgumentException e) {
@@ -48,8 +48,8 @@ public class RankingExpressionLoopDetectionTestCase {
     @Test
     public void testNestedLoop() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(
                 "search test {\n" +
                 "    document test { \n" +
                 "        field a type string { \n" +
@@ -71,7 +71,7 @@ public class RankingExpressionLoopDetectionTestCase {
                 "\n" +
                 "}\n");
         try {
-            builder.build();
+            builder.build(true);
             fail("Excepted exception");
         }
         catch (IllegalArgumentException e) {
@@ -83,8 +83,8 @@ public class RankingExpressionLoopDetectionTestCase {
     @Test
     public void testSelfArgumentLoop() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(
                 "search test {\n" +
                 "    document test { \n" +
                 "        field a type string { \n" +
@@ -106,7 +106,7 @@ public class RankingExpressionLoopDetectionTestCase {
                 "\n" +
                 "}\n");
         try {
-            builder.build();
+            builder.build(true);
             fail("Excepted exception");
         }
         catch (IllegalArgumentException e) {
@@ -118,8 +118,8 @@ public class RankingExpressionLoopDetectionTestCase {
     @Test
     public void testNoLoopWithSameLocalArgument() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(
                 "search test {\n" +
                 "    document test { \n" +
                 "        field a type string { \n" +
@@ -140,14 +140,14 @@ public class RankingExpressionLoopDetectionTestCase {
                 "    }\n" +
                 "\n" +
                 "}\n");
-        builder.build();
+        builder.build(true);
     }
 
     @Test
     public void testNoLoopWithMultipleInvocations() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(
                 "search test {\n" +
                 "    document test { \n" +
                 "        field a type string { \n" +
@@ -168,14 +168,14 @@ public class RankingExpressionLoopDetectionTestCase {
                 "    }\n" +
                 "\n" +
                 "}\n");
-        builder.build();
+        builder.build(true);
     }
 
     @Test
     public void testNoLoopWithBoundIdentifiers() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(
                 "search test {\n" +
                 "    document test { \n" +
                 "    }\n" +
@@ -191,14 +191,14 @@ public class RankingExpressionLoopDetectionTestCase {
                 "        }\n" +
                 "    }\n" +
                 "}\n");
-        builder.build();
+        builder.build(true);
     }
 
     @Test
     public void testNoLoopWithTheSameNestedIdentifierWhichIsUnbound() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(
                 "search test {\n" +
                 "    document test { \n" +
                 "    }\n" +
@@ -214,14 +214,14 @@ public class RankingExpressionLoopDetectionTestCase {
                 "        }\n" +
                 "    }\n" +
                 "}\n");
-        builder.build();
+        builder.build(true);
     }
 
     @Test
     public void testNoLoopWithTheSameAlternatingNestedIdentifierWhichIsUnbound() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(
                 "search test {\n" +
                 "    document test { \n" +
                 "    }\n" +
@@ -240,7 +240,7 @@ public class RankingExpressionLoopDetectionTestCase {
                 "        }\n" +
                 "    }\n" +
                 "}\n");
-        builder.build();
+        builder.build(true);
     }
 
 }

@@ -15,8 +15,8 @@ public class DiversityTestCase {
     @Test
     public void testDiversity() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
                         "        field a type int { \n" +
@@ -42,7 +42,7 @@ public class DiversityTestCase {
                         "        }\n" +
                         "    }\n" +
                         "}\n");
-        builder.build();
+        builder.build(true);
         Schema s = builder.getSchema();
         RankProfile.MatchPhaseSettings matchPhase = rankProfileRegistry.get(s, "parent").getMatchPhaseSettings();
         RankProfile.DiversitySettings diversity = matchPhase.getDiversity();
@@ -60,10 +60,10 @@ public class DiversityTestCase {
     }
     @Test
     public void requireSingleNumericOrString() throws ParseException {
-        SchemaBuilder builder = getSearchBuilder("field b type predicate { indexing: attribute }");
+        ApplicationBuilder builder = getSearchBuilder("field b type predicate { indexing: attribute }");
 
         try {
-            builder.build();
+            builder.build(true);
             fail("Should throw.");
         } catch (IllegalArgumentException e) {
             assertEquals(getMessagePrefix() + "must be single value numeric, or enumerated attribute, but it is 'predicate'", e.getMessage());
@@ -72,19 +72,19 @@ public class DiversityTestCase {
 
     @Test
     public void requireSingle() throws ParseException {
-        SchemaBuilder builder = getSearchBuilder("field b type array<int> { indexing: attribute }");
+        ApplicationBuilder builder = getSearchBuilder("field b type array<int> { indexing: attribute }");
 
         try {
-            builder.build();
+            builder.build(true);
             fail("Should throw.");
         } catch (IllegalArgumentException e) {
             assertEquals(getMessagePrefix() + "must be single value numeric, or enumerated attribute, but it is 'Array<int>'", e.getMessage());
         }
     }
-    private SchemaBuilder getSearchBuilder(String diversity) throws ParseException {
+    private ApplicationBuilder getSearchBuilder(String diversity) throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
                         "        field a type int { \n" +

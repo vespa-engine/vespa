@@ -23,8 +23,8 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
     @Test
     public void testRankPropertyInheritance() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(joinLines(
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(joinLines(
                 "search test {",
                 "    document test {",
                 "        field a type string { ",
@@ -48,7 +48,7 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
                 "        }",
                 "    }",
                 "}"));
-        builder.build();
+        builder.build(true);
         Schema schema = builder.getSchema();
         AttributeFields attributeFields = new AttributeFields(schema);
 
@@ -80,8 +80,8 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
     @Test
     public void testRankProfileMutate() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(joinLines(
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(joinLines(
                 "search test {",
                 "    document test {",
                 "        field a type int { ",
@@ -128,7 +128,7 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
                 "        }",
                 "    }",
                 "}"));
-        builder.build();
+        builder.build(true);
         Schema schema = builder.getSchema();
         RankProfile a = rankProfileRegistry.get(schema, "a");
         List<RankProfile.MutateOperation> operations = a.getMutateOperations();
