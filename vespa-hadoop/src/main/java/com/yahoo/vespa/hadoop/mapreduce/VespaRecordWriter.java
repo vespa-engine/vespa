@@ -147,7 +147,7 @@ public class VespaRecordWriter extends RecordWriter<Object, Object> {
     }
 
     private static List<URI> endpointUris(VespaConfiguration config) {
-        String scheme = config.useSSL() ? "https" : "http";
+        String scheme = config.useSSL().orElse(true) ? "https" : "http";
         return Arrays.stream(config.endpoint().split(","))
                 .map(hostname -> URI.create(String.format("%s://%s:%d/", scheme, hostname, config.defaultPort())))
                 .collect(toList());
