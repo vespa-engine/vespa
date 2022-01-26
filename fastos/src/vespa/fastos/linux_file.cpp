@@ -38,17 +38,17 @@ ssize_t
 FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length, int64_t readOffset)
 {
     char * data = static_cast<char *>(buffer);
-    ssize_t read(0);
-    while (read < ssize_t(length)) {
-        size_t lenNow = std::min(getChunkSize(), length - read);
-        ssize_t readNow = File_RW_Ops::pread(fh, data + read, lenNow, readOffset + read);
+    ssize_t has_read(0);
+    while (has_read < ssize_t(length)) {
+        size_t lenNow = std::min(getChunkSize(), length - has_read);
+        ssize_t readNow = File_RW_Ops::pread(fh, data + has_read, lenNow, readOffset + has_read);
         if (readNow > 0) {
-            read += readNow;
+            has_read += readNow;
         } else {
-            return (read > 0) ? read : readNow;
+            return (has_read > 0) ? has_read : readNow;
         }
     }
-    return read;
+    return has_read;
 }
 
 
@@ -56,17 +56,17 @@ ssize_t
 FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length)
 {
     char * data = static_cast<char *>(buffer);
-    ssize_t read(0);
-    while (read < ssize_t(length)) {
-        size_t lenNow = std::min(getChunkSize(), length - read);
-        ssize_t readNow = File_RW_Ops::read(fh, data + read, lenNow);
+    ssize_t has_read(0);
+    while (has_read < ssize_t(length)) {
+        size_t lenNow = std::min(getChunkSize(), length - has_read);
+        ssize_t readNow = File_RW_Ops::read(fh, data + has_read, lenNow);
         if (readNow > 0) {
-            read += readNow;
+            has_read += readNow;
         } else {
-            return (read > 0) ? read : readNow;
+            return (has_read > 0) ? has_read : readNow;
         }
     }
-    return read;
+    return has_read;
 }
 
 
@@ -296,17 +296,6 @@ FastOS_Linux_File::AllocateDirectIOBuffer (size_t byteSize, void *&realPtr)
     return align(realPtr, memoryAlignment);
 }
 
-
-void *
-FastOS_Linux_File::
-allocateGenericDirectIOBuffer(size_t byteSize, void *&realPtr)
-{
-    size_t memoryAlignment = _directIOMemAlign;
-    realPtr = malloc(byteSize + memoryAlignment - 1);
-    return align(realPtr, memoryAlignment);
-}
-
-
 size_t
 FastOS_Linux_File::getMaxDirectIOMemAlign()
 {
@@ -317,18 +306,14 @@ FastOS_Linux_File::getMaxDirectIOMemAlign()
 bool
 FastOS_Linux_File::GetDirectIORestrictions (size_t &memoryAlignment, size_t &transferGranularity, size_t &transferMaximum)
 {
-    bool rc = false;
-
     if (_directIOEnabled) {
         memoryAlignment = _directIOMemAlign;
         transferGranularity = _directIOFileAlign;
         transferMaximum = 0x7FFFFFFF;
-        rc = true;
+        return true;
     } else {
-        rc = FastOS_UNIX_File::GetDirectIORestrictions(memoryAlignment, transferGranularity, transferMaximum);
+        return FastOS_UNIX_File::GetDirectIORestrictions(memoryAlignment, transferGranularity, transferMaximum);
     }
-
-    return rc;
 }
 
 
