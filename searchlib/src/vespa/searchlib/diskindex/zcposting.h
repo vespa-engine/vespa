@@ -42,8 +42,6 @@ public:
     bool close() override;
     void getParams(PostingListParams &params) override;
     void getFeatureParams(PostingListParams &params) override;
-    void readWordStartWithSkip();
-    void readWordStart();
     void readHeader();
     static const vespalib::string &getIdentifier(bool dynamic_k);
 };

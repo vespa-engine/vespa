@@ -2,7 +2,6 @@
 #pragma once
 
 #include "fileutil.h"
-#include <vespa/fastlib/io/bufferedfile.h>
 
 namespace search {
 

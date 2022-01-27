@@ -2,7 +2,7 @@
 #pragma once
 
 #include "pagedict4file.h"
-#include <vespa/fastlib/io/bufferedfile.h>
+
 
 namespace search::diskindex {
 
@@ -47,7 +47,7 @@ public:
 
 private:
     // "owners" of file handles.
-    std::unique_ptr<Fast_BufferedFile> _old2newwordfile;
+    std::unique_ptr<FastOS_FileInterface> _old2newwordfile;
 
     using DictionaryFileSeqRead = index::DictionaryFileSeqRead;
     std::unique_ptr<DictionaryFileSeqRead> _dictFile;
@@ -82,9 +82,7 @@ public:
 
     void close();
 
-    void writeNewWordNum(uint64_t newWordNum) {
-        _old2newwordfile->WriteBuf(&newWordNum, sizeof(newWordNum));
-    }
+    void writeNewWordNum(uint64_t newWordNum);
 
     void write(WordAggregator &writer) {
         writer.tryWriteWord(_word);

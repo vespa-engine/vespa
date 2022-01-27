@@ -26,9 +26,6 @@
 #include <mutex>
 #include <shared_mutex>
 
-class Fast_BufferedFile;
-class FastOS_FileInterface;
-
 namespace document {
     class ArithmeticValueUpdate;
     class AssignValueUpdate;

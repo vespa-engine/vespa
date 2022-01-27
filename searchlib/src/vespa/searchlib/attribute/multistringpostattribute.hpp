@@ -5,7 +5,6 @@
 #include "stringattribute.h"
 #include "multistringpostattribute.h"
 #include "multistringattribute.hpp"
-#include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 
 namespace search {

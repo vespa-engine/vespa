@@ -5,7 +5,6 @@
 
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/attribute/readerbase.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/util/array.h>
