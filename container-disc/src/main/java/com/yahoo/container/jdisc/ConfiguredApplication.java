@@ -403,7 +403,7 @@ public final class ConfiguredApplication implements Application {
         startAndStopServers(List.of());
         startAndRemoveClients(List.of());
         log.info(logPrefix + ": Waiting for all in-flight requests to complete");
-        activateContainer(null, () -> configurer.shutdown());
+        activateContainer(null, () -> {});
         nonTerminatedContainerTracker.arriveAndAwaitAdvance();
         log.info(logPrefix + ": Finished");
     }
@@ -428,6 +428,7 @@ public final class ConfiguredApplication implements Application {
     @Override
     public void destroy() {
         log.info("Destroy: Shutting down container now");
+        configurer.shutdown();
         slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
         Container.get().shutdown();
         unregisterInSlobrok();
