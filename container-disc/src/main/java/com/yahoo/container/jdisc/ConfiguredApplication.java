@@ -402,6 +402,8 @@ public final class ConfiguredApplication implements Application {
         nonTerminatedContainerTracker.arriveAndAwaitAdvance();
     }
 
+    // TODO Do more graceful shutdown of reconfigurer thread. The interrupt may leave the container in state where
+    //      graceful shutdown is impossible or may hang.
     private void shutdownReconfigurerThread() {
         if (reconfigurerThread == null) return;
         reconfigurerThread.interrupt();
