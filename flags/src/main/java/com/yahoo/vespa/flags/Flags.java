@@ -357,14 +357,6 @@ public class Flags {
             "Triggers restart, takes effect immediately",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundStringFlag MERGE_THROTTLING_POLICY = defineStringFlag(
-            "merge-throttling-policy", "STATIC",
-            List.of("vekterli"), "2022-01-25", "2022-05-01",
-            "Sets the policy used for merge throttling on the content nodes. " +
-            "Valid values: STATIC, DYNAMIC",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag CHECK_CONFIG_CONVERGENCE_BEFORE_RESTARTING = defineFeatureFlag(
             "check-config-convergence-before-restart", false,
             List.of("hmusum"), "2022-01-16", "2022-02-16",
