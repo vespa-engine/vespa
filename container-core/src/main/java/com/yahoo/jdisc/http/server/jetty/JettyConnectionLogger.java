@@ -30,6 +30,9 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.StandardConstants;
 import java.net.InetSocketAddress;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -227,7 +230,6 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
             throw new IllegalArgumentException("Unknown connection endpoint type: " + endpoint.getClass().getName());
         }
     }
-
     @FunctionalInterface private interface ListenerHandler { void run() throws Exception; }
 
     private static class ConnectionInfo {
@@ -249,6 +251,8 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         private Date sslPeerNotBefore;
         private Date sslPeerNotAfter;
         private List<SNIServerName> sslSniServerNames;
+        private String sslPeerIssuerSubject;
+        private byte[] sslPeerEncodedCertificate;
         private SSLHandshakeException sslHandshakeException;
         private List<String> sslSubjectAlternativeNames;
         private String proxyProtocolVersion;
@@ -307,8 +311,9 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
                 this.sslSubjectAlternativeNames = X509CertificateUtils.getSubjectAlternativeNames(peerCertificate).stream()
                         .map(SubjectAlternativeName::getValue)
                         .collect(Collectors.toList());
-
-            } catch (SSLPeerUnverifiedException e) {
+                this.sslPeerIssuerSubject = peerCertificate.getIssuerDN().getName();
+                this.sslPeerEncodedCertificate = peerCertificate.getEncoded();
+            } catch (SSLPeerUnverifiedException | CertificateEncodingException e) {
                 // Throw if peer is not authenticated (e.g when client auth is disabled)
                 // JSSE provides no means of checking for client authentication without catching this exception
             }
@@ -365,10 +370,13 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
                         .findAny()
                         .ifPresent(builder::withSslSniServerName);
             }
-            if (sslPeerSubject != null && sslPeerNotAfter != null && sslPeerNotBefore != null) {
+            if (sslPeerSubject != null && sslPeerNotAfter != null && sslPeerNotBefore != null
+                    && sslPeerIssuerSubject != null && sslPeerEncodedCertificate != null) {
                 builder.withSslPeerSubject(sslPeerSubject)
+                        .withSslPeerIssuerSubject(sslPeerIssuerSubject)
                         .withSslPeerNotAfter(sslPeerNotAfter.toInstant())
-                        .withSslPeerNotBefore(sslPeerNotBefore.toInstant());
+                        .withSslPeerNotBefore(sslPeerNotBefore.toInstant())
+                        .withSslPeerFingerprint(certificateFingerprint(sslPeerEncodedCertificate));
             }
             if (sslSubjectAlternativeNames != null && !sslSubjectAlternativeNames.isEmpty()) {
                 builder.withSslSubjectAlternativeNames(sslSubjectAlternativeNames);
@@ -392,6 +400,14 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
                 builder.withProxyProtocolVersion(proxyProtocolVersion);
             }
             return builder.build();
+        }
+
+        private static String certificateFingerprint(byte[] derEncoded) {
+            try {
+                return HexDump.toHexString(MessageDigest.getInstance("SHA-1").digest(derEncoded));
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
+            }
         }
 
     }
