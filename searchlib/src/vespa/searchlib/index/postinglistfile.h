@@ -3,8 +3,8 @@
 
 #include "postinglistcounts.h"
 #include "postinglisthandle.h"
-#include "postinglistparams.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
+#include <vespa/vespalib/stllike/string.h>
 
 class FastOS_FileInterface;
 
@@ -14,6 +14,7 @@ namespace search::index {
 
 class DocIdAndFeatures;
 class FieldLengthInfo;
+class PostingListParams;
 
 /**
  * Interface for posting list files containing document ids and features

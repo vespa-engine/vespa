@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "postinglistparams.h"
 #include "postinglistcounts.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace search::common { class FileHeaderContext; }
 
@@ -11,6 +11,7 @@ namespace search::index {
 
 class PostingListCounts;
 class PostingListHandle;
+class PostingListParams;
 
 /**
  * Interface for count files describing where in a posting list file

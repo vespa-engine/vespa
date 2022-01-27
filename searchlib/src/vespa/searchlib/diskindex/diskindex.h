@@ -7,6 +7,7 @@
 #include <vespa/searchlib/index/dictionaryfile.h>
 #include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/queryeval/searchable.h>
+#include <vespa/searchcommon/common/schema.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/cache.h>
 

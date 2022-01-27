@@ -163,4 +163,10 @@ public:
     void set_has_raw_data(bool val) { _has_raw_data = val; }
 };
 
+class DocIdAndPosOccFeatures : public DocIdAndFeatures
+{
+public:
+    void addNextOcc(uint32_t elementId, uint32_t wordPos, int32_t elementWeight, uint32_t elementLen);
+};
+
 }

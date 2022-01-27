@@ -49,6 +49,12 @@ PostingListParams::clear()
 }
 
 void
+PostingListParams::add(const PostingListParams & toAdd)
+{
+    _map.insert(toAdd._map.begin(), toAdd._map.end());
+}
+
+void
 PostingListParams::erase(const vespalib::string &key)
 {
     _map.erase(key);
@@ -62,8 +68,7 @@ PostingListParams::operator!=(const PostingListParams &rhs) const
 
 template <typename TYPE>
 void
-PostingListParams::set(const vespalib::string &key,
-                       const TYPE &val)
+PostingListParams::set(const vespalib::string &key, const TYPE &val)
 {
     std::ostringstream os;
 
@@ -73,8 +78,7 @@ PostingListParams::set(const vespalib::string &key,
 
 template <typename TYPE>
 void
-PostingListParams::get(const vespalib::string &key,
-                       TYPE &val) const
+PostingListParams::get(const vespalib::string &key, TYPE &val) const
 {
     std::istringstream is;
     Map::const_iterator it;
@@ -87,35 +91,27 @@ PostingListParams::get(const vespalib::string &key,
 }
 
 template void
-PostingListParams::set<bool>(const vespalib::string &key,
-                             const bool &val);
+PostingListParams::set<bool>(const vespalib::string &key, const bool &val);
 
 template void
-PostingListParams::get<bool>(const vespalib::string &key,
-                             bool &val) const;
+PostingListParams::get<bool>(const vespalib::string &key, bool &val) const;
 
 template void
-PostingListParams::set<int32_t>(const vespalib::string &key,
-                                 const int32_t &val);
+PostingListParams::set<int32_t>(const vespalib::string &key, const int32_t &val);
 
 template void
-PostingListParams::get<int32_t>(const vespalib::string &key,
-                                 int32_t &val) const;
+PostingListParams::get<int32_t>(const vespalib::string &key, int32_t &val) const;
 
 template void
-PostingListParams::set<uint32_t>(const vespalib::string &key,
-                                 const uint32_t &val);
+PostingListParams::set<uint32_t>(const vespalib::string &key, const uint32_t &val);
 
 template void
-PostingListParams::get<uint32_t>(const vespalib::string &key,
-                                 uint32_t &val) const;
+PostingListParams::get<uint32_t>(const vespalib::string &key, uint32_t &val) const;
 
 template void
-PostingListParams::set<uint64_t>(const vespalib::string &key,
-                                 const uint64_t &val);
+PostingListParams::set<uint64_t>(const vespalib::string &key, const uint64_t &val);
 
 template void
-PostingListParams::get<uint64_t>(const vespalib::string &key,
-                                 uint64_t &val) const;
+PostingListParams::get<uint64_t>(const vespalib::string &key, uint64_t &val) const;
 
 }

@@ -1,14 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "postinglistfile.h"
+#include <vespa/searchlib/index/postinglistparams.h>
 #include <vespa/fastos/file.h>
 
 namespace search::index {
 
-PostingListFileSeqRead::PostingListFileSeqRead()
-{
-}
-
+PostingListFileSeqRead::PostingListFileSeqRead() = default;
 PostingListFileSeqRead::~PostingListFileSeqRead() = default;
 
 void
@@ -37,9 +35,7 @@ PostingListFileSeqWrite::PostingListFileSeqWrite()
 {
 }
 
-PostingListFileSeqWrite::~PostingListFileSeqWrite()
-{
-}
+PostingListFileSeqWrite::~PostingListFileSeqWrite() = default;
 
 void
 PostingListFileSeqWrite::
@@ -75,9 +71,7 @@ PostingListFileRandRead()
 {
 }
 
-PostingListFileRandRead::~PostingListFileRandRead()
-{
-}
+PostingListFileRandRead::~PostingListFileRandRead() = default;
 
 void
 PostingListFileRandRead::afterOpen(FastOS_FileInterface &file)
@@ -117,8 +111,7 @@ readPostingList(const PostingListCounts &counts,
                 uint32_t numSegments,
                 PostingListHandle &handle)
 {
-    _lower->readPostingList(counts, firstSegment, numSegments,
-                            handle);
+    _lower->readPostingList(counts, firstSegment, numSegments,handle);
 }
 
 bool

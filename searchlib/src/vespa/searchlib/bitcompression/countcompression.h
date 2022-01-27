@@ -19,15 +19,13 @@ public:
     uint32_t _minChunkDocs; // Minimum number of documents for chunking
     uint32_t _docIdLimit;   // Limit for document ids (docId < docIdLimit)
     uint64_t _numWordIds;   // Number of words in dictionary
-    uint64_t _minWordNum;   // Minimum word number
 
     PostingListCountFileDecodeContext()
         : ParentClass(),
           _avgBitsPerDoc(10),
           _minChunkDocs(262144),
           _docIdLimit(10000000),
-          _numWordIds(0),
-          _minWordNum(0u)
+          _numWordIds(0)
     {
     }
 
@@ -50,15 +48,13 @@ public:
     uint32_t _minChunkDocs; // Minimum number of documents for chunking
     uint32_t _docIdLimit;   // Limit for document ids (docId < docIdLimit)
     uint64_t _numWordIds;   // Number of words in dictionary
-    uint64_t _minWordNum;   // Mininum word number
 
     PostingListCountFileEncodeContext()
         : ParentClass(),
           _avgBitsPerDoc(10),
           _minChunkDocs(262144),
           _docIdLimit(10000000),
-          _numWordIds(0),
-          _minWordNum(0u)
+          _numWordIds(0)
     {
     }
 

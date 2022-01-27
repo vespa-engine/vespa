@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
+#include "compression.h"
 #include <vespa/searchlib/index/docidandfeatures.h>
-#include <vespa/searchcommon/common/schema.h>
 
 #define K_VALUE_POSOCC_FIRST_WORDPOS 8
 
@@ -15,35 +15,6 @@
 #define K_VALUE_POSOCC_NUMELEMENTS 0
 #define K_VALUE_POSOCC_ELEMENTID 0
 #define K_VALUE_POSOCC_ELEMENTWEIGHT 9
-
-namespace search::index {
-
-class DocIdAndPosOccFeatures : public DocIdAndFeatures
-{
-public:
-
-    void
-    addNextOcc(uint32_t elementId,
-               uint32_t wordPos,
-               int32_t elementWeight,
-               uint32_t elementLen)
-    {
-        assert(wordPos < elementLen);
-        if (_elements.empty() || elementId > _elements.back().getElementId()) {
-            _elements.emplace_back(elementId, elementWeight, elementLen);
-        } else {
-            assert(elementId == _elements.back().getElementId());
-            assert(elementWeight == _elements.back().getWeight());
-            assert(elementLen == _elements.back().getElementLen());
-        }
-        assert(_elements.back().getNumOccs() == 0 ||
-               wordPos > _word_positions.back().getWordPos());
-        _elements.back().incNumOccs();
-        _word_positions.emplace_back(wordPos);
-    }
-};
-
-}
 
 namespace search::bitcompression {
 

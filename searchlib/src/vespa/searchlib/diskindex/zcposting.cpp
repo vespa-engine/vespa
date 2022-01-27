@@ -5,6 +5,7 @@
 #include <vespa/searchlib/index/postinglistcountfile.h>
 #include <vespa/searchlib/index/postinglistfile.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/searchlib/index/postinglistparams.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/data/fileheader.h>
 
@@ -46,9 +47,7 @@ Zc4PostingSeqRead::Zc4PostingSeqRead(PostingListCountFileSeqRead *countFile, boo
 }
 
 
-Zc4PostingSeqRead::~Zc4PostingSeqRead()
-{
-}
+Zc4PostingSeqRead::~Zc4PostingSeqRead() = default;
 
 void
 Zc4PostingSeqRead::readDocIdAndFeatures(DocIdAndFeatures &features)
@@ -201,9 +200,7 @@ Zc4PostingSeqWrite(PostingListCountFileSeqWrite *countFile)
 }
 
 
-Zc4PostingSeqWrite::~Zc4PostingSeqWrite()
-{
-}
+Zc4PostingSeqWrite::~Zc4PostingSeqWrite() = default;
 
 
 void
