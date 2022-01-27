@@ -1,43 +1,28 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/log/log.h>
-LOG_SETUP("stringenum");
-#include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/util/stringenum.h>
 
-
+LOG_SETUP("stringenum");
 #include <vespa/vespalib/testkit/testapp.h>
 
 using namespace vespalib;
 
-class MyApp : public vespalib::TestApp
-{
-public:
-    void CheckLookup( search::util::StringEnum *strEnum, const char *str, int value);
-    int Main() override;
-    MyApp() {}
-};
-
-
 void
-MyApp::CheckLookup( search::util::StringEnum *strEnum, const char *str, int value)
+CheckLookup( search::util::StringEnum *strEnum, const char *str, int value)
 {
     EXPECT_EQUAL(0, strcmp(str, strEnum->Lookup(value)));
     EXPECT_EQUAL(value, strEnum->Lookup(str));
 }
 
 
-int
-MyApp::Main()
+TEST("test StringEnum Add and Lookup")
 {
-    TEST_INIT("stringenum_test");
 
     search::util::StringEnum enum1;
-    search::util::StringEnum enum2;
 
     // check number of entries
     EXPECT_EQUAL(enum1.GetNumEntries(), 0u);
-    EXPECT_EQUAL(enum2.GetNumEntries(), 0u);
 
     // check add non-duplicates
     EXPECT_EQUAL(enum1.Add("zero"),   0);
@@ -80,63 +65,11 @@ MyApp::Main()
     TEST_DO(CheckLookup(&enum1, "nine",   9));
     TEST_DO(CheckLookup(&enum1, "ten",   10));
 
-    TEST_FLUSH();
-
-    // save/load
-    EXPECT_TRUE(enum1.Save("tmp.enum"));
-    EXPECT_TRUE(enum2.Load("tmp.enum"));
-
-    // check mapping and reverse mapping
-    EXPECT_EQUAL(enum2.GetNumEntries(), 11u);
-    TEST_DO(CheckLookup(&enum2, "zero",   0));
-    TEST_DO(CheckLookup(&enum2, "one",    1));
-    TEST_DO(CheckLookup(&enum2, "two",    2));
-    TEST_DO(CheckLookup(&enum2, "three",  3));
-    TEST_DO(CheckLookup(&enum2, "four",   4));
-    TEST_DO(CheckLookup(&enum2, "five",   5));
-    TEST_DO(CheckLookup(&enum2, "six",    6));
-    TEST_DO(CheckLookup(&enum2, "seven",  7));
-    TEST_DO(CheckLookup(&enum2, "eight",  8));
-    TEST_DO(CheckLookup(&enum2, "nine",   9));
-    TEST_DO(CheckLookup(&enum2, "ten",   10));
-
-    // add garbage
-    enum2.Add("sfsdffgdfh");
-    enum2.Add("sf24dfsgg3");
-    enum2.Add("sfwertfgdh");
-    enum2.Add("sfewrgtsfh");
-    enum2.Add("sfgdsdgdfh");
-
-    TEST_FLUSH();
-
-    // reload
-    EXPECT_TRUE(enum2.Load("tmp.enum"));
-
-    // check garbage lost
-    EXPECT_EQUAL(enum2.GetNumEntries(), 11u);
-    EXPECT_EQUAL(-1, enum2.Lookup("sfewrgtsfh"));
-    // check mapping and reverse mapping
-    TEST_DO(CheckLookup(&enum2, "zero",   0));
-    TEST_DO(CheckLookup(&enum2, "one",    1));
-    TEST_DO(CheckLookup(&enum2, "two",    2));
-    TEST_DO(CheckLookup(&enum2, "three",  3));
-    TEST_DO(CheckLookup(&enum2, "four",   4));
-    TEST_DO(CheckLookup(&enum2, "five",   5));
-    TEST_DO(CheckLookup(&enum2, "six",    6));
-    TEST_DO(CheckLookup(&enum2, "seven",  7));
-    TEST_DO(CheckLookup(&enum2, "eight",  8));
-    TEST_DO(CheckLookup(&enum2, "nine",   9));
-    TEST_DO(CheckLookup(&enum2, "ten",   10));
-
     // clear
     enum1.Clear();
-    enum2.Clear();
 
     // check number of entries
     EXPECT_EQUAL(enum1.GetNumEntries(), 0u);
-    EXPECT_EQUAL(enum2.GetNumEntries(), 0u);
-
-    TEST_DONE();
 }
 
-TEST_APPHOOK(MyApp);
+TEST_MAIN() { TEST_RUN_ALL(); }
