@@ -16,45 +16,19 @@ namespace search::diskindex {
  */
 class PageDict4FileSeqRead : public index::DictionaryFileSeqRead
 {
-    typedef bitcompression::PostingListCountFileDecodeContext DC;
-    typedef bitcompression::PageDict4SSReader SSReader;
-    typedef bitcompression::PageDict4Reader Reader;
+    using DC = bitcompression::PostingListCountFileDecodeContext;
+    using SSReader = bitcompression::PageDict4SSReader;
+    using Reader = bitcompression::PageDict4Reader;
+    using PostingListCounts = index::PostingListCounts;
+    struct DictFileReadContext;
 
-    typedef index::PostingListCounts PostingListCounts;
-
-    Reader *_pReader;
-    SSReader *_ssReader;
-
-    DC _ssd;
-    ComprFileReadContext _ssReadContext;
-    FastOS_File _ssfile;
-
-    DC _spd;
-    ComprFileReadContext _spReadContext;
-    FastOS_File _spfile;
-
-    DC _pd;
-    ComprFileReadContext _pReadContext;
-    FastOS_File _pfile;
-
-    uint64_t _ssFileBitSize;
-    uint64_t _spFileBitSize;
-    uint64_t _pFileBitSize;
-    uint32_t _ssHeaderLen;
-    uint32_t _spHeaderLen;
-    uint32_t _pHeaderLen;
-
-    bool _ssCompleted;
-    bool _spCompleted;
-    bool _pCompleted;
-
+    std::unique_ptr<Reader>   _pReader;
+    std::unique_ptr<SSReader> _ssReader;
+    std::unique_ptr<DictFileReadContext> _ss;
+    std::unique_ptr<DictFileReadContext> _sp;
+    std::unique_ptr<DictFileReadContext> _p;
     uint64_t _wordNum;
-
-    void readSSHeader();
-    void readSPHeader();
-    void readPHeader();
 public:
-
     PageDict4FileSeqRead();
     ~PageDict4FileSeqRead() override;
 

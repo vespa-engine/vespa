@@ -16,7 +16,8 @@ vespalib::string myPId("PageDict4P.1");
 vespalib::string mySPId("PageDict4SP.1");
 vespalib::string mySSId("PageDict4SS.1");
 
-void assertOpenWriteOnly(bool ok, const vespalib::string &fileName)
+void
+assertOpenWriteOnly(bool ok, const vespalib::string &fileName)
 {
     if (!ok) {
         int osError = errno;
@@ -27,6 +28,19 @@ void assertOpenWriteOnly(bool ok, const vespalib::string &fileName)
     }
 }
 
+int64_t
+getBitSizeAndAssertHeaders(const vespalib::FileHeader & header, vespalib::stringref id) {
+    assert(header.hasTag("frozen"));
+    assert(header.hasTag("fileBitSize"));
+    assert(header.hasTag("format.0"));
+    assert(!header.hasTag("format.1"));
+    assert(header.hasTag("endian"));
+    assert(header.getTag("frozen").asInteger() != 0);
+    assert(header.getTag("endian").asString() == "big");
+    assert(header.getTag("format.0").asString() == id);
+    return header.getTag("fileBitSize").asInteger();
+}
+
 }
 
 using search::common::FileHeaderContext;
@@ -35,130 +49,99 @@ using vespalib::getLastErrorString;
 
 namespace search::diskindex {
 
+struct PageDict4FileSeqRead::DictFileReadContext {
+    DictFileReadContext(vespalib::stringref id, const vespalib::string & name, const TuneFileSeqRead &tune, bool read_all_upfront);
+    ~DictFileReadContext();
+    vespalib::FileHeader readHeader();
+    void readExtendedHeader();
+    bool close();
+    const vespalib::string _id;
+    uint64_t               _fileBitSize;
+    uint32_t               _headerLen;
+    bool                   _valid;
+    DC                     _dc;
+    ComprFileReadContext   _readContext;
+    FastOS_File            _file;
+};
+
+PageDict4FileSeqRead::DictFileReadContext::DictFileReadContext(vespalib::stringref id, const vespalib::string & name,
+                                                               const TuneFileSeqRead &tune, bool read_all_upfront)
+    : _id(id),
+      _fileBitSize(0u),
+      _headerLen(0u),
+      _valid(false),
+      _dc(),
+      _readContext(_dc),
+      _file()
+{
+    _dc.setReadContext(&_readContext);
+    if (tune.getWantDirectIO()) {
+        _file.EnableDirectIO();
+    }
+    if (!_file.OpenReadOnly(name.c_str())) {
+        LOG(error, "could not open %s: %s", _file.GetFileName(), getLastErrorString().c_str());
+        return;
+    }
+    uint64_t fileSize = _file.GetSize();
+    _readContext.setFile(&_file);
+    _readContext.setFileSize(fileSize);
+    if (read_all_upfront) {
+        _readContext.allocComprBuf((fileSize + sizeof(uint64_t) - 1) / sizeof(uint64_t), 32_Ki);
+    } else {
+        _readContext.allocComprBuf(64_Ki, 32_Ki);
+    }
+    _dc.emptyBuffer(0);
+    _readContext.readComprBuffer();
+    if (read_all_upfront) {
+        assert(_readContext.getBufferEndFilePos() >= fileSize);
+    }
+    _valid = true;
+}
+
+PageDict4FileSeqRead::DictFileReadContext::~DictFileReadContext() = default;
+
+vespalib::FileHeader
+PageDict4FileSeqRead::DictFileReadContext::readHeader() {
+    vespalib::FileHeader header;
+    uint32_t headerLen = _dc.readHeader(header, _file.getSize());
+    _fileBitSize = getBitSizeAndAssertHeaders(header, _id);
+    _dc.smallAlign(64);
+    uint32_t minHeaderLen = header.getSize();
+    minHeaderLen += (-minHeaderLen & 7);
+    assert(headerLen >= minHeaderLen);
+    assert(_dc.getReadOffset() == headerLen * 8);
+    _headerLen = headerLen;
+    return header;
+}
+
 PageDict4FileSeqRead::PageDict4FileSeqRead()
-    : _pReader(nullptr),
-      _ssReader(nullptr),
-      _ssd(),
-      _ssReadContext(_ssd),
-      _ssfile(),
-      _spd(),
-      _spReadContext(_spd),
-      _spfile(),
-      _pd(),
-      _pReadContext(_pd),
-      _pfile(),
-      _ssFileBitSize(0u),
-      _spFileBitSize(0u),
-      _pFileBitSize(0u),
-      _ssHeaderLen(0u),
-      _spHeaderLen(0u),
-      _pHeaderLen(0u),
-      _ssCompleted(false),
-      _spCompleted(false),
-      _pCompleted(false),
+    : _pReader(),
+      _ssReader(),
+      _ss(),
+      _sp(),
+      _p(),
       _wordNum(0u)
-{
-    _ssd.setReadContext(&_ssReadContext);
-    _spd.setReadContext(&_spReadContext);
-    _pd.setReadContext(&_pReadContext);
-}
+{ }
 
 
-PageDict4FileSeqRead::~PageDict4FileSeqRead()
-{
-    delete _pReader;
-    delete _ssReader;
-}
-
+PageDict4FileSeqRead::~PageDict4FileSeqRead() = default;
 
 void
-PageDict4FileSeqRead::readSSHeader()
+PageDict4FileSeqRead::DictFileReadContext::readExtendedHeader()
 {
-    DC &ssd = _ssd;
-
-    vespalib::FileHeader header;
-    uint32_t headerLen = ssd.readHeader(header, _ssfile.getSize());
-    assert(header.hasTag("frozen"));
-    assert(header.hasTag("fileBitSize"));
-    assert(header.hasTag("format.0"));
-    assert(!header.hasTag("format.1"));
+    vespalib::FileHeader header = readHeader();
     assert(header.hasTag("numWordIds"));
     assert(header.hasTag("avgBitsPerDoc"));
     assert(header.hasTag("minChunkDocs"));
     assert(header.hasTag("docIdLimit"));
-    assert(header.hasTag("endian"));
-    _ssCompleted = header.getTag("frozen").asInteger() != 0;
-    _ssFileBitSize = header.getTag("fileBitSize").asInteger();
-    assert(header.getTag("format.0").asString() == mySSId);
-    ssd._numWordIds = header.getTag("numWordIds").asInteger();
-    ssd._avgBitsPerDoc = header.getTag("avgBitsPerDoc").asInteger();
-    ssd._minChunkDocs = header.getTag("minChunkDocs").asInteger();
-    ssd._docIdLimit = header.getTag("docIdLimit").asInteger();
-
-    assert(header.getTag("endian").asString() == "big");
-    ssd.smallAlign(64);
-    uint32_t minHeaderLen = header.getSize();
-    minHeaderLen += (-minHeaderLen & 7);
-    assert(headerLen >= minHeaderLen);
-    assert(ssd.getReadOffset() == headerLen * 8);
-    _ssHeaderLen = headerLen;
+    _dc._numWordIds = header.getTag("numWordIds").asInteger();
+    _dc._avgBitsPerDoc = header.getTag("avgBitsPerDoc").asInteger();
+    _dc._minChunkDocs = header.getTag("minChunkDocs").asInteger();
+    _dc._docIdLimit = header.getTag("docIdLimit").asInteger();
 }
 
-
 void
-PageDict4FileSeqRead::readSPHeader()
-{
-    DC &spd = _spd;
-
-    vespalib::FileHeader header;
-    uint32_t headerLen = spd.readHeader(header, _spfile.getSize());
-    assert(header.hasTag("frozen"));
-    assert(header.hasTag("fileBitSize"));
-    assert(header.hasTag("format.0"));
-    assert(!header.hasTag("format.1"));
-    assert(header.hasTag("endian"));
-    _spCompleted = header.getTag("frozen").asInteger() != 0;
-    _spFileBitSize = header.getTag("fileBitSize").asInteger();
-    assert(header.getTag("format.0").asString() == mySPId);
-    assert(header.getTag("endian").asString() == "big");
-    spd.smallAlign(64);
-    uint32_t minHeaderLen = header.getSize();
-    minHeaderLen += (-minHeaderLen & 7);
-    assert(headerLen >= minHeaderLen);
-    assert(spd.getReadOffset() == headerLen * 8);
-    _spHeaderLen = headerLen;
-}
-
-
-void
-PageDict4FileSeqRead::readPHeader()
-{
-    DC &pd = _pd;
-
-    vespalib::FileHeader header;
-    uint32_t headerLen = pd.readHeader(header, _pfile.getSize());
-    assert(header.hasTag("frozen"));
-    assert(header.hasTag("fileBitSize"));
-    assert(header.hasTag("format.0"));
-    assert(!header.hasTag("format.1"));
-    assert(header.hasTag("endian"));
-    _pCompleted = header.getTag("frozen").asInteger() != 0;
-    _pFileBitSize = header.getTag("fileBitSize").asInteger();
-    assert(header.getTag("format.0").asString() == myPId);
-    assert(header.getTag("endian").asString() == "big");
-    pd.smallAlign(64);
-    uint32_t minHeaderLen = header.getSize();
-    minHeaderLen += (-minHeaderLen & 7);
-    assert(headerLen >= minHeaderLen);
-    assert(pd.getReadOffset() == headerLen * 8);
-    _pHeaderLen = headerLen;
-}
-
-
-void
-PageDict4FileSeqRead::readWord(vespalib::string &word,
-                               uint64_t &wordNum,
-                               PostingListCounts &counts)
+PageDict4FileSeqRead::readWord(vespalib::string &word, uint64_t &wordNum, PostingListCounts &counts)
 {
     // Map to external ids and filter by what's present in the schema.
     uint64_t checkWordNum = 0;
@@ -172,77 +155,37 @@ PageDict4FileSeqRead::readWord(vespalib::string &word,
     }
 }
 
+bool
+PageDict4FileSeqRead::DictFileReadContext::close() {
+    _readContext.dropComprBuf();
+    _readContext.setFile(nullptr);
+    return _file.Close();
+}
 
 bool
 PageDict4FileSeqRead::open(const vespalib::string &name,
                            const TuneFileSeqRead &tuneFileRead)
 {
-    if (tuneFileRead.getWantDirectIO()) {
-        _ssfile.EnableDirectIO();
-        _spfile.EnableDirectIO();
-        _pfile.EnableDirectIO();
-    }
-
-    vespalib::string pname = name + ".pdat";
-    vespalib::string spname = name + ".spdat";
-    vespalib::string ssname = name + ".ssdat";
-
-    if (!_ssfile.OpenReadOnly(ssname.c_str())) {
-        LOG(error, "could not open %s: %s",
-            _ssfile.GetFileName(), getLastErrorString().c_str());
-        return false;
-    }
-    if (!_spfile.OpenReadOnly(spname.c_str())) {
-        LOG(error, "could not open %s: %s",
-            _spfile.GetFileName(), getLastErrorString().c_str());
-        return false;
-    }
-    if (!_pfile.OpenReadOnly(pname.c_str())) {
-        LOG(error, "could not open %s: %s",
-            _pfile.GetFileName(), getLastErrorString().c_str());
+    _ss = std::make_unique<DictFileReadContext>(mySSId, name + ".ssdat", tuneFileRead, true);
+    _sp = std::make_unique<DictFileReadContext>(mySPId, name + ".spdat", tuneFileRead, false);
+    _p = std::make_unique<DictFileReadContext>(myPId, name + ".pdat", tuneFileRead, false);
+    if ( !_ss->_valid || !_sp->_valid || !_p->_valid ) {
         return false;
     }
 
-    _spReadContext.setFile(&_spfile);
-    _spReadContext.setFileSize(_spfile.GetSize());
-    _spReadContext.allocComprBuf(64_Ki, 32_Ki);
-    _spd.emptyBuffer(0);
+    _ss->readExtendedHeader();
+    _sp->readHeader();
+    _p->readHeader();
 
-    _pReadContext.setFile(&_pfile);
-    _pReadContext.setFileSize(_pfile.GetSize());
-    _pReadContext.allocComprBuf(64_Ki, 32_Ki);
-    _pd.emptyBuffer(0);
-
-    uint64_t fileSize = _ssfile.GetSize();
-    _ssReadContext.setFile(&_ssfile);
-    _ssReadContext.setFileSize(fileSize);
-    _ssReadContext.allocComprBuf((fileSize + sizeof(uint64_t) - 1) /
-                                 sizeof(uint64_t),
-                                 32_Ki);
-    _ssd.emptyBuffer(0);
-
-    _ssReadContext.readComprBuffer();
-    assert(_ssReadContext.getBufferEndFilePos() >= fileSize);
-    readSSHeader();
-    _spReadContext.readComprBuffer();
-    readSPHeader();
-    _pReadContext.readComprBuffer();
-    readPHeader();
-
-    _ssReader = new SSReader(_ssReadContext,
-                             _ssHeaderLen,
-                             _ssFileBitSize,
-                             _spHeaderLen,
-                             _spFileBitSize,
-                             _pHeaderLen,
-                             _pFileBitSize);
+    _ssReader = std::make_unique<SSReader>(_ss->_readContext,
+                                           _ss->_headerLen, _ss->_fileBitSize,
+                                           _sp->_headerLen, _sp->_fileBitSize,
+                                           _p->_headerLen, _p->_fileBitSize);
 
     // Instantiate helper class for reading
-    _pReader = new Reader(*_ssReader,
-                          _spd,
-                          _pd);
+    _pReader = std::make_unique<Reader>(*_ssReader, _sp->_dc, _p->_dc);
 
-    _ssReader->setup(_ssd);
+    _ssReader->setup(_ss->_dc);
     _pReader->setup();
     _wordNum = 0;
 
@@ -253,18 +196,12 @@ PageDict4FileSeqRead::open(const vespalib::string &name,
 bool
 PageDict4FileSeqRead::close()
 {
-    delete _pReader;
-    delete _ssReader;
-    _pReader = nullptr;
-    _ssReader = nullptr;
-
-    _ssReadContext.dropComprBuf();
-    _spReadContext.dropComprBuf();
-    _pReadContext.dropComprBuf();
-    _ssReadContext.setFile(nullptr);
-    _spReadContext.setFile(nullptr);
-    _pReadContext.setFile(nullptr);
-    return _ssfile.Close() && _spfile.Close() &&_pfile.Close();
+    _pReader.reset();
+    _ssReader.reset();
+    if (_ss) {
+        return _ss->close() && _sp->close() && _p->close();
+    }
+    return true;
 }
 
 
@@ -272,11 +209,14 @@ void
 PageDict4FileSeqRead::getParams(PostingListParams &params)
 {
     params.clear();
-    params.set("avgBitsPerDoc", _ssd._avgBitsPerDoc);
-    params.set("minChunkDocs", _ssd._minChunkDocs);
-    params.set("docIdLimit", _ssd._docIdLimit);
-    params.set("numWordIds", _ssd._numWordIds);
-    params.set("numCounts", _ssd._numWordIds);
+    if (_ss) {
+        const DC &dc = _ss->_dc;
+        params.set("avgBitsPerDoc", dc._avgBitsPerDoc);
+        params.set("minChunkDocs", dc._minChunkDocs);
+        params.set("docIdLimit", dc._docIdLimit);
+        params.set("numWordIds", dc._numWordIds);
+        params.set("numCounts", dc._numWordIds);
+    }
 }
 
 
