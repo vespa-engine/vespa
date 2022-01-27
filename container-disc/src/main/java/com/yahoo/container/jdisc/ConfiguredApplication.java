@@ -8,7 +8,6 @@ import com.google.inject.Injector;
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.component.Vtag;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigInterruptedException;
 import com.yahoo.container.Container;
@@ -43,7 +42,6 @@ import com.yahoo.log.LogSetup;
 import com.yahoo.messagebus.network.rpc.SlobrokConfigSubscriber;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.UncheckedInterruptedException;
 
@@ -55,9 +53,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -71,7 +67,6 @@ public final class ConfiguredApplication implements Application {
 
     private static final Logger log = Logger.getLogger(ConfiguredApplication.class.getName());
     private static final Set<ClientProvider> startedClients = Collections.newSetFromMap(new WeakHashMap<>());
-    static final String SANITIZE_FILENAME = "[/,;]";
 
     private static final Set<ServerProvider> startedServers = Collections.newSetFromMap(new IdentityHashMap<>());
     private final SubscriberFactory subscriberFactory;
@@ -86,6 +81,7 @@ public final class ConfiguredApplication implements Application {
     // to config to make sure that container will be registered in slobrok (by {@link com.yahoo.jrt.slobrok.api.Register})
     // if slobrok config changes (typically slobroks moving to other nodes)
     private final Optional<SlobrokConfigSubscriber> slobrokConfigSubscriber;
+    private final ShutdownDeadline shutdownDeadline;
 
     //TODO: FilterChainRepository should instead always be set up in the model.
     private final FilterChainRepository defaultFilterChainRepository =
@@ -95,8 +91,8 @@ public final class ConfiguredApplication implements Application {
                                       new ComponentRegistry<>(),
                                       new ComponentRegistry<>());
     private final OsgiFramework restrictedOsgiFramework;
+    private final Phaser nonTerminatedContainerTracker = new Phaser(1);
     private HandlersConfigurerDi configurer;
-    private ScheduledThreadPoolExecutor shutdownDeadlineExecutor;
     private Thread reconfigurerThread;
     private Thread portWatcher;
     private QrConfig qrConfig;
@@ -136,6 +132,7 @@ public final class ConfiguredApplication implements Application {
                 ? Optional.of(new SlobrokConfigSubscriber(configId))
                 : Optional.empty();
         this.restrictedOsgiFramework = new DisableOsgiFramework(new RestrictedBundleContext(osgiFramework.bundleContext()));
+        this.shutdownDeadline = new ShutdownDeadline(configId);
     }
 
     @Override
@@ -256,8 +253,7 @@ public final class ConfiguredApplication implements Application {
                            configurer.getComponent(ApplicationContext.class).discBindingsConfig);
         installServerProviders(builder);
 
-        DeactivatedContainer deactivated = activator.activateContainer(builder);
-        if (deactivated != null) deactivated.notifyTermination(cleanupTask);
+        activateContainer(builder, cleanupTask);
 
         startClients();
         startAndStopServers();
@@ -265,6 +261,20 @@ public final class ConfiguredApplication implements Application {
         log.info("Switching to the latest deployed set of configurations and components. " +
                  "Application config generation: " + configurer.generation());
         metric.set("application_generation", configurer.generation(), metric.createContext(Map.of()));
+    }
+
+    private void activateContainer(ContainerBuilder builder, Runnable onPreviousContainerTermination) {
+        DeactivatedContainer deactivated = activator.activateContainer(builder);
+        if (deactivated != null) {
+            nonTerminatedContainerTracker.register();
+            deactivated.notifyTermination(() -> {
+                try {
+                    onPreviousContainerTermination.run();
+                } finally {
+                    nonTerminatedContainerTracker.arriveAndDeregister();
+                }
+            });
+        }
     }
 
     private ContainerBuilder createBuilderWithGuiceBindings() {
@@ -371,9 +381,8 @@ public final class ConfiguredApplication implements Application {
 
     @Override
     public void stop() {
-        startShutdownDeadlineExecutor();
+        shutdownDeadline.schedule((long)(shutdownTimeoutS.get() * 1000), dumpHeapOnShutdownTimeout.get());
         shutdownReconfigurerThread();
-
         log.info("Stop: Closing servers");
         for (ServerProvider server : Container.get().getServerProviderRegistry().allComponents()) {
             if (startedServers.contains(server)) {
@@ -382,24 +391,19 @@ public final class ConfiguredApplication implements Application {
         }
 
         log.info("Stop: Shutting container down");
-        CountDownLatch latch = new CountDownLatch(1);
-        activator.activateContainer(null)
-                .notifyTermination(() -> {
-                    configurer.shutdown();
-                    slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
-                    Container.get().shutdown();
-                    unregisterInSlobrok();
-                    LogSetup.cleanup();
-                    log.info("Stop: Finished");
-                    latch.countDown();
-                });
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            throw new UncheckedInterruptedException("Failed to wait for container deactivation to complete", e, true);
-        }
+        activateContainer(null, () -> {
+            configurer.shutdown();
+            slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
+            Container.get().shutdown();
+            unregisterInSlobrok();
+            LogSetup.cleanup();
+            log.info("Stop: Finished");
+        });
+        nonTerminatedContainerTracker.arriveAndAwaitAdvance();
     }
 
+    // TODO Do more graceful shutdown of reconfigurer thread. The interrupt may leave the container in state where
+    //      graceful shutdown is impossible or may hang.
     private void shutdownReconfigurerThread() {
         if (reconfigurerThread == null) return;
         reconfigurerThread.interrupt();
@@ -418,31 +422,8 @@ public final class ConfiguredApplication implements Application {
 
     @Override
     public void destroy() {
-        if (shutdownDeadlineExecutor != null) { //stop() is not called when exception happens during start
-            shutdownDeadlineExecutor.shutdownNow();
-        }
-    }
-
-    static String santizeFileName(String s) {
-        return s.trim()
-                .replace('\\', '.')
-                .replaceAll(SANITIZE_FILENAME, ".");
-    }
-
-    // Workaround for ApplicationLoader.stop not being able to shutdown
-    private void startShutdownDeadlineExecutor() {
-        shutdownDeadlineExecutor = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("Shutdown deadline timer"));
-        shutdownDeadlineExecutor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
-        long delayMillis = (long)(shutdownTimeoutS.get() * 1000.0);
-        shutdownDeadlineExecutor.schedule(() -> {
-            if (dumpHeapOnShutdownTimeout.get()) {
-                String heapDumpName = Defaults.getDefaults().underVespaHome("var/crash/java_pid.") + santizeFileName(configId) + "." + ProcessHandle.current().pid() + ".hprof";
-                com.yahoo.protect.Process.dumpHeap(heapDumpName, true);
-            }
-            com.yahoo.protect.Process.logAndDie(
-                    "Timed out waiting for application shutdown. Please check that all your request handlers " +
-                            "drain their request content channels.", true);
-        }, delayMillis, TimeUnit.MILLISECONDS);
+        shutdownDeadline.cancel();
+        log.info("Destroy: completed");
     }
 
     private static void addHandlerBindings(ContainerBuilder builder,
