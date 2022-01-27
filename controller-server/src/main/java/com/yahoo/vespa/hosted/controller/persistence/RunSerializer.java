@@ -96,7 +96,6 @@ class RunSerializer {
     private static final String sourceUrlField = "sourceUrl";
     private static final String buildField = "build";
     private static final String sourceField = "source";
-    private static final String applicationHashField = "applicationHash";
     private static final String bundleHashField = "bundleHash";
     private static final String lastTestRecordField = "lastTestRecord";
     private static final String lastVespaLogTimestampField = "lastVespaLogTimestamp";
@@ -181,11 +180,10 @@ class RunSerializer {
         Optional<String> sourceUrl = SlimeUtils.optionalString(versionObject.field(sourceUrlField));
         Optional<String> commit = SlimeUtils.optionalString(versionObject.field(commitField));
         boolean deployedDirectly = versionObject.field(deployedDirectlyField).asBool();
-        Optional<String> applicationPackageHash = SlimeUtils.optionalString(versionObject.field(applicationHashField));
         Optional<String> bundleHash = SlimeUtils.optionalString(versionObject.field(bundleHashField));
 
         return new ApplicationVersion(source, OptionalLong.of(buildNumber), authorEmail,
-                                      compileVersion, buildTime, sourceUrl, commit, deployedDirectly, applicationPackageHash, bundleHash);
+                                      compileVersion, buildTime, sourceUrl, commit, deployedDirectly, bundleHash);
     }
 
     // Don't change this — introduce a separate array instead.

@@ -113,7 +113,6 @@ public class ApplicationSerializer {
     private static final String compileVersionField = "compileVersion";
     private static final String buildTimeField = "buildTime";
     private static final String sourceUrlField = "sourceUrl";
-    private static final String applicationHashField = "applicationHash";
     private static final String bundleHashField = "bundleHash";
     private static final String lastQueriedField = "lastQueried";
     private static final String lastWrittenField = "lastWritten";
@@ -443,10 +442,9 @@ public class ApplicationSerializer {
         Optional<String> sourceUrl = SlimeUtils.optionalString(object.field(sourceUrlField));
         Optional<String> commit = SlimeUtils.optionalString(object.field(commitField));
         boolean deployedDirectly = object.field(deployedDirectlyField).asBool();
-        Optional<String> applicationPackageHash = SlimeUtils.optionalString(object.field(applicationHashField));
         Optional<String> bundleHash = SlimeUtils.optionalString(object.field(bundleHashField));
 
-        return new ApplicationVersion(sourceRevision, applicationBuildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit, deployedDirectly, applicationPackageHash, bundleHash);
+        return new ApplicationVersion(sourceRevision, applicationBuildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit, deployedDirectly, bundleHash);
     }
 
     private Optional<SourceRevision> sourceRevisionFromSlime(Inspector object) {

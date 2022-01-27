@@ -90,8 +90,7 @@ public class ApplicationSerializerTest {
                                                                         Optional.empty(),
                                                                         Optional.of("best commit"),
                                                                         true,
-                                                                        Optional.of("hash1"),
-                                                                        Optional.of("hash2"));
+                                                                        Optional.of("hash1"));
         List<ApplicationVersion> versions = List.of(applicationVersion1);
         assertEquals("https://github/org/repo/tree/commit1", applicationVersion1.sourceUrl().get());
 

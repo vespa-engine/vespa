@@ -221,9 +221,9 @@ public class ApplicationPackage {
 
     // Hashes all files that require a deployment to be forwarded to configservers
     private String calculateBundleHash() {
-        Predicate<String> entryMatcher = name -> !name.contains(deploymentFile) && !name.contains(buildMetaFile);
+        Predicate<String> entryMatcher = name -> !name.endsWith(deploymentFile) && !name.endsWith(buildMetaFile);
         SortedMap<String, Long> entryCRCs = ZipStreamReader.getEntryCRCs(new ByteArrayInputStream(zippedContent), entryMatcher);
-        return Hashing.sha1().hashInt(entryCRCs.hashCode()).toString();
+        return String.valueOf(entryCRCs.hashCode());
     }
 
 

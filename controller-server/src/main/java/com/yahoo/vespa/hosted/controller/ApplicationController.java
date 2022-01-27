@@ -453,9 +453,15 @@ public class ApplicationController {
                 .map(Deployment::applicationVersion)
                 .collect(Collectors.toSet());
 
-        // Remove any version not deployed anywhere
-        for (ApplicationVersion version : application.get().versions()) {
-            if (!existingVersions.contains(version)) application = application.withoutVersion(version);
+        var oldVersions = application.get().versions()
+                .stream()
+                .filter(version -> !existingVersions.contains(version))
+                .sorted()
+                .collect(Collectors.toList());
+
+        // Remove any version not deployed anywhere - but keep one
+        for (int i = 0; i < oldVersions.size() - 1; i++) {
+            application = application.withoutVersion(oldVersions.get(i));
         }
 
         store(application);

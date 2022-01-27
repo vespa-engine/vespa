@@ -92,7 +92,6 @@ public class RunSerializerTest {
                                                                         Optional.empty(),
                                                                         Optional.empty(),
                                                                         true,
-                                                                        Optional.empty(),
                                                                         Optional.empty());
         assertEquals(applicationVersion, run.versions().targetApplication());
         assertEquals(applicationVersion.authorEmail(), run.versions().targetApplication().authorEmail());
