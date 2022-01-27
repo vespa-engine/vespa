@@ -3,14 +3,16 @@
 #include "executorthreadingservice.h"
 #include "threading_service_config.h"
 #include <vespa/searchcore/proton/metrics/executor_threading_service_stats.h>
+#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
+#include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/singleexecutor.h>
-#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 
-using vespalib::SyncableThreadExecutor;
 using vespalib::BlockingThreadStackExecutor;
-using vespalib::SingleExecutor;
+using vespalib::CpuUsage;
 using vespalib::SequencedTaskExecutor;
+using vespalib::SingleExecutor;
+using vespalib::SyncableThreadExecutor;
 using OptimizeFor = vespalib::Executor::OptimizeFor;
 using SharedFieldWriterExecutor = proton::ThreadingServiceConfig::SharedFieldWriterExecutor;
 
@@ -49,11 +51,13 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::Executor& sharedExe
                                                    uint32_t stackSize)
 
     : _sharedExecutor(sharedExecutor),
-      _masterExecutor(1, stackSize, master_executor),
+      _masterExecutor(1, stackSize, CpuUsage::wrap(master_executor, CpuUsage::Category::WRITE)),
       _shared_field_writer(cfg.shared_field_writer()),
       _master_task_limit(cfg.master_task_limit()),
-      _indexExecutor(createExecutorWithOneThread(stackSize, cfg.defaultTaskLimit(), cfg.optimize(), index_executor)),
-      _summaryExecutor(createExecutorWithOneThread(stackSize, cfg.defaultTaskLimit(), cfg.optimize(), summary_executor)),
+      _indexExecutor(createExecutorWithOneThread(stackSize, cfg.defaultTaskLimit(), cfg.optimize(),
+                                                 CpuUsage::wrap(index_executor, CpuUsage::Category::WRITE))),
+      _summaryExecutor(createExecutorWithOneThread(stackSize, cfg.defaultTaskLimit(), cfg.optimize(),
+                                                   CpuUsage::wrap(summary_executor, CpuUsage::Category::WRITE))),
       _masterService(_masterExecutor),
       _indexService(*_indexExecutor),
       _indexFieldInverter(),
@@ -70,8 +74,10 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::Executor& sharedExe
         _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_summaryExecutor.get()](){ executor->wakeup();}));
     }
     if (_shared_field_writer == SharedFieldWriterExecutor::INDEX) {
-        _field_writer = SequencedTaskExecutor::create(field_writer_executor, cfg.indexingThreads() * 2, cfg.defaultTaskLimit());
-        _attributeFieldWriter = SequencedTaskExecutor::create(attribute_field_writer_executor, cfg.indexingThreads(), cfg.defaultTaskLimit(),
+        _field_writer = SequencedTaskExecutor::create(CpuUsage::wrap(field_writer_executor, CpuUsage::Category::WRITE),
+                                                      cfg.indexingThreads() * 2, cfg.defaultTaskLimit());
+        _attributeFieldWriter = SequencedTaskExecutor::create(CpuUsage::wrap(attribute_field_writer_executor, CpuUsage::Category::WRITE),
+                                                              cfg.indexingThreads(), cfg.defaultTaskLimit(),
                                                               cfg.is_task_limit_hard(), cfg.optimize(), cfg.kindOfwatermark());
         if (cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT && invokerService) {
             _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_attributeFieldWriter.get()](){ executor->wakeup();}));
@@ -81,7 +87,8 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::Executor& sharedExe
         _attribute_field_writer_ptr = _attributeFieldWriter.get();
 
     } else if (_shared_field_writer == SharedFieldWriterExecutor::INDEX_AND_ATTRIBUTE) {
-        _field_writer = SequencedTaskExecutor::create(field_writer_executor, cfg.indexingThreads() * 3, cfg.defaultTaskLimit(),
+        _field_writer = SequencedTaskExecutor::create(CpuUsage::wrap(field_writer_executor, CpuUsage::Category::WRITE),
+                                                      cfg.indexingThreads() * 3, cfg.defaultTaskLimit(),
                                                       cfg.is_task_limit_hard(), cfg.optimize(), cfg.kindOfwatermark());
         if (cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT && invokerService) {
             _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_field_writer.get()](){ executor->wakeup();}));
@@ -95,9 +102,12 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::Executor& sharedExe
         _index_field_writer_ptr = field_writer;
         _attribute_field_writer_ptr = field_writer;
     } else {
-        _indexFieldInverter = SequencedTaskExecutor::create(index_field_inverter_executor, cfg.indexingThreads(), cfg.defaultTaskLimit());
-        _indexFieldWriter = SequencedTaskExecutor::create(index_field_writer_executor, cfg.indexingThreads(), cfg.defaultTaskLimit());
-        _attributeFieldWriter = SequencedTaskExecutor::create(attribute_field_writer_executor, cfg.indexingThreads(), cfg.defaultTaskLimit(),
+        _indexFieldInverter = SequencedTaskExecutor::create(CpuUsage::wrap(index_field_inverter_executor, CpuUsage::Category::WRITE),
+                                                            cfg.indexingThreads(), cfg.defaultTaskLimit());
+        _indexFieldWriter = SequencedTaskExecutor::create(CpuUsage::wrap(index_field_writer_executor, CpuUsage::Category::WRITE),
+                                                          cfg.indexingThreads(), cfg.defaultTaskLimit());
+        _attributeFieldWriter = SequencedTaskExecutor::create(CpuUsage::wrap(attribute_field_writer_executor, CpuUsage::Category::WRITE),
+                                                              cfg.indexingThreads(), cfg.defaultTaskLimit(),
                                                               cfg.is_task_limit_hard(), cfg.optimize(), cfg.kindOfwatermark());
         if (cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT && invokerService) {
             _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_attributeFieldWriter.get()](){ executor->wakeup();}));
