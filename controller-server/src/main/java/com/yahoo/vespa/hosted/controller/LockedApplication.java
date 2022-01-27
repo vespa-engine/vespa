@@ -13,16 +13,16 @@ import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 
 import java.security.PublicKey;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.function.UnaryOperator;
 
 /**
@@ -45,7 +45,7 @@ public class LockedApplication {
     private final Set<PublicKey> deployKeys;
     private final OptionalLong projectId;
     private final Optional<ApplicationVersion> latestVersion;
-    private final List<ApplicationVersion> versions;
+    private final SortedSet<ApplicationVersion> versions;
     private final Map<InstanceName, Instance> instances;
 
     /**
@@ -66,7 +66,7 @@ public class LockedApplication {
                               ValidationOverrides validationOverrides,
                               Optional<IssueId> deploymentIssueId, Optional<IssueId> ownershipIssueId, Optional<User> owner,
                               OptionalInt majorVersion, ApplicationMetrics metrics, Set<PublicKey> deployKeys,
-                              OptionalLong projectId, Optional<ApplicationVersion> latestVersion, List<ApplicationVersion> versions,
+                              OptionalLong projectId, Optional<ApplicationVersion> latestVersion, SortedSet<ApplicationVersion> versions,
                               Map<InstanceName, Instance> instances) {
         this.lock = lock;
         this.id = id;
@@ -117,8 +117,8 @@ public class LockedApplication {
     }
 
     public LockedApplication withNewSubmission(ApplicationVersion latestVersion) {
-        List<ApplicationVersion> applicationVersions = new ArrayList<>(versions);
-        if (!applicationVersions.contains(latestVersion)) applicationVersions.add(latestVersion);
+        SortedSet<ApplicationVersion> applicationVersions = new TreeSet<>(versions);
+        applicationVersions.add(latestVersion);
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides,
                                      deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, deployKeys,
                                      projectId, Optional.of(latestVersion), applicationVersions, instances);
@@ -191,7 +191,7 @@ public class LockedApplication {
     }
 
     public LockedApplication withoutVersion(ApplicationVersion version) {
-        List<ApplicationVersion> applicationVersions = new ArrayList<>(versions);
+        SortedSet<ApplicationVersion> applicationVersions = new TreeSet<>(versions);
         applicationVersions.remove(version);
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides,
                 deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, deployKeys,

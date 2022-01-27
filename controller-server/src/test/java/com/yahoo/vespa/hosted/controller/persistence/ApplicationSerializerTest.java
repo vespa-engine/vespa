@@ -42,6 +42,8 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import static org.junit.Assert.assertEquals;
 
@@ -91,7 +93,7 @@ public class ApplicationSerializerTest {
                                                                         Optional.of("best commit"),
                                                                         true,
                                                                         Optional.of("hash1"));
-        List<ApplicationVersion> versions = List.of(applicationVersion1);
+        SortedSet<ApplicationVersion> versions = new TreeSet<>(Set.of(applicationVersion1));
         assertEquals("https://github/org/repo/tree/commit1", applicationVersion1.sourceUrl().get());
 
         ApplicationVersion applicationVersion2 = ApplicationVersion
@@ -156,7 +158,10 @@ public class ApplicationSerializerTest {
         assertEquals(original.latestVersion().get().buildTime(), serialized.latestVersion().get().buildTime());
         assertEquals(original.latestVersion().get().sourceUrl(), serialized.latestVersion().get().sourceUrl());
         assertEquals(original.latestVersion().get().commit(), serialized.latestVersion().get().commit());
+        // Check deployed versions are added
         assertEquals(original.versions(), serialized.versions());
+        assertEquals(serialized.versions(), new TreeSet<>(Set.of(applicationVersion1, applicationVersion2)));
+
 
         assertEquals(original.deploymentSpec().xmlForm(), serialized.deploymentSpec().xmlForm());
         assertEquals(original.validationOverrides().xmlForm(), serialized.validationOverrides().xmlForm());

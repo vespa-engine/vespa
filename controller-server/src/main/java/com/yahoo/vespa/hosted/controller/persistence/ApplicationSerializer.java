@@ -49,6 +49,8 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * Serializes {@link Application}s to/from slime.
@@ -166,7 +168,7 @@ public class ApplicationSerializer {
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
         deployKeysToSlime(application.deployKeys(), root.setArray(pemDeployKeysField));
         application.latestVersion().ifPresent(version -> toSlime(version, root.setObject(latestVersionField)));
-        versionsToSlime(application.versions(), root.setArray(versionsField));
+        versionsToSlime(application, root.setArray(versionsField));
         instancesToSlime(application, root.setArray(instancesField));
         return slime;
     }
@@ -226,8 +228,16 @@ public class ApplicationSerializer {
         object.setString(regionField, zone.region().value());
     }
 
-    private void versionsToSlime(List<ApplicationVersion> versions, Cursor object) {
-        versions.forEach(version -> toSlime(version, object.addObject()));
+    private void versionsToSlime(Application application, Cursor object) {
+        // Add all deployed versions as well
+        application.instances()
+                .values()
+                .stream()
+                .flatMap(instance -> instance.deployments().values().stream())
+                .map(Deployment::applicationVersion)
+                .forEach(application.versions()::add);
+
+        application.versions().forEach(version -> toSlime(version, object.addObject()));
     }
 
     private void toSlime(ApplicationVersion applicationVersion, Cursor object) {
@@ -319,7 +329,7 @@ public class ApplicationSerializer {
         List<Instance> instances = instancesFromSlime(id, root.field(instancesField));
         OptionalLong projectId = SlimeUtils.optionalLong(root.field(projectIdField));
         Optional<ApplicationVersion> latestVersion = latestVersionFromSlime(root.field(latestVersionField));
-        List<ApplicationVersion> versions = versionsFromSlime(root.field(versionsField));
+        SortedSet<ApplicationVersion> versions = versionsFromSlime(root.field(versionsField));
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides,
                                deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics,
@@ -331,8 +341,8 @@ public class ApplicationSerializer {
                        .filter(version -> ! version.isUnknown());
     }
 
-    private List<ApplicationVersion> versionsFromSlime(Inspector versionsObject) {
-        List<ApplicationVersion> versions = new ArrayList<>();
+    private SortedSet<ApplicationVersion> versionsFromSlime(Inspector versionsObject) {
+        SortedSet<ApplicationVersion> versions = new TreeSet<>();
         versionsObject.traverse((ArrayTraverser) (name, object) -> versions.add(applicationVersionFromSlime(object)));
         return versions;
     }
