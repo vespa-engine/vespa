@@ -71,7 +71,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int maxCompactBuffers = 1;
     private boolean failDeploymentWithInvalidJvmOptions = false;
     private String persistenceAsyncThrottling = "UNLIMITED";
-    private String mergeThrottlingPolicy = "STATIC";
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -122,7 +121,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int maxCompactBuffers() { return maxCompactBuffers; }
     @Override public boolean failDeploymentWithInvalidJvmOptions() { return failDeploymentWithInvalidJvmOptions; }
     @Override public String persistenceAsyncThrottling() { return persistenceAsyncThrottling; }
-    @Override public String mergeThrottlingPolicy() { return mergeThrottlingPolicy; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -312,11 +310,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setPersistenceAsyncThrottling(String type) {
         this.persistenceAsyncThrottling = type;
-        return this;
-    }
-
-    public TestProperties setMergeThrottlingPolicy(String policy) {
-        this.mergeThrottlingPolicy = policy;
         return this;
     }
 
