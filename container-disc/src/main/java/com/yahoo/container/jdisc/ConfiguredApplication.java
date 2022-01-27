@@ -32,7 +32,10 @@ import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.jrt.Acceptor;
+import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.ListenFailedException;
+import com.yahoo.jrt.Method;
+import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
@@ -45,7 +48,6 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.UncheckedInterruptedException;
 
-import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -148,30 +150,28 @@ public final class ConfiguredApplication implements Application {
         portWatcher = new Thread(this::watchPortChange, "configured-application-port-watcher");
         portWatcher.setDaemon(true);
         portWatcher.start();
-        slobrokRegistrator = registerInSlobrok(qrConfig); // marks this as up
+        if (setupRpc()) {
+            slobrokRegistrator = registerInSlobrok(qrConfig); // marks this as up
+        }
     }
 
-    /**
-     * The container has no RPC methods, but we still need an RPC server
-     * to register in Slobrok to enable orchestration.
-     */
-    private Register registerInSlobrok(QrConfig qrConfig) {
-        if ( ! qrConfig.rpc().enabled()) return null;
-
-        // 1. Set up RPC server
-        supervisor = new Supervisor(new Transport("slobrok")).setDropEmptyBuffers(true);
+    private boolean setupRpc() {
+        if ( ! qrConfig.rpc().enabled()) return false;
+        supervisor = new Supervisor(new Transport("configured-application")).setDropEmptyBuffers(true);
+        supervisor.addMethod(new Method("prepareStop", "d", "", this::prepareStop));
         Spec listenSpec = new Spec(qrConfig.rpc().port());
         try {
             acceptor = supervisor.listen(listenSpec);
-        }
-        catch (ListenFailedException e) {
+            return true;
+        } catch (ListenFailedException e) {
             throw new RuntimeException("Could not create rpc server listening on " + listenSpec, e);
         }
+    }
 
-        // 2. Register it in slobrok
+    private Register registerInSlobrok(QrConfig qrConfig) {
         SlobrokList slobrokList = getSlobrokList();
         Spec mySpec = new Spec(HostName.getLocalhost(), acceptor.port());
-        slobrokRegistrator = new Register(supervisor, slobrokList, mySpec);
+        Register slobrokRegistrator = new Register(supervisor, slobrokList, mySpec);
         slobrokRegistrator.registerName(qrConfig.rpc().slobrokId());
         log.log(Level.INFO, "Registered name '" + qrConfig.rpc().slobrokId() +
                                "' at " + mySpec + " with: " + slobrokList);
@@ -384,11 +384,17 @@ public final class ConfiguredApplication implements Application {
         stopServersAndAwaitTermination("Stop");
     }
 
-    private void prepareStop(Duration timeout) {
-        ShutdownDeadline deadline =
-                new ShutdownDeadline(configId).schedule(timeout.toMillis(), dumpHeapOnShutdownTimeout.get());
-        stopServersAndAwaitTermination("PrepareStop");
-        deadline.cancel();
+    private void prepareStop(Request request) {
+        long timeoutMillis = (long) (request.parameters().get(0).asDouble() * 1000);
+        try (ShutdownDeadline ignored =
+                     new ShutdownDeadline(configId).schedule(timeoutMillis, dumpHeapOnShutdownTimeout.get())) {
+            stopServersAndAwaitTermination("PrepareStop");
+        } catch (Exception e) {
+            request.setError(ErrorCode.METHOD_FAILED, e.getMessage());
+            throw e;
+        } finally {
+            request.returnRequest();
+        }
     }
 
     private void stopServersAndAwaitTermination(String logPrefix) {
