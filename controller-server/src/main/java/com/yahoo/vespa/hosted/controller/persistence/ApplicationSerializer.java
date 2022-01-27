@@ -75,6 +75,7 @@ public class ApplicationSerializer {
     private static final String deployingField = "deployingField";
     private static final String projectIdField = "projectId";
     private static final String latestVersionField = "latestVersion";
+    private static final String versionsField = "versions";
     private static final String pinnedField = "pinned";
     private static final String deploymentIssueField = "deploymentIssueId";
     private static final String ownershipIssueIdField = "ownershipIssueId";
@@ -112,6 +113,8 @@ public class ApplicationSerializer {
     private static final String compileVersionField = "compileVersion";
     private static final String buildTimeField = "buildTime";
     private static final String sourceUrlField = "sourceUrl";
+    private static final String applicationHashField = "applicationHash";
+    private static final String bundleHashField = "bundleHash";
     private static final String lastQueriedField = "lastQueried";
     private static final String lastWrittenField = "lastWritten";
     private static final String lastQueriesPerSecondField = "lastQueriesPerSecond";
@@ -164,6 +167,7 @@ public class ApplicationSerializer {
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
         deployKeysToSlime(application.deployKeys(), root.setArray(pemDeployKeysField));
         application.latestVersion().ifPresent(version -> toSlime(version, root.setObject(latestVersionField)));
+        versionsToSlime(application.versions(), root.setArray(versionsField));
         instancesToSlime(application, root.setArray(instancesField));
         return slime;
     }
@@ -221,6 +225,10 @@ public class ApplicationSerializer {
     private void zoneIdToSlime(ZoneId zone, Cursor object) {
         object.setString(environmentField, zone.environment().value());
         object.setString(regionField, zone.region().value());
+    }
+
+    private void versionsToSlime(List<ApplicationVersion> versions, Cursor object) {
+        versions.forEach(version -> toSlime(version, object.addObject()));
     }
 
     private void toSlime(ApplicationVersion applicationVersion, Cursor object) {
@@ -312,15 +320,22 @@ public class ApplicationSerializer {
         List<Instance> instances = instancesFromSlime(id, root.field(instancesField));
         OptionalLong projectId = SlimeUtils.optionalLong(root.field(projectIdField));
         Optional<ApplicationVersion> latestVersion = latestVersionFromSlime(root.field(latestVersionField));
+        List<ApplicationVersion> versions = versionsFromSlime(root.field(versionsField));
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides,
                                deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics,
-                               deployKeys, projectId, latestVersion, instances);
+                               deployKeys, projectId, latestVersion, versions, instances);
     }
 
     private Optional<ApplicationVersion> latestVersionFromSlime(Inspector latestVersionObject) {
         return Optional.of(applicationVersionFromSlime(latestVersionObject))
                        .filter(version -> ! version.isUnknown());
+    }
+
+    private List<ApplicationVersion> versionsFromSlime(Inspector versionsObject) {
+        List<ApplicationVersion> versions = new ArrayList<>();
+        versionsObject.traverse((ArrayTraverser) (name, object) -> versions.add(applicationVersionFromSlime(object)));
+        return versions;
     }
 
     private List<Instance> instancesFromSlime(TenantAndApplicationId id, Inspector field) {
@@ -428,8 +443,10 @@ public class ApplicationSerializer {
         Optional<String> sourceUrl = SlimeUtils.optionalString(object.field(sourceUrlField));
         Optional<String> commit = SlimeUtils.optionalString(object.field(commitField));
         boolean deployedDirectly = object.field(deployedDirectlyField).asBool();
+        Optional<String> applicationPackageHash = SlimeUtils.optionalString(object.field(applicationHashField));
+        Optional<String> bundleHash = SlimeUtils.optionalString(object.field(bundleHashField));
 
-        return new ApplicationVersion(sourceRevision, applicationBuildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit, deployedDirectly);
+        return new ApplicationVersion(sourceRevision, applicationBuildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit, deployedDirectly, applicationPackageHash, bundleHash);
     }
 
     private Optional<SourceRevision> sourceRevisionFromSlime(Inspector object) {

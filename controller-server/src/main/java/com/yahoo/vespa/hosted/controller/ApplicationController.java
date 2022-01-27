@@ -445,6 +445,19 @@ public class ApplicationController {
                 controller.notificationsDb().removeNotifications(notification.source());
         }
 
+        var existingVersions = application.get()
+                .instances()
+                .values()
+                .stream()
+                .flatMap(instance -> instance.deployments().values().stream())
+                .map(Deployment::applicationVersion)
+                .collect(Collectors.toSet());
+
+        // Remove any version not deployed anywhere
+        for (ApplicationVersion version : application.get().versions()) {
+            if (!existingVersions.contains(version)) application = application.withoutVersion(version);
+        }
+
         store(application);
         return application;
     }

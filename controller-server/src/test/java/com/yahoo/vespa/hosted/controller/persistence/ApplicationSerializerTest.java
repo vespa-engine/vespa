@@ -89,7 +89,10 @@ public class ApplicationSerializerTest {
                                                                         Optional.of(Instant.ofEpochMilli(666)),
                                                                         Optional.empty(),
                                                                         Optional.of("best commit"),
-                                                                        true);
+                                                                        true,
+                                                                        Optional.of("hash1"),
+                                                                        Optional.of("hash2"));
+        List<ApplicationVersion> versions = List.of(applicationVersion1);
         assertEquals("https://github/org/repo/tree/commit1", applicationVersion1.sourceUrl().get());
 
         ApplicationVersion applicationVersion2 = ApplicationVersion
@@ -142,6 +145,7 @@ public class ApplicationSerializerTest {
                                                Set.of(publicKey, otherPublicKey),
                                                projectId,
                                                Optional.of(applicationVersion1),
+                                               versions,
                                                instances);
 
         Application serialized = APPLICATION_SERIALIZER.fromSlime(SlimeUtils.toJsonBytes(APPLICATION_SERIALIZER.toSlime(original)));
@@ -153,6 +157,7 @@ public class ApplicationSerializerTest {
         assertEquals(original.latestVersion().get().buildTime(), serialized.latestVersion().get().buildTime());
         assertEquals(original.latestVersion().get().sourceUrl(), serialized.latestVersion().get().sourceUrl());
         assertEquals(original.latestVersion().get().commit(), serialized.latestVersion().get().commit());
+        assertEquals(original.versions(), serialized.versions());
 
         assertEquals(original.deploymentSpec().xmlForm(), serialized.deploymentSpec().xmlForm());
         assertEquals(original.validationOverrides().xmlForm(), serialized.validationOverrides().xmlForm());

@@ -439,7 +439,9 @@ public class JobController {
                                                 applicationPackage.buildTime(),
                                                 sourceUrl,
                                                 revision.map(SourceRevision::commit),
-                                                false));
+                                                false,
+                                                Optional.of(applicationPackage.hash()),
+                                                Optional.of(applicationPackage.bundleHash())));
             byte[] diff = application.get().latestVersion()
                     .map(v -> v.buildNumber().getAsLong())
                     .flatMap(prevBuild -> controller.applications().applicationStore().find(id.tenant(), id.application(), prevBuild))
@@ -512,7 +514,7 @@ public class JobController {
 
         long build = 1 + lastRun.map(run -> run.versions().targetApplication().buildNumber().orElse(0)).orElse(0L);
         ApplicationVersion version = ApplicationVersion.from(Optional.empty(), build, Optional.empty(), Optional.empty(),
-                Optional.empty(), Optional.empty(), Optional.empty(), true);
+                Optional.empty(), Optional.empty(), Optional.empty(), true, Optional.empty(), Optional.empty());
 
         byte[] diff = lastRun.map(run -> run.versions().targetApplication())
                 .map(prevVersion -> ApplicationPackageDiff.diff(new ApplicationPackage(controller.applications().applicationStore().get(deploymentId, prevVersion)), applicationPackage))
