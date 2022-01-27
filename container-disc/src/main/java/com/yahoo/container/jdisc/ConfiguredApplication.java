@@ -45,14 +45,13 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.UncheckedInterruptedException;
 
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -66,9 +65,9 @@ import static com.yahoo.collections.CollectionUtil.first;
 public final class ConfiguredApplication implements Application {
 
     private static final Logger log = Logger.getLogger(ConfiguredApplication.class.getName());
-    private static final Set<ClientProvider> startedClients = Collections.newSetFromMap(new WeakHashMap<>());
-
-    private static final Set<ServerProvider> startedServers = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Object monitor = new Object();
+    private final Set<ClientProvider> startedClients = createIdentityHashSet();
+    private final Set<ServerProvider> startedServers = createIdentityHashSet();
     private final SubscriberFactory subscriberFactory;
     private final Metric metric;
     private final ContainerActivator activator;
@@ -251,12 +250,14 @@ public final class ConfiguredApplication implements Application {
     private void initializeAndActivateContainer(ContainerBuilder builder, Runnable cleanupTask) {
         addHandlerBindings(builder, Container.get().getRequestHandlerRegistry(),
                            configurer.getComponent(ApplicationContext.class).discBindingsConfig);
-        installServerProviders(builder);
-
+        List<ServerProvider> currentServers = Container.get().getServerProviderRegistry().allComponents();
+        for (ServerProvider server : currentServers) {
+            builder.serverProviders().install(server);
+        }
         activateContainer(builder, cleanupTask);
+        startAndStopServers(currentServers);
 
-        startClients();
-        startAndStopServers();
+        startAndRemoveClients(Container.get().getClientProviderRegistry().allComponents());
 
         log.info("Switching to the latest deployed set of configurations and components. " +
                  "Application config generation: " + configurer.generation());
@@ -321,40 +322,37 @@ public final class ConfiguredApplication implements Application {
         }
     }
 
-    private static void installServerProviders(ContainerBuilder builder) {
-        List<ServerProvider> serverProviders = Container.get().getServerProviderRegistry().allComponents();
-        for (ServerProvider server : serverProviders) {
-            builder.serverProviders().install(server);
-        }
-    }
-
-    private static void startClients() {
-        for (ClientProvider client : Container.get().getClientProviderRegistry().allComponents()) {
-            if (!startedClients.contains(client)) {
-                client.start();
-                startedClients.add(client);
+    private void startAndStopServers(List<ServerProvider> currentServers) {
+        synchronized (monitor) {
+            Set<ServerProvider> serversToClose = createIdentityHashSet(startedServers);
+            serversToClose.removeAll(currentServers);
+            for (ServerProvider server : serversToClose) {
+                server.close();
+                startedServers.remove(server);
+            }
+            for (ServerProvider server : currentServers) {
+                if (!startedServers.contains(server)) {
+                    server.start();
+                    startedServers.add(server);
+                }
             }
         }
     }
 
-    private static void startAndStopServers() {
-        List<ServerProvider> currentServers = Container.get().getServerProviderRegistry().allComponents();
-        HashSet<ServerProvider> serversToClose = new HashSet<>(startedServers);
-        serversToClose.removeAll(currentServers);
-        for (ServerProvider server : serversToClose) {
-            closeServer(server);
-        }
-        for (ServerProvider server : currentServers) {
-            if (!startedServers.contains(server)) {
-                server.start();
-                startedServers.add(server);
+    private void startAndRemoveClients(List<ClientProvider> currentClients) {
+        synchronized (monitor) {
+            Set<ClientProvider> clientToRemove = createIdentityHashSet(startedClients);
+            clientToRemove.removeAll(currentClients);
+            for (ClientProvider client : clientToRemove) {
+                startedClients.remove(client);
+            }
+            for (ClientProvider client : currentClients) {
+                if (!startedClients.contains(client)) {
+                    client.start();
+                    startedClients.add(client);
+                }
             }
         }
-    }
-
-    private static void closeServer(ServerProvider server) {
-        server.close();
-        startedServers.remove(server);
     }
 
     private HandlersConfigurerDi createConfigurer(Injector discInjector) {
@@ -384,11 +382,8 @@ public final class ConfiguredApplication implements Application {
         shutdownDeadline.schedule((long)(shutdownTimeoutS.get() * 1000), dumpHeapOnShutdownTimeout.get());
         shutdownReconfigurerThread();
         log.info("Stop: Closing servers");
-        for (ServerProvider server : Container.get().getServerProviderRegistry().allComponents()) {
-            if (startedServers.contains(server)) {
-                closeServer(server);
-            }
-        }
+        startAndStopServers(List.of());
+        startAndRemoveClients(List.of());
 
         log.info("Stop: Shutting container down");
         activateContainer(null, () -> {
@@ -447,6 +442,16 @@ public final class ConfiguredApplication implements Application {
         for (String uri : uriPatterns) {
             bindings.bind(uri, target);
         }
+    }
+
+    private static <E> Set<E> createIdentityHashSet() {
+        return Collections.newSetFromMap(new IdentityHashMap<>());
+    }
+
+    private static <E> Set<E> createIdentityHashSet(Collection<E> items) {
+        Set<E> set = createIdentityHashSet();
+        set.addAll(items);
+        return set;
     }
 
     public static final class ApplicationContext {
