@@ -88,7 +88,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
             handleFailure(context, request, startedAt, "No artifacts requested");
             return;
         }
-        ContainerPath directory = context.paths().underVespaHome("tmp/vespa-service-dump");
+        ContainerPath directory = context.paths().underVespaHome("tmp/vespa-service-dump-" + request.getCreatedMillisOrNull());
         UnixPath unixPathDirectory = new UnixPath(directory);
         try {
             context.log(log, Level.INFO,

@@ -81,11 +81,11 @@ class VespaServiceDumperImplTest {
         verify(operations).executeCommandInContainer(
                 context, context.users().vespa(), "/opt/vespa/libexec/vespa/find-pid", "default/container.1");
         verify(operations).executeCommandInContainer(
-                context, context.users().vespa(), "perf", "record", "-g", "--output=/opt/vespa/tmp/vespa-service-dump/perf-record.bin",
+                context, context.users().vespa(), "perf", "record", "-g", "--output=/opt/vespa/tmp/vespa-service-dump-1600000000000/perf-record.bin",
                 "--pid=12345", "sleep", "45");
         verify(operations).executeCommandInContainer(
-                context, context.users().vespa(), "bash", "-c", "perf report --input=/opt/vespa/tmp/vespa-service-dump/perf-record.bin" +
-                        " > /opt/vespa/tmp/vespa-service-dump/perf-report.txt");
+                context, context.users().vespa(), "bash", "-c", "perf report --input=/opt/vespa/tmp/vespa-service-dump-1600000000000/perf-record.bin" +
+                        " > /opt/vespa/tmp/vespa-service-dump-1600000000000/perf-report.txt");
 
         String expectedJson = "{\"createdMillis\":1600000000000,\"startedAt\":1600001000000,\"completedAt\":1600001000000," +
                 "\"location\":\"s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/\"," +
@@ -124,7 +124,7 @@ class VespaServiceDumperImplTest {
                 context, context.users().vespa(), "/opt/vespa/libexec/vespa/find-pid", "default/container.1");
         verify(operations).executeCommandInContainer(
                 context, context.users().vespa(), "jcmd", "12345", "JFR.start", "name=host-admin", "path-to-gc-roots=true", "settings=profile",
-                "filename=/opt/vespa/tmp/vespa-service-dump/recording.jfr", "duration=30s");
+                "filename=/opt/vespa/tmp/vespa-service-dump-1600000000000/recording.jfr", "duration=30s");
         verify(operations).executeCommandInContainer(context, context.users().vespa(), "jcmd", "12345", "JFR.check", "name=host-admin");
 
         String expectedJson = "{\"createdMillis\":1600000000000,\"startedAt\":1600001000000," +
