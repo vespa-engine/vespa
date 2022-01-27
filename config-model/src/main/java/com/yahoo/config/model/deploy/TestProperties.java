@@ -72,6 +72,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean failDeploymentWithInvalidJvmOptions = false;
     private String persistenceAsyncThrottling = "UNLIMITED";
     private String mergeThrottlingPolicy = "STATIC";
+    private double persistenceThrottlingWsDecrementFactor = 1.2;
+    private double persistenceThrottlingWsBackoff = 0.95;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -123,6 +125,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean failDeploymentWithInvalidJvmOptions() { return failDeploymentWithInvalidJvmOptions; }
     @Override public String persistenceAsyncThrottling() { return persistenceAsyncThrottling; }
     @Override public String mergeThrottlingPolicy() { return mergeThrottlingPolicy; }
+    @Override public double persistenceThrottlingWsDecrementFactor() { return persistenceThrottlingWsDecrementFactor; }
+    @Override public double persistenceThrottlingWsBackoff() { return persistenceThrottlingWsBackoff; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -317,6 +321,16 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setMergeThrottlingPolicy(String policy) {
         this.mergeThrottlingPolicy = policy;
+        return this;
+    }
+
+    public TestProperties setPersistenceThrottlingWsDecrementFactor(double factor) {
+        this.persistenceThrottlingWsDecrementFactor = factor;
+        return this;
+    }
+
+    public TestProperties setPersistenceThrottlingWsBackoff(double backoff) {
+        this.persistenceThrottlingWsBackoff = backoff;
         return this;
     }
 

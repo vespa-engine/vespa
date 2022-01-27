@@ -309,20 +309,40 @@ public class StorageClusterTest {
     @Test
     public void persistence_async_throttle_config_defaults_to_unlimited() {
         var config = filestorConfigFromProducer(simpleCluster(new TestProperties()));
-        assertEquals(StorFilestorConfig.Async_operation_throttler_type.UNLIMITED, config.async_operation_throttler_type());
+        assertEquals(StorFilestorConfig.Async_operation_throttler_type.UNLIMITED, config.async_operation_throttler_type()); // TODO remove
+        assertEquals(StorFilestorConfig.Async_operation_throttler.Type.UNLIMITED, config.async_operation_throttler().type());
     }
 
     @Test
     public void persistence_async_throttle_config_is_derived_from_flag() {
         var config = filestorConfigFromProducer(simpleCluster(new TestProperties().setPersistenceAsyncThrottling("UNLIMITED")));
-        assertEquals(StorFilestorConfig.Async_operation_throttler_type.UNLIMITED, config.async_operation_throttler_type());
+        assertEquals(StorFilestorConfig.Async_operation_throttler_type.UNLIMITED, config.async_operation_throttler_type()); // TODO remove
+        assertEquals(StorFilestorConfig.Async_operation_throttler.Type.UNLIMITED, config.async_operation_throttler().type());
 
         config = filestorConfigFromProducer(simpleCluster(new TestProperties().setPersistenceAsyncThrottling("DYNAMIC")));
-        assertEquals(StorFilestorConfig.Async_operation_throttler_type.DYNAMIC, config.async_operation_throttler_type());
+        assertEquals(StorFilestorConfig.Async_operation_throttler_type.DYNAMIC, config.async_operation_throttler_type()); // TODO remove
+        assertEquals(StorFilestorConfig.Async_operation_throttler.Type.DYNAMIC, config.async_operation_throttler().type());
 
         // Invalid enum values fall back to the default
         config = filestorConfigFromProducer(simpleCluster(new TestProperties().setPersistenceAsyncThrottling("BANANAS")));
-        assertEquals(StorFilestorConfig.Async_operation_throttler_type.UNLIMITED, config.async_operation_throttler_type());
+        assertEquals(StorFilestorConfig.Async_operation_throttler_type.UNLIMITED, config.async_operation_throttler_type()); // TODO remove
+        assertEquals(StorFilestorConfig.Async_operation_throttler.Type.UNLIMITED, config.async_operation_throttler().type());
+    }
+
+    @Test
+    public void persistence_dynamic_throttling_parameters_have_sane_defaults() {
+        var config = filestorConfigFromProducer(simpleCluster(new TestProperties()));
+        assertEquals(1.2, config.async_operation_throttler().window_size_decrement_factor(), 0.0001);
+        assertEquals(0.95, config.async_operation_throttler().window_size_backoff(), 0.0001);
+    }
+
+    @Test
+    public void persistence_dynamic_throttling_parameters_can_be_set_through_feature_flags() {
+        var config = filestorConfigFromProducer(simpleCluster(new TestProperties()
+                .setPersistenceThrottlingWsDecrementFactor(1.5)
+                .setPersistenceThrottlingWsBackoff(0.8)));
+        assertEquals(1.5, config.async_operation_throttler().window_size_decrement_factor(), 0.0001);
+        assertEquals(0.8, config.async_operation_throttler().window_size_backoff(), 0.0001);
     }
 
     @Test
