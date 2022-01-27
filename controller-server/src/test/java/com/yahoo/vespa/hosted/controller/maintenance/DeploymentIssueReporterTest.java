@@ -56,6 +56,22 @@ public class DeploymentIssueReporterTest {
     }
 
     @Test
+    public void nonProductionAppGetsNoIssues() {
+        tester.controllerTester().upgradeSystem(Version.fromString("6.2"));
+        var app = tester.newDeploymentContext("application", "tenant", "default");
+        Contact contact = tester.controllerTester().serviceRegistry().contactRetrieverMock().contact();
+        tester.controller().tenants().lockOrThrow(app.instanceId().tenant(), LockedTenant.Athenz.class, tenant ->
+                tester.controller().tenants().store(tenant.with(contact)));
+
+        // app submits a package with no production deployments, and shall not receive issues.
+        app.submit(new ApplicationPackageBuilder().systemTest().stagingTest().build()).runJob(systemTest).failDeployment(stagingTest);
+
+        // Advance to where deployment issues should be detected.
+        tester.clock().advance(maxFailureAge.plus(Duration.ofDays(1)));
+        assertFalse("No issues are produced for app.", issues.isOpenFor(app.application().id()));
+    }
+
+    @Test
     public void testDeploymentFailureReporting() {
         tester.controllerTester().upgradeSystem(Version.fromString("6.2"));
 
@@ -71,6 +87,7 @@ public class DeploymentIssueReporterTest {
                 tester.controller().tenants().store(tenant.with(contact)));
         tester.controller().tenants().lockOrThrow(app3.instanceId().tenant(), LockedTenant.Athenz.class, tenant ->
                 tester.controller().tenants().store(tenant.with(contact)));
+
 
         // NOTE: All maintenance should be idempotent within a small enough time interval, so maintain is called twice in succession throughout.
 
