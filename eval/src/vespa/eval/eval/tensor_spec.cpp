@@ -19,6 +19,20 @@ namespace eval {
 
 namespace {
 
+vespalib::string number_to_expr(double value) { 
+    if (std::isfinite(value)) {
+        return make_string("%g", value);
+    } else if (std::isnan(value)) {
+        return {"(0/0)"};
+    } else { // -inf or inf
+        if (value < 0) {
+            return {"(-1/0)"};
+        } else {
+            return {"(1/0)"};
+        }
+    }
+}
+
 TensorSpec::Address extract_address(const slime::Inspector &address) {
     struct Extractor : slime::ObjectTraverser {
         TensorSpec::Address address;
@@ -288,14 +302,14 @@ vespalib::string
 TensorSpec::to_expr() const
 {
     if (_type == "double") {
-        return make_string("%g", as_double());
+        return number_to_expr(as_double());
     }
     vespalib::string out = _type;
     out.append(":{");
     CommaTracker cell_list;
     for (const auto &cell: _cells) {
         cell_list.maybe_add_comma(out);
-        out.append(make_string("%s:%g", as_string(cell.first).c_str(), cell.second.value));
+        out.append(make_string("%s:%s", as_string(cell.first).c_str(), number_to_expr(cell.second.value).c_str()));
     }
     out.append("}");
     return out;
