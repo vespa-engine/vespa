@@ -24,10 +24,10 @@
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
 #include <vespa/searchcore/proton/flushengine/tls_stats_factory.h>
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
+#include <vespa/searchcore/proton/metrics/content_proton_metrics.h>
+#include <vespa/searchcore/proton/metrics/metrics_engine.h>
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
-#include <vespa/searchcore/proton/metrics/metrics_engine.h>
-#include <vespa/searchcore/proton/metrics/content_proton_metrics.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
@@ -36,13 +36,13 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/net/state_server.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
+#include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/vespalib/util/random.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/util/invokeserviceimpl.h>
 #ifdef __linux__
 #include <malloc.h>
 #endif
@@ -54,20 +54,21 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.proton");
 
-using document::DocumentTypeRepo;
-using vespalib::FileHeader;
-using vespalib::IllegalStateException;
-using vespalib::Slime;
-using vespalib::makeLambdaTask;
-using vespalib::slime::ArrayInserter;
-using vespalib::slime::Cursor;
 using CpuCategory = vespalib::CpuUsage::Category;
 
+using document::DocumentTypeRepo;
+using search::engine::MonitorReply;
 using search::transactionlog::DomainStats;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::search::core::internal::InternalProtonType;
+using vespalib::CpuUsage;
+using vespalib::FileHeader;
+using vespalib::IllegalStateException;
+using vespalib::Slime;
 using vespalib::compression::CompressionConfig;
-using search::engine::MonitorReply;
+using vespalib::makeLambdaTask;
+using vespalib::slime::ArrayInserter;
+using vespalib::slime::Cursor;
 
 namespace proton {
 
@@ -140,8 +141,8 @@ struct MetricsUpdateHook : metrics::UpdateHook
 
 const vespalib::string CUSTOM_COMPONENT_API_PATH = "/state/v1/custom/component";
 
-VESPA_THREAD_STACK_TAG(initialize_executor)
-VESPA_THREAD_STACK_TAG(close_executor)
+VESPA_THREAD_STACK_TAG(proton_initialize_executor)
+VESPA_THREAD_STACK_TAG(proton_close_executor)
 
 }
 
@@ -331,7 +332,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _compile_cache_executor_binding = vespalib::eval::CompileCache::bind(_shared_service->shared_raw());
     InitializeThreads initializeThreads;
     if (protonConfig.initialize.threads > 0) {
-        initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(protonConfig.initialize.threads, 128_Ki, initialize_executor);
+        initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(protonConfig.initialize.threads, 128_Ki,
+                                                                            CpuUsage::wrap(proton_initialize_executor, CpuCategory::SETUP));
         _initDocumentDbsInSequence = (protonConfig.initialize.threads == 1);
     }
     _protonConfigurer.applyInitialConfig(initializeThreads);
@@ -465,7 +467,8 @@ Proton::~Proton()
             }
         }
 
-        vespalib::ThreadStackExecutor closePool(std::min(_documentDBMap.size(), numCores), 0x20000, close_executor);
+        vespalib::ThreadStackExecutor closePool(std::min(_documentDBMap.size(), numCores), 0x20000,
+                                                CpuUsage::wrap(proton_close_executor, CpuCategory::SETUP));
         closeDocumentDBs(closePool);
     }
     _documentDBMap.clear();
