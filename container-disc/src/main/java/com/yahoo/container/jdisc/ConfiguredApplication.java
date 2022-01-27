@@ -45,6 +45,7 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.UncheckedInterruptedException;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -380,34 +381,37 @@ public final class ConfiguredApplication implements Application {
     @Override
     public void stop() {
         shutdownDeadline.schedule((long)(shutdownTimeoutS.get() * 1000), dumpHeapOnShutdownTimeout.get());
+        stopServersAndAwaitTermination("Stop");
+    }
+
+    private void prepareStop(Duration timeout) {
+        ShutdownDeadline deadline =
+                new ShutdownDeadline(configId).schedule(timeout.toMillis(), dumpHeapOnShutdownTimeout.get());
+        stopServersAndAwaitTermination("PrepareStop");
+        deadline.cancel();
+    }
+
+    private void stopServersAndAwaitTermination(String logPrefix) {
         shutdownReconfigurerThread();
-        log.info("Stop: Closing servers");
+        log.info(logPrefix + ": Closing servers");
         startAndStopServers(List.of());
         startAndRemoveClients(List.of());
-
-        log.info("Stop: Shutting container down");
-        activateContainer(null, () -> {
-            configurer.shutdown();
-            slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
-            Container.get().shutdown();
-            unregisterInSlobrok();
-            LogSetup.cleanup();
-            log.info("Stop: Finished");
-        });
+        log.info(logPrefix + ": Waiting for all in-flight requests to complete");
+        activateContainer(null, () -> configurer.shutdown());
         nonTerminatedContainerTracker.arriveAndAwaitAdvance();
+        log.info(logPrefix + ": Finished");
     }
 
     // TODO Do more graceful shutdown of reconfigurer thread. The interrupt may leave the container in state where
     //      graceful shutdown is impossible or may hang.
     private void shutdownReconfigurerThread() {
-        if (reconfigurerThread == null) return;
-        reconfigurerThread.interrupt();
         try {
             //Workaround for component constructors masking InterruptedException.
-            while (reconfigurerThread.isAlive()) {
+            while (reconfigurerThread != null && reconfigurerThread.isAlive()) {
                 reconfigurerThread.interrupt();
                 long millis = 200;
                 reconfigurerThread.join(millis);
+                reconfigurerThread = null;
             }
         } catch (InterruptedException e) {
             log.info("Interrupted while joining on HandlersConfigurer reconfigure thread.");
@@ -417,8 +421,13 @@ public final class ConfiguredApplication implements Application {
 
     @Override
     public void destroy() {
+        log.info("Destroy: Shutting down container now");
+        slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
+        Container.get().shutdown();
+        unregisterInSlobrok();
+        LogSetup.cleanup();
         shutdownDeadline.cancel();
-        log.info("Destroy: completed");
+        log.info("Destroy: Finished");
     }
 
     private static void addHandlerBindings(ContainerBuilder builder,
