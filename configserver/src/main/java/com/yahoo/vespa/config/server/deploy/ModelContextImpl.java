@@ -285,6 +285,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }
         @Override public boolean enableServerOcspStapling() { return enableServerOcspStapling; }
         @Override public String persistenceAsyncThrottling() { return persistenceAsyncThrottling; }
+        @Override public String mergeThrottlingPolicy() { return mergeThrottlingPolicy; }
         @Override public boolean useQrserverServiceName() { return useQrserverServiceName; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
