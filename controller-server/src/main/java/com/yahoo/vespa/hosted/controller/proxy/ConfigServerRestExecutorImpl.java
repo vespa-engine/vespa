@@ -105,7 +105,7 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
             }
         }
 
-        throw new RuntimeException("Failed talking to config servers: " + errorBuilder.toString());
+        throw new RuntimeException("Failed talking to config servers: " + errorBuilder);
     }
 
     private Optional<ProxyResponse> proxy(ProxyRequest request, URI url, StringBuilder errorBuilder) {
@@ -118,9 +118,9 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
             String content = getContent(response);
             int status = response.getStatusLine().getStatusCode();
             if (status / 100 == 5) {
-                errorBuilder.append("Talking to server ").append(url.getHost());
-                errorBuilder.append(", got ").append(status).append(" ")
-                        .append(content).append("\n");
+                errorBuilder.append("Talking to server ").append(url.getHost())
+                            .append(", got ").append(status).append(" ")
+                            .append(content).append("\n");
                 LOG.log(Level.FINE, () -> Text.format("Got response from %s with status code %d and content:\n %s",
                                                         url.getHost(), status, content));
                 return Optional.empty();
@@ -135,8 +135,9 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
             // Send response back
             return Optional.of(new ProxyResponse(request, content, status, url, contentType));
         } catch (Exception e) {
-            errorBuilder.append("Talking to server ").append(url.getHost());
-            errorBuilder.append(" got exception ").append(e.getMessage());
+            errorBuilder.append("Talking to server ").append(url.getHost())
+                        .append(" got exception ").append(e.getMessage())
+                        .append("\n");
             LOG.log(Level.FINE, e, () -> "Got exception while sending request to " + url.getHost());
             return Optional.empty();
         }
