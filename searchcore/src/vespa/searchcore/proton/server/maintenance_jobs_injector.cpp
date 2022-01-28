@@ -89,7 +89,8 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     AttributeUsageFilter &attributeUsageFilter)
 {
     controller.registerJobInMasterThread(std::make_unique<HeartBeatJob>(hbHandler, config.getHeartBeatConfig()));
-    controller.registerJobInDefaultPool(std::make_unique<PruneSessionCacheJob>(scPruner, config.getSessionCachePruneInterval()));
+    controller.registerJobInSharedExecutor(
+            std::make_unique<PruneSessionCacheJob>(scPruner, config.getSessionCachePruneInterval()));
 
     const auto & docTypeName = controller.getDocTypeName().getName();
     const MaintenanceDocumentSubDB &mRemSubDB(controller.getRemSubDB());
