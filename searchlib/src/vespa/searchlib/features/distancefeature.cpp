@@ -225,9 +225,10 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
             _attr_id = fi->id();
             return setup_nns(env, arg);
         }
-        // could check if dt is DataType::INT64
         // could check if ct is CollectionType::SINGLE or CollectionType::ARRAY)
-        return setup_geopos(env, arg);
+        if (dt == DataType::INT64) {
+            return setup_geopos(env, arg);
+        }
     }
     vespalib::string z = document::PositionDataType::getZCurveFieldName(arg);
     fi = env.getFieldByName(z);
