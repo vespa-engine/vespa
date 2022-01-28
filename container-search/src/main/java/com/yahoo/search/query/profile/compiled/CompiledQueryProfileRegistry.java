@@ -12,6 +12,10 @@ import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
 import com.yahoo.yolean.UncheckedInterruptedException;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+
 /**
  * A set of compiled query profiles.
  *
@@ -25,12 +29,28 @@ public class CompiledQueryProfileRegistry extends ComponentRegistry<CompiledQuer
     private final QueryProfileTypeRegistry typeRegistry;
 
     @Inject
-    public CompiledQueryProfileRegistry(QueryProfilesConfig config) {
+    public CompiledQueryProfileRegistry(QueryProfilesConfig config, Executor executor) {
         QueryProfileRegistry registry = QueryProfileConfigurer.createFromConfig(config);
         typeRegistry = registry.getTypeRegistry();
-        for (QueryProfile inputProfile : registry.allComponents()) {
-            abortIfInterrupted();
-            register(QueryProfileCompiler.compile(inputProfile, this));
+        int maxConcurrent = Math.max(1, Runtime.getRuntime().availableProcessors()/2);
+        BlockingQueue<CompiledQueryProfile> doneQ = new LinkedBlockingQueue<>();
+        int started = 0;
+        int completed = 0;
+        try {
+            for (QueryProfile inputProfile : registry.allComponents()) {
+                abortIfInterrupted();
+                if (started++ >= maxConcurrent) {
+                    register(doneQ.take());
+                    completed++;
+                }
+                executor.execute(() -> doneQ.add(QueryProfileCompiler.compile(inputProfile, this)));
+            }
+            while (completed < started) {
+                register(doneQ.take());
+                completed++;
+            }
+        } catch (InterruptedException e) {
+            throw new UncheckedInterruptedException("Interrupted while waiting for compiled query profiles", true);
         }
     }
 

@@ -4,6 +4,8 @@ package com.yahoo.search.query.profile.compiled;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import org.junit.Test;
 
+import java.util.concurrent.Executors;
+
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -21,7 +23,7 @@ public class CompiledQueryProfileRegistryTest {
                                                         .value("5")))
                 .build();
 
-        var registry = new CompiledQueryProfileRegistry(config);
+        var registry = new CompiledQueryProfileRegistry(config, Executors.newCachedThreadPool());
         var profile1 = registry.findQueryProfile("profile1");
         assertEquals("5", profile1.get("hits"));
     }
