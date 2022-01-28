@@ -155,8 +155,8 @@ void
 AttributeFileWriter::close()
 {
     if (_file->IsOpened()) {
-        _file->Sync();
-        _file->Close();
+        (void) _file->Sync();
+        (void) _file->Close();
         updateHeader(_file->GetFileName(), _fileBitSize);
     }
 }

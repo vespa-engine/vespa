@@ -255,9 +255,9 @@ PageDict4RandRead::close()
 
     _ssReadContext.dropComprBuf();
     _ssReadContext.setFile(nullptr);
-    _ssfile->Close();
-    _spfile->Close();
-    _pfile->Close();
+    (void) _ssfile->Close();
+    (void) _spfile->Close();
+    (void) _pfile->Close();
     return true;
 }
 
