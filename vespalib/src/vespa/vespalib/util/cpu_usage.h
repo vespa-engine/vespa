@@ -6,6 +6,7 @@
 #include "spin_lock.h"
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <array>
 #include <memory>
 #include <future>
 #include <vector>
