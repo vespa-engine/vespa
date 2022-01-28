@@ -76,7 +76,7 @@ TEST("usage") {
         EXPECT_FALSE(runProc(proc, done));
     }
     {
-        ChildProcess proc("exec ../../examples/frt/rpc/vespa-rpc-invoke-bin");
+        ChildProcess proc("exec ../../examples/frt/rpc/vespa-rpc-invoke");
         EXPECT_FALSE(runProc(proc, done));
     }
     {
@@ -199,7 +199,7 @@ TEST_MT_F("rpc invoke", 2, std::atomic<bool>()) {
         EXPECT_TRUE(runProc(proc, f1));
     } else {
         TEST_BARRIER();
-        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/frt/rpc/vespa-rpc-invoke-bin tcp/localhost:%d frt.rpc.echo "
+        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/frt/rpc/vespa-rpc-invoke tcp/localhost:%d frt.rpc.echo "
                                                   "b:1 h:2 i:4 l:8 f:0.5 d:0.25 s:foo",
                                                   PORT0).c_str()));
         f1 = true;
