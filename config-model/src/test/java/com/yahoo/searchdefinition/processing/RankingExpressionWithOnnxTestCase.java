@@ -259,7 +259,7 @@ public class RankingExpressionWithOnnxTestCase {
     public void testFunctionGeneration() {
         final String name = "small_constants_and_functions";
         final String rankProfiles =
-                "  rank-profile my_profile {\n" +
+                        "  rank-profile my_profile {\n" +
                         "    function input() {\n" +
                         "      expression: tensor<float>(d0[3])(0.0)\n" +
                         "    }\n" +

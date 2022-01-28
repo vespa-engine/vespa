@@ -8,6 +8,9 @@ schema test {
 
     }
 
+    rank-profile in_schema0 inherits in_schema3 {
+    }
+
     rank-profile in_schema1 {
 
         first-phase {
@@ -17,6 +20,18 @@ schema test {
     }
 
     rank-profile in_schema2 inherits outside_schema2 {
+
+        function f2() {
+            expression: fieldMatch(title) + fo2
+        }
+
+        first-phase {
+            expression: f2
+        }
+
+    }
+
+    rank-profile in_schema3 inherits outside_schema1, outside_schema2 {
 
         function f2() {
             expression: fieldMatch(title) + fo2

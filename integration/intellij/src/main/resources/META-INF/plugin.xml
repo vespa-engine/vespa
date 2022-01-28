@@ -29,7 +29,7 @@
     <!-- Extension points defined by the plugin -->
     <extensions defaultExtensionNs="com.intellij">
         <fileType name="Sd File" implementationClass="ai.vespa.intellij.schema.SdFileType" fieldName="INSTANCE"
-                  language="Sd" extensions="sd"/>
+                  language="Sd" extensions="sd;profile"/>
         <lang.parserDefinition language="Sd" implementationClass="ai.vespa.intellij.schema.parser.SdParserDefinition"/>
         <lang.syntaxHighlighterFactory language="Sd" implementationClass="ai.vespa.intellij.schema.SdSyntaxHighlighterFactory"/>
         <completion.contributor language="Sd" implementationClass="ai.vespa.intellij.schema.SdCompletionContributor"/>

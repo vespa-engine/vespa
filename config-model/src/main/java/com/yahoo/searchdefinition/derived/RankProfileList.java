@@ -73,9 +73,9 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     }
 
     private boolean areDependenciesReady(RankProfile rank, RankProfileRegistry registry) {
-        return (rank.getInheritedName() == null) ||
-                rankProfiles.containsKey(rank.getInheritedName()) ||
-                (rank.schema() != null && registry.resolve(rank.schema().getDocument(), rank.getInheritedName()) != null);
+        return rank.inheritedNames().isEmpty() ||
+               rankProfiles.keySet().containsAll(rank.inheritedNames()) ||
+               (rank.schema() != null && rank.inheritedNames().stream().allMatch(name -> registry.resolve(rank.schema().getDocument(), name) != null));
     }
 
     private void deriveRankProfiles(RankProfileRegistry rankProfileRegistry,

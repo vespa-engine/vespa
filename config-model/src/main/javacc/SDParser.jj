@@ -2036,15 +2036,15 @@ Object rankProfileItem(RankProfile profile) : { }
 /**
  * This rule consumes an inherits statement of a rank-profile.
  *
- * @param profile The profile to modify.
+ * @param profile the profile to modify
  */
 void inheritsRankProfile(RankProfile profile) :
 {
-    String str;
+    String name;
 }
 {
-    <INHERITS> str = identifierWithDash()
-    { profile.setInherited(str); }
+    <INHERITS> name = identifierWithDash() { profile.inherit(name); }
+    ( <COMMA>  name = identifierWithDash() { profile.inherit(name);; } )*
 }
 
 /**

@@ -156,8 +156,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         /**
          * Creates a raw rank profile from the given rank profile
          */
-        Deriver(RankProfile compiled, AttributeFields attributeFields, ModelContext.Properties deployProperties)
-        {
+        Deriver(RankProfile compiled, AttributeFields attributeFields, ModelContext.Properties deployProperties) {
             rankprofileName = compiled.name();
             attributeTypes = compiled.getAttributeTypes();
             queryFeatureTypes = compiled.getQueryFeatureTypes();
@@ -277,14 +276,15 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private void deriveRankTypeSetting(RankProfile rankProfile, AttributeFields attributeFields) {
             for (Iterator<RankProfile.RankSetting> i = rankProfile.rankSettingIterator(); i.hasNext(); ) {
                 RankProfile.RankSetting setting = i.next();
-                if (!setting.getType().equals(RankProfile.RankSetting.Type.RANKTYPE)) continue;
+                if (setting.getType() != RankProfile.RankSetting.Type.RANKTYPE) continue;
 
                 deriveNativeRankTypeSetting(setting.getFieldName(), (RankType) setting.getValue(), attributeFields,
-                        hasDefaultRankTypeSetting(rankProfile, setting.getFieldName()));
+                                            hasDefaultRankTypeSetting(rankProfile, setting.getFieldName()));
             }
         }
 
-        private void deriveNativeRankTypeSetting(String fieldName, RankType rankType, AttributeFields attributeFields, boolean isDefaultSetting) {
+        private void deriveNativeRankTypeSetting(String fieldName, RankType rankType, AttributeFields attributeFields,
+                                                 boolean isDefaultSetting) {
             if (isDefaultSetting) return;
 
             NativeRankTypeDefinition definition = nativeRankTypeDefinitions.getRankTypeDefinition(rankType);

@@ -132,7 +132,8 @@ public class SdUtil {
 
             for (VirtualFile vfile : virtualFiles) {
                 SdFile sdFile = (SdFile) PsiManager.getInstance(project).findFile(vfile);
-                if (sdFile != null && !sdFile.getName().equals(docName + ".sd")) {
+                if (sdFile != null &&
+                    ( !sdFile.getName().equals(docName + ".sd") && !sdFile.getName().equals(docName + ".profile"))) {
                     continue;
                 }
                 result.addAll(SdUtil.findDeclarationsByName(sdFile, name));
