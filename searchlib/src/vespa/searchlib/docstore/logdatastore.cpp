@@ -330,23 +330,6 @@ LogDataStore::initFlush(uint64_t syncToken)
     return syncToken;
 }
 
-double
-LogDataStore::getMaxBucketSpread() const
-{
-    double maxSpread(1.0);
-    MonitorGuard guard(_updateLock);
-    for (FileId i(0); i < FileId(_fileChunks.size()); i = i.next()) {
-        /// Ignore the the active file
-        if (i != _active) {
-            const auto & fc = _fileChunks[i.getId()];
-            if (fc && _bucketizer && fc->frozen()) {
-                maxSpread = std::max(maxSpread, fc->getBucketSpread());
-            }
-        }
-    }
-    return maxSpread;
-}
-
 std::pair<bool, LogDataStore::FileId>
 LogDataStore::findNextToCompact(bool dueToBloat)
 {
@@ -581,6 +564,22 @@ LogDataStore::getDiskHeaderFootprint() const
     return sz;
 }
 
+double
+LogDataStore::getMaxBucketSpread() const
+{
+    double maxSpread(1.0);
+    MonitorGuard guard(_updateLock);
+    for (FileId i(0); i < FileId(_fileChunks.size()); i = i.next()) {
+        /// Ignore the the active file as it is never considered for reordering until completed and frozen.
+        if (i != _active) {
+            const auto & fc = _fileChunks[i.getId()];
+            if (fc && _bucketizer && fc->frozen()) {
+                maxSpread = std::max(maxSpread, fc->getBucketSpread());
+            }
+        }
+    }
+    return maxSpread;
+}
 
 size_t
 LogDataStore::getDiskBloat() const
@@ -588,7 +587,8 @@ LogDataStore::getDiskBloat() const
     MonitorGuard guard(_updateLock);
     size_t sz(0);
     for (FileId i(0); i < FileId(_fileChunks.size()); i = i.next()) {
-        /// Do not count the holes in the last file as bloat
+        /// Do not count the holes in the last file as bloat as it is
+        /// never considered for compaction until completed and frozen.
         if (i != _active) {
             const auto & chunk = _fileChunks[i.getId()];
             if (chunk) {
