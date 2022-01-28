@@ -97,7 +97,9 @@ ModifiedBucketChecker::onClose()
     if (_singleThreadMode) {
         return;
     }
-    assert(_thread);
+    if (!_thread) {
+        return; // Aborted startup; onOpen() was never called so there's nothing to close.
+    }
     LOG(debug, "Interrupting modified bucket checker thread");
     _thread->interrupt();
     _cond.notify_one();
