@@ -10,7 +10,7 @@ all: ${outputdir} ${outputdir}/services.rng ${outputdir}/hosts.rng ${outputdir}/
 ${outputdir}:
 	mkdir -p ${outputdir}
 
-${outputdir}/services.rng: ${srcdir}/services.rnc ${srcdir}/common.rnc ${srcdir}/admin.rnc ${srcdir}/clients.rnc ${srcdir}/docproc.rnc ${srcdir}/routing.rnc ${srcdir}/clients-v2.rnc ${srcdir}/content.rnc ${srcdir}/genericmodule.rnc ${srcdir}/legacygenericcluster.rnc ${srcdir}/genericcluster.rnc ${srcdir}/legacygenericmodule.rnc ${srcdir}/containercluster.rnc
+${outputdir}/services.rng: ${srcdir}/services.rnc ${srcdir}/common.rnc ${srcdir}/admin.rnc ${srcdir}/clients.rnc ${srcdir}/docproc.rnc ${srcdir}/routing.rnc ${srcdir}/clients-v2.rnc ${srcdir}/content.rnc ${srcdir}/genericmodule.rnc ${srcdir}/genericcluster.rnc ${srcdir}/legacygenericmodule.rnc ${srcdir}/containercluster.rnc
 	java -jar $(trangjar) -I rnc -O rng ${srcdir}/services.rnc ${outputdir}/services.rng
 
 ${outputdir}/services.xsd: ${outputdir}/services.rng
