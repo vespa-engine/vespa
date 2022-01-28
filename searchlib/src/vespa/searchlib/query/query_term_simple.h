@@ -21,7 +21,8 @@ public:
         SUBSTRINGTERM = 2,
         EXACTSTRINGTERM = 3,
         SUFFIXTERM = 4,
-        REGEXP = 5
+        REGEXP = 5,
+        GEO_LOCATION = 6
     };
 
     template <typename N>
@@ -59,6 +60,7 @@ public:
     bool isSuffix()        const { return (_type == Type::SUFFIXTERM); }
     bool isWord()          const { return (_type == Type::WORD); }
     bool isRegex()         const { return (_type == Type::REGEXP); }
+    bool isGeoLoc()        const { return (_type == Type::GEO_LOCATION); }
     bool empty()           const { return _term.empty(); }
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
     vespalib::string getClassName() const;
