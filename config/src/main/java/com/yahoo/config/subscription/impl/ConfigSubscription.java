@@ -10,7 +10,7 @@ import com.yahoo.config.subscription.DirSource;
 import com.yahoo.config.subscription.FileSource;
 import com.yahoo.config.subscription.JarSource;
 import com.yahoo.config.subscription.RawSource;
-import com.yahoo.text.SnippetGenerator;
+import com.yahoo.text.internal.SnippetGenerator;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.TimingValues;
