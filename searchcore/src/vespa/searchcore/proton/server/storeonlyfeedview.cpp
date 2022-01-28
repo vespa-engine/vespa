@@ -15,9 +15,10 @@
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
+#include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
-#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.storeonlyfeedview");
@@ -25,18 +26,19 @@ LOG_SETUP(".proton.server.storeonlyfeedview");
 using document::BucketId;
 using document::Document;
 using document::DocumentId;
-using document::GlobalId;
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
-using vespalib::IDestructorCallback;
+using document::GlobalId;
+using proton::documentmetastore::LidReuseDelayer;
 using search::SerialNum;
 using search::index::Schema;
 using storage::spi::BucketInfoResult;
 using storage::spi::Timestamp;
+using vespalib::CpuUsage;
+using vespalib::IDestructorCallback;
 using vespalib::IllegalStateException;
 using vespalib::makeLambdaTask;
 using vespalib::make_string;
-using proton::documentmetastore::LidReuseDelayer;
 
 namespace proton {
 
@@ -449,13 +451,14 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
         } else {
             putSummaryNoop(std::move(futureStream), onWriteDone);
         }
-        _writeService.shared().execute(makeLambdaTask(
-                         [upd = updOp.getUpdate(), useDocStore, lid, onWriteDone, promisedDoc = std::move(promisedDoc),
-                          promisedStream = std::move(promisedStream), this]() mutable
-                          {
-                             makeUpdatedDocument(useDocStore, lid, *upd, onWriteDone,
-                                                 std::move(promisedDoc), std::move(promisedStream));
-                          }));
+        auto task = makeLambdaTask([upd = updOp.getUpdate(), useDocStore, lid, onWriteDone,
+                                           promisedDoc = std::move(promisedDoc),
+                                           promisedStream = std::move(promisedStream), this]() mutable
+        {
+            makeUpdatedDocument(useDocStore, lid, *upd, onWriteDone,
+                                std::move(promisedDoc), std::move(promisedStream));
+        });
+        _writeService.shared().execute(CpuUsage::wrap(std::move(task), CpuUsage::Category::WRITE));
         updateAttributes(serialNum, lid, std::move(futureDoc), onWriteDone);
     }
 }

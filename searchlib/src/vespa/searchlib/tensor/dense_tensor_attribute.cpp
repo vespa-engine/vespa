@@ -11,6 +11,7 @@
 #include <vespa/searchlib/attribute/load_utils.h>
 #include <vespa/searchlib/attribute/readerbase.h>
 #include <vespa/vespalib/data/slime/inserter.h>
+#include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
@@ -21,6 +22,7 @@
 LOG_SETUP(".searchlib.tensor.dense_tensor_attribute");
 
 using search::attribute::LoadUtils;
+using vespalib::CpuUsage;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::slime::ObjectInserter;
@@ -324,7 +326,7 @@ DenseTensorAttribute::ThreadedLoader::load(uint32_t lid, vespalib::datastore::En
 
     // Then we can issue a new one
     ++_pending;
-    _shared_executor.execute(vespalib::makeLambdaTask([this, ref, lid]() {
+    auto task = vespalib::makeLambdaTask([this, ref, lid]() {
         auto prepared = _attr._index->prepare_add_document(lid, _attr._denseTensorStore.get_typed_cells(ref),
                                                            _attr.getGenerationHandler().takeGuard());
         std::unique_lock guard(_mutex);
@@ -332,7 +334,8 @@ DenseTensorAttribute::ThreadedLoader::load(uint32_t lid, vespalib::datastore::En
         if (_queue.size() == 1) {
             _cond.notify_all();
         }
-    }));
+    });
+    _shared_executor.execute(CpuUsage::wrap(std::move(task), CpuUsage::Category::SETUP));
 }
 class DenseTensorAttribute::ForegroundLoader : public Loader {
 public:
