@@ -335,9 +335,11 @@ LogDataStore::getMaxBucketSpread() const
 {
     double maxSpread(1.0);
     MonitorGuard guard(_updateLock);
-    for (const auto & fc : _fileChunks) {
-        if (fc) {
-            if (_bucketizer && fc->frozen()) {
+    for (FileId i(0); i < FileId(_fileChunks.size()); i = i.next()) {
+        /// Ignore the the active file
+        if (i != _active) {
+            const auto & fc = _fileChunks[i.getId()];
+            if (fc && _bucketizer && fc->frozen()) {
                 maxSpread = std::max(maxSpread, fc->getBucketSpread());
             }
         }
