@@ -34,7 +34,7 @@ public class SchemaTestCase {
             ApplicationBuilder.createFromStrings(logger, schema);
             assertEquals("schema 'test' inherits 'nonesuch', but this schema does not exist",
                          logger.entries.get(0).message);
-            fail("Expected failure");
+            fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
             assertEquals("schema 'test' inherits 'nonesuch', but this schema does not exist", e.getMessage());
@@ -61,6 +61,7 @@ public class SchemaTestCase {
                     "  }" +
                     "}");
             ApplicationBuilder.createFromStrings(new DeployLoggerStub(), parent, child);
+            fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
             assertEquals("schema 'child' inherits 'parent', " +
@@ -318,6 +319,98 @@ public class SchemaTestCase {
 
         assertInheritedFromParent(application.schemas().get("child"), application, builder.getRankProfileRegistry());
         assertInheritedFromParent(application.schemas().get("grandchild"), application, builder.getRankProfileRegistry());
+    }
+
+    @Test
+    public void testInheritingMultipleRankProfilesWithOverlappingConstructsIsDisallowed1() throws ParseException {
+        try {
+            String profile = joinLines(
+                    "schema test {" +
+                    "  document test {" +
+                    "    field title type string {" +
+                    "      indexing: summary" +
+                    "    }" +
+                    "  }" +
+                    "  rank-profile r1 {" +
+                    "    first-phase {" +
+                    "      expression: fieldMatch(title)" +
+                    "    }" +
+                    "  }" +
+                    "  rank-profile r2 {" +
+                    "    first-phase {" +
+                    "      expression: fieldMatch(title)" +
+                    "    }" +
+                    "  }" +
+                    "  rank-profile r3 inherits r1, r2 {" +
+                    "  }" +
+                    "}");
+            ApplicationBuilder.createFromStrings(new DeployLoggerStub(), profile);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Only one of the profiles inherited by rank profile 'r3' can contain first-phase expression, but it is present in all of [rank profile 'r1', rank profile 'r2']",
+                         e.getMessage());
+        }
+    }
+
+    @Test
+    public void testInheritingMultipleRankProfilesWithOverlappingConstructsIsAllowedWhenDefinedInChild() throws ParseException {
+        String profile = joinLines(
+                "schema test {" +
+                "  document test {" +
+                "    field title type string {" +
+                "      indexing: summary" +
+                "    }" +
+                "  }" +
+                "  rank-profile r1 {" +
+                "    first-phase {" +
+                "      expression: fieldMatch(title)" +
+                "    }" +
+                "  }" +
+                "  rank-profile r2 {" +
+                "    first-phase {" +
+                "      expression: fieldMatch(title)" +
+                "    }" +
+                "  }" +
+                "  rank-profile r3 inherits r1, r2 {" +
+                "    first-phase {" + // Redefined here so this does not cause failure
+                "      expression: nativeRank" +
+                "    }" +
+                "  }" +
+                "}");
+        ApplicationBuilder.createFromStrings(new DeployLoggerStub(), profile);
+    }
+
+    @Test
+    public void testInheritingMultipleRankProfilesWithOverlappingConstructsIsDisallowed2() throws ParseException {
+        try {
+            String profile = joinLines(
+                    "schema test {" +
+                    "  document test {" +
+                    "    field title type string {" +
+                    "      indexing: summary" +
+                    "    }" +
+                    "  }" +
+                    "  rank-profile r1 {" +
+                    "    function f1() {" +
+                    "      expression: fieldMatch(title)" +
+                    "    }" +
+                    "  }" +
+                    "  rank-profile r2 {" +
+                    "    function f1() {" +
+                    "      expression: fieldMatch(title)" +
+                    "    }" +
+                    "  }" +
+                    "  rank-profile r3 inherits r1, r2 {" +
+                    "  }" +
+                    "}");
+            ApplicationBuilder.createFromStrings(new DeployLoggerStub(), profile);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("rank profile 'r3' inherits rank profile 'r2' which contains function 'f1', but this function is already defined in another profile this inherits",
+                         e.getMessage());
+        }
     }
 
     private void assertInheritedFromParent(Schema schema, Application application, RankProfileRegistry rankProfileRegistry) {
