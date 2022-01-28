@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application.pkg;
 
+import com.google.common.hash.Funnel;
 import com.google.common.hash.Hashing;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.FileSystemWrapper;
@@ -223,7 +224,11 @@ public class ApplicationPackage {
     private String calculateBundleHash() {
         Predicate<String> entryMatcher = name -> !name.endsWith(deploymentFile) && !name.endsWith(buildMetaFile);
         SortedMap<String, Long> entryCRCs = ZipStreamReader.getEntryCRCs(new ByteArrayInputStream(zippedContent), entryMatcher);
-        return String.valueOf(entryCRCs.hashCode());
+        Funnel<SortedMap<String, Long>> funnel = (from, into) -> from.entrySet().forEach(entry -> {
+            into.putBytes(entry.getKey().getBytes());
+            into.putLong(entry.getValue());
+        });
+        return Hashing.sha1().hashObject(entryCRCs, funnel).toString();
     }
 
 
