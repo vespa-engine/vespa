@@ -32,7 +32,7 @@ public class CompiledQueryProfileRegistry extends ComponentRegistry<CompiledQuer
     public CompiledQueryProfileRegistry(QueryProfilesConfig config, Executor executor) {
         QueryProfileRegistry registry = QueryProfileConfigurer.createFromConfig(config);
         typeRegistry = registry.getTypeRegistry();
-        int maxConcurrent = Math.max(1, Runtime.getRuntime().availableProcessors()/2);
+        int maxConcurrent = Math.max(1, (int)(Runtime.getRuntime().availableProcessors() * 0.20));
         BlockingQueue<CompiledQueryProfile> doneQ = new LinkedBlockingQueue<>();
         int started = 0;
         int completed = 0;
@@ -43,7 +43,16 @@ public class CompiledQueryProfileRegistry extends ComponentRegistry<CompiledQuer
                     register(doneQ.take());
                     completed++;
                 }
-                executor.execute(() -> doneQ.add(QueryProfileCompiler.compile(inputProfile, this)));
+                executor.execute(() -> {
+                    Thread self = Thread.currentThread();
+                    int prevPriority = self.getPriority();
+                    try {
+                        self.setPriority(Thread.MIN_PRIORITY);
+                        doneQ.add(QueryProfileCompiler.compile(inputProfile, this));
+                    } finally {
+                        self.setPriority(prevPriority);
+                    }
+                });
             }
             while (completed < started) {
                 register(doneQ.take());
