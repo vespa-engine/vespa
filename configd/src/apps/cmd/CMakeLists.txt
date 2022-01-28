@@ -2,7 +2,7 @@
 vespa_add_executable(configd_vespa-sentinel-cmd_app
     SOURCES
     main.cpp
-    OUTPUT_NAME vespa-sentinel-cmd-bin
+    OUTPUT_NAME vespa-sentinel-cmd
     INSTALL bin
     DEPENDS
     fnet
