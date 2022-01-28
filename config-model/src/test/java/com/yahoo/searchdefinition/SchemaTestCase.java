@@ -187,7 +187,7 @@ public class SchemaTestCase {
         assertNotNull(child1.getExtraField("child1_field"));
         assertNotNull(builder.getRankProfileRegistry().get(child1, "parent_profile"));
         assertNotNull(builder.getRankProfileRegistry().get(child1, "child1_profile"));
-        assertEquals("parent_profile", builder.getRankProfileRegistry().get(child1, "child1_profile").getInheritedName());
+        assertEquals("parent_profile", builder.getRankProfileRegistry().get(child1, "child1_profile").inheritedNames().get(0));
         assertNotNull(child1.rankingConstants().get("parent_constant"));
         assertNotNull(child1.rankingConstants().get("child1_constant"));
         assertTrue(child1.rankingConstants().asMap().containsKey("parent_constant"));
@@ -222,7 +222,7 @@ public class SchemaTestCase {
         assertNotNull(child2.getExtraField("child2_field"));
         assertNotNull(builder.getRankProfileRegistry().get(child2, "parent_profile"));
         assertNotNull(builder.getRankProfileRegistry().get(child2, "child2_profile"));
-        assertEquals("parent_profile", builder.getRankProfileRegistry().get(child2, "child2_profile").getInheritedName());
+        assertEquals("parent_profile", builder.getRankProfileRegistry().get(child2, "child2_profile").inheritedNames().get(0));
         assertNotNull(child2.rankingConstants().get("parent_constant"));
         assertNotNull(child2.rankingConstants().get("child2_constant"));
         assertTrue(child2.rankingConstants().asMap().containsKey("parent_constant"));

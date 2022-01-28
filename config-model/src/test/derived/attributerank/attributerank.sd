@@ -38,4 +38,5 @@ search attributerank {
     rank-type singledouble: identity
     rank-type singlestring: identity
   }
+
 }

@@ -223,9 +223,6 @@ public class ApplicationBuilder {
     private void addRankProfileFiles(Schema schema, String schemaPath) {
         if (applicationPackage == null || schemaPath == null) return;
         Path rankProfilePath = Path.fromString(schemaPath).append(schema.getName());
-        System.out.println("Adding external rank profiles for " + schema + ": Have " +
-                           applicationPackage.getFiles(rankProfilePath, ".profile").size() +
-                           " files in " + rankProfilePath);
         for (NamedReader reader : applicationPackage.getFiles(rankProfilePath, ".profile")) {
             parseRankProfile(reader, schema);
         }

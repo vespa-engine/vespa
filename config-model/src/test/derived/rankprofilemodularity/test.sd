@@ -28,4 +28,16 @@ schema test {
 
     }
 
+    rank-profile in_schema3 inherits outside_schema1, outside_schema2 {
+
+        function f2() {
+            expression: fieldMatch(title) + fo2
+        }
+
+        first-phase {
+            expression: f2
+        }
+
+    }
+
 }
