@@ -8,6 +8,7 @@
 namespace search::fef::test {
 
 struct UnboxBlueprint : Blueprint {
+    bool _was_object;
     UnboxBlueprint();
     void visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const override;
     Blueprint::UP createInstance() const override;
