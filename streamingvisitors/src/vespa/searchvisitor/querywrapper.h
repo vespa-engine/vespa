@@ -47,6 +47,7 @@ public:
         bool isPhraseTerm() const { return _parent != nullptr; }
         bool isFirstPhraseTerm() const { return isPhraseTerm() && getIndex() == 0; }
         size_t getPosAdjust() const { return _parent != nullptr ? _parent->width() - 1 : 0; }
+        bool isGeoPosTerm() const { return (_term != nullptr) && _term->isGeoLoc(); }
     };
 
     typedef std::vector<Term> TermList;

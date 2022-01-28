@@ -295,6 +295,7 @@ void
 FieldSearcher::IteratorHandler::onStructStart(const Content & c)
 {
     LOG(spam, "onStructStart: field value '%s'", c.getValue().toString().c_str());
+    _searcher.onStructValue(static_cast<const document::StructFieldValue &>(c.getValue()));
 }
 
 

@@ -14,6 +14,7 @@ import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.searchdefinition.FieldSets;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.FieldSet;
+import com.yahoo.searchdefinition.document.GeoPos;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
@@ -53,15 +54,19 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
 
     protected void derive(StreamingDocumentType document, SDField field) {
         if (field.usesStructOrMap()) {
+            if (GeoPos.isAnyPos(field)) {
+                StreamingField streamingField = new StreamingField(field);
+                addField(streamingField.getName(), streamingField);
+                addFieldToIndices(document, field.getName(), streamingField);
+            }
             for (SDField structField : field.getStructFields()) {
                 derive(document, structField); // Recursion
             }
         } else {
-
             if (! (field.doesIndexing() || field.doesSummarying() || field.doesAttributing()) )
                 return;
 
-            StreamingField streamingField=new StreamingField(field);
+            StreamingField streamingField = new StreamingField(field);
             addField(streamingField.getName(),streamingField);
             deriveIndices(document, field, streamingField);
         }
@@ -132,14 +137,15 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
             public static Type STRING = new Type("string","AUTOUTF8");
             public static Type BOOL = new Type("bool","BOOL");
             public static Type UNSEARCHABLESTRING = new Type("string","NONE");
+            public static Type GEO_POSITION = new Type("position", "GEOPOS");
 
             private String name;
 
             private String searchMethod;
 
-            private Type(String name,String searchMethod) {
-                this.name=name;
-                this.searchMethod=searchMethod;
+            private Type(String name, String searchMethod) {
+                this.name = name;
+                this.searchMethod = searchMethod;
             }
 
             @Override
@@ -166,10 +172,10 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
         }
 
         public StreamingField(SDField field) {
-            this(field.getName(),field.getDataType(),field.getMatching(), field.doesAttributing());
+            this(field.getName(), field.getDataType(), field.getMatching(), field.doesAttributing());
         }
 
-        private StreamingField(String name,DataType sourceType, Matching  matching, boolean isAttribute) {
+        private StreamingField(String name, DataType sourceType, Matching matching, boolean isAttribute) {
             this.name = name;
             this.type = convertType(sourceType);
             this.matching = matching;
@@ -191,6 +197,8 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
                 return Type.BOOL;
             } else if (fieldType.equals(DataType.BYTE)) {
                 return Type.INT8;
+            } else if (GeoPos.isAnyPos(fieldType)) {
+                return Type.GEO_POSITION;
             } else if (fieldType instanceof NumericDataType) {
                 return Type.INT32;
             } else if (fval instanceof StringFieldValue) {
