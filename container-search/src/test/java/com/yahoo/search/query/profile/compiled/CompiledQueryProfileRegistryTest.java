@@ -4,7 +4,10 @@ package com.yahoo.search.query.profile.compiled;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import org.junit.Test;
 
+import java.util.concurrent.Executors;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author gjoranv
@@ -21,7 +24,9 @@ public class CompiledQueryProfileRegistryTest {
                                                         .value("5")))
                 .build();
 
-        var registry = new CompiledQueryProfileRegistry(config);
+        var executor = Executors.newCachedThreadPool();
+        var registry = new CompiledQueryProfileRegistry(config, executor);
+        assertTrue(executor.shutdownNow().isEmpty());
         var profile1 = registry.findQueryProfile("profile1");
         assertEquals("5", profile1.get("hits"));
     }

@@ -6244,7 +6244,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.search.query.profile.config.QueryProfilesConfig)",
+      "public void <init>(com.yahoo.search.query.profile.config.QueryProfilesConfig, java.util.concurrent.Executor)",
       "public void <init>()",
       "public void <init>(com.yahoo.search.query.profile.types.QueryProfileTypeRegistry)",
       "public final void register(com.yahoo.search.query.profile.compiled.CompiledQueryProfile)",
