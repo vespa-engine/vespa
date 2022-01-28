@@ -2,7 +2,7 @@
 vespa_add_executable(searchcore_vespa-proton-cmd_app
     SOURCES
     vespa-proton-cmd.cpp
-    OUTPUT_NAME vespa-proton-cmd
+    OUTPUT_NAME vespa-proton-cmd-bin
     INSTALL bin
     DEPENDS
 )
