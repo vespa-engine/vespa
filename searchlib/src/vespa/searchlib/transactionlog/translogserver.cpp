@@ -2,27 +2,29 @@
 #include "translogserver.h"
 #include "domain.h"
 #include "client_common.h"
-#include <vespa/vespalib/util/destructor_callbacks.h>
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/transport.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/cpu_usage.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/fnet/frt/supervisor.h>
-#include <vespa/fnet/frt/rpcrequest.h>
-#include <vespa/fnet/transport.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <fstream>
 #include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.server");
 
-using vespalib::make_string;
-using vespalib::stringref;
-using vespalib::IllegalArgumentException;
 using search::common::FileHeaderContext;
 using std::make_shared;
 using std::runtime_error;
+using vespalib::CpuUsage;
+using vespalib::IllegalArgumentException;
+using vespalib::make_string;
+using vespalib::stringref;
 using namespace std::chrono_literals;
 
 namespace search::transactionlog {
@@ -97,7 +99,7 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
       _name(name),
       _baseDir(baseDir),
       _domainConfig(cfg),
-      _executor(maxThreads, 128_Ki, tls_executor),
+      _executor(maxThreads, 128_Ki, CpuUsage::wrap(tls_executor, CpuUsage::Category::WRITE)),
       _threadPool(std::make_unique<FastOS_ThreadPool>(120_Ki)),
       _transport(std::make_unique<FNET_Transport>()),
       _supervisor(std::make_unique<FRT_Supervisor>(_transport.get())),
