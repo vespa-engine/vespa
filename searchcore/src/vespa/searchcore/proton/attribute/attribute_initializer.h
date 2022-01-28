@@ -30,7 +30,7 @@ private:
     const AttributeSpec             _spec;
     const uint64_t                  _currentSerialNum;
     const IAttributeFactory        &_factory;
-    vespalib::Executor             &_executor;
+    vespalib::Executor             &_shared_executor;
     std::unique_ptr<const search::attribute::AttributeHeader> _header;
     bool                            _header_ok;
 
@@ -48,7 +48,7 @@ private:
 public:
     AttributeInitializer(const std::shared_ptr<AttributeDirectory> &attrDir, const vespalib::string &documentSubDbName,
                          const AttributeSpec &spec, uint64_t currentSerialNum, const IAttributeFactory &factory,
-                         vespalib::Executor & executor);
+                         vespalib::Executor& shared_executor);
     ~AttributeInitializer();
 
     AttributeInitializerResult init() const;

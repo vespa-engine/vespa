@@ -193,7 +193,7 @@ AttributeInitializer::loadAttribute(const AttributeVectorSP &attr,
     assert(attr->hasLoadData());
     vespalib::Timer timer;
     EventLogger::loadAttributeStart(_documentSubDbName, attr->getName());
-    if (!attr->load(&_executor)) {
+    if (!attr->load(&_shared_executor)) {
         LOG(warning, "Could not load attribute vector '%s' from disk. Returning empty attribute vector",
             attr->getBaseFileName().c_str());
         return false;
@@ -235,13 +235,13 @@ AttributeInitializer::AttributeInitializer(const std::shared_ptr<AttributeDirect
                                            const AttributeSpec &spec,
                                            uint64_t currentSerialNum,
                                            const IAttributeFactory &factory,
-                                           vespalib::Executor & executor)
+                                           vespalib::Executor& shared_executor)
     : _attrDir(attrDir),
       _documentSubDbName(documentSubDbName),
       _spec(spec),
       _currentSerialNum(currentSerialNum),
       _factory(factory),
-      _executor(executor),
+      _shared_executor(shared_executor),
       _header(),
       _header_ok(false)
 {
