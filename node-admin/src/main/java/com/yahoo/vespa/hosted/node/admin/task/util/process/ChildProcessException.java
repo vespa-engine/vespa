@@ -2,7 +2,7 @@
 
 package com.yahoo.vespa.hosted.node.admin.task.util.process;
 
-import com.yahoo.vespa.hosted.node.admin.task.util.text.SnippetGenerator;
+import com.yahoo.text.internal.SnippetGenerator;
 
 /**
  * Base class for child process related exceptions, with a util to build an error message
