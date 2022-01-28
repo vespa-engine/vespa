@@ -47,12 +47,12 @@ public class CuratorArchiveBucketDb {
         this.system = controller.zoneRegistry().system();
     }
 
-    public Optional<URI> archiveUriFor(ZoneId zoneId, TenantName tenant) {
-        if (enabled(zoneId, tenant)) {
-            return Optional.of(URI.create(Text.format("s3://%s/%s/", findOrAssignBucket(zoneId, tenant), tenant.value())));
-        } else {
-            return Optional.empty();
-        }
+    public Optional<URI> archiveUriFor(ZoneId zoneId, TenantName tenant, boolean createIfMissing) {
+        if ( ! enabled(zoneId, tenant)) return Optional.empty();
+        return getBucketNameFromCache(zoneId, tenant)
+                .or(() -> findAndUpdateArchiveUriCache(zoneId, tenant, buckets(zoneId)))
+                .or(() -> createIfMissing ? Optional.of(assignToBucket(zoneId, tenant)) : Optional.empty())
+                .map(bucketName -> URI.create(Text.format("s3://%s/%s/", bucketName, tenant.value())));
     }
 
     private boolean enabled(ZoneId zone, TenantName tenant) {
@@ -61,12 +61,6 @@ public class CuratorArchiveBucketDb {
                         .with(FetchVector.Dimension.ZONE_ID, zone.value())
                         .with(FetchVector.Dimension.TENANT_ID, tenant.value())
                         .value();
-    }
-
-    private String findOrAssignBucket(ZoneId zoneId, TenantName tenant) {
-        return getBucketNameFromCache(zoneId, tenant)
-                .or(() -> findAndUpdateArchiveUriCache(zoneId, tenant, buckets(zoneId)))
-                .orElseGet(() -> assignToBucket(zoneId, tenant));
     }
 
     private String assignToBucket(ZoneId zoneId, TenantName tenant) {

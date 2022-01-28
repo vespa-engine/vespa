@@ -52,7 +52,7 @@ public class ArchiveUriUpdater extends ControllerMaintainer {
         tenantsByZone.forEach((zone, tenants) -> {
             Map<TenantName, URI> zoneArchiveUris = nodeRepository.getArchiveUris(zone);
             for (TenantName tenant : tenants) {
-                archiveBucketDb.archiveUriFor(zone, tenant)
+                archiveBucketDb.archiveUriFor(zone, tenant, true)
                         .filter(uri -> !uri.equals(zoneArchiveUris.get(tenant)))
                         .ifPresent(uri -> nodeRepository.setArchiveUri(zone, tenant, uri));
             }
