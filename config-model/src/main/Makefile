@@ -39,7 +39,7 @@ ${outputdir}/deployment.xsd: ${outputdir}/deployment.rng
 ${outputdir}/validation-overrides.rng: ${srcdir}/validation-overrides.rnc
 	java -jar $(trangjar) -I rnc -O rng ${srcdir}/validation-overrides.rnc ${outputdir}/validation-overrides.rng
 
-${outputdir}/deployment.xsd: ${outputdir}/validation-overrides.rng
+${outputdir}/validation-overrides.xsd: ${outputdir}/validation-overrides.rng
 	java -jar $(trangjar) -I rng -O xsd ${outputdir}/validation-overrides.rng ${outputdir}/validation-overrides.xsd
 
 clean:
