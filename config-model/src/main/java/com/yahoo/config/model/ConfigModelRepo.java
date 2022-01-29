@@ -138,7 +138,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
                 continue;
             }
             if (tagName.equals("config")) {
-                // TODO: disallow on Vespa 8
+                // this is only for our own use (system tests etc), undocumented:
                 continue;
             }
             if (tagName.equals("cluster")) {
