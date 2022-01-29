@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -9,6 +11,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -84,7 +87,9 @@ public class VersionTagger {
 
         String className = format == Format.SIMPLE ? "VespaVersion" : "Vtag";
         String outFile = dirName + "/" + className +".java";
-        FileOutputStream out = new FileOutputStream(outFile);
+        Path outPath = Path.of(outFile);
+        Path tmpPath = Path.of(outFile + ".tmp");
+        var out = Files.newOutputStream(tmpPath);
         OutputStreamWriter writer = new OutputStreamWriter(out);
         System.err.println("generating: " + outFile);
 
@@ -129,6 +134,17 @@ public class VersionTagger {
         }
         writer.write("}\n");
         writer.close();
+        out.close();
+        if (Files.exists(outPath)) {
+            byte[] tmpBytes = Files.readAllBytes(tmpPath);
+            byte[] oldBytes = Files.readAllBytes(outPath);
+            if (Arrays.equals(tmpBytes, oldBytes)) {
+                Files.delete(tmpPath);
+                return;
+            }
+        }
+        Files.deleteIfExists(outPath);
+        Files.move(tmpPath, outPath);
     }
 
 }
