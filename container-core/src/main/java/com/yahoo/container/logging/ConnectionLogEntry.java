@@ -31,6 +31,8 @@ public class ConnectionLogEntry {
     private final String sslPeerSubject;
     private final Instant sslPeerNotBefore;
     private final Instant sslPeerNotAfter;
+    private final String sslPeerIssuerSubject;
+    private final String sslPeerFingerprint;
     private final String sslSniServerName;
     private final SslHandshakeFailure sslHandshakeFailure;
     private final List<String> sslSubjectAlternativeNames;
@@ -58,6 +60,8 @@ public class ConnectionLogEntry {
         this.sslPeerSubject = builder.sslPeerSubject;
         this.sslPeerNotBefore = builder.sslPeerNotBefore;
         this.sslPeerNotAfter = builder.sslPeerNotAfter;
+        this.sslPeerIssuerSubject = builder.sslPeerIssuerSubject;
+        this.sslPeerFingerprint = builder.sslPeerFingerprint;
         this.sslSniServerName = builder.sslSniServerName;
         this.sslHandshakeFailure = builder.sslHandshakeFailure;
         this.sslSubjectAlternativeNames = builder.sslSubjectAlternativeNames;
@@ -88,6 +92,8 @@ public class ConnectionLogEntry {
     public Optional<String> sslPeerSubject() { return Optional.ofNullable(sslPeerSubject); }
     public Optional<Instant> sslPeerNotBefore() { return Optional.ofNullable(sslPeerNotBefore); }
     public Optional<Instant> sslPeerNotAfter() { return Optional.ofNullable(sslPeerNotAfter); }
+    public Optional<String> sslPeerIssuerSubject() { return Optional.ofNullable(sslPeerIssuerSubject); }
+    public Optional<String> sslPeerFingerprint() { return Optional.ofNullable(sslPeerFingerprint); }
     public Optional<String> sslSniServerName() { return Optional.ofNullable(sslSniServerName); }
     public Optional<SslHandshakeFailure> sslHandshakeFailure() { return Optional.ofNullable(sslHandshakeFailure); }
     public List<String> sslSubjectAlternativeNames() { return sslSubjectAlternativeNames == null ? List.of() : sslSubjectAlternativeNames; }
@@ -140,6 +146,8 @@ public class ConnectionLogEntry {
         private String sslPeerSubject;
         private Instant sslPeerNotBefore;
         private Instant sslPeerNotAfter;
+        private String sslPeerIssuerSubject;
+        private String sslPeerFingerprint;
         private String sslSniServerName;
         private SslHandshakeFailure sslHandshakeFailure;
         private List<String> sslSubjectAlternativeNames;
@@ -219,6 +227,14 @@ public class ConnectionLogEntry {
         }
         public Builder withSslPeerNotAfter(Instant sslPeerNotAfter) {
             this.sslPeerNotAfter = sslPeerNotAfter;
+            return this;
+        }
+        public Builder withSslPeerIssuerSubject(String value) {
+            this.sslPeerIssuerSubject = value;
+            return this;
+        }
+        public Builder withSslPeerFingerprint(String value) {
+            this.sslPeerFingerprint = value;
             return this;
         }
         public Builder withSslSniServerName(String sslSniServerName) {
