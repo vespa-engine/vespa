@@ -10,7 +10,7 @@ import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Component specification for {@link com.yahoo.jdisc.http.server.jetty.ConnectorFactory} with hosted specific configuration.
@@ -88,9 +88,9 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         connectorBuilder.ssl.enabledProtocols(List.of("TLSv1.2"));
 
         if (!tlsCiphersOverride.isEmpty()) {
-            connectorBuilder.ssl.enabledCipherSuites(tlsCiphersOverride);
+            connectorBuilder.ssl.enabledCipherSuites(tlsCiphersOverride.stream().sorted().collect(Collectors.toList()));
         } else {
-            connectorBuilder.ssl.enabledCipherSuites(Set.copyOf(TlsContext.ALLOWED_CIPHER_SUITES));
+            connectorBuilder.ssl.enabledCipherSuites(TlsContext.ALLOWED_CIPHER_SUITES.stream().sorted().collect(Collectors.toList()));
         }
 
         connectorBuilder

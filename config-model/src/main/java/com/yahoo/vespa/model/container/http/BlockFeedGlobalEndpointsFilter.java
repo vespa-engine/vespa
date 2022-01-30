@@ -6,13 +6,12 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.chain.dependencies.Dependencies;
 import com.yahoo.component.chain.model.ChainedComponentModel;
 import com.yahoo.config.model.api.ContainerEndpoint;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.http.filter.security.rule.RuleBasedFilterConfig;
-import com.yahoo.path.Path;
 import com.yahoo.vespa.model.clients.ContainerDocumentApi;
 import com.yahoo.vespa.model.container.ContainerCluster;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -43,8 +42,9 @@ public class BlockFeedGlobalEndpointsFilter extends Filter implements RuleBasedF
                 .flatMap(e -> e.names().stream())
                 .collect(Collectors.toSet());
         if(hostNames.size() > 0) {
+            Collection<String> hostnamesSorted = hostNames.stream().sorted().collect(Collectors.toList());
             RuleBasedFilterConfig.Rule.Builder rule = new RuleBasedFilterConfig.Rule.Builder()
-                    .hostNames(hostNames)
+                    .hostNames(hostnamesSorted)
                     .pathExpressions(ContainerCluster.RESERVED_URI_PREFIX + "/{*}")
                     .pathExpressions(ContainerDocumentApi.DOCUMENT_V1_PREFIX + "/{*}")
                     .methods(List.of(PUT, POST, DELETE))
