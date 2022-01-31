@@ -2,7 +2,7 @@
 vespa_add_executable(config_getvespaconfig_app
     SOURCES
     getconfig.cpp
-    OUTPUT_NAME vespa-get-config
+    OUTPUT_NAME vespa-get-config-bin
     INSTALL bin
     DEPENDS
     config_cloudconfig
