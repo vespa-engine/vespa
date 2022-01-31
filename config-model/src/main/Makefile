@@ -5,7 +5,7 @@ outputdir=../../target/generated-sources/trang/resources/schema
 
 trangjar=../../target/trang.jar
 
-all: ${outputdir} ${outputdir}/services.rng ${outputdir}/hosts.rng ${outputdir}/container-include.rng ${outputdir}/services.xsd ${outputdir}/hosts.xsd ${outputdir}/container-include.xsd ${outputdir}/deployment.xsd
+all: ${outputdir} ${outputdir}/services.rng ${outputdir}/hosts.rng ${outputdir}/container-include.rng ${outputdir}/services.xsd ${outputdir}/hosts.xsd ${outputdir}/container-include.xsd ${outputdir}/deployment.xsd ${outputdir}/validation-overrides.xsd
 
 ${outputdir}:
 	mkdir -p ${outputdir}
