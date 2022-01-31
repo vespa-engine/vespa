@@ -2,6 +2,7 @@
 package com.yahoo.search.searchers;
 
 import com.yahoo.config.subscription.ConfigGetter;
+import com.yahoo.config.subscription.FileSource;
 import com.yahoo.config.subscription.RawSource;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
@@ -18,7 +19,11 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.AttributesConfig;
 
+import com.yahoo.vespa.config.search.RankProfilesConfig;
 import org.junit.Test;
+
+import java.io.File;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -32,8 +37,8 @@ public class ValidateNearestNeighborTestCase {
     public ValidateNearestNeighborTestCase() {
         searcher = new ValidateNearestNeighborSearcher(
                 ConfigGetter.getConfig(AttributesConfig.class,
-                                       "raw:",
-                                       new RawSource("attribute[5]\n" +
+                                       "raw:" +
+                                                     "attribute[5]\n" +
                                                      "attribute[0].name                simple\n" +
                                                      "attribute[0].datatype            INT32\n" +
                                                      "attribute[1].name                dvector\n" +
@@ -57,7 +62,7 @@ public class ValidateNearestNeighborTestCase {
                                                      "attribute[7].name                threetypes\n" +
                                                      "attribute[7].datatype            TENSOR\n" +
                                                      "attribute[7].tensortype          tensor(x{})\n"
-        )));
+        ));
     }
 
     private static TensorType tt_dense_dvector_42 = TensorType.fromSpec("tensor(x[42])");
