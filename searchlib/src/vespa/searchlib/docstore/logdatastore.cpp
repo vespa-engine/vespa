@@ -3,10 +3,11 @@
 #include "storebybucket.h"
 #include "compacter.h"
 #include "logdatastore.h"
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/benchmark_timer.h>
+#include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
 #include <vespa/vespalib/util/size_literals.h>
@@ -22,17 +23,20 @@ namespace {
     constexpr uint32_t DEFAULT_MAX_LIDS_PER_FILE = 32_Mi;
 }
 
-using vespalib::getLastErrorString;
-using vespalib::getErrorString;
-using vespalib::GenerationHandler;
-using vespalib::make_string;
-using vespalib::IllegalStateException;
 using common::FileHeaderContext;
-using std::runtime_error;
-using document::BucketId;
-using docstore::StoreByBucket;
 using docstore::BucketCompacter;
+using docstore::StoreByBucket;
+using document::BucketId;
 using namespace std::literals;
+using std::runtime_error;
+using vespalib::CpuUsage;
+using vespalib::GenerationHandler;
+using vespalib::IllegalStateException;
+using vespalib::getErrorString;
+using vespalib::getLastErrorString;
+using vespalib::make_string;
+
+using CpuCategory = CpuUsage::Category;
 
 LogDataStore::Config::Config()
     : _maxFileSize(DEFAULT_MAX_FILESIZE),
@@ -180,29 +184,30 @@ LogDataStore::write(uint64_t serialNum, uint32_t lid, const void * buffer, size_
 {
     std::unique_lock guard(_updateLock);
     WriteableFileChunk & active = getActive(guard);
-    write(std::move(guard), active, serialNum,  lid, buffer, len);
+    write(std::move(guard), active, serialNum,  lid, buffer, len, CpuCategory::WRITE);
 }
 
 void
 LogDataStore::write(MonitorGuard guard, FileId destinationFileId, uint32_t lid, const void * buffer, size_t len)
 {
     auto & destination = static_cast<WriteableFileChunk &>(*_fileChunks[destinationFileId.getId()]);
-    write(std::move(guard), destination, destination.getSerialNum(), lid, buffer, len);
+    write(std::move(guard), destination, destination.getSerialNum(), lid, buffer, len, CpuCategory::COMPACT);
 }
 
 void
 LogDataStore::write(MonitorGuard guard, WriteableFileChunk & destination,
-                    uint64_t serialNum, uint32_t lid, const void * buffer, size_t len)
+                    uint64_t serialNum, uint32_t lid, const void * buffer, size_t len,
+                    CpuUsage::Category cpu_category)
 {
-    LidInfo lm = destination.append(serialNum, lid, buffer, len);
+    LidInfo lm = destination.append(serialNum, lid, buffer, len, cpu_category);
     setLid(guard, lid, lm);
     if (destination.getFileId() == getActiveFileId(guard)) {
-        requireSpace(std::move(guard), destination);
+        requireSpace(std::move(guard), destination, cpu_category);
     }
 }
 
 void
-LogDataStore::requireSpace(MonitorGuard guard, WriteableFileChunk & active)
+LogDataStore::requireSpace(MonitorGuard guard, WriteableFileChunk & active, CpuUsage::Category cpu_category)
 {
     assert(active.getFileId() == getActiveFileId(guard));
     size_t oldSz(active.getDiskFootprint());
@@ -216,13 +221,13 @@ LogDataStore::requireSpace(MonitorGuard guard, WriteableFileChunk & active)
         guard.unlock();
         // Write chunks to old .dat file 
         // Note: Feed latency spike
-        active.flush(true, active.getSerialNum());
+        active.flush(true, active.getSerialNum(), cpu_category);
         // Sync transaction log
         _tlSyncer.sync(active.getSerialNum());
         // sync old active .dat file, write pending chunks to old .idx file
         // and sync old .idx file to disk.
         active.flushPendingChunks(active.getSerialNum());
-        active.freeze();
+        active.freeze(cpu_category);
         // TODO: Delay create of new file
         LOG(debug, "Closed file %s of size %ld and %u lids due to maxsize of %ld or maxlids %u reached. Bloat is %ld",
                    active.getName().c_str(), active.getDiskFootprint(), active.getNumLids(),
@@ -278,7 +283,7 @@ LogDataStore::remove(uint64_t serialNum, uint32_t lid)
         if (lm.valid()) {
             _fileChunks[lm.getFileId()]->remove(lid, lm.size());
         }
-        lm = getActive(guard).append(serialNum, lid, nullptr, 0);
+        lm = getActive(guard).append(serialNum, lid, nullptr, 0, CpuCategory::WRITE);
         assert( lm.empty() );
         _lidInfo[lid] = lm;
     }
@@ -311,7 +316,9 @@ LogDataStore::flush(uint64_t syncToken)
     {
         MonitorGuard guard(_updateLock);
         // Note: Feed latency spike
-        getActive(guard).flush(true, syncToken);
+        // This is executed by an IFlushTarget,
+        // but is a fundamental part of the WRITE pipeline of the data store.
+        getActive(guard).flush(true, syncToken, CpuCategory::WRITE);
         active = &getActive(guard);
         activeHolder = holdFileChunk(active->getFileId());
     }
@@ -388,18 +395,21 @@ LogDataStore::compactWorst(uint64_t syncToken, bool compactDiskBloat) {
     }
 }
 
-SerialNum LogDataStore::flushFile(MonitorGuard guard, WriteableFileChunk & file, SerialNum syncToken) {
+SerialNum LogDataStore::flushFile(MonitorGuard guard, WriteableFileChunk & file, SerialNum syncToken,
+                                  CpuUsage::Category cpu_category)
+{
     (void) guard;
     uint64_t lastSerial(file.getSerialNum());
     if (lastSerial > syncToken) {
         syncToken = lastSerial;
     }
-    file.flush(false, syncToken);
+    file.flush(false, syncToken, cpu_category);
     return syncToken;
 }
 
 void LogDataStore::flushFileAndWait(MonitorGuard guard, WriteableFileChunk & file, SerialNum syncToken) {
-    syncToken = flushFile(std::move(guard), file, syncToken);
+    // This function is always called in the context of compaction.
+    syncToken = flushFile(std::move(guard), file, syncToken, CpuCategory::COMPACT);
     file.waitForDiskToCatchUpToNow();
     _tlSyncer.sync(syncToken);
     file.flushPendingChunks(syncToken);
@@ -408,7 +418,9 @@ void LogDataStore::flushFileAndWait(MonitorGuard guard, WriteableFileChunk & fil
 SerialNum LogDataStore::flushActive(SerialNum syncToken) {
     MonitorGuard guard(_updateLock);
     WriteableFileChunk &active = getActive(guard);
-    return flushFile(std::move(guard), active, syncToken);
+    // This is executed by an IFlushTarget (via initFlush),
+    // but is a fundamental part of the WRITE pipeline of the data store.
+    return flushFile(std::move(guard), active, syncToken, CpuCategory::WRITE);
 }
 
 void LogDataStore::flushActiveAndWait(SerialNum syncToken) {
@@ -450,7 +462,7 @@ void LogDataStore::compactFile(FileId fileId)
         compacter = std::make_unique<docstore::Compacter>(*this);
     }
 
-    fc->appendTo(_executor, *this, *compacter, fc->getNumChunks(), nullptr);
+    fc->appendTo(_executor, *this, *compacter, fc->getNumChunks(), nullptr, CpuCategory::COMPACT);
 
     if (destinationFileId.isActive()) {
         flushActiveAndWait(0);
@@ -458,7 +470,7 @@ void LogDataStore::compactFile(FileId fileId)
         MonitorGuard guard(_updateLock);
         auto & compactTo = dynamic_cast<WriteableFileChunk &>(*_fileChunks[destinationFileId.getId()]);
         flushFileAndWait(std::move(guard), compactTo, 0);
-        compactTo.freeze();
+        compactTo.freeze(CpuCategory::COMPACT);
     }
     compacter.reset();
 
@@ -1071,7 +1083,9 @@ LogDataStore::accept(IDataStoreVisitor &visitor,
     WrapVisitorProgress wrapProgress(visitorProgress, totalChunks);
     for (FileId fcId : fileChunks) {
         FileChunk & fc = *_fileChunks[fcId.getId()];
-        fc.appendTo(_executor, *this, wrap, fc.getNumChunks(), &wrapProgress);
+        // accept() is used when reprocessing all documents stored (e.g. when adding attribute to a field).
+        // We tag this work as WRITE, as the alternative to reprocessing would be to re-feed the data.
+        fc.appendTo(_executor, *this, wrap, fc.getNumChunks(), &wrapProgress, CpuCategory::WRITE);
         if (prune) {
             internalFlushAll();
             FileChunk::UP toDie;
@@ -1082,7 +1096,7 @@ LogDataStore::accept(IDataStoreVisitor &visitor,
             toDie->erase();
         }
     }
-    lfc.appendTo(_executor, *this, wrap, lastChunks, &wrapProgress);
+    lfc.appendTo(_executor, *this, wrap, lastChunks, &wrapProgress, CpuCategory::WRITE);
     if (prune) {
         internalFlushAll();
     }
