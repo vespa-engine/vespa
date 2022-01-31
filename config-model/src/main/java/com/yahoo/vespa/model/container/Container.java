@@ -281,7 +281,7 @@ public abstract class Container extends AbstractService implements
     }
 
     protected int allocatedRpcPort = 0;
-    private int getRpcPort() {
+    protected int getRpcPort() {
         return allocatedRpcPort;
     }
     protected int numRpcPorts() { return rpcServerEnabled() ? 1 : 0; }

@@ -205,6 +205,7 @@ public class ModelContextImpl implements ModelContext {
         private final double persistenceThrottlingWsDecrementFactor;
         private final double persistenceThrottlingWsBackoff;
         private final boolean useQrserverServiceName;
+        private final boolean enableJdiscPreshutdownCommand;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -248,6 +249,7 @@ public class ModelContextImpl implements ModelContext {
             this.persistenceThrottlingWsDecrementFactor = flagValue(source, appId, Flags.PERSISTENCE_THROTTLING_WS_DECREMENT_FACTOR);
             this.persistenceThrottlingWsBackoff = flagValue(source, appId, Flags.PERSISTENCE_THROTTLING_WS_BACKOFF);
             this.useQrserverServiceName =  flagValue(source, appId, Flags.USE_QRSERVER_SERVICE_NAME);
+            this.enableJdiscPreshutdownCommand =  flagValue(source, appId, Flags.ENABLE_JDISC_PRESHUTDOWN_COMMAND);
         }
 
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -293,6 +295,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public double persistenceThrottlingWsDecrementFactor() { return persistenceThrottlingWsDecrementFactor; }
         @Override public double persistenceThrottlingWsBackoff() { return persistenceThrottlingWsBackoff; }
         @Override public boolean useQrserverServiceName() { return useQrserverServiceName; }
+        @Override public boolean enableJdiscPreshutdownCommand() { return enableJdiscPreshutdownCommand; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
