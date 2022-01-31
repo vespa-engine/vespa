@@ -392,8 +392,6 @@ public final class ConfiguredApplication implements Application {
         } catch (Exception e) {
             request.setError(ErrorCode.METHOD_FAILED, e.getMessage());
             throw e;
-        } finally {
-            request.returnRequest();
         }
     }
 
