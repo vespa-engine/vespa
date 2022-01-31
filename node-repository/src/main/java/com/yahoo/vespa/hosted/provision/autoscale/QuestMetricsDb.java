@@ -341,6 +341,14 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         }
     }
 
+    /**
+     * Issues and wait for 'alter table' SQL statement to be executed against the QuestDb engine.
+     * Needs to be done for some queries, e.g. 'alter table' queries, see https://github.com/questdb/questdb/issues/1846
+     */
+    private void issueAndWait(String sql, SqlExecutionContext context) throws SqlException {
+        issue(sql, context).execute(null).await();
+    }
+
     private SqlExecutionContext newContext() {
         return new SqlExecutionContextImpl(engine(), 1);
     }
@@ -374,7 +382,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         void gc() {
             synchronized (writeLock) {
                 try {
-                    issue("alter table " + name + " drop partition where at < dateadd('d', -4, now());", newContext());
+                    issueAndWait("alter table " + name + " drop partition where at < dateadd('d', -4, now());", newContext());
                 }
                 catch (SqlException e) {
                     log.log(Level.WARNING, "Failed to gc old metrics data in " + dir + " table " + name, e);
@@ -396,7 +404,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
         void ensureColumnExists(String column, String columnType) throws SqlException {
             if (columnNames().contains(column)) return;
-            issue("alter table " + name + " add column " + column + " " + columnType, newContext());
+            issueAndWait("alter table " + name + " add column " + column + " " + columnType, newContext());
         }
 
         private Optional<Long> adjustOrDiscard(Instant at) {
