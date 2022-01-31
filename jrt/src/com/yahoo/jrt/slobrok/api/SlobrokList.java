@@ -3,8 +3,11 @@ package com.yahoo.jrt.slobrok.api;
 
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Logger;
 
 public class SlobrokList {
+
+    private static final Logger log = Logger.getLogger(SlobrokList.class.getName());
 
     private final Internal internal;
     private String[] slobroks;
@@ -20,18 +23,22 @@ public class SlobrokList {
 
     private void checkUpdate() {
         synchronized (internal) {
-            if (slobroks != internal.slobroks) {
-                slobroks = internal.slobroks;
-                idx = 0;
+            if (slobroks == internal.slobroks) {
+                return;
             }
+            slobroks = internal.slobroks;
+            log.fine(() -> "checkUpdate() updated tmp list="+Arrays.toString(slobroks)+" from shared list="+Arrays.toString(internal.slobroks));
+            idx = 0;
         }
     }
 
     public String nextSlobrokSpec() {
         checkUpdate();
         if (idx < slobroks.length) {
+            log.fine(() -> "nextSlobrokSpec() returns: "+slobroks[idx]);
             return slobroks[idx++];
         }
+        log.fine(() -> "nextSlobrokSpec() reached end of internal list, idx="+idx+"/"+slobroks.length+", tmp list="+Arrays.toString(slobroks)+", shared list="+Arrays.toString(internal.slobroks));
         idx = 0;
         return null;
     }
