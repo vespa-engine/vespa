@@ -39,7 +39,7 @@ public interface SharedResource {
                 return Debug.valueOf(val);
             } catch (IllegalArgumentException e) { }
         }
-        return Debug.NO;
+        return Debug.SIMPLE;
     }
 
     /**
