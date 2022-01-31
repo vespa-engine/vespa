@@ -3,9 +3,7 @@
 #include "zcposocc.h"
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/postinglistcountfile.h>
-#include <vespa/searchlib/index/postinglistfile.h>
-#include <vespa/searchlib/index/docidandfeatures.h>
-
+#include <vespa/searchlib/index/postinglistparams.h>
 
 namespace search::diskindex {
 

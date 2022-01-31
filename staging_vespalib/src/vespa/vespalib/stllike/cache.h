@@ -3,6 +3,7 @@
 
 #include <vespa/vespalib/stllike/lrucache_map.h>
 #include <atomic>
+#include <mutex>
 
 namespace vespalib {
 

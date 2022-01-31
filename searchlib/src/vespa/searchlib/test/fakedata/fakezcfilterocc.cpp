@@ -8,6 +8,7 @@
 #include <vespa/searchlib/diskindex/zc4_posting_params.h>
 #include <vespa/searchlib/diskindex/zc4_posting_reader.h>
 #include <vespa/searchlib/diskindex/zc4_posting_writer.h>
+#include <vespa/searchlib/index/postinglistparams.h>
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;

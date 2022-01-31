@@ -13,6 +13,7 @@
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
+#include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/util/url.h>
 #include <vespa/vespalib/text/utf8.h>
@@ -440,6 +441,17 @@ FieldInverter::invertField(uint32_t docId, const FieldValue::UP &val)
     } else {
         removeDocument(docId);
     }
+}
+
+void
+FieldInverter::startDoc(uint32_t docId) {
+    assert(_docId == 0);
+    assert(docId != 0);
+    abortPendingDoc(docId);
+    _removeDocs.push_back(docId);
+    _docId = docId;
+    _elem = 0;
+    _wpos = 0;
 }
 
 void

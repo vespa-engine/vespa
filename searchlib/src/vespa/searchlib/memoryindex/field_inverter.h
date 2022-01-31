@@ -6,13 +6,14 @@
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/datatype/datatypes.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/searchlib/bitcompression/compression.h>
-#include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/vespalib/stllike/allocator.h>
 #include <limits>
 
-namespace search::index { class FieldLengthCalculator; }
+namespace search::index {
+    class FieldLengthCalculator;
+    class Schema;
+}
 
 namespace search::memoryindex {
 
@@ -310,15 +311,7 @@ public:
         _removeDocs.push_back(docId);
     }
 
-    void startDoc(uint32_t docId) {
-        assert(_docId == 0);
-        assert(docId != 0);
-        abortPendingDoc(docId);
-        _removeDocs.push_back(docId);
-        _docId = docId;
-        _elem = 0;
-        _wpos = 0;
-    }
+    void startDoc(uint32_t docId);
 
     void endDoc();
 
