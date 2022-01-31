@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
@@ -30,42 +31,34 @@ public class OutstandingChangeDeployerTest {
         OutstandingChangeDeployer deployer = new OutstandingChangeDeployer(tester.controller(), Duration.ofMinutes(10));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .region("us-west-1")
+                .upgradeRevision("separate")
                 .build();
 
-        var app1 = tester.newDeploymentContext("tenant", "app1", "default").submit(applicationPackage).deploy();
+        var app = tester.newDeploymentContext().submit(applicationPackage).deploy();
 
         Version version = new Version(6, 2);
-        tester.deploymentTrigger().triggerChange(app1.instanceId(), Change.of(version));
-        tester.deploymentTrigger().triggerReadyJobs();
+        tester.deploymentTrigger().triggerChange(app.instanceId(), Change.of(version));
+        assertEquals(Change.of(version), app.instance().change());
+        assertFalse(app.deploymentStatus().outstandingChange(app.instance().name()).hasTargets());
 
-        assertEquals(Change.of(version), app1.instance().change());
-        assertFalse(app1.deploymentStatus().outstandingChange(app1.instance().name()).hasTargets());
+        app.submit(applicationPackage);
+        Optional<ApplicationVersion> revision = app.lastSubmission();
+        assertFalse(app.deploymentStatus().outstandingChange(app.instance().name()).hasTargets());
+        assertEquals(Change.of(version).with(revision.get()), app.instance().change());
 
-        assertEquals(1, app1.application().latestVersion().get().buildNumber().getAsLong());
-        app1.submit(applicationPackage, Optional.of(new SourceRevision("repository1", "master", "cafed00d")));
+        app.submit(applicationPackage);
+        Optional<ApplicationVersion> outstanding = app.lastSubmission();
+        assertTrue(app.deploymentStatus().outstandingChange(app.instance().name()).hasTargets());
+        assertEquals(Change.of(version).with(revision.get()), app.instance().change());
 
-        assertTrue(app1.deploymentStatus().outstandingChange(app1.instance().name()).hasTargets());
-        assertEquals("1.0.2-cafed00d", app1.deploymentStatus().outstandingChange(app1.instance().name()).application().get().id());
-        app1.assertRunning(JobType.systemTest);
-        app1.assertRunning(JobType.stagingTest);
-        assertEquals(2, tester.jobs().active().size());
+        tester.outstandingChangeDeployer().run();
+        assertTrue(app.deploymentStatus().outstandingChange(app.instance().name()).hasTargets());
+        assertEquals(Change.of(version).with(revision.get()), app.instance().change());
 
-        deployer.maintain();
-        tester.triggerJobs();
-        assertEquals("No effect as job is in progress", 2, tester.jobs().active().size());
-        assertEquals("1.0.2-cafed00d", app1.deploymentStatus().outstandingChange(app1.instance().name()).application().get().id());
-
-        app1.runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsWest1)
-            .runJob(JobType.stagingTest).runJob(JobType.systemTest);
-        assertEquals("Upgrade done", 0, tester.jobs().active().size());
-
-        deployer.maintain();
-        tester.triggerJobs();
-        assertEquals("1.0.2-cafed00d", app1.instance().change().application().get().id());
-        List<Run> runs = tester.jobs().active();
-        assertEquals(1, runs.size());
-        app1.assertRunning(JobType.productionUsWest1);
-        assertFalse(app1.deploymentStatus().outstandingChange(app1.instance().name()).hasTargets());
+        app.deploy();
+        tester.outstandingChangeDeployer().run();
+        assertFalse(app.deploymentStatus().outstandingChange(app.instance().name()).hasTargets());
+        assertEquals(Change.of(outstanding.get()), app.instance().change());
     }
 
 }

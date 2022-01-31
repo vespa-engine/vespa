@@ -167,7 +167,6 @@ public class UpgraderTest {
         // --- Failing application is repaired by changing the application, causing confidence to move above 'high' threshold
         // Deploy application change
         default0.submit(applicationPackage("default"));
-        default0.triggerJobs().jobAborted(stagingTest);
         default0.deploy();
 
         tester.controllerTester().computeVersionStatus();
@@ -570,12 +569,12 @@ public class UpgraderTest {
         // A new revision is submitted and starts rolling out.
         app.submit(applicationPackage);
 
-        // production-us-central-1 isn't triggered, as the revision  + platform is the new change to roll out.
+        // production-us-central-1 is re-triggered with upgrade until revision catches up.
         tester.triggerJobs();
-        assertEquals(2, tester.jobs().active().size());
+        assertEquals(3, tester.jobs().active().size());
         app.runJob(systemTest).runJob(stagingTest).runJob(productionUsWest1);
         // us-central-1 has an older version, and needs a new staging test to begin.
-        app.runJob(stagingTest);
+        app.runJob(stagingTest).triggerJobs().jobAborted(productionUsCentral1); // Retry will include revision.
         tester.triggerJobs(); // Triggers us-central-1 before platform upgrade is cancelled.
 
         // A new version is also released, cancelling the upgrade, since it is failing on a now outdated version.
@@ -799,8 +798,10 @@ public class UpgraderTest {
                    app.instance().change().application().get().id().equals(applicationVersion));
 
         // Deployment completes
-        app.runJob(systemTest).runJob(stagingTest).runJob(productionUsWest1).runJob(productionUsEast3);
-        assertTrue("All jobs consumed", tester.jobs().active().isEmpty());
+        app.runJob(systemTest).runJob(stagingTest)
+           .runJob(productionUsWest1)
+           .runJob(productionUsEast3);
+        assertEquals("All jobs consumed", List.of(), tester.jobs().active());
 
         for (Deployment deployment : app.instance().deployments().values()) {
             assertEquals(version, deployment.version());

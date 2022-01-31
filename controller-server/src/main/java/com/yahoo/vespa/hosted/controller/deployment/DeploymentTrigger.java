@@ -198,11 +198,12 @@ public class DeploymentTrigger {
 
         DeploymentStatus status = jobs.deploymentStatus(application);
         Versions versions = Versions.from(instance.change(), application, status.deploymentFor(job), controller.readSystemVersion());
-        Map<JobId, List<Versions>> jobs = status.testJobs(Map.of(job, versions));
+        DeploymentStatus.Job toTrigger = new DeploymentStatus.Job(versions, Optional.of(controller.clock().instant()), instance.change());
+        Map<JobId, List<DeploymentStatus.Job>> jobs = status.testJobs(Map.of(job, List.of(toTrigger)));
         if (jobs.isEmpty() || ! requireTests)
-            jobs = Map.of(job, List.of(versions));
+            jobs = Map.of(job, List.of(toTrigger));
         jobs.forEach((jobId, versionsList) -> {
-            trigger(deploymentJob(instance, versionsList.get(0), jobId.type(), status.jobs().get(jobId).get(), clock.instant()));
+            trigger(deploymentJob(instance, versionsList.get(0).versions(), jobId.type(), status.jobs().get(jobId).get(), clock.instant()));
         });
         return List.copyOf(jobs.keySet());
     }
@@ -321,19 +322,18 @@ public class DeploymentTrigger {
     /** Finds the next step to trigger for the given application, if any, and returns these as a list. */
     private List<Job> computeReadyJobs(DeploymentStatus status) {
         List<Job> jobs = new ArrayList<>();
-        status.jobsToRun().forEach((job, versionsList) -> {
-            for (Versions versions : versionsList)
-                status.jobSteps().get(job).readyAt(status.application().require(job.application().instance()).change())
-                      .filter(readyAt -> ! clock.instant().isBefore(readyAt))
-                      .filter(__ -> ! (job.type().isProduction() && isUnhealthyInAnotherZone(status.application(), job)))
-                      .filter(__ -> abortIfRunning(versionsList, status.jobs().get(job).get())) // Abort and trigger this later if running with outdated parameters.
-                      .ifPresent(readyAt -> {
-                          jobs.add(deploymentJob(status.application().require(job.application().instance()),
-                                                 versions,
-                                                 job.type(),
-                                                 status.instanceJobs(job.application().instance()).get(job.type()),
-                                                 readyAt));
-                      });
+        Map<JobId, List<DeploymentStatus.Job>> jobsToRun = status.jobsToRun();
+        jobsToRun.forEach((job, versionsList) -> {
+            versionsList.get(0).readyAt()
+                        .filter(readyAt -> ! clock.instant().isBefore(readyAt))
+                        .filter(__ -> ! (job.type().isProduction() && isUnhealthyInAnotherZone(status.application(), job)))
+                        .filter(__ -> abortIfRunning(status, jobsToRun, job)) // Abort and trigger this later if running with outdated parameters.
+                        .map(readyAt -> deploymentJob(status.application().require(job.application().instance()),
+                                                      versionsList.get(0).versions(),
+                                                      job.type(),
+                                                      status.instanceJobs(job.application().instance()).get(job.type()),
+                                                      readyAt))
+                        .ifPresent(jobs::add);
         });
         return Collections.unmodifiableList(jobs);
     }
@@ -348,27 +348,49 @@ public class DeploymentTrigger {
         return false;
     }
 
-    /** Returns whether the job is not running, and also aborts it if it's running with outdated versions. */
-    private boolean abortIfRunning(List<Versions> versionsList, JobStatus status) {
-        if ( ! status.isRunning())
-            return true;
+    private void abortIfOutdated(DeploymentStatus status, Map<JobId, List<DeploymentStatus.Job>> jobs, JobId job) {
+        status.jobs().get(job)
+              .flatMap(JobStatus::lastTriggered)
+              .filter(last -> ! last.hasEnded())
+              .ifPresent(last -> {
+                  if (jobs.get(job).stream().noneMatch(versions ->    versions.versions().targetsMatch(last.versions())
+                                                                   && versions.versions().sourcesMatchIfPresent(last.versions()))) {
+                      log.log(Level.INFO, "Aborting outdated run " + last);
+                      controller.jobController().abort(last.id());
+                  }
+              });
+    }
 
-        Run last = status.lastTriggered().get();
-        if (versionsList.stream().noneMatch(versions ->    versions.targetsMatch(last.versions())
-                                                        && versions.sourcesMatchIfPresent(last.versions())))
-            controller.jobController().abort(last.id());
+    /** Returns whether the job is free to start, and also aborts it if it's running with outdated versions. */
+    private boolean abortIfRunning(DeploymentStatus status, Map<JobId, List<DeploymentStatus.Job>> jobs, JobId job) {
+        abortIfOutdated(status, jobs, job);
+        boolean blocked = status.jobs().get(job).get().isRunning();
 
-        return false;
+        if ( ! job.type().isTest()) {
+            Optional<JobStatus> productionTest = JobType.testFrom(controller.system(), job.type().zone(controller.system()).region())
+                                                        .map(type -> new JobId(job.application(), type))
+                                                        .flatMap(status.jobs()::get);
+            if (productionTest.isPresent()) {
+                abortIfOutdated(status, jobs, productionTest.get().id());
+                // Production deployments are also blocked by their declared tests, if the next versions to run
+                //  for those are not the same as the versions we're considering running in the deployment job now.
+                if (productionTest.map(JobStatus::id).map(jobs::get)
+                                  .map(versions -> ! versions.get(0).versions().targetsMatch(jobs.get(job).get(0).versions()))
+                                  .orElse(false))
+                    blocked = true;
+            }
+        }
+
+        return ! blocked;
     }
 
     // ---------- Change management o_O ----------
 
     private boolean acceptNewApplicationVersion(DeploymentStatus status, InstanceName instance) {
         if (status.application().deploymentSpec().instance(instance).isEmpty()) return false; // Unknown instance.
-        if (status.hasFailures()) return true; // Allow changes to fix upgrade or previous revision problems.
+        if (status.hasFailures(instance)) return true; // Allow changes to fix upgrade or previous revision problems.
         DeploymentInstanceSpec spec = status.application().deploymentSpec().requireInstance(instance);
         Change change = status.application().require(instance).change();
-        if (change.platform().isPresent() && spec.upgradeRollout() == DeploymentSpec.UpgradeRollout.separate) return false;
         if (change.application().isPresent() && spec.upgradeRevision() == DeploymentSpec.UpgradeRevision.separate) return false;
         return true;
     }

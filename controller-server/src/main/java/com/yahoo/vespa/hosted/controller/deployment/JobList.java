@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -76,8 +77,13 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
     }
 
     /** Returns the subset of jobs run for the given instance. */
-    public JobList instance(InstanceName instance) {
-        return matching(job -> job.id().application().instance().equals(instance));
+    public JobList instance(InstanceName... instances) {
+        return instance(Set.of(instances));
+    }
+
+    /** Returns the subset of jobs run for the given instance. */
+    public JobList instance(Collection<InstanceName> instances) {
+        return matching(job -> instances.contains(job.id().application().instance()));
     }
 
     /** Returns the subset of jobs of which are production jobs. */
