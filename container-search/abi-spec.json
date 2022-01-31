@@ -720,7 +720,6 @@
       "public static final enum com.yahoo.prelude.query.Item$ItemType WORD",
       "public static final enum com.yahoo.prelude.query.Item$ItemType INT",
       "public static final enum com.yahoo.prelude.query.Item$ItemType PHRASE",
-      "public static final enum com.yahoo.prelude.query.Item$ItemType PAREN",
       "public static final enum com.yahoo.prelude.query.Item$ItemType PREFIX",
       "public static final enum com.yahoo.prelude.query.Item$ItemType SUBSTRING",
       "public static final enum com.yahoo.prelude.query.Item$ItemType NEAR",

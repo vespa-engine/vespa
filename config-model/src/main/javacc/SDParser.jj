@@ -1267,17 +1267,14 @@ Object summaryInDocument(DocumentSummary document) :
         summary.setVsmCommand(SummaryField.VsmCommand.FLATTENSPACE);
 
         SummaryInFieldLongOperation op = new SummaryInFieldLongOperation();
-
     }
     lbrace() (summaryItem(op) (<NL>)*)* <RBRACE>
     {
-	    if (op.destinationIterator().hasNext()) {
+        if (op.destinationIterator().hasNext()) {
             throw new ParseException("Summaries defined in a document-summary section " +
                                      "can not have a 'to' line.");
         }
-
         op.applyToSummary(summary);
-
         document.add(summary);
         return null;
     }

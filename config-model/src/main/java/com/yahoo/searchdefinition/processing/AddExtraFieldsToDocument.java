@@ -52,14 +52,7 @@ public class AddExtraFieldsToDocument extends Processor {
             return;
         }
         for (Attribute atr : field.getAttributes().values()) {
-            // TODO Vespa 8 or before: Check if this should be removed or changed to _zcurve.
-            if (atr.getName().equals(field.getName() + "_position")) {
-                DataType type = PositionDataType.INSTANCE;
-                if (atr.getCollectionType().equals(Attribute.CollectionType.ARRAY)) {
-                    type = DataType.getArray(type);
-                }
-                addField(schema, document, new SDField(document, atr.getName(), type), validate);
-            } else if (!atr.getName().equals(field.getName())) {
+            if (!atr.getName().equals(field.getName())) {
                 addField(schema, document, new SDField(document, atr.getName(), atr.getDataType()), validate);
             }
         }
