@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class CuratorArchiveBucketDbTest {
 
@@ -29,19 +29,22 @@ public class CuratorArchiveBucketDbTest {
                 Set.of(new ArchiveBucket("existingBucket", "keyArn").withTenant(TenantName.defaultName())));
 
         // Finds existing bucket in db
-        assertEquals(Optional.of(URI.create("s3://existingBucket/default/")), bucketDb.archiveUriFor(ZoneId.defaultId(), TenantName.defaultName()));
+        assertEquals(Optional.of(URI.create("s3://existingBucket/default/")), bucketDb.archiveUriFor(ZoneId.defaultId(), TenantName.defaultName(), true));
 
         // Assigns to existing bucket while there is space
         IntStream.range(0, 29).forEach(i ->
                 assertEquals(
                         Optional.of(URI.create("s3://existingBucket/tenant" + i + "/")), bucketDb
-                                .archiveUriFor(ZoneId.defaultId(), TenantName.from("tenant" + i))));
+                                .archiveUriFor(ZoneId.defaultId(), TenantName.from("tenant" + i), true)));
 
         // Creates new bucket when existing buckets are full
-        assertEquals(Optional.of(URI.create("s3://bucketName/lastDrop/")), bucketDb.archiveUriFor(ZoneId.defaultId(), TenantName.from("lastDrop")));
+        assertEquals(Optional.of(URI.create("s3://bucketName/lastDrop/")), bucketDb.archiveUriFor(ZoneId.defaultId(), TenantName.from("lastDrop"), true));
 
         // Creates new bucket when there are no existing buckets in zone
-        assertEquals(Optional.of(URI.create("s3://bucketName/firstInZone/")), bucketDb.archiveUriFor(ZoneId.from("prod.us-east-3"), TenantName.from("firstInZone")));
+        assertEquals(Optional.of(URI.create("s3://bucketName/firstInZone/")), bucketDb.archiveUriFor(ZoneId.from("prod.us-east-3"), TenantName.from("firstInZone"), true));
+
+        // Does not create bucket if not required
+        assertEquals(Optional.empty(), bucketDb.archiveUriFor(ZoneId.from("prod.us-east-3"), TenantName.from("newTenant"), false));
 
         // Lists all buckets by zone
         Set<TenantName> existingBucketTenants = Streams.concat(Stream.of(TenantName.defaultName()), IntStream.range(0, 29).mapToObj(i -> TenantName.from("tenant" + i))).collect(Collectors.toUnmodifiableSet());

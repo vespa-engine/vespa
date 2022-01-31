@@ -35,7 +35,7 @@ public class ArchiveAccessMaintainerTest {
         createTenantWithAccessRole(tester, "tenant2", tenant2role);
 
         ZoneId testZone = ZoneId.from("prod.aws-us-east-1c");
-        tester.controller().archiveBucketDb().archiveUriFor(testZone, tenant1);
+        tester.controller().archiveBucketDb().archiveUriFor(testZone, tenant1, true);
         var testBucket = new ArchiveBucket("bucketName", "keyArn").withTenant(tenant1);
 
         MockArchiveService archiveService = (MockArchiveService) tester.controller().serviceRegistry().archiveService();
