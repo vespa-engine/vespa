@@ -138,11 +138,8 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
                 continue;
             }
             if (tagName.equals("config")) {
-                // this is only for our own use (system tests etc), undocumented:
+                // Top level config, mainly to be used by the Vespa team.
                 continue;
-            }
-            if (tagName.equals("cluster")) {
-                throw new IllegalArgumentException("<" + tagName + "> on top-level is not allowed anymore");
             }
             if ((tagName.equals("clients")) && deployState.isHosted())
                 throw new IllegalArgumentException("<" + tagName + "> is not allowed when running Vespa in a hosted environment");
