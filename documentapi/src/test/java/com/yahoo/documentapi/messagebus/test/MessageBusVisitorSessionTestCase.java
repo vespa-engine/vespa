@@ -942,6 +942,7 @@ public class MessageBusVisitorSessionTestCase {
         }
 
         @Override
+        @SuppressWarnings("removal") // TODO: Vespa 8: remove
         public void onVisitorStatistics(VisitorStatistics vs) {
             super.onVisitorStatistics(vs);
             builder.append("onVisitorStatistics : ");
@@ -1411,6 +1412,7 @@ public class MessageBusVisitorSessionTestCase {
         doTestEarlyCompletion(visitorParameters, replyModifier1, replyModifier2);
     }
 
+    @SuppressWarnings("removal")// TODO: Vespa 8: remove
     @Test
     public void testVisitingCompletedFromSufficientFirstPassHits() {
         VisitorParameters visitorParameters = createVisitorParameters("id.user==1234");
@@ -1432,6 +1434,7 @@ public class MessageBusVisitorSessionTestCase {
         doTestEarlyCompletion(visitorParameters, replyModifier1, replyModifier2);
     }
 
+    @SuppressWarnings("removal")// TODO: Vespa 8: remove test
     @Test
     public void testVisitingCompletedFromSecondPassHits() {
         VisitorParameters visitorParameters = createVisitorParameters("id.user==1234");
@@ -2312,6 +2315,7 @@ public class MessageBusVisitorSessionTestCase {
                 mc.controlHandler.toString());
     }
 
+    @SuppressWarnings("removal")// TODO: Vespa 8: remove test
     @Test
     public void testDynamicallyIncreaseMaxBucketsPerVisitorOption() {
         VisitorParameters visitorParameters = createVisitorParameters("id.user==1234");

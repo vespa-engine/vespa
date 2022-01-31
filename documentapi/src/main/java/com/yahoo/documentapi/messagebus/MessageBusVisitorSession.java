@@ -933,7 +933,9 @@ public class MessageBusVisitorSession implements VisitorSession {
         progress.getIterator().update(bucket, ProgressToken.FINISHED_BUCKET);
     }
 
+    @SuppressWarnings("removal") // TODO: Vespa 8: remove
     private boolean enoughHitsReceived() {
+        // TODO: Vespa 8: remove "Nth pass" concept entirely from API and internals
         if (params.getMaxFirstPassHits() != -1
                 && statistics.getDocumentsReturned() >= params.getMaxFirstPassHits())
         {
@@ -941,7 +943,7 @@ public class MessageBusVisitorSession implements VisitorSession {
         }
         if (params.getMaxTotalHits() != -1
                 && ((statistics.getDocumentsReturned()
-                     + statistics.getSecondPassDocumentsReturned())
+                     + statistics.getSecondPassDocumentsReturned()) // TODO: Vespa 8: remove
                     >= params.getMaxTotalHits()))
         {
             return true;
@@ -1021,6 +1023,7 @@ public class MessageBusVisitorSession implements VisitorSession {
         return scheduleSendCreateVisitorsIfApplicable(0, TimeUnit.MILLISECONDS);
     }
 
+    @SuppressWarnings("removal")// TODO: Vespa 8: remove
     private void handleCreateVisitorReply(CreateVisitorReply reply) {
         CreateVisitorMessage msg = (CreateVisitorMessage)reply.getMessage();
 
@@ -1040,6 +1043,7 @@ public class MessageBusVisitorSession implements VisitorSession {
             trace.getRoot().addChild(reply.getTrace().getRoot());
         }
 
+        // TODO: Vespa 8 remove this unused functionality
         if (params.getDynamicallyIncreaseMaxBucketsPerVisitor()
                 && (reply.getVisitorStatistics().getDocumentsReturned()
                     < params.getMaxFirstPassHits() / 2.0))

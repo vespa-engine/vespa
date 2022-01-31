@@ -10,6 +10,7 @@ import static org.junit.Assert.*;
 public class VisitorParametersTestCase {
     private LoadType loadType = new LoadType(3, "samnmax", DocumentProtocol.Priority.HIGH_3);
 
+    @SuppressWarnings("removal")// TODO: Vespa 8: remove
     private VisitorParameters createVisitorParameters() {
         VisitorParameters params = new VisitorParameters("");
         params.setDocumentSelection("id.user==5678");
@@ -42,6 +43,7 @@ public class VisitorParametersTestCase {
         return params;
     }
 
+    @SuppressWarnings("removal")// TODO: Vespa 8: remove
     @Test
     public void testCopyConstructor() {
         VisitorParameters params = createVisitorParameters();
