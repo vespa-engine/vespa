@@ -249,6 +249,7 @@ public class ApplicationSerializer {
         applicationVersion.sourceUrl().ifPresent(url -> object.setString(sourceUrlField, url));
         applicationVersion.commit().ifPresent(commit -> object.setString(commitField, commit));
         object.setBool(deployedDirectlyField, applicationVersion.isDeployedDirectly());
+        applicationVersion.bundleHash().ifPresent(bundleHash -> object.setString(bundleHashField, bundleHash));
     }
 
     private void toSlime(SourceRevision sourceRevision, Cursor object) {
