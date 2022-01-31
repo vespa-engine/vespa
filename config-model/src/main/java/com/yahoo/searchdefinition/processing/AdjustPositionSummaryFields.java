@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.PositionDataType;
@@ -24,6 +25,14 @@ public class AdjustPositionSummaryFields extends Processor {
 
     public AdjustPositionSummaryFields(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
         super(schema, deployLogger, rankProfileRegistry, queryProfiles);
+    }
+
+    private boolean useV8GeoPositions = false;
+
+    @Override
+    public void process(boolean validate, boolean documentsOnly, ModelContext.Properties properties) {
+        this.useV8GeoPositions = properties.featureFlags().useV8GeoPositions();
+        process(validate, documentsOnly);
     }
 
     @Override
@@ -80,6 +89,7 @@ public class AdjustPositionSummaryFields extends Processor {
     private void ensureSummaryField(DocumentSummary summary, String fieldName, DataType dataType, Source source, SummaryTransform transform) {
         SummaryField oldField = schema.getSummaryField(fieldName);
         if (oldField == null) {
+            if (useV8GeoPositions) return;
             SummaryField newField = new SummaryField(fieldName, dataType, transform);
             newField.addSource(source);
             summary.add(newField);
@@ -94,6 +104,7 @@ public class AdjustPositionSummaryFields extends Processor {
         if (oldField.getSourceCount() != 1 || !oldField.getSingleSource().equals(source.getName())) {
             fail(oldField, "has source '" + oldField.getSources().toString() + "', should have source '" + source + "'");
         }
+        if (useV8GeoPositions) return;
         summary.add(oldField);
     }
 

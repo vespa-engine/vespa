@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
@@ -23,27 +24,32 @@ public class ExportingTestCase extends AbstractExportingTestCase {
 
     @Test
     public void testPositionArray() throws IOException, ParseException {
-        assertCorrectDeriving("position_array");
+        assertCorrectDeriving("position_array",
+                              new TestProperties().setUseV8GeoPositions(true));
     }
 
     @Test
     public void testPositionAttribute() throws IOException, ParseException {
-        assertCorrectDeriving("position_attribute");
+        assertCorrectDeriving("position_attribute",
+                              new TestProperties().setUseV8GeoPositions(true));
     }
 
     @Test
     public void testPositionExtra() throws IOException, ParseException {
-        assertCorrectDeriving("position_extra");
+        assertCorrectDeriving("position_extra",
+                              new TestProperties().setUseV8GeoPositions(true));
     }
 
     @Test
     public void testPositionNoSummary() throws IOException, ParseException {
-        assertCorrectDeriving("position_nosummary");
+        assertCorrectDeriving("position_nosummary",
+                              new TestProperties().setUseV8GeoPositions(true));
     }
 
     @Test
     public void testPositionSummary() throws IOException, ParseException {
-        assertCorrectDeriving("position_summary");
+        assertCorrectDeriving("position_summary",
+                              new TestProperties().setUseV8GeoPositions(true));
     }
 
     @Test

@@ -74,6 +74,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private String mergeThrottlingPolicy = "STATIC";
     private double persistenceThrottlingWsDecrementFactor = 1.2;
     private double persistenceThrottlingWsBackoff = 0.95;
+    private boolean useV8GeoPositions = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -127,6 +128,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public String mergeThrottlingPolicy() { return mergeThrottlingPolicy; }
     @Override public double persistenceThrottlingWsDecrementFactor() { return persistenceThrottlingWsDecrementFactor; }
     @Override public double persistenceThrottlingWsBackoff() { return persistenceThrottlingWsBackoff; }
+    @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -331,6 +333,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setPersistenceThrottlingWsBackoff(double backoff) {
         this.persistenceThrottlingWsBackoff = backoff;
+        return this;
+    }
+
+    public TestProperties setUseV8GeoPositions(boolean value) {
+        this.useV8GeoPositions = value;
         return this;
     }
 
