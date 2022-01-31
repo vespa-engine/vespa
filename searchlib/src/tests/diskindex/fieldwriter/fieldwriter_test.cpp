@@ -19,6 +19,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/time.h>
 #include <openssl/evp.h>
+#include <vespa/fastos/file.h>
 #include <vespa/fastos/app.h>
 #include <vespa/log/log.h>
 LOG_SETUP("fieldwriter_test");
