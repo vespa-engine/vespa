@@ -48,7 +48,7 @@ vespa_add_executable(fnet_rpc_callback_client_app
 vespa_add_executable(fnet_rpc_invoke_app
     SOURCES
     rpc_invoke.cpp
-    OUTPUT_NAME vespa-rpc-invoke
+    OUTPUT_NAME vespa-rpc-invoke-bin
     INSTALL bin
     DEPENDS
     fnet
