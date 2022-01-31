@@ -19,6 +19,7 @@ public:
     void testAttributeMatch();
     void testCloseness();
     void testMatchCount();
+    void testGreatCircleDistance();
     void testDistance();
     void testDistanceToPath();
     void testDotProduct();
