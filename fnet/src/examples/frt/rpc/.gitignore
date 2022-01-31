@@ -13,3 +13,4 @@ fnet_rpc_client_app
 fnet_rpc_server_app
 vespa-rpc-info
 vespa-rpc-proxy
+vespa-rpc-invoke
