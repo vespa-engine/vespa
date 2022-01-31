@@ -12,6 +12,7 @@ vespa_add_library(searchlib_features OBJECT
     debug_wait.cpp
     dense_tensor_attribute_executor.cpp
     direct_tensor_attribute_executor.cpp
+    great_circle_distance_feature.cpp
     distancefeature.cpp
     distancetopathfeature.cpp
     documenttestutils.cpp

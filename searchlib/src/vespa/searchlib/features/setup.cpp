@@ -10,6 +10,7 @@
 #include "debug_attribute_wait.h"
 #include "debug_wait.h"
 #include "distancefeature.h"
+#include "great_circle_distance_feature.h"
 #include "distancetopathfeature.h"
 #include "dotproductfeature.h"
 #include "element_completeness_feature.h"
@@ -126,6 +127,7 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(std::make_shared<GlobalSequenceBlueprint>());
     registry.addPrototype(std::make_shared<OnnxBlueprint>("onnx"));
     registry.addPrototype(std::make_shared<OnnxBlueprint>("onnxModel"));
+    registry.addPrototype(std::make_shared<GreatCircleDistanceBlueprint>());
 
     // Ranking Expression
     auto replacers = std::make_unique<ListExpressionReplacer>();
