@@ -36,7 +36,7 @@ class BucketCompacter : public IWriteData, public StoreByBucket::IWrite
 public:
     using FileId = FileChunk::FileId;
     BucketCompacter(size_t maxSignificantBucketBits, const CompressionConfig & compression, LogDataStore & ds,
-                    Executor & exeutor, const IBucketizer & bucketizer, FileId source, FileId destination);
+                    Executor & executor, const IBucketizer & bucketizer, FileId source, FileId destination);
     void write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override ;
     void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override;
     void close() override;
