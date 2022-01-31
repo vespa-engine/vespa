@@ -9,7 +9,6 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.net.HostName;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.admin.Configserver;
 import com.yahoo.vespa.model.container.Container;
@@ -18,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
@@ -58,6 +56,10 @@ public class ClusterControllerCluster extends AbstractConfigProducer<ClusterCont
             serverBuilder.retired(container.isRetired());
             builder.server(serverBuilder);
         }
+        // Reindexing progress stores huge (observed 530k) progress tokens
+        // in zookeeper. These temporarily ends up in a 500 elements long commit log in memory.
+        // Reducing the log to 10 for cluster-controller should make this manageable for admin nodes too.
+        builder.commitLogCount(10);
     }
 
     @Override

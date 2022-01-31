@@ -231,6 +231,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         assertEquals(id, config.myid());
         Collection<Integer> serverIds = Collections2.transform(config.server(), ZookeeperServerConfig.Server::id);
         assertTrue(serverIds.contains(id));
+        assertEquals(10, config.commitLogCount());
     }
 
     public void assertCuratorConfig(TestRoot root) {

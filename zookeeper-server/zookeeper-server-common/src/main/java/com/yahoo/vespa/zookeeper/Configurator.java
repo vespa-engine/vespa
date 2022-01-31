@@ -42,6 +42,7 @@ public class Configurator {
         // Need to set this as a system property, otherwise it will be parsed for _every_ packet and an exception will be thrown (and handled)
         System.setProperty("zookeeper.globalOutstandingLimit", "1000");
         System.setProperty("zookeeper.snapshot.compression.method", zookeeperServerConfig.snapshotMethod());
+        System.setProperty("zookeeper.commitLogCount", String.valueOf(zookeeperServerConfig.commitLogCount()));
     }
 
     void writeConfigToDisk() { writeConfigToDisk(VespaTlsConfig.fromSystem()); }

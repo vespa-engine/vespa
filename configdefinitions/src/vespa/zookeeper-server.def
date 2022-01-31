@@ -16,10 +16,9 @@ maxClientConnections int default=0
 dataDir string default="var/zookeeper"
 
 clientPort int default=2181
-# TODO(bjorncs): remove setting - no longer in use
-secureClientPort int default=2184
 
 snapshotCount int default=50000
+commitLogCount int default=500
 # Purge interval in hours
 autopurge.purgeInterval int default=1
 autopurge.snapRetainCount int default=15
