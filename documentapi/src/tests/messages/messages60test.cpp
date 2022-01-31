@@ -382,8 +382,8 @@ Messages60Test::testCreateVisitorReply()
             EXPECT_EQUAL(ref.getVisitorStatistics().getBytesVisited(), (uint64_t)1024000);
             EXPECT_EQUAL(ref.getVisitorStatistics().getDocumentsReturned(), (uint64_t)123);
             EXPECT_EQUAL(ref.getVisitorStatistics().getBytesReturned(), (uint64_t)512000);
-            EXPECT_EQUAL(ref.getVisitorStatistics().getSecondPassDocumentsReturned(), (uint64_t)456);
-            EXPECT_EQUAL(ref.getVisitorStatistics().getSecondPassBytesReturned(), (uint64_t)789100);
+            EXPECT_EQUAL(ref.getVisitorStatistics().getSecondPassDocumentsReturned(), (uint64_t)456); // TODO remove on Vespa 8
+            EXPECT_EQUAL(ref.getVisitorStatistics().getSecondPassBytesReturned(), (uint64_t)789100); // TODO remove on Vespa 8
         }
     }
     return true;
