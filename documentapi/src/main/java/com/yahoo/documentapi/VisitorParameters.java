@@ -286,10 +286,18 @@ public class VisitorParameters extends Parameters {
     // TODO: Document: Where is the default - does this ever return null, or does it return "storage" if input is null?
     public Route getRoute() { return visitRoute; }
 
-    /** Set the maximum number of documents to visit (max documents returned by the visitor) */
+    /** Set the maximum number of documents to visit (max documents returned by the visitor)
+     *
+     * @deprecated use setMaxTotalHits instead
+     */
+    @Deprecated(since = "7", forRemoval = true) // TODO: Vespa 8: remove
     public void setMaxFirstPassHits(long max) { maxFirstPassHits = max; }
 
-    /** @return Returns the maximum number of documents to visit (max documents returned by the visitor) */
+    /** @return Returns the maximum number of documents to visit (max documents returned by the visitor)
+     *
+     * @deprecated Use getMaxTotalHits() instead
+     */
+    @Deprecated(since = "7", forRemoval = true) // TODO: Vespa 8: remove
     public long getMaxFirstPassHits() { return maxFirstPassHits; }
 
     /** Set the maximum number of documents to visit (max documents returned by the visitor) */
@@ -349,7 +357,10 @@ public class VisitorParameters extends Parameters {
      * the desired amount of documents
      *
      * @param dynamicallyIncreaseMaxBucketsPerVisitor whether or not to increase
+     *
+     * @deprecated deprecated feature, will be removed on Vespa 8
      */
+    @Deprecated(since = "7", forRemoval = true) // TODO: Vespa 8: remove
     public void setDynamicallyIncreaseMaxBucketsPerVisitor(boolean dynamicallyIncreaseMaxBucketsPerVisitor) {
         this.dynamicallyIncreaseMaxBucketsPerVisitor = dynamicallyIncreaseMaxBucketsPerVisitor;
     }
