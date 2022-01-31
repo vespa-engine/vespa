@@ -27,6 +27,7 @@ public class PositionsData implements Inspectable, JsonProducer, XmlProducer {
         return value;
     }
 
+    @Override
     public String toString() {
         return toJson();
     }
