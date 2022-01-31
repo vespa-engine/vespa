@@ -8,7 +8,6 @@
 #include <vespa/vespalib/stllike/string.h>
 
 using vespalib::GenericHeader;
-class Fast_BufferedFile;
 
 namespace search {
 

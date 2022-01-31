@@ -4,6 +4,7 @@
 #include "filesizecalculator.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/guard.h>
+#include <vespa/fastlib/io/bufferedfile.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>

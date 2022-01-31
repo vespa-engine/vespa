@@ -4,7 +4,6 @@
 #include "attrvector.h"
 #include "load_utils.h"
 #include <vespa/vespalib/util/hdr_abort.h>
-#include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/util/filekit.h>
 
 namespace search {
