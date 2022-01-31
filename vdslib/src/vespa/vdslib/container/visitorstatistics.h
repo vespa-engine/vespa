@@ -40,8 +40,8 @@ private:
     uint64_t _bytesVisited;
     uint64_t _documentsReturned;
     uint64_t _bytesReturned;
-    uint64_t _secondPassDocumentsReturned;
-    uint64_t _secondPassBytesReturned;
+    uint64_t _secondPassDocumentsReturned; // TODO remove on Vespa 8
+    uint64_t _secondPassBytesReturned; // TODO remove on Vespa 8
 };
 
 }
