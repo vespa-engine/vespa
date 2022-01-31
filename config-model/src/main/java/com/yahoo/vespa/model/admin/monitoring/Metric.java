@@ -25,11 +25,11 @@ public class Metric {
         this.name = name;
         this.outputName = outputName;
         this.description = description;
-        this.dimensions = Collections.unmodifiableMap(dimensions);
+        this.dimensions = Map.copyOf(dimensions);
     }
 
     public Metric(String name, String outputName, String description) {
-        this(name, outputName, description, new HashMap<>());
+        this(name, outputName, description, new LinkedHashMap<>());
     }
 
     /**
