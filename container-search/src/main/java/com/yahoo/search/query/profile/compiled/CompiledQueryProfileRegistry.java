@@ -32,7 +32,7 @@ public class CompiledQueryProfileRegistry extends ComponentRegistry<CompiledQuer
     public CompiledQueryProfileRegistry(QueryProfilesConfig config, Executor executor) {
         QueryProfileRegistry registry = QueryProfileConfigurer.createFromConfig(config);
         typeRegistry = registry.getTypeRegistry();
-        int maxConcurrent = Math.max(1, (int)(Runtime.getRuntime().availableProcessors() * 0.20));
+        int maxConcurrent = 1; // TODO hold this one after Concurrency issue has been found: Math.max(1, (int)(Runtime.getRuntime().availableProcessors() * 0.20));
         BlockingQueue<CompiledQueryProfile> doneQ = new LinkedBlockingQueue<>();
         int started = 0;
         int completed = 0;
