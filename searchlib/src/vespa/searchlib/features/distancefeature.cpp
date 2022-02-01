@@ -135,10 +135,15 @@ DistanceExecutor::DistanceExecutor(GeoLocationSpecPtrs locations,
 void
 DistanceExecutor::execute(uint32_t docId)
 {
-    outputs().set_number(0, calculateDistance(docId));
+    static constexpr double earth_mean_radius = 6371.0088;
+    static constexpr double deg_to_rad = M_PI / 180.0;
+    static constexpr double km_from_internal = 1.0e-6 * deg_to_rad * earth_mean_radius;
+    feature_t internal_d = calculateDistance(docId);
+    outputs().set_number(0, internal_d);
     outputs().set_number(1, _best_index);
     outputs().set_number(2, _best_y * 1.0e-6); // latitude
     outputs().set_number(3, _best_x * 1.0e-6); // longitude
+    outputs().set_number(4, internal_d * km_from_internal); // km
 }
 
 const feature_t DistanceExecutor::DEFAULT_DISTANCE(6400000000.0);
@@ -178,6 +183,7 @@ DistanceBlueprint::setup_geopos(const IIndexEnvironment & env,
     describeOutput("index", "Index in array of closest point");
     describeOutput("latitude", "Latitude of closest point");
     describeOutput("longitude", "Longitude of closest point");
+    describeOutput("km", "Distance in kilometer units");
     env.hintAttributeAccess(_arg_string);
     return true;
 }
