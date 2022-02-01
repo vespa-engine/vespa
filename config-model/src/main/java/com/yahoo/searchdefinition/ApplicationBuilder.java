@@ -139,7 +139,7 @@ public class ApplicationBuilder {
      */
     public Schema addSchemaFile(String fileName) throws IOException, ParseException {
         File file = new File(fileName);
-        return addSchema(IOUtils.readFile(file));
+        return addSchema(IOUtils.readFile(file), file.getAbsoluteFile().getParent());
     }
 
     /**
@@ -148,9 +148,9 @@ public class ApplicationBuilder {
      *
      * @param reader the reader whose content to import
      */
-    public void addSchema(NamedReader reader) {
+    private void addSchema(NamedReader reader) {
         try {
-            String schemaName = addSchema(IOUtils.readAll(reader)).getName();
+            String schemaName = addSchema(IOUtils.readAll(reader), reader.getName()).getName();
             String schemaFileName = stripSuffix(reader.getName(), ApplicationPackage.SD_NAME_SUFFIX);
             if ( ! schemaFileName.equals(schemaName)) {
                 throw new IllegalArgumentException("The file containing schema '" + schemaName + "' must be named '" +
@@ -172,12 +172,18 @@ public class ApplicationBuilder {
     }
 
     /**
-     * Adds a schema to this
+     * Adds a schema to this application.
      *
-     * @param schemaString the content of the schema
+     * @param string the string to parse
+     * @return the schema
+     * @throws ParseException thrown if the file does not contain a valid search definition
      */
-    public Schema addSchema(String schemaString) throws ParseException {
-        return add(createSchema(schemaString));
+    public Schema addSchema(String string) throws ParseException {
+        return addSchema(string, null);
+    }
+
+    private Schema addSchema(String schemaString, String schemaPath) throws ParseException {
+        return add(createSchema(schemaString, schemaPath));
     }
 
     /**
@@ -195,16 +201,18 @@ public class ApplicationBuilder {
         return schema;
     }
 
-    private Schema createSchema(String schemaString) throws ParseException {
-        Schema schema = parseSchema(schemaString);
-        addRankProfileFiles(schema);
+    private Schema createSchema(String schemaString, String schemaPath) throws ParseException {
+        Schema schema = parseSchema(schemaString, schemaPath);
+        addRankProfileFiles(schema, schemaPath);
         return schema;
     }
 
-    private Schema parseSchema(String schemaString) throws ParseException {
+    private Schema parseSchema(String schemaString, String schemaPath) throws ParseException {
         SimpleCharStream stream = new SimpleCharStream(schemaString);
         try {
-            return parserOf(stream).schema(documentTypeManager);
+            return new SDParser(stream, applicationPackage, fileRegistry, deployLogger, properties,
+                                         rankProfileRegistry, documentsOnly)
+                    .schema(documentTypeManager, schemaPath);
         } catch (TokenMgrException e) {
             throw new ParseException("Unknown symbol: " + e.getMessage());
         } catch (ParseException pe) {
@@ -212,16 +220,12 @@ public class ApplicationBuilder {
         }
     }
 
-    private void addRankProfileFiles(Schema schema) {
-        if (applicationPackage == null) return;
-
-        Path legacyRankProfilePath = ApplicationPackage.SEARCH_DEFINITIONS_DIR.append(schema.getName());
-        for (NamedReader reader : applicationPackage.getFiles(legacyRankProfilePath, ".profile"))
+    private void addRankProfileFiles(Schema schema, String schemaPath) {
+        if (applicationPackage == null || schemaPath == null) return;
+        Path rankProfilePath = Path.fromString(schemaPath).append(schema.getName());
+        for (NamedReader reader : applicationPackage.getFiles(rankProfilePath, ".profile")) {
             parseRankProfile(reader, schema);
-
-        Path rankProfilePath = ApplicationPackage.SCHEMAS_DIR.append(schema.getName());
-        for (NamedReader reader : applicationPackage.getFiles(rankProfilePath, ".profile"))
-            parseRankProfile(reader, schema);
+        }
     }
 
     /** Parses the rank profile of the given reader and adds it to the rank profile registry for this schema. */
@@ -229,7 +233,9 @@ public class ApplicationBuilder {
         try {
             SimpleCharStream stream = new SimpleCharStream(IOUtils.readAll(reader.getReader()));
             try {
-                parserOf(stream).rankProfile(schema);
+                new SDParser(stream, applicationPackage, fileRegistry, deployLogger, properties,
+                                    rankProfileRegistry, documentsOnly)
+                        .rankProfile(schema);
             } catch (TokenMgrException e) {
                 throw new ParseException("Unknown symbol: " + e.getMessage());
             } catch (ParseException pe) {
@@ -244,10 +250,7 @@ public class ApplicationBuilder {
         }
     }
 
-    private SDParser parserOf(SimpleCharStream stream) {
-        return new SDParser(stream, applicationPackage, fileRegistry, deployLogger, properties,
-                            rankProfileRegistry, documentsOnly);
-    }
+
 
     /**
      * Processes and finalizes the schemas of this.

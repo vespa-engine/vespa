@@ -395,15 +395,16 @@ SPECIAL_TOKEN :
  * The rule consumes any schema and returns the corresponding object. This is the only production that should
  * ever consume leading newlines.
  *
+ * @param dir the directory containing the file being parsed
  * @return the schema object
  */
-Schema schema(DocumentTypeManager docMan) :
+Schema schema(DocumentTypeManager docMan, String dir) :
 {
     this.docMan = docMan;
     Schema schema;
 }
 {
-    (<NL>)* (schema = rootSchema() | schema = rootDocument())
+    (<NL>)* (schema = rootSchema(dir) | schema = rootDocument(dir))
     { return schema; }
 }
 
@@ -411,9 +412,10 @@ Schema schema(DocumentTypeManager docMan) :
  * This rule consumes a proper schema block. This and rootDocument() are the only rules that should ever consume
  * trailing newline tokens.
  *
+ * @param dir the directory containing the file being parsed.
  * @return the schema definition object.
  */
-Schema rootSchema() :
+Schema rootSchema(String dir) :
 {
     String name;
     String inherited = null;
@@ -457,9 +459,10 @@ Object rootSchemaItem(Schema schema) : { }
 /**
  * Consumes a schema definition that contains only documents to be used for inheritance, etc.
  *
+ * @param dir the directory containing the file being parsed.
  * @return the schema definition object.
  */
-Schema rootDocument() :
+Schema rootDocument(String dir) :
 {
     Schema schema = new DocumentOnlySchema(applicationPackage, fileRegistry, deployLogger, properties);
 }
