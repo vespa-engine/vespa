@@ -23,6 +23,7 @@ import java.util.logging.Logger;
  *
  * @author Simon Thoresen Hult
  */
+@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class DocumentRouteSelectorPolicy
         implements DocumentProtocolRoutingPolicy, ConfigSubscriber.SingleSubscriber<DocumentrouteselectorpolicyConfig> {
 

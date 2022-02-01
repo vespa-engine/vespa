@@ -16,6 +16,7 @@ import java.util.Random;
  * @author gjoranv
  * @author ollivir
  */
+@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class DirConfigSource {
     private final TemporaryFolder tempFolder = createTemporaryFolder();
     public final ConfigSource configSource;

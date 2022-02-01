@@ -256,6 +256,7 @@ public class ConfigProxyRpcServerTest {
         assertEquals("success", req.returnValues().get(0).asString());
     }
 
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private static ProxyServer createTestServer(ConfigSourceSet source) {
         return new ProxyServer(null, source, new RpcConfigSourceClient(new ResponseHandler(), source));
     }
@@ -264,6 +265,7 @@ public class ConfigProxyRpcServerTest {
 
         private static final Spec SPEC = new Spec(0);
 
+        @SuppressWarnings("removal") // TODO Vespa 8: remove
         private final ProxyServer proxyServer = createTestServer(new ConfigSourceSet(configSourceAddress));
         private final Supervisor supervisor = new Supervisor(new Transport());
         private final ConfigProxyRpcServer rpcServer = new ConfigProxyRpcServer(proxyServer, supervisor, SPEC);

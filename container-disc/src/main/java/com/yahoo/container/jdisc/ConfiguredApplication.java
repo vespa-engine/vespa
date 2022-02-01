@@ -285,6 +285,7 @@ public final class ConfiguredApplication implements Application {
         return builder;
     }
 
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private void startReconfigurerThread() {
         reconfigurerThread = new Thread(() -> {
             while ( ! Thread.interrupted()) {
