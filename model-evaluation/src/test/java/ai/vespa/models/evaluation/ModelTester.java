@@ -1,30 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
-import com.yahoo.config.FileReference;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.config.subscription.FileSource;
-import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
-import com.yahoo.io.GrowableByteBuffer;
-import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
-import com.yahoo.searchlib.rankingexpression.RankingExpression;
-import com.yahoo.searchlib.rankingexpression.parser.ParseException;
-import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.serialization.TypedBinaryFormat;
-import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 
-import java.io.IOException;
 import java.util.Map;
-import java.util.Optional;
-import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -45,17 +32,19 @@ public class ModelTester {
     public Map<String, Model> models() { return models; }
 
     private static Map<String, Model> createModels(String path) {
-        Path configDir = Path.fromString(path);
-        RankProfilesConfig config = new ConfigGetter<>(new FileSource(configDir.append("rank-profiles.cfg").toFile()),
-                                                       RankProfilesConfig.class).getConfig("");
-        RankingConstantsConfig constantsConfig = new ConfigGetter<>(new FileSource(configDir.append("ranking-constants.cfg").toFile()),
-                                                                    RankingConstantsConfig.class).getConfig("");
-        RankingExpressionsConfig expresionsConfig = new ConfigGetter<>(new FileSource(configDir.append("ranking-expressions.cfg").toFile()),
-                                                                       RankingExpressionsConfig.class).getConfig("");
-        OnnxModelsConfig onnxModelsConfig = new ConfigGetter<>(new FileSource(configDir.append("onnx-models.cfg").toFile()),
-                                                               OnnxModelsConfig.class).getConfig("");
+
+        RankProfilesConfig config = ConfigGetter.getConfig(RankProfilesConfig.class, fileConfigId(path, "rank-profiles.cfg"));
+        RankingConstantsConfig constantsConfig = ConfigGetter.getConfig(RankingConstantsConfig.class, fileConfigId(path, "ranking-constants.cfg"));
+        RankingExpressionsConfig expressionsConfig = ConfigGetter.getConfig(RankingExpressionsConfig.class, fileConfigId(path, "ranking-expressions.cfg"));
+        OnnxModelsConfig onnxModelsConfig = ConfigGetter.getConfig(OnnxModelsConfig.class, fileConfigId(path, "onnx-models.cfg"));
+
+
         return new RankProfilesConfigImporterWithMockedConstants(Path.fromString(path).append("constants"), MockFileAcquirer.returnFile(null))
-                       .importFrom(config, constantsConfig, expresionsConfig, onnxModelsConfig);
+                       .importFrom(config, constantsConfig, expressionsConfig, onnxModelsConfig);
+    }
+
+    private static String fileConfigId(String path, String filename) {
+        return "file:" + path + filename;
     }
 
     public ExpressionFunction assertFunction(String name, String expression, Model model) {
