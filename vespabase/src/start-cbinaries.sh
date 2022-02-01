@@ -97,7 +97,7 @@ check_bname_in_value () {
 configure_valgrind () {
     no_valgrind=true
     if which valgrind >/dev/null 2>&1; then
-        if check_bname_in_value $VESPA_USE_VALGRIND; then
+        if check_bname_in_value "$VESPA_USE_VALGRIND"; then
             no_valgrind=false
             valgrind_log=$VESPA_HOME/tmp/valgrind.$bname.log.$$
             case $VESPA_VALGRIND_OPT in
@@ -108,7 +108,7 @@ configure_valgrind () {
 }
 
 configure_huge_pages () {
-    if check_bname_in_value $VESPA_USE_HUGEPAGES_LIST; then
+    if check_bname_in_value "$VESPA_USE_HUGEPAGES_LIST"; then
         log_debug_message "Want huge pages for '$bname' since VESPA_USE_HUGEPAGES_LIST=${VESPA_USE_HUGEPAGES_LIST}"
         export VESPA_USE_HUGEPAGES="yes"
     fi
@@ -134,15 +134,15 @@ configure_use_madvise () {
 }
 
 configure_vespa_malloc () {
-    if check_bname_in_value $VESPA_USE_NO_VESPAMALLOC; then
+    if check_bname_in_value "$VESPA_USE_NO_VESPAMALLOC"; then
         # log_debug_message "Not using vespamalloc for '$bname' since VESPA_USE_NO_VESPAMALLOC=${VESPA_USE_NO_VESPAMALLOC}"
         return
     fi
     suf=vespa/malloc/libvespamalloc.so
-    if check_bname_in_value $VESPA_USE_VESPAMALLOC_D; then
+    if check_bname_in_value "$VESPA_USE_VESPAMALLOC_D"; then
         suf=vespa/malloc/libvespamallocd.so
     fi
-    if check_bname_in_value $VESPA_USE_VESPAMALLOC_DST; then
+    if check_bname_in_value "$VESPA_USE_VESPAMALLOC_DST"; then
         suf=vespa/malloc/libvespamallocdst16.so
     fi
 
