@@ -100,11 +100,11 @@ public class LoadBalancerProvisioner {
      *
      * Calling this when no load balancer has been prepared for given cluster is a no-op.
      */
-    public void activate(Set<ClusterSpec> clusters, ApplicationTransaction transaction) {
+    public void activate(Set<ClusterSpec> clusters, NodeList newActive, ApplicationTransaction transaction) {
         Set<ClusterSpec.Id> activatingClusters = clusters.stream()
                                                          .map(LoadBalancerProvisioner::effectiveId)
                                                          .collect(Collectors.toSet());
-        for (var cluster : loadBalancedClustersOf(transaction.application()).entrySet()) {
+        for (var cluster : loadBalancedClustersOf(newActive).entrySet()) {
             if (!activatingClusters.contains(cluster.getKey())) continue;
 
             Node clusterNode = cluster.getValue().first().get();
@@ -232,12 +232,13 @@ public class LoadBalancerProvisioner {
 
     /** Returns the nodes allocated to the given load balanced cluster */
     private NodeList nodesOf(ClusterSpec.Id loadBalancedCluster, ApplicationId application) {
-        return loadBalancedClustersOf(application).getOrDefault(loadBalancedCluster, NodeList.copyOf(List.of()));
+        NodeList nodes = nodeRepository.nodes().list(Node.State.reserved, Node.State.active)
+                                       .owner(application);
+        return loadBalancedClustersOf(nodes).getOrDefault(loadBalancedCluster, NodeList.of());
     }
 
     /** Returns the load balanced clusters of given application and their nodes */
-    private Map<ClusterSpec.Id, NodeList> loadBalancedClustersOf(ApplicationId application) {
-        NodeList nodes = nodeRepository.nodes().list(Node.State.reserved, Node.State.active).owner(application);
+    private Map<ClusterSpec.Id, NodeList> loadBalancedClustersOf(NodeList nodes) {
         if (nodes.stream().anyMatch(node -> node.type() == NodeType.config)) {
             nodes = nodes.nodeType(NodeType.config).type(ClusterSpec.Type.admin);
         } else if (nodes.stream().anyMatch(node -> node.type() == NodeType.controller)) {

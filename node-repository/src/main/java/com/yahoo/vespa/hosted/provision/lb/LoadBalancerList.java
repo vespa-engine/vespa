@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.collections.AbstractFilteringList;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 
 import java.util.Collection;
 
@@ -19,6 +21,16 @@ public class LoadBalancerList extends AbstractFilteringList<LoadBalancer, LoadBa
     /** Returns the subset of load balancers that are in given state */
     public LoadBalancerList in(LoadBalancer.State state) {
         return matching(lb -> lb.state() == state);
+    }
+
+    /** Returns the subset of load balancers in given cluster */
+    public LoadBalancerList application(ApplicationId application) {
+        return matching(lb -> lb.id().application().equals(application));
+    }
+
+    /** Returns the subset of load balancers in given cluster */
+    public LoadBalancerList cluster(ClusterSpec.Id cluster) {
+        return matching(lb -> lb.id().cluster().equals(cluster));
     }
 
     public static LoadBalancerList copyOf(Collection<LoadBalancer> loadBalancers) {
