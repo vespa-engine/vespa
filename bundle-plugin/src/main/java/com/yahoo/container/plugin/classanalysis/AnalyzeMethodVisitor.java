@@ -20,7 +20,9 @@ import java.util.Set;
  * @author ollivir
  */
 class AnalyzeMethodVisitor extends MethodVisitor implements ImportCollector {
+
     private final Set<String> imports = new HashSet<>();
+
     private final AnalyzeClassVisitor analyzeClassVisitor;
 
     AnalyzeMethodVisitor(AnalyzeClassVisitor analyzeClassVisitor) {
@@ -104,13 +106,14 @@ class AnalyzeMethodVisitor extends MethodVisitor implements ImportCollector {
 
     @Override
     public void visitInvokeDynamicInsn(String name, String desc, Handle bootstrapMethod, Object... bootstrapMethodArgs) {
+        addImportWithTypeDesc(desc);
         for (Object arg : bootstrapMethodArgs) {
             if (arg instanceof Type) {
                 addImport((Type) arg);
             } else if (arg instanceof Handle) {
                 addImportWithInternalName(((Handle) arg).getOwner());
                 Arrays.asList(Type.getArgumentTypes(desc)).forEach(this::addImport);
-            } else if ((arg instanceof Number) == false && (arg instanceof String) == false) {
+            } else if ( ! (arg instanceof Number) && ! (arg instanceof String)) {
                 throw new AssertionError("Unexpected type " + arg.getClass() + " with value '" + arg + "'");
             }
         }
@@ -165,4 +168,5 @@ class AnalyzeMethodVisitor extends MethodVisitor implements ImportCollector {
     @Override
     public void visitCode() {
     }
+
 }

@@ -11,6 +11,7 @@ import java.util.Set;
  * @author ollivir
  */
 public class ClassFileMetaData {
+
     private final String name;
     private final Set<String> referencedClasses;
     private final Optional<ExportPackageAnnotation> exportPackage;
@@ -32,4 +33,5 @@ public class ClassFileMetaData {
     public Optional<ExportPackageAnnotation> getExportPackage() {
         return exportPackage;
     }
+
 }

@@ -14,6 +14,7 @@ import java.util.Set;
  * @author ollivir
  */
 public class AnalyzeFieldVisitor extends FieldVisitor implements ImportCollector {
+
     private final AnalyzeClassVisitor analyzeClassVisitor;
     private final Set<String> imports = new HashSet<>();
 
@@ -46,4 +47,5 @@ public class AnalyzeFieldVisitor extends FieldVisitor implements ImportCollector
     public void visitEnd() {
         analyzeClassVisitor.addImports(imports);
     }
+
 }

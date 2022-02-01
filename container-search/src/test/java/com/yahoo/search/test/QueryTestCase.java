@@ -2,6 +2,7 @@
 package com.yahoo.search.test;
 
 import com.yahoo.component.chain.Chain;
+import com.yahoo.data.JsonProducer;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.detect.Detection;
@@ -15,6 +16,7 @@ import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
+import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.CompositeItem;
@@ -40,6 +42,7 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.yolean.Exceptions;
+import org.json.JSONObject;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -67,6 +70,17 @@ import static org.junit.Assert.fail;
  * @author bratseth
  */
 public class QueryTestCase {
+
+    @Test
+    public void testIt() throws Exception {
+        JSONObject newroot = new JSONObject("{\"key\": 3}");
+        var hit = new FastHit();
+        hit.setField("data", (JsonProducer)s -> s.append(newroot));
+        var field = hit.getField("data");
+        if (field instanceof JsonProducer) {
+            System.out.println((((JsonProducer) field).toJson()));
+        }
+    }
 
     @Test
     public void testSimpleFunctionality() {
