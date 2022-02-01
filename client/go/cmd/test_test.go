@@ -5,9 +5,6 @@
 package cmd
 
 import (
-	"fmt"
-	"github.com/vespa-engine/vespa/client/go/util"
-	"github.com/vespa-engine/vespa/client/go/vespa"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -15,6 +12,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/vespa-engine/vespa/client/go/util"
+	"github.com/vespa-engine/vespa/client/go/vespa"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -40,7 +40,6 @@ func TestSuite(t *testing.T) {
 		requests = append(requests, createSearchRequest(baseUrl+"/search/"))
 	}
 	assertRequests(requests, client, t)
-	fmt.Println(outBytes)
 	assert.Equal(t, string(expectedBytes), outBytes)
 	assert.Equal(t, "", errBytes)
 }

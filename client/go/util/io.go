@@ -11,6 +11,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -53,7 +54,8 @@ func ReaderToJSON(reader io.Reader) string {
 
 // AtomicWriteFile atomically writes data to filename.
 func AtomicWriteFile(filename string, data []byte) error {
-	tmpFile, err := ioutil.TempFile("", "vespa")
+	dir := filepath.Dir(filename)
+	tmpFile, err := ioutil.TempFile(dir, "vespa")
 	if err != nil {
 		return err
 	}
