@@ -157,6 +157,7 @@ consider_fallback VESPA_USE_VESPAMALLOC     "$(get_var vespamalloc_list)"
 consider_fallback VESPA_USE_VESPAMALLOC_D   "$(get_var vespamallocd_list)"
 consider_fallback VESPA_USE_VESPAMALLOC_DST "$(get_var vespamallocdst_list)"
 consider_fallback VESPA_USE_NO_VESPAMALLOC  "$(get_var no_vespamalloc_list)"
+consider_fallback VESPA_USE_NO_VESPAMALLOC  "vespa-rpc-invoke vespa-get-config vespa-sentinel-cmd vespa-route vespa-proton-cmd vespa-configproxy-cmd vespa-config-status"
 
 # TODO:
 # if [ "$VESPA_USE_HUGEPAGES_LIST" = "all" ]; then
