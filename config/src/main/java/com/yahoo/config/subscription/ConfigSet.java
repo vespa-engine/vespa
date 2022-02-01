@@ -11,7 +11,9 @@ import com.yahoo.vespa.config.ConfigKey;
  * Config source as a programmatically built set of {@link com.yahoo.config.ConfigInstance}s
  *
  * @author Vegard Havdal
+ * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
+@Deprecated(forRemoval = true, since = "7")
 public class ConfigSet implements ConfigSource {
     private final Map<ConfigKey<?>, ConfigInstance.Builder> configs = new ConcurrentHashMap<>();
 

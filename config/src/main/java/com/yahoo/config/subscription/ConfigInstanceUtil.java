@@ -14,7 +14,9 @@ import com.yahoo.vespa.config.*;
 
 /**
  * @author gjoranv
+ * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
+@Deprecated(forRemoval = true, since = "7")
 public class ConfigInstanceUtil {
 
     /**
