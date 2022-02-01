@@ -2,3 +2,4 @@
 fallback VESPA_HOME @CMAKE_INSTALL_PREFIX@
 override VESPA_USER @VESPA_USER@
 override VESPA_UNPRIVILEGED @VESPA_UNPRIVILEGED@
+fallback NO_VESPAMALLOC_LIST "vespa-rpc-invoke vespa-get-config vespa-sentinel-cmd vespa-route vespa-proton-cmd vespa-configproxy-cmd vespa-config-status"
