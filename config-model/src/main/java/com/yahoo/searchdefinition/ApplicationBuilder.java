@@ -204,9 +204,7 @@ public class ApplicationBuilder {
     private Schema parseSchema(String schemaString) throws ParseException {
         SimpleCharStream stream = new SimpleCharStream(schemaString);
         try {
-            return new SDParser(stream, applicationPackage, fileRegistry, deployLogger, properties,
-                                         rankProfileRegistry, documentsOnly)
-                    .schema(documentTypeManager);
+            return parserOf(stream).schema(documentTypeManager);
         } catch (TokenMgrException e) {
             throw new ParseException("Unknown symbol: " + e.getMessage());
         } catch (ParseException pe) {
@@ -216,10 +214,14 @@ public class ApplicationBuilder {
 
     private void addRankProfileFiles(Schema schema) {
         if (applicationPackage == null) return;
-        Path rankProfilePath = ApplicationPackage.SCHEMAS_DIR.append(schema.getName());
-        for (NamedReader reader : applicationPackage.getFiles(rankProfilePath, ".profile")) {
+
+        Path legacyRankProfilePath = ApplicationPackage.SEARCH_DEFINITIONS_DIR.append(schema.getName());
+        for (NamedReader reader : applicationPackage.getFiles(legacyRankProfilePath, ".profile"))
             parseRankProfile(reader, schema);
-        }
+
+        Path rankProfilePath = ApplicationPackage.SCHEMAS_DIR.append(schema.getName());
+        for (NamedReader reader : applicationPackage.getFiles(rankProfilePath, ".profile"))
+            parseRankProfile(reader, schema);
     }
 
     /** Parses the rank profile of the given reader and adds it to the rank profile registry for this schema. */
@@ -227,9 +229,7 @@ public class ApplicationBuilder {
         try {
             SimpleCharStream stream = new SimpleCharStream(IOUtils.readAll(reader.getReader()));
             try {
-                new SDParser(stream, applicationPackage, fileRegistry, deployLogger, properties,
-                                    rankProfileRegistry, documentsOnly)
-                        .rankProfile(schema);
+                parserOf(stream).rankProfile(schema);
             } catch (TokenMgrException e) {
                 throw new ParseException("Unknown symbol: " + e.getMessage());
             } catch (ParseException pe) {
@@ -244,7 +244,10 @@ public class ApplicationBuilder {
         }
     }
 
-
+    private SDParser parserOf(SimpleCharStream stream) {
+        return new SDParser(stream, applicationPackage, fileRegistry, deployLogger, properties,
+                            rankProfileRegistry, documentsOnly);
+    }
 
     /**
      * Processes and finalizes the schemas of this.
