@@ -12,10 +12,10 @@ import java.util.Set;
  * @author Tony Vaagenes
  * @author ollivir
  */
-
 class AnalyzeSignatureVisitor extends SignatureVisitor implements ImportCollector {
+
     private final AnalyzeClassVisitor analyzeClassVisitor;
-    private Set<String> imports = new HashSet<>();
+    private final Set<String> imports = new HashSet<>();
 
     AnalyzeSignatureVisitor(AnalyzeClassVisitor analyzeClassVisitor) {
         super(Opcodes.ASM7);
@@ -116,4 +116,5 @@ class AnalyzeSignatureVisitor extends SignatureVisitor implements ImportCollecto
         if (signature != null)
             new SignatureReader(signature).acceptType(new AnalyzeSignatureVisitor(analyzeClassVisitor));
     }
+
 }

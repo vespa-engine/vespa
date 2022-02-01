@@ -11,6 +11,7 @@ import java.util.Set;
  * @author ollivir
  */
 public class Packages {
+
     public static class PackageMetaData {
         public final Set<String> definedPackages;
         public final Set<String> referencedExternalPackages;
@@ -40,4 +41,5 @@ public class Packages {
         referencedPackages.removeAll(definedPackages);
         return new PackageMetaData(definedPackages, referencedPackages);
     }
+
 }
