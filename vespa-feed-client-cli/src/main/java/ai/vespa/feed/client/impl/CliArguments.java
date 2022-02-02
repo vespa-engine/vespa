@@ -54,6 +54,7 @@ class CliArguments {
     private static final String SILENT_OPTION = "silent";
     private static final String VERSION_OPTION = "version";
     private static final String STDIN_OPTION = "stdin";
+    private static final String DOOM_OPTION = "max-failure-seconds";
 
     private final CommandLine arguments;
 
@@ -148,6 +149,8 @@ class CliArguments {
     Optional<String> route() { return stringValue(ROUTE_OPTION); }
 
     OptionalInt traceLevel() throws CliArgumentsException { return intValue(TRACE_OPTION); }
+
+    OptionalInt doomSeconds() throws CliArgumentsException { return intValue(DOOM_OPTION); }
 
     Optional<Duration> timeout() throws CliArgumentsException {
         OptionalDouble timeout = doubleValue(TIMEOUT_OPTION);
@@ -259,7 +262,7 @@ class CliArguments {
                         .build())
                 .addOption(Option.builder()
                         .longOpt(BENCHMARK_OPTION)
-                        .desc("Enable benchmark mode")
+                        .desc("Print statistics to stdout when done")
                         .build())
                 .addOption(Option.builder()
                         .longOpt(ROUTE_OPTION)
@@ -279,8 +282,14 @@ class CliArguments {
                         .type(Number.class)
                         .build())
                 .addOption(Option.builder()
-                        .longOpt(STDIN_OPTION)
-                        .desc("Read JSON input from standard input")
+                                 .longOpt(STDIN_OPTION)
+                                 .desc("Read JSON input from standard input")
+                                 .build())
+                .addOption(Option.builder()
+                        .longOpt(DOOM_OPTION)
+                        .desc("Exit if specified number of seconds ever pass without any successful operations. Disabled by default")
+                        .hasArg()
+                        .type(Number.class)
                         .build())
                 .addOption(Option.builder()
                         .longOpt(DRYRUN_OPTION)
@@ -292,7 +301,7 @@ class CliArguments {
                         .build())
                 .addOption(Option.builder()
                         .longOpt(SILENT_OPTION)
-                        .desc("Disable periodic status printing")
+                        .desc("Disable periodic status printing to stderr")
                         .build())
                 .addOption(Option.builder()
                         .longOpt(SHOW_ERRORS_OPTION)

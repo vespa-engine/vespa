@@ -1,6 +1,7 @@
 usage: vespa-feed-client <options>
 Vespa feed client
-    --benchmark                           Enable benchmark mode
+    --benchmark                           Print statistics to stdout when
+                                          done
     --ca-certificates <arg>               Path to file containing CA X.509
                                           certificates encoded as PEM
     --certificate <arg>                   Path to PEM encoded X.509
@@ -16,6 +17,10 @@ Vespa feed client
     --header <arg>                        HTTP header on the form 'Name:
                                           value'
     --help
+    --max-failure-seconds <arg>           Exit if specified number of
+                                          seconds ever pass without any
+                                          successful operations. Disabled
+                                          by default
     --max-streams-per-connection <arg>    Maximum number of concurrent
                                           streams per HTTP/2 connection
     --private-key <arg>                   Path to PEM/PKCS#8 encoded
@@ -27,6 +32,7 @@ Vespa feed client
     --show-errors                         Print every feed operation
                                           failure
     --silent                              Disable periodic status printing
+                                          to stderr
     --stdin                               Read JSON input from standard
                                           input
     --timeout <arg>                       Feed operation timeout (in
