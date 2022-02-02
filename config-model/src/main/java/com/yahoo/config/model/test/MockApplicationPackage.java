@@ -147,6 +147,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     @Override
     public List<NamedReader> getFiles(Path dir, String fileSuffix, boolean recurse) {
         try {
+            if (dir.elements().contains(ApplicationPackage.SEARCH_DEFINITIONS_DIR.getName())) return List.of(); // No legacy paths
             File dirFile = new File(root, dir.getName());
             if ( ! dirFile.exists()) return List.of();
             if (recurse) throw new RuntimeException("Recurse not implemented");

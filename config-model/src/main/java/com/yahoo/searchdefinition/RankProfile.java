@@ -205,25 +205,22 @@ public class RankProfile implements Cloneable {
      * The profile must belong to this schema (directly or by inheritance).
      */
     public void inherit(String inheritedName) {
+        inherited = null;
         inheritedNames.add(inheritedName);
     }
 
     /** Returns the names of the profiles this inherits, if any. */
-    public List<String> inheritedNames() { return inheritedNames; }
+    public List<String> inheritedNames() { return Collections.unmodifiableList(inheritedNames); }
 
     /** Returns the rank profiles inherited by this. */
     private List<RankProfile> inherited() {
         if (inheritedNames.isEmpty()) return List.of();
         if (inherited != null) return inherited;
 
-        for (String inheritedName : inheritedNames) {
-            inherited = (schema() != null) ? resolveInheritedProfiles(schema)
-                                           : List.of(rankProfileRegistry.getGlobal(inheritedName));
-
-            List<String> children = new ArrayList<>();
-            children.add(createFullyQualifiedName());
-            inherited.forEach(profile -> verifyNoInheritanceCycle(children, profile));
-        }
+        inherited = resolveInheritedProfiles(schema);
+        List<String> children = new ArrayList<>();
+        children.add(createFullyQualifiedName());
+        inherited.forEach(profile -> verifyNoInheritanceCycle(children, profile));
         return inherited;
     }
 
@@ -245,7 +242,9 @@ public class RankProfile implements Cloneable {
     private List<RankProfile> resolveInheritedProfiles(ImmutableSchema schema) {
         List<RankProfile> inherited = new ArrayList<>();
         for (String inheritedName : inheritedNames) {
-            RankProfile inheritedProfile = resolveInheritedProfile(schema, inheritedName);
+            RankProfile inheritedProfile = schema ==  null
+                                           ? rankProfileRegistry.getGlobal(inheritedName)
+                                           : resolveInheritedProfile(schema, inheritedName);
             if (inheritedProfile == null)
                 throw new IllegalArgumentException("rank-profile '" + name() + "' inherits '" + inheritedName +
                                                    "', but this is not found in " +
