@@ -134,11 +134,11 @@ func getService(service string, sessionOrRunID int64, cluster string) *vespa.Ser
 	t := getTarget()
 	timeout := time.Duration(waitSecsArg) * time.Second
 	if timeout > 0 {
-		log.Printf("Waiting up to %d %s for service to become available ...", color.Cyan(waitSecsArg), color.Cyan("seconds"))
+		log.Printf("Waiting up to %d %s for %s service to become available ...", color.Cyan(waitSecsArg), color.Cyan("seconds"), color.Cyan(service))
 	}
 	s, err := t.Service(service, timeout, sessionOrRunID, cluster)
 	if err != nil {
-		fatalErr(err, "Invalid service: ", service)
+		fatalErr(err, "Service not found: ", service)
 	}
 	return s
 }

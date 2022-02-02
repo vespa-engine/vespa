@@ -31,7 +31,7 @@ const (
 	queryService    = "query"
 	documentService = "document"
 
-	waitRetryInterval = 2 * time.Second
+	retryInterval = 2 * time.Second
 )
 
 // Service represents a Vespa service.
@@ -563,10 +563,10 @@ func wait(fn responseFunc, reqFn requestFunc, certificate *tls.Certificate, time
 			}
 		}
 		timeLeft := deadline.Sub(time.Now())
-		if loopOnce || timeLeft < waitRetryInterval {
+		if loopOnce || timeLeft < retryInterval {
 			break
 		}
-		time.Sleep(waitRetryInterval)
+		time.Sleep(retryInterval)
 	}
 	return statusCode, httpErr
 }
