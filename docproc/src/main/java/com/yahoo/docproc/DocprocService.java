@@ -43,7 +43,7 @@ public class DocprocService extends AbstractComponent {
     private boolean inService = false;
     /** The current state of this service */
     private boolean acceptingNewProcessings = true;
-    public static final SchemaMap schemaMap = new SchemaMap();
+    public static SchemaMap schemaMap = new SchemaMap();
     private DocumentTypeManager documentTypeManager = null;
 
     private DocprocService(ComponentId id, int numThreads) {
