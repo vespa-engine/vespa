@@ -31,7 +31,7 @@ import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -113,7 +113,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     private SDDocumentType ownerDocType = null;
 
     /** The aliases declared for this field. May pertain to indexes or attributes */
-    private final Map<String, String> aliasToName = new LinkedHashMap<>();
+    private final Map<String, String> aliasToName = new HashMap<>();
 
     /** Pending operations that must be applied after parsing, due to use of not-yet-defined structs. */
     private final List<FieldOperation> pendingOperations = new LinkedList<>();

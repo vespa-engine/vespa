@@ -5,7 +5,7 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.model.ml.OnnxModelInfo;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -18,8 +18,8 @@ import java.util.Optional;
 public class OnnxModel extends DistributableResource {
 
     private OnnxModelInfo modelInfo = null;
-    private final Map<String, String> inputMap = new LinkedHashMap<>();
-    private final Map<String, String> outputMap = new LinkedHashMap<>();
+    private final Map<String, String> inputMap = new HashMap<>();
+    private final Map<String, String> outputMap = new HashMap<>();
 
     private String  statelessExecutionMode = null;
     private Integer statelessInterOpThreads = null;

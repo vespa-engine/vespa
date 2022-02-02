@@ -23,7 +23,7 @@ import java.util.*;
 public class SearchOrderer {
 
     /** A map from DataTypeName to the Search defining them */
-    private final Map<DataTypeName, Schema> documentNameToSearch = new LinkedHashMap<>();
+    private final Map<DataTypeName, Schema> documentNameToSearch = new HashMap<>();
 
     /**
      * Reorders the given list of search definitions such that any supertype

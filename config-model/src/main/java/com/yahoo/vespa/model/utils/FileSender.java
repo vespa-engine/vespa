@@ -14,7 +14,7 @@ import com.yahoo.vespa.model.AbstractService;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -43,7 +43,7 @@ public class FileSender implements Serializable {
             return;
 
         UserConfigRepo userConfigs = producer.getUserConfigs();
-        Map<String, FileReference> sentFiles = new LinkedHashMap<>();
+        Map<String, FileReference> sentFiles = new HashMap<>();
         for (ConfigDefinitionKey key : userConfigs.configsProduced()) {
             ConfigPayloadBuilder builder = userConfigs.get(key);
             try {

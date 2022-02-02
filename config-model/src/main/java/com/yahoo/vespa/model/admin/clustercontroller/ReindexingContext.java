@@ -5,7 +5,7 @@ import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.documentmodel.NewDocumentType;
 
 import java.util.Collection;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -19,7 +19,7 @@ import java.util.Set;
 public class ReindexingContext {
 
     private final Object monitor = new Object();
-    private final Map<String, Set<NewDocumentType>> documentTypesPerCluster = new LinkedHashMap<>();
+    private final Map<String, Set<NewDocumentType>> documentTypesPerCluster = new HashMap<>();
     private final Reindexing reindexing;
 
     public ReindexingContext(Reindexing reindexing) {
