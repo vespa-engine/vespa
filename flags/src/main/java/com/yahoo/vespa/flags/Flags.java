@@ -61,21 +61,21 @@ public class Flags {
 
     public static final UnboundIntFlag FEED_TASK_LIMIT = defineIntFlag(
             "feed-task-limit", 1000,
-            List.of("geirst, baldersheim"), "2021-10-14", "2022-02-01",
+            List.of("geirst, baldersheim"), "2021-10-14", "2022-05-01",
             "The task limit used by the executors handling feed in proton",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag FEED_MASTER_TASK_LIMIT = defineIntFlag(
             "feed-master-task-limit", 1000,
-            List.of("geirst, baldersheim"), "2021-11-18", "2022-02-01",
+            List.of("geirst, baldersheim"), "2021-11-18", "2022-05-01",
             "The task limit used by the master thread in each document db in proton. Ignored when set to 0.",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag SHARED_FIELD_WRITER_EXECUTOR = defineStringFlag(
             "shared-field-writer-executor", "NONE",
-            List.of("geirst, baldersheim"), "2021-11-05", "2022-02-01",
+            List.of("geirst, baldersheim"), "2021-11-05", "2022-05-01",
             "Whether to use a shared field writer executor for the document database(s) in proton. " +
             "Valid values: NONE, INDEX, INDEX_AND_ATTRIBUTE, DOCUMENT_DB",
             "Takes effect at redeployment (requires restart)",
@@ -83,7 +83,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
             "max-uncommitted-memory", 130000,
-            List.of("geirst, baldersheim"), "2021-10-21", "2022-02-01",
+            List.of("geirst, baldersheim"), "2021-10-21", "2022-05-01",
             "Max amount of memory holding updates to an attribute before we do a commit.",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -146,7 +146,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
             "enable-feed-block-in-distributor", true,
-            List.of("geirst"), "2021-01-27", "2022-01-31",
+            List.of("geirst"), "2021-01-27", "2022-05-01",
             "Enables blocking of feed in the distributor if resource usage is above limit on at least one content node",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
