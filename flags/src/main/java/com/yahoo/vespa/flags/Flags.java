@@ -167,7 +167,7 @@ public class Flags {
 
     public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
             "allowed-athenz-proxy-identities", List.of(), String.class,
-            List.of("bjorncs", "tokle"), "2021-02-10", "2022-02-01",
+            List.of("bjorncs", "tokle"), "2021-02-10", "2022-06-01",
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
 
@@ -229,27 +229,11 @@ public class Flags {
             TENANT_ID, CONSOLE_USER_EMAIL
     );
 
-    public static final UnboundBooleanFlag ENABLE_ONPREM_TENANT_S3_ARCHIVE = defineFeatureFlag(
-            "enable-onprem-tenant-s3-archive", false,
-            List.of("bjorncs"), "2021-09-14", "2022-02-01",
-            "Enable tenant S3 buckets in cd/main. Must be set on controller cluster only.",
-            "Takes effect immediately",
-            ZONE_ID, TENANT_ID
-    );
-
     public static final UnboundBooleanFlag DELETE_UNMAINTAINED_CERTIFICATES = defineFeatureFlag(
             "delete-unmaintained-certificates", false,
             List.of("andreer"), "2021-09-23", "2022-02-14",
             "Whether to delete certificates that are known by provider but not by controller",
             "Takes effect on next run of EndpointCertificateMaintainer"
-    );
-
-    public static final UnboundBooleanFlag ENABLE_TENANT_DEVELOPER_ROLE = defineFeatureFlag(
-            "enable-tenant-developer-role", false,
-            List.of("bjorncs"), "2021-09-23", "2022-02-01",
-            "Enable tenant developer Athenz role in cd/main. Must be set on controller cluster only.",
-            "Takes effect immediately",
-            TENANT_ID
     );
 
     public static final UnboundBooleanFlag ENABLE_ROUTING_REUSE_PORT = defineFeatureFlag(
@@ -258,14 +242,6 @@ public class Flags {
             "Enable reuse port in routing configuration",
             "Takes effect on container restart",
             HOSTNAME
-    );
-
-    public static final UnboundBooleanFlag ENABLE_TENANT_OPERATOR_ROLE = defineFeatureFlag(
-            "enable-tenant-operator-role", false,
-            List.of("bjorncs"), "2021-09-29", "2022-02-01",
-            "Enable tenant specific operator roles in public systems. For controllers only.",
-            "Takes effect on subsequent maintainer invocation",
-            TENANT_ID
     );
 
     public static final UnboundBooleanFlag UNORDERED_MERGE_CHAINING = defineFeatureFlag(
