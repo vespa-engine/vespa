@@ -93,12 +93,10 @@
           <finalName>${project.artifactId}-jar-with-dependencies</finalName>
           <filters>
             <filter>
-              <!-- Don't include signature files from bouncycastle in uber jar.  -->
               <artifact>*:*</artifact>
               <excludes>
-                <exclude>META-INF/*.SF</exclude>
-                <exclude>META-INF/*.DSA</exclude>
-                <exclude>META-INF/*.RSA</exclude>
+                <exclude>META-INF/**</exclude>
+                <exclude>module-info.class</exclude>
               </excludes>
             </filter>
           </filters>
