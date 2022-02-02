@@ -17,6 +17,10 @@ Vespa feed client
     --header <arg>                        HTTP header on the form 'Name:
                                           value'
     --help
+    --max-failure-seconds <arg>           Exit if specified number of
+                                          seconds ever pass without any
+                                          successful operations. Disabled
+                                          by default
     --max-streams-per-connection <arg>    Maximum number of concurrent
                                           streams per HTTP/2 connection
     --private-key <arg>                   Path to PEM/PKCS#8 encoded
