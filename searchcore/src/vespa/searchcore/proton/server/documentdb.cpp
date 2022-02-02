@@ -500,7 +500,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
                                   _writeServiceConfig.defaultTaskLimit());
     if (params.shouldSubDbsChange()) {
         applySubDBConfig(*configSnapshot, serialNum, params);
-        if (serialNum < _feedHandler->getSerialNum()) {
+        if (serialNum < _feedHandler->get_replay_end_serial_num()) {
             // Not last entry in tls.  Reprocessing should already be done.
             _subDBs.getReprocessingRunner().reset();
         }
