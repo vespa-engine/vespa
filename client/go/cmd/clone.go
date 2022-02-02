@@ -158,6 +158,10 @@ func getSampleAppsZip() *os.File {
 			fatalErr(nil, "Could not download sample apps from GitHub: ", response.StatusCode)
 			return nil
 		}
+		if err := f.Truncate(0); err != nil {
+			fatalErr(err, "Could not truncate sample apps file: ", f.Name())
+			return nil
+		}
 		if _, err := io.Copy(f, response.Body); err != nil {
 			fatalErr(err, "Could not write sample apps to file: ", f.Name())
 			return nil
