@@ -236,28 +236,12 @@ public class Flags {
             "Takes effect on next run of EndpointCertificateMaintainer"
     );
 
-    public static final UnboundBooleanFlag ENABLE_TENANT_DEVELOPER_ROLE = defineFeatureFlag(
-            "enable-tenant-developer-role", false,
-            List.of("bjorncs"), "2021-09-23", "2022-02-01",
-            "Enable tenant developer Athenz role in cd/main. Must be set on controller cluster only.",
-            "Takes effect immediately",
-            TENANT_ID
-    );
-
     public static final UnboundBooleanFlag ENABLE_ROUTING_REUSE_PORT = defineFeatureFlag(
             "enable-routing-reuse-port", true,
             List.of("mortent"), "2021-09-29", "2022-02-01",
             "Enable reuse port in routing configuration",
             "Takes effect on container restart",
             HOSTNAME
-    );
-
-    public static final UnboundBooleanFlag ENABLE_TENANT_OPERATOR_ROLE = defineFeatureFlag(
-            "enable-tenant-operator-role", false,
-            List.of("bjorncs"), "2021-09-29", "2022-02-01",
-            "Enable tenant specific operator roles in public systems. For controllers only.",
-            "Takes effect on subsequent maintainer invocation",
-            TENANT_ID
     );
 
     public static final UnboundBooleanFlag UNORDERED_MERGE_CHAINING = defineFeatureFlag(
