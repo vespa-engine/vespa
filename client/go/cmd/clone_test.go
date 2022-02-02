@@ -5,7 +5,6 @@
 package cmd
 
 import (
-	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
@@ -37,5 +36,5 @@ func assertCreated(sampleAppName string, app string, t *testing.T) {
 	assert.Equal(t, servicesSize, servicesStat.Size())
 
 	scriptStat, _ := os.Stat(filepath.Join(app, "bin", "convert-msmarco.sh"))
-	assert.Equal(t, fs.FileMode(0755), scriptStat.Mode())
+	assert.Equal(t, os.FileMode(0755), scriptStat.Mode())
 }
