@@ -171,7 +171,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void requireThatDefaultCanAlwaysBeInherited() throws ParseException {
+    public void requireThatDefaultInheritingDefaultIsIgnored() throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
         builder.addSchema(joinLines(

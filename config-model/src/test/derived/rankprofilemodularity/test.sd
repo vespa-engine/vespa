@@ -8,7 +8,10 @@ schema test {
 
     }
 
-    rank-profile in_schema0 inherits in_schema3 {
+    rank-profile default inherits outside_schema2 {
+    }
+
+    rank-profile in_schema0 inherits outside_schema2 {
     }
 
     rank-profile in_schema1 {

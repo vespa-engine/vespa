@@ -25,14 +25,11 @@ public class DefaultRankProfile extends RankProfile {
         super("default", schema, rankProfileRegistry, rankingConstants);
     }
 
-    /** Does nothing, the default rank profile can not inherit anything. */
-    // TODO: Why not? If that's the case, then fail attempts at i
-    @Override
-    public void inherit(String inheritedName) {}
-
-    /** Returns empty, the default rank profile can not inherit anything */
-    @Override
-    public List<String> inheritedNames() { return List.of(); }
+    /** Ignore self inheriting of default as some applications may use that for historical reasons. */
+    public void inherit(String inheritedName) {
+        if (inheritedName.equals("default")) return;
+        super.inherit(inheritedName);
+    }
 
     @Override
     public RankSetting getRankSetting(String fieldOrIndex, RankSetting.Type type) {
