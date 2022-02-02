@@ -24,6 +24,7 @@ import com.yahoo.tensor.TensorType;
  *
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSubscriber<DocumentmanagerConfig> {
 
     private final static Logger log = Logger.getLogger(DocumentTypeManagerConfigurer.class.getName());

@@ -4,8 +4,6 @@ package com.yahoo.vdslib.distribution;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.document.BucketId;
 import com.yahoo.vdslib.state.ClusterState;
-import com.yahoo.vdslib.state.Node;
-import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import org.codehaus.jettison.json.JSONArray;
@@ -16,8 +14,9 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
+
+// TODO: Use config builder instead of ConfigGetter to create test config.
 public class DistributionTestFactory extends CrossPlatformTestFactory {
 
     private static final String testDirectory = "src/tests/distribution/testdata";

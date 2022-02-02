@@ -234,6 +234,7 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
         return didApply;
     }
 
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private void applyUserConfig(ConfigInstance.Builder builder, ConfigPayloadBuilder payloadBuilder) {
         ConfigInstance.Builder override;
         if (builder instanceof GenericConfig.GenericConfigBuilder) {
