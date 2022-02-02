@@ -159,9 +159,9 @@ public class ApplicationSerializerTest {
         assertEquals(original.latestVersion().get().sourceUrl(), serialized.latestVersion().get().sourceUrl());
         assertEquals(original.latestVersion().get().commit(), serialized.latestVersion().get().commit());
         assertEquals(original.latestVersion().get().bundleHash(), serialized.latestVersion().get().bundleHash());
-        // Check deployed versions are added
+        // Check indirectly deployed versions are added, directly deployed are removed
         assertEquals(original.versions(), serialized.versions());
-        assertEquals(serialized.versions(), new TreeSet<>(Set.of(applicationVersion1, applicationVersion2)));
+        assertEquals(serialized.versions(), new TreeSet<>(Set.of(applicationVersion2)));
 
 
         assertEquals(original.deploymentSpec().xmlForm(), serialized.deploymentSpec().xmlForm());
