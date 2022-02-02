@@ -68,10 +68,10 @@ public class RankingExpressionWithOnnxModelTestCase {
         OnnxModelsConfig.Model model = config.model(0);
         assertEquals("my_model", model.name());
         assertEquals(3, model.input().size());
-        assertEquals("second/input:0", model.input(0).name());
-        assertEquals("constant(my_constant)", model.input(0).source());
-        assertEquals("first_input", model.input(1).name());
-        assertEquals("attribute(document_field)", model.input(1).source());
+        assertEquals("first_input", model.input(0).name());
+        assertEquals("attribute(document_field)", model.input(0).source());
+        assertEquals("second/input:0", model.input(1).name());
+        assertEquals("constant(my_constant)", model.input(1).source());
         assertEquals("third_input", model.input(2).name());
         assertEquals("rankingExpression(my_function)", model.input(2).source());
         assertEquals(3, model.output().size());
@@ -83,6 +83,23 @@ public class RankingExpressionWithOnnxModelTestCase {
         assertEquals("path_to_output_2", model.output(2).as());
 
         model = config.model(1);
+        assertEquals("another_model", model.name());
+        assertEquals("third_input", model.input(2).name());
+        assertEquals("rankingExpression(another_function)", model.input(2).source());
+
+        model = config.model(2);
+        assertEquals("dynamic_model", model.name());
+        assertEquals(1, model.input().size());
+        assertEquals(1, model.output().size());
+        assertEquals("rankingExpression(my_function)", model.input(0).source());
+
+        model = config.model(3);
+        assertEquals("unbound_model", model.name());
+        assertEquals(1, model.input().size());
+        assertEquals(1, model.output().size());
+        assertEquals("rankingExpression(my_function)", model.input(0).source());
+
+        model = config.model(4);
         assertEquals("files_model_onnx", model.name());
         assertEquals(3, model.input().size());
         assertEquals(3, model.output().size());
@@ -94,27 +111,10 @@ public class RankingExpressionWithOnnxModelTestCase {
         assertEquals("path_to_output_2", model.output(2).as());
         assertEquals("files_model_onnx", model.name());
 
-        model = config.model(2);
-        assertEquals("another_model", model.name());
-        assertEquals("third_input", model.input(2).name());
-        assertEquals("rankingExpression(another_function)", model.input(2).source());
-
-        model = config.model(3);
+        model = config.model(5);
         assertEquals("files_summary_model_onnx", model.name());
         assertEquals(3, model.input().size());
         assertEquals(3, model.output().size());
-
-        model = config.model(4);
-        assertEquals("unbound_model", model.name());
-        assertEquals(1, model.input().size());
-        assertEquals(1, model.output().size());
-        assertEquals("rankingExpression(my_function)", model.input(0).source());
-
-        model = config.model(5);
-        assertEquals("dynamic_model", model.name());
-        assertEquals(1, model.input().size());
-        assertEquals(1, model.output().size());
-        assertEquals("rankingExpression(my_function)", model.input(0).source());
     }
 
     private void assertTransformedFeature(VespaModel model) {

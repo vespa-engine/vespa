@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -56,7 +56,7 @@ public class InMemoryProvisioner implements HostProvisioner {
     private final Map<ClusterSpec, List<HostSpec>> allocations = new LinkedHashMap<>();
 
     /** Indexes must be unique across all groups in a cluster */
-    private final Map<Pair<ClusterSpec.Type, ClusterSpec.Id>, Integer> nextIndexInCluster = new HashMap<>();
+    private final Map<Pair<ClusterSpec.Type, ClusterSpec.Id>, Integer> nextIndexInCluster = new LinkedHashMap<>();
 
     /** Use this index as start index for all clusters */
     private final int startIndexForClusters;

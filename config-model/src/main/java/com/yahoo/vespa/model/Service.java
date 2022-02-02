@@ -3,7 +3,7 @@ package com.yahoo.vespa.model;
 
 import com.yahoo.config.model.api.ServiceInfo;
 
-import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -68,8 +68,8 @@ public interface Service extends ConfigProducer, NetworkPortRequestor {
 
     int getHealthPort();
 
-    /** Returns a HashMap of default dimensions for metrics. */
-    HashMap<String,String> getDefaultMetricDimensions();
+    /** Returns a Map of default dimensions for metrics. */
+    Map<String,String> getDefaultMetricDimensions();
 
     /** Returns the Affinity of this service if it has. */
     Optional<Affinity> getAffinity();

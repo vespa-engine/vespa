@@ -19,7 +19,7 @@ import com.yahoo.tensor.evaluation.TypeContext;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,9 +41,9 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
 
     private final Optional<MapEvaluationTypeContext> parent;
 
-    private final Map<Reference, TensorType> featureTypes = new HashMap<>();
+    private final Map<Reference, TensorType> featureTypes = new LinkedHashMap<>();
 
-    private final Map<Reference, TensorType> resolvedTypes = new HashMap<>();
+    private final Map<Reference, TensorType> resolvedTypes = new LinkedHashMap<>();
 
     /** To avoid re-resolving diamond-shaped dependencies */
     private final Map<Reference, TensorType> globallyResolvedTypes;
@@ -61,7 +61,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         this.currentResolutionCallStack =  new ArrayDeque<>();
         this.queryFeaturesNotDeclared = new TreeSet<>();
         tensorsAreUsed = false;
-        globallyResolvedTypes = new HashMap<>();
+        globallyResolvedTypes = new LinkedHashMap<>();
     }
 
     private MapEvaluationTypeContext(Map<String, ExpressionFunction> functions,
@@ -325,7 +325,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     /** Binds the given list of formal arguments to their actual values */
     private Map<String, String> bind(List<String> formalArguments,
                                      Arguments invocationArguments) {
-        Map<String, String> bindings = new HashMap<>(formalArguments.size());
+        Map<String, String> bindings = new LinkedHashMap<>(formalArguments.size());
         for (int i = 0; i < formalArguments.size(); i++) {
             String identifier = invocationArguments.expressions().get(i).toString();
             bindings.put(formalArguments.get(i), identifier);

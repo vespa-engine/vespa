@@ -7,7 +7,7 @@ import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class ValidateFieldTypesDocumentsOnly extends ValidateFieldTypes {
@@ -20,7 +20,7 @@ public class ValidateFieldTypesDocumentsOnly extends ValidateFieldTypes {
         if ( ! validate) return;
 
         String searchName = schema.getName();
-        Map<String, DataType> seenFields = new HashMap<>();
+        Map<String, DataType> seenFields = new LinkedHashMap<>();
         verifySearchAndDocFields(searchName, seenFields);
     }
 }

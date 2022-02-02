@@ -11,7 +11,7 @@ import com.yahoo.vespa.model.ml.ConvertedModel;
 import com.yahoo.vespa.model.ml.FeatureArguments;
 
 import java.io.UncheckedIOException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -25,7 +25,7 @@ import java.util.Map;
 public class XgboostFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
 
     /** A cache of imported models indexed by model path. This avoids importing the same model multiple times. */
-    private final Map<Path, ConvertedModel> convertedXGBoostModels = new HashMap<>();
+    private final Map<Path, ConvertedModel> convertedXGBoostModels = new LinkedHashMap<>();
 
     @Override
     public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {

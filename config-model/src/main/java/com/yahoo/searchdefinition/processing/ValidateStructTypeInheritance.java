@@ -12,7 +12,7 @@ import com.yahoo.document.StructDataType;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;

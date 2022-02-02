@@ -8,7 +8,7 @@ import org.w3c.dom.Document;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +62,7 @@ public class BundleValidator extends AbstractBundleValidator {
     @Override protected void validatePomXml(DeployState state, JarFile jar, Document pom) {}
 
     private void validateImportedPackages(DeployState state, JarFile jar, Manifest manifest) {
-        Map<DeprecatedProvidedBundle, List<String>> deprecatedPackagesInUse = new HashMap<>();
+        Map<DeprecatedProvidedBundle, List<String>> deprecatedPackagesInUse = new LinkedHashMap<>();
         forEachImportPackage(manifest, (packageName, versionRange) -> {
             for (DeprecatedProvidedBundle deprecatedBundle : DeprecatedProvidedBundle.values()) {
                 for (Predicate<String> matcher : deprecatedBundle.javaPackageMatchers) {
