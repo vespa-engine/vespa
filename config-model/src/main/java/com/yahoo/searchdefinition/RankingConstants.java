@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition;
 import com.yahoo.config.application.api.FileRegistry;
 
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -70,7 +70,7 @@ public class RankingConstants {
         if (owner.isEmpty() || owner.get().inherited().isEmpty()) return Collections.unmodifiableMap(constants);
         if (constants.isEmpty()) return owner.get().inherited().get().rankingConstants().asMap();
 
-        var allConstants = new HashMap<>(owner.get().inherited().get().rankingConstants().asMap());
+        var allConstants = new LinkedHashMap<>(owner.get().inherited().get().rankingConstants().asMap());
         allConstants.putAll(constants);
         return Collections.unmodifiableMap(allConstants);
     }

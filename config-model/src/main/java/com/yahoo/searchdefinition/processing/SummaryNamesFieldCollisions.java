@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.yahoo.collections.Pair;
@@ -29,7 +29,7 @@ public class SummaryNamesFieldCollisions extends Processor {
     public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
-        Map<String, Pair<String, String>> fieldToClassAndSource = new HashMap<>();
+        Map<String, Pair<String, String>> fieldToClassAndSource = new LinkedHashMap<>();
         for (DocumentSummary summary : schema.getSummaries().values()) {
             if ("default".equals(summary.getName())) continue;
             for (SummaryField summaryField : summary.getSummaryFields().values()) {

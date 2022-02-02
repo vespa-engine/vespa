@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Contains the properties properties of a query.
+ * Contains the properties of a query.
  * This is a multimap: Multiple properties may be set for the same key.
  *
  * @author bratseth

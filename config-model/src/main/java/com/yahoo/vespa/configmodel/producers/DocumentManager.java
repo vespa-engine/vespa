@@ -14,7 +14,7 @@ import com.yahoo.vespa.documentmodel.DocumentModel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -201,7 +201,7 @@ public class DocumentManager {
 
     public DocumentmanagerConfig.Builder produceDocTypes(DocumentModel model, DocumentmanagerConfig.Builder builder) {
         builder.usev8geopositions(this.useV8GeoPositions);
-        Map<NewDocumentType.Name, NewDocumentType> produced = new HashMap<>();
+        Map<NewDocumentType.Name, NewDocumentType> produced = new LinkedHashMap<>();
         var indexMap = new IdxMap();
         for (NewDocumentType documentType : model.getDocumentManager().getTypes()) {
             docTypeInheritOrder(documentType, builder, produced, indexMap);
@@ -225,7 +225,7 @@ public class DocumentManager {
     }
 
     static private class IdxMap {
-        private Map<Integer, Boolean> doneMap = new HashMap<>();
+        private Map<Integer, Boolean> doneMap = new LinkedHashMap<>();
         private Map<Object, Integer> map = new IdentityHashMap<>();
         void add(Object someType) {
             assert(someType != null);

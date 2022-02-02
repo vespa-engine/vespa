@@ -8,7 +8,7 @@ import com.yahoo.component.chain.dependencies.Dependencies;
 import com.yahoo.vespa.model.container.docproc.DocumentProcessor;
 import com.yahoo.vespa.model.container.docproc.model.DocumentProcessorModel;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 /**
@@ -23,7 +23,7 @@ public class IndexingProcessor extends DocumentProcessor {
                                                                               new ComponentSpecification(DocumentProcessor.INDEXER),
                                                                               new ComponentSpecification(docprocsBundleSpecification)),
                                          new Dependencies(List.of(), List.of(), List.of()),
-                                         new HashMap<>()));
+                                         new LinkedHashMap<>()));
     }
 
 }

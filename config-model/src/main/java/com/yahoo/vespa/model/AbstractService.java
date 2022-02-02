@@ -12,7 +12,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -122,7 +121,7 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
      * @param services A {@link Collection} of services of the same type, not necessarily on the same host.
      */
     public static <SERVICE extends AbstractService> void distributeCpuSocketAffinity(Collection<SERVICE> services) {
-        Map<HostResource, List<SERVICE>> affinityMap = new HashMap<>();
+        Map<HostResource, List<SERVICE>> affinityMap = new LinkedHashMap<>();
         for (SERVICE service : services) {
             if (!affinityMap.containsKey(service.getHostResource())) {
                 affinityMap.put(service.getHostResource(), new ArrayList<>());
@@ -460,7 +459,7 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
      *
      * @return the default dimensions for this service
      */
-    public HashMap<String, String> getDefaultMetricDimensions(){ return new LinkedHashMap<>(); }
+    public Map<String, String> getDefaultMetricDimensions(){ return new LinkedHashMap<>(); }
 
     // For testing
     public int getNumPortsAllocated() {

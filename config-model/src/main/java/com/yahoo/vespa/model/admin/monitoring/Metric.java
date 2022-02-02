@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.admin.monitoring;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 

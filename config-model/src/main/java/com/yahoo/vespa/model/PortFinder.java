@@ -5,7 +5,7 @@ package com.yahoo.vespa.model;
 import static com.yahoo.config.provision.NetworkPorts.Allocation;
 
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -16,7 +16,7 @@ public class PortFinder {
 
     private static final Logger log = Logger.getLogger(PortFinder.class.getName());
 
-    private final Map<String, Allocation> byKeys = new HashMap<>();
+    private final Map<String, Allocation> byKeys = new LinkedHashMap<>();
     private final Map<Integer, Allocation> byPorts = new TreeMap<>();
 
     /** force add the given allocation, removing any conflicting ones */

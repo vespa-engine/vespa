@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +40,7 @@ public class OnnxModelInfo {
     private final String defaultOutput;
     private final Map<String, OnnxTypeInfo> inputs;
     private final Map<String, OnnxTypeInfo> outputs;
-    private final Map<String, TensorType> vespaTypes = new HashMap<>();
+    private final Map<String, TensorType> vespaTypes = new LinkedHashMap<>();
 
     private OnnxModelInfo(String path, Map<String, OnnxTypeInfo> inputs, Map<String, OnnxTypeInfo> outputs, String defaultOutput) {
         this.modelPath = path;
@@ -77,7 +77,7 @@ public class OnnxModelInfo {
         }
         if (onnxTypeInfo.containsUnknownDimensionSizes()) {
             Set<Long> unboundSizes = new HashSet<>();
-            Map<String, Long> symbolicSizes = new HashMap<>();
+            Map<String, Long> symbolicSizes = new LinkedHashMap<>();
             resolveUnknownDimensionSizes(inputTypes, symbolicSizes, unboundSizes);
             return onnxTypeInfo.toVespaTensorType(symbolicSizes, unboundSizes);
         }
@@ -205,8 +205,8 @@ public class OnnxModelInfo {
     static public OnnxModelInfo jsonToModelInfo(String json) throws IOException {
         ObjectMapper m = new ObjectMapper();
         JsonNode root = m.readTree(json);
-        Map<String, OnnxTypeInfo> inputs = new HashMap<>();
-        Map<String, OnnxTypeInfo> outputs = new HashMap<>();
+        Map<String, OnnxTypeInfo> inputs = new LinkedHashMap<>();
+        Map<String, OnnxTypeInfo> outputs = new LinkedHashMap<>();
         String defaultOutput = "";
 
         String path = null;

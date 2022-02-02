@@ -11,7 +11,7 @@ import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -32,7 +32,7 @@ public class ValidateFieldTypes extends Processor {
         if (!validate) return;
 
         String searchName = schema.getName();
-        Map<String, DataType> seenFields = new HashMap<>();
+        Map<String, DataType> seenFields = new LinkedHashMap<>();
         verifySearchAndDocFields(searchName, seenFields);
         verifySummaryFields(searchName, seenFields);
     }

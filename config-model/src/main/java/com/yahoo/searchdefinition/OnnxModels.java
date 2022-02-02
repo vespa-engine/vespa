@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition;
 import com.yahoo.config.application.api.FileRegistry;
 
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -20,7 +20,7 @@ public class OnnxModels {
     /** The schema this belongs to, or empty if it is global */
     private final Optional<Schema> owner;
 
-    private final Map<String, OnnxModel> models = new HashMap<>();
+    private final Map<String, OnnxModel> models = new LinkedHashMap<>();
 
     public OnnxModels(FileRegistry fileRegistry, Optional<Schema> owner) {
         this.fileRegistry = fileRegistry;
@@ -59,7 +59,7 @@ public class OnnxModels {
         if (owner.isEmpty() || owner.get().inherited().isEmpty()) return Collections.unmodifiableMap(models);
         if (models.isEmpty()) return owner.get().inherited().get().onnxModels().asMap();
 
-        var allModels = new HashMap<>(owner.get().inherited().get().onnxModels().asMap());
+        var allModels = new LinkedHashMap<>(owner.get().inherited().get().onnxModels().asMap());
         allModels.putAll(models);
         return Collections.unmodifiableMap(allModels);
     }

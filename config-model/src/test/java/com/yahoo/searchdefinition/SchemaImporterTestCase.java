@@ -60,10 +60,10 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
         assertFalse(schema.getIndex("default").isPrefix());
         assertTrue(schema.getIndex("title").isPrefix());
         Iterator<String> titleAliases = schema.getIndex("title").aliasIterator();
-        assertEquals("aliaz", titleAliases.next());
         assertEquals("analias.totitle", titleAliases.next());
         assertEquals("analias.todefault",
                      schema.getIndex("default").aliasIterator().next());
+        assertEquals("aliaz", titleAliases.next());
         assertEquals(RankType.IDENTITY, field.getRankType());
         assertEquals(0, field.getAttributes().size());
         assertNull(field.getStemming());

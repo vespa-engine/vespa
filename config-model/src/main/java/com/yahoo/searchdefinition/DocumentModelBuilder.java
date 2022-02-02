@@ -30,7 +30,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -369,8 +369,8 @@ public class DocumentModelBuilder {
     }
 
     private NewDocumentType convert(SDDocumentType sdoc) {
-        Map<AnnotationType, String> annotationInheritance = new HashMap<>();
-        Map<StructDataType, String> structInheritance = new HashMap<>();
+        Map<AnnotationType, String> annotationInheritance = new LinkedHashMap<>();
+        Map<StructDataType, String> structInheritance = new LinkedHashMap<>();
         NewDocumentType dt = new NewDocumentType(new NewDocumentType.Name(sdoc.getName()),
                                                  sdoc.getDocumentType().contentStruct(),
                                                  sdoc.getFieldSets(),

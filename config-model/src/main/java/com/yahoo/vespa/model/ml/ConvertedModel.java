@@ -36,7 +36,7 @@ import java.io.StringReader;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -211,7 +211,7 @@ public class ConvertedModel {
         addGeneratedFunctions(model, profile);
 
         // Add expressions
-        Map<String, ExpressionFunction> expressions = new HashMap<>();
+        Map<String, ExpressionFunction> expressions = new LinkedHashMap<>();
         for (ImportedMlFunction outputFunction : model.outputExpressions()) {
             ExpressionFunction expression = asExpressionFunction(outputFunction);
             for (Map.Entry<String, TensorType> input : expression.argumentTypes().entrySet()) {
@@ -232,7 +232,7 @@ public class ConvertedModel {
 
     private static ExpressionFunction asExpressionFunction(ImportedMlFunction function) {
         try {
-            Map<String, TensorType> argumentTypes = new HashMap<>();
+            Map<String, TensorType> argumentTypes = new LinkedHashMap<>();
             for (Map.Entry<String, String> entry : function.argumentTypes().entrySet())
                 argumentTypes.put(entry.getKey(), TensorType.fromSpec(entry.getValue()));
 
@@ -278,7 +278,7 @@ public class ConvertedModel {
             addGeneratedFunctionToProfile(profile, function.getFirst(), function.getSecond());
         }
 
-        Map<String, ExpressionFunction> expressions = new HashMap<>();
+        Map<String, ExpressionFunction> expressions = new LinkedHashMap<>();
         for (Pair<String, ExpressionFunction> output : store.readExpressions()) {
             String name = output.getFirst();
             ExpressionFunction expression = output.getSecond();
