@@ -94,9 +94,7 @@ public class CliClient {
                 });
                 latch.await();
 
-                if (cliArgs.benchmarkModeEnabled()) {
-                    printBenchmarkResult(System.nanoTime() - startNanos, successes.get(), failures.get(), feedClient.stats(), systemOut);
-                }
+                printBenchmarkResult(System.nanoTime() - startNanos, successes.get(), failures.get(), feedClient.stats(), cliArgs.benchmarkModeEnabled() ? systemOut : systemError);
                 if (fatal.get() != null) throw fatal.get();
             }
             return 0;
