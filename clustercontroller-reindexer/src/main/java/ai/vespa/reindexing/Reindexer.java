@@ -209,6 +209,7 @@ public class Reindexer {
         parameters.setThrottlePolicy(new DynamicThrottlePolicy().setWindowSizeIncrement(speed)
                                                                 .setWindowSizeDecrementFactor(3)
                                                                 .setResizeRate(5)
+                                                                .setMaxWindowSize(128)
                                                                 .setMinWindowSize(3 + (int) (5 * speed)));
         parameters.setRemoteDataHandler(cluster.name());
         parameters.setMaxPending(8);
