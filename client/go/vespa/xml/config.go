@@ -208,10 +208,10 @@ func IsProdRegion(s string, system string) bool {
 
 func parseResource(field, s string) (string, error) {
 	parts := strings.SplitN(s, "=", 2)
-	if len(parts) != 2 || parts[0] != field {
+	if len(parts) != 2 || strings.TrimSpace(parts[0]) != field {
 		return "", fmt.Errorf("invalid value for %s field: %q", field, s)
 	}
-	return parts[1], nil
+	return strings.TrimSpace(parts[1]), nil
 }
 
 // ReplaceRaw finds all elements of name in rawXML and replaces their contents with value.
