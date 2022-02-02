@@ -5,6 +5,7 @@
 package cmd
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
@@ -15,7 +16,7 @@ import (
 )
 
 func TestClone(t *testing.T) {
-	assertCreated("album-recommendation-selfhosted", "mytestapp", t)
+	assertCreated("text-search", "mytestapp", t)
 }
 
 func assertCreated(sampleAppName string, app string, t *testing.T) {
@@ -32,6 +33,9 @@ func assertCreated(sampleAppName string, app string, t *testing.T) {
 	assert.True(t, util.IsDirectory(filepath.Join(app, "src", "main", "application")))
 
 	servicesStat, _ := os.Stat(filepath.Join(app, "src", "main", "application", "services.xml"))
-	servicesSize := int64(2474)
+	servicesSize := int64(1772)
 	assert.Equal(t, servicesSize, servicesStat.Size())
+
+	scriptStat, _ := os.Stat(filepath.Join(app, "bin", "convert-msmarco.sh"))
+	assert.Equal(t, fs.FileMode(0755), scriptStat.Mode())
 }
