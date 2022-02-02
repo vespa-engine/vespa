@@ -14,7 +14,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,7 +33,7 @@ public class ModelNode<MODEL extends ConfigModel> implements ConfigModelInstance
     final Class<MODEL> clazz;
     final Constructor<MODEL> constructor;
     final List<MODEL> instances = new ArrayList<>();
-    private final Map<ComponentId, ModelNode> dependencies = new LinkedHashMap<>();
+    private final Map<ComponentId, ModelNode> dependencies = new HashMap<>();
 
     public ModelNode(ConfigModelBuilder<MODEL> builder) {
         this.id = builder.getId();

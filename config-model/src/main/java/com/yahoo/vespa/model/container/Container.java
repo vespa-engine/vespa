@@ -32,8 +32,7 @@ import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -386,8 +385,8 @@ public abstract class Container extends AbstractService implements
     }
 
     @Override
-    public Map<String,String> getDefaultMetricDimensions(){
-        Map<String, String> dimensions = new LinkedHashMap<>();
+    public HashMap<String,String> getDefaultMetricDimensions(){
+        HashMap<String, String> dimensions = new HashMap<>();
         if (clusterName != null)
             dimensions.put("clustername", clusterName);
         return dimensions;

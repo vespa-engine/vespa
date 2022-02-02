@@ -7,7 +7,7 @@ import com.yahoo.vespa.model.builder.xml.dom.chains.ChainedComponentModelBuilder
 import com.yahoo.vespa.model.container.docproc.model.DocumentProcessorModel;
 import org.w3c.dom.Element;
 
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -15,7 +15,7 @@ import java.util.Map;
  */
 public class DocumentProcessorModelBuilder extends ChainedComponentModelBuilder {
 
-    private Map<Pair<String, String>, String> fieldNameSchemaMap = new LinkedHashMap<>();
+    private Map<Pair<String, String>, String> fieldNameSchemaMap = new HashMap<>();
 
     public DocumentProcessorModelBuilder(Element spec) {
         super(spec);
@@ -38,7 +38,7 @@ public class DocumentProcessorModelBuilder extends ChainedComponentModelBuilder 
      * @return doctype, in-document → in-processor
      */
     public static Map<Pair<String,String>, String> parseFieldNameSchemaMap(Element e) {
-        Map<Pair<String, String>, String> ret = new LinkedHashMap<>();
+        Map<Pair<String, String>, String> ret = new HashMap<>();
         for (Element sm : XML.getChildren(e, "map")) {
             for (Element fm : XML.getChildren(sm, "field")) {
                 String from = fm.getAttribute("in-document");

@@ -32,7 +32,7 @@ import java.io.Serializable;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -121,7 +121,7 @@ public class RankProfile implements Cloneable {
     private final RankProfileRegistry rankProfileRegistry;
 
     /** Constants in ranking expressions */
-    private Map<String, Value> constants = new LinkedHashMap<>();
+    private Map<String, Value> constants = new HashMap<>();
 
     private final TypeSettings attributeTypes = new TypeSettings();
 
@@ -396,9 +396,9 @@ public class RankProfile implements Cloneable {
 
     /** Returns an unmodifiable view of the constants available in this */
     public Map<String, Value> getConstants() {
-        if (inherited().isEmpty()) return new LinkedHashMap<>(constants);
+        if (inherited().isEmpty()) return new HashMap<>(constants);
 
-        Map<String, Value> allConstants = new LinkedHashMap<>();
+        Map<String, Value> allConstants = new HashMap<>();
         for (var inheritedProfile : inherited()) {
             for (var constant : inheritedProfile.getConstants().entrySet()) {
                 if (allConstants.containsKey(constant.getKey()))
@@ -873,7 +873,7 @@ public class RankProfile implements Cloneable {
             clone.functions = new LinkedHashMap<>(this.functions);
             clone.allFunctionsCached = null;
             clone.filterFields = new HashSet<>(this.filterFields);
-            clone.constants = new LinkedHashMap<>(this.constants);
+            clone.constants = new HashMap<>(this.constants);
             return clone;
         }
         catch (CloneNotSupportedException e) {
@@ -989,7 +989,7 @@ public class RankProfile implements Cloneable {
     public MapEvaluationTypeContext typeContext() { return typeContext(new QueryProfileRegistry()); }
 
     private Map<Reference, TensorType> collectFeatureTypes() {
-        Map<Reference, TensorType> featureTypes = new LinkedHashMap<>();
+        Map<Reference, TensorType> featureTypes = new HashMap<>();
         // Add input features
         inputFeatures.forEach((k, v) -> featureTypes.put(k, v));
         // Add attributes
@@ -1042,7 +1042,7 @@ public class RankProfile implements Cloneable {
     }
 
     private Map<String, TensorType> resolveOnnxInputTypes(OnnxModel model, MapEvaluationTypeContext context) {
-        Map<String, TensorType> inputTypes = new LinkedHashMap<>();
+        Map<String, TensorType> inputTypes = new HashMap<>();
         for (String onnxInputName : model.getInputMap().keySet()) {
             resolveOnnxInputType(onnxInputName, model, context).ifPresent(type -> inputTypes.put(onnxInputName, type));
         }
@@ -1320,7 +1320,7 @@ public class RankProfile implements Cloneable {
 
     public static class TypeSettings {
 
-        private final Map<String, String> types = new LinkedHashMap<>();
+        private final Map<String, String> types = new HashMap<>();
 
         void addType(String name, String type) {
             types.put(name, type);

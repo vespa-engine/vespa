@@ -30,7 +30,7 @@ public class DocumentModelBuilderTestCase extends AbstractSchemaTestCase {
 
         DocumenttypesConfig.Builder documenttypesCfg = new DocumentTypes().produce(model, new DocumenttypesConfig.Builder());
         assertConfigFile("src/test/configmodel/types/documenttypes.cfg",
-                         new DocumenttypesConfig(documenttypesCfg).toString());
+                new DocumenttypesConfig(documenttypesCfg).toString());
     }
 
     @Test

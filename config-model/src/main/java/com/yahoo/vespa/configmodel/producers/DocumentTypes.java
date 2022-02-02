@@ -25,7 +25,7 @@ public class DocumentTypes {
 
     public DocumenttypesConfig.Builder produce(DocumentModel model, DocumenttypesConfig.Builder builder) {
         builder.usev8geopositions(this.useV8GeoPositions);
-        Map<NewDocumentType.Name, NewDocumentType> produced = new LinkedHashMap<>();
+        Map<NewDocumentType.Name, NewDocumentType> produced = new HashMap<>();
         for (NewDocumentType documentType : model.getDocumentManager().getTypes()) {
             produceInheritOrder(documentType, builder, produced);
         }

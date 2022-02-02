@@ -120,7 +120,7 @@ public class DeclaredQueryProfileVariants {
 
         private final Map<String, Object> values = new LinkedHashMap<>();
 
-        private final Map<String, Boolean> overridable = new LinkedHashMap<>();
+        private final Map<String, Boolean> overridable = new HashMap<>();
 
         private final List<QueryProfile> inherited = new ArrayList<>();
 

@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.document;
 import com.yahoo.searchdefinition.Schema;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -36,7 +36,7 @@ public class TemporaryImportedFields {
         if (owner.inherited().isEmpty()) return Collections.unmodifiableMap(fields);
         if (owner.inherited().get().temporaryImportedFields().isEmpty()) return Collections.unmodifiableMap(fields);
 
-        var allFields = new LinkedHashMap<>(owner.inherited().get().temporaryImportedFields().get().fields());
+        var allFields = new HashMap<>(owner.inherited().get().temporaryImportedFields().get().fields());
         allFields.putAll(fields);
         return allFields;
     }

@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -139,7 +139,7 @@ public class ModelsEvaluatorTester {
     }
 
     private static FileAcquirer createFileAcquirer(MockFileRegistry fileRegistry, File appDir) {
-        Map<String, File> fileMap = new LinkedHashMap<>();
+        Map<String, File> fileMap = new HashMap<>();
         for (FileRegistry.Entry entry : fileRegistry.export()) {
             fileMap.put(entry.reference.value(), relativePath(appDir, entry.reference.value()));
         }

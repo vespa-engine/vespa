@@ -25,8 +25,7 @@ import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProvider;
 import org.w3c.dom.Element;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
@@ -293,8 +292,8 @@ public class SearchNode extends AbstractService implements
     }
 
     @Override
-    public Map<String, String> getDefaultMetricDimensions() {
-        Map<String, String> dimensions = new LinkedHashMap<>();
+    public HashMap<String, String> getDefaultMetricDimensions() {
+        HashMap<String, String> dimensions = new HashMap<>();
         if (clusterName != null) {
             dimensions.put("clustername", clusterName);
         }

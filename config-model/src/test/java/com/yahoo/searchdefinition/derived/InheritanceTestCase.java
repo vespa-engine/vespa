@@ -82,11 +82,11 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
             assertEquals(childHeader.field(3).name(), "cox");
             DocumentmanagerConfig.Datatype.Documenttype child = documentType("child", dc);
             assertEquals(child.inherits(0).name(), "document");
-            assertEquals(child.inherits(1).name(), "mother");
-            assertEquals(child.inherits(2).name(), "father");
+            assertEquals(child.inherits(1).name(), "father");
+            assertEquals(child.inherits(2).name(), "mother");
             DocumentmanagerConfig.Datatype.Documenttype mother = documentType("mother", dc);
-            assertEquals(mother.inherits(0).name(), "document");
-            assertEquals(mother.inherits(1).name(), "grandparent");
+            assertEquals(mother.inherits(0).name(), "grandparent");
+            assertEquals(mother.inherits(1).name(), "document");
         }
     }
 
