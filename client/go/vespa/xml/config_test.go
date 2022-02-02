@@ -247,11 +247,13 @@ func TestParseResources(t *testing.T) {
 	assertResources(t, "vcpu=2,memory=4Gb", Resources{}, true)
 	assertResources(t, "memory=4Gb,vcpu=2,disk=100Gb", Resources{}, true)
 	assertResources(t, "vcpu=2,memory=4Gb,disk=100Gb", Resources{Vcpu: "2", Memory: "4Gb", Disk: "100Gb"}, false)
+	assertResources(t, "  vcpu = 4, memory =8Gb,  disk=500Gb ", Resources{Vcpu: "4", Memory: "8Gb", Disk: "500Gb"}, false)
 }
 
 func TestParseNodeCount(t *testing.T) {
 	assertNodeCount(t, "2", 2, 2, false)
 	assertNodeCount(t, "[4,8]", 4, 8, false)
+	assertNodeCount(t, "[ 4,  8 ]", 4, 8, false)
 
 	assertNodeCount(t, "foo", 0, 0, true)
 	assertNodeCount(t, "[foo,bar]", 0, 0, true)
