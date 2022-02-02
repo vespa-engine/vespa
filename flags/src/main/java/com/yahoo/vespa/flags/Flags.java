@@ -47,35 +47,35 @@ public class Flags {
 
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
-            List.of("baldersheim"), "2020-12-02", "2022-02-01",
+            List.of("baldersheim"), "2020-12-02", "2022-06-01",
             "Default limit for when to apply termwise query evaluation",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag FEED_SEQUENCER_TYPE = defineStringFlag(
             "feed-sequencer-type", "THROUGHPUT",
-            List.of("baldersheim"), "2020-12-02", "2022-02-01",
+            List.of("baldersheim"), "2020-12-02", "2022-06-01",
             "Selects type of sequenced executor used for feeding in proton, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment (requires restart)",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag FEED_TASK_LIMIT = defineIntFlag(
             "feed-task-limit", 1000,
-            List.of("geirst, baldersheim"), "2021-10-14", "2022-02-01",
+            List.of("geirst, baldersheim"), "2021-10-14", "2022-06-01",
             "The task limit used by the executors handling feed in proton",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag FEED_MASTER_TASK_LIMIT = defineIntFlag(
             "feed-master-task-limit", 1000,
-            List.of("geirst, baldersheim"), "2021-11-18", "2022-02-01",
+            List.of("geirst, baldersheim"), "2021-11-18", "2022-06-01",
             "The task limit used by the master thread in each document db in proton. Ignored when set to 0.",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag SHARED_FIELD_WRITER_EXECUTOR = defineStringFlag(
             "shared-field-writer-executor", "NONE",
-            List.of("geirst, baldersheim"), "2021-11-05", "2022-02-01",
+            List.of("geirst, baldersheim"), "2021-11-05", "2022-06-01",
             "Whether to use a shared field writer executor for the document database(s) in proton. " +
             "Valid values: NONE, INDEX, INDEX_AND_ATTRIBUTE, DOCUMENT_DB",
             "Takes effect at redeployment (requires restart)",
@@ -83,42 +83,42 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
             "max-uncommitted-memory", 130000,
-            List.of("geirst, baldersheim"), "2021-10-21", "2022-02-01",
+            List.of("geirst, baldersheim"), "2021-10-21", "2022-06-01",
             "Max amount of memory holding updates to an attribute before we do a commit.",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag RESPONSE_SEQUENCER_TYPE = defineStringFlag(
             "response-sequencer-type", "ADAPTIVE",
-            List.of("baldersheim"), "2020-12-02", "2022-02-01",
+            List.of("baldersheim"), "2020-12-02", "2022-06-01",
             "Selects type of sequenced executor used for mbus responses, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag RESPONSE_NUM_THREADS = defineIntFlag(
             "response-num-threads", 2,
-            List.of("baldersheim"), "2020-12-02", "2022-02-01",
+            List.of("baldersheim"), "2020-12-02", "2022-06-01",
             "Number of threads used for mbus responses, default is 2, negative number = numcores/4",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag SKIP_COMMUNICATIONMANAGER_THREAD = defineFeatureFlag(
             "skip-communicationmanager-thread", false,
-            List.of("baldersheim"), "2020-12-02", "2022-02-01",
+            List.of("baldersheim"), "2020-12-02", "2022-06-01",
             "Should we skip the communicationmanager thread",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag SKIP_MBUS_REQUEST_THREAD = defineFeatureFlag(
             "skip-mbus-request-thread", false,
-            List.of("baldersheim"), "2020-12-02", "2022-02-01",
+            List.of("baldersheim"), "2020-12-02", "2022-06-01",
             "Should we skip the mbus request thread",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag SKIP_MBUS_REPLY_THREAD = defineFeatureFlag(
             "skip-mbus-reply-thread", false,
-            List.of("baldersheim"), "2020-12-02", "2022-02-01",
+            List.of("baldersheim"), "2020-12-02", "2022-06-01",
             "Should we skip the mbus reply thread",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -132,35 +132,35 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
             "async-message-handling-on-schedule", false,
-            List.of("baldersheim"), "2020-12-02", "2022-02-01",
+            List.of("baldersheim"), "2020-12-02", "2022-06-01",
             "Optionally deliver async messages in own thread",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundDoubleFlag FEED_CONCURRENCY = defineDoubleFlag(
             "feed-concurrency", 0.5,
-            List.of("baldersheim"), "2020-12-02", "2022-02-01",
+            List.of("baldersheim"), "2020-12-02", "2022-06-01",
             "How much concurrency should be allowed for feed",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
             "enable-feed-block-in-distributor", true,
-            List.of("geirst"), "2021-01-27", "2022-01-31",
+            List.of("geirst"), "2021-01-27", "2022-06-01",
             "Enables blocking of feed in the distributor if resource usage is above limit on at least one content node",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT = defineFeatureFlag(
             "container-dump-heap-on-shutdown-timeout", false,
-            List.of("baldersheim"), "2021-09-25", "2022-02-01",
+            List.of("baldersheim"), "2021-09-25", "2022-06-01",
             "Will trigger a heap dump during if container shutdown times out",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundDoubleFlag CONTAINER_SHUTDOWN_TIMEOUT = defineDoubleFlag(
             "container-shutdown-timeout", 50.0,
-            List.of("baldersheim"), "2021-09-25", "2022-02-01",
+            List.of("baldersheim"), "2021-09-25", "2022-06-01",
             "Timeout for shutdown of a jdisc container",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -209,7 +209,7 @@ public class Flags {
 
     public static final UnboundIntFlag METRICSPROXY_NUM_THREADS = defineIntFlag(
             "metricsproxy-num-threads", 2,
-            List.of("balder"), "2021-09-01", "2022-02-01",
+            List.of("balder"), "2021-09-01", "2022-06-01",
             "Number of threads for metrics proxy",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -288,7 +288,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag IGNORE_THREAD_STACK_SIZES = defineFeatureFlag(
             "ignore-thread-stack-sizes", false,
-            List.of("arnej"), "2021-11-12", "2022-01-31",
+            List.of("arnej"), "2021-11-12", "2022-06-01",
             "Whether C++ thread creation should ignore any requested stack size",
             "Triggers restart, takes effect immediately",
             ZONE_ID, APPLICATION_ID);
