@@ -31,6 +31,10 @@ Vespa documentation: https://docs.vespa.ai`,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			configureOutput()
 		},
+		Args: cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			// Root command does nothing useful by itself
+		},
 	}
 
 	targetArg      string
