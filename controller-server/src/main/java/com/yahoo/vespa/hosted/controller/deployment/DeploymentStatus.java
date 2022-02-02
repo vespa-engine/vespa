@@ -118,7 +118,7 @@ public class DeploymentStatus {
 
         return ! allJobs.matching(job -> criticalJobs.contains(job.id()))
                         .failing()
-                        .not().withStatus(RunStatus.outOfCapacity)
+                        .not().outOfTestCapacity()
                         .isEmpty();
     }
 
@@ -126,39 +126,29 @@ public class DeploymentStatus {
         if (visited.contains(current))
             return dependents.contains(current);
 
-        if (dependency == current) {
+        if (dependency == current)
             dependents.add(current);
-            visited.add(current);
-            return true;
-        }
+        else
+            for (StepStatus dep : current.dependencies)
+                if (fillDependents(dependency, visited, dependents, dep))
+                    dependents.add(current);
 
-        for (StepStatus dep : current.dependencies)
-            if (fillDependents(dependency, visited, dependents, dep))
-                dependents.add(current);
         visited.add(current);
-
         return dependents.contains(current);
     }
 
-    /** Whether any jobs of the given instance, or in an instance dependent on it, are failing with other errors than lack of capacity in a test zone. */
-    public boolean hasFailures(InstanceName instance) {
-        Set<StepStatus> dependents = new HashSet<>();
-        for (StepStatus instanceStep : instanceSteps().values())
-            fillDependents(instanceSteps().get(instance), new HashSet<>(), dependents, instanceStep);
-
-        Set<InstanceName> dependentInstances = dependents.stream()
-                                                         .map(StepStatus::instance)
-                                                         .collect(Collectors.toSet());
-        return ! allJobs.instance(dependentInstances)
-                        .failing()
-                        .not().withStatus(RunStatus.outOfCapacity)
+    /** Whether any job is failing on anything older than version, with errors other than lack of capacity in a test zone.. */
+    public boolean hasFailures(ApplicationVersion version) {
+        return ! allJobs.failing()
+                        .not().outOfTestCapacity()
+                        .matching(job -> job.lastTriggered().get().versions().targetApplication().compareTo(version) < 0)
                         .isEmpty();
     }
 
     /** Whether any jobs of this application are failing with other errors than lack of capacity in a test zone. */
     public boolean hasFailures() {
         return ! allJobs.failing()
-                        .not().withStatus(RunStatus.outOfCapacity)
+                        .not().outOfTestCapacity()
                         .isEmpty();
     }
 
@@ -380,12 +370,15 @@ public class DeploymentStatus {
         boolean platformReadyFirst = platformReadyAt.get().isBefore(revisionReadyAt.get());
         boolean revisionReadyFirst = revisionReadyAt.get().isBefore(platformReadyAt.get());
         switch (application.deploymentSpec().requireInstance(job.application().instance()).upgradeRollout()) {
-            case separate: // Let whichever change rolled out first, keep rolling first, unless jobs are failing.
-                return hasFailures() ? List.of(change)
-                                     : platformReadyFirst || platformReadyAt.get().equals(Instant.EPOCH) ? List.of(change.withoutApplication(), change) // No jobs have run yet, assume platform came first
-                                                                                                         : revisionReadyFirst ? List.of(change.withoutPlatform(), change)
-                                                                                                                              : List.of(change);
-            case leading: // When one change catches up, they fuse and continue together.
+            case separate:      // Let whichever change rolled out first, keep rolling first, unless upgrade alone is failing.
+                return (platformReadyFirst || platformReadyAt.get().equals(Instant.EPOCH)) // Assume platform was first if no jobs have run yet.
+                       ? step.job().flatMap(jobs()::get).flatMap(JobStatus::firstFailing).isPresent()
+                         ? List.of(change)                                 // Platform was first, but is failing.
+                         : List.of(change.withoutApplication(), change)    // Platform was first, and is OK.
+                       : revisionReadyFirst
+                         ? List.of(change.withoutPlatform(), change)       // Revision was first.
+                         : List.of(change);                                // Both ready at the same time, probably due to earlier failure.
+            case leading:      // When one change catches up, they fuse and continue together.
                 return List.of(change);
             case simultaneous: // Revisions are allowed to run ahead, but the job where it caught up should have both changes.
                 return platformReadyFirst ? List.of(change) : List.of(change.withoutPlatform(), change);

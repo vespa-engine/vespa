@@ -52,6 +52,10 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
         return matching(job -> job.lastCompleted().isPresent() && ! job.isSuccess());
     }
 
+    public JobList outOfTestCapacity() {
+        return matching(job -> job.isOutOfCapacity() && job.id().type().environment().isTest());
+    }
+
     public JobList running() {
         return matching(job -> job.isRunning());
     }

@@ -97,7 +97,7 @@ public class DeploymentTrigger {
                     && status.instanceSteps().get(instanceName)
                              .readyAt(outstanding)
                              .map(readyAt -> ! readyAt.isAfter(clock.instant())).orElse(false)
-                    && acceptNewApplicationVersion(status, instanceName)) {
+                    && acceptNewApplicationVersion(status, instanceName, outstanding.application().get())) {
                     application = application.with(instanceName,
                                                    instance -> withRemainingChange(instance, instance.change().with(outstanding.application().get()), status));
                 }
@@ -386,13 +386,12 @@ public class DeploymentTrigger {
 
     // ---------- Change management o_O ----------
 
-    private boolean acceptNewApplicationVersion(DeploymentStatus status, InstanceName instance) {
+    private boolean acceptNewApplicationVersion(DeploymentStatus status, InstanceName instance, ApplicationVersion version) {
         if (status.application().deploymentSpec().instance(instance).isEmpty()) return false; // Unknown instance.
-        if (status.hasFailures(instance)) return true; // Allow changes to fix upgrade or previous revision problems.
+        if (status.hasFailures(version)) return true; // Allow changes to fix upgrade or previous revision problems.
         DeploymentInstanceSpec spec = status.application().deploymentSpec().requireInstance(instance);
         Change change = status.application().require(instance).change();
-        if (change.application().isPresent() && spec.upgradeRevision() == DeploymentSpec.UpgradeRevision.separate) return false;
-        return true;
+        return change.application().isEmpty() || spec.upgradeRevision() != DeploymentSpec.UpgradeRevision.separate;
     }
 
     private Instance withRemainingChange(Instance instance, Change change, DeploymentStatus status) {
