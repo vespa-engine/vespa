@@ -229,13 +229,15 @@ public class ApplicationSerializer {
     }
 
     private void versionsToSlime(Application application, Cursor object) {
-        // Add all deployed versions as well
+        // Add all indirectly deployed versions as well
+        // Remove after all apps are updated
         application.instances()
                 .values()
                 .stream()
                 .flatMap(instance -> instance.deployments().values().stream())
                 .map(Deployment::applicationVersion)
                 .forEach(application.versions()::add);
+        application.versions().removeIf(ApplicationVersion::isDeployedDirectly);
 
         application.versions().forEach(version -> toSlime(version, object.addObject()));
     }
