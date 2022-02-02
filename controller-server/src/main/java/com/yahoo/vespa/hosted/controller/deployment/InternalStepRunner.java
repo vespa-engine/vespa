@@ -280,7 +280,7 @@ public class InternalStepRunner implements StepRunner {
             switch (e.type()) {
                 case CERT_NOT_AVAILABLE:
                     // Same as CERTIFICATE_NOT_READY above, only from the controller
-                    logger.log("Waiting for certificate to become valid: new application, or old one has expired");
+                    logger.log("Waiting for certificate to become valid: new application, or old certificate has expired");
                     if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
                         logger.log(WARNING, "Controller could not validate certificate within " +
                                    timeouts.endpointCertificate() + ": " + Exceptions.toMessageString(e));
