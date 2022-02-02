@@ -65,41 +65,40 @@ variable.`,
 	},
 }
 
-func cloneApplication(source string, name string) {
+func cloneApplication(applicationName string, applicationDir string) {
 	zipFile := getSampleAppsZip()
 	defer zipFile.Close()
 
-	zipReader, zipOpenError := zip.OpenReader(zipFile.Name())
-	if zipOpenError != nil {
-		fatalErr(zipOpenError, "Could not open sample apps zip '", color.Cyan(zipFile.Name()), "'")
+	r, err := zip.OpenReader(zipFile.Name())
+	if err != nil {
+		fatalErr(err, "Could not open sample apps zip '", color.Cyan(zipFile.Name()), "'")
 		return
 	}
-	defer zipReader.Close()
+	defer r.Close()
 
 	found := false
-	for _, f := range zipReader.File {
-		zipEntryPrefix := "sample-apps-master/" + source + "/"
-		if strings.HasPrefix(f.Name, zipEntryPrefix) {
+	for _, f := range r.File {
+		dirPrefix := "sample-apps-master/" + applicationName + "/"
+		if strings.HasPrefix(f.Name, dirPrefix) {
 			if !found { // Create destination directory lazily when source is found
-				createErr := os.Mkdir(name, 0755)
+				createErr := os.Mkdir(applicationDir, 0755)
 				if createErr != nil {
-					fatalErr(createErr, "Could not create directory '", color.Cyan(name), "'")
+					fatalErr(createErr, "Could not create directory '", color.Cyan(applicationDir), "'")
 					return
 				}
 			}
 			found = true
 
-			copyError := copy(f, name, zipEntryPrefix)
-			if copyError != nil {
-				fatalErr(copyError, "Could not copy zip entry '", color.Cyan(f.Name), "' to ", color.Cyan(name))
+			if err := copy(f, applicationDir, dirPrefix); err != nil {
+				fatalErr(err, "Could not copy zip entry '", color.Cyan(f.Name), "' to ", color.Cyan(applicationDir))
 				return
 			}
 		}
 	}
 	if !found {
-		fatalErrHint(fmt.Errorf("Could not find source application '%s'", color.Cyan(source)), "Use -f to ignore the cache")
+		fatalErrHint(fmt.Errorf("Could not find source application '%s'", color.Cyan(applicationName)), "Use -f to ignore the cache")
 	} else {
-		log.Print("Created ", color.Cyan(name))
+		log.Print("Created ", color.Cyan(applicationDir))
 	}
 }
 
@@ -158,6 +157,10 @@ func getSampleAppsZip() *os.File {
 			fatalErr(nil, "Could not download sample apps from GitHub: ", response.StatusCode)
 			return nil
 		}
+		if err := f.Truncate(0); err != nil {
+			fatalErr(err, "Could not truncate sample apps file: ", f.Name())
+			return nil
+		}
 		if _, err := io.Copy(f, response.Body); err != nil {
 			fatalErr(err, "Could not write sample apps to file: ", f.Name())
 			return nil
@@ -172,26 +175,25 @@ func copy(f *zip.File, destinationDir string, zipEntryPrefix string) error {
 	destinationPath := filepath.Join(destinationDir, filepath.FromSlash(strings.TrimPrefix(f.Name, zipEntryPrefix)))
 	if strings.HasSuffix(f.Name, "/") {
 		if f.Name != zipEntryPrefix { // root is already created
-			createError := os.Mkdir(destinationPath, 0755)
-			if createError != nil {
-				return createError
+			if err := os.Mkdir(destinationPath, 0755); err != nil {
+				return err
 			}
 		}
 	} else {
-		zipEntry, zipEntryOpenError := f.Open()
-		if zipEntryOpenError != nil {
-			return zipEntryOpenError
+		r, err := f.Open()
+		if err != nil {
+			return err
 		}
-		defer zipEntry.Close()
-
-		destination, createError := os.Create(destinationPath)
-		if createError != nil {
-			return createError
+		defer r.Close()
+		destination, err := os.Create(destinationPath)
+		if err != nil {
+			return err
 		}
-
-		_, copyError := io.Copy(destination, zipEntry)
-		if copyError != nil {
-			return copyError
+		if _, err := io.Copy(destination, r); err != nil {
+			return err
+		}
+		if err := os.Chmod(destinationPath, f.Mode()); err != nil {
+			return err
 		}
 	}
 	return nil
