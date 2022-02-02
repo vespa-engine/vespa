@@ -32,14 +32,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import static java.util.Collections.emptySet;
-import static java.util.stream.Collectors.toSet;
+import java.util.stream.Collectors;
 
 /**
  * @author baldersheim
@@ -439,17 +438,17 @@ public class DocumentModelBuilder {
 
     private static Set<NewDocumentType.Name> convertDocumentReferencesToNames(Optional<DocumentReferences> documentReferences) {
         if (!documentReferences.isPresent()) {
-            return emptySet();
+            return Set.of();
         }
         return documentReferences.get().referenceMap().values().stream()
                 .map(documentReference -> documentReference.targetSearch().getDocument())
                 .map(documentType -> new NewDocumentType.Name(documentType.getName()))
-                .collect(toSet());
+                .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
     }
 
     private static Set<String> convertTemporaryImportedFieldsToNames(TemporaryImportedFields importedFields) {
         if (importedFields == null) {
-            return emptySet();
+            return Set.of();
         }
         return Collections.unmodifiableSet(importedFields.fields().keySet());
     }
