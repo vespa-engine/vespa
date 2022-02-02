@@ -218,7 +218,7 @@ public class NodePrioritizer {
     private boolean canStillAllocate(Node node) {
         if (node.type() != NodeType.tenant || node.parentHostname().isEmpty()) return true;
         Optional<Node> parent = allNodesAndHosts.parentOf(node);
-        return parent.isPresent() ? Nodes.canAllocateTenantNodeTo(parent.get(), dynamicProvisioning) : null;
+        return parent.isPresent() && Nodes.canAllocateTenantNodeTo(parent.get(), dynamicProvisioning);
     }
 
 }
