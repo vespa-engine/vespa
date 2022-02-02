@@ -180,11 +180,11 @@ func ParseNodeCount(s string) (int, int, error) {
 		if len(parts) != 2 {
 			return 0, 0, parseErr
 		}
-		min, err := strconv.Atoi(parts[0])
+		min, err := strconv.Atoi(strings.TrimSpace(parts[0]))
 		if err != nil {
 			return 0, 0, parseErr
 		}
-		max, err := strconv.Atoi(parts[1])
+		max, err := strconv.Atoi(strings.TrimSpace(parts[1]))
 		if err != nil {
 			return 0, 0, parseErr
 		}

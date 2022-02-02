@@ -252,6 +252,7 @@ func TestParseResources(t *testing.T) {
 func TestParseNodeCount(t *testing.T) {
 	assertNodeCount(t, "2", 2, 2, false)
 	assertNodeCount(t, "[4,8]", 4, 8, false)
+	assertNodeCount(t, "[ 4,  8 ]", 4, 8, false)
 
 	assertNodeCount(t, "foo", 0, 0, true)
 	assertNodeCount(t, "[foo,bar]", 0, 0, true)
