@@ -87,6 +87,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -445,19 +446,22 @@ public class ApplicationController {
                 controller.notificationsDb().removeNotifications(notification.source());
         }
 
-        var oldestDeployedVersion = application.get()
+        var oldestVersionByDirectlyDeployed = application.get()
                 .instances()
                 .values()
                 .stream()
                 .flatMap(instance -> instance.deployments().values().stream())
                 .map(Deployment::applicationVersion)
-                .sorted()
-                .findFirst()
-                .orElse(ApplicationVersion.unknown);
+                .collect(toMap(
+                        ApplicationVersion::isDeployedDirectly,
+                        Function.identity(),
+                        (v1, v2) -> v1.compareTo(v2) < 0 ? v1 : v2
+                ));
+
 
         var olderVersions = application.get().versions()
                 .stream()
-                .filter(version -> version.compareTo(oldestDeployedVersion) < 0)
+                .filter(version -> version.compareTo(oldestVersionByDirectlyDeployed.getOrDefault(version.isDeployedDirectly(), ApplicationVersion.unknown)) < 0)
                 .sorted()
                 .collect(Collectors.toList());
 
