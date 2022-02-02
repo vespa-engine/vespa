@@ -412,7 +412,7 @@ func (t *cloudTarget) printLog(response jobResponse, last int64) int64 {
 	var msgs []logMessage
 	for step, stepMsgs := range response.Log {
 		for _, msg := range stepMsgs {
-			if step == "copyVespaLogs" && LogLevel(msg.Type) > t.logOptions.Level {
+			if step == "copyVespaLogs" && LogLevel(msg.Type) > t.logOptions.Level || LogLevel(msg.Type) == 3 {
 				continue
 			}
 			msgs = append(msgs, msg)
