@@ -229,14 +229,6 @@ public class Flags {
             TENANT_ID, CONSOLE_USER_EMAIL
     );
 
-    public static final UnboundBooleanFlag ENABLE_ONPREM_TENANT_S3_ARCHIVE = defineFeatureFlag(
-            "enable-onprem-tenant-s3-archive", false,
-            List.of("bjorncs"), "2021-09-14", "2022-02-01",
-            "Enable tenant S3 buckets in cd/main. Must be set on controller cluster only.",
-            "Takes effect immediately",
-            ZONE_ID, TENANT_ID
-    );
-
     public static final UnboundBooleanFlag DELETE_UNMAINTAINED_CERTIFICATES = defineFeatureFlag(
             "delete-unmaintained-certificates", false,
             List.of("andreer"), "2021-09-23", "2022-02-14",
