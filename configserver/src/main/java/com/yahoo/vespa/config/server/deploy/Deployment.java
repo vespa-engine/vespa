@@ -183,8 +183,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                 .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm());
         if ( ! verify.value()) return;
 
-        // Timeout per service when getting config generations
-        Duration timeout = Duration.ofSeconds(10);
+        deployLogger.log(Level.INFO, "Wait for all services to use new config generation before restarting");
         while (true) {
             try {
                 params.get().getTimeoutBudget().assertNotTimedOut(
@@ -193,15 +192,14 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                 throw new ConfigNotConvergedException(e);
             }
 
-            deployLogger.log(Level.INFO, "Wait for services to converge on new generation before restarting");
             ConfigConvergenceChecker convergenceChecker = applicationRepository.configConvergenceChecker();
             Application app = applicationRepository.getActiveApplication(applicationId);
-            ServiceListResponse response = convergenceChecker.checkConvergenceUnlessDeferringChangesUntilRestart(app, timeout);
+            ServiceListResponse response = convergenceChecker.checkConvergenceUnlessDeferringChangesUntilRestart(app);
             if (response.converged) {
-                deployLogger.log(Level.INFO, "Services converged on new generation " + response.currentGeneration);
+                deployLogger.log(Level.INFO, "Services converged on new config generation " + response.currentGeneration);
                 return;
             } else {
-                deployLogger.log(Level.INFO, "Services not converged on new generation, wanted generation: " +
+                deployLogger.log(Level.INFO, "Services did not converge on new config generation " +
                         response.wantedGeneration + ", current generation: " + response.currentGeneration + ", will retry");
                 try { Thread.sleep(10_000); } catch (InterruptedException e) { /* ignore */ }
             }
