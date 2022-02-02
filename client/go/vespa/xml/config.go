@@ -16,7 +16,7 @@ var DefaultDeployment Deployment
 func init() {
 	defaultDeploymentRaw := `<deployment version="1.0">
   <prod>
-    <region active="true">aws-us-east-1c</region>
+    <region>aws-us-east-1c</region>
   </prod>
 </deployment>`
 	d, err := ReadDeployment(strings.NewReader(defaultDeploymentRaw))
@@ -44,8 +44,7 @@ type Prod struct {
 }
 
 type Region struct {
-	Name   string `xml:",chardata"`
-	Active bool   `xml:"active,attr"`
+	Name string `xml:",chardata"`
 }
 
 func (d Deployment) String() string { return d.rawXML.String() }
@@ -142,7 +141,7 @@ func ReadServices(r io.Reader) (Services, error) {
 func Regions(names ...string) []Region {
 	var regions []Region
 	for _, z := range names {
-		regions = append(regions, Region{Name: z, Active: true})
+		regions = append(regions, Region{Name: z})
 	}
 	return regions
 }
