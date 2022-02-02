@@ -29,6 +29,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.ContainerImages;
 import com.yahoo.vespa.hosted.provision.provisioning.FirmwareChecks;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
+import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.time.Clock;
 import java.util.List;
@@ -59,6 +60,7 @@ public class NodeRepository extends AbstractComponent {
     private final LoadBalancers loadBalancers;
     private final FlagSource flagSource;
     private final MetricsDb metricsDb;
+    private final Orchestrator orchestrator;
     private final int spareCount;
 
     /**
@@ -72,7 +74,8 @@ public class NodeRepository extends AbstractComponent {
                           Curator curator,
                           Zone zone,
                           FlagSource flagSource,
-                          MetricsDb metricsDb) {
+                          MetricsDb metricsDb,
+                          Orchestrator orchestrator) {
         this(flavors,
              provisionServiceProvider,
              curator,
@@ -83,6 +86,7 @@ public class NodeRepository extends AbstractComponent {
              Optional.of(config.tenantContainerImage()).filter(s -> !s.isEmpty()).map(DockerImage::fromString),
              flagSource,
              metricsDb,
+             orchestrator,
              config.useCuratorClientCache(),
              zone.environment().isProduction() && !zone.getCloud().dynamicProvisioning() && !zone.system().isCd() ? 1 : 0,
              config.nodeCacheSize());
@@ -102,6 +106,7 @@ public class NodeRepository extends AbstractComponent {
                           Optional<DockerImage> tenantContainerImage,
                           FlagSource flagSource,
                           MetricsDb metricsDb,
+                          Orchestrator orchestrator,
                           boolean useCuratorClientCache,
                           int spareCount,
                           long nodeCacheSize) {
@@ -127,6 +132,7 @@ public class NodeRepository extends AbstractComponent {
         this.loadBalancers = new LoadBalancers(db);
         this.flagSource = flagSource;
         this.metricsDb = metricsDb;
+        this.orchestrator = orchestrator;
         this.spareCount = spareCount;
         nodes.rewrite();
     }
@@ -171,6 +177,8 @@ public class NodeRepository extends AbstractComponent {
     public FlagSource flagSource() { return flagSource; }
 
     public MetricsDb metricsDb() { return metricsDb; }
+
+    public Orchestrator orchestrator() { return orchestrator; }
 
     public NodeRepoStats computeStats() { return NodeRepoStats.computeOver(this); }
 

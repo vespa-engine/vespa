@@ -26,10 +26,8 @@ import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
-import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
 import com.yahoo.vespa.hosted.provision.testutils.ServiceMonitorStub;
 import com.yahoo.vespa.hosted.provision.testutils.TestHostLivenessTracker;
-import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -66,14 +64,11 @@ public class NodeFailTester {
     public MockDeployer deployer;
     public TestMetric metric;
     private final TestHostLivenessTracker hostLivenessTracker;
-    private final Orchestrator orchestrator;
     private final NodeRepositoryProvisioner provisioner;
     private final Curator curator;
 
     private NodeFailTester() {
-        orchestrator = new OrchestratorMock();
-        tester = new ProvisioningTester.Builder().orchestrator(orchestrator)
-                                                 .flavors(hostFlavors.getFlavors())
+        tester = new ProvisioningTester.Builder().flavors(hostFlavors.getFlavors())
                                                  .spareCount(1).build();
         clock = tester.clock();
         curator = tester.getCurator();
@@ -215,7 +210,7 @@ public class NodeFailTester {
 
     public void suspend(ApplicationId app) {
         try {
-            orchestrator.suspend(app);
+            nodeRepository.orchestrator().suspend(app);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -223,7 +218,7 @@ public class NodeFailTester {
 
     public void suspend(String hostName) {
         try {
-            orchestrator.suspend(new HostName(hostName));
+            nodeRepository.orchestrator().suspend(new HostName(hostName));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -231,7 +226,7 @@ public class NodeFailTester {
 
     public NodeFailer createFailer() {
         return new NodeFailer(deployer, nodeRepository, downtimeLimitOneHour,
-                              Duration.ofMinutes(5), orchestrator, NodeFailer.ThrottlePolicy.hosted, metric);
+                              Duration.ofMinutes(5), NodeFailer.ThrottlePolicy.hosted, metric);
     }
 
     public NodeHealthTracker createUpdater() {

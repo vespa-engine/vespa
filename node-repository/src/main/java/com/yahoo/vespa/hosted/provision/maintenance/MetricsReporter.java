@@ -22,7 +22,6 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.persistence.CacheStats;
-import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
@@ -47,20 +46,17 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
 
     private final Set<Pair<Metric.Context, String>> nonZeroMetrics = new HashSet<>();
     private final Metric metric;
-    private final Orchestrator orchestrator;
     private final ServiceMonitor serviceMonitor;
     private final Map<Map<String, String>, Metric.Context> contextMap = new HashMap<>();
     private final Supplier<Integer> pendingRedeploymentsSupplier;
 
     MetricsReporter(NodeRepository nodeRepository,
                     Metric metric,
-                    Orchestrator orchestrator,
                     ServiceMonitor serviceMonitor,
                     Supplier<Integer> pendingRedeploymentsSupplier,
                     Duration interval) {
         super(nodeRepository, interval, metric);
         this.metric = metric;
-        this.orchestrator = orchestrator;
         this.serviceMonitor = serviceMonitor;
         this.pendingRedeploymentsSupplier = pendingRedeploymentsSupplier;
     }
@@ -212,7 +208,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
 
         serviceModel.getApplication(hostname)
                 .map(ApplicationInstance::reference)
-                .map(reference -> orchestrator.getHostInfo(reference, hostname))
+                .map(reference -> nodeRepository().orchestrator().getHostInfo(reference, hostname))
                 .ifPresent(info -> {
                     int suspended = info.status().isSuspended() ? 1 : 0;
                     metric.set("suspended", suspended, context);

@@ -339,7 +339,6 @@ public class MetricsReporterTest {
     private MetricsReporter metricsReporter(TestMetric metric, ProvisioningTester tester) {
         return new MetricsReporter(tester.nodeRepository(),
                                    metric,
-                                   tester.orchestrator(),
                                    serviceMonitor,
                                    () -> 42,
                                    LONG_INTERVAL);
