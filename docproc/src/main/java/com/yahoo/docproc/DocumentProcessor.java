@@ -48,10 +48,10 @@ public abstract class DocumentProcessor extends ChainedComponent {
     private Map<Pair<String,String>, String> fieldMap = new HashMap<>();
 
     /** For a doc type, the actual field name mapping to do */
-    // TODO how to flush this when reconfig of schemamapping? Must solve
-    private Map<String, Map<String, String>> docMapCache = new HashMap<>();
+    // TODO: How to flush this when reconfig of schemamapping?
+    private final Map<String, Map<String, String>> docMapCache = new HashMap<>();
 
-    final boolean hasAnnotations;
+    private final boolean hasAnnotations;
 
     public DocumentProcessor() {
         hasAnnotations = getClass().getAnnotation(Accesses.class) != null;
@@ -70,6 +70,34 @@ public abstract class DocumentProcessor extends ChainedComponent {
      */
     public abstract Progress process(Processing processing);
 
+    /** Sets the schema map for field names */
+    public void setFieldMap(Map<Pair<String, String>, String> fieldMap) {
+        this.fieldMap = fieldMap;
+
+    }
+
+    /** Schema map for field names (doctype,from)→to */
+    public Map<Pair<String, String>, String> getFieldMap() {
+        return fieldMap;
+    }
+
+    public Map<String, String> getDocMap(String docType) {
+        Map<String, String> cached = docMapCache.get(docType);
+        if (cached!=null) {
+            return cached;
+        }
+        Map<String, String> ret = new HashMap<>();
+        for (Entry<Pair<String, String>, String> e : fieldMap.entrySet()) {
+            // Remember to include tuple if doctype is unset in mapping
+            if (docType.equals(e.getKey().getFirst()) || e.getKey().getFirst()==null || "".equals(e.getKey().getFirst())) {
+                ret.put(e.getKey().getSecond(), e.getValue());
+            }
+        }
+        docMapCache.put(docType, ret);
+        return ret;
+    }
+
+    @Override
     public String toString() {
         return "processor " + getId().stringValue();
     }
@@ -99,7 +127,7 @@ public abstract class DocumentProcessor extends ChainedComponent {
          */
         public static final Progress PERMANENT_FAILURE = new Progress("permanent_failure");
 
-        private String name;
+        private final String name;
 
         private Optional<String> reason = Optional.empty();
 
@@ -120,6 +148,7 @@ public abstract class DocumentProcessor extends ChainedComponent {
             return new Progress(this.name, reason);
         }
 
+        @Override
         public String toString() {
             return name;
         }
@@ -128,16 +157,20 @@ public abstract class DocumentProcessor extends ChainedComponent {
             return reason;
         }
 
+        @Override
         public boolean equals(Object object) {
             return object instanceof Progress && ((Progress) object).name.equals(this.name);
         }
 
+        @Override
         public int hashCode() {
             return name.hashCode();
         }
+
     }
 
     public static final class LaterProgress extends Progress {
+
         private final long delay;
         public static final long DEFAULT_LATER_DELAY = 20;  //ms
 
@@ -153,33 +186,7 @@ public abstract class DocumentProcessor extends ChainedComponent {
         public long getDelay() {
             return delay;
         }
-    }
 
-    /** Sets the schema map for field names */
-    public void setFieldMap(Map<Pair<String, String>, String> fieldMap) {
-        this.fieldMap = fieldMap;
-
-    }
-
-    /** Schema map for field names (doctype,from)→to */
-    public Map<Pair<String, String>, String> getFieldMap() {
-        return fieldMap;
-    }
-
-    public Map<String, String> getDocMap(String docType) {
-        Map<String, String> cached = docMapCache.get(docType);
-        if (cached!=null) {
-            return cached;
-        }
-        Map<String, String> ret = new HashMap<>();
-        for (Entry<Pair<String, String>, String> e : fieldMap.entrySet()) {
-            // Remember to include tuple if doctype is unset in mapping
-            if (docType.equals(e.getKey().getFirst()) || e.getKey().getFirst()==null || "".equals(e.getKey().getFirst())) {
-                ret.put(e.getKey().getSecond(), e.getValue());
-            }
-        }
-        docMapCache.put(docType, ret);
-        return ret;
     }
 
 }
