@@ -10,6 +10,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.model.VespaModel;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -61,7 +62,7 @@ public class QuotaValidator extends Validator {
                 .map(hostSpec -> hostSpec.membership().orElseThrow().cluster())
                 .filter(cluster -> cluster.type() == ClusterSpec.Type.admin)
                 .map(ClusterSpec::id)
-                .collect(Collectors.toUnmodifiableSet());
+                .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
     }
 
     /** Check that all clusters in the application do not exceed the quota max cluster size. */

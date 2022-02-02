@@ -89,7 +89,6 @@ import static com.yahoo.text.StringUtilities.quote;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Collectors.toUnmodifiableMap;
-import static java.util.stream.Collectors.toUnmodifiableSet;
 
 /**
  * <p>
@@ -241,7 +240,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                                       .map(database -> database.getInputDocType())
                                                       .collect(toSet());
 
-        return typesWithIndexMode.stream().filter(typesWithIndexedFields::contains).collect(toUnmodifiableSet());
+        return typesWithIndexMode.stream().filter(typesWithIndexedFields::contains)
+                                          .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
     }
 
     private void propagateRestartOnDeploy() {
