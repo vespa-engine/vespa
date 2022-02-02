@@ -10,15 +10,15 @@ func TestReplaceDeployment(t *testing.T) {
 	in := `
 <deployment version="1.0">
     <prod>
-        <region active="true">us-north-1</region>
-        <region active="false">eu-north-2</region>
+        <region>us-north-1</region>
+        <region>eu-north-2</region>
     </prod>
 </deployment>`
 
 	out := `<deployment version="1.0">
   <prod>
-    <region active="true">eu-south-1</region>
-    <region active="true">us-central-1</region>
+    <region>eu-south-1</region>
+    <region>us-central-1</region>
   </prod>
 </deployment>
 `
@@ -31,12 +31,12 @@ func TestReplaceDeploymentWithInstance(t *testing.T) {
 <deployment version="1.0">
     <instance id="default">
         <prod>
-            <region active="true">us-north-1</region>
+            <region>us-north-1</region>
         </prod>
     </instance>
     <instance id="beta">
         <prod>
-            <region active="true">eu-south-1</region>
+            <region>eu-south-1</region>
         </prod>
     </instance>
 </deployment>`
@@ -44,14 +44,14 @@ func TestReplaceDeploymentWithInstance(t *testing.T) {
 	out := `<deployment version="1.0">
   <instance id="default">
     <prod>
-      <region active="true">us-central-1</region>
-      <region active="true">eu-west-1</region>
+      <region>us-central-1</region>
+      <region>eu-west-1</region>
     </prod>
   </instance>
   <instance id="beta">
     <prod>
-      <region active="true">us-central-1</region>
-      <region active="true">eu-west-1</region>
+      <region>us-central-1</region>
+      <region>eu-west-1</region>
     </prod>
   </instance>
 </deployment>
@@ -132,16 +132,16 @@ func TestReplaceRemovesElement(t *testing.T) {
 	in := `
 <deployment version="1.0">
     <prod>
-        <region active="true">eu-south-1</region>
-        <region active="true">us-central-1</region>
+        <region>eu-south-1</region>
+        <region>us-central-1</region>
         <test>us-central-1</test>
     </prod>
 </deployment>`
 
 	out := `<deployment version="1.0">
   <prod>
-    <region active="true">eu-south-1</region>
-    <region active="true">us-central-1</region>
+    <region>eu-south-1</region>
+    <region>us-central-1</region>
   </prod>
 </deployment>
 `
