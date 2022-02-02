@@ -25,6 +25,12 @@ public class DefaultRankProfile extends RankProfile {
         super("default", schema, rankProfileRegistry, rankingConstants);
     }
 
+    /** Ignore self inheriting of default as some applications may use that for historical reasons. */
+    public void inherit(String inheritedName) {
+        if (inheritedName.equals("default")) return;
+        super.inherit(inheritedName);
+    }
+
     @Override
     public RankSetting getRankSetting(String fieldOrIndex, RankSetting.Type type) {
         RankSetting setting = super.getRankSetting(fieldOrIndex, type);

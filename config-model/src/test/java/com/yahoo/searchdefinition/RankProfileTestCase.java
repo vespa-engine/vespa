@@ -171,6 +171,18 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
+    public void requireThatDefaultInheritingDefaultIsIgnored() throws ParseException {
+        RankProfileRegistry registry = new RankProfileRegistry();
+        ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
+        builder.addSchema(joinLines(
+                "schema test {",
+                "  document test { } ",
+                "  rank-profile default inherits default {}",
+                "}"));
+        builder.build(true);
+    }
+
+    @Test
     public void requireThatCyclicInheritanceIsIllegal() throws ParseException {
         try {
             RankProfileRegistry registry = new RankProfileRegistry();
