@@ -81,6 +81,8 @@ public class VisitorIterator {
     protected static class DistributionRangeBucketSource implements BucketSource {
         private boolean flushActive = false;
         private int distributionBitCount;
+        private long totalBucketsSplit;
+        private long totalBucketsMerged;
         private final int slices;
         private final int sliceId;
         // Wouldn't need this if this were a non-static class, but do it for
@@ -99,7 +101,9 @@ public class VisitorIterator {
 
             this.slices = slices;
             this.sliceId = sliceId;
-            progressToken = progress;
+            this.totalBucketsSplit = 0;
+            this.totalBucketsMerged = 0;
+            this.progressToken = progress;
 
             // New progress token (could also be empty, in which this is a
             // no-op anyway)
@@ -281,6 +285,8 @@ public class VisitorIterator {
                         bucketsMerged + " merge ops. Pending: " + pendingBefore + " -> " +
                         p.getPendingBucketCount());
             }
+            totalBucketsSplit += bucketsSplit;
+            totalBucketsMerged += bucketsMerged;
         }
 
         private void correctTruncatedBucketCursor() {
