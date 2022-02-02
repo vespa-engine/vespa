@@ -728,7 +728,7 @@ public class Nodes {
         return canAllocateTenantNodeTo(host, zone.getCloud().dynamicProvisioning());
     }
 
-    public static boolean canAllocateTenantNodeTo(Node host, boolean dynamicProvisioning) {
+    public boolean canAllocateTenantNodeTo(Node host, boolean dynamicProvisioning) {
         if ( ! host.type().canRun(NodeType.tenant)) return false;
         if (host.status().wantToRetire()) return false;
         if (host.allocation().map(alloc -> alloc.membership().retired()).orElse(false)) return false;
