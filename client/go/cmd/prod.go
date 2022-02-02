@@ -81,6 +81,7 @@ https://cloud.vespa.ai/en/reference/deployment`,
 			"!\nBefore modification a backup of the original file will be created.\n\n")
 		fmt.Fprint(stdout, "A default value is suggested (shown inside brackets) based on\nthe files' existing contents. Press enter to use it.\n\n")
 		fmt.Fprint(stdout, "Abort the configuration at any time by pressing Ctrl-C. The\nfiles will remain untouched.\n\n")
+		fmt.Fprint(stdout, "See this guide for sizing a Vespa deployment:\n", color.Green("https://docs.vespa.ai/en/performance/sizing-search.html\n\n"))
 		r := bufio.NewReader(stdin)
 		deploymentXML = updateRegions(r, deploymentXML)
 		servicesXML = updateNodes(r, servicesXML)
