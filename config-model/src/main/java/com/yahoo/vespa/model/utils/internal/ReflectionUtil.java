@@ -10,6 +10,7 @@ import com.yahoo.vespa.model.ConfigProducer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -31,7 +32,7 @@ public final class ReflectionUtil {
         return interfaces.rawTypes().stream()
                 .filter(ReflectionUtil::isConcreteProducer)
                 .map(i -> createConfigKeyFromInstance(i.getEnclosingClass(), configId))
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
     }
 
     /**
