@@ -240,7 +240,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                                       .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
 
         return typesWithIndexMode.stream().filter(typesWithIndexedFields::contains)
-                                 .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
+                                          .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
     }
 
     private void propagateRestartOnDeploy() {

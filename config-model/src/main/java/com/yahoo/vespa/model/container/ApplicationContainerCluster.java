@@ -40,6 +40,7 @@ import com.yahoo.vespa.model.utils.FileSender;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -96,12 +97,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     public ApplicationContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
         super(parent, configSubId, clusterId, deployState, true, 10);
         this.tlsClientAuthority = deployState.tlsClientAuthority();
-        previousHosts = deployState.getPreviousModel().stream()
-                                   .map(Model::allocatedHosts)
-                                   .map(AllocatedHosts::getHosts)
-                                   .flatMap(Collection::stream)
-                                   .map(HostSpec::hostname)
-                                   .collect(Collectors.toUnmodifiableSet());
+        previousHosts = Collections.unmodifiableSet(deployState.getPreviousModel().stream()
+                                                               .map(Model::allocatedHosts)
+                                                               .map(AllocatedHosts::getHosts)
+                                                               .flatMap(Collection::stream)
+                                                               .map(HostSpec::hostname)
+                                                               .collect(Collectors.toCollection(() -> new LinkedHashSet<>())));
 
         addSimpleComponent("com.yahoo.language.provider.DefaultLinguisticsProvider");
         addSimpleComponent("com.yahoo.language.provider.DefaultEmbedderProvider");

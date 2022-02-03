@@ -96,6 +96,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -348,7 +349,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 // Only consider global endpoints.
                 .filter(endpoint -> endpoint.scope() == ApplicationClusterEndpoint.Scope.global)
                 .flatMap(endpoint -> endpoint.names().stream())
-                .collect(Collectors.toUnmodifiableSet());
+                .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
 
         // Build the comma delimited list of endpoints this container should be known as.
         // Confusingly called 'rotations' for legacy reasons.

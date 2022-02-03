@@ -9,18 +9,17 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.net.HostName;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.admin.Configserver;
 import com.yahoo.vespa.model.container.Container;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toUnmodifiableSet;
 
 /**
  * Used if clustercontroller is run standalone (not as part of the config server ZooKeeper cluster)
@@ -38,12 +37,12 @@ public class ClusterControllerCluster extends AbstractConfigProducer<ClusterCont
 
     public ClusterControllerCluster(AbstractConfigProducer<?> parent, String subId, DeployState deployState) {
         super(parent, subId);
-        this.previousHosts = deployState.getPreviousModel().stream()
-                                        .map(Model::allocatedHosts)
-                                        .map(AllocatedHosts::getHosts)
-                                        .flatMap(Collection::stream)
-                                        .map(HostSpec::hostname)
-                                        .collect(toUnmodifiableSet());
+        this.previousHosts = Collections.unmodifiableSet(deployState.getPreviousModel().stream()
+                                                                    .map(Model::allocatedHosts)
+                                                                    .map(AllocatedHosts::getHosts)
+                                                                    .flatMap(Collection::stream)
+                                                                    .map(HostSpec::hostname)
+                                                                    .collect(Collectors.toCollection(() -> new LinkedHashSet<>())));
     }
 
     @Override

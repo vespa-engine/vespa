@@ -22,7 +22,10 @@ public class FileReferencesRepository {
     }
 
     public Set<FileReference> allFileReferences() {
-        return fileRegistry.export().stream().map(e -> e.reference).collect(Collectors.toUnmodifiableSet());
+        return fileRegistry.export()
+                           .stream()
+                           .map(e -> e.reference)
+                           .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
     }
 
 }
