@@ -111,37 +111,45 @@ bool
 GreatCircleDistanceBlueprint::setup(const IIndexEnvironment & env,
                                     const ParameterList & params)
 {
-    vespalib::string arg = params[0].getValue();
     if (params.size() == 1) {
-        // params[0] = attribute name
+        _field_name = params[0].getValue();
     } else if (params.size() == 2) {
         // params[0] = "field"
         // params[1] = attribute name
-        if (arg == "field") {
-            arg = params[1].getValue();
+        if (params[0].getValue() == "field") {
+            _field_name = params[1].getValue();
         } else {
-            LOG(error, "first argument must be 'field' but was '%s'", arg.c_str());
+            LOG(error, "first argument must be 'field' but was '%s'", params[0].getValue().c_str());
             return false;
         }
     } else {
-        LOG(error, "bad params.size() = %zd", params.size());
+        LOG(error, "Wants 2 parameters, but got %zd", params.size());
         return false;
     }
-    vespalib::string z = document::PositionDataType::getZCurveFieldName(arg);
+    vespalib::string z = document::PositionDataType::getZCurveFieldName(_field_name);
     const auto *fi = env.getFieldByName(z);
     if (fi != nullptr && fi->hasAttribute()) {
         auto dt = fi->get_data_type();
         auto ct = fi->collection();
+        LOG(spam, "index env has attribute for field '%s' which is: %s%s",
+            z.c_str(),
+            (ct == CollectionType::SINGLE ? "" :
+             (ct == CollectionType::ARRAY ? "array of " : "collection of ")),
+            (dt == DataType::INT64 ? "int64" :
+             (dt == DataType::DOUBLE ? "double" : "something")));
+        /* we can't check these because streaming has wrong information
         if (dt == DataType::INT64) {
             if (ct == CollectionType::SINGLE || ct == CollectionType::ARRAY) {
                 return setup_geopos(env, z);
             }
         }
+        */
+        return setup_geopos(env, z);
     }
-    if (env.getFieldByName(arg) == nullptr && fi == nullptr) {
-        LOG(error, "unknown field '%s' for rank feature %s\n", arg.c_str(), getName().c_str());
+    if (env.getFieldByName(_field_name) == nullptr && fi == nullptr) {
+        LOG(error, "unknown field '%s' for rank feature %s\n", _field_name.c_str(), getName().c_str());
     } else {
-        LOG(error, "field '%s' must be type position and attribute for rank feature %s\n", arg.c_str(), getName().c_str());
+        LOG(error, "field '%s' must be type position and attribute for rank feature %s\n", _field_name.c_str(), getName().c_str());
     }
     return false;
 }
@@ -156,7 +164,9 @@ GreatCircleDistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespa
 
     for (auto loc_ptr : env.getAllLocations()) {
         if (loc_ptr && loc_ptr->location.valid()) {
-            if (loc_ptr->field_name == _attr_name) {
+            if (loc_ptr->field_name == _attr_name ||
+                loc_ptr->field_name == _field_name)
+            {
                 LOG(debug, "found loc from query env matching '%s'", _attr_name.c_str());
                 matching_locs.push_back(loc_ptr);
             } else {

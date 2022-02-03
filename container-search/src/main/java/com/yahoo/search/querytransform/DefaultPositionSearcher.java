@@ -5,23 +5,37 @@ import static com.yahoo.prelude.searcher.PosSearcher.POSITION_PARSING;
 
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
+import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.Location;
+import com.yahoo.prelude.query.GeoLocationItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
+import com.google.inject.Inject;
 import java.util.List;
 
 /**
- * If default position has not been set, it will be set here.
+ * If position attribute has not been set, it will be set here.
  *
  * @author baldersheim
  */
 @After({PhaseNames.RAW_QUERY, POSITION_PARSING})
 @Before(PhaseNames.TRANSFORMED_QUERY)
 public class DefaultPositionSearcher extends Searcher {
+
+    private final boolean useV8GeoPositions;
+
+    @Inject
+    public DefaultPositionSearcher(DocumentmanagerConfig cfg) {
+        this.useV8GeoPositions = cfg.usev8geopositions();
+    }
+
+    DefaultPositionSearcher() {
+        this.useV8GeoPositions = false;
+    }
 
     @Override
     public com.yahoo.search.Result search(Query query, Execution execution) {
@@ -39,6 +53,12 @@ public class DefaultPositionSearcher extends Searcher {
             if (location.getAttribute() == null) {
                 location.setAttribute(facts.getDefaultPosition(null));
             }
+        }
+        if (useV8GeoPositions && (location != null) && (location.getAttribute() != null)) {
+            var geoLoc = new GeoLocationItem(location);
+            query.getModel().getQueryTree().and(geoLoc);
+            location = null;
+            query.getRanking().setLocation(location);
         }
         return execution.search(query);
     }
