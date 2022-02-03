@@ -172,8 +172,8 @@ public class Flags {
             "takes effect at redeployment");
 
     public static final UnboundBooleanFlag GENERATE_NON_MTLS_ENDPOINT = defineFeatureFlag(
-            "generate-non-mtls-endpoint", true,
-            List.of("tokle"), "2021-02-18", "2022-02-01",
+            "generate-non-mtls-endpoint", false,
+            List.of("tokle"), "2021-02-18", "2022-03-01",
             "Whether to generate the non-mtls endpoint",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
@@ -238,7 +238,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_ROUTING_REUSE_PORT = defineFeatureFlag(
             "enable-routing-reuse-port", true,
-            List.of("mortent"), "2021-09-29", "2022-02-01",
+            List.of("mortent"), "2021-09-29", "2022-03-01",
             "Enable reuse port in routing configuration",
             "Takes effect on container restart",
             HOSTNAME
@@ -278,7 +278,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_LEGACY_LB_SERVICES = defineFeatureFlag(
             "use-legacy-lb-services", false,
-            List.of("tokle"), "2021-11-22", "2022-02-01",
+            List.of("tokle"), "2021-11-22", "2022-03-01",
             "Whether to generate routing table based on legacy lb-services config",
             "Takes effect on container reboot",
             ZONE_ID, HOSTNAME);
