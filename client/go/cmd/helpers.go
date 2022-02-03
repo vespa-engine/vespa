@@ -5,10 +5,8 @@
 package cmd
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -187,23 +185,13 @@ func getTarget() vespa.Target {
 		endpoints := getEndpointsFromEnv()
 
 		var apiKey []byte = nil
-		apiKey, err = ioutil.ReadFile(cfg.APIKeyPath(deployment.Application.Tenant))
+		apiKey, err = cfg.ReadAPIKey(deployment.Application.Tenant)
 		if !vespa.Auth0AccessTokenEnabled() && endpoints == nil {
 			if err != nil {
 				fatalErrHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
 			}
 		}
-		privateKeyFile, err := cfg.PrivateKeyPath(deployment.Application)
-		if err != nil {
-			fatalErr(err)
-			return nil
-		}
-		certificateFile, err := cfg.CertificatePath(deployment.Application)
-		if err != nil {
-			fatalErr(err)
-			return nil
-		}
-		kp, err := tls.LoadX509KeyPair(certificateFile, privateKeyFile)
+		kp, err := cfg.X509KeyPair(deployment.Application)
 		if err != nil {
 			var msg string
 			if vespa.Auth0AccessTokenEnabled() {
@@ -229,9 +217,9 @@ func getTarget() vespa.Target {
 
 		return vespa.CloudTarget(getApiURL(), deployment, apiKey,
 			vespa.TLSOptions{
-				KeyPair:         kp,
-				CertificateFile: certificateFile,
-				PrivateKeyFile:  privateKeyFile,
+				KeyPair:         kp.KeyPair,
+				CertificateFile: kp.CertificateFile,
+				PrivateKeyFile:  kp.PrivateKeyFile,
 			},
 			vespa.LogOptions{
 				Writer: stdout,
