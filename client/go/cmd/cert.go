@@ -5,14 +5,40 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
-	"os"
-	"path/filepath"
 )
 
 var overwriteCertificate bool
+
+const longDoc = `Create a new private key and self-signed certificate for Vespa Cloud deployment.
+
+The private key and certificate will be stored in the Vespa CLI home directory
+(see 'vespa help config'). Other commands will then automatically load the
+certificate as necessary.
+
+It's possible to override the private key and certificate used through
+environment variables. This can be useful in continuous integration systems.
+
+* VESPA_CLI_DATA_PLANE_CERT and VESPA_CLI_DATA_PLANE_KEY containing the
+  certificate and private key directly:
+
+  export VESPA_CLI_DATA_PLANE_CERT="my cert"
+  export VESPA_CLI_DATA_PLANE_KEY="my private key"
+
+* VESPA_CLI_DATA_PLANE_CERT_FILE and VESPA_CLI_DATA_PLANE_KEY_FILE containing
+  paths to the certificate and private key:
+
+  export VESPA_CLI_DATA_PLANE_CERT_FILE=/path/to/cert
+  export VESPA_CLI_DATA_PLANE_KEY_FILE=/path/to/key
+
+Note that when overriding key pair through environment variables, that key pair
+will always be used for all applications. It's not possible to specify an
+application-specific key.`
 
 func init() {
 	certCmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate and private key")
@@ -30,6 +56,7 @@ func certExample() string {
 var certCmd = &cobra.Command{
 	Use:               "cert",
 	Short:             "Create a new private key and self-signed certificate for Vespa Cloud deployment",
+	Long:              longDoc,
 	Example:           certExample(),
 	DisableAutoGenTag: true,
 	Args:              cobra.MaximumNArgs(1),
@@ -39,6 +66,7 @@ var certCmd = &cobra.Command{
 var deprecatedCertCmd = &cobra.Command{
 	Use:               "cert",
 	Short:             "Create a new private key and self-signed certificate for Vespa Cloud deployment",
+	Long:              longDoc,
 	Example:           "$ vespa cert -a my-tenant.my-app.my-instance",
 	DisableAutoGenTag: true,
 	Args:              cobra.MaximumNArgs(1),
