@@ -17,6 +17,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.Node.State;
@@ -264,6 +265,35 @@ public class DynamicAllocationTest {
 
         List<Node> finalSpareCapacity = findSpareCapacity(tester);
         assertEquals(1, finalSpareCapacity.size());
+    }
+
+    @Test
+    public void does_not_allocate_to_suspended_hosts() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
+        tester.makeReadyNodes(4, "host-small", NodeType.host, 32);
+        tester.activateTenantHosts();
+
+        HostName randomHost = new HostName(tester.nodeRepository().nodes().list(State.active).first().get().hostname());
+        tester.orchestrator().suspend(randomHost);
+
+        ApplicationId application1 = ProvisioningTester.applicationId();
+        ClusterSpec clusterSpec = clusterSpec("myContent.t1.a1");
+        NodeResources flavor = new NodeResources(1, 4, 100, 1);
+
+        try {
+            tester.prepare(application1, clusterSpec, 4, 1, flavor);
+            fail("Should not be able to deploy 4 nodes on 4 hosts because 1 is suspended");
+        } catch (OutOfCapacityException ignored) { }
+
+        // Resume the host, the deployment goes through
+        tester.orchestrator().resume(randomHost);
+        tester.activate(application1, tester.prepare(application1, clusterSpec, 4, 1, flavor));
+        Set<String> hostnames = tester.getNodes(application1, State.active).hostnames();
+
+        // Verify that previously allocated nodes are not affected by host suspension
+        tester.orchestrator().suspend(randomHost);
+        tester.activate(application1, tester.prepare(application1, clusterSpec, 4, 1, flavor));
+        assertEquals(hostnames, tester.getNodes(application1, State.active).hostnames());
     }
 
     @Test

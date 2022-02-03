@@ -118,7 +118,7 @@ public class NodeRepository extends AbstractComponent {
         this.db = new CuratorDatabaseClient(flavors, curator, clock, useCuratorClientCache, nodeCacheSize);
         this.zone = zone;
         this.clock = clock;
-        this.nodes = new Nodes(db, zone, clock);
+        this.nodes = new Nodes(db, zone, clock, orchestrator);
         this.flavors = flavors;
         this.resourcesCalculator = provisionServiceProvider.getHostResourcesCalculator();
         this.nameResolver = nameResolver;
