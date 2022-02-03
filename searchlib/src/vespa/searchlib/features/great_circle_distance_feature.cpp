@@ -23,6 +23,8 @@ namespace search::features {
 
 feature_t GCDExecutor::calculateGCD(uint32_t docId) {
     feature_t dist = std::numeric_limits<feature_t>::max();
+    _best_lat = 90.0;
+    _best_lng = -180.0;
     if (_locations.empty()) {
         return dist;
     }
