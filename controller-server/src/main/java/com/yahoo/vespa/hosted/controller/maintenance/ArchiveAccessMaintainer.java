@@ -6,6 +6,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.archive.CuratorArchiveBucketDb;
@@ -15,7 +16,10 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.groupingBy;
 
 /**
  * Update archive access permissions with roles from tenants
@@ -52,10 +56,20 @@ public class ArchiveAccessMaintainer extends ControllerMaintainer {
                     try {
                         var tenantArchiveAccessRoles = cloudTenantArchiveExternalAccessRoles();
                         archiveBucketDb.buckets(zoneId).forEach(archiveBucket ->
-                                archiveService.updateBucketAndKeyPolicy(zoneId, archiveBucket,
+                                archiveService.updateBucketPolicy(zoneId, archiveBucket,
                                         Maps.filterEntries(tenantArchiveAccessRoles,
                                                 entry -> archiveBucket.tenants().contains(entry.getKey())))
                         );
+                        Map<String, List<ArchiveBucket>> bucketsPerKey = archiveBucketDb.buckets(zoneId).stream()
+                                .collect(groupingBy(ArchiveBucket::keyArn));
+                        bucketsPerKey.forEach((keyArn, buckets) -> {
+                            Set<String> authorizedIamRolesForKey = buckets.stream()
+                                    .flatMap(b -> b.tenants().stream())
+                                    .filter(tenantArchiveAccessRoles::containsKey)
+                                    .map(tenantArchiveAccessRoles::get)
+                                    .collect(Collectors.toSet());
+                            archiveService.updateKeyPolicy(zoneId, keyArn, authorizedIamRolesForKey);
+                        });
                     } catch (Exception e) {
                         throw new RuntimeException("Failed to maintain archive access in " + zoneId.value(), e);
                     }
