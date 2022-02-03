@@ -43,6 +43,9 @@ public class ArchiveUriUpdaterTest {
         // Initially we should not set any archive URIs as the archive service does not return any
         updater.maintain();
         assertArchiveUris(Map.of(), zone);
+        // but the controller zone is always present
+        assertArchiveUris(Map.of(TenantName.from("hosted-vespa"), "s3://bucketName/hosted-vespa/"),
+                          ZoneId.from("prod", "controller"));
 
         // Archive service now has URI for tenant1, but tenant1 is not deployed in zone
         setBucketNameInService(Map.of(tenant1, "uri-1"), zone);
