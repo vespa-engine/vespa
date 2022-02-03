@@ -8,7 +8,7 @@ import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import com.yahoo.vespa.model.container.docproc.DocprocChain;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -30,7 +30,7 @@ public class IndexingDocprocChain extends DocprocChain implements SpecialtokensC
                                      new ChainSpecification.Inheritance(Set.of(), Set.of()),
                                      phases,
                                      Set.of()),
-              new LinkedHashMap<>());
+              new HashMap<>());
         addInnerComponent(new IndexingProcessor());
     }
 

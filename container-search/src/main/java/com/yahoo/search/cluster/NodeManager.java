@@ -11,6 +11,9 @@ import java.util.concurrent.Executor;
  */
 public interface NodeManager<T> {
 
+    /** Name to identify Nodemanager */
+    default String name() { return ""; }
+
     /** Called when a failed node is working (ready for production) again */
     void working(T node);
 

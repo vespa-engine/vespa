@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.utils;
 
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
  */
 public class Duration {
     private static Pattern pattern = Pattern.compile("([0-9\\.]+)\\s*([a-z]+)?");
-    private static Map<String, Integer> unitMultiplier = new LinkedHashMap<>();
+    private static Map<String, Integer> unitMultiplier = new HashMap<>();
     static {
         unitMultiplier.put("s", 1000);
         unitMultiplier.put("d", 1000 * 3600 * 24);

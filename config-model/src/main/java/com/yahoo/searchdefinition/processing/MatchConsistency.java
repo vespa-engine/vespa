@@ -12,7 +12,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.IndexExpression;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -33,7 +33,7 @@ public class MatchConsistency extends Processor {
     public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
-        Map<String, Matching.Type> types = new LinkedHashMap<>();
+        Map<String, Matching.Type> types = new HashMap<>();
         for (SDField field : schema.allConcreteFields()) {
             new MyVisitor(schema, field, types).visit(field.getIndexingScript());
         }

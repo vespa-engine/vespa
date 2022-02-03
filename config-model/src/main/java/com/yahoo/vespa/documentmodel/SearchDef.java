@@ -4,7 +4,7 @@ package com.yahoo.vespa.documentmodel;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentTypeManager;
 
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -19,11 +19,11 @@ public class SearchDef {
     /// These are the real backing documenttypes
     private DocumentTypeManager sources = new DocumentTypeManager();
     /// Map of all search fields
-    private Map<String, SearchField> fields = new LinkedHashMap<>();
+    private Map<String, SearchField> fields = new HashMap<>();
     /// Map of all views that can be searched.
-    private Map<String, FieldView> views = new LinkedHashMap<>();
+    private Map<String, FieldView> views = new HashMap<>();
     /// Map of all aliases <alias, realname>
-    private Map<String, String> aliases = new LinkedHashMap<>();
+    private Map<String, String> aliases = new HashMap<>();
 
     /**
      * Will create a SearchDef with the given name

@@ -47,7 +47,7 @@ public class ClusterMonitor<T> {
 
     public ClusterMonitor(NodeManager<T> manager, boolean startPingThread) {
         nodeManager = manager;
-        monitorThread = new MonitorThread("search.clustermonitor");
+        monitorThread = new MonitorThread("search.clustermonitor." + manager.name());
         if (startPingThread) {
             monitorThread.start();
         }
@@ -81,7 +81,9 @@ public class ClusterMonitor<T> {
 
     /**
      * Returns the monitor of the given node, or null if this node has not been added
+     * @deprecated  Will be removed in Vespa 8.
      */
+    @Deprecated(forRemoval = true, since = "7.537")
     public BaseNodeMonitor<T> getNodeMonitor(T node) {
         return nodeMonitors.get(node);
     }
@@ -147,6 +149,7 @@ public class ClusterMonitor<T> {
     private class MonitorThread extends Thread {
         MonitorThread(String name) {
             super(name);
+            setDaemon(true);
         }
 
         public void run() {

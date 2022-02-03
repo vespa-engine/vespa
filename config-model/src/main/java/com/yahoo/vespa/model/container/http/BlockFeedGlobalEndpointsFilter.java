@@ -12,6 +12,7 @@ import com.yahoo.vespa.model.clients.ContainerDocumentApi;
 import com.yahoo.vespa.model.container.ContainerCluster;
 
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -40,7 +41,7 @@ public class BlockFeedGlobalEndpointsFilter extends Filter implements RuleBasedF
     public void getConfig(RuleBasedFilterConfig.Builder builder) {
         Set<String> hostNames = endpoints.stream()
                 .flatMap(e -> e.names().stream())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
         if(hostNames.size() > 0) {
             Collection<String> hostnamesSorted = hostNames.stream().sorted().collect(Collectors.toList());
             RuleBasedFilterConfig.Rule.Builder rule = new RuleBasedFilterConfig.Rule.Builder()

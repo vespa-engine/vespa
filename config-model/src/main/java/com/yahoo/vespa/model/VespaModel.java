@@ -87,7 +87,6 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.codegen.ConfiggenUtil.createClassName;
 import static com.yahoo.text.StringUtilities.quote;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
@@ -228,7 +227,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     private static Set<String> documentTypesWithIndex(ContentCluster content) {
         Set<String> typesWithIndexMode = content.getSearch().getDocumentTypesWithIndexedCluster().stream()
                                                 .map(type -> type.getFullName().getName())
-                                                .collect(toSet());
+                                                .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
 
         Set<String> typesWithIndexedFields = content.getSearch().getIndexed() == null
                                              ? Set.of()
@@ -238,7 +237,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                                                                   .allConcreteFields()
                                                                                   .stream().anyMatch(SDField::doesIndexing))
                                                       .map(database -> database.getInputDocType())
-                                                      .collect(toSet());
+                                                      .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
 
         return typesWithIndexMode.stream().filter(typesWithIndexedFields::contains)
                                           .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
@@ -695,7 +694,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                       .map(HostResource::spec)
                                       .filter(spec -> spec.membership().isPresent())
                                       .map(spec -> spec.membership().get().cluster().id())
-                                      .collect(Collectors.toSet());
+                                      .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
     }
 
     @Override

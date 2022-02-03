@@ -7,7 +7,7 @@ import com.yahoo.component.chain.dependencies.Dependencies;
 import com.yahoo.component.chain.model.ChainedComponentModel;
 import net.jcip.annotations.Immutable;
 
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -16,7 +16,7 @@ import java.util.Map;
 @Immutable
 public class DocumentProcessorModel extends ChainedComponentModel {
 
-    private final Map<Pair<String, String>, String> fieldNameSchemaMap = new LinkedHashMap<>();
+    private final Map<Pair<String, String>, String> fieldNameSchemaMap = new HashMap<>();
 
     public DocumentProcessorModel(BundleInstantiationSpecification bundleInstantiationSpec, Dependencies dependencies, Map<Pair<String, String>, String> fieldNameSchemaMap) {
         super(bundleInstantiationSpec, dependencies);

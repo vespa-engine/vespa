@@ -9,6 +9,7 @@ import com.yahoo.container.core.http.HttpFilterConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -16,6 +17,7 @@ import static com.yahoo.container.core.http.HttpFilterConfig.Param;
 
 /**
  * @author gjoranv
+ * @since 5.1.23
  */
 public class FilterConfigProvider extends SimpleComponent implements HttpFilterConfig.Producer {
 
@@ -23,7 +25,7 @@ public class FilterConfigProvider extends SimpleComponent implements HttpFilterC
             ComponentSpecification.fromString(com.yahoo.container.FilterConfigProvider.class.getName());
 
     private final ChainedComponentModel filterModel;
-    private final Map<String, String> configMap = new LinkedHashMap<>();
+    private HashMap<String, String> configMap = new LinkedHashMap<>();
 
     public FilterConfigProvider(ChainedComponentModel filterModel) {
         super(new ComponentModel(

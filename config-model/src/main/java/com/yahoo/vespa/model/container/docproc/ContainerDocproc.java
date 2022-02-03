@@ -11,7 +11,7 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.ContainerSubsystem;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -32,7 +32,7 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains>
     // The number of nodes to use per client.
     private int numNodesPerClient = 0;
 
-    private Map<Pair<String, String>, String> fieldNameSchemaMap = new LinkedHashMap<>();
+    private Map<Pair<String, String>, String> fieldNameSchemaMap = new HashMap<>();
 
     public ContainerDocproc(ContainerCluster cluster, DocprocChains chains) {
         this(cluster, chains, new Options(false, null, null, null, null, null, null));
@@ -106,7 +106,7 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains>
     
     @Override
     public void getConfig(SchemamappingConfig.Builder builder) {
-        Map<Pair<String, String>, String> allMappings = new LinkedHashMap<>();
+        Map<Pair<String, String>, String> allMappings = new HashMap<>();
         for (DocprocChain chain : getChains().allChains().allComponents()) {
             for (DocumentProcessor processor : chain.getInnerComponents()) {
                 allMappings.putAll(fieldNameSchemaMap());

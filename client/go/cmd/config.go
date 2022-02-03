@@ -5,6 +5,7 @@
 package cmd
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -107,6 +108,12 @@ type Config struct {
 	createDirs bool
 }
 
+type KeyPair struct {
+	KeyPair         tls.Certificate
+	CertificateFile string
+	PrivateKeyFile  string
+}
+
 func LoadConfig() (*Config, error) {
 	home, err := vespaCliHome()
 	if err != nil {
@@ -146,11 +153,44 @@ func (c *Config) PrivateKeyPath(app vespa.ApplicationID) (string, error) {
 	return c.applicationFilePath(app, "data-plane-private-key.pem")
 }
 
+func (c *Config) X509KeyPair(app vespa.ApplicationID) (KeyPair, error) {
+	cert, certOk := os.LookupEnv("VESPA_CLI_DATA_PLANE_CERT")
+	key, keyOk := os.LookupEnv("VESPA_CLI_DATA_PLANE_KEY")
+	if certOk && keyOk {
+		// Use key pair from environment
+		kp, err := tls.X509KeyPair([]byte(cert), []byte(key))
+		return KeyPair{KeyPair: kp}, err
+	}
+	privateKeyFile, err := c.PrivateKeyPath(app)
+	if err != nil {
+		return KeyPair{}, err
+	}
+	certificateFile, err := c.CertificatePath(app)
+	if err != nil {
+		return KeyPair{}, err
+	}
+	kp, err := tls.LoadX509KeyPair(certificateFile, privateKeyFile)
+	if err != nil {
+		return KeyPair{}, err
+	}
+	return KeyPair{
+		KeyPair:         kp,
+		CertificateFile: certificateFile,
+		PrivateKeyFile:  privateKeyFile,
+	}, nil
+}
+
 func (c *Config) APIKeyPath(tenantName string) string {
+	if override, ok := os.LookupEnv("VESPA_CLI_API_KEY_FILE"); ok {
+		return override
+	}
 	return filepath.Join(c.Home, tenantName+".api-key.pem")
 }
 
 func (c *Config) ReadAPIKey(tenantName string) ([]byte, error) {
+	if override, ok := os.LookupEnv("VESPA_CLI_API_KEY"); ok {
+		return []byte(override), nil
+	}
 	return ioutil.ReadFile(c.APIKeyPath(tenantName))
 }
 

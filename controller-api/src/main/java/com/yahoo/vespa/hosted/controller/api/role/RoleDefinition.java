@@ -60,6 +60,9 @@ public enum RoleDefinition {
               Policy.billingInformationRead,
               Policy.secretStoreOperations),
 
+    /** Developer for manual deployments for a tenant */
+    hostedDeveloper(Policy.developmentDeployment),
+
     /** Admin — the administrative function for user management etc. */
     administrator(Policy.tenantUpdate,
                   Policy.tenantManager,

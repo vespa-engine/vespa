@@ -15,12 +15,30 @@ import (
 
 var overwriteKey bool
 
+const apiKeyLongDoc = `Create a new user API key for authentication with Vespa Cloud.
+
+The API key will be stored in the Vespa CLI home directory
+(see 'vespa help config'). Other commands will then automatically load the API
+key as necessary.
+
+It's possible to override the API key used through environment variables. This
+can be useful in continuous integration systems.
+
+* VESPA_CLI_API_KEY containing the key directly:
+
+  export VESPA_CLI_API_KEY="my api key"
+
+* VESPA_CLI_API_KEY_FILE containing path to the key:
+
+  export VESPA_CLI_API_KEY_FILE=/path/to/api-key
+
+Note that when overriding API key through environment variables, that key will
+always be used. It's not possible to specify a tenant-specific key.`
+
 func init() {
 	apiKeyCmd.Flags().BoolVarP(&overwriteKey, "force", "f", false, "Force overwrite of existing API key")
 	apiKeyCmd.MarkPersistentFlagRequired(applicationFlag)
 }
-
-var example string
 
 func apiKeyExample() string {
 	if vespa.Auth0AccessTokenEnabled() {
@@ -33,6 +51,7 @@ func apiKeyExample() string {
 var apiKeyCmd = &cobra.Command{
 	Use:               "api-key",
 	Short:             "Create a new user API key for authentication with Vespa Cloud",
+	Long:              apiKeyLongDoc,
 	Example:           apiKeyExample(),
 	DisableAutoGenTag: true,
 	Args:              cobra.ExactArgs(0),
@@ -42,6 +61,7 @@ var apiKeyCmd = &cobra.Command{
 var deprecatedApiKeyCmd = &cobra.Command{
 	Use:               "api-key",
 	Short:             "Create a new user API key for authentication with Vespa Cloud",
+	Long:              apiKeyLongDoc,
 	Example:           apiKeyExample(),
 	DisableAutoGenTag: true,
 	Args:              cobra.ExactArgs(0),

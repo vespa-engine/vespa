@@ -140,7 +140,7 @@ public class Validation {
         Set<ClusterSpec.Id> clustersToBeRestarted = actions.stream()
                                                            .filter(action -> action.getType() == ConfigChangeAction.Type.RESTART)
                                                            .map(action -> action.clusterId())
-                                                           .collect(Collectors.toSet());
+                                                           .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
         for (var clusterToRestart : clustersToBeRestarted) {
             var containerCluster = model.getContainerClusters().get(clusterToRestart.value());
             if (containerCluster != null)

@@ -37,12 +37,10 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
 
     private final Map<TenantName, Set<ApplicationInfo>> models;
     private final Zone zone;
-    private final BooleanFlag generateNonMtlsEndpoint;
 
     public LbServicesProducer(Map<TenantName, Set<ApplicationInfo>> models, Zone zone, FlagSource flagSource) {
         this.models = models;
         this.zone = zone;
-        generateNonMtlsEndpoint = Flags.GENERATE_NON_MTLS_ENDPOINT.bindTo(flagSource);
     }
 
     @Override
@@ -77,7 +75,7 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
         // TODO: read active rotation from ApplicationClusterInfo
         ab.activeRotation(getActiveRotation(app));
         ab.usePowerOfTwoChoicesLb(true);
-        ab.generateNonMtlsEndpoint(generateNonMtlsEndpoint(app));
+        ab.generateNonMtlsEndpoint(false);
 
         // TODO: Remove when endpoints-config is read by all load balancers
         app.getModel().getHosts().stream()
@@ -121,10 +119,6 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
             }
         }
         return activeRotation;
-    }
-
-    private boolean generateNonMtlsEndpoint(ApplicationInfo app) {
-        return generateNonMtlsEndpoint.with(FetchVector.Dimension.APPLICATION_ID, app.getApplicationId().serializedForm()).value();
     }
 
     private LbServicesConfig.Tenants.Applications.Hosts.Builder getHostsConfig(HostInfo hostInfo) {
