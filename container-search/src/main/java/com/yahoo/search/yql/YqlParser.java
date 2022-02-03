@@ -400,7 +400,7 @@ public class YqlParser implements Parser {
             case NON_EMPTY:
                 return ensureNonEmpty(ast);
             default:
-                throw newUnexpectedArgumentException(names.get(0), DOT_PRODUCT, NEAREST_NEIGHBOR,
+                throw newUnexpectedArgumentException(names.get(0), DOT_PRODUCT, GEO_LOCATION, NEAREST_NEIGHBOR,
                                                      RANGE, RANK, USER_QUERY, WAND, WEAK_AND, WEIGHTED_SET,
                                                      PREDICATE, USER_INPUT, NON_EMPTY);
         }
