@@ -6,12 +6,15 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author olaa
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PolicyEntity {
+    private static final Pattern namePattern = Pattern.compile("^(?<domain>[^:]+):policy\\.(?<name>.*)$");
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private final List<AssertionEntity> assertions;
@@ -19,8 +22,15 @@ public class PolicyEntity {
 
     public PolicyEntity(@JsonProperty("name") String name,
                         @JsonProperty("assertions") List<AssertionEntity> assertions) {
-        this.name = name;
+        this.name = nameFromResourceString(name);
         this.assertions = assertions;
+    }
+
+    private static String nameFromResourceString(String resource) {
+        Matcher matcher = namePattern.matcher(resource);
+        if (!matcher.matches())
+            throw new IllegalArgumentException("Could not find policy name from resource string: " + resource);
+        return matcher.group("name");
     }
 
     public String getName() {
