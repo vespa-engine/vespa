@@ -29,8 +29,8 @@ public class ArchiveUriUpdater extends ControllerMaintainer {
     private final NodeRepository nodeRepository;
     private final CuratorArchiveBucketDb archiveBucketDb;
 
-    public ArchiveUriUpdater(Controller controller, Duration interval) {
-        super(controller, interval);
+    public ArchiveUriUpdater(Controller controller, Duration duration) {
+        super(controller, duration);
         this.applications = controller.applications();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
         this.archiveBucketDb = controller.archiveBucketDb();
@@ -39,10 +39,6 @@ public class ArchiveUriUpdater extends ControllerMaintainer {
     @Override
     protected double maintain() {
         Map<ZoneId, Set<TenantName>> tenantsByZone = new HashMap<>();
-
-        tenantsByZone.put(controller().zoneRegistry().systemZone().getVirtualId(),
-                          new HashSet<>(INFRASTRUCTURE_TENANTS));
-
         for (var application : applications.asList()) {
             for (var instance : application.instances().values()) {
                 for (var deployment : instance.deployments().values()) {
