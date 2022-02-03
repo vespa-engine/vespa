@@ -148,7 +148,26 @@ func Regions(names ...string) []Region {
 
 // ParseResources parses nodes resources from string s.
 func ParseResources(s string) (Resources, error) {
-	parts := strings.Split(s, ",")
+	var parts []string
+	inRange := false
+	var sb strings.Builder
+	for _, c := range s {
+		if inRange {
+			if c == ']' {
+				inRange = false
+			}
+		} else {
+			if c == '[' {
+				inRange = true
+			} else if c == ',' {
+				parts = append(parts, sb.String())
+				sb.Reset()
+				continue
+			}
+		}
+		sb.WriteRune(c)
+	}
+	parts = append(parts, sb.String())
 	if len(parts) != 3 {
 		return Resources{}, fmt.Errorf("invalid resources: %q", s)
 	}
