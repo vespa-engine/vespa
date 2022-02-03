@@ -190,7 +190,7 @@ determine_buckets_from_bucket_space_metric bool default=true
 # If one resource category from one content node is above the configured limit, feed is blocked.
 # This information is pushed to all distributor nodes via a new cluster state bundle.
 # The distributor nodes handle the actual feed blocking based on this information.
-enable_cluster_feed_block bool default=false
+enable_cluster_feed_block bool default=true
 
 # Contains all resource categories (key) with its corresponding feed block limit (value)
 # used when the cluster controller decides whether external feed should be blocked (or unblocked) in the entire cluster.
