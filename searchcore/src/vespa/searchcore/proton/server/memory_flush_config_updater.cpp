@@ -13,9 +13,10 @@ namespace {
 bool
 shouldUseConservativeMode(const ResourceUsageState &resourceState,
                           bool currentlyUseConservativeMode,
+                          double high_watermark_factor,
                           double lowWatermarkFactor)
 {
-    return resourceState.aboveLimit() ||
+    return resourceState.aboveLimit(high_watermark_factor) ||
            (currentlyUseConservativeMode && resourceState.aboveLimit(lowWatermarkFactor));
 }
 
@@ -25,6 +26,7 @@ void
 MemoryFlushConfigUpdater::considerUseConservativeDiskMode(const LockGuard &guard, MemoryFlush::Config &newConfig)
 {
     if (shouldUseConservativeMode(_currState.diskState(), _useConservativeDiskMode,
+                                  _currConfig.conservative.highwatermarkfactor,
                                   _currConfig.conservative.lowwatermarkfactor))
     {
         newConfig.maxGlobalTlsSize = _currConfig.maxtlssize * _currConfig.conservative.disklimitfactor;
@@ -41,6 +43,7 @@ void
 MemoryFlushConfigUpdater::considerUseConservativeMemoryMode(const LockGuard &, MemoryFlush::Config &newConfig)
 {
     if (shouldUseConservativeMode(_currState.memoryState(), _useConservativeMemoryMode,
+                                  _currConfig.conservative.highwatermarkfactor,
                                   _currConfig.conservative.lowwatermarkfactor))
     {
         newConfig.maxGlobalMemory = _currConfig.maxmemory * _currConfig.conservative.memorylimitfactor;
