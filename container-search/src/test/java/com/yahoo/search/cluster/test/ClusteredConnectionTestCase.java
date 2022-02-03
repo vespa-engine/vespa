@@ -133,7 +133,7 @@ public class ClusteredConnectionTestCase {
     /** Represents a connection, e.g over http, in this test */
     private static class Connection {
 
-        private String id;
+        private final String id;
 
         private boolean inService = true;
 

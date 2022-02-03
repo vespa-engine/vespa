@@ -51,7 +51,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
      * @param internal whether or not this cluster is internal (part of the same installation)
      */
     public ClusterSearcher(ComponentId id, List<T> connections, boolean internal) {
-        this(id, connections, new Hasher<T>(), internal);
+        this(id, connections, new Hasher<>(), internal);
     }
 
     public ClusterSearcher(ComponentId id, List<T> connections, Hasher<T> hasher, boolean internal) {
@@ -67,6 +67,9 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
             hasher.add(connection);
         }
     }
+
+    @Override
+    public String name() { return getIdString(); }
 
     /** Pinging a node, called from ClusterMonitor */
     @Override
@@ -112,7 +115,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
                     if (k == null) {
                         b.append("null\n");
                     } else {
-                        b.append(k.toString()).append('\n');
+                        b.append(k).append('\n');
                     }
                 }
                 traceAsString = b.toString();
@@ -303,7 +306,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
 
     private class Pinger implements Callable<Pong> {
 
-        private T connection;
+        private final T connection;
 
         public Pinger(T connection) {
             this.connection = connection;
