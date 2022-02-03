@@ -69,6 +69,7 @@
         <extensions>true</extensions>
         <configuration>
           <instructions>
+            <_fixupmessages>"Classes found in the wrong directory"</_fixupmessages> <!-- Hide warnings for multi-release jars -->
             <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
             <Bundle-Version>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}</Bundle-Version>
             <Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>
