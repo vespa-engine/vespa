@@ -132,4 +132,9 @@ public interface BillingDatabaseClient {
      * @param collectionMethod The collection method for the tenant
      */
     void setCollectionMethod(TenantName tenantName, CollectionMethod collectionMethod);
+
+    /**
+     * Performs necessary maintenance operations
+     */
+    void maintain();
 }
