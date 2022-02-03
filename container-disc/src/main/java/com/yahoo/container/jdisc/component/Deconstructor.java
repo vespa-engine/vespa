@@ -108,7 +108,7 @@ public class Deconstructor implements ComponentDeconstructor {
         * Used to randomize restart to avoid simultaneous cluster restarts.
         */
         private Duration getRandomizedShutdownDelay() {
-            long seconds = (long) random.nextDouble() * 60 * 10;
+            long seconds = (long) (random.nextDouble() * 60 * 10);
             return Duration.ofSeconds(seconds);
         }
 
