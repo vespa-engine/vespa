@@ -11,6 +11,7 @@ ProtonConfig::Flush::Memory
 getConfig(int64_t maxMemory, int64_t eachMaxMemory, int64_t maxTlsSize,
           double conservativeMemoryLimitFactor = 0.5,
           double conservativeDiskLimitFactor = 0.6,
+          double high_watermark_factor = 0.9,
           double lowWatermarkFactor = 0.8)
 {
     ProtonConfig::Flush::Memory result;
@@ -19,6 +20,7 @@ getConfig(int64_t maxMemory, int64_t eachMaxMemory, int64_t maxTlsSize,
     result.maxtlssize = maxTlsSize;
     result.conservative.memorylimitfactor = conservativeMemoryLimitFactor;
     result.conservative.disklimitfactor = conservativeDiskLimitFactor;
+    result.conservative.highwatermarkfactor = high_watermark_factor;
     result.conservative.lowwatermarkfactor = lowWatermarkFactor;
     return result;
 }
@@ -32,14 +34,16 @@ getDefaultConfig()
 ResourceUsageState
 aboveLimit()
 {
-    return ResourceUsageState(0.7, 0.8);
+    // The high watermark limit is 0.63 (0.7 * 0.9 (factor)).
+    return ResourceUsageState(0.7, 0.64);
 }
 
 ResourceUsageState
 belowLimit()
 {
-    // This is still over default low watermark of 0.56 (0.7 * 0.8)
-    return ResourceUsageState(0.7, 0.6);
+    // The high watermark limit is 0.63 (0.7 * 0.9 (factor)).
+    // This is still over the low watermark limit of 0.56 (0.7 * 0.8 (factor)).
+    return ResourceUsageState(0.7, 0.62);
 }
 
 const HwInfo::Memory defaultMemory(8_Gi);
@@ -173,6 +177,24 @@ TEST_F("require that last config if remembered when setting new disk/memory usag
     f.updater.setConfig(getConfig(6, 3, 30));
     f.notifyDiskMemUsage(aboveLimit(), belowLimit());
     TEST_DO(f.assertStrategyConfig(6, 3, 18));
+}
+
+TEST_F("Use conservative settings when above high watermark for disk usage", Fixture)
+{
+    // The high watermark limit is 0.63 (0.7 * 0.9 (factor)).
+    f.notifyDiskMemUsage(ResourceUsageState(0.7, 0.62), belowLimit());
+    TEST_DO(f.assertStrategyConfig(4, 1, 20));
+    f.notifyDiskMemUsage(ResourceUsageState(0.7, 0.64), belowLimit());
+    TEST_DO(f.assertStrategyConfig(4, 1, 12));
+}
+
+TEST_F("Use conservative settings when above high watermark for memory usage", Fixture)
+{
+    // The high watermark limit is 0.54 (0.6 * 0.9 (factor)).
+    f.notifyDiskMemUsage(belowLimit(), ResourceUsageState(0.6, 0.53));
+    TEST_DO(f.assertStrategyConfig(4, 1, 20));
+    f.notifyDiskMemUsage(belowLimit(), ResourceUsageState(0.6, 0.55));
+    TEST_DO(f.assertStrategyConfig(2, 0, 20));
 }
 
 TEST_F("require that we must go below low watermark for disk usage before using normal tls size value again", Fixture)

@@ -81,6 +81,10 @@ flush.memory.conservative.memorylimitfactor double default=0.5
 ## In this case this factor is multiplied with 'maxtlssize' to calculate a conservative value to use instead.
 flush.memory.conservative.disklimitfactor double default=0.5
 
+## The factor used to multiply with the resource limits for disk / memory to find the high
+## watermark indicating when to from normal into conservative mode for the flush strategy.
+flush.memory.conservative.highwatermarkfactor double default=0.95
+
 ## The factor used to multiply with the resource limits for disk / memory to find the low
 ## watermark indicating when to go back from conservative to normal mode for the flush strategy.
 flush.memory.conservative.lowwatermarkfactor double default=0.9
