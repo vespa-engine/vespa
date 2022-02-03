@@ -84,6 +84,9 @@ public class SearchCluster implements NodeManager<Node> {
         this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(), nodesByHost, groups);
     }
 
+    @Override
+    public String name() { return clusterId; }
+
     public void addMonitoring(ClusterMonitor<Node> clusterMonitor) {
         for (var group : orderedGroups()) {
             for (var node : group.nodes())
