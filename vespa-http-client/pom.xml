@@ -170,17 +170,6 @@
             </goals>
             <configuration>
               <outputFile>target/${project.artifactId}-jar-with-dependencies.jar</outputFile>
-              <filters>
-                <filter>
-                  <!-- Don't include signature files in uber jar (most likely from bouncycastle).  -->
-                  <artifact>*:*</artifact>
-                  <excludes>
-                    <exclude>META-INF/*.SF</exclude>
-                    <exclude>META-INF/*.DSA</exclude>
-                    <exclude>META-INF/*.RSA</exclude>
-                  </excludes>
-                </filter>
-              </filters>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <mainClass>com.yahoo.vespa.http.client.runner.Runner</mainClass>
