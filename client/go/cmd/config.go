@@ -181,10 +181,16 @@ func (c *Config) X509KeyPair(app vespa.ApplicationID) (KeyPair, error) {
 }
 
 func (c *Config) APIKeyPath(tenantName string) string {
+	if override, ok := os.LookupEnv("VESPA_CLI_API_KEY_FILE"); ok {
+		return override
+	}
 	return filepath.Join(c.Home, tenantName+".api-key.pem")
 }
 
 func (c *Config) ReadAPIKey(tenantName string) ([]byte, error) {
+	if override, ok := os.LookupEnv("VESPA_CLI_API_KEY"); ok {
+		return []byte(override), nil
+	}
 	return ioutil.ReadFile(c.APIKeyPath(tenantName))
 }
 
