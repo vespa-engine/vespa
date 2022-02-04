@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -298,6 +299,14 @@ class HttpRequestStrategy implements RequestStrategy {
             inflightById.values().forEach(RetriableFuture::complete);
             cluster.close();
             resultExecutor.shutdown();
+            try {
+                if ( ! resultExecutor.awaitTermination(1, TimeUnit.MINUTES))
+                    log.log(WARNING, "Failed processing results within 1 minute");
+            }
+            catch (InterruptedException e) {
+                log.log(WARNING, "Interrupted waiting for results to be processed");
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
