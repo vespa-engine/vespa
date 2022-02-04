@@ -3,8 +3,8 @@
 #include "asciistream.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/memory.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/fastos/file.h>
 #include <limits>
@@ -564,7 +564,8 @@ void asciistream::write(const void * buf, size_t len)
     _rbuf = _wbuf;
 }
 
-std::vector<string> asciistream::getlines(char delim)
+std::vector<string>
+asciistream::getlines(char delim)
 {
     std::vector<string> lines;
     while (!eof()) {
@@ -573,7 +574,8 @@ std::vector<string> asciistream::getlines(char delim)
     return lines;
 }
 
-string asciistream::getline(char delim)
+string
+asciistream::getline(char delim)
 {
     string line;
     const size_t start(_rPos);
@@ -588,7 +590,8 @@ string asciistream::getline(char delim)
     return line;
 }
 
-asciistream asciistream::createFromFile(stringref fileName)
+asciistream
+asciistream::createFromFile(stringref fileName)
 {
     FastOS_File file(vespalib::string(fileName).c_str());
     asciistream is;
@@ -597,14 +600,14 @@ asciistream asciistream::createFromFile(stringref fileName)
         if (sz < 0) {
             throw IoException("Failed getting size of  file " + fileName + " : Error=" + file.getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
         }
-        MallocPtr buf(sz);
-        ssize_t actual = file.Read(buf, sz);
+        alloc::Alloc buf = alloc::Alloc::alloc(sz);
+        ssize_t actual = file.Read(buf.get(), sz);
         if (actual != sz) {
             asciistream e;
             e << "Failed reading " << sz << " bytes from file " << fileName;
             throw IoException(e.str() + " : Error=" + file.getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
         }
-        is << stringref(buf.c_str(), buf.size());
+        is << stringref(static_cast<const char *>(buf.get()), sz);
     }
     return is;
 }
@@ -614,9 +617,10 @@ asciistream asciistream::createFromDevice(stringref fileName)
     FastOS_File file(vespalib::string(fileName).c_str());
     asciistream is;
     if (file.OpenReadOnly()) {
-        MallocPtr buf(64_Ki);
-        for (ssize_t actual = file.Read(buf, buf.size()); actual > 0; actual = file.Read(buf, buf.size())) {
-            is << stringref(buf.c_str(), actual);
+        constexpr size_t SZ = 64_Ki;
+        auto buf = std::make_unique<char []>(SZ);
+        for (ssize_t actual = file.Read(buf.get(), SZ); actual > 0; actual = file.Read(buf.get(), SZ)) {
+            is << stringref(buf.get(), actual);
         }
     }
     return is;
