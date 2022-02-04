@@ -169,7 +169,10 @@ public class ComponentGraph {
     public List<Object> allConstructedComponentsAndProviders() {
         List<Node> orderedNodes = topologicalSort(nodes());
         Collections.reverse(orderedNodes);
-        return orderedNodes.stream().map(node -> node.constructedInstance().get()).collect(Collectors.toList());
+        return orderedNodes.stream()
+                .filter(node -> node.constructedInstance().isPresent())
+                .map(node -> node.constructedInstance().orElseThrow())
+                .collect(Collectors.toList());
     }
 
     private void completeComponentRegistryNode(ComponentRegistryNode registry) {
