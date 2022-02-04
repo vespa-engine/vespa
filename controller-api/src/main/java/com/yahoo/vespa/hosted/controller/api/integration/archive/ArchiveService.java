@@ -15,7 +15,7 @@ import java.util.Set;
  */
 public interface ArchiveService {
 
-    ArchiveBucket createArchiveBucketFor(ZoneId zoneId, boolean sharded);
+    ArchiveBucket createArchiveBucketFor(ZoneId zoneId);
 
     void updateBucketPolicy(ZoneId zoneId, ArchiveBucket bucket, Map<TenantName, String> authorizeIamRoleByTenantName);
 

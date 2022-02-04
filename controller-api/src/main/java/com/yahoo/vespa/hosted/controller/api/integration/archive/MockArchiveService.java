@@ -19,7 +19,7 @@ public class MockArchiveService implements ArchiveService {
     public Map<String, Set<String>> authorizedIamRolesForKey = new TreeMap<>();
 
     @Override
-    public ArchiveBucket createArchiveBucketFor(ZoneId zoneId, boolean sharded) {
+    public ArchiveBucket createArchiveBucketFor(ZoneId zoneId) {
         return new ArchiveBucket("bucketName", "keyArn");
     }
 
