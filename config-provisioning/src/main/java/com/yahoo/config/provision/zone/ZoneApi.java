@@ -13,6 +13,12 @@ public interface ZoneApi {
 
     SystemName getSystemName();
 
+    /**
+     * Returns the ID of the zone.
+     *
+     * WARNING: The ID of a controller zone is equal to the ID of a prod zone in the same region.
+     * @see #getVirtualId()
+     */
     ZoneId getId();
 
     /** Returns the SYSTEM.ENVIRONMENT.REGION string. */
@@ -21,8 +27,8 @@ public interface ZoneApi {
     }
 
     /**
-     * Returns the virtual ID of this zone. For ordinary zones this is the same as {@link ZoneApi#getId()}, for a
-     * system represented as a zone this is a fixed ID that is independent of the actual zone ID.
+     * Returns {@link #getId()} for all zones except the controller zone.  Unlike {@link #getId()},
+     * the virtual ID of a controller is distinct from all other zones.
      */
     default ZoneId getVirtualId() {
         return getId();
