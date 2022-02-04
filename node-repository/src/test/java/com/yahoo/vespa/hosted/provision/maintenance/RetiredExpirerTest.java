@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.provision.testutils.MockDuperModel;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
+import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,11 +61,11 @@ public class RetiredExpirerTest {
     private final NodeResources hostResources = new NodeResources(64, 128, 2000, 10);
     private final NodeResources nodeResources = new NodeResources(2, 8, 50, 1);
 
-    private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
+    private final Orchestrator orchestrator = mock(Orchestrator.class);
+    private final ProvisioningTester tester = new ProvisioningTester.Builder().orchestrator(orchestrator).build();
     private final ManualClock clock = tester.clock();
     private final NodeRepository nodeRepository = tester.nodeRepository();
     private final NodeRepositoryProvisioner provisioner = tester.provisioner();
-    private final Orchestrator orchestrator = mock(Orchestrator.class);
 
     private static final Duration RETIRED_EXPIRATION = Duration.ofHours(12);
 
@@ -72,6 +73,7 @@ public class RetiredExpirerTest {
     public void setup() throws OrchestrationException {
         // By default, orchestrator should deny all request for suspension so we can test expiration
         doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
+        when(orchestrator.getNodeStatus(any())).thenReturn(HostStatus.NO_REMARKS);
     }
 
     @Test
@@ -269,7 +271,6 @@ public class RetiredExpirerTest {
 
     private RetiredExpirer createRetiredExpirer(Deployer deployer) {
         return new RetiredExpirer(nodeRepository,
-                                  orchestrator,
                                   deployer,
                                   new TestMetric(),
                                   Duration.ofDays(30), /* Maintenance interval, use large value so it never runs by itself */

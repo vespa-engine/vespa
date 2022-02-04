@@ -7,7 +7,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
@@ -15,8 +14,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
-import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
-import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.yolean.Exceptions;
 
@@ -54,19 +51,16 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     private final Deployer deployer;
     private final Duration downTimeLimit;
     private final Duration suspendedDownTimeLimit;
-    private final Orchestrator orchestrator;
     private final ThrottlePolicy throttlePolicy;
     private final Metric metric;
 
     public NodeFailer(Deployer deployer, NodeRepository nodeRepository,
-                      Duration downTimeLimit, Duration interval, Orchestrator orchestrator,
-                      ThrottlePolicy throttlePolicy, Metric metric) {
+                      Duration downTimeLimit, Duration interval, ThrottlePolicy throttlePolicy, Metric metric) {
         // check ping status every interval, but at least twice as often as the down time limit
         super(nodeRepository, min(downTimeLimit.dividedBy(2), interval), metric);
         this.deployer = deployer;
         this.downTimeLimit = downTimeLimit;
         this.suspendedDownTimeLimit = downTimeLimit.multipliedBy(4); // Allow more downtime when a node is suspended
-        this.orchestrator = orchestrator;
         this.throttlePolicy = throttlePolicy;
         this.metric = metric;
     }
@@ -160,7 +154,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
 
         for (Node node : activeNodes) {
-            Instant graceTimeStart = clock().instant().minus(suspended(node) ? suspendedDownTimeLimit : downTimeLimit);
+            Instant graceTimeStart = clock().instant().minus(nodeRepository().nodes().suspended(node) ? suspendedDownTimeLimit : downTimeLimit);
             if (node.history().hasEventBefore(History.Event.Type.down, graceTimeStart) && !applicationSuspended(node)) {
                 // Allow a grace period after node re-activation
                 if (!node.history().hasEventAfter(History.Event.Type.activated, graceTimeStart))
@@ -201,7 +195,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
     private boolean applicationSuspended(Node node) {
         try {
-            return orchestrator.getApplicationInstanceStatus(node.allocation().get().owner())
+            return nodeRepository().orchestrator().getApplicationInstanceStatus(node.allocation().get().owner())
                    == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN;
         } catch (ApplicationIdNotFoundException e) {
             // Treat it as not suspended and allow to fail the node anyway
@@ -209,23 +203,14 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         }
     }
 
-    private boolean suspended(Node node) {
-        try {
-            return orchestrator.getNodeStatus(new HostName(node.hostname())).isSuspended();
-        } catch (HostNameNotFoundException e) {
-            // Treat it as not suspended
-            return false;
-        }
-    }
-
     /** Is the node and all active children suspended? */
     private boolean allSuspended(Node node, NodeList activeNodes) {
-        if (!suspended(node)) return false;
+        if (!nodeRepository().nodes().suspended(node)) return false;
         if (node.parentHostname().isPresent()) return true; // optimization
         return activeNodes.stream()
                 .filter(childNode -> childNode.parentHostname().isPresent() &&
                         childNode.parentHostname().get().equals(node.hostname()))
-                .allMatch(this::suspended);
+                .allMatch(nodeRepository().nodes()::suspended);
     }
 
     /**

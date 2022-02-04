@@ -30,13 +30,14 @@ import java.util.stream.Collectors;
  */
 public class NodePrioritizer {
 
-    private final List<NodeCandidate> nodes = new ArrayList<>();
+    private final List<NodeCandidate> candidates = new ArrayList<>();
     private final NodesAndHosts<LockedNodeList> allNodesAndHosts;
     private final HostCapacity capacity;
     private final NodeSpec requestedNodes;
     private final ApplicationId application;
     private final ClusterSpec clusterSpec;
     private final NameResolver nameResolver;
+    private final Nodes nodes;
     private final boolean dynamicProvisioning;
     /** Whether node specification allows new nodes to be allocated. */
     private final boolean canAllocateNew;
@@ -46,7 +47,7 @@ public class NodePrioritizer {
     private final Set<Node> spareHosts;
 
     public NodePrioritizer(NodesAndHosts<LockedNodeList> allNodesAndHosts, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
-                           int wantedGroups, boolean dynamicProvisioning, NameResolver nameResolver,
+                           int wantedGroups, boolean dynamicProvisioning, NameResolver nameResolver, Nodes nodes,
                            HostResourcesCalculator hostResourcesCalculator, int spareCount) {
         this.allNodesAndHosts = allNodesAndHosts;
         this.capacity = new HostCapacity(this.allNodesAndHosts, hostResourcesCalculator);
@@ -58,6 +59,7 @@ public class NodePrioritizer {
                 capacity.findSpareHostsInDynamicallyProvisionedZones(this.allNodesAndHosts.nodes().asList()) :
                 capacity.findSpareHosts(this.allNodesAndHosts.nodes().asList(), spareCount);
         this.nameResolver = nameResolver;
+        this.nodes = nodes;
 
         NodeList nodesInCluster = this.allNodesAndHosts.nodes().owner(application).type(clusterSpec.type()).cluster(clusterSpec.id());
         NodeList nonRetiredNodesInCluster = nodesInCluster.not().retired();
@@ -95,12 +97,12 @@ public class NodePrioritizer {
     /** Returns the list of nodes sorted by {@link NodeCandidate#compareTo(NodeCandidate)} */
     private List<NodeCandidate> prioritize() {
         // Group candidates by their switch hostname
-        Map<String, List<NodeCandidate>> candidatesBySwitch = this.nodes.stream()
+        Map<String, List<NodeCandidate>> candidatesBySwitch = this.candidates.stream()
                 .collect(Collectors.groupingBy(candidate -> candidate.parent.orElseGet(candidate::toNode)
                                                                             .switchHostname()
                                                                             .orElse("")));
         // Mark lower priority nodes on shared switch as non-exclusive
-        List<NodeCandidate> nodes = new ArrayList<>(this.nodes.size());
+        List<NodeCandidate> nodes = new ArrayList<>(this.candidates.size());
         for (var clusterSwitch : candidatesBySwitch.keySet()) {
             List<NodeCandidate> switchCandidates = candidatesBySwitch.get(clusterSwitch);
             if (clusterSwitch.isEmpty()) {
@@ -126,7 +128,7 @@ public class NodePrioritizer {
         for (Node node : surplusNodes) {
             NodeCandidate candidate = candidateFrom(node, true);
             if (!candidate.violatesSpares || canAllocateToSpareHosts) {
-                nodes.add(candidate);
+                candidates.add(candidate);
             }
         }
     }
@@ -136,7 +138,7 @@ public class NodePrioritizer {
         if ( !canAllocateNew) return;
 
         for (Node host : allNodesAndHosts.nodes()) {
-            if ( ! Nodes.canAllocateTenantNodeTo(host, dynamicProvisioning)) continue;
+            if ( ! nodes.canAllocateTenantNodeTo(host, dynamicProvisioning)) continue;
             if (host.reservedTo().isPresent() && !host.reservedTo().get().equals(application.tenant())) continue;
             if (host.reservedTo().isPresent() && application.instance().isTester()) continue;
             if (host.exclusiveToApplicationId().isPresent()) continue; // Never allocate new nodes to exclusive hosts
@@ -144,7 +146,7 @@ public class NodePrioritizer {
             if (spareHosts.contains(host) && !canAllocateToSpareHosts) continue;
             if ( ! capacity.hasCapacity(host, requestedNodes.resources().get())) continue;
             if ( ! allNodesAndHosts.childrenOf(host).owner(application).cluster(clusterSpec.id()).isEmpty()) continue;
-            nodes.add(NodeCandidate.createNewChild(requestedNodes.resources().get(),
+            candidates.add(NodeCandidate.createNewChild(requestedNodes.resources().get(),
                                                    capacity.availableCapacityOf(host),
                                                    host,
                                                    spareHosts.contains(host),
@@ -164,7 +166,7 @@ public class NodePrioritizer {
                 .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterSpec.id()))
                 .filter(node -> node.state() == Node.State.active || canStillAllocate(node))
                 .map(node -> candidateFrom(node, false))
-                .forEach(nodes::add);
+                .forEach(candidates::add);
     }
 
     /** Add nodes already provisioned, but not allocated to any application */
@@ -174,7 +176,7 @@ public class NodePrioritizer {
                 .filter(node -> node.state() == Node.State.ready)
                 .map(node -> candidateFrom(node, false))
                 .filter(n -> !n.violatesSpares || canAllocateToSpareHosts)
-                .forEach(nodes::add);
+                .forEach(candidates::add);
     }
 
     /** Create a candidate from given pre-existing node */
@@ -218,7 +220,7 @@ public class NodePrioritizer {
     private boolean canStillAllocate(Node node) {
         if (node.type() != NodeType.tenant || node.parentHostname().isEmpty()) return true;
         Optional<Node> parent = allNodesAndHosts.parentOf(node);
-        return parent.isPresent() ? Nodes.canAllocateTenantNodeTo(parent.get(), dynamicProvisioning) : null;
+        return parent.isPresent() && nodes.canAllocateTenantNodeTo(parent.get(), dynamicProvisioning);
     }
 
 }

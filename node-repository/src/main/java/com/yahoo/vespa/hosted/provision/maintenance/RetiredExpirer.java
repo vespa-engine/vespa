@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
-import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
@@ -31,11 +30,9 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
 
     private final Deployer deployer;
     private final Metric metric;
-    private final Orchestrator orchestrator;
     private final Duration retiredExpiry;
 
     public RetiredExpirer(NodeRepository nodeRepository,
-                          Orchestrator orchestrator,
                           Deployer deployer,
                           Metric metric,
                           Duration maintenanceInterval,
@@ -43,7 +40,6 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
         super(nodeRepository, maintenanceInterval, metric);
         this.deployer = deployer;
         this.metric = metric;
-        this.orchestrator = orchestrator;
         this.retiredExpiry = retiredExpiry;
     }
 
@@ -126,7 +122,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
         }
 
         try {
-            orchestrator.acquirePermissionToRemove(new HostName(node.hostname()));
+            nodeRepository().orchestrator().acquirePermissionToRemove(new HostName(node.hostname()));
             log.info("Node " + node + " has been granted permission to be removed");
             return true;
         } catch (UncheckedTimeoutException e) {
