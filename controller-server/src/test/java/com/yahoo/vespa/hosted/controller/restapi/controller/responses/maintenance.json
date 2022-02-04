@@ -13,6 +13,9 @@
       "name": "ArchiveUriUpdater"
     },
     {
+      "name": "BillingDatabaseMaintainer"
+    },
+    {
       "name": "ChangeRequestMaintainer"
     },
     {
