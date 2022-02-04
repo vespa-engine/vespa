@@ -328,7 +328,8 @@ public class AthenzFacade implements AccessControl {
     }
 
     private String applicationResourceString(AthenzDomain tenantDomain, ApplicationName applicationName, Optional<Zone> zone) {
-        String environment = zone.map(Zone::environment).map(Environment::value).orElse("*");
+        // If environment is not provided, add .wildcard to match .* in the policy resource (* is not allowed in the request)
+        String environment = zone.map(Zone::environment).map(Environment::value).orElse("wildcard");
         return resourceStringPrefix(tenantDomain) + "." + "res_group" + "." + applicationName.value() + "." + environment;
     }
 
