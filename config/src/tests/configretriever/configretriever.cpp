@@ -351,8 +351,8 @@ TEST_FF("require that snapshots throws exception if invalid key", ConfigTestFixt
     f1.addComponent("c3", "foo3", "bar3");
     ConfigSnapshot snap1 = f2.retriever->getBootstrapConfigs();
     ASSERT_FALSE(snap1.hasConfig<BarConfig>("doesnotexist"));
-    ASSERT_EXCEPTION(snap1.getConfig<BarConfig>("doesnotexist"), IllegalConfigKeyException, "Unable to find config for key name=bar,namespace=config,configId=doesnotexist");
-    ASSERT_EXCEPTION(snap1.isChanged<BarConfig>("doesnotexist", 0), IllegalConfigKeyException, "Unable to find config for key name=bar,namespace=config,configId=doesnotexist");
+    ASSERT_EXCEPTION(snap1.getConfig<BarConfig>("doesnotexist"), IllegalConfigKeyException, "Unable to find config for key name=config.bar,configId=doesnotexist");
+    ASSERT_EXCEPTION(snap1.isChanged<BarConfig>("doesnotexist", 0), IllegalConfigKeyException, "Unable to find config for key name=config.bar,configId=doesnotexist");
     ASSERT_TRUE(snap1.hasConfig<BootstrapConfig>("myid"));
 }
 
