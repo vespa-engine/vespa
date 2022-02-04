@@ -4,7 +4,6 @@
 #include "resultconfig.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/datatype.h>
-#include <zlib.h>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -264,9 +263,13 @@ GeneralResult::unpack(const char *buf, const size_t buflen)
                 memcpy(&flen, p, sizeof(flen));
                 p += sizeof(flen);
                 lslen = flen & 0x7fffffff;
+                if (lslen != flen) {
+                    LOG(error, "GeneralResult::_inplace_unpack: compressed data");
+                    rc = false;
+                }
                 if (p + lslen <= ebuf) {
                     _entries[i]._stringval = const_cast<char *>(p);
-                    _entries[i]._stringlen = flen;  // with compression flag
+                    _entries[i]._stringlen = lslen;
                     _entries[i]._type = RES_STRING; // type normalization
                     p += lslen;
                 } else {
