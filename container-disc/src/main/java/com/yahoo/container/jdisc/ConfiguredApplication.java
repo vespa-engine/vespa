@@ -148,6 +148,7 @@ public final class ConfiguredApplication implements Application {
         ContainerBuilder builder = createBuilderWithGuiceBindings();
         configurer = createConfigurer(builder.guiceModules().activate());
         initializeAndActivateContainer(builder, () -> {});
+        reconfigurerThread.setDaemon(true);
         reconfigurerThread.start();
         portWatcher = new Thread(this::watchPortChange, "configured-application-port-watcher");
         portWatcher.setDaemon(true);
