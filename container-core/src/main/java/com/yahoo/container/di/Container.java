@@ -76,7 +76,15 @@ public class Container {
             Collection<Bundle> obsoleteBundles = new HashSet<>();
             ComponentGraph newGraph = waitForNewConfigGenAndCreateGraph(oldGraph, fallbackInjector, isInitializing, obsoleteBundles);
             newGraph.reuseNodes(oldGraph);
-            constructComponents(newGraph);
+            try {
+                constructComponents(newGraph);
+            } catch (Exception e) {
+                log.log(Level.WARNING, String.format(
+                        "Failed to construct graph for generation '%d' - scheduling partial graph for deconstruction",
+                        newGraph.generation()), e);
+                deconstructAllComponents(newGraph, componentDeconstructor);
+                throw e;
+            }
             Runnable cleanupTask = createPreviousGraphDeconstructionTask(oldGraph, newGraph, obsoleteBundles);
             return new ComponentGraphResult(newGraph, cleanupTask);
         } catch (Throwable t) {
