@@ -28,7 +28,7 @@ public class ZipBuilder implements AutoCloseable {
     public void add(byte[] zippedContent) {
         try (ZipInputStream zin = new ZipInputStream(new ByteArrayInputStream(zippedContent))) {
             for (ZipEntry entry = zin.getNextEntry(); entry != null; entry = zin.getNextEntry()) {
-                zipOutputStream.putNextEntry(entry);
+                zipOutputStream.putNextEntry(new ZipEntry(entry.getName()));
                 zin.transferTo(zipOutputStream);
                 zipOutputStream.closeEntry();
             }
