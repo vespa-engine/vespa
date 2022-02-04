@@ -72,8 +72,7 @@ public class CuratorArchiveBucketDb {
                         }
 
                         // We'll have to create a new bucket
-                        var newBucket = archiveService.createArchiveBucketFor(zoneId, tenantsPerBucket().isPresent())
-                                .withTenant(tenant);
+                        var newBucket = archiveService.createArchiveBucketFor(zoneId).withTenant(tenant);
                         zoneBuckets.add(newBucket);
                         curatorDb.writeArchiveBuckets(zoneId, zoneBuckets);
                         updateArchiveUriCache(zoneId, zoneBuckets);
