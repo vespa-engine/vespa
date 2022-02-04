@@ -93,7 +93,7 @@ GetConfig::Main()
     int c = -1;
 
     std::vector<vespalib::string> defSchema;
-    const char *schema = nullptr;
+    const char *schemaString = nullptr;
     const char *defName = nullptr;
     const char *defMD5 = "";
     std::string defNamespace("config");
@@ -119,7 +119,7 @@ GetConfig::Main()
         int retval = 1;
         switch (c) {
         case 'a':
-            schema = optArg;
+            schemaString = optArg;
             break;
         case 'n':
             defName = optArg;
@@ -184,17 +184,30 @@ GetConfig::Main()
         defNamespace = std::string(tmp, defName - tmp - 1);
     }
 
-    if (schema != nullptr) {
-        std::ifstream is;
-        is.open(schema);
-        std::string item;
-        while (std::getline(is, item)) {
-            if (item.find("namespace=") == std::string::npos) {
-                defSchema.push_back(item);
-            }
-        }
-        is.close();
+    std::string schema;
+    if (schemaString == nullptr) {
+      std::ostringstream tmp;
+      tmp << getenv("VESPA_HOME");
+      tmp << "/share/vespa/configdefinitions/";
+      tmp << defName;
+      tmp << ".def";
+      schema = tmp.str();
+    } else {
+      schema = schemaString;
     }
+    if (debugging) {
+      printf("Using schema in %s\n", schema.c_str());
+    }
+    std::ifstream is;
+    is.open(schema);
+    std::string item;
+    while (std::getline(is, item)) {
+      if (item.find("namespace=") == std::string::npos) {
+        defSchema.push_back(item);
+      }
+    }
+    is.close();
+
     std::ostringstream tmp;
     tmp << "tcp/";
     tmp << serverHost;
