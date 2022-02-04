@@ -73,9 +73,9 @@ ConfigKey::toString() const
 {
     vespalib::string s;
     s.append("name=");
-    s.append(_defName);
-    s.append(",namespace=");
     s.append(_defNamespace);
+    s.append(".");
+    s.append(_defName);
     s.append(",configId=");
     s.append(_configId);
     return s;

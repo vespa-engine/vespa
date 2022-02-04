@@ -18,7 +18,7 @@ public class ConfigSetTest {
         ConfigSet set = new ConfigSet();
         SimpletypesConfig.Builder builder = new SimpletypesConfig.Builder();
         set.addBuilder("foo", builder);
-        assertTrue(Pattern.matches("name=simpletypes,namespace=foo,configId=foo=>com.yahoo.foo.SimpletypesConfig.*",
+        assertTrue(Pattern.matches("name=foo.simpletypes,configId=foo=>com.yahoo.foo.SimpletypesConfig.*",
                 set.toString()));
     }
 }
