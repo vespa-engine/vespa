@@ -95,8 +95,8 @@ public final class ConfiguredApplication implements Application {
     private final OsgiFramework restrictedOsgiFramework;
     private final Phaser nonTerminatedContainerTracker = new Phaser(1);
     private final Thread reconfigurerThread;
+    private final Thread portWatcher;
     private HandlersConfigurerDi configurer;
-    private Thread portWatcher;
     private QrConfig qrConfig;
 
     private Register slobrokRegistrator = null;
@@ -137,6 +137,7 @@ public final class ConfiguredApplication implements Application {
         this.restrictedOsgiFramework = new DisableOsgiFramework(new RestrictedBundleContext(osgiFramework.bundleContext()));
         this.shutdownDeadline = new ShutdownDeadline(configId);
         this.reconfigurerThread = new Thread(this::doReconfigurationLoop, "configured-application-reconfigurer");
+        this.portWatcher = new Thread(this::watchPortChange, "configured-application-port-watcher");
     }
 
     @Override
@@ -150,7 +151,7 @@ public final class ConfiguredApplication implements Application {
         initializeAndActivateContainer(builder, () -> {});
         reconfigurerThread.setDaemon(true);
         reconfigurerThread.start();
-        portWatcher = new Thread(this::watchPortChange, "configured-application-port-watcher");
+
         portWatcher.setDaemon(true);
         portWatcher.start();
         if (setupRpc()) {
