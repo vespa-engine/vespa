@@ -9,7 +9,6 @@ import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
-import com.yahoo.language.Language;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.tensor.Tensor;
@@ -97,6 +96,52 @@ public class ScriptTestCase {
         Document output = Expression.execute(expression, input);
         assertNotNull(output);
         assertEquals(new BoolFieldValue(true), output.getFieldValue("mybool"));
+    }
+
+    @Test
+    public void testIntHash() throws ParseException {
+        var expression = Expression.fromString("input myText | hash | attribute 'myInt'");
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myText", DataType.STRING));
+        var intField = new Field("myInt", DataType.INT);
+        adapter.createField(intField);
+        adapter.setValue("myText", new StringFieldValue("input text"));
+        expression.setStatementOutput(new DocumentType("myDocument"), intField);
+
+        // Necessary to resolve output type
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(DataType.INT, expression.verify(verificationContext));
+
+        ExecutionContext context = new ExecutionContext(adapter);
+        context.setValue(new StringFieldValue("input text"));
+        expression.execute(context);
+        assertNotNull(context);
+        assertTrue(adapter.values.containsKey("myInt"));
+        assertEquals(-1425622096, adapter.values.get("myInt").getWrappedValue());
+    }
+
+    @Test
+    public void testLongHash() throws ParseException {
+        var expression = Expression.fromString("input myText | hash | attribute 'myLong'");
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myText", DataType.STRING));
+        var intField = new Field("myLong", DataType.LONG);
+        adapter.createField(intField);
+        adapter.setValue("myText", new StringFieldValue("input text"));
+        expression.setStatementOutput(new DocumentType("myDocument"), intField);
+
+        // Necessary to resolve output type
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(DataType.LONG, expression.verify(verificationContext));
+
+        ExecutionContext context = new ExecutionContext(adapter);
+        context.setValue(new StringFieldValue("input text"));
+        expression.execute(context);
+        assertNotNull(context);
+        assertTrue(adapter.values.containsKey("myLong"));
+        assertEquals(7678158186624760752L, adapter.values.get("myLong").getWrappedValue());
     }
 
     @Test
