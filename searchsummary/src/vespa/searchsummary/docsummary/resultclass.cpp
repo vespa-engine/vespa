@@ -4,7 +4,6 @@
 #include "resultconfig.h"
 #include <vespa/vespalib/stllike/hashtable.hpp>
 #include <cassert>
-#include <zlib.h>
 
 namespace search::docsummary {
 
@@ -45,7 +44,6 @@ ResultClass::AddConfigEntry(const char *name, ResType type)
     return true;
 }
 
-
 void
 ResultClass::CreateEnumMap()
 {
@@ -57,54 +55,6 @@ ResultClass::CreateEnumMap()
     for (uint32_t i(0); i < _entries.size(); i++) {
         _enumMap[_entries[i]._enumValue] = i;
     }
-}
-
-
-bool
-ResEntry::_extract_field(search::RawBuf *target) const
-{
-    bool rc = true;
-    target->reset();
-
-    if (ResultConfig::IsVariableSize(_type)) {
-        if (_is_compressed()) { // COMPRESSED
-
-            uint32_t len = _get_length();
-            uint32_t realLen = 0;
-
-            if (len >= sizeof(uint32_t))
-                realLen = _get_real_length();
-            else
-                rc = false;
-
-            if (realLen > 0) {
-                uLongf rlen = realLen;
-                char *fillPos = target->GetWritableFillPos(realLen + 1 < 32000 ?
-                                                           32000 : realLen + 1);
-                if ((uncompress((Bytef *)fillPos, &rlen,
-                                (const Bytef *)(_get_compressed()),
-                                len - sizeof(realLen)) == Z_OK) &&
-                    rlen == realLen) {
-                    fillPos[realLen] = '\0';
-                    target->Fill(realLen);
-                } else {
-                    rc = false;
-                }
-            }
-        } else {                     // UNCOMPRESSED
-            uint32_t len = _len;
-            if (len + 1 < 32000)
-                target->preAlloc(32000);
-            else
-                target->preAlloc(len + 1);
-            char *fillPos = target->GetWritableFillPos(len + 1 < 32000 ?
-                                                       32000 : len + 1);
-            memcpy(fillPos, _pt, len);
-            fillPos[len] = '\0';
-            target->Fill(len);
-        }
-    }
-    return rc;
 }
 
 }
