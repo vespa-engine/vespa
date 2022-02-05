@@ -64,6 +64,7 @@ GeoPositionDFW::insertField(uint32_t docid, GetDocsumsState * dsState, ResType, 
     const auto& attribute = get_attribute(*dsState);
     if (attribute.hasMultiValue()) {
         uint32_t entries = attribute.getValueCount(docid);
+        if (entries == 0 && _useV8geoPositions) return;
         Cursor &arr = target.insertArray();
         if (attribute.hasWeightedSetType()) {
             Symbol isym = arr.resolve("item");
