@@ -345,13 +345,13 @@ JuniperTeaserDFW::Init(
 }
 
 vespalib::stringref
-DynamicTeaserDFW::getJuniperInput(GeneralResult *gres, GetDocsumsState *state) {
+DynamicTeaserDFW::getJuniperInput(GeneralResult *gres) {
     int idx = gres->GetClass()->GetIndexFromEnumValue(_inputFieldEnumValue);
     ResEntry *entry = gres->GetEntry(idx);
     if (entry != nullptr) {
         const char *buf;
         uint32_t    buflen;
-        entry->_resolve_field(&buf, &buflen, &state->_docSumFieldSpace);
+        entry->_resolve_field(&buf, &buflen);
         return vespalib::stringref(buf, buflen);
     }
     return vespalib::stringref();
@@ -428,7 +428,7 @@ void
 DynamicTeaserDFW::insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state, ResType,
                               vespalib::slime::Inserter &target)
 {
-    vespalib::stringref input = getJuniperInput(gres, state);
+    vespalib::stringref input = getJuniperInput(gres);
     if (input.length() > 0) {
         vespalib::string teaser = makeDynamicTeaser(docid, input, state);
         vespalib::Memory value(teaser.c_str(), teaser.size());

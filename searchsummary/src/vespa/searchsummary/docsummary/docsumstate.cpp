@@ -30,8 +30,6 @@ GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
       _keywords(nullptr),
       _callback(callback),
       _dynteaser(),
-      _docSumFieldSpaceStore(),
-      _docSumFieldSpace(_docSumFieldSpaceStore, sizeof(_docSumFieldSpaceStore)), // only alloc buffer if needed
       _attrCtx(),
       _attributes(),
       _fieldWriterStates(),
