@@ -14,6 +14,7 @@
 #include <vespa/storage/common/storage_chain_builder.h>
 #include <vespa/storage/frameworkimpl/status/statuswebserver.h>
 #include <vespa/storage/frameworkimpl/thread/deadlockdetector.h>
+#include <vespa/config/helper/configfetcher.hpp>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>

@@ -7,12 +7,12 @@
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
+#include <vespa/config-bucketspaces.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/fileacquirer/config-filedistributorrpc.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
-#include <vespa/searchcore/proton/server/bootstrapconfigmanager.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
 #include <vespa/searchcore/proton/server/document_db_config_owner.h>
 #include <vespa/searchcore/proton/server/proton_config_snapshot.h>
@@ -21,14 +21,12 @@
 #include <vespa/searchcore/proton/server/i_proton_disk_layout.h>
 #include <vespa/searchcore/proton/server/threading_service_config.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
-#include <vespa/searchcore/config/config-ranking-constants.h>
-#include <vespa/searchcore/config/config-onnx-models.h>
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/config-bucketspaces.h>
+#include <vespa/config/subscription/configuri.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace config;
 using namespace proton;

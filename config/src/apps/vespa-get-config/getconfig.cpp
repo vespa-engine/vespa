@@ -2,10 +2,10 @@
 
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
-#include <vespa/config/config.h>
 #include <vespa/config/frt/frtconfigrequestfactory.h>
 #include <vespa/config/frt/frtconnection.h>
 #include <vespa/config/common/payload_converter.h>
+#include <vespa/config/common/configvalue.h>
 #include <vespa/fastos/app.h>
 
 #include <string>
@@ -92,7 +92,7 @@ GetConfig::Main()
     bool debugging = false;
     int c = -1;
 
-    std::vector<vespalib::string> defSchema;
+    StringVector defSchema;
     const char *schemaString = nullptr;
     const char *defName = nullptr;
     const char *defMD5 = "";
@@ -241,8 +241,8 @@ GetConfig::Main()
     } else {
         response->fill();
         ConfigKey rKey(response->getKey());
-        ConfigState rState(response->getConfigState());
-        ConfigValue rValue(response->getValue());
+        const ConfigState & rState = response->getConfigState();
+        const ConfigValue & rValue = response->getValue();
         if (debugging) {
             printf("defName    %s\n", rKey.getDefName().c_str());
             printf("defMD5     %s\n", rKey.getDefMd5().c_str());
@@ -260,7 +260,7 @@ GetConfig::Main()
         if (printAsJson) {
             printf("%s\n", rValue.asJson().c_str());
         } else {
-            std::vector<vespalib::string> lines = rValue.getLegacyFormat();
+            StringVector lines = rValue.getLegacyFormat();
             for (uint32_t j = 0; j < lines.size(); j++) {
                 printf("%s\n",  lines[j].c_str());
             }

@@ -8,9 +8,10 @@
 #include <vespa/messagebus/dynamicthrottlepolicy.h>
 #include <vespa/messagebus/error.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config/helper/configfetcher.hpp>
+#include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <algorithm>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -185,7 +186,7 @@ MergeThrottler::MergeThrottler(
       _queueSequence(0),
       _messageLock(),
       _stateLock(),
-      _configFetcher(configUri.getContext()),
+      _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
       _metrics(std::make_unique<Metrics>()),
       _component(compReg, "mergethrottler"),
       _thread(),
@@ -198,8 +199,8 @@ MergeThrottler::MergeThrottler(
 {
     _throttlePolicy->setMinWindowSize(20);
     _throttlePolicy->setMaxWindowSize(20);
-    _configFetcher.subscribe<StorServerConfig>(configUri.getConfigId(), this);
-    _configFetcher.start();
+    _configFetcher->subscribe<StorServerConfig>(configUri.getConfigId(), this);
+    _configFetcher->start();
     _component.registerStatusPage(*this);
     _component.registerMetric(*_metrics);
 }
@@ -271,7 +272,7 @@ void
 MergeThrottler::onClose()
 {
     // Avoid getting config on shutdown
-    _configFetcher.close();
+    _configFetcher->close();
     {
         std::lock_guard guard(_messageLock);
         // Note: used to prevent taking locks in different order if onFlush

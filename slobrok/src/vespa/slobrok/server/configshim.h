@@ -17,7 +17,7 @@ private:
 public:
     ConfigShim(uint32_t port);
     ConfigShim(uint32_t port, const std::string& cfgId);
-    ConfigShim(uint32_t port, const std::string& cfgId, config::IConfigContext::SP cfgCtx);
+    ConfigShim(uint32_t port, const std::string& cfgId, std::shared_ptr<config::IConfigContext> cfgCtx);
     ~ConfigShim();
 
     ConfigShim & enableStateServer(bool v) { _enableStateServer = v; return *this; }

@@ -20,7 +20,7 @@ ConfigKey::ConfigKey(vespalib::stringref configId,
                      vespalib::stringref defName,
                      vespalib::stringref defNamespace,
                      vespalib::stringref defMd5,
-                     const std::vector<vespalib::string> & defSchema)
+                     const StringVector & defSchema)
     : _configId(configId),
       _defName(defName),
       _defNamespace(defNamespace),
@@ -66,7 +66,7 @@ const vespalib::string & ConfigKey::getDefName() const { return _defName; }
 const vespalib::string & ConfigKey::getConfigId() const { return _configId; }
 const vespalib::string & ConfigKey::getDefNamespace() const { return _defNamespace; }
 const vespalib::string & ConfigKey::getDefMd5() const { return _defMd5; }
-const std::vector<vespalib::string> & ConfigKey::getDefSchema() const { return _defSchema; }
+const StringVector & ConfigKey::getDefSchema() const { return _defSchema; }
 
 const vespalib::string
 ConfigKey::toString() const

@@ -1,16 +1,19 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "configsubscription.h"
+#include <vespa/config/common/configupdate.h>
+#include <vespa/config/common/iconfigholder.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/common/misc.h>
-#include "configsubscription.h"
 
 namespace config {
 
-ConfigSubscription::ConfigSubscription(const SubscriptionId & id, const ConfigKey & key, const IConfigHolder::SP & holder, Source::UP source)
+ConfigSubscription::ConfigSubscription(const SubscriptionId & id, const ConfigKey & key,
+                                       std::shared_ptr<IConfigHolder> holder, std::unique_ptr<Source> source)
     : _id(id),
       _key(key),
       _source(std::move(source)),
-      _holder(holder),
+      _holder(std::move(holder)),
       _next(),
       _current(),
       _isChanged(false),

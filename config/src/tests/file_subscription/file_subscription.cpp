@@ -1,8 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/config/config.h>
+#include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/config/common/configholder.h>
-#include <vespa/config/file/filesource.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/common/sourcefactory.h>
 #include <vespa/config/common/configcontext.h>
@@ -63,12 +62,12 @@ TEST("requireThatFileSpecGivesCorrectSource") {
     SourceFactory::UP factory(spec.createSourceFactory(TimingValues()));
     ASSERT_TRUE(factory);
     auto holder = std::make_shared<ConfigHolder>();
-    Source::UP src = factory->createSource(holder, ConfigKey("my", "my", "bar", "foo"));
+    std::unique_ptr<Source> src = factory->createSource(holder, ConfigKey("my", "my", "bar", "foo"));
     ASSERT_TRUE(src);
 
     src->getConfig();
     ASSERT_TRUE(holder->poll());
-    ConfigUpdate::UP update(holder->provide());
+    std::unique_ptr<ConfigUpdate> update(holder->provide());
     ASSERT_TRUE(update);
     const ConfigValue & value(update->getValue());
     ASSERT_EQUAL(1u, value.numLines());

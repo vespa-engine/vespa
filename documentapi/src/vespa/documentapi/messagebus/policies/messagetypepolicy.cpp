@@ -4,6 +4,9 @@
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/messagebus/message.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/config/helper/configfetcher.hpp>
+#include <vespa/config/subscription/configuri.h>
+
 
 using vespa::config::content::MessagetyperouteselectorpolicyConfig;
 
@@ -25,10 +28,10 @@ MessageTypePolicy::MessageTypePolicy(const config::ConfigUri & configUri) :
     config::IFetcherCallback<MessagetyperouteselectorpolicyConfig>(),
     _map(),
     _defaultRoute(),
-    _fetcher(configUri.getContext())
+    _fetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext()))
 {
-    _fetcher.subscribe<MessagetyperouteselectorpolicyConfig>(configUri.getConfigId(), this);
-    _fetcher.start();
+    _fetcher->subscribe<MessagetyperouteselectorpolicyConfig>(configUri.getConfigId(), this);
+    _fetcher->start();
 }
 
 MessageTypePolicy::~MessageTypePolicy() {}

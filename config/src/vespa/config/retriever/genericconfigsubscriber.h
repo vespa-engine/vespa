@@ -14,9 +14,9 @@ class GenericConfigSubscriber
 {
 public:
     using milliseconds = std::chrono::milliseconds;
-    GenericConfigSubscriber(const IConfigContext::SP & context);
+    GenericConfigSubscriber(std::shared_ptr<IConfigContext> context);
     bool nextGeneration(milliseconds timeoutInMillis);
-    ConfigSubscription::SP subscribe(const ConfigKey & key, milliseconds timeoutInMillis);
+    std::shared_ptr<ConfigSubscription> subscribe(const ConfigKey & key, milliseconds timeoutInMillis);
     void close();
     int64_t getGeneration() const;
 private:

@@ -16,14 +16,10 @@ class ConfigKey;
 class ConfigSetSourceFactory : public SourceFactory
 {
 public:
-    typedef ConfigSetSource::BuilderMap BuilderMap;
-    typedef ConfigSetSource::BuilderMapSP BuilderMapSP;
-    ConfigSetSourceFactory(const BuilderMapSP & builderMap);
+    using BuilderMapSP = ConfigSetSource::BuilderMapSP;
+    ConfigSetSourceFactory(BuilderMapSP builderMap);
 
-    /**
-     * Create source handling config described by key.
-     */
-    Source::UP createSource(const IConfigHolder::SP & holder, const ConfigKey & key) const override;
+    std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder>  holder, const ConfigKey & key) const override;
 private:
     BuilderMapSP _builderMap;
 };

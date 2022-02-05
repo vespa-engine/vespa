@@ -656,6 +656,10 @@ public:
             addNode(entry->getNodeRef(i).getNode());
         }
     }
+    MergeNodes(MergeNodes && rhs) noexcept = default;
+    MergeNodes & operator =(MergeNodes && rhs) noexcept = delete;
+    MergeNodes(const MergeNodes & rhs) = delete;
+    MergeNodes & operator =(const MergeNodes & rhs) = delete;
 
     ~MergeNodes();
 

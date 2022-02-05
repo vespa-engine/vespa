@@ -2,6 +2,8 @@
 
 #include "opslogger.h"
 #include <vespa/storageapi/message/persistence.h>
+#include <vespa/config/helper/configfetcher.hpp>
+#include <vespa/config/subscription/configuri.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -16,10 +18,10 @@ OpsLogger::OpsLogger(StorageComponentRegister& compReg,
       _fileName(),
       _targetFile(nullptr),
       _component(compReg, "opslogger"),
-      _configFetcher(configUri.getContext())
+      _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext()))
 {
-    _configFetcher.subscribe<vespa::config::content::core::StorOpsloggerConfig>(configUri.getConfigId(), this);
-    _configFetcher.start();
+    _configFetcher->subscribe<vespa::config::content::core::StorOpsloggerConfig>(configUri.getConfigId(), this);
+    _configFetcher->start();
 }
 
 OpsLogger::~OpsLogger()
@@ -35,8 +37,8 @@ OpsLogger::~OpsLogger()
 void
 OpsLogger::onClose()
 {
-        // Avoid getting config during shutdown
-    _configFetcher.close();
+    // Avoid getting config during shutdown
+    _configFetcher->close();
 }
 
 void

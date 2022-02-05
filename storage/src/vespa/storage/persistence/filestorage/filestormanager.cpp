@@ -24,7 +24,8 @@
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <algorithm>
+#include <vespa/config/subscription/configuri.h>
+#include <vespa/config/helper/configfetcher.hpp>
 #include <thread>
 
 #include <vespa/log/bufferedlogger.h>
@@ -73,7 +74,7 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _persistenceHandlers(),
       _threads(),
       _bucketOwnershipNotifier(std::make_unique<BucketOwnershipNotifier>(_component, *this)),
-      _configFetcher(configUri.getContext()),
+      _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
       _use_async_message_handling_on_schedule(false),
       _metrics(std::make_unique<FileStorMetrics>()),
       _filestorHandler(),
@@ -83,8 +84,8 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _host_info_reporter(_component.getStateUpdater()),
       _resource_usage_listener_registration(provider.register_resource_usage_listener(_host_info_reporter))
 {
-    _configFetcher.subscribe(configUri.getConfigId(), this);
-    _configFetcher.start();
+    _configFetcher->subscribe(configUri.getConfigId(), this);
+    _configFetcher->start();
     _component.registerMetric(*_metrics);
     _component.registerStatusPage(*this);
     _component.getStateUpdater().addStateListener(*this);
@@ -851,7 +852,7 @@ void FileStorManager::onClose()
     _bucketExecutorRegistration.reset();
     _resource_usage_listener_registration.reset();
     // Avoid getting config during shutdown
-    _configFetcher.close();
+    _configFetcher->close();
     LOG(debug, "Closed _configFetcher.");
     _filestorHandler->close();
     LOG(debug, "Closed _filestorHandler.");

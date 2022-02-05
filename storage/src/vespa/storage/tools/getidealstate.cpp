@@ -4,9 +4,9 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/util/programoptions.h>
-#include <vespa/config/config.h>
 #include <vespa/config/print/ostreamconfigwriter.h>
 #include <vespa/config-stor-distribution.h>
+#include <vespa/config/subscription/configuri.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <iostream>
 #include <sstream>

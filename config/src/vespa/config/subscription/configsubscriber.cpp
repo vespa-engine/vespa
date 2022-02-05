@@ -6,8 +6,8 @@
 namespace config {
 
 
-ConfigSubscriber::ConfigSubscriber(const IConfigContext::SP & context)
-    : _set(context)
+ConfigSubscriber::ConfigSubscriber(std::shared_ptr<IConfigContext> context)
+    : _set(std::move(context))
 
 { }
 

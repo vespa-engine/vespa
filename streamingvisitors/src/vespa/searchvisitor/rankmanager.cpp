@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vsm/common/document.h>
+#include <vespa/vsm/vsm/vsm-adapter.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchvisitor.rankmanager");

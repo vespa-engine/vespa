@@ -3,8 +3,8 @@
 
 namespace config {
 
-GenericConfigSubscriber::GenericConfigSubscriber(const IConfigContext::SP & context)
-    : _set(context)
+GenericConfigSubscriber::GenericConfigSubscriber(std::shared_ptr<IConfigContext> context)
+    : _set(std::move(context))
 { }
 
 bool
@@ -13,7 +13,7 @@ GenericConfigSubscriber::nextGeneration(milliseconds timeoutInMillis)
     return _set.acquireSnapshot(timeoutInMillis, true);
 }
 
-ConfigSubscription::SP
+std::shared_ptr<ConfigSubscription>
 GenericConfigSubscriber::subscribe(const ConfigKey & key, milliseconds timeoutInMillis)
 {
     return _set.subscribe(key, timeoutInMillis);

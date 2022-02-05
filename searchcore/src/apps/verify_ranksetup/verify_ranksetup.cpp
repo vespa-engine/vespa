@@ -4,7 +4,6 @@
 #include <vespa/config-attributes.h>
 #include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
-#include <vespa/config/config.h>
 #include <vespa/config/helper/legacy.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/config/common/exceptions.h>
@@ -21,6 +20,7 @@
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
+#include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/fastos/app.h>
 #include <optional>
 

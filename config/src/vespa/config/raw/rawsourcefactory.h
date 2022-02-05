@@ -14,7 +14,7 @@ public:
         : _payload(payload)
     { }
 
-    Source::UP createSource(const IConfigHolder::SP & holder, const ConfigKey & key) const override;
+    std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key) const override;
 private:
     const vespalib::string _payload;
 };

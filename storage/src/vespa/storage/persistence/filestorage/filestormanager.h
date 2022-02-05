@@ -25,10 +25,12 @@
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 
-#include <vespa/config/subscription/configuri.h>
 #include <vespa/config/helper/ifetchercallback.h>
-#include <vespa/config/config.h>
 
+namespace config {
+    class ConfigUri;
+    class ConfigFetcher;
+}
 namespace vespalib { class IDestructorCallback; }
 
 namespace storage {
@@ -68,7 +70,7 @@ class FileStorManager : public StorageLinkQueued,
     std::unique_ptr<BucketOwnershipNotifier>         _bucketOwnershipNotifier;
 
     std::unique_ptr<vespa::config::content::StorFilestorConfig> _config;
-    config::ConfigFetcher _configFetcher;
+    std::unique_ptr<config::ConfigFetcher> _configFetcher;
     bool                  _use_async_message_handling_on_schedule;
     std::shared_ptr<FileStorMetrics> _metrics;
     std::unique_ptr<FileStorHandler> _filestorHandler;

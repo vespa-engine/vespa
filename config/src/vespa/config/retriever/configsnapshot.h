@@ -3,8 +3,7 @@
 
 #include "configkeyset.h"
 #include <vespa/config/common/configvalue.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <map>
+#include <vespa/config/common/misc.h>
 
 namespace config {
 
@@ -18,7 +17,7 @@ class ConfigDataBuffer;
 class ConfigSnapshot
 {
 public:
-    typedef std::vector<std::shared_ptr<ConfigSubscription>> SubscriptionList;
+    using SubscriptionList = std::vector<std::shared_ptr<ConfigSubscription>>;
 
     /**
      * Construct an empty config snapshot.
@@ -95,8 +94,8 @@ public:
     void serialize(ConfigDataBuffer & buffer) const;
     void deserialize(const ConfigDataBuffer & buffer);
 private:
-    typedef std::pair<int64_t, ConfigValue> Value;
-    typedef std::map<ConfigKey, Value> ValueMap;
+    using Value = std::pair<int64_t, ConfigValue>;
+    using ValueMap = std::map<ConfigKey, Value>;
     const static int64_t SNAPSHOT_FORMAT_VERSION;
 
     ConfigSnapshot(const ValueMap & valueMap, int64_t generation);
@@ -121,5 +120,3 @@ private:
 };
 
 } // namespace config
-
-#include "configsnapshot.hpp"

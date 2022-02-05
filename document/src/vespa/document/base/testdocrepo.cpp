@@ -4,7 +4,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/repo/configbuilder.h>
-#include <vespa/config/print/fileconfigreader.h>
+#include <vespa/config/print/fileconfigreader.hpp>
 
 using document::config_builder::Struct;
 using document::config_builder::Wset;
@@ -18,7 +18,7 @@ TestDocRepo::TestDocRepo()
       _repo(new DocumentTypeRepo(_cfg)) {
 }
 
-    TestDocRepo::~TestDocRepo() {}
+TestDocRepo::~TestDocRepo() = default;
 
 DocumenttypesConfig TestDocRepo::getDefaultConfig() {
     const int type1_id = 238423572;

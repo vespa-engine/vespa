@@ -6,11 +6,11 @@
 
 namespace config {
 
-Source::UP
-RawSourceFactory::createSource(const IConfigHolder::SP & holder, const ConfigKey & key) const
+std::unique_ptr<Source>
+RawSourceFactory::createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key) const
 {
     (void) key;
-    return Source::UP(new RawSource(holder, _payload));
+    return std::make_unique<RawSource>(std::move(holder), _payload);
 }
 
 }

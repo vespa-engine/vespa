@@ -2,15 +2,17 @@
 //
 #pragma once
 
-#include "confighandle.h"
 #include "subscriptionid.h"
-#include "configsubscription.h"
 #include "configprovider.h"
-#include <vespa/config/common/iconfigcontext.h>
-#include <vespa/config/common/iconfigmanager.h>
 #include <atomic>
+#include <chrono>
 
 namespace config {
+
+class IConfigContext;
+class IConfigManager;
+class ConfigSubscription;
+class ConfigKey;
 
 /**
  * A ConfigSubscriptionSet is a set of configs that can be subscribed to.
@@ -25,7 +27,7 @@ public:
      *
      * @param context A ConfigContext shared between all subscriptions.
      */
-    ConfigSubscriptionSet(const IConfigContext::SP & context);
+    ConfigSubscriptionSet(std::shared_ptr<IConfigContext> context);
 
     ~ConfigSubscriptionSet();
 
@@ -48,7 +50,7 @@ public:
     bool isClosed() const;
 
     // Helpers for doing the subscription
-    ConfigSubscription::SP subscribe(const ConfigKey & key, milliseconds timeoutInMillis);
+    std::shared_ptr<ConfigSubscription> subscribe(const ConfigKey & key, milliseconds timeoutInMillis);
 
     // Tries to acquire a new snapshot of config within the timeout
     bool acquireSnapshot(milliseconds timeoutInMillis, bool requireDifference);
@@ -56,13 +58,13 @@ public:
 private:
     // Describes the state of the subscriber.
     enum SubscriberState { OPEN, FROZEN, CONFIGURED, CLOSED };
+    using SubscriptionList = std::vector<std::shared_ptr<ConfigSubscription>>;
 
-    IConfigContext::SP    _context;               // Context to keep alive managers.
-    IConfigManager &      _mgr;                   // The config manager that we use.
-    int64_t               _currentGeneration;     // Holds the current config generation.
-    SubscriptionList      _subscriptionList;      // List of current subscriptions.
-
-    std::atomic<SubscriberState> _state;              // Current state of this subscriber.
+    std::shared_ptr<IConfigContext> _context;             // Context to keep alive managers.
+    IConfigManager &                _mgr;                 // The config manager that we use.
+    int64_t                         _currentGeneration;   // Holds the current config generation.
+    SubscriptionList                _subscriptionList;    // List of current subscriptions.
+    std::atomic<SubscriberState>    _state;               // Current state of this subscriber.
 };
 
 } // namespace config

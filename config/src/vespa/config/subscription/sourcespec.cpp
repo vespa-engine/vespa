@@ -153,7 +153,9 @@ ConfigInstanceSpec::ConfigInstanceSpec(const ConfigInstance& instance)
     writer.write(instance);
 }
 
-SourceFactory::UP
+ConfigInstanceSpec::~ConfigInstanceSpec() = default;
+
+std::unique_ptr<SourceFactory>
 ConfigInstanceSpec::createSourceFactory(const TimingValues& ) const
 {
     return std::make_unique<ConfigInstanceSourceFactory>(_key, _buffer);

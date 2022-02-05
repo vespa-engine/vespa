@@ -2,7 +2,6 @@
 
 #include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/config/config.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/gtest/gtest.h>
 

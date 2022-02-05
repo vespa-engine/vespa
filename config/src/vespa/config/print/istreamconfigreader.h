@@ -21,6 +21,3 @@ private:
 };
 
 } // namespace config
-
-#include "istreamconfigreader.hpp"
-

@@ -4,14 +4,13 @@
 #include <vespa/storage/common/content_bucket_db_options.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/config-stor-distribution.h>
-#include <vespa/config-load-type.h>
 #include <vespa/config-fleetcontroller.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/time.h>
-#include <vespa/config/config.h>
+#include <vespa/config/subscription/configuri.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <thread>
 #include <sstream>

@@ -69,7 +69,7 @@ struct ConfigTestFixture {
     BucketspacesConfigBuilder bucketspacesBuilder;
     map<std::string, DoctypeFixture::UP> dbConfig;
     ConfigSet set;
-    IConfigContext::SP context;
+    std::shared_ptr<IConfigContext> context;
     int idcounter;
 
     ConfigTestFixture(const std::string & id)

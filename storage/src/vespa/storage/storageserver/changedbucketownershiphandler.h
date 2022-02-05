@@ -3,8 +3,8 @@
 
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/storage/common/storagelink.h>
-#include <vespa/config/config.h>
 #include <vespa/config-persistence.h>
+#include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/metrics/valuemetric.h>
@@ -14,6 +14,10 @@
 #include <vector>
 #include <unordered_map>
 
+namespace config {
+    class ConfigUri;
+    class ConfigFetcher;
+}
 namespace storage {
 
 namespace lib {
@@ -112,7 +116,7 @@ public:
 private:
     ServiceLayerComponent _component;
     Metrics               _metrics;
-    config::ConfigFetcher _configFetcher;
+    std::unique_ptr<config::ConfigFetcher> _configFetcher;
     mutable std::mutex    _stateLock;
     std::shared_ptr<const lib::ClusterStateBundle> _currentState;
     OwnershipState::CSP _currentOwnership;

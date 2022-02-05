@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "types.h"
 #include <vespa/vespalib/data/slime/object_traverser.h>
 #include <vespa/vespalib/data/slime/array_traverser.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 namespace config {
@@ -16,7 +16,7 @@ class PayloadConverter : public vespalib::slime::ObjectTraverser, public vespali
 public:
     PayloadConverter(const vespalib::slime::Inspector & inspector);
     ~PayloadConverter();
-    const std::vector<vespalib::string> & convert();
+    const StringVector & convert();
     void field(const vespalib::Memory & symbol, const vespalib::slime::Inspector & inspector) override;
     void entry(size_t idx, const vespalib::slime::Inspector & inspector) override;
 private:
@@ -38,11 +38,11 @@ private:
         Node(int idx) : name(""), arrayIndex(idx) {}
         Node(const vespalib::string & nm) : name(nm), arrayIndex(-1) {}
     };
+    using NodeStack = std::vector<Node>;
     const vespalib::slime::Inspector & _inspector;
-    std::vector<vespalib::string> _lines;
-    typedef std::vector<Node> NodeStack;
-    NodeStack _nodeStack;
-    vespalib::asciistream _buf;
+    StringVector                       _lines;
+    NodeStack                          _nodeStack;
+    vespalib::asciistream              _buf;
 };
 
 } // namespace config

@@ -35,6 +35,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
+#include <vespa/config/subscription/sourcespec.h>
 
 using namespace cloud::config::filedistribution;
 using namespace document;

@@ -17,7 +17,6 @@
 #include "statusreporterdelegate.h"
 #include "stripe_bucket_db_updater.h" // TODO this is temporary
 #include "stripe_host_info_notifier.h"
-#include <vespa/config/config.h>
 #include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/messagesender.h>

@@ -45,7 +45,7 @@ public:
      *
      * @param context A ConfigContext shared between all subscribers.
      */
-    ConfigSubscriber(const IConfigContext::SP & context);
+    ConfigSubscriber(std::shared_ptr<IConfigContext> context);
 
     /**
      * Checks if one or more of the configs in the set is updated or not.
@@ -106,6 +106,3 @@ private:
 };
 
 } // namespace config
-
-#include "configsubscriber.hpp"
-

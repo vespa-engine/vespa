@@ -2,14 +2,13 @@
 
 #pragma once
 
-#include <vespa/fastos/thread.h>
-#include <vespa/searchcore/proton/common/doctypename.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/config/config.h>
 #include "bootstrapconfigmanager.h"
 #include "documentdbconfigmanager.h"
 #include "i_document_db_config_owner.h"
-#include <chrono>
+#include <vespa/fastos/thread.h>
+#include <vespa/searchcore/proton/common/doctypename.h>
+#include <vespa/config/retriever/configretriever.h>
+#include <vespa/config/subscription/configuri.h>
 
 namespace document { class DocumentTypeRepo; }
 

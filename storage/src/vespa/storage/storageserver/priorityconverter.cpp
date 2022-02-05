@@ -1,16 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "priorityconverter.h"
-#include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/config/subscription/configuri.h>
+#include <vespa/config/helper/configfetcher.hpp>
+
 
 namespace storage {
 
 PriorityConverter::PriorityConverter(const config::ConfigUri & configUri)
-    : _configFetcher(configUri.getContext())
+    : _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext()))
 {
-    _configFetcher.subscribe<vespa::config::content::core::StorPrioritymappingConfig>(configUri.getConfigId(), this);
-    _configFetcher.start();
+    _configFetcher->subscribe<vespa::config::content::core::StorPrioritymappingConfig>(configUri.getConfigId(), this);
+    _configFetcher->start();
 }
 
 PriorityConverter::~PriorityConverter() = default;

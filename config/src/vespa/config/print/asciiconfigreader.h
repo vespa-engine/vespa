@@ -2,10 +2,10 @@
 #pragma once
 
 #include "configreader.h"
-#include "configformatter.h"
-#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace config {
+
+class ConfigFormatter;
 
 /**
  * Read a config from istream
@@ -22,6 +22,3 @@ private:
 };
 
 } // namespace config
-
-#include "asciiconfigreader.hpp"
-

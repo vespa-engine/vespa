@@ -27,7 +27,7 @@ class ConfigRetriever
 public:
     using milliseconds = std::chrono::milliseconds;
     ConfigRetriever(const ConfigKeySet & bootstrapSet,
-                    const IConfigContext::SP & context,
+                    std::shared_ptr<IConfigContext> context,
                     milliseconds subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
     ~ConfigRetriever();
 
@@ -93,13 +93,13 @@ public:
     static const milliseconds DEFAULT_SUBSCRIBE_TIMEOUT;
     static const milliseconds DEFAULT_NEXTGENERATION_TIMEOUT;
 private:
-    FixedConfigSubscriber                    _bootstrapSubscriber;
-    std::unique_ptr<GenericConfigSubscriber> _configSubscriber;
-    std::mutex                               _lock;
-    std::vector<ConfigSubscription::SP>      _subscriptionList;
-    ConfigKeySet                _lastKeySet;
-    IConfigContext::SP          _context;
-    std::unique_ptr<SourceSpec> _spec;
+    FixedConfigSubscriber                            _bootstrapSubscriber;
+    std::unique_ptr<GenericConfigSubscriber>         _configSubscriber;
+    std::mutex                                       _lock;
+    std::vector<std::shared_ptr<ConfigSubscription>> _subscriptionList;
+    ConfigKeySet                                     _lastKeySet;
+    std::shared_ptr<IConfigContext>                  _context;
+    std::unique_ptr<SourceSpec>                      _spec;
     bool                        _closed;
     int64_t                     _generation;
     milliseconds                _subscribeTimeout;

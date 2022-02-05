@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fastos/app.h>
-#include <vespa/messagebus/messagebus.h>
-#include <vespa/messagebus/routing/hopblueprint.h>
 #include "mynetwork.h"
 #include "params.h"
-
+#include <vespa/messagebus/messagebus.h>
+#include <vespa/messagebus/routing/hopblueprint.h>
+#include <vespa/fastos/app.h>
+#include <set>
 namespace vesparoute {
 
 /**

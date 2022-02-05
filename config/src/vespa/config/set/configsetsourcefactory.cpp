@@ -3,15 +3,15 @@
 
 namespace config {
 
-ConfigSetSourceFactory::ConfigSetSourceFactory(const BuilderMapSP & builderMap)
-    : _builderMap(builderMap)
+ConfigSetSourceFactory::ConfigSetSourceFactory(BuilderMapSP builderMap)
+    : _builderMap(std::move(builderMap))
 {
 }
 
-Source::UP
-ConfigSetSourceFactory::createSource(const IConfigHolder::SP & holder, const ConfigKey & key) const
+std::unique_ptr<Source>
+ConfigSetSourceFactory::createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key) const
 {
-    return Source::UP(new ConfigSetSource(holder, key, _builderMap));
+    return std::make_unique<ConfigSetSource>(std::move(holder), key, _builderMap);
 }
 
 } // namespace config
