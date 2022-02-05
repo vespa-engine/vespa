@@ -80,7 +80,7 @@ struct ResEntry
         memcpy(&rlen, _pt, sizeof(rlen));
         return rlen;
     }
-    void _resolve_field(const char **buf, uint32_t *buflen, search::RawBuf *) const
+    void _resolve_field(const char **buf, uint32_t *buflen) const
     {
         // precond: IsVariableSize(_type)
         *buf    = (char *) _pt;

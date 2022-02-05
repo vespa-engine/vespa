@@ -71,8 +71,6 @@ public:
     } _dynteaser;
 
 
-    char                         _docSumFieldSpaceStore[2048];
-    search::RawBuf               _docSumFieldSpace;
     std::unique_ptr<search::attribute::IAttributeContext> _attrCtx;
     std::vector<const search::attribute::IAttributeVector *> _attributes;
     std::vector<std::unique_ptr<DocsumFieldWriterState>> _fieldWriterStates;

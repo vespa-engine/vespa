@@ -84,8 +84,7 @@ DynamicDocsumWriter::resolveInputClass(ResolveClassInfo &rci, uint32_t id) const
 constexpr uint32_t default_32bits_int = search::attribute::getUndefined<int32_t>();
 constexpr uint64_t default_64bits_int = search::attribute::getUndefined<int64_t>();
 
-static void convertEntry(GetDocsumsState *state,
-                         const ResConfigEntry *resCfg,
+static void convertEntry(const ResConfigEntry *resCfg,
                          const ResEntry *entry,
                          Inserter &inserter,
                          Slime &slime)
@@ -120,7 +119,7 @@ static void convertEntry(GetDocsumsState *state,
     case RES_STRING:
     case RES_LONG_STRING:
     case RES_FEATUREDATA:
-        entry->_resolve_field(&ptr, &len, &state->_docSumFieldSpace);
+        entry->_resolve_field(&ptr, &len);
         if (len != 0) {
             inserter.insertString(Memory(ptr, len));
         }
@@ -128,13 +127,13 @@ static void convertEntry(GetDocsumsState *state,
     case RES_DATA:
     case RES_TENSOR:
     case RES_LONG_DATA:
-        entry->_resolve_field(&ptr, &len, &state->_docSumFieldSpace);
+        entry->_resolve_field(&ptr, &len);
         if (len != 0) {
             inserter.insertData(Memory(ptr, len));
         }
         break;
     case RES_JSONSTRING:
-        entry->_resolve_field(&ptr, &len, &state->_docSumFieldSpace);
+        entry->_resolve_field(&ptr, &len);
         if (len != 0) {
             // note: 'JSONSTRING' really means 'structured data'
             size_t d = BinaryFormat::decode_into(Memory(ptr, len), slime, inserter);
@@ -185,7 +184,7 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
                 }
             } else {
                 if (rci.inputClass == rci.outputClass) {
-                    convertEntry(state, outCfg, gres.GetEntry(i), inserter, slime);
+                    convertEntry(outCfg, gres.GetEntry(i), inserter, slime);
                 } else {
                     int inIdx = rci.inputClass->GetIndexFromEnumValue(outCfg->_enumValue);
                     const ResConfigEntry *inCfg = rci.inputClass->GetEntry(inIdx);
@@ -193,7 +192,7 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
                         // copy field
                         const ResEntry *entry = gres.GetEntry(inIdx);
                         LOG_ASSERT(entry != nullptr);
-                        convertEntry(state, outCfg, entry, inserter, slime);
+                        convertEntry(outCfg, entry, inserter, slime);
                     }
                 }
             }
