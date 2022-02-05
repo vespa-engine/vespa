@@ -4,6 +4,8 @@
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/searchsummary/docsummary/resultconfig.h>
+#include <vespa/document/datatype/positiondatatype.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.slimefieldwriter");
@@ -93,8 +95,9 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv, Inserter &i
     } else if (clazz.inherits(document::StructuredFieldValue::classId)) {
         const document::StructuredFieldValue & sfv = static_cast<const document::StructuredFieldValue &>(fv);
         Cursor &o = inserter.insertObject();
-#ifdef USE_V8_GEO_POSITION_RENDERING
-        if (sfv.getDataType()->getName() == "position") {
+        if (sfv.getDataType() == &document::PositionDataType::getInstance()
+            && search::docsummary::ResultConfig::wantedV8geoPositions())
+        {
             bool ok = true;
             try {
                 int x = std::numeric_limits<int>::min();
@@ -121,7 +124,6 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv, Inserter &i
                 // fallback to code below
             }
         }
-#endif
         for (const document::Field & entry : sfv) {
             if (explorePath(entry.getName())) {
                 _currPath.push_back(entry.getName());
