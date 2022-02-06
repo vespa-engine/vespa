@@ -13,6 +13,7 @@ public final class HexEncodeExpression extends Expression {
     public HexEncodeExpression() {
         super(DataType.LONG);
     }
+
     @Override
     protected void doExecute(ExecutionContext context) {
         long input = ((LongFieldValue) context.getValue()).getLong();
