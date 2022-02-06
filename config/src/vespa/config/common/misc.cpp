@@ -39,6 +39,16 @@ calculateContentXxhash64(const StringVector & fileContents)
     return ss.str();
 }
 
+StringVector
+getlines(vespalib::asciistream & is, char delim)
+{
+    StringVector lines;
+    while (!is.eof()) {
+        lines.push_back(is.getline(delim));
+    }
+    return lines;
+}
+
 bool
 isGenerationNewer(int64_t newGen, int64_t oldGen)
 {

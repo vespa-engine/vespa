@@ -36,7 +36,7 @@ StringVector
 RawSource::readConfig()
 {
     vespalib::asciistream is(_payload);
-    return is.getlines();
+    return getlines(is);
 }
 
 }

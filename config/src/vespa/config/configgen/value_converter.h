@@ -7,7 +7,7 @@
 
 namespace config::internal {
 
-void requireValid(const vespalib::string & __fieldName, const ::vespalib::slime::Inspector & __inspector);
+void requireValid(vespalib::stringref __fieldName, const ::vespalib::slime::Inspector & __inspector);
 
 template<typename T>
 T convertValue(const ::vespalib::slime::Inspector & __inspector) { return T(::config::ConfigPayload(__inspector)); }
@@ -29,7 +29,7 @@ vespalib::string convertValue(const ::vespalib::slime::Inspector & __inspector);
 
 template<typename T>
 struct ValueConverter {
-    T operator()(const vespalib::string & __fieldName, const ::vespalib::slime::Inspector & __inspector) {
+    T operator()(vespalib::stringref __fieldName, const ::vespalib::slime::Inspector & __inspector) {
         requireValid(__fieldName, __inspector);
         return convertValue<T>(__inspector);
     }

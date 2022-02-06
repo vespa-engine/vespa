@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <vector>
 
 namespace vespalib {
 
@@ -153,7 +152,6 @@ public:
     static asciistream createFromFile(stringref fileName);
     static asciistream createFromDevice(stringref fileName);
     string getline(char delim='\n');
-    std::vector<string> getlines(char delim='\n');
     char getFill() const noexcept { return _fill; }
     size_t getWidth() const noexcept { return static_cast<size_t>(_width); } // match input type of setw
     Base getBase() const noexcept { return _base; }

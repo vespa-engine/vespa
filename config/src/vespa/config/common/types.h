@@ -2,12 +2,14 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/stllike/allocator.h>
 #include <vector>
 #include <map>
 
 namespace config {
 
-using StringVector = std::vector<vespalib::string>;
+//using StringVector = std::vector<vespalib::string>;
+using StringVector = std::vector<vespalib::string, vespalib::allocator_large<vespalib::string>>;
 using BoolVector = std::vector<bool>;
 using DoubleVector = std::vector<double>;
 using LongVector = std::vector<int64_t>;

@@ -8,10 +8,9 @@
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/fastos/file.h>
 #include <limits>
-#include <stdexcept>
 #include <cassert>
-#include <cmath>
 #include <charconv>
+#include <vector>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.stllike.asciistream");
@@ -601,16 +600,6 @@ asciistream::write(const void * buf, size_t len)
     }
     _wbuf.append(buf, len);
     _rbuf = _wbuf;
-}
-
-std::vector<string>
-asciistream::getlines(char delim)
-{
-    std::vector<string> lines;
-    while (!eof()) {
-        lines.push_back(getline(delim));
-    }
-    return lines;
 }
 
 string

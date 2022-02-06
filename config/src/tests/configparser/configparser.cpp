@@ -3,6 +3,7 @@
 #include <vespa/config/common/configparser.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/common/configvalue.h>
+#include <vespa/config/common/misc.h>
 #include "config-foo.h"
 #include <fstream>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -23,7 +24,7 @@ namespace {
     ConfigValue readConfig(const vespalib::string & fileName)
     {
         asciistream is(asciistream::createFromFile(fileName));
-        return ConfigValue(is.getlines(), "");
+        return ConfigValue(getlines(is), "");
     }
 }
 

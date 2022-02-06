@@ -5,6 +5,7 @@
 #include <memory>
 
 namespace vespalib {
+    class asciistream;
     class Slime;
     namespace slime {
         struct Inspector;
@@ -31,5 +32,7 @@ typedef std::shared_ptr<const vespalib::Slime> SlimePtr;
  * Copy slime objects from under src to dest, recursively.
  */
 void copySlimeObject(const vespalib::slime::Inspector & src, vespalib::slime::Cursor & dest);
+
+StringVector getlines(vespalib::asciistream & is, char delim='\n');
 
 }
