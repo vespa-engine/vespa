@@ -116,7 +116,6 @@ public class ScriptTestCase {
         ExecutionContext context = new ExecutionContext(adapter);
         context.setValue(new StringFieldValue("input text"));
         expression.execute(context);
-        assertNotNull(context);
         assertTrue(adapter.values.containsKey("myInt"));
         assertEquals(-1425622096, adapter.values.get("myInt").getWrappedValue());
     }
@@ -139,7 +138,6 @@ public class ScriptTestCase {
         ExecutionContext context = new ExecutionContext(adapter);
         context.setValue(new StringFieldValue("input text"));
         expression.execute(context);
-        assertNotNull(context);
         assertTrue(adapter.values.containsKey("myLong"));
         assertEquals(7678158186624760752L, adapter.values.get("myLong").getWrappedValue());
     }
@@ -165,7 +163,6 @@ public class ScriptTestCase {
         ExecutionContext context = new ExecutionContext(adapter);
         context.setValue(new StringFieldValue("input text"));
         expression.execute(context);
-        assertNotNull(context);
         assertTrue(adapter.values.containsKey("myTensor"));
         assertEquals(Tensor.from(tensorType, "[7,3,0,0]"),
                      ((TensorFieldValue)adapter.values.get("myTensor")).getTensor().get());

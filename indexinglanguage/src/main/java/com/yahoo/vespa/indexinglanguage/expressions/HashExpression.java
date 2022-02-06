@@ -3,6 +3,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
@@ -21,10 +22,7 @@ public class HashExpression extends Expression  {
 
     private final HashFunction hasher = Hashing.sipHash24();
 
-    /** The destination the embedding will be written to on the form [schema name].[field name] */
-    private String destination;
-
-    /** The target type we are embedding into. */
+    /** The target type we are hashing into. */
     private DataType targetType;
 
     public HashExpression() {
@@ -33,11 +31,11 @@ public class HashExpression extends Expression  {
 
     @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
-        if (field.getDataType() != DataType.INT && field.getDataType() != DataType.LONG)
+        if ( ! canStoreHash(field.getDataType()))
             throw new IllegalArgumentException("Cannot use the hash function on an indexing statement for " +
                                                field.getName() +
-                                               ": The hash function can only be used when the target field is int or long, not " +
-                                               field.getDataType());
+                                               ": The hash function can only be used when the target field " +
+                                               "is int or long, not " + field.getDataType());
         targetType = field.getDataType();
     }
 
@@ -67,11 +65,17 @@ public class HashExpression extends Expression  {
             throw new VerificationException(this, "No output field in this statement: " +
                                                   "Don't know what value to hash to.");
         DataType outputFieldType = context.getInputType(this, outputField);
-        if (outputFieldType != DataType.INT && outputFieldType != DataType.LONG)
+        if ( ! canStoreHash(outputFieldType))
             throw new VerificationException(this, "The type of the output field " + outputField +
-                                                  " is not an int or long but " + outputField);
+                                                  " is not int or long but " + outputFieldType);
         targetType = outputFieldType;
         context.setValueType(createdOutputType());
+    }
+
+    private boolean canStoreHash(DataType type) {
+        if (type.equals(DataType.INT)) return true;
+        if (type.equals(DataType.LONG)) return true;
+        return false;
     }
 
     @Override
@@ -80,12 +84,12 @@ public class HashExpression extends Expression  {
     }
 
     @Override
-    public String toString() { return "embed"; }
+    public String toString() { return "hash"; }
 
     @Override
-    public int hashCode() { return 1; }
+    public int hashCode() { return 987; }
 
     @Override
-    public boolean equals(Object o) { return o instanceof EmbedExpression; }
+    public boolean equals(Object o) { return o instanceof HashExpression; }
 
 }
