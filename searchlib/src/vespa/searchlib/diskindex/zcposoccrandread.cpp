@@ -175,8 +175,7 @@ open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead)
 bool
 ZcPosOccRandRead::close()
 {
-    _file->Close();
-    return true;
+    return _file->Close();
 }
 
 
