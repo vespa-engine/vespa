@@ -10,6 +10,7 @@ import com.yahoo.component.Vtag;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigInterruptedException;
+import com.yahoo.config.subscription.SubscriberClosedException;
 import com.yahoo.container.Container;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ChainsConfig;
@@ -298,7 +299,7 @@ public final class ConfiguredApplication implements Application {
                 // Block until new config arrives, and it should be applied
                 Runnable cleanupTask = configurer.waitForNextGraphGeneration(builder.guiceModules().activate(), false);
                 initializeAndActivateContainer(builder, cleanupTask);
-            } catch (UncheckedInterruptedException | ConfigInterruptedException e) {
+            } catch (UncheckedInterruptedException | SubscriberClosedException | ConfigInterruptedException e) {
                 break;
             } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
                 tryReportFailedComponentGraphConstructionMetric(configurer, e);

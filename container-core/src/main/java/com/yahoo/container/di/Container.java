@@ -5,6 +5,7 @@ import com.google.inject.Injector;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.ConfigInterruptedException;
+import com.yahoo.config.subscription.SubscriberClosedException;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.di.ConfigRetriever.BootstrapConfigs;
@@ -239,7 +240,7 @@ public class Container {
     @SuppressWarnings("removal") // TODO Vespa 8: remove
     private void invalidateGeneration(long generation, Throwable cause) {
         leastGeneration = Math.max(retriever.getComponentsGeneration(), retriever.getBootstrapGeneration()) + 1;
-        if (!(cause instanceof InterruptedException) && !(cause instanceof ConfigInterruptedException)) {
+        if (!(cause instanceof InterruptedException) && !(cause instanceof ConfigInterruptedException) && !(cause instanceof SubscriberClosedException)) {
             log.log(Level.WARNING, newGraphErrorMessage(generation, cause), cause);
         }
     }

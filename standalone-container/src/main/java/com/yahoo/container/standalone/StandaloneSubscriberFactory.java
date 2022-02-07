@@ -4,6 +4,7 @@ package com.yahoo.container.standalone;
 import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigInterruptedException;
+import com.yahoo.config.subscription.SubscriberClosedException;
 import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.vespa.config.ConfigKey;
@@ -66,8 +67,7 @@ public class StandaloneSubscriberFactory implements SubscriberFactory {
                     while (!shutdown && !Thread.interrupted()) {
                         Thread.sleep(100);
                     }
-                    if (shutdown) // Same semantics as an actual interrupt
-                        throw new ConfigInterruptedException(new InterruptedException());
+                    if (shutdown) throw new SubscriberClosedException();
                 } catch (InterruptedException e) {
                     throw new ConfigInterruptedException(e);
                 }
