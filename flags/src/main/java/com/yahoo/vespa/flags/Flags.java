@@ -358,7 +358,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag CHECK_CONFIG_CONVERGENCE_BEFORE_RESTARTING = defineFeatureFlag(
-            "check-config-convergence-before-restart", false,
+            "check-config-convergence-before-restart", true,
             List.of("hmusum"), "2022-01-16", "2022-02-16",
             "Check that config has converged to new generation on all services before restarting services",
             "Takes effect immediately",
