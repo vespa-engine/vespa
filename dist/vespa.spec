@@ -85,8 +85,6 @@ BuildRequires: glibc-langpack-en
 %endif
 %if 0%{?el9}
 BuildRequires: gcc-c++
-BuildRequires: libasan
-BuildRequires: libasan-static
 BuildRequires: libatomic
 BuildRequires: vespa-pybind11-devel
 BuildRequires: python3-pytest
