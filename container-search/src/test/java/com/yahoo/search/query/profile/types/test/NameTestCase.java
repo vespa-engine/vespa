@@ -47,6 +47,7 @@ public class NameTestCase {
         assertLegalFieldName("a/b");
         assertLegalFieldName("/a/b");
         assertLegalFieldName("/a/b/");
+        assertIllegalFieldName("");
         assertIllegalFieldName("aBc.dooEee.ce_d.-some-other.moreHere",
                                "Could not set 'aBc.dooEee.ce_d.-some-other.moreHere' to 'anyValue'",
                                "Illegal name '-some-other'");

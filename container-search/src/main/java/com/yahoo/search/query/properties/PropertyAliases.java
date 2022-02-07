@@ -38,6 +38,7 @@ public class PropertyAliases extends Properties {
      */
     protected CompoundName unalias(CompoundName nameOrAlias) {
         if (aliases.isEmpty()) return nameOrAlias;
+        if (nameOrAlias.size() > 1) return nameOrAlias; // aliases are simple names
         CompoundName properName = aliases.get(nameOrAlias.getLowerCasedName());
         return (properName != null) ? properName : nameOrAlias;
     }
