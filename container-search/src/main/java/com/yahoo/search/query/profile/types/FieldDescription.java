@@ -81,7 +81,7 @@ public class FieldDescription implements Comparable<FieldDescription> {
     /**
      * Creates a field description
      *
-     * @param name the name of the field, emnpty means it describes the value held by  the query profile itself
+     * @param name the name of the field, empty means it describes the value held by  the query profile itself
      * @param type the type of the field represented as a string - see {@link com.yahoo.search.query.profile.types.FieldType}
      * @param aliases a list of aliases, never null. Aliases are not following dotted
      *        (meaning they are global, not that they cannot contain dots) and are case insensitive.
