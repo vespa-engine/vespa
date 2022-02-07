@@ -22,7 +22,6 @@ import java.util.List;
 public class JettyHttpServer extends SimpleComponent implements ServerConfig.Producer {
 
     private final ContainerCluster<?> cluster;
-    private final boolean enablePreshutdownCommand;
     private volatile boolean isHostedVespa;
     private final List<ConnectorFactory> connectorFactories = new ArrayList<>();
     private final List<String> ignoredUserAgentsList = new ArrayList<>();
@@ -37,7 +36,6 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
         for (String agent : deployState.featureFlags().ignoredHttpUserAgents()) {
             addIgnoredUserAgent(agent);
         }
-        this.enablePreshutdownCommand = deployState.featureFlags().enableJdiscPreshutdownCommand();
     }
 
     public void setHostedVespa(boolean isHostedVespa) { this.isHostedVespa = isHostedVespa; }
@@ -77,9 +75,7 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
                     .remotePortHeaders(List.of("X-Forwarded-Port", "y-rp")));
         }
         configureJettyThreadpool(builder);
-        if (enablePreshutdownCommand) {
-            builder.stopTimeout(300);
-        }
+        builder.stopTimeout(300);
     }
 
     private void configureJettyThreadpool(ServerConfig.Builder builder) {

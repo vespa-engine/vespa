@@ -110,7 +110,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}) default double persistenceThrottlingWsDecrementFactor() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default double persistenceThrottlingWsBackoff() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useQrserverServiceName() { return true; }
-        @ModelFeatureFlag(owners = {"bjorncs", "baldersheim"}) default boolean enableJdiscPreshutdownCommand() { return false; }
+        @ModelFeatureFlag(owners = {"bjorncs", "baldersheim"}) default boolean enableJdiscPreshutdownCommand() { return true; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
