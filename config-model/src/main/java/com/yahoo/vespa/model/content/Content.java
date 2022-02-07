@@ -312,7 +312,7 @@ public class Content extends ConfigModel {
                     index++;
                     docprocService.useDynamicPorts();
                     docprocService.setHostResource(host);
-                    docprocService.initService(modelContext.getDeployLogger());
+                    docprocService.initService(modelContext.getDeployState());
                     nodes.add(docprocService);
                     processedHosts.add(host);
                 }

@@ -367,7 +367,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
                     boolean retired = host.spec().membership().map(ClusterMembership::retired).orElse(false);
                     var clusterControllerContainer = new ClusterControllerContainer(clusterControllers, ccIndex, runStandaloneZooKeeper, deployState, retired);
                     clusterControllerContainer.setHostResource(host);
-                    clusterControllerContainer.initService(deployState.getDeployLogger());
+                    clusterControllerContainer.initService(deployState);
                     clusterControllerContainer.setProp("clustertype", "admin");
                     containers.add(clusterControllerContainer);
                     ++index;

@@ -168,11 +168,11 @@ public abstract class Container extends AbstractService implements
     public void addBuiltinHandlers() { }
 
     @Override
-    public void initService(DeployLogger deployLogger) {
+    public void initService(DeployState deployState) {
         if (isInitialized()) return;
 
         // XXX: Must be called first, to set the baseport
-        super.initService(deployLogger);
+        super.initService(deployState);
 
         if (getHttp() == null) {
             initDefaultJettyConnector();

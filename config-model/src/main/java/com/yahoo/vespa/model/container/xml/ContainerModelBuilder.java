@@ -814,7 +814,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                               false,
                                               !deployState.getProperties().isBootstrap());
             var hosts = hostSystem.allocateHosts(clusterSpec, capacity, log);
-            return createNodesFromHosts(log, hosts, cluster, context.getDeployState());
+            return createNodesFromHosts(hosts, cluster, context.getDeployState());
         }
         else {
             return singleHostContainerCluster(cluster, hostSystem.getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC), context);
@@ -824,7 +824,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private List<ApplicationContainer> singleHostContainerCluster(ApplicationContainerCluster cluster, HostResource host, ConfigModelContext context) {
         ApplicationContainer node = new ApplicationContainer(cluster, "container.0", 0, context.getDeployState());
         node.setHostResource(host);
-        node.initService(context.getDeployLogger());
+        node.initService(context.getDeployState());
         return List.of(node);
     }
 
@@ -835,7 +835,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                                                   ClusterSpec.Id.from(cluster.getName()), 
                                                                                   log,
                                                                                   hasZooKeeper(containerElement));
-        return createNodesFromHosts(context.getDeployLogger(), hosts, cluster, context.getDeployState());
+        return createNodesFromHosts(hosts, cluster, context.getDeployState());
     }
 
     private List<ApplicationContainer> createNodesFromNodeType(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
@@ -847,7 +847,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Map<HostResource, ClusterMembership> hosts = 
                 cluster.getRoot().hostSystem().allocateHosts(clusterSpec,
                                                              Capacity.fromRequiredNodeType(type), log);
-        return createNodesFromHosts(context.getDeployLogger(), hosts, cluster, context.getDeployState());
+        return createNodesFromHosts(hosts, cluster, context.getDeployState());
     }
     
     private List<ApplicationContainer> createNodesFromContentServiceReference(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
@@ -865,11 +865,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                             referenceId, 
                                             cluster.getRoot().hostSystem(),
                                             context.getDeployLogger());
-        return createNodesFromHosts(context.getDeployLogger(), hosts, cluster, context.getDeployState());
+        return createNodesFromHosts(hosts, cluster, context.getDeployState());
     }
 
-    private List<ApplicationContainer> createNodesFromHosts(DeployLogger deployLogger,
-                                                            Map<HostResource, ClusterMembership> hosts,
+    private List<ApplicationContainer> createNodesFromHosts(Map<HostResource, ClusterMembership> hosts,
                                                             ApplicationContainerCluster cluster,
                                                             DeployState deployState) {
         List<ApplicationContainer> nodes = new ArrayList<>();
@@ -877,7 +876,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             String id = "container." + entry.getValue().index();
             ApplicationContainer container = new ApplicationContainer(cluster, id, entry.getValue().retired(), entry.getValue().index(), deployState);
             container.setHostResource(entry.getKey());
-            container.initService(deployLogger);
+            container.initService(deployState);
             nodes.add(container);
         }
         return nodes;

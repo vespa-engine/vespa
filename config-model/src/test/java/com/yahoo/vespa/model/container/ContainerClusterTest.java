@@ -6,7 +6,6 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentId;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.deploy.DeployState;
@@ -178,7 +177,7 @@ public class ContainerClusterTest {
     public void testClusterControllerResourceUsage() {
         MockRoot root = createRoot(false);
         ClusterControllerContainerCluster cluster = createClusterControllerCluster(root);
-        addClusterController(root.deployLogger(), cluster, "host-c1", root.getDeployState());
+        addClusterController(cluster, "host-c1", root.getDeployState());
         assertEquals(1, cluster.getContainers().size());
         QrStartConfig.Builder qrBuilder = new QrStartConfig.Builder();
         cluster.getConfig(qrBuilder);
@@ -198,7 +197,7 @@ public class ContainerClusterTest {
     public void testThatLinguisticsIsExcludedForClusterControllerCluster() {
         MockRoot root = createRoot(false);
         ClusterControllerContainerCluster cluster = createClusterControllerCluster(root);
-        addClusterController(root.deployLogger(), cluster, "host-c1", root.getDeployState());
+        addClusterController(cluster, "host-c1", root.getDeployState());
         assertFalse(contains("com.yahoo.language.provider.DefaultLinguisticsProvider", cluster.getAllComponents()));
     }
 
@@ -493,17 +492,16 @@ public class ContainerClusterTest {
                                                      HostResource hostResource) {
         ApplicationContainer container = new ApplicationContainer(cluster, name, 0, root.getDeployState());
         container.setHostResource(hostResource);
-        container.initService(root.deployLogger());
+        container.initService(root.getDeployState());
         cluster.addContainer(container);
     }
 
-    private static void addClusterController(DeployLogger deployLogger,
-                                             ClusterControllerContainerCluster cluster,
+    private static void addClusterController(ClusterControllerContainerCluster cluster,
                                              String hostName,
                                              DeployState deployState) {
         ClusterControllerContainer container = new ClusterControllerContainer(cluster, 1, false, deployState, false);
         container.setHostResource(new HostResource(new Host(null, hostName)));
-        container.initService(deployLogger);
+        container.initService(deployState);
         cluster.addContainer(container);
     }
 
