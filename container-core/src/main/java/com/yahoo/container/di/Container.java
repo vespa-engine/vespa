@@ -22,6 +22,7 @@ import org.osgi.framework.Bundle;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -81,7 +82,7 @@ public class Container {
                 log.log(Level.WARNING, String.format(
                         "Failed to construct graph for generation '%d' - scheduling partial graph for deconstruction",
                         newGraph.generation()), e);
-                scheduleGraphForDeconstruction(newGraph);
+                deconstructFailedGraph(oldGraph, newGraph);
                 throw e;
             }
             Runnable cleanupTask = createPreviousGraphDeconstructionTask(oldGraph, newGraph, obsoleteBundles);
@@ -164,6 +165,17 @@ public class Container {
                 throw new UncheckedInterruptedException("Interrupted while constructing component graph", true);
             n.constructInstance();
         });
+    }
+
+    private void deconstructFailedGraph(ComponentGraph currentGraph, ComponentGraph failedGraph) {
+        Set<Object> currentComponents = Collections.newSetFromMap(new IdentityHashMap<>(currentGraph.size()));
+        currentComponents.addAll(currentGraph.allConstructedComponentsAndProviders());
+
+        List<Object> unusedComponents = new ArrayList<>();
+        for (Object component : failedGraph.allConstructedComponentsAndProviders()) {
+            if (!currentComponents.contains(component)) unusedComponents.add(component);
+        }
+        destructor.deconstruct(failedGraph.generation(), unusedComponents, List.of());
     }
 
     private Runnable createPreviousGraphDeconstructionTask(ComponentGraph oldGraph,
