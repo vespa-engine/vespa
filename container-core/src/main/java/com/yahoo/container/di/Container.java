@@ -254,14 +254,14 @@ public class Container {
     }
 
     public void shutdown(ComponentGraph graph) {
-        shutdownConfigurer();
+        shutdownConfigRetriever();
         if (graph != null) {
             scheduleGraphForDeconstruction(graph);
             destructor.shutdown();
         }
     }
 
-    void shutdownConfigurer() {
+    public void shutdownConfigRetriever() {
         retriever.shutdown();
     }
 

@@ -31,6 +31,7 @@ public class StandaloneSubscriberFactory implements SubscriberFactory {
 
         private final Set<ConfigKey<ConfigInstance>> configKeys;
         private long generation = -1L;
+        private volatile boolean shutdown = false;
 
         StandaloneSubscriber(Set<ConfigKey<ConfigInstance>> configKeys) {
             this.configKeys = configKeys;
@@ -41,9 +42,7 @@ public class StandaloneSubscriberFactory implements SubscriberFactory {
             return generation == 0;
         }
 
-        @Override
-        public void close() {
-        }
+        @Override public void close() { shutdown = true; }
 
         @Override
         public Map<ConfigKey<ConfigInstance>, ConfigInstance> config() {
@@ -64,9 +63,11 @@ public class StandaloneSubscriberFactory implements SubscriberFactory {
 
             if (generation != 0) {
                 try {
-                    while (!Thread.interrupted()) {
-                        Thread.sleep(10000);
+                    while (!shutdown && !Thread.interrupted()) {
+                        Thread.sleep(100);
                     }
+                    if (shutdown) // Same semantics as an actual interrupt
+                        throw new ConfigInterruptedException(new InterruptedException());
                 } catch (InterruptedException e) {
                     throw new ConfigInterruptedException(e);
                 }
