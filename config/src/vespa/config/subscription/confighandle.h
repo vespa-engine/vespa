@@ -17,7 +17,8 @@ class ConfigHandle
 public:
     typedef std::unique_ptr<ConfigHandle <ConfigType> > UP;
 
-    ConfigHandle(std::shared_ptr<ConfigSubscription> subscription);
+    explicit ConfigHandle(std::shared_ptr<ConfigSubscription> subscription);
+    ~ConfigHandle();
 
     /**
      * Return the currently available config known to the ConfigHandle. Throws

@@ -12,6 +12,9 @@ ConfigHandle<ConfigType>::ConfigHandle(std::shared_ptr<ConfigSubscription> subsc
 }
 
 template <typename ConfigType>
+ConfigHandle<ConfigType>::~ConfigHandle() = default;
+
+template <typename ConfigType>
 std::unique_ptr<ConfigType>
 ConfigHandle<ConfigType>::getConfig() const
 {

@@ -15,6 +15,8 @@ ConfigSubscriber::ConfigSubscriber(const SourceSpec & spec)
     : _set(std::make_shared<ConfigContext>(spec))
 { }
 
+ConfigSubscriber::~ConfigSubscriber() = default;
+
 bool
 ConfigSubscriber::nextConfig(milliseconds timeoutInMillis)
 {

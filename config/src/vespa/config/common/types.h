@@ -7,16 +7,15 @@
 
 namespace config {
 
-typedef std::vector<vespalib::string> StringVector;
-typedef std::vector<bool> BoolVector;
-typedef std::vector<double> DoubleVector;
-typedef std::vector<int64_t> LongVector;
-typedef std::vector<int32_t> IntVector;
-typedef std::map<vespalib::string, vespalib::string> StringMap;
-typedef std::map<vespalib::string, bool> BoolMap;
-typedef std::map<vespalib::string, double> DoubleMap;
-typedef std::map<vespalib::string, int64_t> LongMap;
-typedef std::map<vespalib::string, int32_t> IntMap;
+using StringVector = std::vector<vespalib::string>;
+using BoolVector = std::vector<bool>;
+using DoubleVector = std::vector<double>;
+using LongVector = std::vector<int64_t>;
+using IntVector = std::vector<int32_t>;
+using StringMap = std::map<vespalib::string, vespalib::string>;
+using BoolMap = std::map<vespalib::string, bool>;
+using DoubleMap = std::map<vespalib::string, double>;
+using LongMap = std::map<vespalib::string, int64_t>;
+using IntMap = std::map<vespalib::string, int32_t>;
 
-} // namespace common
-
+}

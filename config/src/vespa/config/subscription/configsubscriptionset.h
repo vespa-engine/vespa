@@ -3,9 +3,10 @@
 #pragma once
 
 #include "subscriptionid.h"
-#include "configprovider.h"
 #include <atomic>
 #include <chrono>
+#include <memory>
+#include <vector>
 
 namespace config {
 
@@ -27,8 +28,10 @@ public:
      *
      * @param context A ConfigContext shared between all subscriptions.
      */
-    ConfigSubscriptionSet(std::shared_ptr<IConfigContext> context);
+    explicit ConfigSubscriptionSet(std::shared_ptr<IConfigContext> context);
 
+    ConfigSubscriptionSet(const ConfigSubscriptionSet &) = delete;
+    ConfigSubscriptionSet & operator= (const ConfigSubscriptionSet &) = delete;
     ~ConfigSubscriptionSet();
 
     /**

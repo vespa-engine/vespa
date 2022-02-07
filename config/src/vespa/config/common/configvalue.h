@@ -17,7 +17,7 @@ typedef std::shared_ptr<const protocol::Payload> PayloadPtr;
  */
 class ConfigValue {
 public:
-    ConfigValue(StringVector lines);
+    explicit ConfigValue(StringVector lines);
     ConfigValue(StringVector lines, const vespalib::string & xxhash);
     ConfigValue(PayloadPtr data, const vespalib::string & xxhash);
     ConfigValue();

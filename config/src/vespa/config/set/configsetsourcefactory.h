@@ -17,8 +17,8 @@ class ConfigSetSourceFactory : public SourceFactory
 {
 public:
     using BuilderMapSP = ConfigSetSource::BuilderMapSP;
-    ConfigSetSourceFactory(BuilderMapSP builderMap);
-
+    explicit ConfigSetSourceFactory(BuilderMapSP builderMap);
+    ~ConfigSetSourceFactory() override;
     std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder>  holder, const ConfigKey & key) const override;
 private:
     BuilderMapSP _builderMap;

@@ -97,7 +97,7 @@ typedef std::shared_ptr<DocsumTools> DocsumToolsPtr;
 class VSMConfigSnapshot {
 private:
     const vespalib::string _configId;
-    std::unique_ptr<config::ConfigSnapshot> _snapshot;
+    std::unique_ptr<const config::ConfigSnapshot> _snapshot;
 public:
     VSMConfigSnapshot(const vespalib::string & configId, const config::ConfigSnapshot & snapshot);
     ~VSMConfigSnapshot();
