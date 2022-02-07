@@ -81,6 +81,10 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>jdisc_jetty</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>commons-lang</groupId>
           <artifactId>commons-lang</artifactId>
         </exclusion>

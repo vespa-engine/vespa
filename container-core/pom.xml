@@ -64,6 +64,11 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
+      <artifactId>jdisc_jetty</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
       <artifactId>linguistics</artifactId>
       <version>${project.version}</version>
       <exclusions>
@@ -224,12 +229,6 @@
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>jdisc_core</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>jdisc_jetty</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
