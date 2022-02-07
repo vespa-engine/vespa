@@ -11,8 +11,9 @@
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hashtable.hpp>
+#include <vespa/config/subscription/configsubscriber.hpp>
+#include <set>
 #include <sstream>
-#include <algorithm>
 #include <cassert>
 
 #include <vespa/log/bufferedlogger.h>
@@ -160,8 +161,7 @@ MetricManager::isInitialized() const {
 }
 
 void
-MetricManager::init(const config::ConfigUri & uri, FastOS_ThreadPool& pool,
-                    bool startThread)
+MetricManager::init(const config::ConfigUri & uri, FastOS_ThreadPool& pool, bool startThread)
 {
     if (isInitialized()) {
         throw vespalib::IllegalStateException(
@@ -452,7 +452,7 @@ MetricManager::createSnapshotPeriods(const Config& config)
 void
 MetricManager::configure(const MetricLockGuard & , std::unique_ptr<Config> config)
 {
-    assert(config.get() != 0);
+    assert(config);
     if (LOG_WOULD_LOG(debug)) {
         std::ostringstream ost;
         config::OstreamConfigWriter w(ost);

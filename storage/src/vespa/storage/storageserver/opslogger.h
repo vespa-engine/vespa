@@ -13,7 +13,12 @@
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storage/config/config-stor-opslogger.h>
-#include <vespa/config/config.h>
+#include <vespa/config/helper/ifetchercallback.h>
+
+namespace config {
+    class ConfigUri;
+    class ConfigFetcher;
+}
 
 namespace storage {
 
@@ -40,7 +45,7 @@ private:
     FILE        * _targetFile;
     framework::Component _component;
 
-    config::ConfigFetcher _configFetcher;
+    std::unique_ptr<config::ConfigFetcher> _configFetcher;
 };
 
 }

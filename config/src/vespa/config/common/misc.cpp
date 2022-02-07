@@ -14,7 +14,7 @@ using vespalib::Memory;
 namespace config {
 
 vespalib::string
-calculateContentXxhash64(const std::vector<vespalib::string> & fileContents)
+calculateContentXxhash64(const StringVector & fileContents)
 {
     vespalib::string normalizedLines;
     XXH64_hash_t xxhash64;

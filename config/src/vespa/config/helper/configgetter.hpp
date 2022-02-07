@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "configgetter.h"
-#include <vespa/config/subscription/configsubscriber.h>
+#include <vespa/config/subscription/configsubscriber.hpp>
 
 namespace config {
 
@@ -18,9 +18,9 @@ ConfigGetter<ConfigType>::getConfig(int64_t &generation, const std::string & con
 
 template <typename ConfigType>
 std::unique_ptr<ConfigType>
-ConfigGetter<ConfigType>::getConfig(int64_t &generation, const std::string & configId, const IConfigContext::SP & context, milliseconds subscribeTimeout)
+ConfigGetter<ConfigType>::getConfig(int64_t &generation, const std::string & configId, std::shared_ptr<IConfigContext> context, milliseconds subscribeTimeout)
 {
-    ConfigSubscriber s(context);
+    ConfigSubscriber s(std::move(context));
     std::unique_ptr< ConfigHandle<ConfigType> > h = s.subscribe<ConfigType>(configId, subscribeTimeout);
     s.nextConfigNow();
     generation = s.getGeneration();
@@ -37,10 +37,10 @@ ConfigGetter<ConfigType>::getConfig(const std::string & configId, const SourceSp
 
 template <typename ConfigType>
 std::unique_ptr<ConfigType>
-ConfigGetter<ConfigType>::getConfig(const std::string & configId, const IConfigContext::SP & context, milliseconds subscribeTimeout)
+ConfigGetter<ConfigType>::getConfig(const std::string & configId, std::shared_ptr<IConfigContext> context, milliseconds subscribeTimeout)
 {
     int64_t ignoreGeneration;
-    return getConfig(ignoreGeneration, configId, context, subscribeTimeout);
+    return getConfig(ignoreGeneration, configId, std::move(context), subscribeTimeout);
 }
 
 } // namespace config

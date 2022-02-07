@@ -6,8 +6,6 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/messagebus/routing/hop.h>
-#include <vespa/config/helper/ifetchercallback.h>
-#include <vespa/config/helper/configfetcher.h>
 
 namespace config {
     class ICallback;

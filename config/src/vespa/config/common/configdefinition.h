@@ -1,8 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
+#include "types.h"
 
 namespace vespalib::slime {
     struct Cursor;
@@ -16,12 +15,12 @@ namespace config {
 class ConfigDefinition {
 public:
     ConfigDefinition();
-    ConfigDefinition(const std::vector<vespalib::string> & schema);
+    ConfigDefinition(StringVector schema);
     void deserialize(const vespalib::slime::Inspector & inspector);
     void serialize(vespalib::slime::Cursor & cursor) const;
     vespalib::string asString() const;
 private:
-    std::vector<vespalib::string> _schema;
+    StringVector _schema;
 };
 
 } //namespace config

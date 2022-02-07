@@ -2,15 +2,16 @@
 
 #include "configpoller.h"
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config/subscription/configsubscriber.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.helper.configpoller");
 
 namespace config {
 
-ConfigPoller::ConfigPoller(const IConfigContext::SP & context)
+ConfigPoller::ConfigPoller(std::shared_ptr<IConfigContext> context)
     : _generation(-1),
-      _subscriber(context),
+      _subscriber(std::make_unique<ConfigSubscriber>(std::move(context))),
       _handleList(),
       _callbackList()
 {
@@ -22,7 +23,7 @@ void
 ConfigPoller::run()
 {
     try {
-        while (!_subscriber.isClosed()) {
+        while (!_subscriber->isClosed()) {
             poll();
         }
     } catch (config::InvalidConfigException & e) {
@@ -35,11 +36,11 @@ void
 ConfigPoller::poll()
 {
     LOG(debug, "Checking for new config");
-    if (_subscriber.nextGeneration()) {
-        if (_subscriber.isClosed())
+    if (_subscriber->nextGeneration()) {
+        if (_subscriber->isClosed())
             return;
         LOG(debug, "Got new config, reconfiguring");
-        _generation = _subscriber.getGeneration();
+        _generation = _subscriber->getGeneration();
         for (size_t i = 0; i < _handleList.size(); i++) {
             ICallback * callback(_callbackList[i]);
             if (_handleList[i]->isChanged())
@@ -53,7 +54,7 @@ ConfigPoller::poll()
 void
 ConfigPoller::close()
 {
-    _subscriber.close();
+    _subscriber->close();
 }
 
 }

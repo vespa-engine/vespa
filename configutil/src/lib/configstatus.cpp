@@ -7,8 +7,8 @@
 #include <vbench/http/server_spec.h>
 #include <vbench/http/http_client.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config/subscription/configsubscriber.hpp>
 #include <iostream>
-#include <cstdlib>
 
 using configdefinitions::tagsContain;
 
@@ -69,7 +69,7 @@ struct ComponentTraverser : public vespalib::slime::ObjectTraverser
     }
 };
 
-ComponentTraverser::~ComponentTraverser() {}
+ComponentTraverser::~ComponentTraverser() = default;
 
 class MyHttpHandler : public vbench::HttpResultHandler {
 private:

@@ -31,7 +31,7 @@ ConfigManager::subscribe(const ConfigKey & key, milliseconds timeoutInMillis)
     SubscriptionId id(_idGenerator.fetch_add(1));
 
     auto holder = std::make_shared<ConfigHolder>();
-    Source::UP source = _sourceFactory->createSource(holder, key);
+    std::unique_ptr<Source> source = _sourceFactory->createSource(holder, key);
     source->reload(_generation);
 
     source->getConfig();

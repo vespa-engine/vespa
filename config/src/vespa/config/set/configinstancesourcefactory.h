@@ -17,12 +17,12 @@ class ConfigKey;
 class ConfigInstanceSourceFactory : public SourceFactory
 {
 public:
-    ConfigInstanceSourceFactory(const ConfigKey & key, const vespalib::asciistream & buffer);
+    ConfigInstanceSourceFactory(const ConfigKey & key, vespalib::asciistream buffer);
 
     /**
      * Create source handling config described by key.
      */
-    Source::UP createSource(const IConfigHolder::SP & holder, const ConfigKey & key) const override;
+    std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key) const override;
 private:
     const ConfigKey _key;
     vespalib::asciistream _buffer;

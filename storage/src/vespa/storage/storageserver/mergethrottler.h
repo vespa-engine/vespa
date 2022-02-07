@@ -20,13 +20,15 @@
 #include <vespa/metrics/countmetric.h>
 #include <vespa/metrics/valuemetric.h>
 #include <vespa/metrics/metrictimer.h>
-#include <vespa/config/config.h>
+#include <vespa/config/helper/ifetchercallback.h>
+
 #include <chrono>
 
-namespace mbus {
-class DynamicThrottlePolicy;
+namespace mbus { class DynamicThrottlePolicy; }
+namespace config {
+    class ConfigFetcher;
+    class ConfigUri;
 }
-
 namespace storage {
 
 class AbortBucketOperationsCommand;
@@ -170,7 +172,7 @@ private:
     mutable std::mutex _messageLock;
     std::condition_variable _messageCond;
     mutable std::mutex _stateLock;
-    config::ConfigFetcher _configFetcher;
+    std::unique_ptr<config::ConfigFetcher> _configFetcher;
     // Messages pending to be processed by the worker thread
     std::vector<api::StorageMessage::SP> _messagesDown;
     std::vector<api::StorageMessage::SP> _messagesUp;

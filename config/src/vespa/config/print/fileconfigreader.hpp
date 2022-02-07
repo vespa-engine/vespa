@@ -29,14 +29,14 @@ FileConfigReader<ConfigType>::read(const ConfigFormatter & formatter)
     buf << file.rdbuf();
     buffer.setEncodedString(buf.str());
     formatter.decode(buffer);
-    return std::unique_ptr<ConfigType>(new ConfigType(buffer));
+    return std::make_unique<ConfigType>(buffer);
 }
 
 template <typename ConfigType>
 std::unique_ptr<ConfigType>
 FileConfigReader<ConfigType>::read()
 {
-    std::vector<vespalib::string> lines;
+    StringVector lines;
     std::ifstream f(_fileName.c_str());
     if (f.fail())
         throw vespalib::IllegalArgumentException(std::string("Unable to open file ") + _fileName);
@@ -44,7 +44,7 @@ FileConfigReader<ConfigType>::read()
     for (std::getline(f, line); f; std::getline(f, line)) {
         lines.push_back(line);
     }
-    return std::unique_ptr<ConfigType>(new ConfigType(ConfigValue(lines, calculateContentXxhash64(lines))));
+    return std::make_unique<ConfigType>(ConfigValue(std::move(lines)));
 }
 
 } // namespace config

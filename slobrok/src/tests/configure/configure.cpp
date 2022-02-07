@@ -4,7 +4,6 @@
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/slobrok/sbregister.h>
 #include <vespa/slobrok/server/slobrokserver.h>
-#include <vespa/config/config.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/config-slobroks.h>
 #include <vespa/fnet/transport.h>

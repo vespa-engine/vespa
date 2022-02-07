@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/config/config.h>
-#include <vespa/config-logforwarder.h>
 #include "child-handler.h"
+#include <vespa/config-logforwarder.h>
+#include <vespa/config/subscription/configsubscriber.h>
 
 using cloud::config::LogforwarderConfig;
 

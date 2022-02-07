@@ -1,9 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "config-owner.h"
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/config/common/exceptions.h>
-#include <string>
+#include <vespa/config/subscription/configsubscriber.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".sentinel.config-owner");

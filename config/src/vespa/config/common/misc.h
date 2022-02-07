@@ -1,9 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "configkey.h"
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
+#include "types.h"
 #include <memory>
 
 namespace vespalib {
@@ -19,7 +17,7 @@ namespace config {
 /**
  * Miscellaneous utility functions specific to config.
  */
-vespalib::string calculateContentXxhash64(const std::vector<vespalib::string> & fileContents);
+vespalib::string calculateContentXxhash64(const StringVector & fileContents);
 
 bool isGenerationNewer(int64_t newGen, int64_t oldGen);
 

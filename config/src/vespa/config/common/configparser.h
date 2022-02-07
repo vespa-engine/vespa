@@ -1,12 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "types.h"
 #include <vespa/vespalib/util/stringfmt.h>
-#include <map>
 #include <set>
-#include <vector>
 #include <cerrno>
-#include <cstdint>
 
 namespace config {
 
@@ -16,7 +14,7 @@ namespace config {
  */
 class ConfigParser {
 public:
-    typedef std::vector<vespalib::string> vsvector;
+    using vsvector = StringVector;
 private:
     static vsvector getLinesForKey(vespalib::stringref key, const vsvector & config);
 

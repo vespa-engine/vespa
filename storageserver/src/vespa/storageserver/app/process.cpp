@@ -5,6 +5,7 @@
 #include <vespa/storage/storageserver/storagenode.h>
 #include <vespa/storage/storageserver/storagenodecontext.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/config/subscription/configsubscriber.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".process");
@@ -17,6 +18,8 @@ Process::Process(const config::ConfigUri & configUri)
     : _configUri(configUri),
       _configSubscriber(_configUri.getContext())
 { }
+
+Process::~Process() = default;
 
 void
 Process::setupConfig(milliseconds subscribeTimeout)

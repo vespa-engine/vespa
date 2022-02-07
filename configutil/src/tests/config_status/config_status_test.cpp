@@ -3,7 +3,6 @@
 #include <lib/configstatus.h>
 #include <vespa/vespalib/portal/portal.h>
 #include <vespa/config-model.h>
-#include <vespa/config/config.h>
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/config/common/configcontext.h>
 

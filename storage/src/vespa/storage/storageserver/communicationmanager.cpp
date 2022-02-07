@@ -19,6 +19,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/config/helper/configfetcher.hpp>
 #include <string_view>
 
 #include <vespa/log/bufferedlogger.h>

@@ -14,8 +14,8 @@ constexpr vespalib::duration ONE_MINUTE = 60s;
 
 TEST("Require that element order is correct")
 {
-    ConfigValue value(std::vector<vespalib::string>(), "foo");
-    ConfigValue value2(std::vector<vespalib::string>(), "bar");
+    ConfigValue value(StringVector(), "foo");
+    ConfigValue value2(StringVector(), "bar");
 
     ConfigHolder holder;
     holder.handle(std::make_unique<ConfigUpdate>(value, true, 0));

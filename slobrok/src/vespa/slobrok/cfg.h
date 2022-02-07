@@ -3,8 +3,12 @@
 
 #include <vespa/vespalib/util/ptrholder.h>
 #include <vespa/config-slobroks.h>
-#include <vespa/config/config.h>
+#include <vespa/config/subscription/configuri.h>
+#include <vespa/config/subscription/confighandle.h>
 
+namespace config {
+    class ConfigSubscriber;
+}
 namespace slobrok {
 
 class Configurable {
@@ -16,15 +20,16 @@ public:
 
 class Configurator {
 private:
-    config::ConfigSubscriber _subscriber;
-    config::ConfigHandle<cloud::config::SlobroksConfig>::UP _handle;
+    std::unique_ptr<config::ConfigSubscriber> _subscriber;
+    std::unique_ptr<config::ConfigHandle<cloud::config::SlobroksConfig>> _handle;
     Configurable &_target;
 public:
     Configurator(Configurable &target, const config::ConfigUri & uri);
+    ~Configurator();
     bool poll();
     typedef std::unique_ptr<Configurator> UP;
 
-    int64_t getGeneration() const { return _subscriber.getGeneration(); }
+    int64_t getGeneration() const;
 };
 
 class ConfiguratorFactory {

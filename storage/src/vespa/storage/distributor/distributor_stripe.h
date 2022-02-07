@@ -13,7 +13,6 @@
 #include "stripe_access_guard.h"
 #include "stripe_bucket_db_updater.h"
 #include "tickable_stripe.h"
-#include <vespa/config/config.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/storage/distributor/bucketdb/bucketdbmetricupdater.h>

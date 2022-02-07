@@ -2,24 +2,26 @@
 #pragma once
 
 #include <vespa/config/common/source.h>
-#include <vespa/config/common/iconfigholder.h>
-#include <vespa/vespalib/stllike/string.h>
-
+#include <vespa/config/common/types.h>
 namespace config {
+
+class IConfigHolder;
 
 /**
  * Class for sending and receiving config request from a raw string.
  */
 class RawSource : public Source {
 public:
-    RawSource(const IConfigHolder::SP & holder, const vespalib::string & payload);
-
+    RawSource(std::shared_ptr<IConfigHolder> holder, const vespalib::string & payload);
+    RawSource(const RawSource &) = delete;
+    RawSource & operator = (const RawSource &) = delete;
+    ~RawSource() override;
     void getConfig() override;
     void reload(int64_t generation) override;
     void close() override;
 private:
-    IConfigHolder::SP _holder;
-    std::vector<vespalib::string> readConfig();
+    std::shared_ptr<IConfigHolder> _holder;
+    StringVector readConfig();
     const vespalib::string _payload;
 };
 

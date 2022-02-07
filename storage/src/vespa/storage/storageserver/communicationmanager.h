@@ -21,15 +21,18 @@
 #include <vespa/storageapi/mbusprot/storagereply.h>
 #include <vespa/messagebus/imessagehandler.h>
 #include <vespa/messagebus/ireplyhandler.h>
-#include <vespa/config/helper/configfetcher.h>
+#include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/config/subscription/configuri.h>
+#include <vespa/config-bucketspaces.h>
 #include <map>
 #include <queue>
 #include <atomic>
 #include <mutex>
-#include <vespa/config-bucketspaces.h>
 
+namespace config {
+    class ConfigFetcher;
+}
 namespace mbus {
     class RPCMessageBus;
     class SourceSession;

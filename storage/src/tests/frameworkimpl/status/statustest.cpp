@@ -2,7 +2,6 @@
 
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
 #include <vespa/storage/frameworkimpl/status/statuswebserver.h>
-#include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <tests/common/teststorageapp.h>
@@ -10,6 +9,7 @@
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/net/sync_crypto_socket.h>
+#include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
 

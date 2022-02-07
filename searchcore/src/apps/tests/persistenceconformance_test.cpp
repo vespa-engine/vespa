@@ -39,6 +39,7 @@
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/config/subscription/sourcespec.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("persistenceconformance_test");
@@ -199,7 +200,7 @@ public:
             fileCfg.saveConfig(*snapshot, 1);
         }
         config::DirSpec spec(inputCfg + "/config-1");
-        TuneFileDocumentDB::SP tuneFileDocDB(new TuneFileDocumentDB());
+        auto tuneFileDocDB = std::make_shared<TuneFileDocumentDB>();
         DocumentDBConfigHelper mgr(spec, docType.getName());
         auto b = std::make_shared<BootstrapConfig>(1, factory.getTypeCfg(), factory.getTypeRepo(),
                                                   make_proton_config(),

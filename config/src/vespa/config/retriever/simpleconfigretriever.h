@@ -20,7 +20,7 @@ public:
     using milliseconds = std::chrono::milliseconds;
 
     SimpleConfigRetriever(const ConfigKeySet & keySet,
-                          const IConfigContext::SP & context,
+                          std::shared_ptr<IConfigContext> context,
                           milliseconds subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
 
     /**
@@ -35,7 +35,7 @@ public:
 
 private:
     ConfigSubscriptionSet _set;
-    std::vector<ConfigSubscription::SP> _subscriptionList;
+    std::vector<std::shared_ptr<ConfigSubscription>> _subscriptionList;
 };
 
 } // namespace config

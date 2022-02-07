@@ -1,8 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/config/helper/legacysubscriber.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <vespa/config/helper/legacysubscriber.hpp>
 
 namespace search {
 
@@ -14,7 +13,7 @@ class SubscriptionProxyNg : public config::IFetcherCallback<CFG>
 private:
     ME                       &_target;
     Method                    _method;
-    config::LegacySubscriber *_subscriber;
+    std::unique_ptr<config::LegacySubscriber> _subscriber;
     vespalib::string          _cfgId;
 
     SubscriptionProxyNg(const SubscriptionProxyNg&);
@@ -24,7 +23,7 @@ public:
     SubscriptionProxyNg(ME &target, Method method)
         : _target(target),
           _method(method),
-          _subscriber(NULL),
+          _subscriber(),
           _cfgId("")
     {
     }
@@ -35,26 +34,25 @@ public:
         return _cfgId.c_str();
     }
     void subscribe(const char *configId) {
-        if (_subscriber != NULL) {
-            if (configId != NULL && strcmp(configId, _subscriber->id().c_str()) == 0)
+        if (_subscriber) {
+            if (configId != nullptr && strcmp(configId, _subscriber->id().c_str()) == 0)
             {
                 return; // same id; ignore
             } else {
                 unsubscribe();
             }
         }
-        if (configId != NULL && configId[0] != '\0') {
+        if (configId != nullptr && configId[0] != '\0') {
             _cfgId = configId;
-            _subscriber = new config::LegacySubscriber();
+            _subscriber = std::make_unique<config::LegacySubscriber>();
             _subscriber->subscribe<CFG>(configId, this);
         }
     }
     void unsubscribe() {
-        delete _subscriber;
-        _subscriber = NULL;
+        _subscriber.reset();
         _cfgId = "";
     }
-    virtual void configure(std::unique_ptr<CFG> cfg) override {
+    void configure(std::unique_ptr<CFG> cfg) override {
         (_target.*_method)(*cfg);
     }
 };

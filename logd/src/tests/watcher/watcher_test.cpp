@@ -34,7 +34,7 @@ struct ConfigFixture {
     const std::string configId;
     LogdConfigBuilder logdBuilder;
     ConfigSet set;
-    IConfigContext::SP context;
+    std::shared_ptr<IConfigContext> context;
     int idcounter;
 
     ConfigFixture(const std::string & id);

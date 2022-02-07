@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <memory>
 #include "source.h"
 #include "configkey.h"
-#include "iconfigholder.h"
 
 namespace config {
+
+class IConfigHolder;
 
 /*
  * Source factory, creating possible config sources.
@@ -14,8 +14,8 @@ namespace config {
 class SourceFactory {
 public:
     typedef std::unique_ptr<SourceFactory> UP;
-    virtual Source::UP createSource(const IConfigHolder::SP & holder, const ConfigKey & key) const = 0;
-    virtual ~SourceFactory() { }
+    virtual std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key) const = 0;
+    virtual ~SourceFactory() = default;
 };
 
 } // namespace common

@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/config/config.h>
 #include <vespa/config/common/configcontext.h>
 #include "config-my.h"
 #include "config-foo.h"
 #include "config-bar.h"
+#include <vespa/config/subscription/configsubscriber.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("unittest");

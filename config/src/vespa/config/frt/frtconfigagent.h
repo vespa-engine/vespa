@@ -3,11 +3,13 @@
 
 #include <vespa/config/common/configstate.h>
 #include <vespa/config/common/timingvalues.h>
-#include <vespa/config/common/iconfigholder.h>
 #include <vespa/config/common/configresponse.h>
 #include <vespa/config/common/configrequest.h>
+#include <vespa/config/common/configvalue.h>
 
 namespace config {
+
+class IConfigHolder;
 
 class ConfigAgent
 {
@@ -19,14 +21,14 @@ public:
     virtual uint64_t getWaitTime() const = 0;
     virtual const ConfigState & getConfigState() const = 0;
 
-    virtual ~ConfigAgent() { }
+    virtual ~ConfigAgent() = default;
 };
 
 class FRTConfigAgent : public ConfigAgent
 {
 public:
-    FRTConfigAgent(const IConfigHolder::SP & holder, const TimingValues & timingValues);
-    ~FRTConfigAgent();
+    FRTConfigAgent(std::shared_ptr<IConfigHolder> holder, const TimingValues & timingValues);
+    ~FRTConfigAgent() override;
     void handleResponse(const ConfigRequest & request, ConfigResponse::UP response) override;
     uint64_t getTimeout() const override;
     uint64_t getWaitTime() const override;
@@ -37,14 +39,14 @@ private:
     void handleErrorResponse(const ConfigRequest & request, ConfigResponse::UP response);
     void setWaitTime(uint64_t delay, int multiplier);
 
-    IConfigHolder::SP _holder;
+    std::shared_ptr<IConfigHolder> _holder;
     const TimingValues _timingValues;
-    ConfigState _configState;
-    ConfigValue _latest;
-    uint64_t _waitTime;
-    uint64_t _numConfigured;
-    unsigned int _failedRequests;
-    uint64_t _nextTimeout;
+    ConfigState        _configState;
+    ConfigValue        _latest;
+    uint64_t           _waitTime;
+    uint64_t           _numConfigured;
+    unsigned int       _failedRequests;
+    uint64_t           _nextTimeout;
 };
 
 }

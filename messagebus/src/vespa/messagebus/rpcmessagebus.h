@@ -5,7 +5,6 @@
 #include "configagent.h"
 #include "protocolset.h"
 #include <vespa/messagebus/network/rpcnetwork.h>
-#include <vespa/config/helper/legacysubscriber.h>
 
 namespace config {class ConfigUri; }
 

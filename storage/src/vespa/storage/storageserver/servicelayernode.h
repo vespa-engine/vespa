@@ -13,7 +13,6 @@
 #include "storagenode.h"
 #include <vespa/storage/visiting/visitormessagesessionfactory.h>
 #include <vespa/storage/common/visitorfactory.h>
-#include <vespa/config/config.h>
 
 namespace storage {
 

@@ -358,7 +358,7 @@ JSONTest::testJsonStreamErrors()
     try{
         vespalib::asciistream as;
         vespalib::JsonStream stream(as);
-        stream << Object() << Array();
+        stream << Object() << jsonstream::Array();
     } catch (vespalib::JsonStreamException& e) {
         EXPECT_EQUAL("Invalid state on call: An array value cannot be an object key ({}(ObjectExpectingKey))", e.getReason());
     }
@@ -423,7 +423,7 @@ JSONTest::testJsonStreamErrors()
     try{
         vespalib::asciistream as;
         vespalib::JsonStream stream(as);
-        stream << Object() << End() << Array();
+        stream << Object() << End() << jsonstream::Array();
     } catch (vespalib::JsonStreamException& e) {
         EXPECT_EQUAL("Invalid state on call: Stream already finalized. Can't start a new array. (Finalized)", e.getReason());
     }
@@ -442,7 +442,7 @@ JSONTest::testJsonStreamStateReporting()
     using namespace vespalib::jsonstream;
     vespalib::asciistream as;
     vespalib::JsonStream stream(as);
-    stream << Array() << 13
+    stream << jsonstream::Array() << 13
                       << "foo"
                       << Object() << "key" << "value" << End()
                       << false

@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/config/config.h>
-#include <vespa/config/raw/rawsource.h>
 #include <vespa/config/common/misc.h>
 #include <vespa/config/common/configrequest.h>
 #include <vespa/config/common/timingvalues.h>
 #include <vespa/config/common/trace.h>
+#include <vespa/config/common/configkey.h>
+#include <vespa/config/common/configholder.h>
 #include <vespa/config/frt/frtconfigagent.h>
 #include <config-my.h>
 
@@ -30,10 +30,10 @@ public:
 class MyConfigResponse : public ConfigResponse
 {
 public:
-    MyConfigResponse(const ConfigKey & key, const ConfigValue & value, bool valid, int64_t timestamp,
+    MyConfigResponse(const ConfigKey & key, ConfigValue value, bool valid, int64_t timestamp,
                      const vespalib::string & xxhash64, const std::string & errorMsg, int errorC0de, bool iserror)
         : _key(key),
-          _value(value),
+          _value(std::move(value)),
           _fillCalled(false),
           _valid(valid),
           _state(xxhash64, timestamp, false),
@@ -83,10 +83,8 @@ public:
 class MyHolder : public IConfigHolder
 {
 public:
-    MyHolder()
-        : _update()
-    {
-    }
+    MyHolder() noexcept = default;
+    ~MyHolder() = default;
 
     std::unique_ptr<ConfigUpdate> provide() override
     {
@@ -135,7 +133,7 @@ static TimingValues testTimingValues(
         2000);    // maxDelayMultiplier
 
 TEST("require that agent returns correct values") {
-    FRTConfigAgent handler(IConfigHolder::SP(new MyHolder()), testTimingValues);
+    FRTConfigAgent handler(std::make_shared<MyHolder>(), testTimingValues);
     ASSERT_EQUAL(500u, handler.getTimeout());
     ASSERT_EQUAL(0u, handler.getWaitTime());
     ConfigState cs;
@@ -147,12 +145,12 @@ TEST("require that agent returns correct values") {
 TEST("require that successful request is delivered to holder") {
     const ConfigKey testKey(ConfigKey::create<MyConfig>("mykey"));
     const ConfigValue testValue(createValue("l33t", "a"));
-    IConfigHolder::SP latch(new MyHolder());
+    auto latch = std::make_shared<MyHolder>();
 
     FRTConfigAgent handler(latch, testTimingValues);
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createOKResponse(testKey, testValue));
     ASSERT_TRUE(latch->poll());
-    ConfigUpdate::UP update(latch->provide());
+    std::unique_ptr<ConfigUpdate> update(latch->provide());
     ASSERT_TRUE(update);
     ASSERT_TRUE(update->hasChanged());
     MyConfig cfg(update->getValue());
@@ -163,13 +161,13 @@ TEST("require that important(the change) request is delivered to holder even if 
     const ConfigKey testKey(ConfigKey::create<MyConfig>("mykey"));
     const ConfigValue testValue1(createValue("l33t", "a"));
     const ConfigValue testValue2(createValue("l34t", "b"));
-    IConfigHolder::SP latch(new MyHolder());
+    auto latch = std::make_shared<MyHolder>();
 
     FRTConfigAgent handler(latch, testTimingValues);
     handler.handleResponse(MyConfigRequest(testKey),
                            MyConfigResponse::createOKResponse(testKey, testValue1, 1, testValue1.getXxhash64()));
     ASSERT_TRUE(latch->poll());
-    ConfigUpdate::UP update(latch->provide());
+    std::unique_ptr<ConfigUpdate> update(latch->provide());
     ASSERT_TRUE(update);
     ASSERT_TRUE(update->hasChanged());
     MyConfig cfg(update->getValue());
@@ -190,7 +188,7 @@ TEST("require that important(the change) request is delivered to holder even if 
 TEST("require that successful request sets correct wait time") {
     const ConfigKey testKey(ConfigKey::create<MyConfig>("mykey"));
     const ConfigValue testValue(createValue("l33t", "a"));
-    IConfigHolder::SP latch(new MyHolder());
+    auto latch = std::make_shared<MyHolder>();
     FRTConfigAgent handler(latch, testTimingValues);
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createOKResponse(testKey, testValue));
@@ -203,7 +201,7 @@ TEST("require that successful request sets correct wait time") {
 TEST("require that bad config response returns false") {
     const ConfigKey testKey(ConfigKey::create<MyConfig>("mykey"));
     const ConfigValue testValue(createValue("myval", "a"));
-    IConfigHolder::SP latch(new MyHolder());
+    auto latch = std::make_shared<MyHolder>();
     FRTConfigAgent handler(latch, testTimingValues);
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createConfigErrorResponse(testKey, testValue));
@@ -241,10 +239,9 @@ TEST("require that bad config response returns false") {
 
 TEST("require that bad response returns false") {
     const ConfigKey testKey(ConfigKey::create<MyConfig>("mykey"));
-    std::vector<vespalib::string> lines;
-    const ConfigValue testValue(lines, "a");
+    const ConfigValue testValue(StringVector(), "a");
 
-    IConfigHolder::SP latch(new MyHolder());
+    auto latch = std::make_shared<MyHolder>();
     FRTConfigAgent handler(latch, testTimingValues);
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createServerErrorResponse(testKey, testValue));

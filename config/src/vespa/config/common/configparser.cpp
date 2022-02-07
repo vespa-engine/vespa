@@ -123,7 +123,7 @@ getValueForKey(vespalib::stringref key, vespalib::stringref line,
 
 }
 
-std::vector<vespalib::string>
+StringVector
 ConfigParser::getLinesForKey(vespalib::stringref key,
                              const vsvector & lines)
 {

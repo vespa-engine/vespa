@@ -12,9 +12,9 @@ PayloadConverter::PayloadConverter(const Inspector & inspector)
       _lines()
 {}
 
-PayloadConverter::~PayloadConverter() { }
+PayloadConverter::~PayloadConverter() = default;
 
-const std::vector<vespalib::string> &
+const StringVector &
 PayloadConverter::convert()
 {
     _lines.clear();

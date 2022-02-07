@@ -2,9 +2,10 @@
 #pragma once
 
 #include <memory>
-#include <vespa/config/subscription/configsubscription.h>
 
 namespace config {
+
+class ConfigSubscription;
 
 /**
  * A ConfigHandle is a subscription handle that is capable of looking up config
@@ -16,7 +17,8 @@ class ConfigHandle
 public:
     typedef std::unique_ptr<ConfigHandle <ConfigType> > UP;
 
-    ConfigHandle(const ConfigSubscription::SP & subscription);
+    explicit ConfigHandle(std::shared_ptr<ConfigSubscription> subscription);
+    ~ConfigHandle();
 
     /**
      * Return the currently available config known to the ConfigHandle. Throws
@@ -38,10 +40,8 @@ public:
      */
     bool isChanged() const;
 private:
-    ConfigSubscription::SP _subscription;
+    std::shared_ptr<ConfigSubscription> _subscription;
 };
 
 } // namespace config
-
-#include "confighandle.hpp"
 

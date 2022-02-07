@@ -14,7 +14,6 @@
 
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config-upgrading.h>
-#include <vespa/config/helper/configfetcher.h>
 #include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/document/config/config-documenttypes.h>
@@ -27,6 +26,7 @@
 #include <mutex>
 
 namespace document { class DocumentTypeRepo; }
+namespace config { class ConfigFetcher; }
 
 namespace storage {
 
@@ -35,7 +35,6 @@ class CommunicationManager;
 class FileStorManager;
 class HostInfo;
 class IStorageChainBuilder;
-class MemoryStatusViewer;
 class NodeIdentity;
 class StateManager;
 class StateReporter;

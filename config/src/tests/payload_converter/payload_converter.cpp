@@ -19,7 +19,7 @@ TEST("require that v2 payload leaf values can be converted to cfg format") {
     root.setDouble("baz", 3.1);
     root.setBool("quux", true);
     PayloadConverter converter(root);
-    std::vector<vespalib::string> lines(converter.convert());
+    StringVector lines(converter.convert());
     std::sort(lines.begin(), lines.end());
     
     ASSERT_EQUAL(4u, lines.size());
@@ -36,7 +36,7 @@ TEST("require that v2 payload struct values can be converted to cfg format") {
     inner.setString("foo", "bar");
     inner.setLong("bar", 8);
     PayloadConverter converter(root);
-    std::vector<vespalib::string> lines(converter.convert());
+    StringVector lines(converter.convert());
     std::sort(lines.begin(), lines.end());
 
     ASSERT_EQUAL(2u, lines.size());
@@ -51,7 +51,7 @@ TEST("require that v2 payload array values can be converted to cfg format") {
     inner.addString("foo");
     inner.addLong(8);
     PayloadConverter converter(root);
-    std::vector<vespalib::string> lines(converter.convert());
+    StringVector lines(converter.convert());
     ASSERT_EQUAL(2u, lines.size());
     EXPECT_EQUAL("arr[0] \"foo\"", lines[0]);
     EXPECT_EQUAL("arr[1] 8", lines[1]);
@@ -72,7 +72,7 @@ TEST("require that v2 payload nested structures can be converted to cfg format")
     Cursor & innerArr2(innerobj.setArray("arr2"));
     innerArr2.addString("muhaha");
     PayloadConverter converter(root);
-    std::vector<vespalib::string> lines(converter.convert());
+    StringVector lines(converter.convert());
     std::sort(lines.begin(), lines.end());
     ASSERT_EQUAL(3u, lines.size());
     EXPECT_EQUAL("arr[0].foo \"bar\"", lines[0]);

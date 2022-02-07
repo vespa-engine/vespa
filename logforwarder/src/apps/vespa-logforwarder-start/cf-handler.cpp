@@ -1,15 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "cf-handler.h"
-#include <cstdlib>
-#include <dirent.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <vespa/defaults.h>
 #include <vespa/config/common/configsystem.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config/subscription/configsubscriber.hpp>
+#include <dirent.h>
+#include <sys/stat.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".cf-handler");

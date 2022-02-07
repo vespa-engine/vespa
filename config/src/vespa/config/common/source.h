@@ -11,13 +11,11 @@ namespace config {
  */
 class Source {
 public:
-    typedef std::unique_ptr<Source> UP;
-
     virtual void getConfig() = 0;
     virtual void reload(int64_t generation) = 0;
     virtual void close() = 0;
 
-    virtual ~Source() { }
+    virtual ~Source() = default;
 };
 
 } // namespace common
