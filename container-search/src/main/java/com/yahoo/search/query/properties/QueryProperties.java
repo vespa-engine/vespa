@@ -122,12 +122,16 @@ public class QueryProperties extends Properties {
                 if (key.last().equals(Select.GROUPING)) return query.getSelect().getGroupingString();
             }
         }
-        else if (key.size() == 2 && key.first().equals(Presentation.PRESENTATION)) {
-            if (key.last().equals(Presentation.BOLDING)) return query.getPresentation().getBolding();
-            if (key.last().equals(Presentation.SUMMARY)) return query.getPresentation().getSummary();
-            if (key.last().equals(Presentation.FORMAT)) return query.getPresentation().getFormat();
-            if (key.last().equals(Presentation.TIMING)) return query.getPresentation().getTiming();
-            if (key.last().equals(Presentation.SUMMARY_FIELDS)) return query.getPresentation().getSummaryFields();
+        else if (key.first().equals(Presentation.PRESENTATION)) {
+            if (key.size() == 2) {
+                if (key.last().equals(Presentation.BOLDING)) return query.getPresentation().getBolding();
+                if (key.last().equals(Presentation.SUMMARY)) return query.getPresentation().getSummary();
+                if (key.last().equals(Presentation.FORMAT)) return query.getPresentation().getFormat();
+                if (key.last().equals(Presentation.TIMING)) return query.getPresentation().getTiming();
+                if (key.last().equals(Presentation.SUMMARY_FIELDS)) return query.getPresentation().getSummaryFields();
+            } else if (key.size() == 3 && key.get(1).equals(Presentation.FORMAT)) {
+                if (key.last().equals(Presentation.TENSORS)) return query.getPresentation().getTensorShortForm();
+            }
         }
         else if (key.first().equals("rankfeature") || key.first().equals("featureoverride")) { // featureoverride is deprecated
             return query.getRanking().getFeatures().getObject(key.rest().toString());
@@ -273,17 +277,27 @@ public class QueryProperties extends Properties {
                         throwIllegalParameter(key.rest().toString(), Ranking.RANKING);
                 }
             }
-            else if (key.size() == 2 && key.first().equals(Presentation.PRESENTATION)) {
-                if (key.last().equals(Presentation.BOLDING))
-                    query.getPresentation().setBolding(asBoolean(value, true));
-                else if (key.last().equals(Presentation.SUMMARY))
-                    query.getPresentation().setSummary(asString(value, ""));
-                else if (key.last().equals(Presentation.FORMAT))
-                    query.getPresentation().setFormat(asString(value,""));
-                else if (key.last().equals(Presentation.TIMING))
-                    query.getPresentation().setTiming(asBoolean(value, true));
-                else if (key.last().equals(Presentation.SUMMARY_FIELDS))
-                    query.getPresentation().setSummaryFields(asString(value,""));
+            else if (key.first().equals(Presentation.PRESENTATION)) {
+                if (key.size() == 2) {
+                    if (key.last().equals(Presentation.BOLDING))
+                        query.getPresentation().setBolding(asBoolean(value, true));
+                    else if (key.last().equals(Presentation.SUMMARY))
+                        query.getPresentation().setSummary(asString(value, ""));
+                    else if (key.last().equals(Presentation.FORMAT))
+                        query.getPresentation().setFormat(asString(value, ""));
+                    else if (key.last().equals(Presentation.TIMING))
+                        query.getPresentation().setTiming(asBoolean(value, true));
+                    else if (key.last().equals(Presentation.SUMMARY_FIELDS))
+                        query.getPresentation().setSummaryFields(asString(value, ""));
+                    else
+                        throwIllegalParameter(key.last(), Presentation.PRESENTATION);
+                }
+                else if (key.size() == 3 && key.get(1).equals(Presentation.FORMAT)) {
+                    if (key.last().equals(Presentation.TENSORS))
+                        query.getPresentation().setTensorShortForm(asString(value, ""));
+                    else
+                        throwIllegalParameter(key.last(), Presentation.FORMAT);
+                }
                 else
                     throwIllegalParameter(key.last(), Presentation.PRESENTATION);
             }

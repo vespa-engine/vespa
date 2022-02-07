@@ -11,7 +11,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class DumpToolTestCase {
 
-    private String profileDir = "src/test/java/com/yahoo/search/query/profile/config/test/multiprofile";
+    private final String profileDir = "src/test/java/com/yahoo/search/query/profile/config/test/multiprofile";
 
     @Test
     public void testNoParameters() {
@@ -25,12 +25,13 @@ public class DumpToolTestCase {
 
     @Test
     public void testNoDimensionValues() {
-        assertTrue(new DumpTool().resolveAndDump("multiprofile1", profileDir).startsWith("a=general-a\n"));
+        System.out.println(new DumpTool().resolveAndDump("multiprofile1", profileDir));
+        assertTrue(new DumpTool().resolveAndDump("multiprofile1", profileDir).contains("a=general-a\n"));
     }
 
     @Test
     public void testAllParametersSet() {
-        assertTrue(new DumpTool().resolveAndDump("multiprofile1", profileDir, "").startsWith("a=general-a\n"));
+        assertTrue(new DumpTool().resolveAndDump("multiprofile1", profileDir, "").contains("a=general-a\n"));
     }
 
     @Test
