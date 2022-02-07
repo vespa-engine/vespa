@@ -183,7 +183,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
             // This depends on which constructor in AbstractService is used, but the best way
             // is to let this method do initialize.
             if (!t.isInitialized()) {
-                t.initService(deployState.getDeployLogger());
+                t.initService(deployState);
             }
         }
 

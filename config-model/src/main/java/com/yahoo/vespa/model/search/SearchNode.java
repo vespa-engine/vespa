@@ -123,7 +123,6 @@ public class SearchNode extends AbstractService implements
                        boolean flushOnShutdown, Optional<Tuning> tuning, Optional<ResourceLimits> resourceLimits, boolean isHostedVespa,
                        double fractionOfMemoryReserved) {
         super(parent, name);
-        setOmpNumThreads(1);
         this.isHostedVespa = isHostedVespa;
         this.fractionOfMemoryReserved = fractionOfMemoryReserved;
         this.nodeSpec = nodeSpec;
@@ -239,10 +238,7 @@ public class SearchNode extends AbstractService implements
 
     @Override
     public String getStartupCommand() {
-        if (getOmpNumThreads() != 1) {
-            throw new IllegalStateException("ompNumThreads must be 1");
-        }
-        String startup = getEnvVariables() + "exec $ROOT/sbin/vespa-proton " + "--identity " + getConfigId();
+        String startup = getEnv() + " exec $ROOT/sbin/vespa-proton " + "--identity " + getConfigId();
         if (serviceLayerService != null) {
             startup = startup + " --serviceidentity " + serviceLayerService.getConfigId();
         }

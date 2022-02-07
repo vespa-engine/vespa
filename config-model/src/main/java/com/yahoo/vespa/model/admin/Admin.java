@@ -5,7 +5,6 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.cloud.config.log.LogdConfig;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -168,7 +167,7 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
             Slobrok slobrok = new Slobrok(this, clusterController.index(), deployState.featureFlags());
             slobrok.setHostResource(clusterController.getHostResource());
             slobroks.add(slobrok);
-            slobrok.initService(deployState.getDeployLogger());
+            slobrok.initService(deployState);
         }
         return slobroks;
     }
@@ -237,16 +236,16 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
             // Send hostname to be used in configId (instead of index), as the sorting of hosts seems to be unstable
             // between config changes, even when the set of hosts is unchanged.
             var container = new MetricsProxyContainer(metricsProxyCluster, host, index, deployState);
-            addAndInitializeService(deployState.getDeployLogger(), host, container);
+            addAndInitializeService(deployState, host, container);
             metricsProxyCluster.addContainer(container);
         }
     }
 
     private void addCommonServices(HostResource host, DeployState deployState) {
-        addConfigSentinel(deployState.getDeployLogger(), host, deployState.getProperties().applicationId(), deployState.zone(),
+        addConfigSentinel(deployState, host, deployState.getProperties().applicationId(), deployState.zone(),
                           deployState.featureFlags());
-        addLogd(deployState.getDeployLogger(), host);
-        addConfigProxy(deployState.getDeployLogger(), host);
+        addLogd(deployState, host);
+        addConfigProxy(deployState, host);
         addFileDistribution(host);
         if (logForwarderConfig != null) {
             boolean actuallyAdd = true;
@@ -259,34 +258,34 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
                 }
             }
             if (actuallyAdd) {
-                addLogForwarder(deployState.getDeployLogger(), host);
+                addLogForwarder(deployState, host);
             }
         }
     }
 
-    private void addConfigSentinel(DeployLogger deployLogger, HostResource host,
+    private void addConfigSentinel(DeployState deployState, HostResource host,
                                    ApplicationId applicationId, Zone zone, ModelContext.FeatureFlags featureFlags)
     {
         ConfigSentinel configSentinel = new ConfigSentinel(host.getHost(), applicationId, zone, featureFlags);
-        addAndInitializeService(deployLogger, host, configSentinel);
+        addAndInitializeService(deployState, host, configSentinel);
         host.getHost().setConfigSentinel(configSentinel);
     }
 
-    private void addLogForwarder(DeployLogger deployLogger, HostResource host) {
-        addAndInitializeService(deployLogger, host, new LogForwarder(host.getHost(), logForwarderConfig));
+    private void addLogForwarder(DeployState deployState, HostResource host) {
+        addAndInitializeService(deployState, host, new LogForwarder(host.getHost(), logForwarderConfig));
     }
 
-    private void addLogd(DeployLogger deployLogger, HostResource host) {
-        addAndInitializeService(deployLogger, host, new Logd(host.getHost()));
+    private void addLogd(DeployState deployState, HostResource host) {
+        addAndInitializeService(deployState, host, new Logd(host.getHost()));
     }
 
-    private void addConfigProxy(DeployLogger deployLogger, HostResource host) {
-        addAndInitializeService(deployLogger, host, new ConfigProxy(host.getHost()));
+    private void addConfigProxy(DeployState deployState, HostResource host) {
+        addAndInitializeService(deployState, host, new ConfigProxy(host.getHost()));
     }
 
-    public void addAndInitializeService(DeployLogger deployLogger, HostResource host, AbstractService service) {
+    public void addAndInitializeService(DeployState deployState, HostResource host, AbstractService service) {
         service.setHostResource(host);
-        service.initService(deployLogger);
+        service.initService(deployState);
     }
 
     private void addFileDistribution(HostResource host) {
@@ -300,7 +299,7 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
         List<Slobrok> slobs = new ArrayList<>();
         if (logserver != null) {
             Slobrok slobrok = new Slobrok(this, 0, deployState.featureFlags());
-            addAndInitializeService(deployState.getDeployLogger(), logserver.getHostResource(), slobrok);
+            addAndInitializeService(deployState, logserver.getHostResource(), slobrok);
             slobs.add(slobrok);
         }
 
@@ -309,7 +308,7 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
             HostResource host = hosts.get(n);
             if ((logserver== null || host != logserver.getHostResource()) && ! host.getHost().runsConfigServer()) {
                 Slobrok newSlobrok = new Slobrok(this, slobs.size(), deployState.featureFlags());
-                addAndInitializeService(deployState.getDeployLogger(), host, newSlobrok);
+                addAndInitializeService(deployState, host, newSlobrok);
                 slobs.add(newSlobrok);
             }
             n++;

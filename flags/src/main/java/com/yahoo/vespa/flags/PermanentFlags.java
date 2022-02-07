@@ -198,6 +198,14 @@ public class PermanentFlags {
             APPLICATION_ID, HOSTNAME
     );
 
+    public static final UnboundListFlag<String> ENVIRONMENT_VARIABLES = defineListFlag(
+            "environment-variables", List.of(), String.class,
+            "A list of environment variables set for all services. " +
+                    "Each item should be on the form <ENV_VAR>=<VALUE>",
+            "Takes effect on service restart",
+            ZONE_ID, APPLICATION_ID
+    );
+
     public static final UnboundStringFlag CONFIG_PROXY_JVM_ARGS = defineStringFlag(
             "config-proxy-jvm-args", "",
             "Sets jvm args for config proxy (added at the end of startup command, will override existing ones)",

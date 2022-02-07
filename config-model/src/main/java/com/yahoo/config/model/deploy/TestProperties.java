@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.deploy;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
@@ -75,6 +74,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double persistenceThrottlingWsDecrementFactor = 1.2;
     private double persistenceThrottlingWsBackoff = 0.95;
     private boolean useV8GeoPositions = false;
+    private List<String> environmentVariables = List.of();
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -129,6 +129,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double persistenceThrottlingWsDecrementFactor() { return persistenceThrottlingWsDecrementFactor; }
     @Override public double persistenceThrottlingWsBackoff() { return persistenceThrottlingWsBackoff; }
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
+    @Override public List<String> environmentVariables() { return environmentVariables; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -222,7 +223,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
 
     public TestProperties setConfigServerSpecs(List<Spec> configServerSpecs) {
-        this.configServerSpecs = ImmutableList.copyOf(configServerSpecs);
+        this.configServerSpecs = List.copyOf(configServerSpecs);
         return this;
     }
 
@@ -338,6 +339,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setUseV8GeoPositions(boolean value) {
         this.useV8GeoPositions = value;
+        return this;
+    }
+
+    public TestProperties setEnvironmentVariables(List<String> value) {
+        this.environmentVariables = value;
         return this;
     }
 

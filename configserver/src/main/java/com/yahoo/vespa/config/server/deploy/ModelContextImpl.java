@@ -357,6 +357,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<X509Certificate> operatorCertificates;
         private final List<String> tlsCiphersOverride;
         private final List<String> zoneDnsSuffixes;
+        private final List<String> environmentVariables;
 
         public Properties(ApplicationId applicationId,
                           ConfigserverConfig configserverConfig,
@@ -389,13 +390,15 @@ public class ModelContextImpl implements ModelContext {
             this.tenantSecretStores = tenantSecretStores;
             this.secretStore = secretStore;
             this.jvmGCOptionsFlag = PermanentFlags.JVM_GC_OPTIONS.bindTo(flagSource)
-                                                                 .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm());
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm());
             this.allowDisableMtls = PermanentFlags.ALLOW_DISABLE_MTLS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.operatorCertificates = operatorCertificates;
             this.tlsCiphersOverride = PermanentFlags.TLS_CIPHERS_OVERRIDE.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.zoneDnsSuffixes = configserverConfig.zoneDnsSuffixes();
+            this.environmentVariables = PermanentFlags.ENVIRONMENT_VARIABLES.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -476,6 +479,9 @@ public class ModelContextImpl implements ModelContext {
                               .orElse(flag)
                               .value();
         }
+
+        @Override
+        public List<String> environmentVariables() { return environmentVariables; }
 
     }
 

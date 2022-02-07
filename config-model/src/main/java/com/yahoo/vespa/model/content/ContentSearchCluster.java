@@ -300,11 +300,11 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
                                            clusterName, node, flushOnShutdown, tuning, resourceLimits, parentGroup.isHosted(),
                                            fractionOfMemoryReserved);
             searchNode.setHostResource(node.getHostResource());
-            searchNode.initService(deployState.getDeployLogger());
+            searchNode.initService(deployState);
 
             tls = new TransactionLogServer(searchNode, clusterName, syncTransactionLog);
             tls.setHostResource(searchNode.getHostResource());
-            tls.initService(deployState.getDeployLogger());
+            tls.initService(deployState);
         } else {
             searchNode = new SearchNode.Builder(""+node.getDistributionKey(), spec, clusterName, node, flushOnShutdown,
                                                 tuning, resourceLimits, fractionOfMemoryReserved)

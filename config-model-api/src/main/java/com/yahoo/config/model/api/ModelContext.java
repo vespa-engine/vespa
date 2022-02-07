@@ -156,6 +156,7 @@ public interface ModelContext {
         default List<String> tlsCiphersOverride() { return List.of(); }
 
         default List<String> zoneDnsSuffixes() { return List.of(); }
+        List<String> environmentVariables();
     }
 
     @Retention(RetentionPolicy.RUNTIME)
