@@ -145,8 +145,6 @@ public class HandlersConfigurerDi {
 
     public void shutdown() { container.shutdown(currentGraph); }
 
-    public void shutdownConfigRetriever() { container.shutdownConfigRetriever(); }
-
     /** Returns the currently active application configuration generation */
     public long generation() { return currentGraph.generation(); }
 
