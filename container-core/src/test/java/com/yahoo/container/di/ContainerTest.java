@@ -44,7 +44,7 @@ public class ContainerTest extends ContainerTestBase {
         ComponentTakingConfig component = createComponentTakingConfig(getNewComponentGraph(container));
         assertEquals("myString", component.config.stringVal());
 
-        container.shutdownConfigRetriever();
+        container.shutdownConfigurer();
     }
 
     @Test
@@ -66,7 +66,7 @@ public class ContainerTest extends ContainerTestBase {
         ComponentTakingConfig component2 = createComponentTakingConfig(newComponentGraph);
         assertEquals("reconfigured", component2.config.stringVal());
 
-        container.shutdownConfigRetriever();
+        container.shutdownConfigurer();
     }
 
     @Test
@@ -90,7 +90,7 @@ public class ContainerTest extends ContainerTestBase {
         assertNotNull(ComponentGraph.getNode(newGraph, "id1"));
         assertNotNull(ComponentGraph.getNode(newGraph, "id2"));
 
-        container.shutdownConfigRetriever();
+        container.shutdownConfigurer();
     }
 
     //@Test TODO
