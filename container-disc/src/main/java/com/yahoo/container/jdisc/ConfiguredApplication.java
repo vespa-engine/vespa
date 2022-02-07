@@ -10,6 +10,7 @@ import com.yahoo.component.Vtag;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigInterruptedException;
+import com.yahoo.config.subscription.SubscriberClosedException;
 import com.yahoo.container.Container;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ChainsConfig;
@@ -94,14 +95,15 @@ public final class ConfiguredApplication implements Application {
                                       new ComponentRegistry<>());
     private final OsgiFramework restrictedOsgiFramework;
     private final Phaser nonTerminatedContainerTracker = new Phaser(1);
+    private final Thread reconfigurerThread;
+    private final Thread portWatcher;
     private HandlersConfigurerDi configurer;
-    private Thread reconfigurerThread;
-    private Thread portWatcher;
     private QrConfig qrConfig;
 
     private Register slobrokRegistrator = null;
     private Supervisor supervisor = null;
     private Acceptor acceptor = null;
+    private volatile boolean shutdownReconfiguration = false;
 
     static {
         LogSetup.initVespaLogging("Container");
@@ -135,6 +137,8 @@ public final class ConfiguredApplication implements Application {
                 : Optional.empty();
         this.restrictedOsgiFramework = new DisableOsgiFramework(new RestrictedBundleContext(osgiFramework.bundleContext()));
         this.shutdownDeadline = new ShutdownDeadline(configId);
+        this.reconfigurerThread = new Thread(this::doReconfigurationLoop, "configured-application-reconfigurer");
+        this.portWatcher = new Thread(this::watchPortChange, "configured-application-port-watcher");
     }
 
     @Override
@@ -146,8 +150,9 @@ public final class ConfiguredApplication implements Application {
         ContainerBuilder builder = createBuilderWithGuiceBindings();
         configurer = createConfigurer(builder.guiceModules().activate());
         initializeAndActivateContainer(builder, () -> {});
-        startReconfigurerThread();
-        portWatcher = new Thread(this::watchPortChange, "configured-application-port-watcher");
+        reconfigurerThread.setDaemon(true);
+        reconfigurerThread.start();
+
         portWatcher.setDaemon(true);
         portWatcher.start();
         if (setupRpc()) {
@@ -286,30 +291,27 @@ public final class ConfiguredApplication implements Application {
     }
 
     @SuppressWarnings("removal") // TODO Vespa 8: remove
-    private void startReconfigurerThread() {
-        reconfigurerThread = new Thread(() -> {
-            while ( ! Thread.interrupted()) {
-                try {
-                    ContainerBuilder builder = createBuilderWithGuiceBindings();
+    private void doReconfigurationLoop() {
+        while (!shutdownReconfiguration) {
+            try {
+                ContainerBuilder builder = createBuilderWithGuiceBindings();
 
-                    // Block until new config arrives, and it should be applied
-                    Runnable cleanupTask = configurer.waitForNextGraphGeneration(builder.guiceModules().activate(), false);
-                    initializeAndActivateContainer(builder, cleanupTask);
-                } catch (UncheckedInterruptedException | ConfigInterruptedException e) {
-                    break;
-                } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
-                    tryReportFailedComponentGraphConstructionMetric(configurer, e);
-                    log.log(Level.SEVERE,
-                            "Reconfiguration failed, your application package must be fixed, unless this is a " +
-                            "JNI reload issue: " + Exceptions.toMessageString(e), e);
-                } catch (Error e) {
-                    com.yahoo.protect.Process.logAndDie("java.lang.Error on reconfiguration: We are probably in " +
-                                                        "a bad state and will terminate", e);
-                }
+                // Block until new config arrives, and it should be applied
+                Runnable cleanupTask = configurer.waitForNextGraphGeneration(builder.guiceModules().activate(), false);
+                initializeAndActivateContainer(builder, cleanupTask);
+            } catch (UncheckedInterruptedException | SubscriberClosedException | ConfigInterruptedException e) {
+                break;
+            } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
+                tryReportFailedComponentGraphConstructionMetric(configurer, e);
+                log.log(Level.SEVERE,
+                        "Reconfiguration failed, your application package must be fixed, unless this is a " +
+                                "JNI reload issue: " + Exceptions.toMessageString(e), e);
+            } catch (Error e) {
+                com.yahoo.protect.Process.logAndDie("java.lang.Error on reconfiguration: We are probably in " +
+                        "a bad state and will terminate", e);
             }
-            log.fine("Shutting down HandlersConfigurerDi");
-        }, "configured-application-reconfigurer");
-        reconfigurerThread.start();
+        }
+        log.fine("Reconfiguration loop exited");
     }
 
     private static void tryReportFailedComponentGraphConstructionMetric(HandlersConfigurerDi configurer, Throwable error) {
@@ -397,7 +399,7 @@ public final class ConfiguredApplication implements Application {
     }
 
     private void stopServersAndAwaitTermination(String logPrefix) {
-        shutdownReconfigurerThread();
+        shutdownReconfigurer();
         log.info(logPrefix + ": Closing servers");
         startAndStopServers(List.of());
         startAndRemoveClients(List.of());
@@ -407,20 +409,24 @@ public final class ConfiguredApplication implements Application {
         log.info(logPrefix + ": Finished");
     }
 
-    // TODO Do more graceful shutdown of reconfigurer thread. The interrupt may leave the container in state where
-    //      graceful shutdown is impossible or may hang.
-    private void shutdownReconfigurerThread() {
+    private void shutdownReconfigurer() {
+        if (!reconfigurerThread.isAlive()) {
+            log.info("Reconfiguration thread shutdown already completed");
+            return;
+        }
+        log.info("Shutting down reconfiguration thread");
+        long start = System.currentTimeMillis();
+        shutdownReconfiguration = true;
+        configurer.shutdownConfigRetriever();
         try {
-            //Workaround for component constructors masking InterruptedException.
-            while (reconfigurerThread != null && reconfigurerThread.isAlive()) {
-                reconfigurerThread.interrupt();
-                long millis = 200;
-                reconfigurerThread.join(millis);
-                reconfigurerThread = null;
-            }
+            reconfigurerThread.join();
+            log.info(String.format(
+                    "Reconfiguration shutdown completed in %.3f seconds", (System.currentTimeMillis() - start) / 1000D));
         } catch (InterruptedException e) {
-            log.info("Interrupted while joining on HandlersConfigurer reconfigure thread.");
-            Thread.currentThread().interrupt();
+            String message = "Interrupted while waiting for reconfiguration shutdown";
+            log.warning(message);
+            log.log(Level.FINE, e.getMessage(), e);
+            throw new UncheckedInterruptedException(message, true);
         }
     }
 
