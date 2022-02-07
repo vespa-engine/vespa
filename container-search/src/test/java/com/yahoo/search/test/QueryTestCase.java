@@ -1092,6 +1092,35 @@ public class QueryTestCase {
                      query.getSelect().getGrouping().toString());
     }
 
+    /**
+     * Tests that the value presentation.format.tensors can be set in a query profile.
+     * This is special because presentation.format is a native query profile.
+     */
+    @Test
+    public void testSettingNativeQueryProfileValueInQueryProfile() {
+        {
+            QueryProfileRegistry registry = new QueryProfileRegistry();
+            QueryProfile profile = new QueryProfile("default");
+            profile.set("presentation.format.tensors", "short", Map.of(), registry);
+            registry.register(profile);
+            CompiledQueryProfileRegistry cRegistry = registry.compile();
+            Query query = new Query("?query=foo", cRegistry.findQueryProfile("default"));
+            assertTrue(query.getPresentation().getTensorShortForm());
+        }
+
+        {   // Same as above but also set presentation.format
+            QueryProfileRegistry registry = new QueryProfileRegistry();
+            QueryProfile profile = new QueryProfile("default");
+            profile.set("presentation.format", "xml", Map.of(), registry);
+            profile.set("presentation.format.tensors", "short", Map.of(), registry);
+            registry.register(profile);
+            CompiledQueryProfileRegistry cRegistry = registry.compile();
+            Query query = new Query("?query=foo", cRegistry.findQueryProfile("default"));
+            assertEquals("xml", query.getPresentation().getFormat());
+            assertTrue(query.getPresentation().getTensorShortForm());
+        }
+    }
+
     private void assertDetectionText(String expectedDetectionText, String queryString, String ... indexSpecs) {
         Query q = new Query(httpEncode("/?query=" + queryString));
         SearchDefinition sd = new SearchDefinition("testSearchDefinition");
