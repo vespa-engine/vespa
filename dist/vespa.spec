@@ -51,6 +51,7 @@ BuildRequires: maven
 BuildRequires: python3-pytest
 %else
 BuildRequires: devtoolset-11-gcc-c++
+BuildRequires: devtoolset-11-libasan-devel
 BuildRequires: devtoolset-11-libatomic-devel
 BuildRequires: devtoolset-11-binutils
 BuildRequires: rh-maven35
@@ -66,11 +67,13 @@ BuildRequires: python3-devel
 %if 0%{?_centos_stream}
 BuildRequires: gcc-toolset-11-gcc-c++
 BuildRequires: gcc-toolset-11-binutils
+BuildRequires: gcc-toolset-11-libasan-devel
 BuildRequires: gcc-toolset-11-libatomic-devel
 %define _devtoolset_enable /opt/rh/gcc-toolset-11/enable
 %else
 BuildRequires: gcc-toolset-11-gcc-c++
 BuildRequires: gcc-toolset-11-binutils
+BuildRequires: gcc-toolset-11-libasan-devel
 BuildRequires: gcc-toolset-11-libatomic-devel
 %define _devtoolset_enable /opt/rh/gcc-toolset-11/enable
 %endif
@@ -82,6 +85,8 @@ BuildRequires: glibc-langpack-en
 %endif
 %if 0%{?el9}
 BuildRequires: gcc-c++
+BuildRequires: libasan
+BuildRequires: libasan-static
 BuildRequires: libatomic
 BuildRequires: vespa-pybind11-devel
 BuildRequires: python3-pytest
@@ -90,6 +95,8 @@ BuildRequires: glibc-langpack-en
 %endif
 %if 0%{?fedora}
 BuildRequires: gcc-c++
+BuildRequires: libasan
+BuildRequires: libasan-static
 BuildRequires: libatomic
 BuildRequires: pybind11-devel
 BuildRequires: python3-pytest
