@@ -94,6 +94,12 @@ public:
      * @return same as vespaConfigProxyRpcAddr + vespaConfigServerRpcAddrs
      **/
     static std::vector<std::string> vespaConfigSourcesRpcAddrs();
+
+    /*
+     * Check if address santizer is enabled.
+     * @return true if address sanitizer is enabled.
+     */
+    static bool is_address_sanitizer_enabled();
 };
 
 } // namespace vespa

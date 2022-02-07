@@ -358,4 +358,21 @@ Defaults::vespaConfigSourcesRpcAddrs()
     return ret;
 }
 
+
+bool
+Defaults::is_address_sanitizer_enabled()
+{
+    bool has_address_sanitizer = false;
+#ifdef __SANITIZE_ADDRESS__
+    has_address_sanitizer = true;
+#else
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+    has_address_sanitizer = true;
+#endif
+#endif
+#endif
+    return has_address_sanitizer;
+}
+
 } // namespace vespa

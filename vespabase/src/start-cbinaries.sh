@@ -138,6 +138,11 @@ configure_vespa_malloc () {
         # log_debug_message "Not using vespamalloc for '$bname' since VESPA_USE_NO_VESPAMALLOC=${VESPA_USE_NO_VESPAMALLOC}"
         return
     fi
+    case "$(${VESPA_HOME}/bin/vespa-print-default sanitizer)" in
+	malloc)
+	    # Don't use vespamalloc when address sanitizer is enabled.
+	    return;;
+    esac
     suf=vespa/malloc/libvespamalloc.so
     if check_bname_in_value "$VESPA_USE_VESPAMALLOC_D"; then
         suf=vespa/malloc/libvespamallocd.so
