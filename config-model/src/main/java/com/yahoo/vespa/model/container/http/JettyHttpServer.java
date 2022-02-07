@@ -87,7 +87,7 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
         if (cluster instanceof ApplicationContainerCluster) {
             builder.minWorkerThreads(-1).maxWorkerThreads(-1);
         } else {
-            builder.minWorkerThreads(5).maxWorkerThreads(5);
+            builder.minWorkerThreads(6).maxWorkerThreads(6);
         }
     }
 
