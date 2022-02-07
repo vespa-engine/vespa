@@ -50,7 +50,7 @@ public class ZipStreamReader {
                 if (entry.getName().equals(name))
                     continue;
 
-                zipOut.putNextEntry(entry);
+                zipOut.putNextEntry(new ZipEntry(entry.getName()));
                 zipIn.transferTo(zipOut);
                 zipOut.closeEntry();
             }
