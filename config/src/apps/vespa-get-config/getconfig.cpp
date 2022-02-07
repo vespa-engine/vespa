@@ -196,15 +196,20 @@ GetConfig::Main()
       schema = schemaString;
     }
     if (debugging) {
-      printf("Using schema in %s\n", schema.c_str());
+      printf("Using schema from '%s'\n", schema.c_str());
     }
     std::ifstream is;
     is.open(schema);
     std::string item;
-    while (std::getline(is, item)) {
-      if (item.find("namespace=") == std::string::npos) {
-        defSchema.push_back(item);
+    if (is.is_open()) {
+      while (std::getline(is, item)) {
+	if (item.find("namespace=") == std::string::npos) {
+	  defSchema.push_back(item);
+	}
       }
+    } else {
+      fprintf(stderr, "Could not open schema file '%s'\n", schema.c_str());
+      return 1;
     }
     is.close();
 
