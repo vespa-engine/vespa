@@ -356,6 +356,12 @@ public class CppClassBuilder implements ClassBuilder {
     void writeConfigClassAssignmentOperatorDefinition(Writer w, String parent, String className, NoExceptSpecifier noexcept) throws IOException {
         w.write(parent + " & " + parent + "::" + "operator =(const " + className + " & __rhs)" + noexcept + " = default;\n");
     }
+    void writeConfigClassMoveConstructorDefinition(Writer w, String parent, String className, NoExceptSpecifier noexcept) throws IOException {
+        w.write(parent + "::" + className + "(" + className + " && __rhs)" + noexcept + " = default;\n");
+    }
+    void writeConfigClassMoveOperatorDefinition(Writer w, String parent, String className, NoExceptSpecifier noexcept) throws IOException {
+        w.write(parent + " & " + parent + "::" + "operator =(" + className + " && __rhs)" + noexcept + " = default;\n");
+    }
 
     void writeClassCopyConstructorDefinition(Writer w, String parent, CNode node) throws IOException {
         String typeName = getTypeName(node, false);
@@ -736,6 +742,8 @@ public class CppClassBuilder implements ClassBuilder {
         if (root) {
             writeConfigClassCopyConstructorDefinition(w, fullClassName, typeName, noexcept);
             writeConfigClassAssignmentOperatorDefinition(w, fullClassName, typeName, noexcept);
+            writeConfigClassMoveConstructorDefinition(w, fullClassName, typeName, noexcept);
+            writeConfigClassMoveOperatorDefinition(w, fullClassName, typeName, noexcept);
         } else {
             writeClassCopyConstructorDefinition(w, fullClassName, node);
             writeClassAssignmentOperatorDefinition(w, fullClassName, node);
