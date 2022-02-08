@@ -5,6 +5,7 @@
 #include "value.h"
 #include "nix_value.h"
 #include "value_factory.h"
+#include <vespa/vespalib/stllike/allocator.h>
 #include <vector>
 
 namespace vespalib::slime {
@@ -18,7 +19,7 @@ class ArrayValue final : public Value
 private:
     SymbolTable         &_symbolTable;
     Stash               &_stash;
-    std::vector<Value*>  _values;
+    std::vector<Value*, vespalib::allocator_large<Value*>>  _values;
 
 protected:
     Cursor &addLeaf(const ValueFactory &input) override {
