@@ -291,7 +291,7 @@ public:
     // A collection of string handles with ownership
     class Handles {
     private:
-        std::vector<string_id> _handles;
+        StringIdVector _handles;
     public:
         Handles();
         Handles(Handles &&rhs);
@@ -309,7 +309,7 @@ public:
             string_id id = _repo.copy(handle);
             _handles.push_back(id);
         }
-        const std::vector<string_id> &view() const { return _handles; }
+        const StringIdVector &view() const { return _handles; }
     };
 };
 

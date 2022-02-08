@@ -101,8 +101,8 @@ std::unique_ptr<Handles> copy_strong_handles(const Handles &handles) {
     return result;
 }
 
-std::unique_ptr<std::vector<string_id>> make_weak_handles(const Handles &handles) {
-    return std::make_unique<std::vector<string_id>>(handles.view());
+std::unique_ptr<StringIdVector> make_weak_handles(const Handles &handles) {
+    return std::make_unique<StringIdVector>(handles.view());
 }
 
 //-----------------------------------------------------------------------------
@@ -202,7 +202,7 @@ struct Fixture {
             std::vector<vespalib::string> get_direct_result;
             std::unique_ptr<Handles> strong;
             std::unique_ptr<Handles> strong_copy;
-            std::unique_ptr<std::vector<string_id>> weak;
+            std::unique_ptr<StringIdVector> weak;
             auto copy_strings_task = [&](){ copy_strings_result = copy_strings(work); };
             auto copy_and_hash_task = [&](){ copy_and_hash_result = copy_and_hash(work); };
             auto local_enum_task = [&](){ local_enum_result = local_enum(work); };
