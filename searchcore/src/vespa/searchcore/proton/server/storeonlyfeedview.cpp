@@ -369,7 +369,7 @@ StoreOnlyFeedView::removeSummaries(SerialNum serialNum, const LidVector & lids, 
         trackerTokens.emplace_back(_pendingLidsForDocStore.produce(lid));
     });
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, lids = std::move(lids), onDone, trackerTokens = std::move(trackerTokens), this] {
+            makeLambdaTask([serialNum, lids, onDone, trackerTokens = std::move(trackerTokens), this] {
                 (void) onDone;
                 (void) trackerTokens;
                 std::for_each(lids.begin(), lids.end(), [this, serialNum](Lid lid) {
