@@ -111,6 +111,10 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
     }
 
     private void addAdditionalManifestProperties(Map<String, String> manifestContent) {
+        if (isContainerDiscArtifact(project.getArtifact())) {
+            addIfNotEmpty(manifestContent, "Provide-Capability",
+                          "osgi.serviceloader;osgi.serviceloader=\"org.eclipse.jetty.io.ssl.ALPNProcessor$Server\"");
+        }
         addIfNotEmpty(manifestContent, "Bundle-Activator", bundleActivator);
         addIfNotEmpty(manifestContent, "X-JDisc-Privileged-Activator", jdiscPrivilegedActivator);
         addIfNotEmpty(manifestContent, "Main-Class", mainClass);
