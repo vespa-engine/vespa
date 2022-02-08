@@ -3,7 +3,6 @@ package com.yahoo.jdisc;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
-import com.google.inject.Key;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.jdisc.handler.CompletionHandler;
@@ -304,11 +303,6 @@ public class RequestTestCase {
                                                        requestHandler,
                                                        pattern));
             return requestHandler;
-        }
-
-        @Override
-        public <T> T getInstance(Key<T> key) {
-            return Guice.createInjector().getInstance(key);
         }
 
         @Override

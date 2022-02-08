@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import com.google.inject.Key;
 import com.yahoo.jdisc.Container;
 import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.ResourceReference;
@@ -154,11 +153,6 @@ public class HttpRequestFactoryTest {
 
                 @Override
                 public RequestHandler resolveHandler(com.yahoo.jdisc.Request request) {
-                    return null;
-                }
-
-                @Override
-                public <T> T getInstance(Key<T> tKey) {
                     return null;
                 }
 

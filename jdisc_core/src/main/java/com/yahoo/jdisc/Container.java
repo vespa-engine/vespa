@@ -49,8 +49,10 @@ public interface Container extends SharedResource, Timer {
      * @return The appropriate instance of the given class.
      * @throws ConfigurationException If this injector cannot find or create the provider.
      * @throws ProvisionException     If there was a runtime failure while providing an instance.
+     * @deprecated Use {@link #getInstance(Class)} instead.
      */
-    <T> T getInstance(Key<T> key);
+    @Deprecated(forRemoval = true, since = "7") // TODO Vespa 8 remove
+    default <T> T getInstance(Key<T> key) { throw new UnsupportedOperationException(); }
 
     /**
      * Returns the appropriate instance for the given injection type. When feasible, avoid using this method in

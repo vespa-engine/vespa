@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
-import com.google.inject.Key;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.Container;
 import com.yahoo.jdisc.Request;
@@ -70,9 +69,6 @@ public class MultipartParserTest {
 
         @Override
         public RequestHandler resolveHandler(Request request) { return null; }
-
-        @Override
-        public <T> T getInstance(Key<T> key) { return null; }
 
         @Override
         public <T> T getInstance(Class<T> aClass) { return null; }

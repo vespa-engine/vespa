@@ -150,11 +150,6 @@ public class LoggingRequestHandlerTestCase {
                 }
 
                 @Override
-                public <T> T getInstance(Key<T> tKey) {
-                    return null;
-                }
-
-                @Override
                 public <T> T getInstance(Class<T> tClass) {
                     return null;
                 }
