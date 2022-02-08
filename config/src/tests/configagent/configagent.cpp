@@ -114,7 +114,7 @@ private:
 
 ConfigValue createValue(const std::string & myField, const std::string & xxhash64)
 {
-    std::vector< vespalib::string > lines;
+    StringVector lines;
     lines.push_back("myField \"" + myField + "\"");
     return ConfigValue(lines, xxhash64);
 }

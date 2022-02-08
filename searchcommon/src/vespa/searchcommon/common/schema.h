@@ -3,10 +3,9 @@
 #pragma once
 
 #include "datatype.h"
-#include <vespa/vespalib/stllike/string.h>
+#include <vespa/config/common/types.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/ptrholder.h>
-#include <vector>
 
 namespace vespalib { class asciistream; }
 namespace search::index {
@@ -20,7 +19,6 @@ class Schema
 public:
     using UP = std::unique_ptr<Schema>;
     using SP = std::shared_ptr<Schema>;
-    using PH = vespalib::PtrHolder<Schema>;
 
     using DataType = schema::DataType;
     using CollectionType = schema::CollectionType;
@@ -45,7 +43,7 @@ public:
         /**
          * Create this field based on the given config lines.
          **/
-        Field(const std::vector<vespalib::string> & lines);
+        Field(const config::StringVector & lines);
         Field(const Field &) noexcept;
         Field & operator = (const Field &) noexcept;
         Field(Field &&) noexcept;
@@ -92,7 +90,7 @@ public:
         /**
          * Create this index field based on the given config lines.
          **/
-        IndexField(const std::vector<vespalib::string> &lines);
+        IndexField(const config::StringVector &lines);
 
         IndexField &setAvgElemLen(uint32_t avgElemLen) { _avgElemLen = avgElemLen; return *this; }
         IndexField &set_interleaved_features(bool value) {
@@ -133,7 +131,7 @@ public:
         /**
          * Create this field collection based on the given config lines.
          **/
-        FieldSet(const std::vector<vespalib::string> & lines);
+        FieldSet(const config::StringVector & lines);
 
         ~FieldSet();
 
@@ -143,8 +141,9 @@ public:
         }
 
         const vespalib::string &getName() const { return _name; }
-        const std::vector<vespalib::string> &getFields() const
-        { return _fields; }
+        const std::vector<vespalib::string> &getFields() const {
+            return _fields;
+        }
 
         bool operator==(const FieldSet &rhs) const;
         bool operator!=(const FieldSet &rhs) const;

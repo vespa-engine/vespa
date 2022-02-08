@@ -1,7 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/config/configgen/vector_inserter.h>
+#include <vespa/config/common/types.h>
+#include <vespa/config/configgen/vector_inserter.hpp>
 #include <vespa/vespalib/data/slime/slime.h>
 
 using namespace config;
@@ -27,7 +28,7 @@ TEST("require that vector of ints can be inserted") {
     root.addLong(3);
     root.addLong(2);
     root.addLong(6);
-    VectorInserter<int32_t> inserter(vector);
+    VectorInserter inserter(vector);
     root.traverse(inserter);
     ASSERT_EQUAL(3u, vector.size());
     ASSERT_EQUAL(3, vector[0]);
@@ -45,7 +46,7 @@ TEST("require that vector of struct can be inserted") {
     Cursor & two = root.addObject();
     two.setLong("foo", 1);
     two.setLong("bar", 6);
-    VectorInserter<MyType> inserter(typeVector);
+    VectorInserter inserter(typeVector);
     root.traverse(inserter);
     ASSERT_EQUAL(2u, typeVector.size());
     ASSERT_EQUAL(3, typeVector[0].foo);
@@ -61,7 +62,7 @@ TEST("require that vector of long can be inserted") {
     root.addLong(3);
     root.addLong(2);
     root.addLong(6);
-    VectorInserter<int64_t> inserter(vector);
+    VectorInserter inserter(vector);
     root.traverse(inserter);
     ASSERT_EQUAL(3u, vector.size());
     ASSERT_EQUAL(3, vector[0]);
@@ -76,7 +77,7 @@ TEST("require that vector of double can be inserted") {
     root.addDouble(3.1);
     root.addDouble(2.4);
     root.addDouble(6.6);
-    VectorInserter<double> inserter(vector);
+    VectorInserter inserter(vector);
     root.traverse(inserter);
     ASSERT_EQUAL(3u, vector.size());
     ASSERT_EQUAL(3.1, vector[0]);
@@ -91,7 +92,7 @@ TEST("require that vector of bool can be inserted") {
     root.addBool(true);
     root.addBool(false);
     root.addBool(true);
-    VectorInserter<bool> inserter(vector);
+    VectorInserter inserter(vector);
     root.traverse(inserter);
     ASSERT_EQUAL(3u, vector.size());
     ASSERT_TRUE(vector[0]);
@@ -99,19 +100,25 @@ TEST("require that vector of bool can be inserted") {
     ASSERT_TRUE(vector[2]);
 }
 
-TEST("require that vector of string can be inserted") {
-    std::vector<vespalib::string> vector;
+template<typename V>
+void
+verify_vector_strings_can_be_inserted(V vector) {
     Slime slime;
     Cursor & root = slime.setArray();
     root.addString("foo");
     root.addString("bar");
     root.addString("baz");
-    VectorInserter<vespalib::string> inserter(vector);
+    VectorInserter inserter(vector);
     root.traverse(inserter);
     ASSERT_EQUAL(3u, vector.size());
     ASSERT_EQUAL("foo", vector[0]);
     ASSERT_EQUAL("bar", vector[1]);
     ASSERT_EQUAL("baz", vector[2]);
+}
+
+TEST("require that different vectors of strings can be inserted") {
+    verify_vector_strings_can_be_inserted(std::vector<vespalib::string>());
+    verify_vector_strings_can_be_inserted(StringVector());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

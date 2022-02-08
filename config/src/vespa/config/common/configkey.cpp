@@ -30,19 +30,12 @@ ConfigKey::ConfigKey(vespalib::stringref configId,
 {
 }
 
-ConfigKey::ConfigKey()
-    : _configId(),
-      _defName(),
-      _defNamespace(),
-      _defMd5(),
-      _defSchema(),
-      _key()
-{}
-
+ConfigKey::ConfigKey() = default;
 ConfigKey::ConfigKey(const ConfigKey &) = default;
 ConfigKey & ConfigKey::operator = (const ConfigKey &) = default;
-
-ConfigKey::~ConfigKey() { }
+ConfigKey::ConfigKey(ConfigKey &&) noexcept = default;
+ConfigKey & ConfigKey::operator = (ConfigKey &&) noexcept = default;
+ConfigKey::~ConfigKey() = default;
 
 bool
 ConfigKey::operator<(const ConfigKey & rhs) const

@@ -14,7 +14,7 @@ public:
     { }
     void close() override { }
     void getConfig() override {
-        _holder->handle(std::make_unique<config::ConfigUpdate>(config::ConfigValue(_buffer.getlines()), true, _generation));
+        _holder->handle(std::make_unique<config::ConfigUpdate>(config::ConfigValue(config::getlines(_buffer)), true, _generation));
 
     }
     void reload(int64_t generation) override { _generation = generation; }

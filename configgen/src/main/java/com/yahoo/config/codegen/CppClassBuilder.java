@@ -3,14 +3,10 @@ package com.yahoo.config.codegen;
 
 import java.io.FileWriter;
 import java.io.File;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.FileReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.Collections;
 import java.util.Arrays;
 import java.util.StringTokenizer;
 import java.util.stream.Collectors;
@@ -24,39 +20,31 @@ public class CppClassBuilder implements ClassBuilder {
     private final NormalizedDefinition nd;
     private final File rootDir;
     private final String relativePathUnderRoot;
-    private static final Map<String, String> vectorTypeDefs;
-    static {
-        Map<String, String> map = new HashMap<String, String>();
-        map.put("bool", "BoolVector");
-        map.put("int32_t", "IntVector");
-        map.put("int64_t", "LongVector");
-        map.put("double", "DoubleVector");
-        map.put("vespalib::string", "StringVector");
-        vectorTypeDefs = Collections.unmodifiableMap(map);
-    }
-    private static final Map<String, String> mapTypeDefs;
-    static {
-        Map<String, String> map = new HashMap<>();
-        map.put("bool", "BoolMap");
-        map.put("int32_t", "IntMap");
-        map.put("int64_t", "LongMap");
-        map.put("double", "DoubleMap");
-        map.put("vespalib::string", "StringMap");
-        mapTypeDefs = Collections.unmodifiableMap(map);
-    }
-    private static final Map<String, String> slimeTypeMap;
-    static {
-        Map<String, String> map = new HashMap<String, String>();
-        map.put("bool", "Bool");
-        map.put("int", "Long");
-        map.put("long", "Long");
-        map.put("double", "Double");
-        map.put("string", "String");
-        map.put("enum", "String");
-        map.put("file", "String");
-        map.put("reference", "String");
-        slimeTypeMap = Collections.unmodifiableMap(map);
-    }
+    private static final Map<String, String> vectorTypeDefs =  Map.of(
+            "bool", "::config::BoolVector",
+            "int32_t", "::config::IntVector",
+            "int64_t", "::config::LongVector",
+            "double", "::config::DoubleVector",
+            "vespalib::string", "::config::StringVector"
+    );
+    private static final Map<String, String> mapTypeDefs = Map.of(
+            "bool", "::config::BoolMap",
+            "int32_t", "::config::IntMap",
+            "int64_t", "::config::LongMap",
+            "double", "::config::DoubleMap",
+            "vespalib::string", "::config::StringMap"
+    );
+
+    private static final Map<String, String> slimeTypeMap = Map.of(
+            "bool", "Bool",
+            "int", "Long",
+            "long", "Long",
+            "double", "Double",
+            "string", "String",
+            "enum", "String",
+            "file", "String",
+            "reference", "String"
+    );
 
     public CppClassBuilder(CNode root, NormalizedDefinition nd, File rootDir, String relativePathUnderRoot) {
         this.root = root;
@@ -67,19 +55,6 @@ public class CppClassBuilder implements ClassBuilder {
 
     public void createConfigClasses() {
         generateConfig(root, nd);
-    }
-
-    String readFile(File f) throws IOException {
-        if (!f.isFile()) return null;
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader sr = new BufferedReader(new FileReader(f))) {
-            while (true) {
-                String line = sr.readLine();
-                if (line == null) break;
-                sb.append(line).append("\n");
-            }
-            return sb.toString();
-        }
     }
 
     void writeFile(File f, String content) throws IOException {
@@ -118,7 +93,7 @@ public class CppClassBuilder implements ClassBuilder {
 
     static String removeDashesAndUpperCaseAllFirstChars(String source, boolean capitalizeFirst) {
         // Create upper case chars after each dash
-        String parts[] = source.split("[-_]");
+        String [] parts = source.split("[-_]");
         StringBuilder sb = new StringBuilder();
         for (String s : parts) {
             sb.append(s.substring(0, 1).toUpperCase()).append(s.substring(1));
@@ -149,7 +124,7 @@ public class CppClassBuilder implements ClassBuilder {
      * Class to generate noexcept specifier if default constructor, copy constructor or copy assignment is non-throwing
      */
     private static class NoExceptSpecifier {
-        private boolean enabled;
+        private final boolean enabled;
 
         public NoExceptSpecifier(CNode node) {
                 enabled = checkNode(node);
@@ -267,9 +242,7 @@ public class CppClassBuilder implements ClassBuilder {
                 + "#define CLOUD_CONFIG_" + defineName + "_H\n"
                 + "\n"
                 + "#include <vespa/config/configgen/configinstance.h>\n"
-                + "#include <vespa/vespalib/stllike/string.h>\n"
-                + "#include <vector>\n"
-                + "#include <map>\n"
+                + "#include <vespa/config/common/types.h>\n"
                 + "\n");
         w.write("namespace config {\n");
         w.write("    class ConfigValue;\n");
@@ -295,7 +268,7 @@ public class CppClassBuilder implements ClassBuilder {
 
 
     void writeTypeDeclarations(Writer w, CNode node, String indent) throws IOException {
-        java.util.Set<String> declaredTypes = new java.util.HashSet<String>();
+        java.util.Set<String> declaredTypes = new java.util.HashSet<>();
         for (CNode child : node.getChildren()) {
             boolean complexType = (child instanceof InnerCNode || child instanceof LeafCNode.EnumLeaf);
             if (complexType && !declaredTypes.contains(child.getName())) {
@@ -357,7 +330,7 @@ public class CppClassBuilder implements ClassBuilder {
     }
 
     void writeStructFunctionDeclarations(Writer w, String className, CNode node, String indent) throws IOException {
-        w.write(indent + className + "(const std::vector<vespalib::string> & __lines);\n");
+        w.write(indent + className + "(const " + vectorTypeDefs.get("vespalib::string") + " & __lines);\n");
         w.write(indent + className + "(const vespalib::slime::Inspector & __inspector);\n");
         w.write(indent + className + "(const ::config::ConfigPayload & __payload);\n");
         writeCommonFunctionDeclarations(w, className, node, indent);
@@ -370,6 +343,12 @@ public class CppClassBuilder implements ClassBuilder {
     void writeClassAssignmentOperatorDeclaration(Writer w, String className, NoExceptSpecifier noexcept, String indent) throws IOException {
         w.write(indent + className + " & operator = (const " + className + " & __rhs)" + noexcept + ";\n");
     }
+    void writeClassMoveConstructorDeclaration(Writer w, String className, NoExceptSpecifier noexcept, String indent) throws IOException {
+        w.write(indent + className + "(" + className + " && __rhs)" + noexcept + ";\n");
+    }
+    void writeClassMoveOperatorDeclaration(Writer w, String className, NoExceptSpecifier noexcept, String indent) throws IOException {
+        w.write(indent + className + " & operator = (" + className + " && __rhs)" + noexcept + ";\n");
+    }
 
     void writeConfigClassCopyConstructorDefinition(Writer w, String parent, String className, NoExceptSpecifier noexcept) throws IOException {
         w.write(parent + "::" + className + "(const " + className + " & __rhs)" + noexcept + " = default;\n");
@@ -377,11 +356,22 @@ public class CppClassBuilder implements ClassBuilder {
     void writeConfigClassAssignmentOperatorDefinition(Writer w, String parent, String className, NoExceptSpecifier noexcept) throws IOException {
         w.write(parent + " & " + parent + "::" + "operator =(const " + className + " & __rhs)" + noexcept + " = default;\n");
     }
+    void writeConfigClassMoveConstructorDefinition(Writer w, String parent, String className, NoExceptSpecifier noexcept) throws IOException {
+        w.write(parent + "::" + className + "(" + className + " && __rhs)" + noexcept + " = default;\n");
+    }
+    void writeConfigClassMoveOperatorDefinition(Writer w, String parent, String className, NoExceptSpecifier noexcept) throws IOException {
+        w.write(parent + " & " + parent + "::" + "operator =(" + className + " && __rhs)" + noexcept + " = default;\n");
+    }
 
     void writeClassCopyConstructorDefinition(Writer w, String parent, CNode node) throws IOException {
         String typeName = getTypeName(node, false);
         NoExceptSpecifier noexcept = new NoExceptSpecifier(node);
         w.write(parent + "::" + typeName + "(const " + typeName + " & __rhs)" + noexcept + " = default;\n");
+    }
+    void writeClassMoveConstructorDefinition(Writer w, String parent, CNode node) throws IOException {
+        String typeName = getTypeName(node, false);
+        NoExceptSpecifier noexcept = new NoExceptSpecifier(node);
+        w.write(parent + "::" + typeName + "(" + typeName + " && __rhs)" + noexcept + " = default;\n");
     }
 
     void writeClassAssignmentOperatorDefinition(Writer w, String parent, CNode node) throws IOException {
@@ -391,8 +381,15 @@ public class CppClassBuilder implements ClassBuilder {
         w.write(parent + " & " + parent + "::" + "operator = (const " + typeName + " & __rhs)" + noexcept + " = default;\n");
     }
 
+    void writeClassMoveOperatorDefinition(Writer w, String parent, CNode node) throws IOException {
+        String typeName = getTypeName(node, false);
+        NoExceptSpecifier noexcept = new NoExceptSpecifier(node);
+        // Write empty constructor
+        w.write(parent + " & " + parent + "::" + "operator = (" + typeName + " && __rhs)" + noexcept + " = default;\n");
+    }
+
     void writeDestructor(Writer w, String parent, String className) throws IOException {
-        w.write(parent + "~" + className + "() { } \n");
+        w.write(parent + "~" + className + "() = default; \n");
     }
 
     void writeCommonFunctionDeclarations(Writer w, String className, CNode node, String indent) throws IOException {
@@ -400,6 +397,8 @@ public class CppClassBuilder implements ClassBuilder {
         w.write("" + indent + className + "() " + noexcept + ";\n");
         writeClassCopyConstructorDeclaration(w, className, noexcept, indent);
         writeClassAssignmentOperatorDeclaration(w, className, noexcept, indent);
+        writeClassMoveConstructorDeclaration(w, className, noexcept, indent);
+        writeClassMoveOperatorDeclaration(w, className, noexcept, indent);
         w.write("" + indent + "~" + className + "();\n");
         w.write("\n"
                 + indent + "bool operator==(const " + className + "& __rhs) const noexcept;\n"
@@ -460,7 +459,7 @@ public class CppClassBuilder implements ClassBuilder {
                 + indent + "static const vespalib::string CONFIG_DEF_VERSION;\n"
                 + indent + "static const vespalib::string CONFIG_DEF_NAME;\n"
                 + indent + "static const vespalib::string CONFIG_DEF_NAMESPACE;\n"
-                + indent + "static const std::vector<vespalib::string> CONFIG_DEF_SCHEMA;\n"
+                + indent + "static const ::config::StringVector CONFIG_DEF_SCHEMA;\n"
                 + indent + "static const int64_t CONFIG_DEF_SERIALIZE_VERSION;\n"
                 + "\n"
                 );
@@ -469,7 +468,7 @@ public class CppClassBuilder implements ClassBuilder {
     void writeComment(Writer w, String indent, String comment, boolean javadoc)
         throws IOException
     {
-        /** If simple one liner comment, write on one line. */
+        // If simple one liner comment, write on one line.
         if (javadoc && comment.indexOf('\n') == -1
             && comment.length() <= 80 - (indent.length() + 7))
         {
@@ -481,7 +480,7 @@ public class CppClassBuilder implements ClassBuilder {
             w.write(indent + "// " + comment + "\n");
             return;
         }
-        /** If not we need to write multi line comment. */
+        // If not we need to write multi line comment.
         int maxLineLen = 80 - (indent.length() + 3);
         if (javadoc) w.write(indent + "/**\n");
         do {
@@ -543,18 +542,6 @@ public class CppClassBuilder implements ClassBuilder {
 
     void writeHeaderTypeDefs(Writer w, CNode root, String indent) throws IOException {
         w.write(indent + "typedef std::unique_ptr<const " + getInternalClassName(root) + "> UP;\n");
-        for (Map.Entry<String, String> entry : vectorTypeDefs.entrySet()) {
-            String typeName = entry.getKey();
-            String vectorName = entry.getValue();
-            String typeDef = "typedef std::vector<" + typeName + "> " + vectorName;
-            w.write(indent + typeDef + ";\n");
-        }
-        for (Map.Entry<String, String> entry : mapTypeDefs.entrySet()) {
-            String typeName = entry.getKey();
-            String mapName = entry.getValue();
-            String typeDef = "typedef std::map<vespalib::string, " + typeName + "> " + mapName;
-            w.write(indent + typeDef + ";\n");
-        }
     }
 
     private static String getInternalClassName(CNode root) {
@@ -599,11 +586,11 @@ public class CppClassBuilder implements ClassBuilder {
         w.write("#include <vespa/config/configgen/configpayload.h>\n");
         w.write("#include <vespa/config/print/configdatabuffer.h>\n");
         w.write("#include <vespa/config/common/configparser.h>\n");
-        w.write("#include <vespa/config/configgen/vector_inserter.h>\n");
-        w.write("#include <vespa/config/configgen/map_inserter.h>\n");
         w.write("#include <vespa/vespalib/data/slime/convenience.h>\n");
         w.write("#include <vespa/vespalib/data/slime/slime.h>\n");
         w.write("#include <vespa/vespalib/stllike/asciistream.h>\n");
+        w.write("#include <vespa/config/configgen/vector_inserter.hpp>\n");
+        w.write("#include <vespa/config/configgen/map_inserter.hpp>\n");
         w.write("\n");
         writeNameSpaceBegin(w, generateCppNameSpace(root));
         w.write("\nnamespace internal {\n\n");
@@ -627,7 +614,7 @@ public class CppClassBuilder implements ClassBuilder {
             w.write("\"" + line.replace("\"", "\\\"") + "\",\n");
         }
         w.write("};\n");
-        w.write("const std::vector<vespalib::string> " + typeName + "::CONFIG_DEF_SCHEMA(__internalDefSchema,\n");
+        w.write("const ::config::StringVector " + typeName + "::CONFIG_DEF_SCHEMA(__internalDefSchema,\n");
         w.write("    __internalDefSchema + (sizeof(__internalDefSchema) / \n");
         w.write("                           sizeof(__internalDefSchema[0])));\n");
         w.write("\n");
@@ -640,7 +627,7 @@ public class CppClassBuilder implements ClassBuilder {
             root = true;
         }
         final String parent = fullClassName + "::";
-        java.util.Set<String> declaredTypes = new java.util.HashSet<String>();
+        java.util.Set<String> declaredTypes = new java.util.HashSet<>();
         for (CNode child : node.getChildren()) {
             boolean complexType = (child instanceof InnerCNode || child instanceof LeafCNode.EnumLeaf);
             if (complexType && !declaredTypes.contains(child.getName())) {
@@ -755,9 +742,13 @@ public class CppClassBuilder implements ClassBuilder {
         if (root) {
             writeConfigClassCopyConstructorDefinition(w, fullClassName, typeName, noexcept);
             writeConfigClassAssignmentOperatorDefinition(w, fullClassName, typeName, noexcept);
+            writeConfigClassMoveConstructorDefinition(w, fullClassName, typeName, noexcept);
+            writeConfigClassMoveOperatorDefinition(w, fullClassName, typeName, noexcept);
         } else {
             writeClassCopyConstructorDefinition(w, fullClassName, node);
             writeClassAssignmentOperatorDefinition(w, fullClassName, node);
+            writeClassMoveConstructorDefinition(w, fullClassName, node);
+            writeClassMoveOperatorDefinition(w, fullClassName, node);
         }
         writeDestructor(w, parent, typeName);
 
@@ -768,30 +759,20 @@ public class CppClassBuilder implements ClassBuilder {
                     + "{\n"
                     + indent + "try {\n");
             indent = "        ";
-            w.write(indent + "const std::vector<vespalib::string> & __lines(__value.getLines());\n");
+            w.write(indent + "const " + vectorTypeDefs.get("vespalib::string") + " & __lines(__value.getLines());\n");
         } else {
-            w.write(parent + typeName + "(const std::vector<vespalib::string> & __lines)\n"
+            w.write(parent + typeName + "(const " + vectorTypeDefs.get("vespalib::string") +" & __lines)\n"
                     + "{\n");
         }
-        w.write(""
-                + indent + "std::set<vespalib::string> __remainingValuesToParse("
-                + "__lines.begin(), __lines.end());\n");
-        w.write(indent + "for(std::set<vespalib::string>::iterator __rVTPiter = __remainingValuesToParse.begin();\n"
-                + indent + "    __rVTPiter != __remainingValuesToParse.end();)\n"
-                + indent + "{\n"
-                + indent + "    if (ConfigParser::stripWhitespace(*__rVTPiter).empty()) {\n"
-                + indent + "        std::set<vespalib::string>::iterator __rVTPiter2 = __rVTPiter++;\n"
-                + indent + "        __remainingValuesToParse.erase(__rVTPiter2);\n"
-                + indent + "    } else {\n"
-                + indent + "        ++__rVTPiter;\n"
-                + indent + "    }\n"
-                + indent + "}\n");
+        w.write(indent + "std::set<vespalib::string> __remainingValuesToParse = ConfigParser::getUniqueNonWhiteSpaceLines(__lines);\n");
         for (CNode child : node.getChildren()) {
             String childType = getTypeName(child, false);
             String childName = getIdentifier(child.getName());
+            String childVectorType = null;
             if (child instanceof LeafCNode.EnumLeaf) {
                 if (child.isArray) {
-                    w.write(indent + "std::vector<vespalib::string> " + childName + "__ValueList(\n            ");
+                    childVectorType = "::config::StringVector";
+                    w.write(indent + childVectorType + " " + childName + "__ValueList(\n            ");
                 } else if (child.isMap) {
                     w.write(indent + "std::map<vespalib::string, vespalib::string> " + childName + "__ValueMap(\n            ");
                 } else {
@@ -802,18 +783,17 @@ public class CppClassBuilder implements ClassBuilder {
                 w.write(indent + childName + " = ");
             }
             if (child.isArray) {
-                w.write("ConfigParser::parseArray<" + childType + ">(\""
-                        + child.getName() + "\", __lines)");
+                if (childVectorType == null) {
+                    childVectorType = getTypeName(child, true);
+                }
+                w.write("ConfigParser::parseArray<" + childVectorType + ">(\"" + child.getName() + "\", __lines)");
             } else if (child.isMap) {
-                w.write("ConfigParser::parseMap<" + childType + ">(\""
-                        + child.getName() + "\", __lines)");
+                w.write("ConfigParser::parseMap<" + childType + ">(\"" + child.getName() + "\", __lines)");
             } else {
                 if (child instanceof LeafCNode) {
-                    w.write("ConfigParser::parse<" + childType + ">(\""
-                            + child.getName() + "\", __lines");
+                    w.write("ConfigParser::parse<" + childType + ">(\"" + child.getName() + "\", __lines");
                 } else {
-                    w.write("ConfigParser::parseStruct<" + childType + ">(\""
-                            + child.getName() + "\", __lines");
+                    w.write("ConfigParser::parseStruct<" + childType + ">(\"" + child.getName() + "\", __lines");
                 }
                 if (child instanceof LeafCNode && ((LeafCNode) child).getDefaultValue() != null) {
                     LeafCNode leaf = (LeafCNode) child;
@@ -832,26 +812,20 @@ public class CppClassBuilder implements ClassBuilder {
                 w.write(");\n");
                 if (child.isArray) {
                     w.write(indent + childName + ".reserve(" + childName + "__ValueList.size());\n"
-                            + indent + "for (std::vector<vespalib::string>::const_iterator __it\n"
-                            + indent + "        = " + childName + "__ValueList.begin();\n"
-                            + indent + "     __it != " + childName + "__ValueList.end(); ++__it)\n"
-                            + indent + "{\n"
-                            + indent + "    " + childName + ".push_back(get" + childType + "(*__it));\n"
+                            + indent + "for (const auto & item : " + childName + "__ValueList) {\n"
+                            + indent + "    " + childName + ".push_back(get" + childType + "(item));\n"
                             + indent + "}\n"
                             );
                 } else if (child.isMap) {
-                    w.write(indent + "typedef std::map<vespalib::string, vespalib::string> __ValueMap;\n");
-                    w.write(indent + "for (__ValueMap::iterator __it(" + childName + "__ValueMap.begin()), __mt(" + childName + "__ValueMap.end()); __it != __mt; __it++) {\n"
-                                   + "    " + childName + "[__it->first] = get" + childType + "(__it->second);\n"
+                    w.write(indent + "for (const auto & entry : " + childName + "__ValueMap) {\n"
+                                   + "    " + childName + "[entry.first] = get" + childType + "(entry.second);\n"
                                    + "}\n"
                     );
                 }
             } else {
                 w.write(";\n");
             }
-            w.write(indent + "ConfigParser::stripLinesForKey(\""
-                    + child.getName() + "\", "
-                    + "__remainingValuesToParse);\n");
+            w.write(indent + "ConfigParser::stripLinesForKey(\"" + child.getName() + "\", " + "__remainingValuesToParse);\n");
         }
         if (root) {
             indent = "    ";
@@ -864,9 +838,8 @@ public class CppClassBuilder implements ClassBuilder {
                 + "\n"
                 );
         // Write operator==
-        String lineBreak = (parent.length() + typeName.length() < 50 ? "" : "\n");
         w.write("bool\n"
-                + parent + lineBreak + "operator==(const " + typeName + "& __rhs) const noexcept\n"
+                + parent + lineBreak(parent, typeName) + "operator==(const " + typeName + "& __rhs) const noexcept\n"
                 + "{\n"
                 + "    return ("
                 );
@@ -883,9 +856,8 @@ public class CppClassBuilder implements ClassBuilder {
                 + "\n"
                 );
         // Write operator!=
-        lineBreak = (parent.length() + typeName.length() < 50 ? "" : "\n");
         w.write("bool\n"
-                + parent + lineBreak + "operator!=(const " + typeName + "& __rhs) const noexcept\n"
+                + parent + lineBreak(parent, typeName) + "operator!=(const " + typeName + "& __rhs) const noexcept\n"
                 + "{\n"
                 + "    return !(operator==(__rhs));\n"
                 + "}\n"
@@ -894,6 +866,10 @@ public class CppClassBuilder implements ClassBuilder {
         writeSlimeEncoder(w, node, parent, root);
         writeSlimeDecoder(w, node, parent, root);
         writeSlimeConstructor(w, node, parent, root);
+    }
+
+    private static String lineBreak(String parent, String typeName) {
+        return (parent.length() + typeName.length() < 50 ? "" : "\n");
     }
 
     public void writeSlimeEncoder(Writer w, CNode node, String parent, boolean root) throws IOException
@@ -929,55 +905,54 @@ public class CppClassBuilder implements ClassBuilder {
             if (child.isArray) {
                 w.write(indent + "__c.setString(\"type\", \"array\");\n");
                 w.write(indent + "vespalib::slime::Cursor & __c2 = __c.setArray(\"value\");\n");
-                w.write(indent + "for (size_t __i = 0; __i < " + childName + ".size(); __i++) {\n");
+                w.write(indent + "for (const auto & child : " + childName +") {\n");
                 w.write(indent + "    vespalib::slime::Cursor & __c3 = __c2.addObject();\n");
                 if (child instanceof LeafCNode.EnumLeaf) {
                     String repType = slimeTypeMap.get("enum");
                     w.write(indent + "    __c3.setString(\"type\", \"enum\");\n");
                     w.write(indent + "    __c3.set" + repType);
-                    w.write("(\"value\", vespalib::Memory(get" + childType + "Name(" + childName + "[__i])));\n");
+                    w.write("(\"value\", vespalib::Memory(get" + childType + "Name(child)));\n");
                 } else if (child instanceof LeafCNode) {
                     String type = ((LeafCNode) child).getType();
                     String repType = slimeTypeMap.get(type);
                     w.write(indent + "    __c3.setString(\"type\", \"" + type + "\");\n");
                     w.write(indent + "    __c3.set" + repType);
                     if ("String".equals(repType)) {
-                        w.write("(\"value\", vespalib::Memory(" + childName + "[__i]));\n");
+                        w.write("(\"value\", vespalib::Memory(child));\n");
                     } else {
-                        w.write("(\"value\", " + childName + "[__i]);\n");
+                        w.write("(\"value\", child);\n");
                     }
                 } else {
                     w.write(indent + "    __c3.setString(\"type\", \"struct\");\n");
                     w.write(indent + "    Cursor & __c4 = __c3.setObject(\"value\");\n");
-                    w.write(indent + "    " + childName + "[__i].serialize(__c4);\n");
+                    w.write(indent + "    child.serialize(__c4);\n");
                 }
                 w.write(indent + "}\n");
             } else if (child.isMap) {
                 w.write(indent + "__c.setString(\"type\", \"map\");\n");
                 w.write(indent + "vespalib::slime::Cursor & __c2 = __c.setArray(\"value\");\n");
-                String childMapType = getTypeName(child, true);
-                w.write(indent + "for (" + childMapType + "::const_iterator it(" + childName + ".begin()), mt(" + childName + ".end()); it != mt; it++) {\n");
+                w.write(indent + "for (const auto & entry : " + childName + ") {\n");
                 w.write(indent + "    vespalib::slime::Cursor & __c3 = __c2.addObject();\n");
-                w.write(indent + "    __c3.setString(\"key\", vespalib::Memory(it->first));\n");
+                w.write(indent + "    __c3.setString(\"key\", vespalib::Memory(entry.first));\n");
                 if (child instanceof LeafCNode.EnumLeaf) {
                     String repType = slimeTypeMap.get("enum");
                     w.write(indent + "    __c3.setString(\"type\", \"enum\");\n");
                     w.write(indent + "    __c3.set" + repType);
-                    w.write("(\"value\", vespalib::Memory(get" + childType + "Name(it->second)));\n");
+                    w.write("(\"value\", vespalib::Memory(get" + childType + "Name(entry.second)));\n");
                 } else if (child instanceof LeafCNode) {
                     String type = ((LeafCNode) child).getType();
                     String repType = slimeTypeMap.get(type);
                     w.write(indent + "    __c3.setString(\"type\", \"" + type + "\");\n");
                     w.write(indent + "    __c3.set" + repType);
                     if ("String".equals(repType)) {
-                        w.write("(\"value\", vespalib::Memory(it->second));\n");
+                        w.write("(\"value\", vespalib::Memory(entry.second));\n");
                     } else {
-                        w.write("(\"value\", it->second);\n");
+                        w.write("(\"value\", entry.second);\n");
                     }
                 } else {
                     w.write(indent + "    __c3.setString(\"type\", \"struct\");\n");
                     w.write(indent + "    Cursor & __c4 = __c3.setObject(\"value\");\n");
-                    w.write(indent + "    it->second.serialize(__c4);\n");
+                    w.write(indent + "    entry.second.serialize(__c4);\n");
                 }
                 w.write(indent + "}\n");
             } else {
@@ -1033,39 +1008,13 @@ public class CppClassBuilder implements ClassBuilder {
             if (child.isArray) {
                 w.write(indent + "for (size_t __i = 0; __i < " + inspectorLine + ".children(); __i++) {\n");
                 w.write(indent + "    " + childName + ".push_back(");
-                if (child instanceof LeafCNode.EnumLeaf) {
-                    String repType = slimeTypeMap.get("enum");
-                    w.write("get" + childType + "(" + inspectorLine + "[__i][\"value\"].as" + repType + "().make_string())");
-                } else if (child instanceof LeafCNode) {
-                    String type = ((LeafCNode) child).getType();
-                    String repType = slimeTypeMap.get(type);
-                    if ("String".equals(repType)) {
-                        w.write("" + inspectorLine + "[__i][\"value\"].as" + repType + "().make_string()");
-                    } else {
-                        w.write("" + inspectorLine + "[__i][\"value\"].as" + repType + "()");
-                    }
-                } else {
-                    w.write(childType + "(" + inspectorLine + "[__i][\"value\"])");
-                }
+                writeSlimeChild(w, child, childType, inspectorLine);
                 w.write(");\n");
                 w.write(indent + "}\n");
             } else if (child.isMap) {
                 w.write(indent + "for (size_t __i = 0; __i < " + inspectorLine + ".children(); __i++) {\n");
                 w.write(indent + "    " + childName + "[" + inspectorLine + "[__i][\"key\"].asString().make_string()] = ");
-                if (child instanceof LeafCNode.EnumLeaf) {
-                    String repType = slimeTypeMap.get("enum");
-                    w.write("get" + childType + "(" + inspectorLine + "[__i][\"value\"].as" + repType + "().make_string())");
-                } else if (child instanceof LeafCNode) {
-                    String type = ((LeafCNode) child).getType();
-                    String repType = slimeTypeMap.get(type);
-                    if ("String".equals(repType)) {
-                        w.write("" + inspectorLine + "[__i][\"value\"].as" + repType + "().make_string()");
-                    } else {
-                        w.write("" + inspectorLine + "[__i][\"value\"].as" + repType + "()");
-                    }
-                } else {
-                    w.write(childType + "(" + inspectorLine + "[__i][\"value\"])");
-                }
+                writeSlimeChild(w, child, childType, inspectorLine);
                 w.write(";\n");
                 w.write(indent + "}\n");
             } else {
@@ -1090,6 +1039,23 @@ public class CppClassBuilder implements ClassBuilder {
         w.write("}\n\n");
     }
 
+    private void writeSlimeChild(Writer w, CNode child, String childType, String inspectorLine) throws IOException {
+        if (child instanceof LeafCNode.EnumLeaf) {
+            String repType = slimeTypeMap.get("enum");
+            w.write("get" + childType + "(" + inspectorLine + "[__i][\"value\"].as" + repType + "().make_string())");
+        } else if (child instanceof LeafCNode) {
+            String type = ((LeafCNode) child).getType();
+            String repType = slimeTypeMap.get(type);
+            if ("String".equals(repType)) {
+                w.write("" + inspectorLine + "[__i][\"value\"].as" + repType + "().make_string()");
+            } else {
+                w.write("" + inspectorLine + "[__i][\"value\"].as" + repType + "()");
+            }
+        } else {
+            w.write(childType + "(" + inspectorLine + "[__i][\"value\"])");
+        }
+    }
+
     public void writeSlimeConstructor(Writer w, CNode node, String parent, boolean root) throws IOException {
         String tmpName = getTypeName(node, false);
         String typeName = root ? getInternalClassName(node) : tmpName;
@@ -1110,7 +1076,8 @@ public class CppClassBuilder implements ClassBuilder {
             String childInspector = "__inspector[\"" + child.getName() + "\"]";
             if (child.isArray) {
                 String inserterName = "__" + childName + "Inserter";
-                w.write(indent + "::config::internal::VectorInserter<" + childType);
+                String childVectorType = getTypeName(child, true);
+                w.write(indent + "::config::internal::VectorInserter<" + childVectorType);
                 if (child instanceof LeafCNode.EnumLeaf) {
                     w.write(", Internal" + childType + "Converter");
                 }

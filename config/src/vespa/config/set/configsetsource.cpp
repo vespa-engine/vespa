@@ -30,7 +30,7 @@ ConfigSetSource::getConfig()
     vespalib::asciistream ss;
     AsciiConfigWriter writer(ss);
     writer.write(*instance);
-    StringVector lines(ss.getlines());
+    StringVector lines(getlines(ss));
     vespalib::string currentXxhash64(calculateContentXxhash64(lines));
 
     if (isGenerationNewer(_generation, _lastState.generation) && currentXxhash64.compare(_lastState.xxhash64) != 0) {

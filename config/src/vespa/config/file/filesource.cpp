@@ -53,7 +53,7 @@ StringVector
 FileSource::readConfigFile(const vespalib::string & fileName)
 {
     asciistream is(asciistream::createFromFile(fileName));
-    return is.getlines();
+    return getlines(is);
 }
 
 void
