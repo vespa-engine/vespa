@@ -7158,6 +7158,7 @@
     "methods": [
       "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean)",
       "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean, boolean)",
+      "protected void <init>(boolean, boolean, boolean)",
       "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean, boolean, boolean)",
       "public void accept(java.lang.String, java.lang.Object)",
       "public void accept(java.lang.String, byte[], int, int)",
@@ -7199,6 +7200,7 @@
       "public void endResponse()",
       "public java.lang.String getEncoding()",
       "public java.lang.String getMimeType()",
+      "protected com.yahoo.search.rendering.JsonRenderer$FieldConsumer createFieldConsumer(boolean)",
       "protected com.yahoo.search.rendering.JsonRenderer$FieldConsumer createFieldConsumer(com.fasterxml.jackson.core.JsonGenerator, boolean)"
     ],
     "fields": []
