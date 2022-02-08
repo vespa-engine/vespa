@@ -151,8 +151,12 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
      * method will be invoked when creating the first renderer instance, but not
      * for each fresh clone used by individual results.
      *
+     * @deprecated Will be removed in Vespa 8. Override the individual render methods of {@link JsonRenderer} to alter
+     *             rendering behaviour. Override {@link #createFieldConsumer(boolean)} and sub-class {@link FieldConsumer}
+     *             to alter rendering of hit fields.
      * @return an object mapper for the internal JsonFactory
      */
+    @Deprecated(forRemoval = true, since = "7") // TODO Vespa 8 make private
     protected static ObjectMapper createJsonCodec() {
         return new ObjectMapper().disable(FLUSH_AFTER_WRITE_VALUE);
     }
@@ -525,6 +529,13 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         this.fieldConsumer = generator == null ? null : createFieldConsumer(generator, debugRendering, jsonMaps);
     }
 
+    /** Override this method to use a custom {@link FieldConsumer} sub-class to render fields */
+    protected FieldConsumer createFieldConsumer(boolean debugRendering) {
+        return createFieldConsumer(generator, debugRendering, this.jsonMaps);
+    }
+
+    /** @deprecated Will be removed in Vespa 8. Use {@link #createFieldConsumer(boolean)} instead. */
+    @Deprecated(forRemoval = true, since = "7") // TODO Vespa 8 remove method
     protected FieldConsumer createFieldConsumer(JsonGenerator generator, boolean debugRendering) {
         return createFieldConsumer(generator, debugRendering, this.jsonMaps);
     }
@@ -554,12 +565,25 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         private MutableBoolean hasFieldsField;
 
+        /** @deprecated Will be removed in Vespa 8. Use {@link #FieldConsumer(boolean, boolean, boolean)} instead. */
+        @Deprecated(forRemoval = true, since = "7") // TODO Vespa 8 Remove
         public FieldConsumer(JsonGenerator generator, boolean debugRendering) {
             this(generator, debugRendering, false);
         }
+
+        /** @deprecated Will be removed in Vespa 8. Use {@link #FieldConsumer(boolean, boolean, boolean)} instead. */
+        @Deprecated(forRemoval = true, since = "7") // TODO Vespa 8 Remove
         public FieldConsumer(JsonGenerator generator, boolean debugRendering, boolean tensorShortForm) {
             this(generator, debugRendering, tensorShortForm, false);
         }
+
+        /** Invoke this from your constructor when sub-classing {@link FieldConsumer} */
+        protected FieldConsumer(boolean debugRendering, boolean tensorShortForm, boolean jsonMaps) {
+            this(null, debugRendering, tensorShortForm, jsonMaps);
+        }
+
+        /** @deprecated Will be removed in Vespa 8. Use {@link #FieldConsumer(boolean, boolean, boolean)} instead. */
+        @Deprecated(forRemoval = true, since = "7") // TODO Vespa 8 remove
         public FieldConsumer(JsonGenerator generator, boolean debugRendering, boolean tensorShortForm, boolean jsonMaps) {
             this.generator = generator;
             this.debugRendering = debugRendering;
@@ -578,14 +602,14 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         /** Call before rendering a field to the generator */
         void ensureFieldsField() throws IOException {
             if (hasFieldsField.get()) return;
-            generator.writeObjectFieldStart(FIELDS);
+            generator().writeObjectFieldStart(FIELDS);
             hasFieldsField.set(true);
         }
 
         /** Call after all fields in a hit to close the "fields" field of the JSON object */
         void endHitFields() throws IOException {
             if ( ! hasFieldsField.get()) return;
-            generator.writeEndObject();
+            generator().writeEndObject();
             this.hasFieldsField = null;
         }
 
@@ -594,7 +618,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             try {
                 if (shouldRender(name, value)) {
                     ensureFieldsField();
-                    generator.writeFieldName(name);
+                    generator().writeFieldName(name);
                     renderFieldContents(value);
                 }
             }
@@ -608,8 +632,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             try {
                 if (shouldRenderUtf8Value(name, length)) {
                     ensureFieldsField();
-                    generator.writeFieldName(name);
-                    generator.writeUTF8String(utf8Data, offset, length);
+                    generator().writeFieldName(name);
+                    generator().writeUTF8String(utf8Data, offset, length);
                 }
             }
             catch (IOException e) {
@@ -700,7 +724,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         private void renderInspectorDirect(Inspector data) throws IOException {
             StringBuilder intermediate = new StringBuilder();
             JsonRender.render(data, intermediate, true);
-            generator.writeRawValue(intermediate.toString());
+            generator().writeRawValue(intermediate.toString());
         }
 
         protected void renderFieldContents(Object field) throws IOException {
@@ -714,66 +738,73 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         @Override
         public void accept(Object field) throws IOException {
             if (field == null) {
-                generator.writeNull();
+                generator().writeNull();
             } else if (field instanceof Boolean) {
-                generator.writeBoolean((Boolean)field);
+                generator().writeBoolean((Boolean)field);
             } else if (field instanceof Number) {
                 renderNumberField((Number) field);
             } else if (field instanceof TreeNode) {
-                generator.writeTree((TreeNode) field);
+                generator().writeTree((TreeNode) field);
             } else if (field instanceof Tensor) {
                 renderTensor(Optional.of((Tensor)field));
             } else if (field instanceof FeatureData) {
-                generator.writeRawValue(((FeatureData)field).toJson(tensorShortForm));
+                generator().writeRawValue(((FeatureData)field).toJson(tensorShortForm));
             } else if (field instanceof Inspectable) {
                 renderInspectorDirect(((Inspectable)field).inspect());
             } else if (field instanceof JsonProducer) {
-                generator.writeRawValue(((JsonProducer) field).toJson());
+                generator().writeRawValue(((JsonProducer) field).toJson());
             } else if (field instanceof StringFieldValue) {
-                generator.writeString(((StringFieldValue)field).getString());
+                generator().writeString(((StringFieldValue)field).getString());
             } else if (field instanceof TensorFieldValue) {
                 renderTensor(((TensorFieldValue)field).getTensor());
             } else if (field instanceof FieldValue) {
                 // the null below is the field which has already been written
                 ((FieldValue) field).serialize(null, new JsonWriter(generator));
             } else {
-                generator.writeString(field.toString());
+                generator().writeString(field.toString());
             }
         }
 
         private void renderNumberField(Number field) throws IOException {
             if (field instanceof Integer) {
-                generator.writeNumber(field.intValue());
+                generator().writeNumber(field.intValue());
             }  else if (field instanceof Float) {
-                generator.writeNumber(field.floatValue());
+                generator().writeNumber(field.floatValue());
             }  else if (field instanceof Double) {
-                generator.writeNumber(field.doubleValue());
+                generator().writeNumber(field.doubleValue());
             } else if (field instanceof Long) {
-                generator.writeNumber(field.longValue());
+                generator().writeNumber(field.longValue());
             } else if (field instanceof Byte || field instanceof Short) {
-                generator.writeNumber(field.intValue());
+                generator().writeNumber(field.intValue());
             } else if (field instanceof BigInteger) {
-                generator.writeNumber((BigInteger) field);
+                generator().writeNumber((BigInteger) field);
             } else if (field instanceof BigDecimal) {
-                generator.writeNumber((BigDecimal) field);
+                generator().writeNumber((BigDecimal) field);
             } else {
-                generator.writeNumber(field.doubleValue());
+                generator().writeNumber(field.doubleValue());
             }
         }
 
         private void renderTensor(Optional<Tensor> tensor) throws IOException {
             if (tensor.isEmpty()) {
-                generator.writeStartObject();
-                generator.writeArrayFieldStart("cells");
-                generator.writeEndArray();
-                generator.writeEndObject();
+                generator().writeStartObject();
+                generator().writeArrayFieldStart("cells");
+                generator().writeEndArray();
+                generator().writeEndObject();
                 return;
             }
             if (tensorShortForm) {
-                generator.writeRawValue(new String(JsonFormat.encodeShortForm(tensor.get()), StandardCharsets.UTF_8));
+                generator().writeRawValue(new String(JsonFormat.encodeShortForm(tensor.get()), StandardCharsets.UTF_8));
             } else {
-                generator.writeRawValue(new String(JsonFormat.encode(tensor.get()), StandardCharsets.UTF_8));
+                generator().writeRawValue(new String(JsonFormat.encode(tensor.get()), StandardCharsets.UTF_8));
             }
+        }
+
+        private JsonGenerator generator() {
+            if (generator == null)
+                throw new UnsupportedOperationException("Generator required but not assigned. " +
+                        "All accept() methods must be overridden when sub-classing FieldConsumer");
+            return generator;
         }
 
     }
