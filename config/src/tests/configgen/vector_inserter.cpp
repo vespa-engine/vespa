@@ -100,8 +100,9 @@ TEST("require that vector of bool can be inserted") {
     ASSERT_TRUE(vector[2]);
 }
 
-TEST("require that vector of string can be inserted") {
-    std::vector<vespalib::string> vector;
+template<typename V>
+void
+verify_vector_strings_can_be_inserted(V vector) {
     Slime slime;
     Cursor & root = slime.setArray();
     root.addString("foo");
@@ -115,19 +116,9 @@ TEST("require that vector of string can be inserted") {
     ASSERT_EQUAL("baz", vector[2]);
 }
 
-TEST("require that vector of string can be inserted") {
-    StringVector vector;
-    Slime slime;
-    Cursor & root = slime.setArray();
-    root.addString("foo");
-    root.addString("bar");
-    root.addString("baz");
-    VectorInserter inserter(vector);
-    root.traverse(inserter);
-    ASSERT_EQUAL(3u, vector.size());
-    ASSERT_EQUAL("foo", vector[0]);
-    ASSERT_EQUAL("bar", vector[1]);
-    ASSERT_EQUAL("baz", vector[2]);
+TEST("require that different vectors of strings can be inserted") {
+    verify_vector_strings_can_be_inserted(std::vector<vespalib::string>());
+    verify_vector_strings_can_be_inserted(StringVector());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

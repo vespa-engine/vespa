@@ -8,7 +8,6 @@
 
 namespace config {
 
-//using StringVector = std::vector<vespalib::string>;
 using StringVector = std::vector<vespalib::string, vespalib::allocator_large<vespalib::string>>;
 using BoolVector = std::vector<bool>;
 using DoubleVector = std::vector<double>;
