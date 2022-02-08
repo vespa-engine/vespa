@@ -116,18 +116,30 @@ public class QueryProfileProperties extends Properties {
                     FieldDescription fieldDescription = type.getField(localName);
                     if (fieldDescription == null && type.isStrict())
                         throw new IllegalInputException("'" + localName + "' is not declared in " + type + ", and the type is strict");
-
                     // TODO: In addition to strictness, check legality along the way
 
                     if (fieldDescription != null) {
                         if (i == name.size() - 1) { // at the end of the path, check the assignment type
-                            value = fieldDescription.getType().convertFrom(value, new ConversionContext(localName,
-                                                                                                        profile.getRegistry(),
-                                                                                                        embedder,
-                                                                                                        context));
-                            if (value == null)
+                            var conversionContext = new ConversionContext(localName, profile.getRegistry(), embedder, context);
+                            var convertedValue = fieldDescription.getType().convertFrom(value, conversionContext);
+                            if (convertedValue == null
+                                && fieldDescription.getType() instanceof QueryProfileFieldType
+                                && ((QueryProfileFieldType) fieldDescription.getType()).getQueryProfileType() != null) {
+                                // Try the value of the query profile itself instead
+                                var queryProfileValueDescription = ((QueryProfileFieldType) fieldDescription.getType()).getQueryProfileType().getField("");
+                                if (queryProfileValueDescription != null) {
+                                    convertedValue = queryProfileValueDescription.getType().convertFrom(value, conversionContext);
+                                    if (convertedValue == null)
+                                        throw new IllegalInputException("'" + value + "' is neither a " +
+                                                                        fieldDescription.getType().toInstanceDescription() + " nor a " +
+                                                                        queryProfileValueDescription.getType().toInstanceDescription());
+                                }
+                            }
+                            else if (convertedValue == null)
                                 throw new IllegalInputException("'" + value + "' is not a " +
                                                                 fieldDescription.getType().toInstanceDescription());
+
+                            value = convertedValue;
                         }
                         else if (fieldDescription.getType() instanceof QueryProfileFieldType) {
                             // If a type is specified, use that instead of the type implied by the name

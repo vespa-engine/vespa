@@ -38,6 +38,7 @@ import com.yahoo.search.query.profile.DimensionValues;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
+import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
@@ -1118,6 +1119,20 @@ public class QueryTestCase {
             Query query = new Query("?query=foo", cRegistry.findQueryProfile("default"));
             assertEquals("xml", query.getPresentation().getFormat());
             assertTrue(query.getPresentation().getTensorShortForm());
+        }
+
+        {   // Set presentation.format with a typed query profile type
+            QueryProfileRegistry registry = new QueryProfileRegistry();
+            QueryProfileType type = new QueryProfileType("mytype");
+            type.inherited().add(registry.getType("native"));
+            registry.getTypeRegistry().register(type);
+            type.addField(new FieldDescription("ranking.features.query(embedding)", "tensor(x[5])"),
+                          registry.getTypeRegistry());
+            QueryProfile profile = new QueryProfile("default");
+            profile.setType(type);
+            registry.register(profile);
+            CompiledQueryProfileRegistry cRegistry = registry.compile();
+            Query query = new Query("?query=foo&presentation.format=xml", cRegistry.findQueryProfile("default"));
         }
     }
 
