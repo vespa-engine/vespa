@@ -20,8 +20,8 @@ public:
 
     ConfigKey(const ConfigKey &);
     ConfigKey & operator = (const ConfigKey &);
-    ConfigKey(ConfigKey &&) = default;
-    ConfigKey & operator = (ConfigKey &&) = default;
+    ConfigKey(ConfigKey &&) noexcept;
+    ConfigKey & operator = (ConfigKey &&) noexcept;
     ConfigKey();
     ~ConfigKey();
 
