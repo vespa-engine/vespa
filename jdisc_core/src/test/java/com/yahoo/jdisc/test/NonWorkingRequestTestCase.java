@@ -2,13 +2,11 @@
 package com.yahoo.jdisc.test;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Key;
-import com.google.inject.name.Names;
 import com.yahoo.jdisc.Request;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 
 
 /**
@@ -23,13 +21,14 @@ public class NonWorkingRequestTestCase {
 
     @Test
     public void requireThatGuiceModulesAreInjected() {
+        Object obj = new Object();
         Request request = NonWorkingRequest.newInstance("scheme://host/path", new AbstractModule() {
 
             @Override
             protected void configure() {
-                bind(String.class).annotatedWith(Names.named("foo")).toInstance("bar");
+                bind(Object.class).toInstance(obj);
             }
         });
-        assertEquals("bar", request.container().getInstance(Key.get(String.class, Names.named("foo"))));
+        assertSame(obj, request.container().getInstance(Object.class));
     }
 }

@@ -2,8 +2,6 @@
 package com.yahoo.jdisc.core;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Key;
-import com.google.inject.name.Names;
 import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.application.BindingMatch;
@@ -142,13 +140,11 @@ public class ContainerSnapshotTestCase {
             @Override
             protected void configure() {
                 bind(Object.class).toInstance(obj);
-                bind(String.class).annotatedWith(Names.named("foo")).toInstance("foo");
             }
         });
         ActiveContainer active = new ActiveContainer(driver.newContainerBuilder());
         ContainerSnapshot snapshot = new ContainerSnapshot(active, null, null, null);
         assertSame(obj, snapshot.getInstance(Object.class));
-        assertEquals("foo", snapshot.getInstance(Key.get(String.class, Names.named("foo"))));
         snapshot.release();
         assertTrue(driver.close());
     }
