@@ -330,9 +330,12 @@ public final class ConfiguredApplication implements Application {
         synchronized (monitor) {
             Set<ServerProvider> serversToClose = createIdentityHashSet(startedServers);
             serversToClose.removeAll(currentServers);
-            for (ServerProvider server : serversToClose) {
-                server.close();
-                startedServers.remove(server);
+            if (serversToClose.size() > 0) {
+                log.info(String.format("Closing %d server instances", serversToClose.size()));
+                for (ServerProvider server : serversToClose) {
+                    server.close();
+                    startedServers.remove(server);
+                }
             }
             for (ServerProvider server : currentServers) {
                 if (!startedServers.contains(server)) {
@@ -383,37 +386,35 @@ public final class ConfiguredApplication implements Application {
 
     @Override
     public void stop() {
+        log.info("Stop: Initiated");
         shutdownDeadline.schedule((long)(shutdownTimeoutS.get() * 1000), dumpHeapOnShutdownTimeout.get());
-        stopServersAndAwaitTermination("Stop");
+        stopServersAndAwaitTermination();
+        log.info("Stop: Finished");
     }
 
     private void prepareStop(Request request) {
+        log.info("PrepareStop: Initiated");
         long timeoutMillis = (long) (request.parameters().get(0).asDouble() * 1000);
         try (ShutdownDeadline ignored =
                      new ShutdownDeadline(configId).schedule(timeoutMillis, dumpHeapOnShutdownTimeout.get())) {
-            stopServersAndAwaitTermination("PrepareStop");
+            stopServersAndAwaitTermination();
+            log.info("PrepareStop: Finished");
         } catch (Exception e) {
             request.setError(ErrorCode.METHOD_FAILED, e.getMessage());
             throw e;
         }
     }
 
-    private void stopServersAndAwaitTermination(String logPrefix) {
+    private void stopServersAndAwaitTermination() {
         shutdownReconfigurer();
-        log.info(logPrefix + ": Closing servers");
         startAndStopServers(List.of());
         startAndRemoveClients(List.of());
-        log.info(logPrefix + ": Waiting for all in-flight requests to complete");
-        activateContainer(null, () -> {});
+        activateContainer(null, () -> log.info("Last active container generation has terminated"));
         nonTerminatedContainerTracker.arriveAndAwaitAdvance();
-        log.info(logPrefix + ": Finished");
     }
 
     private void shutdownReconfigurer() {
-        if (!reconfigurerThread.isAlive()) {
-            log.info("Reconfiguration thread shutdown already completed");
-            return;
-        }
+        if (!reconfigurerThread.isAlive()) return;
         log.info("Shutting down reconfiguration thread");
         long start = System.currentTimeMillis();
         shutdownReconfiguration = true;
@@ -421,7 +422,7 @@ public final class ConfiguredApplication implements Application {
         try {
             reconfigurerThread.join();
             log.info(String.format(
-                    "Reconfiguration shutdown completed in %.3f seconds", (System.currentTimeMillis() - start) / 1000D));
+                    "Reconfiguration thread shutdown completed in %.3f seconds", (System.currentTimeMillis() - start) / 1000D));
         } catch (InterruptedException e) {
             String message = "Interrupted while waiting for reconfiguration shutdown";
             log.warning(message);
