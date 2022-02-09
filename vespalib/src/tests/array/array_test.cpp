@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/util/size_literals.h>
 #include <deque>
@@ -26,6 +27,11 @@ std::ostream & operator << (std::ostream & os, const Array<T> & a)
 }
 
 }
+
+using alloc::Alloc;
+using alloc::MemoryAllocator;
+using MyMemoryAllocator = vespalib::alloc::test::MemoryAllocatorObserver;
+using AllocStats = MyMemoryAllocator::Stats;
 
 class Clever {
 public:
@@ -349,6 +355,48 @@ TEST_F("require that try_unreserve() succeedes if mmap can be shrinked", Unreser
     EXPECT_EQUAL(1_Ki, f.arr.capacity());
     int *newPtr = &f.arr[0];
     EXPECT_EQUAL(oldPtr, newPtr);
+}
+
+struct Fixture {
+    AllocStats stats;
+    std::unique_ptr<MemoryAllocator> allocator;
+    Alloc initial_alloc;
+    Array<int> arr;
+
+    Fixture();
+    ~Fixture();
+};
+
+Fixture::Fixture()
+    : stats(),
+      allocator(std::make_unique<MyMemoryAllocator>(stats)),
+      initial_alloc(Alloc::alloc_with_allocator(allocator.get())),
+      arr(initial_alloc)
+{
+}
+
+Fixture::~Fixture() = default;
+
+TEST_F("require that memory allocator can be set", Fixture)
+{
+    f.arr.resize(1);
+    EXPECT_EQUAL(AllocStats(1, 0), f.stats);
+}
+
+TEST_F("require that memory allocator is preserved across reset", Fixture)
+{
+    f.arr.resize(1);
+    f.arr.reset();
+    f.arr.resize(1);
+    EXPECT_EQUAL(AllocStats(2, 1), f.stats);
+}
+
+TEST_F("require that created array uses same memory allocator", Fixture)
+{
+    auto arr2 = f.arr.create();
+    EXPECT_EQUAL(AllocStats(0, 0), f.stats);
+    arr2.resize(1);
+    EXPECT_EQUAL(AllocStats(1, 0), f.stats);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

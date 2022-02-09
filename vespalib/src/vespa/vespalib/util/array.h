@@ -135,6 +135,7 @@ public:
         std::destroy(array(0), array(_sz));
         _sz = 0;
     }
+    void reset();
     bool empty() const                      { return _sz == 0; }
     T & operator [] (size_t i)              { return *array(i); }
     const T & operator [] (size_t i) const  { return *array(i); }
@@ -145,6 +146,7 @@ public:
         rhs._sz = 0;
         return std::move(rhs._array);
     }
+    Array<T> create() const;
 private:
     T *       array(size_t i)       { return static_cast<T *>(_array.get()) + i; }
     const T * array(size_t i) const { return static_cast<const T *>(_array.get()) + i; }
