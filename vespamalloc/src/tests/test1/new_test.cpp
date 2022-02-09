@@ -3,6 +3,7 @@
 #include <vespa/log/log.h>
 #include <malloc.h>
 #include <dlfcn.h>
+#include <functional>
 
 LOG_SETUP("new_test");
 
@@ -133,28 +134,14 @@ void verify_vespamalloc_usable_size() {
     }
 }
 
-enum class MallocLibrary { UNKNOWN, VESPA_MALLOC, VESPA_MALLOC_D};
-
-MallocLibrary
-detectLibrary() {
-    if (dlsym(RTLD_NEXT, "is_vespamallocd") != nullptr) {
-        // Debug variants will never have more memory available as there is pre/postamble for error detection.
-        return MallocLibrary::VESPA_MALLOC_D;
-    } else if (dlsym(RTLD_NEXT, "is_vespamalloc") != nullptr) {
-        return MallocLibrary::VESPA_MALLOC;
-    }
-    return MallocLibrary::UNKNOWN;
-}
-
 TEST("verify malloc_usable_size is sane") {
     constexpr size_t SZ = 33;
     std::unique_ptr<char[]> buf = std::make_unique<char[]>(SZ);
     size_t usable_size = malloc_usable_size(buf.get());
-    MallocLibrary env = detectLibrary();
-    if (env == MallocLibrary::VESPA_MALLOC_D) {
+    if (dlsym(RTLD_NEXT, "is_vespamallocd") != nullptr) {
         // Debug variants will never have more memory available as there is pre/postamble for error detection.
         EXPECT_EQUAL(SZ, usable_size);
-    } else if (env == MallocLibrary::VESPA_MALLOC) {
+    } else if (dlsym(RTLD_NEXT, "is_vespamalloc") != nullptr) {
         // Normal production vespamalloc will round up
         EXPECT_EQUAL(64u, usable_size);
         verify_vespamalloc_usable_size();
@@ -162,14 +149,6 @@ TEST("verify malloc_usable_size is sane") {
         // Non vespamalloc implementations we can not say anything about
         EXPECT_GREATER_EQUAL(usable_size, SZ);
     }
-}
-
-TEST("verify mallopt") {
-    MallocLibrary env = detectLibrary();
-    if (env == MallocLibrary::UNKNOWN) return;
-    EXPECT_EQUAL(0, mallopt(M_MMAP_MAX, 0x1000000));
-    EXPECT_EQUAL(1, mallopt(M_MMAP_THRESHOLD, 0x1000000));
-    EXPECT_EQUAL(1, mallopt(M_MMAP_THRESHOLD, -1));
 }
 
 
