@@ -13,6 +13,7 @@ import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
+import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnection;
 import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnectorLocalPort;
 
@@ -27,7 +28,7 @@ class HttpRequestFactory {
             HttpRequest httpRequest = HttpRequest.newServerRequest(
                     container,
                     getUri(servletRequest),
-                    HttpRequest.Method.valueOf(servletRequest.getMethod()),
+                    getMethod(servletRequest),
                     HttpRequest.Version.fromString(servletRequest.getProtocol()),
                     new InetSocketAddress(servletRequest.getRemoteAddr(), servletRequest.getRemotePort()),
                     getConnection((Request) servletRequest).getCreatedTimeStamp());
@@ -36,6 +37,15 @@ class HttpRequestFactory {
             return httpRequest;
         } catch (Utf8Appendable.NotUtf8Exception e) {
             throw createBadQueryException(e);
+        }
+    }
+
+    private static HttpRequest.Method getMethod(HttpServletRequest servletRequest) {
+        String method = servletRequest.getMethod();
+        try {
+            return HttpRequest.Method.valueOf(method);
+        } catch (IllegalArgumentException e) {
+            throw new RequestException(METHOD_NOT_ALLOWED, "Invalid method '" + method + "'");
         }
     }
 
