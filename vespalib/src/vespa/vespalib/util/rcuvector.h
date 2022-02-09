@@ -122,6 +122,7 @@ public:
     void reset();
     void shrink(size_t newSize) __attribute__((noinline));
     void replaceVector(ArrayType replacement);
+    ArrayType create_replacement_vector() const { return _data.create(); }
 };
 
 template <typename T>

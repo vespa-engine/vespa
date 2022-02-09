@@ -42,7 +42,7 @@ template <typename T>
 void
 RcuVectorBase<T>::reset() {
     // Assumes no readers at this moment
-    ArrayType().swap(_data);
+    _data.reset();
     _data.reserve(16);
 }
 
@@ -52,7 +52,7 @@ RcuVectorBase<T>::~RcuVectorBase() = default;
 template <typename T>
 void
 RcuVectorBase<T>::expand(size_t newCapacity) {
-    ArrayType tmpData;
+    auto tmpData = create_replacement_vector();
     tmpData.reserve(newCapacity);
     for (const T & v : _data) {
         tmpData.push_back_fast(v);
@@ -91,7 +91,7 @@ RcuVectorBase<T>::shrink(size_t newSize)
         return;
     }
     if (!_data.try_unreserve(wantedCapacity)) {
-        ArrayType tmpData;
+        auto tmpData = create_replacement_vector();
         tmpData.reserve(wantedCapacity);
         tmpData.resize(newSize);
         for (uint32_t i = 0; i < newSize; ++i) {

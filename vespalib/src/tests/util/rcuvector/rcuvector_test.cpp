@@ -1,10 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/util/rcuvector.h>
 #include <vespa/vespalib/util/size_literals.h>
 
 using namespace vespalib;
+
+using vespalib::alloc::Alloc;
+using vespalib::alloc::MemoryAllocator;
+using MyMemoryAllocator = vespalib::alloc::test::MemoryAllocatorObserver;
+using AllocStats = MyMemoryAllocator::Stats;
 
 bool
 assertUsage(const MemoryUsage & exp, const MemoryUsage & act)
@@ -286,6 +292,72 @@ TEST("test small expand")
     EXPECT_EQUAL(2u, v.size());
     g.transferHoldLists(1);
     g.trimHoldLists(2);
+}
+
+struct Fixture {
+    using generation_t = GenerationHandler::generation_t;
+
+    AllocStats stats;
+    std::unique_ptr<MemoryAllocator> allocator;
+    Alloc initial_alloc;
+    GenerationHolder g;
+    RcuVectorBase<int> arr;
+
+    Fixture();
+    ~Fixture();
+    void transfer_and_trim(generation_t transfer_gen, generation_t trim_gen)
+    {
+        g.transferHoldLists(transfer_gen);
+        g.trimHoldLists(trim_gen);
+    }
+};
+
+Fixture::Fixture()
+    : stats(),
+      allocator(std::make_unique<MyMemoryAllocator>(stats)),
+      initial_alloc(Alloc::alloc_with_allocator(allocator.get())),
+      g(),
+      arr(g, initial_alloc)
+{
+    arr.reserve(100);
+}
+
+Fixture::~Fixture() = default;
+
+TEST_F("require that memory allocator can be set", Fixture)
+{
+    EXPECT_EQUAL(AllocStats(2, 0), f.stats);
+    f.transfer_and_trim(1, 2);
+    EXPECT_EQUAL(AllocStats(2, 1), f.stats);
+}
+
+TEST_F("require that memory allocator is preserved across reset", Fixture)
+{
+    f.arr.reset();
+    f.arr.reserve(100);
+    EXPECT_EQUAL(AllocStats(4, 1), f.stats);
+    f.transfer_and_trim(1, 2);
+    EXPECT_EQUAL(AllocStats(4, 3), f.stats);
+}
+
+TEST_F("require that created replacement vector uses same memory allocator", Fixture)
+{
+    auto arr2 = f.arr.create_replacement_vector();
+    EXPECT_EQUAL(AllocStats(2, 0), f.stats);
+    arr2.reserve(100);
+    EXPECT_EQUAL(AllocStats(3, 0), f.stats);
+    f.transfer_and_trim(1, 2);
+    EXPECT_EQUAL(AllocStats(3, 1), f.stats);
+}
+
+TEST_F("require that ensure_size and shrink use same memory allocator", Fixture)
+{
+    f.arr.ensure_size(2000);
+    EXPECT_EQUAL(AllocStats(3, 0), f.stats);
+    f.arr.shrink(1000);
+    EXPECT_EQUAL(AllocStats(4, 0), f.stats);
+    f.transfer_and_trim(1, 2);
+    EXPECT_EQUAL(AllocStats(4, 3), f.stats);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
