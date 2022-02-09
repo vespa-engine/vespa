@@ -3,6 +3,7 @@
 #include <vespa/log/log.h>
 #include <malloc.h>
 #include <dlfcn.h>
+#include <functional>
 
 LOG_SETUP("new_test");
 
