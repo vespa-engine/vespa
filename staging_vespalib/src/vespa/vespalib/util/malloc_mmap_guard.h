@@ -7,7 +7,9 @@ namespace vespalib {
 
 /**
  * Provides a hint to malloc implementation that all allocations in the scope of this guard
- * will use mmap directly for allocation larger than the givem limit.
+ * will use mmap directly for allocation larger than the given limit.
+ * NB !! Note that guards can not be nested. Intention is to use around third party libraries where
+ * you do not control allocation yourself.
  * The effect is implementation dependent. vespamalloc applies this only for the calling thread.
  **/
 class MallocMmapGuard
@@ -24,4 +26,3 @@ private:
 };
 
 } // namespace vespalib
-

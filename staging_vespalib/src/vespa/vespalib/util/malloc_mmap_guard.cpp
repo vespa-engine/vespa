@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "malloc_mmap_guard.h"
+#include <vespa/vespalib/util/size_literals.h>
 #include <malloc.h>
 #include <limits>
 #include <cassert>
@@ -16,7 +17,7 @@ MallocMmapGuard::MallocMmapGuard(size_t mmapLimit) :
 MallocMmapGuard::~MallocMmapGuard()
 {
     assert(_threadId == std::this_thread::get_id());
-    mallopt(M_MMAP_THRESHOLD, -1);
+    mallopt(M_MMAP_THRESHOLD, 1_Gi);
 }
 
 }

@@ -86,7 +86,7 @@ mallocHelper(size_t exactSize,
 template <typename MemBlockPtrT, typename ThreadStatT >
 ThreadPoolT<MemBlockPtrT, ThreadStatT>::ThreadPoolT() :
     _allocPool(nullptr),
-    _mmapLimit(-1),
+    _mmapLimit(0x40000000),
     _threadId(0),
     _osThreadId(0)
 {
