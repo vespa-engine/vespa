@@ -189,6 +189,8 @@ GetConfig::Main()
       std::ostringstream tmp;
       tmp << getenv("VESPA_HOME");
       tmp << "/share/vespa/configdefinitions/";
+      tmp << defNamespace;
+      tmp << ".";
       tmp << defName;
       tmp << ".def";
       schema = tmp.str();
