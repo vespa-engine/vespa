@@ -48,7 +48,8 @@ public final class StatementExpression extends ExpressionList<Expression> {
             if (expression instanceof OutputExpression)
                 outputField = ((OutputExpression)expression).getFieldName();
         }
-        context.setOutputField(outputField);
+        if (outputField != null)
+            context.setOutputField(outputField);
         for (Expression expression : this)
             context.execute(expression);
     }

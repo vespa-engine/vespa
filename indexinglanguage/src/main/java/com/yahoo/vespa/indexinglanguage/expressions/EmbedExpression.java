@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
+import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
@@ -33,7 +34,7 @@ public class EmbedExpression extends Expression  {
 
     @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
-        targetType = ((TensorDataType)field.getDataType()).getTensorType();
+        targetType = toTargetTensor(field.getDataType());
         destination = documentType.getName() + "." + field.getName();
     }
 
@@ -52,17 +53,21 @@ public class EmbedExpression extends Expression  {
         if (outputField == null)
             throw new VerificationException(this, "No output field in this statement: " +
                                                   "Don't know what tensor type to embed into.");
-        DataType outputFieldType = context.getInputType(this, outputField);
-        if ( ! (outputFieldType instanceof TensorDataType) )
-            throw new VerificationException(this, "The type of the output field " + outputField +
-                                                  " is not a tensor but " + outputField);
-        targetType = ((TensorDataType) outputFieldType).getTensorType();
+        targetType = toTargetTensor(context.getInputType(this, outputField));
         context.setValueType(createdOutputType());
     }
 
     @Override
     public DataType createdOutputType() {
         return new TensorDataType(targetType);
+    }
+
+    private static TensorType toTargetTensor(DataType dataType) {
+        if (dataType instanceof ArrayDataType) return toTargetTensor(((ArrayDataType) dataType).getNestedType());
+        if  ( ! ( dataType instanceof TensorDataType))
+            throw new IllegalArgumentException("Expected a tensor data type but got " + dataType);
+        return ((TensorDataType)dataType).getTensorType();
+
     }
 
     @Override

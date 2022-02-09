@@ -7,6 +7,7 @@ import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
+import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
@@ -22,7 +23,7 @@ public class HashExpression extends Expression  {
 
     private final HashFunction hasher = Hashing.sipHash24();
 
-    /** The target type we are hashing into. */
+    /** The target *primitive* type we are hashing into. */
     private DataType targetType;
 
     public HashExpression() {
@@ -35,8 +36,8 @@ public class HashExpression extends Expression  {
             throw new IllegalArgumentException("Cannot use the hash function on an indexing statement for " +
                                                field.getName() +
                                                ": The hash function can only be used when the target field " +
-                                               "is int or long, not " + field.getDataType());
-        targetType = field.getDataType();
+                                               "is int or long or an array of int or long, not " + field.getDataType());
+        targetType = primitiveTypeOf(field.getDataType());
     }
 
     @Override
@@ -68,20 +69,24 @@ public class HashExpression extends Expression  {
         if ( ! canStoreHash(outputFieldType))
             throw new VerificationException(this, "The type of the output field " + outputField +
                                                   " is not int or long but " + outputFieldType);
-        targetType = outputFieldType;
+        targetType = primitiveTypeOf(outputFieldType);
         context.setValueType(createdOutputType());
     }
 
     private boolean canStoreHash(DataType type) {
         if (type.equals(DataType.INT)) return true;
         if (type.equals(DataType.LONG)) return true;
+        if (type instanceof ArrayDataType) return canStoreHash(((ArrayDataType)type).getNestedType());
         return false;
     }
 
-    @Override
-    public DataType createdOutputType() {
-        return targetType;
+    private static DataType primitiveTypeOf(DataType type) {
+        if (type instanceof ArrayDataType) return ((ArrayDataType)type).getNestedType();
+        return type;
     }
+
+    @Override
+    public DataType createdOutputType() { return targetType; }
 
     @Override
     public String toString() { return "hash"; }

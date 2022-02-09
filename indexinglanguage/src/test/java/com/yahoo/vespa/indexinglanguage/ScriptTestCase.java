@@ -1,12 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
+import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.TensorDataType;
+import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.language.process.Embedder;
@@ -120,6 +123,34 @@ public class ScriptTestCase {
         assertEquals(-1425622096, adapter.values.get("myInt").getWrappedValue());
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testIntArrayHash() throws ParseException {
+        var expression = Expression.fromString("input myTextArray | for_each { hash } | attribute 'myIntArray'");
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myTextArray", new ArrayDataType(DataType.STRING)));
+        var intField = new Field("myIntArray", new ArrayDataType(DataType.INT));
+        adapter.createField(intField);
+        var array = new Array<StringFieldValue>(new ArrayDataType(DataType.STRING));
+        array.add(new StringFieldValue("first"));
+        array.add(new StringFieldValue("second"));
+        adapter.setValue("myTextArray", array);
+        expression.setStatementOutput(new DocumentType("myDocument"), intField);
+
+        // Necessary to resolve output type
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(new ArrayDataType(DataType.INT), expression.verify(verificationContext));
+
+        ExecutionContext context = new ExecutionContext(adapter);
+        context.setValue(array);
+        expression.execute(context);
+        assertTrue(adapter.values.containsKey("myIntArray"));
+        var intArray = (Array<IntegerFieldValue>)adapter.values.get("myIntArray");
+        assertEquals(  368658787, intArray.get(0).getInteger());
+        assertEquals(-1382874952, intArray.get(1).getInteger());
+    }
+
     @Test
     public void testLongHash() throws ParseException {
         var expression = Expression.fromString("input myText | hash | attribute 'myLong'");
@@ -166,6 +197,39 @@ public class ScriptTestCase {
         assertTrue(adapter.values.containsKey("myTensor"));
         assertEquals(Tensor.from(tensorType, "[7,3,0,0]"),
                      ((TensorFieldValue)adapter.values.get("myTensor")).getTensor().get());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testArrayEmbed() throws ParseException {
+        TensorType tensorType = TensorType.fromSpec("tensor(d[4])");
+        var expression = Expression.fromString("input myTextArray | for_each { embed } | attribute 'myTensorArray'",
+                                               new SimpleLinguistics(),
+                                               new MockEmbedder("myDocument.myTensorArray"));
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myTextArray", new ArrayDataType(DataType.STRING)));
+
+        var tensorField = new Field("myTensorArray", new ArrayDataType(new TensorDataType(tensorType)));
+        adapter.createField(tensorField);
+
+        var array = new Array<StringFieldValue>(new ArrayDataType(DataType.STRING));
+        array.add(new StringFieldValue("first"));
+        array.add(new StringFieldValue("second"));
+        adapter.setValue("myTextArray", array);
+        expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
+
+        // Necessary to resolve output type
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(new ArrayDataType(new TensorDataType(tensorType)), expression.verify(verificationContext));
+
+        ExecutionContext context = new ExecutionContext(adapter);
+        context.setValue(array);
+        expression.execute(context);
+        assertTrue(adapter.values.containsKey("myTensorArray"));
+        var tensorArray = (Array<TensorFieldValue>)adapter.values.get("myTensorArray");
+        assertEquals(Tensor.from(tensorType, "[7,3,0,0]"), tensorArray.get(0).getTensor().get());
+        assertEquals(Tensor.from(tensorType, "[7,3,0,0]"), tensorArray.get(1).getTensor().get());
     }
 
     private static class MockEmbedder implements Embedder {
