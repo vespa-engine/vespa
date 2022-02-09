@@ -25,6 +25,7 @@ public:
     }
     size_t getMaxNumThreads() const override { return _threadList.getMaxNumThreads(); }
 
+    int mallopt(int param, int value);
     void *malloc(size_t sz);
     void *malloc(size_t sz, std::align_val_t);
     void *realloc(void *oldPtr, size_t sz);
@@ -149,6 +150,11 @@ void MemoryManager<MemBlockPtrT, ThreadListT>::info(FILE * os, size_t level)
 }
 
 template <typename MemBlockPtrT, typename ThreadListT>
+int MemoryManager<MemBlockPtrT, ThreadListT>::mallopt(int param, int value) {
+    return _threadList.getCurrent().mallopt(param, value);
+}
+
+template <typename MemBlockPtrT, typename ThreadListT>
 void * MemoryManager<MemBlockPtrT, ThreadListT>::malloc(size_t sz)
 {
     MemBlockPtrT mem;
@@ -205,7 +211,7 @@ void MemoryManager<MemBlockPtrT, ThreadListT>::freeSC(void *ptr, SizeClassT sc)
 template <typename MemBlockPtrT, typename ThreadListT>
 void * MemoryManager<MemBlockPtrT, ThreadListT>::realloc(void *oldPtr, size_t sz)
 {
-    void *ptr(NULL);
+    void *ptr(nullptr);
     if (oldPtr) {
         MemBlockPtrT mem(oldPtr);
         mem.readjustAlignment(_segment);

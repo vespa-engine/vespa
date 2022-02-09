@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespamalloc/malloc/threadpool.h>
+#include <malloc.h>
 
 namespace vespamalloc {
 
@@ -85,6 +86,7 @@ mallocHelper(size_t exactSize,
 template <typename MemBlockPtrT, typename ThreadStatT >
 ThreadPoolT<MemBlockPtrT, ThreadStatT>::ThreadPoolT() :
     _allocPool(nullptr),
+    _mmapLimit(-1),
     _threadId(0),
     _osThreadId(0)
 {
@@ -92,6 +94,15 @@ ThreadPoolT<MemBlockPtrT, ThreadStatT>::ThreadPoolT() :
 
 template <typename MemBlockPtrT, typename ThreadStatT >
 ThreadPoolT<MemBlockPtrT, ThreadStatT>::~ThreadPoolT() = default;
+
+template <typename MemBlockPtrT, typename ThreadStatT >
+int ThreadPoolT<MemBlockPtrT, ThreadStatT>::mallopt(int param, int value) {
+    if (param == M_MMAP_THRESHOLD) {
+        _mmapLimit = value;
+        return 1;
+    }
+    return 0;
+}
 
 template <typename MemBlockPtrT, typename ThreadStatT >
 void ThreadPoolT<MemBlockPtrT, ThreadStatT>::malloc(size_t sz, MemBlockPtrT & mem)

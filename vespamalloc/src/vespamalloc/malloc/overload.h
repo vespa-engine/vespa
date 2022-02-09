@@ -4,7 +4,7 @@
 #include <dlfcn.h>
 #include <errno.h>
 #include <new>
-#include <stdlib.h>
+#include <cstdlib>
 #include <malloc.h>
 
 class CreateAllocator
@@ -139,6 +139,11 @@ struct mallinfo mallinfo() __THROW {
     return info;
 }
 #endif
+
+int mallopt(int param, int value) throw() __attribute((visibility("default")));
+int mallopt(int param, int value) throw() {
+    return vespamalloc::createAllocator()->mallopt(param, value);
+}
 
 void * malloc(size_t sz) __attribute((visibility("default")));
 void * malloc(size_t sz) {
