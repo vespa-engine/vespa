@@ -168,29 +168,26 @@ struct FastCells {
     static constexpr size_t elem_size = sizeof(T);
     size_t capacity;
     size_t size;
-    void *memory;
+    mutable alloc::Alloc memory;
     FastCells(size_t initial_capacity)
         : capacity(roundUp2inN(initial_capacity)),
           size(0),
-          memory(malloc(elem_size * capacity))
+          memory(alloc::Alloc::alloc(elem_size * capacity))
     {
         static_assert(std::is_trivially_copyable_v<T>);
         static_assert(can_skip_destruction<T>::value);
     }
-    ~FastCells() {
-        free(memory);
-    }
+    ~FastCells() = default;
     void ensure_free(size_t need) {
         if (__builtin_expect((size + need) > capacity, false)) {
             capacity = roundUp2inN(size + need);
-            void *new_memory = malloc(elem_size * capacity);
-            memcpy(new_memory, memory, elem_size * size);
-            free(memory);
-            memory = new_memory;
+            alloc::Alloc new_memory = alloc::Alloc::alloc(elem_size * capacity);
+            memcpy(new_memory.get(), memory.get(), elem_size * size);
+            memory = std::move(new_memory);
         }
     }
     constexpr T *get(size_t offset) const {
-        return reinterpret_cast<T*>(memory) + offset;
+        return reinterpret_cast<T*>(memory.get()) + offset;
     }
     void push_back_fast(T value) {
         *get(size++) = value;
@@ -245,7 +242,7 @@ struct FastValue final : Value, ValueBuilder<T> {
             // not called
             abort();
         } else {
-            return TypedCells(my_cells.memory, get_cell_type<T>(), my_cells.size);
+            return TypedCells(my_cells.memory.get(), get_cell_type<T>(), my_cells.size);
         }
     }
     void add_mapping(ConstArrayRef<vespalib::stringref> addr) {
@@ -328,7 +325,7 @@ struct FastDenseValue final : Value, ValueBuilder<T> {
     ~FastDenseValue() override;
     const ValueType &type() const override { return my_type; }
     const Value::Index &index() const override { return TrivialIndex::get(); }
-    TypedCells cells() const override { return TypedCells(my_cells.memory, get_cell_type<T>(), my_cells.size); }
+    TypedCells cells() const override { return TypedCells(my_cells.memory.get(), get_cell_type<T>(), my_cells.size); }
     ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref>) override {
         return ArrayRef<T>(my_cells.get(0), my_cells.size);
     }
