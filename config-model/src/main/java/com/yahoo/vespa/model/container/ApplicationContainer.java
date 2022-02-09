@@ -29,7 +29,6 @@ public final class ApplicationContainer extends Container implements
     private final boolean isHostedVespa;
     private final boolean enableServerOcspStapling;
     private final boolean useQrserverServiceName;
-    private final boolean enablePreshutdownCommand;
 
     public ApplicationContainer(AbstractConfigProducer<?> parent, String name, int index, DeployState deployState) {
         this(parent, name, false, index, deployState);
@@ -40,7 +39,6 @@ public final class ApplicationContainer extends Container implements
         this.isHostedVespa = deployState.isHosted();
         this.enableServerOcspStapling = deployState.featureFlags().enableServerOcspStapling();
         this.useQrserverServiceName = deployState.featureFlags().useQrserverServiceName();
-        this.enablePreshutdownCommand = deployState.featureFlags().enableJdiscPreshutdownCommand();
 
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.NetworkMultiplexerHolder"));
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.NetworkMultiplexerProvider"));
@@ -109,7 +107,6 @@ public final class ApplicationContainer extends Container implements
 
     @Override
     public Optional<String> getPreShutdownCommand() {
-        if (!enablePreshutdownCommand) return Optional.empty();
         int preshutdownTimeoutSeconds = 360;
         int rpcTimeoutSeconds = preshutdownTimeoutSeconds + 10;
         String rpcParams = "-t " + rpcTimeoutSeconds + " tcp/localhost:" + getRpcPort() + " prepareStop d:" + preshutdownTimeoutSeconds;
