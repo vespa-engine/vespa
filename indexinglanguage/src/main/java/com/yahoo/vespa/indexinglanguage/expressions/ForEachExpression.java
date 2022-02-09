@@ -52,28 +52,35 @@ public final class ForEachExpression extends CompositeExpression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValueType();
-        if (input instanceof ArrayDataType || input instanceof WeightedSetDataType) {
-            context.setValueType(((CollectionDataType)input).getNestedType()).execute(exp);
-            if (input instanceof ArrayDataType) {
+        DataType valueType = context.getValueType();
+        if (valueType instanceof ArrayDataType || valueType instanceof WeightedSetDataType) {
+            // Set type for block evaluation
+            context.setValueType(((CollectionDataType)valueType).getNestedType());
+
+            // Evaluate block, which sets value>Type to the output of the block
+            context.execute(exp);
+
+            // Value type outside block becomes the collection type having the block output type as argument
+            if (valueType instanceof ArrayDataType) {
                 context.setValueType(DataType.getArray(context.getValueType()));
             } else {
-                WeightedSetDataType wset = (WeightedSetDataType)input;
+                WeightedSetDataType wset = (WeightedSetDataType)valueType;
                 context.setValueType(DataType.getWeightedSet(context.getValueType(), wset.createIfNonExistent(), wset.removeIfZero()));
             }
-        } else if (input instanceof StructDataType) {
-            for (Field field : ((StructDataType)input).getFields()) {
+        }
+        else if (valueType instanceof StructDataType) {
+            for (Field field : ((StructDataType)valueType).getFields()) {
                 DataType fieldType = field.getDataType();
-                DataType valueType = context.setValueType(fieldType).execute(exp).getValueType();
-                if (!fieldType.isAssignableFrom(valueType)) {
+                DataType structValueType = context.setValueType(fieldType).execute(exp).getValueType();
+                if (!fieldType.isAssignableFrom(structValueType))
                     throw new VerificationException(this, "Expected " + fieldType.getName() + " output, got " +
-                                                          valueType.getName() + ".");
-                }
+                                                          structValueType.getName() + ".");
             }
-            context.setValueType(input);
-        } else {
+            context.setValueType(valueType);
+        }
+        else {
             throw new VerificationException(this, "Expected Array, Struct or WeightedSet input, got " +
-                                                  input.getName() + ".");
+                                                  valueType.getName() + ".");
         }
     }
 
