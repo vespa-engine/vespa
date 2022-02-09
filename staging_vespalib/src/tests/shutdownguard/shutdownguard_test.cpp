@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/shutdownguard.h>
+#include <vespa/vespalib/util/malloc_mmap_guard.h>
 #include <thread>
 #include <unistd.h>
 #include <sys/wait.h>
@@ -8,12 +9,8 @@
 
 using namespace vespalib;
 
-TEST_SETUP(Test);
-
-int
-Test::Main()
+TEST("test shutdown guard")
 {
-    TEST_INIT("shutdownguard_test");
     {
         ShutdownGuard farFuture(1000000s);
         std::this_thread::sleep_for(20ms);
@@ -37,5 +34,10 @@ Test::Main()
         }
         EXPECT_TRUE(i < 800);
     }
-    TEST_DONE();
 }
+
+TEST("test malloc mmap guard") {
+    MallocMmapGuard guard(0x100000);
+}
+
+TEST_MAIN() { TEST_RUN_ALL(); }

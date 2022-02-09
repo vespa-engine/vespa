@@ -5,6 +5,7 @@ vespa_add_library(staging_vespalib_vespalib_util OBJECT
     bits.cpp
     clock.cpp
     crc.cpp
+    document_runnable.cpp
     doom.cpp
     foregroundtaskexecutor.cpp
     growablebytebuffer.cpp
@@ -12,10 +13,10 @@ vespa_add_library(staging_vespalib_vespalib_util OBJECT
     jsonexception.cpp
     jsonstream.cpp
     jsonwriter.cpp
+    malloc_mmap_guard.cpp
     process_memory_stats.cpp
     programoptions.cpp
     programoptions_testutils.cpp
-    document_runnable.cpp
     rusage.cpp
     sequencedtaskexecutor.cpp
     sequencedtaskexecutorobserver.cpp

@@ -19,6 +19,7 @@ public:
     void setPool(AllocPool & pool) {
         _allocPool = & pool;
     }
+    int mallopt(int param, int value);
     void malloc(size_t sz, MemBlockPtrT & mem);
     void free(MemBlockPtrT mem, SizeClassT sc);
 
@@ -65,6 +66,7 @@ private:
     static constexpr bool alwaysReuse(SizeClassT sc) { return sc > ALWAYS_REUSE_SC_LIMIT; }
 
     AllocPool   * _allocPool;
+    ssize_t       _mmapLimit;
     AllocFree     _memList[NUM_SIZE_CLASSES];
     ThreadStatT   _stat[NUM_SIZE_CLASSES];
     uint32_t      _threadId;
