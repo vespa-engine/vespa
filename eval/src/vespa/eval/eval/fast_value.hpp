@@ -169,23 +169,16 @@ struct FastCells {
     size_t capacity;
     size_t size;
     mutable alloc::Alloc memory;
-    FastCells(size_t initial_capacity)
-        : capacity(roundUp2inN(initial_capacity)),
-          size(0),
-          memory(alloc::Alloc::alloc(elem_size * capacity))
-    {
-        static_assert(std::is_trivially_copyable_v<T>);
-        static_assert(can_skip_destruction<T>::value);
-    }
-    ~FastCells() = default;
+    FastCells(size_t initial_capacity);
+    FastCells(const FastCells &) = delete;
+    FastCells & operator = (const FastCells &) = delete;
+    ~FastCells();
     void ensure_free(size_t need) {
         if (__builtin_expect((size + need) > capacity, false)) {
-            capacity = roundUp2inN(size + need);
-            alloc::Alloc new_memory = alloc::Alloc::alloc(elem_size * capacity);
-            memcpy(new_memory.get(), memory.get(), elem_size * size);
-            memory = std::move(new_memory);
+            reallocate(need);
         }
     }
+    void reallocate(size_t need);
     constexpr T *get(size_t offset) const {
         return reinterpret_cast<T*>(memory.get()) + offset;
     }
@@ -205,6 +198,28 @@ struct FastCells {
         return usage;
     }
 };
+
+template <typename T>
+FastCells<T>::FastCells(size_t initial_capacity)
+    : capacity(roundUp2inN(initial_capacity)),
+      size(0),
+      memory(alloc::Alloc::alloc(elem_size * capacity))
+{
+    static_assert(std::is_trivially_copyable_v<T>);
+    static_assert(can_skip_destruction<T>::value);
+}
+
+template <typename T>
+void
+FastCells<T>::reallocate(size_t need) {
+    capacity = roundUp2inN(size + need);
+    alloc::Alloc new_memory = alloc::Alloc::alloc(elem_size * capacity);
+    memcpy(new_memory.get(), memory.get(), elem_size * size);
+    memory = std::move(new_memory);
+}
+
+template <typename T>
+FastCells<T>::~FastCells() = default;
 
 //-----------------------------------------------------------------------------
 
