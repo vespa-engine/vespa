@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include "streamed_value_index.h"
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
-#include "streamed_value_index.h"
 #include <cassert>
 
 namespace vespalib::eval {

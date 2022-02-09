@@ -7,7 +7,6 @@
 #include <vespa/vespalib/util/string_id.h>
 #include <vespa/vespalib/stllike/identity.h>
 #include <vespa/vespalib/stllike/hashtable.h>
-#include <vector>
 
 namespace vespalib::eval {
 
@@ -62,8 +61,8 @@ public:
     // view able to convert tags into sparse addresses
     struct LabelView {
         size_t addr_size;
-        const std::vector<string_id> &labels;
-        LabelView(size_t num_mapped_dims, const std::vector<string_id> &labels_in)
+        const StringIdVector &labels;
+        LabelView(size_t num_mapped_dims, const StringIdVector &labels_in)
             : addr_size(num_mapped_dims), labels(labels_in) {}
         ConstArrayRef<string_id> get_addr(size_t idx) const {
             return {&labels[idx * addr_size], addr_size};
@@ -105,7 +104,7 @@ private:
     HashType _map;
 
 public:
-    FastAddrMap(size_t num_mapped_dims, const std::vector<string_id> &labels_in, size_t expected_subspaces)
+    FastAddrMap(size_t num_mapped_dims, const StringIdVector &labels_in, size_t expected_subspaces)
         : _labels(num_mapped_dims, labels_in),
           _map(expected_subspaces * 2, Hash(), Equal(_labels)) {}
     ~FastAddrMap();
@@ -117,7 +116,7 @@ public:
     ConstArrayRef<string_id> get_addr(size_t idx) const { return _labels.get_addr(idx); }
     size_t size() const { return _map.size(); }
     constexpr size_t addr_size() const { return _labels.addr_size; }
-    const std::vector<string_id> &labels() const { return _labels.labels; }
+    const StringIdVector &labels() const { return _labels.labels; }
     template <typename T>
     size_t lookup(ConstArrayRef<T> addr, uint32_t hash) const {
         // assert(addr_size() == addr.size());

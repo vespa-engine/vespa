@@ -139,7 +139,7 @@ struct FastIterateView : public Value::Index::View {
 // operations by calling inline functions directly.
 struct FastValueIndex final : Value::Index {
     FastAddrMap map;
-    FastValueIndex(size_t num_mapped_dims_in, const std::vector<string_id> &labels, size_t expected_subspaces_in)
+    FastValueIndex(size_t num_mapped_dims_in, const StringIdVector &labels, size_t expected_subspaces_in)
         : map(num_mapped_dims_in, labels, expected_subspaces_in) {}
     size_t size() const override { return map.size(); }
     std::unique_ptr<View> create_view(ConstArrayRef<size_t> dims) const override;
@@ -213,13 +213,12 @@ struct FastCells {
 
 template <typename T, bool transient>
 struct FastValue final : Value, ValueBuilder<T> {
-
     using Handles = typename std::conditional<transient,
-                                     std::vector<string_id>,
+                                     StringIdVector,
                                      SharedStringRepo::Handles>::type;
 
-    static const std::vector<string_id> &get_view(const std::vector<string_id> &handles) { return handles; }
-    static const std::vector<string_id> &get_view(const SharedStringRepo::Handles &handles) { return handles.view(); }
+    static const StringIdVector &get_view(const StringIdVector &handles) { return handles; }
+    static const StringIdVector &get_view(const SharedStringRepo::Handles &handles) { return handles.view(); }
 
     ValueType my_type;
     size_t my_subspace_size;
@@ -227,14 +226,7 @@ struct FastValue final : Value, ValueBuilder<T> {
     FastValueIndex my_index;
     FastCells<T> my_cells;
 
-    FastValue(const ValueType &type_in, size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces_in)
-        : my_type(type_in), my_subspace_size(subspace_size_in),
-          my_handles(),
-          my_index(num_mapped_dims_in, get_view(my_handles), expected_subspaces_in),
-          my_cells(subspace_size_in * expected_subspaces_in)
-    {
-        my_handles.reserve(expected_subspaces_in * num_mapped_dims_in);
-    }
+    FastValue(const ValueType &type_in, size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces_in);
     ~FastValue() override;
     const ValueType &type() const override { return my_type; }
     const Value::Index &index() const override { return my_index; }
@@ -310,7 +302,20 @@ struct FastValue final : Value, ValueBuilder<T> {
         return usage;
     }
 };
-template <typename T,bool transient> FastValue<T,transient>::~FastValue() = default;
+
+template <typename T,bool transient>
+FastValue<T,transient>::FastValue(const ValueType &type_in, size_t num_mapped_dims_in,
+                                  size_t subspace_size_in, size_t expected_subspaces_in)
+    : my_type(type_in), my_subspace_size(subspace_size_in),
+      my_handles(),
+      my_index(num_mapped_dims_in, get_view(my_handles), expected_subspaces_in),
+      my_cells(subspace_size_in * expected_subspaces_in)
+{
+    my_handles.reserve(expected_subspaces_in * num_mapped_dims_in);
+}
+
+template <typename T,bool transient>
+FastValue<T,transient>::~FastValue() = default;
 
 //-----------------------------------------------------------------------------
 
