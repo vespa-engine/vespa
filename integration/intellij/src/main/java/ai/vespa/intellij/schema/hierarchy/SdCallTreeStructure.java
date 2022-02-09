@@ -34,7 +34,7 @@ public abstract class SdCallTreeStructure extends HierarchyTreeStructure {
         super(project, new SdCallHierarchyNodeDescriptor(null, element, true));
         myScopeType = currentScopeType;
         myFile = (SdFile) element.getContainingFile();
-        macrosMap = SdUtil.createMacrosMap(myFile);
+        macrosMap = SdUtil.createFunctionsMap(myFile);
         ranksHeritageMap = new HashMap<>();
     }
     

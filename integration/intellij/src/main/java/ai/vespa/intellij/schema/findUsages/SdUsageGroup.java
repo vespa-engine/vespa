@@ -58,6 +58,7 @@ public class SdUsageGroup implements UsageGroup {
         return canNavigate();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public int compareTo(UsageGroup usageGroup) {
 //        return getPresentableGroupText().compareToIgnoreCase(usageGroup.getPresentableGroupText());

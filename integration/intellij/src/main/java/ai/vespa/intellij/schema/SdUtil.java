@@ -43,12 +43,11 @@ import java.util.List;
  */
 public class SdUtil {
     
-    public static HashMap<String, List<PsiElement>> createMacrosMap(SdFile file) {
+    public static HashMap<String, List<PsiElement>> createFunctionsMap(SdFile file) {
         HashMap<String, List<PsiElement>> macrosMap = new HashMap<>();
-        for (SdRankProfileDefinition rankProfile : PsiTreeUtil
-            .findChildrenOfType(file, SdRankProfileDefinition.class)) {
-            for (SdFunctionDefinition macro : PsiTreeUtil.findChildrenOfType(rankProfile, SdFunctionDefinition.class)) {
-                macrosMap.computeIfAbsent(macro.getName(), k -> new ArrayList<>()).add(macro);
+        for (SdRankProfileDefinition rankProfile : PsiTreeUtil.findChildrenOfType(file, SdRankProfileDefinition.class)) {
+            for (SdFunctionDefinition function : PsiTreeUtil.findChildrenOfType(rankProfile, SdFunctionDefinition.class)) {
+                macrosMap.computeIfAbsent(function.getName(), k -> new ArrayList<>()).add(function);
             }
         }
         return macrosMap;
@@ -78,13 +77,13 @@ public class SdUtil {
         return ref != null ? ref.resolve() : null;
     }
     
-    public static String createFunctionDescription(SdFunctionDefinition macro) {
-        SdRankProfileDefinition rankProfile = PsiTreeUtil.getParentOfType(macro, SdRankProfileDefinition.class);
+    public static String createFunctionDescription(SdFunctionDefinition function) {
+        SdRankProfileDefinition rankProfile = PsiTreeUtil.getParentOfType(function, SdRankProfileDefinition.class);
         String rankProfileName;
         if (rankProfile != null) {
             rankProfileName = rankProfile.getName();
-            List<SdArgumentDefinition> args = macro.getArgumentDefinitionList();
-            StringBuilder text = new StringBuilder(rankProfileName + "." + macro.getName() + "(");
+            List<SdArgumentDefinition> args = function.getArgumentDefinitionList();
+            StringBuilder text = new StringBuilder(rankProfileName + "." + function.getName() + "(");
             for (int i = 0; i < args.size(); i++) {
                 text.append(args.get(i).getName());
                 if (i < args.size() - 1) {
@@ -94,7 +93,7 @@ public class SdUtil {
             text.append(")");
             return text.toString();
         } else {
-            return macro.getName();
+            return function.getName();
         }
     }
     
@@ -141,30 +140,30 @@ public class SdUtil {
             return result;
         }
         
-        // If element is the macro's name in the macro definition, return the macro definition
+        // If element is the function's name in the function definition, return the function definition
         if (element.getParent() instanceof SdFunctionDefinition) {
             result.add((SdDeclaration) element.getParent());
             return result;
         }
         
-        // Check if element is inside a macro body
+        // Check if element is inside a function body
         SdFunctionDefinition macroParent = PsiTreeUtil.getParentOfType(element, SdFunctionDefinition.class);
         if (macroParent != null) {
             for (SdArgumentDefinition arg : PsiTreeUtil.findChildrenOfType(macroParent, SdArgumentDefinition.class)) {
-                if (name.equals(arg.getName())) { // if the element was declared as an argument of the macro
+                if (name.equals(arg.getName())) { // if the element was declared as an argument of the function
                     result.add(arg);
                     return result;
                 }
             }
         }
         
-        // If element is a macro's name, return the most specific declaration of the macro
+        // If element is a function's name, return the most specific declaration of the function
         if (((SdIdentifier) element).isFunctionName(file, name)) {
             PsiElement curRankProfile = PsiTreeUtil.getParentOfType(element, SdRankProfileDefinition.class);
             while (curRankProfile != null) {
-                for (SdFunctionDefinition macro : PsiTreeUtil.collectElementsOfType(curRankProfile, SdFunctionDefinition.class)) {
-                    if (macro.getName() != null && macro.getName().equals(name)) {
-                        result.add(macro);
+                for (SdFunctionDefinition function : PsiTreeUtil.collectElementsOfType(curRankProfile, SdFunctionDefinition.class)) {
+                    if (function.getName() != null && function.getName().equals(name)) {
+                        result.add(function);
                         return result;
                     }
                 }
