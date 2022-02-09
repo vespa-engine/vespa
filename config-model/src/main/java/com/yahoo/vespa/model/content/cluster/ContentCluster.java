@@ -120,9 +120,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             ContentCluster c = new ContentCluster(context.getParentProducer(), getClusterId(contentElement), documentDefinitions,
                                                   globallyDistributedDocuments, routingSelection,
                                                   deployState.zone(), deployState.isHosted());
-            boolean enableFeedBlockInDistributor = deployState.getProperties().featureFlags().enableFeedBlockInDistributor();
-            var resourceLimits = new ClusterResourceLimits.Builder(enableFeedBlockInDistributor,
-                                                                   stateIsHosted(deployState),
+            var resourceLimits = new ClusterResourceLimits.Builder(stateIsHosted(deployState),
                                                                    deployState.featureFlags().resourceLimitDisk(),
                                                                    deployState.featureFlags().resourceLimitMemory())
                     .build(contentElement);
