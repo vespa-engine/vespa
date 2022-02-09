@@ -19,14 +19,12 @@ public class FleetControllerClusterTest {
     private ClusterControllerConfig parse(String xml, TestProperties props) {
         Document doc = XML.getDocument(xml);
         var deployState = new DeployState.Builder().properties(props).build();
-        boolean enableFeedBlockInDistributor = deployState.getProperties().featureFlags().enableFeedBlockInDistributor();
         MockRoot root = new MockRoot("", deployState);
         var clusterElement = new ModelElement(doc.getDocumentElement());
         ModelContext.FeatureFlags featureFlags = new TestProperties();
         return new ClusterControllerConfig.Builder("storage",
                                                    clusterElement,
-                                                   new ClusterResourceLimits.Builder(enableFeedBlockInDistributor,
-                                                                                     false,
+                                                   new ClusterResourceLimits.Builder(false,
                                                                                      featureFlags.resourceLimitDisk(),
                                                                                      featureFlags.resourceLimitMemory())
                                                            .build(clusterElement).getClusterControllerLimits())
@@ -34,7 +32,7 @@ public class FleetControllerClusterTest {
     }
 
     private ClusterControllerConfig parse(String xml) {
-        return parse(xml, new TestProperties().enableFeedBlockInDistributor(true));
+        return parse(xml, new TestProperties());
     }
 
     @Test
@@ -104,7 +102,6 @@ public class FleetControllerClusterTest {
         assertEquals(0.0, config.min_node_ratio_per_group(), 0.01);
     }
 
-
     @Test
     public void default_cluster_feed_block_limits_are_set() {
         assertLimits(0.8, 0.8, getConfigForBasicCluster());
@@ -143,17 +140,6 @@ public class FleetControllerClusterTest {
     }
 
     @Test
-    public void feature_flag_controls_enable_cluster_feed_block() {
-        verifyThatFeatureFlagControlsEnableClusterFeedBlock(true);
-        verifyThatFeatureFlagControlsEnableClusterFeedBlock(false);
-    }
-
-    private void verifyThatFeatureFlagControlsEnableClusterFeedBlock(boolean flag) {
-        var config = getConfigForBasicCluster(new TestProperties().enableFeedBlockInDistributor(flag));
-        assertEquals(flag, config.enable_cluster_feed_block());
-    }
-
-    @Test
     public void feature_flag_controls_min_node_ratio_per_group() {
         verifyFeatureFlagControlsMinNodeRatioPerGroup(0.0, new TestProperties());
         verifyFeatureFlagControlsMinNodeRatioPerGroup(0.3,
@@ -175,6 +161,6 @@ public class FleetControllerClusterTest {
     }
 
     private FleetcontrollerConfig getConfigForBasicCluster() {
-        return getConfigForBasicCluster(new TestProperties().enableFeedBlockInDistributor(true));
+        return getConfigForBasicCluster(new TestProperties());
     }
 }

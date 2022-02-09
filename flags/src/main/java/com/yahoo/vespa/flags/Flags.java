@@ -144,13 +144,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
-            "enable-feed-block-in-distributor", true,
-            List.of("geirst"), "2021-01-27", "2022-06-01",
-            "Enables blocking of feed in the distributor if resource usage is above limit on at least one content node",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT = defineFeatureFlag(
             "container-dump-heap-on-shutdown-timeout", false,
             List.of("baldersheim"), "2021-09-25", "2022-06-01",
