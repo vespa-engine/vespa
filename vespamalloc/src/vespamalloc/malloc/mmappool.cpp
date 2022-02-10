@@ -19,6 +19,21 @@ MMapPool::MMapPool()
 MMapPool::~MMapPool() {
     assert(_mappings.empty());
 }
+
+size_t
+MMapPool::getNumMappings() const {
+    std::lock_guard guard(_mutex);
+    return _mappings.size();
+}
+
+size_t
+MMapPool::getMmappedBytes() const {
+    std::lock_guard guard(_mutex);
+    size_t sum(0);
+    std::for_each(_mappings.begin(), _mappings.end(), [&sum](const auto & e){ sum += e.second._sz; });
+    return sum;
+}
+
 void *
 MMapPool::mmap(size_t sz) {
     void * buf(nullptr);

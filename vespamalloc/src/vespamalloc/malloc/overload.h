@@ -113,12 +113,12 @@ struct mallinfo2 mallinfo2() __THROW {
     info.arena = vespamalloc::_GmemP->dataSegment().dataSize();
     info.ordblks = 0;
     info.smblks = 0;
-    info.hblks = 0;
-    info.hblkhd = 0;
+    info.hblkhd = vespamalloc::_GmemP->mmapPool().getNumMappings();
+    info.hblks = vespamalloc::_GmemP->mmapPool().getMmappedBytes();
     info.usmblks = 0;
     info.fsmblks = 0;
-    info.uordblks = 0;
-    info.fordblks = 0;
+    info.fordblks = vespamalloc::_GmemP->dataSegment().freeSize();
+    info.uordblks = info.arena + info.hblks - info.fordblks;
     info.keepcost = 0;
     return info;
 }
@@ -129,12 +129,12 @@ struct mallinfo mallinfo() __THROW {
     info.arena = (vespamalloc::_GmemP->dataSegment().dataSize() >> 20); // Note reporting in 1M blocks
     info.ordblks = 0;
     info.smblks = 0;
-    info.hblks = 0;
-    info.hblkhd = 0;
+    info.hblkhd = vespamalloc::_GmemP->mmapPool().getNumMappings();
+    info.hblks = (vespamalloc::_GmemP->mmapPool().getMmappedBytes() >> 20);
     info.usmblks = 0;
     info.fsmblks = 0;
-    info.uordblks = 0;
-    info.fordblks = 0;
+    info.fordblks = (vespamalloc::_GmemP->dataSegment().freeSize() >> 20);
+    info.uordblks = info.arena + info.hblks - info.fordblks;
     info.keepcost = 0;
     return info;
 }

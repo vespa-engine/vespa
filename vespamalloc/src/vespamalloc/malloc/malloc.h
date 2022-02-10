@@ -77,6 +77,7 @@ public:
         _allocPool.setParams(threadCacheLimit);
     }
     const DataSegment<MemBlockPtrT> & dataSegment() const { return _segment; }
+    const MMapPool & mmapPool() const { return _mmapPool; }
 private:
     void freeSC(void *ptr, SizeClassT sc);
     void crash() __attribute__((noinline));;

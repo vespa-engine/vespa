@@ -14,6 +14,8 @@ public:
     ~MMapPool();
     void * mmap(size_t sz);
     void unmap(void *);
+    size_t getNumMappings() const;
+    size_t getMmappedBytes() const;
 private:
     struct MMapInfo {
         MMapInfo(size_t id, size_t sz) : _id(id), _sz(sz) { }
@@ -24,7 +26,7 @@ private:
     const int           _huge_flags;
     std::atomic<size_t> _count;
     std::atomic<bool>   _has_hugepage_failure_just_happened;
-    std::mutex          _mutex;
+    mutable std::mutex  _mutex;
     std::map<const void *, MMapInfo> _mappings;
 };
 
