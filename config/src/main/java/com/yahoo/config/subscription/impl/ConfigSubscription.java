@@ -199,8 +199,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     }
 
     void setConfigAndGeneration(Long generation, boolean applyOnRestart, T config, PayloadChecksums payloadChecksums) {
-        ConfigState<T> prev = this.config.get();
-        T previousConfig = prev.getConfig();
+        T previousConfig = this.config.get().getConfig();
         boolean configChanged = ! Objects.equals(previousConfig, config);
         if (previousConfig != null && configChanged) {
             SnippetGenerator generator = new SnippetGenerator();
