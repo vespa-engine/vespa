@@ -20,7 +20,7 @@ public class AthenzAccessControlService implements AccessControlService {
 
     private static final String ALLOWED_OPERATOR_GROUPNAME = "vespa-team";
     private static final String DATAPLANE_ACCESS_ROLENAME = "operator-data-plane";
-    private final String TENANT_DOMAIN_PREFIX = "vespa.tenant.";
+    private final String TENANT_DOMAIN_PREFIX = "vespa.tenant";
     private final ZmsClient zmsClient;
     private final AthenzRole dataPlaneAccessRole;
     private final AthenzGroup vespaTeam;
@@ -60,6 +60,7 @@ public class AthenzAccessControlService implements AccessControlService {
     /**
      * @return Whether the ssh access role has any pending role membership requests
      */
+    @Override
     public boolean hasPendingAccessRequests(TenantName tenantName) {
         var role = sshRole(tenantName);
         var pendingApprovals = vespaZmsClient.listPendingRoleApprovals(role);
@@ -69,6 +70,7 @@ public class AthenzAccessControlService implements AccessControlService {
     /**
      * @return true if access has been granted - false if already member
      */
+    @Override
     public boolean approveSshAccess(TenantName tenantName, Instant expiry) {
         var role = sshRole(tenantName);
         if (vespaZmsClient.getMembership(role, vespaTeam))
@@ -85,6 +87,7 @@ public class AthenzAccessControlService implements AccessControlService {
     /**
      * @return true if access has been requested - false if already member
      */
+    @Override
     public boolean requestSshAccess(TenantName tenantName) {
         var role = sshRole(tenantName);
         if (vespaZmsClient.getMembership(role, vespaTeam))
@@ -94,11 +97,17 @@ public class AthenzAccessControlService implements AccessControlService {
     }
 
     private AthenzRole sshRole(TenantName tenantName) {
-        return new AthenzRole(tenantDomain(tenantName), "ssh_access");
+        return new AthenzRole(getOrCreateTenantDomain(tenantName), "ssh_access");
     }
 
-    private AthenzDomain tenantDomain(TenantName tenantName) {
-        return new AthenzDomain(TENANT_DOMAIN_PREFIX + tenantName.value());
+    private AthenzDomain getOrCreateTenantDomain(TenantName tenantName) {
+        var domain = new AthenzDomain(TENANT_DOMAIN_PREFIX + "." + tenantName.value());
+
+        if (vespaZmsClient.getDomainList(domain.getName()).isEmpty()) {
+            vespaZmsClient.createSubdomain(new AthenzDomain(TENANT_DOMAIN_PREFIX), tenantName.value());
+        }
+
+        return domain;
     }
 
     public boolean isVespaTeamMember(AthenzUser user) {

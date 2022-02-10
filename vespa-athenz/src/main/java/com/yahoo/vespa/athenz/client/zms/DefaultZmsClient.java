@@ -391,6 +391,16 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
         execute(request, response -> readEntity(response, Void.class));
     }
 
+    @Override
+    public void createSubdomain(AthenzDomain parent, String name) {
+        URI uri = zmsUrl.resolve(String.format("subdomain/%s", parent.getName()));
+        StringEntity entity = toJsonStringEntity(Map.of("name", name));
+        var request = RequestBuilder.put(uri)
+                .setEntity(toJsonStringEntity(entity))
+                .build();
+        execute(request, response -> readEntity(response, Void.class));
+    }
+
     private static Header createCookieHeaderWithOktaTokens(OktaIdentityToken identityToken, OktaAccessToken accessToken) {
         return new BasicHeader("Cookie", String.format("okta_at=%s; okta_it=%s", accessToken.token(), identityToken.token()));
     }

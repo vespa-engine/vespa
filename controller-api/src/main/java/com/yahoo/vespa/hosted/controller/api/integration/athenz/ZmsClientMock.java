@@ -255,6 +255,10 @@ public class ZmsClientMock implements ZmsClient {
     public void deleteRole(AthenzRole athenzRole) {
         athenz.domains.get(athenzRole.domain()).roles.removeIf(role -> role.name().equals(athenzRole.roleName()));
     }
+
+    @Override
+    public void createSubdomain(AthenzDomain parent, String name) {}
+
     @Override
     public void close() {}
 
