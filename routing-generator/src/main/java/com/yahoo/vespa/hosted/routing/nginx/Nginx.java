@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.routing.nginx;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.routing.Router;
@@ -63,6 +64,7 @@ public class Nginx implements Router {
     public void load(RoutingTable table) {
         synchronized (monitor) {
             try {
+                table = table.routingMethod(RoutingMethod.sharedLayer4); // This router only supports layer 4 endpoints
                 testConfig(table);
                 loadConfig(table.asMap().size());
                 gcConfig();

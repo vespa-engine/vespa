@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.routing.nginx;
 import com.google.common.jimfs.Jimfs;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.vespa.hosted.routing.RoutingTable;
@@ -152,10 +153,10 @@ public class NginxMetricsReporterTest {
     }
 
     private static RoutingTable createRoutingTable() {
-        return new RoutingTable(Map.of(new Endpoint("endpoint0"), target0,
-                                       new Endpoint("endpoint1"), target1,
-                                       new Endpoint("endpoint2"), target2,
-                                       new Endpoint("endpoint3"), target3),
+        return new RoutingTable(Map.of(new Endpoint("endpoint0", RoutingMethod.sharedLayer4), target0,
+                                       new Endpoint("endpoint1", RoutingMethod.sharedLayer4), target1,
+                                       new Endpoint("endpoint2", RoutingMethod.sharedLayer4), target2,
+                                       new Endpoint("endpoint3", RoutingMethod.sharedLayer4), target3),
                                 42);
     }
 

@@ -8,17 +8,18 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -35,7 +36,7 @@ public class RoutingTable {
 
     private static final String HOSTED_VESPA_TENANT_NAME = "hosted-vespa";
 
-    private final Map<Endpoint, Target> table;
+    private final SortedMap<Endpoint, Target> table;
     private final long generation;
 
     public RoutingTable(Map<Endpoint, Target> table, long generation) {
@@ -43,13 +44,20 @@ public class RoutingTable {
         this.generation = generation;
     }
 
-    /** Returns the target for given dnsName, if any */
-    public Optional<Target> targetOf(String dnsName) {
-        return Optional.ofNullable(table.get(new Endpoint(dnsName)));
+    public SortedMap<Endpoint, Target> asMap() {
+        return table;
     }
 
-    public Map<Endpoint, Target> asMap() {
-        return table;
+    /** Returns the target for given dnsName, if any */
+    public Optional<Target> targetOf(String dnsName, RoutingMethod routingMethod) {
+        return Optional.ofNullable(table.get(new Endpoint(dnsName, routingMethod)));
+    }
+
+    /** Returns a copy of this containing only endpoints using given routing method */
+    public RoutingTable routingMethod(RoutingMethod method) {
+        Map<Endpoint, Target> copy = new TreeMap<>(table);
+        copy.keySet().removeIf(endpoint -> !endpoint.routingMethod().equals(method));
+        return new RoutingTable(copy, generation);
     }
 
     /** Returns the Vespa config generation this is based on */
@@ -76,7 +84,7 @@ public class RoutingTable {
     }
 
     public static RoutingTable from(LbServicesConfig config, long generation) {
-        Map<Endpoint, Target> entries = new HashMap<>();
+        Map<Endpoint, Target> entries = new TreeMap<>();
         for (var tenants : config.tenants().entrySet()) {
             TenantName tenantName = TenantName.from(tenants.getKey());
             if (tenantName.value().equals(HOSTED_VESPA_TENANT_NAME)) continue;
@@ -95,7 +103,7 @@ public class RoutingTable {
                                                                                    configuredEndpoint.weight(),
                                                                                    applications.getValue().activeRotation()))
                                                          .collect(Collectors.toList());
-                    Endpoint endpoint = new Endpoint(configuredEndpoint.dnsName());
+                    Endpoint endpoint = new Endpoint(configuredEndpoint.dnsName(), routingMethodFrom(configuredEndpoint));
                     ClusterSpec.Id cluster = ClusterSpec.Id.from(configuredEndpoint.clusterId());
                     Target target;
                     boolean applicationEndpoint = configuredEndpoint.scope() == LbServicesConfig.Tenants.Applications.Endpoints.Scope.Enum.application;
@@ -116,6 +124,14 @@ public class RoutingTable {
             }
         }
         return new RoutingTable(entries, generation);
+    }
+
+    private static RoutingMethod routingMethodFrom(LbServicesConfig.Tenants.Applications.Endpoints endpoint) {
+        switch (endpoint.routingMethod()) {
+            case shared: return RoutingMethod.shared;
+            case sharedLayer4: return RoutingMethod.sharedLayer4;
+        }
+        throw new IllegalArgumentException("Unhandled routing method: " + endpoint.routingMethod());
     }
 
     /** The target of an {@link Endpoint} */
@@ -217,6 +233,11 @@ public class RoutingTable {
                    ",reals=" + reals;
         }
 
+        @Override
+        public int compareTo(RoutingTable.Target other) {
+            return id.compareTo(other.id);
+        }
+
         /** Create an instance-level tartget */
         public static Target create(ApplicationId instance, ClusterSpec.Id cluster, ZoneId zone, List<Real> reals) {
             return new Target(createId("", instance.tenant(), instance.application(), Optional.of(instance.instance()), cluster, zone),
@@ -260,20 +281,20 @@ public class RoutingTable {
                      .replaceAll("[^a-z0-9-]*", "");
         }
 
-        @Override
-        public int compareTo(RoutingTable.Target other) {
-            return id.compareTo(other.id);
-        }
-
     }
 
     /** An externally visible endpoint */
     public static class Endpoint implements Comparable<Endpoint> {
 
-        private final String dnsName;
+        private static final Comparator<Endpoint> COMPARATOR = Comparator.comparing(Endpoint::dnsName)
+                                                                         .thenComparing(Endpoint::routingMethod);
 
-        public Endpoint(String dnsName) {
+        private final String dnsName;
+        private final RoutingMethod routingMethod;
+
+        public Endpoint(String dnsName, RoutingMethod routingMethod) {
             this.dnsName = Objects.requireNonNull(dnsName);
+            this.routingMethod = Objects.requireNonNull(routingMethod);
         }
 
         /** The DNS name of this endpoint. This does not contain a trailing dot */
@@ -281,9 +302,13 @@ public class RoutingTable {
             return dnsName;
         }
 
+        public RoutingMethod routingMethod() {
+            return routingMethod;
+        }
+
         @Override
         public String toString() {
-            return "endpoint " + dnsName;
+            return "endpoint " + dnsName + " (routing method: " + routingMethod + ")";
         }
 
         @Override
@@ -291,17 +316,17 @@ public class RoutingTable {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Endpoint endpoint = (Endpoint) o;
-            return dnsName.equals(endpoint.dnsName);
+            return dnsName.equals(endpoint.dnsName) && routingMethod == endpoint.routingMethod;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(dnsName);
+            return Objects.hash(dnsName, routingMethod);
         }
 
         @Override
-        public int compareTo(RoutingTable.Endpoint o) {
-            return dnsName.compareTo(o.dnsName);
+        public int compareTo(Endpoint o) {
+            return COMPARATOR.compare(this, o);
         }
 
     }
