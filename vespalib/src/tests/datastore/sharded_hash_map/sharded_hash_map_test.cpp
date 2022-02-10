@@ -132,7 +132,7 @@ struct DataStoreShardedHashTest : public ::testing::Test
 
 DataStoreShardedHashTest::DataStoreShardedHashTest()
     : _generationHandler(),
-      _allocator(),
+      _allocator({}),
       _store(_allocator.get_data_store()),
       _hash_map(std::make_unique<MyCompare>(_store)),
       _writer(1, 128_Ki),

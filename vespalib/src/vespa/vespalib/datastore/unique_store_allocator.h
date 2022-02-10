@@ -5,8 +5,11 @@
 #include "datastore.h"
 #include "entryref.h"
 #include "unique_store_add_result.h"
+#include "unique_store_buffer_type.h"
 #include "unique_store_entry.h"
 #include "i_compactable.h"
+
+namespace vespalib::alloc { class MemoryAllocator; }
 
 namespace vespalib::datastore {
 
@@ -23,13 +26,12 @@ public:
     using EntryConstRefType = const EntryType &;
     using WrappedEntryType = UniqueStoreEntry<EntryType>;
     using RefType = RefT;
-    using UniqueStoreBufferType = BufferType<WrappedEntryType>;
 private:
     DataStoreType _store;
-    UniqueStoreBufferType _typeHandler;
+    UniqueStoreBufferType<WrappedEntryType> _typeHandler;
 
 public:
-    UniqueStoreAllocator();
+    UniqueStoreAllocator(std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
     ~UniqueStoreAllocator() override;
     EntryRef allocate(const EntryType& value);
     void hold(EntryRef ref);

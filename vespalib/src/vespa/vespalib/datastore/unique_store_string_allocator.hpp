@@ -8,14 +8,14 @@
 namespace vespalib::datastore {
 
 template <typename RefT>
-UniqueStoreStringAllocator<RefT>::UniqueStoreStringAllocator()
+UniqueStoreStringAllocator<RefT>::UniqueStoreStringAllocator(std::shared_ptr<alloc::MemoryAllocator> memory_allocator)
     : ICompactable(),
       _store(),
       _type_handlers()
 {
-    _type_handlers.emplace_back(std::make_unique<UniqueStoreExternalStringBufferType>(1, RefT::offsetSize()));
+    _type_handlers.emplace_back(std::make_unique<UniqueStoreExternalStringBufferType>(1, RefT::offsetSize(), memory_allocator));
     for (auto size : string_allocator::array_sizes) {
-        _type_handlers.emplace_back(std::make_unique<UniqueStoreSmallStringBufferType>(size, RefT::offsetSize()));
+        _type_handlers.emplace_back(std::make_unique<UniqueStoreSmallStringBufferType>(size, RefT::offsetSize(), memory_allocator));
     }
     uint32_t exp_type_id = 0;
     for (auto &type_handler : _type_handlers) {

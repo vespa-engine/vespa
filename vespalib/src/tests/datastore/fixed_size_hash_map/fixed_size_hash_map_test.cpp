@@ -68,7 +68,7 @@ struct DataStoreFixedSizeHashTest : public ::testing::Test
 DataStoreFixedSizeHashTest::DataStoreFixedSizeHashTest()
     : _generation_handler(),
       _generation_holder(),
-      _allocator(),
+      _allocator({}),
       _store(_allocator.get_data_store()),
       _comp(std::make_unique<MyCompare>(_store)),
       _hash_map(),

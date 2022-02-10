@@ -33,8 +33,9 @@ get_type_id(size_t string_len)
 
 }
 
-UniqueStoreSmallStringBufferType::UniqueStoreSmallStringBufferType(uint32_t array_size, uint32_t max_arrays)
-    : BufferType<char>(array_size, 2u, max_arrays, NUM_ARRAYS_FOR_NEW_UNIQUESTORE_BUFFER, ALLOC_GROW_FACTOR)
+UniqueStoreSmallStringBufferType::UniqueStoreSmallStringBufferType(uint32_t array_size, uint32_t max_arrays, std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator)
+    : BufferType<char>(array_size, 2u, max_arrays, NUM_ARRAYS_FOR_NEW_UNIQUESTORE_BUFFER, ALLOC_GROW_FACTOR),
+      _memory_allocator(std::move(memory_allocator))
 {
 }
 
@@ -68,8 +69,15 @@ UniqueStoreSmallStringBufferType::cleanHold(void *buffer, size_t offset, ElemCou
     assert(e == e_end);
 }
 
-UniqueStoreExternalStringBufferType::UniqueStoreExternalStringBufferType(uint32_t array_size, uint32_t max_arrays)
-    : BufferType<UniqueStoreEntry<std::string>>(array_size, 2u, max_arrays, NUM_ARRAYS_FOR_NEW_UNIQUESTORE_BUFFER, ALLOC_GROW_FACTOR)
+const vespalib::alloc::MemoryAllocator*
+UniqueStoreSmallStringBufferType::get_memory_allocator() const
+{
+    return _memory_allocator.get();
+}
+
+UniqueStoreExternalStringBufferType::UniqueStoreExternalStringBufferType(uint32_t array_size, uint32_t max_arrays, std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator)
+    : BufferType<UniqueStoreEntry<std::string>>(array_size, 2u, max_arrays, NUM_ARRAYS_FOR_NEW_UNIQUESTORE_BUFFER, ALLOC_GROW_FACTOR),
+      _memory_allocator(std::move(memory_allocator))
 {
 }
 
@@ -84,6 +92,12 @@ UniqueStoreExternalStringBufferType::cleanHold(void *buffer, size_t offset, Elem
         std::string().swap(elem->value());
         ++elem;
     }
+}
+
+const vespalib::alloc::MemoryAllocator*
+UniqueStoreExternalStringBufferType::get_memory_allocator() const
+{
+    return _memory_allocator.get();
 }
 
 template class UniqueStoreStringAllocator<EntryRefT<22>>;

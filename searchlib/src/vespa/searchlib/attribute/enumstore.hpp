@@ -73,7 +73,7 @@ EnumStoreT<EntryT>::load_unique_value(const void* src, size_t available, Index& 
 
 template <typename EntryT>
 EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const DictionaryConfig & dict_cfg)
-    : _store(),
+    : _store({}),
       _dict(),
       _is_folded(dict_cfg.getMatch() == DictionaryConfig::Match::UNCASED),
       _comparator(_store.get_data_store()),
