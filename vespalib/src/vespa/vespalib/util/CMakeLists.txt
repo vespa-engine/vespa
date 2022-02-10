@@ -42,6 +42,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     mmap_file_allocator.cpp
     mmap_file_allocator_factory.cpp
     monitored_refcount.cpp
+    nice.cpp
     printable.cpp
     priority_queue.cpp
     random.cpp
