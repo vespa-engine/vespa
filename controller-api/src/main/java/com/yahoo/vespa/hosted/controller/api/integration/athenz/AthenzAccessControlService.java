@@ -5,6 +5,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzGroup;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.client.zms.ZmsClient;
@@ -39,7 +40,7 @@ public class AthenzAccessControlService implements AccessControlService {
         if(!isVespaTeamMember(user)) {
             throw new IllegalArgumentException(String.format("User %s requires manual approval, please contact Vespa team", user.getName()));
         }
-        Map<AthenzUser, String> users = zmsClient.listPendingRoleApprovals(dataPlaneAccessRole);
+        Map<AthenzIdentity, String> users = zmsClient.listPendingRoleApprovals(dataPlaneAccessRole);
         if (users.containsKey(user)) {
             zmsClient.approvePendingRoleMembership(dataPlaneAccessRole, user, expiry, Optional.empty());
             return true;
@@ -62,7 +63,7 @@ public class AthenzAccessControlService implements AccessControlService {
     public boolean hasPendingAccessRequests(TenantName tenantName) {
         var role = sshRole(tenantName);
         var pendingApprovals = vespaZmsClient.listPendingRoleApprovals(role);
-        return !pendingApprovals.isEmpty();
+        return pendingApprovals.containsKey(vespaTeam);
     }
 
     /**

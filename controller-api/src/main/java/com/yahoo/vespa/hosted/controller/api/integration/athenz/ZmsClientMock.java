@@ -200,7 +200,7 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public Map<AthenzUser,String> listPendingRoleApprovals(AthenzRole athenzRole) {
+    public Map<AthenzIdentity,String> listPendingRoleApprovals(AthenzRole athenzRole) {
         return Map.of();
     }
 

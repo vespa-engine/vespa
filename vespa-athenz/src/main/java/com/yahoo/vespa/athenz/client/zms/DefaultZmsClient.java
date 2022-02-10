@@ -288,7 +288,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
-    public Map<AthenzUser, String> listPendingRoleApprovals(AthenzRole athenzRole) {
+    public Map<AthenzIdentity, String> listPendingRoleApprovals(AthenzRole athenzRole) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s?pending=true", athenzRole.domain().getName(), athenzRole.roleName()));
         HttpUriRequest request = RequestBuilder.get()
                 .setUri(uri)
@@ -297,9 +297,8 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
 
         return roleEntity.roleMembers().stream()
                 .filter(RoleEntity.Member::pendingApproval)
-                .filter(re -> AthenzIdentities.USER_PRINCIPAL_DOMAIN.equals(AthenzIdentities.from(re.memberName()).getDomain()))
                 .collect(Collectors.toUnmodifiableMap(
-                        m -> (AthenzUser) AthenzIdentities.from(m.memberName()),
+                        m -> AthenzIdentities.from(m.memberName()),
                         m -> m.auditRef() != null ? m.auditRef() : "<no reason provided>"));
     }
 
