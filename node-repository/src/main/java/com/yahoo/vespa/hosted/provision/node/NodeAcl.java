@@ -109,10 +109,9 @@ public class NodeAcl {
             case proxy:
                 // Proxy nodes trust:
                 // - config servers
-                // - all connections from the world on 4080 (insecure tb removed), and 4443
+                // - all connections from the world on 443 (production traffic) and 4443 (health checks)
                 trustedNodes.addAll(allNodes.nodeType(NodeType.config).asList());
                 trustedPorts.add(443);
-                trustedPorts.add(4080);
                 trustedPorts.add(4443);
                 break;
 
