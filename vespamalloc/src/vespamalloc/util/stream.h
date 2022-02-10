@@ -11,6 +11,8 @@ class asciistream
 public:
     asciistream();
     ~asciistream();
+    asciistream(asciistream && rhs) noexcept;
+    asciistream & operator = (asciistream && ) noexcept;
     asciistream(const asciistream & rhs);
     asciistream & operator = (const asciistream & rhs);
     void swap(asciistream & rhs);

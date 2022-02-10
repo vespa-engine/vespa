@@ -20,18 +20,18 @@ template <size_t MinSizeClassC, size_t MaxSizeClassMultiAllocC>
 class MemBlockT : public vespamalloc::CommonT<MinSizeClassC>
 {
 public:
-    typedef vespamalloc::StackEntry<vespamalloc::StackReturnEntry> Stack;
+    typedef vespamalloc::StackEntry Stack;
     enum {
         MaxSizeClassMultiAlloc = MaxSizeClassMultiAllocC,
         SizeClassSpan = (MaxSizeClassMultiAllocC-MinSizeClassC)
     };
-    MemBlockT() : _ptr(NULL) { }
+    MemBlockT() : _ptr(nullptr) { }
     MemBlockT(void * p) : _ptr(p) { }
     MemBlockT(void * p, size_t /*sz*/) : _ptr(p) { }
     void *ptr()               { return _ptr; }
     const void *ptr()   const { return _ptr; }
-    bool validAlloc()   const { return _ptr != NULL; }
-    bool validFree()    const { return _ptr != NULL; }
+    bool validAlloc()   const { return _ptr != nullptr; }
+    bool validFree()    const { return _ptr != nullptr; }
     void setExact(size_t )    { }
     void alloc(bool )         { }
     void threadId(int )       { }
@@ -40,7 +40,7 @@ public:
     bool allocated()    const { return false; }
     int threadId()      const { return 0; }
     void info(FILE *, unsigned level=0) const  { (void) level; }
-    Stack * callStack()                   { return NULL; }
+    Stack * callStack()                   { return nullptr; }
     size_t callStackLen()           const { return 0; }
 
     static size_t adjustSize(size_t sz)   { return sz; }
@@ -138,7 +138,7 @@ int Test::Main() {
         ASSERT_TRUE((l >= &globalList[0]) && (l < &globalList[NumBlocks]));
     }
     List *n =  List::linkOut(sharedList);
-    ASSERT_TRUE(n == NULL);
+    ASSERT_TRUE(n == nullptr);
 
     List::HeadPtr tmp(sharedList.load());
     tmp._tag = 1;
@@ -156,12 +156,12 @@ int Test::Main() {
     LinkInOutAndIn  pc1(sharedList, 16, false);
     LinkInOutAndIn  pc2(sharedList, 16, true);
 
-    ASSERT_TRUE(pool.NewThread(&c1, NULL) != NULL);
-    ASSERT_TRUE(pool.NewThread(&c2, NULL) != NULL);
-    ASSERT_TRUE(pool.NewThread(&p1, NULL) != NULL);
-    ASSERT_TRUE(pool.NewThread(&p2, NULL) != NULL);
-    ASSERT_TRUE(pool.NewThread(&pc1, NULL) != NULL);
-    ASSERT_TRUE(pool.NewThread(&pc2, NULL) != NULL);
+    ASSERT_TRUE(pool.NewThread(&c1, nullptr) != nullptr);
+    ASSERT_TRUE(pool.NewThread(&c2, nullptr) != nullptr);
+    ASSERT_TRUE(pool.NewThread(&p1, nullptr) != nullptr);
+    ASSERT_TRUE(pool.NewThread(&p2, nullptr) != nullptr);
+    ASSERT_TRUE(pool.NewThread(&pc1, nullptr) != nullptr);
+    ASSERT_TRUE(pool.NewThread(&pc2, nullptr) != nullptr);
 
     for (; duration > 0; --duration) {
         LOG(info, "%d seconds left...", duration);
@@ -182,6 +182,6 @@ int Test::Main() {
         ASSERT_TRUE((l >= &globalList[0]) && (l < &globalList[NumBlocks]));
     }
     n =  List::linkOut(sharedList);
-    ASSERT_TRUE(n == NULL);
+    ASSERT_TRUE(n == nullptr);
     TEST_DONE();
 }
