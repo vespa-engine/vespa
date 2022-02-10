@@ -5237,13 +5237,16 @@
       "public java.lang.String getFormat()",
       "public void setFormat(java.lang.String)",
       "public java.lang.Object clone()",
-      "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
       "public boolean getTiming()",
       "public void setTiming(boolean)",
       "public java.util.Set getSummaryFields()",
+      "public void setSummaryFields(java.lang.String)",
+      "public boolean getTensorShortForm()",
+      "public void setTensorShortForm(java.lang.String)",
+      "public void setTensorShortForm(boolean)",
       "public void prepare()",
-      "public void setSummaryFields(java.lang.String)"
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": [
       "public static final java.lang.String PRESENTATION",
@@ -5251,6 +5254,7 @@
       "public static final java.lang.String TIMING",
       "public static final java.lang.String SUMMARY",
       "public static final java.lang.String SUMMARY_FIELDS",
+      "public static final java.lang.String TENSORS",
       "public static final java.lang.String FORMAT"
     ]
   },

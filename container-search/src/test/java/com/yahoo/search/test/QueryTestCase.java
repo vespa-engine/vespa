@@ -38,6 +38,7 @@ import com.yahoo.search.query.profile.DimensionValues;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
+import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
@@ -1090,6 +1091,49 @@ public class QueryTestCase {
         parser.search(query, new Execution(parser, Execution.Context.createContextStub()));
         assertEquals("[all(group(context_id) max(10) each(each(output(summary())))), all(group(context_id) max(10) each(each(output(summary()))))]",
                      query.getSelect().getGrouping().toString());
+    }
+
+    /**
+     * Tests that the value presentation.format.tensors can be set in a query profile.
+     * This is special because presentation.format is a native query profile.
+     */
+    @Test
+    public void testSettingNativeQueryProfileValueInQueryProfile() {
+        {
+            QueryProfileRegistry registry = new QueryProfileRegistry();
+            QueryProfile profile = new QueryProfile("default");
+            profile.set("presentation.format.tensors", "short", Map.of(), registry);
+            registry.register(profile);
+            CompiledQueryProfileRegistry cRegistry = registry.compile();
+            Query query = new Query("?query=foo", cRegistry.findQueryProfile("default"));
+            assertTrue(query.getPresentation().getTensorShortForm());
+        }
+
+        {   // Same as above but also set presentation.format
+            QueryProfileRegistry registry = new QueryProfileRegistry();
+            QueryProfile profile = new QueryProfile("default");
+            profile.set("presentation.format", "xml", Map.of(), registry);
+            profile.set("presentation.format.tensors", "short", Map.of(), registry);
+            registry.register(profile);
+            CompiledQueryProfileRegistry cRegistry = registry.compile();
+            Query query = new Query("?query=foo", cRegistry.findQueryProfile("default"));
+            assertEquals("xml", query.getPresentation().getFormat());
+            assertTrue(query.getPresentation().getTensorShortForm());
+        }
+
+        {   // Set presentation.format with a typed query profile type
+            QueryProfileRegistry registry = new QueryProfileRegistry();
+            QueryProfileType type = new QueryProfileType("mytype");
+            type.inherited().add(registry.getType("native"));
+            registry.getTypeRegistry().register(type);
+            type.addField(new FieldDescription("ranking.features.query(embedding)", "tensor(x[5])"),
+                          registry.getTypeRegistry());
+            QueryProfile profile = new QueryProfile("default");
+            profile.setType(type);
+            registry.register(profile);
+            CompiledQueryProfileRegistry cRegistry = registry.compile();
+            Query query = new Query("?query=foo&presentation.format=xml", cRegistry.findQueryProfile("default"));
+        }
     }
 
     private void assertDetectionText(String expectedDetectionText, String queryString, String ... indexSpecs) {

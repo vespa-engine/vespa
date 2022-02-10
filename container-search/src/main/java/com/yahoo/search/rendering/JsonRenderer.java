@@ -79,7 +79,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private static final CompoundName WRAP_ALL_MAPS = new CompoundName("renderer.json.jsonMaps");
     private static final CompoundName DEBUG_RENDERING_KEY = new CompoundName("renderer.json.debug");
     private static final CompoundName JSON_CALLBACK = new CompoundName("jsoncallback");
-    private static final CompoundName TENSOR_FORMAT = new CompoundName("format.tensors");
 
     // if this must be optimized, simply use com.fasterxml.jackson.core.SerializableString
     private static final String BUCKET_LIMITS = "limits";
@@ -177,7 +176,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         beginJsonCallback(stream);
         debugRendering = getDebugRendering(getResult().getQuery());
         jsonMaps = getWrapAllMaps(getResult().getQuery());
-        tensorShortFormRendering = getTensorShortFormRendering(getResult().getQuery());
+        tensorShortFormRendering = getResult().getQuery() != null
+                                   && getResult().getQuery().getPresentation().getTensorShortForm();
         setGenerator(generatorFactory.createGenerator(stream, JsonEncoding.UTF8), debugRendering);
         renderedChildren = new ArrayDeque<>();
         generator.writeStartObject();
@@ -214,12 +214,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     private boolean getDebugRendering(Query q) {
         return q != null && q.properties().getBoolean(DEBUG_RENDERING_KEY, false);
-    }
-
-    private boolean getTensorShortFormRendering(Query q) {
-        if (q == null || q.properties().get(TENSOR_FORMAT) == null)
-            return false;
-        return q.properties().getString(TENSOR_FORMAT).equalsIgnoreCase("short");
     }
 
     protected void renderTrace(Trace trace) throws IOException {

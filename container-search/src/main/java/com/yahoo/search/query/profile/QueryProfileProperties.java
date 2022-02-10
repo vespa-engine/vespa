@@ -87,7 +87,6 @@ public class QueryProfileProperties extends Properties {
      */
     @Override
     public void set(CompoundName name, Object value, Map<String, String> context) {
-        // TODO: Refactor
         try {
             name = unalias(name, context);
 
@@ -101,42 +100,8 @@ public class QueryProfileProperties extends Properties {
             if (runtimeReference != null &&  ! runtimeReference.getSecond().isOverridable(name.rest(runtimeReference.getFirst().size()), context))
                 return;
 
-            // Check types
-            if ( ! profile.getTypes().isEmpty()) {
-                QueryProfileType type;
-                QueryProfileType explicitTypeFromField = null;
-                for (int i = 0; i < name.size(); i++) {
-                    if (explicitTypeFromField != null)
-                        type = explicitTypeFromField;
-                    else
-                        type = profile.getType(name.first(i), context);
-                    if (type == null) continue;
-
-                    String localName = name.get(i);
-                    FieldDescription fieldDescription = type.getField(localName);
-                    if (fieldDescription == null && type.isStrict())
-                        throw new IllegalInputException("'" + localName + "' is not declared in " + type + ", and the type is strict");
-
-                    // TODO: In addition to strictness, check legality along the way
-
-                    if (fieldDescription != null) {
-                        if (i == name.size() - 1) { // at the end of the path, check the assignment type
-                            value = fieldDescription.getType().convertFrom(value, new ConversionContext(localName,
-                                                                                                        profile.getRegistry(),
-                                                                                                        embedder,
-                                                                                                        context));
-                            if (value == null)
-                                throw new IllegalInputException("'" + value + "' is not a " +
-                                                                fieldDescription.getType().toInstanceDescription());
-                        }
-                        else if (fieldDescription.getType() instanceof QueryProfileFieldType) {
-                            // If a type is specified, use that instead of the type implied by the name
-                            explicitTypeFromField = ((QueryProfileFieldType) fieldDescription.getType()).getQueryProfileType();
-                        }
-                    }
-
-                }
-            }
+            if ( ! profile.getTypes().isEmpty())
+                value = convertByType(name, value, context);
 
             if (value instanceof String && value.toString().startsWith("ref:")) {
                 if (profile.getRegistry() == null)
@@ -162,6 +127,53 @@ public class QueryProfileProperties extends Properties {
         catch (IllegalArgumentException e) {
             throw new IllegalInputException("Could not set '" + name + "' to '" + value + "'", e);
         }
+    }
+
+    private Object convertByType(CompoundName name, Object value, Map<String, String> context) {
+        QueryProfileType type;
+        QueryProfileType explicitTypeFromField = null;
+        for (int i = 0; i < name.size(); i++) {
+            if (explicitTypeFromField != null)
+                type = explicitTypeFromField;
+            else
+                type = profile.getType(name.first(i), context);
+            if (type == null) continue;
+
+            String localName = name.get(i);
+            FieldDescription fieldDescription = type.getField(localName);
+            if (fieldDescription == null && type.isStrict())
+                throw new IllegalInputException("'" + localName + "' is not declared in " + type + ", and the type is strict");
+            // TODO: In addition to strictness, check legality along the way
+
+            if (fieldDescription != null) {
+                if (i == name.size() - 1) { // at the end of the path, check the assignment type
+                    var conversionContext = new ConversionContext(localName, profile.getRegistry(), embedder, context);
+                    var convertedValue = fieldDescription.getType().convertFrom(value, conversionContext);
+                    if (convertedValue == null
+                        && fieldDescription.getType() instanceof QueryProfileFieldType
+                        && ((QueryProfileFieldType) fieldDescription.getType()).getQueryProfileType() != null) {
+                        // Try the value of the query profile itself instead
+                        var queryProfileValueDescription = ((QueryProfileFieldType) fieldDescription.getType()).getQueryProfileType().getField("");
+                        if (queryProfileValueDescription != null) {
+                            convertedValue = queryProfileValueDescription.getType().convertFrom(value, conversionContext);
+                            if (convertedValue == null)
+                                throw new IllegalInputException("'" + value + "' is neither a " +
+                                                                fieldDescription.getType().toInstanceDescription() + " nor a " +
+                                                                queryProfileValueDescription.getType().toInstanceDescription());
+                        }
+                    } else if (convertedValue == null)
+                        throw new IllegalInputException("'" + value + "' is not a " +
+                                                        fieldDescription.getType().toInstanceDescription());
+
+                    value = convertedValue;
+                } else if (fieldDescription.getType() instanceof QueryProfileFieldType) {
+                    // If a type is specified, use that instead of the type implied by the name
+                    explicitTypeFromField = ((QueryProfileFieldType) fieldDescription.getType()).getQueryProfileType();
+                }
+            }
+
+        }
+        return value;
     }
 
     @Override
