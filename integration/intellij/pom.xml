@@ -28,7 +28,7 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
-            <!-- Gradle is also responsible for creating javadoc such that this task is skipped here. -->
+            <!-- Gradle is also responsible for creating javadoc so this task is skipped here. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>

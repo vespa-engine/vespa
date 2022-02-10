@@ -3,8 +3,6 @@ package ai.vespa.intellij.model;
 
 import com.intellij.testFramework.LightProjectDescriptor;
 
-import java.io.File;
-
 /**
  * Describes a project used in unit tests.
  * https://plugins.jetbrains.com/docs/intellij/light-and-heavy-tests.html
@@ -12,5 +10,5 @@ import java.io.File;
  * @author bratseth
  */
 public class TestProjectDescriptor extends LightProjectDescriptor {
-    
+
 }

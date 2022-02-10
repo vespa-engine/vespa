@@ -9,8 +9,10 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.PsiReference;
+import com.intellij.psi.PsiWhiteSpace;
 import com.intellij.psi.search.FileTypeIndex;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.PsiTreeUtil;
 import ai.vespa.intellij.schema.psi.SdAnnotationFieldDefinition;
 import ai.vespa.intellij.schema.psi.SdArgumentDefinition;
@@ -62,26 +64,38 @@ public class SdUtil {
     }
     
     /**
-     * @param baseRankProfile the rank-profile node to find its parent
-     * @return the rank-profile that the baseRankProfile inherits from, or null if it doesn't exist
+     * Returns the profiles inherited by this.
+     *
+     * @param baseRankProfile the rank-profile node to find the parents of
+     * @return the profiles this inherits from, empty if none
      */
     public static List<SdRankProfileDefinition> getRankProfileParents(SdRankProfileDefinition baseRankProfile) {
-        if (baseRankProfile == null) return null;
+        if (baseRankProfile == null) return List.of();
         ASTNode inheritsNode = baseRankProfile.getNode().findChildByType(SdTypes.INHERITS);
-        if (inheritsNode == null) return null;
-
-        return identifiersIn(inheritsNode).stream()
-                                          .map(parentIdentifierAST -> parentIdentifierAST.getPsi().getReference())
-                                          .filter(reference -> reference != null)
-                                          .map(reference -> (SdRankProfileDefinition)reference.resolve())
-                                          .collect(Collectors.toList());
+        if (inheritsNode == null) return List.of();
+        return inherits(baseRankProfile).stream()
+                                        .map(parentIdentifierAST -> parentIdentifierAST.getPsi().getReference())
+                                        .filter(reference -> reference != null)
+                                        .map(reference -> (SdRankProfileDefinition)reference.resolve())
+                                        .collect(Collectors.toList());
     }
 
-    private static List<ASTNode> identifiersIn(ASTNode inheritsNode) {
-        return Arrays.stream(inheritsNode.getChildren(null))
-                     .filter(node -> node.getElementType() == SdTypes.IDENTIFIER_VAL ||
-                                     node.getElementType() == SdTypes.IDENTIFIER_WITH_DASH_VAL)
-                     .collect(Collectors.toList());
+    private static List<ASTNode> inherits(SdRankProfileDefinition baseRankProfile) {
+        Tokens tokens = Tokens.of(baseRankProfile);
+        tokens.require(SdTypes.RANK_PROFILE);
+        tokens.requireWhitespace();
+        tokens.require(SdTypes.IDENTIFIER_VAL, SdTypes.IDENTIFIER_WITH_DASH_VAL);
+        if ( ! tokens.skipWhitespace()) return List.of();
+        if ( ! tokens.skip(SdTypes.INHERITS)) return List.of();
+        tokens.requireWhitespace();
+        List<ASTNode> inherited = new ArrayList<>();
+        do {
+            inherited.add(tokens.require(SdTypes.IDENTIFIER_VAL, SdTypes.IDENTIFIER_WITH_DASH_VAL));
+            tokens.skipWhitespace();
+            if ( ! tokens.skip(SdTypes.COMMA)) break;
+            tokens.skipWhitespace();
+        } while (true);
+        return inherited;
     }
     
     public static String createFunctionDescription(SdFunctionDefinition function) {
@@ -237,5 +251,84 @@ public class SdUtil {
     public static List<PsiElement> findDocumentSummaryChildren(PsiElement element) {
         return new ArrayList<>(PsiTreeUtil.collectElementsOfType(element, SdSummaryDefinition.class));
     }
-    
+
+    /** A collection of tokens with a current index. */
+    public static class Tokens {
+
+        private final ASTNode[] nodes;
+        private int i = 0;
+
+        private Tokens(PsiElement element) {
+            nodes = element.getNode().getChildren(null);
+        }
+
+        /**
+         * Advances to the next token, if it is of the given type.
+         *
+         * @return true if the current token was of the given type and we advanced it, false
+         *         if it was not and nothing was changed
+         */
+        public boolean skip(IElementType ... tokenTypes) {
+            boolean is = is(tokenTypes);
+            if (is)
+                i++;
+            return is;
+        }
+
+        /**
+         * Advances beyond the next token, if it is whitespace.
+         *
+         * @return true if the current token was of the given type and we advanced it, false
+         *         if it was not and nothing was changed
+         */
+        public boolean skipWhitespace() {
+            boolean is = isWhitespace();
+            if (is)
+                i++;
+            return is;
+        }
+
+        /** Returns whether the current token is of the given type */
+        public boolean is(IElementType ... tokenTypes) {
+            for (IElementType type : tokenTypes)
+                if (current().getElementType() == type) return true;
+            return false;
+        }
+
+        /** Returns whether the current token is whitespace */
+        public boolean isWhitespace() {
+            return current().getPsi() instanceof PsiWhiteSpace;
+        }
+
+        /** Returns the current token if it is of the required type and throws otherwise. */
+        public ASTNode require(IElementType ... tokenTypes) {
+            if ( ! is(tokenTypes) )
+                throw new IllegalArgumentException("Expected " + toString(tokenTypes) + " but got " + current());
+            ASTNode current = current();
+            i++;
+            return current;
+        }
+
+        public void requireWhitespace() {
+            if ( ! isWhitespace() )
+                throw new IllegalArgumentException("Expected whitespace, but got " + current());
+            i++;
+        }
+
+        /** Returns the current token (AST node), or null if we have reached the end. */
+        public ASTNode current() {
+            if (i >= nodes.length) return null;
+            return nodes[i];
+        }
+
+        private String toString(IElementType[] tokens) {
+            return Arrays.stream(tokens).map(token -> token.getDebugName()).collect(Collectors.joining(", "));
+        }
+
+        public static Tokens of(PsiElement element) {
+            return new Tokens(element);
+        }
+
+    }
+
 }

@@ -30,7 +30,10 @@
         ID_WITH_DASH_REG = 'regexp:[a-zA-Z_][a-zA-Z0-9_-]*'
         WHITE_SPACE = 'regexp:\s+'
         COMMENT = 'regexp:#.*'
-        SYMBOL = 'regexp:[!$|:{}(),.\[\]]'
+        SYMBOL = 'regexp:[!$|:{}().\[\]]'
+        COMMA = 'regexp:[,]'
+        //BLOCK_START = '{'
+        //BLOCK_END = '}'
         COMPARISON_OPERATOR = 'regexp:[<>]|(==)|(<=)|(>=)|(~=)'
         ARITHMETIC_OPERATOR = 'regexp:[\-+*/%]'
         INTEGER_REG = 'regexp:[0-9]+'
@@ -55,11 +58,11 @@ SchemaFieldDefinition ::= field IdentifierVal type FieldTypeName '{' SchemaField
                            }
                             
 FieldTypeName ::= ("array" '<' (FieldTypeName | IdentifierVal) '>') | ("weightedset" '<' SingleValueFieldTypeName '>') | 
-                  ("map" '<' (FieldTypeName | IdentifierVal) ',' (FieldTypeName | IdentifierVal) '>') | TensorType |
+                  ("map" '<' (FieldTypeName | IdentifierVal) COMMA (FieldTypeName | IdentifierVal) '>') | TensorType |
                   (SingleValueFieldTypeName '[' ']') | SingleValueFieldTypeName
 private SingleValueFieldTypeName ::= "string" | "int" | "long" | "bool" | "byte" | "float" | "double" | "position" | "predicate" | "raw" | "uri" | 
                              "reference" '<' IdentifierVal '>' | "annotationreference" '<' IdentifierVal '>' | IdentifierVal
-private TensorType ::= "tensor" ('<' ("float" | "double" | "int8" | "bfloat16") '>')? '(' TensorDimension (',' TensorDimension)* ')'
+private TensorType ::= "tensor" ('<' ("float" | "double" | "int8" | "bfloat16") '>')? '(' TensorDimension (COMMA TensorDimension)* ')'
 private TensorDimension ::= WordWrapper (('{' '}') | ('[' INTEGER_REG ']'))
 
 SchemaFieldBody ::= DocumentFieldBodyOptions* // Fields of schemas and documents defined the same way here
@@ -78,7 +81,7 @@ ImportFieldDefinition ::= import field IdentifierVal '.' IdentifierVal as Identi
 
 FieldSetDefinition ::= fieldset IdentifierVal '{' FieldSetBody '}'
 FieldSetBody ::= FieldSetBodyOptions*
-private FieldSetBodyOptions ::= (fields ':' IdentifierVal (',' IdentifierVal)*) | QueryCommandDefinition | MatchDefinition
+private FieldSetBodyOptions ::= (fields ':' IdentifierVal (COMMA IdentifierVal)*) | QueryCommandDefinition | MatchDefinition
 
 ConstantDefinition ::= constant IdentifierVal '{' ConstantBody '}'
 ConstantBody ::= ConstantBodyOptions*
@@ -111,8 +114,8 @@ RankingExpression ::= FilePathExpr | ParenthesisedExpr | BooleanExpr | Arithmeti
 
 FilePathExpr ::= file ':' (FilePath | WordWrapper)
 
-IfFunctionExpr ::= "if" '(' (InListRankingExpr | RankingExpression) ',' RankingExpression ',' RankingExpression ')'
-InListRankingExpr ::= RankingExpression "in" '[' RankingExpression (',' RankingExpression)* ']'
+IfFunctionExpr ::= "if" '(' (InListRankingExpr | RankingExpression) COMMA RankingExpression COMMA RankingExpression ')'
+InListRankingExpr ::= RankingExpression "in" '[' RankingExpression (COMMA RankingExpression)* ']'
 
 BooleanExpr ::= RankingExpression COMPARISON_OPERATOR RankingExpression
                 
@@ -120,7 +123,7 @@ ArithmeticExpr ::= RankingExpression ARITHMETIC_OPERATOR RankingExpression
 
 QueryDefinitionExpr ::= QueryDefinition | ItemRawScoreDefinition
 
-FunctionCallExpr ::= IdentifierWithDashVal '(' RankingExpression (',' RankingExpression)* ')' ('.' IdentifierWithDashVal)?
+FunctionCallExpr ::= IdentifierWithDashVal '(' RankingExpression (COMMA RankingExpression)* ')' ('.' IdentifierWithDashVal)?
  
 ParenthesisedExpr ::= '(' RankingExpression ')'
 
@@ -129,7 +132,7 @@ PrimitiveExpr ::= (('-')? INTEGER_REG) | (('-')? FLOAT_REG) | IdentifierVal | Ra
 //-------------------------
 //-- Rank Profile rules ---
 //-------------------------
-RankProfileDefinition ::= (rank-profile | model) IdentifierWithDashVal (inherits IdentifierWithDashVal (',' IdentifierWithDashVal)*)? '{' RankProfileBody '}'
+RankProfileDefinition ::= (rank-profile | model) IdentifierWithDashVal (inherits IdentifierWithDashVal (COMMA IdentifierWithDashVal)*)? '{' RankProfileBody '}'
                           { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                             implements=["ai.vespa.intellij.schema.psi.SdDeclaration"]
                            }
@@ -167,10 +170,10 @@ private SecondPhaseBodyOptions ::= (rerank-count ':' INTEGER_REG) | ExpressionDe
 
 RankPropertiesDefinition ::= rank-properties '{' RankPropertiesBody '}'
 RankPropertiesBody ::= (RankPropertiesKey ':' RankPropertiesValue)+
-RankPropertiesKey ::= (IdentifierWithDashVal | STRING_REG | '(' | ')' | '.' | ',' | '$' | INTEGER_REG)+ 
+RankPropertiesKey ::= (IdentifierWithDashVal | STRING_REG | '(' | ')' | '.' | COMMA | '$' | INTEGER_REG)+
 RankPropertiesValue ::= (('-')? INTEGER_REG) | (('-')? FLOAT_REG) | WORD_REG | IdentifierVal | STRING_REG
 
-FunctionDefinition ::= (function | macro) inline? IdentifierVal ( '()' | '(' (ArgumentDefinition (',' ArgumentDefinition)*)? ')' )
+FunctionDefinition ::= (function | macro) inline? IdentifierVal ( '()' | '(' (ArgumentDefinition (COMMA ArgumentDefinition)*)? ')' )
                        '{' ExpressionDefinition '}'  
                        { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                          implements=["ai.vespa.intellij.schema.psi.SdFunctionDefinitionInterface" "ai.vespa.intellij.schema.psi.SdNamedElement"]
@@ -201,7 +204,7 @@ ItemRawScoreDefinition ::=  "itemRawScore" '(' IdentifierVal ')'
 //-------------------------
 //---- Document rules -----
 //-------------------------
-DocumentDefinition ::= document (IdentifierVal (inherits IdentifierVal (',' IdentifierVal)*)?)? '{' DocumentBody '}'
+DocumentDefinition ::= document (IdentifierVal (inherits IdentifierVal (COMMA IdentifierVal)*)?)? '{' DocumentBody '}'
                       { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                         implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                       }
@@ -281,10 +284,10 @@ QueryCommandDefinition ::= query-command ':' (IdentifierVal | STRING_REG | WordW
 SummaryDefinition ::= summary IdentifierWithDashVal? (type FieldTypeName)? ((':' SummaryBodyOptions) | ( '{' SummaryBody '}'))
                       { mixin="ai.vespa.intellij.schema.psi.impl.SdSummaryDefinitionMixin" }
 SummaryBody ::= SummaryBodyOptions* // Does not support zero-or-one occurrences
-SummaryBodyOptions ::= full | static | dynamic | (source ':' (IdentifierVal ('.' IdentifierVal)?) (',' IdentifierVal ('.' IdentifierVal)?)*) |
-                       (to ':' IdentifierVal (',' IdentifierVal)*) | matched-elements-only | BoldingDefinition
+SummaryBodyOptions ::= full | static | dynamic | (source ':' (IdentifierVal ('.' IdentifierVal)?) (COMMA IdentifierVal ('.' IdentifierVal)?)*) |
+                       (to ':' IdentifierVal (COMMA IdentifierVal)*) | matched-elements-only | BoldingDefinition
 // Summary To
-SummaryToDefinition ::= summary-to ':' WordWrapper (',' WordWrapper)*
+SummaryToDefinition ::= summary-to ':' WordWrapper (COMMA WordWrapper)*
 // Bolding                       
 BoldingDefinition ::= bolding ':' (on | off | true | false)
 // Index

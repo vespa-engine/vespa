@@ -5,6 +5,7 @@ import ai.vespa.intellij.schema.psi.SdFile;
 import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.search.FilenameIndex;
@@ -34,15 +35,9 @@ public class RankProfile {
      * @throws IllegalArgumentException if not found
      */
     public static RankProfile fromProjectFile(Project project, String filePath, String profileName) {
-        PsiFile[] psiFile = FilenameIndex.getFilesByName(project, filePath, GlobalSearchScope.allScope(project));
-        if (psiFile.length == 0)
-            throw new IllegalArgumentException(filePath + " could not be opened");
-        if (psiFile.length > 1)
-            throw new IllegalArgumentException("Multiple files matches " + filePath);
-        if ( ! (psiFile[0] instanceof SdFile))
-            throw new IllegalArgumentException(filePath + " is not a schema or profile");
+        PsiElement root = Schema.load(project, filePath);
         Optional<SdRankProfileDefinition> definition =
-                PsiTreeUtil.collectElementsOfType(psiFile[0], SdRankProfileDefinition.class)
+                PsiTreeUtil.collectElementsOfType(root, SdRankProfileDefinition.class)
                    .stream()
                    .filter(p -> p.getName().equals(profileName))
                    .findAny();

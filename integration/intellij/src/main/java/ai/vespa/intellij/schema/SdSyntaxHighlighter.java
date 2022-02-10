@@ -64,7 +64,7 @@ public class SdSyntaxHighlighter extends SyntaxHighlighterBase {
             return IDENTIFIER_KEYS;
         } else if (keyWordsSet.contains(tokenType)) {
             return KEY_KEYS;
-        } else if (tokenType.equals(SdTypes.SYMBOL)) {
+        } else if (tokenType.equals(SdTypes.SYMBOL) || tokenType.equals(SdTypes.COMMA)) {
             return SYMBOL_KEYS;
         } else if (tokenType.equals(SdTypes.STRING_REG)) {
             return STRING_KEYS;

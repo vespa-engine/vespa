@@ -22,7 +22,10 @@ schema child inherits parent {
         indexing: input pf1 | lowercase | index | attribute | summary
     }
 
-    rank-profile child_profile inherits parent_profile {
+    rank-profile  child_profile   inherits other_child_profile, parent_profile {
+    }
+
+    rank-profile other_child_profile {
     }
 
     constant child_constant {
