@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.intellij.schema.hierarchy;
 
+import ai.vespa.intellij.schema.model.Function;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNamedElement;
@@ -29,12 +30,12 @@ public class SdCalleeTreeStructure extends SdCallTreeStructure {
     }
         
     @Override
-    protected Set<PsiElement> getChildren(SdFunctionDefinition element) {
+    protected Set<Function> getChildren(SdFunctionDefinition element) {
         return getCallees(element, functionsMap);
     }
     
-    private Set<PsiElement> getCallees(SdFunctionDefinition function, Map<String, List<PsiElement>> functions) {
-        Set<PsiElement> results = new HashSet<>();
+    private Set<Function> getCallees(SdFunctionDefinition function, Map<String, List<Function>> functions) {
+        Set<Function> results = new HashSet<>();
         SdExpressionDefinition expression = PsiTreeUtil.findChildOfType(function, SdExpressionDefinition.class);
         if (expression == null) {
             return results;
@@ -43,7 +44,7 @@ public class SdCalleeTreeStructure extends SdCallTreeStructure {
             if (functions.containsKey(((PsiNamedElement) identifier).getName())) {
                 PsiReference identifierRef = identifier.getReference();
                 if (identifierRef != null) {
-                    results.add(identifierRef.resolve());
+                    results.add(Function.from(identifierRef.resolve()));
                 }
             }
         }
@@ -59,8 +60,8 @@ public class SdCalleeTreeStructure extends SdCallTreeStructure {
         
         Set<SdRankProfileDefinition> inheritedRanks = ranksHeritageMap.get(rankProfileName);
         
-        for (PsiElement functionImpl : functions.get(function.getName())) {
-            if (inheritedRanks.contains(PsiTreeUtil.getParentOfType(functionImpl, SdRankProfileDefinition.class))) {
+        for (Function functionImpl : functions.get(function.getName())) {
+            if (inheritedRanks.contains(PsiTreeUtil.getParentOfType(functionImpl.definition(), SdRankProfileDefinition.class))) {
                 results.add(functionImpl);
             }
 

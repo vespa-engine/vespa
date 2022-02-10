@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.intellij.schema;
 
+import ai.vespa.intellij.schema.model.Function;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -36,6 +37,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -49,14 +51,14 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.collect;
  */
 public class SdUtil {
     
-    public static HashMap<String, List<PsiElement>> createFunctionsMap(SdFile file) {
-        HashMap<String, List<PsiElement>> macrosMap = new HashMap<>();
+    public static Map<String, List<Function>> functionsIn(SdFile file) {
+        Map<String, List<Function>> functionsMap = new HashMap<>();
         for (SdRankProfileDefinition rankProfile : PsiTreeUtil.findChildrenOfType(file, SdRankProfileDefinition.class)) {
             for (SdFunctionDefinition function : PsiTreeUtil.findChildrenOfType(rankProfile, SdFunctionDefinition.class)) {
-                macrosMap.computeIfAbsent(function.getName(), k -> new ArrayList<>()).add(function);
+                functionsMap.computeIfAbsent(function.getName(), k -> new ArrayList<>()).add(Function.from(function));
             }
         }
-        return macrosMap;
+        return functionsMap;
     }
     
     /**

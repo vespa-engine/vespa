@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.intellij.schema.hierarchy;
 
+import ai.vespa.intellij.schema.model.Function;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
@@ -26,7 +27,7 @@ import java.util.function.Consumer;
  */
 public class SdCallerTreeStructure extends SdCallTreeStructure {
     
-    private Map<String, Set<PsiElement>> functionTreeChildren;
+    private Map<String, Set<Function>> functionTreeChildren;
     
     public SdCallerTreeStructure(Project project, PsiElement element, String currentScopeType) {
         super(project, element, currentScopeType);
@@ -34,35 +35,34 @@ public class SdCallerTreeStructure extends SdCallTreeStructure {
     }
     
     @Override
-    protected Set<PsiElement> getChildren(SdFunctionDefinition element) {
+    protected Set<Function> getChildren(SdFunctionDefinition element) {
         return getCallers(element, functionsMap);
     }
     
-    private Set<PsiElement> getCallers(SdFunctionDefinition macro, Map<String, List<PsiElement>> macrosMap) {
-        String macroName = macro.getName();
-
-        if (functionTreeChildren.containsKey(macroName)) {
-            return functionTreeChildren.get(macroName);
+    private Set<Function> getCallers(SdFunctionDefinition function, Map<String, List<Function>> functionsMap) {
+        String functionName = function.getName();
+        if (functionTreeChildren.containsKey(functionName)) {
+            return functionTreeChildren.get(functionName);
         }
         
-        Set<PsiElement> results = new HashSet<>();
-        
-        for (PsiElement macroImpl : macrosMap.get(macroName)) {
-            SearchScope searchScope = getSearchScope(myScopeType, macroImpl);
-            ReferencesSearch.search(macroImpl, searchScope).forEach((Consumer<? super PsiReference>) r -> {
+        Set<Function> results = new HashSet<>();
+        for (Function functionImpl : functionsMap.get(functionName)) {
+            SearchScope searchScope = getSearchScope(myScopeType, functionImpl.definition());
+            ReferencesSearch.search(functionImpl.definition(), searchScope).forEach((Consumer<? super PsiReference>) r -> {
                 ProgressManager.checkCanceled();
                 PsiElement psiElement = r.getElement();
                 SdFunctionDefinition f = PsiTreeUtil.getParentOfType(psiElement, SdFunctionDefinition.class, false);
-                if (f != null && f.getName() != null && !f.getName().equals(macroName)) { 
-                    ContainerUtil.addIfNotNull(results, f); 
+                if (f != null && f.getName() != null && !f.getName().equals(functionName)) {
+                    results.add(Function.from(f));
                 } else {
                     SdFirstPhaseDefinition fp = PsiTreeUtil.getParentOfType(psiElement, SdFirstPhaseDefinition.class, false);
-                    ContainerUtil.addIfNotNull(results, fp);
+                    if (fp != null)
+                        results.add(Function.from(fp));
                 }
             });
         }
         
-        functionTreeChildren.put(macroName, results);
+        functionTreeChildren.put(functionName, results);
         return results;
     }
     

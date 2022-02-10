@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.intellij.schema.hierarchy;
 
+import ai.vespa.intellij.schema.model.Function;
 import com.intellij.ide.hierarchy.HierarchyNodeDescriptor;
 import com.intellij.ide.hierarchy.HierarchyTreeStructure;
 import com.intellij.openapi.project.Project;
@@ -15,7 +16,6 @@ import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,18 +29,18 @@ public abstract class SdCallTreeStructure extends HierarchyTreeStructure {
 
     protected final String myScopeType;
     protected final SdFile myFile;
-    protected Map<String, List<PsiElement>> functionsMap;
+    protected Map<String, List<Function>> functionsMap;
     protected Map<String, Set<SdRankProfileDefinition>> ranksHeritageMap;
     
     public SdCallTreeStructure(Project project, PsiElement element, String currentScopeType) {
         super(project, new SdCallHierarchyNodeDescriptor(null, element, true));
         myScopeType = currentScopeType;
         myFile = (SdFile) element.getContainingFile();
-        functionsMap = SdUtil.createFunctionsMap(myFile);
+        functionsMap = SdUtil.functionsIn(myFile);
         ranksHeritageMap = new HashMap<>();
     }
     
-    protected abstract Set<PsiElement> getChildren(SdFunctionDefinition element);
+    protected abstract Set<Function> getChildren(SdFunctionDefinition element);
     
     @Override
     protected Object[] buildChildren(HierarchyNodeDescriptor descriptor) {
@@ -57,17 +57,17 @@ public abstract class SdCallTreeStructure extends HierarchyTreeStructure {
                 return ArrayUtilRt.EMPTY_OBJECT_ARRAY;
             }
             
-            Set<PsiElement> children = getChildren((SdFunctionDefinition) element);
+            Set<Function> children = getChildren((SdFunctionDefinition) element);
             
             Map<PsiElement, SdCallHierarchyNodeDescriptor> callerToDescriptorMap = new HashMap<>();
             PsiElement baseClass = PsiTreeUtil.getParentOfType(element, SdRankProfileDefinition.class);
             
-            for (PsiElement caller : children) {
-                if (isInScope(baseClass, caller, myScopeType)) {
+            for (Function caller : children) {
+                if (isInScope(baseClass, caller.definition(), myScopeType)) {
                     SdCallHierarchyNodeDescriptor callerDescriptor = callerToDescriptorMap.get(caller);
                     if (callerDescriptor == null) {
-                        callerDescriptor = new SdCallHierarchyNodeDescriptor(descriptor, caller, false);
-                        callerToDescriptorMap.put(caller, callerDescriptor);
+                        callerDescriptor = new SdCallHierarchyNodeDescriptor(descriptor, caller.definition(), false);
+                        callerToDescriptorMap.put(caller.definition(), callerDescriptor);
                         descriptors.add(callerDescriptor);
                     }
                 }

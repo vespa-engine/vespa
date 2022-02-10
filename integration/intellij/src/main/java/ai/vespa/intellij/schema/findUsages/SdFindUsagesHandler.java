@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.intellij.schema.findUsages;
 
+import ai.vespa.intellij.schema.model.Function;
 import com.intellij.find.findUsages.FindUsagesHandler;
 import com.intellij.find.findUsages.FindUsagesOptions;
 import com.intellij.openapi.application.ReadAction;
@@ -18,6 +19,7 @@ import ai.vespa.intellij.schema.psi.SdFunctionDefinition;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This class handles creating the "Find Usages" window.
@@ -26,12 +28,12 @@ import java.util.List;
  */
 public class SdFindUsagesHandler extends FindUsagesHandler {
     
-    private final HashMap<String, List<PsiElement>> functionsMap;
+    private final Map<String, List<Function>> functionsMap;
     
     protected SdFindUsagesHandler(PsiElement psiElement) {
         super(psiElement);
         PsiFile file = psiElement.getContainingFile();
-        functionsMap = file instanceof SdFile ? SdUtil.createFunctionsMap((SdFile) psiElement.getContainingFile())
+        functionsMap = file instanceof SdFile ? SdUtil.functionsIn((SdFile) psiElement.getContainingFile())
                                               : new HashMap<>();
     }
     
@@ -49,11 +51,11 @@ public class SdFindUsagesHandler extends FindUsagesHandler {
                                     .forEach((PsiReference ref) -> processor.process(new UsageInfo(ref)));
                 if (!success) return false;
             } else {
-                String macroName = ReadAction.compute( ((SdFunctionDefinition) elementToSearch)::getName);
+                String functionName = ReadAction.compute( ((SdFunctionDefinition) elementToSearch)::getName);
                 
-                for (PsiElement macroImpl : functionsMap.get(macroName)) {
+                for (Function functionImpl : functionsMap.get(functionName)) {
                     boolean success =
-                        ReferencesSearch.search(createSearchParameters(macroImpl, scope, options))
+                        ReferencesSearch.search(createSearchParameters(functionImpl.definition(), scope, options))
                                         .forEach((PsiReference ref) -> processor.process(new UsageInfo(ref)));
                     if (!success) return false;
                 }
