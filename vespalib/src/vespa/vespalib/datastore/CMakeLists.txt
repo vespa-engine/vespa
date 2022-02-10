@@ -14,6 +14,7 @@ vespa_add_library(vespalib_vespalib_datastore OBJECT
     fixed_size_hash_map.cpp
     sharded_hash_map.cpp
     unique_store.cpp
+    unique_store_buffer_type.cpp
     unique_store_string_allocator.cpp
     DEPENDS
 )
