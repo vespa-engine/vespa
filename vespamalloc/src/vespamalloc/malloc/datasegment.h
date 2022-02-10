@@ -21,6 +21,7 @@ public:
     void * getBlock(size_t & oldBlockSize, SizeClassT sc) __attribute__((noinline));
     void returnBlock(void *ptr) __attribute__((noinline));
     SizeClassT sizeClass(const void * ptr)    const { return _blockList[blockId(ptr)].sizeClass(); }
+    bool containsPtr(const void * ptr)       const { return blockId(ptr) < BlockCount; }
     size_t getMaxSize(const void * ptr)       const { return _blockList[blockId(ptr)].getMaxSize(); }
     const void * start()                      const { return _osMemory.getStart(); }
     const void * end()                        const { return _osMemory.getEnd(); }

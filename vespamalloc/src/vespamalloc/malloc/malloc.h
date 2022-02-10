@@ -30,13 +30,25 @@ public:
     void *malloc(size_t sz, std::align_val_t);
     void *realloc(void *oldPtr, size_t sz);
     void free(void *ptr) {
-        freeSC(ptr, _segment.sizeClass(ptr));
+        if (_segment.containsPtr(ptr)) {
+            freeSC(ptr, _segment.sizeClass(ptr));
+        } else {
+            _mmapPool.unmap(MemBlockPtrT(ptr).rawPtr());
+        }
     }
     void free(void *ptr, size_t sz) {
-        freeSC(ptr, MemBlockPtrT::sizeClass(MemBlockPtrT::adjustSize(sz)));
+        if (_segment.containsPtr(ptr)) {
+            freeSC(ptr, MemBlockPtrT::sizeClass(MemBlockPtrT::adjustSize(sz)));
+        } else {
+            _mmapPool.unmap(MemBlockPtrT(ptr).rawPtr());
+        }
     }
     void free(void *ptr, size_t sz, std::align_val_t alignment) {
-        freeSC(ptr, MemBlockPtrT::sizeClass(MemBlockPtrT::adjustSize(sz, alignment)));
+        if (_segment.containsPtr(ptr)) {
+            freeSC(ptr, MemBlockPtrT::sizeClass(MemBlockPtrT::adjustSize(sz, alignment)));
+        } else {
+            _mmapPool.unmap(MemBlockPtrT(ptr).rawPtr());
+        }
     }
     size_t getMinSizeForAlignment(size_t align, size_t sz) const { return MemBlockPtrT::getMinSizeForAlignment(align, sz); }
     size_t sizeClass(const void *ptr) const { return _segment.sizeClass(ptr); }
@@ -73,6 +85,7 @@ private:
     size_t                     _prAllocLimit;
     DataSegment<MemBlockPtrT>  _segment;
     AllocPool                  _allocPool;
+    MMapPool                   _mmapPool;
     ThreadListT                _threadList;
 };
 
@@ -82,7 +95,8 @@ MemoryManager<MemBlockPtrT, ThreadListT>::MemoryManager(size_t logLimitAtStart) 
     _prAllocLimit(logLimitAtStart),
     _segment(),
     _allocPool(_segment),
-    _threadList(_allocPool)
+    _mmapPool(),
+    _threadList(_allocPool, _mmapPool)
 {
     setAllocatorForThreads(this);
     initThisThread();

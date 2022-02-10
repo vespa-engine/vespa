@@ -17,7 +17,9 @@ class ThreadListT
 public:
     using ThreadPool = ThreadPoolT<MemBlockPtrT, ThreadStatT >;
     using AllocPool = AllocPoolT<MemBlockPtrT>;
-    ThreadListT(AllocPool & pool);
+    ThreadListT(AllocPool & allocPool, MMapPool & mmapPool);
+    ThreadListT(const ThreadListT & tl) = delete;
+    ThreadListT & operator = (const ThreadListT & tl) = delete;
     ~ThreadListT();
     void setParams(size_t threadCacheLimit) {
         ThreadPool::setParams(threadCacheLimit);
@@ -33,13 +35,12 @@ public:
     void info(FILE * os, size_t level=0);
     size_t getMaxNumThreads() const { return NELEMS(_threadVector); }
 private:
-    ThreadListT(const ThreadListT & tl);
-    ThreadListT & operator = (const ThreadListT & tl);
     std::atomic_flag           _isThreaded;
     std::atomic<uint32_t>      _threadCount;
     std::atomic<uint32_t>      _threadCountAccum;
     ThreadPool                 _threadVector[NUM_THREADS];
     AllocPoolT<MemBlockPtrT> & _allocPool;
+    MMapPool                 & _mmapPool;
     static thread_local ThreadPool * _myPool TLS_LINKAGE;
 };
 

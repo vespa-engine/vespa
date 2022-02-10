@@ -55,7 +55,7 @@ static constexpr uint32_t NUM_THREADS = 16384;
 using OSMemory = MmapMemory;
 using SizeClassT = int;
 
-constexpr size_t ALWAYS_REUSE_LIMIT = 0x200000ul;
+constexpr size_t ALWAYS_REUSE_LIMIT = 0x100000ul;
    
 inline constexpr int msbIdx(uint64_t v) {
     return (sizeof(v)*8 - 1) - __builtin_clzl(v);

@@ -71,13 +71,19 @@ mallocHelper(size_t exactSize,
                 PARANOID_CHECK2( *(int *)2 = 2; );
             }
         } else {
-            af._allocFrom = _allocPool->exactAlloc(exactSize, sc, af._allocFrom);
-            _stat[sc].incExactAlloc();
-            if (af._allocFrom) {
-                af._allocFrom->sub(mem);
-                PARANOID_CHECK2( if (!mem.ptr()) { *(int *)3 = 3; } );
+            if (exactSize > _mmapLimit) {
+                mem = MemBlockPtrT(_mmapPool->mmap(MemBlockPtrT::classSize(sc)), MemBlockPtrT::classSize(sc));
+                mem.setExact(exactSize);
+                mem.free();
             } else {
-                PARANOID_CHECK2( *(int *)4 = 4; );
+                af._allocFrom = _allocPool->exactAlloc(exactSize, sc, af._allocFrom);
+                _stat[sc].incExactAlloc();
+                if (af._allocFrom) {
+                    af._allocFrom->sub(mem);
+                    PARANOID_CHECK2(if (!mem.ptr()) { *(int *) 3 = 3; });
+                } else {
+                    PARANOID_CHECK2(*(int *) 4 = 4;);
+                }
             }
         }
     }
@@ -86,6 +92,7 @@ mallocHelper(size_t exactSize,
 template <typename MemBlockPtrT, typename ThreadStatT >
 ThreadPoolT<MemBlockPtrT, ThreadStatT>::ThreadPoolT() :
     _allocPool(nullptr),
+    _mmapPool(nullptr),
     _mmapLimit(0x40000000),
     _threadId(0),
     _osThreadId(0)
