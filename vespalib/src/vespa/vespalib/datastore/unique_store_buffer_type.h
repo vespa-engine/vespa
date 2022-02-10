@@ -20,7 +20,7 @@ public:
     UniqueStoreBufferType(uint32_t min_arrays, uint32_t max_arrays,
                           uint32_t num_arrays_for_new_buffer, float alloc_grow_factor,
                           std::shared_ptr<alloc::MemoryAllocator> memory_allocator) noexcept;
-    ~UniqueStoreBufferType();
+    ~UniqueStoreBufferType() override;
     const vespalib::alloc::MemoryAllocator* get_memory_allocator() const override;
 };
 
