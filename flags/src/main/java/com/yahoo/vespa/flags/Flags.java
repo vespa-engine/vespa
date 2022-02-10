@@ -164,13 +164,6 @@ public class Flags {
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
 
-    public static final UnboundBooleanFlag GENERATE_NON_MTLS_ENDPOINT = defineFeatureFlag(
-            "generate-non-mtls-endpoint", false,
-            List.of("tokle"), "2021-02-18", "2022-03-01",
-            "Whether to generate the non-mtls endpoint",
-            "Takes effect on next internal redeployment",
-            APPLICATION_ID);
-
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
             List.of("vekterli"), "2021-02-19", "2022-05-01",
@@ -229,14 +222,6 @@ public class Flags {
             "Takes effect on next run of EndpointCertificateMaintainer"
     );
 
-    public static final UnboundBooleanFlag ENABLE_ROUTING_REUSE_PORT = defineFeatureFlag(
-            "enable-routing-reuse-port", true,
-            List.of("mortent"), "2021-09-29", "2022-03-01",
-            "Enable reuse port in routing configuration",
-            "Takes effect on container restart",
-            HOSTNAME
-    );
-
     public static final UnboundBooleanFlag UNORDERED_MERGE_CHAINING = defineFeatureFlag(
             "unordered-merge-chaining", true,
             List.of("vekterli", "geirst"), "2021-11-15", "2022-03-01",
@@ -268,13 +253,6 @@ public class Flags {
             "Use Vespa 8 types and formats for geographical positions",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundBooleanFlag USE_LEGACY_LB_SERVICES = defineFeatureFlag(
-            "use-legacy-lb-services", false,
-            List.of("tokle"), "2021-11-22", "2022-03-01",
-            "Whether to generate routing table based on legacy lb-services config",
-            "Takes effect on container reboot",
-            ZONE_ID, HOSTNAME);
 
     public static final UnboundBooleanFlag USE_V8_DOC_MANAGER_CFG = defineFeatureFlag(
             "use-v8-doc-manager-cfg", false,
