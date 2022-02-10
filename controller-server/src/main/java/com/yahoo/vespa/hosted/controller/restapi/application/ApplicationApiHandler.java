@@ -235,7 +235,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/")) return root(request);
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/access/ssh/request")) return accessRequests(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/access/request/ssh")) return accessRequests(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return tenantInfo(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/notifications")) return notifications(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}/validate")) return validateSecretStore(path.get("tenant"), path.get("name"), request);
@@ -287,8 +287,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse handlePUT(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return updateTenant(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/access/ssh/request")) return requestSshAccess(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/access/ssh/approve")) return approveAccessRequest(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/access/request/ssh")) return requestSshAccess(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/access/approve/ssh")) return approveAccessRequest(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return updateTenantInfo(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/archive-access")) return allowArchiveAccess(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}")) return addSecretStore(path.get("tenant"), path.get("name"), request);
@@ -434,9 +434,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (controller.tenants().require(tenant).type() != Tenant.Type.cloud)
             return ErrorResponse.badRequest("Can only see access requests for cloud tenants");
 
-        if (!isTenantAdmin(tenant, request)) {
-            return ErrorResponse.forbidden("Only tenant admins are allowed to approve access requests");
-        }
         var inspector = toSlime(request.getData()).get();
         var expiry = inspector.field("expiry").valid() ?
                 Instant.ofEpochMilli(inspector.field("expiry").asLong()) :
@@ -2780,16 +2777,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return securityContext.roles().stream()
                               .map(Role::definition)
                               .anyMatch(definition -> definition == RoleDefinition.hostedOperator);
-    }
-
-    private static boolean isTenantAdmin(TenantName tenant, HttpRequest request) {
-        return Optional.ofNullable(request.getJDiscRequest().context().get(SecurityContext.ATTRIBUTE_NAME))
-                .filter(SecurityContext.class::isInstance)
-                .map(SecurityContext.class::cast)
-                .map(SecurityContext::roles)
-                .orElseThrow(() -> new IllegalArgumentException("Attribute '" + SecurityContext.ATTRIBUTE_NAME + "' was not set on request"))
-                .stream()
-                .anyMatch(role -> role.equals(Role.administrator(tenant)));
     }
 
     private void ensureApplicationExists(TenantAndApplicationId id, HttpRequest request) {
