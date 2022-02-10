@@ -140,6 +140,7 @@ Onnx::WireInfo make_plan(Options &opts, const Onnx &model) {
         auto type = make_input_type(input);
         REQUIRE(planner.bind_input_type(type, input));
     }
+    planner.prepare_output_types(model);
     for (const auto &output: model.outputs()) {
         REQUIRE(!planner.make_output_type(output).is_error());
     }
