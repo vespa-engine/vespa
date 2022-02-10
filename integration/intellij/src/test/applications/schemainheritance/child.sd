@@ -1,0 +1,43 @@
+schema child inherits parent {
+
+    document child inherits parent {
+
+        field cf1 type string {
+            indexing: summary
+        }
+
+    }
+
+    fieldset child_set {
+        fields: cf1, pf1
+    }
+
+    stemming: shortest
+
+    index child_index {
+        stemming: shortest
+    }
+
+    field child_field type string {
+        indexing: input pf1 | lowercase | index | attribute | summary
+    }
+
+    rank-profile child_profile inherits parent_profile {
+    }
+
+    constant child_constant {
+        file: constants/my_constant_tensor_file.json
+        type: tensor<float>(x{},y{})
+    }
+
+    onnx-model child_model {
+        file: small_constants_and_functions.onnx
+    }
+
+    document-summary child_summary inherits parent_summary {
+        summary cf1 type string {}
+    }
+
+    import field importedschema_ref.importedfield2 as child_imported {}
+
+}
