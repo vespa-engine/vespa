@@ -25,7 +25,7 @@ public class SdRankProfileGroupingRule extends SingleParentUsageGroupingRule imp
         
         while (psiElement != null) {
             if (psiElement instanceof SdRankProfileDefinition) {
-                final SdRankProfileDefinition componentElement = (SdRankProfileDefinition) psiElement;
+                SdRankProfileDefinition componentElement = (SdRankProfileDefinition) psiElement;
                 return new SdUsageGroup(componentElement);
             }
             psiElement = psiElement.getParent();

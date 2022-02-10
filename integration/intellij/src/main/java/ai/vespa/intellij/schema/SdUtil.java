@@ -32,14 +32,20 @@ import ai.vespa.intellij.schema.psi.SdSummaryDefinition;
 import ai.vespa.intellij.schema.psi.SdTypes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.collect;
 
 /**
  * Util class for the plugin's code.
  *
  * @author Shahar Ariel
+ * @author bratseth
  */
 public class SdUtil {
     
@@ -57,24 +63,23 @@ public class SdUtil {
      * @param baseRankProfile the rank-profile node to find its parent
      * @return the rank-profile that the baseRankProfile inherits from, or null if it doesn't exist
      */
-    public static PsiElement getRankProfileParent(SdRankProfileDefinition baseRankProfile) {
-        if (baseRankProfile == null) {
-            return null;
-        }
+    public static List<SdRankProfileDefinition> getRankProfileParents(SdRankProfileDefinition baseRankProfile) {
+        if (baseRankProfile == null) return null;
         ASTNode inheritsNode = baseRankProfile.getNode().findChildByType(SdTypes.INHERITS);
-        if (inheritsNode == null) {
-            return null;
-        }
-        ASTNode ancestorAST = baseRankProfile.getNode().findChildByType(SdTypes.IDENTIFIER_VAL, inheritsNode);
-        if (ancestorAST == null) {
-            ancestorAST = baseRankProfile.getNode().findChildByType(SdTypes.IDENTIFIER_WITH_DASH_VAL, inheritsNode);
-            if (ancestorAST == null) {
-                return null;
-            }
-        }
-        SdIdentifier ancestorIdentifier = (SdIdentifier) ancestorAST.getPsi();
-        PsiReference ref = ancestorIdentifier.getReference();
-        return ref != null ? ref.resolve() : null;
+        if (inheritsNode == null) return null;
+
+        return identifiersIn(inheritsNode).stream()
+                                          .map(parentIdentifierAST -> parentIdentifierAST.getPsi().getReference())
+                                          .filter(reference -> reference != null)
+                                          .map(reference -> (SdRankProfileDefinition)reference.resolve())
+                                          .collect(Collectors.toList());
+    }
+
+    private static List<ASTNode> identifiersIn(ASTNode inheritsNode) {
+        return Arrays.stream(inheritsNode.getChildren(null))
+                     .filter(node -> node.getElementType() == SdTypes.IDENTIFIER_VAL ||
+                                     node.getElementType() == SdTypes.IDENTIFIER_WITH_DASH_VAL)
+                     .collect(Collectors.toList());
     }
     
     public static String createFunctionDescription(SdFunctionDefinition function) {
@@ -107,11 +112,10 @@ public class SdUtil {
         }
         return result;
     }
-    
-    
+
     public static List<SdDeclaration> findDeclarationsByScope(PsiElement file, PsiElement element, String name) {
         List<SdDeclaration> result = new ArrayList<>();
-        
+
         // If element is a field declared in another file (to be imported), return the declaration from the other file
         // if found, else return an empty result list
         if (element.getParent() instanceof SdImportFieldDefinition &&
@@ -159,18 +163,14 @@ public class SdUtil {
         
         // If element is a function's name, return the most specific declaration of the function
         if (((SdIdentifier) element).isFunctionName(file, name)) {
-            PsiElement curRankProfile = PsiTreeUtil.getParentOfType(element, SdRankProfileDefinition.class);
-            while (curRankProfile != null) {
-                for (SdFunctionDefinition function : PsiTreeUtil.collectElementsOfType(curRankProfile, SdFunctionDefinition.class)) {
-                    if (function.getName() != null && function.getName().equals(name)) {
-                        result.add(function);
-                        return result;
-                    }
-                }
-                curRankProfile = getRankProfileParent((SdRankProfileDefinition) curRankProfile);
+            var profile = (SdRankProfileDefinition)PsiTreeUtil.getParentOfType(element, SdRankProfileDefinition.class);
+            Optional<SdFunctionDefinition> function = findFunction(name, profile);
+            if (function.isPresent()) {
+                result.add(function.get());
+                return result;
             }
         }
-        
+
         for (PsiElement declaration : PsiTreeUtil.collectElements(file, psiElement ->
             psiElement instanceof SdDeclaration && !(psiElement instanceof SdArgumentDefinition))) {
             if (name.equals(((SdDeclaration) declaration).getName())) {
@@ -180,6 +180,25 @@ public class SdUtil {
         }
         
         return result;
+    }
+
+    /**
+     * Returns the first encountered function of the given name in the inheritance hierarchy
+     * of the given profile, or empty if it is not present.
+     *
+     * NOTE: Only profiles in the same file is considered
+     */
+    private static Optional<SdFunctionDefinition> findFunction(String functionName, SdRankProfileDefinition profile) {
+        Optional<SdFunctionDefinition> function = PsiTreeUtil.collectElementsOfType(profile, SdFunctionDefinition.class)
+                                                             .stream()
+                                                             .filter(f -> f.getName().equals(functionName))
+                                                             .findAny();
+        if (function.isPresent()) return function;
+        for (var parent : getRankProfileParents(profile)) {
+            function = findFunction(functionName, parent);
+            if (function.isPresent()) return function;
+        }
+        return Optional.empty();
     }
     
     public static List<SdDeclaration> findDeclarations(PsiElement element) {

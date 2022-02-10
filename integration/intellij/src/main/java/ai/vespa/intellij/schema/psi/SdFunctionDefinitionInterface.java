@@ -11,19 +11,20 @@ import ai.vespa.intellij.schema.SdUtil;
 public interface SdFunctionDefinitionInterface extends SdDeclaration {
 
     default boolean isOverride() {
-        String macroName = this.getName();
-        
-        SdRankProfileDefinition curRankProfile = PsiTreeUtil.getParentOfType(this, SdRankProfileDefinition.class);
-        if (curRankProfile != null) {
-            curRankProfile = (SdRankProfileDefinition) SdUtil.getRankProfileParent(curRankProfile);
+        String functionName = this.getName();
+        SdRankProfileDefinition thisRankProfile = PsiTreeUtil.getParentOfType(this, SdRankProfileDefinition.class);
+        if (thisRankProfile == null) return false;
+        for (var parentProfile : SdUtil.getRankProfileParents(thisRankProfile)) {
+            if (containsFunction(functionName, parentProfile))
+                return true;
         }
-        while (curRankProfile != null) {
-            for (SdFunctionDefinition macro : PsiTreeUtil.collectElementsOfType(curRankProfile, SdFunctionDefinition.class)) {
-                if (macro.getName() != null && macro.getName().equals(macroName)) {
-                    return true;
-                }
-            }
-            curRankProfile = (SdRankProfileDefinition) SdUtil.getRankProfileParent(curRankProfile);
+        return false;
+    }
+
+    default boolean containsFunction(String functionName, SdRankProfileDefinition rankProfile) {
+        for (var parentProfile : SdUtil.getRankProfileParents(rankProfile)) {
+            if (containsFunction(functionName, parentProfile))
+                return true;
         }
         return false;
     }

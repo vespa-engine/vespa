@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A general tree in the "Call Hierarchy" window.
@@ -27,18 +29,18 @@ public abstract class SdCallTreeStructure extends HierarchyTreeStructure {
 
     protected final String myScopeType;
     protected final SdFile myFile;
-    protected HashMap<String, List<PsiElement>> macrosMap;
-    protected HashMap<String, HashSet<SdRankProfileDefinition>> ranksHeritageMap;
+    protected Map<String, List<PsiElement>> functionsMap;
+    protected Map<String, Set<SdRankProfileDefinition>> ranksHeritageMap;
     
     public SdCallTreeStructure(Project project, PsiElement element, String currentScopeType) {
         super(project, new SdCallHierarchyNodeDescriptor(null, element, true));
         myScopeType = currentScopeType;
         myFile = (SdFile) element.getContainingFile();
-        macrosMap = SdUtil.createFunctionsMap(myFile);
+        functionsMap = SdUtil.createFunctionsMap(myFile);
         ranksHeritageMap = new HashMap<>();
     }
     
-    protected abstract HashSet<PsiElement> getChildren(SdFunctionDefinition element);
+    protected abstract Set<PsiElement> getChildren(SdFunctionDefinition element);
     
     @Override
     protected Object[] buildChildren(HierarchyNodeDescriptor descriptor) {
@@ -55,9 +57,9 @@ public abstract class SdCallTreeStructure extends HierarchyTreeStructure {
                 return ArrayUtilRt.EMPTY_OBJECT_ARRAY;
             }
             
-            HashSet<PsiElement> children = getChildren((SdFunctionDefinition) element);
+            Set<PsiElement> children = getChildren((SdFunctionDefinition) element);
             
-            final HashMap<PsiElement, SdCallHierarchyNodeDescriptor> callerToDescriptorMap = new HashMap<>();
+            Map<PsiElement, SdCallHierarchyNodeDescriptor> callerToDescriptorMap = new HashMap<>();
             PsiElement baseClass = PsiTreeUtil.getParentOfType(element, SdRankProfileDefinition.class);
             
             for (PsiElement caller : children) {

@@ -14,6 +14,8 @@ import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A Callee tree in the "Call Hierarchy" window.
@@ -27,18 +29,18 @@ public class SdCalleeTreeStructure extends SdCallTreeStructure {
     }
         
     @Override
-    protected HashSet<PsiElement> getChildren(SdFunctionDefinition element) {
-        return getCallees(element, macrosMap);
+    protected Set<PsiElement> getChildren(SdFunctionDefinition element) {
+        return getCallees(element, functionsMap);
     }
     
-    private HashSet<PsiElement> getCallees(SdFunctionDefinition macro, HashMap<String, List<PsiElement>> macrosMap) {
-        final HashSet<PsiElement> results = new HashSet<>();
-        SdExpressionDefinition expression = PsiTreeUtil.findChildOfType(macro, SdExpressionDefinition.class);
+    private Set<PsiElement> getCallees(SdFunctionDefinition function, Map<String, List<PsiElement>> functions) {
+        Set<PsiElement> results = new HashSet<>();
+        SdExpressionDefinition expression = PsiTreeUtil.findChildOfType(function, SdExpressionDefinition.class);
         if (expression == null) {
             return results;
         }
         for (SdIdentifier identifier : PsiTreeUtil.collectElementsOfType(expression, SdIdentifier.class)) {
-            if (macrosMap.containsKey(((PsiNamedElement) identifier).getName())) {
+            if (functions.containsKey(((PsiNamedElement) identifier).getName())) {
                 PsiReference identifierRef = identifier.getReference();
                 if (identifierRef != null) {
                     results.add(identifierRef.resolve());
@@ -46,7 +48,7 @@ public class SdCalleeTreeStructure extends SdCallTreeStructure {
             }
         }
         
-        SdRankProfileDefinition rankProfile = PsiTreeUtil.getParentOfType(macro, SdRankProfileDefinition.class);
+        SdRankProfileDefinition rankProfile = PsiTreeUtil.getParentOfType(function, SdRankProfileDefinition.class);
         if (rankProfile == null) {
             return results;
         }
@@ -55,11 +57,11 @@ public class SdCalleeTreeStructure extends SdCallTreeStructure {
             ranksHeritageMap.put(rankProfileName, SdHierarchyUtil.getRankProfileChildren(myFile, rankProfile));
         }
         
-        HashSet<SdRankProfileDefinition> inheritedRanks = ranksHeritageMap.get(rankProfileName);
+        Set<SdRankProfileDefinition> inheritedRanks = ranksHeritageMap.get(rankProfileName);
         
-        for (PsiElement macroImpl : macrosMap.get(macro.getName())) {
-            if (inheritedRanks.contains(PsiTreeUtil.getParentOfType(macroImpl, SdRankProfileDefinition.class))) {
-                results.add(macroImpl);
+        for (PsiElement functionImpl : functions.get(function.getName())) {
+            if (inheritedRanks.contains(PsiTreeUtil.getParentOfType(functionImpl, SdRankProfileDefinition.class))) {
+                results.add(functionImpl);
             }
 
         }

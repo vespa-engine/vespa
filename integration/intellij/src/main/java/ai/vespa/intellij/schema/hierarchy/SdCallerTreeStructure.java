@@ -15,6 +15,8 @@ import ai.vespa.intellij.schema.psi.SdFunctionDefinition;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -24,26 +26,26 @@ import java.util.function.Consumer;
  */
 public class SdCallerTreeStructure extends SdCallTreeStructure {
     
-    private HashMap<String, HashSet<PsiElement>> macroTreeChildren;
+    private Map<String, Set<PsiElement>> functionTreeChildren;
     
     public SdCallerTreeStructure(Project project, PsiElement element, String currentScopeType) {
         super(project, element, currentScopeType);
-        macroTreeChildren = new HashMap<>();
+        functionTreeChildren = new HashMap<>();
     }
     
     @Override
-    protected HashSet<PsiElement> getChildren(SdFunctionDefinition element) {
-        return getCallers(element, macrosMap);
+    protected Set<PsiElement> getChildren(SdFunctionDefinition element) {
+        return getCallers(element, functionsMap);
     }
     
-    private HashSet<PsiElement> getCallers(SdFunctionDefinition macro, HashMap<String, List<PsiElement>> macrosMap) {
+    private Set<PsiElement> getCallers(SdFunctionDefinition macro, Map<String, List<PsiElement>> macrosMap) {
         String macroName = macro.getName();
 
-        if (macroTreeChildren.containsKey(macroName)) {
-            return macroTreeChildren.get(macroName);
+        if (functionTreeChildren.containsKey(macroName)) {
+            return functionTreeChildren.get(macroName);
         }
         
-        HashSet<PsiElement> results = new HashSet<>();
+        Set<PsiElement> results = new HashSet<>();
         
         for (PsiElement macroImpl : macrosMap.get(macroName)) {
             SearchScope searchScope = getSearchScope(myScopeType, macroImpl);
@@ -60,7 +62,7 @@ public class SdCallerTreeStructure extends SdCallTreeStructure {
             });
         }
         
-        macroTreeChildren.put(macroName, results);
+        functionTreeChildren.put(macroName, results);
         return results;
     }
     
