@@ -5,10 +5,20 @@ search summaryfield {
             indexing: index | summary
             summary bar: full
         }
+        field mytags type array<string> {
+            indexing: index
+        }
     }
     document-summary baz {
         summary cox type string {
             source: bar
+        }
+        summary alltags type array<string> {
+            source: mytags
+        }
+        summary sometags type array<string> {
+            source: mytags
+            matched-elements-only
         }
     }
 }

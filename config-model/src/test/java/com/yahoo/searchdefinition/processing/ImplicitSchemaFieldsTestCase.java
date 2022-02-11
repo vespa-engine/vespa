@@ -38,7 +38,9 @@ public class ImplicitSchemaFieldsTestCase extends AbstractSchemaTestCase {
         assertNotNull(docType.getField("foo"));
         assertNotNull(docType.getField("bar"));
         assertNotNull(docType.getField("cox"));
-        assertEquals(3, docType.getFieldCount());
+        assertNotNull(docType.getField("mytags"));
+        assertNotNull(docType.getField("alltags"));
+        assertEquals(5, docType.getFieldCount());
     }
 
     @Test
