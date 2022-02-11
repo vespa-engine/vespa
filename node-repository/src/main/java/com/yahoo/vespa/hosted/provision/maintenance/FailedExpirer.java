@@ -42,6 +42,8 @@ import java.util.stream.Collectors;
 public class FailedExpirer extends NodeRepositoryMaintainer {
 
     private static final Logger log = Logger.getLogger(FailedExpirer.class.getName());
+    // Try recycling nodes until reaching this many failures
+    private static final int maxAllowedFailures = 50;
 
     private final NodeRepository nodeRepository;
     private final Duration statefulExpiry; // Stateful nodes: Grace period to allow recovery of data
@@ -85,11 +87,11 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
         recycle(nodesToRecycle);
     }
 
-    /** Move eligible nodes to dirty. This may be a subset of the given nodes */
+    /** Move eligible nodes to dirty or parked. This may be a subset of the given nodes */
     private void recycle(List<Node> nodes) {
         List<Node> nodesToRecycle = new ArrayList<>();
         for (Node candidate : nodes) {
-            if (NodeFailer.hasHardwareIssue(candidate, nodeRepository)) {
+            if (broken(candidate)) {
                 List<String> unparkedChildren = !candidate.type().isHost() ? List.of() :
                                                 nodeRepository.nodes().list()
                                                               .childrenOf(candidate)
@@ -98,7 +100,7 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
 
                 if (unparkedChildren.isEmpty()) {
                     nodeRepository.nodes().park(candidate.hostname(), false, Agent.FailedExpirer,
-                                                "Parked by FailedExpirer due to hardware issue");
+                                                "Parked by FailedExpirer due to hardware issue or high fail count");
                 } else {
                     log.info(String.format("Expired failed node %s with hardware issue was not parked because of " +
                                            "unparked children: %s", candidate.hostname(),
@@ -109,6 +111,12 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
             }
         }
         nodeRepository.nodes().deallocate(nodesToRecycle, Agent.FailedExpirer, "Expired by FailedExpirer");
+    }
+
+    /** Returns whether node is broken and cannot be recycled */
+    private boolean broken(Node node) {
+        return NodeFailer.hasHardwareIssue(node, nodeRepository) ||
+               (node.type().isHost() && node.status().failCount() >= maxAllowedFailures);
     }
 
 }
