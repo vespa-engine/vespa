@@ -35,10 +35,10 @@ public class SchemaTest extends LightJavaCodeInsightFixtureTestCase {
         assertEquals("simple.sd", schema.definition().getName());
         RankProfile profile = RankProfile.fromProjectFile(getProject(), "simple.sd", "simple-profile");
         assertEquals("simple-profile", profile.definition().getName());
-        List<SdRankProfileDefinition> parents = profile.findInherited();
+        List<RankProfile> parents = profile.findInherited();
         assertEquals(2, parents.size());
-        assertEquals("parent-profile1", parents.get(0).getName());
-        assertEquals("parent-profile2", parents.get(1).getName());
+        assertEquals("parent-profile1", parents.get(0).name());
+        assertEquals("parent-profile2", parents.get(1).name());
     }
 
     @Test
@@ -49,10 +49,10 @@ public class SchemaTest extends LightJavaCodeInsightFixtureTestCase {
         assertEquals("child.sd", schema.definition().getName());
         RankProfile profile = RankProfile.fromProjectFile(getProject(), "child.sd", "child_profile");
         assertEquals("child_profile", profile.definition().getName());
-        List<SdRankProfileDefinition> parents = profile.findInherited();
+        List<RankProfile> parents = profile.findInherited();
         assertEquals(2, parents.size());
-        assertEquals("other_child_profile", parents.get(0).getName());
-        // assertEquals("parent-profile", parents.get(1).getName()); TODO
+        assertEquals("other_child_profile", parents.get(0).name());
+        // assertEquals("parent-profile", parents.get(1).name()); TODO
     }
 
 }

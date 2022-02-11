@@ -27,6 +27,8 @@ public class RankProfile {
         this.definition = definition;
     }
 
+    public String name() { return definition.getName(); }
+
     public SdRankProfileDefinition definition() { return definition; }
 
     /**
@@ -34,13 +36,13 @@ public class RankProfile {
      *
      * @return the profiles this inherits from, empty if none
      */
-    public List<SdRankProfileDefinition> findInherited() {
+    public List<RankProfile> findInherited() {
         ASTNode inheritsNode = definition.getNode().findChildByType(SdTypes.INHERITS);
         if (inheritsNode == null) return List.of();
         return inherits().stream()
                          .map(parentIdentifierAST -> parentIdentifierAST.getPsi().getReference())
                          .filter(reference -> reference != null)
-                         .map(reference -> (SdRankProfileDefinition)reference.resolve())
+                         .map(reference -> new RankProfile((SdRankProfileDefinition)reference.resolve()))
                          .collect(Collectors.toList());
     }
 

@@ -16,7 +16,7 @@ public interface SdFunctionDefinitionInterface extends SdDeclaration {
         SdRankProfileDefinition thisRankProfile = PsiTreeUtil.getParentOfType(this, SdRankProfileDefinition.class);
         if (thisRankProfile == null) return false;
         for (var parentProfile : new RankProfile(thisRankProfile).findInherited()) {
-            if (containsFunction(functionName, parentProfile))
+            if (containsFunction(functionName, parentProfile.definition()))
                 return true;
         }
         return false;
@@ -26,7 +26,7 @@ public interface SdFunctionDefinitionInterface extends SdDeclaration {
         if (SdUtil.functionsIn(new RankProfile(rankProfile)).containsKey(functionName))
             return true;
         for (var parentProfile : new RankProfile(rankProfile).findInherited()) {
-            if (containsFunction(functionName, parentProfile))
+            if (containsFunction(functionName, parentProfile.definition()))
                 return true;
         }
         return false;

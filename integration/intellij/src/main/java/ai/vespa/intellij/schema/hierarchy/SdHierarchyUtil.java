@@ -45,7 +45,7 @@ public class SdHierarchyUtil {
         if (thisProfile.getName().equals(targetProfile.getName())) return true;
         return new RankProfile(thisProfile).findInherited()
                                            .stream()
-                                           .anyMatch(parent -> isChildOf(targetProfile, parent));
+                                           .anyMatch(parent -> isChildOf(targetProfile, parent.definition()));
     }
 
     public static Comparator<NodeDescriptor<?>> getComparator(Project project) {

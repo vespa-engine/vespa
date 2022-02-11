@@ -184,7 +184,7 @@ public class SdUtil {
                                                              .findAny();
         if (function.isPresent()) return function;
         for (var parent : new RankProfile(profile).findInherited()) {
-            function = findFunction(functionName, parent);
+            function = findFunction(functionName, parent.definition());
             if (function.isPresent()) return function;
         }
         return Optional.empty();
