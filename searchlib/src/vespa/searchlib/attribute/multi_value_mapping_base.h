@@ -27,11 +27,12 @@ public:
     using RefVector = vespalib::RcuVectorBase<EntryRef>;
 
 protected:
+    std::shared_ptr<vespalib::alloc::MemoryAllocator> _memory_allocator;
     RefVector _indices;
     size_t    _totalValues;
     CompactionSpec _compaction_spec;
 
-    MultiValueMappingBase(const vespalib::GrowStrategy &gs, vespalib::GenerationHolder &genHolder);
+    MultiValueMappingBase(const vespalib::GrowStrategy &gs, vespalib::GenerationHolder &genHolder, std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator);
     virtual ~MultiValueMappingBase();
 
     void updateValueCount(size_t oldValues, size_t newValues) {

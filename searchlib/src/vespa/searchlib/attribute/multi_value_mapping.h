@@ -27,7 +27,8 @@ public:
     MultiValueMapping(const MultiValueMapping &) = delete;
     MultiValueMapping & operator = (const MultiValueMapping &) = delete;
     MultiValueMapping(const vespalib::datastore::ArrayStoreConfig &storeCfg,
-                      const vespalib::GrowStrategy &gs = vespalib::GrowStrategy());
+                      const vespalib::GrowStrategy &gs,
+                      std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator);
     ~MultiValueMapping() override;
     ConstArrayRef get(uint32_t docId) const { return _store.get(_indices[docId]); }
     ConstArrayRef getDataForIdx(EntryRef idx) const { return _store.get(idx); }
