@@ -99,17 +99,6 @@ BlobSequenceReader::is_present() {
     return true;
 }
 
-
-
-std::unique_ptr<vespalib::alloc::MemoryAllocator>
-make_memory_allocator(const vespalib::string& name, bool swappable)
-{
-    if (swappable) {
-        return vespalib::alloc::MmapFileAllocatorFactory::instance().make_memory_allocator(name);
-    }
-    return {};
-}
-
 }
 
 void
@@ -161,7 +150,7 @@ DenseTensorAttribute::populate_address_space_usage(AddressSpaceUsage& usage) con
 DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
                                            const NearestNeighborIndexFactory& index_factory)
     : TensorAttribute(baseFileName, cfg, _denseTensorStore),
-      _denseTensorStore(cfg.tensorType(), make_memory_allocator(getName(), cfg.paged())),
+      _denseTensorStore(cfg.tensorType(), get_memory_allocator()),
       _index()
 {
     if (cfg.hnsw_index_params().has_value()) {
