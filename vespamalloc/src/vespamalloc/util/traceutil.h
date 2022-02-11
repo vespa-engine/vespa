@@ -13,7 +13,7 @@
 
 namespace vespamalloc {
 
-typedef StackEntry<StackReturnEntry> StackElem;
+using StackElem = StackEntry;
 typedef CallGraph<StackElem, 0x10000, Index> CallGraphT;
 
 class Aggregator
@@ -21,7 +21,7 @@ class Aggregator
 public:
     Aggregator();
     ~Aggregator();
-    void push_back(size_t num, const string & s) { _map.push_back(Map::value_type(num, s)); }
+    void push_back(size_t num, const string & s) { _map.emplace_back(num, s); }
     friend asciistream & operator << (asciistream & os, const Aggregator & v);
 private:
     typedef std::vector< std::pair<size_t, string> > Map;
@@ -57,9 +57,7 @@ DumpGraph<N>::DumpGraph(Aggregator * aggregator, const char * start, const char 
 }
 
 template<typename N>
-DumpGraph<N>::~DumpGraph()
-{
-}
+DumpGraph<N>::~DumpGraph() = default;
 
 template<typename N>
 void DumpGraph<N>::handle(const N & node)
@@ -71,7 +69,7 @@ void DumpGraph<N>::handle(const N & node)
     asciistream os;
     os << ' ' << node;
     _string += os.c_str();
-    if (node.callers() == NULL) {
+    if (node.callers() == nullptr) {
         _string += _endString;
         _aggregator->push_back(_min, _string);
     }

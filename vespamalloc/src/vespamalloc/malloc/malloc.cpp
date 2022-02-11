@@ -26,7 +26,7 @@ template <>
 void MemBlock::
 dumpInfo(size_t level)
 {
-    _GmemP->info(_logFile, level);
+    _GmemP->info(_G_logFile, level);
 }
 
 }

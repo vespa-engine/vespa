@@ -122,6 +122,11 @@ public:
 };
 
 void info();
+void logBigBlock(const void * ptr, size_t exact, size_t adjusted, size_t gross) __attribute__((noinline));
+void logStackTrace() __attribute__((noinline));
+
+extern FILE * _G_logFile;
+extern size_t _G_bigBlockLimit;
 
 }
 

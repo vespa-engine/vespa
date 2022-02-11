@@ -123,18 +123,7 @@ template <typename MemBlockPtrT, typename ThreadListT>
 void MemoryManager<MemBlockPtrT, ThreadListT>::crash()
 {
     fprintf(stderr, "vespamalloc detected unrecoverable error.\n");
-#if 0
-    if (_invalidMemLogLevel > 0) {
-        static size_t numRecurse=0;
-        if (numRecurse++ == 0) {
-            MemBlockPtrT::dumpInfo(_invalidMemLogLevel);
-        }
-        numRecurse--;
-    }
-    sleep(1);
-#else
     abort();
-#endif
 }
 
 template <typename MemBlockPtrT, typename ThreadListT>
@@ -211,7 +200,7 @@ void MemoryManager<MemBlockPtrT, ThreadListT>::freeSC(void *ptr, SizeClassT sc)
 template <typename MemBlockPtrT, typename ThreadListT>
 void * MemoryManager<MemBlockPtrT, ThreadListT>::realloc(void *oldPtr, size_t sz)
 {
-    void *ptr(nullptr);
+    void *ptr;
     if (oldPtr) {
         MemBlockPtrT mem(oldPtr);
         mem.readjustAlignment(_segment);
