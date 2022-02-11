@@ -377,6 +377,7 @@ protected:
     virtual vespalib::MemoryUsage getEnumStoreValuesMemoryUsage() const;
     virtual void populate_address_space_usage(AddressSpaceUsage& usage) const;
 
+    const std::shared_ptr<vespalib::alloc::MemoryAllocator>& get_memory_allocator() const noexcept { return _memory_allocator; }
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(AttributeVector);
     bool isLoaded() const { return _loaded; }
@@ -584,6 +585,7 @@ private:
     bool                                  _loaded;
     bool                                  _isUpdateableInMemoryOnly;
     vespalib::steady_time                 _nextStatUpdateTime;
+    std::shared_ptr<vespalib::alloc::MemoryAllocator> _memory_allocator;
 
 ////// Locking strategy interface. only available from the Guards.
     /**
