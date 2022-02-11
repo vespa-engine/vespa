@@ -28,7 +28,7 @@ void verify_that_vespamalloc_datasegment_size_exists() {
     assert(info.keepcost == 0);
     assert(info.ordblks == 0);
     assert(info.smblks == 0);
-    assert(info.uordblks == 0);
+    assert(info.uordblks > 0);
     assert(info.usmblks == 0);
 #else
     struct mallinfo info = mallinfo();
@@ -42,7 +42,7 @@ void verify_that_vespamalloc_datasegment_size_exists() {
     assert(info.keepcost == 0);
     assert(info.ordblks == 0);
     assert(info.smblks == 0);
-    assert(info.uordblks == 0);
+    assert(info.uordblks > 0);
     assert(info.usmblks == 0);
 #endif
 }

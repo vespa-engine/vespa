@@ -21,13 +21,14 @@ public:
     void * getBlock(size_t & oldBlockSize, SizeClassT sc) __attribute__((noinline));
     void returnBlock(void *ptr) __attribute__((noinline));
     SizeClassT sizeClass(const void * ptr)    const { return _blockList[blockId(ptr)].sizeClass(); }
+    bool containsPtr(const void * ptr)       const { return blockId(ptr) < BlockCount; }
     size_t getMaxSize(const void * ptr)       const { return _blockList[blockId(ptr)].getMaxSize(); }
     const void * start()                      const { return _osMemory.getStart(); }
     const void * end()                        const { return _osMemory.getEnd(); }
     static SizeClassT adjustedSizeClass(size_t sz)  { return (sz >> 16) + 0x400; }
     static size_t adjustedClassSize(SizeClassT sc)  { return (sc > 0x400) ? (sc - 0x400) << 16 : sc; }
     size_t dataSize()                         const { return (const char*)end() - (const char*)start(); }
-    size_t textSize()                         const { return size_t(start()); }
+    size_t freeSize() const;
     size_t infoThread(FILE * os, int level, uint32_t thread, SizeClassT sct, uint32_t maxThreadId=0) const __attribute__((noinline));
     void info(FILE * os, size_t level) __attribute__((noinline));
     void setupLog(size_t bigMemLogLevel, size_t bigLimit, size_t bigIncrement, size_t allocs2Show)
@@ -98,7 +99,8 @@ private:
                 _count--;
             }
         }
-        size_t info(FILE * os, int level) __attribute__((noinline));
+        size_t numFreeBlocks() const;
+        void info(FILE * os) __attribute__((noinline));
     private:
         void * linkOut(size_t findex, size_t left) __attribute__((noinline));
         BlockT *_blockList;

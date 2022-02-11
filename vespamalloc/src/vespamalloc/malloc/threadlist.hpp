@@ -6,14 +6,15 @@
 namespace vespamalloc {
 
 template <typename MemBlockPtrT, typename ThreadStatT>
-ThreadListT<MemBlockPtrT, ThreadStatT>::ThreadListT(AllocPool & pool) :
+ThreadListT<MemBlockPtrT, ThreadStatT>::ThreadListT(AllocPool & allocPool, MMapPool & mmapPool) :
     _isThreaded(false),
     _threadCount(0),
     _threadCountAccum(0),
-    _allocPool(pool)
+    _allocPool(allocPool),
+    _mmapPool(mmapPool)
 {
     for (size_t i = 0; i < getMaxNumThreads(); i++) {
-        _threadVector[i].setPool(_allocPool);
+        _threadVector[i].setPool(_allocPool, _mmapPool);
     }
 }
 
