@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.ml;
 
+import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.models.evaluation.Model;
 import ai.vespa.models.evaluation.ModelsEvaluator;
 import ai.vespa.models.handler.ModelsEvaluationHandler;
@@ -30,6 +31,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * Tests stateless model evaluation (turned on by the "model-evaluation" tag in "container")
@@ -61,6 +63,7 @@ public class ModelEvaluationTest {
 
     @Test
     public void testMl_serving() throws IOException {
+        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
         Path appDir = Path.fromString("src/test/cfg/application/ml_serving");
         Path storedAppDir = appDir.append("copy");
         try {
