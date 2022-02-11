@@ -15,7 +15,7 @@ namespace vespalib::datastore {
 
 template <typename EntryT, typename RefT>
 void
-ArrayStore<EntryT, RefT>::initArrayTypes(std::shared_ptr<alloc::MemoryAllocator> memory_allocator, const ArrayStoreConfig &cfg)
+ArrayStore<EntryT, RefT>::initArrayTypes(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator)
 {
     _largeArrayTypeId = _store.addType(&_largeArrayType);
     assert(_largeArrayTypeId == 0);
@@ -31,14 +31,14 @@ ArrayStore<EntryT, RefT>::initArrayTypes(std::shared_ptr<alloc::MemoryAllocator>
 }
 
 template <typename EntryT, typename RefT>
-ArrayStore<EntryT, RefT>::ArrayStore(std::shared_ptr<alloc::MemoryAllocator> memory_allocator, const ArrayStoreConfig &cfg)
+ArrayStore<EntryT, RefT>::ArrayStore(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator)
     : _largeArrayTypeId(0),
       _maxSmallArraySize(cfg.maxSmallArraySize()),
       _store(),
       _smallArrayTypes(),
       _largeArrayType(cfg.specForSize(0), memory_allocator)
 {
-    initArrayTypes(std::move(memory_allocator), cfg);
+    initArrayTypes(cfg, std::move(memory_allocator));
     _store.init_primary_buffers();
     if (cfg.enable_free_lists()) {
         _store.enableFreeLists();

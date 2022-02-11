@@ -49,16 +49,15 @@ struct Fixture
     ReferenceStore refStore;
     generation_t generation;
     Fixture(uint32_t maxSmallArraySize, bool enable_free_lists = true)
-        : store(std::make_unique<MemoryAllocatorObserver>(stats),
-                ArrayStoreConfig(maxSmallArraySize,
+        : store(ArrayStoreConfig(maxSmallArraySize,
                                  ArrayStoreConfig::AllocSpec(16, RefT::offsetSize(), 8_Ki,
-                                                             ALLOC_GROW_FACTOR)).enable_free_lists(enable_free_lists)),
+                                                             ALLOC_GROW_FACTOR)).enable_free_lists(enable_free_lists),
+                std::make_unique<MemoryAllocatorObserver>(stats)),
           refStore(),
           generation(1)
     {}
     Fixture(const ArrayStoreConfig &storeCfg)
-        : store(std::make_unique<MemoryAllocatorObserver>(stats),
-                storeCfg),
+        : store(storeCfg, std::make_unique<MemoryAllocatorObserver>(stats)),
           refStore(),
           generation(1)
     {}

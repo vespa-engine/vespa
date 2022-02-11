@@ -42,7 +42,7 @@ private:
     LargeArrayBufferType<EntryT> _largeArrayType;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
-    void initArrayTypes(std::shared_ptr<alloc::MemoryAllocator> memory_allocator, const ArrayStoreConfig &cfg);
+    void initArrayTypes(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
     // 1-to-1 mapping between type ids and sizes for small arrays is enforced during initialization.
     uint32_t getTypeId(size_t arraySize) const { return arraySize; }
     size_t getArraySize(uint32_t typeId) const { return typeId; }
@@ -58,7 +58,7 @@ private:
     }
 
 public:
-    ArrayStore(std::shared_ptr<alloc::MemoryAllocator> memory_allocator, const ArrayStoreConfig &cfg);
+    ArrayStore(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
     ~ArrayStore();
     EntryRef add(const ConstArrayRef &array);
     ConstArrayRef get(EntryRef ref) const {
