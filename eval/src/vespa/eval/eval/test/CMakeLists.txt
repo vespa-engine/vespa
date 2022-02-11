@@ -3,6 +3,7 @@ vespa_add_library(eval_eval_test OBJECT
     SOURCES
     cell_type_space.cpp
     eval_fixture.cpp
+    eval_onnx.cpp
     eval_spec.cpp
     gen_spec.cpp
     reference_evaluation.cpp
