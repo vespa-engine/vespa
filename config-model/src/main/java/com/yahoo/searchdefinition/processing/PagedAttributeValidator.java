@@ -9,6 +9,8 @@ import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
+import java.util.Optional;
+
 /**
  * Validates the 'paged' attribute setting and throws if specified on unsupported types.
  *
@@ -38,11 +40,23 @@ public class PagedAttributeValidator extends Processor {
     }
 
     private void validatePagedSetting(Field field, Attribute attribute) {
-        var tensorType = attribute.tensorType();
-        if (tensorType.isEmpty()
-            || !isDenseTensorType(tensorType.get())) {
-            fail(schema, field, "The 'paged' attribute setting is only supported for dense tensor types");
+        if (!isSupportedType(attribute)) {
+            fail(schema, field, "The 'paged' attribute setting is not supported for non-dense tensor, predicate and reference types");
         }
+    }
+
+    private boolean isSupportedType(Attribute attribute) {
+        var type = attribute.getType();
+        return (type != Attribute.Type.PREDICATE) &&
+                (type != Attribute.Type.REFERENCE) &&
+                (isSupportedTensorType(attribute.tensorType()));
+    }
+
+    private boolean isSupportedTensorType(Optional<TensorType> tensorType) {
+        if (tensorType.isPresent()) {
+            return isDenseTensorType(tensorType.get());
+        }
+        return true;
     }
 
     private boolean isDenseTensorType(TensorType type) {
