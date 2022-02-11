@@ -50,7 +50,7 @@ private:
 
 public:
     UniqueStore(std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
-    UniqueStore(std::shared_ptr<alloc::MemoryAllocator> memory_allocator, std::unique_ptr<IUniqueStoreDictionary> dict);
+    UniqueStore(std::unique_ptr<IUniqueStoreDictionary> dict, std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
     ~UniqueStore();
     void set_dictionary(std::unique_ptr<IUniqueStoreDictionary> dict);
     UniqueStoreAddResult add(EntryConstRefType value);
