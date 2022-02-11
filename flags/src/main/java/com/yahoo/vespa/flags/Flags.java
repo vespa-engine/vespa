@@ -291,7 +291,7 @@ public class Flags {
 
     public static final UnboundStringFlag ZOOKEEPER_SNAPSHOT_METHOD = defineStringFlag(
             "zookeeper-snapshot-method", "gz",
-            List.of("hmusum"), "2022-01-11", "2022-02-11",
+            List.of("hmusum"), "2022-01-11", "2022-03-01",
             "ZooKeeper snapshot method. Valid values are '', 'gz' and 'snappy'",
             "Takes effect on Docker container restart",
             ZONE_ID, APPLICATION_ID, NODE_TYPE);
