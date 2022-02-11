@@ -111,6 +111,7 @@
         <module>predicate-search</module>
         <module>predicate-search-core</module>
         <module>provided-dependencies</module>
+        <module>routing-generator</module>
         <module>searchcore</module>
         <module>searchlib</module>
         <module>searchsummary</module>

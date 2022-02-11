@@ -1,0 +1,18 @@
+
+{"servers": {
+  "total": 9,
+  "generation": 1,
+  "server": [
+    {"index": 0, "upstream": "gateway.prod.music.vespa.us-east-2.prod", "name": "10.78.114.166:4080", "status": "up", "rise": 0, "fall": 1, "type": "http", "port": 0},
+    {"index": 1, "upstream": "gateway.prod.music.vespa.us-east-2.prod", "name": "10.78.115.68:4080", "status": "up", "rise": 2, "fall": 0, "type": "http", "port": 0},
+    {"index": 2, "upstream": "qrs.prod.music.vespa.us-east-2.prod", "name": "10.78.114.166:4080", "status": "up", "rise": 0, "fall": 1, "type": "http", "port": 0},
+    {"index": 3, "upstream": "qrs.prod.music.vespa.us-east-2.prod", "name": "10.78.115.68:4080", "status": "up", "rise": 2, "fall": 0, "type": "http", "port": 0},
+    {"index": 4, "upstream": "qrs.prod.music.vespa.us-east-2.prod", "name": "10.78.114.166:4080", "status": "down", "rise": 0, "fall": 1, "type": "http", "port": 0},
+    {"index": 5, "upstream": "qrs.prod.music.vespa.us-east-2.prod", "name": "10.78.115.68:4080", "status": "down", "rise": 2, "fall": 0, "type": "http", "port": 0},
+    {"index": 6, "upstream": "qrs.prod.music.vespa.us-east-2.prod", "name": "10.78.114.166:4080", "status": "down", "rise": 0, "fall": 1, "type": "http", "port": 0},
+    {"index": 7, "upstream": "qrs.prod.music.vespa.us-east-2.prod", "name": "10.78.115.68:4080", "status": "down", "rise": 2, "fall": 0, "type": "http", "port": 0},
+    {"index": 8, "upstream": "donbot.vespa.us-east-2.prod", "name": "10.201.8.47:4080", "status": "up", "rise": 50604, "fall": 0, "type": "http", "port": 0},
+    {"index": 9, "upstream": "donbot.vespa.us-east-2.prod", "name": "10.201.14.46:4080", "status": "down", "rise": 50834, "fall": 0, "type": "http", "port": 0},
+    {"index": 10, "upstream": "appearing-in-routing.not.us-east-2.prod", "name": "10.201.14.50:4080", "status": "down", "rise": 50834, "fall": 0, "type": "http", "port": 0}
+    ]
+}}
