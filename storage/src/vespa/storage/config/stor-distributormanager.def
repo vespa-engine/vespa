@@ -293,3 +293,9 @@ implicitly_clear_bucket_priority_on_schedule bool default=true
 ## involved in a given merge have previously reported (as part of bucket info fetching)
 ## that they support the unordered merge feature.
 use_unordered_merge_chaining bool default=true
+
+## If true, inhibits _all_ merges to buckets in the default bucket space if the current
+## cluster state bundle indicates that global merges are pending in the cluster, i.e.
+## one or more nodes is in maintenance mode in the default bucket space but marked up in
+## the global bucket space.
+inhibit_default_merges_when_global_merges_pending bool default=false
