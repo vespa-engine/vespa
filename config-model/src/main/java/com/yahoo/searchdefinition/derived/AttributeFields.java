@@ -179,6 +179,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         return "attributes";
     }
 
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private Map<String, AttributesConfig.Attribute.Builder> toMap(List<AttributesConfig.Attribute.Builder> ls) {
         Map<String, AttributesConfig.Attribute.Builder> ret = new LinkedHashMap<>();
         for (AttributesConfig.Attribute.Builder builder : ls) {

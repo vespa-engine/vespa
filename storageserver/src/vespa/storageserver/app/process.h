@@ -42,7 +42,7 @@ public:
     using milliseconds = std::chrono::milliseconds;
 
     Process(const config::ConfigUri & configUri);
-    virtual ~Process() {}
+    ~Process() override;
 
     virtual void setupConfig(milliseconds subscribeTimeout);
     virtual void createNode() = 0;

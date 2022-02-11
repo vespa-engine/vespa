@@ -164,14 +164,13 @@ public class DeploymentContext {
     }
 
 
-    /** Completely deploy the latest change */
+    /** Completely deploy the current change */
     public DeploymentContext deploy() {
         Application application = application();
         assertTrue("Application package submitted", application.latestVersion().isPresent());
         assertFalse("Submission is not already deployed", application.instances().values().stream()
                                                                      .anyMatch(instance -> instance.deployments().values().stream()
                                                                                                      .anyMatch(deployment -> deployment.applicationVersion().equals(lastSubmission))));
-        assertEquals(application.latestVersion(), instance().change().application());
         completeRollout(application.deploymentSpec().instances().size() > 1);
         for (var instance : application().instances().values()) {
             assertFalse(instance.change().hasTargets());
@@ -334,20 +333,20 @@ public class DeploymentContext {
     /** Runs and returns all remaining jobs for the application, at most once, and asserts the current change is rolled out. */
     public DeploymentContext completeRollout(boolean multiInstance) {
         triggerJobs();
-        Map<ApplicationId, Set<JobType>> jobsByInstance = new HashMap<>();
+        Map<ApplicationId, Map<JobType, Versions>> jobsByInstance = new HashMap<>();
         List<Run> activeRuns;
         while ( ! (activeRuns = this.jobs.active(applicationId)).isEmpty())
             for (Run run : activeRuns) {
-                Set<JobType> jobs = jobsByInstance.computeIfAbsent(run.id().application(), k -> new HashSet<>());
-                if (jobs.add(run.id().type())) {
-                    runJob(run.id().type(), run.id().application());
-                    if (multiInstance) {
-                        tester.outstandingChangeDeployer().run();
-                    }
-                    triggerJobs();
-                } else {
-                    throw new AssertionError("Job '" + run.id() + "' was run twice");
+                Map<JobType, Versions> jobs = jobsByInstance.computeIfAbsent(run.id().application(), k -> new HashMap<>());
+                Versions previous = jobs.put(run.id().type(), run.versions());
+                if (run.versions().equals(previous)) {
+                    throw new AssertionError("Job '" + run.id() + "' was run twice on same versions");
                 }
+                runJob(run.id().type(), run.id().application());
+                if (multiInstance) {
+                    tester.outstandingChangeDeployer().run();
+                }
+                triggerJobs();
             }
 
         assertFalse("Change should have no targets, but was " + instance().change(), instance().change().hasTargets());

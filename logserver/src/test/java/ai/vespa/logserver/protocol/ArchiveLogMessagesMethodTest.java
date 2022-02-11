@@ -30,6 +30,7 @@ import static org.mockito.Mockito.verify;
 /**
  * @author bjorncs
  */
+@SuppressWarnings("deprecation")
 public class ArchiveLogMessagesMethodTest {
 
     private static final LogMessage MESSAGE_1 =

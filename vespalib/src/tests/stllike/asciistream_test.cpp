@@ -409,27 +409,14 @@ AsciistreamTest::testWriteThenRead()
 void
 AsciistreamTest::testGetLine()
 {
-    asciistream is("");
-    EXPECT_TRUE(is.getlines().empty());
-    is = asciistream("line 1");
-    std::vector<string> v = is.getlines();
-    EXPECT_EQUAL(1u, v.size());
-    EXPECT_EQUAL("line 1", v[0]);
-    is = asciistream("line 1\nline 2");
-    v = is.getlines();
-    EXPECT_EQUAL(2u, v.size());
-    EXPECT_EQUAL("line 1", v[0]);
-    EXPECT_EQUAL("line 2", v[1]);
-    is = asciistream("line 1\nline 2\n\n");
-    v = is.getlines();
-    EXPECT_EQUAL(3u, v.size());
-    EXPECT_EQUAL("line 1", v[0]);
-    EXPECT_EQUAL("line 2", v[1]);
-    EXPECT_EQUAL("", v[2]);
-    is = asciistream("line 1");
+    asciistream is = asciistream("line 1\nline 2\nline 3");
     string s;
     getline(is, s);
     EXPECT_EQUAL("line 1", s);
+    getline(is, s);
+    EXPECT_EQUAL("line 2", s);
+    getline(is, s);
+    EXPECT_EQUAL("line 3", s);
 }
 
 #define VERIFY_DOUBLE_SERIALIZATION(value, expected, format, precision) { \

@@ -9,6 +9,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/config/subscription/configuri.h>
+#include <vespa/config/helper/configfetcher.hpp>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <sstream>
@@ -27,7 +28,7 @@ Bouncer::Bouncer(StorageComponentRegister& compReg, const config::ConfigUri & co
       _baselineNodeState("s:i"),
       _derivedNodeStates(),
       _clusterState(&lib::State::UP),
-      _configFetcher(configUri.getContext()),
+      _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
       _metrics(std::make_unique<BouncerMetrics>())
 {
     _component.getStateUpdater().addStateListener(*this);
@@ -36,8 +37,8 @@ Bouncer::Bouncer(StorageComponentRegister& compReg, const config::ConfigUri & co
     // exception allowing program to continue if missing/faulty config.
     try{
         if (!configUri.empty()) {
-            _configFetcher.subscribe<vespa::config::content::core::StorBouncerConfig>(configUri.getConfigId(), this);
-            _configFetcher.start();
+            _configFetcher->subscribe<vespa::config::content::core::StorBouncerConfig>(configUri.getConfigId(), this);
+            _configFetcher->start();
         } else {
             LOG(info, "No config id specified. Using defaults rather than "
                       "config");
@@ -66,7 +67,7 @@ Bouncer::print(std::ostream& out, bool verbose,
 void
 Bouncer::onClose()
 {
-    _configFetcher.close();
+    _configFetcher->close();
     _component.getStateUpdater().removeStateListener(*this);
 }
 

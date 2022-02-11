@@ -8,6 +8,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/identity.h>
+#include <vespa/vespalib/stllike/allocator.h>
 #include <vespa/vespalib/stllike/hashtable.hpp>
 #include <xxhash.h>
 #include <mutex>
@@ -95,6 +96,7 @@ private:
                 return (--_ref_cnt == 0);
             }
         };
+        using EntryVector = std::vector<Entry, allocator_large<Entry>>;
         struct Key {
             uint32_t idx;
             uint32_t hash;
@@ -104,8 +106,8 @@ private:
             uint32_t operator()(const AltKey &key) const { return key.hash; }
         };
         struct Equal {
-            const std::vector<Entry> &entries;
-            Equal(const std::vector<Entry> &entries_in) : entries(entries_in) {}
+            const EntryVector &entries;
+            Equal(const EntryVector &entries_in) : entries(entries_in) {}
             Equal(const Equal &rhs) = default;
             bool operator()(const Key &a, const Key &b) const { return (a.idx == b.idx); }
             bool operator()(const Key &a, const AltKey &b) const { return ((a.hash == b.hash) && (entries[a.idx].str() == b.str)); }
@@ -113,10 +115,10 @@ private:
         using HashType = hashtable<Key,Key,Hash,Equal,Identity,hashtable_base::and_modulator>;
 
     private:
-        mutable SpinLock      _lock;
-        std::vector<Entry>    _entries;
-        uint32_t              _free;
-        HashType              _hash;
+        mutable SpinLock   _lock;
+        EntryVector        _entries;
+        uint32_t           _free;
+        HashType           _hash;
 
         void make_entries(size_t hint);
 
@@ -291,7 +293,7 @@ public:
     // A collection of string handles with ownership
     class Handles {
     private:
-        std::vector<string_id> _handles;
+        StringIdVector _handles;
     public:
         Handles();
         Handles(Handles &&rhs);
@@ -309,7 +311,7 @@ public:
             string_id id = _repo.copy(handle);
             _handles.push_back(id);
         }
-        const std::vector<string_id> &view() const { return _handles; }
+        const StringIdVector &view() const { return _handles; }
     };
 };
 

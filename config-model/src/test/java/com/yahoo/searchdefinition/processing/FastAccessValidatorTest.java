@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.model.test.TestUtil;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Rule;
 import org.junit.Test;
@@ -20,15 +20,15 @@ public class FastAccessValidatorTest {
 
     @Test
     public void throws_exception_on_incompatible_use_of_fastaccess() throws ParseException {
-        SchemaBuilder builder = new SchemaBuilder(new RankProfileRegistry());
-        builder.importString(
+        ApplicationBuilder builder = new ApplicationBuilder(new RankProfileRegistry());
+        builder.addSchema(
                 TestUtil.joinLines(
                         "schema parent {",
                         "  document parent {",
                         "    field int_field type int { indexing: attribute }",
                         "  }",
                         "}"));
-        builder.importString(
+        builder.addSchema(
                 TestUtil.joinLines(
                         "schema test {",
                         "    document test { ",
@@ -55,7 +55,7 @@ public class FastAccessValidatorTest {
                 "For schema 'test': The following attributes have a type that is incompatible " +
                         "with fast-access: predicate_attribute, tensor_attribute, reference_attribute. " +
                         "Predicate, tensor and reference attributes are incompatible with fast-access.");
-        builder.build();
+        builder.build(true);
     }
 
 }

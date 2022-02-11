@@ -464,13 +464,14 @@ FeedHandler::close()
 void
 FeedHandler::replayTransactionLog(SerialNum flushedIndexMgrSerial, SerialNum flushedSummaryMgrSerial,
                                   SerialNum oldestFlushedSerial, SerialNum newestFlushedSerial,
-                                  ConfigStore &config_store)
+                                  ConfigStore &config_store,
+                                  const ReplayThrottlingPolicy& replay_throttling_policy)
 {
     (void) newestFlushedSerial;
     assert(_activeFeedView);
     assert(_bucketDBHandler);
     auto state = make_shared<ReplayTransactionLogState>
-                          (getDocTypeName(), _activeFeedView, *_bucketDBHandler, _replayConfig, config_store, *this);
+                          (getDocTypeName(), _activeFeedView, *_bucketDBHandler, _replayConfig, config_store, replay_throttling_policy, *this);
     changeFeedState(state);
     // Resurrected attribute vector might cause oldestFlushedSerial to
     // be lower than _prunedSerialNum, so don't warn for now.

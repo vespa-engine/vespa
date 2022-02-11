@@ -36,7 +36,7 @@ public class EndpointCertificateValidatorImpl implements EndpointCertificateVali
             var pemEncodedEndpointCertificate = secretStore.getSecret(endpointCertificateMetadata.certName(), endpointCertificateMetadata.version());
 
             if (pemEncodedEndpointCertificate == null)
-                throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Secret store returned null for certificate");
+                throw new EndpointCertificateException(EndpointCertificateException.Type.CERT_NOT_AVAILABLE, "Secret store returned null for certificate");
 
             List<X509Certificate> x509CertificateList = X509CertificateUtils.certificateListFromPem(pemEncodedEndpointCertificate);
 

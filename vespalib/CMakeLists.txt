@@ -85,6 +85,7 @@ vespa_define_module(
     src/tests/net/tls/policy_checking_certificate_verifier
     src/tests/net/tls/protocol_snooping
     src/tests/net/tls/transport_options
+    src/tests/nice
     src/tests/objects/nbostream
     src/tests/optimized
     src/tests/overload
@@ -101,6 +102,7 @@ vespa_define_module(
     src/tests/require
     src/tests/runnable_pair
     src/tests/sha1
+    src/tests/shared_operation_throttler
     src/tests/shared_string_repo
     src/tests/sharedptr
     src/tests/signalhandler

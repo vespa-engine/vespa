@@ -381,6 +381,9 @@ MMapAllocator::sresize_inplace(PtrAndSize current, size_t newSize) {
 
 size_t
 MMapAllocator::extend_inplace(PtrAndSize current, size_t newSize) {
+    if (current.second == 0u) {
+        return 0u;
+    }
     PtrAndSize got = MMapAllocator::salloc(newSize - current.second, static_cast<char *>(current.first)+current.second);
     if ((static_cast<const char *>(current.first) + current.second) == static_cast<const char *>(got.first)) {
         return current.second + got.second;
@@ -477,6 +480,9 @@ Alloc::allocHeap(size_t sz)
 bool
 Alloc::resize_inplace(size_t newSize)
 {
+    if (newSize == 0u) {
+        return size() == 0u;
+    }
     size_t extendedSize = _allocator->resize_inplace(_alloc, newSize);
     if (extendedSize >= newSize) {
         _alloc.second = extendedSize;

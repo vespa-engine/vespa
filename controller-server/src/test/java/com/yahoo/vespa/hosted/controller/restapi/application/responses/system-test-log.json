@@ -132,91 +132,151 @@
       {
         "at": 0,
         "type": "info",
+        "message": "Waiting for convergence of 1 services across 1 nodes"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "1 application services upgrading"
+      },
+      {
+        "at": 0,
+        "type": "debug",
         "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
       },
       {
         "at": 0,
-        "type": "info",
+        "type": "debug",
         "message": "--- platform vespa/vespa:6.1"
       },
       {
         "at": 0,
-        "type": "info",
+        "type": "debug",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
         "at": 0,
         "type": "info",
+        "message": "Waiting for convergence of 1 services across 1 nodes"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "1 application services upgrading"
+      },
+      {
+        "at": 0,
+        "type": "debug",
         "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
       },
       {
         "at": 0,
-        "type": "info",
+        "type": "debug",
         "message": "--- platform vespa/vespa:6.1"
       },
       {
         "at": 0,
-        "type": "info",
+        "type": "debug",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
         "at": 0,
         "type": "info",
+        "message": "Waiting for convergence of 1 services across 1 nodes"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "1 application services upgrading"
+      },
+      {
+        "at": 0,
+        "type": "debug",
         "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
       },
       {
         "at": 0,
-        "type": "info",
+        "type": "debug",
         "message": "--- platform vespa/vespa:6.1"
       },
       {
         "at": 0,
-        "type": "info",
+        "type": "debug",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
         "at": 0,
         "type": "info",
+        "message": "Waiting for convergence of 1 services across 1 nodes"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "1 application services upgrading"
+      },
+      {
+        "at": 0,
+        "type": "debug",
         "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
       },
       {
         "at": 0,
-        "type": "info",
+        "type": "debug",
         "message": "--- platform vespa/vespa:6.1"
       },
       {
         "at": 0,
-        "type": "info",
+        "type": "debug",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
         "at": 0,
         "type": "info",
+        "message": "Waiting for convergence of 1 services across 1 nodes"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "1 application services upgrading"
+      },
+      {
+        "at": 0,
+        "type": "debug",
         "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
       },
       {
         "at": 0,
-        "type": "info",
+        "type": "debug",
         "message": "--- platform vespa/vespa:6.1"
       },
       {
         "at": 0,
-        "type": "info",
+        "type": "debug",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
         "at": 0,
         "type": "info",
+        "message": "Waiting for convergence of 1 services across 1 nodes"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "1 application services upgrading"
+      },
+      {
+        "at": 0,
+        "type": "debug",
         "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
       },
       {
         "at": 0,
-        "type": "info",
+        "type": "debug",
         "message": "--- platform vespa/vespa:6.1"
       },
       {
         "at": 0,
-        "type": "info",
+        "type": "debug",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
@@ -289,7 +349,7 @@
       }
     ]
   },
-  "lastId": 54,
+  "lastId": 66,
   "steps": {
     "deployTester": {
       "status": "succeeded",

@@ -18,8 +18,8 @@ import java.util.Optional;
 public class OnnxModel extends DistributableResource {
 
     private OnnxModelInfo modelInfo = null;
-    private Map<String, String> inputMap = new HashMap<>();
-    private Map<String, String> outputMap = new HashMap<>();
+    private final Map<String, String> inputMap = new HashMap<>();
+    private final Map<String, String> outputMap = new HashMap<>();
 
     private String  statelessExecutionMode = null;
     private Integer statelessInterOpThreads = null;

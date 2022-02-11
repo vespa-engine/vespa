@@ -43,6 +43,7 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
     private final boolean useThreePhaseUpdates;
     private final int maxActivationInhibitedOutOfSyncGroups;
     private final boolean unorderedMergeChaining;
+    private final boolean inhibitDefaultMergesWhenGlobalMergesPending;
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<DistributorCluster> {
 
@@ -106,11 +107,12 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
             boolean useThreePhaseUpdates = deployState.getProperties().featureFlags().useThreePhaseUpdates();
             int maxInhibitedGroups = deployState.getProperties().featureFlags().maxActivationInhibitedOutOfSyncGroups();
             boolean unorderedMergeChaining = deployState.getProperties().featureFlags().unorderedMergeChaining();
+            boolean inhibitDefaultMerges = deployState.getProperties().featureFlags().inhibitDefaultMergesWhenGlobalMergesPending();
 
             return new DistributorCluster(parent,
                     new BucketSplitting.Builder().build(new ModelElement(producerSpec)), gc,
                     hasIndexedDocumentType, useThreePhaseUpdates,
-                    maxInhibitedGroups, unorderedMergeChaining);
+                    maxInhibitedGroups, unorderedMergeChaining, inhibitDefaultMerges);
         }
     }
 
@@ -118,7 +120,8 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
                                GcOptions gc, boolean hasIndexedDocumentType,
                                boolean useThreePhaseUpdates,
                                int maxActivationInhibitedOutOfSyncGroups,
-                               boolean unorderedMergeChaining)
+                               boolean unorderedMergeChaining,
+                               boolean inhibitDefaultMergesWhenGlobalMergesPending)
     {
         super(parent, "distributor");
         this.parent = parent;
@@ -128,6 +131,7 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         this.useThreePhaseUpdates = useThreePhaseUpdates;
         this.maxActivationInhibitedOutOfSyncGroups = maxActivationInhibitedOutOfSyncGroups;
         this.unorderedMergeChaining = unorderedMergeChaining;
+        this.inhibitDefaultMergesWhenGlobalMergesPending = inhibitDefaultMergesWhenGlobalMergesPending;
     }
 
     @Override
@@ -142,6 +146,7 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         builder.enable_metadata_only_fetch_phase_for_inconsistent_updates(useThreePhaseUpdates);
         builder.max_activation_inhibited_out_of_sync_groups(maxActivationInhibitedOutOfSyncGroups);
         builder.use_unordered_merge_chaining(unorderedMergeChaining);
+        builder.inhibit_default_merges_when_global_merges_pending(inhibitDefaultMergesWhenGlobalMergesPending);
 
         bucketSplitting.getConfig(builder);
     }

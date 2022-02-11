@@ -3,9 +3,10 @@ package com.yahoo.document;
 
 import com.yahoo.compress.CompressionType;
 import com.yahoo.config.subscription.ConfigSubscriber;
-import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
+import com.yahoo.document.config.DocumentmanagerConfig;
+import com.yahoo.document.internal.GeoPosType;
 import java.util.logging.Level;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,6 +24,7 @@ import com.yahoo.tensor.TensorType;
  *
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSubscriber<DocumentmanagerConfig> {
 
     private final static Logger log = Logger.getLogger(DocumentTypeManagerConfigurer.class.getName());
@@ -97,11 +99,19 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
         }
 
+        boolean looksLikePosition(StructDataType type) {
+            var pos = PositionDataType.INSTANCE;
+            return type.getName().equals(pos.getName()) && type.getId() == pos.getId();
+        }
+
         private void startStructsAndDocs(DocumentmanagerConfig config) {
             for (var thisDataType : config.datatype()) {
                 for (var o : thisDataType.structtype()) {
                     int id = thisDataType.id();
                     StructDataType type = new StructDataType(id, o.name());
+                    if (usev8geopositions && looksLikePosition(type)) {
+                        type = new GeoPosType(8);
+                    }
                     inProgress(type);
                     configMap.remove(id);
                 }
@@ -198,6 +208,9 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                 for (var struct : thisDataType.structtype()) {
                     int id = thisDataType.id();
                     StructDataType type = (StructDataType) typesById.get(id);
+                    if (type instanceof GeoPosType) {
+                        continue;
+                    }
                     for (var parent : struct.inherits()) {
                         var parentStruct = (StructDataType) typesByName.get(parent.name());
                         type.inherit(parentStruct);
@@ -319,8 +332,8 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         private final DocumentTypeManager manager;
     }
 
-
     private static class ApplyNewDoctypeConfig {
+
 
         public ApplyNewDoctypeConfig(DocumentmanagerConfig config, DocumentTypeManager manager) {
             this.manager = manager;
@@ -379,7 +392,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                 for (var typeconf : docTypeConfig.primitivetype()) {
                     DataType type = manager.getDataType(typeconf.name());
                     if (! (type instanceof PrimitiveDataType)) {
-                        throw new IllegalArgumentException("Needed primitive type for idx "+typeconf.idx()+" but got: "+type);
+                        throw new IllegalArgumentException("Needed primitive type for '"+typeconf.name()+"' [idx "+typeconf.idx()+"] but got: "+type);
                     }
                     addNewType(typeconf.idx(), type);
                 }
@@ -411,10 +424,32 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                 }
             }
 
+            private final Field POS_X = PositionDataType.INSTANCE.getField(PositionDataType.FIELD_X);
+            private final Field POS_Y = PositionDataType.INSTANCE.getField(PositionDataType.FIELD_Y);
+
+            boolean isPositionStruct(DocumentmanagerConfig.Doctype.Structtype cfg) {
+                if (! cfg.name().equals(PositionDataType.STRUCT_NAME)) return false;
+                if (! cfg.inherits().isEmpty()) return false;
+                if (cfg.field().size() != 2) return false;
+                var f0 = cfg.field(0);
+                var f1 = cfg.field(1);
+                if (! f0.name().equals(POS_X.getName())) return false;
+                if (! f1.name().equals(POS_Y.getName())) return false;
+                if (f0.internalid() != POS_X.getId()) return false;
+                if (f1.internalid() != POS_Y.getId()) return false;
+                if (typesByIdx.get(f0.type()) != POS_X.getDataType()) return false;
+                if (typesByIdx.get(f1.type()) != POS_Y.getDataType()) return false;
+                return true;
+            }
+
             void createEmptyStructs() {
                 String docName = docTypeConfig.name();
                 for (var typeconf : docTypeConfig.structtype()) {
-                    addNewType(typeconf.idx(), new StructDataType(typeconf.name()));
+                    if (usev8geopositions && isPositionStruct(typeconf)) {
+                        addNewType(typeconf.idx(), new GeoPosType(8));
+                    } else {
+                        addNewType(typeconf.idx(), new StructDataType(typeconf.name()));
+                    }
                 }
             }
 
@@ -486,6 +521,9 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
             void fillStructs() {
                 for (var structCfg : docTypeConfig.structtype()) {
+                    if (usev8geopositions && isPositionStruct(structCfg)) {
+                        continue;
+                    }
                     int idx = structCfg.idx();
                     StructDataType type = (StructDataType) typesByIdx.get(idx);
                     for (var parent : structCfg.inherits()) {
@@ -541,11 +579,11 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
             for (var docType : config.doctype()) {
                 var docTypeData = inProgressById.get(docType.idx());
+                docTypeData.createSimpleTypes();
                 docTypeData.createEmptyStructs();
                 docTypeData.initializeDocType();
                 docTypeData.createEmptyAnnotationTypes();
                 docTypeData.createFactories();
-                docTypeData.createSimpleTypes();
             }
             createComplexTypes();
             for (var docType : config.doctype()) {

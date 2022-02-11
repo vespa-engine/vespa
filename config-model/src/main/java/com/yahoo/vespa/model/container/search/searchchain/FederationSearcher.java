@@ -208,14 +208,14 @@ public class FederationSearcher extends Searcher<FederationSearcherModel> implem
 
             Target target = targetResolver.resolve(targetSpec);
             if (target == null) {
-                throw new RuntimeException("Can't find source " + targetSpec.sourceSpec +
-                                           " used as a source for federation '" + getComponentId() + "'");
+                throw new IllegalArgumentException("Can't find source " + targetSpec.sourceSpec +
+                                                   " used as a source for federation '" + getComponentId() + "'");
             }
 
             Target duplicate = resolvedTargets.put(target.id, target);
             if (duplicate != null && !duplicate.targetOptions.equals(target.targetOptions)) {
-                throw new RuntimeException("Search chain " + target.id + " added twice with different federation options" +
-                                           " to the federation searcher " + getComponentId());
+                throw new IllegalArgumentException("Search chain " + target.id + " added twice with different federation options" +
+                                                   " to the federation searcher " + getComponentId());
             }
         }
     }

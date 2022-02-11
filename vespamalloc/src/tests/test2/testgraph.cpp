@@ -23,7 +23,7 @@ public:
         asciistream os;
         os << ' ' << node;
         _string += os.c_str();
-        if (node.callers() == NULL) {
+        if (node.callers() == nullptr) {
             printf("%s\n", _string.c_str());
         }
     }
@@ -75,7 +75,7 @@ void testaggregator() {
     callGraph.addStack(s4, 3);
     Aggregator agg;
     DumpGraph<CallGraphT::Node> dump(&agg, "{ ", " }");
-    callGraph.traverseDepth(dump);;
+    callGraph.traverseDepth(dump);
     asciistream ost;
     ost << agg;
     printf("%s\n", ost.c_str());

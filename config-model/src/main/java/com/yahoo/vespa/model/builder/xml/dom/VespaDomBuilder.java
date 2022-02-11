@@ -69,20 +69,20 @@ public class VespaDomBuilder extends VespaModelBuilder {
     // TODO Move and change scope
     public static List<String> getHostAliases(NodeList hostAliases) {
         List<String> aliases = new LinkedList<>();
-        for (int i=0; i < hostAliases.getLength(); i++) {
+        for (int i = 0; i < hostAliases.getLength(); i++) {
             Node n = hostAliases.item(i);
             if (! (n instanceof Element)) {
                 continue;
             }
             Element e = (Element)n;
             if (! e.getNodeName().equals("alias")) {
-                throw new RuntimeException("Unexpected tag: '" + e.getNodeName() + "' at node " +
-                        XML.getNodePath(e, " > ") + ", expected 'alias'.");
+                throw new IllegalArgumentException("Unexpected tag: '" + e.getNodeName() + "' at node " +
+                                                   XML.getNodePath(e, " > ") + ", expected 'alias'.");
             }
             String alias = e.getFirstChild().getNodeValue();
             if ((alias == null) || (alias.equals(""))) {
-                throw new RuntimeException("Missing value for the alias tag at node " +
-                        XML.getNodePath(e, " > ") + "'.");
+                throw new IllegalArgumentException("Missing value for the alias tag at node " +
+                                                   XML.getNodePath(e, " > ") + "'.");
             }
             aliases.add(alias);
         }
@@ -113,7 +113,6 @@ public class VespaDomBuilder extends VespaModelBuilder {
      * include hostalias, baseport and user config overrides generically.
      *
      * @param <T> an {@link com.yahoo.config.model.producer.AbstractConfigProducer}
-     * @author vegardh
      */
     public static abstract class DomConfigProducerBuilder<T extends AbstractConfigProducer<?>> {
 
@@ -184,7 +183,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
             // This depends on which constructor in AbstractService is used, but the best way
             // is to let this method do initialize.
             if (!t.isInitialized()) {
-                t.initService(deployState.getDeployLogger());
+                t.initService(deployState);
             }
         }
 

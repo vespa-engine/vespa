@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/distributor/distributor_stripe_test_util.h>
-#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/top_level_distributor.h>
@@ -13,6 +12,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/config/helper/configgetter.h>
 
 using std::shared_ptr;
 using config::ConfigGetter;

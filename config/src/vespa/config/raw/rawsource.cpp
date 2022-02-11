@@ -1,13 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "rawsource.h"
 #include <vespa/config/common/misc.h>
+#include <vespa/config/common/iconfigholder.h>
+#include <vespa/config/common/configvalue.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 namespace config {
 
+RawSource::~RawSource() = default;
 
-RawSource::RawSource(const IConfigHolder::SP & holder, const vespalib::string & payload)
-    : _holder(holder),
+RawSource::RawSource(std::shared_ptr<IConfigHolder> holder, const vespalib::string & payload)
+    : _holder(std::move(holder)),
       _payload(payload)
 {
 }
@@ -15,9 +18,7 @@ RawSource::RawSource(const IConfigHolder::SP & holder, const vespalib::string & 
 void
 RawSource::getConfig()
 {
-    auto lines(readConfig());
-    ConfigValue value(lines, calculateContentXxhash64(lines));
-    _holder->handle(ConfigUpdate::UP(new ConfigUpdate(value, true, 1)));
+    _holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(readConfig()), true, 1));
 }
 
 void
@@ -31,11 +32,11 @@ RawSource::close()
 {
 }
 
-std::vector<vespalib::string>
+StringVector
 RawSource::readConfig()
 {
     vespalib::asciistream is(_payload);
-    return is.getlines();
+    return getlines(is);
 }
 
 }

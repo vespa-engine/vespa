@@ -43,7 +43,7 @@ public class BundleInstantiationSpecificationBuilder {
 
         for (String forbiddenClass: forbiddenClasses) {
             if (forbiddenClass.equals(instSpec.getClassName())) {
-                throw new RuntimeException("Setting up " + forbiddenClass + " manually is not supported.");
+                throw new IllegalArgumentException("Setting up " + forbiddenClass + " manually is not supported");
             }
         }
     }

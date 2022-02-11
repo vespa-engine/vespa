@@ -11,6 +11,10 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
+import java.util.Optional;
+
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+
 /**
  * A container that is typically used by container clusters set up from the user application.
  *
@@ -101,4 +105,11 @@ public final class ApplicationContainer extends Container implements
         return featureFlags.jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type.container);
     }
 
+    @Override
+    public Optional<String> getPreShutdownCommand() {
+        int preshutdownTimeoutSeconds = 360;
+        int rpcTimeoutSeconds = preshutdownTimeoutSeconds + 10;
+        String rpcParams = "-t " + rpcTimeoutSeconds + " tcp/localhost:" + getRpcPort() + " prepareStop d:" + preshutdownTimeoutSeconds;
+        return Optional.of(getDefaults().underVespaHome("bin/vespa-rpc-invoke") + " " + rpcParams);
+    }
 }

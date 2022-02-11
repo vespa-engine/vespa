@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.handler;
 
+import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.models.evaluation.ModelsEvaluator;
 import ai.vespa.models.evaluation.RankProfilesConfigImporterWithMockedConstants;
 import com.yahoo.config.subscription.ConfigGetter;
-import com.yahoo.config.subscription.FileSource;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
 import com.yahoo.path.Path;
 import com.yahoo.tensor.Tensor;
@@ -19,13 +19,16 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.Assume.assumeTrue;
+
 public class ModelsEvaluationHandlerTest {
 
+    private static final String MODELS_DIR = "src/test/resources/config/models/";
     private static HandlerTester handler;
 
     @BeforeClass
     static public void setUp() {
-        handler = new HandlerTester(createModels("src/test/resources/config/models/"));
+        handler = new HandlerTester(createModels());
     }
 
     @Test
@@ -244,6 +247,7 @@ public class ModelsEvaluationHandlerTest {
 
     @Test
     public void testMnistSavedEvaluateSpecificFunction() {
+        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
         Map<String, String> properties = new HashMap<>();
         properties.put("input", inputTensor());
         String url = "http://localhost/model-evaluation/v1/mnist_saved/serving_default.y/eval";
@@ -251,18 +255,18 @@ public class ModelsEvaluationHandlerTest {
         handler.assertResponse(url, properties, 200, expected);
     }
 
-    static private ModelsEvaluator createModels(String path) {
-        Path configDir = Path.fromString(path);
-        RankProfilesConfig config = new ConfigGetter<>(new FileSource(configDir.append("rank-profiles.cfg").toFile()),
-                RankProfilesConfig.class).getConfig("");
-        RankingConstantsConfig constantsConfig = new ConfigGetter<>(new FileSource(configDir.append("ranking-constants.cfg").toFile()),
-                RankingConstantsConfig.class).getConfig("");
-        RankingExpressionsConfig expressionsConfig = new ConfigGetter<>(new FileSource(configDir.append("ranking-expressions.cfg").toFile()),
-                RankingExpressionsConfig.class).getConfig("");
-        OnnxModelsConfig onnxModelsConfig = new ConfigGetter<>(new FileSource(configDir.append("onnx-models.cfg").toFile()),
-                OnnxModelsConfig.class).getConfig("");
-        return new ModelsEvaluator(new RankProfilesConfigImporterWithMockedConstants(Path.fromString(path).append("constants"), MockFileAcquirer.returnFile(null)),
+    static private ModelsEvaluator createModels() {
+        RankProfilesConfig config = ConfigGetter.getConfig(RankProfilesConfig.class, fileConfigId("rank-profiles.cfg"));
+        RankingConstantsConfig constantsConfig = ConfigGetter.getConfig(RankingConstantsConfig.class, fileConfigId("ranking-constants.cfg"));
+        RankingExpressionsConfig expressionsConfig = ConfigGetter.getConfig(RankingExpressionsConfig.class, fileConfigId("ranking-expressions.cfg"));
+        OnnxModelsConfig onnxModelsConfig = ConfigGetter.getConfig(OnnxModelsConfig.class, fileConfigId("onnx-models.cfg"));
+
+        return new ModelsEvaluator(new RankProfilesConfigImporterWithMockedConstants(Path.fromString(MODELS_DIR).append("constants"), MockFileAcquirer.returnFile(null)),
                 config, constantsConfig, expressionsConfig, onnxModelsConfig);
+    }
+
+    private static String fileConfigId(String filename) {
+        return "file:" + MODELS_DIR + filename;
     }
 
     private String inputTensor() {

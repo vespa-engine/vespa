@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.filter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -73,6 +74,18 @@ public class ControllerAuthorizationFilterTest {
         assertIsForbidden(invokeFilter(filter, createRequest(Method.POST, "/zone/v2/path", securityContext)));
         assertIsForbidden(invokeFilter(filter, createRequest(Method.PUT, "/application/v4/user", securityContext)));
         assertIsAllowed(invokeFilter(filter, createRequest(Method.GET, "/zone/v1/path", securityContext)));
+    }
+
+    @Test
+    public void hostedDeveloper() {
+        ControllerTester tester = new ControllerTester();
+        TenantName tenantName = TenantName.defaultName();
+        SecurityContext securityContext = new SecurityContext(() -> "user", Set.of(Role.hostedDeveloper(tenantName)));
+
+        ControllerAuthorizationFilter filter = createFilter(tester);
+        assertIsAllowed(invokeFilter(filter, createRequest(Method.POST, "/application/v4/tenant/" + tenantName.value() + "/application/app/instance/default/environment/dev/region/region/deploy", securityContext)));
+        assertIsForbidden(invokeFilter(filter, createRequest(Method.POST, "/application/v4/tenant/" + tenantName.value() + "/application/app/instance/default/environment/prod/region/region/deploy", securityContext)));
+        assertIsForbidden(invokeFilter(filter, createRequest(Method.POST, "/application/v4/tenant/" + tenantName.value() + "/application/app/submit", securityContext)));
     }
 
     private static void assertIsAllowed(Optional<AuthorizationResponse> response) {

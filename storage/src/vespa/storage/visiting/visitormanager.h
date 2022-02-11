@@ -29,12 +29,15 @@
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/internal.h>
 #include <vespa/storageapi/message/visitor.h>
-#include <vespa/config/config.h>
+#include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/vespalib/util/document_runnable.h>
 
-namespace storage {
+namespace config {
+    class ConfigUri;
+    class ConfigFetcher;
+}
 
-namespace api { class BucketTimeInterval; }
+namespace storage {
 
 class RequestStatusPageReply;
 
@@ -63,7 +66,7 @@ private:
     mutable std::mutex      _visitorLock;
     std::condition_variable _visitorCond;
     uint64_t _visitorCounter;
-    config::ConfigFetcher _configFetcher;
+    std::unique_ptr<config::ConfigFetcher> _configFetcher;
     std::shared_ptr<VisitorMetrics> _metrics;
     uint32_t _maxFixedConcurrentVisitors;
     uint32_t _maxVariableConcurrentVisitors;

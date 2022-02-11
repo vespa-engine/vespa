@@ -2,11 +2,12 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.document.BooleanIndexDefinition;
 import com.yahoo.searchdefinition.document.SDDocumentType;
@@ -120,7 +121,7 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
                 "clear_state | guard { input smallattribute | attribute smallattribute; }",
                 "clear_state | guard { input title | tokenize normalize stem:\"BEST\" | summary title | index title; }",
                 "clear_state | guard { input title . \" \" . input category | tokenize | summary exact | index exact; }"),
-                       SchemaBuilder.buildFromFile("src/test/examples/simple.sd"));
+                       ApplicationBuilder.buildFromFile("src/test/examples/simple.sd"));
     }
 
     @Test
@@ -129,7 +130,7 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
                 Arrays.asList("clear_state | guard { input title_src | lowercase | normalize | " +
                               "                      tokenize | index title; }",
                               "clear_state | guard { input title_src | summary title_s; }"),
-                SchemaBuilder.buildFromFile("src/test/examples/indexrewrite.sd"));
+                ApplicationBuilder.buildFromFile("src/test/examples/indexrewrite.sd"));
     }
 
     @Test
@@ -154,7 +155,7 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
     private static ScriptExpression processField(SDField unprocessedField) {
         SDDocumentType sdoc = new SDDocumentType("test");
         sdoc.addField(unprocessedField);
-        Schema schema = new Schema("test");
+        Schema schema = new Schema("test", MockApplicationPackage.createEmpty());
         schema.addDocument(sdoc);
         new Processing().process(schema, new BaseDeployLogger(), new RankProfileRegistry(),
                                  new QueryProfiles(), true, false, Set.of());

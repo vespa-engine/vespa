@@ -192,7 +192,7 @@ public class JobControllerApiHandlerHelperTest {
     private void compare(HttpResponse response, String expected) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
-        JsonTestHelper.assertJsonEquals(expected, baos.toString());
+        JsonTestHelper.assertJsonEquals(baos.toString(), expected);
     }
 
     private void assertResponse(HttpResponse response, String fileName) {

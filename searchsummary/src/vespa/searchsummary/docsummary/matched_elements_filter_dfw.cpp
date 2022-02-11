@@ -65,11 +65,11 @@ MatchedElementsFilterDFW::~MatchedElementsFilterDFW() = default;
 namespace {
 
 void
-decode_input_field_to_slime(const ResEntry& entry, search::RawBuf& target_buf, Slime& input_field_as_slime)
+decode_input_field_to_slime(const ResEntry& entry, Slime& input_field_as_slime)
 {
     const char* buf;
     uint32_t buf_len;
-    entry._resolve_field(&buf, &buf_len, &target_buf);
+    entry._resolve_field(&buf, &buf_len);
     BinaryFormat::decode(vespalib::Memory(buf, buf_len), input_field_as_slime);
 }
 
@@ -91,12 +91,11 @@ filter_matching_elements_in_input_field_while_converting_to_slime(const FieldVal
 }
 
 bool
-resolve_input_field_as_slime(GeneralResult& result, GetDocsumsState& state,
-                             int entry_idx, Slime& input_field_as_slime)
+resolve_input_field_as_slime(GeneralResult& result, int entry_idx, Slime& input_field_as_slime)
 {
     ResEntry* entry = result.GetEntry(entry_idx);
     if (entry != nullptr) {
-        decode_input_field_to_slime(*entry, state._docSumFieldSpace, input_field_as_slime);
+        decode_input_field_to_slime(*entry, input_field_as_slime);
         return true;
     }
     return false;
@@ -127,7 +126,7 @@ MatchedElementsFilterDFW::insertField(uint32_t docid, GeneralResult* result, Get
     assert(type == ResType::RES_JSONSTRING);
     int entry_idx = result->GetClass()->GetIndexFromEnumValue(_input_field_enum);
     Slime input_field;
-    if (resolve_input_field_as_slime(*result, *state, entry_idx, input_field)) {
+    if (resolve_input_field_as_slime(*result, entry_idx, input_field)) {
         Slime output_field;
         filter_matching_elements_in_input_field(input_field, get_matching_elements(docid, *state), output_field);
         inject(output_field.get(), target);

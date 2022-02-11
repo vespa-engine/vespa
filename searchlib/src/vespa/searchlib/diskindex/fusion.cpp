@@ -71,9 +71,9 @@ Fusion::Fusion(const Schema& schema, const vespalib::string& dir,
 Fusion::~Fusion() = default;
 
 bool
-Fusion::mergeFields(vespalib::Executor & executor, std::shared_ptr<IFlushToken> flush_token)
+Fusion::mergeFields(vespalib::Executor& shared_executor, std::shared_ptr<IFlushToken> flush_token)
 {
-    FieldMergersState field_mergers_state(_fusion_out_index, executor, flush_token);
+    FieldMergersState field_mergers_state(_fusion_out_index, shared_executor, flush_token);
     const Schema &schema = getSchema();
     for (SchemaUtil::IndexIterator iter(schema); iter.isValid(); ++iter) {
         auto& field_merger = field_mergers_state.alloc_field_merger(iter.getIndex());
@@ -103,7 +103,7 @@ Fusion::readSchemaFiles()
 }
 
 bool
-Fusion::merge(vespalib::Executor& executor, std::shared_ptr<IFlushToken> flush_token)
+Fusion::merge(vespalib::Executor& shared_executor, std::shared_ptr<IFlushToken> flush_token)
 {
     FastOS_StatInfo statInfo;
     if (!FastOS_File::Stat(_fusion_out_index.get_path().c_str(), &statInfo)) {
@@ -137,7 +137,7 @@ Fusion::merge(vespalib::Executor& executor, std::shared_ptr<IFlushToken> flush_t
         if (!readSchemaFiles()) {
             throw IllegalArgumentException("Cannot read schema files for source indexes");
         }
-        return mergeFields(executor, flush_token);
+        return mergeFields(shared_executor, flush_token);
     } catch (const std::exception & e) {
         LOG(error, "%s", e.what());
         return false;

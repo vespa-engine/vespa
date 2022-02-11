@@ -185,6 +185,7 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
                                    .ifPresent(until -> jobObject.setLong("coolingDownUntil", until.toEpochMilli()));
                           if (jobsToRun.containsKey(job)) {
                               List<Versions> versionsOnThisPlatform = jobsToRun.get(job).stream()
+                                      .map(DeploymentStatus.Job::versions)
                                       .filter(versions -> versions.targetPlatform().equals(statistics.version()))
                                       .collect(Collectors.toList());
                               if ( ! versionsOnThisPlatform.isEmpty())

@@ -46,7 +46,9 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
     private final ContentCluster cluster;
     private final int reponseNumThreads;
     private final StorFilestorConfig.Response_sequencer_type.Enum responseSequencerType;
-    private final StorFilestorConfig.Async_operation_throttler_type.Enum asyncOperationThrottlerType;
+    private final StorFilestorConfig.Async_operation_throttler.Type.Enum asyncOperationThrottlerType;
+    private final double persistenceThrottlingWsDecrementFactor;
+    private final double persistenceThrottlingWsBackoff;
     private final boolean useAsyncMessageHandlingOnSchedule;
 
     private static StorFilestorConfig.Response_sequencer_type.Enum convertResponseSequencerType(String sequencerType) {
@@ -57,11 +59,11 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         }
     }
 
-    private static StorFilestorConfig.Async_operation_throttler_type.Enum toAsyncOperationThrottlerType(String throttlerType) {
+    private static StorFilestorConfig.Async_operation_throttler.Type.Enum toAsyncOperationThrottlerType(String throttlerType) {
         try {
-            return StorFilestorConfig.Async_operation_throttler_type.Enum.valueOf(throttlerType);
+            return StorFilestorConfig.Async_operation_throttler.Type.Enum.valueOf(throttlerType);
         } catch (Throwable t) {
-            return StorFilestorConfig.Async_operation_throttler_type.UNLIMITED;
+            return StorFilestorConfig.Async_operation_throttler.Type.UNLIMITED;
         }
     }
 
@@ -71,7 +73,9 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         this.reponseNumThreads = featureFlags.defaultNumResponseThreads();
         this.responseSequencerType = convertResponseSequencerType(featureFlags.responseSequencerType());
         this.asyncOperationThrottlerType = toAsyncOperationThrottlerType(featureFlags.persistenceAsyncThrottling());
-        useAsyncMessageHandlingOnSchedule = featureFlags.useAsyncMessageHandlingOnSchedule();
+        this.persistenceThrottlingWsDecrementFactor = featureFlags.persistenceThrottlingWsDecrementFactor();
+        this.persistenceThrottlingWsBackoff = featureFlags.persistenceThrottlingWsBackoff();
+        this.useAsyncMessageHandlingOnSchedule = featureFlags.useAsyncMessageHandlingOnSchedule();
     }
 
     @Override
@@ -83,7 +87,16 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         builder.num_response_threads(reponseNumThreads);
         builder.response_sequencer_type(responseSequencerType);
         builder.use_async_message_handling_on_schedule(useAsyncMessageHandlingOnSchedule);
-        builder.async_operation_throttler_type(asyncOperationThrottlerType);
+        // TODO remove deprecated throttler type config
+        builder.async_operation_throttler_type((asyncOperationThrottlerType == StorFilestorConfig.Async_operation_throttler.Type.DYNAMIC)
+                                               ? StorFilestorConfig.Async_operation_throttler_type.Enum.DYNAMIC
+                                               : StorFilestorConfig.Async_operation_throttler_type.Enum.UNLIMITED);
+
+        var throttleBuilder = new StorFilestorConfig.Async_operation_throttler.Builder();
+        throttleBuilder.type(asyncOperationThrottlerType);
+        throttleBuilder.window_size_decrement_factor(persistenceThrottlingWsDecrementFactor);
+        throttleBuilder.window_size_backoff(persistenceThrottlingWsBackoff);
+        builder.async_operation_throttler(throttleBuilder);
     }
 
 }

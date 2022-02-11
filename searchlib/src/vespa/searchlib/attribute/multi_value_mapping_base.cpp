@@ -10,8 +10,10 @@ namespace search::attribute {
 using vespalib::datastore::CompactionStrategy;
 
 MultiValueMappingBase::MultiValueMappingBase(const vespalib::GrowStrategy &gs,
-                                             vespalib::GenerationHolder &genHolder)
-    : _indices(gs, genHolder),
+                                             vespalib::GenerationHolder &genHolder,
+                                             std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator)
+    : _memory_allocator(std::move(memory_allocator)),
+      _indices(gs, genHolder, _memory_allocator ? vespalib::alloc::Alloc::alloc_with_allocator(_memory_allocator.get()) : vespalib::alloc::Alloc::alloc()),
       _totalValues(0u),
       _compaction_spec()
 {

@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
@@ -17,7 +17,7 @@ public class ImplicitSummaryFieldsTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testRequireThatImplicitFieldsAreCreated() throws IOException, ParseException {
-        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/implicitsummaryfields.sd");
+        Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/implicitsummaryfields.sd");
         assertNotNull(schema);
 
         DocumentSummary docsum = schema.getSummary("default");

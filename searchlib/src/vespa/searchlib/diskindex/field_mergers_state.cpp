@@ -5,8 +5,11 @@
 #include "field_merger_task.h"
 #include "fusion_output_index.h"
 #include <vespa/searchcommon/common/schema.h>
+#include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/executor.h>
 #include <cassert>
+
+using vespalib::CpuUsage;
 
 namespace search::diskindex {
 
@@ -66,7 +69,8 @@ FieldMergersState::wait_field_mergers_done()
 void
 FieldMergersState::schedule_task(FieldMerger& field_merger)
 {
-    auto rejected = _executor.execute(std::make_unique<FieldMergerTask>(field_merger, *this));
+    auto task = std::make_unique<FieldMergerTask>(field_merger, *this);
+    auto rejected = _executor.execute(CpuUsage::wrap(std::move(task), CpuUsage::Category::COMPACT));
     assert(!rejected);
 }
 

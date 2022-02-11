@@ -24,8 +24,7 @@ using search::SerialNum;
 using vespalib::IllegalStateException;
 using vespalib::FileHeader;
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 namespace {
 
@@ -42,22 +41,24 @@ IndexWriteUtilities::writeSerialNum(SerialNum serialNum,
         IndexDiskLayout::getSerialNumFileName(dir);
     const vespalib::string tmpFileName = fileName + ".tmp";
 
-    SerialNumFileHeaderContext snFileHeaderContext(fileHeaderContext,
-                                                   serialNum);
+    SerialNumFileHeaderContext snFileHeaderContext(fileHeaderContext, serialNum);
     Fast_BufferedFile file;
     file.WriteOpen(tmpFileName.c_str());
     FileHeader fileHeader;
     snFileHeaderContext.addTags(fileHeader, fileName);
-    fileHeader.putTag(FileHeader::Tag(IndexDiskLayout::SerialNumTag,
-                                      serialNum));
+    fileHeader.putTag(FileHeader::Tag(IndexDiskLayout::SerialNumTag, serialNum));
     bool ok = (fileHeader.writeFile(file) >= fileHeader.getSize());
-    if (!file.Sync()) {
-        ok = false;
-        LOG(error,
-            "Unable to fsync '%s'",
-            tmpFileName.c_str());
+    if ( ! ok) {
+        LOG(error, "Unable to write file header '%s'", tmpFileName.c_str());
     }
-    file.Close();
+    if ( ! file.Sync()) {
+        ok = false;
+        LOG(error, "Unable to fsync '%s'", tmpFileName.c_str());
+    }
+    if ( ! file.Close()) {
+        ok = false;
+        LOG(error, "Unable to close '%s'", tmpFileName.c_str());
+    }
     vespalib::File::sync(dir);
 
     if (ok) {
@@ -85,23 +86,20 @@ IndexWriteUtilities::copySerialNumFile(const vespalib::string &sourceDir,
     }
     FastOS_File file(tmpDest.c_str());
     if (!file.OpenReadWrite()) {
-        LOG(error,
-            "Unable to open '%s' for fsync",
-            tmpDest.c_str());
+        LOG(error, "Unable to open '%s' for fsync", tmpDest.c_str());
         return false;
     }
     if (!file.Sync()) {
-        LOG(error,
-            "Unable to fsync '%s'",
-            tmpDest.c_str());
+        LOG(error, "Unable to fsync '%s'", tmpDest.c_str());
         return false;
     }
-    file.Close();
+    if (!file.Close()) {
+        LOG(error, "Unable to close '%s'", tmpDest.c_str());
+        return false;
+    }
     vespalib::File::sync(destDir);
     if (!file.Rename(dest.c_str())) {
-        LOG(error,
-            "Unable to rename file '%s' to '%s'",
-            tmpDest.c_str(), dest.c_str());
+        LOG(error, "Unable to rename file '%s' to '%s'", tmpDest.c_str(), dest.c_str());
         return false;
     }
     vespalib::File::sync(destDir);
@@ -193,6 +191,4 @@ IndexWriteUtilities::updateDiskIndexSchema(const vespalib::string &indexDir,
     vespalib::File::sync(indexDir);
 }
 
-} // namespace index
-} // namespace searchcorespi
-
+}

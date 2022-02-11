@@ -18,6 +18,7 @@ import io.questdb.cairo.sql.Record;
 import io.questdb.cairo.sql.RecordCursor;
 import io.questdb.cairo.sql.RecordCursorFactory;
 import io.questdb.griffin.CompiledQuery;
+import io.questdb.griffin.QueryFuture;
 import io.questdb.griffin.SqlCompiler;
 import io.questdb.griffin.SqlException;
 import io.questdb.griffin.SqlExecutionContext;
@@ -341,6 +342,16 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         }
     }
 
+    /**
+     * Issues and wait for an SQL statement to be executed against the QuestDb engine.
+     * Needs to be done for some queries, e.g. 'alter table' queries, see https://github.com/questdb/questdb/issues/1846
+     */
+    private void issueAsync(String sql, SqlExecutionContext context) throws SqlException {
+        try (QueryFuture future = issue(sql, context).execute(null)) {
+            future.await();
+        }
+    }
+
     private SqlExecutionContext newContext() {
         return new SqlExecutionContextImpl(engine(), 1);
     }
@@ -374,7 +385,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         void gc() {
             synchronized (writeLock) {
                 try {
-                    issue("alter table " + name + " drop partition where at < dateadd('d', -4, now());", newContext());
+                    issueAsync("alter table " + name + " drop partition where at < dateadd('d', -4, now());", newContext());
                 }
                 catch (SqlException e) {
                     log.log(Level.WARNING, "Failed to gc old metrics data in " + dir + " table " + name, e);
@@ -396,7 +407,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
         void ensureColumnExists(String column, String columnType) throws SqlException {
             if (columnNames().contains(column)) return;
-            issue("alter table " + name + " add column " + column + " " + columnType, newContext());
+            issueAsync("alter table " + name + " add column " + column + " " + columnType, newContext());
         }
 
         private Optional<Long> adjustOrDiscard(Instant at) {

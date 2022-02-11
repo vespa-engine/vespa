@@ -1,18 +1,23 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.log;
 
+import com.yahoo.log.impl.LogUtils;
 import java.time.Instant;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Vespa log formatting utility methods.
- * Contains some code based on Util.java in Cloudname https://github.com/Cloudname/cloudname
+ * Contains some code based on LogUtils.java in Cloudname https://github.com/Cloudname/cloudname
  * written by Bjørn Borud, licensed under the Apache 2.0 license.
- * 
+ *
  * @author arnej27959
  * @author bjorncs
+ *
+ * @deprecated Should only be used internally in the log library
  */
+@SuppressWarnings("removal")
+@Deprecated(since = "7", forRemoval = true)
 public class VespaFormat {
 
     private static final Pattern special   = Pattern.compile("[\r\\\n\\\t\\\\]+");
@@ -25,8 +30,8 @@ public class VespaFormat {
     private static final String processID;
 
     static {
-        hostname = Util.getHostName();
-        processID = Util.getPID();
+        hostname = LogUtils.getHostName();
+        processID = LogUtils.getPID();
     }
 
     /**

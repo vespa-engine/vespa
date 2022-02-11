@@ -7,6 +7,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +16,7 @@ import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -108,11 +111,30 @@ public class ApplicationPackageTest {
         }
     }
 
+    @Test
+    public void testBundleHashesAreSameWithDifferentDeploymentXml() throws Exception {
+        var originalPackage = getApplicationZip("original.zip");
+        var changedDeploymentXml = getApplicationZip("changed-deployment-xml.zip");
+        var changedServices = getApplicationZip("changed-services-xml.zip");
+
+        // services.xml is changed -> different bundle hash
+        assertNotEquals(originalPackage.bundleHash(), changedServices.bundleHash());
+        assertNotEquals(originalPackage.hash(), changedServices.hash());
+
+        // deployment.xml is changed -> same bundle hash
+        assertEquals(originalPackage.bundleHash(), changedDeploymentXml.bundleHash());
+        assertNotEquals(originalPackage.hash(), changedDeploymentXml.hash());
+    }
+
     private static Map<String, String> unzip(byte[] zip) {
         return new ZipStreamReader(new ByteArrayInputStream(zip), __ -> true, 1 << 10, true)
                 .entries().stream()
                 .collect(Collectors.toMap(entry -> entry.zipEntry().getName(),
                                           entry -> new String(entry.contentOrThrow(), UTF_8)));
+    }
+
+    private ApplicationPackage getApplicationZip(String path) throws Exception {
+        return new ApplicationPackage(Files.readAllBytes(Path.of("src/test/resources/application-packages/" + path)), true);
     }
 
 }

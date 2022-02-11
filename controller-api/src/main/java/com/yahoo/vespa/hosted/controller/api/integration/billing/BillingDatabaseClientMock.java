@@ -175,4 +175,7 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
                 })
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public void maintain() {}
 }

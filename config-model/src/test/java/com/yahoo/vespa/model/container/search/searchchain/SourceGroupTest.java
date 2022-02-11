@@ -11,6 +11,7 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Set;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -80,8 +81,8 @@ public class SourceGroupTest {
             searchChains.validate();
             fail("Expected exception");
         } catch (Exception e) {
-            assertTrue(e.getMessage().contains("Same id used for a source"));
-            assertTrue(e.getMessage().contains("'sameId'"));
+            assertEquals("Id 'sameId' is used both for a source and another search chain/provider",
+                         e.getMessage());
         }
     }
 }

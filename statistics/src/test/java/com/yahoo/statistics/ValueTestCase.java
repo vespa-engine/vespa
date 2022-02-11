@@ -21,7 +21,7 @@ import org.junit.Test;
  *
  * @author Steinar Knutsen
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation","removal"}) // TODO Vespa 8: remove
 public class ValueTestCase {
 
     private static final double delta = 0.0000000001;

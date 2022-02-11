@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "filesourcefactory.h"
 #include "filesource.h"
-#include <vespa/config/common/exceptions.h>
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -23,8 +22,8 @@ DirSourceFactory::DirSourceFactory(const DirSpec & dirSpec)
     }
 }
 
-Source::UP
-DirSourceFactory::createSource(const IConfigHolder::SP & holder, const ConfigKey & key) const
+std::unique_ptr<Source>
+DirSourceFactory::createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key) const
 {
     vespalib::string fileId(key.getDefName());
     if (!key.getConfigId().empty()) {
@@ -45,7 +44,7 @@ DirSourceFactory::createSource(const IConfigHolder::SP & holder, const ConfigKey
     vespalib::string fName = _dirName;
     if (!fName.empty()) fName += "/";
     fName += fileId;
-    return Source::UP(new FileSource(holder, fName));
+    return std::make_unique<FileSource>(std::move(holder), fName);
 }
 
 FileSourceFactory::FileSourceFactory(const FileSpec & fileSpec)
@@ -53,11 +52,11 @@ FileSourceFactory::FileSourceFactory(const FileSpec & fileSpec)
 {
 }
 
-Source::UP
-FileSourceFactory::createSource(const IConfigHolder::SP & holder, const ConfigKey & key) const
+std::unique_ptr<Source>
+FileSourceFactory::createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key) const
 {
     (void) key;
-    return Source::UP(new FileSource(holder, _fileName));
+    return std::make_unique<FileSource>(std::move(holder), _fileName);
 }
 
 } // namespace config

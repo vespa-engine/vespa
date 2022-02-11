@@ -39,9 +39,9 @@ private:
     std::unique_ptr<FNET_Transport>    _transport;
     std::unique_ptr<FRT_Supervisor>    _supervisor;
 
-    ConfigShim         _configShim;
-    Configurator::UP   _configurator;
-    bool               _shuttingDown;
+    ConfigShim                     _configShim;
+    std::unique_ptr<Configurator>  _configurator;
+    bool                           _shuttingDown;
 
     SBEnv(const SBEnv &);            // Not used
     SBEnv &operator=(const SBEnv &); // Not used

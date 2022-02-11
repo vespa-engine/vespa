@@ -46,8 +46,8 @@ func TestProdInit(t *testing.T) {
 	// Verify contents
 	deploymentPath := filepath.Join(pkgDir, "src", "main", "application", "deployment.xml")
 	deploymentXML := readFileString(t, deploymentPath)
-	assert.Contains(t, deploymentXML, `<region active="true">aws-us-west-2a</region>`)
-	assert.Contains(t, deploymentXML, `<region active="true">aws-eu-west-1a</region>`)
+	assert.Contains(t, deploymentXML, `<region>aws-us-west-2a</region>`)
+	assert.Contains(t, deploymentXML, `<region>aws-eu-west-1a</region>`)
 
 	servicesPath := filepath.Join(pkgDir, "src", "main", "application", "services.xml")
 	servicesXML := readFileString(t, servicesPath)
@@ -90,7 +90,7 @@ func createApplication(t *testing.T, pkgDir string, java bool) {
 
 	deploymentXML := `<deployment version="1.0">
   <prod>
-    <region active="true">aws-us-east-1c</region>
+    <region>aws-us-east-1c</region>
   </prod>
 </deployment>`
 	if err := ioutil.WriteFile(filepath.Join(appDir, "deployment.xml"), []byte(deploymentXML), 0644); err != nil {

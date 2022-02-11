@@ -24,35 +24,23 @@ using document::BucketSpace;
 namespace storage {
 
 Visitor::HitCounter::HitCounter()
-    : _firstPassHits(0),
-      _firstPassBytes(0),
-      _secondPassHits(0),
-      _secondPassBytes(0)
+    : _doc_hits(0),
+      _doc_bytes(0)
 {
 }
 
 void
 Visitor::HitCounter::addHit(const document::DocumentId& , uint32_t size)
 {
-    bool firstPass = false;
-
-    if (firstPass) {
-        _firstPassHits++;
-        _firstPassBytes += size;
-    } else {
-        _secondPassHits++;
-        _secondPassBytes += size;
-    }
-
+    _doc_hits++;
+    _doc_bytes += size;
 }
 
 void
-Visitor::HitCounter::updateVisitorStatistics(vdslib::VisitorStatistics& statistics)
+Visitor::HitCounter::updateVisitorStatistics(vdslib::VisitorStatistics& statistics) const
 {
-    statistics.setDocumentsReturned(statistics.getDocumentsReturned() + _firstPassHits);
-    statistics.setBytesReturned(statistics.getBytesReturned() + _firstPassBytes);
-    statistics.setSecondPassDocumentsReturned(statistics.getSecondPassDocumentsReturned() + _secondPassHits);
-    statistics.setSecondPassBytesReturned(statistics.getSecondPassBytesReturned() + _secondPassBytes);
+    statistics.setDocumentsReturned(statistics.getDocumentsReturned() + _doc_hits);
+    statistics.setBytesReturned(statistics.getBytesReturned() + _doc_bytes);
 }
 
 Visitor::VisitorTarget::MessageMeta::MessageMeta(

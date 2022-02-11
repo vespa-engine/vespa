@@ -46,7 +46,6 @@ public:
     void TestFailShort();
     void TestFailOrder();
     void TestBasicInplace();
-    void TestCompressInplace();
 
     int Main() override;
 };
@@ -337,60 +336,6 @@ MyApp::TestBasicInplace()
     delete gres;
 }
 
-
-void
-MyApp::TestCompressInplace()
-{
-    const char *buf;
-    uint32_t buflen;
-
-    search::RawBuf         field1(32_Ki);
-    search::RawBuf         field2(32_Ki);
-    const ResultClass   *resClass;
-    GeneralResult *gres;
-
-    const char *lstrval = "string string string";
-    const char *ldatval = "data data data";
-
-    RTR(__LINE__, _packer.Init(2));
-    RTR(__LINE__, _packer.AddLongString(lstrval, strlen(lstrval)));
-    RTR(__LINE__, _packer.AddLongData(ldatval, strlen(ldatval)));
-    RTR(__LINE__, _packer.GetDocsumBlob(&buf, &buflen));
-
-    resClass = _config.LookupResultClass(_config.GetClassID(buf, buflen));
-    if (resClass == nullptr) {
-        gres = nullptr;
-    } else {
-        DocsumStoreValue value(buf, buflen);
-        gres = new GeneralResult(resClass);
-        if (!gres->inplaceUnpack(value)) {
-            delete gres;
-            gres = nullptr;
-        }
-    }
-
-    ResEntry *e1 = (gres == nullptr) ? nullptr : gres->GetEntry("text");
-    ResEntry *e2 = (gres == nullptr) ? nullptr : gres->GetEntry("data");
-
-    if (e1 != nullptr)
-        e1->_extract_field(&field1);
-    if (e2 != nullptr)
-        e2->_extract_field(&field2);
-
-    RTR(__LINE__, gres != nullptr);
-    RTR(__LINE__, e1 != nullptr);
-    RTR(__LINE__, e2 != nullptr);
-    RTR(__LINE__, strcmp(field1.GetDrainPos(), lstrval) == 0);
-    RTR(__LINE__, strcmp(field2.GetDrainPos(), ldatval) == 0);
-    RTR(__LINE__, strlen(lstrval) == field1.GetUsedLen());
-    RTR(__LINE__, strlen(ldatval) == field2.GetUsedLen());
-    RTR(__LINE__, (gres != nullptr &&
-                   gres->GetClass()->GetNumEntries() == 2));
-    RTR(__LINE__, (gres != nullptr &&
-                   gres->GetClass()->GetClassID() == 2));
-    delete gres;
-}
-
 int
 MyApp::Main()
 {
@@ -423,7 +368,6 @@ MyApp::Main()
     TestFailShort();
     TestFailOrder();
     TestBasicInplace();
-    TestCompressInplace();
 
     LOG(info, "CONCLUSION: %s", (_rc) ? "SUCCESS" : "FAIL");
     return (_rc ? 0 : 1);

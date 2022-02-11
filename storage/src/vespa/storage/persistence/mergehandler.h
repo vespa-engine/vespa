@@ -22,7 +22,10 @@
 #include <vespa/vespalib/util/monitored_refcount.h>
 #include <atomic>
 
-namespace vespalib { class ISequencedTaskExecutor; }
+namespace vespalib {
+class ISequencedTaskExecutor;
+class SharedOperationThrottler;
+}
 
 namespace storage {
 
@@ -34,7 +37,6 @@ namespace spi {
 class PersistenceUtil;
 class ApplyBucketDiffState;
 class MergeStatus;
-class SharedOperationThrottler;
 
 class MergeHandler : public Types,
                      public MergeBucketInfoSyncer {
@@ -85,7 +87,7 @@ private:
     const ClusterContext &_cluster_context;
     PersistenceUtil          &_env;
     spi::PersistenceProvider &_spi;
-    SharedOperationThrottler& _operation_throttler;
+    vespalib::SharedOperationThrottler& _operation_throttler;
     std::unique_ptr<vespalib::MonitoredRefCount> _monitored_ref_count;
     const uint32_t            _maxChunkSize;
     const uint32_t            _commonMergeChainOptimalizationMinimumSize;

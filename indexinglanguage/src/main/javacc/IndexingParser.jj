@@ -164,6 +164,7 @@ TOKEN :
     <GET_FIELD: "get_field"> |
     <GET_VAR: "get_var"> |
     <GUARD: "guard"> |
+    <HASH: "hash"> |
     <HEX_DECODE: "hexdecode"> |
     <HEX_ENCODE: "hexencode"> |
     <HOST_NAME: "hostname"> |
@@ -283,13 +284,14 @@ Expression value() :
       val = base64EncodeExp()       |
       val = clearStateExp()         |
       val = echoExp()               |
-      val = embedExp()             |
+      val = embedExp()              |
       val = exactExp()              |
       val = flattenExp()            |
       val = forEachExp()            |
       val = getFieldExp()           |
       val = getVarExp()             |
       val = guardExp()              |
+      val = hashExp()               |
       val = hexDecodeExp()          |
       val = hexEncodeExp()          |
       val = hostNameExp()           |
@@ -417,6 +419,12 @@ Expression guardExp() :
 {
     ( <GUARD> val = script() )
     { return new GuardExpression(val); }
+}
+
+Expression hashExp() : { }
+{
+    ( <HASH> )
+    { return new HashExpression(); }
 }
 
 Expression hexDecodeExp() : { }
@@ -744,12 +752,13 @@ String identifier() :
         <ECHO>                   |
         <EXACT>                  |
         <ELSE>                   |
-        <EMBED>                 |
+        <EMBED>                  |
         <FLATTEN>                |
         <FOR_EACH>               |
         <GET_FIELD>              |
         <GET_VAR>                |
         <GUARD>                  |
+        <HASH>                   |
         <HEX_DECODE>             |
         <HEX_ENCODE>             |
         <HOST_NAME>              |

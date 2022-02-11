@@ -21,7 +21,7 @@ import java.util.ListIterator;
 import java.util.RandomAccess;
 
 /**
- * FieldValue which encapsulates a Array value
+ * FieldValue which encapsulates an Array value
  *
  * @author Einar M R Rosenvinge
  */
@@ -42,8 +42,7 @@ public final class Array<T extends FieldValue> extends CollectionFieldValue<T> i
         this(type);
         for (T v : values) {
             if (!((ArrayDataType)type).getNestedType().isValueCompatible(v)) {
-                throw new IllegalArgumentException("FieldValue " + v +
-                        " is not compatible with " + type + ".");
+                throw new IllegalArgumentException("FieldValue " + v + " is not compatible with " + type + ".");
             }
         }
         this.values.addAll(values);

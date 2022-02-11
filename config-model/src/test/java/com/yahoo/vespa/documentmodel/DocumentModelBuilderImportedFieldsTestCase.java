@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.documentmodel;
 
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -27,27 +27,27 @@ public class DocumentModelBuilderImportedFieldsTestCase extends AbstractReferenc
     }
 
     private static class TestDocumentModelBuilder {
-        private final SchemaBuilder builder = new SchemaBuilder();
+        private final ApplicationBuilder builder = new ApplicationBuilder();
         public TestDocumentModelBuilder addCampaign() throws ParseException {
-            builder.importString(joinLines("search campaign {",
-                    "  document campaign {",
-                    "    field cool_field type string { indexing: attribute }",
-                    "    field swag_field type long { indexing: attribute }",
-                    "  }",
-                    "}"));
+            builder.addSchema(joinLines("search campaign {",
+                                        "  document campaign {",
+                                        "    field cool_field type string { indexing: attribute }",
+                                        "    field swag_field type long { indexing: attribute }",
+                                        "  }",
+                                        "}"));
             return this;
         }
         public TestDocumentModelBuilder addPerson() throws ParseException {
-            builder.importString(joinLines("search person {",
-                    "  document person {",
-                    "    field name type string { indexing: attribute }",
-                    "  }",
-                    "}"));
+            builder.addSchema(joinLines("search person {",
+                                        "  document person {",
+                                        "    field name type string { indexing: attribute }",
+                                        "  }",
+                                        "}"));
             return this;
         }
         public DocumentModel build(String adSdContent) throws ParseException {
-            builder.importString(adSdContent);
-            builder.build();
+            builder.addSchema(adSdContent);
+            builder.build(true);
             return builder.getModel();
         }
     }

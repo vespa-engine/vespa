@@ -196,10 +196,9 @@ public class IndexedSearchCluster extends SearchCluster
     @Override
     protected void deriveAllSchemas(List<SchemaSpec> localSearches, DeployState deployState) {
         for (SchemaSpec spec : localSearches) {
-            Schema schema = spec.getSearchDefinition().getSearch();
-            if ( ! (schema instanceof DocumentOnlySchema)) {
-                DocumentDatabase db = new DocumentDatabase(this, schema.getName(),
-                                                           new DerivedConfiguration(schema,
+            if ( ! (spec.getSchema() instanceof DocumentOnlySchema)) {
+                DocumentDatabase db = new DocumentDatabase(this, spec.getSchema().getName(),
+                                                           new DerivedConfiguration(spec.getSchema(),
                                                                                     deployState.getDeployLogger(),
                                                                                     deployState.getProperties(),
                                                                                     deployState.rankProfileRegistry(),

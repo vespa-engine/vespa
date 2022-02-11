@@ -72,8 +72,8 @@ EnumStoreT<EntryT>::load_unique_value(const void* src, size_t available, Index& 
 }
 
 template <typename EntryT>
-EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const DictionaryConfig & dict_cfg)
-    : _store(),
+EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const DictionaryConfig& dict_cfg, std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator)
+    : _store(std::move(memory_allocator)),
       _dict(),
       _is_folded(dict_cfg.getMatch() == DictionaryConfig::Match::UNCASED),
       _comparator(_store.get_data_store()),
@@ -84,6 +84,12 @@ EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const DictionaryConfig & dict_
                                                      allocate_comparator(),
                                                      allocate_optionally_folded_comparator(is_folded())));
     _dict = static_cast<IEnumStoreDictionary*>(&_store.get_dictionary());
+}
+
+template <typename EntryT>
+EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const DictionaryConfig& dict_cfg)
+    : EnumStoreT<EntryT>(has_postings, dict_cfg, {})
+{
 }
 
 template <typename EntryT>

@@ -8,6 +8,7 @@
 #include <vespa/searchcore/proton/server/feedstates.h>
 #include <vespa/searchcore/proton/server/ireplayconfig.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
+#include <vespa/searchcore/proton/server/replay_throttling_policy.h>
 #include <vespa/searchcore/proton/feedoperation/removeoperation.h>
 #include <vespa/searchcore/proton/test/dummy_feed_view.h>
 #include <vespa/searchlib/common/serialnum.h>
@@ -71,6 +72,7 @@ struct Fixture
     MemoryConfigStore config_store;
     bucketdb::BucketDBOwner _bucketDB;
     bucketdb::BucketDBHandler _bucketDBHandler;
+    ReplayThrottlingPolicy _replay_throttling_policy;
     MyIncSerialNum _inc_serial_num;
     ReplayTransactionLogState state;
 
@@ -86,8 +88,9 @@ Fixture::Fixture()
       config_store(),
       _bucketDB(),
       _bucketDBHandler(_bucketDB),
+      _replay_throttling_policy({}),
       _inc_serial_num(9u),
-      state("doctypename", feed_view_ptr, _bucketDBHandler, replay_config, config_store, _inc_serial_num)
+      state("doctypename", feed_view_ptr, _bucketDBHandler, replay_config, config_store, _replay_throttling_policy, _inc_serial_num)
 {
 }
 Fixture::~Fixture() = default;

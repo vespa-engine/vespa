@@ -9,6 +9,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/datastore/buffer_stats.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/util/traits.h>
 #include <vector>
 
@@ -21,6 +22,9 @@ using namespace vespalib::datastore;
 using vespalib::ArrayRef;
 using generation_t = vespalib::GenerationHandler::generation_t;
 using vespalib::datastore::test::BufferStats;
+using vespalib::alloc::MemoryAllocator;
+using vespalib::alloc::test::MemoryAllocatorObserver;
+using AllocStats = MemoryAllocatorObserver::Stats;
 
 template <typename UniqueStoreT>
 struct TestBaseValues {
@@ -39,6 +43,7 @@ struct TestBase : public ::testing::Test {
     using ReferenceStoreValueType = std::conditional_t<std::is_same_v<ValueType, const char *>, std::string, ValueType>;
     using ReferenceStore = std::map<EntryRef, std::pair<ReferenceStoreValueType,uint32_t>>;
 
+    AllocStats stats;
     UniqueStoreType store;
     ReferenceStore refStore;
     generation_t generation;
@@ -148,7 +153,8 @@ struct TestBase : public ::testing::Test {
 
 template <typename UniqueStoreTypeAndDictionaryType>
 TestBase<UniqueStoreTypeAndDictionaryType>::TestBase()
-    : store(),
+    : stats(),
+      store(std::make_unique<MemoryAllocatorObserver>(stats)),
       refStore(),
       generation(1)
 {
@@ -422,6 +428,15 @@ TYPED_TEST(TestBase, store_can_be_enumerated)
     EXPECT_EQ(0u, invalidEnum);
     EXPECT_EQ(1u, enumValue1);
     EXPECT_EQ(2u, enumValue2);
+}
+
+TYPED_TEST(TestBase, provided_memory_allocator_is_used)
+{
+    if constexpr (std::is_same_v<const char *, typename TestFixture::ValueType>) {
+        EXPECT_EQ(AllocStats(18, 0), this->stats);
+    } else {
+        EXPECT_EQ(AllocStats(1, 0), this->stats);
+    }
 }
 
 #pragma GCC diagnostic pop

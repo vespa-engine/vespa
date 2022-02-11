@@ -8,7 +8,9 @@ import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.types.FieldDescription;
+import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
+import com.yahoo.search.query.ranking.MatchPhase;
 import com.yahoo.search.rendering.RendererRegistry;
 
 import java.util.ArrayList;
@@ -30,19 +32,26 @@ public class Presentation implements Cloneable {
     public static final String TIMING = "timing";
     public static final String SUMMARY = "summary";
     public static final String SUMMARY_FIELDS = "summaryFields";
+    public static final String TENSORS = "tensors";
 
     /** The (short) name of the parameter holding the name of the return format to use */
     public static final String FORMAT = "format";
 
     static {
-        argumentType=new QueryProfileType(PRESENTATION);
+        argumentType = new QueryProfileType(PRESENTATION);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(BOLDING, "boolean", "bolding"));
         argumentType.addField(new FieldDescription(TIMING, "boolean", "timing"));
         argumentType.addField(new FieldDescription(SUMMARY, "string", "summary"));
-        argumentType.addField(new FieldDescription(FORMAT, "string", "format template"));
         argumentType.addField(new FieldDescription(SUMMARY_FIELDS, "string", "summaryFields"));
+        QueryProfileType formatArgumentType = new QueryProfileType(FORMAT);
+        formatArgumentType.setBuiltin(true);
+        formatArgumentType.setStrict(true);
+        formatArgumentType.addField(new FieldDescription("", "string", "format template"));
+        formatArgumentType.addField(new FieldDescription(TENSORS, "string", "format.tensors"));
+        formatArgumentType.freeze();
+        argumentType.addField(new FieldDescription(FORMAT, new QueryProfileFieldType(formatArgumentType), "format"));
         argumentType.freeze();
     }
     public static QueryProfileType getArgumentType() { return argumentType; }
@@ -53,7 +62,7 @@ public class Presentation implements Cloneable {
     /** The terms to highlight in the result (only used by BoldingSearcher, may be removed later). */
     private List<IndexedItem> boldingData = null;
 
-    /** Whether or not to do highlighting */
+    /** Whether to do highlighting */
     private boolean bolding = true;
 
     /** The summary class to be shown */
@@ -64,6 +73,9 @@ public class Presentation implements Cloneable {
 
     /** Whether optional timing data should be rendered */
     private boolean timing = false;
+
+    /** Whether to renders tensors in short form */
+    private boolean tensorShortForm = false;
 
     /** Set of explicitly requested summary fields, instead of summary classes */
     private Set<String> summaryFields = LazySet.newHashSet();
@@ -98,14 +110,10 @@ public class Presentation implements Cloneable {
         this.format = (format != null) ? format : RendererRegistry.defaultRendererId.toSpecification();
     }
 
-    /**
-     * Get the name of the format desired for result rendering.
-     */
+    /** Get the name of the format desired for result rendering. */
     public String getFormat() { return format.getName(); }
 
-    /**
-     * Set the desired format for result rendering. If null, use the default renderer.
-     */
+    /** Set the desired format for result rendering. If null, use the default renderer. */
     public void setFormat(String format) {
         setRenderer(ComponentSpecification.fromString(format));
     }
@@ -132,21 +140,7 @@ public class Presentation implements Cloneable {
         }
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if ( ! (o instanceof Presentation)) return false;
-        Presentation p = (Presentation) o;
-        return QueryHelper.equals(bolding, p.bolding) && QueryHelper.equals(summary, p.summary);
-    }
-
-    @Override
-    public int hashCode() {
-        return QueryHelper.combineHash(bolding, summary);
-    }
-
-    /**
-     * @return whether to add optional timing data to the rendered result
-     */
+    /** Returns whether to add optional timing data to the rendered result. */
     public boolean getTiming() {
         return timing;
     }
@@ -166,20 +160,13 @@ public class Presentation implements Cloneable {
         return summaryFields;
     }
 
-    /** Prepares this for binary serialization. For internal use - see {@link Query#prepare} */
-    public void prepare() {
-        if (highlight != null)
-            highlight.prepare();
-    }
-
     /**
      * Parse the given string as a comma delimited set of field names and
      * overwrite the set of summary fields. Whitespace will be trimmed. If you
      * want to add or remove fields programmatically, use
      * {@link #getSummaryFields()} and modify the returned set.
      *
-     * @param asString
-     *            the summary fields requested, e.g. "price,author,title"
+     * @param asString the summary fields requested, e.g. "price,author,title"
      */
     public void setSummaryFields(String asString) {
         summaryFields.clear();
@@ -187,6 +174,54 @@ public class Presentation implements Cloneable {
             summaryFields.add(field);
         }
 
+    }
+
+    /**
+     * Returns whether tensors should use short form in JSON and textual representations, see
+     * <a href="https://docs.vespa.ai/en/reference/document-json-format.html#tensor">https://docs.vespa.ai/en/reference/document-json-format.html#tensor</a>
+     * and <a href="https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form">https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form</a>.
+     * Default is false.
+     */
+    public boolean getTensorShortForm() { return tensorShortForm; }
+
+    /**
+     * Sets whether tensors should use short form in JSON and textual representations from a string.
+     *
+     * @param value a string which must be either 'short' or 'long'
+     * @throws IllegalArgumentException if any other value is passed
+     */
+    public void setTensorShortForm(String value) {
+        tensorShortForm = toTensorShortForm(value);
+    }
+
+    private boolean toTensorShortForm(String value) {
+        switch (value) {
+            case "short": return true;
+            case "long": return false;
+            default: throw new IllegalArgumentException("Value must be 'long' or 'short', not '" + value + "'");
+        }
+    }
+
+    public void setTensorShortForm(boolean tensorShortForm) {
+        this.tensorShortForm = tensorShortForm;
+    }
+
+    /** Prepares this for binary serialization. For internal use - see {@link Query#prepare} */
+    public void prepare() {
+        if (highlight != null)
+            highlight.prepare();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if ( ! (o instanceof Presentation)) return false;
+        Presentation p = (Presentation) o;
+        return QueryHelper.equals(bolding, p.bolding) && QueryHelper.equals(summary, p.summary);
+    }
+
+    @Override
+    public int hashCode() {
+        return QueryHelper.combineHash(bolding, summary);
     }
 
 }

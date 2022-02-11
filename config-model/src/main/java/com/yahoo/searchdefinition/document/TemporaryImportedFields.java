@@ -29,11 +29,7 @@ public class TemporaryImportedFields {
     }
 
     public boolean hasField(String fieldName) {
-        boolean has = fields.get(fieldName) != null;
-        if (has) return true;
-        if (owner.inherited().isEmpty()) return false;
-        if (owner.inherited().get().temporaryImportedFields().isEmpty()) return false;
-        return owner.inherited().get().temporaryImportedFields().get().hasField(fieldName);
+        return fields.get(fieldName) != null;
     }
 
     public Map<String, TemporaryImportedField> fields() {

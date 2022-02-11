@@ -7,6 +7,10 @@ import java.util.Objects;
  * @author smorgrav
  */
 public class TenantInfoBillingContact {
+
+    // All fields are editable in 'Billing - Edit billing contact'
+    // Only 'name' and 'email' are exposed outside the 'Edit billing contact' form.
+    // All these fields are required by the billing process.
     private final String name;
     private final String email;
     private final String phone;

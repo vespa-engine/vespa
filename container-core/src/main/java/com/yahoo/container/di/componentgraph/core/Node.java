@@ -22,7 +22,7 @@ import java.util.Set;
 public abstract class Node {
 
     private final ComponentId componentId;
-    protected Optional<Object> instance = Optional.empty();
+    protected volatile Optional<Object> instance = Optional.empty();
     List<Node> componentsToInject = new ArrayList<>();
 
     public Node(ComponentId componentId) {

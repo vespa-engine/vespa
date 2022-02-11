@@ -3,6 +3,7 @@
 package com.yahoo.log;
 
 import com.yahoo.log.event.Event;
+import com.yahoo.log.impl.LogUtils;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -18,7 +19,9 @@ import java.util.regex.Pattern;
  * @author  Bjorn Borud
  * @author arnej27959
  *
+ * @deprecated Should only be used internally in the log library
  */
+@Deprecated(since = "7", forRemoval = true)
 public class VespaFormatter extends SimpleFormatter {
 
     private static final Pattern backSlash = Pattern.compile("\\\\");
@@ -34,8 +37,8 @@ public class VespaFormatter extends SimpleFormatter {
     public static final String serviceNameUnsetValue = "-";
 
     static {
-        hostname = Util.getHostName();
-        processID = Util.getPID();
+        hostname = LogUtils.getHostName();
+        processID = LogUtils.getPID();
     }
 
     private String serviceName;

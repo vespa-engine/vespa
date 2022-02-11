@@ -27,8 +27,8 @@ public class ValidateMatchPhaseSearcherTestCase {
     public ValidateMatchPhaseSearcherTestCase() {
         searcher = new ValidateMatchPhaseSearcher(
                 ConfigGetter.getConfig(AttributesConfig.class,
-                                       "raw:",
-                                       new RawSource("attribute[4]\n" +
+                                       "raw:" +
+                                                     "attribute[4]\n" +
                                                      "attribute[0].name                ok\n" +
                                                      "attribute[0].datatype            INT32\n" +
                                                      "attribute[0].collectiontype      SINGLE\n" +
@@ -45,7 +45,7 @@ public class ValidateMatchPhaseSearcherTestCase {
                                                      "attribute[3].datatype            INT32\n" +
                                                      "attribute[3].collectiontype      ARRAY\n" +
                                                      "attribute[3].fastsearch          true"
-        )));
+        ));
     }
 
     private static String getErrorMatch(String attribute) {

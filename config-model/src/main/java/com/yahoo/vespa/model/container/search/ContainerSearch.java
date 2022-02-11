@@ -125,7 +125,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     		QrSearchersConfig.Searchcluster.Builder scB = new QrSearchersConfig.Searchcluster.Builder().
     				name(sys.getClusterName());
     		for (AbstractSearchCluster.SchemaSpec spec : sys.getLocalSDS()) {
-    			scB.searchdef(spec.getSearchDefinition().getName());
+    			scB.searchdef(spec.getSchema().getName());
     		}
     		scB.rankprofiles(new QrSearchersConfig.Searchcluster.Rankprofiles.Builder().configid(sys.getConfigId()));
     		scB.indexingmode(QrSearchersConfig.Searchcluster.Indexingmode.Enum.valueOf(sys.getIndexingModeName()));

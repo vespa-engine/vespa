@@ -4,7 +4,7 @@
 #include "filesizecalculator.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/guard.h>
-#include <cassert>
+#include <vespa/fastlib/io/bufferedfile.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -19,12 +19,11 @@ using vespalib::GenericHeader;
 using vespalib::FileDescriptor;
 using vespalib::getLastErrorString;
 
-namespace search {
-namespace fileutil {
+namespace search::fileutil {
 
 LoadedMmap::LoadedMmap(const vespalib::string &fileName)
-    : LoadedBuffer(NULL, 0),
-      _mapBuffer(NULL),
+    : LoadedBuffer(nullptr, 0),
+      _mapBuffer(nullptr),
       _mapSize(0)
 {
     FileDescriptor fd(open(fileName.c_str(), O_RDONLY, 0664));
@@ -35,7 +34,7 @@ LoadedMmap::LoadedMmap(const vespalib::string &fileName)
             uint64_t fileSize = stbuf.st_size;
             size_t sz = fileSize;
             if (sz) {
-                void *tmpBuffer = mmap(NULL, sz, PROT_READ, MAP_PRIVATE, fd.fd(), 0);
+                void *tmpBuffer = mmap(nullptr, sz, PROT_READ, MAP_PRIVATE, fd.fd(), 0);
                 if (tmpBuffer != MAP_FAILED) {
                     _mapSize = sz;
                     _mapBuffer = tmpBuffer;
@@ -78,14 +77,15 @@ LoadedMmap::~LoadedMmap() {
 
 }
 
+namespace search {
+
 std::unique_ptr<FastOS_FileInterface>
 FileUtil::openFile(const vespalib::string &fileName)
 {
-    std::unique_ptr<Fast_BufferedFile> file(new Fast_BufferedFile());
+    auto file = std::make_unique<Fast_BufferedFile>();
     file->EnableDirectIO();
     if (!file->OpenReadOnly(fileName.c_str())) {
         LOG(error, "could not open %s: %s", file->GetFileName(), getLastErrorString().c_str());
-        file->Close();
         throw IllegalStateException(make_string("Failed opening '%s' for direct IO reading.", file->GetFileName()));
     }
     return file;
@@ -97,12 +97,11 @@ using fileutil::LoadedMmap;
 LoadedBuffer::UP
 FileUtil::loadFile(const vespalib::string &fileName)
 {
-    LoadedBuffer::UP data(new LoadedMmap(fileName));
+    auto data = std::make_unique<LoadedMmap>(fileName);
     FastOS_File file(fileName.c_str());
     if (!file.OpenReadOnly()) {
         LOG(error, "could not open %s: %s", file.GetFileName(), getLastErrorString().c_str());
     }
-    file.Close();
     return data;
 }
 
@@ -123,44 +122,6 @@ void FileWriterBase::handleError(ssize_t numRead, size_t wanted)
     } else {
         throw std::runtime_error(vespalib::make_string("Partial read(%zd of %zu) of file %s", numRead, wanted, _file.GetFileName()));
     }
-}
-
-SequentialFileArray::SequentialFileArray(const vespalib::string & fname) :
-    _backingFile(),
-    _name(fname)
-{
-    _backingFile->EnableDirectIO();
-}
-
-SequentialFileArray::~SequentialFileArray()
-{
-    close();
-}
-
-void SequentialFileArray::rewind()
-{
-    assert(_backingFile->SetPosition(0));
-}
-
-void SequentialFileArray::close()
-{
-    _backingFile->Close();
-}
-
-void SequentialFileArray::erase()
-{
-    close();
-    FastOS_File::Delete(_backingFile->GetFileName());
-}
-
-void SequentialFileArray::openReadOnly()
-{
-    _backingFile->ReadOpen(_name.c_str());
-}
-
-void SequentialFileArray::openWriteOnly()
-{
-    _backingFile->OpenWriteOnlyTruncate(_name.c_str());
 }
 
 ssize_t

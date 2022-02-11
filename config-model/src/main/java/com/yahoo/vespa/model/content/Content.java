@@ -243,8 +243,8 @@ public class Content extends ConfigModel {
             String indexingClusterName = cluster.getIndexingClusterName();
             ContainerModel containerModel = findByName(indexingClusterName, containers);
             if (containerModel == null)
-                throw new RuntimeException("Content cluster '" + cluster.getClusterName() + "' refers to docproc " +
-                                           "cluster '" + indexingClusterName + "', but this cluster does not exist.");
+                throw new IllegalArgumentException("Content cluster '" + cluster.getClusterName() + "' refers to docproc " +
+                                                   "cluster '" + indexingClusterName + "', but this cluster does not exist.");
             addIndexingChainsTo(containerModel.getCluster(), cluster);
         }
 
@@ -312,7 +312,7 @@ public class Content extends ConfigModel {
                     index++;
                     docprocService.useDynamicPorts();
                     docprocService.setHostResource(host);
-                    docprocService.initService(modelContext.getDeployLogger());
+                    docprocService.initService(modelContext.getDeployState());
                     nodes.add(docprocService);
                     processedHosts.add(host);
                 }

@@ -128,7 +128,11 @@ TEST("require that expression with only number inputs produce number output (com
 }
 
 TEST("require that expression with object input produces object output (interpreted)") {
-    TEST_DO(verify_output_type({{"b", "double"}}, "a*b", FeatureType::object(ValueType::double_type())));
+    TEST_DO(verify_output_type({{"b", "tensor(x{})"}}, "a*b", FeatureType::object(ValueType::from_spec("tensor(x{})"))));
+}
+
+TEST("require that scalar expressions are auto-unboxed (interpreted)") {
+    TEST_DO(verify_output_type({{"b", "tensor(x{})"}}, "reduce(a*b,sum)", FeatureType::number()));
 }
 
 TEST("require that ranking expression can resolve to concrete complex type") {
@@ -138,7 +142,7 @@ TEST("require that ranking expression can resolve to concrete complex type") {
 
 TEST("require that ranking expression can be external") {
     TEST_DO(verify_output_type({}, "a*b", FeatureType::number(), "my_expr"));
-    TEST_DO(verify_output_type({{"b", "double"}}, "a*b", FeatureType::object(ValueType::double_type()), "my_expr"));
+    TEST_DO(verify_output_type({{"b", "double"}}, "a*b", FeatureType::number(), "my_expr"));
     TEST_DO(verify_output_type({{"a", "tensor(x{},y{})"}, {"b", "tensor(y{},z{})"}}, "a*b",
                                FeatureType::object(ValueType::from_spec("tensor(x{},y{},z{})")), "my_expr"));
 }

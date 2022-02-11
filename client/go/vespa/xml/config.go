@@ -16,7 +16,7 @@ var DefaultDeployment Deployment
 func init() {
 	defaultDeploymentRaw := `<deployment version="1.0">
   <prod>
-    <region active="true">aws-us-east-1c</region>
+    <region>aws-us-east-1c</region>
   </prod>
 </deployment>`
 	d, err := ReadDeployment(strings.NewReader(defaultDeploymentRaw))
@@ -44,8 +44,7 @@ type Prod struct {
 }
 
 type Region struct {
-	Name   string `xml:",chardata"`
-	Active bool   `xml:"active,attr"`
+	Name string `xml:",chardata"`
 }
 
 func (d Deployment) String() string { return d.rawXML.String() }
@@ -142,14 +141,33 @@ func ReadServices(r io.Reader) (Services, error) {
 func Regions(names ...string) []Region {
 	var regions []Region
 	for _, z := range names {
-		regions = append(regions, Region{Name: z, Active: true})
+		regions = append(regions, Region{Name: z})
 	}
 	return regions
 }
 
 // ParseResources parses nodes resources from string s.
 func ParseResources(s string) (Resources, error) {
-	parts := strings.Split(s, ",")
+	var parts []string
+	inRange := false
+	var sb strings.Builder
+	for _, c := range s {
+		if inRange {
+			if c == ']' {
+				inRange = false
+			}
+		} else {
+			if c == '[' {
+				inRange = true
+			} else if c == ',' {
+				parts = append(parts, sb.String())
+				sb.Reset()
+				continue
+			}
+		}
+		sb.WriteRune(c)
+	}
+	parts = append(parts, sb.String())
 	if len(parts) != 3 {
 		return Resources{}, fmt.Errorf("invalid resources: %q", s)
 	}
@@ -180,11 +198,11 @@ func ParseNodeCount(s string) (int, int, error) {
 		if len(parts) != 2 {
 			return 0, 0, parseErr
 		}
-		min, err := strconv.Atoi(parts[0])
+		min, err := strconv.Atoi(strings.TrimSpace(parts[0]))
 		if err != nil {
 			return 0, 0, parseErr
 		}
-		max, err := strconv.Atoi(parts[1])
+		max, err := strconv.Atoi(strings.TrimSpace(parts[1]))
 		if err != nil {
 			return 0, 0, parseErr
 		}
@@ -208,10 +226,10 @@ func IsProdRegion(s string, system string) bool {
 
 func parseResource(field, s string) (string, error) {
 	parts := strings.SplitN(s, "=", 2)
-	if len(parts) != 2 || parts[0] != field {
+	if len(parts) != 2 || strings.TrimSpace(parts[0]) != field {
 		return "", fmt.Errorf("invalid value for %s field: %q", field, s)
 	}
-	return parts[1], nil
+	return strings.TrimSpace(parts[1]), nil
 }
 
 // ReplaceRaw finds all elements of name in rawXML and replaces their contents with value.

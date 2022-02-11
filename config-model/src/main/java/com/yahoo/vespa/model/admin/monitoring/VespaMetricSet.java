@@ -475,11 +475,17 @@ public class VespaMetricSet {
 
         // resource usage
         metrics.add(new Metric("content.proton.resource_usage.disk.average"));
-        metrics.add(new Metric("content.proton.resource_usage.disk_utilization.average"));
+        metrics.add(new Metric("content.proton.resource_usage.disk_usage.total.max"));
+        metrics.add(new Metric("content.proton.resource_usage.disk_usage.total_utilization.max"));
+        metrics.add(new Metric("content.proton.resource_usage.disk_usage.transient.max"));
         metrics.add(new Metric("content.proton.resource_usage.memory.average"));
-        metrics.add(new Metric("content.proton.resource_usage.memory_utilization.average"));
-        metrics.add(new Metric("content.proton.resource_usage.transient_memory.average"));
-        metrics.add(new Metric("content.proton.resource_usage.transient_disk.average"));
+        metrics.add(new Metric("content.proton.resource_usage.memory_usage.total.max"));
+        metrics.add(new Metric("content.proton.resource_usage.memory_usage.total_utilization.max"));
+        metrics.add(new Metric("content.proton.resource_usage.memory_usage.transient.max"));
+        metrics.add(new Metric("content.proton.resource_usage.disk_utilization.average")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("content.proton.resource_usage.memory_utilization.average")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("content.proton.resource_usage.transient_memory.average")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("content.proton.resource_usage.transient_disk.average")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("content.proton.resource_usage.memory_mappings.max"));
         metrics.add(new Metric("content.proton.resource_usage.open_file_descriptors.max"));
         metrics.add(new Metric("content.proton.resource_usage.feeding_blocked.max"));
@@ -487,6 +493,23 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.address_space.max"));
         metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.feeding_blocked.last")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.feeding_blocked.max"));
+
+        // CPU util
+        metrics.add(new Metric("content.proton.resource_usage.cpu_util.setup.max"));
+        metrics.add(new Metric("content.proton.resource_usage.cpu_util.setup.sum"));
+        metrics.add(new Metric("content.proton.resource_usage.cpu_util.setup.count"));
+        metrics.add(new Metric("content.proton.resource_usage.cpu_util.read.max"));
+        metrics.add(new Metric("content.proton.resource_usage.cpu_util.read.sum"));
+        metrics.add(new Metric("content.proton.resource_usage.cpu_util.read.count"));
+        metrics.add(new Metric("content.proton.resource_usage.cpu_util.write.max"));
+        metrics.add(new Metric("content.proton.resource_usage.cpu_util.write.sum"));
+        metrics.add(new Metric("content.proton.resource_usage.cpu_util.write.count"));
+        metrics.add(new Metric("content.proton.resource_usage.cpu_util.compact.max"));
+        metrics.add(new Metric("content.proton.resource_usage.cpu_util.compact.sum"));
+        metrics.add(new Metric("content.proton.resource_usage.cpu_util.compact.count"));
+        metrics.add(new Metric("content.proton.resource_usage.cpu_util.other.max"));
+        metrics.add(new Metric("content.proton.resource_usage.cpu_util.other.sum"));
+        metrics.add(new Metric("content.proton.resource_usage.cpu_util.other.count"));
 
         // transaction log
         metrics.add(new Metric("content.proton.transactionlog.entries.average"));

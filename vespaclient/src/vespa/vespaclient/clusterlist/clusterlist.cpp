@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "clusterlist.h"
-#include <vespa/config/config.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <sstream>
 
@@ -17,7 +16,7 @@ ClusterList::Cluster::Cluster(const std::string& name, const std::string& config
 
 ClusterList::Cluster::Cluster(const Cluster &) = default;
 ClusterList::Cluster & ClusterList::Cluster::operator = (const Cluster &) = default;
-ClusterList::Cluster::~Cluster() {}
+ClusterList::Cluster::~Cluster() = default;
 
 ClusterList::ClusterList()
 {

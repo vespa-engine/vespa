@@ -78,7 +78,7 @@ CopyDFW::Init(const ResultConfig & config, const char *inputField)
 }
 
 void
-CopyDFW::insertField(uint32_t /*docid*/, GeneralResult *gres, GetDocsumsState *state, ResType type,
+CopyDFW::insertField(uint32_t /*docid*/, GeneralResult *gres, GetDocsumsState *, ResType type,
                      vespalib::slime::Inserter &target)
 {
     int idx = gres->GetClass()->GetIndexFromEnumValue(_inputFieldEnumValue);
@@ -128,7 +128,7 @@ CopyDFW::insertField(uint32_t /*docid*/, GeneralResult *gres, GetDocsumsState *s
             uint32_t    len;
             const char *spt;
             // resolve field
-            entry->_resolve_field(&spt, &len, &state->_docSumFieldSpace);
+            entry->_resolve_field(&spt, &len);
             vespalib::Memory value(spt, len);
             target.insertString(value);
             break; }
@@ -139,7 +139,7 @@ CopyDFW::insertField(uint32_t /*docid*/, GeneralResult *gres, GetDocsumsState *s
             uint32_t    len;
             const char *dpt;
             // resolve field
-            entry->_resolve_field(&dpt, &len, &state->_docSumFieldSpace);
+            entry->_resolve_field(&dpt, &len);
             vespalib::Memory value(dpt, len);
             target.insertData(value);
             break; }

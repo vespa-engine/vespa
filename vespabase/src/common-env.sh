@@ -148,15 +148,16 @@ consider_fallback VESPA_VALGRIND_OPT "--num-callers=32 \
 --show-reachable=yes \
 ${VESPA_VALGRIND_SUPPREESSIONS_OPT}"
 
-consider_fallback VESPA_USE_HUGEPAGES_LIST  $(get_var "hugepages_list")
+consider_fallback VESPA_USE_HUGEPAGES_LIST  "$(get_var hugepages_list)"
 consider_fallback VESPA_USE_HUGEPAGES_LIST  "all"
 
-consider_fallback VESPA_USE_MADVISE_LIST    $(get_var "madvise_list")
+consider_fallback VESPA_USE_MADVISE_LIST    "$(get_var madvise_list)"
 
-consider_fallback VESPA_USE_VESPAMALLOC     $(get_var "vespamalloc_list")
-consider_fallback VESPA_USE_VESPAMALLOC_D   $(get_var "vespamallocd_list")
-consider_fallback VESPA_USE_VESPAMALLOC_DST $(get_var "vespamallocdst_list")
-consider_fallback VESPA_USE_NO_VESPAMALLOC  $(get_var "no_vespamalloc_list")
+consider_fallback VESPA_USE_VESPAMALLOC     "$(get_var vespamalloc_list)"
+consider_fallback VESPA_USE_VESPAMALLOC_D   "$(get_var vespamallocd_list)"
+consider_fallback VESPA_USE_VESPAMALLOC_DST "$(get_var vespamallocdst_list)"
+consider_fallback VESPA_USE_NO_VESPAMALLOC  "$(get_var no_vespamalloc_list)"
+consider_fallback VESPA_USE_NO_VESPAMALLOC  "vespa-rpc-invoke vespa-get-config vespa-sentinel-cmd vespa-route vespa-proton-cmd vespa-configproxy-cmd vespa-config-status"
 
 # TODO:
 # if [ "$VESPA_USE_HUGEPAGES_LIST" = "all" ]; then

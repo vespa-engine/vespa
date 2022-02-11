@@ -40,7 +40,7 @@ public class ZmsClientMock implements ZmsClient {
     private final AthenzDbMock athenz;
     private final AthenzIdentity controllerIdentity;
     private static final Pattern TENANT_RESOURCE_PATTERN = Pattern.compile("service\\.hosting\\.tenant\\.(?<tenantDomain>[\\w\\-_]+)\\..*");
-    private static final Pattern APPLICATION_RESOURCE_PATTERN = Pattern.compile("service\\.hosting\\.tenant\\.[\\w\\-_]+\\.res_group\\.(?<resourceGroup>[\\w\\-_]+)\\.wildcard");
+    private static final Pattern APPLICATION_RESOURCE_PATTERN = Pattern.compile("service\\.hosting\\.tenant\\.[\\w\\-_]+\\.res_group\\.(?<resourceGroup>[\\w\\-_]+)\\.(?<environment>[\\w\\-_]+)");
 
     public ZmsClientMock(AthenzDbMock athenz, AthenzIdentity controllerIdentity) {
         this.athenz = athenz;

@@ -13,7 +13,7 @@ ConfigHolder::ConfigHolder()
 
 ConfigHolder::~ConfigHolder() = default;
 
-ConfigUpdate::UP
+std::unique_ptr<ConfigUpdate>
 ConfigHolder::provide()
 {
     std::lock_guard guard(_lock);
@@ -21,7 +21,7 @@ ConfigHolder::provide()
 }
 
 void
-ConfigHolder::handle(ConfigUpdate::UP update)
+ConfigHolder::handle(std::unique_ptr<ConfigUpdate> update)
 {
     std::lock_guard guard(_lock);
     if (_current) {

@@ -31,10 +31,10 @@ public class SchemaTestCase {
                     "  }" +
                     "}");
             DeployLoggerStub logger = new DeployLoggerStub();
-            SchemaBuilder.createFromStrings(logger, schema);
+            ApplicationBuilder.createFromStrings(logger, schema);
             assertEquals("schema 'test' inherits 'nonesuch', but this schema does not exist",
                          logger.entries.get(0).message);
-            fail("Expected failure");
+            fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
             assertEquals("schema 'test' inherits 'nonesuch', but this schema does not exist", e.getMessage());
@@ -60,7 +60,8 @@ public class SchemaTestCase {
                     "    }" +
                     "  }" +
                     "}");
-            SchemaBuilder.createFromStrings(new DeployLoggerStub(), parent, child);
+            ApplicationBuilder.createFromStrings(new DeployLoggerStub(), parent, child);
+            fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
             assertEquals("schema 'child' inherits 'parent', " +
@@ -166,12 +167,12 @@ public class SchemaTestCase {
                 "  import field parentschema_ref.name as child2_imported {}" +
                 "}");
 
-        SchemaBuilder builder = new SchemaBuilder(new DeployLoggerStub());
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
         builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
         builder.processorsToSkip().add(ImportedFieldsResolver.class); // Avoid discovering the document reference leads nowhere
-        builder.importString(parentLines);
-        builder.importString(child1Lines);
-        builder.importString(child2Lines);
+        builder.addSchema(parentLines);
+        builder.addSchema(child1Lines);
+        builder.addSchema(child2Lines);
         builder.build(true);
         var application = builder.application();
 
@@ -187,7 +188,7 @@ public class SchemaTestCase {
         assertNotNull(child1.getExtraField("child1_field"));
         assertNotNull(builder.getRankProfileRegistry().get(child1, "parent_profile"));
         assertNotNull(builder.getRankProfileRegistry().get(child1, "child1_profile"));
-        assertEquals("parent_profile", builder.getRankProfileRegistry().get(child1, "child1_profile").getInheritedName());
+        assertEquals("parent_profile", builder.getRankProfileRegistry().get(child1, "child1_profile").inheritedNames().get(0));
         assertNotNull(child1.rankingConstants().get("parent_constant"));
         assertNotNull(child1.rankingConstants().get("child1_constant"));
         assertTrue(child1.rankingConstants().asMap().containsKey("parent_constant"));
@@ -222,7 +223,7 @@ public class SchemaTestCase {
         assertNotNull(child2.getExtraField("child2_field"));
         assertNotNull(builder.getRankProfileRegistry().get(child2, "parent_profile"));
         assertNotNull(builder.getRankProfileRegistry().get(child2, "child2_profile"));
-        assertEquals("parent_profile", builder.getRankProfileRegistry().get(child2, "child2_profile").getInheritedName());
+        assertEquals("parent_profile", builder.getRankProfileRegistry().get(child2, "child2_profile").inheritedNames().get(0));
         assertNotNull(child2.rankingConstants().get("parent_constant"));
         assertNotNull(child2.rankingConstants().get("child2_constant"));
         assertTrue(child2.rankingConstants().asMap().containsKey("parent_constant"));
@@ -307,17 +308,109 @@ public class SchemaTestCase {
                 "  }" +
                 "}");
 
-        SchemaBuilder builder = new SchemaBuilder(new DeployLoggerStub());
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
         builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
         builder.processorsToSkip().add(ImportedFieldsResolver.class); // Avoid discovering the document reference leads nowhere
-        builder.importString(parentLines);
-        builder.importString(childLines);
-        builder.importString(grandchildLines);
+        builder.addSchema(parentLines);
+        builder.addSchema(childLines);
+        builder.addSchema(grandchildLines);
         builder.build(true);
         var application = builder.application();
 
         assertInheritedFromParent(application.schemas().get("child"), application, builder.getRankProfileRegistry());
         assertInheritedFromParent(application.schemas().get("grandchild"), application, builder.getRankProfileRegistry());
+    }
+
+    @Test
+    public void testInheritingMultipleRankProfilesWithOverlappingConstructsIsDisallowed1() throws ParseException {
+        try {
+            String profile = joinLines(
+                    "schema test {" +
+                    "  document test {" +
+                    "    field title type string {" +
+                    "      indexing: summary" +
+                    "    }" +
+                    "  }" +
+                    "  rank-profile r1 {" +
+                    "    first-phase {" +
+                    "      expression: fieldMatch(title)" +
+                    "    }" +
+                    "  }" +
+                    "  rank-profile r2 {" +
+                    "    first-phase {" +
+                    "      expression: fieldMatch(title)" +
+                    "    }" +
+                    "  }" +
+                    "  rank-profile r3 inherits r1, r2 {" +
+                    "  }" +
+                    "}");
+            ApplicationBuilder.createFromStrings(new DeployLoggerStub(), profile);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Only one of the profiles inherited by rank profile 'r3' can contain first-phase expression, but it is present in all of [rank profile 'r1', rank profile 'r2']",
+                         e.getMessage());
+        }
+    }
+
+    @Test
+    public void testInheritingMultipleRankProfilesWithOverlappingConstructsIsAllowedWhenDefinedInChild() throws ParseException {
+        String profile = joinLines(
+                "schema test {" +
+                "  document test {" +
+                "    field title type string {" +
+                "      indexing: summary" +
+                "    }" +
+                "  }" +
+                "  rank-profile r1 {" +
+                "    first-phase {" +
+                "      expression: fieldMatch(title)" +
+                "    }" +
+                "  }" +
+                "  rank-profile r2 {" +
+                "    first-phase {" +
+                "      expression: fieldMatch(title)" +
+                "    }" +
+                "  }" +
+                "  rank-profile r3 inherits r1, r2 {" +
+                "    first-phase {" + // Redefined here so this does not cause failure
+                "      expression: nativeRank" +
+                "    }" +
+                "  }" +
+                "}");
+        ApplicationBuilder.createFromStrings(new DeployLoggerStub(), profile);
+    }
+
+    @Test
+    public void testInheritingMultipleRankProfilesWithOverlappingConstructsIsDisallowed2() throws ParseException {
+        try {
+            String profile = joinLines(
+                    "schema test {" +
+                    "  document test {" +
+                    "    field title type string {" +
+                    "      indexing: summary" +
+                    "    }" +
+                    "  }" +
+                    "  rank-profile r1 {" +
+                    "    function f1() {" +
+                    "      expression: fieldMatch(title)" +
+                    "    }" +
+                    "  }" +
+                    "  rank-profile r2 {" +
+                    "    function f1() {" +
+                    "      expression: fieldMatch(title)" +
+                    "    }" +
+                    "  }" +
+                    "  rank-profile r3 inherits r1, r2 {" +
+                    "  }" +
+                    "}");
+            ApplicationBuilder.createFromStrings(new DeployLoggerStub(), profile);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("rank profile 'r3' inherits rank profile 'r2' which contains function 'f1', but this function is already defined in another profile this inherits",
+                         e.getMessage());
+        }
     }
 
     private void assertInheritedFromParent(Schema schema, Application application, RankProfileRegistry rankProfileRegistry) {

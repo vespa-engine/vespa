@@ -15,8 +15,6 @@ class IConfigManager;
 class IConfigContext
 {
 public:
-    typedef std::shared_ptr<IConfigContext> SP;
-
     /**
      * Get an instance of the config manager.
      *
@@ -29,7 +27,7 @@ public:
      */
     virtual void reload() = 0;
 
-    virtual ~IConfigContext() { }
+    virtual ~IConfigContext() = default;
 };
 
 } // namespace

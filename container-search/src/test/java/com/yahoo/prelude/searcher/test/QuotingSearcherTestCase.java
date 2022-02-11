@@ -32,7 +32,6 @@ import static org.junit.Assert.assertTrue;
  *
  * @author Steinar Knutsen
  */
-@SuppressWarnings("deprecation")
 public class QuotingSearcherTestCase {
 
     public static QuotingSearcher createQuotingSearcher(String configId) {

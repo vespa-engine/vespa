@@ -75,6 +75,7 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
                     .remotePortHeaders(List.of("X-Forwarded-Port", "y-rp")));
         }
         configureJettyThreadpool(builder);
+        builder.stopTimeout(300);
     }
 
     private void configureJettyThreadpool(ServerConfig.Builder builder) {

@@ -27,8 +27,8 @@ public class DataTypeRepo implements DataTypeCollection {
 
     public DataTypeRepo add(DataType type) {
         if (typeByName.containsKey(type.getName()) || typeById.containsKey(type.getId())) {
-            throw new IllegalStateException("Data type '" + type.getName() + "', id '" + 
-                                            type.getId() + "' is already registered.");
+            throw new IllegalArgumentException("Data type '" + type.getName() + "', id '" +
+                                               type.getId() + "' is already registered.");
         }
         typeByName.put(type.getName(), type);
         typeById.put(type.getId(), type);
@@ -43,9 +43,7 @@ public class DataTypeRepo implements DataTypeCollection {
     }
 
     public DataTypeRepo replace(DataType type) {
-        if (!typeByName.containsKey(type.getName()) ||
-            !typeById.containsKey(type.getId()))
-        {
+        if (!typeByName.containsKey(type.getName()) || !typeById.containsKey(type.getId())) {
             throw new IllegalStateException("Data type '" + type.getName() + "' is not registered.");
         }
         var oldByName = typeByName.remove(type.getName());

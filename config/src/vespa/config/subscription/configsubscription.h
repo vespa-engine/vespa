@@ -1,14 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 #include "subscriptionid.h"
-#include <vespa/config/common/iconfigholder.h>
 #include <vespa/config/common/configkey.h>
 #include <vespa/config/common/source.h>
-
 #include <atomic>
 #include <chrono>
 
 namespace config {
+
+class IConfigHolder;
+class ConfigUpdate;
+class ConfigValue;
 
 /**
  * A subscription can be polled for config updates, and handles interruption of
@@ -20,7 +22,7 @@ public:
     typedef std::unique_ptr<ConfigSubscription> UP;
     typedef std::shared_ptr<ConfigSubscription> SP;
 
-    ConfigSubscription(const SubscriptionId & id, const ConfigKey & key, const IConfigHolder::SP & holder, Source::UP source);
+    ConfigSubscription(const SubscriptionId & id, const ConfigKey & key, std::shared_ptr<IConfigHolder> holder, std::unique_ptr<Source> source);
     ~ConfigSubscription();
 
     /**
@@ -57,15 +59,15 @@ public:
     void reload(int64_t generation);
 
 private:
-    const SubscriptionId _id;
-    const ConfigKey _key;
-    Source::UP _source;
-    IConfigHolder::SP _holder;
-    ConfigUpdate::UP _next;
-    ConfigUpdate::UP _current;
-    bool _isChanged;
-    int64_t _lastGenerationChanged;
-    std::atomic<bool> _closed;
+    const SubscriptionId           _id;
+    const ConfigKey                _key;
+    std::unique_ptr<Source>        _source;
+    std::shared_ptr<IConfigHolder> _holder;
+    std::unique_ptr<ConfigUpdate> _next;
+    std::unique_ptr<ConfigUpdate> _current;
+    bool                          _isChanged;
+    int64_t                       _lastGenerationChanged;
+    std::atomic<bool>             _closed;
 };
 
 typedef std::vector<ConfigSubscription::SP> SubscriptionList;

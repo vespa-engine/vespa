@@ -19,7 +19,7 @@ import com.yahoo.io.reader.NamedReader;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -95,8 +96,8 @@ public class MockApplicationPackage implements ApplicationPackage {
     /** Returns the root of this application package relative to the current dir */
     protected File root() { return root; }
 
+    @SuppressWarnings("deprecation") // not redundant
     @Override
-    @SuppressWarnings("deprecation") // NOT redundant
     public String getApplicationName() {
         return "mock application";
     }
@@ -118,21 +119,24 @@ public class MockApplicationPackage implements ApplicationPackage {
     @Override
     public List<NamedReader> getSchemas() {
         ArrayList<NamedReader> readers = new ArrayList<>();
-        SchemaBuilder schemaBuilder = new SchemaBuilder(this,
-                                                        new MockFileRegistry(),
-                                                        new BaseDeployLogger(),
-                                                        new TestProperties(),
-                                                        new RankProfileRegistry(),
-                                                        queryProfileRegistry);
-        for (String sd : schemas) {
-            try  {
-                String name = schemaBuilder.importString(sd);
-                readers.add(new NamedReader(name + ApplicationPackage.SD_NAME_SUFFIX, new StringReader(sd)));
-            } catch (ParseException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        for (String sd : schemas)
+            readers.add(new NamedReader(extractSdName(sd) + ApplicationPackage.SD_NAME_SUFFIX, new StringReader(sd)));
         return readers;
+    }
+
+    /** To avoid either double parsing or supplying a name explicitly */
+    private String extractSdName(String sd) {
+        String s = sd.split("\n")[0];
+        if (s.startsWith("schema"))
+            s = s.substring("schema".length()).trim();
+        else if (s.startsWith("search"))
+            s = s.substring("search".length()).trim();
+        else
+            throw new IllegalArgumentException("Expected the first line of a schema but got '" + sd + "'");
+        int end = s.indexOf(' ');
+        if (end < 0)
+        end = s.indexOf('}');
+        return s.substring(0, end).trim();
     }
 
     @Override
@@ -142,7 +146,21 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     @Override
     public List<NamedReader> getFiles(Path dir, String fileSuffix, boolean recurse) {
-        return new ArrayList<>();
+        try {
+            if (dir.elements().contains(ApplicationPackage.SEARCH_DEFINITIONS_DIR.getName())) return List.of(); // No legacy paths
+            File dirFile = new File(root, dir.getName());
+            if ( ! dirFile.exists()) return List.of();
+            if (recurse) throw new RuntimeException("Recurse not implemented");
+            List<NamedReader> readers = new ArrayList<>();
+            for (var i = Files.list(dirFile.toPath()).filter(p -> p.getFileName().toString().endsWith(fileSuffix)).iterator(); i.hasNext(); ) {
+                var file = i.next();
+                readers.add(new NamedReader(file.toString(), IOUtils.createReader(file.toString())));
+            }
+            return readers;
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

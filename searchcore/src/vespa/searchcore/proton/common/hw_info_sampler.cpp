@@ -1,15 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "hw_info_sampler.h"
-#include <vespa/config/config.h>
 #include <vespa/config/print/fileconfigwriter.h>
+#include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/fastos/file.h>
 #include <vespa/searchcore/config/config-hwinfo.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/alloc.h>
 #include <filesystem>
 #include <thread>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.common.hw_info_sampler");
 
@@ -55,7 +57,8 @@ sampleCpuCores(const HwInfoSampler::Config &cfg)
     return std::thread::hardware_concurrency();
 }
 
-std::unique_ptr<HwinfoConfig> readConfig(const vespalib::string &path) {
+std::unique_ptr<HwinfoConfig>
+readConfig(const vespalib::string &path) {
     FileSpec spec(path + "/" + "hwinfo.cfg");
     ConfigSubscriber s(spec);
     std::unique_ptr<ConfigHandle<HwinfoConfig>> handle = s.subscribe<HwinfoConfig>("hwinfo");
@@ -79,29 +82,31 @@ void writeConfig(const vespalib::string &path,
 double measureDiskWriteSpeed(const vespalib::string &path,
                              size_t diskWriteLen)
 {
-    FastOS_File testFile;
     vespalib::string fileName = path + "/hwinfo-writespeed";
     size_t bufferLen = 1_Mi;
     Alloc buffer(Alloc::allocMMap(bufferLen));
     memset(buffer.get(), 0, buffer.size());
-    testFile.EnableDirectIO();
-    testFile.OpenWriteOnlyTruncate(fileName.c_str());
-    sync();
-    sleep(1);
-    sync();
-    sleep(1);
-    Clock::time_point before = Clock::now();
-    size_t residue = diskWriteLen;
-    while (residue > 0) {
-        size_t writeNow = std::min(residue, bufferLen);
-        testFile.WriteBuf(buffer.get(), writeNow);
-        residue -= writeNow;
+    double diskWriteSpeed;
+    {
+        FastOS_File testFile;
+        testFile.EnableDirectIO();
+        testFile.OpenWriteOnlyTruncate(fileName.c_str());
+        sync();
+        sleep(1);
+        sync();
+        sleep(1);
+        Clock::time_point before = Clock::now();
+        size_t residue = diskWriteLen;
+        while (residue > 0) {
+            size_t writeNow = std::min(residue, bufferLen);
+            testFile.WriteBuf(buffer.get(), writeNow);
+            residue -= writeNow;
+        }
+        Clock::time_point after = Clock::now();
+        double elapsed = vespalib::to_s(after - before);
+        diskWriteSpeed = diskWriteLen / elapsed / 1_Mi;
     }
-    Clock::time_point after = Clock::now();
-    testFile.Close();
     vespalib::unlink(fileName);
-    double elapsed = vespalib::to_s(after - before);
-    double diskWriteSpeed = diskWriteLen / elapsed / 1_Mi;
     return diskWriteSpeed;
 }
 

@@ -1,6 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <cstdlib>
-#include <cstdio>
 #include <pthread.h>
 #include <dlfcn.h>
 #include <cassert>
@@ -29,7 +28,7 @@ void verify_that_vespamalloc_datasegment_size_exists() {
     assert(info.keepcost == 0);
     assert(info.ordblks == 0);
     assert(info.smblks == 0);
-    assert(info.uordblks == 0);
+    assert(info.uordblks > 0);
     assert(info.usmblks == 0);
 #else
     struct mallinfo info = mallinfo();
@@ -43,7 +42,7 @@ void verify_that_vespamalloc_datasegment_size_exists() {
     assert(info.keepcost == 0);
     assert(info.ordblks == 0);
     assert(info.smblks == 0);
-    assert(info.uordblks == 0);
+    assert(info.uordblks > 0);
     assert(info.usmblks == 0);
 #endif
 }

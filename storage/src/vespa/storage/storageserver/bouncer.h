@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include <vespa/config/helper/configfetcher.h>
+#include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/storagecomponent.h>
@@ -19,7 +19,10 @@
 #include <vespa/storage/config/config-stor-bouncer.h>
 #include <unordered_map>
 
-namespace config { class ConfigUri; }
+namespace config {
+    class ConfigUri;
+    class ConfigFetcher;
+}
 
 namespace storage {
 
@@ -36,7 +39,7 @@ class Bouncer : public StorageLink,
     using BucketSpaceNodeStateMapping = std::unordered_map<document::BucketSpace, lib::NodeState, document::BucketSpace::hash>;
     BucketSpaceNodeStateMapping _derivedNodeStates;
     const lib::State* _clusterState;
-    config::ConfigFetcher _configFetcher;
+    std::unique_ptr<config::ConfigFetcher> _configFetcher;
     std::unique_ptr<BouncerMetrics> _metrics;
 
 public:
@@ -47,36 +50,20 @@ public:
                const std::string& indent) const override;
 
     void configure(std::unique_ptr<vespa::config::content::core::StorBouncerConfig> config) override;
-
     const BouncerMetrics& metrics() const noexcept;
 
 private:
-    void validateConfig(
-            const vespa::config::content::core::StorBouncerConfig&) const;
-
+    void validateConfig(const vespa::config::content::core::StorBouncerConfig&) const;
     void onClose() override;
-
-    void abortCommandForUnavailableNode(api::StorageMessage&,
-                                        const lib::State&);
-
-    void rejectCommandWithTooHighClockSkew(api::StorageMessage& msg,
-                                           int maxClockSkewInSeconds);
-
+    void abortCommandForUnavailableNode(api::StorageMessage&, const lib::State&);
+    void rejectCommandWithTooHighClockSkew(api::StorageMessage& msg, int maxClockSkewInSeconds);
     void abortCommandDueToClusterDown(api::StorageMessage&);
-
-    void rejectDueToInsufficientPriority(api::StorageMessage&,
-                                         api::StorageMessage::Priority);
-
+    void rejectDueToInsufficientPriority(api::StorageMessage&, api::StorageMessage::Priority);
     void reject_due_to_too_few_bucket_bits(api::StorageMessage&);
-
     bool clusterIsUp() const;
-
     bool isDistributor() const;
-
     bool isExternalLoad(const api::MessageType&) const noexcept;
-
     bool isExternalWriteOperation(const api::MessageType&) const noexcept;
-
     bool priorityRejectionIsEnabled(int configuredPriority) const noexcept {
         return (configuredPriority != -1);
     }
@@ -86,12 +73,9 @@ private:
      * update commands), return that timestamp. Otherwise, return 0.
      */
     uint64_t extractMutationTimestampIfAny(const api::StorageMessage& msg);
-
     bool onDown(const std::shared_ptr<api::StorageMessage>&) override;
-
     void handleNewState() override;
     const lib::NodeState &getDerivedNodeState(document::BucketSpace bucketSpace) const;
-
     void append_node_identity(std::ostream& target_stream) const;
 };
 

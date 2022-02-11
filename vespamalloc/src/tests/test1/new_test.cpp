@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/log/log.h>
 #include <malloc.h>
 #include <dlfcn.h>
@@ -134,14 +135,28 @@ void verify_vespamalloc_usable_size() {
     }
 }
 
+enum class MallocLibrary { UNKNOWN, VESPA_MALLOC, VESPA_MALLOC_D};
+
+MallocLibrary
+detectLibrary() {
+    if (dlsym(RTLD_NEXT, "is_vespamallocd") != nullptr) {
+        // Debug variants will never have more memory available as there is pre/postamble for error detection.
+        return MallocLibrary::VESPA_MALLOC_D;
+    } else if (dlsym(RTLD_NEXT, "is_vespamalloc") != nullptr) {
+        return MallocLibrary::VESPA_MALLOC;
+    }
+    return MallocLibrary::UNKNOWN;
+}
+
 TEST("verify malloc_usable_size is sane") {
     constexpr size_t SZ = 33;
     std::unique_ptr<char[]> buf = std::make_unique<char[]>(SZ);
     size_t usable_size = malloc_usable_size(buf.get());
-    if (dlsym(RTLD_NEXT, "is_vespamallocd") != nullptr) {
+    MallocLibrary env = detectLibrary();
+    if (env == MallocLibrary::VESPA_MALLOC_D) {
         // Debug variants will never have more memory available as there is pre/postamble for error detection.
         EXPECT_EQUAL(SZ, usable_size);
-    } else if (dlsym(RTLD_NEXT, "is_vespamalloc") != nullptr) {
+    } else if (env == MallocLibrary::VESPA_MALLOC) {
         // Normal production vespamalloc will round up
         EXPECT_EQUAL(64u, usable_size);
         verify_vespamalloc_usable_size();
@@ -149,6 +164,26 @@ TEST("verify malloc_usable_size is sane") {
         // Non vespamalloc implementations we can not say anything about
         EXPECT_GREATER_EQUAL(usable_size, SZ);
     }
+}
+
+TEST("verify mallopt") {
+    MallocLibrary env = detectLibrary();
+    if (env == MallocLibrary::UNKNOWN) return;
+    EXPECT_EQUAL(0, mallopt(M_MMAP_MAX, 0x1000000));
+    EXPECT_EQUAL(1, mallopt(M_MMAP_THRESHOLD, 0x1000000));
+    EXPECT_EQUAL(1, mallopt(M_MMAP_THRESHOLD, 1_Gi));
+}
+
+TEST("verify mmap_limit") {
+    MallocLibrary env = detectLibrary();
+    if (env == MallocLibrary::UNKNOWN) return;
+    EXPECT_EQUAL(1, mallopt(M_MMAP_THRESHOLD, 0x100000));
+    auto small = std::make_unique<char[]>(16_Ki);
+    auto large_1 = std::make_unique<char[]>(1200_Ki);
+    EXPECT_GREATER(size_t(labs(small.get() - large_1.get())), 1_Ti);
+    EXPECT_EQUAL(1, mallopt(M_MMAP_THRESHOLD, 1_Gi));
+    auto large_2 = std::make_unique<char[]>(1200_Ki);
+    EXPECT_LESS(size_t(labs(small.get() - large_2.get())), 1_Ti);
 }
 
 

@@ -7,6 +7,8 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/net/crypto_engine.h>
+#include <vespa/config/subscription/configuri.h>
+#include <vespa/config/helper/configfetcher.hpp>
 #include <functional>
 
 #include <vespa/log/log.h>
@@ -21,17 +23,17 @@ StatusWebServer::StatusWebServer(
     : _reporterMap(reporterMap),
       _port(0),
       _httpServer(),
-      _configFetcher(configUri.getContext()),
+      _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
       _component(std::make_unique<framework::Component>(componentRegister, "Status"))
 {
-    _configFetcher.subscribe<vespa::config::content::core::StorStatusConfig>(configUri.getConfigId(), this);
-    _configFetcher.start();
+    _configFetcher->subscribe<vespa::config::content::core::StorStatusConfig>(configUri.getConfigId(), this);
+    _configFetcher->start();
 }
 
 StatusWebServer::~StatusWebServer()
 {
     // Avoid getting config during shutdown
-    _configFetcher.close();
+    _configFetcher->close();
 
     if (_httpServer) {
         LOG(debug, "Shutting down status web server on port %u", _httpServer->getListenPort());

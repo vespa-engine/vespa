@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "vsm-adapter.h"
+#include "vsm-adapter.hpp"
 #include "docsumconfig.h"
 #include "i_matching_elements_filler.h"
 #include <vespa/searchlib/common/matching_elements.h>
@@ -24,7 +24,7 @@ GetDocsumsStateCallback::GetDocsumsStateCallback() :
 void GetDocsumsStateCallback::FillSummaryFeatures(GetDocsumsState * state, IDocsumEnvironment * env)
 {
     (void) env;
-    if (_summaryFeatures.get() != NULL) { // set the summary features to write to the docsum
+    if (_summaryFeatures) { // set the summary features to write to the docsum
         state->_summaryFeatures = _summaryFeatures;
         state->_summaryFeaturesCached = true;
     }
@@ -33,7 +33,7 @@ void GetDocsumsStateCallback::FillSummaryFeatures(GetDocsumsState * state, IDocs
 void GetDocsumsStateCallback::FillRankFeatures(GetDocsumsState * state, IDocsumEnvironment * env)
 {
     (void) env;
-    if (_rankFeatures.get() != NULL) { // set the rank features to write to the docsum
+    if (_rankFeatures) { // set the rank features to write to the docsum
         state->_rankFeatures = _rankFeatures;
     }
 }
@@ -119,10 +119,10 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     std::lock_guard guard(_lock);
     LOG(debug, "(re-)configure VSM (docsum tools)");
 
-    std::shared_ptr<SummaryConfig>      summary(snapshot.getConfig<SummaryConfig>().release());
-    std::shared_ptr<SummarymapConfig>   summaryMap(snapshot.getConfig<SummarymapConfig>().release());
-    std::shared_ptr<VsmsummaryConfig>   vsmSummary(snapshot.getConfig<VsmsummaryConfig>().release());
-    std::shared_ptr<JuniperrcConfig>    juniperrc(snapshot.getConfig<JuniperrcConfig>().release());
+    std::shared_ptr<SummaryConfig>      summary(snapshot.getConfig<SummaryConfig>());
+    std::shared_ptr<SummarymapConfig>   summaryMap(snapshot.getConfig<SummarymapConfig>());
+    std::shared_ptr<VsmsummaryConfig>   vsmSummary(snapshot.getConfig<VsmsummaryConfig>());
+    std::shared_ptr<JuniperrcConfig>    juniperrc(snapshot.getConfig<JuniperrcConfig>());
 
     _fieldsCfg.set(snapshot.getConfig<VsmfieldsConfig>().release());
     _fieldsCfg.latch();
@@ -174,6 +174,12 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
         throw std::runtime_error("(re-)configuration of VSM (docsum tools) failed");
     }
 }
+
+VSMConfigSnapshot::VSMConfigSnapshot(const vespalib::string & configId, const config::ConfigSnapshot & snapshot)
+    : _configId(configId),
+      _snapshot(std::make_unique<config::ConfigSnapshot>(snapshot))
+{ }
+VSMConfigSnapshot::~VSMConfigSnapshot() = default;
 
 VSMAdapter::VSMAdapter(const vespalib::string & highlightindexes, const vespalib::string & configId, Fast_WordFolder & wordFolder)
     : _highlightindexes(highlightindexes),

@@ -53,7 +53,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
     private List<Configserver> parseConfigservers(DeployState deployState, Admin admin, Element adminE) {
         List<Configserver> configservers;
         if (multitenant)
-            configservers = getConfigServersFromSpec(deployState.getDeployLogger(), admin);
+            configservers = getConfigServersFromSpec(deployState, admin);
         else
             configservers = getConfigServers(deployState, admin, adminE);
         if (configservers.isEmpty() && ! multitenant)
@@ -129,7 +129,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         SimpleConfigProducer<?> configServers = new SimpleConfigProducer<>(parent, "configservers");
         Configserver configServer = new Configserver(configServers, "configserver", Configserver.defaultRpcPort);
         configServer.setHostResource(parent.hostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC));
-        configServer.initService(deployState.getDeployLogger());
+        configServer.initService(deployState);
         return List.of(configServer);
     }
 

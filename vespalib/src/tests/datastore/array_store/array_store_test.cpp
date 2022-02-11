@@ -7,6 +7,7 @@
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -19,6 +20,9 @@ using vespalib::ArrayRef;
 using generation_t = vespalib::GenerationHandler::generation_t;
 using MemStats = vespalib::datastore::test::MemStats;
 using BufferStats = vespalib::datastore::test::BufferStats;
+using vespalib::alloc::MemoryAllocator;
+using vespalib::alloc::test::MemoryAllocatorObserver;
+using AllocStats = MemoryAllocatorObserver::Stats;
 
 namespace {
 
@@ -40,18 +44,20 @@ struct Fixture
     using value_type = EntryT;
     using ReferenceStore = vespalib::hash_map<EntryRef, EntryVector>;
 
+    AllocStats     stats;
     ArrayStoreType store;
     ReferenceStore refStore;
     generation_t generation;
     Fixture(uint32_t maxSmallArraySize, bool enable_free_lists = true)
         : store(ArrayStoreConfig(maxSmallArraySize,
                                  ArrayStoreConfig::AllocSpec(16, RefT::offsetSize(), 8_Ki,
-                                                             ALLOC_GROW_FACTOR)).enable_free_lists(enable_free_lists)),
+                                                             ALLOC_GROW_FACTOR)).enable_free_lists(enable_free_lists),
+                std::make_unique<MemoryAllocatorObserver>(stats)),
           refStore(),
           generation(1)
     {}
     Fixture(const ArrayStoreConfig &storeCfg)
-        : store(storeCfg),
+        : store(storeCfg, std::make_unique<MemoryAllocatorObserver>(stats)),
           refStore(),
           generation(1)
     {}
@@ -162,10 +168,10 @@ TEST("require that we test with trivial and non-trivial types")
 
 TEST_F("control static sizes", NumberFixture(3)) {
 #ifdef _LIBCPP_VERSION
-    EXPECT_EQUAL(424u, sizeof(f.store));
+    EXPECT_EQUAL(440u, sizeof(f.store));
     EXPECT_EQUAL(296u, sizeof(NumberFixture::ArrayStoreType::DataStoreType));
 #else
-    EXPECT_EQUAL(456u, sizeof(f.store));
+    EXPECT_EQUAL(472u, sizeof(f.store));
     EXPECT_EQUAL(328u, sizeof(NumberFixture::ArrayStoreType::DataStoreType));
 #endif
     EXPECT_EQUAL(96u, sizeof(NumberFixture::ArrayStoreType::SmallArrayType));
@@ -445,6 +451,11 @@ TEST_F("require that offset in EntryRefT is within bounds when allocating memory
         f.add({1, 2, 3});
     }
     f.assertStoreContent();
+}
+
+TEST_F("require that provided memory allocator is used", NumberFixture(3))
+{
+    EXPECT_EQUAL(AllocStats(4, 0), f.stats);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.searchdefinition.*;
 import com.yahoo.vespa.config.search.SummarymapConfig;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
@@ -29,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 public class SummaryMapTestCase extends AbstractSchemaTestCase {
     @Test
     public void testDeriving() throws IOException, ParseException {
-        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/simple.sd");
+        Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/simple.sd");
         SummaryMap summaryMap=new SummaryMap(schema);
 
         Iterator transforms=summaryMap.resultTransformIterator();
@@ -73,7 +74,7 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
     }
     @Test
     public void testPositionDeriving() {
-        Schema schema = new Schema("store");
+        Schema schema = new Schema("store", MockApplicationPackage.createEmpty());
         SDDocumentType document = new SDDocumentType("store");
         schema.addDocument(document);
         String fieldName = "location";
@@ -147,7 +148,7 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
     @Test
     public void testFailOnSummaryFieldSourceCollision() {
         try {
-            SchemaBuilder.buildFromFile("src/test/examples/summaryfieldcollision.sd");
+            ApplicationBuilder.buildFromFile("src/test/examples/summaryfieldcollision.sd");
         } catch (Exception e) {
             assertTrue(e.getMessage().matches(".*equally named field.*"));
         }
@@ -189,13 +190,13 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
     }
 
     private Schema buildSearch(String field) throws ParseException {
-        var builder = new SchemaBuilder(new RankProfileRegistry());
-        builder.importString(joinLines("search test {",
-                "  document test {",
-                field,
-                "  }",
-                "}"));
-        builder.build();
+        var builder = new ApplicationBuilder(new RankProfileRegistry());
+        builder.addSchema(joinLines("search test {",
+                                    "  document test {",
+                                    field,
+                                    "  }",
+                                    "}"));
+        builder.build(true);
         return builder.getSchema();
     }
 

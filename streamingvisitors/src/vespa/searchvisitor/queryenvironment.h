@@ -33,6 +33,8 @@ public:
                      const search::IAttributeManager * attrMgr = nullptr);
     ~QueryEnvironment();
 
+    void addGeoLocation(const vespalib::string &field, const vespalib::string &location);
+
     // inherit documentation
     virtual const search::fef::Properties & getProperties() const override { return _properties; }
 

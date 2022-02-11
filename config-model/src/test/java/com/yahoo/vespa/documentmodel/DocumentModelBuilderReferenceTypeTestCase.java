@@ -3,7 +3,7 @@ package com.yahoo.vespa.documentmodel;
 
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.documentmodel.NewDocumentType;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -56,22 +56,22 @@ public class DocumentModelBuilderReferenceTypeTestCase extends AbstractReference
     }
 
     private static class TestDocumentModelBuilder {
-        private final SchemaBuilder builder = new SchemaBuilder();
+        private final ApplicationBuilder builder = new ApplicationBuilder();
         public TestDocumentModelBuilder addCampaign() throws ParseException {
-            builder.importString(joinLines("search campaign {",
-                    "  document campaign {}",
-                    "}"));
+            builder.addSchema(joinLines("search campaign {",
+                                        "  document campaign {}",
+                                        "}"));
             return this;
         }
         public TestDocumentModelBuilder addPerson() throws ParseException {
-            builder.importString(joinLines("search person {",
-                    "  document person {}",
-                    "}"));
+            builder.addSchema(joinLines("search person {",
+                                        "  document person {}",
+                                        "}"));
             return this;
         }
         public DocumentModel build(String adSdContent) throws ParseException {
-            builder.importString(adSdContent);
-            builder.build();
+            builder.addSchema(adSdContent);
+            builder.build(true);
             return builder.getModel();
         }
     }

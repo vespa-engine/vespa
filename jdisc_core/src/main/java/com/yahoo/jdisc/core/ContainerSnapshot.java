@@ -37,7 +37,10 @@ class ContainerSnapshot extends AbstractResource implements Container {
         this.containerReference = container.refer(context);
     }
 
+    /** @deprecated Use {@link #getInstance(Class)} instead. */
     @Override
+    @Deprecated(forRemoval = true, since = "7") // TODO Vespa 8 remove
+    @SuppressWarnings("removal")
     public <T> T getInstance(Key<T> key) {
         return container.guiceInjector().getInstance(key);
     }

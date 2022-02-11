@@ -6,7 +6,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile.RankProperty;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
@@ -21,10 +21,10 @@ public class RankPropertyVariablesTestCase extends AbstractSchemaTestCase {
     @Test
     public void testRankPropVariables() throws IOException, ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/rankpropvars.sd",
-                                                    new BaseDeployLogger(),
-                                                    rankProfileRegistry,
-                                                    new QueryProfileRegistry());
+        Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/rankpropvars.sd",
+                                                          new BaseDeployLogger(),
+                                                          rankProfileRegistry,
+                                                          new QueryProfileRegistry());
         assertRankPropEquals(rankProfileRegistry.get(schema, "other").getRankProperties(), "$testvar1", "foo");
         assertRankPropEquals(rankProfileRegistry.get(schema, "other").getRankProperties(), "$testvar_2", "bar");
         assertRankPropEquals(rankProfileRegistry.get(schema, "other").getRankProperties(), "$testvarOne23", "baz");

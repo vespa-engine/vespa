@@ -13,9 +13,9 @@ struct CancelHandler
      *
      * @param subscription ConfigSubscription to cancel
      */
-    virtual void unsubscribe(const ConfigSubscription::SP & subscription) = 0;
+    virtual void unsubscribe(const std::shared_ptr<ConfigSubscription> & subscription) = 0;
 
-    virtual ~CancelHandler() { }
+    virtual ~CancelHandler() = default;
 };
 
 }

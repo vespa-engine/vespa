@@ -48,7 +48,7 @@ public class AddAttributeTransformToSummaryOfImportedFieldsTest {
     }
 
     private static Schema createSearch(String documentType) {
-        return new Schema(documentType, new Application(MockApplicationPackage.createEmpty()), new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
+        return new Schema(documentType, MockApplicationPackage.createEmpty(), new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
     }
 
     private static Schema createSearchWithDocument(String documentName) {

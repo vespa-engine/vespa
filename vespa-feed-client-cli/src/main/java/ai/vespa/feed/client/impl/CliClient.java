@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -94,9 +95,7 @@ public class CliClient {
                 });
                 latch.await();
 
-                if (cliArgs.benchmarkModeEnabled()) {
-                    printBenchmarkResult(System.nanoTime() - startNanos, successes.get(), failures.get(), feedClient.stats(), systemOut);
-                }
+                printBenchmarkResult(System.nanoTime() - startNanos, successes.get(), failures.get(), feedClient.stats(), cliArgs.benchmarkModeEnabled() ? systemOut : systemError);
                 if (fatal.get() != null) throw fatal.get();
             }
             return 0;
@@ -137,6 +136,8 @@ public class CliClient {
         cliArgs.caCertificates().ifPresent(builder::setCaCertificatesFile);
         cliArgs.headers().forEach(builder::addRequestHeader);
         builder.setDryrun(cliArgs.dryrunEnabled());
+        cliArgs.doomSeconds().ifPresent(doom -> builder.setCircuitBreaker(new GracePeriodCircuitBreaker(Duration.ofSeconds(10),
+                                                                                                        Duration.ofSeconds(doom))));
         return builder.build();
     }
 

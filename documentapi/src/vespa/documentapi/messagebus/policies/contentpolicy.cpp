@@ -10,6 +10,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/config-stor-distribution.h>
+#include <vespa/config/helper/configfetcher.hpp>
 #include <vespa/config/subscription/configuri.h>
 #include <cassert>
 

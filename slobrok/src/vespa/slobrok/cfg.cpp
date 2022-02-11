@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "cfg.h"
+#include <vespa/config/subscription/configsubscriber.hpp>
 
 namespace slobrok {
 
@@ -21,7 +22,7 @@ extract(const cloud::config::SlobroksConfig &cfg)
 bool
 Configurator::poll()
 {
-    bool retval = _subscriber.nextGenerationNow();
+    bool retval = _subscriber->nextGenerationNow();
     if (retval) {
         std::unique_ptr<cloud::config::SlobroksConfig> cfg = _handle->getConfig();
         _target.setup(extract(*cfg));
@@ -31,11 +32,20 @@ Configurator::poll()
 
 
 Configurator::Configurator(Configurable& target, const config::ConfigUri & uri)
-    : _subscriber(uri.getContext()),
-      _handle(_subscriber.subscribe<cloud::config::SlobroksConfig>(uri.getConfigId())),
+    : _subscriber(std::make_unique<config::ConfigSubscriber>(uri.getContext())),
+      _handle(_subscriber->subscribe<cloud::config::SlobroksConfig>(uri.getConfigId())),
       _target(target)
 {
 }
+
+Configurator::~Configurator() = default;
+
+
+int64_t
+Configurator::getGeneration() const {
+    return _subscriber->getGeneration();
+}
+
 
 ConfiguratorFactory::ConfiguratorFactory(const config::ConfigUri& uri)
     : _uri(uri)

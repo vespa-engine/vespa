@@ -11,8 +11,9 @@ import java.util.regex.Pattern;
  * @author Tony Vaagenes
  */
 public class BinaryScaledAmountParser {
-    //The pattern must match the one given in the schema
-    private static Pattern pattern = Pattern.compile("(\\d+(\\.\\d*)?)\\s*([kmgKMG])?");
+
+    // The pattern must match the one given in the schema
+    private static final Pattern pattern = Pattern.compile("(\\d+(\\.\\d*)?)\\s*([kmgKMG])?");
 
     public static BinaryScaledAmount parse(String valueString) {
         Matcher matcher = pattern.matcher(valueString);
@@ -34,4 +35,5 @@ public class BinaryScaledAmountParser {
             return BinaryPrefix.fromSymbol(binaryPrefixString.toUpperCase().charAt(0));
         }
     }
+
 }

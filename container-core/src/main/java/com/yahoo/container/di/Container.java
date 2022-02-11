@@ -5,6 +5,7 @@ import com.google.inject.Injector;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.ConfigInterruptedException;
+import com.yahoo.config.subscription.SubscriberClosedException;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.di.ConfigRetriever.BootstrapConfigs;
@@ -17,6 +18,7 @@ import com.yahoo.container.di.config.ApplicationBundlesConfig;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.yolean.UncheckedInterruptedException;
 import org.osgi.framework.Bundle;
 
 import java.util.ArrayList;
@@ -45,7 +47,7 @@ public class Container {
     private final ConfigKey<ApplicationBundlesConfig> applicationBundlesConfigKey;
     private final ConfigKey<PlatformBundlesConfig> platformBundlesConfigKey;
     private final ConfigKey<ComponentsConfig> componentsConfigKey;
-    private final ComponentDeconstructor componentDeconstructor;
+    private final ComponentDeconstructor destructor;
     private final Osgi osgi;
 
     private final ConfigRetriever retriever;
@@ -53,9 +55,9 @@ public class Container {
     private long previousConfigGeneration = -1L;
     private long leastGeneration = -1L;
 
-    public Container(SubscriberFactory subscriberFactory, String configId, ComponentDeconstructor componentDeconstructor, Osgi osgi) {
+    public Container(SubscriberFactory subscriberFactory, String configId, ComponentDeconstructor destructor, Osgi osgi) {
         this.subscriberFactory = subscriberFactory;
-        this.componentDeconstructor = componentDeconstructor;
+        this.destructor = destructor;
         this.osgi = osgi;
 
         applicationBundlesConfigKey = new ConfigKey<>(ApplicationBundlesConfig.class, configId);
@@ -65,29 +67,35 @@ public class Container {
         this.retriever = new ConfigRetriever(bootstrapKeys, subscriberFactory);
     }
 
-    public Container(SubscriberFactory subscriberFactory, String configId, ComponentDeconstructor componentDeconstructor) {
-        this(subscriberFactory, configId, componentDeconstructor, new Osgi() {
+    public Container(SubscriberFactory subscriberFactory, String configId, ComponentDeconstructor destructor) {
+        this(subscriberFactory, configId, destructor, new Osgi() {
         });
     }
 
-    public ComponentGraph getNewComponentGraph(ComponentGraph oldGraph, Injector fallbackInjector, boolean isInitializing) {
+    public ComponentGraphResult waitForNextGraphGeneration(ComponentGraph oldGraph, Injector fallbackInjector, boolean isInitializing) {
         try {
             Collection<Bundle> obsoleteBundles = new HashSet<>();
-            ComponentGraph newGraph = getConfigAndCreateGraph(oldGraph, fallbackInjector, isInitializing, obsoleteBundles);
+            ComponentGraph newGraph = waitForNewConfigGenAndCreateGraph(oldGraph, fallbackInjector, isInitializing, obsoleteBundles);
             newGraph.reuseNodes(oldGraph);
-            constructComponents(newGraph);
-            deconstructObsoleteComponents(oldGraph, newGraph, obsoleteBundles);
-            return newGraph;
+            try {
+                constructComponents(newGraph);
+            } catch (Exception e) {
+                log.log(Level.WARNING, String.format(
+                        "Failed to construct graph for generation '%d' - scheduling partial graph for deconstruction",
+                        newGraph.generation()), e);
+                deconstructFailedGraph(oldGraph, newGraph);
+                throw e;
+            }
+            Runnable cleanupTask = createPreviousGraphDeconstructionTask(oldGraph, newGraph, obsoleteBundles);
+            return new ComponentGraphResult(newGraph, cleanupTask);
         } catch (Throwable t) {
             invalidateGeneration(oldGraph.generation(), t);
             throw t;
         }
     }
 
-    private ComponentGraph getConfigAndCreateGraph(ComponentGraph graph,
-                                                   Injector fallbackInjector,
-                                                   boolean isInitializing,
-                                                   Collection<Bundle> obsoleteBundles) // NOTE: Return value
+    private ComponentGraph waitForNewConfigGenAndCreateGraph(
+            ComponentGraph graph, Injector fallbackInjector, boolean isInitializing, Collection<Bundle> obsoleteBundles) // NOTE: Return value
     {
         ConfigSnapshot snapshot;
         while (true) {
@@ -153,12 +161,27 @@ public class Container {
     }
 
     private void constructComponents(ComponentGraph graph) {
-        graph.nodes().forEach(Node::constructInstance);
+        graph.nodes().forEach(n -> {
+            if (Thread.interrupted())
+                throw new UncheckedInterruptedException("Interrupted while constructing component graph", true);
+            n.constructInstance();
+        });
     }
 
-    private void deconstructObsoleteComponents(ComponentGraph oldGraph,
-                                               ComponentGraph newGraph,
-                                               Collection<Bundle> obsoleteBundles) {
+    private void deconstructFailedGraph(ComponentGraph currentGraph, ComponentGraph failedGraph) {
+        Set<Object> currentComponents = Collections.newSetFromMap(new IdentityHashMap<>(currentGraph.size()));
+        currentComponents.addAll(currentGraph.allConstructedComponentsAndProviders());
+
+        List<Object> unusedComponents = new ArrayList<>();
+        for (Object component : failedGraph.allConstructedComponentsAndProviders()) {
+            if (!currentComponents.contains(component)) unusedComponents.add(component);
+        }
+        destructor.deconstruct(failedGraph.generation(), unusedComponents, List.of());
+    }
+
+    private Runnable createPreviousGraphDeconstructionTask(ComponentGraph oldGraph,
+                                                           ComponentGraph newGraph,
+                                                           Collection<Bundle> obsoleteBundles) {
         Map<Object, ?> newComponents = new IdentityHashMap<>(newGraph.size());
         for (Object component : newGraph.allConstructedComponentsAndProviders())
             newComponents.put(component, null);
@@ -168,7 +191,7 @@ public class Container {
             if ( ! newComponents.containsKey(component))
                 obsoleteComponents.add(component);
 
-        componentDeconstructor.deconstruct(obsoleteComponents, obsoleteBundles);
+        return () -> destructor.deconstruct(oldGraph.generation(), obsoleteComponents, obsoleteBundles);
     }
 
     private Set<Bundle> installApplicationBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {
@@ -214,9 +237,10 @@ public class Container {
         }
     }
 
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private void invalidateGeneration(long generation, Throwable cause) {
         leastGeneration = Math.max(retriever.getComponentsGeneration(), retriever.getBootstrapGeneration()) + 1;
-        if (!(cause instanceof InterruptedException) && !(cause instanceof ConfigInterruptedException)) {
+        if (!(cause instanceof InterruptedException) && !(cause instanceof ConfigInterruptedException) && !(cause instanceof SubscriberClosedException)) {
             log.log(Level.WARNING, newGraphErrorMessage(generation, cause), cause);
         }
     }
@@ -242,14 +266,15 @@ public class Container {
         }
     }
 
-    public void shutdown(ComponentGraph graph, ComponentDeconstructor deconstructor) {
-        shutdownConfigurer();
+    public void shutdown(ComponentGraph graph) {
+        shutdownConfigRetriever();
         if (graph != null) {
-            deconstructAllComponents(graph, deconstructor);
+            scheduleGraphForDeconstruction(graph);
+            destructor.shutdown();
         }
     }
 
-    void shutdownConfigurer() {
+    public void shutdownConfigRetriever() {
         retriever.shutdown();
     }
 
@@ -258,9 +283,9 @@ public class Container {
         subscriberFactory.reloadActiveSubscribers(generation);
     }
 
-    private void deconstructAllComponents(ComponentGraph graph, ComponentDeconstructor deconstructor) {
-        // This is only used for shutdown, so no need to uninstall any bundles.
-        deconstructor.deconstruct(graph.allConstructedComponentsAndProviders(), Collections.emptyList());
+    private void scheduleGraphForDeconstruction(ComponentGraph graph) {
+        // This is only used for shutdown and cleanup of failed graph, so no need to uninstall any bundles.
+        destructor.deconstruct(graph.generation(), graph.allConstructedComponentsAndProviders(), List.of());
     }
 
     public static <T extends ConfigInstance> T getConfig(ConfigKey<T> key,
@@ -276,6 +301,19 @@ public class Container {
 
     private static BundleInstantiationSpecification bundleInstantiationSpecification(ComponentsConfig.Components config) {
         return BundleInstantiationSpecification.getFromStrings(config.id(), config.classId(), config.bundle());
+    }
+
+    public static class ComponentGraphResult {
+        private final ComponentGraph newGraph;
+        private final Runnable oldComponentsCleanupTask;
+
+        public ComponentGraphResult(ComponentGraph newGraph, Runnable oldComponentsCleanupTask) {
+            this.newGraph = newGraph;
+            this.oldComponentsCleanupTask = oldComponentsCleanupTask;
+        }
+
+        public ComponentGraph newGraph() { return newGraph; }
+        public Runnable oldComponentsCleanupTask() { return oldComponentsCleanupTask; }
     }
 
 }

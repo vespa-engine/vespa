@@ -159,12 +159,12 @@ public class MetricsProxyContainer extends Container implements
         cluster.getConfig(builder);
 
         if (clusterMembership.isPresent()) {
-            int maxHeapSize = clusterMembership.get().cluster().type() == ClusterSpec.Type.admin
-                    ? 128
-                    : 256;
+            boolean adminCluster = clusterMembership.get().cluster().type() == ClusterSpec.Type.admin;
+            int maxHeapSize = adminCluster ? 96 : 256;
             builder.jvm
                     .gcopts(jvmGCOptions)
                     .heapsize(maxHeapSize);
+            if (adminCluster) builder.jvm.minHeapsize(maxHeapSize);
         }
     }
 

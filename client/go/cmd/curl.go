@@ -19,14 +19,16 @@ func init() {
 
 var curlCmd = &cobra.Command{
 	Use:   "curl [curl-options] path",
-	Short: "Query Vespa using curl",
-	Long: `Query Vespa using curl.
+	Short: "Access Vespa directly using curl",
+	Long: `Access Vespa directly using curl.
 
-Execute curl with the appropriate URL, certificate and private key for your application.`,
-	Example: `$ vespa curl /search/?yql=query
-$ vespa curl -- -v --data-urlencode "yql=select * from sources * where title contains 'foo';" /search/
-$ vespa curl -t local -- -v /search/?yql=query
+Execute curl with the appropriate URL, certificate and private key for your application.
+
+For a more high-level interface to query and feeding, see the 'query' and 'document' commands.
 `,
+	Example: `$ vespa curl /ApplicationStatus
+$ vespa curl -- -X POST -H "Content-Type:application/json" --data-binary @src/test/resources/A-Head-Full-of-Dreams.json /document/v1/namespace/music/docid/1
+$ vespa curl -- -v --data-urlencode "yql=select * from music where album contains 'head';" /search/\?hits=5`,
 	DisableAutoGenTag: true,
 	Args:              cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {

@@ -100,6 +100,7 @@ public class AclProvisioningTest {
 
         // Trusted nodes is all tenant nodes, all proxy nodes, all config servers and load balancer subnets
         assertAcls(List.of(tenantNodes.asList(), proxyNodes, configServers.asList()), Set.of("10.2.3.0/24", "10.4.5.0/24"), List.of(nodeAcl));
+        assertEquals(Set.of(22, 4443), nodeAcl.trustedPorts());
     }
 
     @Test
@@ -121,6 +122,7 @@ public class AclProvisioningTest {
 
         // Trusted nodes is all config servers and all proxy nodes
         assertAcls(List.of(proxyNodes.asList(), configServers.asList()), List.of(nodeAcl));
+        assertEquals(Set.of(22, 443, 4443), nodeAcl.trustedPorts());
     }
 
     @Test

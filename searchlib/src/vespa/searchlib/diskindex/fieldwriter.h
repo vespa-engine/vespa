@@ -4,9 +4,10 @@
 #include "bitvectorfile.h"
 #include <vespa/searchlib/index/dictionaryfile.h>
 #include <vespa/searchlib/index/postinglistfile.h>
-#include <vespa/searchlib/bitcompression/compression.h>
-#include <vespa/searchlib/bitcompression/countcompression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
+#include <vespa/searchlib/bitcompression/countcompression.h>
+
+namespace search::index { class Schema; }
 
 namespace search::diskindex {
 

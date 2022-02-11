@@ -3,13 +3,10 @@ package com.yahoo.vespa.streamingvisitors;
 
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.AckToken;
-import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.VisitorDataHandler;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
-import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
-import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
@@ -41,7 +38,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 /**
@@ -187,7 +183,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
             params.setLibraryParameter("location", af);
         }
 
-        if (query.hasEncodableProperties()) {
+        if (QueryEncoder.hasEncodableProperties(query)) {
             encodeQueryData(query, 1, ed);
             params.setLibraryParameter("rankproperties", ed.getEncodedData());
         }
@@ -254,7 +250,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
                         ed.setReturned(query.getModel().getQueryTree().getRoot().encode(buf));
                         break;
                     case 1:
-                        ed.setReturned(query.encodeAsProperties(buf, true));
+                        ed.setReturned(QueryEncoder.encodeAsProperties(query, buf, true));
                         break;
                     case 2:
                         throw new IllegalArgumentException("old aggregation no longer exists!");

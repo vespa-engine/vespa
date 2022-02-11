@@ -17,8 +17,7 @@ class IConfigHolder : public ConfigHandler,
                       public Interruptable
 {
 public:
-    typedef std::shared_ptr<IConfigHolder> SP;
-    virtual ~IConfigHolder() { }
+    virtual ~IConfigHolder() = default;
 };
 
 } // namespace config

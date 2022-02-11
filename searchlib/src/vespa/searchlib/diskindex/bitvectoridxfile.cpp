@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bitvectoridxfile.h"
-#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/index/bitvectorkeys.h>
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/fastlib/io/bufferedfile.h>
 #include <cassert>
 
 namespace search::diskindex {
@@ -22,7 +22,6 @@ readHeader(vespalib::FileHeader &h, const vespalib::string &name)
     Fast_BufferedFile file(32_Ki);
     file.OpenReadOnly(name.c_str());
     h.readFile(file);
-    file.Close();
 }
 
 }
@@ -116,13 +115,13 @@ BitVectorIdxFileWrite::updateIdxHeader(uint64_t fileBitSize)
     if (_scope != BitVectorKeyScope::SHARED_WORDS) {
         h.putTag(Tag("fileBitSize", fileBitSize));
     }
-    _idxFile->Flush();
-    _idxFile->Sync();
+    bool sync_ok = _idxFile->Sync();
+    assert(sync_ok);
     assert(h.getSize() == _idxHeaderLen);
     _idxFile->SetPosition(0);
     h.writeFile(*_idxFile);
-    _idxFile->Flush();
-    _idxFile->Sync();
+    sync_ok = _idxFile->Sync();
+    assert(sync_ok);
 }
 
 void
@@ -148,7 +147,8 @@ BitVectorIdxFileWrite::flush()
 void
 BitVectorIdxFileWrite::syncCommon()
 {
-    _idxFile->Sync();
+    bool sync_ok = _idxFile->Sync();
+    assert(sync_ok);
 }
 
 void
@@ -167,7 +167,8 @@ BitVectorIdxFileWrite::close()
             assert(pos == idxSize());
             _idxFile->alignEndForDirectIO();
             updateIdxHeader(pos * 8);
-            _idxFile->Close();
+            bool close_ok = _idxFile->Close();
+            assert(close_ok);
         }
         _idxFile.reset();
     }

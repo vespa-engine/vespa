@@ -90,15 +90,15 @@ public class ZooKeeperClient {
     }
 
     private void writeSchemas(ApplicationPackage app) throws IOException {
-        Collection<NamedReader> sds = app.getSchemas();
-        if (sds.isEmpty()) return;
+        Collection<NamedReader> schemas = app.getSchemas();
+        if (schemas.isEmpty()) return;
 
         Path zkPath = getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(SCHEMAS_DIR);
         curator.create(zkPath);
         // Ensures that ranking expressions and other files are also written
-        writeDir(app.getFile(ApplicationPackage.SEARCH_DEFINITIONS_DIR), zkPath, false);
-        writeDir(app.getFile(ApplicationPackage.SCHEMAS_DIR), zkPath, false);
-        for (NamedReader sd : sds) {
+        writeDir(app.getFile(ApplicationPackage.SEARCH_DEFINITIONS_DIR), zkPath, true);
+        writeDir(app.getFile(ApplicationPackage.SCHEMAS_DIR), zkPath, true);
+        for (NamedReader sd : schemas) {
             curator.set(zkPath.append(sd.getName()), Utf8.toBytes(com.yahoo.io.IOUtils.readAll(sd.getReader())));
             sd.getReader().close();
         }

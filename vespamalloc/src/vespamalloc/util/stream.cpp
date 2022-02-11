@@ -5,18 +5,50 @@
 
 namespace vespamalloc {
 
-asciistream::asciistream() :
-    _rPos(0),
-    _wPos(0),
-    _buffer(static_cast<char *>(malloc(1024))),
-    _sz(1024)
+asciistream::asciistream()
+    : _rPos(0),
+      _wPos(0),
+      _buffer(static_cast<char *>(malloc(1024))),
+      _sz(1024)
 {
 }
 
 asciistream::~asciistream()
 {
-    free(_buffer);
-    _buffer = nullptr;
+    if (_buffer != nullptr) {
+        free(_buffer);
+        _buffer = nullptr;
+    }
+}
+
+asciistream::asciistream(asciistream && rhs) noexcept
+    : _rPos(rhs._rPos),
+      _wPos(rhs._wPos),
+      _buffer(rhs._buffer),
+      _sz(rhs._sz)
+{
+    rhs._rPos = 0;
+    rhs._wPos = 0;
+    rhs._sz = 0;
+    rhs._buffer = nullptr;
+}
+
+asciistream &
+asciistream::operator = (asciistream && rhs) noexcept
+{
+    if (this != &rhs) {
+        if (_buffer) free(_buffer);
+
+        _rPos = rhs._rPos;
+        _wPos = rhs._wPos;
+        _buffer = rhs._buffer;
+        _sz = rhs._sz;
+        rhs._rPos = 0;
+        rhs._wPos = 0;
+        rhs._sz = 0;
+        rhs._buffer = nullptr;
+    }
+    return *this;
 }
 
 asciistream::asciistream(const asciistream & rhs) :
@@ -29,7 +61,8 @@ asciistream::asciistream(const asciistream & rhs) :
     _buffer[_wPos] = 0;
 }
 
-asciistream & asciistream::operator = (const asciistream & rhs)
+asciistream &
+asciistream::operator = (const asciistream & rhs)
 {
     if (this != &rhs) {
         asciistream newStream(rhs);
@@ -37,6 +70,7 @@ asciistream & asciistream::operator = (const asciistream & rhs)
     }
     return *this;
 }
+
 
 void asciistream::swap(asciistream & rhs)
 {

@@ -141,7 +141,7 @@ public abstract class LockedTenant {
         }
 
         private Cloud(CloudTenant tenant) {
-            this(tenant.name(), tenant.createdAt(), tenant.lastLoginInfo(), Optional.empty(), tenant.developerKeys(), tenant.info(), tenant.tenantSecretStores(), tenant.archiveAccessRole());
+            this(tenant.name(), tenant.createdAt(), tenant.lastLoginInfo(), tenant.creator(), tenant.developerKeys(), tenant.info(), tenant.tenantSecretStores(), tenant.archiveAccessRole());
         }
 
         @Override

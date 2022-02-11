@@ -90,6 +90,10 @@ public class VespaCliTestRunner implements TestRunner {
             in.lines().forEach(line -> log(htmlLogger.toLog(line)));
             status.set(process.waitFor() == 0 ? SUCCESS : process.waitFor() == 3 ? FAILURE : ERROR);
         }
+        catch (NoTestsException e) {
+            log(Level.WARNING, "Did not find expected basic HTTP tests", e);
+            status.set(FAILURE);
+        }
         catch (Exception e) {
             if (process != null)
                 process.destroyForcibly();
@@ -109,7 +113,7 @@ public class VespaCliTestRunner implements TestRunner {
 
     ProcessBuilder testRunProcessBuilder(Suite suite, TestConfig config) throws IOException {
         Path suitePath = getChildDirectory(testsPath, toSuiteDirectoryName(suite))
-                .orElseThrow(() -> new IllegalStateException("No tests found, for suite '" + suite + "'"));
+                .orElseThrow(() -> new NoTestsException("No tests found, for suite '" + suite + "'"));
 
         ProcessBuilder builder = new ProcessBuilder("vespa", "test", suitePath.toAbsolutePath().toString(),
                                                     "--application", config.application().toFullString(),
@@ -164,6 +168,12 @@ public class VespaCliTestRunner implements TestRunner {
             endpointObject.setString("url", url.toString());
         });
         return new String(SlimeUtils.toJsonBytes(root), UTF_8);
+    }
+
+    static class NoTestsException extends RuntimeException {
+
+        private NoTestsException(String message) { super(message); }
+
     }
 
 }

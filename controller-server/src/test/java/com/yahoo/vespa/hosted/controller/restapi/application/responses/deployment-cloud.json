@@ -37,7 +37,6 @@
   },
   "status": "complete",
   "quota": "(ignore)",
-  "archiveUri": "s3://bucketName/scoober/",
   "activity": {},
   "metrics": {
     "queriesPerSecond": 0.0,

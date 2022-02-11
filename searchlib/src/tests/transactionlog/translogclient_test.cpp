@@ -967,7 +967,6 @@ TEST("test truncation after short read") {
         FastOS_File trfile(filename.c_str());
         EXPECT_TRUE(trfile.OpenReadWrite(nullptr));
         trfile.SetSize(trfile.getSize() - 1);
-        trfile.Close();
     }
     {
         TransLogServer tlss(topdir.getDir(), 18377, ".", fileHeaderContext, domainConfig);

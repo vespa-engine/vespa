@@ -1,18 +1,22 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.log;
 
+import com.yahoo.log.impl.LogUtils;
 import java.util.logging.Level;
 
 /**
  * a levelcontroller that just implements a simple default
  * (possibly controlled by a system property or environment)
- **/
+ * @deprecated Should only be used internally in the log library
+ */
+@SuppressWarnings("removal")
+@Deprecated(since = "7", forRemoval = true)
 class DefaultLevelController implements LevelController {
     private String levelstring;
     private Level levelLimit = LogLevel.EVENT;
 
     DefaultLevelController(String env) {
-        if (LogUtil.empty(env)) {
+        if (LogUtils.empty(env)) {
             env = "all -debug -spam";
         }
 

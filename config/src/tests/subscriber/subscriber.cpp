@@ -3,11 +3,12 @@
 #include "config-bar.h"
 #include "config-baz.h"
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/config/config.h>
 #include <vespa/config/common/misc.h>
 #include <vespa/config/common/configholder.h>
-#include <vespa/config/subscription/configsubscription.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config/common/iconfigmanager.h>
+#include <vespa/config/common/iconfigcontext.h>
+#include <vespa/config/subscription/configsubscriber.hpp>
 #include <thread>
 
 using namespace config;
@@ -18,9 +19,9 @@ namespace {
 
     ConfigValue createValue(const std::string & value)
     {
-        std::vector< vespalib::string > lines;
+        StringVector lines;
         lines.push_back(value);
-        return ConfigValue(lines, calculateContentXxhash64(lines));
+        return ConfigValue(std::move(lines));
     }
 
     ConfigValue createFooValue(const std::string & value)
@@ -40,13 +41,13 @@ namespace {
 
     void verifyConfig(const std::string & expected, std::unique_ptr<FooConfig> cfg)
     {
-        ASSERT_TRUE(cfg.get() != NULL);
+        ASSERT_TRUE(cfg);
         ASSERT_EQUAL(expected, cfg->fooValue);
     }
 
     void verifyConfig(const std::string & expected, std::unique_ptr<BarConfig> cfg)
     {
-        ASSERT_TRUE(cfg.get() != NULL);
+        ASSERT_TRUE(cfg);
         ASSERT_EQUAL(expected, cfg->barValue);
     }
 
@@ -72,7 +73,7 @@ namespace {
 
 
         SubscriptionId idCounter;
-        std::vector<IConfigHolder::SP> _holders;
+        std::vector<std::shared_ptr<IConfigHolder>> _holders;
         int numCancel;
 
 
@@ -80,7 +81,7 @@ namespace {
 
         ConfigSubscription::SP subscribe(const ConfigKey & key, milliseconds timeoutInMillis) override {
             (void) timeoutInMillis;
-            IConfigHolder::SP holder(new ConfigHolder());
+            auto holder = std::make_shared<ConfigHolder>();
             _holders.push_back(holder);
 
             return std::make_shared<ConfigSubscription>(0, key, holder, std::make_unique<MySource>());
@@ -116,15 +117,17 @@ namespace {
     {
     public:
         MyManager & _m;
-        APIFixture(MyManager & m)
+        APIFixture(MyManager & m) noexcept
             : _m(m)
         {
         }
 
-        APIFixture(const APIFixture & rhs)
+        APIFixture(const APIFixture & rhs) noexcept
             : IConfigContext(rhs),
               _m(rhs._m)
         { }
+
+        ~APIFixture() override = default;
 
         IConfigManager & getManagerInstance() override {
             return _m;
@@ -144,7 +147,7 @@ namespace {
         ConfigHandle<FooConfig>::UP h1;
         ConfigHandle<BarConfig>::UP h2;
 
-        StandardFixture(MyManager & F1, APIFixture & F2) : f1(F1), s(IConfigContext::SP(new APIFixture(F2)))
+        StandardFixture(MyManager & F1, APIFixture & F2) : f1(F1), s(std::make_shared<APIFixture>(F2))
         {
             h1 = s.subscribe<FooConfig>("myid");
             h2 = s.subscribe<BarConfig>("myid");
@@ -206,7 +209,7 @@ TEST_F("requireThatSubscriptionsCannotBeAddedWhenFrozen", SimpleFixture()) {
 }
 
 TEST_FF("requireThatNextConfigReturnsFalseUntilSubscriptionHasSucceeded", MyManager, APIFixture(f1)) {
-    ConfigSubscriber s(IConfigContext::SP(new APIFixture(f2)));
+    ConfigSubscriber s(std::make_shared<APIFixture>(f2));
     ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid");
     ConfigHandle<BarConfig>::UP h2 = s.subscribe<BarConfig>("myid");
     ASSERT_FALSE(s.nextConfigNow());
@@ -335,7 +338,7 @@ TEST_MT_FFF("requireThatNextConfigIsInterruptedOnClose", 2, MyManager, APIFixtur
 }
 
 TEST_FF("requireThatHandlesAreMarkedAsChanged", MyManager, APIFixture(f1)) {
-    ConfigSubscriber s(IConfigContext::SP(new APIFixture(f2)));
+    ConfigSubscriber s(std::make_shared<APIFixture>(f2));
     ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid2");
     ConfigHandle<BarConfig>::UP h2 = s.subscribe<BarConfig>("myid2");
     EXPECT_FALSE(s.nextConfigNow());
@@ -357,7 +360,7 @@ TEST_FF("requireThatHandlesAreMarkedAsChanged", MyManager, APIFixture(f1)) {
 }
 
 TEST_FF("requireThatNextGenerationMarksChanged", MyManager, APIFixture(f1)) {
-    ConfigSubscriber s(IConfigContext::SP(new APIFixture(f2)));
+    ConfigSubscriber s(std::make_shared<APIFixture>(f2));
     ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid2");
     ConfigHandle<BarConfig>::UP h2 = s.subscribe<BarConfig>("myid2");
     f1.updateValue(0, createFooValue("foo"), 1);
@@ -380,7 +383,7 @@ TEST_FF("requireThatNextGenerationMarksChanged", MyManager, APIFixture(f1)) {
 }
 
 TEST_FF("requireThatgetGenerationIsSet", MyManager, APIFixture(f1)) {
-    ConfigSubscriber s(IConfigContext::SP(new APIFixture(f2)));
+    ConfigSubscriber s(std::make_shared<APIFixture>(f2));
     ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid2");
     ConfigHandle<BarConfig>::UP h2 = s.subscribe<BarConfig>("myid2");
     f1.updateValue(0, createFooValue("foo"), 1);
@@ -407,7 +410,7 @@ TEST_FFF("requireThatConfigHandleStillHasConfigOnTimestampUpdate", MyManager, AP
 }
 
 TEST_FF("requireThatTimeStamp0Works", MyManager, APIFixture(f1)) {
-    ConfigSubscriber s(IConfigContext::SP(new APIFixture(f2)));
+    ConfigSubscriber s(std::make_shared<APIFixture>(f2));
     ConfigHandle<BarConfig>::UP h2 = s.subscribe<BarConfig>("myid");
     ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid");
     ConfigHandle<BazConfig>::UP h3 = s.subscribe<BazConfig>("myid");
@@ -421,7 +424,7 @@ TEST_FF("requireThatTimeStamp0Works", MyManager, APIFixture(f1)) {
 }
 
 TEST_FF("requireThatNextGenerationWorksWithManyConfigs", MyManager, APIFixture(f1)) {
-    ConfigSubscriber s(IConfigContext::SP(new APIFixture(f2)));
+    ConfigSubscriber s(std::make_shared<APIFixture>(f2));
     ConfigHandle<BarConfig>::UP h2 = s.subscribe<BarConfig>("myid");
     ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid");
     ConfigHandle<BazConfig>::UP h3 = s.subscribe<BazConfig>("myid");
@@ -483,7 +486,7 @@ TEST_FF("requireThatNextGenerationWorksWithManyConfigs", MyManager, APIFixture(f
 }
 
 TEST_FF("requireThatConfigSubscriberHandlesProxyCache", MyManager, APIFixture(f1)) {
-    ConfigSubscriber s(IConfigContext::SP(new APIFixture(f2)));
+    ConfigSubscriber s(std::make_shared<APIFixture>(f2));
     ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid");
     f1.updateValue(0, createFooValue("foo"), 1);
     f1.updateGeneration(0, 2);
@@ -501,7 +504,7 @@ TEST_FF("requireThatConfigSubscriberHandlesProxyCache", MyManager, APIFixture(f1
 
 TEST_MT_FF("requireThatConfigSubscriberWaitsUntilNextConfigSucceeds", 2, MyManager, APIFixture(f1)) {
     if (thread_id == 0) {
-        ConfigSubscriber s(IConfigContext::SP(new APIFixture(f2)));
+        ConfigSubscriber s(std::make_shared<APIFixture>(f2));
         ConfigHandle<FooConfig>::UP h1 = s.subscribe<FooConfig>("myid");
         f1.updateValue(0, createFooValue("foo"), 1);
         ASSERT_TRUE(s.nextConfigNow());

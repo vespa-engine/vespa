@@ -3,7 +3,7 @@
 
 namespace config {
 SimpleConfigRetriever::SimpleConfigRetriever(const ConfigKeySet & keySet,
-                                             const IConfigContext::SP & context,
+                                             std::shared_ptr<IConfigContext> context,
                                              milliseconds subscribeTimeout)
     : _set(context),
       _subscriptionList()

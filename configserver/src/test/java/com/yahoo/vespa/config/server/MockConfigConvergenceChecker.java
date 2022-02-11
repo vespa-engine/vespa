@@ -31,7 +31,7 @@ public class MockConfigConvergenceChecker extends ConfigConvergenceChecker {
     }
 
     @Override
-    public ServiceListResponse checkConvergenceUnlessDeferringChangesUntilRestart(Application application, Duration timeoutPerService) {
+    public ServiceListResponse checkConvergenceUnlessDeferringChangesUntilRestart(Application application) {
         return new ServiceListResponse(Map.of(), wantedGeneration, wantedGeneration);
     }
 

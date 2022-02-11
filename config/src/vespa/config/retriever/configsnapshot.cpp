@@ -5,6 +5,7 @@
 #include <vespa/config/print/configdatabuffer.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/common/misc.h>
+#include <vespa/config/frt/protocol.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
@@ -41,8 +42,9 @@ ConfigSnapshot::swap(ConfigSnapshot &rhs) {
 }
 
 ConfigSnapshot::ConfigSnapshot(const SubscriptionList &subscriptionList, int64_t generation)
-        : _valueMap(),
-          _generation(generation) {
+    : _valueMap(),
+      _generation(generation)
+{
     for (SubscriptionList::const_iterator it(subscriptionList.begin()), mt(subscriptionList.end()); it != mt; it++) {
         _valueMap[(*it)->getKey()] = Value((*it)->getLastGenerationChanged(), (*it)->getConfig());
     }
@@ -66,10 +68,10 @@ ConfigSnapshot
 ConfigSnapshot::subset(const ConfigKeySet & keySet) const
 {
     ValueMap subSet;
-    for (ConfigKeySet::const_iterator it(keySet.begin()), mt(keySet.end()); it != mt; it++) {
-        ValueMap::const_iterator found(_valueMap.find(*it));
+    for (const ConfigKey & key : keySet) {
+        ValueMap::const_iterator found(_valueMap.find(key));
         if (found != _valueMap.end()) {
-            subSet[*it] = found->second;
+            subSet[key] = found->second;
         }
     }
     return ConfigSnapshot(subSet, _generation);
@@ -127,15 +129,13 @@ ConfigSnapshot::serializeV2(Cursor & root) const
 void
 ConfigSnapshot::serializeKeyV1(Cursor & cursor, const ConfigKey & key) const
 {
-    typedef std::vector<vespalib::string> SchemaVector;
     cursor.setString("configId", Memory(key.getConfigId()));
     cursor.setString("defName", Memory(key.getDefName()));
     cursor.setString("defNamespace", Memory(key.getDefNamespace()));
     cursor.setString("defMd5", Memory(key.getDefMd5()));
     Cursor & defSchema(cursor.setArray("defSchema"));
-    const SchemaVector & vec(key.getDefSchema());
-    for (SchemaVector::const_iterator it(vec.begin()), mt(vec.end()); it != mt; it++) {
-        defSchema.addString(vespalib::Memory(*it));
+    for (const vespalib::string & line : key.getDefSchema()) {
+        defSchema.addString(vespalib::Memory(line));
     }
 }
 
@@ -203,7 +203,7 @@ ConfigSnapshot::deserializeV2(Inspector & root)
 ConfigKey
 ConfigSnapshot::deserializeKeyV1(Inspector & inspector) const
 {
-    std::vector<vespalib::string> schema;
+    StringVector schema;
     Inspector & s(inspector["defSchema"]);
     for (size_t i = 0; i < s.children(); i++) {
         schema.push_back(s[i].asString().make_string());
@@ -219,13 +219,13 @@ ConfigSnapshot::deserializeKeyV1(Inspector & inspector) const
 std::pair<int64_t, ConfigValue>
 ConfigSnapshot::deserializeValueV1(Inspector & inspector) const
 {
-    std::vector<vespalib::string> payload;
+    StringVector payload;
     int64_t lastChanged = static_cast<int64_t>(inspector["lastChanged"].asDouble());
     Inspector & s(inspector["lines"]);
     for (size_t i = 0; i < s.children(); i++) {
         payload.push_back(s[i].asString().make_string());
     }
-    return Value(lastChanged, ConfigValue(payload, calculateContentXxhash64(payload)));
+    return Value(lastChanged, ConfigValue(payload));
 }
 
 namespace {

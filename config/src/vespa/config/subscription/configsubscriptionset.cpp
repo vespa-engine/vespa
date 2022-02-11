@@ -1,8 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "configsubscriptionset.h"
+#include "configsubscription.h"
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/common/misc.h>
+#include <vespa/config/common/iconfigmanager.h>
+#include <vespa/config/common/iconfigcontext.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -13,9 +16,9 @@ using namespace std::chrono;
 
 namespace config {
 
-ConfigSubscriptionSet::ConfigSubscriptionSet(const IConfigContext::SP & context)
-    : _context(context),
-      _mgr(context->getManagerInstance()),
+ConfigSubscriptionSet::ConfigSubscriptionSet(std::shared_ptr<IConfigContext> context)
+    : _context(std::move(context)),
+      _mgr(_context->getManagerInstance()),
       _currentGeneration(-1),
       _subscriptionList(),
       _state(OPEN)
@@ -119,7 +122,7 @@ ConfigSubscriptionSet::isClosed() const
     return (_state.load(std::memory_order_relaxed) == CLOSED);
 }
 
-ConfigSubscription::SP
+std::shared_ptr<ConfigSubscription>
 ConfigSubscriptionSet::subscribe(const ConfigKey & key, milliseconds timeoutInMillis)
 {
     if (_state != OPEN) {
@@ -127,7 +130,7 @@ ConfigSubscriptionSet::subscribe(const ConfigKey & key, milliseconds timeoutInMi
     }
     LOG(debug, "Subscribing with config Id(%s), defName(%s)", key.getConfigId().c_str(), key.getDefName().c_str());
 
-    ConfigSubscription::SP s = _mgr.subscribe(key, timeoutInMillis);
+    std::shared_ptr<ConfigSubscription> s = _mgr.subscribe(key, timeoutInMillis);
     _subscriptionList.push_back(s);
     return s;
 }

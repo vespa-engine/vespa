@@ -5,16 +5,19 @@
 #include <vespa/storage/common/dummy_mbus_messages.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/messagebus/message.h>
+#include <vespa/messagebus/dynamicthrottlepolicy.h>
 #include <vespa/messagebus/error.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config/helper/configfetcher.hpp>
+#include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <algorithm>
 #include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".mergethrottler");
+
+using vespa::config::content::core::StorServerConfig;
 
 namespace storage {
 
@@ -126,7 +129,7 @@ MergeThrottler::MergeNodeSequence::MergeNodeSequence(const api::MergeBucketComma
 }
 
 uint16_t
-MergeThrottler::MergeNodeSequence::getNextNodeInChain() const
+MergeThrottler::MergeNodeSequence::getNextNodeInChain() const noexcept
 {
     assert(_cmd.getChain().size() < _sortedNodes.size());
     if (_use_unordered_forwarding) {
@@ -144,7 +147,7 @@ MergeThrottler::MergeNodeSequence::getNextNodeInChain() const
 }
 
 bool
-MergeThrottler::MergeNodeSequence::isChainCompleted() const
+MergeThrottler::MergeNodeSequence::isChainCompleted() const noexcept
 {
     if (_cmd.getChain().size() != _sortedNodes.size()) return false;
 
@@ -179,23 +182,25 @@ MergeThrottler::MergeThrottler(
       _merges(),
       _queue(),
       _maxQueueSize(1024),
-      _throttlePolicy(std::make_unique<mbus::StaticThrottlePolicy>()),
+      _throttlePolicy(std::make_unique<mbus::DynamicThrottlePolicy>()),
       _queueSequence(0),
       _messageLock(),
       _stateLock(),
-      _configFetcher(configUri.getContext()),
+      _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
       _metrics(std::make_unique<Metrics>()),
       _component(compReg, "mergethrottler"),
       _thread(),
-      _rendezvous(RENDEZVOUS_NONE),
+      _rendezvous(RendezvousState::NONE),
       _throttle_until_time(),
       _backpressure_duration(std::chrono::seconds(30)),
+      _use_dynamic_throttling(false),
       _disable_queue_limits_for_chained_merges(false),
       _closing(false)
 {
-    _throttlePolicy->setMaxPendingCount(20);
-    _configFetcher.subscribe<vespa::config::content::core::StorServerConfig>(configUri.getConfigId(), this);
-    _configFetcher.start();
+    _throttlePolicy->setMinWindowSize(20);
+    _throttlePolicy->setMaxWindowSize(20);
+    _configFetcher->subscribe<StorServerConfig>(configUri.getConfigId(), this);
+    _configFetcher->start();
     _component.registerStatusPage(*this);
     _component.registerMetric(*_metrics);
 }
@@ -204,7 +209,8 @@ void
 MergeThrottler::configure(std::unique_ptr<vespa::config::content::core::StorServerConfig> newConfig)
 {
     std::lock_guard lock(_stateLock);
-
+    _use_dynamic_throttling = (newConfig->mergeThrottlingPolicy.type
+                               == StorServerConfig::MergeThrottlingPolicy::Type::DYNAMIC);
     if (newConfig->maxMergesPerNode < 1) {
         throw config::InvalidConfigException("Cannot have a max merge count of less than 1");
     }
@@ -214,12 +220,22 @@ MergeThrottler::configure(std::unique_ptr<vespa::config::content::core::StorServ
     if (newConfig->resourceExhaustionMergeBackPressureDurationSecs < 0.0) {
         throw config::InvalidConfigException("Merge back-pressure duration cannot be less than 0");
     }
-    if (static_cast<double>(newConfig->maxMergesPerNode)
-        != _throttlePolicy->getMaxPendingCount())
-    {
-        LOG(debug, "Setting new max pending count from max_merges_per_node: %d",
-            newConfig->maxMergesPerNode);
-        _throttlePolicy->setMaxPendingCount(newConfig->maxMergesPerNode);
+    if (_use_dynamic_throttling) {
+        auto min_win_sz = std::max(newConfig->mergeThrottlingPolicy.minWindowSize, 1);
+        auto max_win_sz = std::max(newConfig->mergeThrottlingPolicy.maxWindowSize, 1);
+        if (min_win_sz > max_win_sz) {
+            min_win_sz = max_win_sz;
+        }
+        auto win_sz_increment = std::max(1.0, newConfig->mergeThrottlingPolicy.windowSizeIncrement);
+        _throttlePolicy->setMinWindowSize(min_win_sz);
+        _throttlePolicy->setMaxWindowSize(max_win_sz);
+        _throttlePolicy->setWindowSizeIncrement(win_sz_increment);
+        LOG(debug, "Using dynamic throttling window min/max [%d, %d], win size increment %.2g",
+            min_win_sz, max_win_sz, win_sz_increment);
+    } else {
+        // Use legacy config values when static throttling is enabled.
+        _throttlePolicy->setMinWindowSize(newConfig->maxMergesPerNode);
+        _throttlePolicy->setMaxWindowSize(newConfig->maxMergesPerNode);
     }
     LOG(debug, "Setting new max queue size to %d",
         newConfig->maxMergeQueueSize);
@@ -256,7 +272,7 @@ void
 MergeThrottler::onClose()
 {
     // Avoid getting config on shutdown
-    _configFetcher.close();
+    _configFetcher->close();
     {
         std::lock_guard guard(_messageLock);
         // Note: used to prevent taking locks in different order if onFlush
@@ -573,16 +589,16 @@ MergeThrottler::processQueuedMerges(MessageGuard& msgGuard)
 void
 MergeThrottler::handleRendezvous(std::unique_lock<std::mutex> & guard, std::condition_variable & cond)
 {
-    if (_rendezvous != RENDEZVOUS_NONE) {
+    if (_rendezvous != RendezvousState::NONE) {
         LOG(spam, "rendezvous requested by external thread; establishing");
-        assert(_rendezvous == RENDEZVOUS_REQUESTED);
-        _rendezvous = RENDEZVOUS_ESTABLISHED;
+        assert(_rendezvous == RendezvousState::REQUESTED);
+        _rendezvous = RendezvousState::ESTABLISHED;
         cond.notify_all();
-        while (_rendezvous != RENDEZVOUS_RELEASED) {
+        while (_rendezvous != RendezvousState::RELEASED) {
             cond.wait(guard);
         }
         LOG(spam, "external thread rendezvous released");
-        _rendezvous = RENDEZVOUS_NONE;
+        _rendezvous = RendezvousState::NONE;
         cond.notify_all();
     }
 }
@@ -604,7 +620,7 @@ MergeThrottler::run(framework::ThreadHandle& thread)
             while (_messagesDown.empty()
                    && _messagesUp.empty()
                    && !thread.interrupted()
-                   && _rendezvous == RENDEZVOUS_NONE)
+                   && _rendezvous == RendezvousState::NONE)
             {
                _messageCond.wait_for(msgLock, 1000ms);
                 thread.registerTick(framework::WAIT_CYCLE);
@@ -683,10 +699,20 @@ bool MergeThrottler::backpressure_mode_active() const {
     return backpressure_mode_active_no_lock();
 }
 
-bool MergeThrottler::allow_merge_despite_full_window(const api::MergeBucketCommand& cmd) noexcept {
+bool MergeThrottler::allow_merge_despite_full_window(const api::MergeBucketCommand& cmd) const noexcept {
     // We cannot let forwarded unordered merges fall into the queue, as that might lead to a deadlock.
     // See comment in may_allow_into_queue() for rationale.
-    return (cmd.use_unordered_forwarding() && !cmd.from_distributor());
+    if (!cmd.use_unordered_forwarding() || cmd.from_distributor()) {
+        return false;
+    }
+    // We'll only get here if we're dealing with an unordered merge that has been forwarded
+    // from another content node. In other words, it's a merge we want to handle immediately
+    // instead of deferring in the queue for later processing. We already know that the merge
+    // window is full, so we must either allow it in regardless or bounce it back. The latter
+    // makes the most sense when dynamic throttling is enabled, as NACKed replies count
+    // _against_ incrementing the throttling window, thereby implicitly helping to reduce the
+    // merge pressure generated by other nodes.
+    return !_use_dynamic_throttling;
 }
 
 bool MergeThrottler::may_allow_into_queue(const api::MergeBucketCommand& cmd) const noexcept {
@@ -1155,10 +1181,10 @@ void
 MergeThrottler::rendezvousWithWorkerThread(std::unique_lock<std::mutex> & guard, std::condition_variable & cond)
 {
     LOG(spam, "establishing rendezvous with worker thread");
-    assert(_rendezvous == RENDEZVOUS_NONE);
-    _rendezvous = RENDEZVOUS_REQUESTED;
+    assert(_rendezvous == RendezvousState::NONE);
+    _rendezvous = RendezvousState::REQUESTED;
     cond.notify_all();
-    while (_rendezvous != RENDEZVOUS_ESTABLISHED) {
+    while (_rendezvous != RendezvousState::ESTABLISHED) {
         cond.wait(guard);
     }
     LOG(spam, "rendezvous established with worker thread");
@@ -1167,9 +1193,9 @@ MergeThrottler::rendezvousWithWorkerThread(std::unique_lock<std::mutex> & guard,
 void
 MergeThrottler::releaseWorkerThreadRendezvous(std::unique_lock<std::mutex> & guard, std::condition_variable & cond)
 {
-    _rendezvous = RENDEZVOUS_RELEASED;
+    _rendezvous = RendezvousState::RELEASED;
     cond.notify_all();
-    while (_rendezvous != RENDEZVOUS_NONE) {
+    while (_rendezvous != RendezvousState::NONE) {
         cond.wait(guard);
     }
 }
@@ -1288,57 +1314,62 @@ MergeThrottler::reportHtmlStatus(std::ostream& out,
                                  const framework::HttpUrlPath&) const
 {
     std::lock_guard lock(_stateLock);
-    {
-        out << "<p>Max pending: "
+    if (_use_dynamic_throttling) {
+        out << "<p>Dynamic throttle policy; window size min/max: ["
+               << _throttlePolicy->getMinWindowSize() << ", "
+               << _throttlePolicy->getMaxWindowSize()
+               << "], current window size: "
+               << _throttlePolicy->getMaxPendingCount()
+               << "</p>\n";
+    } else {
+        out << "<p>Static throttle policy; max pending: "
             << _throttlePolicy->getMaxPendingCount()
             << "</p>\n";
-        out << "<p>Please see node metrics for performance numbers</p>\n";
-        out << "<h3>Active merges ("
-            << _merges.size()
-            << ")</h3>\n";
-        if (!_merges.empty()) {
-            out << "<ul>\n";
-            for (auto& m : _merges) {
-                out << "<li>" << m.second.getMergeCmdString();
-                if (m.second.isExecutingLocally()) {
-                    out << " <strong>(";
-                    if (m.second.isInCycle()) {
-                        out << "cycled - ";
-                    } else if (m.second.isCycleBroken()) {
-                        out << "broken cycle (another node in the chain likely went down) - ";
-                    }
-                    out << "executing on this node)</strong>";
-                } else if (m.second.isUnwinding()) {
-                    out << " <strong>(was executed here, now unwinding)</strong>";
+    }
+    out << "<p>Please see node metrics for performance numbers</p>\n";
+    out << "<h3>Active merges ("
+        << _merges.size()
+        << ")</h3>\n";
+    if (!_merges.empty()) {
+        out << "<ul>\n";
+        for (auto& m : _merges) {
+            out << "<li>" << m.second.getMergeCmdString();
+            if (m.second.isExecutingLocally()) {
+                out << " <strong>(";
+                if (m.second.isInCycle()) {
+                    out << "cycled - ";
+                } else if (m.second.isCycleBroken()) {
+                    out << "broken cycle (another node in the chain likely went down) - ";
                 }
-                if (m.second.isAborted()) {
-                    out << " <strong>aborted</strong>";
-                }
-                out << "</li>\n";
+                out << "executing on this node)</strong>";
+            } else if (m.second.isUnwinding()) {
+                out << " <strong>(was executed here, now unwinding)</strong>";
             }
-        out << "</ul>\n";
-        } else {
-            out << "<p>None</p>\n";
+            if (m.second.isAborted()) {
+                out << " <strong>aborted</strong>";
+            }
+            out << "</li>\n";
         }
+    out << "</ul>\n";
+    } else {
+        out << "<p>None</p>\n";
     }
 
-    {
-        out << "<h3>Queued merges (in priority order) ("
-            << _queue.size()
-            << ")</h3>\n";
-        if (!_queue.empty()) {
-            out << "<ol>\n";
-            for (auto& qm : _queue) {
-                // The queue always owns its messages, thus this is safe
-                out << "<li>Pri "
-                    << static_cast<unsigned int>(qm._msg->getPriority())
-                    << ": " << *qm._msg;
-                out << "</li>\n";
-            }
-            out << "</ol>\n";
-        } else {
-            out << "<p>None</p>\n";
+    out << "<h3>Queued merges (in priority order) ("
+        << _queue.size()
+        << ")</h3>\n";
+    if (!_queue.empty()) {
+        out << "<ol>\n";
+        for (auto& qm : _queue) {
+            // The queue always owns its messages, thus this is safe
+            out << "<li>Pri "
+                << static_cast<unsigned int>(qm._msg->getPriority())
+                << ": " << *qm._msg;
+            out << "</li>\n";
         }
+        out << "</ol>\n";
+    } else {
+        out << "<p>None</p>\n";
     }
 }
 

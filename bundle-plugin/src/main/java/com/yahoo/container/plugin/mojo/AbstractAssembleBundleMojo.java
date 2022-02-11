@@ -48,6 +48,7 @@ abstract class AbstractAssembleBundleMojo extends AbstractMojo {
         MavenArchiver mavenArchiver = new MavenArchiver();
         mavenArchiver.setArchiver(jarArchiver);
         mavenArchiver.setOutputFile(jarFile.toFile());
+        mavenArchiver.configureReproducible("1");
         try {
             mavenArchiver.createArchive(session, project, archiveConfiguration);
         } catch (Exception e) {

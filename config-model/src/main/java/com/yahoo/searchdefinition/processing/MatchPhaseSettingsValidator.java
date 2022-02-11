@@ -35,7 +35,7 @@ public class MatchPhaseSettingsValidator extends Processor {
     private void validateMatchPhaseSettings(RankProfile rankProfile, RankProfile.MatchPhaseSettings settings) {
         String attributeName = settings.getAttribute();
         new AttributeValidator(schema.getName(),
-                               rankProfile.getName(),
+                               rankProfile.name(),
                                schema.getAttribute(attributeName), attributeName).validate();
     }
 

@@ -37,7 +37,7 @@ public:
      * @return An std::unique_ptr<Source> that can be used to ask for config.
      */
     virtual SourceFactorySP createSourceFactory(const TimingValues & timingValues) const = 0;
-    virtual ~SourceSpec() { }
+    virtual ~SourceSpec() = default;
 };
 
 
@@ -131,7 +131,7 @@ class ServerSpec : public SourceSpec
 {
 public:
     /// A list of host specifications
-    typedef std::vector<vespalib::string> HostSpecList;
+    using HostSpecList = std::vector<vespalib::string>;
 
     /**
      * Construct a ServerSpec that fetches the host specs from the

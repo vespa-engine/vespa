@@ -87,6 +87,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -391,6 +392,8 @@ public class ApplicationController {
             // the source since it's the same application, so it should have the same warnings
             NotificationSource source = zone.environment().isManuallyDeployed() ?
                     NotificationSource.from(deployment) : NotificationSource.from(applicationId);
+
+            @SuppressWarnings("deprecation")
             List<String> warnings = Optional.ofNullable(result.prepareResponse().log)
                     .map(logs -> logs.stream()
                             .filter(log -> log.applicationPackage)
@@ -441,6 +444,29 @@ public class ApplicationController {
             if (notification.source().instance().isPresent() &&
                     ! notification.source().zoneId().map(application.get().require(notification.source().instance().get()).deployments()::containsKey).orElse(false))
                 controller.notificationsDb().removeNotifications(notification.source());
+        }
+
+        var oldestDeployedVersion = application.get()
+                .instances()
+                .values()
+                .stream()
+                .flatMap(instance -> instance.deployments().values().stream())
+                .map(Deployment::applicationVersion)
+                .filter(version -> !version.isDeployedDirectly())
+                .sorted()
+                .findFirst()
+                .orElse(ApplicationVersion.unknown);
+
+
+        var olderVersions = application.get().versions()
+                .stream()
+                .filter(version -> version.compareTo(oldestDeployedVersion) < 0)
+                .sorted()
+                .collect(Collectors.toList());
+
+        // Remove any version not deployed anywhere - but keep one
+        for (int i = 0; i < olderVersions.size() - 1; i++) {
+            application = application.withoutVersion(olderVersions.get(i));
         }
 
         store(application);

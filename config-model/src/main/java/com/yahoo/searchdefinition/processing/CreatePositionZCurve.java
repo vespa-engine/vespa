@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
@@ -38,6 +39,14 @@ public class CreatePositionZCurve extends Processor {
         super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
+    private boolean useV8GeoPositions = false;
+
+    @Override
+    public void process(boolean validate, boolean documentsOnly, ModelContext.Properties properties) {
+        this.useV8GeoPositions = properties.featureFlags().useV8GeoPositions();
+        process(validate, documentsOnly);
+    }
+
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         for (SDField field : schema.allConcreteFields()) {
@@ -63,14 +72,16 @@ public class CreatePositionZCurve extends Processor {
 
             // configure summary
             Collection<String> summaryTo = removeSummaryTo(field);
-            ensureCompatibleSummary(field, zName,
-                                    PositionDataType.getPositionSummaryFieldName(fieldName),
-                                    DataType.getArray(DataType.STRING), // will become "xmlstring"
-                                    SummaryTransform.POSITIONS, summaryTo, validate);
-            ensureCompatibleSummary(field, zName,
-                                    PositionDataType.getDistanceSummaryFieldName(fieldName),
-                                    DataType.INT,
-                                    SummaryTransform.DISTANCE, summaryTo, validate);
+            if (! useV8GeoPositions) {
+                ensureCompatibleSummary(field, zName,
+                                        PositionDataType.getPositionSummaryFieldName(fieldName),
+                                        DataType.getArray(DataType.STRING), // will become "xmlstring"
+                                        SummaryTransform.POSITIONS, summaryTo, validate);
+                ensureCompatibleSummary(field, zName,
+                                        PositionDataType.getDistanceSummaryFieldName(fieldName),
+                                        DataType.INT,
+                                        SummaryTransform.DISTANCE, summaryTo, validate);
+            }
             // clear indexing script
             field.setIndexingScript(null);
             SDField posX = field.getStructField(PositionDataType.FIELD_X);

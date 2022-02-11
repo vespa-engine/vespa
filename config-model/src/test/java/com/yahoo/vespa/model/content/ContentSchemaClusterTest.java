@@ -77,12 +77,6 @@ public class ContentSchemaClusterTest {
         return new ProtonConfig(builder);
     }
 
-    private static ContentCluster createClusterWithFeatureFlag(String clusterXml, boolean enableFeedBlockInDistributor) throws Exception {
-        var deployStateBuilder = new DeployState.Builder().properties(
-                new TestProperties().enableFeedBlockInDistributor(enableFeedBlockInDistributor));
-        return createCluster(clusterXml, deployStateBuilder);
-    }
-
     private static void assertProtonResourceLimits(double expDiskLimit, double expMemoryLimit, String clusterXml) throws Exception {
         assertProtonResourceLimits(expDiskLimit, expMemoryLimit, createCluster(clusterXml));
     }
@@ -142,15 +136,8 @@ public class ContentSchemaClusterTest {
     }
 
     @Test
-    public void default_resource_limits_when_feed_block_is_disabled_in_distributor() throws Exception {
-        var cluster = createClusterWithFeatureFlag(new ContentClusterBuilder().getXml(), false);
-        assertProtonResourceLimits(0.8, 0.8, cluster);
-        assertClusterControllerResourceLimits(0.8, 0.8, cluster);
-    }
-
-    @Test
-    public void default_resource_limits_when_feed_block_is_enabled_in_distributor() throws Exception {
-        var cluster = createClusterWithFeatureFlag(new ContentClusterBuilder().getXml(), true);
+    public void default_resource_limits_with_feed_block_in_distributor() throws Exception {
+        var cluster = createCluster(new ContentClusterBuilder().getXml());
         assertProtonResourceLimits(0.9, 0.9, cluster);
         assertClusterControllerResourceLimits(0.8, 0.8, cluster);
     }

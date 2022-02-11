@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 
 import java.io.IOException;
@@ -14,13 +14,13 @@ import static org.junit.Assert.*;
 public abstract class AssertSearchBuilder {
 
     public static void assertBuilds(String searchDefinitionFileName) throws IOException, ParseException {
-        assertNotNull(SchemaBuilder.buildFromFile(searchDefinitionFileName));
+        assertNotNull(ApplicationBuilder.buildFromFile(searchDefinitionFileName));
     }
 
     public static void assertBuildFails(String searchDefinitionFileName, String expectedException)
             throws IOException, ParseException {
         try {
-            SchemaBuilder.buildFromFile(searchDefinitionFileName);
+            ApplicationBuilder.buildFromFile(searchDefinitionFileName);
             fail(searchDefinitionFileName);
         } catch (IllegalArgumentException e) {
             assertEquals(expectedException, e.getMessage());

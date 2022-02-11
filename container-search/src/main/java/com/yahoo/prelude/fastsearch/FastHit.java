@@ -377,7 +377,7 @@ public class FastHit extends Hit {
         }
     }
 
-    private static void appendAsHex(byte [] gid, StringBuilder sb) {
+    private static void appendAsHex(byte[] gid, StringBuilder sb) {
         for (byte b : gid) {
             String hex = Integer.toHexString(0xFF & b);
             if (hex.length() == 1) {

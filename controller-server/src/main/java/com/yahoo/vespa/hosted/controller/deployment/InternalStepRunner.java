@@ -101,6 +101,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
+import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
 import static java.util.stream.Collectors.joining;
@@ -222,6 +223,7 @@ public class InternalStepRunner implements StepRunner {
                       logger);
     }
 
+    @SuppressWarnings("deprecation")
     private Optional<RunStatus> deploy(Supplier<ActivateResult> deployment, Instant startTime, DualLogger logger) {
         try {
             PrepareResponse prepareResponse = deployment.get().prepareResponse();
@@ -245,9 +247,9 @@ public class InternalStepRunner implements StepRunner {
                                          ? Optional.of(deploymentFailed) : Optional.empty();
             switch (e.code()) {
                 case CERTIFICATE_NOT_READY:
-                    logger.log("Waiting for certificate to become ready on config server: New application, or old one has expired");
+                    logger.log("No valid CA signed certificate for app available to config server");
                     if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
-                        logger.log(WARNING, "Certificate did not become available on config server within (" + timeouts.endpointCertificate() + ")");
+                        logger.log(WARNING, "CA signed certificate for app not available to config server within " + timeouts.endpointCertificate());
                         return Optional.of(RunStatus.endpointCertificateTimeout);
                     }
                     return result;
@@ -259,7 +261,7 @@ public class InternalStepRunner implements StepRunner {
                     return result;
                 case LOAD_BALANCER_NOT_READY:
                 case PARENT_HOST_NOT_READY:
-                    logger.log(e.message());
+                    logger.log(e.message()); // Consider splitting these messages in summary and details, on config server.
                     return result;
                 case OUT_OF_CAPACITY:
                     logger.log(e.message());
@@ -278,9 +280,9 @@ public class InternalStepRunner implements StepRunner {
             switch (e.type()) {
                 case CERT_NOT_AVAILABLE:
                     // Same as CERTIFICATE_NOT_READY above, only from the controller
-                    logger.log("Waiting for certificate to become valid: New application, or old one has expired");
+                    logger.log("Validating CA signed certificate requested for app: not yet available");
                     if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
-                        logger.log(WARNING, "Controller could not validate certificate within " +
+                        logger.log(WARNING, "CA signed certificate for app not available within " +
                                    timeouts.endpointCertificate() + ": " + Exceptions.toMessageString(e));
                         return Optional.of(RunStatus.endpointCertificateTimeout);
                     }
@@ -302,7 +304,7 @@ public class InternalStepRunner implements StepRunner {
     private Optional<RunStatus> installReal(RunId id, boolean setTheStage, DualLogger logger) {
         Optional<Deployment> deployment = deployment(id.application(), id.type());
         if (deployment.isEmpty()) {
-            logger.log(INFO, "Deployment expired before installation was successful.");
+            logger.log("Deployment expired before installation was successful.");
             return Optional.of(installationFailed);
         }
 
@@ -325,15 +327,32 @@ public class InternalStepRunner implements StepRunner {
         List<Node> parents = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(controller.system()),
                                                                                                NodeFilter.all()
                                                                                                          .hostnames(parentHostnames));
-        NodeList nodeList = NodeList.of(nodes, parents, services.get());
         boolean firstTick = run.convergenceSummary().isEmpty();
+        NodeList nodeList = NodeList.of(nodes, parents, services.get());
+        ConvergenceSummary summary = nodeList.summary();
         if (firstTick) { // Run the first time (for each convergence step).
             logger.log("######## Details for all nodes ########");
             logger.log(nodeList.asList().stream()
                                .flatMap(node -> nodeDetails(node, true))
                                .collect(toList()));
         }
-        ConvergenceSummary summary = nodeList.summary();
+        else if ( ! summary.converged()) {
+            logger.log("Waiting for convergence of " + summary.services() + " services across " + summary.nodes() + " nodes");
+            if (summary.needPlatformUpgrade() > 0)
+                logger.log(summary.upgradingPlatform() + "/" + summary.needPlatformUpgrade() + " nodes upgrading platform");
+            if (summary.needReboot() > 0)
+                logger.log(summary.rebooting() + "/" + summary.needReboot() + " nodes rebooting");
+            if (summary.needRestart() > 0)
+                logger.log(summary.restarting() + "/" + summary.needRestart() + " nodes restarting");
+            if (summary.retiring() > 0)
+                logger.log(summary.retiring() + " nodes retiring");
+            if (summary.upgradingFirmware() > 0)
+                logger.log(summary.upgradingFirmware() + " nodes upgrading firmware");
+            if (summary.upgradingOs() > 0)
+                logger.log(summary.upgradingOs() + " nodes upgrading OS");
+            if (summary.needNewConfig() > 0)
+                logger.log(summary.needNewConfig() + " application services upgrading");
+        }
         if (summary.converged()) {
             controller.jobController().locked(id, lockedRun -> lockedRun.withSummary(null));
             if (endpointsAvailable(id.application(), id.type().zone(controller.system()), logger)) {
@@ -397,10 +416,10 @@ public class InternalStepRunner implements StepRunner {
         }
 
         if ( ! firstTick)
-            logger.log(nodeList.expectedDown().and(nodeList.needsNewConfig()).asList().stream()
-                               .distinct()
-                               .flatMap(node -> nodeDetails(node, false))
-                               .collect(toList()));
+            logger.log(FINE, nodeList.expectedDown().and(nodeList.needsNewConfig()).asList().stream()
+                                     .distinct()
+                                     .flatMap(node -> nodeDetails(node, false))
+                                     .collect(toList()));
 
         controller.jobController().locked(id, lockedRun -> {
             Instant noNodesDownSince = nodeList.allowedDown().size() == 0 ? lockedRun.noNodesDownSince().orElse(controller.clock().instant()) : null;
@@ -1004,7 +1023,11 @@ public class InternalStepRunner implements StepRunner {
         }
 
         private void log(String... messages) {
-            log(List.of(messages));
+            log(INFO, List.of(messages));
+        }
+
+        private void log(Level level, String... messages) {
+            log(level, List.of(messages));
         }
 
         private void logAll(List<LogEntry> messages) {
@@ -1012,7 +1035,11 @@ public class InternalStepRunner implements StepRunner {
         }
 
         private void log(List<String> messages) {
-            controller.jobController().log(id, step, INFO, messages);
+            log(INFO, messages);
+        }
+
+        private void log(Level level, List<String> messages) {
+            controller.jobController().log(id, step, level, messages);
         }
 
         private void log(Level level, String message) {

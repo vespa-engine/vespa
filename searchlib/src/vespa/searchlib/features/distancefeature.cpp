@@ -135,10 +135,15 @@ DistanceExecutor::DistanceExecutor(GeoLocationSpecPtrs locations,
 void
 DistanceExecutor::execute(uint32_t docId)
 {
-    outputs().set_number(0, calculateDistance(docId));
+    static constexpr double earth_mean_radius = 6371.0088;
+    static constexpr double deg_to_rad = M_PI / 180.0;
+    static constexpr double km_from_internal = 1.0e-6 * deg_to_rad * earth_mean_radius;
+    feature_t internal_d = calculateDistance(docId);
+    outputs().set_number(0, internal_d);
     outputs().set_number(1, _best_index);
     outputs().set_number(2, _best_y * 1.0e-6); // latitude
     outputs().set_number(3, _best_x * 1.0e-6); // longitude
+    outputs().set_number(4, internal_d * km_from_internal); // km
 }
 
 const feature_t DistanceExecutor::DEFAULT_DISTANCE(6400000000.0);
@@ -146,6 +151,7 @@ const feature_t DistanceExecutor::DEFAULT_DISTANCE(6400000000.0);
 
 DistanceBlueprint::DistanceBlueprint() :
     Blueprint("distance"),
+    _field_name(),
     _arg_string(),
     _attr_id(search::index::Schema::UNKNOWN_FIELD_ID),
     _use_geo_pos(false),
@@ -178,6 +184,7 @@ DistanceBlueprint::setup_geopos(const IIndexEnvironment & env,
     describeOutput("index", "Index in array of closest point");
     describeOutput("latitude", "Latitude of closest point");
     describeOutput("longitude", "Longitude of closest point");
+    describeOutput("km", "Distance in kilometer units");
     env.hintAttributeAccess(_arg_string);
     return true;
 }
@@ -202,7 +209,7 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
     bool allow_bad_field = true;
     if (params.size() == 2) {
         // params[0] = field / label
-        // params[0] = attribute name / label value
+        // params[1] = attribute name / label value
         if (arg == "label") {
             _arg_string = params[1].getValue();
             _use_item_label = true;
@@ -212,12 +219,18 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
             arg = params[1].getValue();
             allow_bad_field = false;
         } else {
-            LOG(error, "first argument must be 'field' or 'label', but was '%s'",
-                arg.c_str());
+            LOG(error, "first argument must be 'field' or 'label', but was '%s'", arg.c_str());
             return false;
         }
     }
-    const FieldInfo *fi = env.getFieldByName(arg);
+    _field_name = arg;
+    vespalib::string z = document::PositionDataType::getZCurveFieldName(arg);
+    const FieldInfo *fi = env.getFieldByName(z);
+    if (fi != nullptr && fi->hasAttribute()) {
+        // can't check anything here because streaming has wrong information
+        return setup_geopos(env, z);
+    }
+    fi = env.getFieldByName(arg);
     if (fi != nullptr && fi->hasAttribute()) {
         auto dt = fi->get_data_type();
         auto ct = fi->collection();
@@ -225,21 +238,17 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
             _attr_id = fi->id();
             return setup_nns(env, arg);
         }
-        // could check if dt is DataType::INT64
         // could check if ct is CollectionType::SINGLE or CollectionType::ARRAY)
-        return setup_geopos(env, arg);
-    }
-    vespalib::string z = document::PositionDataType::getZCurveFieldName(arg);
-    fi = env.getFieldByName(z);
-    if (fi != nullptr && fi->hasAttribute()) {
-        return setup_geopos(env, z);
+        if (dt == DataType::INT64) {
+            return setup_geopos(env, arg);
+        }
     }
     if (allow_bad_field) {
         // TODO remove on Vespa 8
         // backwards compatibility fallback:
         return setup_geopos(env, arg);
     }
-    if (env.getFieldByName(arg) == nullptr && fi == nullptr) {
+    if (env.getFieldByName(arg) == nullptr) {
         LOG(error, "unknown field '%s' for rank feature %s\n", arg.c_str(), getName().c_str());
     } else {
         LOG(error, "field '%s' must be an attribute for rank feature %s\n", arg.c_str(), getName().c_str());
@@ -263,7 +272,9 @@ DistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash 
 
     for (auto loc_ptr : env.getAllLocations()) {
         if (_use_geo_pos && loc_ptr && loc_ptr->location.valid()) {
-            if (loc_ptr->field_name == _arg_string) {
+            if (loc_ptr->field_name == _arg_string ||
+                loc_ptr->field_name == _field_name)
+            {
                 LOG(debug, "found loc from query env matching '%s'", _arg_string.c_str());
                 matching_locs.push_back(loc_ptr);
             } else {

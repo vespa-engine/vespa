@@ -720,7 +720,6 @@
       "public static final enum com.yahoo.prelude.query.Item$ItemType WORD",
       "public static final enum com.yahoo.prelude.query.Item$ItemType INT",
       "public static final enum com.yahoo.prelude.query.Item$ItemType PHRASE",
-      "public static final enum com.yahoo.prelude.query.Item$ItemType PAREN",
       "public static final enum com.yahoo.prelude.query.Item$ItemType PREFIX",
       "public static final enum com.yahoo.prelude.query.Item$ItemType SUBSTRING",
       "public static final enum com.yahoo.prelude.query.Item$ItemType NEAR",
@@ -2120,6 +2119,7 @@
       "public void <init>(com.yahoo.component.ComponentId, java.util.List, boolean)",
       "public void <init>(com.yahoo.component.ComponentId, java.util.List, com.yahoo.search.cluster.Hasher, boolean)",
       "protected void <init>(com.yahoo.component.ComponentId, java.util.List, com.yahoo.search.cluster.Hasher, boolean, boolean)",
+      "public java.lang.String name()",
       "public final void ping(com.yahoo.search.cluster.ClusterMonitor, java.lang.Object, java.util.concurrent.Executor)",
       "protected abstract com.yahoo.prelude.Pong ping(com.yahoo.prelude.Ping, java.lang.Object)",
       "protected java.lang.Object getFirstConnection(com.yahoo.search.cluster.Hasher$NodeList, int, int, com.yahoo.search.Query)",
@@ -2213,6 +2213,7 @@
       "abstract"
     ],
     "methods": [
+      "public java.lang.String name()",
       "public abstract void working(java.lang.Object)",
       "public abstract void failed(java.lang.Object)",
       "public void ping(java.lang.Object, java.util.concurrent.Executor)",
@@ -5236,13 +5237,16 @@
       "public java.lang.String getFormat()",
       "public void setFormat(java.lang.String)",
       "public java.lang.Object clone()",
-      "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
       "public boolean getTiming()",
       "public void setTiming(boolean)",
       "public java.util.Set getSummaryFields()",
+      "public void setSummaryFields(java.lang.String)",
+      "public boolean getTensorShortForm()",
+      "public void setTensorShortForm(java.lang.String)",
+      "public void setTensorShortForm(boolean)",
       "public void prepare()",
-      "public void setSummaryFields(java.lang.String)"
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": [
       "public static final java.lang.String PRESENTATION",
@@ -5250,6 +5254,7 @@
       "public static final java.lang.String TIMING",
       "public static final java.lang.String SUMMARY",
       "public static final java.lang.String SUMMARY_FIELDS",
+      "public static final java.lang.String TENSORS",
       "public static final java.lang.String FORMAT"
     ]
   },
@@ -6244,7 +6249,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.search.query.profile.config.QueryProfilesConfig)",
+      "public void <init>(com.yahoo.search.query.profile.config.QueryProfilesConfig, java.util.concurrent.Executor)",
       "public void <init>()",
       "public void <init>(com.yahoo.search.query.profile.types.QueryProfileTypeRegistry)",
       "public final void register(com.yahoo.search.query.profile.compiled.CompiledQueryProfile)",
@@ -7157,6 +7162,7 @@
     "methods": [
       "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean)",
       "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean, boolean)",
+      "protected void <init>(boolean, boolean, boolean)",
       "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean, boolean, boolean)",
       "public void accept(java.lang.String, java.lang.Object)",
       "public void accept(java.lang.String, byte[], int, int)",
@@ -7198,6 +7204,7 @@
       "public void endResponse()",
       "public java.lang.String getEncoding()",
       "public java.lang.String getMimeType()",
+      "protected com.yahoo.search.rendering.JsonRenderer$FieldConsumer createFieldConsumer(boolean)",
       "protected com.yahoo.search.rendering.JsonRenderer$FieldConsumer createFieldConsumer(com.fasterxml.jackson.core.JsonGenerator, boolean)"
     ],
     "fields": []

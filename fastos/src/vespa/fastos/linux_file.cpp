@@ -9,13 +9,14 @@
 
 #ifdef __linux__
 #include "file.h"
+#include "file_rw_ops.h"
 #include <sstream>
 #include <unistd.h>
 #include <fcntl.h>
-#include "file_rw_ops.h"
 #include <cstdio>
 #include <cstring>
 #include <system_error>
+#include <cassert>
 
 using fastos::File_RW_Ops;
 
@@ -29,6 +30,11 @@ FastOS_Linux_File::FastOS_Linux_File(const char *filename)
 {
 }
 
+FastOS_Linux_File::~FastOS_Linux_File () {
+    bool ok = Close();
+    assert(ok);
+}
+
 #define DIRECTIOPOSSIBLE(buf, len, off) \
  ((off & (_directIOFileAlign - 1)) == 0 && \
   (len & (_directIOFileAlign - 1)) == 0 && \
@@ -37,14 +43,36 @@ FastOS_Linux_File::FastOS_Linux_File(const char *filename)
 ssize_t
 FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length, int64_t readOffset)
 {
-    return File_RW_Ops::pread(fh, buffer, length, readOffset);
+    char * data = static_cast<char *>(buffer);
+    ssize_t has_read(0);
+    while (has_read < ssize_t(length)) {
+        size_t lenNow = std::min(getChunkSize(), length - has_read);
+        ssize_t readNow = File_RW_Ops::pread(fh, data + has_read, lenNow, readOffset + has_read);
+        if (readNow > 0) {
+            has_read += readNow;
+        } else {
+            return (has_read > 0) ? has_read : readNow;
+        }
+    }
+    return has_read;
 }
 
 
 ssize_t
 FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length)
 {
-    return File_RW_Ops::read(fh, buffer, length);
+    char * data = static_cast<char *>(buffer);
+    ssize_t has_read(0);
+    while (has_read < ssize_t(length)) {
+        size_t lenNow = std::min(getChunkSize(), length - has_read);
+        ssize_t readNow = File_RW_Ops::read(fh, data + has_read, lenNow);
+        if (readNow > 0) {
+            has_read += readNow;
+        } else {
+            return (has_read > 0) ? has_read : readNow;
+        }
+    }
+    return has_read;
 }
 
 
@@ -169,7 +197,7 @@ FastOS_Linux_File::Write2(const void *buffer, size_t length)
     const char * data = static_cast<const char *>(buffer);
     ssize_t written(0);
     while (written < ssize_t(length)) {
-        size_t lenNow = std::min(getWriteChunkSize(), length - written);
+        size_t lenNow = std::min(getChunkSize(), length - written);
         ssize_t writtenNow = internalWrite2(data + written, lenNow);
         if (writtenNow > 0) {
             written += writtenNow;
@@ -274,17 +302,6 @@ FastOS_Linux_File::AllocateDirectIOBuffer (size_t byteSize, void *&realPtr)
     return align(realPtr, memoryAlignment);
 }
 
-
-void *
-FastOS_Linux_File::
-allocateGenericDirectIOBuffer(size_t byteSize, void *&realPtr)
-{
-    size_t memoryAlignment = _directIOMemAlign;
-    realPtr = malloc(byteSize + memoryAlignment - 1);
-    return align(realPtr, memoryAlignment);
-}
-
-
 size_t
 FastOS_Linux_File::getMaxDirectIOMemAlign()
 {
@@ -295,18 +312,14 @@ FastOS_Linux_File::getMaxDirectIOMemAlign()
 bool
 FastOS_Linux_File::GetDirectIORestrictions (size_t &memoryAlignment, size_t &transferGranularity, size_t &transferMaximum)
 {
-    bool rc = false;
-
     if (_directIOEnabled) {
         memoryAlignment = _directIOMemAlign;
         transferGranularity = _directIOFileAlign;
         transferMaximum = 0x7FFFFFFF;
-        rc = true;
+        return true;
     } else {
-        rc = FastOS_UNIX_File::GetDirectIORestrictions(memoryAlignment, transferGranularity, transferMaximum);
+        return FastOS_UNIX_File::GetDirectIORestrictions(memoryAlignment, transferGranularity, transferMaximum);
     }
-
-    return rc;
 }
 
 
@@ -376,12 +389,14 @@ FastOS_Linux_File::Open(unsigned int openFlags, const char *filename)
             if (POSIX_FADV_NORMAL != fadviseOptions) {
                 rc = (posix_fadvise(_filedes, 0, 0, fadviseOptions) == 0);
                 if (!rc) {
-                    Close();
+                    bool close_ok = Close();
+                    assert(close_ok);
                 }
             }
         }
         if (rc) {
-            Sync();
+            bool sync_ok = Sync();
+            assert(sync_ok);
             _cachedSize = GetSize();
             _filePointer = 0;
         }
@@ -390,7 +405,8 @@ FastOS_Linux_File::Open(unsigned int openFlags, const char *filename)
         if (rc && (POSIX_FADV_NORMAL != getFAdviseOptions())) {
             rc = (posix_fadvise(_filedes, 0, 0, getFAdviseOptions()) == 0);
             if (!rc) {
-                Close();
+                bool close_ok = Close();
+                assert(close_ok);
             }
         }
     }

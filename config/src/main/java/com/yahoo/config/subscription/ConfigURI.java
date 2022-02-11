@@ -10,7 +10,9 @@ import com.yahoo.config.subscription.impl.JRTConfigRequester;
  * object to simplify parameter passing.
  *
  * @author Ulf Lilleengen
+ * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
+@Deprecated(forRemoval = true, since = "7")
 public class ConfigURI {
 
     private String configId;

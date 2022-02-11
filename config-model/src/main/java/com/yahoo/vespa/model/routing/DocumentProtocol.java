@@ -317,7 +317,7 @@ public final class DocumentProtocol implements Protocol,
             DocprocChain defaultChain = getDefaultChain(containerCluster.getDocproc());
             if (defaultChain != null) {
                 if (result != null)
-                    throw new RuntimeException("Only a single default docproc chain is allowed across all container clusters");
+                    throw new IllegalArgumentException("Only a single default docproc chain is allowed across all container clusters");
                 result = defaultChain;
             }
         }

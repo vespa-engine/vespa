@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
@@ -32,7 +33,7 @@ public class DocumentReferenceResolverTest {
     @Test
     public void reference_from_one_document_to_another_is_resolved() {
         // Create bar document with no fields
-        Schema barSchema = new Schema(BAR);
+        Schema barSchema = new Schema(BAR, MockApplicationPackage.createEmpty());
         SDDocumentType barDocument = new SDDocumentType(BAR, barSchema);
         barSchema.addDocument(barDocument);
 
@@ -41,7 +42,7 @@ public class DocumentReferenceResolverTest {
                 ("bar_ref", ReferenceDataType.createWithInferredId(barDocument.getDocumentType()));
         AttributeUtils.addAttributeAspect(fooRefToBarField);
         SDField irrelevantField = new SDField("irrelevant_stuff", DataType.INT);
-        Schema fooSchema = new Schema(FOO);
+        Schema fooSchema = new Schema(FOO, MockApplicationPackage.createEmpty());
         SDDocumentType fooDocument = new SDDocumentType("foo", fooSchema);
         fooDocument.addField(fooRefToBarField);
         fooDocument.addField(irrelevantField);
@@ -64,7 +65,7 @@ public class DocumentReferenceResolverTest {
         SDField fooRefToBarField = new SDField(
                 "bar_ref", ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create("bar")));
         AttributeUtils.addAttributeAspect(fooRefToBarField);
-        Schema fooSchema = new Schema(FOO);
+        Schema fooSchema = new Schema(FOO, MockApplicationPackage.createEmpty());
         SDDocumentType fooDocument = new SDDocumentType("foo", fooSchema);
         fooDocument.addField(fooRefToBarField);
         fooSchema.addDocument(fooDocument);
@@ -80,14 +81,14 @@ public class DocumentReferenceResolverTest {
     @Test
     public void throws_exception_if_reference_is_not_an_attribute() {
         // Create bar document with no fields
-        Schema barSchema = new Schema(BAR);
+        Schema barSchema = new Schema(BAR, MockApplicationPackage.createEmpty());
         SDDocumentType barDocument = new SDDocumentType("bar", barSchema);
         barSchema.addDocument(barDocument);
 
         // Create foo document with document reference to bar
         SDField fooRefToBarField = new SDField
                 ("bar_ref", ReferenceDataType.createWithInferredId(barDocument.getDocumentType()));
-        Schema fooSchema = new Schema(FOO);
+        Schema fooSchema = new Schema(FOO, MockApplicationPackage.createEmpty());
         SDDocumentType fooDocument = new SDDocumentType("foo", fooSchema);
         fooDocument.addField(fooRefToBarField);
         fooSchema.addDocument(fooDocument);

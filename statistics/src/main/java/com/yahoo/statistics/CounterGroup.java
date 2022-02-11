@@ -15,6 +15,7 @@ import java.util.Iterator;
  *
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
+@SuppressWarnings("removal") // TODO Vespa 8: remove (com.yahoo.log.event)
 @Deprecated
 public class CounterGroup extends Group {
     private final boolean resetCounter;

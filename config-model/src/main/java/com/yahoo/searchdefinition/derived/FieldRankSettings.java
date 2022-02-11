@@ -4,11 +4,9 @@ package com.yahoo.searchdefinition.derived;
 import com.yahoo.collections.Pair;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * The rank settings of a field used for native rank features.
@@ -17,9 +15,7 @@ import java.util.logging.Logger;
  */
 public class FieldRankSettings {
 
-    private static final Logger logger = Logger.getLogger(FieldRankSettings.class.getName());
-
-    private String fieldName;
+    private final String fieldName;
 
     private final Map<String, NativeTable> tables = new LinkedHashMap<>();
 
@@ -30,7 +26,7 @@ public class FieldRankSettings {
     public void addTable(NativeTable table) {
         NativeTable existing = tables.get(table.getType().getName());
         if (existing != null) {
-            logger.info("Using already specified rank table " + existing + " for field " + fieldName + ", not " + table);
+            // TODO: Throw?
             return;
         }
         tables.put(table.getType().getName(), table);
@@ -60,8 +56,7 @@ public class FieldRankSettings {
 
     public List<Pair<String, String>> deriveRankProperties() {
         List<Pair<String, String>> properties = new ArrayList<>();
-        for (Iterator<NativeTable> i = tables.values().iterator(); i.hasNext();) {
-            NativeTable table = i.next();
+        for (NativeTable table : tables.values()) {
             if (isFieldMatchTable(table))
                 properties.add(new Pair<>("nativeFieldMatch." + table.getType().getName() + "." + fieldName, table.getName()));
             if (isAttributeMatchTable(table))
@@ -72,6 +67,7 @@ public class FieldRankSettings {
         return properties;
     }
 
+    @Override
     public String toString() {
         return "rank settings of field " + fieldName;
     }

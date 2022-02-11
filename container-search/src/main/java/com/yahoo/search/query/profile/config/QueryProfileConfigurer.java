@@ -19,6 +19,7 @@ import java.util.Set;
 /**
  * @author bratseth
  */
+@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class QueryProfileConfigurer implements ConfigSubscriber.SingleSubscriber<QueryProfilesConfig> {
 
     private final ConfigSubscriber subscriber = new ConfigSubscriber();

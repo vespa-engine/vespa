@@ -10,15 +10,15 @@ func TestReplaceDeployment(t *testing.T) {
 	in := `
 <deployment version="1.0">
     <prod>
-        <region active="true">us-north-1</region>
-        <region active="false">eu-north-2</region>
+        <region>us-north-1</region>
+        <region>eu-north-2</region>
     </prod>
 </deployment>`
 
 	out := `<deployment version="1.0">
   <prod>
-    <region active="true">eu-south-1</region>
-    <region active="true">us-central-1</region>
+    <region>eu-south-1</region>
+    <region>us-central-1</region>
   </prod>
 </deployment>
 `
@@ -31,12 +31,12 @@ func TestReplaceDeploymentWithInstance(t *testing.T) {
 <deployment version="1.0">
     <instance id="default">
         <prod>
-            <region active="true">us-north-1</region>
+            <region>us-north-1</region>
         </prod>
     </instance>
     <instance id="beta">
         <prod>
-            <region active="true">eu-south-1</region>
+            <region>eu-south-1</region>
         </prod>
     </instance>
 </deployment>`
@@ -44,14 +44,14 @@ func TestReplaceDeploymentWithInstance(t *testing.T) {
 	out := `<deployment version="1.0">
   <instance id="default">
     <prod>
-      <region active="true">us-central-1</region>
-      <region active="true">eu-west-1</region>
+      <region>us-central-1</region>
+      <region>eu-west-1</region>
     </prod>
   </instance>
   <instance id="beta">
     <prod>
-      <region active="true">us-central-1</region>
-      <region active="true">eu-west-1</region>
+      <region>us-central-1</region>
+      <region>eu-west-1</region>
     </prod>
   </instance>
 </deployment>
@@ -132,16 +132,16 @@ func TestReplaceRemovesElement(t *testing.T) {
 	in := `
 <deployment version="1.0">
     <prod>
-        <region active="true">eu-south-1</region>
-        <region active="true">us-central-1</region>
+        <region>eu-south-1</region>
+        <region>us-central-1</region>
         <test>us-central-1</test>
     </prod>
 </deployment>`
 
 	out := `<deployment version="1.0">
   <prod>
-    <region active="true">eu-south-1</region>
-    <region active="true">us-central-1</region>
+    <region>eu-south-1</region>
+    <region>us-central-1</region>
   </prod>
 </deployment>
 `
@@ -247,11 +247,14 @@ func TestParseResources(t *testing.T) {
 	assertResources(t, "vcpu=2,memory=4Gb", Resources{}, true)
 	assertResources(t, "memory=4Gb,vcpu=2,disk=100Gb", Resources{}, true)
 	assertResources(t, "vcpu=2,memory=4Gb,disk=100Gb", Resources{Vcpu: "2", Memory: "4Gb", Disk: "100Gb"}, false)
+	assertResources(t, "  vcpu = 4, memory =8Gb,  disk=500Gb ", Resources{Vcpu: "4", Memory: "8Gb", Disk: "500Gb"}, false)
+	assertResources(t, "vcpu=[2.5,  8],memory=[32Gb,150Gb],disk=[100Gb, 1Tb]", Resources{Vcpu: "[2.5,  8]", Memory: "[32Gb,150Gb]", Disk: "[100Gb, 1Tb]"}, false)
 }
 
 func TestParseNodeCount(t *testing.T) {
 	assertNodeCount(t, "2", 2, 2, false)
 	assertNodeCount(t, "[4,8]", 4, 8, false)
+	assertNodeCount(t, "[ 4,  8 ]", 4, 8, false)
 
 	assertNodeCount(t, "foo", 0, 0, true)
 	assertNodeCount(t, "[foo,bar]", 0, 0, true)

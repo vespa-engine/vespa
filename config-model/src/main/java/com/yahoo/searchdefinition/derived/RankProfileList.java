@@ -73,9 +73,9 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     }
 
     private boolean areDependenciesReady(RankProfile rank, RankProfileRegistry registry) {
-        return (rank.getInheritedName() == null) ||
-                rankProfiles.containsKey(rank.getInheritedName()) ||
-                (rank.getSearch() != null && registry.resolve(rank.getSearch().getDocument(), rank.getInheritedName()) != null);
+        return rank.inheritedNames().isEmpty() ||
+               rankProfiles.keySet().containsAll(rank.inheritedNames()) ||
+               (rank.schema() != null && rank.inheritedNames().stream().allMatch(name -> registry.resolve(rank.schema().getDocument(), name) != null));
     }
 
     private void deriveRankProfiles(RankProfileRegistry rankProfileRegistry,
@@ -92,7 +92,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
         }
 
         Map<String, RankProfile> remaining = new LinkedHashMap<>();
-        rankProfileRegistry.rankProfilesOf(schema).forEach(rank -> remaining.put(rank.getName(), rank));
+        rankProfileRegistry.rankProfilesOf(schema).forEach(rank -> remaining.put(rank.name(), rank));
         remaining.remove("default");
         while (!remaining.isEmpty()) {
             List<RankProfile> ready = new ArrayList<>();
@@ -100,7 +100,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                 if (areDependenciesReady(rank, rankProfileRegistry)) ready.add(rank);
             });
             processRankProfiles(ready, queryProfiles, importedModels, schema, attributeFields, deployProperties, executor);
-            ready.forEach(rank -> remaining.remove(rank.getName()));
+            ready.forEach(rank -> remaining.remove(rank.name()));
         }
     }
     private void processRankProfiles(List<RankProfile> ready,
@@ -116,8 +116,8 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                 onnxModels.add(rank.onnxModels());
             }
 
-            futureRawRankProfiles.put(rank.getName(), executor.submit(() -> new RawRankProfile(rank, largeRankExpressions, queryProfiles, importedModels,
-                    attributeFields, deployProperties)));
+            futureRawRankProfiles.put(rank.name(), executor.submit(() -> new RawRankProfile(rank, largeRankExpressions, queryProfiles, importedModels,
+                                                                                            attributeFields, deployProperties)));
         }
         try {
             for (Future<RawRankProfile> rawFuture : futureRawRankProfiles.values()) {

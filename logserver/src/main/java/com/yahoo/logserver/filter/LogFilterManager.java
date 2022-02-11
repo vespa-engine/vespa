@@ -14,6 +14,7 @@ import java.util.Map;
  *
  * @author Bjorn Borud
  */
+@SuppressWarnings("deprecation")
 public class LogFilterManager {
     private static final LogFilterManager instance;
 

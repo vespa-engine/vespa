@@ -389,7 +389,7 @@ UrlFieldInverter::pushDocuments()
     _hostname->pushDocuments();
 }
 
-UrlFieldInverter::UrlFieldInverter(index::Schema::CollectionType collectionType,
+UrlFieldInverter::UrlFieldInverter(index::schema::CollectionType collectionType,
                                    FieldInverter *all,
                                    FieldInverter *scheme,
                                    FieldInverter *host,

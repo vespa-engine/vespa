@@ -14,6 +14,7 @@
 #include <vespa/searchlib/features/attributefeature.h>
 #include <vespa/searchlib/features/closenessfeature.h>
 #include <vespa/searchlib/features/distancefeature.h>
+#include <vespa/searchlib/features/great_circle_distance_feature.h>
 #include <vespa/searchlib/features/dotproductfeature.h>
 #include <vespa/searchlib/features/fieldlengthfeature.h>
 #include <vespa/searchlib/features/fieldmatchfeature.h>
@@ -93,6 +94,7 @@ Test::Main()
     TEST_DO(testAttributeMatch());      TEST_FLUSH();
     TEST_DO(testCloseness());           TEST_FLUSH();
     TEST_DO(testMatchCount());          TEST_FLUSH();
+    TEST_DO(testGreatCircleDistance()); TEST_FLUSH();
     TEST_DO(testDistance());            TEST_FLUSH();
     TEST_DO(testDistanceToPath());      TEST_FLUSH();
     TEST_DO(testDotProduct());          TEST_FLUSH();
@@ -819,6 +821,67 @@ Test::assertFreshness(feature_t expFreshness, const vespalib::string & attr, uin
     ASSERT_TRUE(ft.execute(RankResult().addScore(feature, expFreshness).setEpsilon(EPS)));
 }
 
+namespace {
+
+struct AirPort {
+    const char *tla;
+    double lat;
+    double lng;
+};
+
+std::pair<int32_t, int32_t> toXY(const AirPort &p) {
+    return std::make_pair((int)(p.lng * 1.0e6),
+                          (int)(p.lat * 1.0e6));
+}
+
+GeoLocation toGL(const AirPort &p) {
+    int32_t x = (int)(p.lng * 1.0e6);
+    int32_t y = (int)(p.lat * 1.0e6);
+    GeoLocation::Point gp{x, y};
+    return GeoLocation{gp};
+}
+
+}
+
+void
+Test::testGreatCircleDistance()
+{
+    { // Test blueprint.
+        GreatCircleDistanceBlueprint pt;
+        EXPECT_TRUE(assertCreateInstance(pt, "great_circle_distance"));
+        StringList params, in, out;
+        FT_SETUP_FAIL(pt, params);
+        FtIndexEnvironment idx_env;
+        idx_env
+            .getBuilder()
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64, "pos_zcurve");
+        FT_SETUP_OK(pt, idx_env, params.add("pos"), in,
+                    out.add("km").add("latitude").add("longitude"));
+        FT_DUMP_EMPTY(_factory, "great_circle_distance");
+    }
+    { // Test executor.
+        FtFeatureTest ft(_factory, "great_circle_distance(pos)");
+        const AirPort SFO = { "SFO",  37.618806,  -122.375416 };
+        const AirPort TRD = { "TRD",  63.457556,  10.924250 };
+        std::vector<std::pair<int32_t,int32_t>> pos = { toXY(SFO), toXY(TRD) };
+        setupForDistanceTest(ft, "pos_zcurve", pos, true);
+        const AirPort LHR = { "LHR",  51.477500,  -0.461388 };
+        const AirPort JFK = { "JFK",  40.639928,  -73.778692 };
+        ft.getQueryEnv().addLocation(GeoLocationSpec{"pos", toGL(LHR)});
+        ft.getQueryEnv().addLocation(GeoLocationSpec{"pos", toGL(JFK)});
+        ASSERT_TRUE(ft.setup());
+        double exp = 1494; // according to gcmap.com
+        ASSERT_TRUE(ft.execute(RankResult().setEpsilon(10.0).
+                               addScore("great_circle_distance(pos)", exp)));
+        ASSERT_TRUE(ft.execute(RankResult().setEpsilon(10.0).
+                               addScore("great_circle_distance(pos).km", exp)));
+        ASSERT_TRUE(ft.execute(RankResult().setEpsilon(1e-9).
+                               addScore("great_circle_distance(pos).latitude", TRD.lat)));
+        ASSERT_TRUE(ft.execute(RankResult().setEpsilon(1e-9).
+                               addScore("great_circle_distance(pos).longitude", TRD.lng)));
+    }
+}
+
 void
 Test::testDistance()
 {
@@ -830,7 +893,7 @@ Test::testDistance()
         StringList params, in, out;
         FT_SETUP_FAIL(pt, params);
         FT_SETUP_OK(pt, params.add("pos"), in,
-                    out.add("out").add("index").add("latitude").add("longitude"));
+                    out.add("out").add("index").add("latitude").add("longitude").add("km"));
         FT_DUMP_EMPTY(_factory, "distance");
     }
 
@@ -963,6 +1026,8 @@ Test::assert2DZDistance(feature_t exp, const vespalib::string & positions,
     ASSERT_TRUE(ft.setup());
     ASSERT_TRUE(ft.execute(RankResult().setEpsilon(1e-4).
                            addScore("distance(pos)", exp)));
+    ASSERT_TRUE(ft.execute(RankResult().setEpsilon(1e-4).
+                           addScore("distance(pos).km", exp * 0.00011119508023)));
     ASSERT_TRUE(ft.execute(RankResult().setEpsilon(1e-30).
                            addScore("distance(pos).index", hit_index)));
     ASSERT_TRUE(ft.execute(RankResult().setEpsilon(1e-9).

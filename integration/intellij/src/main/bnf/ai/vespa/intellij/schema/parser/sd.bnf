@@ -40,7 +40,7 @@
     ]
 }
 
-SdFile ::= SchemaDefinition | DocumentDefinition
+SdFile ::= SchemaDefinition | DocumentDefinition | RankProfileDefinition
 SchemaDefinition ::= (search | schema) IdentifierVal? (inherits IdentifierVal)? '{' SchemaBody '}'
 SchemaBody ::= SchemaBodyOptions* DocumentDefinition SchemaBodyOptions* // Does not support zero-or-one occurrences
 private SchemaBodyOptions ::= SchemaFieldDefinition | ImportFieldDefinition | DocumentSummaryDefinition | 
@@ -129,7 +129,7 @@ PrimitiveExpr ::= (('-')? INTEGER_REG) | (('-')? FLOAT_REG) | IdentifierVal | Ra
 //-------------------------
 //-- Rank Profile rules ---
 //-------------------------
-RankProfileDefinition ::= (rank-profile | model) IdentifierWithDashVal (inherits IdentifierWithDashVal)? '{' RankProfileBody '}'
+RankProfileDefinition ::= (rank-profile | model) IdentifierWithDashVal (inherits IdentifierWithDashVal (',' IdentifierWithDashVal)*)? '{' RankProfileBody '}'
                           { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                             implements=["ai.vespa.intellij.schema.psi.SdDeclaration"]
                            }

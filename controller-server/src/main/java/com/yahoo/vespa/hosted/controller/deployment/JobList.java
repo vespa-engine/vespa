@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -51,6 +52,10 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
         return matching(job -> job.lastCompleted().isPresent() && ! job.isSuccess());
     }
 
+    public JobList outOfTestCapacity() {
+        return matching(job -> job.isOutOfCapacity() && job.id().type().environment().isTest());
+    }
+
     public JobList running() {
         return matching(job -> job.isRunning());
     }
@@ -76,8 +81,13 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
     }
 
     /** Returns the subset of jobs run for the given instance. */
-    public JobList instance(InstanceName instance) {
-        return matching(job -> job.id().application().instance().equals(instance));
+    public JobList instance(InstanceName... instances) {
+        return instance(Set.of(instances));
+    }
+
+    /** Returns the subset of jobs run for the given instance. */
+    public JobList instance(Collection<InstanceName> instances) {
+        return matching(job -> instances.contains(job.id().application().instance()));
     }
 
     /** Returns the subset of jobs of which are production jobs. */
@@ -85,12 +95,12 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
         return matching(job -> job.id().type().isProduction());
     }
 
-    /** Returns the jobs with any runs matching the given versions — targets only for system test, everything present otherwise. */
+    /** Returns the jobs with any runs matching the given versions — targets only for system test, everything present otherwise. */
     public JobList triggeredOn(Versions versions) {
         return matching(job -> ! RunList.from(job).on(versions).isEmpty());
     }
 
-    /** Returns the jobs with successful runs matching the given versions — targets only for system test, everything present otherwise. */
+    /** Returns the jobs with successful runs matching the given versions — targets only for system test, everything present otherwise. */
     public JobList successOn(Versions versions) {
         return matching(job -> ! RunList.from(job).status(RunStatus.success).on(versions).isEmpty());
     }

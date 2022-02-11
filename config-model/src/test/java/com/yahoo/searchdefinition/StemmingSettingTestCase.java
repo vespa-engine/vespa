@@ -20,7 +20,7 @@ public class StemmingSettingTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testStemmingSettings() throws IOException, ParseException {
-        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/stemmingsetting.sd");
+        Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/stemmingsetting.sd");
 
         SDField artist = (SDField) schema.getDocument().getField("artist");
         assertEquals(Stemming.SHORTEST, artist.getStemming(schema));
@@ -43,7 +43,7 @@ public class StemmingSettingTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void requireThatStemmingIsDefaultBest() throws IOException, ParseException {
-        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/stemmingdefault.sd");
+        Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/stemmingdefault.sd");
         assertNull(schema.getConcreteField("my_str").getStemming());
         assertEquals(Stemming.BEST, schema.getConcreteField("my_str").getStemming(schema));
     }

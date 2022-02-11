@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
@@ -16,7 +16,7 @@ public class WeightedSetSummaryToTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testRequireThatImplicitFieldsAreCreated() throws IOException, ParseException {
-        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/weightedset-summaryto.sd");
+        Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/weightedset-summaryto.sd");
         assertNotNull(schema);
     }
 

@@ -24,10 +24,10 @@
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
 #include <vespa/searchcore/proton/flushengine/tls_stats_factory.h>
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
+#include <vespa/searchcore/proton/metrics/content_proton_metrics.h>
+#include <vespa/searchcore/proton/metrics/metrics_engine.h>
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
-#include <vespa/searchcore/proton/metrics/metrics_engine.h>
-#include <vespa/searchcore/proton/metrics/content_proton_metrics.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
@@ -36,13 +36,13 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/net/state_server.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
+#include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/vespalib/util/random.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/util/invokeserviceimpl.h>
 #ifdef __linux__
 #include <malloc.h>
 #endif
@@ -54,19 +54,21 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.proton");
 
-using document::DocumentTypeRepo;
-using vespalib::FileHeader;
-using vespalib::IllegalStateException;
-using vespalib::Slime;
-using vespalib::makeLambdaTask;
-using vespalib::slime::ArrayInserter;
-using vespalib::slime::Cursor;
+using CpuCategory = vespalib::CpuUsage::Category;
 
+using document::DocumentTypeRepo;
+using search::engine::MonitorReply;
 using search::transactionlog::DomainStats;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::search::core::internal::InternalProtonType;
+using vespalib::CpuUsage;
+using vespalib::FileHeader;
+using vespalib::IllegalStateException;
+using vespalib::Slime;
 using vespalib::compression::CompressionConfig;
-using search::engine::MonitorReply;
+using vespalib::makeLambdaTask;
+using vespalib::slime::ArrayInserter;
+using vespalib::slime::Cursor;
 
 namespace proton {
 
@@ -139,8 +141,8 @@ struct MetricsUpdateHook : metrics::UpdateHook
 
 const vespalib::string CUSTOM_COMPONENT_API_PATH = "/state/v1/custom/component";
 
-VESPA_THREAD_STACK_TAG(initialize_executor)
-VESPA_THREAD_STACK_TAG(close_executor)
+VESPA_THREAD_STACK_TAG(proton_initialize_executor)
+VESPA_THREAD_STACK_TAG(proton_close_executor)
 
 }
 
@@ -207,6 +209,7 @@ Proton::Proton(const config::ConfigUri & configUri,
       StatusProducer(),
       IPersistenceEngineOwner(),
       ComponentConfigProducer(),
+      _cpu_util(),
       _configUri(configUri),
       _mutex(),
       _metricsHook(std::make_unique<MetricsUpdateHook>(*this)),
@@ -329,7 +332,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _compile_cache_executor_binding = vespalib::eval::CompileCache::bind(_shared_service->shared_raw());
     InitializeThreads initializeThreads;
     if (protonConfig.initialize.threads > 0) {
-        initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(protonConfig.initialize.threads, 128_Ki, initialize_executor);
+        initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(protonConfig.initialize.threads, 128_Ki,
+                                                                            CpuUsage::wrap(proton_initialize_executor, CpuCategory::SETUP));
         _initDocumentDbsInSequence = (protonConfig.initialize.threads == 1);
     }
     _protonConfigurer.applyInitialConfig(initializeThreads);
@@ -463,7 +467,8 @@ Proton::~Proton()
             }
         }
 
-        vespalib::ThreadStackExecutor closePool(std::min(_documentDBMap.size(), numCores), 0x20000, close_executor);
+        vespalib::ThreadStackExecutor closePool(std::min(_documentDBMap.size(), numCores), 0x20000,
+                                                CpuUsage::wrap(proton_close_executor, CpuCategory::SETUP));
         closeDocumentDBs(closePool);
     }
     _documentDBMap.clear();
@@ -753,12 +758,20 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
 
         const DiskMemUsageFilter &usageFilter = _diskMemUsageSampler->writeFilter();
         auto dm_metrics = usageFilter.get_metrics();
-        metrics.resourceUsage.disk.set(dm_metrics.get_disk_usage());
-        metrics.resourceUsage.diskUtilization.set(dm_metrics.get_disk_utilization());
-        metrics.resourceUsage.memory.set(dm_metrics.get_memory_usage());
-        metrics.resourceUsage.memoryUtilization.set(dm_metrics.get_memory_utilization());
-        metrics.resourceUsage.transient_memory.set(dm_metrics.get_transient_memory_usage());
-        metrics.resourceUsage.transient_disk.set(dm_metrics.get_transient_disk_usage());
+        metrics.resourceUsage.disk.set(dm_metrics.non_transient_disk_usage());
+        metrics.resourceUsage.diskUtilization.set(dm_metrics.total_disk_utilization());
+        metrics.resourceUsage.transient_disk.set(dm_metrics.transient_disk_usage());
+        metrics.resourceUsage.disk_usage.total.set(dm_metrics.total_disk_usage());
+        metrics.resourceUsage.disk_usage.total_util.set(dm_metrics.total_disk_utilization());
+        metrics.resourceUsage.disk_usage.transient.set(dm_metrics.transient_disk_usage());
+
+        metrics.resourceUsage.memory.set(dm_metrics.non_transient_memory_usage());
+        metrics.resourceUsage.memoryUtilization.set(dm_metrics.total_memory_utilization());
+        metrics.resourceUsage.transient_memory.set(dm_metrics.transient_memory_usage());
+        metrics.resourceUsage.memory_usage.total.set(dm_metrics.total_memory_usage());
+        metrics.resourceUsage.memory_usage.total_util.set(dm_metrics.total_memory_utilization());
+        metrics.resourceUsage.memory_usage.transient.set(dm_metrics.transient_memory_usage());
+
         metrics.resourceUsage.memoryMappings.set(usageFilter.getMemoryStats().getMappingsCount());
         metrics.resourceUsage.openFileDescriptors.set(FastOS_File::count_open_files());
         metrics.resourceUsage.feedingBlocked.set((usageFilter.acceptWriteOperation() ? 0.0 : 1.0));
@@ -775,6 +788,12 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
 #else
         metrics.resourceUsage.mallocArena.set(UINT64_C(0));
 #endif
+        auto cpu_util = _cpu_util.get_util();
+        metrics.resourceUsage.cpu_util.setup.set(cpu_util[CpuCategory::SETUP]);
+        metrics.resourceUsage.cpu_util.read.set(cpu_util[CpuCategory::READ]);
+        metrics.resourceUsage.cpu_util.write.set(cpu_util[CpuCategory::WRITE]);
+        metrics.resourceUsage.cpu_util.compact.set(cpu_util[CpuCategory::COMPACT]);
+        metrics.resourceUsage.cpu_util.other.set(cpu_util[CpuCategory::OTHER]);
     }
     {
         ContentProtonMetrics::ProtonExecutorMetrics &metrics = _metricsEngine->root().executor;

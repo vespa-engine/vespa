@@ -13,7 +13,7 @@ const size_t MIN_ALIGNMENT = 0x1000;
 }
 
 void
-Fast_BufferedFile::flushWriteBuf(void)
+Fast_BufferedFile::flushWriteBuf()
 {
     if (_bufi != buf()) {
         _file->WriteBuf(buf(), _bufi - buf());
@@ -31,7 +31,7 @@ Fast_BufferedFile::flushWriteBuf(void)
 }
 
 void
-Fast_BufferedFile::fillReadBuf(void)
+Fast_BufferedFile::fillReadBuf()
 {
     size_t toread = std::min(static_cast<int64_t>(_buf.size()), _fileleft);
     if (toread > 0) {
@@ -71,20 +71,14 @@ Fast_BufferedFile::addNum(unsigned int num, int fieldw, char fill)
     }
 }
 
-uint64_t
-Fast_BufferedFile::BytesLeft(void) const
-{
-    return _fileleft + (_bufe - _bufi);
-}
-
 bool
-Fast_BufferedFile::Eof(void) const
+Fast_BufferedFile::Eof() const
 {
     return _fileleft == 0 && _bufi == _bufe;
 }
 
 int64_t
-Fast_BufferedFile::GetSize (void)
+Fast_BufferedFile::GetSize()
 {
     return _file->GetSize();
 }
@@ -101,41 +95,41 @@ Fast_BufferedFile::SetSize (int64_t s)
 }
 
 bool
-Fast_BufferedFile::IsOpened (void) const
+Fast_BufferedFile::IsOpened () const
 {
     return _file->IsOpened();
 }
 
 bool
-Fast_BufferedFile::Sync(void)
+Fast_BufferedFile::Sync()
 {
     Flush();
     return _file->Sync();
 }
 
 time_t
-Fast_BufferedFile::GetModificationTime(void)
+Fast_BufferedFile::GetModificationTime()
 {
     time_t retval = _file->GetModificationTime();
     return retval;
 }
 
 void
-Fast_BufferedFile::EnableDirectIO(void)
+Fast_BufferedFile::EnableDirectIO()
 {
     _file->EnableDirectIO();
     _directIOEnabled = true;
 }
 
 void
-Fast_BufferedFile::EnableSyncWrites(void)
+Fast_BufferedFile::EnableSyncWrites()
 {
     FastOS_FileInterface::EnableSyncWrites();
     _file->EnableSyncWrites();
 }
 
 int64_t
-Fast_BufferedFile::GetPosition(void)
+Fast_BufferedFile::GetPosition()
 {
     if (_file->IsWriteMode()) {
         int64_t filePosition = _file->GetPosition();
@@ -147,7 +141,7 @@ Fast_BufferedFile::GetPosition(void)
 
 
 void
-Fast_BufferedFile::Flush(void)
+Fast_BufferedFile::Flush()
 {
     if (_file->IsWriteMode()) {
         flushWriteBuf();
@@ -202,11 +196,9 @@ Fast_BufferedFile::SetPosition(const int64_t s)
 }
 
 const char *
-Fast_BufferedFile::GetFileName(void) const
+Fast_BufferedFile::GetFileName() const
 {
-    return (_file.get() == NULL)
-        ? ""
-        : _file->GetFileName();
+    return _file ? _file->GetFileName() : "";
 }
 
 char *
@@ -228,19 +220,20 @@ Fast_BufferedFile::ReadLine(char *line, size_t buflen)
             fillReadBuf();
             if (_bufi >= _bufe) {
                 if (p == line)
-                    return NULL;
+                    return nullptr;
                 *p = 0;
                 return line;
             }
             continue;
         }
         *p++ = *_bufi++;
-        *p++ = 0;
+        *p = 0;
         return line;
     }
 }
 
-ssize_t Fast_BufferedFile::Write2(const void * src, size_t srclen)
+ssize_t
+Fast_BufferedFile::Write2(const void * src, size_t srclen)
 {
     const char *p, *pe;
     p = static_cast<const char *>(src);
@@ -295,22 +288,11 @@ Fast_BufferedFile::WriteByte(char byte)
     *_bufi++ = byte;
 }
 
-int
-Fast_BufferedFile::GetByte(void)
-{
-    if (_bufi < _bufe)
-        return *reinterpret_cast<unsigned char *>(_bufi++);
-    fillReadBuf();
-    if (_bufi < _bufe)
-        return *reinterpret_cast<unsigned char *>(_bufi++);
-    return -1;
-}
-
 void
 Fast_BufferedFile::ReadOpenExisting(const char *name)
 {
-    Close();
-    bool ok = _file->OpenReadOnlyExisting(true, name);
+    bool ok = Close();
+    ok &= _file->OpenReadOnlyExisting(true, name);
     if (!ok) {
         fprintf(stderr, "ERROR opening %s for read: %s",
                 _file->GetFileName(), getLastErrorString().c_str());
@@ -326,8 +308,8 @@ Fast_BufferedFile::ReadOpenExisting(const char *name)
 void
 Fast_BufferedFile::ReadOpen(const char *name)
 {
-    Close();
-    bool ok = _file->OpenReadOnly(name);
+    bool ok = Close();
+    ok &= _file->OpenReadOnly(name);
     if (!ok) {
         fprintf(stderr, "ERROR opening %s for read: %s",
                 _file->GetFileName(), getLastErrorString().c_str());
@@ -346,8 +328,8 @@ Fast_BufferedFile::ReadOpen(const char *name)
 void
 Fast_BufferedFile::WriteOpen(const char *name)
 {
-    Close();
-    bool ok = _file->OpenWriteOnly(name);
+    bool ok = Close();
+    ok &= _file->OpenWriteOnly(name);
     if (!ok) {
         fprintf(stderr, "ERROR opening %s for write: %s",
                 _file->GetFileName(), getLastErrorString().c_str());
@@ -378,7 +360,7 @@ namespace {
 
 size_t computeBufLen(size_t buflen)
 {
-    size_t bitCount(0);
+    size_t bitCount;
     for ( bitCount = 1; buflen >> bitCount; bitCount++);
     buflen = 1 << (bitCount - 1);
 
@@ -394,8 +376,8 @@ Fast_BufferedFile::Fast_BufferedFile(FastOS_FileInterface *file, size_t bufferSi
     FastOS_FileInterface(),
     _fileleft(static_cast<uint64_t>(-1)),
     _buf(vespalib::alloc::Alloc::allocMMap(computeBufLen(bufferSize))),
-    _bufi(NULL),
-    _bufe(NULL),
+    _bufi(nullptr),
+    _bufe(nullptr),
     _filepos(0),
     _directIOEnabled(false),
     _file(file)
@@ -403,20 +385,21 @@ Fast_BufferedFile::Fast_BufferedFile(FastOS_FileInterface *file, size_t bufferSi
     ResetBuf();
 }
 
-Fast_BufferedFile::~Fast_BufferedFile(void)
+Fast_BufferedFile::~Fast_BufferedFile()
 {
-    Close();
+    bool close_ok = Close();
+    assert(close_ok);
 }
 
 void
-Fast_BufferedFile::ResetBuf(void)
+Fast_BufferedFile::ResetBuf()
 {
     _bufi = buf();
     _bufe = _bufi;
 }
 
 bool
-Fast_BufferedFile::Close(void)
+Fast_BufferedFile::Close()
 {
     Flush();
     _openFlags = 0;
@@ -426,14 +409,14 @@ Fast_BufferedFile::Close(void)
 
 bool Fast_BufferedFile::Open(unsigned int openFlags, const char * name)
 {
-    bool ok = false;
+    bool ok;
     if (openFlags & FASTOS_FILE_OPEN_READ) {
-        Close();
+        ok = Close();
         _filepos = 0;
         _fileleft = 0;
         ResetBuf();
 
-        ok = _file->Open(openFlags, name);
+        ok &= _file->Open(openFlags, name);
         if (ok) {
             _openFlags = openFlags;
             //CASTWARN
@@ -442,10 +425,10 @@ bool Fast_BufferedFile::Open(unsigned int openFlags, const char * name)
             // caller will have to check return value
         }
     } else {
-        Close();
+        ok = Close();
         _filepos = 0;
         ResetBuf();
-        ok = _file->Open(FASTOS_FILE_OPEN_WRITE | openFlags, name);
+        ok &= _file->Open(FASTOS_FILE_OPEN_WRITE | openFlags, name);
         if (ok) {
             _openFlags = FASTOS_FILE_OPEN_WRITE | openFlags;
         } else {

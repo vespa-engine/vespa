@@ -3,11 +3,10 @@
 #include "reconfigurable_stateserver.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/net/state_server.h>
+#include <vespa/config/helper/configfetcher.hpp>
 #include <thread>
 
 #include <vespa/log/log.h>
-#include <vespa/config/common/exceptions.h>
-
 LOG_SETUP(".slobrok.server.reconfigurable_stateserver");
 
 using namespace std::chrono_literals;

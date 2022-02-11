@@ -3,6 +3,7 @@ package com.yahoo.container.plugin.classanalysis.sampleclasses;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Input for class analysis tests.
@@ -10,6 +11,7 @@ import java.util.Map;
  */
 @SuppressWarnings("unused")
 public class Methods {
+
     public void method1() {
         Base b = new Base();
         System.out.println(Fields.field2.size());
@@ -29,5 +31,15 @@ public class Methods {
         Derived d = new Derived();
     }
 
+    public void  method3() {
+        var result = methodTakingFunctionalArgument((Interface3)() -> "hello");
+        System.out.println(result);
+    }
+
+    public String methodTakingFunctionalArgument(Supplier<String> function) {
+        return function.get();
+    }
+
     public void methodTakingGenericArgument(Map<String, List<Dummy>> map) {}
+
 }

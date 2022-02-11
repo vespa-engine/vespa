@@ -99,8 +99,8 @@ SearchableFeedView::updateIndexedFields(SerialNum serialNum, search::DocumentIdT
 {
     _writeService.index().execute(
             makeLambdaTask([serialNum, lid, futureDoc = std::move(futureDoc),
-                            onWriteDone = std::move(onWriteDone), this]() mutable {
-                performIndexPut(serialNum, lid, std::move(futureDoc), std::move(onWriteDone));
+                            onWriteDone, this]() mutable {
+                performIndexPut(serialNum, lid, std::move(futureDoc), onWriteDone);
             }));
 }
 

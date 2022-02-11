@@ -23,7 +23,7 @@ class DistributorComponent : public storage::DistributorComponent,
                              public DistributorOperationContext {
 private:
     DistributorInterface& _distributor;
-    BucketSpaceStateMap _bucket_space_states;
+    BucketSpaceStateMap   _bucket_space_states;
 
 
 public:

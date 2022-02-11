@@ -26,7 +26,7 @@ public class HostResourceTest {
         TestService service = new TestService(root, 1);
 
         try {
-            service.initService(root.deployLogger());
+            service.initService(root.getDeployState());
         } catch (RuntimeException e) {
             assertTrue(e.getMessage().endsWith("No host found for service 'hostresourcetest$testservice0'. " +
                     "The hostalias is probably missing from hosts.xml."));

@@ -6,6 +6,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
@@ -43,7 +44,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testRankProfileInheritance() {
-        Schema schema = new Schema("test");
+        Schema schema = new Schema("test", MockApplicationPackage.createEmpty());
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
         SDDocumentType document = new SDDocumentType("test");
         SDField a = document.addField("a", DataType.STRING);
@@ -51,7 +52,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
         document.addField("b", DataType.STRING);
         schema.addDocument(document);
         RankProfile child = new RankProfile("child", schema, rankProfileRegistry, schema.rankingConstants());
-        child.setInherited("default");
+        child.inherit("default");
         rankProfileRegistry.add(child);
 
         Iterator<RankProfile.RankSetting> i = child.rankSettingIterator();
@@ -69,8 +70,8 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     public void requireThatIllegalInheritanceIsChecked() throws ParseException {
         try {
             RankProfileRegistry registry = new RankProfileRegistry();
-            SchemaBuilder builder = new SchemaBuilder(registry, setupQueryProfileTypes());
-            builder.importString(joinLines(
+            ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
+            builder.addSchema(joinLines(
                     "search test {",
                     "  document test { } ",
                     "  rank-profile p1 inherits notexist {}",
@@ -78,7 +79,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
             builder.build(true);
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("rank-profile 'p1' inherits 'notexist', but it does not exist anywhere in the inheritance of search 'test'.", e.getMessage());
+            assertEquals("rank-profile 'p1' inherits 'notexist', but this is not found in schema 'test'", e.getMessage());
         }
     }
 
@@ -86,8 +87,8 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     public void requireThatSelfInheritanceIsIllegal() throws ParseException {
         try {
             RankProfileRegistry registry = new RankProfileRegistry();
-            SchemaBuilder builder = new SchemaBuilder(registry, setupQueryProfileTypes());
-            builder.importString(joinLines(
+            ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
+            builder.addSchema(joinLines(
                     "schema test {",
                     "  document test { } ",
                     "  rank-profile self inherits self {}",
@@ -102,13 +103,13 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     @Test
     public void requireThatSelfInheritanceIsLegalWhenOverloading() throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(registry, setupQueryProfileTypes());
-        builder.importString(joinLines(
+        ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
+        builder.addSchema(joinLines(
                 "schema base {",
                 "  document base { } ",
                 "  rank-profile self inherits default {}",
                 "}"));
-        builder.importString(joinLines(
+        builder.addSchema(joinLines(
                 "schema test {",
                 "  document test inherits base { } ",
                 "  rank-profile self inherits self {}",
@@ -119,8 +120,8 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     @Test
     public void requireThatSidewaysInheritanceIsImpossible() throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(registry, setupQueryProfileTypes());
-        builder.importString(joinLines(
+        ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
+        builder.addSchema(joinLines(
                 "schema child1 {",
                 "  document child1 {",
                 "    field field1 type int {",
@@ -141,7 +142,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
                 "    }",
                 "  }",
                 "}\n"));
-        builder.importString(joinLines(
+        builder.addSchema(joinLines(
                 "schema child2 {",
                 "  document child2 {",
                 "    field field1 type int {",
@@ -165,15 +166,15 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
             builder.build(true);
             fail("Sideways inheritance should have been enforced");
         } catch (IllegalArgumentException e) {
-            assertEquals("rank-profile 'child' inherits 'parent', but it does not exist anywhere in the inheritance of search 'child1'.", e.getMessage());
+            assertEquals("rank-profile 'child' inherits 'parent', but this is not found in schema 'child1'", e.getMessage());
         }
     }
 
     @Test
-    public void requireThatDefaultCanAlwaysBeInherited() throws ParseException {
+    public void requireThatDefaultInheritingDefaultIsIgnored() throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(registry, setupQueryProfileTypes());
-        builder.importString(joinLines(
+        ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
+        builder.addSchema(joinLines(
                 "schema test {",
                 "  document test { } ",
                 "  rank-profile default inherits default {}",
@@ -185,8 +186,8 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     public void requireThatCyclicInheritanceIsIllegal() throws ParseException {
         try {
             RankProfileRegistry registry = new RankProfileRegistry();
-            SchemaBuilder builder = new SchemaBuilder(registry, setupQueryProfileTypes());
-            builder.importString(joinLines(
+            ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
+            builder.addSchema(joinLines(
                     "search test {",
                     "  document test { } ",
                     "  rank-profile a inherits b {}",
@@ -204,8 +205,8 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     public void requireThatRankProfilesCanInheritNotYetSeenProfiles() throws ParseException
     {
         RankProfileRegistry registry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(registry, setupQueryProfileTypes());
-        builder.importString(joinLines(
+        ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
+        builder.addSchema(joinLines(
                 "search test {",
                 "  document test { } ",
                 "  rank-profile p1 inherits not_yet_defined {}",
@@ -246,9 +247,9 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
 
     private void verifyTermwiseLimitAndSomeMoreIncludingInheritance(ModelContext.Properties deployProperties, String sd, Double termwiseLimit) throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(sd);
-        builder.build();
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(sd);
+        builder.build(true);
         Schema schema = builder.getSchema();
         AttributeFields attributeFields = new AttributeFields(schema);
         verifyRankProfile(rankProfileRegistry.get(schema, "parent"), attributeFields, deployProperties, termwiseLimit);
@@ -279,8 +280,8 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     @Test
     public void requireThatConfigIsDerivedForAttributeTypeSettings() throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(registry);
-        builder.importString(joinLines(
+        ApplicationBuilder builder = new ApplicationBuilder(registry);
+        builder.addSchema(joinLines(
                 "search test {",
                 "  document test { ",
                 "    field a type tensor(x[10]) { indexing: attribute }",
@@ -290,7 +291,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
                 "  rank-profile p1 {}",
                 "  rank-profile p2 {}",
                 "}"));
-        builder.build();
+        builder.build(true);
         Schema schema = builder.getSchema();
 
         assertEquals(4, registry.all().size());
@@ -303,14 +304,14 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     @Test
     public void requireThatDenseDimensionsMustBeBound() throws ParseException {
         try {
-            SchemaBuilder builder = new SchemaBuilder(new RankProfileRegistry());
-            builder.importString(joinLines(
+            ApplicationBuilder builder = new ApplicationBuilder(new RankProfileRegistry());
+            builder.addSchema(joinLines(
                     "search test {",
                     "  document test { ",
                     "    field a type tensor(x[]) { indexing: attribute }",
                     "  }",
                     "}"));
-            builder.build();
+            builder.build(true);
         }
         catch (IllegalArgumentException e) {
             assertEquals("Illegal type in field a type tensor(x[]): Dense tensor dimensions must have a size",
@@ -332,8 +333,8 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     @Test
     public void requireThatConfigIsDerivedForQueryFeatureTypeSettings() throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(registry, setupQueryProfileTypes());
-        builder.importString(joinLines(
+        ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
+        builder.addSchema(joinLines(
                 "search test {",
                 "  document test { } ",
                 "  rank-profile p1 {}",

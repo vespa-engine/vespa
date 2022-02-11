@@ -1,23 +1,25 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/docstore/filechunk.h>
 #include <vespa/searchlib/docstore/writeablefilechunk.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/cpu_usage.h>
+#include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <iomanip>
 #include <iostream>
 
 #include <vespa/log/log.h>
-#include <vespa/vespalib/util/compressionconfig.h>
 
 LOG_SETUP("file_chunk_test");
 
 using namespace search;
 
 using common::FileHeaderContext;
+using vespalib::CpuUsage;
 using vespalib::ThreadStackExecutor;
 
 struct MyFileHeaderContext : public FileHeaderContext {
@@ -136,12 +138,12 @@ struct WriteFixture : public FixtureBase {
         dir.cleanup(dirCleanup);
     }
     void flush() {
-        chunk.flush(true, serialNum);
+        chunk.flush(true, serialNum, CpuUsage::Category::WRITE);
         chunk.flushPendingChunks(serialNum);
     }
     WriteFixture &append(uint32_t lid) {
         vespalib::string data = getData(lid);
-        chunk.append(nextSerialNum(), lid, data.c_str(), data.size());
+        chunk.append(nextSerialNum(), lid, data.c_str(), data.size(), CpuUsage::Category::WRITE);
         return *this;
     }
     void updateLidMap(uint32_t docIdLimit) {

@@ -10,8 +10,9 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/executor.h>
+#include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/fastos/file.h>
@@ -20,6 +21,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".search.filechunk");
 
+using vespalib::CpuUsage;
 using vespalib::GenericHeader;
 using vespalib::getErrorString;
 
@@ -100,7 +102,6 @@ FileChunk::FileChunk(FileId fileId, NameId nameId, const vespalib::string & base
             _diskFootprint += idxFile.GetSize();
             _modificationTime = FileKit::getModificationTime(_idxFileName);
         } else {
-            dataFile.Close();
             throw SummaryException("Failed opening idx file", idxFile, VESPA_STRLOC);
         }
     }
@@ -304,8 +305,6 @@ FileChunk::getModificationTime() const
 
 namespace {
 
-using FutureChunk = std::future<Chunk::UP>;
-
 struct FixedParams {
     const IGetLid & db;
     IWriteData & dest;
@@ -337,29 +336,38 @@ appendChunks(FixedParams * args, Chunk::UP chunk)
 }
 
 void
-FileChunk::appendTo(vespalib::ThreadExecutor & executor, const IGetLid & db, IWriteData & dest,
-                    uint32_t numChunks, IFileChunkVisitorProgress *visitorProgress)
+FileChunk::appendTo(vespalib::Executor & executor, const IGetLid & db, IWriteData & dest,
+                    uint32_t numChunks, IFileChunkVisitorProgress *visitorProgress,
+                    vespalib::CpuUsage::Category cpu_category)
 {
     assert(frozen() || visitorProgress);
     vespalib::GenerationHandler::Guard lidReadGuard(db.getLidReadGuard());
     assert(numChunks <= getNumChunks());
     FixedParams fixedParams = {db, dest, lidReadGuard, getFileId().getId(), visitorProgress};
-    vespalib::BlockingThreadStackExecutor singleExecutor(1, 64_Ki, executor.getNumThreads()*2);
+    size_t limit = std::thread::hardware_concurrency();
+    vespalib::ArrayQueue<std::future<Chunk::UP>> queue;
     for (size_t chunkId(0); chunkId < numChunks; chunkId++) {
         std::promise<Chunk::UP> promisedChunk;
         std::future<Chunk::UP> futureChunk = promisedChunk.get_future();
-        executor.execute(vespalib::makeLambdaTask([promise = std::move(promisedChunk), chunkId, this]() mutable {
+        auto task = vespalib::makeLambdaTask([promise = std::move(promisedChunk), chunkId, this]() mutable {
             const ChunkInfo & cInfo(_chunkInfo[chunkId]);
             vespalib::DataBuffer whole(0ul, ALIGNMENT);
             FileRandRead::FSP keepAlive(_file->read(cInfo.getOffset(), whole, cInfo.getSize()));
             promise.set_value(std::make_unique<Chunk>(chunkId, whole.getData(), whole.getDataLen()));
-        }));
+        });
+        executor.execute(CpuUsage::wrap(std::move(task), cpu_category));
 
-        singleExecutor.execute(vespalib::makeLambdaTask([args = &fixedParams, chunk = std::move(futureChunk)]() mutable {
-            appendChunks(args, chunk.get());
-        }));
+        while (queue.size() >= limit) {
+            appendChunks(&fixedParams, queue.front().get());
+            queue.pop();
+        }
+
+        queue.push(std::move(futureChunk));
     }
-    singleExecutor.sync();
+    while ( ! queue.empty() ) {
+        appendChunks(&fixedParams, queue.front().get());
+        queue.pop();
+    }
     dest.close();
 }
 

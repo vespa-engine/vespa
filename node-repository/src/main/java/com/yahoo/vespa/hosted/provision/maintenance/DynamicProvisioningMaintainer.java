@@ -26,7 +26,6 @@ import com.yahoo.vespa.hosted.provision.NodesAndHosts;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
-import com.yahoo.vespa.hosted.provision.node.Nodes;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
@@ -205,7 +204,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
 
     private Map<String, Node> findSharedHosts(NodeList nodeList) {
         return nodeList.stream()
-                .filter(node -> Nodes.canAllocateTenantNodeTo(node, true))
+                .filter(node -> nodeRepository().nodes().canAllocateTenantNodeTo(node, true))
                 .filter(node -> node.reservedTo().isEmpty())
                 .filter(node -> node.exclusiveToApplicationId().isEmpty())
                 .collect(Collectors.toMap(Node::hostname, Function.identity()));
@@ -298,7 +297,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         int wantedGroups = 1;
 
         NodePrioritizer prioritizer = new NodePrioritizer(nodesAndHosts, applicationId, clusterSpec, nodeSpec, wantedGroups,
-                true, nodeRepository().nameResolver(), nodeRepository().resourcesCalculator(),
+                true, nodeRepository().nameResolver(), nodeRepository().nodes(), nodeRepository().resourcesCalculator(),
                 nodeRepository().spareCount());
         List<NodeCandidate> nodeCandidates = prioritizer.collect(List.of());
         MutableInteger index = new MutableInteger(0);

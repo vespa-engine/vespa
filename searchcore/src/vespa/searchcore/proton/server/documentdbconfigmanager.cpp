@@ -14,6 +14,7 @@
 #include <vespa/config-summarymap.h>
 #include <vespa/config/file_acquirer/file_acquirer.h>
 #include <vespa/config/common/configcontext.h>
+#include <vespa/config/retriever/configretriever.h>
 #include <vespa/config/helper/legacy.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-indexschema.h>
@@ -23,6 +24,7 @@
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/time/time_box.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/config/retriever/configsnapshot.hpp>
 #include <thread>
 #include <cassert>
 

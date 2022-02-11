@@ -297,5 +297,16 @@
     "fields": [
       "public final java.lang.String payload"
     ]
+  },
+  "com.yahoo.config.subscription.SubscriberClosedException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()"
+    ],
+    "fields": []
   }
 }

@@ -4,7 +4,10 @@ package com.yahoo.vespa.hosted.controller.restapi.filter;
 import com.auth0.jwt.JWT;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
 
@@ -16,6 +19,7 @@ import com.yahoo.restapi.Path;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
+import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
@@ -94,6 +98,15 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
         path.matches("/application/v4/tenant/{tenant}/application/{application}/{*}");
         Optional<ApplicationName> application = Optional.ofNullable(path.get("application")).map(ApplicationName::from);
 
+        final Optional<Zone> zone;
+        if(path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/{*}")) {
+            zone = Optional.of(new Zone(Environment.from(path.get("environment")), RegionName.from(path.get("region"))));
+        } else if(path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/{*}")) {
+            zone = Optional.of(new Zone(Environment.from(path.get("environment")), RegionName.from(path.get("region"))));
+        } else {
+            zone = Optional.empty();
+        }
+
         AthenzIdentity identity = principal.getIdentity();
 
         Set<Role> roleMemberships = new CopyOnWriteArraySet<>();
@@ -121,9 +134,20 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
             && ! tenant.get().name().value().equals("sandbox"))
             futures.add(executor.submit(() -> {
                 if (   tenant.get().type() == Tenant.Type.athenz
-                    && hasDeployerAccess(identity, ((AthenzTenant) tenant.get()).domain(), application.get()))
+                    && hasDeployerAccess(identity, ((AthenzTenant) tenant.get()).domain(), application.get(), zone))
                     roleMemberships.add(Role.buildService(tenant.get().name(), application.get()));
             }));
+
+        if (identity instanceof AthenzUser
+            && zone.isPresent()
+            && tenant.isPresent()
+            && application.isPresent()) {
+            Zone z = zone.get();
+            futures.add(executor.submit(() -> {
+                if (canDeployToManualZones(identity, ((AthenzTenant) tenant.get()).domain(), application.get(), z))
+                    roleMemberships.add(Role.hostedDeveloper(tenant.get().name()));
+            }));
+        }
 
         futures.add(executor.submit(() -> {
             if (athenz.hasSystemFlagsAccess(identity, /*dryrun*/false))
@@ -167,12 +191,22 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
         }
     }
 
-    private boolean hasDeployerAccess(AthenzIdentity identity, AthenzDomain tenantDomain, ApplicationName application) {
+    private boolean hasDeployerAccess(AthenzIdentity identity, AthenzDomain tenantDomain, ApplicationName application, Optional<Zone> zone) {
         try {
             return athenz.hasApplicationAccess(identity,
                                                ApplicationAction.deploy,
                                                tenantDomain,
-                                               application);
+                                               application,
+                                               zone);
+        } catch (ZmsClientException e) {
+            throw new RuntimeException("Failed to authorize operation:  (" + e.getMessage() + ")", e);
+        }
+    }
+
+    private boolean canDeployToManualZones(AthenzIdentity identity, AthenzDomain tenantDomain, ApplicationName application, Zone zone) {
+        if (! zone.environment().isManuallyDeployed()) return false;
+        try {
+            return athenz.hasApplicationAccess(identity, ApplicationAction.deploy, tenantDomain, application, Optional.of(zone));
         } catch (ZmsClientException e) {
             throw new RuntimeException("Failed to authorize operation:  (" + e.getMessage() + ")", e);
         }

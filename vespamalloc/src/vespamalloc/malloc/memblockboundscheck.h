@@ -9,7 +9,7 @@ namespace vespamalloc {
 class MemBlockBoundsCheckBaseTBase : public CommonT<5>
 {
 public:
-    typedef StackEntry<StackReturnEntry> Stack;
+    using Stack = StackEntry;
     void * rawPtr()          { return _ptr; }
     void *ptr()              {
         char *p((char*)_ptr);

@@ -31,32 +31,34 @@ FileHeader::taste(const vespalib::string &name,
                   const TuneFileSeqRead &tuneFileRead)
 {
     vespalib::FileHeader header;
-    FastOS_File file;
+    uint32_t headerLen;
+    uint64_t fileSize;
+    {
+        FastOS_File file;
 
-    if (tuneFileRead.getWantDirectIO()) {
-        file.EnableDirectIO();
-    }
-    bool res = file.OpenReadOnly(name.c_str());
-    if (!res) {
-        return false;
-    }
 
-    uint32_t headerLen = 0u;
-    uint64_t fileSize = file.GetSize();
-    try {
-        headerLen = header.readFile(file);
-        assert(headerLen >= header.getSize());
-        (void) headerLen;
-    } catch (vespalib::IllegalHeaderException &e) {
-        if (e.getMessage() != "Failed to read header info." &&
-            e.getMessage() != "Failed to verify magic bits.") {
-            LOG(error, "FileHeader::tastGeneric(\"%s\") exception: %s",
-                name.c_str(), e.getMessage().c_str());
+        if (tuneFileRead.getWantDirectIO()) {
+            file.EnableDirectIO();
         }
-        file.Close();
-        return false;
+        bool res = file.OpenReadOnly(name.c_str());
+        if (!res) {
+            return false;
+        }
+
+        fileSize = file.GetSize();
+        try {
+            headerLen = header.readFile(file);
+            assert(headerLen >= header.getSize());
+            (void) headerLen;
+        } catch (vespalib::IllegalHeaderException &e) {
+            if (e.getMessage() != "Failed to read header info." &&
+                e.getMessage() != "Failed to verify magic bits.") {
+                LOG(error, "FileHeader::tastGeneric(\"%s\") exception: %s",
+                    name.c_str(), e.getMessage().c_str());
+            }
+            return false;
+        }
     }
-    file.Close();
 
     _version = 1;
     _headerLen = headerLen;

@@ -34,7 +34,6 @@ public class ClusterResourceLimits {
 
     public static class Builder {
 
-        private final boolean enableFeedBlockInDistributor;
         private final boolean hostedVespa;
         private final double resourceLimitDisk;
         private final double resourceLimitMemory;
@@ -42,11 +41,9 @@ public class ClusterResourceLimits {
         private ResourceLimits.Builder ctrlBuilder = new ResourceLimits.Builder();
         private ResourceLimits.Builder nodeBuilder = new ResourceLimits.Builder();
 
-        public Builder(boolean enableFeedBlockInDistributor,
-                       boolean hostedVespa,
+        public Builder(boolean hostedVespa,
                        double resourceLimitDisk,
                        double resourceLimitMemory) {
-            this.enableFeedBlockInDistributor = enableFeedBlockInDistributor;
             this.hostedVespa = hostedVespa;
             this.resourceLimitDisk = resourceLimitDisk;
             this.resourceLimitMemory = resourceLimitMemory;
@@ -81,17 +78,15 @@ public class ClusterResourceLimits {
         }
 
         private void deriveLimits() {
-            if (enableFeedBlockInDistributor) {
-                // This also ensures that content nodes limits are derived according to the formula in calcContentNodeLimit().
-                considerSettingDefaultClusterControllerLimit(ctrlBuilder.getDiskLimit(),
-                                                             nodeBuilder.getDiskLimit(),
-                                                             ctrlBuilder::setDiskLimit,
-                                                             resourceLimitDisk);
-                considerSettingDefaultClusterControllerLimit(ctrlBuilder.getMemoryLimit(),
-                                                             nodeBuilder.getMemoryLimit(),
-                                                             ctrlBuilder::setMemoryLimit,
-                                                             resourceLimitMemory);
-            }
+            // This also ensures that content nodes limits are derived according to the formula in calcContentNodeLimit().
+            considerSettingDefaultClusterControllerLimit(ctrlBuilder.getDiskLimit(),
+                                                         nodeBuilder.getDiskLimit(),
+                                                         ctrlBuilder::setDiskLimit,
+                                                         resourceLimitDisk);
+            considerSettingDefaultClusterControllerLimit(ctrlBuilder.getMemoryLimit(),
+                                                         nodeBuilder.getMemoryLimit(),
+                                                         ctrlBuilder::setMemoryLimit,
+                                                         resourceLimitMemory);
 
             deriveClusterControllerLimit(ctrlBuilder.getDiskLimit(), nodeBuilder.getDiskLimit(), ctrlBuilder::setDiskLimit);
             deriveClusterControllerLimit(ctrlBuilder.getMemoryLimit(), nodeBuilder.getMemoryLimit(), ctrlBuilder::setMemoryLimit);

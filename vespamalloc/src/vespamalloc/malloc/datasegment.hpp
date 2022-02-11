@@ -39,6 +39,12 @@ DataSegment<MemBlockPtrT>::DataSegment() :
 }
 
 template<typename MemBlockPtrT>
+size_t
+DataSegment<MemBlockPtrT>::freeSize() const {
+    return _freeList.numFreeBlocks() * BlockSize;
+}
+
+template<typename MemBlockPtrT>
 void * DataSegment<MemBlockPtrT>::getBlock(size_t & oldBlockSize, SizeClassT sc)
 {
     const size_t minBlockSize = std::max(size_t(BlockSize), _osMemory.getMinBlockSize());
@@ -273,12 +279,10 @@ void DataSegment<MemBlockPtrT>::info(FILE * os, size_t level)
 {
     fprintf(os, "Start at %p, End at %p(%p) size(%ld) partialExtension(%ld) NextLogLimit(%lx) logLevel(%ld)\n",
             _osMemory.getStart(), _osMemory.getEnd(), sbrk(0), dataSize(), _partialExtension, _nextLogLimit, level);
-    size_t numFreeBlocks(0), numAllocatedBlocks(0);
-    {
-        // Guard sync(_mutex);
-        numFreeBlocks = _freeList.info(os, level);
-        _unMappedList.info(os, level);
-    }
+    size_t numAllocatedBlocks(0);
+    size_t numFreeBlocks = _freeList.numFreeBlocks();
+    _freeList.info(os);
+    _unMappedList.info(os);
     if (level >= 1) {
 #ifdef PRINT_ALOT
         SizeClassT oldSc(-17);
@@ -430,15 +434,25 @@ size_t DataSegment<MemBlockPtrT>::FreeListT<MaxCount>::lastBlock(size_t nextBloc
 
 template<typename MemBlockPtrT>
 template <int MaxCount>
-size_t DataSegment<MemBlockPtrT>::FreeListT<MaxCount>::info(FILE * os, int UNUSED(level))
+void DataSegment<MemBlockPtrT>::FreeListT<MaxCount>::info(FILE * os)
+{
+    for (size_t i=0; i < _count; i++) {
+        size_t index(_freeStartIndex[i]);
+        const BlockT & b = _blockList[index];
+        fprintf(os, "Free #%3ld block #%5ld chainlength %5d size %10lu\n",
+                i, index, b.freeChainLength(), size_t(b.freeChainLength())*BlockSize);
+    }
+}
+
+template<typename MemBlockPtrT>
+template <int MaxCount>
+size_t DataSegment<MemBlockPtrT>::FreeListT<MaxCount>::numFreeBlocks() const
 {
     size_t freeBlockCount(0);
     for (size_t i=0; i < _count; i++) {
         size_t index(_freeStartIndex[i]);
         const BlockT & b = _blockList[index];
         freeBlockCount += b.freeChainLength();
-        fprintf(os, "Free #%3ld block #%5ld chainlength %5d size %10lu\n",
-                i, index, b.freeChainLength(), size_t(b.freeChainLength())*BlockSize);
     }
     return freeBlockCount;
 }

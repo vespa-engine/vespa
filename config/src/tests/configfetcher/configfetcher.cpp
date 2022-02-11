@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/config/helper/configfetcher.h>
+#include <vespa/config/helper/configfetcher.hpp>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/vespalib/util/exception.h>
 #include "config-my.h"
@@ -125,7 +125,7 @@ namespace {
 struct ConfigFixture {
     MyConfigBuilder builder;
     ConfigSet set;
-    ConfigContext::SP context;
+    std::shared_ptr<ConfigContext> context;
     ConfigFixture() : builder(), set(), context() {
         set.addBuilder("cfgid", &builder);
         context = std::make_shared<ConfigContext>(set);

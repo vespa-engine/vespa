@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -57,6 +58,7 @@ public class DeploymentIssueReporter extends ControllerMaintainer {
     private List<Application> applications() {
         return ApplicationList.from(controller().applications().readable())
                               .withProjectId()
+                              .matching(appliaction -> appliaction.deploymentSpec().steps().stream().anyMatch(step -> step.concerns(Environment.prod)))
                               .asList();
     }
 

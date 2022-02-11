@@ -80,25 +80,6 @@ public:
      * @return current number of entries.
      **/
     uint32_t GetNumEntries() const { return _numEntries; }
-
-
-    /**
-     * Save the enumeration currently held by this object to file.
-     *
-     * @return success(true)/fail(false).
-     * @param filename name of save file.
-     **/
-    bool Save(const char *filename);
-
-
-    /**
-     * Load an enumeration from file. The loaded enumeration will
-     * replace the one currently held by this object.
-     *
-     * @return success(true)/fail(false).
-     * @param filename name of file to load.
-     **/
-    bool Load(const char *filename);
 };
 
 }

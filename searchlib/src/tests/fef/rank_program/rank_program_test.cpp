@@ -339,7 +339,7 @@ TEST_F("require that interpreted ranking expressions are always lazy", Fixture()
     f1.add_expr("rank", "if(docid<10,box(track(ivalue(1))),track(ivalue(2)))");
     f1.compile();
     EXPECT_EQUAL(7u, f1.program.num_executors());
-    EXPECT_EQUAL(8u, count_features(f1.program));
+    EXPECT_EQUAL(7u, count_features(f1.program));
     EXPECT_EQUAL(0u, count_const_features(f1.program));
     EXPECT_EQUAL(f1.track_cnt, 0u);
     EXPECT_EQUAL(f1.get(expr_feature("rank"),  5), 1.0);
@@ -364,8 +364,8 @@ TEST_F("require that lazy compiled ranking expressions are pure", Fixture()) {
 
 TEST_F("require that interpreted ranking expressions are pure", Fixture()) {
     f1.add_expr("rank", "box(value(7))").compile();
-    EXPECT_EQUAL(4u, count_features(f1.program));
-    EXPECT_EQUAL(4u, count_const_features(f1.program));
+    EXPECT_EQUAL(3u, count_features(f1.program));
+    EXPECT_EQUAL(3u, count_const_features(f1.program));
     EXPECT_EQUAL(f1.get(), 7.0);
 }
 

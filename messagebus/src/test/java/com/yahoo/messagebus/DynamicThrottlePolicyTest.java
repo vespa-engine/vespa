@@ -97,10 +97,10 @@ public class DynamicThrottlePolicyTest {
     /** Sort of a dummy test, as the conditions are perfect. In a more realistic scenario, below, the algorithm needs luck to climb this high. */
     @Test
     public void singlePolicySingleWorkerWithIncreasingParallelism() {
-        for (int i = 0; i < 4; i++) {
+        for (int exponent = 0; exponent < 4; exponent++) {
             CustomTimer timer = new CustomTimer();
             DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer);
-            int scaleFactor = (int) Math.pow(10, i);
+            int scaleFactor = (int) Math.pow(10, exponent);
             long operations = 3_000L * scaleFactor;
             int workPerSuccess = 6;
             int numberOfWorkers = 1;
@@ -120,10 +120,10 @@ public class DynamicThrottlePolicyTest {
     /** A more realistic test, where throughput gradually flattens with increasing window size, and with more variance in throughput. */
     @Test
     public void singlePolicyIncreasingWorkersWithNoParallelism() {
-        for (int i = 0; i < 4; i++) {
+        for (int exponent = 0; exponent < 4; exponent++) {
             CustomTimer timer = new CustomTimer();
             DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer);
-            int scaleFactor = (int) Math.pow(10, i);
+            int scaleFactor = (int) Math.pow(10, exponent);
             long operations = 2_000L * scaleFactor;
             // workPerSuccess determines the latency of the simulated server, which again determines the impact of the
             // synthetic attractors of the algorithm, around latencies which give (close to) integer log10(1 / latency).
@@ -143,14 +143,14 @@ public class DynamicThrottlePolicyTest {
             double maxMaxPending = numberOfWorkers * maximumTasksPerWorker;
             assertInRange(minMaxPending, summary.averagePending, maxMaxPending);
             assertInRange(minMaxPending, summary.averageWindows[0], maxMaxPending);
-            assertInRange(1, summary.inefficiency, 1 + 0.25 * i); // Even slower ramp-up.
+            assertInRange(1, summary.inefficiency, 1 + 0.25 * exponent); // Even slower ramp-up.
             assertInRange(0, summary.waste, 0);
         }
     }
 
     @Test
     public void twoWeightedPoliciesWithUnboundedTaskQueue() {
-        for (int i = 0; i < 10; i++) {
+        for (int repeat = 0; repeat < 3; repeat++) {
             long operations = 1_000_000;
             int workPerSuccess = 6 + (int) (30 * Math.random());
             int numberOfWorkers = 1 + (int) (10 * Math.random());
@@ -174,7 +174,7 @@ public class DynamicThrottlePolicyTest {
 
     @Test
     public void tenPoliciesVeryParallelServerWithShortTaskQueue() {
-        for (int i = 0; i < 10; i++) {
+        for (int repeat = 0; repeat < 2; repeat++) {
             long operations = 1_000_000;
             int workPerSuccess = 6;
             int numberOfWorkers = 6;

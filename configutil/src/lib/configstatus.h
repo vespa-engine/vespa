@@ -4,7 +4,7 @@
 #include "hostfilter.h"
 #include <vespa/config-model.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/config/config.h>
+#include <vespa/config/subscription/configuri.h>
 
 class ConfigStatus
 {

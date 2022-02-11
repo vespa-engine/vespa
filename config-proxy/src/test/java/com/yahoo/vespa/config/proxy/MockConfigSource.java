@@ -15,6 +15,7 @@ import java.util.Set;
  *
  * @author hmusum
  */
+@SuppressWarnings("removal") // TODO Vespa 8: remove
 class MockConfigSource extends ConfigSourceSet {
     private final HashMap<ConfigKey<?>, RawConfig> backing = new HashMap<>();
 

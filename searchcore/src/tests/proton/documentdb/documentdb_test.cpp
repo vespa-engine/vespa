@@ -6,7 +6,6 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
-#include <vespa/fastos/file.h>
 #include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
 #include <vespa/searchcore/proton/attribute/flushableattribute.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
@@ -35,6 +34,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/config/subscription/sourcespec.h>
 #include <iostream>
 
 using namespace cloud::config::filedistribution;

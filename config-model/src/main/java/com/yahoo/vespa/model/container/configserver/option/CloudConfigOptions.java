@@ -32,6 +32,7 @@ public interface CloudConfigOptions {
     Optional<String> environment();
     Optional<String> region();
     Optional<String> system();
+    default Optional<String> cloud() { return Optional.empty(); }
     Optional<Boolean> useVespaVersionInRequest();
     Optional<String> loadBalancerAddress();
     Optional<String> athenzDnsSuffix();

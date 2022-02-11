@@ -45,7 +45,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         this.configServerSpecs = configServerSpecs;
     }
 
-    List<Configserver> getConfigServersFromSpec(DeployLogger deployLogger, AbstractConfigProducer<?> parent) {
+    List<Configserver> getConfigServersFromSpec(DeployState deployState, AbstractConfigProducer<?> parent) {
         List<Configserver> configservers = new ArrayList<>();
         for (ConfigServerSpec spec : configServerSpecs) {
             HostSystem hostSystem = parent.hostSystem();
@@ -54,7 +54,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
             Configserver configserver = new Configserver(parent, spec.getHostName(), spec.getConfigServerPort());
             configserver.setHostResource(host);
             configserver.setBasePort(configserver.getWantedPort());
-            configserver.initService(deployLogger);
+            configserver.initService(deployState);
             configservers.add(configserver);
         }
         return configservers;

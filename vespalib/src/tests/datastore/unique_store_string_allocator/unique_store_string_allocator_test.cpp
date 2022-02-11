@@ -4,6 +4,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/datastore/buffer_stats.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/util/traits.h>
 #include <vector>
 
@@ -11,6 +12,10 @@ using namespace vespalib::datastore;
 using vespalib::MemoryUsage;
 using generation_t = vespalib::GenerationHandler::generation_t;
 using BufferStats = vespalib::datastore::test::BufferStats;
+using vespalib::alloc::MemoryAllocator;
+using vespalib::alloc::test::MemoryAllocatorObserver;
+using AllocStats = MemoryAllocatorObserver::Stats;
+
 
 namespace {
 
@@ -24,10 +29,12 @@ template <typename RefT = EntryRefT<22>>
 struct TestBase : public ::testing::Test {
     using EntryRefType = RefT;
 
+    AllocStats stats;
     UniqueStoreStringAllocator<EntryRefType> allocator;
     generation_t generation;
     TestBase()
-        : allocator(),
+        : stats(),
+          allocator(std::make_unique<MemoryAllocatorObserver>(stats)),
           generation(1)
     {}
     void assert_add(const char *input) {
@@ -170,6 +177,11 @@ TEST_F(StringTest, free_list_is_never_used_for_move)
     assert_buffer_state(ref2, BufferStats().used(4).hold(0).dead(2).extra_used(2002));
 }
 
+TEST_F(StringTest, provided_memory_allocator_is_used)
+{
+    EXPECT_EQ(AllocStats(18, 0), stats);
+}
+
 TEST_F(SmallOffsetStringTest, new_underlying_buffer_is_allocated_when_current_is_full)
 {
     uint32_t first_buffer_id = get_buffer_id(add(small.c_str()));
@@ -184,6 +196,7 @@ TEST_F(SmallOffsetStringTest, new_underlying_buffer_is_allocated_when_current_is
         uint32_t buffer_id = get_buffer_id(add(small.c_str()));
         EXPECT_EQ(second_buffer_id, buffer_id);
     }
+    EXPECT_LT(18, stats.alloc_cnt);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

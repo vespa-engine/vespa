@@ -54,7 +54,7 @@ template<>
 vespalib::string convertValue(const ::vespalib::slime::Inspector & __inspector) { return __inspector.asString().make_string(); }
 
 void
-requireValid(const vespalib::string & __fieldName, const ::vespalib::slime::Inspector & __inspector) {
+requireValid(vespalib::stringref __fieldName, const ::vespalib::slime::Inspector & __inspector) {
     if (!__inspector.valid()) {
         throw ::config::InvalidConfigException("Value for '" + __fieldName + "' required but not found");
     }

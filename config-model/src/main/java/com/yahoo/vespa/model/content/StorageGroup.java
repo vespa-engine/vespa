@@ -211,7 +211,7 @@ public class StorageGroup {
             Optional<ModelElement> nodes = getNodes(clusterElement);
 
             if (group.isPresent() && nodes.isPresent())
-                throw new IllegalStateException("Both group and nodes exists, only one of these tags is legal");
+                throw new IllegalArgumentException("Both <group> and <nodes> is specified: Only one of these tags can be used in the same configuration");
             if (group.isPresent() && (group.get().stringAttribute("name") != null || group.get().integerAttribute("distribution-key") != null))
                     deployState.getDeployLogger().logApplicationPackage(Level.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
 
@@ -280,15 +280,13 @@ public class StorageGroup {
             /** The nodes explicitly specified as a nodes tag in this group, or empty if none */
             private final Optional<NodesSpecification> nodeRequirement;
 
-            private final DeployLogger deployLogger;
 
             private GroupBuilder(StorageGroup storageGroup, List<GroupBuilder> subGroups, List<XmlNodeBuilder> nodeBuilders,
-                                 Optional<NodesSpecification> nodeRequirement, DeployLogger deployLogger) {
+                                 Optional<NodesSpecification> nodeRequirement) {
                 this.storageGroup = storageGroup;
                 this.subGroups = subGroups;
                 this.nodeBuilders = nodeBuilders;
                 this.nodeRequirement = nodeRequirement;
-                this.deployLogger = deployLogger;
             }
 
             /**
@@ -319,11 +317,11 @@ public class StorageGroup {
                 StorageNode searchNode = new StorageNode(deployState.getProperties(), parent.getStorageCluster(), 1.0, distributionKey , false);
                 searchNode.setHostResource(parent.hostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC));
                 PersistenceEngine provider = parent.getPersistence().create(deployState, searchNode, storageGroup, null);
-                searchNode.initService(deployLogger);
+                searchNode.initService(deployState);
 
                 Distributor distributor = new Distributor(deployState.getProperties(), parent.getDistributorNodes(), distributionKey, null, provider);
                 distributor.setHostResource(searchNode.getHostResource());
-                distributor.initService(deployLogger);
+                distributor.initService(deployState);
                 return searchNode;
             }
             
@@ -339,7 +337,7 @@ public class StorageGroup {
                     throw new IllegalArgumentException("Specifying individual groups is not supported on hosted applications");
                 Map<HostResource, ClusterMembership> hostMapping =
                         nodeRequirement.isPresent() ?
-                        provisionHosts(nodeRequirement.get(), owner.getStorageCluster().getClusterName(), owner.getRoot().hostSystem(), deployLogger) :
+                        provisionHosts(nodeRequirement.get(), owner.getStorageCluster().getClusterName(), owner.getRoot().hostSystem(), deployState.getDeployLogger()) :
                         Collections.emptyMap();
 
                 Map<Optional<ClusterSpec.Group>, Map<HostResource, ClusterMembership>> hostGroups = collectAllocatedSubgroups(hostMapping);
@@ -450,7 +448,7 @@ public class StorageGroup {
             else // Nodes or groups explicitly listed - resolve in GroupBuilder
                 nodeRequirement = Optional.empty();
 
-            return new GroupBuilder(group, subGroups, explicitNodes, nodeRequirement, context.getDeployLogger());
+            return new GroupBuilder(group, subGroups, explicitNodes, nodeRequirement);
         }
 
         private Optional<String> childAsString(Optional<ModelElement> element, String childTagName) {
@@ -503,13 +501,13 @@ public class StorageGroup {
         private static StorageNode createStorageNode(DeployState deployState, ContentCluster parent, HostResource hostResource, StorageGroup parentGroup, ClusterMembership clusterMembership) {
             StorageNode sNode = new StorageNode(deployState.getProperties(), parent.getStorageCluster(), null, clusterMembership.index(), clusterMembership.retired());
             sNode.setHostResource(hostResource);
-            sNode.initService(deployState.getDeployLogger());
+            sNode.initService(deployState);
 
             // TODO: Supplying null as XML is not very nice
             PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, parentGroup, null);
             Distributor d = new Distributor(deployState.getProperties(), parent.getDistributorNodes(), clusterMembership.index(), null, provider);
             d.setHostResource(sNode.getHostResource());
-            d.initService(deployState.getDeployLogger());
+            d.initService(deployState);
             return sNode;
         }
     }

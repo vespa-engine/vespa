@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.derived;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.io.IOUtils;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -19,10 +19,10 @@ public class SchemaInheritanceTestCase extends AbstractExportingTestCase {
     @Test
     public void testIt() throws IOException, ParseException {
         try {
-            SchemaBuilder builder = SchemaBuilder.createFromDirectory("src/test/derived/schemainheritance/",
-                                                                      new MockFileRegistry(),
-                                                                      new TestableDeployLogger(),
-                                                                      new TestProperties());
+            ApplicationBuilder builder = ApplicationBuilder.createFromDirectory("src/test/derived/schemainheritance/",
+                                                                                  new MockFileRegistry(),
+                                                                                  new TestableDeployLogger(),
+                                                                                  new TestProperties());
             derive("schemainheritance", builder, builder.getSchema("child"));
             assertCorrectConfigFiles("schemainheritance");
         }

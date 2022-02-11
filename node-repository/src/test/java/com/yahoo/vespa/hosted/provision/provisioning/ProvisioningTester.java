@@ -43,6 +43,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider;
+import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
 
@@ -80,7 +81,6 @@ public class ProvisioningTester {
     private final NodeFlavors nodeFlavors;
     private final ManualClock clock;
     private final NodeRepository nodeRepository;
-    private final Orchestrator orchestrator;
     private final NodeRepositoryProvisioner provisioner;
     private final CapacityPolicies capacityPolicies;
     private final ProvisionLogger provisionLogger;
@@ -114,10 +114,10 @@ public class ProvisioningTester {
                                                  Optional.empty(),
                                                  flagSource,
                                                  new MemoryMetricsDb(clock),
+                                                 orchestrator,
                                                  true,
                                                  spareCount,
                                                  1000);
-        this.orchestrator = orchestrator;
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository,
                                                          zone,
                                                          provisionServiceProvider,
@@ -144,7 +144,7 @@ public class ProvisioningTester {
 
     public void advanceTime(TemporalAmount duration) { clock.advance(duration); }
     public NodeRepository nodeRepository() { return nodeRepository; }
-    public Orchestrator orchestrator() { return orchestrator; }
+    public Orchestrator orchestrator() { return nodeRepository.orchestrator(); }
     public ManualClock clock() { return clock; }
     public NodeRepositoryProvisioner provisioner() { return provisioner; }
     public LoadBalancerServiceMock loadBalancerService() { return loadBalancerService; }
@@ -689,20 +689,13 @@ public class ProvisioningTester {
         }
 
         public ProvisioningTester build() {
-            Orchestrator orchestrator = Optional.ofNullable(this.orchestrator)
-                    .orElseGet(() -> {
-                        Orchestrator orch = mock(Orchestrator.class);
-                        doThrow(new RuntimeException()).when(orch).acquirePermissionToRemove(any());
-                        return orch;
-                    });
-
             return new ProvisioningTester(Optional.ofNullable(curator).orElseGet(MockCurator::new),
                                           new NodeFlavors(Optional.ofNullable(flavorsConfig).orElseGet(ProvisioningTester::createConfig)),
                                           resourcesCalculator,
                                           Optional.ofNullable(zone).orElseGet(Zone::defaultZone),
                                           Optional.ofNullable(nameResolver).orElseGet(() -> new MockNameResolver().mockAnyLookup()),
                                           defaultImage,
-                                          orchestrator,
+                                          Optional.ofNullable(orchestrator).orElseGet(OrchestratorMock::new),
                                           hostProvisioner,
                                           new LoadBalancerServiceMock(),
                                           Optional.ofNullable(flagSource).orElseGet(InMemoryFlagSource::new),

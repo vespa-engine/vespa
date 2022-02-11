@@ -7,6 +7,7 @@ import com.yahoo.container.plugin.classanalysis.sampleclasses.Derived;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Dummy;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Fields;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Interface1;
+import com.yahoo.container.plugin.classanalysis.sampleclasses.Interface3;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Methods;
 import org.junit.Test;
 
@@ -24,6 +25,7 @@ import static org.junit.Assert.assertTrue;
  * @author Tony Vaagenes
  */
 public class AnalyzeMethodBodyTest {
+
     @Test
     public void require_that_class_of_locals_are_included() {
         assertTrue(analyzeClass(Methods.class).getReferencedClasses().contains(name(Base.class)));
@@ -62,6 +64,11 @@ public class AnalyzeMethodBodyTest {
     @Test
     public void require_that_container_generic_parameters_are_included() {
         assertTrue(analyzeClass(Methods.class).getReferencedClasses().contains(name(Dummy.class)));
+    }
+
+    @Test
+    public void require_that_functional_interface_usage_is_included() {
+        assertTrue(analyzeClass(Methods.class).getReferencedClasses().contains(name(Interface3.class)));
     }
 
     @Test

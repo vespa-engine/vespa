@@ -13,6 +13,9 @@ import java.util.List;
 public interface ComponentDeconstructor {
 
     /** Deconstructs the given components in order, then the given bundles. */
-    void deconstruct(List<Object> components, Collection<Bundle> bundles);
+    void deconstruct(long generation, List<Object> components, Collection<Bundle> bundles);
+
+    /** Wait for all previous destruction tasks to complete */
+    default void shutdown() {}
 
 }

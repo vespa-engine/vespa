@@ -117,16 +117,26 @@
       {
         "at": 14503000,
         "type": "info",
+        "message": "Waiting for convergence of 1 services across 1 nodes"
+      },
+      {
+        "at": 14503000,
+        "type": "info",
+        "message": "1 application services upgrading"
+      },
+      {
+        "at": 14503000,
+        "type": "debug",
         "message": "host-tenant:application:default-staging.us-east-3: unorchestrated"
       },
       {
         "at": 14503000,
-        "type": "info",
+        "type": "debug",
         "message": "--- platform vespa/vespa:6.1"
       },
       {
         "at": 14503000,
-        "type": "info",
+        "type": "debug",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
@@ -150,7 +160,7 @@
       }
     ]
   },
-  "lastId": 27,
+  "lastId": 29,
   "steps": {
     "deployTester": {
       "status": "succeeded",

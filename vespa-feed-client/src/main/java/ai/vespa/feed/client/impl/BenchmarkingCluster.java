@@ -74,8 +74,8 @@ public class BenchmarkingCluster implements Cluster {
                 return getStats();
             }
         }
-        catch (InterruptedException | ExecutionException ignored) {
-            throw new RuntimeException(ignored);
+        catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
         }
     }
 

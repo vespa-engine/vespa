@@ -7,6 +7,7 @@
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/fastlib/io/bufferedfile.h>
 #include <cassert>
 
 namespace search::diskindex {
@@ -23,24 +24,19 @@ readHeader(vespalib::FileHeader &h,
     Fast_BufferedFile file(32_Ki);
     file.OpenReadOnly(name.c_str());
     h.readFile(file);
-    file.Close();
 }
 
 }
 
 BitVectorFileWrite::BitVectorFileWrite(BitVectorKeyScope scope)
     : BitVectorIdxFileWrite(scope),
-      _datFile(nullptr),
+      _datFile(),
       _datHeaderLen(0)
 {
 }
 
 
-BitVectorFileWrite::~BitVectorFileWrite()
-{
-    // No implicit close() call, but cleanup memory allocations.
-    delete _datFile;
-}
+BitVectorFileWrite::~BitVectorFileWrite() = default;
 
 
 void
@@ -51,12 +47,11 @@ BitVectorFileWrite::open(const vespalib::string &name,
 {
     vespalib::string datname = name + ".bdat";
 
-    assert(_datFile == nullptr);
+    assert( ! _datFile);
 
     Parent::open(name, docIdLimit, tuneFileWrite, fileHeaderContext);
 
-    FastOS_FileInterface *datfile = new FastOS_File;
-    _datFile = new Fast_BufferedFile(datfile);
+    _datFile = std::make_unique<Fast_BufferedFile>(new FastOS_File);
     if (tuneFileWrite.getWantSyncWrites()) {
         _datFile->EnableSyncWrites();
     }
@@ -116,13 +111,13 @@ BitVectorFileWrite::updateDatHeader(uint64_t fileBitSize)
     h.putTag(Tag("numKeys", _numKeys));
     h.putTag(Tag("frozen", 1));
     h.putTag(Tag("fileBitSize", fileBitSize));
-    _datFile->Flush();
-    _datFile->Sync();
+    bool sync_ok = _datFile->Sync();
+    assert(sync_ok);
     assert(h.getSize() == _datHeaderLen);
     _datFile->SetPosition(0);
     h.writeFile(*_datFile);
-    _datFile->Flush();
-    _datFile->Sync();
+    sync_ok = _datFile->Sync();
+    assert(sync_ok);
 }
 
 
@@ -151,7 +146,8 @@ BitVectorFileWrite::sync()
 {
     flush();
     Parent::syncCommon();
-    _datFile->Sync();
+    bool sync_ok = _datFile->Sync();
+    assert(sync_ok);
 }
 
 
@@ -168,10 +164,10 @@ BitVectorFileWrite::close()
             (void) bitmapbytes;
             _datFile->alignEndForDirectIO();
             updateDatHeader(pos * 8);
-            _datFile->Close();
+            bool close_ok = _datFile->Close();
+            assert(close_ok);
         }
-        delete _datFile;
-        _datFile = nullptr;
+        _datFile.reset();
     }
     Parent::close();
 }

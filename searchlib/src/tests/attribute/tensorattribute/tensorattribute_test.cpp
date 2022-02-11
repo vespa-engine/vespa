@@ -681,7 +681,6 @@ Fixture::get_file_header()
     vespalib::string file_name = attr_name + ".dat";
     EXPECT_TRUE(file.OpenReadOnly(file_name.c_str()));
     (void) header.readFile(file);
-    file.Close();
     return header;
 }
 

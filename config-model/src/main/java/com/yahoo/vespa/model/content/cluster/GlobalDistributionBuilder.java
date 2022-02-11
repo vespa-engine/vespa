@@ -5,10 +5,10 @@ import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-
-import static java.util.stream.Collectors.toSet;
+import java.util.stream.Collectors;
 
 /**
  * Determines the set of document types that are configured to be globally distributed.
@@ -32,7 +32,7 @@ public class GlobalDistributionBuilder {
                 .filter(GlobalDistributionBuilder::isGloballyDistributed)
                 .map(GlobalDistributionBuilder::getDocumentName)
                 .map(this::getDocumentType)
-                .collect(toSet());
+                .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
     }
 
     private static boolean isGloballyDistributed(ModelElement e) {

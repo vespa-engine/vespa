@@ -76,12 +76,12 @@ public class SDDocumentTypeOrderer {
             SDDocumentType inherited;
             if (type.isStruct()) {
                 inherited = owningDocument.allTypes().get(new NewDocumentType.Name(name.getName()));
-                if (inherited == null) throw new IllegalStateException("Struct '" + name + "' not found in " + owningDocument);
+                if (inherited == null) throw new IllegalArgumentException("Struct '" + name + "' not found in " + owningDocument);
                 process(inherited, owningDocument);
             }
             else {
                 inherited = createdSDTypes.get(name);
-                if (inherited == null) throw new IllegalStateException("Document type '" + name + "' not found");
+                if (inherited == null) throw new IllegalArgumentException("Document type '" + name + "' not found");
                 process(inherited, inherited);
             }
             type.inherit(inherited);

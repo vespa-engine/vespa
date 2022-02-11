@@ -44,7 +44,7 @@ public class ContainerTest extends ContainerTestBase {
         ComponentTakingConfig component = createComponentTakingConfig(getNewComponentGraph(container));
         assertEquals("myString", component.config.stringVal());
 
-        container.shutdownConfigurer();
+        container.shutdownConfigRetriever();
     }
 
     @Test
@@ -66,7 +66,7 @@ public class ContainerTest extends ContainerTestBase {
         ComponentTakingConfig component2 = createComponentTakingConfig(newComponentGraph);
         assertEquals("reconfigured", component2.config.stringVal());
 
-        container.shutdownConfigurer();
+        container.shutdownConfigRetriever();
     }
 
     @Test
@@ -90,7 +90,7 @@ public class ContainerTest extends ContainerTestBase {
         assertNotNull(ComponentGraph.getNode(newGraph, "id1"));
         assertNotNull(ComponentGraph.getNode(newGraph, "id2"));
 
-        container.shutdownConfigurer();
+        container.shutdownConfigRetriever();
     }
 
     //@Test TODO
@@ -219,7 +219,7 @@ public class ContainerTest extends ContainerTestBase {
     public void providers_are_destructed() {
         writeBootstrapConfigs("id1", DestructableProvider.class);
 
-        ComponentDeconstructor deconstructor = (components, bundles) -> {
+        ComponentDeconstructor deconstructor = (generation, components, bundles) -> {
             components.forEach(component -> {
                 if (component instanceof AbstractComponent) {
                     ((AbstractComponent) component).deconstruct();
@@ -312,7 +312,7 @@ public class ContainerTest extends ContainerTestBase {
 
     public static class TestDeconstructor implements ComponentDeconstructor {
         @Override
-        public void deconstruct(List<Object> components, Collection<Bundle> bundles) {
+        public void deconstruct(long generation, List<Object> components, Collection<Bundle> bundles) {
             components.forEach(component -> {
                 if (component instanceof DestructableComponent) {
                     DestructableComponent vespaComponent = (DestructableComponent) component;
@@ -333,11 +333,13 @@ public class ContainerTest extends ContainerTestBase {
     }
 
     ComponentGraph getNewComponentGraph(Container container, ComponentGraph oldGraph) {
-        return container.getNewComponentGraph(oldGraph, Guice.createInjector(), true);
+        Container.ComponentGraphResult result = container.waitForNextGraphGeneration(oldGraph, Guice.createInjector(), true);
+        result.oldComponentsCleanupTask().run();
+        return result.newGraph();
     }
 
     ComponentGraph getNewComponentGraph(Container container) {
-        return container.getNewComponentGraph(new ComponentGraph(), Guice.createInjector(), true);
+        return container.waitForNextGraphGeneration(new ComponentGraph(), Guice.createInjector(), true).newGraph();
     }
 
     private ComponentTakingConfig createComponentTakingConfig(ComponentGraph componentGraph) {

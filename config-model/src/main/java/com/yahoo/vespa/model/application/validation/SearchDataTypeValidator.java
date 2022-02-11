@@ -11,11 +11,11 @@ import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
-import com.yahoo.vespa.model.search.NamedSchema;
 
 import java.util.List;
 
@@ -35,26 +35,26 @@ public class SearchDataTypeValidator extends Validator {
                 continue;
             }
             for (AbstractSearchCluster.SchemaSpec spec : cluster.getLocalSDS()) {
-                SDDocumentType docType = spec.getSearchDefinition().getSearch().getDocument();
+                SDDocumentType docType = spec.getSchema().getDocument();
                 if (docType == null) {
                     continue;
                 }
-                validateDocument(cluster, spec.getSearchDefinition(), docType);
+                validateDocument(cluster, spec.getSchema(), docType);
             }
         }
     }
 
-    private void validateDocument(AbstractSearchCluster cluster, NamedSchema def, SDDocumentType doc) {
+    private void validateDocument(AbstractSearchCluster cluster, Schema schema, SDDocumentType doc) {
         for (SDDocumentType child : doc.getTypes()) {
-            validateDocument(cluster, def, child);
+            validateDocument(cluster, schema, child);
         }
         for (Field field : doc.fieldSet()) {
             DataType fieldType = field.getDataType();
-            disallowIndexingOfMaps(cluster, def, field);
+            disallowIndexingOfMaps(cluster, schema, field);
             if ( ! isSupportedInSearchClusters(fieldType)) {
                 throw new IllegalArgumentException("Field type '" + fieldType.getName() + "' is illegal for search " +
-                                                   "clusters (field '" + field.getName() + "' in definition '" +
-                                                   def.getName() + "' for cluster '" + cluster.getClusterName() + "').");
+                                                   "clusters (field '" + field.getName() + "' in schema '" +
+                                                   schema.getName() + "' for cluster '" + cluster.getClusterName() + "').");
             }
         }
     }
@@ -84,12 +84,12 @@ public class SearchDataTypeValidator extends Validator {
         }
     }
 
-    private void disallowIndexingOfMaps(AbstractSearchCluster cluster, NamedSchema def, Field field) {
+    private void disallowIndexingOfMaps(AbstractSearchCluster cluster, Schema schema, Field field) {
         DataType fieldType = field.getDataType();
         if ((fieldType instanceof MapDataType) && (((SDField) field).doesIndexing())) {
             throw new IllegalArgumentException("Field type '" + fieldType.getName() + "' cannot be indexed for search " +
                                                "clusters (field '" + field.getName() + "' in definition '" +
-                                               def.getName() + "' for cluster '" + cluster.getClusterName() + "').");
+                                               schema.getName() + "' for cluster '" + cluster.getClusterName() + "').");
         }
     }
 }

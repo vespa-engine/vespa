@@ -235,18 +235,18 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     private static final Map<String, CompoundName> propertyAliases;
     static {
         Map<String,CompoundName> propertyAliasesBuilder = new HashMap<>();
-        addAliases(Query.getArgumentType(), propertyAliasesBuilder);
-        addAliases(Ranking.getArgumentType(), propertyAliasesBuilder);
-        addAliases(Model.getArgumentType(), propertyAliasesBuilder);
-        addAliases(Presentation.getArgumentType(), propertyAliasesBuilder);
-        addAliases(Select.getArgumentType(), propertyAliasesBuilder);
+        addAliases(Query.getArgumentType(), CompoundName.empty, propertyAliasesBuilder);
         propertyAliases = ImmutableMap.copyOf(propertyAliasesBuilder);
     }
-    private static void addAliases(QueryProfileType arguments, Map<String, CompoundName> aliases) {
-        CompoundName prefix = getPrefix(arguments);
+    private static void addAliases(QueryProfileType arguments, CompoundName prefix, Map<String, CompoundName> aliases) {
         for (FieldDescription field : arguments.fields().values()) {
             for (String alias : field.getAliases())
                 aliases.put(alias, prefix.append(field.getName()));
+            if (field.getType() instanceof QueryProfileFieldType) {
+                var type = ((QueryProfileFieldType) field.getType()).getQueryProfileType();
+                if (type != null)
+                    addAliases(type, prefix.append(type.getComponentIdAsCompoundName()), aliases);
+            }
         }
     }
 
@@ -1048,6 +1048,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         return new SessionId(requestId, getRanking().getProfile());
     }
 
+    @Deprecated // TODO: Remove on Vespa 8
     public boolean hasEncodableProperties() {
         if ( ! ranking.getProperties().isEmpty()) return true;
         if ( ! ranking.getFeatures().isEmpty()) return true;
@@ -1064,39 +1065,29 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * @param buffer the buffer to encode to
      * @param encodeQueryData true to encode all properties, false to only include session information, not actual query data
      * @return the encoded length
+     * @deprecated do not use
      */
+    @Deprecated // TODO: Remove on Vespa 8
     public int encodeAsProperties(ByteBuffer buffer, boolean encodeQueryData) {
         // Make sure we don't encode anything here if we have turned the property feature off
         // Due to sendQuery we sometimes end up turning this feature on and then encoding a 0 int as the number of
         // property maps - that's ok (probably we should simplify by just always turning the feature on)
         if (! hasEncodableProperties()) return 0;
-
         int start = buffer.position();
-
         int mapCountPosition = buffer.position();
         buffer.putInt(0); // map count will go here
-
         int mapCount = 0;
-
-        // TODO: Push down
         mapCount += ranking.getProperties().encode(buffer, encodeQueryData);
         if (encodeQueryData) {
             mapCount += ranking.getFeatures().encode(buffer);
-
-            // TODO: Push down
             if (presentation.getHighlight() != null) {
                 mapCount += MapEncoder.encodeMultiMap(Highlight.HIGHLIGHTTERMS, presentation.getHighlight().getHighlightTerms(), buffer);
             }
-
-            // TODO: Push down
             mapCount += MapEncoder.encodeMap("model", createModelMap(), buffer);
         }
         mapCount += MapEncoder.encodeSingleValue(DocumentDatabase.MATCH_PROPERTY, DocumentDatabase.SEARCH_DOC_TYPE_KEY, model.getDocumentDb(), buffer);
-
         mapCount += MapEncoder.encodeMap("caches", createCacheSettingMap(), buffer);
-
         buffer.putInt(mapCountPosition, mapCount);
-
         return buffer.position() - start;
     }
 
@@ -1126,7 +1117,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /**
      * Prepares this for binary serialization.
-     * <p>
+     *
      * This must be invoked after all changes have been made to this query before it is passed
      * on to a receiving backend. Calling it is somewhat expensive, so it should only happen once.
      * If a prepared query is cloned, it stays prepared.

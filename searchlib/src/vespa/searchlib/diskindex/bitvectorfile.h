@@ -2,12 +2,13 @@
 
 #pragma once
 
-#include <vespa/fastlib/io/bufferedfile.h>
+#include "bitvectoridxfile.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/allocator.h>
-#include "bitvectoridxfile.h"
+
+class Fast_BufferedFile;
 
 namespace search::diskindex {
 
@@ -16,7 +17,7 @@ class BitVectorFileWrite : public BitVectorIdxFileWrite
 private:
     using Parent = BitVectorIdxFileWrite;
 
-    Fast_BufferedFile *_datFile;
+    std::unique_ptr<Fast_BufferedFile> _datFile;
 public:
 
 private:
@@ -32,13 +33,13 @@ public:
 
     void open(const vespalib::string &name, uint32_t docIdLimit,
             const TuneFileSeqWrite &tuneFileWrite,
-            const common::FileHeaderContext &fileHeaderContext);
+            const common::FileHeaderContext &fileHeaderContext) override;
 
 
     void addWordSingle(uint64_t wordNum, const BitVector &bitVector);
-    void flush();
-    void sync();
-    void close();
+    void flush() override;
+    void sync() override;
+    void close() override;
     void makeDatHeader(const common::FileHeaderContext &fileHeaderContext);
     void updateDatHeader(uint64_t fileBitSize);
 };

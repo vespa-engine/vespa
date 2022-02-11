@@ -22,6 +22,7 @@ import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.ReferenceFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
+import com.yahoo.document.internal.GeoPosType;
 import com.yahoo.document.json.readers.DocumentParseInfo;
 import com.yahoo.document.json.readers.VespaJsonDocumentReader;
 import com.yahoo.tensor.TensorType;
@@ -93,6 +94,7 @@ public class JsonWriterTestCase {
         DocumentType x = new DocumentType("testmultipos");
         DataType d = new ArrayDataType(PositionDataType.INSTANCE);
         x.addField(new Field("multipos", d));
+        x.addField(new Field("geopos", new ArrayDataType(new GeoPosType(8))));
         types.registerDocumentType(x);
     }
 
@@ -100,6 +102,7 @@ public class JsonWriterTestCase {
         DocumentType x = new DocumentType("testsinglepos");
         DataType d = PositionDataType.INSTANCE;
         x.addField(new Field("singlepos", d));
+        x.addField(new Field("geopos", new GeoPosType(8)));
         types.registerDocumentType(x);
     }
 
@@ -202,11 +205,13 @@ public class JsonWriterTestCase {
     @Test
     public void singlePosTest() throws IOException {
         roundTripEquality("id:unittest:testsinglepos::bamf", "{ \"singlepos\": \"N60.222333;E10.12\" }");
+        roundTripEquality("id:unittest:testsinglepos::bamf", "{ \"geopos\": { \"lat\": 60.222333, \"lng\": 10.12 } }");
     }
 
     @Test
     public void multiPosTest() throws IOException {
         roundTripEquality("id:unittest:testmultipos::bamf", "{ \"multipos\": [ \"N0.0;E0.0\", \"S1.1;W1.1\", \"N10.2;W122.2\" ] }");
+        roundTripEquality("id:unittest:testmultipos::bamf", "{ \"geopos\": [ {  \"lat\": -1.5, \"lng\": -1.5 }, {  \"lat\": 63.4, \"lng\": 10.4 }, { \"lat\": 0.0, \"lng\": 0.0 } ] }");
     }
 
     @Test

@@ -12,8 +12,11 @@ vespa_add_library(vespalib_vespalib_datastore OBJECT
     entryref.cpp
     entry_ref_filter.cpp
     fixed_size_hash_map.cpp
+    large_array_buffer_type.cpp
     sharded_hash_map.cpp
+    small_array_buffer_type.cpp
     unique_store.cpp
+    unique_store_buffer_type.cpp
     unique_store_string_allocator.cpp
     DEPENDS
 )

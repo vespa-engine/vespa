@@ -2,10 +2,8 @@
 #pragma once
 
 #include <vespa/searchlib/index/dictionaryfile.h>
-#include <vespa/searchlib/bitcompression/compression.h>
-#include <vespa/searchlib/bitcompression/countcompression.h>
+#include <vespa/searchlib/index/postinglistparams.h>
 #include <vespa/searchlib/bitcompression/pagedict4.h>
-#include <vespa/fastos/file.h>
 
 namespace vespalib { class GenericHeader; }
 
@@ -16,45 +14,19 @@ namespace search::diskindex {
  */
 class PageDict4FileSeqRead : public index::DictionaryFileSeqRead
 {
-    typedef bitcompression::PostingListCountFileDecodeContext DC;
-    typedef bitcompression::PageDict4SSReader SSReader;
-    typedef bitcompression::PageDict4Reader Reader;
+    using DC = bitcompression::PostingListCountFileDecodeContext;
+    using SSReader = bitcompression::PageDict4SSReader;
+    using Reader = bitcompression::PageDict4Reader;
+    using PostingListCounts = index::PostingListCounts;
+    struct DictFileReadContext;
 
-    typedef index::PostingListCounts PostingListCounts;
-
-    Reader *_pReader;
-    SSReader *_ssReader;
-
-    DC _ssd;
-    ComprFileReadContext _ssReadContext;
-    FastOS_File _ssfile;
-
-    DC _spd;
-    ComprFileReadContext _spReadContext;
-    FastOS_File _spfile;
-
-    DC _pd;
-    ComprFileReadContext _pReadContext;
-    FastOS_File _pfile;
-
-    uint64_t _ssFileBitSize;
-    uint64_t _spFileBitSize;
-    uint64_t _pFileBitSize;
-    uint32_t _ssHeaderLen;
-    uint32_t _spHeaderLen;
-    uint32_t _pHeaderLen;
-
-    bool _ssCompleted;
-    bool _spCompleted;
-    bool _pCompleted;
-
+    std::unique_ptr<Reader>   _pReader;
+    std::unique_ptr<SSReader> _ssReader;
+    std::unique_ptr<DictFileReadContext> _ss;
+    std::unique_ptr<DictFileReadContext> _sp;
+    std::unique_ptr<DictFileReadContext> _p;
     uint64_t _wordNum;
-
-    void readSSHeader();
-    void readSPHeader();
-    void readPHeader();
 public:
-
     PageDict4FileSeqRead();
     ~PageDict4FileSeqRead() override;
 
@@ -73,44 +45,23 @@ public:
  */
 class PageDict4FileSeqWrite : public index::DictionaryFileSeqWrite
 {
-    typedef bitcompression::PostingListCountFileEncodeContext EC;
-    typedef EC SPEC;
-    typedef EC PEC;
-    typedef EC SSEC;
-    typedef bitcompression::PageDict4SSWriter SSWriter;
-    typedef bitcompression::PageDict4SPWriter SPWriter;
-    typedef bitcompression::PageDict4PWriter PWriter;
-
-    typedef index::PostingListCounts PostingListCounts;
+    using EC = bitcompression::PostingListCountFileEncodeContext;
+    using SSWriter = bitcompression::PageDict4SSWriter;
+    using SPWriter = bitcompression::PageDict4SPWriter;
+    using PWriter = bitcompression::PageDict4PWriter;
+    using PostingListCounts = index::PostingListCounts;
     using FileHeaderContext = common::FileHeaderContext;
+    struct DictFileContext;
 
+    index::PostingListParams  _params;
     std::unique_ptr<PWriter>  _pWriter;
     std::unique_ptr<SPWriter> _spWriter;
     std::unique_ptr<SSWriter> _ssWriter;
+    std::unique_ptr<DictFileContext> _ss;
+    std::unique_ptr<DictFileContext> _sp;
+    std::unique_ptr<DictFileContext> _p;
 
-    EC _pe;
-    ComprFileWriteContext _pWriteContext;
-    FastOS_File _pfile;
-
-    EC _spe;
-    ComprFileWriteContext _spWriteContext;
-    FastOS_File _spfile;
-
-    EC _sse;
-    ComprFileWriteContext _ssWriteContext;
-    FastOS_File _ssfile;
-
-    uint32_t _pHeaderLen;  // Length of header for page file (bytes)
-    uint32_t _spHeaderLen; // Length of header for sparse page file (bytes)
-    uint32_t _ssHeaderLen; // Length of header for sparse sparse file (bytes)
-
-    void writeSSSubHeader(vespalib::GenericHeader &header);
-    void makePHeader(const FileHeaderContext &fileHeaderContext);
-    void makeSPHeader(const FileHeaderContext &fileHeaderContext);
-    void makeSSHeader(const FileHeaderContext &fileHeaderContext);
-    void updatePHeader(uint64_t fileBitSize);
-    void updateSPHeader(uint64_t fileBitSize);
-    void updateSSHeader(uint64_t fileBitSize);
+    void activateParams(const index::PostingListParams &params);
 public:
     PageDict4FileSeqWrite();
     ~PageDict4FileSeqWrite();
@@ -121,7 +72,7 @@ public:
      * Open dictionary file for sequential write.  The index with most
      * words should be first for optimal compression.
      */
-    bool open(const vespalib::string &name, const TuneFileSeqWrite &tuneFileWrite,
+    bool open(const vespalib::string &name, const TuneFileSeqWrite &tune,
               const FileHeaderContext &fileHeaderContext) override;
 
     bool close() override;

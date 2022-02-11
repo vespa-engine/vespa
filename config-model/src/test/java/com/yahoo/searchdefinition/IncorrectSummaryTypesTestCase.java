@@ -15,7 +15,7 @@ public class IncorrectSummaryTypesTestCase extends AbstractSchemaTestCase {
     @Test
     public void testImportingIncorrect() throws ParseException {
         try {
-            SchemaBuilder.createFromString(
+            ApplicationBuilder.createFromString(
                     "search incorrectsummarytypes {\n" +
                     "  document incorrectsummarytypes {\n" +
                     "    field somestring type string {\n" +

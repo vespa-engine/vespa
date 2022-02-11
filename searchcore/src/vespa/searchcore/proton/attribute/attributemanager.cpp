@@ -240,7 +240,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
                                    const TuneFileAttributes &tuneFileAttributes,
                                    const FileHeaderContext &fileHeaderContext,
                                    vespalib::ISequencedTaskExecutor &attributeFieldWriter,
-                                   vespalib::ThreadExecutor& shared_executor,
+                                   vespalib::Executor& shared_executor,
                                    const HwInfo &hwInfo)
     : proton::IAttributeManager(),
       _attributes(),
@@ -264,7 +264,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
                                    const search::TuneFileAttributes &tuneFileAttributes,
                                    const search::common::FileHeaderContext &fileHeaderContext,
                                    vespalib::ISequencedTaskExecutor &attributeFieldWriter,
-                                   vespalib::ThreadExecutor& shared_executor,
+                                   vespalib::Executor& shared_executor,
                                    const IAttributeFactory::SP &factory,
                                    const HwInfo &hwInfo)
     : proton::IAttributeManager(),
@@ -556,12 +556,6 @@ vespalib::ISequencedTaskExecutor &
 AttributeManager::getAttributeFieldWriter() const
 {
     return _attributeFieldWriter;
-}
-
-vespalib::ThreadExecutor&
-AttributeManager::get_shared_executor() const
-{
-    return _shared_executor;
 }
 
 AttributeVector *

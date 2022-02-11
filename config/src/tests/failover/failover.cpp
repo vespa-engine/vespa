@@ -1,10 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/config/common/misc.h>
 #include <vespa/config/frt/protocol.h>
-#include <vespa/config/config.h>
 #include <vespa/config/common/configcontext.h>
+#include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 
@@ -189,7 +188,7 @@ TimingValues testTimingValues(
     1200); // fatalDelay
 
 struct ConfigCheckFixture {
-    IConfigContext::SP ctx;
+    std::shared_ptr<IConfigContext> ctx;
     NetworkFixture & nf;
 
     ConfigCheckFixture(NetworkFixture & f2)
@@ -221,7 +220,7 @@ struct ConfigCheckFixture {
 };
 
 struct ConfigReloadFixture {
-    IConfigContext::SP ctx;
+    std::shared_ptr<IConfigContext> ctx;
     NetworkFixture & nf;
     ConfigSubscriber s;
     ConfigHandle<MyConfig>::UP handle;

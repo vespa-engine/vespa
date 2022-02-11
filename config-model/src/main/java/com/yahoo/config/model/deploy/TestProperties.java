@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.deploy;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
@@ -52,7 +51,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Quota quota = Quota.unlimited();
     private boolean useAsyncMessageHandlingOnSchedule = false;
     private double feedConcurrency = 0.5;
-    private boolean enableFeedBlockInDistributor = true;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
     private String jvmOmitStackTraceInFastThrowOption;
@@ -71,6 +69,12 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int maxCompactBuffers = 1;
     private boolean failDeploymentWithInvalidJvmOptions = false;
     private String persistenceAsyncThrottling = "UNLIMITED";
+    private String mergeThrottlingPolicy = "STATIC";
+    private double persistenceThrottlingWsDecrementFactor = 1.2;
+    private double persistenceThrottlingWsBackoff = 0.95;
+    private boolean inhibitDefaultMergesWhenGlobalMergesPending = false;
+    private boolean useV8GeoPositions = false;
+    private List<String> environmentVariables = List.of();
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -102,7 +106,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public Quota quota() { return quota; }
     @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
     @Override public double feedConcurrency() { return feedConcurrency; }
-    @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
     @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
     @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
     @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return jvmOmitStackTraceInFastThrowOption; }
@@ -121,6 +124,12 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int maxCompactBuffers() { return maxCompactBuffers; }
     @Override public boolean failDeploymentWithInvalidJvmOptions() { return failDeploymentWithInvalidJvmOptions; }
     @Override public String persistenceAsyncThrottling() { return persistenceAsyncThrottling; }
+    @Override public String mergeThrottlingPolicy() { return mergeThrottlingPolicy; }
+    @Override public double persistenceThrottlingWsDecrementFactor() { return persistenceThrottlingWsDecrementFactor; }
+    @Override public double persistenceThrottlingWsBackoff() { return persistenceThrottlingWsBackoff; }
+    @Override public boolean inhibitDefaultMergesWhenGlobalMergesPending() { return inhibitDefaultMergesWhenGlobalMergesPending; }
+    @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
+    @Override public List<String> environmentVariables() { return environmentVariables; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -214,7 +223,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
 
     public TestProperties setConfigServerSpecs(List<Spec> configServerSpecs) {
-        this.configServerSpecs = ImmutableList.copyOf(configServerSpecs);
+        this.configServerSpecs = List.copyOf(configServerSpecs);
         return this;
     }
 
@@ -240,11 +249,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setQuota(Quota quota) {
         this.quota = quota;
-        return this;
-    }
-
-    public TestProperties enableFeedBlockInDistributor(boolean enabled) {
-        enableFeedBlockInDistributor = enabled;
         return this;
     }
 
@@ -310,6 +314,36 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setPersistenceAsyncThrottling(String type) {
         this.persistenceAsyncThrottling = type;
+        return this;
+    }
+
+    public TestProperties setMergeThrottlingPolicy(String policy) {
+        this.mergeThrottlingPolicy = policy;
+        return this;
+    }
+
+    public TestProperties setPersistenceThrottlingWsDecrementFactor(double factor) {
+        this.persistenceThrottlingWsDecrementFactor = factor;
+        return this;
+    }
+
+    public TestProperties setPersistenceThrottlingWsBackoff(double backoff) {
+        this.persistenceThrottlingWsBackoff = backoff;
+        return this;
+    }
+
+    public TestProperties inhibitDefaultMergesWhenGlobalMergesPending(boolean value) {
+        this.inhibitDefaultMergesWhenGlobalMergesPending = value;
+        return this;
+    }
+
+    public TestProperties setUseV8GeoPositions(boolean value) {
+        this.useV8GeoPositions = value;
+        return this;
+    }
+
+    public TestProperties setEnvironmentVariables(List<String> value) {
+        this.environmentVariables = value;
         return this;
     }
 

@@ -3,7 +3,6 @@ package com.yahoo.document;
 
 import com.google.inject.Inject;
 import com.yahoo.config.subscription.ConfigSubscriber;
-import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.document.annotation.AnnotationTypeRegistry;
 import com.yahoo.document.annotation.AnnotationTypes;
@@ -14,7 +13,14 @@ import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.TensorType;
 
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -33,6 +39,8 @@ import java.util.logging.Logger;
 public class DocumentTypeManager {
 
     private final static Logger log = Logger.getLogger(DocumentTypeManager.class.getName());
+
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private ConfigSubscriber subscriber;
 
     // *Configured data types* (not built-in/primitive) indexed by their id

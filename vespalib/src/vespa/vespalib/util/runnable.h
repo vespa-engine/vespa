@@ -23,6 +23,7 @@ namespace vespalib {
 struct Runnable {
     using UP = std::unique_ptr<Runnable>;
     using init_fun_t = std::function<int(Runnable&)>;
+    static int default_init_function(Runnable &target);
 
     /**
      * Entry point called by the running thread
@@ -36,4 +37,3 @@ struct Runnable {
 };
 
 } // namespace vespalib
-

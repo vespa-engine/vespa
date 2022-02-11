@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.document.SDField;
@@ -25,7 +25,7 @@ public class NGramTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testNGram() throws IOException, ParseException {
-        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/ngram.sd");
+        Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/ngram.sd");
         assertNotNull(schema);
 
         SDField gram1 = schema.getConcreteField("gram_1");
@@ -55,7 +55,7 @@ public class NGramTestCase extends AbstractSchemaTestCase {
     @Test
     public void testInvalidNGramSetting1() throws IOException, ParseException {
         try {
-            Schema schema = SchemaBuilder.buildFromFile("src/test/examples/invalidngram1.sd");
+            Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/invalidngram1.sd");
             fail("Should cause an exception");
         }
         catch (IllegalArgumentException e) {
@@ -66,7 +66,7 @@ public class NGramTestCase extends AbstractSchemaTestCase {
     @Test
     public void testInvalidNGramSetting2() throws IOException, ParseException {
         try {
-            Schema schema = SchemaBuilder.buildFromFile("src/test/examples/invalidngram2.sd");
+            Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/invalidngram2.sd");
             fail("Should cause an exception");
         }
         catch (IllegalArgumentException e) {
@@ -77,7 +77,7 @@ public class NGramTestCase extends AbstractSchemaTestCase {
     @Test
     public void testInvalidNGramSetting3() throws IOException, ParseException {
         try {
-            Schema schema = SchemaBuilder.buildFromFile("src/test/examples/invalidngram3.sd");
+            Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/invalidngram3.sd");
             fail("Should cause an exception");
         }
         catch (IllegalArgumentException e) {

@@ -1,12 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "types.h"
 #include <vespa/vespalib/util/stringfmt.h>
-#include <map>
 #include <set>
-#include <vector>
 #include <cerrno>
-#include <cstdint>
 
 namespace config {
 
@@ -16,69 +14,83 @@ namespace config {
  */
 class ConfigParser {
 public:
-    typedef std::vector<vespalib::string> vsvector;
+    class Cfg {
+    public:
+        Cfg(const std::vector<vespalib::string> & v)
+            : _cfg(&v[0]), _sz(v.size())
+        { }
+        Cfg(const std::vector<vespalib::string, vespalib::allocator_large<vespalib::string>> & v) :
+            _cfg(&v[0]),
+            _sz(v.size())
+        { }
+        size_t size() const { return _sz; }
+        const vespalib::string & operator[] (size_t idx) const { return _cfg[idx]; }
+    private:
+        const vespalib::string * _cfg;
+        size_t                   _sz;
+    };
 private:
-    static vsvector getLinesForKey(vespalib::stringref key, const vsvector & config);
+    static StringVector getLinesForKey(vespalib::stringref key, Cfg config);
 
-    static std::vector<vsvector> splitArray( const vsvector & config);
-    static std::map<vespalib::string, vsvector> splitMap( const vsvector & config);
+    static std::vector<StringVector> splitArray(Cfg config);
+    static std::map<vespalib::string, StringVector> splitMap(Cfg config);
 
     static vespalib::string deQuote(const vespalib::string & source);
     static void throwNoDefaultValue(vespalib::stringref key);
 
     template<typename T>
-    static T convert(const vsvector &);
+    static T convert(const StringVector & config);
 
-    static vespalib::string arrayToString(const vsvector &);
+    static vespalib::string arrayToString(Cfg config);
 
-    template<typename T, typename V>
-    static T parseInternal(vespalib::stringref key, const V & config);
-    template<typename T, typename V>
-    static T parseInternal(vespalib::stringref key, const V & config, T defaultValue);
+    template<typename T>
+    static T parseInternal(vespalib::stringref key, Cfg config);
+    template<typename T>
+    static T parseInternal(vespalib::stringref key, Cfg config, T defaultValue);
 
-    template<typename T, typename V>
-    static std::vector<T> parseArrayInternal(vespalib::stringref key, const V & config);
-    template<typename T, typename V>
-    static std::map<vespalib::string, T> parseMapInternal(vespalib::stringref key, const V & config);
-    template<typename T, typename V>
-    static T parseStructInternal(vespalib::stringref key, const V & config);
+    template<typename V>
+    static V parseArrayInternal(vespalib::stringref key, Cfg config);
+    template<typename T>
+    static std::map<vespalib::string, T> parseMapInternal(vespalib::stringref key, Cfg config);
+    template<typename T>
+    static T parseStructInternal(vespalib::stringref key, Cfg config);
 
 public:
-    static void stripLinesForKey(vespalib::stringref key,
-                                 std::set<vespalib::string>& config);
+    static void stripLinesForKey(vespalib::stringref key, std::set<vespalib::string>& config);
+    static std::set<vespalib::string> getUniqueNonWhiteSpaceLines(Cfg config);
     static vespalib::string stripWhitespace(vespalib::stringref source);
 
     template<typename T>
-    static T parse(vespalib::stringref key, const vsvector & config) {
-        return parseInternal<T, vsvector>(key, config);
+    static T parse(vespalib::stringref key, Cfg config) {
+        return parseInternal<T>(key, config);
     }
     template<typename T>
-    static T parse(vespalib::stringref key, const vsvector & config, T defaultValue) {
+    static T parse(vespalib::stringref key, Cfg config, T defaultValue) {
         return parseInternal(key, config, defaultValue);
     }
 
-    template<typename T>
-    static std::vector<T> parseArray(vespalib::stringref key, const vsvector & config) {
-        return parseArrayInternal<T, vsvector>(key, config);
+    template<typename V>
+    static V parseArray(vespalib::stringref key, Cfg config) {
+        return parseArrayInternal<V>(key, config);
     }
 
     template<typename T>
-    static std::map<vespalib::string, T> parseMap(vespalib::stringref key, const vsvector & config) {
-        return parseMapInternal<T, vsvector>(key, config);
+    static std::map<vespalib::string, T> parseMap(vespalib::stringref key, Cfg config) {
+        return parseMapInternal<T>(key, config);
     }
 
     template<typename T>
-    static T parseStruct(vespalib::stringref key, const vsvector & config) {
-        return parseStructInternal<T, vsvector>(key, config);
+    static T parseStruct(vespalib::stringref key, Cfg config) {
+        return parseStructInternal<T>(key, config);
     }
 
 };
 
-template<typename T, typename V>
+template<typename T>
 T
-ConfigParser::parseInternal(vespalib::stringref key, const V & config)
+ConfigParser::parseInternal(vespalib::stringref key, Cfg config)
 {
-    V lines = getLinesForKey(key, config);
+    StringVector lines = getLinesForKey(key, config);
 
     if (lines.size() == 0) {
         throwNoDefaultValue(key);
@@ -86,11 +98,11 @@ ConfigParser::parseInternal(vespalib::stringref key, const V & config)
     return convert<T>(lines);
 }
 
-template<typename T, typename V>
+template<typename T>
 T
-ConfigParser::parseInternal(vespalib::stringref key, const V & config, T defaultValue)
+ConfigParser::parseInternal(vespalib::stringref key, Cfg config, T defaultValue)
 {
-    V lines = getLinesForKey(key, config);
+    StringVector lines = getLinesForKey(key, config);
 
     if (lines.size() == 0) {
         return defaultValue;
@@ -101,67 +113,68 @@ ConfigParser::parseInternal(vespalib::stringref key, const V & config, T default
 
 template<typename T>
 T
-ConfigParser::convert(const vsvector & lines) {
+ConfigParser::convert(const StringVector & lines) {
     return T(lines);
 }
 
-template<typename T, typename V>
+template<typename T>
 std::map<vespalib::string, T>
-ConfigParser::parseMapInternal(vespalib::stringref key, const V & config)
+ConfigParser::parseMapInternal(vespalib::stringref key, Cfg config)
 {
-    V lines = getLinesForKey(key, config);
-    typedef std::map<vespalib::string, V> SplittedMap;
+    StringVector lines = getLinesForKey(key, config);
+    using SplittedMap = std::map<vespalib::string, StringVector>;
     SplittedMap s = splitMap(lines);
     std::map<vespalib::string, T> retval;
-    for (typename SplittedMap::iterator it(s.begin()), mt(s.end()); it != mt; it++) {
-        retval[it->first] = convert<T>(it->second);
+    for (const auto & e : s) {
+        retval[e.first] = convert<T>(e.second);
     }
     return retval;
 }
 
-template<typename T, typename V>
-std::vector<T>
-ConfigParser::parseArrayInternal(vespalib::stringref key, const V & config)
+template<typename V>
+V
+ConfigParser::parseArrayInternal(vespalib::stringref key, Cfg config)
 {
-    V lines = getLinesForKey(key, config);
-    std::vector<V> split = splitArray(lines);
+    StringVector lines = getLinesForKey(key, config);
+    std::vector<StringVector> split = splitArray(lines);
 
-    std::vector<T> retval;
+    V retval;
+    retval.reserve(split.size());
     for (uint32_t i = 0; i < split.size(); i++) {
-        retval.push_back(convert<T>(split[i]));
+        retval.push_back(convert<typename V::value_type>(split[i]));
     }
 
     return retval;
 }
 
-template<typename T, typename V>
+template<typename T>
 T
-ConfigParser::parseStructInternal(vespalib::stringref key, const V & config)
+ConfigParser::parseStructInternal(vespalib::stringref key, Cfg config)
 {
-    V lines = getLinesForKey(key, config);
+    StringVector lines = getLinesForKey(key, config);
 
     return convert<T>(lines);
 }
 
 template<>
 bool
-ConfigParser::convert<bool>(const vsvector & config);
+ConfigParser::convert<bool>(const StringVector & config);
 
 template<>
 int32_t
-ConfigParser::convert<int32_t>(const vsvector & config);
+ConfigParser::convert<int32_t>(const StringVector & config);
 
 template<>
 int64_t
-ConfigParser::convert<int64_t>(const vsvector & config);
+ConfigParser::convert<int64_t>(const StringVector & config);
 
 template<>
 double
-ConfigParser::convert<double>(const vsvector & config);
+ConfigParser::convert<double>(const StringVector & config);
 
 template<>
 vespalib::string
-ConfigParser::convert<vespalib::string>(const vsvector & config);
+ConfigParser::convert<vespalib::string>(const StringVector & config);
 
 } // config
 

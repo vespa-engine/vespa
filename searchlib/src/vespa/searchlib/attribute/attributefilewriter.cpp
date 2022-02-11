@@ -48,8 +48,8 @@ updateHeader(const vespalib::string &name, uint64_t fileBitSize)
     h.putTag(Tag("frozen", 1));
     h.putTag(Tag("fileBitSize", fileBitSize));
     h.rewriteFile(f);
-    f.Sync();
-    f.Close();
+    bool sync_ok = f.Sync();
+    assert(sync_ok);
 }
 
 /*
@@ -155,8 +155,10 @@ void
 AttributeFileWriter::close()
 {
     if (_file->IsOpened()) {
-        _file->Sync();
-        _file->Close();
+        bool synk_ok = _file->Sync();
+        assert(synk_ok);
+        bool close_ok = _file->Close();
+        assert(close_ok);
         updateHeader(_file->GetFileName(), _fileBitSize);
     }
 }

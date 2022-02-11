@@ -19,7 +19,7 @@ class RemoveDoneContext : public OperationDoneContext
     IPendingLidTracker::Token _uncommitted;
 
 public:
-    RemoveDoneContext(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted);
+    RemoveDoneContext(std::shared_ptr<feedtoken::IState>, std::shared_ptr<vespalib::IDestructorCallback> done_callback, IPendingLidTracker::Token uncommitted);
     ~RemoveDoneContext() override;
 };
 

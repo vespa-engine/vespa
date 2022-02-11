@@ -1,12 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "maintenancejobrunner.h"
-#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/fastos/thread.h>
+#include <vespa/vespalib/util/cpu_usage.h>
+#include <vespa/vespalib/util/lambdatask.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.maintenancejobrunner");
 
+using vespalib::CpuUsage;
 using vespalib::Executor;
 using vespalib::makeLambdaTask;
 
@@ -34,7 +36,8 @@ MaintenanceJobRunner::addExecutorTask()
     Guard guard(_lock);
     if (!_stopped && !_job->isBlocked() && !_queued) {
         _queued = true;
-        _executor.execute(makeLambdaTask([this]() { runJobInExecutor(); }));
+        auto task = makeLambdaTask([this]() { runJobInExecutor(); });
+        _executor.execute(CpuUsage::wrap(std::move(task), CpuUsage::Category::COMPACT));
     }
 }
 

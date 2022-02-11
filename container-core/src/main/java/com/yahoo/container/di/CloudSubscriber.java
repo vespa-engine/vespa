@@ -21,6 +21,7 @@ import static java.util.logging.Level.FINE;
  * @author Tony Vaagenes
  * @author ollivir
  */
+@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class CloudSubscriber  implements Subscriber {
     private static final Logger log = Logger.getLogger(CloudSubscriber.class.getName());
 

@@ -118,8 +118,8 @@ TEST("require that prealloc makes enough room") {
 
 TEST("require that rawbuf can read from file") {
     FastOS_File file("mytemporaryfile");
-    file.OpenReadWrite();
-    file.Write2("barbaz", 6);
+    ASSERT_TRUE(file.OpenReadWrite());
+    ASSERT_EQUAL(6, file.Write2("barbaz", 6));
     file.SetPosition(0);
 
     RawBuf buf(10);
@@ -129,7 +129,7 @@ TEST("require that rawbuf can read from file") {
     buf.readFile(file, 100);
     EXPECT_EQUAL("foobarbaz", getString(buf));
 
-    file.Close();
+    ASSERT_TRUE(file.Close());
     file.Delete();
 }
 

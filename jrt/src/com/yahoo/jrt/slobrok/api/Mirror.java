@@ -199,6 +199,7 @@ public class Mirror implements IMirror {
                 updateTask.schedule(delay);
                 return;
             }
+            log.fine(() -> "Try connecting to "+currSlobrok);
             target = orb.connect(new Spec(currSlobrok));
             specsGeneration = 0;
         }
@@ -216,6 +217,9 @@ public class Mirror implements IMirror {
             if (! logOnSuccess) {
                 log.log(Level.INFO, "Error with location broker "+currSlobrok+" update: " + req.errorMessage() +
                         " (error code " + req.errorCode() + ")");
+            } else {
+                log.fine(() -> "Error with location broker "+currSlobrok+" update: " + req.errorMessage() +
+                         " (error code " + req.errorCode() + ")");
             }
             target.close();
             target = null; // try next slobrok
@@ -260,6 +264,8 @@ public class Mirror implements IMirror {
             if (logOnSuccess) {
                 log.log(Level.INFO, "successfully connected to location broker "+currSlobrok+" (mirror initialized with "+newSpecs.length+" service names)");
                 logOnSuccess = false;
+            } else {
+                log.fine(() -> "successfully updated from location broker "+currSlobrok+" (now "+newSpecs.length+" service names)");
             }
             specs.set(newSpecs);
 
@@ -269,6 +275,8 @@ public class Mirror implements IMirror {
                 u++;
             }
             updates = u;
+        } else {
+            log.fine(() -> "NOP update from location broker "+currSlobrok+" (curr gen "+specsGeneration+")");
         }
         backOff.reset();
     }

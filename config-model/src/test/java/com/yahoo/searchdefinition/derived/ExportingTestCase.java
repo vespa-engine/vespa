@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.model.deploy.TestProperties;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -24,27 +24,32 @@ public class ExportingTestCase extends AbstractExportingTestCase {
 
     @Test
     public void testPositionArray() throws IOException, ParseException {
-        assertCorrectDeriving("position_array");
+        assertCorrectDeriving("position_array",
+                              new TestProperties().setUseV8GeoPositions(true));
     }
 
     @Test
     public void testPositionAttribute() throws IOException, ParseException {
-        assertCorrectDeriving("position_attribute");
+        assertCorrectDeriving("position_attribute",
+                              new TestProperties().setUseV8GeoPositions(true));
     }
 
     @Test
     public void testPositionExtra() throws IOException, ParseException {
-        assertCorrectDeriving("position_extra");
+        assertCorrectDeriving("position_extra",
+                              new TestProperties().setUseV8GeoPositions(true));
     }
 
     @Test
     public void testPositionNoSummary() throws IOException, ParseException {
-        assertCorrectDeriving("position_nosummary");
+        assertCorrectDeriving("position_nosummary",
+                              new TestProperties().setUseV8GeoPositions(true));
     }
 
     @Test
     public void testPositionSummary() throws IOException, ParseException {
-        assertCorrectDeriving("position_summary");
+        assertCorrectDeriving("position_summary",
+                              new TestProperties().setUseV8GeoPositions(true));
     }
 
     @Test
@@ -145,10 +150,10 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     @Test
     public void testTensor2() throws IOException, ParseException {
         String dir = "src/test/derived/tensor2/";
-        SchemaBuilder builder = new SchemaBuilder();
-        builder.importFile(dir + "first.sd");
-        builder.importFile(dir + "second.sd");
-        builder.build();
+        ApplicationBuilder builder = new ApplicationBuilder();
+        builder.addSchemaFile(dir + "first.sd");
+        builder.addSchemaFile(dir + "second.sd");
+        builder.build(true);
         derive("tensor2", builder, builder.getSchema("second"));
         assertCorrectConfigFiles("tensor2");
     }
@@ -168,6 +173,11 @@ public class ExportingTestCase extends AbstractExportingTestCase {
         TestableDeployLogger logger = new TestableDeployLogger();
         assertCorrectDeriving("language", logger);
         assertEquals(0, logger.warnings.size());
+    }
+
+    @Test
+    public void testRankProfileModularity() throws IOException, ParseException {
+        assertCorrectDeriving("rankprofilemodularity");
     }
 
 }

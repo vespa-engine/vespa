@@ -10,7 +10,9 @@ import com.yahoo.config.subscription.impl.ConfigSubscription;
  *
  * @param <T> the type of the config
  * @author vegardh
+ * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
+@Deprecated(forRemoval = true, since = "7")
 public class ConfigHandle<T extends ConfigInstance> {
 
     private final ConfigSubscription<T> sub;

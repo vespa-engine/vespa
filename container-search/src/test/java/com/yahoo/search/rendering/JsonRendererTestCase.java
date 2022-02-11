@@ -54,6 +54,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.text.Utf8;
+import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.trace.TraceNode;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,6 +70,7 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Functional testing of {@link JsonRenderer}.
@@ -165,11 +167,26 @@ public class JsonRendererTestCase {
         h.setField("tensor_mixed", new TensorFieldValue(Tensor.from("tensor(x{},y[2]):{a:[1,2], b:[3,4]}")));
         h.setField("summaryfeatures", summaryFeatures);
 
-        Result r = new Result(new Query("/?format.tensors=short"));
-        r.hits().add(h);
-        r.setTotalHitCount(1L);
-        String summary = render(r);
-        assertEqualJson(expected, summary);
+        Result result1 = new Result(new Query("/?presentation.format.tensors=short"));
+        result1.hits().add(h);
+        result1.setTotalHitCount(1L);
+        String summary1 = render(result1);
+        assertEqualJson(expected, summary1);
+
+        Result result2 = new Result(new Query("/?format.tensors=short"));
+        result2.hits().add(h);
+        result2.setTotalHitCount(1L);
+        String summary2 = render(result2);
+        assertEqualJson(expected, summary2);
+
+        try {
+            render(new Result(new Query("/?presentation.format.tensors=unknown")));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Could not set 'presentation.format.tensors' to 'unknown': Value must be 'long' or 'short', not 'unknown'",
+                         Exceptions.toMessageString(e));
+        }
     }
 
     @Test

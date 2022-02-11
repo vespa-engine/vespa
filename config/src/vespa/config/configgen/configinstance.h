@@ -22,7 +22,7 @@ public:
 
     virtual void serialize(ConfigDataBuffer & buffer) const = 0;
 
-    virtual ~ConfigInstance() { }
+    virtual ~ConfigInstance() = default;
 };
 
 } // namespace config

@@ -92,15 +92,7 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
             Request request = new Request("http://localhost:8080" + path, data, method, principal);
             request.getAttributes().put(SecurityContext.ATTRIBUTE_NAME, new SecurityContext(principal, roles));
             if (user != null) {
-                Map<String, String> userAttributes = new HashMap<>();
-                userAttributes.put("email", user.email());
-                if (user.name() != null)
-                    userAttributes.put("name", user.name());
-                if (user.nickname() != null)
-                    userAttributes.put("nickname", user.nickname());
-                if (user.picture() != null)
-                    userAttributes.put("picture", user.picture());
-                request.getAttributes().put(User.ATTRIBUTE_NAME, Map.copyOf(userAttributes));
+                request.getAttributes().put(User.ATTRIBUTE_NAME, user);
             }
             request.getHeaders().put("Content-Type", contentType);
             return request;

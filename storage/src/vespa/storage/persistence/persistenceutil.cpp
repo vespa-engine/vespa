@@ -32,7 +32,7 @@ MessageTracker::MessageTracker(const framework::MilliSecTimer & timer,
                                MessageSender & replySender,
                                FileStorHandler::BucketLockInterface::SP bucketLock,
                                api::StorageMessage::SP msg,
-                               SharedOperationThrottler::Token throttle_token)
+                               ThrottleToken throttle_token)
     : MessageTracker(timer, env, replySender, true, std::move(bucketLock), std::move(msg), std::move(throttle_token))
 {}
 MessageTracker::MessageTracker(const framework::MilliSecTimer & timer,
@@ -41,7 +41,7 @@ MessageTracker::MessageTracker(const framework::MilliSecTimer & timer,
                                bool updateBucketInfo,
                                FileStorHandler::BucketLockInterface::SP bucketLock,
                                api::StorageMessage::SP msg,
-                               SharedOperationThrottler::Token throttle_token)
+                               ThrottleToken throttle_token)
     : _sendReply(true),
       _updateBucketInfo(updateBucketInfo && hasBucketInfo(msg->getType().getId())),
       _bucketLock(std::move(bucketLock)),
@@ -60,7 +60,7 @@ MessageTracker::createForTesting(const framework::MilliSecTimer & timer, Persist
                                  FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg)
 {
     return MessageTracker::UP(new MessageTracker(timer, env, replySender, false, std::move(bucketLock),
-                                                 std::move(msg), SharedOperationThrottler::Token()));
+                                                 std::move(msg), ThrottleToken()));
 }
 
 void

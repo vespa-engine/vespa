@@ -7,10 +7,11 @@
 #include "lid_info.h"
 #include "randread.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
+#include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/util/cpu_usage.h>
+#include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/util/ptrholder.h>
-#include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/time.h>
 
 class FastOS_FileInterface;
@@ -18,7 +19,7 @@ class FastOS_FileInterface;
 namespace vespalib {
     class DataBuffer;
     class GenericHeader;
-    class ThreadExecutor;
+    class Executor;
 }
 
 namespace search {
@@ -163,8 +164,9 @@ public:
     virtual bool frozen() const { return true; }
     const vespalib::string & getName() const { return _name; }
     void compact(const IGetLid & iGetLid);
-    void appendTo(vespalib::ThreadExecutor & executor, const IGetLid & db, IWriteData & dest,
-                  uint32_t numChunks, IFileChunkVisitorProgress *visitorProgress);
+    void appendTo(vespalib::Executor & executor, const IGetLid & db, IWriteData & dest,
+                  uint32_t numChunks, IFileChunkVisitorProgress *visitorProgress,
+                  vespalib::CpuUsage::Category cpu_category);
     /**
      * Must be called after chunk has been created to allow correct
      * underlying file object to be created.  Must be called before

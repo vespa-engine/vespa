@@ -13,7 +13,7 @@ namespace config {
  const milliseconds ConfigRetriever::DEFAULT_NEXTGENERATION_TIMEOUT(60000);
 
 ConfigRetriever::ConfigRetriever(const ConfigKeySet & bootstrapSet,
-                                 const IConfigContext::SP & context,
+                                 std::shared_ptr<IConfigContext> context,
                                  milliseconds subscribeTimeout)
     : _bootstrapSubscriber(bootstrapSet, context, subscribeTimeout),
       _configSubscriber(),

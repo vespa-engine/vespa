@@ -4,6 +4,8 @@
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/searchsummary/docsummary/resultconfig.h>
+#include <vespa/document/datatype/positiondatatype.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.slimefieldwriter");
@@ -93,6 +95,35 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv, Inserter &i
     } else if (clazz.inherits(document::StructuredFieldValue::classId)) {
         const document::StructuredFieldValue & sfv = static_cast<const document::StructuredFieldValue &>(fv);
         Cursor &o = inserter.insertObject();
+        if (sfv.getDataType() == &document::PositionDataType::getInstance()
+            && search::docsummary::ResultConfig::wantedV8geoPositions())
+        {
+            bool ok = true;
+            try {
+                int x = std::numeric_limits<int>::min();
+                int y = std::numeric_limits<int>::min();
+                for (const document::Field & entry : sfv) {
+                    document::FieldValue::UP fval(sfv.getValue(entry));
+                    if (entry.getName() == "x") {
+                        x = fval->getAsInt();
+                    } else if (entry.getName() == "y") {
+                        y = fval->getAsInt();
+                    } else {
+                        ok = false;
+                    }
+                }
+                if (x == std::numeric_limits<int>::min()) ok = false;
+                if (y == std::numeric_limits<int>::min()) ok = false;
+                if (ok) {
+                    o.setDouble("lat", double(y) / 1.0e6);
+                    o.setDouble("lng", double(x) / 1.0e6);
+                    return;
+                }
+            } catch (std::exception &e) {
+                (void)e;
+                // fallback to code below
+            }
+        }
         for (const document::Field & entry : sfv) {
             if (explorePath(entry.getName())) {
                 _currPath.push_back(entry.getName());

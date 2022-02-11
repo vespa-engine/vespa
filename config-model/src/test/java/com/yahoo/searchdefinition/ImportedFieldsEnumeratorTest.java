@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.searchdefinition.document.SDDocumentType;
@@ -19,7 +20,7 @@ public class ImportedFieldsEnumeratorTest {
     @Test
     public void imported_fields_are_enumerated_and_copied_from_correct_search_instance() {
         String PARENT = "parent";
-        Schema parentSchema = new Schema(PARENT);
+        Schema parentSchema = new Schema(PARENT, MockApplicationPackage.createEmpty());
         SDDocumentType parentDocument = new SDDocumentType(PARENT, parentSchema);
         var parentField = new SDField("their_field", DataType.INT);
         AttributeUtils.addAttributeAspect(parentField);
@@ -27,7 +28,7 @@ public class ImportedFieldsEnumeratorTest {
         parentSchema.addDocument(parentDocument);
 
         String FOO = "foo";
-        Schema fooSchema = new Schema(FOO);
+        Schema fooSchema = new Schema(FOO, MockApplicationPackage.createEmpty());
         SDField fooRefToParent = new SDField(
                 "foo_ref", ReferenceDataType.createWithInferredId(parentDocument.getDocumentType()));
         AttributeUtils.addAttributeAspect(fooRefToParent);
@@ -38,7 +39,7 @@ public class ImportedFieldsEnumeratorTest {
         fooSchema.addDocument(fooDocument);
 
         String BAR = "bar";
-        Schema barSchema = new Schema(BAR);
+        Schema barSchema = new Schema(BAR, MockApplicationPackage.createEmpty());
         SDField barRefToParent = new SDField(
                 "bar_ref", ReferenceDataType.createWithInferredId(parentDocument.getDocumentType()));
         AttributeUtils.addAttributeAspect(barRefToParent);

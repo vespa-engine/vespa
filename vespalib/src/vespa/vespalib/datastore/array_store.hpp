@@ -6,40 +6,23 @@
 #include "compaction_spec.h"
 #include "entry_ref_filter.h"
 #include "datastore.hpp"
+#include "large_array_buffer_type.hpp"
+#include "small_array_buffer_type.hpp"
 #include <atomic>
 #include <algorithm>
 
 namespace vespalib::datastore {
 
 template <typename EntryT, typename RefT>
-ArrayStore<EntryT, RefT>::LargeArrayType::LargeArrayType(const AllocSpec &spec)
-    : BufferType<LargeArray>(1, spec.minArraysInBuffer, spec.maxArraysInBuffer, spec.numArraysForNewBuffer, spec.allocGrowFactor)
-{
-}
-
-template <typename EntryT, typename RefT>
 void
-ArrayStore<EntryT, RefT>::LargeArrayType::cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx)
-{
-    LargeArray *elem = static_cast<LargeArray *>(buffer) + offset;
-    for (size_t i = 0; i < numElems; ++i) {
-        cleanCtx.extraBytesCleaned(sizeof(EntryT) * elem->size());
-        *elem = _emptyEntry;
-        ++elem;
-    }
-}
-
-template <typename EntryT, typename RefT>
-void
-ArrayStore<EntryT, RefT>::initArrayTypes(const ArrayStoreConfig &cfg)
+ArrayStore<EntryT, RefT>::initArrayTypes(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator)
 {
     _largeArrayTypeId = _store.addType(&_largeArrayType);
     assert(_largeArrayTypeId == 0);
     _smallArrayTypes.reserve(_maxSmallArraySize);
     for (uint32_t arraySize = 1; arraySize <= _maxSmallArraySize; ++arraySize) {
         const AllocSpec &spec = cfg.specForSize(arraySize);
-        _smallArrayTypes.emplace_back(arraySize, spec.minArraysInBuffer, spec.maxArraysInBuffer,
-                                      spec.numArraysForNewBuffer, spec.allocGrowFactor);
+        _smallArrayTypes.emplace_back(arraySize, spec, memory_allocator);
     }
     for (auto & type : _smallArrayTypes) {
         uint32_t typeId = _store.addType(&type);
@@ -48,14 +31,14 @@ ArrayStore<EntryT, RefT>::initArrayTypes(const ArrayStoreConfig &cfg)
 }
 
 template <typename EntryT, typename RefT>
-ArrayStore<EntryT, RefT>::ArrayStore(const ArrayStoreConfig &cfg)
+ArrayStore<EntryT, RefT>::ArrayStore(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator)
     : _largeArrayTypeId(0),
       _maxSmallArraySize(cfg.maxSmallArraySize()),
       _store(),
       _smallArrayTypes(),
-      _largeArrayType(cfg.specForSize(0))
+      _largeArrayType(cfg.specForSize(0), memory_allocator)
 {
-    initArrayTypes(cfg);
+    initArrayTypes(cfg, std::move(memory_allocator));
     _store.init_primary_buffers();
     if (cfg.enable_free_lists()) {
         _store.enableFreeLists();

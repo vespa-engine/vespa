@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/config/print/fileconfigreader.h>
 #include <vespa/messagebus/configagent.h>
 #include <vespa/messagebus/iconfighandler.h>
 #include <vespa/messagebus/routing/routingspec.h>
 #include <vespa/messagebus/config-messagebus.h>
+#include <vespa/config/print/fileconfigreader.hpp>
 
 using namespace mbus;
 using namespace messagebus;

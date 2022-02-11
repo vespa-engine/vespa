@@ -5,6 +5,8 @@
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
+#include <vespa/searchcommon/common/schema.h>
+
 
 namespace vespalib { class Rand48; }
 

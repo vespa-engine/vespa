@@ -6,14 +6,16 @@
 namespace config {
 
 
-ConfigSubscriber::ConfigSubscriber(const IConfigContext::SP & context)
-    : _set(context)
+ConfigSubscriber::ConfigSubscriber(std::shared_ptr<IConfigContext> context)
+    : _set(std::move(context))
 
 { }
 
 ConfigSubscriber::ConfigSubscriber(const SourceSpec & spec)
     : _set(std::make_shared<ConfigContext>(spec))
 { }
+
+ConfigSubscriber::~ConfigSubscriber() = default;
 
 bool
 ConfigSubscriber::nextConfig(milliseconds timeoutInMillis)

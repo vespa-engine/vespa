@@ -3,7 +3,6 @@
 
 #include "legacy.h"
 #include "configfetcher.h"
-#include <vespa/config/subscription/sourcespec.h>
 
 namespace config {
 
@@ -27,6 +26,3 @@ private:
 };
 
 } // namespace config
-
-#include "legacysubscriber.hpp"
-

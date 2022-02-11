@@ -12,6 +12,7 @@
 #include "idocumentsubdb.h"
 #include "maintenance_jobs_injector.h"
 #include "reconfig_params.h"
+#include "replay_throttling_policy.h"
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/metrics/updatehook.h>
 #include <vespa/searchcore/proton/attribute/attribute_config_inspector.h>
@@ -75,6 +76,18 @@ constexpr uint32_t indexing_thread_stack_size = 128_Ki;
 index::IndexConfig
 makeIndexConfig(const ProtonConfig::Index & cfg) {
     return index::IndexConfig(WarmupConfig(vespalib::from_s(cfg.warmup.time), cfg.warmup.unpack), cfg.maxflushed, cfg.cache.size);
+}
+
+ReplayThrottlingPolicy
+make_replay_throttling_policy(const ProtonConfig::ReplayThrottlingPolicy& cfg) {
+    if (cfg.type == ProtonConfig::ReplayThrottlingPolicy::Type::UNLIMITED) {
+        return ReplayThrottlingPolicy({});
+    }
+    vespalib::SharedOperationThrottler::DynamicThrottleParams params;
+    params.min_window_size = cfg.minWindowSize;
+    params.max_window_size = cfg.maxWindowSize;
+    params.window_size_increment = cfg.windowSizeIncrement;
+    return ReplayThrottlingPolicy(params);
 }
 
 class MetricsUpdateHook : public metrics::UpdateHook {
@@ -190,6 +203,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _clusterStateHandler(_writeService.master()),
       _bucketHandler(_writeService.master()),
       _indexCfg(makeIndexConfig(protonCfg.index)),
+      _replay_throttling_policy(std::make_unique<ReplayThrottlingPolicy>(make_replay_throttling_policy(protonCfg.replayThrottlingPolicy))),
       _config_store(std::move(config_store)),
       _sessionManager(std::make_shared<matching::SessionManager>(protonCfg.grouping.sessionmanager.maxentries)),
       _metricsWireService(metricsWireService),
@@ -486,7 +500,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
                                   _writeServiceConfig.defaultTaskLimit());
     if (params.shouldSubDbsChange()) {
         applySubDBConfig(*configSnapshot, serialNum, params);
-        if (serialNum < _feedHandler->getSerialNum()) {
+        if (serialNum < _feedHandler->get_replay_end_serial_num()) {
             // Not last entry in tls.  Reprocessing should already be done.
             _subDBs.getReprocessingRunner().reset();
         }
@@ -720,7 +734,8 @@ DocumentDB::startTransactionLogReplay()
                                       getBackingStore().lastSyncToken(),
                                       oldestFlushedSerial,
                                       newestFlushedSerial,
-                                      *_config_store);
+                                      *_config_store,
+                                      *_replay_throttling_policy);
     _initGate.countDown();
 
     LOG(debug, "DocumentDB(%s): Database started.", _docTypeName.toString().c_str());

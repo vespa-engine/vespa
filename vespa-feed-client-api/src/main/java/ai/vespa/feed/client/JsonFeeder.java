@@ -45,6 +45,8 @@ public class JsonFeeder implements Closeable {
     });
     private final FeedClient client;
     private final OperationParameters protoParameters;
+    private final AtomicInteger globalInflightOperations = new AtomicInteger(0);
+    private volatile boolean closed = false;
 
     private JsonFeeder(FeedClient client, OperationParameters protoParameters) {
         this.client = client;
@@ -84,6 +86,8 @@ public class JsonFeeder implements Closeable {
      *  Exceptional completion will use be an instance of {@link FeedException} or one of its sub-classes.
      */
     public CompletableFuture<Result> feedSingle(String json) {
+        if (closed) throw new IllegalStateException("Already closed");
+        globalInflightOperations.incrementAndGet();
         CompletableFuture<Result> result = new CompletableFuture<>();
         try {
             SingleOperationParserAndExecutor parser = new SingleOperationParserAndExecutor(json.getBytes(UTF_8));
@@ -93,9 +97,11 @@ public class JsonFeeder implements Closeable {
                 } else {
                     result.complete(operationResult);
                 }
+                globalInflightOperations.decrementAndGet();
             }, resultExecutor);
         } catch (Exception e) {
             resultExecutor.execute(() -> result.completeExceptionally(wrapException(e)));
+            globalInflightOperations.decrementAndGet();
         }
         return result;
     }
@@ -125,6 +131,7 @@ public class JsonFeeder implements Closeable {
      * </pre>
      * Note that {@code "id"} is an alias for the document put operation.
      * Exceptional completion will use be an instance of {@link FeedException} or one of its sub-classes.
+     * The input stream will be closed upon exhaustion, or error.
      */
     public CompletableFuture<Void> feedMany(InputStream jsonStream, ResultCallback resultCallback) {
         return feedMany(jsonStream, 1 << 26, resultCallback);
@@ -139,25 +146,27 @@ public class JsonFeeder implements Closeable {
     }
 
     CompletableFuture<Void> feedMany(InputStream jsonStream, int size, ResultCallback resultCallback) {
+        if (closed) throw new IllegalStateException("Already closed");
         CompletableFuture<Void> overallResult = new CompletableFuture<>();
         CompletableFuture<Result> result;
-        AtomicInteger pending = new AtomicInteger(1); // The below dispatch loop itself is counted as a single pending operation
+        AtomicInteger localInflightOperations = new AtomicInteger(1); // The below dispatch loop itself is counted as a single pending operation
         AtomicBoolean finalCallbackInvoked = new AtomicBoolean();
-        try {
-            RingBufferStream buffer = new RingBufferStream(jsonStream, size);
+        try (RingBufferStream buffer = new RingBufferStream(jsonStream, size)) {
             while ((result = buffer.next()) != null) {
-                pending.incrementAndGet();
+                localInflightOperations.incrementAndGet();
+                globalInflightOperations.incrementAndGet();
                 result.whenCompleteAsync((r, t) -> {
                     if (!finalCallbackInvoked.get()) {
                         invokeCallback(resultCallback, c -> c.onNextResult(r, (FeedException) t));
                     }
-                    if (pending.decrementAndGet() == 0 && finalCallbackInvoked.compareAndSet(false, true)) {
+                    if (localInflightOperations.decrementAndGet() == 0 && finalCallbackInvoked.compareAndSet(false, true)) {
                         invokeCallback(resultCallback, ResultCallback::onComplete);
                         overallResult.complete(null);
                     }
+                    globalInflightOperations.decrementAndGet();
                 }, resultExecutor);
             }
-            if (pending.decrementAndGet() == 0 && finalCallbackInvoked.compareAndSet(false, true)) {
+            if (localInflightOperations.decrementAndGet() == 0 && finalCallbackInvoked.compareAndSet(false, true)) {
                 resultExecutor.execute(() -> {
                     invokeCallback(resultCallback, ResultCallback::onComplete);
                     overallResult.complete(null);
@@ -187,12 +196,22 @@ public class JsonFeeder implements Closeable {
     private static final JsonFactory factory = new JsonFactory();
 
     @Override public void close() throws IOException {
+        closed = true;
+        awaitInflightOperations();
         client.close();
         resultExecutor.shutdown();
         try {
             if (!resultExecutor.awaitTermination(30, TimeUnit.SECONDS)) {
                 throw new IOException("Failed to close client in time");
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void awaitInflightOperations() {
+        try {
+            while (globalInflightOperations.get() > 0) Thread.sleep(10);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -225,7 +244,9 @@ public class JsonFeeder implements Closeable {
             this.data = new byte[size];
             this.size = size;
 
-            new Thread(this::fill, "feed-reader").start();
+            Thread filler = new Thread(this::fill, "feed-reader");
+            filler.setDaemon(true);
+            filler.start();
 
             this.parserAndExecutor = new RingBufferBackedOperationParserAndExecutor(factory.createParser(this));
         }

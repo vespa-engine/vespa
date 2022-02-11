@@ -11,6 +11,7 @@ import java.util.Set;
  * @author ollivir
  */
 public interface ImportCollector {
+
     Set<String> imports();
 
     default void addImportWithTypeDesc(String typeDescriptor) {
@@ -32,4 +33,5 @@ public interface ImportCollector {
     default void addImport(Optional<String> anImport) {
         anImport.ifPresent(pkg -> imports().add(pkg));
     }
+
 }

@@ -19,6 +19,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/time.h>
 #include <openssl/evp.h>
+#include <vespa/fastos/file.h>
 #include <vespa/fastos/app.h>
 #include <vespa/log/log.h>
 LOG_SETUP("fieldwriter_test");
@@ -330,7 +331,6 @@ FileChecksum::FileChecksum(const vespalib::string &file_name)
         EVP_DigestUpdate(md_ctx.get(), buf.get(), thistime);
         remainder -= thistime;
     }
-    f.Close();
     EVP_DigestFinal_ex(md_ctx.get(), &_digest[0], &_digest_len);
     assert(_digest_len > 0u && _digest_len <= EVP_MAX_MD_SIZE);
 }

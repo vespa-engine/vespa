@@ -39,7 +39,6 @@ public class OnnxFeatureConverter extends ExpressionTransformer<RankProfileTrans
 
     private ExpressionNode transformFeature(ReferenceNode feature, RankProfileTransformContext context) {
         if ( ! feature.getName().equals("onnx_vespa")) return feature;
-
         try {
             FeatureArguments arguments = asFeatureArguments(feature.getArguments());
             ConvertedModel convertedModel =

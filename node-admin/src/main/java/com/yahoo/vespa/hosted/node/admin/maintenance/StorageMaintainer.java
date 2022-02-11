@@ -214,6 +214,13 @@ public class StorageMaintainer {
             containerLogsOnHost.moveIfExists(containerLogsInArchiveDir);
         }
         new UnixPath(context.paths().of("/")).deleteRecursively();
+
+        // Operations on ContainerPath will fail if Container FS root doesn't exist, it is therefore important that
+        // it exists as long as NodeAgent is running. Normally the root is only created when NodeAgent is first
+        // started. Because non-tenant nodes are never removed from node-repo, we immediately re-create the new root
+        // after archiving the previous
+        if (context.nodeType() != NodeType.tenant)
+            context.paths().of("/").getFileSystem().createRoot();
     }
 
     private String getMicrocodeVersion() {

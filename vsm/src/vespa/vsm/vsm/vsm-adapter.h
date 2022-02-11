@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/searchlib/query/base.h>
-#include <vespa/config/retriever/configsnapshot.h>
 #include <vespa/vsm/config/vsm-cfif.h>
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
@@ -25,6 +24,7 @@ using vespa::config::search::SummaryConfig;
 using vespa::config::search::SummarymapConfig;
 using vespa::config::search::summary::JuniperrcConfig;
 
+namespace config { class ConfigSnapshot; }
 namespace vsm {
 
 class IMatchingElementsFiller;
@@ -97,17 +97,12 @@ typedef std::shared_ptr<DocsumTools> DocsumToolsPtr;
 class VSMConfigSnapshot {
 private:
     const vespalib::string _configId;
-    const config::ConfigSnapshot _snapshot;
+    std::unique_ptr<const config::ConfigSnapshot> _snapshot;
 public:
-    VSMConfigSnapshot(const vespalib::string & configId, const config::ConfigSnapshot & snapshot)
-        : _configId(configId),
-          _snapshot(snapshot)
-    { }
+    VSMConfigSnapshot(const vespalib::string & configId, const config::ConfigSnapshot & snapshot);
+    ~VSMConfigSnapshot();
     template <typename ConfigType>
-    std::unique_ptr<ConfigType> getConfig() const
-    {
-        return _snapshot.getConfig<ConfigType>(_configId);
-    }
+    std::unique_ptr<ConfigType> getConfig() const;
 };
 
 class VSMAdapter

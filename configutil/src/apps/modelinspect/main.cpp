@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/defaults.h>
-#include <iostream>
-#include <cstdlib>
 #include "lib/modelinspect.h"
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/config/subscription/sourcespec.h>
 #include <vespa/fastos/app.h>
+#include <iostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-model-inspect");

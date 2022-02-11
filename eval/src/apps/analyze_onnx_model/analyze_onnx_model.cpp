@@ -4,6 +4,7 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/eval/test/test_io.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/guard.h>
@@ -11,8 +12,13 @@
 
 using vespalib::make_string_short::fmt;
 
+using vespalib::Slime;
+using vespalib::slime::JsonFormat;
+using vespalib::slime::Inspector;
+using vespalib::slime::Cursor;
 using vespalib::FilePointer;
 using namespace vespalib::eval;
+using namespace vespalib::eval::test;
 
 bool read_line(FilePointer &file, vespalib::string &line) {
     char line_buffer[1024];
@@ -140,6 +146,7 @@ Onnx::WireInfo make_plan(Options &opts, const Onnx &model) {
         auto type = make_input_type(input);
         REQUIRE(planner.bind_input_type(type, input));
     }
+    planner.prepare_output_types(model);
     for (const auto &output: model.outputs()) {
         REQUIRE(!planner.make_output_type(output).is_error());
     }
@@ -168,13 +175,49 @@ int usage(const char *self) {
     fprintf(stderr, "  load onnx model and report memory usage\n");
     fprintf(stderr, "  options are used to specify unknown values, like dimension sizes\n");
     fprintf(stderr, "  options are accepted in the order in which they are needed\n");
-    fprintf(stderr, "  tip: run without options first, to see which you need\n");
+    fprintf(stderr, "  tip: run without options first, to see which you need\n\n");
+    fprintf(stderr, "usage: %s --probe-types\n", self);
+    fprintf(stderr, "  use onnx model to infer/probe output types based on input types\n");
+    fprintf(stderr, "  parameters are read from stdin and results are written to stdout\n");
+    fprintf(stderr, "  input format (json): {model:<filename>, inputs:{<name>:vespa-type-string}}\n");
+    fprintf(stderr, "  output format (json): {outputs:{<name>:vespa-type-string}}\n");
     return 1;
+}
+
+int probe_types() {
+    StdIn std_in;
+    StdOut std_out;
+    Slime params;
+    if (!JsonFormat::decode(std_in, params)) {
+        return 3;
+    }
+    Slime result;
+    auto &root = result.setObject();
+    auto &types = root.setObject("outputs");
+    Onnx model(params["model"].asString().make_string(), Onnx::Optimize::DISABLE);
+    Onnx::WirePlanner planner;
+    for (size_t i = 0; i < model.inputs().size(); ++i) {
+        auto spec = params["inputs"][model.inputs()[i].name].asString().make_string();
+        auto input_type = ValueType::from_spec(spec);
+        REQUIRE(!input_type.is_error());
+        REQUIRE(planner.bind_input_type(input_type, model.inputs()[i]));
+    }
+    planner.prepare_output_types(model);
+    for (const auto &output: model.outputs()) {
+        auto output_type = planner.make_output_type(output);
+        REQUIRE(!output_type.is_error());
+        types.setString(output.name, output_type.to_spec());
+    }
+    write_compact(result, std_out);
+    return 0;
 }
 
 int my_main(int argc, char **argv) {
     if (argc < 2) {
         return usage(argv[0]);
+    }
+    if ((argc == 2) && (vespalib::string(argv[1]) == "--probe-types")) {
+        return probe_types();
     }
     Options opts;
     for (int i = 2; i < argc; ++i) {

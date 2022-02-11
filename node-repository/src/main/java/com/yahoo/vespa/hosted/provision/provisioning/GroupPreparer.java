@@ -149,6 +149,7 @@ public class GroupPreparer {
                                                           wantedGroups,
                                                           nodeRepository.zone().getCloud().dynamicProvisioning(),
                                                           nodeRepository.nameResolver(),
+                                                          nodeRepository.nodes(),
                                                           nodeRepository.resourcesCalculator(),
                                                           nodeRepository.spareCount());
         allocation.offer(prioritizer.collect(surplusActiveNodes));

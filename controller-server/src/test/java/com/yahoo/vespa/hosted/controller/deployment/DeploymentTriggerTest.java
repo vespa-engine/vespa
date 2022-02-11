@@ -107,6 +107,40 @@ public class DeploymentTriggerTest {
     }
 
     @Test
+    public void separateRevisionMakesApplicationChangeWaitForPreviousToComplete() {
+        DeploymentContext app = tester.newDeploymentContext();
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .upgradeRevision(null) // separate by default, but we override this in test builder
+                .region("us-east-3")
+                .test("us-east-3")
+                .build();
+
+        app.submit(applicationPackage).runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
+        Optional<ApplicationVersion> v0 = app.lastSubmission();
+
+        app.submit(applicationPackage);
+        Optional<ApplicationVersion> v1 = app.lastSubmission();
+        assertEquals(v0, app.instance().change().application());
+
+        // Eager tests still run before new revision rolls out.
+        app.runJob(systemTest).runJob(stagingTest);
+
+        // v0 rolls out completely.
+        app.runJob(testUsEast3);
+        assertEquals(Optional.empty(), app.instance().change().application());
+
+        // v1 starts rolling when v0 is done.
+        tester.outstandingChangeDeployer().run();
+        assertEquals(v1, app.instance().change().application());
+
+        // v1 fails, so v2 starts immediately.
+        app.runJob(productionUsEast3).failDeployment(testUsEast3);
+        app.submit(applicationPackage);
+        Optional<ApplicationVersion> v2 = app.lastSubmission();
+        assertEquals(v2, app.instance().change().application());
+    }
+
+    @Test
     public void leadingUpgradeAllowsApplicationChangeWhileUpgrading() {
         var applicationPackage = new ApplicationPackageBuilder().region("us-east-3")
                                                                 .upgradeRollout("leading")
@@ -155,9 +189,10 @@ public class DeploymentTriggerTest {
         tester.controllerTester().upgradeSystem(new Version("8.9"));
         tester.upgrader().maintain();
         app.runJob(systemTest).runJob(stagingTest);
+        tester.clock().advance(Duration.ofMinutes(1));
         tester.triggerJobs();
 
-        // Jobs are not aborted when the new submission remains outstanding.
+        // Upgrade is allowed to proceed ahead of revision change, and is not aborted.
         app.submit();
         app.runJob(systemTest).runJob(stagingTest);
         tester.triggerJobs();
@@ -347,17 +382,15 @@ public class DeploymentTriggerTest {
         // Application on (6.1, 1.0.1)
         Version v1 = Version.fromString("6.1");
 
-        // Application is mid-upgrade when block window begins, and has an outstanding change.
+        // Application is mid-upgrade when block window begins, and gets an outstanding change.
         Version v2 = Version.fromString("6.2");
         tester.controllerTester().upgradeSystem(v2);
         tester.upgrader().maintain();
-        app.submit(applicationPackage);
-
         app.runJob(stagingTest).runJob(systemTest);
 
         // Entering block window will keep the outstanding change in place.
         tester.clock().advance(Duration.ofHours(1));
-        tester.outstandingChangeDeployer().run();
+        app.submit(applicationPackage);
         app.runJob(productionUsWest1);
         assertEquals(1, app.instanceJobs().get(productionUsWest1).lastSuccess().get().versions().targetApplication().buildNumber().getAsLong());
         assertEquals(2, app.deploymentStatus().outstandingChange(app.instance().name()).application().get().buildNumber().getAsLong());
@@ -468,7 +501,11 @@ public class DeploymentTriggerTest {
     public void downgradingApplicationVersionWorks() {
         var app = tester.newDeploymentContext().submit().deploy();
         ApplicationVersion appVersion0 = app.lastSubmission().get();
+        assertEquals(Optional.of(appVersion0), app.instance().latestDeployed());
+
         app.submit().deploy();
+        ApplicationVersion appVersion1 = app.lastSubmission().get();
+        assertEquals(Optional.of(appVersion1), app.instance().latestDeployed());
 
         // Downgrading application version.
         tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(appVersion0));
@@ -479,19 +516,27 @@ public class DeploymentTriggerTest {
            .runJob(productionUsWest1);
         assertEquals(Change.empty(), app.instance().change());
         assertEquals(appVersion0, app.instance().deployments().get(productionUsEast3.zone(tester.controller().system())).applicationVersion());
+        assertEquals(Optional.of(appVersion0), app.instance().latestDeployed());
     }
 
     @Test
     public void settingANoOpChangeIsANoOp() {
-        var app = tester.newDeploymentContext().submit().deploy();
+        var app = tester.newDeploymentContext().submit();
+        assertEquals(Optional.empty(), app.instance().latestDeployed());
+
+        app.deploy();
         ApplicationVersion appVersion0 = app.lastSubmission().get();
+        assertEquals(Optional.of(appVersion0), app.instance().latestDeployed());
+
         app.submit().deploy();
         ApplicationVersion appVersion1 = app.lastSubmission().get();
+        assertEquals(Optional.of(appVersion1), app.instance().latestDeployed());
 
         // Triggering a roll-out of an already deployed application is a no-op.
         assertEquals(Change.empty(), app.instance().change());
         tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(appVersion1));
         assertEquals(Change.empty(), app.instance().change());
+        assertEquals(Optional.of(appVersion1), app.instance().latestDeployed());
     }
 
     @Test
@@ -553,19 +598,23 @@ public class DeploymentTriggerTest {
 
         // Change has a higher application version than what is deployed -- deployment should trigger.
         app1.timeOutUpgrade(productionUsCentral1);
-        assertEquals(version2, app1.instance().deployments().get(productionUsCentral1.zone(main)).version());
+        assertEquals(version2, app1.deployment(productionUsCentral1.zone(main)).version());
         assertEquals(revision2, app1.deployment(productionUsCentral1.zone(main)).applicationVersion());
 
         // Change is again strictly dominated, and us-central-1 is skipped, even though it is still failing.
-        tester.clock().advance(Duration.ofHours(2).plus(Duration.ofSeconds(1))); // Enough time for retry
+        tester.clock().advance(Duration.ofHours(3)); // Enough time for retry
         tester.triggerJobs();
         // Failing job is not retried as change has been deployed
         app1.assertNotRunning(productionUsCentral1);
 
         // Last job has a different deployment target, so tests need to run again.
-        app1.runJob(systemTest).runJob(stagingTest).runJob(productionEuWest1);
-        assertFalse(app1.instance().change().hasTargets());
-        assertFalse(app1.instanceJobs().get(productionUsCentral1).isSuccess());
+        app1.runJob(systemTest)
+            .runJob(stagingTest)            // Eager test of outstanding change, assuming upgrade in west succeeds.
+            .runJob(productionEuWest1)      // Upgrade completes, and revision is the only change.
+            .runJob(productionUsCentral1)   // With only revision change, central should run to cover a previous failure.
+            .runJob(productionEuWest1);     // Finally, west changes revision.
+        assertEquals(Change.empty(), app1.instance().change());
+        assertEquals(Optional.of(RunStatus.success), app1.instanceJobs().get(productionUsCentral1).lastStatus());
     }
 
     @Test
@@ -807,6 +856,115 @@ public class DeploymentTriggerTest {
     }
 
     @Test
+    public void testMultipleInstancesWithDifferentChanges() {
+        DeploymentContext i1 = tester.newDeploymentContext("t", "a", "i1");
+        DeploymentContext i2 = tester.newDeploymentContext("t", "a", "i2");
+        DeploymentContext i3 = tester.newDeploymentContext("t", "a", "i3");
+        DeploymentContext i4 = tester.newDeploymentContext("t", "a", "i4");
+        ApplicationPackage applicationPackage = ApplicationPackageBuilder
+                .fromDeploymentXml("<deployment version='1'>\n" +
+                                   "  <upgrade revision='separate' />\n" +
+                                   "  <parallel>\n" +
+                                   "    <instance id='i1'>\n" +
+                                   "      <prod>\n" +
+                                   "        <region>us-east-3</region>\n" +
+                                   "        <delay hours='6' />\n" +
+                                   "      </prod>\n" +
+                                   "    </instance>\n" +
+                                   "    <instance id='i2'>\n" +
+                                   "      <prod>\n" +
+                                   "        <region>us-east-3</region>\n" +
+                                   "      </prod>\n" +
+                                   "    </instance>\n" +
+                                   "  </parallel>\n" +
+                                   "  <instance id='i3'>\n" +
+                                   "    <prod>\n" +
+                                   "      <region>us-east-3</region>\n" +
+                                   "        <delay hours='18' />\n" +
+                                   "      <test>us-east-3</test>\n" +
+                                   "    </prod>\n" +
+                                   "  </instance>\n" +
+                                   "  <instance id='i4'>\n" +
+                                   "    <test />\n" +
+                                   "    <staging />\n" +
+                                   "    <prod>\n" +
+                                   "      <region>us-east-3</region>\n" +
+                                   "    </prod>\n" +
+                                   "  </instance>\n" +
+                                   "</deployment>\n");
+
+        // Package is submitted, and change propagated to the two first instances.
+        i1.submit(applicationPackage);
+        Optional<ApplicationVersion> v0 = i1.lastSubmission();
+        tester.outstandingChangeDeployer().run();
+        assertEquals(v0, i1.instance().change().application());
+        assertEquals(v0, i2.instance().change().application());
+        assertEquals(Optional.empty(), i3.instance().change().application());
+        assertEquals(Optional.empty(), i4.instance().change().application());
+
+        // Tests run in i4, as they're declared there, and i1 and i2 get to work
+        i4.runJob(systemTest).runJob(stagingTest);
+        i1.runJob(productionUsEast3);
+        i2.runJob(productionUsEast3);
+
+        // Since the post-deployment delay of i1 is incomplete, i3 doesn't yet get the change.
+        tester.outstandingChangeDeployer().run();
+        assertEquals(v0, i1.instance().latestDeployed());
+        assertEquals(v0, i2.instance().latestDeployed());
+        assertEquals(Optional.empty(), i1.instance().change().application());
+        assertEquals(Optional.empty(), i2.instance().change().application());
+        assertEquals(Optional.empty(), i3.instance().change().application());
+        assertEquals(Optional.empty(), i4.instance().change().application());
+
+        // When the delay is done, i3 gets the change.
+        tester.clock().advance(Duration.ofHours(6));
+        tester.outstandingChangeDeployer().run();
+        assertEquals(Optional.empty(), i1.instance().change().application());
+        assertEquals(Optional.empty(), i2.instance().change().application());
+        assertEquals(v0, i3.instance().change().application());
+        assertEquals(Optional.empty(), i4.instance().change().application());
+
+        // v0 begins roll-out in i3, and v1 is submitted and rolls out in i1 and i2 some time later
+        i3.runJob(productionUsEast3); // v0
+        tester.clock().advance(Duration.ofHours(12));
+        i1.submit(applicationPackage);
+        Optional<ApplicationVersion> v1 = i1.lastSubmission();
+        i4.runJob(systemTest).runJob(stagingTest);
+        i1.runJob(productionUsEast3); // v1
+        i2.runJob(productionUsEast3); // v1
+        assertEquals(v1, i1.instance().latestDeployed());
+        assertEquals(v1, i2.instance().latestDeployed());
+        assertEquals(Optional.empty(), i1.instance().change().application());
+        assertEquals(Optional.empty(), i2.instance().change().application());
+        assertEquals(v0, i3.instance().change().application());
+        assertEquals(Optional.empty(), i4.instance().change().application());
+
+        // After some time, v2 also starts rolling out to i1 and i2, but does not complete in i2
+        tester.clock().advance(Duration.ofHours(3));
+        i1.submit(applicationPackage);
+        Optional<ApplicationVersion> v2 = i1.lastSubmission();
+        i4.runJob(systemTest).runJob(stagingTest);
+        i1.runJob(productionUsEast3); // v2
+        tester.clock().advance(Duration.ofHours(3));
+
+        // v1 is all done in i1 and i2, but does not yet roll out in i3; v2 is not completely rolled out there yet.
+        tester.outstandingChangeDeployer().run();
+        assertEquals(v0, i3.instance().change().application());
+
+        // i3 completes v0, which rolls out to i4; v1 is ready for i3, but v2 is not.
+        i3.runJob(testUsEast3);
+        assertEquals(Optional.empty(), i3.instance().change().application());
+        tester.outstandingChangeDeployer().run();
+        assertEquals(v2, i1.instance().latestDeployed());
+        assertEquals(v1, i2.instance().latestDeployed());
+        assertEquals(v0, i3.instance().latestDeployed());
+        assertEquals(Optional.empty(), i1.instance().change().application());
+        assertEquals(v2, i2.instance().change().application());
+        assertEquals(v1, i3.instance().change().application());
+        assertEquals(v0, i4.instance().change().application());
+    }
+
+    @Test
     public void testMultipleInstances() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .instances("instance1,instance2")
@@ -1013,48 +1171,65 @@ public class DeploymentTriggerTest {
         assertEquals(Change.empty(), app2.instance().change());
         assertEquals(Change.empty(), app3.instance().change());
 
-        // Upgrade instance 1; a failure in any instance allows an application change to accompany the upgrade.
+        // Upgrade instance 1; upgrade rolls out first, with revision following.
         // The new platform won't roll out to the conservative instance until the normal one is upgraded.
-        app2.failDeployment(systemTest);
         app1.submit(applicationPackage);
         assertEquals(Change.of(version).with(app1.application().latestVersion().get()), app1.instance().change());
+        // Upgrade platform.
         app2.runJob(systemTest);
-        app1.jobAborted(stagingTest)
-            .runJob(stagingTest)
+        app1.runJob(stagingTest)
             .runJob(productionUsWest1)
             .runJob(productionUsEast3);
-        app1.runJob(stagingTest);   // Tests with only the outstanding application change.
-        app2.runJob(systemTest);    // Tests with only the outstanding application change.
+        // Upgrade revision
+        tester.clock().advance(Duration.ofSeconds(1)); // Ensure we see revision as rolling after upgrade.
+        app2.runJob(systemTest);        // R
+        app1.runJob(stagingTest)        // R
+            .runJob(productionUsWest1); // R
+            // productionUsEast3 won't change revision before its production test has completed for the upgrade, which is one of the last jobs!
         tester.clock().advance(Duration.ofHours(2));
         app1.runJob(productionEuWest1);
         tester.clock().advance(Duration.ofHours(1));
         app1.runJob(productionAwsUsEast1a);
-        tester.triggerJobs();
         app1.runJob(testAwsUsEast1a);
+        tester.clock().advance(Duration.ofSeconds(1));
+        app1.runJob(productionAwsUsEast1a); // R
+        app1.runJob(testAwsUsEast1a);       // R
         app1.runJob(productionApNortheast2);
         app1.runJob(productionApNortheast1);
         tester.clock().advance(Duration.ofHours(1));
         app1.runJob(testApNortheast1);
         app1.runJob(testApNortheast2);
+        app1.runJob(productionApNortheast2); // R
+        app1.runJob(productionApNortheast1); // R
         app1.runJob(testUsEast3);
         app1.runJob(productionApSoutheast1);
+        tester.clock().advance(Duration.ofSeconds(1));
+        app1.runJob(productionUsEast3);      // R
+        tester.clock().advance(Duration.ofHours(2));
+        app1.runJob(productionEuWest1);      // R
+        tester.clock().advance(Duration.ofMinutes(330));
+        app1.runJob(testApNortheast1);       // R
+        app1.runJob(testApNortheast2);       // R
+        app1.runJob(testUsEast3);            // R
+        app1.runJob(productionApSoutheast1); // R
+
+        app1.runJob(stagingTest);   // Tests with only the outstanding application change.
+        app2.runJob(systemTest);    // Tests with only the outstanding application change.
 
         // Confidence rises to high, for the new version, and instance 2 starts to upgrade.
         tester.controllerTester().computeVersionStatus();
         tester.upgrader().maintain();
         tester.outstandingChangeDeployer().run();
         tester.triggerJobs();
-        assertEquals(2, tester.jobs().active().size());
+        assertEquals(tester.jobs().active().toString(), 1, tester.jobs().active().size());
         assertEquals(Change.empty(), app1.instance().change());
         assertEquals(Change.of(version), app2.instance().change());
         assertEquals(Change.empty(), app3.instance().change());
 
-        app1.runJob(stagingTest);   // Never completed successfully with just the upgrade.
-        app2.runJob(systemTest)     // Never completed successfully with just the upgrade.
-            .runJob(productionEuWest1)
+        app2.runJob(productionEuWest1)
             .failDeployment(testEuWest1);
 
-        // Instance 2 failed the last job, and now exist block window, letting application change roll out with the upgrade.
+        // Instance 2 failed the last job, and now exits block window, letting application change roll out with the upgrade.
         tester.clock().advance(Duration.ofDays(1)); // Leave block window for revisions.
         tester.upgrader().maintain();
         tester.outstandingChangeDeployer().run();
@@ -1069,41 +1244,48 @@ public class DeploymentTriggerTest {
         assertEquals(Change.empty(), app2.instance().change());
         assertEquals(Change.empty(), app3.instance().change());
 
-        // Two first instances upgraded and with new revision — last instance gets change from whatever maintainer runs first.
+        // Two first instances upgraded and with new revision — last instance gets both changes as well.
         tester.upgrader().maintain();
         tester.outstandingChangeDeployer().run();
-        assertEquals(Change.of(version), app3.instance().change());
+        assertEquals(Change.of(version).with(app1.lastSubmission().get()), app3.instance().change());
 
         tester.deploymentTrigger().cancelChange(app3.instanceId(), ALL);
         tester.outstandingChangeDeployer().run();
         tester.upgrader().maintain();
-        assertEquals(Change.of(app1.application().latestVersion().get()), app3.instance().change());
+        assertEquals(Change.of(app1.lastSubmission().get()), app3.instance().change());
 
         app3.runJob(productionEuWest1);
         tester.upgrader().maintain();
+        app1.runJob(stagingTest);
         app3.runJob(productionEuWest1);
         tester.triggerJobs();
         assertEquals(List.of(), tester.jobs().active());
         assertEquals(Change.empty(), app3.instance().change());
     }
 
+    // TODO test new revision allowed exactly when dependent instance is failing
+    // TODO test multi-tier pipeline with various policies
+    // TODO test multi-tier pipeline with upgrade after new version is the candidate
+
     @Test
-    public void testChangeCompletion() {
+    public void testRevisionJoinsUpgradeWithSeparateRollout() {
         var app = tester.newDeploymentContext().submit().deploy();
         var version = new Version("7.1");
         tester.controllerTester().upgradeSystem(version);
         tester.upgrader().maintain();
         app.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1);
+        tester.clock().advance(Duration.ofMinutes(1));
 
         app.submit();
-        tester.triggerJobs();
-        tester.outstandingChangeDeployer().run();
-        assertEquals(Change.of(version), app.instance().change());
+        assertEquals(Change.of(version).with(app.lastSubmission().get()), app.instance().change());
+        app.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1);
 
         app.runJob(productionUsEast3).runJob(productionUsWest1);
         tester.triggerJobs();
-        tester.outstandingChangeDeployer().run();
         assertEquals(Change.of(app.lastSubmission().get()), app.instance().change());
+
+        app.runJob(productionUsEast3).runJob(productionUsWest1);
+        assertEquals(Change.empty(), app.instance().change());
     }
 
     @Test

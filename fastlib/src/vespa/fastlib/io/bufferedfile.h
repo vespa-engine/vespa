@@ -26,7 +26,6 @@ private:
     /** True if the file should be read using direct IO */
     bool _directIOEnabled;
 
-    void setupDirectIOAlign();
     char * buf() { return static_cast<char *>(_buf.get()); }
 protected:
     /** The file instance used for low-level file access. */
@@ -51,7 +50,7 @@ public:
     /**
      * Delete the file instance used for low-level file access.
      **/
-    virtual ~Fast_BufferedFile(void);
+    virtual ~Fast_BufferedFile();
     /**
      * Open an existing file for reading.
      *
@@ -75,13 +74,13 @@ public:
      * Reset the internal start and end pointers to the
      * head of the buffer, thus "emptying" it.
      */
-    void ResetBuf(void);
+    void ResetBuf();
     /**
      * Write the buffer to the file. Caution: Uses obsolete
      * FastOS_FileInterface::WriteBuf.
      * Allocates a 32kB buffer if not previously allocated.
      */
-    void flushWriteBuf(void);
+    void flushWriteBuf();
     /**
      * Read from the file into the buffer. Allocates a 32kB
      * buffer if not previously allocated. Fills the buffer,
@@ -90,7 +89,7 @@ public:
      * Caution: If the amount read is smaller than the expected
      * amount, the method will abort.
      */
-    void fillReadBuf(void);
+    void fillReadBuf();
     /**
      * Read the next line of the buffered file into a buffer,
      * reading from the file as necessary.
@@ -107,7 +106,7 @@ public:
      * @param src The source buffer.
      * @param srclen The length of the source buffer.
      */
-    ssize_t Write2(const void*, size_t) override;
+    [[nodiscard]] ssize_t Write2(const void*, size_t) override;
     /**
      * Write a string to a buffered file, flushing to file
      * as necessary.
@@ -123,7 +122,7 @@ public:
      * @param dstlen The length of the destination buffer.
      * @return The number of bytes read.
      */
-    ssize_t Read(void *dst, size_t dstlen) override;
+    [[nodiscard]] ssize_t Read(void *dst, size_t dstlen) override;
     /**
      * Write one byte to the buffered file, flushing to
      * file if necessary.
@@ -131,13 +130,7 @@ public:
      * @param byte The byte to write.
      */
     void WriteByte(char byte);
-    /**
-     * Get one byte from the buffered file, reading from
-     * the file if necessary.
-     *
-     * @return int The byte read, or -1 if not read.
-     */
-    int GetByte(void);
+
     /**
      * Add an unsigned int number as ASCII text in base 10 to the buffered
      * file using a fixed width with a designated fill character.
@@ -148,22 +141,14 @@ public:
      *     for instance '0' or ' '.
      */
     void addNum(unsigned int num, int fieldw, char fill);
-    /**
-     * Get the number of bytes left to read from the buffered
-     * file. This is the sum of bytes left in the buffer, and
-     * the number of bytes left in the file that has not yet
-     * been read into the buffer.
-     *
-     * @return The number of bytes left.
-     */
-    uint64_t BytesLeft(void) const;
+
     /**
      * Test for end of file.
      *
      * @return bool True if all bytes have been read from the
      *    buffered file.
      */
-    bool Eof(void) const;
+    bool Eof() const;
     /**
      * Get the size of the file.
      *
@@ -186,7 +171,7 @@ public:
     /**
      * Force completion of pending disk writes (flush cache).
      */
-    bool Sync() override;
+    [[nodiscard]] bool Sync() override;
     /**
      * Get the time the file was last modified.
      *
@@ -208,7 +193,7 @@ public:
      * Flush the buffer, and close the file instance.
      * @return The result of the Close operation.
      */
-    bool Close () override;
+    [[nodiscard]] bool Close () override;
     /**
      * Get the buffered file position, in bytes.
      * This takes into account the data in the buffer, that has

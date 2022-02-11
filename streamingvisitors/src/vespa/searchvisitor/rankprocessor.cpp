@@ -56,6 +56,11 @@ RankProcessor::initQueryEnvironment()
     QueryWrapper::TermList & terms = _query.getTermList();
 
     for (uint32_t i = 0; i < terms.size(); ++i) {
+        if (terms[i].isGeoPosTerm()) {
+            const vespalib::string & fieldName = terms[i].getTerm()->index();
+            const vespalib::string & locStr = terms[i].getTerm()->getTermString();
+            _queryEnv.addGeoLocation(fieldName, locStr);
+        }
         if (!terms[i].isPhraseTerm() || terms[i].isFirstPhraseTerm()) { // register 1 term data per phrase
             QueryTermData & qtd = dynamic_cast<QueryTermData &>(terms[i].getTerm()->getQueryItem());
 

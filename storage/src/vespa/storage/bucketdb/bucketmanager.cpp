@@ -18,7 +18,6 @@
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/config/config.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <chrono>
 #include <thread>

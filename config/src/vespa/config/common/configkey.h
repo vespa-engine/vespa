@@ -1,8 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
+#include "types.h"
 
 namespace config {
 
@@ -17,12 +16,12 @@ public:
               vespalib::stringref defName,
               vespalib::stringref defNamespace,
               vespalib::stringref defMd5,
-              const std::vector<vespalib::string> & defSchema);
+              const StringVector & defSchema);
 
     ConfigKey(const ConfigKey &);
     ConfigKey & operator = (const ConfigKey &);
-    ConfigKey(ConfigKey &&) = default;
-    ConfigKey & operator = (ConfigKey &&) = default;
+    ConfigKey(ConfigKey &&) noexcept;
+    ConfigKey & operator = (ConfigKey &&) noexcept;
     ConfigKey();
     ~ConfigKey();
 
@@ -34,7 +33,7 @@ public:
     const vespalib::string & getConfigId() const;
     const vespalib::string & getDefNamespace() const;
     const vespalib::string & getDefMd5() const;
-    const std::vector<vespalib::string> & getDefSchema() const;
+    const StringVector & getDefSchema() const;
 
     template <typename ConfigType>
     static const ConfigKey create(vespalib::stringref configId)
@@ -51,7 +50,7 @@ private:
     vespalib::string _defName;
     vespalib::string _defNamespace;
     vespalib::string _defMd5;
-    std::vector<vespalib::string> _defSchema;
+    StringVector     _defSchema;
     vespalib::string _key;
 };
 

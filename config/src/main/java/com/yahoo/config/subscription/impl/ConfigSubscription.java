@@ -10,6 +10,7 @@ import com.yahoo.config.subscription.DirSource;
 import com.yahoo.config.subscription.FileSource;
 import com.yahoo.config.subscription.JarSource;
 import com.yahoo.config.subscription.RawSource;
+import com.yahoo.text.internal.SnippetGenerator;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.TimingValues;
@@ -198,13 +199,14 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     }
 
     void setConfigAndGeneration(Long generation, boolean applyOnRestart, T config, PayloadChecksums payloadChecksums) {
-        ConfigState<T> prev = this.config.get();
-        boolean configChanged = !Objects.equals(prev.getConfig(), config);
-        String message = "Config has changed unexpectedly for " + key + ", generation " + generation;
-        if (configChanged) {
-            if (log.isLoggable(Level.FINE))
-                message = message + ", config in state :" + prev.getConfig() + ", new config: " + config;
-            log.log(Level.WARNING, message);
+        T previousConfig = this.config.get().getConfig();
+        boolean configChanged = ! Objects.equals(previousConfig, config);
+        if (previousConfig != null && configChanged) {
+            SnippetGenerator generator = new SnippetGenerator();
+            int sizeHint = 500;
+            log.log(Level.WARNING, "Config has changed unexpectedly for " + key + ", generation " + generation +
+                    ", config in state :" + generator.makeSnippet(previousConfig.toString(), sizeHint) + ", new config: " +
+                    generator.makeSnippet(config.toString(), sizeHint));
         }
         this.config.set(new ConfigState<>(true, generation, applyOnRestart, configChanged, config, payloadChecksums));
     }

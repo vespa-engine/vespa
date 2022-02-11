@@ -6,7 +6,6 @@ import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.Flags;
@@ -71,7 +70,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
             deleteUnusedCertificates();
             deleteOrReportUnmanagedCertificates();
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Exception caught while maintaining endpoint certificates", e);
+            log.log(Level.SEVERE, "Exception caught while maintaining endpoint certificates", e);
             return 0.0;
         }
 

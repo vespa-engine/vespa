@@ -177,7 +177,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean skipMbusReplyThread;
         private final boolean useAsyncMessageHandlingOnSchedule;
         private final double feedConcurrency;
-        private final boolean enableFeedBlockInDistributor;
         private final List<String> allowedAthenzProxyIdentities;
         private final int maxActivationInhibitedOutOfSyncGroups;
         private final ToIntFunction<ClusterSpec.Type> jvmOmitStackTraceInFastThrow;
@@ -201,6 +200,10 @@ public class ModelContextImpl implements ModelContext {
         private final List<String> ignoredHttpUserAgents;
         private final boolean enableServerOcspStapling;
         private final String persistenceAsyncThrottling;
+        private final String mergeThrottlingPolicy;
+        private final double persistenceThrottlingWsDecrementFactor;
+        private final double persistenceThrottlingWsBackoff;
+        private final boolean inhibitDefaultMergesWhenGlobalMergesPending;
         private final boolean useQrserverServiceName;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
@@ -217,7 +220,6 @@ public class ModelContextImpl implements ModelContext {
             this.skipMbusReplyThread = flagValue(source, appId, Flags.SKIP_MBUS_REPLY_THREAD);
             this.useAsyncMessageHandlingOnSchedule = flagValue(source, appId, Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE);
             this.feedConcurrency = flagValue(source, appId, Flags.FEED_CONCURRENCY);
-            this.enableFeedBlockInDistributor = flagValue(source, appId, Flags.ENABLE_FEED_BLOCK_IN_DISTRIBUTOR);
             this.allowedAthenzProxyIdentities = flagValue(source, appId, Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES);
             this.maxActivationInhibitedOutOfSyncGroups = flagValue(source, appId, Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS);
             this.jvmOmitStackTraceInFastThrow = type -> flagValueAsInt(source, appId, type, PermanentFlags.JVM_OMIT_STACK_TRACE_IN_FAST_THROW);
@@ -241,6 +243,10 @@ public class ModelContextImpl implements ModelContext {
             this.ignoredHttpUserAgents = flagValue(source, appId, PermanentFlags.IGNORED_HTTP_USER_AGENTS);
             this.enableServerOcspStapling = flagValue(source, appId, Flags.ENABLE_SERVER_OCSP_STAPLING);
             this.persistenceAsyncThrottling = flagValue(source, appId, Flags.PERSISTENCE_ASYNC_THROTTLING);
+            this.mergeThrottlingPolicy = flagValue(source, appId, Flags.MERGE_THROTTLING_POLICY);
+            this.persistenceThrottlingWsDecrementFactor = flagValue(source, appId, Flags.PERSISTENCE_THROTTLING_WS_DECREMENT_FACTOR);
+            this.persistenceThrottlingWsBackoff = flagValue(source, appId, Flags.PERSISTENCE_THROTTLING_WS_BACKOFF);
+            this.inhibitDefaultMergesWhenGlobalMergesPending = flagValue(source, appId, Flags.INHIBIT_DEFAULT_MERGES_WHEN_GLOBAL_MERGES_PENDING);
             this.useQrserverServiceName =  flagValue(source, appId, Flags.USE_QRSERVER_SERVICE_NAME);
         }
 
@@ -257,7 +263,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean skipMbusReplyThread() { return skipMbusReplyThread; }
         @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
         @Override public double feedConcurrency() { return feedConcurrency; }
-        @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
         @Override public List<String> allowedAthenzProxyIdentities() { return allowedAthenzProxyIdentities; }
         @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
         @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) {
@@ -283,6 +288,10 @@ public class ModelContextImpl implements ModelContext {
         @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }
         @Override public boolean enableServerOcspStapling() { return enableServerOcspStapling; }
         @Override public String persistenceAsyncThrottling() { return persistenceAsyncThrottling; }
+        @Override public String mergeThrottlingPolicy() { return mergeThrottlingPolicy; }
+        @Override public double persistenceThrottlingWsDecrementFactor() { return persistenceThrottlingWsDecrementFactor; }
+        @Override public double persistenceThrottlingWsBackoff() { return persistenceThrottlingWsBackoff; }
+        @Override public boolean inhibitDefaultMergesWhenGlobalMergesPending() { return inhibitDefaultMergesWhenGlobalMergesPending; }
         @Override public boolean useQrserverServiceName() { return useQrserverServiceName; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
@@ -345,6 +354,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<X509Certificate> operatorCertificates;
         private final List<String> tlsCiphersOverride;
         private final List<String> zoneDnsSuffixes;
+        private final List<String> environmentVariables;
 
         public Properties(ApplicationId applicationId,
                           ConfigserverConfig configserverConfig,
@@ -377,13 +387,15 @@ public class ModelContextImpl implements ModelContext {
             this.tenantSecretStores = tenantSecretStores;
             this.secretStore = secretStore;
             this.jvmGCOptionsFlag = PermanentFlags.JVM_GC_OPTIONS.bindTo(flagSource)
-                                                                 .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm());
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm());
             this.allowDisableMtls = PermanentFlags.ALLOW_DISABLE_MTLS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.operatorCertificates = operatorCertificates;
             this.tlsCiphersOverride = PermanentFlags.TLS_CIPHERS_OVERRIDE.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.zoneDnsSuffixes = configserverConfig.zoneDnsSuffixes();
+            this.environmentVariables = PermanentFlags.ENVIRONMENT_VARIABLES.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -464,6 +476,9 @@ public class ModelContextImpl implements ModelContext {
                               .orElse(flag)
                               .value();
         }
+
+        @Override
+        public List<String> environmentVariables() { return environmentVariables; }
 
     }
 

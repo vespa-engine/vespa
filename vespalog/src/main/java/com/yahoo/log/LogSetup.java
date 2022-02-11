@@ -1,12 +1,20 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.log;
 
+import com.yahoo.log.impl.LogUtils;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Enumeration;
-import java.util.logging.*;
 import java.util.Timer;
+import java.util.logging.FileHandler;
+import java.util.logging.Filter;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 /**
  * Sets up Vespa logging. Call a setup method to set up this.
@@ -14,10 +22,16 @@ import java.util.Timer;
  * @author  Bjorn Borud
  * @author arnej27959
  */
+@SuppressWarnings("removal")
 public class LogSetup {
 
     private static Timer taskRunner = new Timer(true);
-    /** A global task thread */
+
+    /**
+     * A global task thread
+     * @deprecated Just construct a java.util.Timer instead
+     **/
+    @Deprecated(since = "7", forRemoval = true)
     public static Timer getTaskRunner() { return taskRunner; }
 
     /** The log handler used by this */
@@ -25,6 +39,7 @@ public class LogSetup {
 
     private static ZooKeeperFilter zooKeeperFilter = null;
 
+    /** Clear all handlers registered in java.util.logging framework */
     public static void clearHandlers () {
         Enumeration<String> names = LogManager.getLogManager().getLoggerNames();
         while (names.hasMoreElements()) {
@@ -155,14 +170,18 @@ public class LogSetup {
         Logger.getLogger("").addHandler(logHandler);
     }
 
-    /** Returns the log handler set up by this class */
+    /**
+     * Returns the log handler set up by this class
+     * @deprecated Should only be used internally in the log library
+     */
+    @Deprecated(since = "7", forRemoval = true)
     public static VespaLogHandler getLogHandler() {
         return logHandler;
     }
 
-    /** Returns the log handler set up by this class */
+    /** perform cleanup */
     public static void cleanup() {
-        if (zooKeeperFilter != null)
+         if (zooKeeperFilter != null)
             zooKeeperFilter.close();
     }
 

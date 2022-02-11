@@ -5,6 +5,7 @@
 #include "filesizecalculator.h"
 #include <vespa/fastos/file.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <cassert>
 
 namespace search {
 
@@ -52,7 +53,8 @@ FileWithHeader::rewind()
 void
 FileWithHeader::close()
 {
-    _file->Close();
+    bool close_ok = _file->Close();
+    assert(close_ok);
 }
 
 

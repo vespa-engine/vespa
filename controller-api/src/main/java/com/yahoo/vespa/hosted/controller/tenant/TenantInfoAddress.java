@@ -16,6 +16,8 @@ import java.util.Objects;
  */
 public class TenantInfoAddress {
 
+    // All fields are editable in 'Edit Profile - Company Address'.
+    // The fields are not exposed outside the 'Edit Profile' form.
     private final String addressLines;
     private final String postalCodeOrZip;
     private final String city;

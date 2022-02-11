@@ -5,16 +5,13 @@
 #include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
-#include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
-#include <vespa/searchlib/attribute/attrvector.h>
 #include <vespa/searchlib/attribute/multienumattribute.hpp>
-#include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/searchlib/attribute/multistringattribute.h>
 #include <vespa/searchlib/attribute/multivalueattribute.hpp>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
@@ -25,6 +22,7 @@
 #include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/fastos/file.h>
 #include <cmath>
 #include <iostream>
 
@@ -40,6 +38,8 @@ using search::attribute::BasicType;
 using search::attribute::IAttributeVector;
 using vespalib::stringref;
 using vespalib::string;
+
+namespace search {
 
 namespace {
 
@@ -156,8 +156,6 @@ bool contains_value(const Container& c, size_t elems, const V& value) {
 }
 
 }
-
-namespace search {
 
 using attribute::CollectionType;
 using attribute::Config;

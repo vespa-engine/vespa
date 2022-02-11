@@ -2,7 +2,7 @@
 #pragma once
 
 #include <vespa/config/common/sourcefactory.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <vespa/config/common/types.h>
 
 namespace config {
 
@@ -20,7 +20,7 @@ public:
     /**
      * Create source handling config described by key.
      */
-    Source::UP createSource(const IConfigHolder::SP & holder, const ConfigKey & key) const override;
+    std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key) const override;
 private:
     vespalib::string _fileName;
 };
@@ -36,10 +36,10 @@ public:
     /**
      * Create source handling config described by key.
      */
-    Source::UP createSource(const IConfigHolder::SP & holder, const ConfigKey & key) const override;
+    std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key) const override;
 private:
     vespalib::string _dirName;
-    std::vector<vespalib::string> _fileNames;
+    StringVector _fileNames;
 };
 
 

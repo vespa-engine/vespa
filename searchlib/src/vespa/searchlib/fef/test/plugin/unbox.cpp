@@ -14,10 +14,18 @@ struct UnboxExecutor : FeatureExecutor {
     }
 };
 
+struct ForwardExecutor : FeatureExecutor {
+    bool isPure() override { return true; }
+    void execute(uint32_t) override {
+        outputs().set_number(0, inputs().get_number(0));
+    }
+};
+
 } // namespace search::fef::test::<unnamed>
 
 UnboxBlueprint::UnboxBlueprint()
-    : Blueprint("unbox")
+  : Blueprint("unbox"),
+    _was_object(false)
 {
 }
 
@@ -41,15 +49,22 @@ UnboxBlueprint::getDescriptions() const
 bool
 UnboxBlueprint::setup(const IIndexEnvironment &, const ParameterList &params)
 {
-    defineInput(params[0].getValue(), AcceptInput::OBJECT);
-    describeOutput("value", "unboxed value", FeatureType::number());
-    return true;
+    if (auto input = defineInput(params[0].getValue(), AcceptInput::ANY)) {
+        _was_object = input.value().is_object();
+        describeOutput("value", "unboxed value", FeatureType::number());
+        return true;
+    }
+    return false; // dependency error
 }
 
 FeatureExecutor &
 UnboxBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
 {
-    return stash.create<UnboxExecutor>();
+    if (_was_object) {
+        return stash.create<UnboxExecutor>();
+    } else {
+        return stash.create<ForwardExecutor>();
+    }
 }
 
 } // namespace search::fef::test

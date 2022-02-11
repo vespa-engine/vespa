@@ -23,7 +23,6 @@ import com.yahoo.searchdefinition.document.TemporarySDField;
  */
 public class ParentChildSearchModel {
 
-    private final Application application = new Application(MockApplicationPackage.createEmpty());
     public Schema parentSchema;
     public Schema childSchema;
 
@@ -33,7 +32,7 @@ public class ParentChildSearchModel {
     }
 
     protected Schema createSearch(String name) {
-        Schema result = new Schema(name, application, new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
+        Schema result = new Schema(name, MockApplicationPackage.createEmpty(), new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
         result.addDocument(new SDDocumentType(name));
         return result;
     }

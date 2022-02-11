@@ -11,6 +11,7 @@
 #include <vespa/searchlib/common/schedule_sequenced_task_callback.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/retain_guard.h>
+#include <cassert>
 
 namespace search::memoryindex {
 
@@ -28,8 +29,7 @@ DocumentInverter::DocumentInverter(DocumentInverterContext& context)
 {
     auto& schema = context.get_schema();
     auto& field_indexes = context.get_field_indexes();
-    for (uint32_t fieldId = 0; fieldId < schema.getNumIndexFields();
-         ++fieldId) {
+    for (uint32_t fieldId = 0; fieldId < schema.getNumIndexFields(); ++fieldId) {
         auto &remover(field_indexes.get_remover(fieldId));
         auto &inserter(field_indexes.get_inserter(fieldId));
         auto &calculator(field_indexes.get_calculator(fieldId));

@@ -52,8 +52,8 @@ public class FeedHandlerV3 extends ThreadedHttpRequestHandler {
         docTypeManager = new DocumentTypeManager(documentManagerConfig);
         this.sessionCache = sessionCache;
         feedReplyHandler = new FeedReplyReader(metric, metricsHelper);
-        cron = new ScheduledThreadPoolExecutor(1, ThreadFactoryFactory.getThreadFactory("feedhandlerv3.cron"));
-        cron.scheduleWithFixedDelay(this::removeOldClients, 16, 11, TimeUnit.MINUTES);
+        cron = new ScheduledThreadPoolExecutor(1, ThreadFactoryFactory.getThreadFactory("feed-handler-v3-janitor"));
+        cron.scheduleWithFixedDelay(this::removeOldClients, 3, 3, TimeUnit.SECONDS);
         this.metric = metric;
     }
 

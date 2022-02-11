@@ -5,6 +5,7 @@
 #include <vespa/searchlib/index/postinglistcountfile.h>
 #include <vespa/searchlib/index/postinglistfile.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/searchlib/index/postinglistparams.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/data/fileheader.h>
 
@@ -15,7 +16,6 @@ namespace {
 
 vespalib::string myId5("Zc.5");
 vespalib::string myId4("Zc.4");
-vespalib::string emptyId;
 vespalib::string interleaved_features("interleaved_features");
 
 }
@@ -47,9 +47,7 @@ Zc4PostingSeqRead::Zc4PostingSeqRead(PostingListCountFileSeqRead *countFile, boo
 }
 
 
-Zc4PostingSeqRead::~Zc4PostingSeqRead()
-{
-}
+Zc4PostingSeqRead::~Zc4PostingSeqRead() = default;
 
 void
 Zc4PostingSeqRead::readDocIdAndFeatures(DocIdAndFeatures &features)
@@ -98,9 +96,8 @@ Zc4PostingSeqRead::close()
 {
     auto &readContext = _reader.get_read_context();
     readContext.dropComprBuf();
-    _file.Close();
     readContext.setFile(nullptr);
-    return true;
+    return _file.Close();
 }
 
 
@@ -203,9 +200,7 @@ Zc4PostingSeqWrite(PostingListCountFileSeqWrite *countFile)
 }
 
 
-Zc4PostingSeqWrite::~Zc4PostingSeqWrite()
-{
-}
+Zc4PostingSeqWrite::~Zc4PostingSeqWrite() = default;
 
 
 void
@@ -258,7 +253,7 @@ Zc4PostingSeqWrite::makeHeader(const FileHeaderContext &fileHeaderContext)
 }
 
 
-void
+bool
 Zc4PostingSeqWrite::updateHeader()
 {
     vespalib::FileHeader h;
@@ -271,8 +266,9 @@ Zc4PostingSeqWrite::updateHeader()
     h.putTag(Tag("fileBitSize", _fileBitSize));
     h.putTag(Tag("numWords", _writer.get_num_words()));
     h.rewriteFile(f);
-    f.Sync();
-    f.Close();
+    bool success = f.Sync();
+    success &= f.Close();
+    return success;
 }
 
 
@@ -320,11 +316,11 @@ Zc4PostingSeqWrite::close()
     _writer.on_close(); // flush and pad
     auto &writeContext = _writer.get_write_context();
     writeContext.dropComprBuf();
-    _file.Sync();
-    _file.Close();
+    bool success = _file.Sync();
+    success &= _file.Close();
     writeContext.setFile(nullptr);
-    updateHeader();
-    return true;
+    success &= updateHeader();
+    return success;
 }
 
 void

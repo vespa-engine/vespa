@@ -5,6 +5,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.documentmodel.NewDocumentType;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.builder.UserConfigBuilder;
@@ -14,7 +15,6 @@ import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
-import com.yahoo.vespa.model.search.NamedSchema;
 import com.yahoo.vespa.model.search.NodeSpec;
 import com.yahoo.vespa.model.search.SchemaDefinitionXMLHandler;
 import com.yahoo.vespa.model.search.SearchCluster;
@@ -73,6 +73,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private final double defaultFeedConcurrency;
     private final boolean forwardIssuesToQrs;
     private final int defaultMaxCompactBuffers;
+    private final ProtonConfig.Replay_throttling_policy.Type.Enum persistenceAsyncThrottling;
 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
     private final double fractionOfMemoryReserved;
@@ -202,6 +203,14 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         }
     }
 
+    private static ProtonConfig.Replay_throttling_policy.Type.Enum convertPersistenceAsyncThrottling(String value) {
+        try {
+            return ProtonConfig.Replay_throttling_policy.Type.Enum.valueOf(value);
+        } catch (Throwable t) {
+            return ProtonConfig.Replay_throttling_policy.Type.Enum.UNLIMITED;
+        }
+    }
+
     private ContentSearchCluster(AbstractConfigProducer<?> parent,
                                  String clusterName,
                                  ModelContext.FeatureFlags featureFlags,
@@ -226,6 +235,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         this.defaultFeedConcurrency = featureFlags.feedConcurrency();
         this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
         this.defaultMaxCompactBuffers = featureFlags.maxCompactBuffers();
+        this.persistenceAsyncThrottling = convertPersistenceAsyncThrottling(featureFlags.persistenceAsyncThrottling());
     }
 
     public void setVisibilityDelay(double delay) {
@@ -249,27 +259,25 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private void addSchemas(DeployState deployState, List<ModelElement> searchDefs, AbstractSearchCluster sc) {
         for (ModelElement e : searchDefs) {
             SchemaDefinitionXMLHandler schemaDefinitionXMLHandler = new SchemaDefinitionXMLHandler(e);
-            NamedSchema searchDefinition =
-                    schemaDefinitionXMLHandler.getResponsibleSearchDefinition(deployState.getSchemas());
-            if (searchDefinition == null)
-                throw new RuntimeException("Schema '" + schemaDefinitionXMLHandler.getName() + "' referenced in " +
-                                           this + " does not exist");
+            Schema schema = schemaDefinitionXMLHandler.findResponsibleSchema(deployState.getSchemas());
+            if (schema == null)
+                throw new IllegalArgumentException("Schema '" + schemaDefinitionXMLHandler.getName() + "' referenced in " +
+                                                   this + " does not exist");
 
             // TODO: remove explicit building of user configs when the complete content model is built using builders.
-            sc.getLocalSDS().add(new AbstractSearchCluster.SchemaSpec(searchDefinition,
+            sc.getLocalSDS().add(new AbstractSearchCluster.SchemaSpec(schema,
                                                                       UserConfigBuilder.build(e.getXml(), deployState, deployState.getDeployLogger())));
-            //need to get the document names from this sdfile
-            sc.addDocumentNames(searchDefinition);
+            sc.addDocumentNames(schema);
         }
     }
 
     private void addCluster(AbstractSearchCluster sc) {
         if (clusters.containsKey(sc.getClusterName())) {
-            throw new IllegalArgumentException("I already have registered cluster '" + sc.getClusterName() + "'");
+            throw new IllegalArgumentException("Duplicate cluster '" + sc.getClusterName() + "'");
         }
         if (sc instanceof IndexedSearchCluster) {
             if (indexedCluster != null) {
-                throw new IllegalArgumentException("I already have one indexed cluster named '" + indexedCluster.getClusterName());
+                throw new IllegalArgumentException("Duplicate indexed cluster '" + indexedCluster.getClusterName() + "'");
             }
             indexedCluster = (IndexedSearchCluster)sc;
         }
@@ -292,11 +300,11 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
                                            clusterName, node, flushOnShutdown, tuning, resourceLimits, parentGroup.isHosted(),
                                            fractionOfMemoryReserved);
             searchNode.setHostResource(node.getHostResource());
-            searchNode.initService(deployState.getDeployLogger());
+            searchNode.initService(deployState);
 
             tls = new TransactionLogServer(searchNode, clusterName, syncTransactionLog);
             tls.setHostResource(searchNode.getHostResource());
-            tls.initService(deployState.getDeployLogger());
+            tls.initService(deployState);
         } else {
             searchNode = new SearchNode.Builder(""+node.getDistributionKey(), spec, clusterName, node, flushOnShutdown,
                                                 tuning, resourceLimits, fractionOfMemoryReserved)
@@ -444,6 +452,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         builder.indexing.tasklimit(feedTaskLimit);
         builder.feeding.master_task_limit(feedMasterTaskLimit);
         builder.feeding.shared_field_writer_executor(sharedFieldWriterExecutor);
+        builder.replay_throttling_policy.type(persistenceAsyncThrottling);
     }
 
     private boolean isGloballyDistributed(NewDocumentType docType) {

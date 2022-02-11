@@ -40,11 +40,11 @@ public class SchemaNodeTest {
         TransactionLogServer tls = new TransactionLogServer(root, "mycluster", useFsync);
         tls.setHostResource(new HostResource(host));
         tls.setBasePort(100);
-        tls.initService(root.deployLogger());
+        tls.initService(root.getDeployState());
         node.setTls(tls);
         node.setHostResource(new HostResource(host));
         node.setBasePort(200);
-        node.initService(root.deployLogger());
+        node.initService(root.getDeployState());
         root.freezeModelTopology();
     }
 
@@ -78,7 +78,7 @@ public class SchemaNodeTest {
         MockRoot root = new MockRoot("");
         SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted());
         node.setHostResource(new HostResource(new Host(node, "mynbode")));
-        node.initService(root.deployLogger());
+        node.initService(root.getDeployState());
         assertFalse(node.getPreShutdownCommand().isPresent());
     }
 
@@ -87,7 +87,7 @@ public class SchemaNodeTest {
         MockRoot root = new MockRoot("");
         SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, root.getDeployState().isHosted());
         node.setHostResource(new HostResource(new Host(node, "mynbode2")));
-        node.initService(root.deployLogger());
+        node.initService(root.getDeployState());
         assertTrue(node.getPreShutdownCommand().isPresent());
         assertTrue(node.getPreShutdownCommand().get().contains("vespa-proton-cmd " + node.getRpcPort() + " prepareRestart"));
     }

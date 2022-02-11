@@ -6,6 +6,8 @@
 #include <optional>
 #include <cassert>
 
+#include <sys/resource.h>
+
 namespace vespalib {
 
 namespace cpu_usage {
@@ -15,11 +17,11 @@ namespace {
 class DummyThreadSampler : public ThreadSampler {
 private:
     steady_time _start;
-    double _load;
+    double _util;
 public:
-    DummyThreadSampler(double load) : _start(steady_clock::now()), _load(load) {}
-    duration sample() const override {
-        return from_s(to_s(steady_clock::now() - _start) * _load);
+    DummyThreadSampler(double util) : _start(steady_clock::now()), _util(util) {}
+    duration sample() const noexcept override {
+        return from_s(to_s(steady_clock::now() - _start) * _util);
     }
 };
 
@@ -32,9 +34,10 @@ public:
     LinuxThreadSampler() : _my_clock() {
         REQUIRE_EQ(pthread_getcpuclockid(pthread_self(), &_my_clock), 0);
     }
-    duration sample() const override {
+    duration sample() const noexcept override {
         timespec ts;
-        REQUIRE_EQ(clock_gettime(_my_clock, &ts), 0);
+        memset(&ts, 0, sizeof(ts));
+        clock_gettime(_my_clock, &ts);
         return from_timespec(ts);
     }
 };
@@ -43,87 +46,88 @@ public:
 
 } // <unnamed>
 
-ThreadSampler::UP create_thread_sampler(bool force_mock_impl, double expected_load) {
+duration total_cpu_usage() noexcept {
+        timespec ts;
+        memset(&ts, 0, sizeof(ts));
+        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
+        return from_timespec(ts);
+}
+
+ThreadSampler::UP create_thread_sampler(bool force_mock_impl, double expected_util) {
     if (force_mock_impl) {
-        return std::make_unique<DummyThreadSampler>(expected_load);
+        return std::make_unique<DummyThreadSampler>(expected_util);
     }
 #ifdef __linux__
     return std::make_unique<LinuxThreadSampler>();
 #endif
-    return std::make_unique<DummyThreadSampler>(expected_load);
+    return std::make_unique<DummyThreadSampler>(expected_util);
 }
 
 } // cpu_usage
 
-class CpuUsage::ThreadTrackerImpl : public CpuUsage::ThreadTracker {
-private:
-    SpinLock                     _lock;
-    uint32_t                     _cat_idx;
-    duration                     _old_usage;
-    cpu_usage::ThreadSampler::UP _sampler;
-    Sample                       _pending;
-
-    using Guard = std::lock_guard<SpinLock>;
-
-    struct Wrapper {
-        std::shared_ptr<ThreadTrackerImpl> self;
-        Wrapper() : self(std::make_shared<ThreadTrackerImpl>()) {
-            CpuUsage::self().add_thread(self);
-        }
-        ~Wrapper() {
-            self->set_category(CpuUsage::num_categories);
-            CpuUsage::self().remove_thread(std::move(self));
-        }
-    };
-
-public:
-    ThreadTrackerImpl()
-      : _lock(),
-        _cat_idx(num_categories),
-        _old_usage(),
-        _sampler(cpu_usage::create_thread_sampler()),
-        _pending()
-    {
-    }
-
-    uint32_t set_category(uint32_t new_cat_idx) {
-        Guard guard(_lock);
-        duration new_usage = _sampler->sample();
-        if (_cat_idx < num_categories) {
-            _pending[_cat_idx] += (new_usage - _old_usage);
-        }
-        _old_usage = new_usage;
-        size_t old_cat_idx = _cat_idx;
-        _cat_idx = new_cat_idx;
-        return old_cat_idx;
-    }
-
-    Sample sample() override {
-        Guard guard(_lock);
-        if (_cat_idx < num_categories) {
-            duration new_usage = _sampler->sample();
-            _pending[_cat_idx] += (new_usage - _old_usage);
-            _old_usage = new_usage;
-        }
-        Sample sample = _pending;
-        _pending = Sample();
-        return sample;
-    }
-
-    static ThreadTrackerImpl &self() {
-        thread_local Wrapper wrapper;
-        return *wrapper.self;
-    }
-};
-
-CpuUsage::MyUsage::MyUsage(Category cat)
-  : _old_cat_idx(ThreadTrackerImpl::self().set_category(index_of(cat)))
+CpuUsage::ThreadTrackerImpl::ThreadTrackerImpl(cpu_usage::ThreadSampler::UP sampler)
+  : _lock(),
+    _cat(Category::OTHER),
+    _old_usage(),
+    _sampler(std::move(sampler)),
+    _pending()
 {
 }
 
-CpuUsage::MyUsage::~MyUsage()
+CpuUsage::Category
+CpuUsage::ThreadTrackerImpl::set_category(Category new_cat) noexcept
 {
-    ThreadTrackerImpl::self().set_category(_old_cat_idx);
+    // only owning thread may change category
+    if (new_cat == _cat) {
+        return new_cat;
+    }
+    Guard guard(_lock);
+    duration new_usage = _sampler->sample();
+    if (_cat != Category::OTHER) {
+        _pending[_cat] += (new_usage - _old_usage);
+    }
+    _old_usage = new_usage;
+    auto old_cat = _cat;
+    _cat = new_cat;
+    return old_cat;
+}
+
+CpuUsage::Sample
+CpuUsage::ThreadTrackerImpl::sample() noexcept
+{
+    Guard guard(_lock);
+    if (_cat != Category::OTHER) {
+        duration new_usage = _sampler->sample();
+        _pending[_cat] += (new_usage - _old_usage);
+        _old_usage = new_usage;
+    }
+    Sample sample = _pending;
+    _pending = Sample();
+    return sample;
+}
+
+vespalib::string &
+CpuUsage::name_of(Category cat)
+{
+    static std::array<vespalib::string,num_categories> names = {"setup", "read", "write", "compact", "other"};
+    return names[index_of(cat)];
+}
+
+CpuUsage::Category
+CpuUsage::MyUsage::set_cpu_category_for_this_thread(Category cat) noexcept
+{
+    struct Wrapper {
+        std::shared_ptr<ThreadTrackerImpl> self;
+        Wrapper() : self(std::make_shared<ThreadTrackerImpl>(cpu_usage::create_thread_sampler())) {
+            CpuUsage::self().add_thread(self);
+        }
+        ~Wrapper() {
+            self->set_category(CpuUsage::Category::OTHER);
+            CpuUsage::self().remove_thread(std::move(self));
+        }
+    };
+    thread_local Wrapper wrapper;
+    return wrapper.self->set_category(cat);
 }
 
 CpuUsage::CpuUsage()
@@ -218,6 +222,11 @@ CpuUsage::do_sample()
         my_sample.merge(_usage);
         _usage = my_sample;
     }
+    auto total = cpu_usage::total_cpu_usage();
+    for (size_t i = 0; i < index_of(Category::OTHER); ++i) {
+        total -= my_sample[i];
+    }
+    my_sample[Category::OTHER] = std::max(total, duration::zero());
     TimedSample result{t, my_sample};
     if (my_promise.has_value()) {
         my_promise.value().set_value(result);
@@ -236,6 +245,7 @@ CpuUsage::sample_or_wait()
                 _conflict = std::make_unique<SampleConflict>();
             }
             my_future = _conflict->future_sample;
+            _conflict->waiters++;
         } else {
             _sampling = true;
         }
@@ -251,6 +261,31 @@ CpuUsage::TimedSample
 CpuUsage::sample()
 {
     return self().sample_or_wait();
+}
+
+Runnable::init_fun_t
+CpuUsage::wrap(Runnable::init_fun_t init, Category cat)
+{
+    return [init,cat](Runnable &target) {
+        auto my_usage = CpuUsage::use(cat);
+        return init(target);
+    };
+}
+
+Executor::Task::UP
+CpuUsage::wrap(Executor::Task::UP task, Category cat)
+{
+    struct CpuTask : Executor::Task {
+        UP task;
+        Category cat;
+        CpuTask(UP task_in, Category cat_in)
+          : task(std::move(task_in)), cat(cat_in) {}
+        void run() override {
+            auto my_usage = CpuUsage::use(cat);
+            task->run();
+        }
+    };
+    return std::make_unique<CpuTask>(std::move(task), cat);
 }
 
 } // namespace

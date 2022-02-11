@@ -2,6 +2,7 @@
 
 #include "translogserverapp.h"
 #include <vespa/config/subscription/configuri.h>
+#include <vespa/config/helper/configfetcher.hpp>
 #include <vespa/vespalib/util/time.h>
 
 #include <vespa/log/log.h>
@@ -16,11 +17,11 @@ TransLogServerApp::TransLogServerApp(const config::ConfigUri & tlsConfigUri,
     : _lock(),
       _tls(),
       _tlsConfig(),
-      _tlsConfigFetcher(tlsConfigUri.getContext()),
+      _tlsConfigFetcher(std::make_unique<config::ConfigFetcher>(tlsConfigUri.getContext())),
       _fileHeaderContext(fileHeaderContext)
 {
-    _tlsConfigFetcher.subscribe<searchlib::TranslogserverConfig>(tlsConfigUri.getConfigId(), this);
-    _tlsConfigFetcher.start();
+    _tlsConfigFetcher->subscribe<searchlib::TranslogserverConfig>(tlsConfigUri.getConfigId(), this);
+    _tlsConfigFetcher->start();
 }
 
 namespace {
@@ -93,7 +94,7 @@ TransLogServerApp::start()
 
 TransLogServerApp::~TransLogServerApp()
 {
-    _tlsConfigFetcher.close();
+    _tlsConfigFetcher->close();
 }
 
 void

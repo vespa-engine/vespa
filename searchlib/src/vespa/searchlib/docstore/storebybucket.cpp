@@ -1,14 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "storebybucket.h"
-#include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/cpu_usage.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <algorithm>
 
 namespace search::docstore {
 
 using document::BucketId;
+using vespalib::CpuUsage;
 using vespalib::makeLambdaTask;
 
 StoreByBucket::StoreByBucket(MemoryDataStore & backingMemory, Executor & executor, const CompressionConfig & compression) noexcept
@@ -35,9 +37,10 @@ StoreByBucket::add(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void
         Chunk::UP tmpChunk = createChunk();
         _current.swap(tmpChunk);
         incChunksPosted();
-        _executor.execute(makeLambdaTask([this, chunk=std::move(tmpChunk)]() mutable {
+        auto task = makeLambdaTask([this, chunk=std::move(tmpChunk)]() mutable {
             closeChunk(std::move(chunk));
-        }));
+        });
+        _executor.execute(CpuUsage::wrap(std::move(task), CpuUsage::Category::COMPACT));
     }
     Index idx(bucketId, _current->getId(), chunkId, lid);
     _current->append(lid, buffer, sz);
@@ -88,9 +91,10 @@ void
 StoreByBucket::drain(IWrite & drainer)
 {
     incChunksPosted();
-    _executor.execute(makeLambdaTask([this, chunk=std::move(_current)]() mutable {
+    auto task = makeLambdaTask([this, chunk=std::move(_current)]() mutable {
         closeChunk(std::move(chunk));
-    }));
+    });
+    _executor.execute(CpuUsage::wrap(std::move(task), CpuUsage::Category::COMPACT));
     waitAllProcessed();
     std::vector<Chunk::UP> chunks;
     chunks.resize(_chunks.size());

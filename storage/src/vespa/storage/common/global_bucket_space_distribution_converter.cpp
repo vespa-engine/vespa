@@ -2,9 +2,8 @@
 
 #include "global_bucket_space_distribution_converter.h"
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/config/config.h>
 #include <vespa/config/print/asciiconfigwriter.h>
-#include <vespa/config/print/asciiconfigreader.h>
+#include <vespa/config/print/asciiconfigreader.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vdslib/distribution/distribution_config_util.h>
 #include <vespa/vespalib/stllike/asciistream.h>

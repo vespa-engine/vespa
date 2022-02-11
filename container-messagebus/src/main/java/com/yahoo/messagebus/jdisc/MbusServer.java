@@ -10,10 +10,6 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.service.ServerProvider;
-
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-
 import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.ErrorCode;
@@ -23,6 +19,8 @@ import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.shared.ServerSession;
 
 import java.net.URI;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -57,6 +55,7 @@ public final class MbusServer extends AbstractResource implements ServerProvider
     @Override
     public void close() {
         log.log(Level.FINE, "Closing message bus server.");
+        session.disconnect();
         runState.set(State.STOPPED);
     }
 

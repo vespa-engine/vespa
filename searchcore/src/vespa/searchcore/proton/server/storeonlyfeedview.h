@@ -180,7 +180,7 @@ private:
     // returns the number of documents removed.
     size_t removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attribute_fields, DoneCallback onDone);
 
-    void internalRemove(IDestructorCallbackSP token, IPendingLidTracker::Token uncommitted, SerialNum serialNum, Lid lid);
+    void internalRemove(FeedToken token, std::shared_ptr<vespalib::IDestructorCallback> done_callback,IPendingLidTracker::Token uncommitted, SerialNum serialNum, Lid lid);
 
     IPendingLidTracker::Token get_pending_lid_token(const DocumentOperation &op);
 

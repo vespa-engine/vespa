@@ -256,7 +256,7 @@ class JobControllerApiHandlerHelper {
         responseObject.setString("application", id.application().value());
         application.projectId().ifPresent(projectId -> responseObject.setLong("projectId", projectId));
 
-        Map<JobId, List<Versions>> jobsToRun = status.jobsToRun();
+        Map<JobId, List<DeploymentStatus.Job>> jobsToRun = status.jobsToRun();
         Cursor stepsArray = responseObject.setArray("steps");
         VersionStatus versionStatus = controller.readVersionStatus();
         for (DeploymentStatus.StepStatus stepStatus : status.allSteps()) {
@@ -330,17 +330,17 @@ class JobControllerApiHandlerHelper {
 
                 JobStatus jobStatus = status.jobs().get(job).get();
                 Cursor toRunArray = stepObject.setArray("toRun");
-                for (Versions versions : jobsToRun.getOrDefault(job, List.of())) {
+                for (DeploymentStatus.Job versions : jobsToRun.getOrDefault(job, List.of())) {
                     boolean running = jobStatus.lastTriggered()
                                                .map(run ->    jobStatus.isRunning()
-                                                           && versions.targetsMatch(run.versions())
-                                                           && (job.type().isProduction() || versions.sourcesMatchIfPresent(run.versions())))
+                                                           && versions.versions().targetsMatch(run.versions())
+                                                           && (job.type().isProduction() || versions.versions().sourcesMatchIfPresent(run.versions())))
                                                .orElse(false);
                     if (running)
                         continue; // Run will be contained in the "runs" array.
 
                     Cursor runObject = toRunArray.addObject();
-                    toSlime(runObject.setObject("versions"), versions);
+                    toSlime(runObject.setObject("versions"), versions.versions());
                 }
 
                 toSlime(stepObject.setArray("runs"), jobStatus.runs().descendingMap().values(), 10, baseUriForJob);

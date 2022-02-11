@@ -5,6 +5,7 @@
 #include <vespamalloc/malloc/common.h>
 #include <vespamalloc/malloc/allocchunk.h>
 #include <vespamalloc/malloc/globalpool.h>
+#include <vespamalloc/malloc/mmappool.h>
 
 namespace vespamalloc {
 
@@ -12,13 +13,15 @@ template <typename MemBlockPtrT, typename ThreadStatT >
 class ThreadPoolT
 {
 public:
-    typedef AFList<MemBlockPtrT> ChunkSList;
-    typedef AllocPoolT<MemBlockPtrT> AllocPool;
+    using ChunkSList = AFList<MemBlockPtrT>;
+    using AllocPool = AllocPoolT<MemBlockPtrT>;
     ThreadPoolT();
     ~ThreadPoolT();
-    void setPool(AllocPool & pool) {
-        _allocPool = & pool;
+    void setPool(AllocPool & allocPool, MMapPool & mmapPool) {
+        _allocPool = & allocPool;
+        _mmapPool = & mmapPool;
     }
+    int mallopt(int param, int value);
     void malloc(size_t sz, MemBlockPtrT & mem);
     void free(MemBlockPtrT mem, SizeClassT sc);
 
@@ -65,6 +68,8 @@ private:
     static constexpr bool alwaysReuse(SizeClassT sc) { return sc > ALWAYS_REUSE_SC_LIMIT; }
 
     AllocPool   * _allocPool;
+    MMapPool    * _mmapPool;
+    size_t        _mmapLimit;
     AllocFree     _memList[NUM_SIZE_CLASSES];
     ThreadStatT   _stat[NUM_SIZE_CLASSES];
     uint32_t      _threadId;

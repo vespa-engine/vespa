@@ -10,8 +10,8 @@ namespace search::tensor {
 HnswGraph::HnswGraph()
   : node_refs(),
     node_refs_size(1u),
-    nodes(HnswIndex::make_default_node_store_config()),
-    links(HnswIndex::make_default_link_store_config()),
+    nodes(HnswIndex::make_default_node_store_config(), {}),
+    links(HnswIndex::make_default_link_store_config(), {}),
     entry_docid_and_level()
 {
     node_refs.ensure_size(1, AtomicEntryRef());

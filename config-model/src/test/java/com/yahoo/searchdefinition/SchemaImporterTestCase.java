@@ -18,6 +18,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Iterator;
 
+import static com.google.common.collect.testing.Helpers.assertEmpty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -36,9 +37,9 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
     @SuppressWarnings("deprecation")
     public void testSimpleImporting() throws IOException, ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder sb = new SchemaBuilder(rankProfileRegistry, new QueryProfileRegistry());
-        sb.importFile("src/test/examples/simple.sd");
-        sb.build();
+        ApplicationBuilder sb = new ApplicationBuilder(rankProfileRegistry, new QueryProfileRegistry());
+        sb.addSchemaFile("src/test/examples/simple.sd");
+        sb.build(true);
         Schema schema = sb.getSchema();
         assertEquals("simple", schema.getName());
         assertTrue(schema.hasDocument());
@@ -53,14 +54,14 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
         new MakeAliases(schema, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles()).process(true, false);
 
         // First field
-        field=(SDField) document.getField("title");
-        assertEquals(DataType.STRING,field.getDataType());
+        field = (SDField) document.getField("title");
+        assertEquals(DataType.STRING, field.getDataType());
         assertEquals("{ input title | tokenize normalize stem:\"BEST\" | summary title | index title; }", field.getIndexingScript().toString());
         assertFalse(schema.getIndex("default").isPrefix());
         assertTrue(schema.getIndex("title").isPrefix());
-        Iterator<String> titleAliases= schema.getIndex("title").aliasIterator();
-        assertEquals("aliaz",titleAliases.next());
-        assertEquals("analias.totitle",titleAliases.next());
+        Iterator<String> titleAliases = schema.getIndex("title").aliasIterator();
+        assertEquals("aliaz", titleAliases.next());
+        assertEquals("analias.totitle", titleAliases.next());
         assertEquals("analias.todefault",
                      schema.getIndex("default").aliasIterator().next());
         assertEquals(RankType.IDENTITY, field.getRankType());
@@ -70,7 +71,7 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
         assertTrue(field.isHeader());
 
         // Second field
-        field=(SDField) document.getField("description");
+        field = (SDField) document.getField("description");
         assertEquals(RankType.ABOUT, field.getRankType());
         assertEquals(SummaryTransform.NONE,
                      field.getSummaryField("description").getTransform());
@@ -81,30 +82,30 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
         assertEquals("hallo", schema.getIndex("description").aliasIterator().next());
 
         // Third field
-        field=(SDField) document.getField("chatter");
+        field = (SDField) document.getField("chatter");
         assertEquals(RankType.ABOUT, field.getRankType());
         assertNull(field.getStemming());
         assertTrue(field.getNormalizing().doRemoveAccents());
 
         // Fourth field
-        field=(SDField) document.getField("category");
+        field = (SDField) document.getField("category");
         assertEquals(0, field.getAttributes().size());
         assertEquals(Stemming.NONE, field.getStemming());
         assertFalse(field.getNormalizing().doRemoveAccents());
 
         // Fifth field
-        field=(SDField) document.getField("popularity");
+        field = (SDField) document.getField("popularity");
         assertEquals("{ input popularity | attribute popularity; }",
                      field.getIndexingScript().toString());
 
         // Sixth field
-        field=(SDField) document.getField("measurement");
-        assertEquals(DataType.INT,field.getDataType());
+        field = (SDField) document.getField("measurement");
+        assertEquals(DataType.INT, field.getDataType());
         assertEquals(RankType.EMPTY, field.getRankType());
         assertEquals(1, field.getAttributes().size());
 
         // Seventh field
-        field= schema.getConcreteField("categories");
+        field = schema.getConcreteField("categories");
         assertEquals("{ input categories_src | lowercase | normalize | tokenize normalize stem:\"BEST\" | index categories; }",
                      field.getIndexingScript().toString());
         assertTrue(field.isHeader());
@@ -139,27 +140,27 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
         assertEquals(Attribute.CollectionType.ARRAY, attribute.getCollectionType());
 
         // Rank Profiles
-        RankProfile profile=rankProfileRegistry.get(schema, "default");
+        RankProfile profile = rankProfileRegistry.get(schema, "default");
         assertNotNull(profile);
-        assertNull(profile.getInheritedName());
+        assertEmpty(profile.inheritedNames());
         assertNull(profile.getDeclaredRankSetting("measurement", RankProfile.RankSetting.Type.RANKTYPE));
         assertEquals(RankType.EMPTY,
                      profile.getRankSetting("measurement", RankProfile.RankSetting.Type.RANKTYPE).getValue());
-        profile=rankProfileRegistry.get(schema, "experimental");
+        profile = rankProfileRegistry.get(schema, "experimental");
         assertNotNull(profile);
-        assertEquals("default",profile.getInheritedName());
+        assertEquals("default", profile.inheritedNames().get(0));
         assertEquals(RankType.IDENTITY,
                      profile.getDeclaredRankSetting("measurement", RankProfile.RankSetting.Type.RANKTYPE).getValue());
 
-        profile=rankProfileRegistry.get(schema, "other");
+        profile = rankProfileRegistry.get(schema, "other");
         assertNotNull(profile);
-        assertEquals("experimental",profile.getInheritedName());
+        assertEquals("experimental", profile.inheritedNames().get(0));
 
         // The extra-document field
-        SDField exact= schema.getConcreteField("exact");
-        assertNotNull("Extra field was parsed",exact);
-        assertEquals("exact",exact.getName());
-        assertEquals(Stemming.NONE,exact.getStemming());
+        SDField exact = schema.getConcreteField("exact");
+        assertNotNull("Extra field was parsed", exact);
+        assertEquals("exact", exact.getName());
+        assertEquals(Stemming.NONE, exact.getStemming());
         assertFalse(exact.getNormalizing().doRemoveAccents());
         assertEquals("{ input title . \" \" . input category | tokenize | summary exact | index exact; }",
                      exact.getIndexingScript().toString());
@@ -170,7 +171,7 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
     public void testDocumentImporting() throws IOException, ParseException {
         try {
             // Having two documents in one sd-file is illegal.
-            SchemaBuilder.buildFromFile("src/test/examples/documents.sd");
+            ApplicationBuilder.buildFromFile("src/test/examples/documents.sd");
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -178,11 +179,11 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testIdImporting() throws IOException, ParseException {
-        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/strange.sd");
-        SDField idecidemyide=(SDField) schema.getDocument().getField("idecidemyide");
-        assertEquals(5,idecidemyide.getId());
-        SDField sodoi=(SDField) schema.getDocument().getField("sodoi");
-        assertEquals(7,sodoi.getId());
+        Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/strange.sd");
+        SDField idecidemyide = (SDField)schema.getDocument().getField("idecidemyide");
+        assertEquals(5, idecidemyide.getId());
+        SDField sodoi = (SDField) schema.getDocument().getField("sodoi");
+        assertEquals(7, sodoi.getId());
     }
 
 }

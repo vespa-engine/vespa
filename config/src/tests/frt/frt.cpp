@@ -16,6 +16,8 @@
 #include <vespa/fnet/frt/error.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/config/frt/protocol.h>
+#include <vespa/config/common/configvalue.hpp>
+
 #include <lz4.h>
 #include <thread>
 
@@ -29,15 +31,15 @@ using namespace config::protocol::v3;
 namespace {
 
     struct UpdateFixture : public IConfigHolder {
-        ConfigUpdate::UP update;
+        std::unique_ptr<ConfigUpdate> update;
         bool notified;
 
         UpdateFixture()
             : update(),
               notified(false)
         { }
-        ConfigUpdate::UP provide() override { return ConfigUpdate::UP(); }
-        void handle(ConfigUpdate::UP u) override { update = std::move(u); }
+        std::unique_ptr<ConfigUpdate> provide() override { return std::unique_ptr<ConfigUpdate>(); }
+        void handle(std::unique_ptr<ConfigUpdate> u) override { update = std::move(u); }
         bool wait(milliseconds timeoutInMillis) override { (void) timeoutInMillis; return notified; }
         bool poll() override { return notified; }
         void interrupt() override { }
@@ -75,7 +77,7 @@ namespace {
                                           const vespalib::string & configXxhash64="",
                                           int changed=0,
                                           long generation=0,
-                                          const std::vector<vespalib::string> & payload = std::vector<vespalib::string>(),
+                                          const StringVector & payload = StringVector(),
                                           const vespalib::string & ns = "")
         {
             FRT_RPCRequest * req = new FRT_RPCRequest();
