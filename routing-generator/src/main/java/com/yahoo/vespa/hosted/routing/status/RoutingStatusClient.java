@@ -5,7 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.lang.CachedSupplier;
 import com.yahoo.routing.config.ZoneConfig;
-import com.yahoo.slime.Inspector;
+import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.athenz.api.AthenzService;
@@ -91,11 +91,12 @@ public class RoutingStatusClient extends AbstractComponent implements RoutingSta
     }
 
     private Status status() {
-        Set<String> inactiveDeployments = SlimeUtils.entriesStream(get("/routing/v1/status").get())
-                                                    .map(Inspector::asString)
+        Slime slime = get("/routing/v2/status");
+        Cursor root = slime.get();
+        Set<String> inactiveDeployments = SlimeUtils.entriesStream(root.field("inactiveDeployments"))
+                                                    .map(inspector -> inspector.field("upstreamName").asString())
                                                     .collect(Collectors.toUnmodifiableSet());
-        boolean zoneActive = get("/routing/v1/status/zone").get().field("status").asString()
-                                                           .equalsIgnoreCase("in");
+        boolean zoneActive = root.field("zoneActive").asBool();
         return new Status(zoneActive, inactiveDeployments);
     }
 
