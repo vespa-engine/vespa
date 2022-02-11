@@ -1,11 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
+import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import com.yahoo.config.subscription.ConfigGetter;
-import com.yahoo.config.subscription.FileSource;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
-import com.yahoo.path.Path;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
@@ -19,6 +18,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * @author lesters
@@ -30,6 +30,7 @@ public class OnnxEvaluatorTest {
 
     @Test
     public void testOnnxEvaluation() {
+        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
         ModelsEvaluator models = createModels();
 
         assertTrue(models.models().containsKey("add_mul"));

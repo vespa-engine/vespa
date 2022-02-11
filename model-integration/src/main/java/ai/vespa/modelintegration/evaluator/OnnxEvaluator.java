@@ -93,4 +93,13 @@ public class OnnxEvaluator {
         }
     }
 
+    public static boolean isRuntimeAvailable() {
+        try {
+            new OnnxEvaluator("");
+            return true;
+        } catch (UnsatisfiedLinkError | RuntimeException | NoClassDefFoundError e) {
+            return false;
+        }
+    }
+
 }
