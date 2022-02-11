@@ -1,12 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.handler;
 
+import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.models.evaluation.ModelsEvaluator;
 import com.yahoo.config.subscription.ConfigGetter;
-import com.yahoo.config.subscription.FileSource;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
-import com.yahoo.path.Path;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
@@ -19,6 +18,8 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.Assume.assumeTrue;
+
 public class OnnxEvaluationHandlerTest {
 
     private static HandlerTester handler;
@@ -26,6 +27,7 @@ public class OnnxEvaluationHandlerTest {
 
     @BeforeClass
     static public void setUp() {
+        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
         handler = new HandlerTester(createModels());
     }
 

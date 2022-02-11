@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.handler;
 
+import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.models.evaluation.ModelsEvaluator;
 import ai.vespa.models.evaluation.RankProfilesConfigImporterWithMockedConstants;
 import com.yahoo.config.subscription.ConfigGetter;
@@ -17,6 +18,8 @@ import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.junit.Assume.assumeTrue;
 
 public class ModelsEvaluationHandlerTest {
 
@@ -244,6 +247,7 @@ public class ModelsEvaluationHandlerTest {
 
     @Test
     public void testMnistSavedEvaluateSpecificFunction() {
+        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
         Map<String, String> properties = new HashMap<>();
         properties.put("input", inputTensor());
         String url = "http://localhost/model-evaluation/v1/mnist_saved/serving_default.y/eval";
