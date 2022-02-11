@@ -328,6 +328,14 @@ public class Flags {
             "Takes effect on redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag INHIBIT_DEFAULT_MERGES_WHEN_GLOBAL_MERGES_PENDING = defineFeatureFlag(
+            "inhibit-default-merges-when-global-merges-pending", false,
+            List.of("geirst", "vekterli"), "2022-02-11", "2022-06-01",
+            "Inhibits all merges to buckets in the default bucket space if the current " +
+                    "cluster state bundle indicates that global merges are pending in the cluster",
+            "Takes effect on redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag CHECK_CONFIG_CONVERGENCE_BEFORE_RESTARTING = defineFeatureFlag(
             "check-config-convergence-before-restart", true,
             List.of("hmusum"), "2022-01-16", "2022-02-16",

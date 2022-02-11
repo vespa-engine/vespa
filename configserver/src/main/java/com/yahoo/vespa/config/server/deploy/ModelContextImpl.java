@@ -203,6 +203,7 @@ public class ModelContextImpl implements ModelContext {
         private final String mergeThrottlingPolicy;
         private final double persistenceThrottlingWsDecrementFactor;
         private final double persistenceThrottlingWsBackoff;
+        private final boolean inhibitDefaultMergesWhenGlobalMergesPending;
         private final boolean useQrserverServiceName;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
@@ -245,6 +246,7 @@ public class ModelContextImpl implements ModelContext {
             this.mergeThrottlingPolicy = flagValue(source, appId, Flags.MERGE_THROTTLING_POLICY);
             this.persistenceThrottlingWsDecrementFactor = flagValue(source, appId, Flags.PERSISTENCE_THROTTLING_WS_DECREMENT_FACTOR);
             this.persistenceThrottlingWsBackoff = flagValue(source, appId, Flags.PERSISTENCE_THROTTLING_WS_BACKOFF);
+            this.inhibitDefaultMergesWhenGlobalMergesPending = flagValue(source, appId, Flags.INHIBIT_DEFAULT_MERGES_WHEN_GLOBAL_MERGES_PENDING);
             this.useQrserverServiceName =  flagValue(source, appId, Flags.USE_QRSERVER_SERVICE_NAME);
         }
 
@@ -289,6 +291,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public String mergeThrottlingPolicy() { return mergeThrottlingPolicy; }
         @Override public double persistenceThrottlingWsDecrementFactor() { return persistenceThrottlingWsDecrementFactor; }
         @Override public double persistenceThrottlingWsBackoff() { return persistenceThrottlingWsBackoff; }
+        @Override public boolean inhibitDefaultMergesWhenGlobalMergesPending() { return inhibitDefaultMergesWhenGlobalMergesPending; }
         @Override public boolean useQrserverServiceName() { return useQrserverServiceName; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
