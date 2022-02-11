@@ -2,6 +2,7 @@
 package ai.vespa.intellij.schema;
 
 import ai.vespa.intellij.schema.model.Function;
+import ai.vespa.intellij.schema.model.RankProfile;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -32,7 +33,6 @@ import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
 import ai.vespa.intellij.schema.psi.SdSchemaAnnotationDefinition;
 import ai.vespa.intellij.schema.psi.SdSchemaFieldDefinition;
 import ai.vespa.intellij.schema.psi.SdSummaryDefinition;
-import ai.vespa.intellij.schema.psi.SdTypes;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,42 +62,15 @@ public class SdUtil {
         }
         return functionsMap;
     }
-    
-    /**
-     * Returns the profiles inherited by this.
-     *
-     * @param baseRankProfile the rank-profile node to find the parents of
-     * @return the profiles this inherits from, empty if none
-     */
-    public static List<SdRankProfileDefinition> getRankProfileParents(SdRankProfileDefinition baseRankProfile) {
-        if (baseRankProfile == null) return List.of();
-        ASTNode inheritsNode = baseRankProfile.getNode().findChildByType(SdTypes.INHERITS);
-        if (inheritsNode == null) return List.of();
-        return inherits(baseRankProfile).stream()
-                                        .map(parentIdentifierAST -> parentIdentifierAST.getPsi().getReference())
-                                        .filter(reference -> reference != null)
-                                        .map(reference -> (SdRankProfileDefinition)reference.resolve())
-                                        .collect(Collectors.toList());
+
+    public static Map<String, List<Function>> functionsIn(RankProfile profile) {
+        Map<String, List<Function>> functionsMap = new HashMap<>();
+        for (SdFunctionDefinition function : PsiTreeUtil.findChildrenOfType(profile.definition(), SdFunctionDefinition.class)) {
+            functionsMap.computeIfAbsent(function.getName(), k -> new ArrayList<>()).add(Function.from(function));
+        }
+        return functionsMap;
     }
 
-    private static List<ASTNode> inherits(SdRankProfileDefinition baseRankProfile) {
-        Tokens tokens = Tokens.of(baseRankProfile);
-        tokens.require(SdTypes.RANK_PROFILE);
-        tokens.requireWhitespace();
-        tokens.require(SdTypes.IDENTIFIER_VAL, SdTypes.IDENTIFIER_WITH_DASH_VAL);
-        if ( ! tokens.skipWhitespace()) return List.of();
-        if ( ! tokens.skip(SdTypes.INHERITS)) return List.of();
-        tokens.requireWhitespace();
-        List<ASTNode> inherited = new ArrayList<>();
-        do {
-            inherited.add(tokens.require(SdTypes.IDENTIFIER_VAL, SdTypes.IDENTIFIER_WITH_DASH_VAL));
-            tokens.skipWhitespace();
-            if ( ! tokens.skip(SdTypes.COMMA)) break;
-            tokens.skipWhitespace();
-        } while (true);
-        return inherited;
-    }
-    
     public static String createFunctionDescription(SdFunctionDefinition function) {
         SdRankProfileDefinition rankProfile = PsiTreeUtil.getParentOfType(function, SdRankProfileDefinition.class);
         String rankProfileName;
@@ -210,7 +183,7 @@ public class SdUtil {
                                                              .filter(f -> f.getName().equals(functionName))
                                                              .findAny();
         if (function.isPresent()) return function;
-        for (var parent : getRankProfileParents(profile)) {
+        for (var parent : new RankProfile(profile).findInherited()) {
             function = findFunction(functionName, parent);
             if (function.isPresent()) return function;
         }

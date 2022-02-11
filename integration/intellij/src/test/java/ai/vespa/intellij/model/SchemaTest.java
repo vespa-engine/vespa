@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.intellij.model;
 
-import ai.vespa.intellij.schema.SdUtil;
 import ai.vespa.intellij.schema.model.RankProfile;
 import ai.vespa.intellij.schema.model.Schema;
 import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
@@ -36,7 +35,7 @@ public class SchemaTest extends LightJavaCodeInsightFixtureTestCase {
         assertEquals("simple.sd", schema.definition().getName());
         RankProfile profile = RankProfile.fromProjectFile(getProject(), "simple.sd", "simple-profile");
         assertEquals("simple-profile", profile.definition().getName());
-        List<SdRankProfileDefinition> parents = SdUtil.getRankProfileParents(profile.definition());
+        List<SdRankProfileDefinition> parents = profile.findInherited();
         assertEquals(2, parents.size());
         assertEquals("parent-profile1", parents.get(0).getName());
         assertEquals("parent-profile2", parents.get(1).getName());
@@ -50,7 +49,7 @@ public class SchemaTest extends LightJavaCodeInsightFixtureTestCase {
         assertEquals("child.sd", schema.definition().getName());
         RankProfile profile = RankProfile.fromProjectFile(getProject(), "child.sd", "child_profile");
         assertEquals("child_profile", profile.definition().getName());
-        List<SdRankProfileDefinition> parents = SdUtil.getRankProfileParents(profile.definition());
+        List<SdRankProfileDefinition> parents = profile.findInherited();
         assertEquals(2, parents.size());
         assertEquals("other_child_profile", parents.get(0).getName());
         // assertEquals("parent-profile", parents.get(1).getName()); TODO
