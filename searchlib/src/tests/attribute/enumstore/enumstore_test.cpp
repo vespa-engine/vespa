@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/attribute/enumstore.hpp>
+#include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
@@ -11,6 +12,8 @@ using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 using vespalib::datastore::EntryRefFilter;
 using RefT = vespalib::datastore::EntryRefT<22>;
+using vespalib::alloc::test::MemoryAllocatorObserver;
+using AllocStats = MemoryAllocatorObserver::Stats;
 
 namespace vespalib::datastore {
 
@@ -372,6 +375,13 @@ TEST(EnumStoreTest, address_space_usage_is_reported)
     EXPECT_EQ(AddressSpace(3, 2, ADDRESS_LIMIT + 2), store.get_values_address_space_usage());
     dec_ref_count(store, idx2);
     EXPECT_EQ(AddressSpace(3, 3, ADDRESS_LIMIT + 2), store.get_values_address_space_usage());
+}
+
+TEST(EnumStoreTest, provided_memory_allocator_is_used)
+{
+    AllocStats stats;
+    NumericEnumStore ses(false, DictionaryConfig::Type::BTREE, std::make_unique<MemoryAllocatorObserver>(stats));
+    EXPECT_EQ(AllocStats(1, 0), stats);
 }
 
 class BatchUpdaterTest : public ::testing::Test {
