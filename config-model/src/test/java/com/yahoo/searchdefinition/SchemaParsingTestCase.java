@@ -80,10 +80,4 @@ public class SchemaParsingTestCase extends AbstractSchemaTestCase {
         }
     }
 
-    // TODO: Remove in Vespa 8
-    @Test
-    public void requireThatParserHandlesHeadAndBody() throws IOException, ParseException {
-        assertNotNull(ApplicationBuilder.buildFromFile("src/test/examples/header_body.sd"));
-    }
-
 }
