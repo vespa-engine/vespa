@@ -5,8 +5,8 @@
 #include "multi_value_mapping.h"
 #include "multi_value_mapping.hpp"
 #include "multivalue.h"
-#include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
+#include <vespa/vespalib/util/array.hpp>
 
 using search::multivalue::Value;
 using search::multivalue::WeightedValue;

@@ -9,6 +9,8 @@
 #include "entryref.h"
 #include "atomic_entry_ref.h"
 #include "i_compaction_context.h"
+#include "large_array_buffer_type.h"
+#include "small_array_buffer_type.h"
 #include <vespa/vespalib/util/array.h>
 
 namespace vespalib::datastore {
@@ -32,27 +34,15 @@ public:
     using SmallArrayType = BufferType<EntryT>;
     using LargeArray = vespalib::Array<EntryT>;
     using AllocSpec = ArrayStoreConfig::AllocSpec;
-
 private:
-    class LargeArrayType : public BufferType<LargeArray> {
-    private:
-        using ParentType = BufferType<LargeArray>;
-        using ParentType::_emptyEntry;
-        using CleanContext = typename ParentType::CleanContext;
-    public:
-        LargeArrayType(const AllocSpec &spec);
-        void cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx) override;
-    };
-
-
     uint32_t _largeArrayTypeId;
     uint32_t _maxSmallArraySize;
     DataStoreType _store;
-    std::vector<SmallArrayType> _smallArrayTypes;
-    LargeArrayType _largeArrayType;
+    std::vector<SmallArrayBufferType<EntryT>> _smallArrayTypes;
+    LargeArrayBufferType<EntryT> _largeArrayType;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
-    void initArrayTypes(const ArrayStoreConfig &cfg);
+    void initArrayTypes(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
     // 1-to-1 mapping between type ids and sizes for small arrays is enforced during initialization.
     uint32_t getTypeId(size_t arraySize) const { return arraySize; }
     size_t getArraySize(uint32_t typeId) const { return typeId; }
@@ -68,7 +58,7 @@ private:
     }
 
 public:
-    ArrayStore(const ArrayStoreConfig &cfg);
+    ArrayStore(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
     ~ArrayStore();
     EntryRef add(const ConstArrayRef &array);
     ConstArrayRef get(EntryRef ref) const {

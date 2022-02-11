@@ -100,7 +100,7 @@ struct BTreeBucketDatabase::ReplicaValueTraits {
 template class bucketdb::GenericBTreeBucketDatabase<BTreeBucketDatabase::ReplicaValueTraits>;
 
 BTreeBucketDatabase::BTreeBucketDatabase()
-    : _impl(std::make_unique<ImplType>(make_default_array_store_config<ReplicaValueTraits::DataStoreType>()))
+    : _impl(std::make_unique<ImplType>(make_default_array_store_config<ReplicaValueTraits::DataStoreType>(), std::shared_ptr<vespalib::alloc::MemoryAllocator>()))
 {
 }
 

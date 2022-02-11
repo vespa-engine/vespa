@@ -19,7 +19,7 @@ MultiValueMapping<EntryT,RefT>::MultiValueMapping(const vespalib::datastore::Arr
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
-      _store(storeCfg)
+      _store(storeCfg, {})
 {
 }
 

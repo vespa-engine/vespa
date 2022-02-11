@@ -5,10 +5,4 @@
 
 namespace vespalib::datastore {
 
-template class BufferType<vespalib::Array<uint8_t>>;
-template class BufferType<vespalib::Array<uint32_t>>;
-template class BufferType<vespalib::Array<int32_t>>;
-template class BufferType<vespalib::Array<std::string>>;
-template class BufferType<vespalib::Array<AtomicEntryRef>>;
-
 }
