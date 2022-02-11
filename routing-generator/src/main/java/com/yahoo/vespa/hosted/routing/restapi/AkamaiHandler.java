@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.routing.restapi;
 
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
@@ -73,7 +74,7 @@ public class AkamaiHandler extends ThreadedHttpRequestHandler {
     private HttpResponse status(HttpRequest request) {
         String hostHeader = request.getHeader("host");
         String hostname = withoutPort(hostHeader);
-        Optional<RoutingTable.Target> target = tableSupplier.get().flatMap(table -> table.targetOf(hostname));
+        Optional<RoutingTable.Target> target = tableSupplier.get().flatMap(table -> table.targetOf(hostname, RoutingMethod.sharedLayer4));
 
         if (target.isEmpty())
             return response(404, hostHeader, "", ROTATION_UNKNOWN_MESSAGE);

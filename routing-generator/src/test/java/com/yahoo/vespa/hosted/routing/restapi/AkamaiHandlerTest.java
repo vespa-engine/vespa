@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.routing.restapi;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpRequestBuilder;
@@ -93,10 +94,10 @@ public class AkamaiHandlerTest {
 
     private static RoutingTable makeRoutingTable() {
         return new RoutingTable(Map.of(
-                new Endpoint(ENDPOINT_OK), createTarget("t1", "a1", "i1", "default", true),
-                new Endpoint(ENDPOINT_UNAVAILABLE), createTarget("t3", "a3", "i3", "default", true),
-                new Endpoint(ENDPOINT_UNHEALTHY), createTarget("t2", "a2", "i2", "default", true),
-                new Endpoint(ENDPOINT_INACTIVE), createTarget("t1", "a1", "i1", "default", false)
+                new Endpoint(ENDPOINT_OK, RoutingMethod.sharedLayer4), createTarget("t1", "a1", "i1", "default", true),
+                new Endpoint(ENDPOINT_UNAVAILABLE, RoutingMethod.sharedLayer4), createTarget("t3", "a3", "i3", "default", true),
+                new Endpoint(ENDPOINT_UNHEALTHY, RoutingMethod.sharedLayer4), createTarget("t2", "a2", "i2", "default", true),
+                new Endpoint(ENDPOINT_INACTIVE, RoutingMethod.sharedLayer4), createTarget("t1", "a1", "i1", "default", false)
         ), 42);
     }
 

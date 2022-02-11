@@ -5,6 +5,7 @@ import com.google.common.jimfs.Jimfs;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.system.ProcessExecuter;
@@ -65,7 +66,7 @@ public class NginxTest {
 
         // A new table is loaded
         Map<RoutingTable.Endpoint, RoutingTable.Target> newEntries = new HashMap<>(table0.asMap());
-        newEntries.put(new RoutingTable.Endpoint("endpoint1"),
+        newEntries.put(new RoutingTable.Endpoint("endpoint1", RoutingMethod.sharedLayer4),
                        RoutingTable.Target.create(ApplicationId.from("t1", "a1", "i1"),
                                                   ClusterSpec.Id.from("default"),
                                                   ZoneId.from("prod", "us-north-1"),
