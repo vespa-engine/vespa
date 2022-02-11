@@ -6,6 +6,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -16,6 +17,8 @@ LOG_SETUP("multivaluemapping_test");
 using vespalib::datastore::ArrayStoreConfig;
 using vespalib::datastore::CompactionSpec;
 using vespalib::datastore::CompactionStrategy;
+using vespalib::alloc::test::MemoryAllocatorObserver;
+using AllocStats = MemoryAllocatorObserver::Stats;
 
 template <typename EntryT>
 void
@@ -69,6 +72,7 @@ class MappingTestBase : public ::testing::Test {
 protected:
     using MvMapping = search::attribute::MultiValueMapping<EntryT>;
     using AttributeType = MyAttribute<MvMapping>;
+    AllocStats _stats;
     std::unique_ptr<MvMapping> _mvMapping;
     std::unique_ptr<AttributeType> _attr;
     uint32_t _maxSmallArraySize;
@@ -78,7 +82,8 @@ protected:
 public:
     using ConstArrayRef = vespalib::ConstArrayRef<EntryT>;
     MappingTestBase()
-        : _mvMapping(),
+        : _stats(),
+          _mvMapping(),
           _attr(),
           _maxSmallArraySize()
     {
@@ -87,7 +92,7 @@ public:
         ArrayStoreConfig config(maxSmallArraySize,
                                 ArrayStoreConfig::AllocSpec(0, RefType::offsetSize(), 8_Ki, ALLOC_GROW_FACTOR));
         config.enable_free_lists(enable_free_lists);
-        _mvMapping = std::make_unique<MvMapping>(config);
+        _mvMapping = std::make_unique<MvMapping>(config, vespalib::GrowStrategy(), std::make_unique<MemoryAllocatorObserver>(_stats));
         _attr = std::make_unique<AttributeType>(*_mvMapping);
         _maxSmallArraySize = maxSmallArraySize;
     }
@@ -95,7 +100,7 @@ public:
         ArrayStoreConfig config(maxSmallArraySize,
                                 ArrayStoreConfig::AllocSpec(minArrays, maxArrays, numArraysForNewBuffer, ALLOC_GROW_FACTOR));
         config.enable_free_lists(enable_free_lists);
-        _mvMapping = std::make_unique<MvMapping>(config);
+        _mvMapping = std::make_unique<MvMapping>(config, vespalib::GrowStrategy(), std::make_unique<MemoryAllocatorObserver>(_stats));
         _attr = std::make_unique<AttributeType>(*_mvMapping);
         _maxSmallArraySize = maxSmallArraySize;
     }
@@ -129,6 +134,7 @@ public:
         _mvMapping->clearDocs(lidLow, lidLimit, [this](uint32_t docId) { _attr->clearDoc(docId); });
     }
     size_t getTotalValueCnt() const { return _mvMapping->getTotalValueCnt(); }
+    const AllocStats &get_stats() const noexcept { return _stats; }
 
     uint32_t countBuffers() {
         using RefVector = typename MvMapping::RefCopyVector;
@@ -324,6 +330,12 @@ TEST_F(IntMappingTest, test_that_free_lists_can_be_disabled)
 {
     setup(3, false);
     EXPECT_FALSE(_mvMapping->has_free_lists_enabled());
+}
+
+TEST_F(IntMappingTest, provided_memory_allocator_is_used)
+{
+    setup(3, 64, 512, 129, true);
+    EXPECT_EQ(AllocStats(5, 0), get_stats());
 }
 
 TEST_F(CompactionIntMappingTest, test_that_compaction_works)
