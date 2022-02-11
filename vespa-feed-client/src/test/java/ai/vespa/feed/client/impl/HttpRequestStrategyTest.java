@@ -174,18 +174,20 @@ class HttpRequestStrategyTest {
         now.set(605000);
         assertEquals(OPEN, breaker.state()); // Circuit broken due to failed requests.
 
+        strategy.destroy();
+        OperationStats stats = strategy.stats();
         Map<Integer, Long> codes = new HashMap<>();
         codes.put(200, 4L);
         codes.put(400, 1L);
         codes.put(429, 2L);
         codes.put(500, 3L);
-        assertEquals(codes, strategy.stats().responsesByCode());
-        assertEquals(3, strategy.stats().exceptions());
+        assertEquals(codes, stats.responsesByCode());
+        assertEquals(3, stats.exceptions());
 
-        assertEquals(strategy.stats(), strategy.stats().since(initial));
-        assertEquals(0, strategy.stats().since(strategy.stats()).averageLatencyMillis());
-        assertEquals(0, strategy.stats().since(strategy.stats()).requests());
-        assertEquals(0, strategy.stats().since(strategy.stats()).bytesSent());
+        assertEquals(stats, stats.since(initial));
+        assertEquals(0, stats.since(stats).averageLatencyMillis());
+        assertEquals(0, stats.since(stats).requests());
+        assertEquals(0, stats.since(stats).bytesSent());
     }
 
     @Test
