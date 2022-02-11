@@ -1159,6 +1159,24 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
+    public void inhibit_default_merges_when_global_merges_pending_controlled_by_properties() throws Exception {
+        assertFalse(resolveInhibitDefaultMergesConfig(Optional.empty()));
+        assertFalse(resolveInhibitDefaultMergesConfig(Optional.of(false)));
+        assertTrue(resolveInhibitDefaultMergesConfig(Optional.of(true)));
+    }
+
+    private boolean resolveInhibitDefaultMergesConfig(Optional<Boolean> inhibitDefaultMerges) throws Exception {
+        var props = new TestProperties();
+        if (inhibitDefaultMerges.isPresent()) {
+            props.inhibitDefaultMergesWhenGlobalMergesPending(inhibitDefaultMerges.get());
+        }
+        var cluster = createOneNodeCluster(props);
+        var builder = new StorDistributormanagerConfig.Builder();
+        cluster.getDistributorNodes().getConfig(builder);
+        return (new StorDistributormanagerConfig(builder)).inhibit_default_merges_when_global_merges_pending();
+    }
+
+    @Test
     public void testDedicatedClusterControllers() {
         VespaModel noContentModel = createEnd2EndOneNode(new TestProperties().setHostedVespa(true)
                                                                              .setMultitenant(true),

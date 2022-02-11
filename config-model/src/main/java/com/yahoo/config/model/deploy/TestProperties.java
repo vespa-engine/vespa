@@ -72,6 +72,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private String mergeThrottlingPolicy = "STATIC";
     private double persistenceThrottlingWsDecrementFactor = 1.2;
     private double persistenceThrottlingWsBackoff = 0.95;
+    private boolean inhibitDefaultMergesWhenGlobalMergesPending = false;
     private boolean useV8GeoPositions = false;
     private List<String> environmentVariables = List.of();
 
@@ -126,6 +127,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public String mergeThrottlingPolicy() { return mergeThrottlingPolicy; }
     @Override public double persistenceThrottlingWsDecrementFactor() { return persistenceThrottlingWsDecrementFactor; }
     @Override public double persistenceThrottlingWsBackoff() { return persistenceThrottlingWsBackoff; }
+    @Override public boolean inhibitDefaultMergesWhenGlobalMergesPending() { return inhibitDefaultMergesWhenGlobalMergesPending; }
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
 
@@ -327,6 +329,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setPersistenceThrottlingWsBackoff(double backoff) {
         this.persistenceThrottlingWsBackoff = backoff;
+        return this;
+    }
+
+    public TestProperties inhibitDefaultMergesWhenGlobalMergesPending(boolean value) {
+        this.inhibitDefaultMergesWhenGlobalMergesPending = value;
         return this;
     }
 
