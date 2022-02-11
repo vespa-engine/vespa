@@ -2,7 +2,7 @@
 #pragma once
 
 #include <atomic>
-#include <map>
+#include <unordered_map>
 
 namespace vespamalloc {
 
@@ -27,7 +27,7 @@ private:
     std::atomic<size_t> _count;
     std::atomic<bool>   _has_hugepage_failure_just_happened;
     mutable std::mutex  _mutex;
-    std::map<const void *, MMapInfo> _mappings;
+    std::unordered_map<const void *, MMapInfo> _mappings;
 };
 
 }
