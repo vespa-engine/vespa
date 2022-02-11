@@ -1263,28 +1263,149 @@ public class DeploymentTriggerTest {
         assertEquals(Change.empty(), app3.instance().change());
     }
 
-    // TODO test new revision allowed exactly when dependent instance is failing
     // TODO test multi-tier pipeline with various policies
     // TODO test multi-tier pipeline with upgrade after new version is the candidate
 
     @Test
     public void testRevisionJoinsUpgradeWithSeparateRollout() {
-        var app = tester.newDeploymentContext().submit().deploy();
-        var version = new Version("7.1");
-        tester.controllerTester().upgradeSystem(version);
+        var appPackage = new ApplicationPackageBuilder().region("us-central-1")
+                                                        .region("us-east-3")
+                                                        .region("us-west-1")
+                                                        .upgradeRollout("separate")
+                                                        .build();
+        var app = tester.newDeploymentContext().submit(appPackage).deploy();
+
+        // Platform rolls through first production zone.
+        var version0 = tester.controller().readSystemVersion();
+        var version1 = new Version("7.1");
+        tester.controllerTester().upgradeSystem(version1);
         tester.upgrader().maintain();
         app.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1);
         tester.clock().advance(Duration.ofMinutes(1));
 
-        app.submit();
-        assertEquals(Change.of(version).with(app.lastSubmission().get()), app.instance().change());
+        // Revision starts rolling, but stays behind.
+        var revision0 = app.lastSubmission();
+        app.submit(appPackage);
+        var revision1 = app.lastSubmission();
+        assertEquals(Change.of(version1).with(revision1.get()), app.instance().change());
         app.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1);
 
-        app.runJob(productionUsEast3).runJob(productionUsWest1);
-        tester.triggerJobs();
-        assertEquals(Change.of(app.lastSubmission().get()), app.instance().change());
+        // Upgrade got here first, so attempts to proceed alone, but the upgrade fails.
+        app.triggerJobs();
+        assertEquals(new Versions(version1, revision0.get(), Optional.of(version0), revision0),
+                     tester.jobs().last(app.instanceId(), productionUsEast3).get().versions());
+        app.timeOutConvergence(productionUsEast3);
 
-        app.runJob(productionUsEast3).runJob(productionUsWest1);
+        // Revision is allowed to join.
+        app.triggerJobs();
+        assertEquals(new Versions(version1, revision1.get(), Optional.of(version1), revision0),
+                     tester.jobs().last(app.instanceId(), productionUsEast3).get().versions());
+        app.runJob(productionUsEast3);
+
+        // Platform and revision now proceed together.
+        app.runJob(stagingTest);
+        app.triggerJobs();
+        assertEquals(new Versions(version1, revision1.get(), Optional.of(version0), revision0),
+                     tester.jobs().last(app.instanceId(), productionUsWest1).get().versions());
+        app.runJob(productionUsWest1);
+        assertEquals(Change.empty(), app.instance().change());
+    }
+
+    @Test
+    public void testRevisionJoinsUpgradeWithLeadingRollout() {
+        var appPackage = new ApplicationPackageBuilder().region("us-central-1")
+                                                        .region("us-east-3")
+                                                        .region("us-west-1")
+                                                        .upgradeRollout("leading")
+                                                        .build();
+        var app = tester.newDeploymentContext().submit(appPackage).deploy();
+
+        // Platform rolls through first production zone.
+        var version0 = tester.controller().readSystemVersion();
+        var version1 = new Version("7.1");
+        tester.controllerTester().upgradeSystem(version1);
+        tester.upgrader().maintain();
+        app.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1);
+        tester.clock().advance(Duration.ofMinutes(1));
+
+        // Revision starts rolling, and catches up.
+        var revision0 = app.lastSubmission();
+        app.submit(appPackage);
+        var revision1 = app.lastSubmission();
+        assertEquals(Change.of(version1).with(revision1.get()), app.instance().change());
+        app.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1);
+
+        // Upgrade got here first, and has triggered, but is now obsolete.
+        app.triggerJobs();
+        assertEquals(new Versions(version1, revision0.get(), Optional.of(version0), revision0),
+                     tester.jobs().last(app.instanceId(), productionUsEast3).get().versions());
+        assertEquals(RunStatus.running, tester.jobs().last(app.instanceId(), productionUsEast3).get().status());
+
+        // Once staging tests verify the joint upgrade, the job is replaced with that.
+        app.runJob(stagingTest);
+        app.triggerJobs();
+        app.jobAborted(productionUsEast3).runJob(productionUsEast3);
+        assertEquals(new Versions(version1, revision1.get(), Optional.of(version0), revision0),
+                     tester.jobs().last(app.instanceId(), productionUsEast3).get().versions());
+
+        // Platform and revision now proceed together.
+        app.triggerJobs();
+        assertEquals(new Versions(version1, revision1.get(), Optional.of(version0), revision0),
+                     tester.jobs().last(app.instanceId(), productionUsWest1).get().versions());
+        app.runJob(productionUsWest1);
+        assertEquals(Change.empty(), app.instance().change());
+    }
+
+    @Test
+    public void testRevisionPassesUpgradeWithSimultaneousRollout() {
+        var appPackage = new ApplicationPackageBuilder().region("us-central-1")
+                                                        .region("us-east-3")
+                                                        .region("us-west-1")
+                                                        .upgradeRollout("simultaneous")
+                                                        .build();
+        var app = tester.newDeploymentContext().submit(appPackage).deploy();
+
+        // Platform rolls through first production zone.
+        var version0 = tester.controller().readSystemVersion();
+        var version1 = new Version("7.1");
+        tester.controllerTester().upgradeSystem(version1);
+        tester.upgrader().maintain();
+        app.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1);
+        tester.clock().advance(Duration.ofMinutes(1));
+
+        // Revision starts rolling, and catches up.
+        var revision0 = app.lastSubmission();
+        app.submit(appPackage);
+        var revision1 = app.lastSubmission();
+        assertEquals(Change.of(version1).with(revision1.get()), app.instance().change());
+        app.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1);
+
+        // Upgrade got here first, and has triggered, but is now obsolete.
+        app.triggerJobs();
+        app.assertRunning(productionUsEast3);
+        assertEquals(new Versions(version1, revision0.get(), Optional.of(version0), revision0),
+                     tester.jobs().last(app.instanceId(), productionUsEast3).get().versions());
+        assertEquals(RunStatus.running, tester.jobs().last(app.instanceId(), productionUsEast3).get().status());
+
+        // Once staging tests verify the joint upgrade, the job is replaced with that.
+        app.runJob(stagingTest);
+        app.triggerJobs();
+        app.jobAborted(productionUsEast3).runJob(productionUsEast3);
+        assertEquals(new Versions(version1, revision1.get(), Optional.of(version0), revision0),
+                     tester.jobs().last(app.instanceId(), productionUsEast3).get().versions());
+
+        // Revision now proceeds alone.
+        app.runJob(systemTest).runJob(stagingTest);
+        app.triggerJobs();
+        assertEquals(new Versions(version0, revision1.get(), Optional.of(version0), revision0),
+                     tester.jobs().last(app.instanceId(), productionUsWest1).get().versions());
+        app.runJob(productionUsWest1);
+
+        // Upgrade follows.
+        app.triggerJobs();
+        assertEquals(new Versions(version1, revision1.get(), Optional.of(version0), revision1),
+                     tester.jobs().last(app.instanceId(), productionUsWest1).get().versions());
+        app.runJob(productionUsWest1);
         assertEquals(Change.empty(), app.instance().change());
     }
 
