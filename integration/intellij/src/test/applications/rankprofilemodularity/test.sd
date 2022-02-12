@@ -20,6 +20,11 @@ schema test {
             expression: nativeRank
         }
 
+        function tensorFunction(myTensor) {
+            expression: myTensor
+            # expression: myTensor{key} TODO
+        }
+
     }
 
     rank-profile in_schema2 inherits outside_schema2 {

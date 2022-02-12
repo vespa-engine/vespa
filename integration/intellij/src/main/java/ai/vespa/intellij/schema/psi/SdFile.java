@@ -25,7 +25,7 @@ public class SdFile extends PsiFileBase {
     
     @Override
     public String toString() {
-        return "Sd File";
+        return "Sd file '" + getName() + "'";
     }
 
 }

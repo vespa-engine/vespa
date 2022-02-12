@@ -43,7 +43,7 @@ public class SdHierarchyUtil {
 
     private static boolean isChildOf(SdRankProfileDefinition targetProfile, SdRankProfileDefinition thisProfile) {
         if (thisProfile.getName().equals(targetProfile.getName())) return true;
-        return new RankProfile(thisProfile).findInherited()
+        return new RankProfile(thisProfile, null).findInherited()
                                            .stream()
                                            .anyMatch(parent -> isChildOf(targetProfile, parent.definition()));
     }

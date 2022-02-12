@@ -5,13 +5,10 @@ import ai.vespa.intellij.schema.SdUtil;
 import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
 import ai.vespa.intellij.schema.psi.SdTypes;
 import com.intellij.lang.ASTNode;
-import com.intellij.openapi.project.Project;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.util.PsiTreeUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -23,8 +20,11 @@ public class RankProfile {
 
     private final SdRankProfileDefinition definition;
 
-    public RankProfile(SdRankProfileDefinition definition) {
-        this.definition = definition;
+    private final Schema owner;
+
+    public RankProfile(SdRankProfileDefinition definition, Schema owner) {
+        this.definition = Objects.requireNonNull(definition);
+        this.owner = owner;
     }
 
     public String name() { return definition.getName(); }
@@ -42,7 +42,8 @@ public class RankProfile {
         return inherits().stream()
                          .map(parentIdentifierAST -> parentIdentifierAST.getPsi().getReference())
                          .filter(reference -> reference != null)
-                         .map(reference -> new RankProfile((SdRankProfileDefinition)reference.resolve()))
+                         .map(reference -> owner.rankProfile(reference.getCanonicalText()))
+                         .flatMap(r -> r.stream())
                          .collect(Collectors.toList());
     }
 
@@ -63,23 +64,6 @@ public class RankProfile {
             tokens.skipWhitespace();
         } while (true);
         return inherited;
-    }
-
-    /**
-     * Returns the profile of the given name from the given file.
-     *
-     * @throws IllegalArgumentException if not found
-     */
-    public static RankProfile fromProjectFile(Project project, String filePath, String profileName) {
-        PsiElement root = Schema.load(project, filePath);
-        Optional<SdRankProfileDefinition> definition =
-                PsiTreeUtil.collectElementsOfType(root, SdRankProfileDefinition.class)
-                   .stream()
-                   .filter(p -> p.getName().equals(profileName))
-                   .findAny();
-        if (definition.isEmpty())
-            throw new IllegalArgumentException("Rank profile '" + profileName + "' is not present in " + filePath);
-        return new RankProfile(definition.get());
     }
 
 }

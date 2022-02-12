@@ -183,7 +183,7 @@ public class SdUtil {
                                                              .filter(f -> f.getName().equals(functionName))
                                                              .findAny();
         if (function.isPresent()) return function;
-        for (var parent : new RankProfile(profile).findInherited()) {
+        for (var parent : new RankProfile(profile, null).findInherited()) {
             function = findFunction(functionName, parent.definition());
             if (function.isPresent()) return function;
         }
