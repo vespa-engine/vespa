@@ -3,13 +3,12 @@ package ai.vespa.intellij.schema.model;
 
 import ai.vespa.intellij.schema.psi.SdFile;
 import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
+import ai.vespa.intellij.schema.psi.SdSchemaDefinition;
+import ai.vespa.intellij.schema.utils.AST;
 import ai.vespa.intellij.schema.utils.Files;
 import ai.vespa.intellij.schema.utils.Path;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiFileSystemItem;
-import com.intellij.psi.search.FilenameIndex;
-import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
 
 import java.util.Optional;
@@ -29,6 +28,9 @@ public class Schema {
     /** The project this is part of */
     private final Project project;
 
+    /** The schema this inherits, or empty if none. Resolved lazily. */
+    private Optional<Schema> inherited = null;
+
     public Schema(SdFile definition, Path path, Project project) {
         this.definition = definition;
         this.path = path;
@@ -39,13 +41,25 @@ public class Schema {
 
     public SdFile definition() { return definition; }
 
+    public Optional<Schema> inherited() {
+        if (inherited != null) return inherited;
+        System.out.println("----------- starting schema inherits");
+        return inherited = AST.inherits(PsiTreeUtil.collectElementsOfType(definition, SdSchemaDefinition.class).stream().findFirst().get())
+                              .stream()
+                              .findFirst() // Only one schema can be inherited; ignore any following
+                              .map(inheritedNode -> fromProjectFile(project, path.getParentPath().append(inheritedNode.getText() + ".sd")));
+    }
+
     /** Returns a rank profile belonging to this, defined either inside it or in a separate .profile file */
     public Optional<RankProfile> rankProfile(String name) {
-        var definition = findProfileElement(name, this.definition);
-        if (definition.isEmpty()) { // Defined in a separate file schema-name/profile-name.profile
+        var definition = findProfileElement(name, this.definition); // Look up in this
+        if (definition.isEmpty()) { // Look up in a separate file schema-name/profile-name.profile
             Optional<PsiFile> file = Files.open(path.getParentPath().append(name()).append(name + ".profile"), project);
             if (file.isPresent())
                 definition = findProfileElement(name, file.get());
+        }
+        if (definition.isEmpty() && inherited().isPresent()) { // Look up in parent
+            return inherited().get().rankProfile(name);
         }
         return definition.map(d -> new RankProfile(d, this));
     }

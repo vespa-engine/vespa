@@ -52,7 +52,7 @@ public class SchemaTest extends LightJavaCodeInsightFixtureTestCase {
         List<RankProfile> parents = profile.findInherited();
         assertEquals(2, parents.size());
         assertEquals("other_child_profile", parents.get(0).name());
-        assertEquals("parent-profile", parents.get(1).name());
+        assertEquals("parent_profile", parents.get(1).name());
     }
 
     @Test
