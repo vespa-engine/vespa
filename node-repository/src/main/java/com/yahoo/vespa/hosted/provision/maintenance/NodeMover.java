@@ -74,6 +74,8 @@ public abstract class NodeMover<MOVE> extends NodeRepositoryMaintainer {
             if (deployedRecently(applicationId)) continue;
             for (HostWithResources toHost : hostResources) {
                 if (toHost.node.hostname().equals(node.parentHostname().get())) continue;
+                if (toHost.node.reservedTo().isPresent() &&
+                    !toHost.node.reservedTo().get().equals(applicationId.tenant())) continue; // Reserved to a different tenant
                 if (spares.contains(toHost.node)) continue; // Do not offer spares as a valid move as they are reserved for replacement of failed nodes
                 if ( ! toHost.hasCapacity(node.resources())) continue;
 
