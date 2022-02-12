@@ -110,7 +110,7 @@ AnnotationFieldDefinition ::= field IdentifierVal type FieldTypeName '{' '}'
 //--- Expressions rules ---
 //-------------------------
 RankingExpression ::= FilePathExpr | ParenthesisedExpr | BooleanExpr | ArithmeticExpr | IfFunctionExpr | 
-                      QueryDefinitionExpr | FunctionCallExpr | InListRankingExpr | PrimitiveExpr
+                      QueryDefinitionExpr | FunctionCallExpr | InListRankingExpr | PrimitiveExpr | TensorExpr
 
 FilePathExpr ::= file ':' (FilePath | WordWrapper)
 
@@ -128,6 +128,8 @@ FunctionCallExpr ::= IdentifierWithDashVal '(' RankingExpression (COMMA RankingE
 ParenthesisedExpr ::= '(' RankingExpression ')'
 
 PrimitiveExpr ::= (('-')? INTEGER_REG) | (('-')? FLOAT_REG) | IdentifierVal | RankFeature | STRING_REG
+
+TensorExpr ::= RankingExpression '{' IdentifierVal '}'
 
 //-------------------------
 //-- Rank Profile rules ---

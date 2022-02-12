@@ -43,7 +43,9 @@ public class Schema {
 
     public Optional<Schema> inherited() {
         if (inherited != null) return inherited;
-        return inherited = AST.inherits(PsiTreeUtil.collectElementsOfType(definition, SdSchemaDefinition.class).stream().findFirst().get())
+        Optional<SdSchemaDefinition> schemaDefinition = PsiTreeUtil.collectElementsOfType(definition, SdSchemaDefinition.class).stream().findFirst();
+        if (schemaDefinition.isEmpty()) return Optional.empty(); // No valid schema definition in schema file
+        return inherited = AST.inherits(schemaDefinition.get())
                               .stream()
                               .findFirst() // Only one schema can be inherited; ignore any following
                               .map(inheritedNode -> fromProjectFile(project, path.getParentPath().append(inheritedNode.getText() + ".sd")));

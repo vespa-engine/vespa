@@ -21,8 +21,7 @@ schema test {
         }
 
         function tensorFunction(myTensor) {
-            expression: myTensor
-            # expression: myTensor{key} TODO
+            expression: myTensor{key}
         }
 
     }
