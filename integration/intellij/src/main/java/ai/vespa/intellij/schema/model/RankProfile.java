@@ -1,13 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.intellij.schema.model;
 
-import ai.vespa.intellij.schema.SdUtil;
 import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
-import ai.vespa.intellij.schema.psi.SdTypes;
 import ai.vespa.intellij.schema.utils.AST;
-import com.intellij.lang.ASTNode;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
