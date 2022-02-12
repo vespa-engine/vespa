@@ -4,9 +4,7 @@ package ai.vespa.intellij.schema.utils;
 import com.intellij.lang.ASTNode;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiWhiteSpace;
-import com.intellij.psi.impl.source.tree.CompositeElement;
 import com.intellij.psi.impl.source.tree.LeafPsiElement;
-import com.intellij.psi.impl.source.tree.TreeElement;
 import com.intellij.psi.tree.IElementType;
 
 import java.util.Arrays;
@@ -62,7 +60,7 @@ public class Tokens {
 
     /** Returns whether the current token is an element */
     public boolean isElement() {
-        return current() instanceof TreeElement;
+        return current() instanceof LeafPsiElement;
     }
 
     /** Returns the current token if it is of the required type and throws otherwise. */

@@ -43,7 +43,6 @@ public class Schema {
 
     public Optional<Schema> inherited() {
         if (inherited != null) return inherited;
-        System.out.println("----------- starting schema inherits");
         return inherited = AST.inherits(PsiTreeUtil.collectElementsOfType(definition, SdSchemaDefinition.class).stream().findFirst().get())
                               .stream()
                               .findFirst() // Only one schema can be inherited; ignore any following
