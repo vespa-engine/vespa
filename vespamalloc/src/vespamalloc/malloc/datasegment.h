@@ -42,7 +42,7 @@ public:
         checkAndLogBigSegment();
     }
     void enableThreadSupport() { _mutex.init(); }
-    static uint32_t blockId(const void * ptr)       {
+    static BlockIdT blockId(const void * ptr)       {
         return (size_t(ptr) - Memory::getMinPreferredStartAddress())/BlockSize;
     }
     static void * fromBlockId(size_t id) {
@@ -71,13 +71,13 @@ private:
         BlockT(SizeClassT szClass = UNUSED_BLOCK, BlockIdT numBlocks = 0)
             : _sizeClass(szClass), _freeChainLength(0), _realNumBlocks(numBlocks)
         { }
-        SizeClassT sizeClass()              const { return _sizeClass; }
+        SizeClassT sizeClass()            const { return _sizeClass; }
         BlockIdT realNumBlocks()          const { return _realNumBlocks; }
         BlockIdT freeChainLength()        const { return _freeChainLength; }
-        void sizeClass(SizeClassT sc)             { _sizeClass = sc; }
+        void sizeClass(SizeClassT sc)           { _sizeClass = sc; }
         void realNumBlocks(BlockIdT fc)         { _realNumBlocks = fc; }
         void freeChainLength(BlockIdT fc)       { _freeChainLength = fc; }
-        size_t getMaxSize()                 const {
+        size_t getMaxSize()               const {
             return MemBlockPtrT::unAdjustSize(std::min(MemBlockPtrT::classSize(_sizeClass),
                                                        size_t(_realNumBlocks) * BlockSize));
         }
