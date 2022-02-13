@@ -2,6 +2,7 @@
 package ai.vespa.intellij.schema.hierarchy;
 
 import ai.vespa.intellij.schema.model.Function;
+import ai.vespa.intellij.schema.model.RankProfile;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNamedElement;
@@ -55,7 +56,7 @@ public class SdCalleeTreeStructure extends SdCallTreeStructure {
         }
         String rankProfileName = rankProfile.getName();
         if (!ranksHeritageMap.containsKey(rankProfileName)) {
-            ranksHeritageMap.put(rankProfileName, SdHierarchyUtil.getRankProfileChildren(myFile, rankProfile));
+            ranksHeritageMap.put(rankProfileName, SdHierarchyUtil.getRankProfileChildren(myFile, new RankProfile(rankProfile, null)));
         }
         
         Set<SdRankProfileDefinition> inheritedRanks = ranksHeritageMap.get(rankProfileName);

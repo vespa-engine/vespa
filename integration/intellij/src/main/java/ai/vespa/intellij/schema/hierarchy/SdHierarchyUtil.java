@@ -35,18 +35,19 @@ public class SdHierarchyUtil {
         return component instanceof SdFunctionDefinition;
     }
 
-    public static Set<SdRankProfileDefinition> getRankProfileChildren(SdFile file, SdRankProfileDefinition targetProfile) {
+    public static Set<SdRankProfileDefinition> getRankProfileChildren(SdFile file, RankProfile targetProfile) {
         return PsiTreeUtil.collectElementsOfType(file, SdRankProfileDefinition.class)
                           .stream()
-                          .filter(profile -> isChildOf(targetProfile, profile))
+                          .filter(profile -> isChildOf(targetProfile, new RankProfile(profile, null)))
                           .collect(Collectors.toSet());
     }
 
-    private static boolean isChildOf(SdRankProfileDefinition targetProfile, SdRankProfileDefinition thisProfile) {
-        if (Objects.equals(thisProfile.getName(), targetProfile.getName())) return true;
-        return new RankProfile(thisProfile, null).inherited().values()
+    private static boolean isChildOf(RankProfile targetProfile, RankProfile thisProfile) {
+
+        if (Objects.equals(thisProfile.name(), targetProfile.name())) return true;
+        return thisProfile.inherited().values()
                                            .stream()
-                                           .anyMatch(parent -> isChildOf(targetProfile, parent.definition()));
+                                           .anyMatch(parent -> isChildOf(targetProfile, parent));
     }
 
     public static Comparator<NodeDescriptor<?>> getComparator(Project project) {
