@@ -38,7 +38,7 @@
         ARITHMETIC_OPERATOR = 'regexp:[\-+*/%]'
         INTEGER_REG = 'regexp:[0-9]+'
         FLOAT_REG = 'regexp:[0-9]+[.][0-9]+[e]?'
-        STRING_REG = 'regexp:\"([^\"\\]*(\\.[^\"\\]*)*)\"'
+        STRING_REG = 'regexp:\"([^\"\\]*(\\.[^\"\\]*)*)\"' // TODO: Should also support single-quotes
         WORD_REG = 'regexp:\w+'
     ]
 }
@@ -108,13 +108,15 @@ AnnotationFieldDefinition ::= field IdentifierVal type FieldTypeName '{' '}'
 
 //-------------------------
 //--- Expressions rules ---
+//    Note - these must end by "Expr" - see this line above: extends(".*Expr")=RankingExpression
 //-------------------------
-RankingExpression ::= FilePathExpr | ParenthesisedExpr | BooleanExpr | ArithmeticExpr | IfFunctionExpr | 
-                      QueryDefinitionExpr | FunctionCallExpr | InListRankingExpr | PrimitiveExpr | TensorExpr
+RankingExpression ::= FilePathExpr | ParenthesisedExpr | BooleanExpr | ArithmeticExpr | IfFunctionExpr |
+                      QueryDefinitionExpr | FunctionCallExpr | InListRankingExpr | PrimitiveExpr | SliceExpr
 
 FilePathExpr ::= file ':' (FilePath | WordWrapper)
 
-IfFunctionExpr ::= "if" '(' (InListRankingExpr | RankingExpression) COMMA RankingExpression COMMA RankingExpression ')'
+IfFunctionExpr ::= "if" '(' RankingExpression COMMA RankingExpression COMMA RankingExpression ')'
+
 InListRankingExpr ::= RankingExpression "in" '[' RankingExpression (COMMA RankingExpression)* ']'
 
 BooleanExpr ::= RankingExpression COMPARISON_OPERATOR RankingExpression
@@ -127,9 +129,19 @@ FunctionCallExpr ::= IdentifierWithDashVal '(' RankingExpression (COMMA RankingE
  
 ParenthesisedExpr ::= '(' RankingExpression ')'
 
-PrimitiveExpr ::= (('-')? INTEGER_REG) | (('-')? FLOAT_REG) | IdentifierVal | RankFeature | STRING_REG
+PrimitiveExpr ::= ( (('-')? INTEGER_REG) | (('-')? FLOAT_REG) | IdentifierVal | RankFeature | STRING_REG )
 
-TensorExpr ::= RankingExpression '{' IdentifierVal '}'
+SliceExpr ::= RankingExpression ( MapSlice | IndexSlice | TensorAddress )
+
+MapSlice ::= '{' Label '}'
+
+IndexSlice ::= '[' RankingExpression ']'
+
+TensorAddress ::= '{' KeyValue ( ',' KeyValue )* '}'
+
+KeyValue ::= IdentifierVal ':' ( Label | RankingExpression )
+
+Label ::= IdentifierVal | STRING_REG
 
 //-------------------------
 //-- Rank Profile rules ---

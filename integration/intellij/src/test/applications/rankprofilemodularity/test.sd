@@ -20,8 +20,9 @@ schema test {
             expression: nativeRank
         }
 
-        function tensorFunction(myTensor) {
-            expression: myTensor{key}
+        function tensorFunction(tensor1, tensor2, tensor3, tensor4, tensor) {
+            expression: tensor1{key} + tensor2[1] + tensor3{key:key1,x:1} + tensor4{key:key1,x:(3-2)} +
+                        tensor1{"key"} + tensor3{key:"key1",x:1}
         }
 
     }
