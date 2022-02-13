@@ -107,11 +107,14 @@ AnnotationFieldDefinition ::= field IdentifierVal type FieldTypeName '{' '}'
                            }
 
 //-------------------------
-//--- Expressions rules ---
-//    Note - these must end by "Expr" - see this line above: extends(".*Expr")=RankingExpression
+//    Expressions rules
+//
+//    NOTE: These must end by "Expr" - see this line above: extends(".*Expr")=RankingExpression
+//          The *Expr alternatives are consumed greedily so order matters.
 //-------------------------
-RankingExpression ::= FilePathExpr | ParenthesisedExpr | BooleanExpr | ArithmeticExpr | IfFunctionExpr |
-                      QueryDefinitionExpr | FunctionCallExpr | InListRankingExpr | PrimitiveExpr | SliceExpr
+RankingExpression ::= LiteralTensorExpr | FilePathExpr | ParenthesisedExpr | BooleanExpr | ArithmeticExpr | IfFunctionExpr |
+                      QueryDefinitionExpr | FunctionCallExpr | InListRankingExpr | PrimitiveExpr |
+                      SliceExpr
 
 FilePathExpr ::= file ':' (FilePath | WordWrapper)
 
@@ -131,17 +134,22 @@ ParenthesisedExpr ::= '(' RankingExpression ')'
 
 PrimitiveExpr ::= ( (('-')? INTEGER_REG) | (('-')? FLOAT_REG) | IdentifierVal | RankFeature | STRING_REG )
 
-SliceExpr ::= RankingExpression ( MapSlice | IndexSlice | TensorAddress )
+SliceExpr ::= RankingExpression ( SliceKey | SliceIndex | FullTensorAddress )
 
-MapSlice ::= '{' Label '}'
+SliceKey ::= '{' Label '}'
+SliceIndex ::= '[' RankingExpression ']'
 
-IndexSlice ::= '[' RankingExpression ']'
-
-TensorAddress ::= '{' KeyValue ( ',' KeyValue )* '}'
+FullTensorAddress ::= '{' KeyValue ( ',' KeyValue )* '}'
 
 KeyValue ::= IdentifierVal ':' ( Label | RankingExpression )
 
 Label ::= IdentifierVal | STRING_REG
+
+LiteralTensorExpr ::= TensorType ':' '{' TensorValue ( ',' TensorValue )* '}'
+
+TensorValue ::= CellAddress ':' RankingExpression
+
+CellAddress ::= Label | FullTensorAddress
 
 //-------------------------
 //-- Rank Profile rules ---
