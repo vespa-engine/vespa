@@ -41,12 +41,16 @@ schema test {
 
     rank-profile in_schema2 inherits outside_schema2 {
 
-        function f2() {
-            expression: fieldMatch(title) + fo2
+        first-phase {
+            expression: f2 + ff1
         }
 
-        first-phase {
-            expression: f2
+        function f2() {
+            expression: fieldMatch(title) + fo2 + ff1
+        }
+
+        function ff1() {
+            expression: random
         }
 
     }

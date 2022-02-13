@@ -1,35 +1,20 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.intellij.model;
 
+import ai.vespa.intellij.PluginTestBase;
 import ai.vespa.intellij.schema.model.RankProfile;
 import ai.vespa.intellij.schema.model.Schema;
 import ai.vespa.intellij.schema.utils.Path;
-import com.intellij.testFramework.LightProjectDescriptor;
-import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase;
 import org.junit.Test;
-
-import java.util.List;
 
 /**
  * @author bratseth
  */
-public class SchemaTest extends LightJavaCodeInsightFixtureTestCase {
-
-    private final TestProjectDescriptor descriptor;
-
-    public SchemaTest() {
-        descriptor = new TestProjectDescriptor(); // Expensive instance
-    }
-
-    @Override
-    protected LightProjectDescriptor getProjectDescriptor() { return descriptor; }
-
-    @Override
-    protected String getTestDataPath() { return "."; }
+public class SchemaTest extends PluginTestBase {
 
     @Test
     public void testSimple() {
-        super.myFixture.copyDirectoryToProject("src/test/applications/simple", "/");
+        useDir("src/test/applications/simple");
         Schema schema = Schema.fromProjectFile(getProject(), Path.fromString("simple.sd"));
         assertNotNull(schema);
         assertEquals("simple", schema.name());
@@ -42,7 +27,7 @@ public class SchemaTest extends LightJavaCodeInsightFixtureTestCase {
 
     @Test
     public void testSchemaInheritance() {
-        super.myFixture.copyDirectoryToProject("src/test/applications/schemainheritance", "/");
+        useDir("src/test/applications/schemaInheritance");
         Schema schema = Schema.fromProjectFile(getProject(), Path.fromString("child.sd"));
         assertNotNull(schema);
         assertEquals("child", schema.name());
@@ -55,7 +40,7 @@ public class SchemaTest extends LightJavaCodeInsightFixtureTestCase {
 
     @Test
     public void testRankProfileModularity() {
-        super.myFixture.copyDirectoryToProject("src/test/applications/rankprofilemodularity", "/");
+        useDir("src/test/applications/rankProfileModularity");
         Schema schema = Schema.fromProjectFile(getProject(), Path.fromString("test.sd"));
         assertNotNull(schema);
         assertEquals("test", schema.name());

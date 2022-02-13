@@ -30,7 +30,7 @@ public class SdFindUsagesHandler extends FindUsagesHandler {
     
     private final Map<String, List<Function>> functionsMap;
     
-    protected SdFindUsagesHandler(PsiElement psiElement) {
+    public SdFindUsagesHandler(PsiElement psiElement) {
         super(psiElement);
         PsiFile file = psiElement.getContainingFile();
         functionsMap = file instanceof SdFile ? SdUtil.functionsIn((SdFile) psiElement.getContainingFile())

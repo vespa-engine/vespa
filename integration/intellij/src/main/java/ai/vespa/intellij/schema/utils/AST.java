@@ -18,7 +18,6 @@ public class AST {
     /** Returns the nodes following "inherits" in the given element. */
     public static List<ASTNode> inherits(PsiElement element) {
         Tokens tokens = Tokens.of(element);
-        tokens.dump();
         tokens.requireElement();
         tokens.requireWhitespace();
         tokens.require(SdTypes.IDENTIFIER_VAL, SdTypes.IDENTIFIER_WITH_DASH_VAL);

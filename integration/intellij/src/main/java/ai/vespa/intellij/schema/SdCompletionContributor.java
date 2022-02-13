@@ -18,14 +18,13 @@ import ai.vespa.intellij.schema.psi.SdTypes;
  */
 public class SdCompletionContributor extends CompletionContributor {
     
-    
     public SdCompletionContributor() {
         extend(CompletionType.BASIC, 
                PlatformPatterns.psiElement(SdTypes.IDENTIFIER_VAL),
                new CompletionProvider<>() {
                    public void addCompletions(CompletionParameters parameters, //completion parameters contain details of the cursor position
                                               ProcessingContext context,
-                                              CompletionResultSet resultSet) { //result set contains completion details to suggest
+                                              CompletionResultSet resultSet) { // result set contains completion details to suggest
                        resultSet.addElement(LookupElementBuilder.create(""));
                    }
                }
