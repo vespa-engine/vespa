@@ -35,10 +35,9 @@ public class SchemaTest extends LightJavaCodeInsightFixtureTestCase {
         assertEquals("simple", schema.name());
         RankProfile profile = schema.rankProfile("simple-profile").get();
         assertEquals("simple-profile", profile.name());
-        List<RankProfile> parents = profile.findInherited();
-        assertEquals(2, parents.size());
-        assertEquals("parent-profile1", parents.get(0).name());
-        assertEquals("parent-profile2", parents.get(1).name());
+        assertEquals(2, profile.inherited().size());
+        assertEquals("parent-profile1", profile.inherited().get("parent-profile1").name());
+        assertEquals("parent-profile2", profile.inherited().get("parent-profile2").name());
     }
 
     @Test
@@ -49,10 +48,9 @@ public class SchemaTest extends LightJavaCodeInsightFixtureTestCase {
         assertEquals("child", schema.name());
         RankProfile profile = schema.rankProfile("child_profile").get();
         assertEquals("child_profile", profile.name());
-        List<RankProfile> parents = profile.findInherited();
-        assertEquals(2, parents.size());
-        assertEquals("other_child_profile", parents.get(0).name());
-        assertEquals("parent_profile", parents.get(1).name());
+        assertEquals(2, profile.inherited().size());
+        assertEquals("other_child_profile", profile.inherited().get("other_child_profile").name());
+        assertEquals("parent_profile", profile.inherited().get("parent_profile").name());
     }
 
     @Test
@@ -63,10 +61,9 @@ public class SchemaTest extends LightJavaCodeInsightFixtureTestCase {
         assertEquals("test", schema.name());
         RankProfile profile = schema.rankProfile("in_schema3").get();
         assertEquals("in_schema3", profile.name());
-        List<RankProfile> parents = profile.findInherited();
-        assertEquals(2, parents.size());
-        assertEquals("outside_schema1", parents.get(0).name());
-        assertEquals("outside_schema2", parents.get(1).name());
+        assertEquals(2, profile.inherited().size());
+        assertEquals("outside_schema1", profile.inherited().get("outside_schema1").name());
+        assertEquals("outside_schema2", profile.inherited().get("outside_schema2").name());
     }
 
 }

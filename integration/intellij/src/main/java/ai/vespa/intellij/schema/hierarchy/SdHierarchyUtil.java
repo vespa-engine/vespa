@@ -14,6 +14,7 @@ import ai.vespa.intellij.schema.psi.SdFunctionDefinition;
 import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
 
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -42,8 +43,8 @@ public class SdHierarchyUtil {
     }
 
     private static boolean isChildOf(SdRankProfileDefinition targetProfile, SdRankProfileDefinition thisProfile) {
-        if (thisProfile.getName().equals(targetProfile.getName())) return true;
-        return new RankProfile(thisProfile, null).findInherited()
+        if (Objects.equals(thisProfile.getName(), targetProfile.getName())) return true;
+        return new RankProfile(thisProfile, null).inherited().values()
                                            .stream()
                                            .anyMatch(parent -> isChildOf(targetProfile, parent.definition()));
     }

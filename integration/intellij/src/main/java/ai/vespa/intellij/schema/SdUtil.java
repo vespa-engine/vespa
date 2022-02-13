@@ -3,17 +3,14 @@ package ai.vespa.intellij.schema;
 
 import ai.vespa.intellij.schema.model.Function;
 import ai.vespa.intellij.schema.model.RankProfile;
-import com.intellij.lang.ASTNode;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.PsiReference;
-import com.intellij.psi.PsiWhiteSpace;
 import com.intellij.psi.search.FileTypeIndex;
 import com.intellij.psi.search.GlobalSearchScope;
-import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.PsiTreeUtil;
 import ai.vespa.intellij.schema.psi.SdAnnotationFieldDefinition;
 import ai.vespa.intellij.schema.psi.SdArgumentDefinition;
@@ -35,13 +32,11 @@ import ai.vespa.intellij.schema.psi.SdSchemaFieldDefinition;
 import ai.vespa.intellij.schema.psi.SdSummaryDefinition;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.collect;
 
@@ -183,7 +178,7 @@ public class SdUtil {
                                                              .filter(f -> f.getName().equals(functionName))
                                                              .findAny();
         if (function.isPresent()) return function;
-        for (var parent : profile.findInherited()) {
+        for (var parent : profile.inherited().values()) {
             function = findFunction(functionName, parent);
             if (function.isPresent()) return function;
         }

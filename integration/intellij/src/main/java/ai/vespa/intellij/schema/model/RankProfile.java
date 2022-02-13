@@ -5,6 +5,7 @@ import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
 import ai.vespa.intellij.schema.utils.AST;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -18,6 +19,9 @@ public class RankProfile {
     private final SdRankProfileDefinition definition;
 
     private final Schema owner;
+
+    /** The profiles inherited by this - lazily initialized. */
+    private Map<String, RankProfile> inherited = null;
 
     public RankProfile(SdRankProfileDefinition definition, Schema owner) {
         this.definition = Objects.requireNonNull(definition);
@@ -33,13 +37,14 @@ public class RankProfile {
      *
      * @return the profiles this inherits from, empty if none
      */
-    public List<RankProfile> findInherited() {
-        return AST.inherits(definition).stream()
-                  .map(parentIdentifierAST -> parentIdentifierAST.getPsi().getReference())
-                  .filter(reference -> reference != null)
-                  .map(reference -> owner.rankProfile(reference.getCanonicalText()))
-                  .flatMap(r -> r.stream())
-                  .collect(Collectors.toList());
+    public Map<String, RankProfile> inherited() {
+        if (inherited != null) return inherited;
+        return inherited = AST.inherits(definition).stream()
+                              .map(parentIdentifierAST -> parentIdentifierAST.getPsi().getReference())
+                              .filter(reference -> reference != null)
+                              .map(reference -> owner.rankProfile(reference.getCanonicalText()))
+                              .flatMap(r -> r.stream())
+                              .collect(Collectors.toMap(p -> p.name(), p -> p));
     }
 
 }
