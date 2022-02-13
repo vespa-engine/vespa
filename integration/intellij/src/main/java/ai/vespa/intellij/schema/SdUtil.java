@@ -153,7 +153,7 @@ public class SdUtil {
         // If element is a function's name, return the most specific declaration of the function
         if (((SdIdentifier) element).isFunctionName(file, name)) {
             var profile = (SdRankProfileDefinition)PsiTreeUtil.getParentOfType(element, SdRankProfileDefinition.class);
-            Optional<SdFunctionDefinition> function = findFunction(name, profile);
+            Optional<SdFunctionDefinition> function = findFunction(name, new RankProfile(profile, null));
             if (function.isPresent()) {
                 result.add(function.get());
                 return result;
@@ -177,14 +177,14 @@ public class SdUtil {
      *
      * NOTE: Only profiles in the same file is considered
      */
-    private static Optional<SdFunctionDefinition> findFunction(String functionName, SdRankProfileDefinition profile) {
-        Optional<SdFunctionDefinition> function = PsiTreeUtil.collectElementsOfType(profile, SdFunctionDefinition.class)
+    private static Optional<SdFunctionDefinition> findFunction(String functionName, RankProfile profile) {
+        Optional<SdFunctionDefinition> function = PsiTreeUtil.collectElementsOfType(profile.definition(), SdFunctionDefinition.class)
                                                              .stream()
                                                              .filter(f -> f.getName().equals(functionName))
                                                              .findAny();
         if (function.isPresent()) return function;
-        for (var parent : new RankProfile(profile, null).findInherited()) {
-            function = findFunction(functionName, parent.definition());
+        for (var parent : profile.findInherited()) {
+            function = findFunction(functionName, parent);
             if (function.isPresent()) return function;
         }
         return Optional.empty();
