@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespamalloc/malloc/datasegment.hpp>
-#include <vespamalloc/malloc/memblock.h>
+#include "datasegment.hpp"
+#include "memblock.h"
 
-namespace vespamalloc {
+namespace vespamalloc::segment {
 
 template class DataSegment<MemBlock>;
 
