@@ -235,6 +235,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/")) return root(request);
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/access/request/ssh")) return accessRequests(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return tenantInfo(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/notifications")) return notifications(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}/validate")) return validateSecretStore(path.get("tenant"), path.get("name"), request);
@@ -286,6 +287,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse handlePUT(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return updateTenant(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/access/request/ssh")) return requestSshAccess(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/access/approve/ssh")) return approveAccessRequest(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return updateTenantInfo(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/archive-access")) return allowArchiveAccess(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}")) return addSecretStore(path.get("tenant"), path.get("name"), request);
@@ -400,6 +403,44 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Slime slime = new Slime();
         toSlime(slime.setObject(), tenant, controller.applications().asList(tenant.name()), request);
         return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse accessRequests(String tenantName, HttpRequest request) {
+        if (controller.tenants().require(TenantName.from(tenantName)).type() != Tenant.Type.cloud)
+            return ErrorResponse.badRequest("Can only see access requests for cloud tenants");
+
+        var pendingRequests = controller.serviceRegistry().accessControlService().hasPendingAccessRequests(TenantName.from(tenantName));
+        var slime = new Slime();
+        slime.setObject().setBool("hasPendingRequests", pendingRequests);
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse requestSshAccess(String tenantName, HttpRequest request) {
+        if (!isOperator(request)) {
+            return ErrorResponse.forbidden("Only operators are allowed to request ssh access");
+        }
+
+        if (controller.tenants().require(TenantName.from(tenantName)).type() != Tenant.Type.cloud)
+            return ErrorResponse.badRequest("Can only request access for cloud tenants");
+
+        controller.serviceRegistry().accessControlService().requestSshAccess(TenantName.from(tenantName));
+        return new MessageResponse("OK");
+
+    }
+
+    private HttpResponse approveAccessRequest(String tenantName, HttpRequest request) {
+        var tenant = TenantName.from(tenantName);
+
+        if (controller.tenants().require(tenant).type() != Tenant.Type.cloud)
+            return ErrorResponse.badRequest("Can only see access requests for cloud tenants");
+
+        var inspector = toSlime(request.getData()).get();
+        var expiry = inspector.field("expiry").valid() ?
+                Instant.ofEpochMilli(inspector.field("expiry").asLong()) :
+                Instant.now().plus(1, ChronoUnit.DAYS);
+
+        controller.serviceRegistry().accessControlService().approveSshAccess(tenant, expiry);
+        return new MessageResponse("OK");
     }
 
     private HttpResponse tenantInfo(String tenantName, HttpRequest request) {

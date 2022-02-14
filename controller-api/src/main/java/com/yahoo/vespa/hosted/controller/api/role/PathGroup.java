@@ -233,7 +233,13 @@ enum PathGroup {
     secretStore(Matcher.tenant, "/application/v4/tenant/{tenant}/secret-store/{*}"),
 
     /** Paths used to proxy Horizon metric requests */
-    horizonProxy("/horizon/v1/{*}");
+    horizonProxy("/horizon/v1/{*}"),
+
+    /** Paths used to list and request access to tenant resources */
+    accessRequests(Matcher.tenant, "/application/v4/tenant/{tenant}/access/request/{*}"),
+
+    /** Paths used to approve requests to access tenant resources */
+    accessRequestApproval(Matcher.tenant, "/application/v4/tenant/{tenant}/access/approve/{*}");
 
     final List<String> pathSpecs;
     final List<Matcher> matchers;
@@ -281,9 +287,10 @@ enum PathGroup {
         return EnumSet.complementOf(EnumSet.copyOf(pathGroups));
     }
 
-    static Set<PathGroup> billingPaths() {
+    static Set<PathGroup> operatorRestrictedPaths() {
         var paths = billingPathsNoToken();
         paths.add(PathGroup.billingToken);
+        paths.add(accessRequestApproval);
         return paths;
     }
 
