@@ -5,6 +5,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <filesystem>
 #include <unistd.h>
 #include <assert.h>
 
@@ -12,6 +13,8 @@ using vespalib::Memory;
 using vespalib::WritableMemory;
 using vespalib::slime::JsonFormat;
 using vespalib::slime::Cursor;
+
+namespace fs = std::filesystem;
 
 namespace vespalib::eval::test {
 
@@ -63,6 +66,101 @@ StdOut::commit(size_t bytes)
 
 //-----------------------------------------------------------------------------
 
+ChildIn::ChildIn(ChildProcess &child)
+  : _child(child),
+    _output()
+{
+}
+
+WritableMemory
+ChildIn::reserve(size_t bytes)
+{
+    return _output.reserve(bytes);
+}
+
+Output &
+ChildIn::commit(size_t bytes)
+{
+    _output.commit(bytes);
+    Memory buf = _output.obtain();
+    REQUIRE(_child.write(buf.data, buf.size));
+    _output.evict(buf.size);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+
+ChildOut::ChildOut(ChildProcess &child)
+  : _child(child),
+    _input()
+{
+    REQUIRE(_child.running());
+    REQUIRE(!_child.failed());
+}
+
+Memory
+ChildOut::obtain()
+{
+    if ((_input.get().size == 0) && !_child.eof()) {
+        WritableMemory buf = _input.reserve(4_Ki);
+        uint32_t res = _child.read(buf.data, buf.size);
+        REQUIRE((res > 0) || _child.eof());
+        _input.commit(res);
+    }
+    return _input.obtain();
+}
+
+Input &
+ChildOut::evict(size_t bytes)
+{
+    _input.evict(bytes);
+    return *this;
+}
+
+//-----------------------------------------------------------------------------
+
+void
+ServerCmd::maybe_dump_message(const char *prefix, const Slime &slime)
+{
+    if (_verbose) {
+        SimpleBuffer buf;
+        slime::JsonFormat::encode(slime, buf, false);
+        auto str = buf.get().make_string();
+        fprintf(stderr, "%s%s: %s", prefix, _basename.c_str(), str.c_str());
+    }
+}
+
+ServerCmd::ServerCmd(vespalib::string cmd, bool verbose)
+  : _child(cmd.c_str()),
+    _child_stdin(_child),
+    _child_stdout(_child),
+    _basename(fs::path(cmd).filename()),
+    _verbose(verbose)
+{
+}
+
+ServerCmd::~ServerCmd()
+{
+    _child.close();
+    read_until_eof(_child_stdout);
+    assert(_child.wait());
+    assert(!_child.running());
+    assert(!_child.failed());
+}
+
+Slime
+ServerCmd::invoke(const Slime &req)
+{
+    maybe_dump_message("request --> ", req);
+    write_compact(req, _child_stdin);
+    Slime reply;
+    REQUIRE(JsonFormat::decode(_child_stdout, reply));
+    maybe_dump_message("reply <-- ", reply);
+    return reply;
+}
+
+//-----------------------------------------------------------------------------
+
 bool
 LineReader::read_line(vespalib::string &line)
 {
@@ -94,6 +192,12 @@ bool look_for_eof(Input &input) {
         input.evict(mem.size);
     }
     return true;
+}
+
+void read_until_eof(Input &input) {
+    for (auto mem = input.obtain(); mem.size > 0; mem = input.obtain()) {
+        input.evict(mem.size);
+    }
 }
 
 void write_compact(const Slime &slime, Output &out) {
