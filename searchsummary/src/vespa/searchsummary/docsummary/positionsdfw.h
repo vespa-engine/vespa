@@ -36,19 +36,18 @@ public:
 class AbsDistanceDFW : public LocationAttrDFW
 {
 private:
-    bool _useV8geoPositions;
     double kmMinDistance(uint32_t docid, GetDocsumsState *state,
                          const std::vector<const GeoLoc *> &locations);
     uint64_t findMinDistance(uint32_t docid, GetDocsumsState *state,
                              const std::vector<const GeoLoc *> &locations);
 public:
-    AbsDistanceDFW(const vespalib::string & attrName, bool useV8geoPositions);
+    AbsDistanceDFW(const vespalib::string & attrName);
 
     bool IsGenerated() const override { return true; }
     void insertField(uint32_t docid, GetDocsumsState *state,
                      ResType type, vespalib::slime::Inserter &target) override;
 
-    static UP create(const char *attribute_name, IAttributeManager *index_man, bool useV8geoPositions);
+    static UP create(const char *attribute_name, IAttributeManager *index_man);
 
 };
 

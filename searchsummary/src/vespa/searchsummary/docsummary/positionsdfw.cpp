@@ -61,9 +61,8 @@ LocationAttrDFW::getAllLocations(GetDocsumsState *state)
     return retval;
 }
 
-AbsDistanceDFW::AbsDistanceDFW(const vespalib::string & attrName, bool useV8geoPositions) :
-    LocationAttrDFW(attrName),
-    _useV8geoPositions(useV8geoPositions)
+AbsDistanceDFW::AbsDistanceDFW(const vespalib::string & attrName)
+    : LocationAttrDFW(attrName)
 { }
 
 double
@@ -300,7 +299,7 @@ PositionsDFW::UP PositionsDFW::create(const char *attribute_name, IAttributeMana
     return std::make_unique<PositionsDFW>(attribute_name, useV8geoPositions);
 }
 
-AbsDistanceDFW::UP AbsDistanceDFW::create(const char *attribute_name, IAttributeManager *attribute_manager, bool useV8geoPositions) {
+AbsDistanceDFW::UP AbsDistanceDFW::create(const char *attribute_name, IAttributeManager *attribute_manager) {
     AbsDistanceDFW::UP ret;
     if (attribute_manager != nullptr) {
         if (!attribute_name) {
@@ -318,7 +317,7 @@ AbsDistanceDFW::UP AbsDistanceDFW::create(const char *attribute_name, IAttribute
             return ret;
         }
     }
-    return std::make_unique<AbsDistanceDFW>(attribute_name, useV8geoPositions);
+    return std::make_unique<AbsDistanceDFW>(attribute_name);
 }
 
 }
