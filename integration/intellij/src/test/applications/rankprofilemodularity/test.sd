@@ -67,17 +67,16 @@ schema test {
 
     }
 
-#    rank-profile in_schema4 {
-#
-#        function f2() {
-#            expression: fieldMatch(title)
-#        }
-#
-#        first-phase {
-#            expression: f2
-#        }
+    rank-profile in_schema4 {
+
+        function f2() {
+            expression: fieldMatch(title)
+        }
+
+        first-phase {
+            expression: f2
+        }
 
     }
-
 
 }

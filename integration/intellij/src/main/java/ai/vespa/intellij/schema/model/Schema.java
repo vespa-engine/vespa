@@ -40,7 +40,7 @@ public class Schema {
 
     public SdFile definition() { return definition; }
 
-    /** The path of this schema from the project root. */
+    /** The path of the location of this schema from the project root. */
     public Path path() { return Path.fromString(definition.getContainingDirectory().getVirtualFile().getPath()); }
 
     public Optional<Schema> inherited() {
@@ -64,7 +64,7 @@ public class Schema {
         for (var profileDefinition : PsiTreeUtil.collectElementsOfType(definition, SdRankProfileDefinition.class))
             rankProfiles.put(profileDefinition.getName(), new RankProfile(profileDefinition, this));
 
-        for (var profileFile : Files.allFilesIn(path().getParentPath().append(name()), "profile", definition.getProject())) {
+        for (var profileFile : Files.allFilesIn(path().append(name()), "profile", definition.getProject())) {
             var profileDefinitions = PsiTreeUtil.collectElementsOfType(profileFile, SdRankProfileDefinition.class);
             if (profileDefinitions.size() != 1) continue; // invalid file
             var profileDefinition = profileDefinitions.stream().findAny().get();
@@ -81,6 +81,9 @@ public class Schema {
         }
         return functions;
     }
+
+    @Override
+    public String toString() { return "schema " + name(); }
 
     /**
      * Returns the profile of the given name from the given file.

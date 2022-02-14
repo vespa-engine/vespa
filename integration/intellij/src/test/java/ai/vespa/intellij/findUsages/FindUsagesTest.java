@@ -21,17 +21,29 @@ import java.util.List;
 public class FindUsagesTest extends PluginTestBase {
 
     @Test
+    public void testTmp() {
+        useDir("src/test/applications/rankprofilemodularity");
+        var tester = new UsagesTester("test.sd", getProject());
+        tester.assertFunctionUsages("3 references in parent schema", 3, "outside_schema2", "fo2");
+    }
+
+    @Test
+    public void testTmp2() {
+        useDir("src/test/applications/rankprofilemodularity");
+        var tester = new UsagesTester("test.sd", getProject());
+    }
+
+    @Test
     public void testFindUsages() {
         useDir("src/test/applications/rankprofilemodularity");
         var tester = new UsagesTester("test.sd", getProject());
         tester.assertFunctionUsages("0 refs",       0, "in_schema1", "tensorFunction");
-        tester.assertFunctionUsages("1 local refs + 2 refs in child",  3, "in_schema2", "f2");
+        tester.assertFunctionUsages("1 local ref in first-phase",  1, "in_schema2", "f2");
         tester.assertFunctionUsages("2 local refs", 2, "in_schema2", "ff1");
-        tester.assertFunctionUsages("2 local refs + 1 ref in parent", 3, "in_schema3", "f2");
-        //tester.assertFunctionUsages("1 local ref", 1, "in_schema4", "f2");
-        //tester.assertFunctionUsages("1 local reference ", 1, "outside_schema1", "local1");
-        //tester.assertFunctionUsages("4 local references", 4, "outside_schema1", "local2");
-        //tester.assertFunctionUsages("3 references in parent schema", 3, "outside_schema2", "fo2");
+        tester.assertFunctionUsages("1 local ref", 1, "in_schema4", "f2");
+        tester.assertFunctionUsages("1 local refa", 1, "outside_schema1", "local1");
+        tester.assertFunctionUsages("4 local refs", 4, "outside_schema1", "local2");
+        tester.assertFunctionUsages("3 refs in parent schema", 3, "outside_schema2", "fo2");
     }
 
     private static class UsagesTester {

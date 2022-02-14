@@ -19,8 +19,8 @@ public enum SdDeclarationType {
     IMPORTED_FIELD("Imported Field"),
     DOCUMENT_SUMMARY("Document-Summary"),
     RANK_PROFILE("Rank Profile"),
-    MACRO("Macro"),
-    MACRO_ARGUMENT("Macro's Argument"),
+    FUNCTION("Function"),
+    FIUNCTION_ARGUMENT("Function argument"),
     QUERY("Query (first use in file)"),
     ITEM_RAW_SCORE("ItemRawScore (first use in file)");
     
