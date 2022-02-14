@@ -8,9 +8,9 @@
 
 namespace vespamalloc::segment {
 
-class IMemblockInfo {
+class IMemBlockInfo {
 public:
-    virtual ~IMemblockInfo() = default;
+    virtual ~IMemBlockInfo() = default;
     virtual bool allocated() const = 0;
     virtual uint32_t threadId() const = 0;
     virtual void info(FILE * os, int level) const = 0;
@@ -22,7 +22,7 @@ public:
     virtual ~IHelper() = default;
     virtual size_t classSize(SizeClassT sc) const = 0;
     virtual void dumpInfo(int level) const = 0;
-    virtual std::unique_ptr<IMemblockInfo> createMemblockInfo(void * ptr) const = 0;
+    virtual std::unique_ptr<IMemBlockInfo> createMemblockInfo(void * ptr) const = 0;
 };
 
 class DataSegment
@@ -30,7 +30,7 @@ class DataSegment
 public:
     DataSegment(const DataSegment & rhs) = delete;
     DataSegment & operator = (const DataSegment & rhs) = delete;
-    DataSegment(const IHelper & helper) __attribute__((noinline));
+    explicit DataSegment(const IHelper & helper) __attribute__((noinline));
     ~DataSegment() __attribute__((noinline));
 
     void * getBlock(size_t & oldBlockSize, SizeClassT sc) __attribute__((noinline));

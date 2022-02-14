@@ -12,9 +12,9 @@
 namespace vespamalloc {
 
 template <typename MemBlockPtrT>
-class MemblockInfoT final : public segment::IMemblockInfo {
+class MemBlockInfoT final : public segment::IMemBlockInfo {
 public:
-    MemblockInfoT(void *ptr) : _mem(ptr, 0, false) { }
+    MemBlockInfoT(void *ptr) : _mem(ptr, 0, false) { }
     bool allocated() const override { return _mem.allocated(); }
     uint32_t threadId() const override { return _mem.threadId(); }
     void info(FILE * os, int level) const override { _mem.info(os, level); }
@@ -40,9 +40,9 @@ public:
     size_t getMaxNumThreads() const override { return _threadList.getMaxNumThreads(); }
     size_t classSize(SizeClassT sc) const override { return MemBlockPtrT::classSize(sc); }
     void dumpInfo(int level) const override { MemBlockPtrT::dumpInfo(level); }
-    std::unique_ptr<segment::IMemblockInfo>
+    std::unique_ptr<segment::IMemBlockInfo>
     createMemblockInfo(void * ptr) const override {
-        return std::make_unique<MemblockInfoT<MemBlockPtrT>>(ptr);
+        return std::make_unique<MemBlockInfoT<MemBlockPtrT>>(ptr);
     }
 
     int mallopt(int param, int value);
