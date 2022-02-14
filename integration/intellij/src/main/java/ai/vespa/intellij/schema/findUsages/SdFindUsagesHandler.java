@@ -56,7 +56,10 @@ public class SdFindUsagesHandler extends FindUsagesHandler {
                 for (Function functionImpl : functionsMap.get(functionName)) {
                     boolean success =
                         ReferencesSearch.search(createSearchParameters(functionImpl.definition(), scope, options))
-                                        .forEach((PsiReference ref) -> processor.process(new UsageInfo(ref)));
+                                        .forEach((PsiReference ref) -> {
+                                            if (ref.getElement().getParent() == elementToSearch) return true; // Skip self ref.
+                                            return processor.process(new UsageInfo(ref));
+                                        });
                     if (!success) return false;
                 }
             }
