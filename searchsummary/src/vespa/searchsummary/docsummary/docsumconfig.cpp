@@ -72,7 +72,7 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
     } else if (overrideName == "absdist") {
         if (getEnvironment()) {
             IAttributeManager *am = getEnvironment()->getAttributeManager();
-            fieldWriter = AbsDistanceDFW::create(argument.c_str(), am, resultConfig.useV8geoPositions());
+            fieldWriter = AbsDistanceDFW::create(argument.c_str(), am);
             rc = fieldWriter.get();
         }
     } else if (overrideName == "positions") {
