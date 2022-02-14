@@ -63,6 +63,7 @@ public class StatelessOnnxEvaluationTest {
 
     @Test
     public void testStatelessOnnxModelEvaluation() throws IOException {
+        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
         Path appDir = Path.fromString("src/test/cfg/application/onnx");
         Path storedAppDir = appDir.append("copy");
         try {
