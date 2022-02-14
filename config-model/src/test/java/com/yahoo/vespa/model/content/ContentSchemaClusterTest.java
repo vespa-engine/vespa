@@ -118,7 +118,7 @@ public class ContentSchemaClusterTest {
 
     @Test
     public void requireThatOnlyMemoryLimitCanBeSet() throws Exception {
-        assertProtonResourceLimits(0.9, 0.77,
+        assertProtonResourceLimits(0.875, 0.77,
                 new ContentClusterBuilder().protonMemoryLimit(0.77).getXml());
     }
 
@@ -138,8 +138,8 @@ public class ContentSchemaClusterTest {
     @Test
     public void default_resource_limits_with_feed_block_in_distributor() throws Exception {
         var cluster = createCluster(new ContentClusterBuilder().getXml());
-        assertProtonResourceLimits(0.9, 0.9, cluster);
-        assertClusterControllerResourceLimits(0.8, 0.8, cluster);
+        assertProtonResourceLimits(0.875, 0.9, cluster);
+        assertClusterControllerResourceLimits(0.75, 0.8, cluster);
     }
 
     @Test
