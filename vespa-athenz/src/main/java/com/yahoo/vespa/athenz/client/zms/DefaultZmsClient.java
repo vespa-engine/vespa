@@ -396,7 +396,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
         URI uri = zmsUrl.resolve(String.format("subdomain/%s", parent.getName()));
         StringEntity entity = toJsonStringEntity(Map.of("name", name));
         var request = RequestBuilder.put(uri)
-                .setEntity(toJsonStringEntity(entity))
+                .setEntity(entity)
                 .build();
         execute(request, response -> readEntity(response, Void.class));
     }
