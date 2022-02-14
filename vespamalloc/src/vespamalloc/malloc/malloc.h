@@ -11,10 +11,23 @@
 
 namespace vespamalloc {
 
+template <typename MemBlockPtrT>
+class MemblockInfoT final : public segment::IMemblockInfo {
+public:
+    MemblockInfoT(void *ptr) : _mem(ptr, 0, false) { }
+    bool allocated() const override { return _mem.allocated(); }
+    uint32_t threadId() const override { return _mem.threadId(); }
+    void info(FILE * os, int level) const override { _mem.info(os, level); }
+    uint32_t callStackLen() const override { return _mem.callStackLen(); }
+    const StackEntry * callStack() const override { return _mem.callStack(); }
+private:
+    MemBlockPtrT _mem;
+};
+
 template <typename MemBlockPtrT, typename ThreadListT>
-class MemoryManager : public IAllocator
+class MemoryManager : public IAllocator, public segment::IHelper
 {
-    using DataSegment = segment::DataSegment<MemBlockPtrT>;
+    using DataSegment = segment::DataSegment;
 public:
     MemoryManager(size_t logLimitAtStart);
     ~MemoryManager() override;
@@ -25,6 +38,12 @@ public:
         MemBlockPtrT::Stack::setStopAddress(returnAddressStop);
     }
     size_t getMaxNumThreads() const override { return _threadList.getMaxNumThreads(); }
+    size_t classSize(SizeClassT sc) const override { return MemBlockPtrT::classSize(sc); }
+    void dumpInfo(int level) const override { MemBlockPtrT::dumpInfo(level); }
+    std::unique_ptr<segment::IMemblockInfo>
+    createMemblockInfo(void * ptr) const override {
+        return std::make_unique<MemblockInfoT<MemBlockPtrT>>(ptr);
+    }
 
     int mallopt(int param, int value);
     void *malloc(size_t sz);
@@ -54,7 +73,7 @@ public:
     size_t getMinSizeForAlignment(size_t align, size_t sz) const { return MemBlockPtrT::getMinSizeForAlignment(align, sz); }
     size_t sizeClass(const void *ptr) const { return _segment.sizeClass(ptr); }
     size_t usable_size(void *ptr) const {
-        return MemBlockPtrT::usable_size(ptr, _segment.getMaxSize(ptr));
+        return MemBlockPtrT::usable_size(ptr, _segment.getMaxSize<MemBlockPtrT>(ptr));
     }
 
     void *calloc(size_t nelm, size_t esz) {
@@ -95,7 +114,7 @@ template <typename MemBlockPtrT, typename ThreadListT>
 MemoryManager<MemBlockPtrT, ThreadListT>::MemoryManager(size_t logLimitAtStart) :
     IAllocator(),
     _prAllocLimit(logLimitAtStart),
-    _segment(),
+    _segment(*this),
     _allocPool(_segment),
     _mmapPool(),
     _threadList(_allocPool, _mmapPool)
@@ -226,7 +245,7 @@ void * MemoryManager<MemBlockPtrT, ThreadListT>::realloc(void *oldPtr, size_t sz
         }
         SizeClassT sc(_segment.sizeClass(oldPtr));
         if (sc >= 0) {
-            size_t oldSz(_segment.getMaxSize(oldPtr));
+            size_t oldSz(_segment.getMaxSize<MemBlockPtrT>(oldPtr));
             if (sz > oldSz) {
                 ptr = malloc(sz);
                 if (ptr) {

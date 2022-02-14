@@ -24,7 +24,7 @@ vespa_add_library(vespamalloc_mallocd OBJECT
     threadproxy.cpp
     memblockboundscheck.cpp
     memblockboundscheck_d.cpp
-    datasegmentd.cpp
+    datasegment.cpp
     globalpoold.cpp
     threadpoold.cpp
     threadlistd.cpp
@@ -40,7 +40,7 @@ vespa_add_library(vespamalloc_mallocdst16 OBJECT
     threadproxy.cpp
     memblockboundscheck.cpp
     memblockboundscheck_dst.cpp
-    datasegmentdst.cpp
+    datasegment.cpp
     globalpooldst.cpp
     threadpooldst.cpp
     threadlistdst.cpp
@@ -57,7 +57,7 @@ vespa_add_library(vespamalloc_mallocdst16_nl OBJECT
     threadproxy.cpp
     memblockboundscheck.cpp
     memblockboundscheck_dst.cpp
-    datasegmentdst.cpp
+    datasegment.cpp
     globalpooldst.cpp
     threadpooldst.cpp
     threadlistdst.cpp

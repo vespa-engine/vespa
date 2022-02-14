@@ -40,7 +40,7 @@ public:
     bool allocated()    const { return false; }
     uint32_t threadId()      const { return 0; }
     void info(FILE *, unsigned level=0) const  { (void) level; }
-    Stack * callStack()                   { return nullptr; }
+    const Stack * callStack()           const  { return nullptr; }
     size_t callStackLen()           const { return 0; }
     void fillMemory(size_t)               { }
 
