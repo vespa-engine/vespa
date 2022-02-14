@@ -373,7 +373,7 @@ public class DeploymentTrigger {
             if (productionTest.isPresent()) {
                 abortIfOutdated(status, jobs, productionTest.get().id());
                 // Production deployments are also blocked by their declared tests, if the next versions to run
-                //  for those are not the same as the versions we're considering running in the deployment job now.
+                // for those are not the same as the versions we're considering running in the deployment job now.
                 if (productionTest.map(JobStatus::id).map(jobs::get)
                                   .map(versions -> ! versions.get(0).versions().targetsMatch(jobs.get(job).get(0).versions()))
                                   .orElse(false))

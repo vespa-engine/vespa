@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.DeclaredTest;
 import com.yahoo.config.application.api.DeploymentSpec.DeclaredZone;
+import com.yahoo.config.application.api.DeploymentSpec.UpgradeRollout;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
@@ -313,7 +314,7 @@ public class DeploymentStatus {
             if (job.application().instance().equals(instance) && job.type().isProduction()) {
 
                 List<Job> toRun = new ArrayList<>();
-                List<Change> changes = changes(job, step, change, deployment);
+                List<Change> changes = changes(job, step, change);
                 if (changes.isEmpty()) return;
                 for (Change partial : changes) {
                     toRun.add(new Job(Versions.from(partial, application, deployment, systemVersion),
@@ -340,36 +341,75 @@ public class DeploymentStatus {
     }
 
     /** Changes to deploy with the given job, possibly split in two steps. */
-    private List<Change> changes(JobId job, StepStatus step, Change change, Optional<Deployment> deployment) {
+    private List<Change> changes(JobId job, StepStatus step, Change change) {
         // Signal strict completion criterion by depending on job itself.
         if (step.completedAt(change, Optional.of(job)).isPresent())
             return List.of();
+
+        if (change.platform().isEmpty() || change.application().isEmpty() || change.isPinned())
+            return List.of(change);
 
         if (   step.completedAt(change.withoutApplication(), Optional.of(job)).isPresent()
             || step.completedAt(change.withoutPlatform(), Optional.of(job)).isPresent())
             return List.of(change);
 
-        if (change.platform().isEmpty() || change.application().isEmpty() || change.isPinned())
-            return List.of(change);
+        // For a dual change, where both target remain, we determine what to run by looking at when the two parts became ready:
+        // for deployments, we look at dependencies; for tests, this may be overridden by what is already deployed.
+        JobId deployment = new JobId(job.application(), JobType.from(system, job.type().zone(system)).get());
+        UpgradeRollout rollout = application.deploymentSpec().requireInstance(job.application().instance()).upgradeRollout();
+        if (job.type().isTest()) {
+            Optional<Instant> platformDeployedAt = jobSteps.get(deployment).completedAt(change.withoutApplication(), Optional.of(deployment));
+            Optional<Instant> revisionDeployedAt = jobSteps.get(deployment).completedAt(change.withoutPlatform(), Optional.of(deployment));
+
+            // If only the revision has deployed, then we expect to test that first.
+            if (platformDeployedAt.isEmpty() && revisionDeployedAt.isPresent()) return List.of(change.withoutPlatform(), change);
+
+            // If only the upgrade has deployed, then we expect to test that first, with one exception:
+            // The revision has caught up to the upgrade at the deployment job; and either
+            // the upgrade is failing between deployment and here, or
+            // the specified rollout is leading or simultaneous; and
+            // the revision is now blocked by waiting for the production test to verify the upgrade.
+            // In this case we must abandon the production test on the pure upgrade, so the revision can be deployed.
+            if (platformDeployedAt.isPresent() && revisionDeployedAt.isEmpty()) {
+                    if (jobSteps.get(deployment).readyAt(change, Optional.of(deployment))
+                                      .map(ready -> ! now.isBefore(ready)).orElse(false)) {
+                        switch (rollout) {
+                            // If separate rollout, this test should keep blocking the revision, unless there are failures.
+                            case separate: return hasFailures(jobSteps.get(deployment), jobSteps.get(job)) ? List.of(change) : List.of(change.withoutApplication(), change);
+                            // If leading rollout, this test should now expect the two changes to fuse and roll together.
+                            case leading: return List.of(change);
+                            // If simultaneous rollout, this test should now expect the revision to run ahead.
+                            case simultaneous: return List.of(change.withoutPlatform(), change);
+                        }
+                    }
+                return List.of(change.withoutApplication(), change);
+            }
+            // If neither is deployed, then neither is ready, and we guess like for deployments.
+            // If both are deployed, then we need to follow normal logic for whatever is ready.
+        }
 
         Optional<Instant> platformReadyAt = step.dependenciesCompletedAt(change.withoutApplication(), Optional.of(job));
         Optional<Instant> revisionReadyAt = step.dependenciesCompletedAt(change.withoutPlatform(), Optional.of(job));
 
-        // If the revision is not ready for this job, we prioritise the upgrade, assuming it was triggered first,
-        // unless this is a production test job, and the upgrade is already failing between deployment and here,
-        // in which case we must abandon the production test on the pure upgrade, so the revision can be deployed.
-        if (revisionReadyAt.isEmpty()) {
-            if (isTestAndIsFailingBetweenDeploymentAndThis(job)) return List.of(change);
-            return List.of(change.withoutApplication(), change);
+        // If neither change is ready, we guess based on the specified rollout.
+        if (platformReadyAt.isEmpty() && revisionReadyAt.isEmpty()) switch (rollout) {
+            case separate: return List.of(change.withoutApplication(), change);  // Platform should stay ahead.
+            case leading: return List.of(change);                                // They should eventually join.
+            case simultaneous: return List.of(change.withoutPlatform(), change); // Revision should get ahead.
         }
-        // If only the revision is ready, we prioritise that.
+
+        // If only the revision is ready, we run that first.
         if (platformReadyAt.isEmpty()) return List.of(change.withoutPlatform(), change);
 
-        // Both changes are ready for this step, so we use the policy to decide.
-        // TODO jonmv adding change.application.at and change.platform.at makes this better
+        // If only the platform is ready, we run that first.
+        if (revisionReadyAt.isEmpty()) {
+            return List.of(change.withoutApplication(), change);
+        }
+
+        // Both changes are ready for this step, and we look to the specified rollout to decide.
         boolean platformReadyFirst = platformReadyAt.get().isBefore(revisionReadyAt.get());
         boolean revisionReadyFirst = revisionReadyAt.get().isBefore(platformReadyAt.get());
-        switch (application.deploymentSpec().requireInstance(job.application().instance()).upgradeRollout()) {
+        switch (rollout) {
             case separate:      // Let whichever change rolled out first, keep rolling first, unless upgrade alone is failing.
                 return (platformReadyFirst || platformReadyAt.get().equals(Instant.EPOCH)) // Assume platform was first if no jobs have run yet.
                        ? step.job().flatMap(jobs()::get).flatMap(JobStatus::firstFailing).isPresent()
@@ -384,12 +424,6 @@ public class DeploymentStatus {
                 return platformReadyFirst ? List.of(change) : List.of(change.withoutPlatform(), change);
             default: throw new IllegalStateException("Unknown upgrade rollout policy");
         }
-    }
-
-    private boolean isTestAndIsFailingBetweenDeploymentAndThis(JobId job) {
-        if ( ! job.type().isTest()) return false;
-        JobId deployment = new JobId(job.application(), JobType.from(system, job.type().zone(system)).get());
-        return hasFailures(jobSteps.get(deployment), jobSteps.get(job));
     }
 
     /** The test jobs that need to run prior to the given production deployment jobs. */
@@ -498,7 +532,7 @@ public class DeploymentStatus {
 
         if (step instanceof DeploymentInstanceSpec) {
             DeploymentInstanceSpec spec = ((DeploymentInstanceSpec) step);
-            StepStatus instanceStatus = new InstanceStatus(spec, previous, now, application.require(spec.name()), this);
+            StepStatus instanceStatus = new InstanceStatus(spec, previous, now, application.require(spec.name()));
             instance = spec.name();
             allSteps.add(instanceStatus);
             previous = List.of(instanceStatus);
@@ -603,11 +637,13 @@ public class DeploymentStatus {
 
         /** The time at which all dependencies completed on the given change and / or versions. */
         Optional<Instant> dependenciesCompletedAt(Change change, Optional<JobId> dependent) {
-            return dependencies.stream().allMatch(step -> step.completedAt(change, dependent).isPresent())
-                   ? dependencies.stream().map(step -> step.completedAt(change, dependent).get())
-                                 .max(naturalOrder())
-                                 .or(() -> Optional.of(Instant.EPOCH))
-                   : Optional.empty();
+            Instant latest = Instant.EPOCH;
+            for (StepStatus step : dependencies) {
+                Optional<Instant> completedAt = step.completedAt(change, dependent);
+                if (completedAt.isEmpty()) return Optional.empty();
+                latest = latest.isBefore(completedAt.get()) ? completedAt.get() : latest;
+            }
+            return Optional.of(latest);
         }
 
         /** The time until which this step is blocked by a change blocker. */
@@ -644,15 +680,13 @@ public class DeploymentStatus {
         private final DeploymentInstanceSpec spec;
         private final Instant now;
         private final Instance instance;
-        private final DeploymentStatus status;
 
         private InstanceStatus(DeploymentInstanceSpec spec, List<StepStatus> dependencies, Instant now,
-                               Instance instance, DeploymentStatus status) {
+                               Instance instance) {
             super(StepType.instance, spec, dependencies, spec.name());
             this.spec = spec;
             this.now = now;
             this.instance = instance;
-            this.status = status;
         }
 
         /**
