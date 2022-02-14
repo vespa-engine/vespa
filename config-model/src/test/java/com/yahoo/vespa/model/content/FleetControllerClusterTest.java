@@ -104,14 +104,14 @@ public class FleetControllerClusterTest {
 
     @Test
     public void default_cluster_feed_block_limits_are_set() {
-        assertLimits(0.8, 0.8, getConfigForBasicCluster());
+        assertLimits(0.75, 0.8, getConfigForBasicCluster());
     }
 
     @Test
     public void resource_limits_can_be_set_in_tuning() {
         assertLimits(0.6, 0.7, getConfigForResourceLimitsTuning(0.6, 0.7));
         assertLimits(0.6, 0.8, getConfigForResourceLimitsTuning(0.6, null));
-        assertLimits(0.8, 0.7, getConfigForResourceLimitsTuning(null, 0.7));
+        assertLimits(0.75, 0.7, getConfigForResourceLimitsTuning(null, 0.7));
     }
 
     private static final double DELTA = 0.00001;
