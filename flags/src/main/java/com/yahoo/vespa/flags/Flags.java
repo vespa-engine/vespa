@@ -217,7 +217,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DELETE_UNMAINTAINED_CERTIFICATES = defineFeatureFlag(
             "delete-unmaintained-certificates", false,
-            List.of("andreer"), "2021-09-23", "2022-02-14",
+            List.of("andreer"), "2021-09-23", "2022-03-14",
             "Whether to delete certificates that are known by provider but not by controller",
             "Takes effect on next run of EndpointCertificateMaintainer"
     );
