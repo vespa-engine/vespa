@@ -378,6 +378,7 @@ protected:
     virtual void populate_address_space_usage(AddressSpaceUsage& usage) const;
 
     const std::shared_ptr<vespalib::alloc::MemoryAllocator>& get_memory_allocator() const noexcept { return _memory_allocator; }
+    vespalib::alloc::Alloc get_initial_alloc();
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(AttributeVector);
     bool isLoaded() const { return _loaded; }

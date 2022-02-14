@@ -19,7 +19,8 @@ SingleValueNumericAttribute(const vespalib::string & baseFileName, const Attribu
     _data(c.getGrowStrategy().getDocsInitialCapacity(),
           c.getGrowStrategy().getDocsGrowPercent(),
           c.getGrowStrategy().getDocsGrowDelta(),
-          getGenerationHolder())
+          getGenerationHolder(),
+          this->get_initial_alloc())
 { }
 
 template <typename B>

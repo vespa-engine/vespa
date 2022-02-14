@@ -14,11 +14,11 @@ namespace search {
 using attribute::Config;
 
 SingleValueEnumAttributeBase::
-SingleValueEnumAttributeBase(const Config & c, GenerationHolder &genHolder)
+SingleValueEnumAttributeBase(const Config & c, GenerationHolder &genHolder, const vespalib::alloc::Alloc& initial_alloc)
     : _enumIndices(c.getGrowStrategy().getDocsInitialCapacity(),
                    c.getGrowStrategy().getDocsGrowPercent(),
                    c.getGrowStrategy().getDocsGrowDelta(),
-                   genHolder)
+                   genHolder, initial_alloc)
 {
 }
 
