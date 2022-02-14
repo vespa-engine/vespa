@@ -13,7 +13,7 @@ namespace vespamalloc {
 template <typename MemBlockPtrT>
 class AllocPoolT
 {
-    using DataSegment = segment::DataSegment<MemBlockPtrT>;
+    using DataSegment = segment::DataSegment;
 public:
     typedef AFList<MemBlockPtrT> ChunkSList;
     AllocPoolT(DataSegment & ds);

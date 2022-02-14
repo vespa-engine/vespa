@@ -67,11 +67,11 @@ class CommonT
 public:
     static constexpr size_t MAX_ALIGN = 0x200000ul;
     enum {MinClassSize = MinClassSizeC};
-    static inline constexpr SizeClassT sizeClass(size_t sz) {
+    static constexpr SizeClassT sizeClass(size_t sz) noexcept {
         SizeClassT tmp(msbIdx(sz - 1) - (MinClassSizeC - 1));
         return (sz <= (1 << MinClassSizeC )) ? 0 : tmp;
     }
-    static inline constexpr size_t classSize(SizeClassT sc) { return (size_t(1) << (sc + MinClassSizeC)); }
+    static constexpr size_t classSize(SizeClassT sc) noexcept { return (size_t(1) << (sc + MinClassSizeC)); }
 };
 
 inline void crash() { *((volatile unsigned *) nullptr) = 0; }

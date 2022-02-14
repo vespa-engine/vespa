@@ -15,7 +15,7 @@ class ThreadPoolT
 public:
     using ChunkSList = AFList<MemBlockPtrT>;
     using AllocPool = AllocPoolT<MemBlockPtrT>;
-    using DataSegment = segment::DataSegment<MemBlockPtrT>;
+    using DataSegment = segment::DataSegment;
     ThreadPoolT();
     ~ThreadPoolT();
     void setPool(AllocPool & allocPool, MMapPool & mmapPool) {

@@ -21,7 +21,7 @@ public:
     size_t count()                 const { return _count; }
     void content(const T & v)            { _content = v; }
     template <typename Store>
-    bool addStack(T * stack, size_t nelem, Store & store);
+    bool addStack(const T * stack, size_t nelem, Store & store);
     template<typename Object>
     void traverseDepth(size_t depth, size_t width, Object func);
     template<typename Object>
@@ -38,7 +38,7 @@ private:
 
 template<typename T, typename AddSub>
 template <typename Store>
-bool CallGraphNode<T, AddSub>::addStack(T * stack, size_t nelem, Store & store) {
+bool CallGraphNode<T, AddSub>::addStack(const T * stack, size_t nelem, Store & store) {
     bool retval(false);
     if (nelem == 0) {
         retval = true;
@@ -125,7 +125,7 @@ public:
     {
         checkOrSetRoot(root);
     }
-    bool addStack(Content * stack, size_t nelem) {
+    bool addStack(const Content * stack, size_t nelem) {
         checkOrSetRoot(stack[0]);
         return _root->addStack(stack, nelem, *_nodeStore);
     }
