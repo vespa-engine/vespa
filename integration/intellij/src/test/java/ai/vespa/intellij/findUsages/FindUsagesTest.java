@@ -24,7 +24,7 @@ public class FindUsagesTest extends PluginTestBase {
     public void testFindUsages() {
         useDir("src/test/applications/rankprofilemodularity");
         var tester = new UsagesTester("test.sd", getProject());
-        tester.assertFunctionUsages("Self reference + 2 local references", 3, "in_schema2", "ff1");
+        tester.assertFunctionUsages("2 local references", 2, "in_schema2", "ff1");
     }
 
     private static class UsagesTester {
