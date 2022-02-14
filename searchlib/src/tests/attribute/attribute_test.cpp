@@ -23,6 +23,8 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
+#include <vespa/vespalib/util/round_up_to_page_size.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fastos/file.h>
 #include <cmath>
 #include <iostream>
@@ -2283,13 +2285,20 @@ int
 AttributeTest::test_paged_attribute(const vespalib::string& name, const vespalib::string& swapfile, const search::attribute::Config& cfg)
 {
     int result = 1;
+    size_t rounded_size = vespalib::round_up_to_page_size(1);
+    size_t lid_mapping_size = 1200;
+    size_t sv_maxlid = 1200;
+    if (rounded_size == 64_Ki) {
+        lid_mapping_size = 17000;
+        sv_maxlid = 1500;
+    }
     LOG(info, "test_paged_attribute '%s'", name.c_str());
     auto av = createAttribute(name, cfg);
     auto v = std::dynamic_pointer_cast<IntegerAttribute>(av);
     ASSERT_TRUE(v);
     auto size1 = stat_size(swapfile);
     // Grow mapping from lid to value or multivalue index
-    addClearedDocs(av, 1200);
+    addClearedDocs(av, lid_mapping_size);
     auto size2 = stat_size(swapfile);
     auto size3 = size2;
     EXPECT_LESS(size1, size2);
@@ -2308,7 +2317,7 @@ AttributeTest::test_paged_attribute(const vespalib::string& name, const vespalib
     }
     if (cfg.fastSearch()) {
         // Grow enum store
-        uint32_t maxlid = cfg.collectionType().isMultiValue() ? 100 : 1200;
+        uint32_t maxlid = cfg.collectionType().isMultiValue() ? 100 : sv_maxlid;
         for (uint32_t lid = 1; lid < maxlid; ++lid) {
             av->clearDoc(lid);
             if (cfg.collectionType().isMultiValue()) {
