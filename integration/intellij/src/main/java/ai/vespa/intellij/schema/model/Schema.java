@@ -33,6 +33,9 @@ public class Schema {
     /** The schema this inherits, or empty if none. Resolved lazily. */
     private Optional<Schema> inherited = null;
 
+    /** The profiles of this, either defined inside it or in separatew .profile files. Resolved lazily. */
+    private Map<String, RankProfile> rankProfiles = null;
+
     public Schema(SdFile definition, Path path) {
         this.definition = definition;
         this.path = path;
@@ -52,19 +55,24 @@ public class Schema {
                               .map(inheritedNode -> fromProjectFile(definition.getProject(), path.getParentPath().append(inheritedNode.getText() + ".sd")));
     }
 
-    /** Returns a rank profile belonging to this, defined either inside it or in a separate .profile file */
-    public Optional<RankProfile> rankProfile(String name) {
-        var definition = findProfileElement(name, this.definition); // Look up in this
-        if (definition.isEmpty()) { // Look up in a separate file schema-name/profile-name.profile
-            Optional<PsiFile> file = Files.open(path.getParentPath().append(name()).append(name + ".profile"),
-                                                this.definition.getProject());
-            if (file.isPresent())
-                definition = findProfileElement(name, file.get());
+    /**
+     * Returns the rank profiles in this, defined either inside it or in separate .profile files,
+     * or inherited from the parent schema.
+     */
+    public Map<String, RankProfile> rankProfiles() {
+        if (rankProfiles != null) return rankProfiles;
+        rankProfiles = inherited().isPresent() ? inherited().get().rankProfiles() : new HashMap<>();
+
+        for (var profileDefinition : PsiTreeUtil.collectElementsOfType(definition, SdRankProfileDefinition.class))
+            rankProfiles.put(profileDefinition.getName(), new RankProfile(profileDefinition, this));
+
+        for (var profileFile : Files.allFilesIn(path.getParentPath().append(name()), "profile", definition.getProject())) {
+            var profileDefinitions = PsiTreeUtil.collectElementsOfType(profileFile, SdRankProfileDefinition.class);
+            if (profileDefinitions.size() != 1) continue; // invalid file
+            var profileDefinition = profileDefinitions.stream().findAny().get();
+            rankProfiles.put(profileDefinition.getName(), new RankProfile(profileDefinition, this));
         }
-        if (definition.isEmpty() && inherited().isPresent()) { // Look up in parent
-            return inherited().get().rankProfile(name);
-        }
-        return definition.map(d -> new RankProfile(d, this));
+        return rankProfiles;
     }
 
     public Map<String, List<Function>> definedFunctions() {
@@ -75,13 +83,6 @@ public class Schema {
             }
         }
         return functions;
-    }
-
-    private Optional<SdRankProfileDefinition> findProfileElement(String name, PsiFile file) {
-        return PsiTreeUtil.collectElementsOfType(file, SdRankProfileDefinition.class)
-                          .stream()
-                          .filter(p -> name.equals(p.getName()))
-                          .findAny();
     }
 
     /**

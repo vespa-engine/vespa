@@ -49,8 +49,8 @@ public class RankProfile {
         return inherited = AST.inherits(definition).stream()
                               .map(parentIdentifierAST -> parentIdentifierAST.getPsi().getReference())
                               .filter(reference -> reference != null)
-                              .map(reference -> owner.rankProfile(reference.getCanonicalText()))
-                              .flatMap(r -> r.stream())
+                              .map(reference -> owner.rankProfiles().get(reference.getCanonicalText()))
+                              .filter(r -> r != null)
                               .collect(Collectors.toMap(p -> p.name(), p -> p));
     }
 

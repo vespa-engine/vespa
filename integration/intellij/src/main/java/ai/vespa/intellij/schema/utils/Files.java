@@ -9,7 +9,9 @@ import com.intellij.psi.search.FilenameIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Provide workable file operations on top of IntelliJ's API.
@@ -31,6 +33,17 @@ public class Files {
                 return Optional.of(PsiManager.getInstance(project).findFile(candidate));
         }
         return Optional.empty();
+    }
+
+    /** Returns all the files in the given directory with the given ending. */
+    public static List<PsiFile> allFilesIn(Path dir, String extension, Project project) {
+        if (extension.startsWith("."))
+            extension = extension.substring(1);
+        return FilenameIndex.getAllFilesByExt(project, extension)
+                            .stream()
+                            .filter(file -> file.getParent().getPath().endsWith(dir.getRelative()))
+                            .map(file -> PsiManager.getInstance(project).findFile(file))
+                            .collect(Collectors.toList());
     }
 
 }

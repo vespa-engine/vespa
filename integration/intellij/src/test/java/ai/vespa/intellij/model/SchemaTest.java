@@ -18,7 +18,7 @@ public class SchemaTest extends PluginTestBase {
         Schema schema = Schema.fromProjectFile(getProject(), Path.fromString("simple.sd"));
         assertNotNull(schema);
         assertEquals("simple", schema.name());
-        RankProfile profile = schema.rankProfile("simple-profile").get();
+        RankProfile profile = schema.rankProfiles().get("simple-profile");
         assertEquals("simple-profile", profile.name());
         assertEquals(2, profile.inherited().size());
         assertEquals("parent-profile1", profile.inherited().get("parent-profile1").name());
@@ -31,7 +31,7 @@ public class SchemaTest extends PluginTestBase {
         Schema schema = Schema.fromProjectFile(getProject(), Path.fromString("child.sd"));
         assertNotNull(schema);
         assertEquals("child", schema.name());
-        RankProfile profile = schema.rankProfile("child_profile").get();
+        RankProfile profile = schema.rankProfiles().get("child_profile");
         assertEquals("child_profile", profile.name());
         assertEquals(2, profile.inherited().size());
         assertEquals("other_child_profile", profile.inherited().get("other_child_profile").name());
@@ -44,7 +44,7 @@ public class SchemaTest extends PluginTestBase {
         Schema schema = Schema.fromProjectFile(getProject(), Path.fromString("test.sd"));
         assertNotNull(schema);
         assertEquals("test", schema.name());
-        RankProfile profile = schema.rankProfile("in_schema3").get();
+        RankProfile profile = schema.rankProfiles().get("in_schema3");
         assertEquals("in_schema3", profile.name());
         assertEquals(2, profile.inherited().size());
         assertEquals("outside_schema1", profile.inherited().get("outside_schema1").name());
