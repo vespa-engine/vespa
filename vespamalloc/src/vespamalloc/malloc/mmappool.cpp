@@ -95,6 +95,7 @@ MMapPool::unmap(void * ptr) {
             abort();
         }
         sz = found->second._sz;
+        _mappings.erase(found);
     }
     int munmap_ok = ::munmap(ptr, sz);
     assert(munmap_ok == 0);
