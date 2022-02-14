@@ -1312,6 +1312,116 @@ public class DeploymentTriggerTest {
     }
 
     @Test
+    public void testProductionTestBlockingDeploymentWithSeparateRollout() {
+        var appPackage = new ApplicationPackageBuilder().region("us-east-3")
+                                                        .region("us-west-1")
+                                                        .delay(Duration.ofHours(1))
+                                                        .test("us-east-3")
+                                                        .upgradeRollout("separate")
+                                                        .build();
+        var app = tester.newDeploymentContext().submit(appPackage)
+                        .runJob(systemTest).runJob(stagingTest)
+                        .runJob(productionUsEast3).runJob(productionUsWest1);
+        tester.clock().advance(Duration.ofHours(1));
+        app.runJob(testUsEast3);
+        assertEquals(Change.empty(), app.instance().change());
+
+        // Platform rolls through first production zone.
+        var version0 = tester.controller().readSystemVersion();
+        var version1 = new Version("7.1");
+        tester.controllerTester().upgradeSystem(version1);
+        tester.upgrader().maintain();
+        app.runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
+
+        // Revision starts rolling, but waits for production test to verify the upgrade.
+        var revision0 = app.lastSubmission();
+        app.submit(appPackage);
+        var revision1 = app.lastSubmission();
+        assertEquals(Change.of(version1).with(revision1.get()), app.instance().change());
+        app.runJob(systemTest).runJob(stagingTest).triggerJobs();
+        app.assertRunning(productionUsWest1);
+        app.assertNotRunning(productionUsEast3);
+
+        // Upgrade got here first, so attempts to proceed alone, but the upgrade fails.
+        app.triggerJobs();
+        assertEquals(new Versions(version1, revision0.get(), Optional.of(version0), revision0),
+                     tester.jobs().last(app.instanceId(), productionUsWest1).get().versions());
+        app.timeOutConvergence(productionUsWest1).triggerJobs();
+
+        // Upgrade now fails between us-east-3 deployment and test, so test is abandoned, and revision unblocked.
+        app.assertRunning(productionUsEast3);
+        assertEquals(new Versions(version1, revision1.get(), Optional.of(version1), revision0),
+                     tester.jobs().last(app.instanceId(), productionUsEast3).get().versions());
+        app.runJob(productionUsEast3).triggerJobs()
+                .jobAborted(productionUsWest1).runJob(productionUsWest1);
+        tester.clock().advance(Duration.ofHours(1));
+        app.runJob(testUsEast3);
+        assertEquals(Change.empty(), app.instance().change());
+    }
+
+    @Test
+    public void testProductionTestNotBlockingDeploymentWithSimultaneousRollout() {
+        var appPackage = new ApplicationPackageBuilder().region("us-east-3")
+                                                        .region("us-central-1")
+                                                        .region("us-west-1")
+                                                        .delay(Duration.ofHours(1))
+                                                        .test("us-east-3")
+                                                        .test("us-west-1")
+                                                        .upgradeRollout("simultaneous")
+                                                        .build();
+        var app = tester.newDeploymentContext().submit(appPackage)
+                .runJob(systemTest).runJob(stagingTest)
+                .runJob(productionUsEast3).runJob(productionUsCentral1).runJob(productionUsWest1);
+        tester.clock().advance(Duration.ofHours(1));
+        app.runJob(testUsEast3).runJob(testUsWest1);
+        assertEquals(Change.empty(), app.instance().change());
+
+        // Platform rolls through first production zone.
+        var version0 = tester.controller().readSystemVersion();
+        var version1 = new Version("7.1");
+        tester.controllerTester().upgradeSystem(version1);
+        tester.upgrader().maintain();
+        app.runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
+
+        // Revision starts rolling, and causes production test to abort when it reaches deployment.
+        var revision0 = app.lastSubmission();
+        app.submit(appPackage);
+        var revision1 = app.lastSubmission();
+        assertEquals(Change.of(version1).with(revision1.get()), app.instance().change());
+        app.runJob(systemTest).runJob(stagingTest).triggerJobs();
+        app.assertRunning(productionUsCentral1);
+        app.assertRunning(productionUsEast3);
+
+        // Revision deploys to first prod zone.
+        app.triggerJobs();
+        assertEquals(new Versions(version1, revision1.get(), Optional.of(version1), revision0),
+                     tester.jobs().last(app.instanceId(), productionUsEast3).get().versions());
+        tester.clock().advance(Duration.ofSeconds(1));
+        app.runJob(productionUsEast3);
+
+        // Revision catches up in second prod zone.
+        app.runJob(systemTest).runJob(stagingTest).runJob(stagingTest).triggerJobs();
+        app.jobAborted(productionUsCentral1).triggerJobs();
+        assertEquals(new Versions(version1, revision1.get(), Optional.of(version0), revision0),
+                     tester.jobs().last(app.instanceId(), productionUsCentral1).get().versions());
+        app.runJob(productionUsCentral1).triggerJobs();
+
+        // Revision proceeds alone in third prod zone, making test targets different for the two prod tests.
+        assertEquals(new Versions(version0, revision1.get(), Optional.of(version0), revision0),
+                     tester.jobs().last(app.instanceId(), productionUsWest1).get().versions());
+        app.runJob(productionUsWest1);
+        app.triggerJobs();
+        app.assertNotRunning(testUsEast3);
+        tester.clock().advance(Duration.ofHours(1));
+
+        // Test lets revision proceed alone, and us-west-1 is blocked until tested.
+        app.runJob(testUsEast3).triggerJobs();
+        app.assertNotRunning(productionUsWest1);
+        app.runJob(testUsWest1).runJob(productionUsWest1).runJob(testUsWest1); // Test for us-east-3 is not re-run.
+        assertEquals(Change.empty(), app.instance().change());
+    }
+
+    @Test
     public void testRevisionJoinsUpgradeWithLeadingRollout() {
         var appPackage = new ApplicationPackageBuilder().region("us-central-1")
                                                         .region("us-east-3")
@@ -1388,14 +1498,13 @@ public class DeploymentTriggerTest {
         assertEquals(RunStatus.running, tester.jobs().last(app.instanceId(), productionUsEast3).get().status());
 
         // Once staging tests verify the joint upgrade, the job is replaced with that.
-        app.runJob(stagingTest);
+        app.runJob(systemTest).runJob(stagingTest).runJob(stagingTest);
         app.triggerJobs();
         app.jobAborted(productionUsEast3).runJob(productionUsEast3);
         assertEquals(new Versions(version1, revision1.get(), Optional.of(version0), revision0),
                      tester.jobs().last(app.instanceId(), productionUsEast3).get().versions());
 
         // Revision now proceeds alone.
-        app.runJob(systemTest).runJob(stagingTest);
         app.triggerJobs();
         assertEquals(new Versions(version0, revision1.get(), Optional.of(version0), revision0),
                      tester.jobs().last(app.instanceId(), productionUsWest1).get().versions());
