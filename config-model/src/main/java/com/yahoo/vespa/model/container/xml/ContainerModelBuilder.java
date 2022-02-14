@@ -360,6 +360,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (environment != Environment.prod) return;
 
         Element aliases = XML.getChild(spec, "aliases");
+        if (aliases != null) {
+            log.logApplicationPackage(WARNING, "The 'aliases' element and its children has no effect. They have been deprecated for removal in Vespa 8");
+        }
         for (Element alias : XML.getChildren(aliases, "service-alias")) {
             cluster.serviceAliases().add(XML.getValue(alias));
         }
