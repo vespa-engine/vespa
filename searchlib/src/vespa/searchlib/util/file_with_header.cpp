@@ -31,7 +31,8 @@ FileWithHeader::FileWithHeader(std::unique_ptr<FastOS_FileInterface> file_in)
         _header_len = _header.readFile(*_file);
         _file->SetPosition(_header_len);
         if (!extract_file_size(_header, *_file, _file_size)) {
-            _file->Close();
+            bool close_ok = _file->Close();
+            assert(close_ok);
         }
     }
 }
