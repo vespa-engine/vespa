@@ -1299,7 +1299,7 @@ public class DeploymentTriggerTest {
                             ZoneId.from("prod.cd-aws-us-east-1a"));
         tester.controllerTester()
               .setZones(zones, SystemName.cd)
-              .setRoutingMethod(zones, RoutingMethod.shared);
+              .setRoutingMethod(zones, RoutingMethod.sharedLayer4);
         tester.controllerTester().upgradeSystem(Version.fromString("6.1"));
         tester.controllerTester().computeVersionStatus();
         var app = tester.newDeploymentContext();

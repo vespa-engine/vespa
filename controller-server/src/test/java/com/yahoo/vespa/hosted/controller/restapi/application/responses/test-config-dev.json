@@ -8,7 +8,7 @@
       "https://my-user.application1.tenant1.us-east-1.dev.vespa.oath.cloud/"
     ],
     "prod.us-central-1": [
-      "https://application1--tenant1.us-central-1.vespa.oath.cloud:4443/"
+      "https://application1.tenant1.us-central-1.vespa.oath.cloud/"
     ]
   },
   "zoneEndpoints": {
@@ -16,7 +16,7 @@
       "default": "https://my-user.application1.tenant1.us-east-1.dev.vespa.oath.cloud/"
     },
     "prod.us-central-1": {
-      "default": "https://application1--tenant1.us-central-1.vespa.oath.cloud:4443/"
+      "default": "https://application1.tenant1.us-central-1.vespa.oath.cloud/"
     }
   },
   "clusters": {

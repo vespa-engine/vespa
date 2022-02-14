@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
@@ -110,13 +108,10 @@ public class RoutingController {
     public EndpointList readEndpointsOf(DeploymentId deployment) {
         Set<Endpoint> endpoints = new LinkedHashSet<>();
         boolean isSystemApplication = SystemApplication.matching(deployment.applicationId()).isPresent();
-        // Avoid reading application more than once per call to this
-        Supplier<DeploymentSpec> deploymentSpec = Suppliers.memoize(() -> controller.applications().requireApplication(TenantAndApplicationId.from(deployment.applicationId())).deploymentSpec());
         // To discover the cluster name for a zone-scoped endpoint, we need to read routing policies
         for (var policy : routingPolicies.read(deployment)) {
             if (!policy.status().isActive()) continue;
             for (var routingMethod :  controller.zoneRegistry().routingMethods(policy.id().zone())) {
-                if (routingMethod.isDirect() && !isSystemApplication && !canRouteDirectlyTo(deployment, deploymentSpec.get())) continue;
                 endpoints.addAll(policy.zoneEndpointsIn(controller.system(), routingMethod, controller.zoneRegistry()));
                 endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod));
             }
@@ -374,7 +369,7 @@ public class RoutingController {
     }
 
     /** Returns the routing methods that are available across all given deployments */
-    private List<RoutingMethod> routingMethodsOfAll(Collection<DeploymentId> deployments, DeploymentSpec deploymentSpec) {
+    private List<RoutingMethod> routingMethodsOfAll(Collection<DeploymentId> deployments) {
         var deploymentsByMethod = new HashMap<RoutingMethod, Set<DeploymentId>>();
         for (var deployment : deployments) {
             for (var method : controller.zoneRegistry().routingMethods(deployment.zoneId())) {
@@ -385,38 +380,17 @@ public class RoutingController {
         var routingMethods = new ArrayList<RoutingMethod>();
         deploymentsByMethod.forEach((method, supportedDeployments) -> {
             if (supportedDeployments.containsAll(deployments)) {
-                if (method.isDirect() && !canRouteDirectlyTo(deployments, deploymentSpec)) return;
                 routingMethods.add(method);
             }
         });
         return Collections.unmodifiableList(routingMethods);
     }
 
-    /** Returns whether traffic can be directly routed to all given deployments */
-    private boolean canRouteDirectlyTo(Collection<DeploymentId> deployments, DeploymentSpec deploymentSpec) {
-        return deployments.stream().allMatch(deployment -> canRouteDirectlyTo(deployment, deploymentSpec));
-    }
-
-    /** Returns whether traffic can be directly routed to given deployment */
-    private boolean canRouteDirectlyTo(DeploymentId deploymentId, DeploymentSpec deploymentSpec) {
-        if (controller.system().isPublic()) return true; // Public always supports direct routing
-        if (controller.system().isCd()) return true; // CD deploys directly so we cannot enforce all requirements below
-        if (deploymentId.zoneId().environment().isManuallyDeployed()) return true; // Manually deployed zones always support direct routing
-
-        // Check Athenz service presence. The test framework uses this identity when sending requests to the
-        // deployment's container(s).
-        var athenzService = deploymentSpec.instance(deploymentId.applicationId().instance())
-                                          .flatMap(instance -> instance.athenzService(deploymentId.zoneId().environment(),
-                                                                                      deploymentId.zoneId().region()));
-        if (athenzService.isEmpty()) return false;
-        return true;
-    }
-
     /** Compute global endpoints for given routing ID, application and deployments */
     private List<Endpoint> computeGlobalEndpoints(RoutingId routingId, ClusterSpec.Id cluster, List<DeploymentId> deployments, DeploymentSpec deploymentSpec) {
         var endpoints = new ArrayList<Endpoint>();
         var directMethods = 0;
-        var availableRoutingMethods = routingMethodsOfAll(deployments, deploymentSpec);
+        var availableRoutingMethods = routingMethodsOfAll(deployments);
         boolean legacyNamesAvailable = requiresLegacyNames(deploymentSpec, routingId.instance().instance());
 
         for (var method : availableRoutingMethods) {
