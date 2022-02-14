@@ -313,7 +313,7 @@ public class DeploymentStatus {
             if (job.application().instance().equals(instance) && job.type().isProduction()) {
 
                 List<Job> toRun = new ArrayList<>();
-                List<Change> changes = changes(job, step, change, deployment);
+                List<Change> changes = changes(job, step, change);
                 if (changes.isEmpty()) return;
                 for (Change partial : changes) {
                     toRun.add(new Job(Versions.from(partial, application, deployment, systemVersion),
@@ -340,7 +340,7 @@ public class DeploymentStatus {
     }
 
     /** Changes to deploy with the given job, possibly split in two steps. */
-    private List<Change> changes(JobId job, StepStatus step, Change change, Optional<Deployment> deployment) {
+    private List<Change> changes(JobId job, StepStatus step, Change change) {
         // Signal strict completion criterion by depending on job itself.
         if (step.completedAt(change, Optional.of(job)).isPresent())
             return List.of();
@@ -603,11 +603,13 @@ public class DeploymentStatus {
 
         /** The time at which all dependencies completed on the given change and / or versions. */
         Optional<Instant> dependenciesCompletedAt(Change change, Optional<JobId> dependent) {
-            return dependencies.stream().allMatch(step -> step.completedAt(change, dependent).isPresent())
-                   ? dependencies.stream().map(step -> step.completedAt(change, dependent).get())
-                                 .max(naturalOrder())
-                                 .or(() -> Optional.of(Instant.EPOCH))
-                   : Optional.empty();
+            Instant latest = Instant.EPOCH;
+            for (StepStatus step : dependencies) {
+                Optional<Instant> completedAt = step.completedAt(change, dependent);
+                if (completedAt.isEmpty()) return Optional.empty();
+                latest = latest.isBefore(completedAt.get()) ? completedAt.get() : latest;
+            }
+            return Optional.of(latest);
         }
 
         /** The time until which this step is blocked by a change blocker. */
