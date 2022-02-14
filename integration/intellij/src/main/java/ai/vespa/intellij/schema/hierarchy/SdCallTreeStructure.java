@@ -2,6 +2,7 @@
 package ai.vespa.intellij.schema.hierarchy;
 
 import ai.vespa.intellij.schema.model.Function;
+import ai.vespa.intellij.schema.model.Schema;
 import com.intellij.ide.hierarchy.HierarchyNodeDescriptor;
 import com.intellij.ide.hierarchy.HierarchyTreeStructure;
 import com.intellij.openapi.project.Project;
@@ -36,7 +37,7 @@ public abstract class SdCallTreeStructure extends HierarchyTreeStructure {
         super(project, new SdCallHierarchyNodeDescriptor(null, element, true));
         myScopeType = currentScopeType;
         myFile = (SdFile) element.getContainingFile();
-        functionsMap = SdUtil.functionsIn(myFile);
+        functionsMap = new Schema(myFile, null, project).definedFunctions();
         ranksHeritageMap = new HashMap<>();
     }
     

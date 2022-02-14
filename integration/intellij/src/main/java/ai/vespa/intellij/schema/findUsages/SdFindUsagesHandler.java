@@ -2,6 +2,7 @@
 package ai.vespa.intellij.schema.findUsages;
 
 import ai.vespa.intellij.schema.model.Function;
+import ai.vespa.intellij.schema.model.Schema;
 import com.intellij.find.findUsages.FindUsagesHandler;
 import com.intellij.find.findUsages.FindUsagesOptions;
 import com.intellij.openapi.application.ReadAction;
@@ -33,8 +34,8 @@ public class SdFindUsagesHandler extends FindUsagesHandler {
     public SdFindUsagesHandler(PsiElement psiElement) {
         super(psiElement);
         PsiFile file = psiElement.getContainingFile();
-        functionsMap = file instanceof SdFile ? SdUtil.functionsIn((SdFile) psiElement.getContainingFile())
-                                              : new HashMap<>();
+        functionsMap = file instanceof SdFile ? new Schema((SdFile)file, null, psiElement.getProject()).definedFunctions()
+                                              : Map.of();
     }
     
     @Override

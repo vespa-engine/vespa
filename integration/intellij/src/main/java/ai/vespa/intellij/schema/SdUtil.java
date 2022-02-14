@@ -38,8 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.collect;
-
 /**
  * Util class for the plugin's code.
  *
@@ -48,16 +46,6 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.collect;
  */
 public class SdUtil {
     
-    public static Map<String, List<Function>> functionsIn(SdFile file) {
-        Map<String, List<Function>> functionsMap = new HashMap<>();
-        for (SdRankProfileDefinition rankProfile : PsiTreeUtil.findChildrenOfType(file, SdRankProfileDefinition.class)) {
-            for (SdFunctionDefinition function : PsiTreeUtil.findChildrenOfType(rankProfile, SdFunctionDefinition.class)) {
-                functionsMap.computeIfAbsent(function.getName(), k -> new ArrayList<>()).add(Function.from(function, null));
-            }
-        }
-        return functionsMap;
-    }
-
     public static String createFunctionDescription(SdFunctionDefinition function) {
         SdRankProfileDefinition rankProfile = PsiTreeUtil.getParentOfType(function, SdRankProfileDefinition.class);
         String rankProfileName;

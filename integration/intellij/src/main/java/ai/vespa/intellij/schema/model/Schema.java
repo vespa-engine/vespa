@@ -2,6 +2,7 @@
 package ai.vespa.intellij.schema.model;
 
 import ai.vespa.intellij.schema.psi.SdFile;
+import ai.vespa.intellij.schema.psi.SdFunctionDefinition;
 import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
 import ai.vespa.intellij.schema.psi.SdSchemaDefinition;
 import ai.vespa.intellij.schema.utils.AST;
@@ -11,6 +12,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.util.PsiTreeUtil;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -63,6 +68,16 @@ public class Schema {
             return inherited().get().rankProfile(name);
         }
         return definition.map(d -> new RankProfile(d, this));
+    }
+
+    public Map<String, List<Function>> definedFunctions() {
+        Map<String, List<Function>> functions = new HashMap<>();
+        for (SdRankProfileDefinition rankProfile : PsiTreeUtil.findChildrenOfType(definition, SdRankProfileDefinition.class)) {
+            for (SdFunctionDefinition function : PsiTreeUtil.findChildrenOfType(rankProfile, SdFunctionDefinition.class)) {
+                functions.computeIfAbsent(function.getName(), k -> new ArrayList<>()).add(Function.from(function, null));
+            }
+        }
+        return functions;
     }
 
     private Optional<SdRankProfileDefinition> findProfileElement(String name, PsiFile file) {
