@@ -16,7 +16,7 @@ size_t ThreadPoolT<MemBlockPtrT, ThreadStatT>::_threadCacheLimit __attribute__((
 
 template <typename MemBlockPtrT, typename ThreadStatT>
 void
-ThreadPoolT<MemBlockPtrT, ThreadStatT>::info(FILE * os, size_t level, const DataSegment<MemBlockPtrT> & ds) const {
+ThreadPoolT<MemBlockPtrT, ThreadStatT>::info(FILE * os, size_t level, const DataSegment & ds) const {
     if (level > 0) {
         for (size_t i=0; i < NELEMS(_stat); i++) {
             const ThreadStatT & s = _stat[i];

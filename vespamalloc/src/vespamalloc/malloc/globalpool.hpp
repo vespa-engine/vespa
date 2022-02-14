@@ -11,7 +11,7 @@ template <typename MemBlockPtrT>
 size_t AllocPoolT<MemBlockPtrT>::_threadCacheLimit __attribute__((visibility("hidden"))) = 0x10000;
 
 template <typename MemBlockPtrT>
-AllocPoolT<MemBlockPtrT>::AllocPoolT(DataSegment<MemBlockPtrT> & ds)
+AllocPoolT<MemBlockPtrT>::AllocPoolT(DataSegment & ds)
     : _chunkPool(nullptr),
       _scList(),
       _dataSegment(ds),
@@ -234,7 +234,7 @@ AllocPoolT<MemBlockPtrT>::allocChunkList(const Guard & guard)
 {
     (void) guard;
     size_t blockSize(sizeof(ChunkSList)*0x2000);
-    void * block = _dataSegment.getBlock(blockSize, _dataSegment.SYSTEM_BLOCK);
+    void * block = _dataSegment.getBlock(blockSize, segment::SYSTEM_BLOCK);
     ChunkSList * newList(nullptr);
     if (block != nullptr) {
         size_t chunksInBlock(blockSize/sizeof(ChunkSList));

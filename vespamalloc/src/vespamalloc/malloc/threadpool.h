@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "common.h"
+#include "allocchunk.h"
+#include "globalpool.h"
+#include "mmappool.h"
 #include <atomic>
-#include <vespamalloc/malloc/common.h>
-#include <vespamalloc/malloc/allocchunk.h>
-#include <vespamalloc/malloc/globalpool.h>
-#include <vespamalloc/malloc/mmappool.h>
 
 namespace vespamalloc {
 
@@ -15,6 +15,7 @@ class ThreadPoolT
 public:
     using ChunkSList = AFList<MemBlockPtrT>;
     using AllocPool = AllocPoolT<MemBlockPtrT>;
+    using DataSegment = segment::DataSegment<MemBlockPtrT>;
     ThreadPoolT();
     ~ThreadPoolT();
     void setPool(AllocPool & allocPool, MMapPool & mmapPool) {
@@ -25,7 +26,7 @@ public:
     void malloc(size_t sz, MemBlockPtrT & mem);
     void free(MemBlockPtrT mem, SizeClassT sc);
 
-    void info(FILE * os, size_t level, const DataSegment<MemBlockPtrT> & ds) const __attribute__((noinline));
+    void info(FILE * os, size_t level, const DataSegment & ds) const __attribute__((noinline));
     /**
      * Indicates if it represents an active thread.
      * @return true if this represents an active thread.

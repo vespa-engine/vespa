@@ -14,6 +14,7 @@ namespace vespamalloc {
 template <typename MemBlockPtrT, typename ThreadListT>
 class MemoryManager : public IAllocator
 {
+    using DataSegment = segment::DataSegment<MemBlockPtrT>;
 public:
     MemoryManager(size_t logLimitAtStart);
     ~MemoryManager() override;
@@ -76,18 +77,18 @@ public:
         _threadList.setParams(threadCacheLimit);
         _allocPool.setParams(threadCacheLimit);
     }
-    const DataSegment<MemBlockPtrT> & dataSegment() const { return _segment; }
+    const DataSegment & dataSegment() const { return _segment; }
     const MMapPool & mmapPool() const { return _mmapPool; }
 private:
     void freeSC(void *ptr, SizeClassT sc);
-    void crash() __attribute__((noinline));;
-    typedef AllocPoolT<MemBlockPtrT> AllocPool;
-    typedef typename ThreadListT::ThreadPool  ThreadPool;
-    size_t                     _prAllocLimit;
-    DataSegment<MemBlockPtrT>  _segment;
-    AllocPool                  _allocPool;
-    MMapPool                   _mmapPool;
-    ThreadListT                _threadList;
+    void crash() __attribute__((noinline));
+    using AllocPool = AllocPoolT<MemBlockPtrT>;
+    using ThreadPool = typename ThreadListT::ThreadPool;
+    size_t       _prAllocLimit;
+    DataSegment  _segment;
+    AllocPool    _allocPool;
+    MMapPool     _mmapPool;
+    ThreadListT  _threadList;
 };
 
 template <typename MemBlockPtrT, typename ThreadListT>
