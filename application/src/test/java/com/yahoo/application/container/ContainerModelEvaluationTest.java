@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.application.container;
 
+import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import com.yahoo.application.Application;
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.handler.Request;
@@ -17,6 +18,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * Verify that we can create a JDisc (and hence Application) instance capable of doing model evaluation
@@ -37,6 +39,7 @@ public class ContainerModelEvaluationTest {
 
     @Test
     public void testCreateApplicationInstanceWithModelEvaluation() {
+        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
         try (Application application =
                      Application.fromApplicationPackage(new File("src/test/app-packages/model-evaluation"),
                                                         Networking.disable)) {
