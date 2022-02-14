@@ -28,15 +28,15 @@ DocumentDBJobTrackers::DocumentDBJobTrackers()
 {
 }
 
-DocumentDBJobTrackers::~DocumentDBJobTrackers() {}
+DocumentDBJobTrackers::~DocumentDBJobTrackers() = default;
 
 namespace {
 
 IFlushTarget::SP
-trackFlushTarget(const IJobTracker::SP &tracker,
-                 const IFlushTarget::SP &target)
+trackFlushTarget(std::shared_ptr<IJobTracker> tracker,
+                 std::shared_ptr<IFlushTarget> target)
 {
-    return std::make_shared<JobTrackedFlushTarget>(tracker, target);
+    return std::make_shared<JobTrackedFlushTarget>(std::move(tracker), std::move(target));
 }
 
 }

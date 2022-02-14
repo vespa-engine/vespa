@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <memory>
-
 namespace proton {
 
 /**
@@ -11,9 +9,7 @@ namespace proton {
  */
 struct IJobTracker
 {
-    typedef std::shared_ptr<IJobTracker> SP;
-
-    virtual ~IJobTracker() {}
+    virtual ~IJobTracker() = default;
 
     virtual void start() = 0;
     virtual void end() = 0;

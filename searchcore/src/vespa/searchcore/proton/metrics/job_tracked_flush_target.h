@@ -13,12 +13,12 @@ namespace proton {
 class JobTrackedFlushTarget : public searchcorespi::IFlushTarget
 {
 private:
-    IJobTracker::SP                 _tracker;
-    searchcorespi::IFlushTarget::SP _target;
+    std::shared_ptr<IJobTracker>                 _tracker;
+    std::shared_ptr<searchcorespi::IFlushTarget> _target;
 
 public:
-    JobTrackedFlushTarget(const IJobTracker::SP &tracker,
-                          const searchcorespi::IFlushTarget::SP &target);
+    JobTrackedFlushTarget(std::shared_ptr<IJobTracker> tracker,
+                          std::shared_ptr<searchcorespi::IFlushTarget> target);
     ~JobTrackedFlushTarget();
 
     const IJobTracker &getTracker() const { return *_tracker; }
