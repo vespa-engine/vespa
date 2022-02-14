@@ -5,6 +5,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <unistd.h>
 #include <functional>
+#include <thread>
 
 using vespalib::Runnable;
 using vespalib::be_nice;

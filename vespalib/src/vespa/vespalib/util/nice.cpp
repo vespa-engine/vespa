@@ -3,6 +3,7 @@
 #include "nice.h"
 
 #include <unistd.h>
+#include <algorithm>
 
 namespace vespalib {
 

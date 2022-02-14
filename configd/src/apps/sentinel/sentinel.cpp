@@ -7,6 +7,7 @@
 #include <vespa/defaults.h>
 #include <chrono>
 #include <string>
+#include <locale.h>
 #include <unistd.h>
 #include <sys/time.h>
 
