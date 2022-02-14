@@ -434,7 +434,9 @@ public final class ConfiguredApplication implements Application {
     @Override
     public void destroy() {
         log.info("Destroy: Shutting down container now");
-        configurer.shutdown();
+        if (configurer != null) {
+            configurer.shutdown();
+        }
         slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
         Container.get().shutdown();
         unregisterInSlobrok();
