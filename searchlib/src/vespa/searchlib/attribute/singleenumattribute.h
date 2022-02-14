@@ -30,7 +30,7 @@ public:
     IEnumStore::Index getEnumIndex(DocId docId) const { return _enumIndices[docId]; }
     EnumHandle getE(DocId doc) const { return _enumIndices[doc].ref(); }
 protected:
-    SingleValueEnumAttributeBase(const attribute::Config & c, GenerationHolder &genHolder);
+    SingleValueEnumAttributeBase(const attribute::Config & c, GenerationHolder &genHolder, const vespalib::alloc::Alloc& initial_alloc);
     ~SingleValueEnumAttributeBase();
     AttributeVector::DocId addDoc(bool & incGeneration);
 

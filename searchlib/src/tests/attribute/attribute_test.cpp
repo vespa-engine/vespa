@@ -22,6 +22,7 @@
 #include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/fastos/file.h>
 #include <cmath>
 #include <iostream>
@@ -274,6 +275,10 @@ private:
 
     void testPendingCompaction();
     void testConditionalCommit();
+
+    static int64_t stat_size(const vespalib::string& swapfile);
+    int test_paged_attribute(const vespalib::string& name, const vespalib::string& swapfile, const search::attribute::Config& cfg);
+    void test_paged_attributes();
 
 public:
     AttributeTest();
@@ -2266,6 +2271,85 @@ AttributeTest::testConditionalCommit() {
     EXPECT_EQUAL(0u, iv.getChangeVectorMemoryUsage().usedBytes());
 }
 
+int64_t
+AttributeTest::stat_size(const vespalib::string& swapfile)
+{
+    auto stat = vespalib::stat(swapfile);
+    ASSERT_TRUE(stat);
+    return stat->_size;
+}
+
+int
+AttributeTest::test_paged_attribute(const vespalib::string& name, const vespalib::string& swapfile, const search::attribute::Config& cfg)
+{
+    int result = 1;
+    LOG(info, "test_paged_attribute '%s'", name.c_str());
+    auto av = createAttribute(name, cfg);
+    auto v = std::dynamic_pointer_cast<IntegerAttribute>(av);
+    ASSERT_TRUE(v);
+    auto size1 = stat_size(swapfile);
+    // Grow mapping from lid to value or multivalue index
+    addClearedDocs(av, 1200);
+    auto size2 = stat_size(swapfile);
+    auto size3 = size2;
+    EXPECT_LESS(size1, size2);
+    if (cfg.collectionType().isMultiValue()) {
+        // Grow multi value mapping
+        for (uint32_t lid = 1; lid < 100; ++lid) {
+            av->clearDoc(lid);
+            for (uint32_t i = 0; i < 50; ++i) {
+                EXPECT_TRUE(v->append(lid, 0, 1));
+            }
+            av->commit();
+        }
+        size3 = stat_size(swapfile);
+        EXPECT_LESS(size2, size3);
+        result += 2;
+    }
+    if (cfg.fastSearch()) {
+        // Grow enum store
+        uint32_t maxlid = cfg.collectionType().isMultiValue() ? 100 : 1200;
+        for (uint32_t lid = 1; lid < maxlid; ++lid) {
+            av->clearDoc(lid);
+            if (cfg.collectionType().isMultiValue()) {
+                for (uint32_t i = 0; i < 50; ++i) {
+                    EXPECT_TRUE(v->append(lid, lid * 100 + i, 1));
+                }
+            } else {
+                EXPECT_TRUE(v->update(lid, lid * 100));
+            }
+            av->commit();
+        }
+        auto size4 = stat_size(swapfile);
+        EXPECT_LESS(size3, size4);
+        result += 4;
+    }
+    return result;
+}
+
+void
+AttributeTest::test_paged_attributes()
+{
+    vespalib::string basedir("mmap-file-allocator-factory-dir");
+    vespalib::alloc::MmapFileAllocatorFactory::instance().setup(basedir);
+    search::attribute::Config cfg1(BasicType::INT32, CollectionType::SINGLE);
+    cfg1.setPaged(true);
+    EXPECT_EQUAL(1, test_paged_attribute("std-int-sv-paged", basedir + "/0.std-int-sv-paged/swapfile", cfg1));
+    search::attribute::Config cfg2(BasicType::INT32, CollectionType::ARRAY);
+    cfg2.setPaged(true);
+    EXPECT_EQUAL(3, test_paged_attribute("std-int-mv-paged", basedir + "/1.std-int-mv-paged/swapfile", cfg2));
+    search::attribute::Config cfg3(BasicType::INT32, CollectionType::SINGLE);
+    cfg3.setPaged(true);
+    cfg3.setFastSearch(true);
+    EXPECT_EQUAL(5, test_paged_attribute("fs-int-sv-paged", basedir + "/2.fs-int-sv-paged/swapfile", cfg3));
+    search::attribute::Config cfg4(BasicType::INT32, CollectionType::ARRAY);
+    cfg4.setPaged(true);
+    cfg4.setFastSearch(true);
+    EXPECT_EQUAL(7, test_paged_attribute("fs-int-mv-paged", basedir + "/3.fs-int-mv-paged/swapfile", cfg4));
+    vespalib::alloc::MmapFileAllocatorFactory::instance().setup("");
+    vespalib::rmdir(basedir, true);
+}
+
 void testNamePrefix() {
     Config cfg(BasicType::INT32, CollectionType::SINGLE);
     AttributeVector::SP vFlat = createAttribute("sfsint32_pc", cfg);
@@ -2348,6 +2432,7 @@ int AttributeTest::Main()
     TEST_DO(testConditionalCommit());
     TEST_DO(testNamePrefix());
     test_multi_value_mapping_has_free_lists_enabled();
+    TEST_DO(test_paged_attributes());
 
     deleteDataDirs();
     TEST_DONE();
