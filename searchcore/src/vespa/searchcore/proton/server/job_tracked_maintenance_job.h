@@ -12,12 +12,14 @@ namespace proton {
 class JobTrackedMaintenanceJob final : public IMaintenanceJob
 {
 private:
-    IJobTracker::SP     _tracker;
-    IMaintenanceJob::SP _job;
-    bool                _running;
+    std::shared_ptr<IJobTracker>  _tracker;
+    IMaintenanceJob::SP           _job;
+    bool                          _running;
 
 public:
-    JobTrackedMaintenanceJob(IJobTracker::SP tracker, IMaintenanceJob::SP job);
+    JobTrackedMaintenanceJob(std::shared_ptr<IJobTracker> tracker, IMaintenanceJob::SP job);
+    JobTrackedMaintenanceJob(const JobTrackedMaintenanceJob &) = delete;
+    JobTrackedMaintenanceJob & operator = (const JobTrackedMaintenanceJob &) = delete;
     ~JobTrackedMaintenanceJob() override;
 
     bool isBlocked() const override { return _job->isBlocked(); }

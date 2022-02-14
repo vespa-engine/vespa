@@ -12,16 +12,18 @@ namespace proton {
 class JobTrackedFlushTask : public searchcorespi::FlushTask
 {
 private:
-    IJobTracker::SP              _tracker;
+    std::shared_ptr<IJobTracker>  _tracker;
     searchcorespi::FlushTask::UP _task;
 
 public:
-    JobTrackedFlushTask(const IJobTracker::SP &tracker,
+    JobTrackedFlushTask(std::shared_ptr<IJobTracker> tracker,
                         searchcorespi::FlushTask::UP task);
+    JobTrackedFlushTask(const JobTrackedFlushTask &) = delete;
+    JobTrackedFlushTask & operator = (const JobTrackedFlushTask &) = delete;
+    ~JobTrackedFlushTask() override;
 
-    // Implements searchcorespi::FlushTask
-    virtual void run() override;
-    virtual search::SerialNum getFlushSerial() const override {
+    void run() override;
+    search::SerialNum getFlushSerial() const override {
         return _task->getFlushSerial();
     }
 };

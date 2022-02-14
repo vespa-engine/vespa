@@ -4,7 +4,7 @@
 
 namespace proton {
 
-JobTrackedMaintenanceJob::JobTrackedMaintenanceJob(IJobTracker::SP tracker,
+JobTrackedMaintenanceJob::JobTrackedMaintenanceJob(std::shared_ptr<IJobTracker> tracker,
                                                    IMaintenanceJob::SP job)
     : IMaintenanceJob(job->getName(), job->getDelay(), job->getInterval()),
       _tracker(std::move(tracker)),
