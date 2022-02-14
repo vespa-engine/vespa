@@ -1553,8 +1553,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     public void support_access() {
         var app = deploymentTester.newDeploymentContext(createTenantAndApplication());
         var zone = ZoneId.from(Environment.prod, RegionName.from("us-west-1"));
-        deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(zone),
-                List.of(RoutingMethod.exclusive, RoutingMethod.shared));
+        deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(zone), RoutingMethod.exclusive);
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain"), AthenzService.from("service"))

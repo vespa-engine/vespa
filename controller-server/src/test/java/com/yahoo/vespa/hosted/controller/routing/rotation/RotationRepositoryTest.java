@@ -151,13 +151,13 @@ public class RotationRepositoryTest {
                 ZoneApiMock.fromId("prod.cd-us-west-1"));
         tester.controllerTester().zoneRegistry()
               .setZones(zones)
-              .setRoutingMethod(zones, RoutingMethod.shared)
+              .setRoutingMethod(zones, RoutingMethod.sharedLayer4)
               .setSystemName(SystemName.cd);
         tester.configServer().bootstrap(tester.controllerTester().zoneRegistry().zones().all().ids(), SystemApplication.notController());
         var application2 = tester.newDeploymentContext("tenant2", "app2", "default");
         application2.submit(applicationPackage).deploy();
         assertEquals(List.of(new RotationId("foo-1")), rotationIds(application2.instance().rotations()));
-        assertEquals("https://cd--app2--tenant2.global.vespa.oath.cloud:4443/",
+        assertEquals("https://cd.app2.tenant2.global.vespa.oath.cloud/",
                      tester.controller().routing().readDeclaredEndpointsOf(application2.instanceId()).primary().get().url().toString());
     }
 

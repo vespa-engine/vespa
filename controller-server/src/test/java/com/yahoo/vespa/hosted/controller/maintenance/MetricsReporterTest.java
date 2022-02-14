@@ -283,7 +283,7 @@ public class MetricsReporterTest {
 
         context.submit(applicationPackage).deploy();
         reporter.maintain();
-        assertEquals("Deployment queues name services requests", 6, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue());
+        assertEquals("Deployment queues name services requests", 2, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue());
 
         context.flushDnsUpdates();
         reporter.maintain();

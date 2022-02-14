@@ -72,7 +72,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
                                  ZoneApiMock.fromId("prod.us-west-1"),
                                  ZoneApiMock.fromId("prod.us-central-1"),
                                  ZoneApiMock.fromId("prod.eu-west-1"));
-            setRoutingMethod(this.zones, RoutingMethod.sharedLayer4, RoutingMethod.shared);
+            setRoutingMethod(this.zones, RoutingMethod.sharedLayer4);
         }
     }
 
@@ -119,17 +119,17 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     public ZoneRegistryMock setRoutingMethod(ZoneApi zone, RoutingMethod... routingMethods) {
-        return setRoutingMethod(zone, List.of(routingMethods));
+        return setRoutingMethod(zone, Set.of(routingMethods));
     }
 
     public ZoneRegistryMock setRoutingMethod(List<? extends ZoneApi> zones, RoutingMethod... routingMethods) {
-        zones.forEach(zone -> setRoutingMethod(zone, List.of(routingMethods)));
+        zones.forEach(zone -> setRoutingMethod(zone, Set.of(routingMethods)));
         return this;
     }
 
-    public ZoneRegistryMock setRoutingMethod(ZoneApi zone, List<RoutingMethod> routingMethods) {
-        if (routingMethods.stream().distinct().count() != routingMethods.size()) {
-            throw new IllegalArgumentException("Routing methods must be distinct");
+    private ZoneRegistryMock setRoutingMethod(ZoneApi zone, Set<RoutingMethod> routingMethods) {
+        if (routingMethods.stream().anyMatch(method -> method == RoutingMethod.shared)) {
+            throw new IllegalArgumentException(RoutingMethod.shared + " is not supported");
         }
         this.zoneRoutingMethods.put(zone, List.copyOf(routingMethods));
         return this;
