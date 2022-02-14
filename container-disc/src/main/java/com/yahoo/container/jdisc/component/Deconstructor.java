@@ -115,8 +115,8 @@ public class Deconstructor implements ComponentDeconstructor {
         @Override
         public void run() {
             long start = System.currentTimeMillis();
-            log.info(String.format("Starting deconstruction of %d old components from graph generation %d",
-                    components.size(), generation));
+            log.info(String.format("Starting deconstruction of %d components and %d bundles from generation %d",
+                    components.size(), bundles.size(), generation));
             for (var component : components) {
                 log.log(FINE, () -> "Starting deconstruction of " + component);
                 try {
@@ -138,7 +138,6 @@ public class Deconstructor implements ComponentDeconstructor {
                     log.log(WARNING, "Non-error not exception throwable thrown when deconstructing component  " + component, e);
                 }
             }
-            log.info(String.format("Completed deconstruction in %.3f seconds", (System.currentTimeMillis() - start) / 1000D));
             // It should now be safe to uninstall the old bundles.
             for (var bundle : bundles) {
                 try {
@@ -148,6 +147,7 @@ public class Deconstructor implements ComponentDeconstructor {
                     log.log(SEVERE, "Could not uninstall bundle " + bundle);
                 }
             }
+            log.info(String.format("Completed deconstruction in %.3f seconds", (System.currentTimeMillis() - start) / 1000D));
             // NOTE: It could be tempting to refresh packages here, but if active bundles were using any of
             //       the removed ones, they would switch wiring in the middle of a generation's lifespan.
             //       This would happen if the dependent active bundle has not been rebuilt with a new version
