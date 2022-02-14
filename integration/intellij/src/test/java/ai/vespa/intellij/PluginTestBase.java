@@ -8,6 +8,9 @@ import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase;
 /**
  * Parent of unit tests. This is an antipattern, but mandated by IntelliJ.
  *
+ * NOTE: Sometimes, unit tests will stop working with IntelliJ-interna. exceptions. To fix this,
+ *       run the first step of "File -> Repair IDE": "Refresh indexable files"
+ *
  * @author bratseth
  */
 public class PluginTestBase extends LightJavaCodeInsightFixtureTestCase {

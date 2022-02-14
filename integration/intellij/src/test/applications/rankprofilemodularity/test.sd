@@ -62,7 +62,7 @@ schema test {
         }
 
         first-phase {
-            expression: f2
+            expression: f2 + fo2
         }
 
     }
