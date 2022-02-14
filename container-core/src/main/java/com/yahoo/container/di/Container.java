@@ -21,6 +21,7 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.UncheckedInterruptedException;
 import org.osgi.framework.Bundle;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -266,11 +267,11 @@ public class Container {
         }
     }
 
-    public void shutdown(ComponentGraph graph) {
+    public void shutdown(ComponentGraph graph, Duration timeout) {
         shutdownConfigRetriever();
         if (graph != null) {
             scheduleGraphForDeconstruction(graph);
-            destructor.shutdown();
+            destructor.shutdown(timeout);
         }
     }
 

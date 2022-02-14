@@ -49,6 +49,7 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.UncheckedInterruptedException;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -387,8 +388,9 @@ public final class ConfiguredApplication implements Application {
     @Override
     public void stop() {
         log.info("Stop: Initiated");
-        shutdownDeadline.schedule((long)(shutdownTimeoutS.get() * 1000), dumpHeapOnShutdownTimeout.get());
-        stopServersAndAwaitTermination();
+        long timeoutMillis = (long) (shutdownTimeoutS.get() * 1000);
+        shutdownDeadline.schedule(timeoutMillis, dumpHeapOnShutdownTimeout.get());
+        stopServersAndAwaitTermination(Duration.ofMillis(timeoutMillis - 1000));
         log.info("Stop: Finished");
     }
 
@@ -397,7 +399,7 @@ public final class ConfiguredApplication implements Application {
         long timeoutMillis = (long) (request.parameters().get(0).asDouble() * 1000);
         try (ShutdownDeadline ignored =
                      new ShutdownDeadline(configId).schedule(timeoutMillis, dumpHeapOnShutdownTimeout.get())) {
-            stopServersAndAwaitTermination();
+            stopServersAndAwaitTermination(Duration.ofMillis(timeoutMillis - 1000));
             log.info("PrepareStop: Finished");
         } catch (Exception e) {
             request.setError(ErrorCode.METHOD_FAILED, e.getMessage());
@@ -405,12 +407,13 @@ public final class ConfiguredApplication implements Application {
         }
     }
 
-    private void stopServersAndAwaitTermination() {
+    private void stopServersAndAwaitTermination(Duration timeout) {
         shutdownReconfigurer();
         startAndStopServers(List.of());
         startAndRemoveClients(List.of());
         activateContainer(null, () -> log.info("Last active container generation has terminated"));
         nonTerminatedContainerTracker.arriveAndAwaitAdvance();
+        if (configurer != null) configurer.shutdown(timeout);
     }
 
     private void shutdownReconfigurer() {
@@ -434,9 +437,6 @@ public final class ConfiguredApplication implements Application {
     @Override
     public void destroy() {
         log.info("Destroy: Shutting down container now");
-        if (configurer != null) {
-            configurer.shutdown();
-        }
         slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
         Container.get().shutdown();
         unregisterInSlobrok();

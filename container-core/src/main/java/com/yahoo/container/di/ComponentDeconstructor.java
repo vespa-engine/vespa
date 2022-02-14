@@ -3,6 +3,7 @@ package com.yahoo.container.di;
 
 import org.osgi.framework.Bundle;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 
@@ -16,6 +17,6 @@ public interface ComponentDeconstructor {
     void deconstruct(long generation, List<Object> components, Collection<Bundle> bundles);
 
     /** Wait for all previous destruction tasks to complete */
-    default void shutdown() {}
+    default void shutdown(Duration timeout) {}
 
 }

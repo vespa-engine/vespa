@@ -23,6 +23,7 @@ import com.yahoo.osgi.OsgiWrapper;
 import com.yahoo.statistics.Statistics;
 import org.osgi.framework.Bundle;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
@@ -143,7 +144,7 @@ public class HandlersConfigurerDi {
         return currentGraph.getInstance(componentClass);
     }
 
-    public void shutdown() { container.shutdown(currentGraph); }
+    public void shutdown(Duration timeout) { container.shutdown(currentGraph, timeout); }
 
     public void shutdownConfigRetriever() { container.shutdownConfigRetriever(); }
 

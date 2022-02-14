@@ -22,6 +22,7 @@ import com.yahoo.language.simple.SimpleLinguistics;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.LinkedHashSet;
 import java.util.Random;
 import java.util.Set;
@@ -126,7 +127,7 @@ public class HandlersConfigurerTestWrapper {
     }
 
     public void shutdown() {
-        configurer.shutdown();
+        configurer.shutdown(Duration.ofSeconds(45));
         // TODO: Remove once tests use ConfigSet rather than dir:
         for (File f : createdFiles) {
             f.delete();

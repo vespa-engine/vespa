@@ -38,14 +38,7 @@ public class Deconstructor implements ComponentDeconstructor {
     private final ExecutorService executor =
             Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory("component-deconstructor"));
 
-    // This must be smaller than the shutdownDeadlineExecutor delay in ConfiguredApplication
-    private final Duration shutdownTimeout;
-
-    public Deconstructor(Duration shutdownTimeout) {
-        this.shutdownTimeout = shutdownTimeout;
-    }
-
-    public Deconstructor() { this(Duration.ofSeconds(45)); }
+    public Deconstructor() {}
 
     @Override
     public void deconstruct(long generation, List<Object> components, Collection<Bundle> bundles) {
@@ -69,11 +62,11 @@ public class Deconstructor implements ComponentDeconstructor {
     }
 
     @Override
-    public void shutdown() {
+    public void shutdown(Duration timeout) {
         executor.shutdown();
         try {
-            log.info("Waiting up to " + shutdownTimeout.toSeconds() + " seconds for all previous components graphs to deconstruct.");
-            if (!executor.awaitTermination(shutdownTimeout.getSeconds(), TimeUnit.SECONDS)) {
+            log.info("Waiting up to " + timeout.toSeconds() + " seconds for all previous components graphs to deconstruct.");
+            if (!executor.awaitTermination(timeout.getSeconds(), TimeUnit.SECONDS)) {
                 log.warning("Waiting for deconstruction timed out.");
             }
         } catch (InterruptedException e) {
@@ -115,8 +108,8 @@ public class Deconstructor implements ComponentDeconstructor {
         @Override
         public void run() {
             long start = System.currentTimeMillis();
-            log.info(String.format("Starting deconstruction of %d old components from graph generation %d",
-                    components.size(), generation));
+            log.info(String.format("Starting deconstruction of %d components and %d bundles from generation %d",
+                    components.size(), bundles.size(), generation));
             for (var component : components) {
                 log.log(FINE, () -> "Starting deconstruction of " + component);
                 try {
@@ -138,7 +131,6 @@ public class Deconstructor implements ComponentDeconstructor {
                     log.log(WARNING, "Non-error not exception throwable thrown when deconstructing component  " + component, e);
                 }
             }
-            log.info(String.format("Completed deconstruction in %.3f seconds", (System.currentTimeMillis() - start) / 1000D));
             // It should now be safe to uninstall the old bundles.
             for (var bundle : bundles) {
                 try {
@@ -148,6 +140,7 @@ public class Deconstructor implements ComponentDeconstructor {
                     log.log(SEVERE, "Could not uninstall bundle " + bundle);
                 }
             }
+            log.info(String.format("Completed deconstruction in %.3f seconds", (System.currentTimeMillis() - start) / 1000D));
             // NOTE: It could be tempting to refresh packages here, but if active bundles were using any of
             //       the removed ones, they would switch wiring in the middle of a generation's lifespan.
             //       This would happen if the dependent active bundle has not been rebuilt with a new version

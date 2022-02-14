@@ -9,6 +9,7 @@ import com.yahoo.jdisc.SharedResource;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.function.Supplier;
@@ -34,7 +35,7 @@ public class DeconstructorTest {
 
         var slowDeconstructComponent = new SlowDeconstructComponent();
         deconstructor.deconstruct(0, List.of(slowDeconstructComponent), emptyList());
-        deconstructor.shutdown();
+        deconstructor.shutdown(Duration.ofSeconds(45));
         assertTrue(slowDeconstructComponent.destructed);
     }
 
