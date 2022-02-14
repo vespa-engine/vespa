@@ -13,26 +13,30 @@ public class Function {
 
     private final PsiElement definition;
 
-    public Function(PsiElement definition) {
+    private final RankProfile owner;
+
+    public Function(PsiElement definition, RankProfile owner) {
         this.definition = definition;
+        this.owner = owner;
     }
 
     public PsiElement definition() { return definition; }
+    public RankProfile owner() { return owner; }
 
-    public static Function from(SdFirstPhaseDefinition firstPhase) {
-        return new Function(firstPhase);
+    public static Function from(SdFirstPhaseDefinition firstPhase, RankProfile owner) {
+        return new Function(firstPhase, owner);
     }
 
-    public static Function from(SdSecondPhaseDefinition secondPhase) {
-        return new Function(secondPhase);
+    public static Function from(SdSecondPhaseDefinition secondPhase, RankProfile owner) {
+        return new Function(secondPhase, owner);
     }
 
-    public static Function from(SdFunctionDefinition definition) {
-        return new Function(definition);
+    public static Function from(SdFunctionDefinition definition, RankProfile owner) {
+        return new Function(definition, owner);
     }
 
-    public static Function from(PsiElement definition) {
-        return new Function(definition);
+    public static Function from(PsiElement definition, RankProfile owner) {
+        return new Function(definition, owner);
     }
 
 }

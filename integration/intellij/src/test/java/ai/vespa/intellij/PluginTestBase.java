@@ -4,6 +4,7 @@ package ai.vespa.intellij;
 import ai.vespa.intellij.model.TestProjectDescriptor;
 import com.intellij.testFramework.LightProjectDescriptor;
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase;
+import org.junit.Test;
 
 /**
  * Parent of unit tests. This is an antipattern, but mandated by IntelliJ.
@@ -30,5 +31,9 @@ public class PluginTestBase extends LightJavaCodeInsightFixtureTestCase {
     protected void useDir(String dir) {
         myFixture.copyDirectoryToProject(dir, "/");
     }
+
+    /** Avoid "no tests" warning */
+    @Test
+    public void testDummy() {}
 
 }

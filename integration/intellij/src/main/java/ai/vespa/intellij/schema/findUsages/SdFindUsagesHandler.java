@@ -53,9 +53,9 @@ public class SdFindUsagesHandler extends FindUsagesHandler {
             } else {
                 String functionName = ReadAction.compute( ((SdFunctionDefinition) elementToSearch)::getName);
                 
-                for (Function functionImpl : functionsMap.get(functionName)) {
+                for (Function function : functionsMap.get(functionName)) {
                     boolean success =
-                        ReferencesSearch.search(createSearchParameters(functionImpl.definition(), scope, options))
+                        ReferencesSearch.search(createSearchParameters(function.definition(), scope, options))
                                         .forEach((PsiReference ref) -> {
                                             if (ref.getElement().getParent() == elementToSearch) return true; // Skip self ref.
                                             return processor.process(new UsageInfo(ref));

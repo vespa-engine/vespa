@@ -53,11 +53,11 @@ public class SdCallerTreeStructure extends SdCallTreeStructure {
                 PsiElement psiElement = r.getElement();
                 SdFunctionDefinition f = PsiTreeUtil.getParentOfType(psiElement, SdFunctionDefinition.class, false);
                 if (f != null && f.getName() != null && !f.getName().equals(functionName)) {
-                    results.add(Function.from(f));
+                    results.add(Function.from(f, null));
                 } else {
                     SdFirstPhaseDefinition fp = PsiTreeUtil.getParentOfType(psiElement, SdFirstPhaseDefinition.class, false);
                     if (fp != null)
-                        results.add(Function.from(fp));
+                        results.add(Function.from(fp, null));
                 }
             });
         }

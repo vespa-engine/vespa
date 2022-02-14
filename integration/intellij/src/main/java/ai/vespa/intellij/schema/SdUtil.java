@@ -52,7 +52,7 @@ public class SdUtil {
         Map<String, List<Function>> functionsMap = new HashMap<>();
         for (SdRankProfileDefinition rankProfile : PsiTreeUtil.findChildrenOfType(file, SdRankProfileDefinition.class)) {
             for (SdFunctionDefinition function : PsiTreeUtil.findChildrenOfType(rankProfile, SdFunctionDefinition.class)) {
-                functionsMap.computeIfAbsent(function.getName(), k -> new ArrayList<>()).add(Function.from(function));
+                functionsMap.computeIfAbsent(function.getName(), k -> new ArrayList<>()).add(Function.from(function, null));
             }
         }
         return functionsMap;
@@ -61,7 +61,7 @@ public class SdUtil {
     public static Map<String, List<Function>> functionsIn(RankProfile profile) {
         Map<String, List<Function>> functionsMap = new HashMap<>();
         for (SdFunctionDefinition function : PsiTreeUtil.findChildrenOfType(profile.definition(), SdFunctionDefinition.class)) {
-            functionsMap.computeIfAbsent(function.getName(), k -> new ArrayList<>()).add(Function.from(function));
+            functionsMap.computeIfAbsent(function.getName(), k -> new ArrayList<>()).add(Function.from(function, null));
         }
         return functionsMap;
     }
