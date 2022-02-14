@@ -16,17 +16,17 @@ public interface SdFunctionDefinitionInterface extends SdDeclaration {
         SdRankProfileDefinition thisRankProfile = PsiTreeUtil.getParentOfType(this, SdRankProfileDefinition.class);
         if (thisRankProfile == null) return false;
         for (var parentProfile : new RankProfile(thisRankProfile, null).inherited().values()) {
-            if (containsFunction(functionName, parentProfile.definition()))
+            if (containsFunction(functionName, parentProfile))
                 return true;
         }
         return false;
     }
 
-    default boolean containsFunction(String functionName, SdRankProfileDefinition rankProfile) {
-        if (SdUtil.functionsIn(new RankProfile(rankProfile, null)).containsKey(functionName))
+    default boolean containsFunction(String functionName, RankProfile rankProfile) {
+        if (rankProfile.definedFunctions().containsKey(functionName))
             return true;
-        for (var parentProfile : new RankProfile(rankProfile, null).inherited().values()) {
-            if (containsFunction(functionName, parentProfile.definition()))
+        for (var parentProfile : rankProfile.inherited().values()) {
+            if (containsFunction(functionName, parentProfile))
                 return true;
         }
         return false;

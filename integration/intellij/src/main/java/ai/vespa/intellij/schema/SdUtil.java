@@ -58,14 +58,6 @@ public class SdUtil {
         return functionsMap;
     }
 
-    public static Map<String, List<Function>> functionsIn(RankProfile profile) {
-        Map<String, List<Function>> functionsMap = new HashMap<>();
-        for (SdFunctionDefinition function : PsiTreeUtil.findChildrenOfType(profile.definition(), SdFunctionDefinition.class)) {
-            functionsMap.computeIfAbsent(function.getName(), k -> new ArrayList<>()).add(Function.from(function, null));
-        }
-        return functionsMap;
-    }
-
     public static String createFunctionDescription(SdFunctionDefinition function) {
         SdRankProfileDefinition rankProfile = PsiTreeUtil.getParentOfType(function, SdRankProfileDefinition.class);
         String rankProfileName;

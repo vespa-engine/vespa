@@ -47,7 +47,7 @@ public class FindUsagesTest extends PluginTestBase {
         }
 
         void assertFunctionUsages(String explanation, int expectedUsages, String profileName, String functionName) {
-            var function = SdUtil.functionsIn(schema.rankProfile(profileName).get()).get(functionName).get(0).definition();
+            var function = schema.rankProfile(profileName).get().definedFunctions().get(functionName).get(0).definition();
             var usageProcessor = new MockUsageProcessor();
             var options = new FindUsagesOptions(project);
             options.isUsages = true;
