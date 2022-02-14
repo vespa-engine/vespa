@@ -30,16 +30,12 @@ public class Schema {
     /** The path to this schema */
     private final Path path;
 
-    /** The project this is part of */
-    private final Project project;
-
     /** The schema this inherits, or empty if none. Resolved lazily. */
     private Optional<Schema> inherited = null;
 
-    public Schema(SdFile definition, Path path, Project project) {
+    public Schema(SdFile definition, Path path) {
         this.definition = definition;
         this.path = path;
-        this.project = project;
     }
 
     public String name() { return definition.getName().substring(0, definition.getName().length() - 3); }
@@ -53,14 +49,15 @@ public class Schema {
         return inherited = AST.inherits(schemaDefinition.get())
                               .stream()
                               .findFirst() // Only one schema can be inherited; ignore any following
-                              .map(inheritedNode -> fromProjectFile(project, path.getParentPath().append(inheritedNode.getText() + ".sd")));
+                              .map(inheritedNode -> fromProjectFile(definition.getProject(), path.getParentPath().append(inheritedNode.getText() + ".sd")));
     }
 
     /** Returns a rank profile belonging to this, defined either inside it or in a separate .profile file */
     public Optional<RankProfile> rankProfile(String name) {
         var definition = findProfileElement(name, this.definition); // Look up in this
         if (definition.isEmpty()) { // Look up in a separate file schema-name/profile-name.profile
-            Optional<PsiFile> file = Files.open(path.getParentPath().append(name()).append(name + ".profile"), project);
+            Optional<PsiFile> file = Files.open(path.getParentPath().append(name()).append(name + ".profile"),
+                                                this.definition.getProject());
             if (file.isPresent())
                 definition = findProfileElement(name, file.get());
         }
@@ -98,7 +95,7 @@ public class Schema {
             throw new IllegalArgumentException("Could not find file '" + file + "'");
         if ( ! (psiFile.get() instanceof SdFile))
             throw new IllegalArgumentException(file + " is not a schema file");
-        return new Schema((SdFile)psiFile.get(), file, project);
+        return new Schema((SdFile)psiFile.get(), file);
     }
 
 }
