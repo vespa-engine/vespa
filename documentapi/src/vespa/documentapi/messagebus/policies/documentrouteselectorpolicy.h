@@ -7,6 +7,7 @@
 #include <vespa/messagebus/routing/iroutingpolicy.h>
 #include <vespa/documentapi/common.h>
 #include <vespa/config/helper/ifetchercallback.h>
+#include <mutex>
 
 namespace document { class DocumentTypeRepo; }
 

@@ -12,6 +12,7 @@
 #include <openssl/evp.h>
 #include <cassert>
 #include <getopt.h>
+#include <vector>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-gen-testdocs");

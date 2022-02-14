@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cassert>
+#include <vector>
 
 namespace vespalib::xml {
 

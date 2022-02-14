@@ -5,6 +5,7 @@
 #include "ihandle.h"
 #include <vespa/config/common/timingvalues.h>
 #include <vespa/vespalib/util/runnable.h>
+#include <vector>
 
 namespace config {
 
