@@ -62,6 +62,22 @@ public class RoutingStatusApiHandlerTest {
     }
 
     @Test
+    public void get_deployment_status_v2() {
+        String response = responseAsString(executeRequest(Method.GET, "/routing/v2/status/", null));
+        assertEquals("{\"inactiveDeployments\":[],\"zoneActive\":true}", response);
+
+        // Set deployment out
+        executeRequest(Method.PUT, "/routing/v1/status/" + upstreamName + "?application=" + instance.serializedForm(), statusOut());
+        response = responseAsString(executeRequest(Method.GET, "/routing/v2/status/", null));
+        assertEquals("{\"inactiveDeployments\":[{\"upstreamName\":\"test-upstream-name\"}],\"zoneActive\":true}", response);
+
+        // Set zone out
+        executeRequest(Method.PUT, "/routing/v1/status/zone", null);
+        response = responseAsString(executeRequest(Method.GET, "/routing/v2/status/", null));
+        assertEquals("{\"inactiveDeployments\":[{\"upstreamName\":\"test-upstream-name\"}],\"zoneActive\":false}", response);
+    }
+
+    @Test
     public void set_deployment_status() {
         String response = responseAsString(executeRequest(Method.PUT, "/routing/v1/status/" + upstreamName + "?application=" + instance.serializedForm(),
                                                           statusOut()));
