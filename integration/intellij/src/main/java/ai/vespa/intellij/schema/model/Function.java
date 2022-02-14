@@ -11,32 +11,39 @@ import com.intellij.psi.PsiElement;
  */
 public class Function {
 
+    private final String name;
+
     private final PsiElement definition;
 
     private final RankProfile owner;
 
-    public Function(PsiElement definition, RankProfile owner) {
+    private Function(String name, PsiElement definition, RankProfile owner) {
+        this.name = name;
         this.definition = definition;
         this.owner = owner;
     }
 
     public PsiElement definition() { return definition; }
+
+    public String name() { return name; }
+
     public RankProfile owner() { return owner; }
 
+    @Override
+    public String toString() {
+        return "function " + name();
+    }
+
     public static Function from(SdFirstPhaseDefinition firstPhase, RankProfile owner) {
-        return new Function(firstPhase, owner);
+        return new Function("first-phase", firstPhase, owner);
     }
 
     public static Function from(SdSecondPhaseDefinition secondPhase, RankProfile owner) {
-        return new Function(secondPhase, owner);
+        return new Function("second-phase", secondPhase, owner);
     }
 
     public static Function from(SdFunctionDefinition definition, RankProfile owner) {
-        return new Function(definition, owner);
-    }
-
-    public static Function from(PsiElement definition, RankProfile owner) {
-        return new Function(definition, owner);
+        return new Function(definition.getName(), definition, owner);
     }
 
 }

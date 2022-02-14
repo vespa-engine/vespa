@@ -26,23 +26,22 @@ public class Schema {
 
     private final SdFile definition;
 
-    /** The path to this schema */
-    private final Path path;
-
     /** The schema this inherits, or empty if none. Resolved lazily. */
     private Optional<Schema> inherited = null;
 
-    /** The profiles of this, either defined inside it or in separatew .profile files. Resolved lazily. */
+    /** The profiles of this, either defined inside it or in separate .profile files. Resolved lazily. */
     private Map<String, RankProfile> rankProfiles = null;
 
-    public Schema(SdFile definition, Path path) {
+    public Schema(SdFile definition) {
         this.definition = definition;
-        this.path = path;
     }
 
     public String name() { return definition.getName().substring(0, definition.getName().length() - 3); }
 
     public SdFile definition() { return definition; }
+
+    /** The path of this schema from the project root. */
+    public Path path() { return Path.fromString(definition.getContainingDirectory().getVirtualFile().getPath()); }
 
     public Optional<Schema> inherited() {
         if (inherited != null) return inherited;
@@ -51,7 +50,7 @@ public class Schema {
         return inherited = AST.inherits(schemaDefinition.get())
                               .stream()
                               .findFirst() // Only one schema can be inherited; ignore any following
-                              .map(inheritedNode -> fromProjectFile(definition.getProject(), path.getParentPath().append(inheritedNode.getText() + ".sd")));
+                              .map(inheritedNode -> fromProjectFile(definition.getProject(), path().getParentPath().append(inheritedNode.getText() + ".sd")));
     }
 
     /**
@@ -65,7 +64,7 @@ public class Schema {
         for (var profileDefinition : PsiTreeUtil.collectElementsOfType(definition, SdRankProfileDefinition.class))
             rankProfiles.put(profileDefinition.getName(), new RankProfile(profileDefinition, this));
 
-        for (var profileFile : Files.allFilesIn(path.getParentPath().append(name()), "profile", definition.getProject())) {
+        for (var profileFile : Files.allFilesIn(path().getParentPath().append(name()), "profile", definition.getProject())) {
             var profileDefinitions = PsiTreeUtil.collectElementsOfType(profileFile, SdRankProfileDefinition.class);
             if (profileDefinitions.size() != 1) continue; // invalid file
             var profileDefinition = profileDefinitions.stream().findAny().get();
@@ -94,7 +93,7 @@ public class Schema {
             throw new IllegalArgumentException("Could not find file '" + file + "'");
         if ( ! (psiFile.get() instanceof SdFile))
             throw new IllegalArgumentException(file + " is not a schema file");
-        return new Schema((SdFile)psiFile.get(), file);
+        return new Schema((SdFile)psiFile.get());
     }
 
 }

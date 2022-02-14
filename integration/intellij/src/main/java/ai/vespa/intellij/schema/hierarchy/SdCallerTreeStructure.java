@@ -2,6 +2,7 @@
 package ai.vespa.intellij.schema.hierarchy;
 
 import ai.vespa.intellij.schema.model.Function;
+import ai.vespa.intellij.schema.psi.SdSecondPhaseDefinition;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
@@ -58,6 +59,11 @@ public class SdCallerTreeStructure extends SdCallTreeStructure {
                     SdFirstPhaseDefinition fp = PsiTreeUtil.getParentOfType(psiElement, SdFirstPhaseDefinition.class, false);
                     if (fp != null)
                         results.add(Function.from(fp, null));
+                    else {
+                        SdSecondPhaseDefinition sp = PsiTreeUtil.getParentOfType(psiElement, SdSecondPhaseDefinition.class, false);
+                        if (sp != null)
+                            results.add(Function.from(sp, null));
+                    }
                 }
             });
         }

@@ -45,7 +45,7 @@ public class SdCalleeTreeStructure extends SdCallTreeStructure {
             if (functions.containsKey(((PsiNamedElement) identifier).getName())) {
                 PsiReference identifierRef = identifier.getReference();
                 if (identifierRef != null) {
-                    results.add(Function.from(identifierRef.resolve(), null));
+                    results.add(Function.from((SdFunctionDefinition)identifierRef.resolve(), null));
                 }
             }
         }

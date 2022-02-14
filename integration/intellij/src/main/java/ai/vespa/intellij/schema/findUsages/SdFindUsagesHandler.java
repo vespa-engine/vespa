@@ -35,9 +35,7 @@ public class SdFindUsagesHandler extends FindUsagesHandler {
     public SdFindUsagesHandler(PsiElement psiElement) {
         super(psiElement);
         PsiFile file = psiElement.getContainingFile();
-        functionsMap = file instanceof SdFile ? new Schema((SdFile)file,
-                                                           Path.fromString(file.getContainingDirectory().toString())).functions()
-                                              : Map.of();
+        functionsMap = file instanceof SdFile ? new Schema((SdFile)file).functions() : Map.of();
     }
     
     @Override

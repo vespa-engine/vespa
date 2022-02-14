@@ -23,6 +23,7 @@ public class SchemaTest extends PluginTestBase {
         assertEquals(2, profile.inherited().size());
         assertEquals("parent-profile1", profile.inherited().get("parent-profile1").name());
         assertEquals("parent-profile2", profile.inherited().get("parent-profile2").name());
+        assertEquals(0, schema.functions().size());
     }
 
     @Test
@@ -36,6 +37,7 @@ public class SchemaTest extends PluginTestBase {
         assertEquals(2, profile.inherited().size());
         assertEquals("other_child_profile", profile.inherited().get("other_child_profile").name());
         assertEquals("parent_profile", profile.inherited().get("parent_profile").name());
+        assertEquals(0, schema.functions().size());
     }
 
     @Test
@@ -49,6 +51,8 @@ public class SchemaTest extends PluginTestBase {
         assertEquals(2, profile.inherited().size());
         assertEquals("outside_schema1", profile.inherited().get("outside_schema1").name());
         assertEquals("outside_schema2", profile.inherited().get("outside_schema2").name());
+        schema.functions().entrySet().stream().forEach(e -> System.out.println(e));
+        assertEquals(8, schema.functions().size());
     }
 
 }
