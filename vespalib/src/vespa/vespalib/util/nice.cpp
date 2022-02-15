@@ -11,10 +11,12 @@ namespace {
 
 void set_nice_value(double how_nice) {
     if (how_nice > 0.0) {
+#ifndef __APPLE__
         int now = nice(0);
         int max = 19;
         int max_inc = (max - now);
         nice(std::min(max_inc, int(how_nice * (max_inc + 1))));
+#endif
     }
 }
 
