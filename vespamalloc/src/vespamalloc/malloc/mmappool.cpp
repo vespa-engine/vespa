@@ -105,6 +105,7 @@ size_t
 MMapPool::get_size(void * ptr) const {
     std::lock_guard guard(_mutex);
     auto found = _mappings.find(ptr);
+    assert(found != _mappings.end());
     return found->second._sz;
 }
 

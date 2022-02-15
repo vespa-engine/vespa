@@ -247,7 +247,7 @@ void * MemoryManager<MemBlockPtrT, ThreadListT>::realloc(void *oldPtr, size_t sz
     MemBlockPtrT mem(oldPtr);
     mem.readjustAlignment(_segment);
     if (! mem.validAlloc()) {
-        fprintf(stderr, "Someone has tamper with my pre/post signatures of my memoryblock %p(%ld).\n", mem.ptr(), mem.size());
+        fprintf(stderr, "Someone has tampered with the pre/post signatures of my memoryblock %p(%ld).\n", mem.ptr(), mem.size());
         crash();
     }
 
@@ -257,19 +257,15 @@ void * MemoryManager<MemBlockPtrT, ThreadListT>::realloc(void *oldPtr, size_t sz
         size_t oldSz(_segment.getMaxSize<MemBlockPtrT>(oldPtr));
         if (sz > oldSz) {
             ptr = malloc(sz);
-            if (ptr) {
-                memcpy(ptr, oldPtr, oldSz);
-                free(oldPtr);
-            }
+            memcpy(ptr, oldPtr, oldSz);
+            free(oldPtr);
         } else {
             mem.setExact(sz);
             ptr = oldPtr;
         }
     } else {
         ptr = malloc(sz);
-        if (ptr) {
-            memcpy(ptr, oldPtr, sz);
-        }
+        memcpy(ptr, oldPtr, sz);
     }
     PARANOID_CHECK2( { MemBlockPtrT mem(ptr); mem.readjustAlignment(_segment); if (! mem.validAlloc()) { crash(); } });
     return ptr;

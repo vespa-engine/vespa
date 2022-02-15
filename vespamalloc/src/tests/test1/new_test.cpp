@@ -171,10 +171,10 @@ detectLibrary() {
     return MallocLibrary::UNKNOWN;
 }
 
-MallocLibrary _Env = detectLibrary();
+MallocLibrary _env = detectLibrary();
 
 size_t
-cmp(const char * v, char c, size_t count) {
+count_mismatches(const char * v, char c, size_t count) {
     size_t errors = 0;
     for (size_t i(0); i < count; i++) {
         if (v[i] != c) errors++;
@@ -188,10 +188,10 @@ TEST("verify malloc_usable_size is sane") {
     constexpr size_t SZ = 33;
     std::unique_ptr<char[]> buf = std::make_unique<char[]>(SZ);
     size_t usable_size = malloc_usable_size(buf.get());
-    if (_Env == MallocLibrary::VESPA_MALLOC_D) {
+    if (_env == MallocLibrary::VESPA_MALLOC_D) {
         // Debug variants will never have more memory available as there is pre/postamble for error detection.
         EXPECT_EQUAL(SZ, usable_size);
-    } else if (_Env == MallocLibrary::VESPA_MALLOC) {
+    } else if (_env == MallocLibrary::VESPA_MALLOC) {
         // Normal production vespamalloc will round up
         EXPECT_EQUAL(64u, usable_size);
         verify_vespamalloc_usable_size();
@@ -202,14 +202,14 @@ TEST("verify malloc_usable_size is sane") {
 }
 
 TEST("verify mallopt") {
-    if (_Env == MallocLibrary::UNKNOWN) return;
+    if (_env == MallocLibrary::UNKNOWN) return;
     EXPECT_EQUAL(0, mallopt(M_MMAP_MAX, 0x1000000));
     EXPECT_EQUAL(1, mallopt(M_MMAP_THRESHOLD, 0x1000000));
     EXPECT_EQUAL(1, mallopt(M_MMAP_THRESHOLD, 1_Gi));
 }
 
 TEST("verify mmap_limit") {
-    if (_Env == MallocLibrary::UNKNOWN) return;
+    if (_env == MallocLibrary::UNKNOWN) return;
     EXPECT_EQUAL(1, mallopt(M_MMAP_THRESHOLD, 0x100000));
     auto small = std::make_unique<char[]>(16_Ki);
     auto large_1 = std::make_unique<char[]>(1200_Ki);
@@ -230,19 +230,19 @@ verifyReallocLarge(char * initial, bool expect_vespamalloc_optimization) {
     if (expect_vespamalloc_optimization) {
         ASSERT_TRUE(v == nv);
     }
-    EXPECT_EQUAL(0u, cmp(nv, 0x5b, INITIAL_SIZE));
+    EXPECT_EQUAL(0u, count_mismatches(nv, 0x5b, INITIAL_SIZE));
     memset(nv, 0xbe, SECOND_SIZE);
     v = static_cast<char *>(realloc(nv, THIRD_SIZE));
     if (expect_vespamalloc_optimization) {
         ASSERT_TRUE(v != nv);
     }
-    EXPECT_EQUAL(0u, cmp(v, 0xbe, INITIAL_SIZE));
+    EXPECT_EQUAL(0u, count_mismatches(v, 0xbe, SECOND_SIZE));
     free(v);
 }
 TEST("test realloc large buffers") {
-    verifyReallocLarge(nullptr, _Env != MallocLibrary::UNKNOWN);
-    verifyReallocLarge(static_cast<char *>(malloc(2000)), _Env != MallocLibrary::UNKNOWN);
-    if (_Env == MallocLibrary::UNKNOWN) return;
+    verifyReallocLarge(nullptr, _env != MallocLibrary::UNKNOWN);
+    verifyReallocLarge(static_cast<char *>(malloc(2000)), _env != MallocLibrary::UNKNOWN);
+    if (_env == MallocLibrary::UNKNOWN) return;
 
     EXPECT_EQUAL(1, mallopt(M_MMAP_THRESHOLD, 1_Mi));
     verifyReallocLarge(nullptr, false);
