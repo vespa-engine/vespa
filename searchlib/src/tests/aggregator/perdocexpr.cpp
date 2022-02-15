@@ -1605,7 +1605,7 @@ AttributeGuard createInt8Attribute() {
 }
 
 AttributeGuard createBoolAttribute() {
-    SingleBoolAttribute *selectAttr1(new SingleBoolAttribute("selectAttr1", search::GrowStrategy()));
+    SingleBoolAttribute *selectAttr1(new SingleBoolAttribute("selectAttr1", search::GrowStrategy(), false));
     DocId docId(0);
     selectAttr1->addDoc(docId);
     selectAttr1->setBit(docId, true);

@@ -1830,7 +1830,7 @@ private:
 
 public:
     BoolAttributeFixture(const SimpleResult& true_docs, uint32_t num_docs)
-        : _attr("bool_attr", search::GrowStrategy())
+        : _attr("bool_attr", search::GrowStrategy(), false)
     {
         _attr.addDocs(num_docs);
         for (uint32_t i = 0; i < true_docs.getHitCount(); ++i) {

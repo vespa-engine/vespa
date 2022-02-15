@@ -2292,10 +2292,13 @@ AttributeTest::test_paged_attribute(const vespalib::string& name, const vespalib
         lid_mapping_size = 17000;
         sv_maxlid = 1500;
     }
+    if (cfg.basicType() == search::attribute::BasicType::Type::BOOL) {
+        lid_mapping_size = rounded_size * 8 + 100;
+    }
     LOG(info, "test_paged_attribute '%s'", name.c_str());
     auto av = createAttribute(name, cfg);
     auto v = std::dynamic_pointer_cast<IntegerAttribute>(av);
-    ASSERT_TRUE(v);
+    ASSERT_TRUE(v || (!cfg.collectionType().isMultiValue() && !cfg.fastSearch()));
     auto size1 = stat_size(swapfile);
     // Grow mapping from lid to value or multivalue index
     addClearedDocs(av, lid_mapping_size);
@@ -2355,6 +2358,9 @@ AttributeTest::test_paged_attributes()
     cfg4.setPaged(true);
     cfg4.setFastSearch(true);
     EXPECT_EQUAL(7, test_paged_attribute("fs-int-mv-paged", basedir + "/3.fs-int-mv-paged/swapfile", cfg4));
+    search::attribute::Config cfg5(BasicType::BOOL, CollectionType::SINGLE);
+    cfg5.setPaged(true);
+    EXPECT_EQUAL(1, test_paged_attribute("std-bool-sv-paged", basedir + "/4.std-bool-sv-paged/swapfile", cfg5));
     vespalib::alloc::MmapFileAllocatorFactory::instance().setup("");
     vespalib::rmdir(basedir, true);
 }

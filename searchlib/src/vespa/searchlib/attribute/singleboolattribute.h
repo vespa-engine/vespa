@@ -15,7 +15,7 @@ namespace search {
 class SingleBoolAttribute final : public IntegerAttributeTemplate<int8_t>
 {
 public:
-    SingleBoolAttribute(const vespalib::string & baseFileName, const search::GrowStrategy & grow);
+    SingleBoolAttribute(const vespalib::string & baseFileName, const search::GrowStrategy & grow, bool paged);
     ~SingleBoolAttribute() override;
 
     void onCommit() override;
@@ -108,6 +108,7 @@ private:
     int8_t getFast(DocId doc) const {
         return _bv.testBit(doc) ? 1 : 0;
     }
+    vespalib::alloc::Alloc _init_alloc;
     GrowableBitVector _bv;
 };
 
