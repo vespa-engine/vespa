@@ -76,9 +76,10 @@ var setConfigCmd = &cobra.Command{
 }
 
 var getConfigCmd = &cobra.Command{
-	Use:               "get option-name",
-	Short:             "Get a configuration option",
-	Example:           "$ vespa config get target",
+	Use:   "get [option-name]",
+	Short: "Show given configuration option, or all configuration options",
+	Example: `$ vespa config get
+$ vespa config get target`,
 	Args:              cobra.MaximumNArgs(1),
 	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
