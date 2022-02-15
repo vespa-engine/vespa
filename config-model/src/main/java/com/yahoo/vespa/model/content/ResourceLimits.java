@@ -31,13 +31,12 @@ public class ResourceLimits implements FleetcontrollerConfig.Producer, ProtonCon
 
     @Override
     public void getConfig(FleetcontrollerConfig.Builder builder) {
-        // TODO: Choose other defaults when this is default enabled.
         // Note: The resource categories must match the ones used in host info reporting
         // between content nodes and cluster controller:
         // storage/src/vespa/storage/persistence/filestorage/service_layer_host_info_reporter.cpp
         builder.cluster_feed_block_limit.put("memory", memoryLimit.orElse(0.8));
-        builder.cluster_feed_block_limit.put("disk", diskLimit.orElse(0.8));
-        builder.cluster_feed_block_limit.put("attribute-address-space", 0.89);
+        builder.cluster_feed_block_limit.put("disk", diskLimit.orElse(0.75));
+        builder.cluster_feed_block_limit.put("attribute-address-space", 0.9);
     }
 
     @Override
