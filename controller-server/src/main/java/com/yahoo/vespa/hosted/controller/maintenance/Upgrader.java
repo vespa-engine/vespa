@@ -67,7 +67,7 @@ public class Upgrader extends ControllerMaintainer {
     private Collection<Version> targetVersions(Confidence confidence, VersionStatus versionStatus) {
         return versionStatus.versions().stream()
                             // Ensure we never pick a version newer than the system
-                            .filter(v -> !v.versionNumber().isAfter(controller().systemVersion(versionStatus)))
+                            .filter(v -> ! v.versionNumber().isAfter(controller().systemVersion(versionStatus)))
                             .filter(v -> v.confidence().equalOrHigherThan(confidence))
                             .map(VespaVersion::versionNumber)
                             .collect(Collectors.toMap(Version::getMajor, // Key on major version

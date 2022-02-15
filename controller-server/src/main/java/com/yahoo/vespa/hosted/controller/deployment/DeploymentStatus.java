@@ -392,10 +392,12 @@ public class DeploymentStatus {
         Optional<Instant> revisionReadyAt = step.dependenciesCompletedAt(change.withoutPlatform(), Optional.of(job));
 
         // If neither change is ready, we guess based on the specified rollout.
-        if (platformReadyAt.isEmpty() && revisionReadyAt.isEmpty()) switch (rollout) {
-            case separate: return List.of(change.withoutApplication(), change);  // Platform should stay ahead.
-            case leading: return List.of(change);                                // They should eventually join.
-            case simultaneous: return List.of(change.withoutPlatform(), change); // Revision should get ahead.
+        if (platformReadyAt.isEmpty() && revisionReadyAt.isEmpty()) {
+            switch (rollout) {
+                case separate: return List.of(change.withoutApplication(), change);  // Platform should stay ahead.
+                case leading: return List.of(change);                                // They should eventually join.
+                case simultaneous: return List.of(change.withoutPlatform(), change); // Revision should get ahead.
+            }
         }
 
         // If only the revision is ready, we run that first.
