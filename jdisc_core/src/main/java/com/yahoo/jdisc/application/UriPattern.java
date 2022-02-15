@@ -29,7 +29,6 @@ import java.util.regex.Pattern;
  */
 public class UriPattern implements Comparable<UriPattern> {
 
-    public static final int DEFAULT_PRIORITY = 0;
     private static final Pattern PATTERN = Pattern.compile("([^:]+)://([^:/]+)(:((\\*)|([0-9]+)))?/(.*)",
                                                            Pattern.UNICODE_CASE | Pattern.CANON_EQ);
     private final String pattern;
@@ -37,9 +36,6 @@ public class UriPattern implements Comparable<UriPattern> {
     private final GlobPattern host;
     private final int port;
     private final GlobPattern path;
-
-    // TODO Vespa 8 jonmv remove
-    private final int priority;
 
     /**
      * <p>Creates a new instance of this class that represents the given pattern string, with a priority of <code>0</code>.
@@ -59,31 +55,6 @@ public class UriPattern implements Comparable<UriPattern> {
         port = parseOrZero(matcher.group(4));
         path = GlobPattern.compile(nonNullOrWildcard(matcher.group(7)));
         pattern = scheme + "://" + host + ":" + (port > 0 ? port : "*") + "/" + path;
-        this.priority = DEFAULT_PRIORITY;
-    }
-
-    /**
-     * <p>Creates a new instance of this class that represents the given pattern string, with the given priority. The
-     * input string must be on the form <code>&lt;scheme&gt;://&lt;host&gt;[:&lt;port&gt;]&lt;path&gt;</code>, where
-     * '*' can be used as a wildcard character at any position.</p>
-     *
-     * @deprecated Use {@link #UriPattern(String)} and let's avoid another complication here.
-     * @param uri      The pattern to parse.
-     * @param priority The priority of this pattern.
-     * @throws IllegalArgumentException If the pattern could not be parsed.
-     */
-    @Deprecated(forRemoval = true, since = "7")
-    public UriPattern(String uri, int priority) {
-        Matcher matcher = PATTERN.matcher(uri);
-        if (!matcher.find()) {
-            throw new IllegalArgumentException(uri);
-        }
-        scheme = GlobPattern.compile(normalizeScheme(nonNullOrWildcard(matcher.group(1))));
-        host = GlobPattern.compile(nonNullOrWildcard(matcher.group(2)));
-        port = parseOrZero(matcher.group(4));
-        path = GlobPattern.compile(nonNullOrWildcard(matcher.group(7)));
-        pattern = scheme + "://" + host + ":" + (port > 0 ? port : "*") + "/" + path;
-        this.priority = priority;
     }
 
     /**
@@ -135,10 +106,6 @@ public class UriPattern implements Comparable<UriPattern> {
     @Override
     public int compareTo(UriPattern rhs) {
         int cmp;
-        cmp = rhs.priority - priority;
-        if (cmp != 0) {
-            return cmp;
-        }
         cmp = scheme.compareTo(rhs.scheme);
         if (cmp != 0) {
             return cmp;
