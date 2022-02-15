@@ -1263,9 +1263,6 @@ public class DeploymentTriggerTest {
         assertEquals(Change.empty(), app3.instance().change());
     }
 
-    // TODO test multi-tier pipeline with various policies
-    // TODO test multi-tier pipeline with upgrade after new version is the candidate
-
     @Test
     public void testRevisionJoinsUpgradeWithSeparateRollout() {
         var appPackage = new ApplicationPackageBuilder().region("us-central-1")
@@ -1419,6 +1416,63 @@ public class DeploymentTriggerTest {
         app.assertNotRunning(productionUsWest1);
         app.runJob(testUsWest1).runJob(productionUsWest1).runJob(testUsWest1); // Test for us-east-3 is not re-run.
         assertEquals(Change.empty(), app.instance().change());
+    }
+
+    @Test
+    public void testsVeryLengthyPipeline() {
+        String lengthyDeploymentSpec =
+                "<deployment version='1.0'>\n" +
+                "    <instance id='alpha'>\n" +
+                "        <test />\n" +
+                "        <staging />\n" +
+                "        <upgrade rollout='simultaneous' />\n" +
+                "        <prod>\n" +
+                "            <region>us-east-3</region>\n" +
+                "            <test>us-east-3</test>\n" +
+                "        </prod>\n" +
+                "    </instance>\n" +
+                "    <instance id='beta'>\n" +
+                "        <upgrade rollout='simultaneous' />\n" +
+                "        <prod>\n" +
+                "            <region>us-east-3</region>\n" +
+                "            <test>us-east-3</test>\n" +
+                "        </prod>\n" +
+                "    </instance>\n" +
+                "    <instance id='gamma'>\n" +
+                "        <upgrade rollout='separate' />\n" +
+                "        <prod>\n" +
+                "            <region>us-east-3</region>\n" +
+                "            <test>us-east-3</test>\n" +
+                "        </prod>\n" +
+                "    </instance>\n" +
+                "</deployment>\n";
+        var appPackage = ApplicationPackageBuilder.fromDeploymentXml(lengthyDeploymentSpec);
+        var alpha = tester.newDeploymentContext("t", "a", "alpha");
+        var beta  = tester.newDeploymentContext("t", "a", "beta");
+        var gamma = tester.newDeploymentContext("t", "a", "gamma");
+        alpha.submit(appPackage).deploy();
+
+        // A version releases, but when the first upgrade has gotten through alpha, beta, and gamma, a newer version has high confidence.
+        var version0 = tester.controller().readSystemVersion();
+        var version1 = new Version("7.1");
+        var version2 = new Version("7.2");
+        tester.controllerTester().upgradeSystem(version1);
+
+        tester.upgrader().maintain();
+        alpha.runJob(systemTest).runJob(stagingTest)
+             .runJob(productionUsEast3).runJob(testUsEast3);
+        assertEquals(Change.empty(), alpha.instance().change());
+
+        tester.upgrader().maintain();
+        beta.runJob(productionUsEast3);
+        tester.controllerTester().upgradeSystem(version2);
+        beta.runJob(testUsEast3);
+        assertEquals(Change.empty(), beta.instance().change());
+
+        tester.upgrader().maintain();
+        assertEquals(Change.of(version2), alpha.instance().change());
+        assertEquals(Change.empty(), beta.instance().change());
+        assertEquals(Change.of(version1), gamma.instance().change());
     }
 
     @Test
