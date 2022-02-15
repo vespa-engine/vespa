@@ -28,6 +28,7 @@ DistributorBucketSpace::DistributorBucketSpace(uint16_t node_index)
       _distribution(),
       _node_index(node_index),
       _distribution_bits(1u),
+      _merges_inhibited(false),
       _pending_cluster_state(),
       _available_nodes(),
       _ownerships(),

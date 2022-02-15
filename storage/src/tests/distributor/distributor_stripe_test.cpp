@@ -629,6 +629,19 @@ TEST_F(DistributorStripeTest, max_clock_skew_config_is_propagated_to_distributor
     EXPECT_EQ(getConfig().getMaxClusterClockSkew(), std::chrono::seconds(5));
 }
 
+TEST_F(DistributorStripeTest, inhibit_default_merge_if_global_merges_pending_config_is_propagated)
+{
+    setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
+    ConfigBuilder builder;
+    builder.inhibitDefaultMergesWhenGlobalMergesPending = true;
+    configure_stripe(builder);
+    EXPECT_TRUE(getConfig().inhibit_default_merges_when_global_merges_pending());
+
+    builder.inhibitDefaultMergesWhenGlobalMergesPending = false;
+    configure_stripe(builder);
+    EXPECT_FALSE(getConfig().inhibit_default_merges_when_global_merges_pending());
+}
+
 namespace {
 
 auto makeDummyRemoveCommand() {

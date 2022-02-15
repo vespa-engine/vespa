@@ -481,9 +481,7 @@ void
 DistributorStripe::propagateClusterStates()
 {
     for (auto* repo : {_bucketSpaceRepo.get(), _readOnlyBucketSpaceRepo.get()}) {
-        for (auto& iter : *repo) {
-            iter.second->setClusterState(_clusterStateBundle.getDerivedClusterState(iter.first));
-        }
+        repo->enable_cluster_state_bundle(_clusterStateBundle);
     }
 }
 
