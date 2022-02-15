@@ -482,7 +482,7 @@ public class InternalStepRunnerTest {
 
         tester.clock().advance(InternalStepRunner.Timeouts.of(system()).testerCertificate().plus(Duration.ofSeconds(1)));
         tester.runner().run();
-        assertEquals(RunStatus.aborted, tester.jobs().run(id).get().status());
+        assertEquals(RunStatus.error, tester.jobs().run(id).get().status());
     }
 
     private void assertTestLogEntries(RunId id, Step step, LogEntry... entries) {

@@ -118,8 +118,7 @@ public class DeploymentStatus {
         Set<JobId> criticalJobs = dependents.stream().flatMap(step -> step.job().stream()).collect(Collectors.toSet());
 
         return ! allJobs.matching(job -> criticalJobs.contains(job.id()))
-                        .failing()
-                        .not().outOfTestCapacity()
+                        .failingHard()
                         .isEmpty();
     }
 
@@ -140,17 +139,14 @@ public class DeploymentStatus {
 
     /** Whether any job is failing on anything older than version, with errors other than lack of capacity in a test zone.. */
     public boolean hasFailures(ApplicationVersion version) {
-        return ! allJobs.failing()
-                        .not().outOfTestCapacity()
+        return ! allJobs.failingHard()
                         .matching(job -> job.lastTriggered().get().versions().targetApplication().compareTo(version) < 0)
                         .isEmpty();
     }
 
     /** Whether any jobs of this application are failing with other errors than lack of capacity in a test zone. */
     public boolean hasFailures() {
-        return ! allJobs.failing()
-                        .not().outOfTestCapacity()
-                        .isEmpty();
+        return ! allJobs.failingHard().isEmpty();
     }
 
     /** All job statuses, by job type, for the given instance. */

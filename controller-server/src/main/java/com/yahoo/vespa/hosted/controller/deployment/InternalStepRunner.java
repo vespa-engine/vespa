@@ -83,7 +83,6 @@ import static com.yahoo.config.application.api.Notifications.When.failing;
 import static com.yahoo.config.application.api.Notifications.When.failingCommit;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
@@ -154,7 +153,7 @@ public class InternalStepRunner implements StepRunner {
                 case installReal: return installReal(id, logger);
                 case startStagingSetup: return startTests(id, true, logger);
                 case endStagingSetup:
-                case endTests:  return endTests(id, logger);
+                case endTests: return endTests(id, logger);
                 case startTests: return startTests(id, false, logger);
                 case copyVespaLogs: return copyVespaLogs(id, logger);
                 case deactivateReal: return deactivateReal(id, logger);
@@ -637,7 +636,7 @@ public class InternalStepRunner implements StepRunner {
     private Optional<RunStatus> endTests(RunId id, DualLogger logger) {
         if (deployment(id.application(), id.type()).isEmpty()) {
             logger.log(INFO, "Deployment expired before tests could complete.");
-            return Optional.of(aborted);
+            return Optional.of(error);
         }
 
         Optional<X509Certificate> testerCertificate = controller.jobController().run(id).get().testerCertificate();
@@ -647,7 +646,7 @@ public class InternalStepRunner implements StepRunner {
             }
             catch (CertificateExpiredException | CertificateNotYetValidException e) {
                 logger.log(WARNING, "Tester certificate expired before tests could complete.");
-                return Optional.of(aborted);
+                return Optional.of(error);
             }
         }
 

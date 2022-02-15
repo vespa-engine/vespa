@@ -16,6 +16,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
+
 /**
  * A list of deployment jobs that can be filtered in various ways.
  *
@@ -50,6 +52,11 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
     /** Returns the subset of jobs which are currently failing */
     public JobList failing() {
         return matching(job -> job.lastCompleted().isPresent() && ! job.isSuccess());
+    }
+
+    /** Returns the subset of jobs which are currently failing, not out of test capacity, and not aborted. */
+    public JobList failingHard() {
+        return failing().not().outOfTestCapacity().not().withStatus(aborted);
     }
 
     public JobList outOfTestCapacity() {

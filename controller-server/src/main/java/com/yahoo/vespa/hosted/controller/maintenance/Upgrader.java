@@ -92,7 +92,7 @@ public class Upgrader extends ControllerMaintainer {
                                                                                                    .not().upgradingTo(targetAndNewer);
 
         Map<ApplicationId, Version> targets = new LinkedHashMap<>();
-        for (Version version : targetsForConfidence(versionStatus, policy)) {
+        for (Version version : targetsForPolicy(versionStatus, policy)) {
             targetAndNewer.add(version);
             InstanceList eligible = eligibleForVersion(remaining, version, cancellationCriterion, targetMajorVersion);
             InstanceList outdated = cancellationCriterion.apply(eligible);
@@ -112,7 +112,7 @@ public class Upgrader extends ControllerMaintainer {
     }
 
     /** Returns target versions for given confidence, by descending version number. */
-    private List<Version> targetsForConfidence(VersionStatus versions, UpgradePolicy policy) {
+    private List<Version> targetsForPolicy(VersionStatus versions, UpgradePolicy policy) {
         Version systemVersion = controller().systemVersion(versions);
         if (policy == UpgradePolicy.canary)
             return List.of(systemVersion);

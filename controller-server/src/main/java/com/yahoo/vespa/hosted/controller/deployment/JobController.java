@@ -378,14 +378,14 @@ public class JobController {
                     long successes = runs.values().stream().filter(old -> old.status() == RunStatus.success).count();
                     var oldEntries = runs.entrySet().iterator();
                     for (var old = oldEntries.next();
-                         old.getKey().number() <= last - historyLength
+                            old.getKey().number() <= last - historyLength
                          || old.getValue().start().isBefore(controller.clock().instant().minus(maxHistoryAge));
                          old = oldEntries.next()) {
 
                         // Make sure we keep the last success and the first failing
-                        if (successes == 1
-                            && old.getValue().status() == RunStatus.success
-                            && !old.getValue().start().isBefore(controller.clock().instant().minus(maxHistoryAge))) {
+                        if (     successes == 1
+                            &&   old.getValue().status() == RunStatus.success
+                            && ! old.getValue().start().isBefore(controller.clock().instant().minus(maxHistoryAge))) {
                             oldEntries.next();
                             continue;
                         }
