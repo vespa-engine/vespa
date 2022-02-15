@@ -147,20 +147,6 @@ public class UriPatternTestCase {
     }
 
     @Test
-    @SuppressWarnings("removal")
-    public void requireThatPrioritiesAreOrderedDescending() {
-        assertCompareLt(new UriPattern("scheme://host:69/path", 1),
-                        new UriPattern("scheme://host:69/path", 0));
-    }
-
-    @Test
-    @SuppressWarnings("removal")
-    public void requireThatPriorityOrdersBeforeScheme() {
-        assertCompareLt(new UriPattern("*://host:69/path", 1),
-                        new UriPattern("scheme://host:69/path", 0));
-    }
-
-    @Test
     public void requireThatSchemesAreOrdered() {
         assertCompareLt("b://host:69/path",
                         "a://host:69/path");
