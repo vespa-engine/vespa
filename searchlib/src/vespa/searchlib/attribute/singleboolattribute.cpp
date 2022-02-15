@@ -17,9 +17,10 @@ namespace search {
 using attribute::Config;
 
 SingleBoolAttribute::
-SingleBoolAttribute(const vespalib::string &baseFileName, const GrowStrategy & grow)
-    : IntegerAttributeTemplate<int8_t>(baseFileName, Config(BasicType::BOOL, CollectionType::SINGLE).setGrowStrategy(grow), BasicType::BOOL),
-      _bv(0, 0, getGenerationHolder())
+SingleBoolAttribute(const vespalib::string &baseFileName, const GrowStrategy & grow, bool paged)
+    : IntegerAttributeTemplate<int8_t>(baseFileName, Config(BasicType::BOOL, CollectionType::SINGLE).setGrowStrategy(grow).setPaged(paged), BasicType::BOOL),
+      _init_alloc(get_initial_alloc()),
+      _bv(0, 0, getGenerationHolder(), get_memory_allocator() ? &_init_alloc : nullptr)
 {
 }
 

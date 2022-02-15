@@ -21,7 +21,7 @@ AttributeFactory::createSingleStd(stringref name, const Config & info)
     assert(info.collectionType().type() == attribute::CollectionType::SINGLE);
     switch(info.basicType().type()) {
     case BasicType::BOOL:
-        return std::make_shared<SingleBoolAttribute>(name, info.getGrowStrategy());
+        return std::make_shared<SingleBoolAttribute>(name, info.getGrowStrategy(), info.paged());
     case BasicType::UINT2:
         return std::make_shared<SingleValueSemiNibbleNumericAttribute>(name, info.getGrowStrategy());
     case BasicType::UINT4:

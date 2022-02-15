@@ -24,7 +24,7 @@ AttributeFactory::createSingleFastSearch(stringref name, const Config & info)
     assert(info.fastSearch());
     switch(info.basicType().type()) {
     case BasicType::BOOL:
-        return std::make_shared<SingleBoolAttribute>(name, info.getGrowStrategy());
+        return std::make_shared<SingleBoolAttribute>(name, info.getGrowStrategy(), info.paged());
     case BasicType::UINT2:
     case BasicType::UINT4:
         break;
