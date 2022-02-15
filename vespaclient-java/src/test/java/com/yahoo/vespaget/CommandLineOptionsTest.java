@@ -2,6 +2,7 @@
 package com.yahoo.vespaget;
 
 import com.yahoo.document.fieldset.AllFields;
+import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.document.fieldset.DocIdOnly;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import org.junit.Rule;
@@ -55,6 +56,7 @@ public class CommandLineOptionsTest {
         assertFalse(params.help);
         assertFalse(params.documentIds.hasNext());
         assertFalse(params.printIdsOnly);
+        // TODO Vespa 8: change to DocumentOnly.NAME
         assertEquals(AllFields.NAME, params.fieldSet);
         assertEquals("default-get", params.route);
         assertTrue(params.cluster.isEmpty());

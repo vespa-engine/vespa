@@ -2,6 +2,7 @@
 package com.yahoo.vespaget;
 
 import com.yahoo.document.fieldset.AllFields;
+import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.document.fieldset.DocIdOnly;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import org.apache.commons.cli.CommandLine;
@@ -67,6 +68,7 @@ public class CommandLineOptions {
                 .longOpt(PRINTIDS_OPTION)
                 .build());
 
+        // TODO Vespa 8: change to DocumentOnly.NAME
         options.addOption(Option.builder("f")
                 .hasArg(true)
                 .desc("Retrieve the specified fields only (see https://docs.vespa.ai/en/documents.html#fieldsets) (default '" + AllFields.NAME + "')")
@@ -181,8 +183,9 @@ public class CommandLineOptions {
 
             if (printIdsOnly) {
                 fieldSet = DocIdOnly.NAME;
-            } else if (fieldSet.isEmpty()) {
-                fieldSet = AllFields.NAME;
+            } else if (fieldSet.isEmpty()) { 
+                // TODO Vespa 8: change to DocumentOnly.NAME
+               fieldSet = AllFields.NAME;
             }
 
             if (!cluster.isEmpty() && !route.isEmpty()) {

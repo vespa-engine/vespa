@@ -5,6 +5,8 @@ import com.yahoo.document.datatypes.FloatFieldValue;
 import com.yahoo.document.datatypes.Raw;
 
 import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertNotNull;
 
@@ -60,6 +62,8 @@ public class DocumentTestCaseBase {
         floatField = testDocType.getField("floatattr");
         stringField = testDocType.getField("stringattr");
         minField = testDocType.getField("Minattr");
+
+        testDocType.addFieldSets(Map.of("[document]", List.of("stringattr", "intattr")));
 
         docMan.registerDocumentType(testDocType);
     }

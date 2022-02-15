@@ -7,6 +7,7 @@ import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.fieldset.AllFields;
+import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.documentapi.AsyncParameters;
 import com.yahoo.documentapi.DocumentAccessException;
 import com.yahoo.documentapi.DocumentOperationParameters;
@@ -152,6 +153,7 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
 
     @Override
     public Document get(DocumentId id, DocumentOperationParameters parameters, Duration timeout) {
+        // TODO Vespa 8: change to DocumentOnly.NAME
         GetDocumentMessage msg = new GetDocumentMessage(id, parameters.fieldSet().orElse(AllFields.NAME));
         msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_1));
 
