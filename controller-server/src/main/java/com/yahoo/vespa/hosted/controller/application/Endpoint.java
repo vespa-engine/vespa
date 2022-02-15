@@ -162,7 +162,7 @@ public class Endpoint {
     private static URI createUrl(String name, TenantAndApplicationId application, Optional<InstanceName> instance,
                                  List<Target> targets, Scope scope, SystemName system, Port port, boolean legacy,
                                  RoutingMethod routingMethod) {
-        String separator = separator(system, routingMethod);
+        String separator = ".";
         String portPart = port.isDefault() ? "" : ":" + port.port;
         return URI.create("https://" +
                           sanitize(namePart(name, separator)) +
@@ -180,12 +180,6 @@ public class Endpoint {
 
     private static String sanitize(String part) { // TODO: Reject reserved words
         return part.replace('_', '-');
-    }
-
-    private static String separator(SystemName system, RoutingMethod routingMethod) {
-        if (routingMethod.isDirect()) return ".";
-        if (system.isPublic()) return ".";
-        return "--";
     }
 
     private static String namePart(String name, String separator) {
@@ -488,7 +482,7 @@ public class Endpoint {
         private ClusterSpec.Id cluster;
         private EndpointId endpointId;
         private Port port;
-        private RoutingMethod routingMethod = RoutingMethod.shared;
+        private RoutingMethod routingMethod = RoutingMethod.sharedLayer4;
         private boolean legacy = false;
         private boolean certificateName = false;
 
