@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -94,16 +93,7 @@ public class RoutingPolicy {
             return List.of(infraEndpoint.get());
         }
         DeploymentId deployment = new DeploymentId(id.owner(), id.zone());
-        List<Endpoint> endpoints = new ArrayList<>();
-        endpoints.add(endpoint(routingMethod).target(id.cluster(), deployment).in(system));
-        // Add legacy endpoint
-        if (routingMethod == RoutingMethod.shared) {
-            endpoints.add(endpoint(routingMethod).target(id.cluster(), deployment)
-                                                 .on(Port.tls(4443))
-                                                 .legacy()
-                                                 .in(system));
-        }
-        return endpoints;
+        return List.of(endpoint(routingMethod).target(id.cluster(), deployment).in(system));
     }
 
     /** Returns the region endpoint of this */

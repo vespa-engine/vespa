@@ -55,8 +55,8 @@ public class NginxTest {
               .assertMetric(Nginx.GENERATED_UPSTREAMS_METRIC, 5);
 
         // Loading the same table again does nothing
-        tester.load(table0);
-        tester.assertVerifiedConfig(1)
+        tester.load(table0)
+              .assertVerifiedConfig(1)
               .assertLoadedConfig(false)
               .assertConfigContents("nginx.conf")
               .assertTemporaryConfigRemoved(true)

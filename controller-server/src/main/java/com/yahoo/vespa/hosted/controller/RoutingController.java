@@ -391,8 +391,6 @@ public class RoutingController {
         var endpoints = new ArrayList<Endpoint>();
         var directMethods = 0;
         var availableRoutingMethods = routingMethodsOfAll(deployments);
-        boolean legacyNamesAvailable = requiresLegacyNames(deploymentSpec, routingId.instance().instance());
-
         for (var method : availableRoutingMethods) {
             if (method.isDirect() && ++directMethods > 1) {
                 throw new IllegalArgumentException("Invalid routing methods for " + routingId + ": Exceeded maximum " +
@@ -403,15 +401,6 @@ public class RoutingController {
                                   .on(Port.fromRoutingMethod(method))
                                   .routingMethod(method)
                                   .in(controller.system()));
-            // Add legacy endpoint
-            if (legacyNamesAvailable && method == RoutingMethod.shared) {
-                endpoints.add(Endpoint.of(routingId.instance())
-                                      .target(routingId.endpointId(), cluster, deployments)
-                                      .on(Port.tls(4443))
-                                      .legacy()
-                                      .routingMethod(method)
-                                      .in(controller.system()));
-            }
         }
         return endpoints;
     }

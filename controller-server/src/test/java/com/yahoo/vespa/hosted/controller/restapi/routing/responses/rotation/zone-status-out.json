@@ -1,5 +1,5 @@
 {
-  "routingMethod": "shared",
+  "routingMethod": "sharedLayer4",
   "environment": "prod",
   "region": "us-west-1",
   "status": "out",

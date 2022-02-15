@@ -128,9 +128,6 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     private ZoneRegistryMock setRoutingMethod(ZoneApi zone, Set<RoutingMethod> routingMethods) {
-        if (routingMethods.stream().anyMatch(method -> method == RoutingMethod.shared)) {
-            throw new IllegalArgumentException(RoutingMethod.shared + " is not supported");
-        }
         this.zoneRoutingMethods.put(zone, List.copyOf(routingMethods));
         return this;
     }
