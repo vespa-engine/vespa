@@ -59,10 +59,10 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Alloc buffer, siz
 {
 }
 
-AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Index capacityBits, const void * rhsBuf, size_t rhsSize) :
+AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Index capacityBits, const void * rhsBuf, size_t rhsSize, const Alloc* init_alloc) :
     BitVector(),
     _capacityBits(capacityBits),
-    _alloc(allocatePaddedAndAligned(0, numberOfElements, capacityBits))
+    _alloc(allocatePaddedAndAligned(0, numberOfElements, capacityBits, init_alloc))
 {
     _capacityBits = computeCapacity(_capacityBits, _alloc.size());
     init(_alloc.get(), 0, numberOfElements);
@@ -104,17 +104,9 @@ AllocatedBitVector::AllocatedBitVector(const BitVector & rhs, std::pair<Index, I
 AllocatedBitVector::~AllocatedBitVector() = default;
 
 void
-AllocatedBitVector::cleanup()
-{
-    init(nullptr, 0, 0);
-    Alloc().swap(_alloc);
-    _capacityBits = 0;
-}
-
-void
 AllocatedBitVector::resize(Index newLength)
 {
-    _alloc = allocatePaddedAndAligned(newLength);
+    _alloc = allocatePaddedAndAligned(0, newLength, newLength, &_alloc);
     _capacityBits = computeCapacity(newLength, _alloc.size());
     init(_alloc.get(), 0, newLength);
     clear();
@@ -145,7 +137,7 @@ AllocatedBitVector::grow(Index newSize, Index newCapacity)
     assert(newCapacity >= newSize);
     GenerationHeldBase::UP ret;
     if (newCapacity != capacity()) {
-        AllocatedBitVector tbv(newSize, newCapacity, _alloc.get(), size());
+        AllocatedBitVector tbv(newSize, newCapacity, _alloc.get(), size(), &_alloc);
         if (newSize > size()) {
             tbv.clearBitAndMaintainCount(size());  // Clear old guard bit.
         }

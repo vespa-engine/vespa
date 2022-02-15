@@ -10,8 +10,9 @@ using vespalib::GenerationHeldBase;
 using vespalib::GenerationHolder;
 
 GrowableBitVector::GrowableBitVector(Index newSize, Index newCapacity,
-                                     GenerationHolder &generationHolder)
-    : AllocatedBitVector(newSize, newCapacity, nullptr, 0),
+                                     GenerationHolder &generationHolder,
+                                     const Alloc* init_alloc)
+    : AllocatedBitVector(newSize, newCapacity, nullptr, 0, init_alloc),
       _generationHolder(generationHolder)
 {
     assert(newSize <= newCapacity);
