@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring;
 
-import javax.annotation.concurrent.Immutable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -14,10 +13,10 @@ import static java.util.Collections.unmodifiableMap;
 
 /**
  * Models a metric set containing a set of metrics and child metric sets.
+ * This should be immutable.
  *
  * @author gjoranv
  */
-@Immutable
 public class MetricSet {
 
     private final String id;
