@@ -37,6 +37,7 @@ class DistributorBucketSpace {
     std::shared_ptr<const lib::Distribution> _distribution;
     uint16_t                                 _node_index;
     uint16_t                                 _distribution_bits;
+    bool                                     _merges_inhibited;
     std::shared_ptr<const lib::ClusterState> _pending_cluster_state;
     std::vector<bool>                        _available_nodes;
     mutable vespalib::hash_map<document::BucketId, BucketOwnershipFlags, document::BucketId::hash>  _ownerships;
@@ -84,6 +85,13 @@ public:
     void set_pending_cluster_state(std::shared_ptr<const lib::ClusterState> pending_cluster_state);
     bool has_pending_cluster_state() const noexcept { return static_cast<bool>(_pending_cluster_state); }
     const lib::ClusterState& get_pending_cluster_state() const noexcept { return *_pending_cluster_state; }
+
+    void set_merges_inhibited(bool inhibited) noexcept {
+        _merges_inhibited = inhibited;
+    }
+    [[nodiscard]] bool merges_inhibited() const noexcept {
+        return _merges_inhibited;
+    }
 
     /**
      * Returns true if this distributor owns the given bucket in the

@@ -65,8 +65,8 @@ public:
 
     ClusterStateBundle(const ClusterStateBundle&);
     ClusterStateBundle& operator=(const ClusterStateBundle&);
-    ClusterStateBundle(ClusterStateBundle&&);
-    ClusterStateBundle& operator=(ClusterStateBundle&&);
+    ClusterStateBundle(ClusterStateBundle&&) noexcept;
+    ClusterStateBundle& operator=(ClusterStateBundle&&) noexcept;
 
     ~ClusterStateBundle();
     const std::shared_ptr<const ClusterState> &getBaselineClusterState() const;
@@ -74,15 +74,15 @@ public:
     const BucketSpaceStateMapping& getDerivedClusterStates() const noexcept {
         return _derivedBucketSpaceStates;
     }
-    bool block_feed_in_cluster() const {
+    [[nodiscard]] bool block_feed_in_cluster() const noexcept {
         return _feed_block.has_value() && _feed_block->block_feed_in_cluster();
     }
     const std::optional<FeedBlock>& feed_block() const { return _feed_block; }
     uint32_t getVersion() const;
     bool deferredActivation() const noexcept { return _deferredActivation; }
     std::string toString() const;
-    bool operator==(const ClusterStateBundle &rhs) const;
-    bool operator!=(const ClusterStateBundle &rhs) const { return !operator==(rhs); }
+    bool operator==(const ClusterStateBundle &rhs) const noexcept;
+    bool operator!=(const ClusterStateBundle &rhs) const noexcept { return !operator==(rhs); }
 };
 
 std::ostream& operator<<(std::ostream&, const ClusterStateBundle&);

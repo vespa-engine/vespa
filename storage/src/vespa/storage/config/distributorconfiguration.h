@@ -273,6 +273,12 @@ public:
     [[nodiscard]] bool use_unordered_merge_chaining() const noexcept {
         return _use_unordered_merge_chaining;
     }
+    void set_inhibit_default_merges_when_global_merges_pending(bool inhibit) noexcept {
+        _inhibit_default_merges_when_global_merges_pending = inhibit;
+    }
+    [[nodiscard]] bool inhibit_default_merges_when_global_merges_pending() const noexcept {
+        return _inhibit_default_merges_when_global_merges_pending;
+    }
 
     uint32_t num_distributor_stripes() const noexcept { return _num_distributor_stripes; }
 
@@ -331,6 +337,7 @@ private:
     bool _enable_revert;
     bool _implicitly_clear_priority_on_schedule;
     bool _use_unordered_merge_chaining;
+    bool _inhibit_default_merges_when_global_merges_pending;
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
 

@@ -62,8 +62,8 @@ ClusterStateBundle::ClusterStateBundle(const ClusterState& baselineClusterState,
 
 ClusterStateBundle::ClusterStateBundle(const ClusterStateBundle&) = default;
 ClusterStateBundle& ClusterStateBundle::operator=(const ClusterStateBundle&) = default;
-ClusterStateBundle::ClusterStateBundle(ClusterStateBundle&&) = default;
-ClusterStateBundle& ClusterStateBundle::operator=(ClusterStateBundle&&) = default;
+ClusterStateBundle::ClusterStateBundle(ClusterStateBundle&&) noexcept = default;
+ClusterStateBundle& ClusterStateBundle::operator=(ClusterStateBundle&&) noexcept = default;
 
 ClusterStateBundle::~ClusterStateBundle() = default;
 
@@ -90,7 +90,7 @@ ClusterStateBundle::getVersion() const
 }
 
 bool
-ClusterStateBundle::operator==(const ClusterStateBundle &rhs) const
+ClusterStateBundle::operator==(const ClusterStateBundle &rhs) const noexcept
 {
     if (!(*_baselineClusterState == *rhs._baselineClusterState)) {
         return false;

@@ -33,6 +33,7 @@ public:
     BucketSpaceMap::const_iterator begin() const { return _map.begin(); }
     BucketSpaceMap::const_iterator end() const { return _map.end(); }
     void add(document::BucketSpace bucketSpace, std::unique_ptr<DistributorBucketSpace> distributorBucketSpace);
+    void enable_cluster_state_bundle(const lib::ClusterStateBundle& cluster_state_bundle);
     void set_pending_cluster_state_bundle(const lib::ClusterStateBundle& cluster_state_bundle);
     void clear_pending_cluster_state_bundle();
 };
