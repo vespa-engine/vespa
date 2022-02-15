@@ -14,6 +14,7 @@ public:
     ~MMapPool();
     void * mmap(size_t sz);
     void unmap(void *);
+    size_t get_size(void *) const;
     size_t getNumMappings() const;
     size_t getMmappedBytes() const;
 private:
