@@ -5,4 +5,6 @@ vespa_add_executable(vespalib_nice_test_app TEST
     DEPENDS
     vespalib
 )
-vespa_add_test(NAME vespalib_nice_test_app COMMAND vespalib_nice_test_app)
+if(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+  vespa_add_test(NAME vespalib_nice_test_app COMMAND vespalib_nice_test_app)
+endif()
