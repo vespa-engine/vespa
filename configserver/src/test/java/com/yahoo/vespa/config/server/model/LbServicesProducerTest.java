@@ -125,10 +125,10 @@ public class LbServicesProducerTest {
         LbServicesConfig config = getLbServicesConfig(new Zone(Environment.prod, regionName), testModel);
 
         List<Endpoints> endpointList = config.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").endpoints();
-        // Expect 4 zone endpoints (2 suffixes), 2 global endpoints and 1 application endpoint
-        assertEquals(7, endpointList.size());
+        // Expect 2 zone endpoints (2 suffixes), 2 global endpoints and 1 application endpoint
+        assertEquals(5, endpointList.size());
         List<Endpoints> zoneEndpoints = endpointList.stream().filter(e -> e.scope() == zone).collect(Collectors.toList());
-        assertEquals(4, zoneEndpoints.size());
+        assertEquals(2, zoneEndpoints.size());
         assertTrue(zoneEndpoints.stream()
                            .filter(e -> e.routingMethod() == sharedLayer4)
                            .map(Endpoints::dnsName).collect(Collectors.toList())
