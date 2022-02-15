@@ -33,7 +33,9 @@ Vespa documentation: https://docs.vespa.ai`,
 		},
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			fatalErr(nil, "invalid command: ", args[0])
+			// Root command does nothing
+			cmd.Help()
+			exitFunc(1)
 		},
 	}
 
