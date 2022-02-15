@@ -27,6 +27,7 @@ DocumenttypesConfig TestDocRepo::getDefaultConfig() {
     const int mystruct_id = -2092985851;
     const int structarray_id = 759956026;
     config_builder::DocumenttypesConfigBuilderHelper builder;
+    ::config::StringVector documentfields = { "headerval", "hstringval", "title" };
     builder.document(type1_id, "testdoctype1",
                      Struct("testdoctype1.header")
                      .addField("headerval", DataType::T_INT)
@@ -55,7 +56,9 @@ DocumenttypesConfig TestDocRepo::getDefaultConfig() {
                      .addTensorField("sparse_tensor", "tensor(x{})")
                      .addTensorField("sparse_xy_tensor", "tensor(x{},y{})")
                      .addTensorField("sparse_float_tensor", "tensor<float>(x{})")
-                     .addTensorField("dense_tensor", "tensor(x[2])"));
+                     .addTensorField("dense_tensor", "tensor(x[2])"))
+        .doc_type.fieldsets["[document]"].fields.swap(documentfields);
+
     builder.document(type2_id, "testdoctype2",
                      Struct("testdoctype2.header")
                      .addField("onlyinchild", DataType::T_INT),
