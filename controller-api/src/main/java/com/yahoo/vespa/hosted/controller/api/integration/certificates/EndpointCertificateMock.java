@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.certificates;
 
 import com.yahoo.config.provision.ApplicationId;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -65,6 +66,11 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
     public void deleteCertificate(ApplicationId applicationId, String requestId) {
         dnsNames.remove(applicationId);
         providerMetadata.remove(requestId);
+    }
+
+    @Override
+    public String certificateDetails(String id) throws IOException {
+        return "";
     }
 
 }
