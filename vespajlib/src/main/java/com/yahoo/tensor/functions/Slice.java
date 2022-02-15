@@ -121,14 +121,13 @@ public class Slice<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
 
     private TensorType resultType(TensorType argumentType) {
         List<String> peekDimensions;
-
         // Special case where a single indexed or mapped dimension is sliced
         if (subspaceAddress.size() == 1 && subspaceAddress.get(0).dimension().isEmpty()) {
             if (subspaceAddress.get(0).index().isPresent()) {
                 peekDimensions = findDimensions(argumentType.dimensions(), TensorType.Dimension::isIndexed);
                 if (peekDimensions.size() > 1) {
                     throw new IllegalArgumentException(this + " slices a single indexed dimension, cannot be applied " +
-                            "to " + argumentType + ", which has multiple");
+                                                       "to " + argumentType + ", which has multiple");
                 }
             }
             else {
@@ -141,6 +140,8 @@ public class Slice<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
         else { // general slicing
             peekDimensions = subspaceAddress.stream().map(d -> d.dimension().get()).collect(Collectors.toList());
         }
+        if (peekDimensions.isEmpty())
+            throw new IllegalArgumentException(this + " cannot slice " + argumentType + ": No dimensions to slice");
         return TypeResolver.peek(argumentType, peekDimensions);
     }
 

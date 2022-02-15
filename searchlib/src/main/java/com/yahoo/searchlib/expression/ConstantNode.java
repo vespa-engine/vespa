@@ -16,9 +16,7 @@ public class ConstantNode extends ExpressionNode {
     public static final int classId = registerClass(0x4000 + 49, ConstantNode.class);
     private ResultNode value = null;
 
-    public ConstantNode() {
-
-    }
+    public ConstantNode() {}
 
     public ConstantNode(ResultNode value) {
         this.value = value;
