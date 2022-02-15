@@ -1,0 +1,21 @@
+search test {
+
+    document test {
+    }
+
+    rank-profile parent {
+
+        function inline cpmScore() {
+            expression: myValue * mySlice(query(myTensor))
+        }
+
+        function inline myValue() {
+            expression: 4
+        }
+
+        function inline mySlice(myTensor) {
+            expression: myTensor{"NULL"}
+        }
+    }
+
+}

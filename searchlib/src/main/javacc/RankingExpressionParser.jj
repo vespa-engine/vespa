@@ -1032,11 +1032,13 @@ Slice.DimensionValue dimensionValue(Optional dimensionName) :
 {
     value = expression()
     {
-    if (value instanceof ReferenceNode && ((ReferenceNode)value).reference().isIdentifier())
-        return new Slice.DimensionValue(dimensionName, ((ReferenceNode)value).reference().name());
-    else
-        return new Slice.DimensionValue(dimensionName, TensorFunctionNode.wrapScalar(value));
-}
+        if (value instanceof ReferenceNode && ((ReferenceNode)value).reference().isIdentifier()) // A label
+            return new Slice.DimensionValue(dimensionName, ((ReferenceNode)value).reference().name());
+        else if (value instanceof ConstantNode && ((ConstantNode)value).getValue() instanceof StringValue) // A quoted label
+            return new Slice.DimensionValue(dimensionName, ((StringValue)((ConstantNode)value).getValue()).asString());
+        else
+            return new Slice.DimensionValue(dimensionName, TensorFunctionNode.wrapScalar(value));
+    }
 }
 
 String label() :
