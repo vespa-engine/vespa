@@ -84,7 +84,7 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
     /** Returns the subset of instances which currently have failing jobs on the given version */
     public InstanceList failingOn(Version version) {
         return matching(id -> ! instances.get(id).instanceJobs().get(id).failing()
-                                         .not().withStatus(outOfCapacity)
+                                         .not().outOfTestCapacity()
                                          .lastCompleted().on(version).isEmpty());
     }
 
@@ -95,7 +95,7 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
 
     /** Returns the subset of instances which are not currently failing any jobs. */
     public InstanceList failing() {
-        return matching(id -> ! instances.get(id).instanceJobs().get(id).failing().not().withStatus(outOfCapacity).isEmpty());
+        return matching(id -> ! instances.get(id).instanceJobs().get(id).failing().not().outOfTestCapacity().isEmpty());
     }
 
     /** Returns the subset of instances which are currently failing an upgrade. */
