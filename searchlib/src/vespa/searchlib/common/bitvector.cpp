@@ -47,13 +47,13 @@ using vespalib::GenerationHeldAlloc;
 using vespalib::GenerationHolder;
 
 Alloc
-BitVector::allocatePaddedAndAligned(Index start, Index end, Index capacity)
+BitVector::allocatePaddedAndAligned(Index start, Index end, Index capacity, const Alloc* init_alloc)
 {
     assert(capacity >= end);
     uint32_t words = numActiveWords(start, capacity);
     words += (-words & 15); // Pad to 64 byte alignment
     const size_t sz(words * sizeof(Word));
-    Alloc alloc = Alloc::alloc(sz, MMAP_LIMIT);
+    Alloc alloc = (init_alloc != nullptr) ? init_alloc->create(sz) : Alloc::alloc(sz, MMAP_LIMIT);
     assert(alloc.size()/sizeof(Word) >= words);
     // Clear padding
     size_t usedBytes = numBytes(end - start);

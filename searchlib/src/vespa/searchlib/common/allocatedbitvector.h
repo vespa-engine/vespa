@@ -35,7 +35,7 @@ public:
      * Creates a new bitvector with size of numberOfElements bits and at least a capacity of capacity.
      * Copies what it can from the original vector. This is used for extending vector.
      */
-    AllocatedBitVector(Index numberOfElements, Index capacity, const void * rhsBuf, size_t rhsSize);
+    AllocatedBitVector(Index numberOfElements, Index capacity, const void * rhsBuf, size_t rhsSize, const Alloc* init_alloc);
 
     AllocatedBitVector(const BitVector &other);
     AllocatedBitVector(const AllocatedBitVector &other);
@@ -74,12 +74,6 @@ private:
     }
 
     AllocatedBitVector(const BitVector &other, std::pair<Index, Index> size_capacity);
-
-    /**
-     * Prepare for potential reuse where new value might be filled in by
-     * Read method.
-     */
-    void cleanup();
 };
 
 } // namespace search

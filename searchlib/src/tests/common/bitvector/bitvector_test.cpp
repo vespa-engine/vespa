@@ -8,10 +8,15 @@
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/util/rand48.h>
 #include <algorithm>
 
 using namespace search;
+
+using vespalib::alloc::Alloc;
+using vespalib::alloc::test::MemoryAllocatorObserver;
+using AllocStats = MemoryAllocatorObserver::Stats;
 
 namespace {
 
@@ -653,5 +658,26 @@ TEST("requireThatGrowWorks")
     g.trimHoldLists(2);
 }
 
+TEST("require that growable bit vectors keeps memory allocator")
+{
+    AllocStats stats;
+    auto memory_allocator = std::make_unique<MemoryAllocatorObserver>(stats);
+    Alloc init_alloc = Alloc::alloc_with_allocator(memory_allocator.get());
+    vespalib::GenerationHolder g;
+    GrowableBitVector v(200, 200, g, &init_alloc);
+    EXPECT_EQUAL(AllocStats(1, 0), stats);
+    v.resize(1);
+    EXPECT_EQUAL(AllocStats(2, 1), stats);
+    v.reserve(2000);
+    EXPECT_EQUAL(AllocStats(3, 1), stats);
+    v.extend(4000);
+    EXPECT_EQUAL(AllocStats(4, 1), stats);
+    v.shrink(200);
+    EXPECT_EQUAL(AllocStats(4, 1), stats);
+    v.resize(1);
+    EXPECT_EQUAL(AllocStats(5, 2), stats);
+    g.transferHoldLists(1);
+    g.trimHoldLists(2);
+}
 
 TEST_MAIN() { TEST_RUN_ALL(); }

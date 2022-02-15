@@ -281,7 +281,7 @@ protected:
     static Alloc allocatePaddedAndAligned(Index start, Index end) {
         return allocatePaddedAndAligned(start, end, end);
     }
-    static Alloc allocatePaddedAndAligned(Index start, Index end, Index capacity);
+    static Alloc allocatePaddedAndAligned(Index start, Index end, Index capacity, const Alloc* init_alloc = nullptr);
 
 private:
     friend PartialBitVector;

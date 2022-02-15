@@ -9,7 +9,7 @@ namespace search {
 class GrowableBitVector : public AllocatedBitVector
 {
 public:
-    GrowableBitVector(Index newSize, Index newCapacity, GenerationHolder &generationHolder);
+    GrowableBitVector(Index newSize, Index newCapacity, GenerationHolder &generationHolder, const Alloc* init_alloc = nullptr);
 
     /** Will return true if a a buffer is held */
     bool reserve(Index newCapacity);
