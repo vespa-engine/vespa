@@ -146,7 +146,10 @@ $ vespa prod submit`,
 				"See https://cloud.vespa.ai/en/getting-to-production")
 			return
 		}
-		verifyTests(pkg.TestPath, target)
+		// TODO: Always verify tests. Do it before packaging, when running Maven from this CLI.
+		if ! pkg.IsZip() {
+			verifyTests(pkg.TestPath, target)
+		}
 		isCI := os.Getenv("CI") != ""
 		if !isCI {
 			fmt.Fprintln(stderr, color.Yellow("Warning:"), "We recommend doing this only from a CD job")
