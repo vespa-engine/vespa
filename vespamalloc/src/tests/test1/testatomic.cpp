@@ -29,16 +29,20 @@ TEST("test explicit mmap/munmap") {
     void * mmap1 = mmapPool.mmap(0xe000);
     EXPECT_EQUAL(1u, mmapPool.getNumMappings());
     EXPECT_EQUAL(0xe000u, mmapPool.getMmappedBytes());
+    EXPECT_EQUAL(0xe000u, mmapPool.get_size(mmap1));
     mmapPool.unmap(mmap1);
     EXPECT_EQUAL(0u, mmapPool.getNumMappings());
     EXPECT_EQUAL(0u, mmapPool.getMmappedBytes());
     mmap1 = mmapPool.mmap(0xe000);
     EXPECT_EQUAL(1u, mmapPool.getNumMappings());
     EXPECT_EQUAL(0xe000u, mmapPool.getMmappedBytes());
+    EXPECT_EQUAL(0xe000u, mmapPool.get_size(mmap1));
 
     void * mmap2 = mmapPool.mmap(0x1e000);
     EXPECT_EQUAL(2u, mmapPool.getNumMappings());
     EXPECT_EQUAL(0x2c000u, mmapPool.getMmappedBytes());
+    EXPECT_EQUAL(0xe000u, mmapPool.get_size(mmap1));
+    EXPECT_EQUAL(0x1e000u, mmapPool.get_size(mmap2));
     mmapPool.unmap(mmap1);
     EXPECT_EQUAL(1u, mmapPool.getNumMappings());
     EXPECT_EQUAL(0x1e000u, mmapPool.getMmappedBytes());

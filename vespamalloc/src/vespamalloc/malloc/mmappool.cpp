@@ -101,4 +101,11 @@ MMapPool::unmap(void * ptr) {
     assert(munmap_ok == 0);
 }
 
+size_t
+MMapPool::get_size(void * ptr) const {
+    std::lock_guard guard(_mutex);
+    auto found = _mappings.find(ptr);
+    return found->second._sz;
+}
+
 }

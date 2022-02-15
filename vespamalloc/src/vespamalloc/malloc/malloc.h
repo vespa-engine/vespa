@@ -76,7 +76,7 @@ public:
         return MemBlockPtrT::usable_size(ptr, _segment.getMaxSize<MemBlockPtrT>(ptr));
     }
 
-    void *calloc(size_t nelm, size_t esz) {
+    void * calloc(size_t nelm, size_t esz) {
         void * ptr = malloc(nelm * esz);
         if (ptr) {
             memset(ptr, 0, nelm * esz);
@@ -235,35 +235,41 @@ void MemoryManager<MemBlockPtrT, ThreadListT>::freeSC(void *ptr, SizeClassT sc)
 template <typename MemBlockPtrT, typename ThreadListT>
 void * MemoryManager<MemBlockPtrT, ThreadListT>::realloc(void *oldPtr, size_t sz)
 {
-    void *ptr;
-    if (oldPtr) {
-        MemBlockPtrT mem(oldPtr);
-        mem.readjustAlignment(_segment);
-        if (! mem.validAlloc()) {
-            fprintf(stderr, "Someone has tamper with my pre/post signatures of my memoryblock %p(%ld).\n", mem.ptr(), mem.size());
-            crash();
-        }
-        SizeClassT sc(_segment.sizeClass(oldPtr));
-        if (sc >= 0) {
-            size_t oldSz(_segment.getMaxSize<MemBlockPtrT>(oldPtr));
-            if (sz > oldSz) {
-                ptr = malloc(sz);
-                if (ptr) {
-                    memcpy(ptr, oldPtr, oldSz);
-                    free(oldPtr);
-                }
-            } else {
-                mem.setExact(sz);
-                ptr = oldPtr;
-            }
-        } else {
+    if (oldPtr == nullptr) return malloc(sz);
+    if ( ! _segment.containsPtr(oldPtr)) {
+        void * ptr = malloc(sz);
+        size_t oldBlockSize = _mmapPool.get_size(MemBlockPtrT(oldPtr).rawPtr());
+        memcpy(ptr, oldPtr, MemBlockPtrT::unAdjustSize(oldBlockSize));
+        _mmapPool.unmap(MemBlockPtrT(oldPtr).rawPtr());
+        return ptr;
+    }
+
+    MemBlockPtrT mem(oldPtr);
+    mem.readjustAlignment(_segment);
+    if (! mem.validAlloc()) {
+        fprintf(stderr, "Someone has tamper with my pre/post signatures of my memoryblock %p(%ld).\n", mem.ptr(), mem.size());
+        crash();
+    }
+
+    SizeClassT sc(_segment.sizeClass(oldPtr));
+    void * ptr;
+    if (sc >= 0) {
+        size_t oldSz(_segment.getMaxSize<MemBlockPtrT>(oldPtr));
+        if (sz > oldSz) {
             ptr = malloc(sz);
             if (ptr) {
-                memcpy(ptr, oldPtr, sz);
+                memcpy(ptr, oldPtr, oldSz);
+                free(oldPtr);
             }
+        } else {
+            mem.setExact(sz);
+            ptr = oldPtr;
         }
     } else {
         ptr = malloc(sz);
+        if (ptr) {
+            memcpy(ptr, oldPtr, sz);
+        }
     }
     PARANOID_CHECK2( { MemBlockPtrT mem(ptr); mem.readjustAlignment(_segment); if (! mem.validAlloc()) { crash(); } });
     return ptr;
