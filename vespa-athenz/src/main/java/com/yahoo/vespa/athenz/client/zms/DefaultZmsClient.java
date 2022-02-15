@@ -9,7 +9,6 @@ import com.yahoo.vespa.athenz.api.AthenzPolicy;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.api.OktaIdentityToken;
 import com.yahoo.vespa.athenz.client.ErrorHandler;
@@ -394,7 +393,11 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     @Override
     public void createSubdomain(AthenzDomain parent, String name) {
         URI uri = zmsUrl.resolve(String.format("subdomain/%s", parent.getName()));
-        StringEntity entity = toJsonStringEntity(Map.of("name", name));
+        StringEntity entity = toJsonStringEntity(
+                Map.of("name", name,
+                        "parent", parent.getName(),
+                        "adminUsers", List.of(identity.getFullName())) // TODO: createSubdomain should receive an adminUsers argument
+        );
         var request = RequestBuilder.post(uri)
                 .setEntity(entity)
                 .build();
