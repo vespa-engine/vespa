@@ -63,9 +63,6 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string)
 	rootCmd.Flags().VisitAll(resetFlag)
 	documentCmd.Flags().VisitAll(resetFlag)
 
-	// Do not exit in tests
-	exitFunc = func(code int) {}
-
 	// Capture stdout and execute command
 	var capturedOut bytes.Buffer
 	var capturedErr bytes.Buffer
@@ -79,7 +76,7 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string)
 
 	// Execute command and return output
 	rootCmd.SetArgs(append(cmd.args, cmd.moreArgs...))
-	rootCmd.Execute()
+	Execute()
 	return capturedOut.String(), capturedErr.String()
 }
 

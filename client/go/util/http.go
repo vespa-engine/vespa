@@ -49,7 +49,7 @@ func CreateClient(timeout time.Duration) HttpClient {
 func HttpGet(host string, path string, description string) (*http.Response, error) {
 	url, err := url.Parse(host + path)
 	if err != nil {
-		return nil, fmt.Errorf("Invalid target URL: %s: %w", host+path, err)
+		return nil, fmt.Errorf("invalid target url: %s: %w", host+path, err)
 	}
 	return HttpDo(&http.Request{URL: url}, time.Second*10, description)
 }

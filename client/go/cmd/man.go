@@ -2,6 +2,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 )
@@ -16,13 +18,14 @@ var manCmd = &cobra.Command{
 	Args:              cobra.ExactArgs(1),
 	Hidden:            true, // Not intended to be called by users
 	DisableAutoGenTag: true,
-	Run: func(cmd *cobra.Command, args []string) {
+	SilenceUsage:      true,
+	RunE: func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
 		err := doc.GenManTree(rootCmd, nil, dir)
 		if err != nil {
-			fatalErr(err, "Failed to write man pages")
-			return
+			return fmt.Errorf("failed to write man pages: %w", err)
 		}
 		printSuccess("Man pages written to ", dir)
+		return nil
 	},
 }

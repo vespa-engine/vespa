@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -30,31 +31,34 @@ For a more high-level interface to query and feeding, see the 'query' and 'docum
 $ vespa curl -- -X POST -H "Content-Type:application/json" --data-binary @src/test/resources/A-Head-Full-of-Dreams.json /document/v1/namespace/music/docid/1
 $ vespa curl -- -v --data-urlencode "yql=select * from music where album contains 'head';" /search/\?hits=5`,
 	DisableAutoGenTag: true,
+	SilenceUsage:      true,
 	Args:              cobra.MinimumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := LoadConfig()
 		if err != nil {
-			fatalErr(err, "Could not load config")
-			return
+			return err
 		}
-		app := getApplication()
+		app, err := getApplication()
+		if err != nil {
+			return err
+		}
 		privateKeyFile, err := cfg.PrivateKeyPath(app)
 		if err != nil {
-			fatalErr(err)
-			return
+			return err
 		}
 		certificateFile, err := cfg.CertificatePath(app)
 		if err != nil {
-			fatalErr(err)
-			return
+			return err
 		}
-		service := getService("query", 0, "")
+		service, err := getService("query", 0, "")
+		if err != nil {
+			return err
+		}
 		url := joinURL(service.BaseURL, args[len(args)-1])
 		rawArgs := args[:len(args)-1]
 		c, err := curl.RawArgs(url, rawArgs...)
 		if err != nil {
-			fatalErr(err)
-			return
+			return err
 		}
 		c.PrivateKey = privateKeyFile
 		c.Certificate = certificateFile
@@ -63,10 +67,10 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 			log.Print(c.String())
 		} else {
 			if err := c.Run(os.Stdout, os.Stderr); err != nil {
-				fatalErr(err, "Failed to run curl")
-				return
+				return fmt.Errorf("failed to execute curl: %w", err)
 			}
 		}
+		return nil
 	},
 }
 

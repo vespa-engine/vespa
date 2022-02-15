@@ -12,6 +12,7 @@ var loginCmd = &cobra.Command{
 	Short:             "Authenticate the Vespa CLI",
 	Example:           "$ vespa auth login",
 	DisableAutoGenTag: true,
+	SilenceUsage:      true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 		cfg, err := LoadConfig()
@@ -29,7 +30,7 @@ var loginCmd = &cobra.Command{
 					return err
 				}
 				if err := cfg.Write(); err != nil {
-					fatalErr(err)
+					return err
 				}
 			}
 		}

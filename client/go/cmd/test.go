@@ -9,9 +9,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/util"
-	"github.com/vespa-engine/vespa/client/go/vespa"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -20,6 +17,10 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/client/go/util"
+	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 func init() {
@@ -39,8 +40,13 @@ See https://cloud.vespa.ai/en/reference/testing.html for details.`,
 $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 	Args:              cobra.ExactArgs(1),
 	DisableAutoGenTag: true,
-	Run: func(cmd *cobra.Command, args []string) {
-		if count, failed := runTests(args[0], false); len(failed) != 0 {
+	SilenceUsage:      true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		count, failed, err := runTests(args[0], false)
+		if err != nil {
+			return err
+		}
+		if len(failed) != 0 {
 			plural := "s"
 			if count == 1 {
 				plural = ""
@@ -49,26 +55,27 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 			for _, test := range failed {
 				fmt.Fprintln(stdout, test)
 			}
-			exitFunc(3)
+			return ErrCLI{Status: 3, error: fmt.Errorf("tests failed"), quiet: true}
 		} else {
 			plural := "s"
 			if count == 1 {
 				plural = ""
 			}
 			fmt.Fprintf(stdout, "\n%s %d test%s OK\n", color.Green("Success:"), count, plural)
+			return nil
 		}
 	},
 }
 
-func runTests(rootPath string, dryRun bool) (int, []string) {
+func runTests(rootPath string, dryRun bool) (int, []string, error) {
 	count := 0
 	failed := make([]string, 0)
 	if stat, err := os.Stat(rootPath); err != nil {
-		fatalErrHint(err, "See https://cloud.vespa.ai/en/reference/testing")
+		return 0, nil, errHint(err, "See https://cloud.vespa.ai/en/reference/testing")
 	} else if stat.IsDir() {
 		tests, err := ioutil.ReadDir(rootPath) // TODO: Use os.ReadDir when >= 1.16 is required.
 		if err != nil {
-			fatalErrHint(err, "See https://cloud.vespa.ai/en/reference/testing")
+			return 0, nil, errHint(err, "See https://cloud.vespa.ai/en/reference/testing")
 		}
 		context := testContext{testsPath: rootPath, dryRun: dryRun}
 		previousFailed := false
@@ -79,7 +86,10 @@ func runTests(rootPath string, dryRun bool) (int, []string) {
 					fmt.Fprintln(stdout, "")
 					previousFailed = false
 				}
-				failure := runTest(testPath, context)
+				failure, err := runTest(testPath, context)
+				if err != nil {
+					return 0, nil, err
+				}
 				if failure != "" {
 					failed = append(failed, failure)
 					previousFailed = true
@@ -88,27 +98,30 @@ func runTests(rootPath string, dryRun bool) (int, []string) {
 			}
 		}
 	} else if strings.HasSuffix(stat.Name(), ".json") {
-		failure := runTest(rootPath, testContext{testsPath: filepath.Dir(rootPath), dryRun: dryRun})
+		failure, err := runTest(rootPath, testContext{testsPath: filepath.Dir(rootPath), dryRun: dryRun})
+		if err != nil {
+			return 0, nil, err
+		}
 		if failure != "" {
 			failed = append(failed, failure)
 		}
 		count++
 	}
 	if count == 0 {
-		fatalErrHint(fmt.Errorf("Failed to find any tests at %s", rootPath), "See https://cloud.vespa.ai/en/reference/testing")
+		return 0, nil, errHint(fmt.Errorf("failed to find any tests at %s", rootPath), "See https://cloud.vespa.ai/en/reference/testing")
 	}
-	return count, failed
+	return count, failed, nil
 }
 
 // Runs the test at the given path, and returns the specified test name if the test fails
-func runTest(testPath string, context testContext) string {
+func runTest(testPath string, context testContext) (string, error) {
 	var test test
 	testBytes, err := ioutil.ReadFile(testPath)
 	if err != nil {
-		fatalErrHint(err, "See https://cloud.vespa.ai/en/reference/testing")
+		return "", errHint(err, "See https://cloud.vespa.ai/en/reference/testing")
 	}
 	if err = json.Unmarshal(testBytes, &test); err != nil {
-		fatalErrHint(err, fmt.Sprintf("Failed parsing test at %s", testPath), "See https://cloud.vespa.ai/en/reference/testing")
+		return "", errHint(fmt.Errorf("failed parsing test at %s: %w", testPath, err), "See https://cloud.vespa.ai/en/reference/testing")
 	}
 
 	testName := test.Name
@@ -122,12 +135,12 @@ func runTest(testPath string, context testContext) string {
 	defaultParameters, err := getParameters(test.Defaults.ParametersRaw, filepath.Dir(testPath))
 	if err != nil {
 		fmt.Fprintln(stderr)
-		fatalErrHint(err, fmt.Sprintf("Invalid default parameters for %s", testName), "See https://cloud.vespa.ai/en/reference/testing")
+		return "", errHint(fmt.Errorf("invalid default parameters for %s: %w", testName, err), "See https://cloud.vespa.ai/en/reference/testing")
 	}
 
 	if len(test.Steps) == 0 {
 		fmt.Fprintln(stderr)
-		fatalErrHint(fmt.Errorf("a test must have at least one step, but none were found in %s", testPath), "See https://cloud.vespa.ai/en/reference/testing")
+		return "", errHint(fmt.Errorf("a test must have at least one step, but none were found in %s", testPath), "See https://cloud.vespa.ai/en/reference/testing")
 	}
 	for i, step := range test.Steps {
 		stepName := fmt.Sprintf("Step %d", i+1)
@@ -137,12 +150,12 @@ func runTest(testPath string, context testContext) string {
 		failure, longFailure, err := verify(step, test.Defaults.Cluster, defaultParameters, context)
 		if err != nil {
 			fmt.Fprintln(stderr)
-			fatalErrHint(err, fmt.Sprintf("Error in %s", stepName), "See https://cloud.vespa.ai/en/reference/testing")
+			return "", errHint(fmt.Errorf("error in %s: %w", stepName, err), "See https://cloud.vespa.ai/en/reference/testing")
 		}
 		if !context.dryRun {
 			if failure != "" {
 				fmt.Fprintf(stdout, " %s\n%s:\n%s\n", color.Red("failed"), stepName, longFailure)
-				return fmt.Sprintf("%s: %s: %s", testName, stepName, failure)
+				return fmt.Sprintf("%s: %s: %s", testName, stepName, failure), nil
 			}
 			if i == 0 {
 				fmt.Fprintf(stdout, " ")
@@ -153,7 +166,7 @@ func runTest(testPath string, context testContext) string {
 	if !context.dryRun {
 		fmt.Fprintln(stdout, color.Green(" OK"))
 	}
-	return ""
+	return "", nil
 }
 
 // Asserts specified response is obtained for request, or returns a failure message, or an error if this fails
@@ -194,7 +207,11 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 	}
 	externalEndpoint := requestUrl.IsAbs()
 	if !externalEndpoint && !context.dryRun {
-		service, err = context.target().Service("query", 0, 0, cluster)
+		target, err := context.target()
+		if err != nil {
+			return "", "", err
+		}
+		service, err = target.Service("query", 0, 0, cluster)
 		if err != nil {
 			return "", "", err
 		}
@@ -453,9 +470,13 @@ type testContext struct {
 	dryRun     bool
 }
 
-func (t *testContext) target() vespa.Target {
+func (t *testContext) target() (vespa.Target, error) {
 	if t.lazyTarget == nil {
-		t.lazyTarget = getTarget()
+		target, err := getTarget()
+		if err != nil {
+			return nil, err
+		}
+		t.lazyTarget = target
 	}
-	return t.lazyTarget
+	return t.lazyTarget, nil
 }

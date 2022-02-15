@@ -97,7 +97,10 @@ func TestDocumentGet(t *testing.T) {
 
 func assertDocumentSend(arguments []string, expectedOperation string, expectedMethod string, expectedDocumentId string, expectedPayloadFile string, t *testing.T) {
 	client := &mockHttpClient{}
-	documentURL := documentServiceURL(client)
+	documentURL, err := documentServiceURL(client)
+	if err != nil {
+		t.Fatal(err)
+	}
 	expectedPath, _ := vespa.IdToURLPath(expectedDocumentId)
 	expectedURL := documentURL + "/document/v1/" + expectedPath
 	out, errOut := execute(command{args: arguments}, t, client)
@@ -123,7 +126,10 @@ func assertDocumentSend(arguments []string, expectedOperation string, expectedMe
 
 func assertDocumentGet(arguments []string, documentId string, t *testing.T) {
 	client := &mockHttpClient{}
-	documentURL := documentServiceURL(client)
+	documentURL, err := documentServiceURL(client)
+	if err != nil {
+		t.Fatal(err)
+	}
 	client.NextResponse(200, "{\"fields\":{\"foo\":\"bar\"}}")
 	assert.Equal(t,
 		`{
@@ -160,6 +166,10 @@ func assertDocumentServerError(t *testing.T, status int, errorMessage string) {
 		outErr)
 }
 
-func documentServiceURL(client *mockHttpClient) string {
-	return getService("document", 0, "").BaseURL
+func documentServiceURL(client *mockHttpClient) (string, error) {
+	service, err := getService("document", 0, "")
+	if err != nil {
+		return "", err
+	}
+	return service.BaseURL, nil
 }

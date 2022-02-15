@@ -164,7 +164,7 @@ func assertApplicationPackageError(t *testing.T, cmd string, status int, expecte
 	client.NextResponse(status, returnBody)
 	_, outErr := execute(command{args: []string{cmd, "testdata/applications/withTarget/target/application.zip"}}, t, client)
 	assert.Equal(t,
-		"Error: Invalid application package (Status "+strconv.Itoa(status)+")\n\n"+expectedMessage+"\n",
+		"Error: invalid application package (Status "+strconv.Itoa(status)+")\n"+expectedMessage+"\n",
 		outErr)
 }
 
@@ -173,6 +173,6 @@ func assertDeployServerError(t *testing.T, status int, errorMessage string) {
 	client.NextResponse(status, errorMessage)
 	_, outErr := execute(command{args: []string{"deploy", "testdata/applications/withTarget/target/application.zip"}}, t, client)
 	assert.Equal(t,
-		"Error: Error from deploy service at 127.0.0.1:19071 (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
+		"Error: error from deploy service at 127.0.0.1:19071 (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
 		outErr)
 }

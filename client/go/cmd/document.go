@@ -46,9 +46,14 @@ To feed with high throughput, https://docs.vespa.ai/en/vespa-feed-client.html
 should be used instead of this.`,
 	Example:           `$ vespa document src/test/resources/A-Head-Full-of-Dreams.json`,
 	DisableAutoGenTag: true,
+	SilenceUsage:      true,
 	Args:              cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		printResult(vespa.Send(args[0], documentService(), operationOptions()), false)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		service, err := documentService()
+		if err != nil {
+			return err
+		}
+		return printResult(vespa.Send(args[0], service, operationOptions()), false)
 	},
 }
 
@@ -62,11 +67,16 @@ If the document id is specified both as an argument and in the file the argument
 	Example: `$ vespa document put src/test/resources/A-Head-Full-of-Dreams.json
 $ vespa document put id:mynamespace:music::a-head-full-of-dreams src/test/resources/A-Head-Full-of-Dreams.json`,
 	DisableAutoGenTag: true,
-	Run: func(cmd *cobra.Command, args []string) {
+	SilenceUsage:      true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		service, err := documentService()
+		if err != nil {
+			return err
+		}
 		if len(args) == 1 {
-			printResult(vespa.Put("", args[0], documentService(), operationOptions()), false)
+			return printResult(vespa.Put("", args[0], service, operationOptions()), false)
 		} else {
-			printResult(vespa.Put(args[0], args[1], documentService(), operationOptions()), false)
+			return printResult(vespa.Put(args[0], args[1], service, operationOptions()), false)
 		}
 	},
 }
@@ -80,11 +90,16 @@ If the document id is specified both as an argument and in the file the argument
 	Example: `$ vespa document update src/test/resources/A-Head-Full-of-Dreams-Update.json
 $ vespa document update id:mynamespace:music::a-head-full-of-dreams src/test/resources/A-Head-Full-of-Dreams.json`,
 	DisableAutoGenTag: true,
-	Run: func(cmd *cobra.Command, args []string) {
+	SilenceUsage:      true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		service, err := documentService()
+		if err != nil {
+			return err
+		}
 		if len(args) == 1 {
-			printResult(vespa.Update("", args[0], documentService(), operationOptions()), false)
+			return printResult(vespa.Update("", args[0], service, operationOptions()), false)
 		} else {
-			printResult(vespa.Update(args[0], args[1], documentService(), operationOptions()), false)
+			return printResult(vespa.Update(args[0], args[1], service, operationOptions()), false)
 		}
 	},
 }
@@ -98,11 +113,16 @@ If the document id is specified both as an argument and in the file the argument
 	Example: `$ vespa document remove src/test/resources/A-Head-Full-of-Dreams-Remove.json
 $ vespa document remove id:mynamespace:music::a-head-full-of-dreams`,
 	DisableAutoGenTag: true,
-	Run: func(cmd *cobra.Command, args []string) {
+	SilenceUsage:      true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		service, err := documentService()
+		if err != nil {
+			return err
+		}
 		if strings.HasPrefix(args[0], "id:") {
-			printResult(vespa.RemoveId(args[0], documentService(), operationOptions()), false)
+			return printResult(vespa.RemoveId(args[0], service, operationOptions()), false)
 		} else {
-			printResult(vespa.RemoveOperation(args[0], documentService(), operationOptions()), false)
+			return printResult(vespa.RemoveOperation(args[0], service, operationOptions()), false)
 		}
 	},
 }
@@ -112,13 +132,18 @@ var documentGetCmd = &cobra.Command{
 	Short:             "Gets a document",
 	Args:              cobra.ExactArgs(1),
 	DisableAutoGenTag: true,
+	SilenceUsage:      true,
 	Example:           `$ vespa document get id:mynamespace:music::a-head-full-of-dreams`,
-	Run: func(cmd *cobra.Command, args []string) {
-		printResult(vespa.Get(args[0], documentService(), operationOptions()), true)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		service, err := documentService()
+		if err != nil {
+			return err
+		}
+		return printResult(vespa.Get(args[0], service, operationOptions()), true)
 	},
 }
 
-func documentService() *vespa.Service { return getService("document", 0, "") }
+func documentService() (*vespa.Service, error) { return getService("document", 0, "") }
 
 func operationOptions() vespa.OperationOptions {
 	return vespa.OperationOptions{
@@ -134,7 +159,7 @@ func curlOutput() io.Writer {
 	return ioutil.Discard
 }
 
-func printResult(result util.OperationResult, payloadOnlyOnSuccess bool) {
+func printResult(result util.OperationResult, payloadOnlyOnSuccess bool) error {
 	out := stdout
 	if !result.Success {
 		out = stderr
@@ -158,6 +183,9 @@ func printResult(result util.OperationResult, payloadOnlyOnSuccess bool) {
 	}
 
 	if !result.Success {
-		exitFunc(1)
+		err := errHint(fmt.Errorf("document operation failed"))
+		err.quiet = true
+		return err
 	}
+	return nil
 }

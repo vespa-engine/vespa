@@ -40,9 +40,13 @@ $ vespa log --nldequote=false 10m
 $ vespa log --from 2021-08-25T15:00:00Z --to 2021-08-26T02:00:00Z
 $ vespa log --follow`,
 	DisableAutoGenTag: true,
+	SilenceUsage:      true,
 	Args:              cobra.MaximumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		target := getTarget()
+	RunE: func(cmd *cobra.Command, args []string) error {
+		target, err := getTarget()
+		if err != nil {
+			return err
+		}
 		options := vespa.LogOptions{
 			Level:   vespa.LogLevel(levelArg),
 			Follow:  followArg,
@@ -51,21 +55,21 @@ $ vespa log --follow`,
 		}
 		if options.Follow {
 			if fromArg != "" || toArg != "" || len(args) > 0 {
-				fatalErr(fmt.Errorf("cannot combine --from/--to or relative time with --follow"), "Could not follow logs")
+				return fmt.Errorf("cannot combine --from/--to or relative time with --follow")
 			}
 			options.From = time.Now().Add(-5 * time.Minute)
 		} else {
 			from, to, err := parsePeriod(args)
 			if err != nil {
-				fatalErr(err, "Invalid period")
-				return
+				return fmt.Errorf("invalid period: %w", err)
 			}
 			options.From = from
 			options.To = to
 		}
 		if err := target.PrintLog(options); err != nil {
-			fatalErr(err, "Could not retrieve logs")
+			return fmt.Errorf("could not retrieve logs: %w", err)
 		}
+		return nil
 	},
 }
 

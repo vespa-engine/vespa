@@ -50,7 +50,10 @@ func assertQuery(t *testing.T, expectedQuery string, query ...string) {
 		"{\n    \"query\": \"result\"\n}\n",
 		executeCommand(t, client, []string{"query"}, query),
 		"query output")
-	queryURL := queryServiceURL(client)
+	queryURL, err := queryServiceURL(client)
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, queryURL+"/search/"+expectedQuery, client.lastRequest.URL.String())
 }
 
@@ -59,7 +62,7 @@ func assertQueryError(t *testing.T, status int, errorMessage string) {
 	client.NextResponse(status, errorMessage)
 	_, outErr := execute(command{args: []string{"query", "yql=select from sources * where title contains 'foo'"}}, t, client)
 	assert.Equal(t,
-		"Error: Invalid query: Status "+strconv.Itoa(status)+"\n"+errorMessage+"\n",
+		"Error: invalid query: Status "+strconv.Itoa(status)+"\n"+errorMessage+"\n",
 		outErr,
 		"error output")
 }
@@ -74,6 +77,10 @@ func assertQueryServiceError(t *testing.T, status int, errorMessage string) {
 		"error output")
 }
 
-func queryServiceURL(client *mockHttpClient) string {
-	return getService("query", 0, "").BaseURL
+func queryServiceURL(client *mockHttpClient) (string, error) {
+	service, err := getService("query", 0, "")
+	if err != nil {
+		return "", err
+	}
+	return service.BaseURL, nil
 }
