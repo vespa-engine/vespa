@@ -202,6 +202,7 @@ jobs:
       - SAMPLE_APPS_DEPLOY_KEY
       - VESPA_DEPLOY_KEY
       - DOCKER_HUB_DEPLOY_KEY
+      - GHCR_DEPLOY_KEY
 
     environment:
        GIT_SSH_COMMAND: "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
