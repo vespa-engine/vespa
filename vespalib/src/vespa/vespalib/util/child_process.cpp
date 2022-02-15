@@ -67,7 +67,9 @@ ChildProcess::Reader::OnReceiveData(const void *data, size_t length)
         return;
     }
     if (buf == nullptr) { // EOF
-        _gotEOF = true;
+        if (--_num_streams == 0) {
+            _gotEOF = true;
+        }
     } else {
         _queue.push(std::string(buf, length));
     }
@@ -107,11 +109,12 @@ ChildProcess::Reader::updateEOF()
 }
 
 
-ChildProcess::Reader::Reader()
+ChildProcess::Reader::Reader(int num_streams)
     : _lock(),
       _cond(),
       _queue(),
       _data(),
+      _num_streams(num_streams),
       _gotEOF(false),
       _waitCnt(0),
       _readEOF(false)
@@ -203,8 +206,19 @@ ChildProcess::checkProc()
 
 
 ChildProcess::ChildProcess(const char *cmd)
-    : _reader(),
+    : _reader(1),
       _proc(cmd, true, &_reader),
+      _running(false),
+      _failed(false),
+      _exitCode(-918273645)
+{
+    _running = _proc.CreateWithShell();
+    _failed  = !_running;
+}
+
+ChildProcess::ChildProcess(const char *cmd, capture_stderr_tag)
+    : _reader(2),
+      _proc(cmd, true, &_reader, &_reader),
       _running(false),
       _failed(false),
       _exitCode(-918273645)

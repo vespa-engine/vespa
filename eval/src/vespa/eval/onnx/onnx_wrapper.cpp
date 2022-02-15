@@ -382,6 +382,22 @@ Onnx::WirePlanner::bind_input_type(const ValueType &vespa_in, const TensorInfo &
     return true;
 }
 
+std::map<vespalib::string,size_t>
+Onnx::WirePlanner::get_bound_sizes(const TensorInfo &onnx_in) const
+{
+    std::map<vespalib::string,size_t> result;
+    for (const auto &dim: onnx_in.dimensions) {
+        if (dim.is_symbolic()) {
+            auto pos = _symbolic_sizes.find(dim.name);
+            if (pos != _symbolic_sizes.end()) {
+                assert(pos->second != 0);
+                result.emplace(dim.name, pos->second);
+            }
+        }
+    }
+    return result;
+}
+
 void
 Onnx::WirePlanner::prepare_output_types(const Onnx &model)
 {

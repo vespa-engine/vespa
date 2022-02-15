@@ -94,6 +94,7 @@ public:
         ~WirePlanner();
         static CellType best_cell_type(Onnx::ElementType type);
         bool bind_input_type(const ValueType &vespa_in, const TensorInfo &onnx_in);
+        std::map<vespalib::string,size_t> get_bound_sizes(const TensorInfo &onnx_in) const;
         void prepare_output_types(const Onnx &model);
         ValueType make_output_type(const TensorInfo &onnx_out) const;
         WireInfo get_wire_info(const Onnx &model) const;
