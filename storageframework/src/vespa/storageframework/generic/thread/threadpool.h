@@ -16,6 +16,8 @@
 #include <vespa/storageframework/generic/thread/runnable.h>
 #include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/storageframework/generic/clock/time.h>
+#include <vespa/vespalib/util/cpu_usage.h>
+#include <optional>
 #include <vector>
 
 namespace storage::framework {
@@ -88,7 +90,8 @@ struct ThreadPool {
                                    vespalib::stringref id,
                                    vespalib::duration waitTime,
                                    vespalib::duration maxProcessTime,
-                                   int ticksBeforeWait) = 0;
+                                   int ticksBeforeWait,
+                                   std::optional<vespalib::CpuUsage::Category> cpu_category) = 0;
 
     virtual void visitThreads(ThreadVisitor&) const = 0;
 };

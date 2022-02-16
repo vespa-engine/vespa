@@ -89,10 +89,11 @@ Component::getThreadPool() const
 
 // Helper functions for components wanting to start a single thread.
 Thread::UP
-Component::startThread(Runnable& runnable, vespalib::duration waitTime, vespalib::duration maxProcessTime, int ticksBeforeWait)
+Component::startThread(Runnable& runnable, vespalib::duration waitTime, vespalib::duration maxProcessTime,
+                       int ticksBeforeWait, std::optional<vespalib::CpuUsage::Category> cpu_category)
 {
     return getThreadPool().startThread(runnable, getName(), waitTime,
-                                       maxProcessTime, ticksBeforeWait);
+                                       maxProcessTime, ticksBeforeWait, cpu_category);
 }
 
 void
