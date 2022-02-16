@@ -20,7 +20,7 @@ var curlService string
 func init() {
 	rootCmd.AddCommand(curlCmd)
 	curlCmd.Flags().BoolVarP(&curlDryRun, "dry-run", "n", false, "Print the curl command that would be executed")
-	curlCmd.Flags().StringVarP(&curlService, "service", "s", "query", "Which service to query")
+	curlCmd.Flags().StringVarP(&curlService, "service", "s", "query", "Which service to query. Must be \"deploy\", \"document\" or \"query\"")
 }
 
 var curlCmd = &cobra.Command{
@@ -59,21 +59,19 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 		}
 		switch curlService {
 		case "deploy":
-			if !vespa.Auth0AccessTokenEnabled() {
-				return errors.New("accessing control plane using curl subcommand is only supported for Auth0 device flow")
-			}
 			t, err := getTarget()
 			if err != nil {
 				return err
 			}
 			if t.Type() == "cloud" {
+				if !vespa.Auth0AccessTokenEnabled() {
+					return errors.New("accessing control plane using curl subcommand is only supported for Auth0 device flow")
+				}
 				if err := addCloudAuth0Authentication(cfg, c); err != nil {
 					return err
 				}
 			}
-		case "document":
-			fallthrough
-		case "query":
+		case "document", "query":
 			privateKeyFile, err := cfg.PrivateKeyPath(app)
 			if err != nil {
 				return err
