@@ -81,6 +81,11 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
         return matching(id -> instance(id).change().hasTargets());
     }
 
+    /** Returns the subset of instances which are currently deploying a new revision */
+    public InstanceList changingRevision() {
+        return matching(id -> instance(id).change().application().isPresent());
+    }
+
     /** Returns the subset of instances which currently have failing jobs on the given version */
     public InstanceList failingOn(Version version) {
         return matching(id -> ! instances.get(id).instanceJobs().get(id).failing()
