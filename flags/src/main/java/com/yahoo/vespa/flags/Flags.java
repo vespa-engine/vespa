@@ -336,13 +336,6 @@ public class Flags {
             "Takes effect on redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag CHECK_CONFIG_CONVERGENCE_BEFORE_RESTARTING = defineFeatureFlag(
-            "check-config-convergence-before-restart", true,
-            List.of("hmusum"), "2022-01-16", "2022-02-16",
-            "Check that config has converged to new generation on all services before restarting services",
-            "Takes effect immediately",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag USE_QRSERVER_SERVICE_NAME = defineFeatureFlag(
             "use-qrserver-service-name", true,
             List.of("arnej"), "2022-01-18", "2022-12-31",
