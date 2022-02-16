@@ -13,6 +13,7 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.search.SearchScope;
 import com.intellij.psi.search.searches.ReferencesSearch;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.usageView.UsageInfo;
@@ -40,7 +41,7 @@ public class SdFindUsagesHandler extends FindUsagesHandler {
                                         FindUsagesOptions options) {
         if (options.isUsages) {
             if (elementToSearch instanceof SdFunctionDefinition) {
-                findFunctionUsages((SdFunctionDefinition) elementToSearch, processor);
+                findFunctionUsages((SdFunctionDefinition) elementToSearch, options.searchScope, processor);
             } else {
                 boolean success =
                         ReferencesSearch.search(createSearchParameters(elementToSearch, options.searchScope, options))
@@ -69,12 +70,12 @@ public class SdFindUsagesHandler extends FindUsagesHandler {
      * on the assumption that this keeps the IDE responsive. I have not found documentation
      * on that.
      */
-    private void findFunctionUsages(SdFunctionDefinition functionToFind, Processor<? super UsageInfo> processor) {
+    private void findFunctionUsages(SdFunctionDefinition functionToFind, SearchScope scope, Processor<? super UsageInfo> processor) {
         String functionNameToFind = ReadAction.compute(functionToFind::getName);
         Schema schema = ReadAction.compute(this::resolveSchema);
         var rankProfile = ReadAction.compute(() -> schema.rankProfiles()
                                                          .get(PsiTreeUtil.getParentOfType(functionToFind, SdRankProfileDefinition.class).getName()));
-        findFunctionUsages(functionNameToFind, functionToFind, rankProfile, processor);
+        findFunctionUsages(functionNameToFind, functionToFind, rankProfile, scope, processor);
     }
 
     private Schema resolveSchema() {
@@ -91,17 +92,20 @@ public class SdFindUsagesHandler extends FindUsagesHandler {
     private void findFunctionUsages(String functionNameToFind,
                                     SdFunctionDefinition functionToFind,
                                     RankProfile rankProfile,
+                                    SearchScope scope,
                                     Processor<? super UsageInfo> processor) {
-        ReadAction.compute(() -> findFunctionUsagesInThis(functionNameToFind, functionToFind, rankProfile, processor));
+        ReadAction.compute(() -> findFunctionUsagesInThis(functionNameToFind, functionToFind, rankProfile, scope, processor));
         Collection<RankProfile> children = ReadAction.compute(() -> rankProfile.children().values());
         for (var child : children)
-            findFunctionUsages(functionNameToFind, functionToFind, child, processor);
+            findFunctionUsages(functionNameToFind, functionToFind, child, scope, processor);
     }
 
     private boolean findFunctionUsagesInThis(String functionNameToFind,
                                              SdFunctionDefinition functionToFind,
                                              RankProfile rankProfile,
+                                             SearchScope scope,
                                              Processor<? super UsageInfo> processor) {
+        if ( ! scope.contains(rankProfile.definition().getContainingFile().getVirtualFile())) return false;
         Collection<List<Function>> functions = ReadAction.compute(() -> rankProfile.definedFunctions().values());
         for (var functionList : functions) {
             for (var function : functionList) {
