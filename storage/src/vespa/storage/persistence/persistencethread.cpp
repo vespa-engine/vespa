@@ -16,7 +16,7 @@ PersistenceThread::PersistenceThread(PersistenceHandler & persistenceHandler, Fi
       _stripeId(stripeId),
       _thread()
 {
-    _thread = component.startThread(*this, 60s, 1s);
+    _thread = component.startThread(*this, 60s, 1s, 1, vespalib::CpuUsage::Category::WRITE);
 }
 
 PersistenceThread::~PersistenceThread()
