@@ -51,7 +51,7 @@ VisitorManager::VisitorManager(const config::ConfigUri & configUri,
     _configFetcher->subscribe<vespa::config::content::core::StorVisitorConfig>(configUri.getConfigId(), this);
     _configFetcher->start();
     _component.registerMetric(*_metrics);
-    _thread = _component.startThread(*this, 30s, 1s);
+    _thread = _component.startThread(*this, 30s, 1s, 1, vespalib::CpuUsage::Category::READ);
     _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
     _visitorFactories["dumpvisitor"] = std::make_shared<DumpVisitorSingleFactory>();
     _visitorFactories["dumpvisitorsingle"] = std::make_shared<DumpVisitorSingleFactory>();
