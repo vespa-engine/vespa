@@ -51,6 +51,9 @@ public interface TesterCloud {
         /** Tests failed. */
         FAILURE,
 
+        /** Tests were inconclusive, and need to run again later. */
+        INCONCLUSIVE,
+
         /** The tester encountered an exception. */
         ERROR,
 

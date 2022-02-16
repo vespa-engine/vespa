@@ -49,6 +49,7 @@ import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endStagingSetup;
@@ -370,7 +371,11 @@ public class JobController {
             for (Step step : report.allPrerequisites(unlockedRun.steps().keySet()))
                 locks.add(curator.lock(id.application(), id.type(), step));
 
-            locked(id, run -> { // Store the modified run after it has been written to history, in case the latter fails.
+            locked(id, run -> {
+                // If run should be reset, just return here.
+                if (run.status() == reset) return run.reset();
+
+                // Store the modified run after it has been written to history, in case the latter fails.
                 Run finishedRun = run.finished(controller.clock().instant());
                 locked(id.application(), id.type(), runs -> {
                     runs.put(run.id(), finishedRun);

@@ -87,6 +87,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentF
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
@@ -662,6 +663,9 @@ public class InternalStepRunner implements StepRunner {
                 logger.log("Tests failed.");
                 controller.jobController().updateTestReport(id);
                 return Optional.of(testFailure);
+            case INCONCLUSIVE:
+                logger.log("Tests were inconclusive, and will run again.");
+                return Optional.of(reset);
             case ERROR:
                 logger.log(INFO, "Tester failed running its tests!");
                 controller.jobController().updateTestReport(id);

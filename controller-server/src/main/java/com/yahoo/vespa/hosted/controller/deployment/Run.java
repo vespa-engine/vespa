@@ -107,6 +107,14 @@ public class Run {
                        noNodesDownSince, convergenceSummary, testerCertificate, dryRun);
     }
 
+    public Run reset() {
+        requireActive();
+        Map<Step, StepInfo> reset = new EnumMap<>(steps);
+        reset.replaceAll((step, __) -> StepInfo.initial(step));
+        return new Run(id, reset, versions, isRedeployment, start, Optional.empty(), running, lastTestRecord, lastVespaLogTimestamp,
+                       Optional.empty(), Optional.empty(), testerCertificate, dryRun);
+    }
+
     public Run with(long lastTestRecord) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, status, lastTestRecord, lastVespaLogTimestamp,

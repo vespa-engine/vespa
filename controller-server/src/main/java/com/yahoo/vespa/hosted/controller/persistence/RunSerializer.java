@@ -37,6 +37,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.endpointCer
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
@@ -364,6 +365,7 @@ class RunSerializer {
             case error                      : return "error";
             case success                    : return "success";
             case aborted                    : return "aborted";
+            case reset                      : return "reset";
 
             default: throw new AssertionError("No value defined for '" + status + "'!");
         }
@@ -380,6 +382,7 @@ class RunSerializer {
             case "error"                      : return error;
             case "success"                    : return success;
             case "aborted"                    : return aborted;
+            case "reset"                      : return reset;
 
             default: throw new IllegalArgumentException("No run status defined by '" + status + "'!");
         }

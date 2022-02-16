@@ -230,6 +230,7 @@ class JobControllerApiHandlerHelper {
 
     private static String nameOf(RunStatus status) {
         switch (status) {
+            case reset:                      // This means the run will reset and keep running.
             case running:                    return "running";
             case aborted:                    return "aborted";
             case error:                      return "error";

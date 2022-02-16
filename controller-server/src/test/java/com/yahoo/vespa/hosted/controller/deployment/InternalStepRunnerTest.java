@@ -53,6 +53,9 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.app
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.instanceId;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
@@ -333,6 +336,29 @@ public class InternalStepRunnerTest {
                              new LogEntry(lastId + 3, Instant.ofEpochMilli(12345), info, "Success!"),
                              new LogEntry(lastId + 4, tester.clock().instant(), info, "Tests completed successfully."));
         assertEquals(succeeded, tester.jobs().run(id).get().stepStatuses().get(Step.endTests));
+    }
+
+    @Test
+    public void testCanBeReset() {
+        RunId id = app.startSystemTestTests();
+        tester.cloud().add(new LogEntry(0, Instant.ofEpochMilli(123), info, "Not enough data!"));
+        tester.cloud().set(TesterCloud.Status.INCONCLUSIVE);
+
+        long lastId = tester.jobs().details(id).get().lastId().getAsLong();
+        tester.runner().run();
+        assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.endTests));
+        assertEquals(running, tester.jobs().run(id).get().status());
+
+        // TODO: Add some sleeping, so this isn't immediately re-run.
+        assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.deployTester));
+        tester.cloud().set(TesterCloud.Status.SUCCESS);
+        tester.runner().run();
+        assertEquals(success, tester.jobs().run(id).get().status());
+
+        assertTestLogEntries(id, Step.endTests,
+                             new LogEntry(lastId + 1, Instant.ofEpochMilli(123), info, "Not enough data!"),
+                             new LogEntry(lastId + 2, tester.clock().instant(), info, "Tests were inconclusive, and will run again."),
+                             new LogEntry(lastId + 3, tester.clock().instant(), info, "Tests completed successfully."));
     }
 
     @Test
