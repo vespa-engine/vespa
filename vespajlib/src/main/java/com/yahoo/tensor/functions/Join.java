@@ -75,7 +75,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
     }
 
     @Override
-    public String toString(ToStringContext context) {
+    public String toString(ToStringContext<NAMETYPE> context) {
         return "join(" + argumentA.toString(context) + ", " + argumentB.toString(context) + ", " + combinator + ")";
     }
 

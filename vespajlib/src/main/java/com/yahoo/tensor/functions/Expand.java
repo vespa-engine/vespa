@@ -41,7 +41,7 @@ public class Expand<NAMETYPE extends Name> extends CompositeTensorFunction<NAMET
     }
 
     @Override
-    public String toString(ToStringContext context) {
+    public String toString(ToStringContext<NAMETYPE> context) {
         return "expand(" + argument.toString(context) + ", " + dimensionName + ")";
     }
 

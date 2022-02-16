@@ -39,7 +39,7 @@ public class L1Normalize<NAMETYPE extends Name> extends CompositeTensorFunction<
     }
 
     @Override
-    public String toString(ToStringContext context) {
+    public String toString(ToStringContext<NAMETYPE> context) {
         return "l1_normalize(" + argument.toString(context) + ", " + dimension + ")";
     }
 

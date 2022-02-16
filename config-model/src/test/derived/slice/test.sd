@@ -5,8 +5,8 @@ search test {
 
     rank-profile parent {
 
-        function inline cpmScore() {
-            expression: myValue * mySlice(query(myTensor))
+        function inline myFunction() {
+            expression: myValue * query(myTensor){MY_KEY1} * mySlice(query(myTensor))
         }
 
         function inline myValue() {
@@ -14,7 +14,9 @@ search test {
         }
 
         function inline mySlice(myTensor) {
-            expression: myTensor{"NULL"}
+            # TODO: We are missing type resolving across function calls in serialization,
+            #       so using the short form (without 'key') here will fail
+            expression: myTensor{key:MY_KEY2}
         }
     }
 

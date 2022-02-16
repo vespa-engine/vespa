@@ -47,6 +47,6 @@ public class ConstantTensor<NAMETYPE extends Name> extends PrimitiveTensorFuncti
     public Tensor evaluate(EvaluationContext<NAMETYPE> context) { return constant; }
 
     @Override
-    public String toString(ToStringContext context) { return constant.toString(); }
+    public String toString(ToStringContext<NAMETYPE> context) { return constant.toString(); }
 
 }

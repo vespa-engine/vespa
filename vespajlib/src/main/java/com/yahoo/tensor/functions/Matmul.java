@@ -45,7 +45,7 @@ public class Matmul<NAMETYPE extends Name> extends CompositeTensorFunction<NAMET
     }
 
     @Override
-    public String toString(ToStringContext context) {
+    public String toString(ToStringContext<NAMETYPE> context) {
         return "matmul(" + argument1.toString(context) + ", " + argument2.toString(context) + ", " + dimension + ")";
     }
 

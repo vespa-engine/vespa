@@ -20,6 +20,6 @@ public interface ScalarFunction<NAMETYPE extends Name> extends Function<Evaluati
     /** Returns this as a tensor function, or empty if it cannot be represented as a tensor function */
     default Optional<TensorFunction<NAMETYPE>> asTensorFunction() { return Optional.empty(); }
 
-    default String toString(ToStringContext context) { return toString(); }
+    default String toString(ToStringContext<NAMETYPE> context) { return toString(); }
 
 }

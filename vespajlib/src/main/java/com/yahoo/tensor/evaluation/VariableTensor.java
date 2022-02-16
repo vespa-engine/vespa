@@ -58,7 +58,7 @@ public class VariableTensor<NAMETYPE extends Name> extends PrimitiveTensorFuncti
     }
 
     @Override
-    public String toString(ToStringContext context) {
+    public String toString(ToStringContext<NAMETYPE> context) {
         return name;
     }
 

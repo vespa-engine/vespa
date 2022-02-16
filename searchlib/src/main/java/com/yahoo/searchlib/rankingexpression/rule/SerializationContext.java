@@ -4,13 +4,16 @@ package com.yahoo.searchlib.rankingexpression.rule;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Context needed to serialize an expression to a string. This has the lifetime of a single serialization
@@ -22,6 +25,8 @@ public class SerializationContext extends FunctionReferenceContext {
     /** Serialized form of functions indexed by name */
     private final Map<String, String> serializedFunctions;
 
+    private final Optional<TypeContext<Reference>> typeContext;
+
     /** Create a context for a single serialization task */
     public SerializationContext() {
         this(Collections.emptyList());
@@ -29,7 +34,7 @@ public class SerializationContext extends FunctionReferenceContext {
 
     /** Create a context for a single serialization task */
     public SerializationContext(Collection<ExpressionFunction> functions) {
-        this(functions, Collections.emptyMap(), new LinkedHashMap<>());
+        this(functions, Collections.emptyMap(), Optional.empty(), new LinkedHashMap<>());
     }
 
     /** Create a context for a single serialization task */
@@ -39,7 +44,13 @@ public class SerializationContext extends FunctionReferenceContext {
 
     /** Create a context for a single serialization task */
     public SerializationContext(Collection<ExpressionFunction> functions, Map<String, String> bindings) {
-        this(functions, bindings, new LinkedHashMap<>());
+        this(functions, bindings, Optional.empty(), new LinkedHashMap<>());
+    }
+
+    /** Create a context for a single serialization task */
+    public SerializationContext(Collection<ExpressionFunction> functions, Map<String, String> bindings,
+                                TypeContext<Reference> typeContext) {
+        this(functions, bindings, Optional.of(typeContext), new LinkedHashMap<>());
     }
 
     /**
@@ -47,13 +58,18 @@ public class SerializationContext extends FunctionReferenceContext {
      *
      * @param functions the functions of this
      * @param bindings the arguments of this
+     * @param typeContext the type context of this: Serialization may depend on type resolution
      * @param serializedFunctions a cache of serializedFunctions - the ownership of this map
      *        is <b>transferred</b> to this and will be modified in it
      */
-    public SerializationContext(Collection<ExpressionFunction> functions, Map<String, String> bindings,
+    private SerializationContext(Collection<ExpressionFunction> functions, Map<String, String> bindings,
+                                Optional<TypeContext<Reference>> typeContext,
                                 Map<String, String> serializedFunctions) {
-        this(toMap(functions), bindings, serializedFunctions);
+        this(toMap(functions), bindings, typeContext, serializedFunctions);
     }
+
+    /** Returns the type context of this, if it is able to resolve types. */
+    public Optional<TypeContext<Reference>> typeContext() { return typeContext; }
 
     private static Map<String, ExpressionFunction> toMap(Collection<ExpressionFunction> list) {
         Map<String,ExpressionFunction> mapBuilder = new HashMap<>();
@@ -70,9 +86,16 @@ public class SerializationContext extends FunctionReferenceContext {
      * @param serializedFunctions a cache of serializedFunctions - the ownership of this map
      *        is <b>transferred</b> to this and will be modified in it
      */
+    public SerializationContext(Map<String, ExpressionFunction> functions, Map<String, String> bindings,
+                                Map<String, String> serializedFunctions) {
+        this(functions, bindings, Optional.empty(), serializedFunctions);
+    }
+
     public SerializationContext(Map<String,ExpressionFunction> functions, Map<String, String> bindings,
+                                Optional<TypeContext<Reference>> typeContext,
                                 Map<String, String> serializedFunctions) {
         super(functions, bindings);
+        this.typeContext = typeContext;
         this.serializedFunctions = serializedFunctions;
     }
 
@@ -88,7 +111,7 @@ public class SerializationContext extends FunctionReferenceContext {
         serializedFunctions.put(name, expressionString);
     }
 
-    /** Adds the serialization of the an argument type to a function */
+    /** Adds the serialization of the argument type to a function */
     public void addArgumentTypeSerialization(String functionName, String argumentName, TensorType type) {
         serializedFunctions.put("rankingExpression(" + functionName + ")." + argumentName + ".type", type.toString());
     }
