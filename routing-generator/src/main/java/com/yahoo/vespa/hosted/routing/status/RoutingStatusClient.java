@@ -5,7 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.lang.CachedSupplier;
 import com.yahoo.routing.config.ZoneConfig;
-import com.yahoo.slime.Inspector;
+import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.athenz.api.AthenzService;
@@ -17,6 +17,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.NoopUserTokenHandler;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
@@ -60,6 +61,8 @@ public class RoutingStatusClient extends AbstractComponent implements RoutingSta
                                                                        .build())
                                  .setSSLContext(provider.getIdentitySslContext())
                                  .setSSLHostnameVerifier(createHostnameVerifier(config))
+                                 // Required to enable connection pooling, which is disabled by default when using mTLS
+                                 .setUserTokenHandler(NoopUserTokenHandler.INSTANCE)
                                  .setUserAgent("hosted-vespa-routing-status-client")
                                  .build(),
                 URI.create(config.configserverVipUrl())
@@ -76,7 +79,7 @@ public class RoutingStatusClient extends AbstractComponent implements RoutingSta
         try {
             return cache.get().isActive(upstreamName);
         } catch (Exception e) {
-            log.log(Level.WARNING, "Failed to get status for '" + upstreamName + "'", e);
+            log.log(Level.WARNING, "Failed to get status for '" + upstreamName + "': " + Exceptions.toMessageString(e));
             return true; // Assume IN if cache update fails
         }
     }
@@ -91,11 +94,12 @@ public class RoutingStatusClient extends AbstractComponent implements RoutingSta
     }
 
     private Status status() {
-        Set<String> inactiveDeployments = SlimeUtils.entriesStream(get("/routing/v1/status").get())
-                                                    .map(Inspector::asString)
+        Slime slime = get("/routing/v2/status");
+        Cursor root = slime.get();
+        Set<String> inactiveDeployments = SlimeUtils.entriesStream(root.field("inactiveDeployments"))
+                                                    .map(inspector -> inspector.field("upstreamName").asString())
                                                     .collect(Collectors.toUnmodifiableSet());
-        boolean zoneActive = get("/routing/v1/status/zone").get().field("status").asString()
-                                                           .equalsIgnoreCase("in");
+        boolean zoneActive = root.field("zoneActive").asBool();
         return new Status(zoneActive, inactiveDeployments);
     }
 

@@ -19,18 +19,16 @@ public class RoutingStatusClientTest {
 
     @Test
     public void client() {
-        String deploymentUrl = "http://host/routing/v1/status";
-        String zoneUrl = "http://host/routing/v1/status/zone";
+        String statusUrl = "http://host/routing/v2/status";
         HttpClientMock httpClient = new HttpClientMock();
         RoutingStatusClient client = new RoutingStatusClient(httpClient, URI.create("http://host"));
 
         // Nothing is inactive
-        httpClient.setResponse("GET", deploymentUrl, inactiveDeployments())
-                  .setResponse("GET", zoneUrl, zoneActive(true));
+        httpClient.setResponse("GET", statusUrl, response(true));
         assertTrue(client.isActive("foo"));
 
         // Two upstreams are set inactive
-        httpClient.setResponse("GET", deploymentUrl, inactiveDeployments("bar", "foo"));
+        httpClient.setResponse("GET", statusUrl, response(true, "bar", "foo"));
         client.invalidateCache();
         assertFalse(client.isActive("foo"));
         assertFalse(client.isActive("bar"));
@@ -38,18 +36,17 @@ public class RoutingStatusClientTest {
 
         // Bad response results in active status
         client.invalidateCache();
-        httpClient.setResponse("GET", deploymentUrl, badRequest("something went wrong"));
+        httpClient.setResponse("GET", statusUrl, badRequest("something went wrong"));
         assertTrue(client.isActive("foo"));
 
         // Inactive zone overrides deployment status
         client.invalidateCache();
-        httpClient.setResponse("GET", deploymentUrl, inactiveDeployments("bar"));
-        httpClient.setResponse("GET", zoneUrl, zoneActive(false));
+        httpClient.setResponse("GET", statusUrl, response(false, "bar"));
         assertFalse(client.isActive("foo"));
         assertFalse(client.isActive("bar"));
 
         // Zone is active again. Fall back to reading deployment status
-        httpClient.setResponse("GET", zoneUrl, zoneActive(true));
+        httpClient.setResponse("GET", statusUrl, response(true, "bar"));
         client.invalidateCache();
         assertTrue(client.isActive("foo"));
         assertFalse(client.isActive("bar"));
@@ -59,14 +56,12 @@ public class RoutingStatusClientTest {
         return new JsonResponse("{\"message\":\"" + message + "\"}", 400);
     }
 
-    private static JsonResponse zoneActive(boolean active) {
-        return new JsonResponse("{\"status\":\"" + (active ? "IN" : "OUT") + "\"}", 200);
-    }
-
-    private static JsonResponse inactiveDeployments(String... deployments) {
-        return new JsonResponse("[" + Arrays.stream(deployments)
-                                            .map(d -> "\"" + d + "\"")
-                                            .collect(Collectors.joining(",")) + "]", 200);
+    private static JsonResponse response(boolean zoneActive, String... inactiveUpstreams) {
+        String inactiveDeployments = "[" + Arrays.stream(inactiveUpstreams)
+                                                 .map(d -> "{\"upstreamName\":\"" + d + "\"}")
+                                                 .collect(Collectors.joining(",")) + "]";
+        String json = "{\"inactiveDeployments\":" + inactiveDeployments + ",\"zoneActive\":" + zoneActive + "}";
+        return new JsonResponse(json, 200);
     }
 
 }
