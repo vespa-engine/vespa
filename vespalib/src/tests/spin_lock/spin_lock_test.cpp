@@ -1,12 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/spin_lock.h>
+#include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <array>
 
 using namespace vespalib;
+using namespace vespalib::atomic;
 
 bool verbose = false;
 double budget = 0.25;
@@ -19,30 +21,21 @@ struct DummyLock {
 
 //-----------------------------------------------------------------------------
 
-template <typename T>
-constexpr void relaxed_store(T& lhs, T v) noexcept {
-    std::atomic_ref<T>(lhs).store(v, std::memory_order_relaxed);
-}
-template <typename T>
-constexpr T relaxed_load(const T& a) noexcept {
-    return std::atomic_ref<const T>(a).load(std::memory_order_relaxed);
-}
-
 struct MyState {
     static constexpr size_t SZ = 5;
     std::array<size_t,SZ> state = {0,0,0,0,0};
     void update() {
         std::array<size_t,SZ> tmp;
         for (size_t i = 0; i < SZ; ++i) {
-            relaxed_store(tmp[i], relaxed_load(state[i]));
+            store_ref_relaxed(tmp[i], load_ref_relaxed(state[i]));
         }
         for (size_t i = 0; i < SZ; ++i) {
-            relaxed_store(state[i], relaxed_load(tmp[i]) + 1);
+            store_ref_relaxed(state[i], load_ref_relaxed(tmp[i]) + 1);
         }
     }
     bool check(size_t expect) const {
         for (const auto& value: state) {
-            if (relaxed_load(value) != expect) {
+            if (load_ref_relaxed(value) != expect) {
                 return false;
             }
         }
