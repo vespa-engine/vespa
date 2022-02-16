@@ -22,7 +22,8 @@ public:
     ~ThreadPoolImpl() override;
 
     Thread::UP startThread(Runnable&, vespalib::stringref id, vespalib::duration waitTime,
-                           vespalib::duration maxProcessTime, int ticksBeforeWait) override;
+                           vespalib::duration maxProcessTime, int ticksBeforeWait,
+                           std::optional<vespalib::CpuUsage::Category> cpu_category) override;
     void visitThreads(ThreadVisitor&) const override;
 
     void registerThread(ThreadImpl&);

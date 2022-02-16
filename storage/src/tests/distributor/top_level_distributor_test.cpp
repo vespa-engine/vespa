@@ -253,7 +253,7 @@ TEST_F(TopLevelDistributorTest, tick_aggregates_status_requests_from_all_stripes
     FakeClock clock;
     ThreadPoolImpl pool(clock);
     int ticksBeforeWait = 1;
-    framework::Thread::UP tp(pool.startThread(thread, "statustest", 5ms, 5s, ticksBeforeWait));
+    framework::Thread::UP tp(pool.startThread(thread, "statustest", 5ms, 5s, ticksBeforeWait, std::nullopt));
 
     while (true) {
         std::this_thread::sleep_for(1ms);

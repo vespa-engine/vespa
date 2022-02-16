@@ -96,7 +96,7 @@ VisitorThread::VisitorThread(uint32_t threadIndex,
       _messageSessionFactory(messageSessionFac),
       _visitorFactories(visitorFactories)
 {
-    _thread = _component.startThread(*this, 30s, 1s);
+    _thread = _component.startThread(*this, 30s, 1s, 1, vespalib::CpuUsage::Category::READ);
     _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
 }
 

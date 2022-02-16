@@ -171,7 +171,7 @@ public:
                     ost.str(),
                     _waitTime.load(std::memory_order_relaxed),
                     _maxProcessTime.load(std::memory_order_relaxed),
-                    _ticksBeforeWait.load(std::memory_order_relaxed))));
+                    _ticksBeforeWait.load(std::memory_order_relaxed), std::nullopt)));
         }
     }
 

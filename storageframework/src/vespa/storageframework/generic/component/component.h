@@ -71,7 +71,9 @@
 #include <vespa/storageframework/generic/thread/runnable.h>
 #include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/storageframework/generic/clock/clock.h>
+#include <vespa/vespalib/util/cpu_usage.h>
 #include <atomic>
+#include <optional>
 
 namespace storage::framework {
 
@@ -115,7 +117,7 @@ class Component : private ManagedComponent
     void close() override;
 
 public:
-    typedef std::unique_ptr<Component> UP;
+    using UP = std::unique_ptr<Component>;
 
     Component(ComponentRegister&, vespalib::stringref name);
     virtual ~Component();
@@ -180,7 +182,8 @@ public:
     Thread::UP startThread(Runnable&,
                            vespalib::duration maxProcessTime = vespalib::duration::zero(),
                            vespalib::duration waitTime = vespalib::duration::zero(),
-                           int ticksBeforeWait = 1);
+                           int ticksBeforeWait = 1,
+                           std::optional<vespalib::CpuUsage::Category> cpu_category = std::nullopt);
 
     // Check upgrade flag settings. Note that this flag may change at any time.
     // Thus the results of these functions should not be cached.
