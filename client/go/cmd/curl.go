@@ -2,20 +2,25 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/client/go/auth0"
 	"github.com/vespa-engine/vespa/client/go/curl"
+	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 var curlDryRun bool
+var curlService string
 
 func init() {
 	rootCmd.AddCommand(curlCmd)
 	curlCmd.Flags().BoolVarP(&curlDryRun, "dry-run", "n", false, "Print the curl command that would be executed")
+	curlCmd.Flags().StringVarP(&curlService, "service", "s", "query", "Which service to query")
 }
 
 var curlCmd = &cobra.Command{
@@ -42,15 +47,7 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 		if err != nil {
 			return err
 		}
-		privateKeyFile, err := cfg.PrivateKeyPath(app)
-		if err != nil {
-			return err
-		}
-		certificateFile, err := cfg.CertificatePath(app)
-		if err != nil {
-			return err
-		}
-		service, err := getService("query", 0, "")
+		service, err := getService(curlService, 0, "")
 		if err != nil {
 			return err
 		}
@@ -60,8 +57,36 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 		if err != nil {
 			return err
 		}
-		c.PrivateKey = privateKeyFile
-		c.Certificate = certificateFile
+		switch curlService {
+		case "deploy":
+			if !vespa.Auth0AccessTokenEnabled() {
+				return errors.New("accessing control plane using curl subcommand is only supported for Auth0 device flow")
+			}
+			t, err := getTarget()
+			if err != nil {
+				return err
+			}
+			if t.Type() == "cloud" {
+				if err := addCloudAuth0Authentication(cfg, c); err != nil {
+					return err
+				}
+			}
+		case "document":
+			fallthrough
+		case "query":
+			privateKeyFile, err := cfg.PrivateKeyPath(app)
+			if err != nil {
+				return err
+			}
+			certificateFile, err := cfg.CertificatePath(app)
+			if err != nil {
+				return err
+			}
+			c.PrivateKey = privateKeyFile
+			c.Certificate = certificateFile
+		default:
+			return fmt.Errorf("service not found: %s", curlService)
+		}
 
 		if curlDryRun {
 			log.Print(c.String())
@@ -72,6 +97,20 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 		}
 		return nil
 	},
+}
+
+func addCloudAuth0Authentication(cfg *Config, c *curl.Command) error {
+	a, err := auth0.GetAuth0(cfg.AuthConfigPath(), getSystemName(), getApiURL())
+	if err != nil {
+		return err
+	}
+
+	system, err := a.PrepareSystem(auth0.ContextWithCancel())
+	if err != nil {
+		return err
+	}
+	c.Header("Authorization", "Bearer "+system.AccessToken)
+	return nil
 }
 
 func joinURL(baseURL, path string) string {
