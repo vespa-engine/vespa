@@ -100,7 +100,7 @@ template <typename T>
     static_assert(!detail::is_std_atomic_v<T>, "atomic ref function invoked with a std::atomic, probably not intended");
 #if __cpp_lib_atomic_ref
     static_assert(std::atomic_ref<const T>::is_always_lock_free);
-    return std::atomic_ref<const T>(a).load(std::memory_order_acquire);
+    return std::atomic_ref<const T>(a).load(std::memory_order_seq_cst);
 #else
     // TODO replace with compiler intrinsic
     std::atomic_thread_fence(std::memory_order_seq_cst);
