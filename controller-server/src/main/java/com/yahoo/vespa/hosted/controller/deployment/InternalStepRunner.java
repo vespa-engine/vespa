@@ -635,7 +635,8 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> endTests(RunId id, DualLogger logger) {
-        if (deployment(id.application(), id.type()).isEmpty()) {
+        Optional<Deployment> deployment = deployment(id.application(), id.type());
+        if (deployment.isEmpty()) {
             logger.log(INFO, "Deployment expired before tests could complete.");
             return Optional.of(error);
         }
@@ -664,7 +665,9 @@ public class InternalStepRunner implements StepRunner {
                 controller.jobController().updateTestReport(id);
                 return Optional.of(testFailure);
             case INCONCLUSIVE:
-                logger.log("Tests were inconclusive, and will run again.");
+                long sleepMinutes = Math.max(15, Math.min(120, Duration.between(deployment.get().at(), controller.clock().instant()).toMinutes() / 20));
+                logger.log("Tests were inconclusive, and will run again in " + sleepMinutes + " minutes.");
+                controller.jobController().locked(id, run -> run.sleepingUntil(controller.clock().instant().plusSeconds(60 * sleepMinutes)));
                 return Optional.of(reset);
             case ERROR:
                 logger.log(INFO, "Tester failed running its tests!");
@@ -737,8 +740,12 @@ public class InternalStepRunner implements StepRunner {
     private Optional<RunStatus> report(RunId id, DualLogger logger) {
         try {
             controller.jobController().active(id).ifPresent(run -> {
+                if (run.status() == reset)
+                    return;
+
                 if (run.hasFailed())
                     sendEmailNotification(run, logger);
+
                 updateConsoleNotification(run);
             });
         }

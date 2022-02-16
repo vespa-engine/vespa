@@ -78,7 +78,7 @@ public class JobRunner extends ControllerMaintainer {
     /** Advances each of the ready steps for the given run, or marks it as finished, and stashes it. Public for testing. */
     public void advance(Run run) {
         if (   ! run.hasFailed()
-            &&   controller().clock().instant().isAfter(run.start().plus(jobTimeout)))
+            &&   controller().clock().instant().isAfter(run.sleepUntil().orElse(run.start()).plus(jobTimeout)))
             executors.execute(() -> {
                 jobs.abort(run.id());
                 advance(jobs.run(run.id()).get());
@@ -86,7 +86,7 @@ public class JobRunner extends ControllerMaintainer {
 
         else if (run.readySteps().isEmpty())
             executors.execute(() -> finish(run.id()));
-        else
+        else if (run.hasFailed() || run.sleepUntil().map(sleepUntil -> ! sleepUntil.isAfter(controller().clock().instant())).orElse(true))
             run.readySteps().forEach(step -> executors.execute(() -> advance(run.id(), step)));
     }
 

@@ -83,6 +83,7 @@ class RunSerializer {
     private static final String numberField = "number";
     private static final String startField = "start";
     private static final String endField = "end";
+    private static final String sleepingUntilField = "sleepingUntil";
     private static final String statusField = "status";
     private static final String versionsField = "versions";
     private static final String isRedeploymentField = "isRedeployment";
@@ -140,6 +141,7 @@ class RunSerializer {
                        runObject.field(isRedeploymentField).asBool(),
                        SlimeUtils.instant(runObject.field(startField)),
                        SlimeUtils.optionalInstant(runObject.field(endField)),
+                       SlimeUtils.optionalInstant(runObject.field(sleepingUntilField)),
                        runStatusOf(runObject.field(statusField).asString()),
                        runObject.field(lastTestRecordField).asLong(),
                        Instant.EPOCH.plus(runObject.field(lastVespaLogTimestampField).asLong(), ChronoUnit.MICROS),
@@ -229,6 +231,7 @@ class RunSerializer {
         runObject.setLong(numberField, run.id().number());
         runObject.setLong(startField, run.start().toEpochMilli());
         run.end().ifPresent(end -> runObject.setLong(endField, end.toEpochMilli()));
+        run.sleepUntil().ifPresent(end -> runObject.setLong(sleepingUntilField, end.toEpochMilli()));
         runObject.setString(statusField, valueOf(run.status()));
         runObject.setLong(lastTestRecordField, run.lastTestLogEntry());
         runObject.setLong(lastVespaLogTimestampField, Instant.EPOCH.until(run.lastVespaLogTimestamp(), ChronoUnit.MICROS));
