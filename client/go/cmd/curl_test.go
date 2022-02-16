@@ -18,4 +18,8 @@ func TestCurl(t *testing.T) {
 		filepath.Join(homeDir, "t1.a1.i1", "data-plane-private-key.pem"),
 		filepath.Join(homeDir, "t1.a1.i1", "data-plane-public-cert.pem"))
 	assert.Equal(t, expected, out)
+
+	out, _ = execute(command{homeDir: homeDir, args: []string{"curl", "-s", "deploy", "-n", "/application/v4/tenant/foo"}}, t, httpClient)
+	expected = "curl https://127.0.0.1:19071/application/v4/tenant/foo\n"
+	assert.Equal(t, expected, out)
 }
