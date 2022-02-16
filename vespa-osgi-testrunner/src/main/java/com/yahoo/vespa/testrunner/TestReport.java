@@ -78,8 +78,8 @@ public class TestReport {
             return this;
         }
 
-        public Builder withInconclusiveCount(long failedCount) {
-            this.failedCount = failedCount;
+        public Builder withInconclusiveCount(long inconclusiveCount) {
+            this.inconclusiveCount = inconclusiveCount;
             return this;
         }
 
