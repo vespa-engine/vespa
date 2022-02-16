@@ -72,12 +72,12 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         JRTClientConfigRequest response = pollQueue(timeoutMillis);
         // There might be more than one response on the queue, so empty queue by polling with
         // 0 timeout until queue is empty (returned value is null)
-        JRTClientConfigRequest temp;
-        do {
+        JRTClientConfigRequest temp = response;
+        while (temp != null) {
             temp = pollQueue(0);
             if (temp != null)
                 response = temp;
-        } while (temp != null);
+        }
 
         return response;
     }
