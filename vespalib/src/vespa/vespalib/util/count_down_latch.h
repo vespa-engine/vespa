@@ -83,7 +83,7 @@ public:
      * @return current count
      **/
     [[nodiscard]] uint32_t getCount() const noexcept {
-        std::unique_lock guard(_lock);
+        std::lock_guard guard(_lock);
         return _count;
     }
 
