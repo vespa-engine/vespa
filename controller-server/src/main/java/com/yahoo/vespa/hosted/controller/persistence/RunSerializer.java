@@ -37,6 +37,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.endpointCer
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
@@ -82,6 +83,7 @@ class RunSerializer {
     private static final String numberField = "number";
     private static final String startField = "start";
     private static final String endField = "end";
+    private static final String sleepingUntilField = "sleepingUntil";
     private static final String statusField = "status";
     private static final String versionsField = "versions";
     private static final String isRedeploymentField = "isRedeployment";
@@ -139,6 +141,7 @@ class RunSerializer {
                        runObject.field(isRedeploymentField).asBool(),
                        SlimeUtils.instant(runObject.field(startField)),
                        SlimeUtils.optionalInstant(runObject.field(endField)),
+                       SlimeUtils.optionalInstant(runObject.field(sleepingUntilField)),
                        runStatusOf(runObject.field(statusField).asString()),
                        runObject.field(lastTestRecordField).asLong(),
                        Instant.EPOCH.plus(runObject.field(lastVespaLogTimestampField).asLong(), ChronoUnit.MICROS),
@@ -228,6 +231,7 @@ class RunSerializer {
         runObject.setLong(numberField, run.id().number());
         runObject.setLong(startField, run.start().toEpochMilli());
         run.end().ifPresent(end -> runObject.setLong(endField, end.toEpochMilli()));
+        run.sleepUntil().ifPresent(end -> runObject.setLong(sleepingUntilField, end.toEpochMilli()));
         runObject.setString(statusField, valueOf(run.status()));
         runObject.setLong(lastTestRecordField, run.lastTestLogEntry());
         runObject.setLong(lastVespaLogTimestampField, Instant.EPOCH.until(run.lastVespaLogTimestamp(), ChronoUnit.MICROS));
@@ -364,6 +368,7 @@ class RunSerializer {
             case error                      : return "error";
             case success                    : return "success";
             case aborted                    : return "aborted";
+            case reset                      : return "reset";
 
             default: throw new AssertionError("No value defined for '" + status + "'!");
         }
@@ -380,6 +385,7 @@ class RunSerializer {
             case "error"                      : return error;
             case "success"                    : return success;
             case "aborted"                    : return aborted;
+            case "reset"                      : return reset;
 
             default: throw new IllegalArgumentException("No run status defined by '" + status + "'!");
         }

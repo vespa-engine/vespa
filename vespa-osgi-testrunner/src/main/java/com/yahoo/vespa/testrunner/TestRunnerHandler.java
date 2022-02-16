@@ -27,7 +27,7 @@ import static com.yahoo.jdisc.Response.Status;
 
 /**
  * @author valerijf
- * @author jvenstad
+ * @author jonmv
  * @author mortent
  */
 public class TestRunnerHandler extends ThreadedHttpRequestHandler {

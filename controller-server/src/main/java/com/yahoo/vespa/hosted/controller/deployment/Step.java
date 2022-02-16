@@ -113,6 +113,7 @@ public enum Step {
         public static Step.Status of(RunStatus status) {
             switch (status) {
                 case success : throw new AssertionError("Unexpected run status '" + status + "'!");
+                case reset   :
                 case aborted : return unfinished;
                 case running : return succeeded;
                 default      : return failed;

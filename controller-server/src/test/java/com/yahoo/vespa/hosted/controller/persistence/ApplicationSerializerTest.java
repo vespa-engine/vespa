@@ -93,12 +93,12 @@ public class ApplicationSerializerTest {
                                                                         Optional.of("best commit"),
                                                                         true,
                                                                         Optional.of("hash1"));
-        SortedSet<ApplicationVersion> versions = new TreeSet<>(Set.of(applicationVersion1));
         assertEquals("https://github/org/repo/tree/commit1", applicationVersion1.sourceUrl().get());
 
         ApplicationVersion applicationVersion2 = ApplicationVersion
                 .from(new SourceRevision("repo1", "branch1", "commit1"), 32, "a@b",
                       Version.fromString("6.3.1"), Instant.ofEpochMilli(496));
+        SortedSet<ApplicationVersion> versions = new TreeSet<>(Set.of(applicationVersion2));
         Instant activityAt = Instant.parse("2018-06-01T10:15:30.00Z");
         deployments.add(new Deployment(zone1, applicationVersion1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3),
                                        DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none, OptionalDouble.empty()));
@@ -159,9 +159,8 @@ public class ApplicationSerializerTest {
         assertEquals(original.latestVersion().get().sourceUrl(), serialized.latestVersion().get().sourceUrl());
         assertEquals(original.latestVersion().get().commit(), serialized.latestVersion().get().commit());
         assertEquals(original.latestVersion().get().bundleHash(), serialized.latestVersion().get().bundleHash());
-        // Check indirectly deployed versions are added, directly deployed are removed
         assertEquals(original.versions(), serialized.versions());
-        assertEquals(serialized.versions(), new TreeSet<>(Set.of(applicationVersion2)));
+        assertEquals(original.versions(), serialized.versions());
 
 
         assertEquals(original.deploymentSpec().xmlForm(), serialized.deploymentSpec().xmlForm());

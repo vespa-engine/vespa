@@ -133,4 +133,5 @@ public class BufferedLogStore {
     public void writeTestReport(RunId id, TestReport report) {
         store.putTestReport(id, report.toJson().getBytes());
     }
+
 }

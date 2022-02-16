@@ -83,11 +83,11 @@ import static com.yahoo.config.application.api.Notifications.When.failing;
 import static com.yahoo.config.application.api.Notifications.When.failingCommit;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
@@ -154,7 +154,7 @@ public class InternalStepRunner implements StepRunner {
                 case installReal: return installReal(id, logger);
                 case startStagingSetup: return startTests(id, true, logger);
                 case endStagingSetup:
-                case endTests:  return endTests(id, logger);
+                case endTests: return endTests(id, logger);
                 case startTests: return startTests(id, false, logger);
                 case copyVespaLogs: return copyVespaLogs(id, logger);
                 case deactivateReal: return deactivateReal(id, logger);
@@ -635,9 +635,10 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> endTests(RunId id, DualLogger logger) {
-        if (deployment(id.application(), id.type()).isEmpty()) {
+        Optional<Deployment> deployment = deployment(id.application(), id.type());
+        if (deployment.isEmpty()) {
             logger.log(INFO, "Deployment expired before tests could complete.");
-            return Optional.of(aborted);
+            return Optional.of(error);
         }
 
         Optional<X509Certificate> testerCertificate = controller.jobController().run(id).get().testerCertificate();
@@ -647,7 +648,7 @@ public class InternalStepRunner implements StepRunner {
             }
             catch (CertificateExpiredException | CertificateNotYetValidException e) {
                 logger.log(WARNING, "Tester certificate expired before tests could complete.");
-                return Optional.of(aborted);
+                return Optional.of(error);
             }
         }
 
@@ -663,6 +664,11 @@ public class InternalStepRunner implements StepRunner {
                 logger.log("Tests failed.");
                 controller.jobController().updateTestReport(id);
                 return Optional.of(testFailure);
+            case INCONCLUSIVE:
+                long sleepMinutes = Math.max(15, Math.min(120, Duration.between(deployment.get().at(), controller.clock().instant()).toMinutes() / 20));
+                logger.log("Tests were inconclusive, and will run again in " + sleepMinutes + " minutes.");
+                controller.jobController().locked(id, run -> run.sleepingUntil(controller.clock().instant().plusSeconds(60 * sleepMinutes)));
+                return Optional.of(reset);
             case ERROR:
                 logger.log(INFO, "Tester failed running its tests!");
                 controller.jobController().updateTestReport(id);
@@ -734,8 +740,12 @@ public class InternalStepRunner implements StepRunner {
     private Optional<RunStatus> report(RunId id, DualLogger logger) {
         try {
             controller.jobController().active(id).ifPresent(run -> {
+                if (run.status() == reset)
+                    return;
+
                 if (run.hasFailed())
                     sendEmailNotification(run, logger);
+
                 updateConsoleNotification(run);
             });
         }

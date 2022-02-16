@@ -29,6 +29,17 @@
     ],
     "fields": []
   },
+  "ai.vespa.hosted.cd.InconclusiveTestException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()"
+    ],
+    "fields": []
+  },
   "ai.vespa.hosted.cd.IntegrationTest": {
     "superClass": "java.lang.Object",
     "interfaces": [

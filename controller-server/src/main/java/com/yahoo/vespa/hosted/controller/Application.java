@@ -108,9 +108,10 @@ public class Application {
     /** Returns the project id of this application, if it has any. */
     public OptionalLong projectId() { return projectId; }
 
-    /** Returns the last submitted version of this application.
-     * TODO: Replace with latest in {@link #versions }*/
-    public Optional<ApplicationVersion> latestVersion() { return latestVersion; }
+    /** Returns the last submitted version of this application. */
+    public Optional<ApplicationVersion> latestVersion() {
+        return versions.isEmpty() ? Optional.empty() : Optional.of(versions.last());
+    }
 
     /** Returns the currently deployed versions of the application */
     public SortedSet<ApplicationVersion> versions() {

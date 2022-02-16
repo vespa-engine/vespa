@@ -84,9 +84,7 @@ public class DeploymentStatistics {
                 for (Deployment deployment : instance.productionDeployments().values())
                     allVersions.add(deployment.version());
 
-            JobList failing = status.jobs().failing()
-                                    .not().withStatus(RunStatus.outOfCapacity)
-                                    .not().withStatus(RunStatus.aborted);
+            JobList failing = status.jobs().failingHard();
 
             // Add all unsuccessful runs for failing production jobs as any run may have resulted in an incomplete deployment
             // where a subset of nodes have upgraded.

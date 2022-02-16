@@ -52,12 +52,14 @@ public class AggregateTestRunner implements TestRunner {
             return Status.NOT_STARTED;
 
         boolean failed = false;
+        boolean inconclusive = false;
         for (int i = 0; i <= current.get(); i++) {
             if (i == wrapped.size())
-                return failed ? Status.FAILURE : Status.SUCCESS;
+                return failed ? Status.FAILURE : inconclusive ? Status.INCONCLUSIVE : Status.SUCCESS;
 
             switch (wrapped.get(i).getStatus()) {
                 case ERROR: return Status.ERROR;
+                case INCONCLUSIVE: inconclusive = true; break;
                 case FAILURE: failed = true;
             }
         }

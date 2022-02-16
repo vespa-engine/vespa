@@ -6,12 +6,12 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Information about a step.
+ * Information about a step. Immutable.
  *
  * @author hakonhall
  */
-// @Immutable
 public class StepInfo {
+
     private final Step step;
     private final Step.Status status;
     private final Optional<Instant> startTime;
@@ -57,4 +57,5 @@ public class StepInfo {
     public int hashCode() {
         return Objects.hash(step, status, startTime);
     }
+
 }

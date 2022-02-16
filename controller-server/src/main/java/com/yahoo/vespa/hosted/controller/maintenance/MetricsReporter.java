@@ -292,7 +292,7 @@ public class MetricsReporter extends ControllerMaintainer {
     }
 
     private static int deploymentsFailingUpgrade(JobList jobs) {
-        return jobs.failing().not().failingApplicationChange().size();
+        return jobs.failingHard().not().failingApplicationChange().size();
     }
 
     private static Duration averageDeploymentDuration(JobList jobs, Instant now) {
