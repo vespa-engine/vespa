@@ -76,7 +76,7 @@ public class RoutingStatusClient extends AbstractComponent implements RoutingSta
         try {
             return cache.get().isActive(upstreamName);
         } catch (Exception e) {
-            log.log(Level.WARNING, "Failed to get status for '" + upstreamName + "'", e);
+            log.log(Level.WARNING, "Failed to get status for '" + upstreamName + "': " + Exceptions.toMessageString(e));
             return true; // Assume IN if cache update fails
         }
     }
