@@ -4,14 +4,18 @@ package ai.vespa.intellij.schema.findUsages;
 import ai.vespa.intellij.schema.model.Function;
 import ai.vespa.intellij.schema.model.RankProfile;
 import ai.vespa.intellij.schema.model.Schema;
+import ai.vespa.intellij.schema.psi.SdNamedElement;
 import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
 import ai.vespa.intellij.schema.utils.Path;
 import com.intellij.find.findUsages.FindUsagesHandler;
 import com.intellij.find.findUsages.FindUsagesOptions;
 import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.progress.ProgressIndicatorProvider;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiReference;
+import com.intellij.psi.impl.source.tree.LeafPsiElement;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.SearchScope;
 import com.intellij.psi.search.searches.ReferencesSearch;
@@ -94,6 +98,7 @@ public class SdFindUsagesHandler extends FindUsagesHandler {
                                     RankProfile rankProfile,
                                     SearchScope scope,
                                     Processor<? super UsageInfo> processor) {
+        ProgressIndicatorProvider.checkCanceled();
         ReadAction.compute(() -> findFunctionUsagesInThis(functionNameToFind, functionToFind, rankProfile, scope, processor));
         Collection<RankProfile> children = ReadAction.compute(() -> rankProfile.children().values());
         for (var child : children)
@@ -109,21 +114,45 @@ public class SdFindUsagesHandler extends FindUsagesHandler {
         Collection<List<Function>> functions = ReadAction.compute(() -> rankProfile.definedFunctions().values());
         for (var functionList : functions) {
             for (var function : functionList) {
-                String text = ReadAction.compute(() -> function.definition().getText());
-                int offset = 0;
-                boolean skipNext = functionToFind == function.definition(); // Skip the definition itself
-                while (offset < text.length()) {
-                    int occurrenceStart = text.indexOf(functionNameToFind, offset);
-                    if (occurrenceStart < 0) break;
-                    int occurrenceEnd = occurrenceStart + functionNameToFind.length();
-                    if ( ! skipNext)
-                        processor.process(new UsageInfo(function.definition(), occurrenceStart, occurrenceEnd));
-                    offset = occurrenceEnd;
-                    skipNext = false;
-                }
+                var matchingVisitor = new MatchingVisitor(functionNameToFind,
+                                                          functionToFind == function.definition(),
+                                                          processor);
+                ReadAction.compute(() -> { function.definition().accept(matchingVisitor); return null; } );
             }
         }
         return true;
+    }
+
+    private static class MatchingVisitor extends PsiElementVisitor {
+
+        private final String textToMatch;
+        private final Processor<? super UsageInfo> processor;
+
+        private boolean skipNextMatch;
+
+        public MatchingVisitor(String textToMatch, boolean skipFirstMatch, Processor<? super UsageInfo> processor) {
+            this.textToMatch = textToMatch;
+            this.skipNextMatch = skipFirstMatch;
+            this.processor = processor;
+        }
+
+        @Override
+        public void visitElement(PsiElement element) {
+            if (element instanceof LeafPsiElement)
+                visitThis(element);
+            else
+                element.acceptChildren(this);
+        }
+
+        private void visitThis(PsiElement element) {
+            if ( ! textToMatch.equals(element.getText())) return;
+            if (skipNextMatch) {
+                skipNextMatch = false;
+                return;
+            }
+            processor.process(new UsageInfo(element));
+        }
+
     }
 
 }

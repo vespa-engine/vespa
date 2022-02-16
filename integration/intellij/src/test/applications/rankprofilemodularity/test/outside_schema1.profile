@@ -5,15 +5,15 @@ rank-profile outside_schema1 inherits in_schema1 {
     }
 
     function local1() {
-        expression: local2 + local3 + local2
+        expression: local12 + local3 + local12
     }
 
-    function local2() {
+    function local12() {
         expression: now
     }
 
     function local3() {
-        expression: local2 + local2
+        expression: local12 + local12
     }
 
 }
