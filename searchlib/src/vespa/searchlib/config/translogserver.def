@@ -18,7 +18,7 @@ basedir string default="tmp" restart
 usefsync bool default=true
 
 ##Number of threads available for visiting/subscription.
-maxthreads int default=4 restart
+maxthreads int default=0 restart
 
 ##Default crc method used
 crcmethod enum {ccitt_crc32, xxh64} default=xxh64

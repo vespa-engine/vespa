@@ -79,17 +79,24 @@ logReconfig(const searchlib::TranslogserverConfig & cfg, const DomainConfig & dc
         dcfg.getPartSizeLimit(), dcfg.getChunkSizeLimit());
 }
 
+size_t
+derive_num_threads(uint32_t configured_cores, uint32_t actual_cores) {
+    return (configured_cores > 0)
+        ? configured_cores
+        : std::max(1u, std::min(4u, actual_cores/8));
+}
+
 }
 
 void
-TransLogServerApp::start()
+TransLogServerApp::start(uint32_t num_cores)
 {
     std::lock_guard<std::mutex> guard(_lock);
     auto c = _tlsConfig.get();
     DomainConfig domainConfig = getDomainConfig(*c);
     logReconfig(*c, domainConfig);
    _tls = std::make_shared<TransLogServer>(c->servername, c->listenport, c->basedir, _fileHeaderContext,
-                                            domainConfig, c->maxthreads);
+                                            domainConfig, derive_num_threads(c->maxthreads, num_cores));
 }
 
 TransLogServerApp::~TransLogServerApp()
