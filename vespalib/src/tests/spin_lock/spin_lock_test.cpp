@@ -19,21 +19,30 @@ struct DummyLock {
 
 //-----------------------------------------------------------------------------
 
+template <typename T>
+constexpr void relaxed_store(T& lhs, T v) noexcept {
+    std::atomic_ref<T>(lhs).store(v, std::memory_order_relaxed);
+}
+template <typename T>
+constexpr T relaxed_load(const T& a) noexcept {
+    return std::atomic_ref<const T>(a).load(std::memory_order_relaxed);
+}
+
 struct MyState {
     static constexpr size_t SZ = 5;
     std::array<size_t,SZ> state = {0,0,0,0,0};
     void update() {
         std::array<size_t,SZ> tmp;
         for (size_t i = 0; i < SZ; ++i) {
-            tmp[i] = state[i];
+            relaxed_store(tmp[i], relaxed_load(state[i]));
         }
         for (size_t i = 0; i < SZ; ++i) {
-            state[i] = tmp[i] + 1;
+            relaxed_store(state[i], relaxed_load(tmp[i]) + 1);
         }
     }
     bool check(size_t expect) const {
-        for (size_t value: state) {
-            if (value != expect) {
+        for (const auto& value: state) {
+            if (relaxed_load(value) != expect) {
                 return false;
             }
         }
