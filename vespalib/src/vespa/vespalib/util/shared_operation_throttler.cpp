@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "shared_operation_throttler.h"
+#include <atomic>
 #include <condition_variable>
 #include <cassert>
 #include <functional>
@@ -11,21 +12,32 @@ namespace {
 
 class NoLimitsOperationThrottler final : public SharedOperationThrottler {
 public:
-    ~NoLimitsOperationThrottler() override = default;
+    NoLimitsOperationThrottler()
+        : SharedOperationThrottler(),
+          _refs(0u)
+    {
+    }
+    ~NoLimitsOperationThrottler() override {
+        assert(_refs.load(std::memory_order_acquire) == 0u);
+    }
     Token blocking_acquire_one() noexcept override {
+        ++_refs;
         return Token(this, TokenCtorTag{});
     }
     Token blocking_acquire_one(vespalib::duration) noexcept override {
+        ++_refs;
         return Token(this, TokenCtorTag{});
     }
     Token try_acquire_one() noexcept override {
+        ++_refs;
         return Token(this, TokenCtorTag{});
     }
     uint32_t current_window_size() const noexcept override { return 0; }
     uint32_t waiting_threads() const noexcept override { return 0; }
     void reconfigure_dynamic_throttling(const DynamicThrottleParams&) noexcept override { /* no-op */ }
 private:
-    void release_one() noexcept override { /* no-op */ }
+    void release_one() noexcept override { --_refs; }
+    std::atomic<uint32_t> _refs;
 };
 
 /**
