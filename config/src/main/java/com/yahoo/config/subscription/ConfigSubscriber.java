@@ -279,7 +279,8 @@ public class ConfigSubscriber implements AutoCloseable {
             state = State.FROZEN;
             applyOnRestartOnly = applyOnRestart;
         }
-        long started = System.currentTimeMillis();
+        boolean expiredOnEntry = (timeoutInMillis <= 0);
+        long started = now(expiredOnEntry);
         long timeLeftMillis = timeoutInMillis;
         boolean anyConfigChanged = false;
 
@@ -308,7 +309,7 @@ public class ConfigSubscriber implements AutoCloseable {
                 allGenerationsChanged &= config.isGenerationChanged();
                 anyConfigChanged      |= config.isConfigChanged();
                 applyOnRestartOnly    |= config.applyOnRestart();
-                timeLeftMillis = timeoutInMillis + started - System.currentTimeMillis();
+                timeLeftMillis = timeoutInMillis + started - now(expiredOnEntry);
             }
             reconfigDue = (isInitializing || !applyOnRestartOnly) && (anyConfigChanged || !requireChange)
                           && allGenerationsChanged && allGenerationsTheSame;
@@ -333,6 +334,10 @@ public class ConfigSubscriber implements AutoCloseable {
             }
         }
         return reconfigDue;
+    }
+
+    private long now(boolean alreadyExpired) {
+        return alreadyExpired ? 0 : System.currentTimeMillis();
     }
 
     private void sleep(long timeLeftMillis) {
