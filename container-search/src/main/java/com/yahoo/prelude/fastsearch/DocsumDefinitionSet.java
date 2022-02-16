@@ -57,6 +57,11 @@ public final class DocsumDefinitionSet {
         return ds;
     }
 
+    /** Do we have a summary definition with the given name */
+    public boolean hasDocsum(String summaryClass) {
+        return definitionsByName.containsKey(summaryClass);
+    }
+
     /**
      * Makes data available for decoding for the given hit.
      *
