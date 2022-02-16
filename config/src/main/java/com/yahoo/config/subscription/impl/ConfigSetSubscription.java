@@ -29,23 +29,31 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
         setGeneration(0L);
     }
 
+    private boolean hasConfigChanged() {
+        T myInstance = getNewInstance();
+        ConfigState<T> configState = getConfigState();
+        // User forced reload
+        if (checkReloaded()) {
+            setConfigIfChanged(myInstance);
+            return true;
+        }
+        if (!myInstance.equals(configState.getConfig())) {
+            setConfigIncGen(myInstance);
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public boolean nextConfig(long timeout) {
-        long end = System.currentTimeMillis() + timeout;
+        if (hasConfigChanged()) return true;
+        if (timeout <= 0) return false;
+
+        long end = System.nanoTime() + timeout * 1_000_000;
         do {
-            T myInstance = getNewInstance();
-            ConfigState<T> configState = getConfigState();
-            // User forced reload
-            if (checkReloaded()) {
-                setConfigIfChanged(myInstance);
-                return true;
-            }
-            if (!myInstance.equals(configState.getConfig())) {
-                setConfigIncGen(myInstance);
-                return true;
-            }
             sleep();
-        } while (System.currentTimeMillis() < end);
+            if (hasConfigChanged()) return true;
+        } while (System.nanoTime() < end);
         return false;
     }
 
