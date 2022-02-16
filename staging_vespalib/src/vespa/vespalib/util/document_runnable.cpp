@@ -15,28 +15,47 @@ Runnable::Runnable()
 
 Runnable::~Runnable() {
     std::lock_guard monitorGuard(_stateLock);
-    assert(_state == NOT_RUNNING);
+    assert(getState() == NOT_RUNNING);
 }
 
 bool Runnable::start(FastOS_ThreadPool& pool)
 {
     std::unique_lock guard(_stateLock);
-    _stateCond.wait(guard, [&](){ return (_state != STOPPING);});
+    _stateCond.wait(guard, [&](){ return (getState() != STOPPING);});
 
-    if (_state != NOT_RUNNING) return false;
-    _state = STARTING;
+    if (getState() != NOT_RUNNING) return false;
+    set_state(STARTING);
     if (pool.NewThread(this) == nullptr) {
         throw vespalib::IllegalStateException("Failed starting a new thread", VESPA_STRLOC);
     }
     return true;
 }
 
+void Runnable::set_state(State new_state) noexcept
+{
+    _state.store(new_state, std::memory_order_relaxed);
+}
+
+bool Runnable::stopping() const noexcept
+{
+    State s(getState());
+    return (s == STOPPING) || (s == RUNNING && GetThread()->GetBreakFlag());
+}
+
+bool Runnable::running() const noexcept
+{
+    State s(getState());
+    // Must check break-flag too, as threadpool will use that to close
+    // down.
+    return (s == STARTING || (s == RUNNING && !GetThread()->GetBreakFlag()));
+}
+
 bool Runnable::stop()
 {
     std::lock_guard monitor(_stateLock);
-    if (_state == STOPPING || _state == NOT_RUNNING) return false;
+    if (getState() == STOPPING || getState() == NOT_RUNNING) return false;
     GetThread()->SetBreakFlag();
-    _state = STOPPING;
+    set_state(STOPPING);
     return onStop();
 }
 
@@ -48,8 +67,8 @@ bool Runnable::onStop()
 bool Runnable::join() const
 {
     std::unique_lock guard(_stateLock);
-    assert ((_state != STARTING) && (_state != RUNNING));
-    _stateCond.wait(guard, [&](){ return (_state == NOT_RUNNING);});
+    assert ((getState() != STARTING) && (getState() != RUNNING));
+    _stateCond.wait(guard, [&](){ return (getState() == NOT_RUNNING);});
     return true;
 }
 
@@ -57,21 +76,21 @@ void Runnable::Run(FastOS_ThreadInterface*, void*)
 {
     {
         std::lock_guard guard(_stateLock);
-        // Dont set state if its alreadyt at stopping. (And let run() be
+        // Don't set state if its already at stopping. (And let run() be
         // called even though about to stop for consistency)
-        if (_state == STARTING) {
-            _state = RUNNING;
+        if (getState() == STARTING) {
+            set_state(RUNNING);
         }
     }
 
     // By not catching exceptions, they should abort whole application.
-    // We should thus not need to have a catch all to set state to not
+    // We should thus not need to have a catch-all to set state to not
     // running.
     run();
 
     {
         std::lock_guard guard(_stateLock);
-        _state = NOT_RUNNING;
+        set_state(NOT_RUNNING);
         _stateCond.notify_all();
     }
 }
