@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 
 import static com.yahoo.vespa.testrunner.TestRunner.Status.ERROR;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.FAILURE;
+import static com.yahoo.vespa.testrunner.TestRunner.Status.INCONCLUSIVE;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.RUNNING;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.SUCCESS;
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -88,7 +89,8 @@ public class VespaCliTestRunner implements TestRunner {
             HtmlLogger htmlLogger = new HtmlLogger();
             BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
             in.lines().forEach(line -> log(htmlLogger.toLog(line)));
-            status.set(process.waitFor() == 0 ? SUCCESS : process.waitFor() == 3 ? FAILURE : ERROR);
+            int exitCode = process.waitFor();
+            status.set(exitCode == 0 ? SUCCESS : exitCode == 3 ? FAILURE : exitCode == 4 ? INCONCLUSIVE : ERROR);
         }
         catch (NoTestsException e) {
             log(Level.WARNING, "Did not find expected basic HTTP tests", e);

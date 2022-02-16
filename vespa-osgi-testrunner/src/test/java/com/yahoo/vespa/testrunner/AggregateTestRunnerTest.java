@@ -12,6 +12,7 @@ import java.util.logging.LogRecord;
 
 import static com.yahoo.vespa.testrunner.TestRunner.Status.ERROR;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.FAILURE;
+import static com.yahoo.vespa.testrunner.TestRunner.Status.INCONCLUSIVE;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.NOT_STARTED;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.RUNNING;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.SUCCESS;
@@ -84,6 +85,10 @@ class AggregateTestRunnerTest {
         // No failures means success.
         second.future.complete(null);
         assertEquals(SUCCESS, runner.getStatus());
+
+        // An inconclusive test means inconclusive.
+        first.status = INCONCLUSIVE;
+        assertEquals(INCONCLUSIVE, runner.getStatus());
 
         // A failure means failure.
         second.status = FAILURE;

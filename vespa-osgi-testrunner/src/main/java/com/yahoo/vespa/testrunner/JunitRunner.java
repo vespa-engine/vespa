@@ -5,6 +5,7 @@ import ai.vespa.cloud.Environment;
 import ai.vespa.cloud.SystemInfo;
 import ai.vespa.cloud.Zone;
 import ai.vespa.hosted.api.TestDescriptor;
+import ai.vespa.hosted.cd.InconclusiveTestException;
 import ai.vespa.hosted.cd.internal.TestRuntimeProvider;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
@@ -204,11 +205,13 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         var failures = report.getFailures().stream()
                 .map(failure -> new TestReport.Failure(failure.getTestIdentifier().getUniqueId(), failure.getException()))
                 .collect(Collectors.toList());
+        long inconclusive = failures.stream().filter(failure -> failure.exception() instanceof InconclusiveTestException).count();
         return TestReport.builder()
                 .withSuccessCount(report.getTestsSucceededCount())
                 .withAbortedCount(report.getTestsAbortedCount())
                 .withIgnoredCount(report.getTestsSkippedCount())
-                .withFailedCount(report.getTestsFailedCount())
+                .withFailedCount(report.getTestsFailedCount() - inconclusive)
+                .withInconclusiveCount(inconclusive)
                 .withFailures(failures)
                 .withLogs(logRecords.values())
                 .build();
@@ -230,12 +233,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         if (execution == null) return TestRunner.Status.NOT_STARTED;
         if (!execution.isDone()) return TestRunner.Status.RUNNING;
         try {
-            TestReport report = execution.get();
-            if (report.isSuccess()) {
-                return TestRunner.Status.SUCCESS;
-            } else {
-                return TestRunner.Status.FAILURE;
-            }
+            return execution.get().status();
         } catch (InterruptedException|ExecutionException e) {
             logger.log(Level.WARNING, "Error while getting test report", e);
             return TestRunner.Status.ERROR;
