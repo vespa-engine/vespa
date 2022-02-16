@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.intellij;
 
-import ai.vespa.intellij.model.TestProjectDescriptor;
 import com.intellij.testFramework.LightProjectDescriptor;
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase;
 import org.junit.Test;
@@ -35,5 +34,9 @@ public class PluginTestBase extends LightJavaCodeInsightFixtureTestCase {
     /** Avoid "no tests" warning */
     @Test
     public void testDummy() {}
+
+    static class TestProjectDescriptor extends LightProjectDescriptor {
+
+    }
 
 }

@@ -51,7 +51,6 @@ public class SchemaTest extends PluginTestBase {
         assertEquals(2, profile.inherited().size());
         assertEquals("outside_schema1", profile.inherited().get("outside_schema1").name());
         assertEquals("outside_schema2", profile.inherited().get("outside_schema2").name());
-        schema.functions().entrySet().stream().forEach(e -> System.out.println(e));
         assertEquals("8 proper functions + first-phase", 9, schema.functions().size());
         assertEquals(schema.rankProfiles().get("in_schema2").definedFunctions().get("ff1"),
                      schema.functions().get("ff1"));
