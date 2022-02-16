@@ -3,6 +3,7 @@
 
 #include <atomic>
 #include <type_traits>
+#include <version>
 
 /**
  * Utility functions for single value atomic memory accesses.
@@ -23,11 +24,6 @@ namespace vespalib::atomic {
 // std::atomic_ref<T> helpers
 //
 
-// No atomic_ref on clang on darwin (for now)
-#if defined(__clang__) && defined(__apple_build_version__)
-#  define VESPA_NO_ATOMIC_REF_SUPPORT
-#endif
-
 namespace detail {
 template <typename T> struct is_std_atomic : std::false_type {};
 template <typename T> struct is_std_atomic<std::atomic<T>> : std::true_type {};
@@ -39,7 +35,7 @@ template <typename T> inline constexpr bool is_std_atomic_v = is_std_atomic<T>::
 template <typename T1, typename T2>
 constexpr void store_ref_relaxed(T1& lhs, T2&& v) noexcept {
     static_assert(!detail::is_std_atomic_v<T1>, "atomic ref function invoked with a std::atomic, probably not intended");
-#ifndef VESPA_NO_ATOMIC_REF_SUPPORT
+#if __cpp_lib_atomic_ref
     static_assert(std::atomic_ref<T1>::is_always_lock_free);
     std::atomic_ref<T1>(lhs).store(std::forward<T2>(v), std::memory_order_relaxed);
 #else
@@ -51,7 +47,7 @@ constexpr void store_ref_relaxed(T1& lhs, T2&& v) noexcept {
 template <typename T1, typename T2>
 constexpr void store_ref_release(T1& lhs, T2&& v) noexcept {
     static_assert(!detail::is_std_atomic_v<T1>, "atomic ref function invoked with a std::atomic, probably not intended");
-#ifndef VESPA_NO_ATOMIC_REF_SUPPORT
+#if __cpp_lib_atomic_ref
     static_assert(std::atomic_ref<T1>::is_always_lock_free);
     std::atomic_ref<T1>(lhs).store(std::forward<T2>(v), std::memory_order_release);
 #else
@@ -64,7 +60,7 @@ constexpr void store_ref_release(T1& lhs, T2&& v) noexcept {
 template <typename T1, typename T2>
 constexpr void store_ref_seq_cst(T1& lhs, T2&& v) noexcept {
     static_assert(!detail::is_std_atomic_v<T1>, "atomic ref function invoked with a std::atomic, probably not intended");
-#ifndef VESPA_NO_ATOMIC_REF_SUPPORT
+#if __cpp_lib_atomic_ref
     static_assert(std::atomic_ref<T1>::is_always_lock_free);
     std::atomic_ref<T1>(lhs).store(std::forward<T2>(v), std::memory_order_seq_cst);
 #else
@@ -77,7 +73,7 @@ constexpr void store_ref_seq_cst(T1& lhs, T2&& v) noexcept {
 template <typename T>
 [[nodiscard]] constexpr T load_ref_relaxed(const T& a) noexcept {
     static_assert(!detail::is_std_atomic_v<T>, "atomic ref function invoked with a std::atomic, probably not intended");
-#ifndef VESPA_NO_ATOMIC_REF_SUPPORT
+#if __cpp_lib_atomic_ref
     static_assert(std::atomic_ref<const T>::is_always_lock_free);
     return std::atomic_ref<const T>(a).load(std::memory_order_relaxed);
 #else
@@ -89,7 +85,7 @@ template <typename T>
 template <typename T>
 [[nodiscard]] constexpr T load_ref_acquire(const T& a) noexcept {
     static_assert(!detail::is_std_atomic_v<T>, "atomic ref function invoked with a std::atomic, probably not intended");
-#ifndef VESPA_NO_ATOMIC_REF_SUPPORT
+#if __cpp_lib_atomic_ref
     static_assert(std::atomic_ref<const T>::is_always_lock_free);
     return std::atomic_ref<const T>(a).load(std::memory_order_acquire);
 #else
@@ -102,7 +98,7 @@ template <typename T>
 template <typename T>
 [[nodiscard]] constexpr T load_ref_seq_cst(const T& a) noexcept {
     static_assert(!detail::is_std_atomic_v<T>, "atomic ref function invoked with a std::atomic, probably not intended");
-#ifndef VESPA_NO_ATOMIC_REF_SUPPORT
+#if __cpp_lib_atomic_ref
     static_assert(std::atomic_ref<const T>::is_always_lock_free);
     return std::atomic_ref<const T>(a).load(std::memory_order_acquire);
 #else
