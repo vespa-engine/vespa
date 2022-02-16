@@ -113,7 +113,7 @@ public class Run {
         requireActive();
         Map<Step, StepInfo> reset = new EnumMap<>(steps);
         reset.replaceAll((step, __) -> StepInfo.initial(step));
-        return new Run(id, reset, versions, isRedeployment, start, end, sleepUntil, running, lastTestRecord, lastVespaLogTimestamp,
+        return new Run(id, reset, versions, isRedeployment, start, end, sleepUntil, running, -1, lastVespaLogTimestamp,
                        Optional.empty(), Optional.empty(), testerCertificate, dryRun);
     }
 

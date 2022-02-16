@@ -350,6 +350,7 @@ public class InternalStepRunnerTest {
         tester.runner().run();
         assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.endTests));
         assertEquals(running, tester.jobs().run(id).get().status());
+        tester.cloud().clearLog();
 
         // Test sleeps for a while.
         tester.runner().run();
