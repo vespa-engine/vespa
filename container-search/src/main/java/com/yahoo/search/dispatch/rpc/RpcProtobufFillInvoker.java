@@ -65,6 +65,11 @@ public class RpcProtobufFillInvoker extends FillInvoker {
 
     @Override
     protected void sendFillRequest(Result result, String summaryClass) {
+        if (! documentDb.getDocsumDefinitionSet().hasDocsum(summaryClass)) {
+            // TODO Vespa 8:
+            // throw new IllegalArgumentException("invalid summary="+summaryClass);
+            log.fine("invalid presentation.summary="+summaryClass);
+        }
         ListMap<Integer, FastHit> hitsByNode = hitsByNode(result);
 
         result.getQuery().trace(false, 5, "Sending ", hitsByNode.size(), " summary fetch requests with jrt/protobuf");
