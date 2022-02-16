@@ -4,6 +4,7 @@ vespa_add_executable(eval_analyze_onnx_model_test_app TEST
     analyze_onnx_model_test.cpp
     DEPENDS
     vespaeval
+    AFTER
+    eval_analyze_onnx_model_app
 )
-vespa_add_test(NAME eval_analyze_onnx_model_test_app COMMAND eval_analyze_onnx_model_test_app
-               DEPENDS eval_analyze_onnx_model_test_app eval_analyze_onnx_model_app)
+vespa_add_test(NAME eval_analyze_onnx_model_test_app COMMAND eval_analyze_onnx_model_test_app)

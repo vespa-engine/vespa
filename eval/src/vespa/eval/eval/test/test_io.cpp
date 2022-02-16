@@ -120,43 +120,102 @@ ChildOut::evict(size_t bytes)
 //-----------------------------------------------------------------------------
 
 void
-ServerCmd::maybe_dump_message(const char *prefix, const Slime &slime)
+ServerCmd::maybe_close()
 {
-    if (_verbose) {
-        SimpleBuffer buf;
-        slime::JsonFormat::encode(slime, buf, false);
-        auto str = buf.get().make_string();
-        fprintf(stderr, "%s%s: %s", prefix, _basename.c_str(), str.c_str());
+    if (!_closed) {
+        _child.close();
+        _closed = true;
     }
 }
 
-ServerCmd::ServerCmd(vespalib::string cmd, bool verbose)
+void
+ServerCmd::maybe_exit()
+{
+    if (!_exited) {
+        read_until_eof(_child_stdout);
+        assert(_child.wait());
+        assert(!_child.running());
+        _exit_code = _child.getExitCode();
+        _exited = true;
+    }
+}
+
+void
+ServerCmd::dump_string(const char *prefix, const vespalib::string &str)
+{
+    fprintf(stderr, "%s%s: '%s'\n", prefix, _basename.c_str(), str.c_str());
+}
+
+void
+ServerCmd::dump_message(const char *prefix, const Slime &slime)
+{
+    SimpleBuffer buf;
+    slime::JsonFormat::encode(slime, buf, false);
+    auto str = buf.get().make_string();
+    fprintf(stderr, "%s%s: %s", prefix, _basename.c_str(), str.c_str());
+}
+
+ServerCmd::ServerCmd(vespalib::string cmd)
   : _child(cmd.c_str()),
     _child_stdin(_child),
     _child_stdout(_child),
     _basename(fs::path(cmd).filename()),
-    _verbose(verbose)
+    _closed(false),
+    _exited(false),
+    _exit_code(31212)
+{
+}
+
+ServerCmd::ServerCmd(vespalib::string cmd, capture_stderr_tag)
+  : _child(cmd.c_str(), ChildProcess::capture_stderr_tag()),
+    _child_stdin(_child),
+    _child_stdout(_child),
+    _basename(fs::path(cmd).filename()),
+    _closed(false),
+    _exited(false),
+    _exit_code(31212)
 {
 }
 
 ServerCmd::~ServerCmd()
 {
-    _child.close();
-    read_until_eof(_child_stdout);
-    assert(_child.wait());
-    assert(!_child.running());
-    assert(!_child.failed());
+    maybe_close();
+    maybe_exit();
 }
 
 Slime
 ServerCmd::invoke(const Slime &req)
 {
-    maybe_dump_message("request --> ", req);
+    dump_message("request --> ", req);
     write_compact(req, _child_stdin);
     Slime reply;
     REQUIRE(JsonFormat::decode(_child_stdout, reply));
-    maybe_dump_message("reply <-- ", reply);
+    dump_message("reply <-- ", reply);
     return reply;
+}
+
+vespalib::string
+ServerCmd::write_then_read_all(const vespalib::string &input)
+{
+    vespalib::string result;
+    dump_string("input --> ", input);
+    memcpy(_child_stdin.reserve(input.size()).data, input.data(), input.size());
+    _child_stdin.commit(input.size());
+    maybe_close();
+    for (auto mem = _child_stdout.obtain(); mem.size > 0; mem = _child_stdout.obtain()) {
+        result.append(mem.data, mem.size);
+        _child_stdout.evict(mem.size);
+    }
+    dump_string("output <-- ", result);
+    return result;
+}
+
+int
+ServerCmd::shutdown()
+{
+    maybe_close();
+    maybe_exit();
+    return _exit_code;
 }
 
 //-----------------------------------------------------------------------------

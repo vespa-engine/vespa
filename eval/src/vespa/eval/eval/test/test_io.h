@@ -73,13 +73,24 @@ private:
     ChildIn _child_stdin;
     ChildOut _child_stdout;
     vespalib::string _basename;
-    bool _verbose;
+    bool _closed;
+    bool _exited;
+    int _exit_code;
 
-    void maybe_dump_message(const char *prefix, const Slime &slime);
+    void maybe_close();
+    void maybe_exit();
+
+    void dump_string(const char *prefix, const vespalib::string &str);
+    void dump_message(const char *prefix, const Slime &slime);
+
 public:
-    ServerCmd(vespalib::string cmd, bool verbose);
+    struct capture_stderr_tag{};
+    ServerCmd(vespalib::string cmd);
+    ServerCmd(vespalib::string cmd, capture_stderr_tag);
     ~ServerCmd();
     Slime invoke(const Slime &req);
+    vespalib::string write_then_read_all(const vespalib::string &input);
+    int shutdown();
 };
 
 /**

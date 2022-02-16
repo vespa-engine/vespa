@@ -56,7 +56,7 @@ Result::~Result() = default;
 
 struct Server : public ServerCmd {
     TimeBomb time_bomb;
-    Server() : ServerCmd(server_cmd, true), time_bomb(60) {}
+    Server() : ServerCmd(server_cmd), time_bomb(60) {}
     Result eval(const vespalib::string &expr, const vespalib::string &name = {}, bool verbose = false) {
         Slime req;
         auto &obj = req.setObject();
@@ -69,6 +69,9 @@ struct Server : public ServerCmd {
         }
         Slime reply = invoke(req);
         return {reply.get()};
+    }
+    ~Server() {
+        EXPECT_EQUAL(shutdown(), 0);
     }
 };
 
