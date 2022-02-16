@@ -30,8 +30,6 @@ import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.session.PrepareParams;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.application.validation.change.VespaReindexAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 import org.junit.Rule;
@@ -442,7 +440,6 @@ public class HostedDeployTest {
                 .zone(prodZone)
                 .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true, false))
                 .configConvergenceChecker(new MockConfigConvergenceChecker(2))
-                .flagSource(new InMemoryFlagSource().withBooleanFlag(Flags.CHECK_CONFIG_CONVERGENCE_BEFORE_RESTARTING.id(), true))
                 .build();
         PrepareResult prepareResult = tester.deployApp("src/test/apps/hosted/", "6.1.0");
 
