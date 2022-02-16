@@ -106,7 +106,8 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
 
         doc.getDataType().serialize(this);
         if (hasHead) {
-            doc.getHeader().serialize(null, this);
+            StructuredFieldValue asStructured = doc;
+            write(null, asStructured);
         }
 
         int finalPos = buf.position();
@@ -311,12 +312,12 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
     }
 
     /**
-     * Write out the value of struct field
+     * Write out the value of structured field
      *
      * @param field - field description (name and data type)
      * @param s     - field value
      */
-    public void write(FieldBase field, Struct s) {
+    public void write(FieldBase field, StructuredFieldValue s) {
         // Serialize all parts first.. As we need to know length before starting
         // Serialize all the fields.
 
@@ -330,7 +331,9 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
         List<Integer> fieldIds = new LinkedList<>();
         List<java.lang.Integer> fieldLengths = new LinkedList<>();
 
-        for (Map.Entry<Field, FieldValue> value : s.getFields()) {
+        var iter = s.iterator();
+        while (iter.hasNext()) {
+            Map.Entry<Field, FieldValue> value = iter.next();
 
             int startPos = buffer.position();
             value.getValue().serialize(value.getKey(), this);
@@ -343,13 +346,14 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
         buffer.flip();
         buf = bigBuffer;
 
+        int sz = fieldIds.size();
         // Actual serialization starts here.
         int lenPos = buf.position();
         putInt(null, 0); // Move back to this after compression is done.
         buf.put(CompressionType.NONE.getCode());
-        buf.putInt1_4Bytes(s.getFieldCount());
+        buf.putInt1_4Bytes(sz);
 
-        for (int i = 0; i < s.getFieldCount(); ++i) {
+        for (int i = 0; i < sz; ++i) {
             putInt1_4Bytes(null, fieldIds.get(i));
             putInt2_4_8Bytes(null, fieldLengths.get(i));
         }
@@ -365,13 +369,14 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
     }
 
     /**
-     * Write out the value of structured field
+     * Write out the value of struct field
      *
      * @param field - field description (name and data type)
      * @param value - field value
      */
-    public void write(FieldBase field, StructuredFieldValue value) {
-        throw new IllegalArgumentException("Not Implemented");
+    public void write(FieldBase field, Struct value) {
+        StructuredFieldValue asStructured = value;
+        write(field, asStructured);
     }
 
     /**
