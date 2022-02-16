@@ -183,7 +183,7 @@ public:
                            vespalib::duration maxProcessTime = vespalib::duration::zero(),
                            vespalib::duration waitTime = vespalib::duration::zero(),
                            int ticksBeforeWait = 1,
-                           std::optional<vespalib::CpuUsage::Category> cpu_category = {});
+                           std::optional<vespalib::CpuUsage::Category> cpu_category = std::nullopt);
 
     // Check upgrade flag settings. Note that this flag may change at any time.
     // Thus the results of these functions should not be cached.
