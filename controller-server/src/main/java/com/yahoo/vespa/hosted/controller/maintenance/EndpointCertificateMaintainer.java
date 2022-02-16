@@ -135,7 +135,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                     if (Optional.of(storedMetaData).equals(curator.readEndpointCertificateMetadata(applicationId))) {
                         log.log(Level.INFO, "Cert for app " + applicationId.serializedForm()
                                 + " has not been requested in a month and app has no deployments, deleting from provider and ZK");
-                        endpointCertificateProvider.deleteCertificate(applicationId, storedMetaData.requestId());
+                        endpointCertificateProvider.deleteCertificate(applicationId, storedMetaData.rootRequestId());
                         curator.deleteEndpointCertificateMetadata(applicationId);
                     }
                 }
@@ -156,7 +156,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
 
     private void deleteOrReportUnmanagedCertificates() {
         List<EndpointCertificateRequestMetadata> endpointCertificateMetadata = endpointCertificateProvider.listCertificates();
-        Set<String> managedRequestIds = curator.readAllEndpointCertificateMetadata().values().stream().map(EndpointCertificateMetadata::requestId).collect(Collectors.toSet());
+        Set<String> managedRequestIds = curator.readAllEndpointCertificateMetadata().values().stream().map(EndpointCertificateMetadata::rootRequestId).collect(Collectors.toSet());
 
         for (var providerCertificateMetadata : endpointCertificateMetadata) {
             if (!managedRequestIds.contains(providerCertificateMetadata.requestId())) {

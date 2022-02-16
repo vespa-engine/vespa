@@ -35,7 +35,7 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
         long inAnHour = epochSecond + 3600;
         String requestId = UUID.randomUUID().toString();
         EndpointCertificateMetadata metadata = new EndpointCertificateMetadata(endpointCertificatePrefix + "-key", endpointCertificatePrefix + "-cert", 0, 0,
-                requestId, dnsNames, "mockCa", Optional.of(inAnHour), Optional.of(epochSecond));
+                currentMetadata.map(EndpointCertificateMetadata::rootRequestId).orElse(requestId), Optional.of(requestId), dnsNames, "mockCa", Optional.of(inAnHour), Optional.of(epochSecond));
         providerMetadata.put(requestId, metadata);
         return metadata;
     }
@@ -45,7 +45,7 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
 
         return providerMetadata.values().stream()
                 .map(p -> new EndpointCertificateRequestMetadata(
-                        p.requestId(),
+                        p.rootRequestId(),
                         "mock",
                         "mock",
                         "mock",
@@ -69,7 +69,7 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
     }
 
     @Override
-    public String certificateDetails(String id) throws IOException {
+    public String certificateDetails(String id) {
         return "";
     }
 

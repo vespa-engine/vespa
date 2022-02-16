@@ -33,7 +33,8 @@ public class EndpointCertificateMetadataSerializer {
     private final static String certNameField = "certName";
     private final static String versionField = "version";
     private final static String lastRequestedField = "lastRequested";
-    private final static String requestIdField = "requestId";
+    private final static String rootRequestIdField = "requestId";
+    private final static String leafRequestIdField = "leafRequestId";
     private final static String requestedDnsSansField = "requestedDnsSans";
     private final static String issuerField = "issuer";
     private final static String expiryField = "expiry";
@@ -46,7 +47,8 @@ public class EndpointCertificateMetadataSerializer {
         object.setString(certNameField, metadata.certName());
         object.setLong(versionField, metadata.version());
         object.setLong(lastRequestedField, metadata.lastRequested());
-        object.setString(requestIdField, metadata.requestId());
+        object.setString(rootRequestIdField, metadata.rootRequestId());
+        metadata.leafRequestId().ifPresent(leafRequestId -> object.setString(leafRequestIdField, leafRequestId));
         var cursor = object.setArray(requestedDnsSansField);
         metadata.requestedDnsSans().forEach(cursor::addString);
         object.setString(issuerField, metadata.issuer());
@@ -65,7 +67,8 @@ public class EndpointCertificateMetadataSerializer {
                 inspector.field(certNameField).asString(),
                 Math.toIntExact(inspector.field(versionField).asLong()),
                 inspector.field(lastRequestedField).asLong(),
-                inspector.field(requestIdField).asString(),
+                inspector.field(rootRequestIdField).asString(),
+                SlimeUtils.optionalString(inspector.field(leafRequestIdField)),
                 IntStream.range(0, inspector.field(requestedDnsSansField).entries())
                         .mapToObj(i -> inspector.field(requestedDnsSansField).entry(i).asString()).collect(Collectors.toList()),
                 inspector.field(issuerField).asString(),

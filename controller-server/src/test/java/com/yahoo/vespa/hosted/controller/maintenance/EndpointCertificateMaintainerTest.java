@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
-import com.yahoo.yolean.concurrent.Sleeper;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -32,7 +31,7 @@ public class EndpointCertificateMaintainerTest {
     private final ControllerTester tester = new ControllerTester();
     private final SecretStoreMock secretStore = (SecretStoreMock) tester.controller().secretStore();
     private final EndpointCertificateMaintainer maintainer = new EndpointCertificateMaintainer(tester.controller(), Duration.ofHours(1));
-    private final EndpointCertificateMetadata exampleMetadata = new EndpointCertificateMetadata("keyName", "certName", 0, 0, "uuid", List.of(), "issuer", Optional.empty(), Optional.empty());
+    private final EndpointCertificateMetadata exampleMetadata = new EndpointCertificateMetadata("keyName", "certName", 0, 0, "root-request-uuid", Optional.of("leaf-request-uuid"), List.of(), "issuer", Optional.empty(), Optional.empty());
     {
         ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.DELETE_UNMAINTAINED_CERTIFICATES.id(), true);
     }
