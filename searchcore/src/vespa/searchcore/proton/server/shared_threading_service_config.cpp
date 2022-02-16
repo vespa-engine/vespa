@@ -30,6 +30,11 @@ derive_shared_threads(const ProtonConfig& cfg, const HwInfo::Cpu& cpu_info)
     return std::max(scaled_cores, cfg.documentdb.size() + cfg.flush.maxconcurrent + 1);
 }
 
+size_t
+derive_warmup_threads(const HwInfo::Cpu& cpu_info) {
+    return std::max(1u, std::min(4u, cpu_info.cores()/8));
+}
+
 }
 
 SharedThreadingServiceConfig
@@ -37,7 +42,7 @@ SharedThreadingServiceConfig::make(const proton::SharedThreadingServiceConfig::P
                                    const proton::HwInfo::Cpu& cpu_info)
 {
     size_t shared_threads = derive_shared_threads(cfg, cpu_info);
-    return proton::SharedThreadingServiceConfig(shared_threads, shared_threads * 16, 4,
+    return proton::SharedThreadingServiceConfig(shared_threads, shared_threads * 16, derive_warmup_threads(cpu_info),
                                                 ThreadingServiceConfig::make(cfg, cfg.feeding.concurrency, cpu_info));
 }
 
