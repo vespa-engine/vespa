@@ -29,7 +29,7 @@ func TestCert(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("Success: Certificate written to %s\nSuccess: Certificate written to %s\nSuccess: Private key written to %s\n", pkgCertificate, certificate, privateKey), out)
 
 	_, outErr := execute(command{args: []string{"cert", "-a", "t1.a1.i1", pkgDir}, homeDir: homeDir}, t, nil)
-	assert.Contains(t, outErr, fmt.Sprintf("Error: Application package %s already contains a certificate", appDir))
+	assert.Contains(t, outErr, fmt.Sprintf("Error: application package %s already contains a certificate", appDir))
 }
 
 func TestCertCompressedPackage(t *testing.T) {
@@ -42,7 +42,7 @@ func TestCertCompressedPackage(t *testing.T) {
 	assert.Nil(t, err)
 
 	_, outErr := execute(command{args: []string{"cert", "-a", "t1.a1.i1", pkgDir}, homeDir: homeDir}, t, nil)
-	assert.Contains(t, outErr, "Error: Cannot add certificate to compressed application package")
+	assert.Contains(t, outErr, "Error: cannot add certificate to compressed application package")
 
 	err = os.Remove(zipFile)
 	assert.Nil(t, err)

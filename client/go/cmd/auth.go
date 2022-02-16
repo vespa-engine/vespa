@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
@@ -21,14 +23,13 @@ func init() {
 }
 
 var authCmd = &cobra.Command{
-	Use:   "auth",
-	Short: "Manage Vespa Cloud credentials",
-	Long:  `Manage Vespa Cloud credentials.`,
-
+	Use:               "auth",
+	Short:             "Manage Vespa Cloud credentials",
+	Long:              `Manage Vespa Cloud credentials.`,
 	DisableAutoGenTag: true,
-	Run: func(cmd *cobra.Command, args []string) {
-		// Root command does nothing
-		cmd.Help()
-		exitFunc(1)
+	SilenceUsage:      false,
+	Args:              cobra.MinimumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return fmt.Errorf("invalid command: %s", args[0])
 	},
 }

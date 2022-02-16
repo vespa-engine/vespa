@@ -18,9 +18,8 @@ const (
 )
 
 var (
-	zoneArg        string
-	logLevelArg    string
-	sessionOrRunID int64
+	zoneArg     string
+	logLevelArg string
 )
 
 func init() {
@@ -51,39 +50,45 @@ $ vespa deploy -t cloud -z dev.aws-us-east-1c  # -z can be omitted here as this 
 $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 	Args:              cobra.MaximumNArgs(1),
 	DisableAutoGenTag: true,
-	Run: func(cmd *cobra.Command, args []string) {
+	SilenceUsage:      true,
+	RunE: func(cmd *cobra.Command, args []string) error {
 		pkg, err := vespa.FindApplicationPackage(applicationSource(args), true)
 		if err != nil {
-			fatalErr(nil, err.Error())
-			return
+			return err
 		}
 		cfg, err := LoadConfig()
 		if err != nil {
-			fatalErr(err, "Could not load config")
-			return
+			return err
 		}
-		target := getTarget()
-		opts := getDeploymentOpts(cfg, pkg, target)
+		target, err := getTarget()
+		if err != nil {
+			return err
+		}
+		opts, err := getDeploymentOpts(cfg, pkg, target)
+		if err != nil {
+			return err
+		}
+		sessionOrRunID, err := vespa.Deploy(opts)
+		if err != nil {
+			return err
+		}
 
-		if sessionOrRunID, err := vespa.Deploy(opts); err == nil {
-			fmt.Print("\n")
-			if opts.IsCloud() {
-				printSuccess("Triggered deployment of ", color.Cyan(pkg.Path), " with run ID ", color.Cyan(sessionOrRunID))
-			} else {
-				printSuccess("Deployed ", color.Cyan(pkg.Path))
-			}
-			if opts.IsCloud() {
-				log.Printf("\nUse %s for deployment status, or follow this deployment at", color.Cyan("vespa status"))
-				log.Print(color.Cyan(fmt.Sprintf("%s/tenant/%s/application/%s/dev/instance/%s/job/%s-%s/run/%d",
-					getConsoleURL(),
-					opts.Deployment.Application.Tenant, opts.Deployment.Application.Application, opts.Deployment.Application.Instance,
-					opts.Deployment.Zone.Environment, opts.Deployment.Zone.Region,
-					sessionOrRunID)))
-			}
-			waitForQueryService(sessionOrRunID)
+		fmt.Print("\n")
+		if opts.IsCloud() {
+			printSuccess("Triggered deployment of ", color.Cyan(pkg.Path), " with run ID ", color.Cyan(sessionOrRunID))
 		} else {
-			fatalErr(nil, err.Error())
+			printSuccess("Deployed ", color.Cyan(pkg.Path))
 		}
+		if opts.IsCloud() {
+			log.Printf("\nUse %s for deployment status, or follow this deployment at", color.Cyan("vespa status"))
+			log.Print(color.Cyan(fmt.Sprintf("%s/tenant/%s/application/%s/dev/instance/%s/job/%s-%s/run/%d",
+				getConsoleURL(),
+				opts.Deployment.Application.Tenant, opts.Deployment.Application.Application, opts.Deployment.Application.Instance,
+				opts.Deployment.Zone.Environment, opts.Deployment.Zone.Region,
+				sessionOrRunID)))
+		}
+		waitForQueryService(sessionOrRunID)
+		return nil
 	},
 }
 
@@ -92,31 +97,32 @@ var prepareCmd = &cobra.Command{
 	Short:             "Prepare an application package for activation",
 	Args:              cobra.MaximumNArgs(1),
 	DisableAutoGenTag: true,
-	Run: func(cmd *cobra.Command, args []string) {
+	SilenceUsage:      true,
+	RunE: func(cmd *cobra.Command, args []string) error {
 		pkg, err := vespa.FindApplicationPackage(applicationSource(args), true)
 		if err != nil {
-			fatalErr(err, "Could not find application package")
-			return
+			return fmt.Errorf("could not find application package: %w", err)
 		}
 		cfg, err := LoadConfig()
 		if err != nil {
-			fatalErr(err, "Could not load config")
-			return
+			return err
 		}
-		target := getTarget()
+		target, err := getTarget()
+		if err != nil {
+			return err
+		}
 		sessionID, err := vespa.Prepare(vespa.DeploymentOpts{
 			ApplicationPackage: pkg,
 			Target:             target,
 		})
-		if err == nil {
-			if err := cfg.WriteSessionID(vespa.DefaultApplication, sessionID); err != nil {
-				fatalErr(err, "Could not write session ID")
-				return
-			}
-			printSuccess("Prepared ", color.Cyan(pkg.Path), " with session ", sessionID)
-		} else {
-			fatalErr(nil, err.Error())
+		if err != nil {
+			return err
 		}
+		if err := cfg.WriteSessionID(vespa.DefaultApplication, sessionID); err != nil {
+			return fmt.Errorf("could not write session id: %w", err)
+		}
+		printSuccess("Prepared ", color.Cyan(pkg.Path), " with session ", sessionID)
+		return nil
 	},
 }
 
@@ -125,33 +131,34 @@ var activateCmd = &cobra.Command{
 	Short:             "Activate (deploy) a previously prepared application package",
 	Args:              cobra.MaximumNArgs(1),
 	DisableAutoGenTag: true,
-	Run: func(cmd *cobra.Command, args []string) {
+	SilenceUsage:      true,
+	RunE: func(cmd *cobra.Command, args []string) error {
 		pkg, err := vespa.FindApplicationPackage(applicationSource(args), true)
 		if err != nil {
-			fatalErr(err, "Could not find application package")
-			return
+			return fmt.Errorf("could not find application package: %w", err)
 		}
 		cfg, err := LoadConfig()
 		if err != nil {
-			fatalErr(err, "Could not load config")
-			return
+			return err
 		}
 		sessionID, err := cfg.ReadSessionID(vespa.DefaultApplication)
 		if err != nil {
-			fatalErr(err, "Could not read session ID")
-			return
+			return fmt.Errorf("could not read session id: %w", err)
 		}
-		target := getTarget()
+		target, err := getTarget()
+		if err != nil {
+			return err
+		}
 		err = vespa.Activate(sessionID, vespa.DeploymentOpts{
 			ApplicationPackage: pkg,
 			Target:             target,
 		})
-		if err == nil {
-			printSuccess("Activated ", color.Cyan(pkg.Path), " with session ", sessionID)
-			waitForQueryService(sessionID)
-		} else {
-			fatalErr(nil, err.Error())
+		if err != nil {
+			return err
 		}
+		printSuccess("Activated ", color.Cyan(pkg.Path), " with session ", sessionID)
+		waitForQueryService(sessionID)
+		return nil
 	},
 }
 

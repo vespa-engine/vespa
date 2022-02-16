@@ -5,12 +5,17 @@
 package main
 
 import (
-	"github.com/vespa-engine/vespa/client/go/cmd"
 	"os"
+
+	"github.com/vespa-engine/vespa/client/go/cmd"
 )
 
 func main() {
 	if err := cmd.Execute(); err != nil {
-		os.Exit(1)
+		if cliErr, ok := err.(cmd.ErrCLI); ok {
+			os.Exit(cliErr.Status)
+		} else {
+			os.Exit(1)
+		}
 	}
 }

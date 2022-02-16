@@ -46,14 +46,14 @@ var versionCmd = &cobra.Command{
 	Use:               "version",
 	Short:             "Show current version and check for updates",
 	DisableAutoGenTag: true,
+	SilenceUsage:      true,
 	Args:              cobra.ExactArgs(0),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		log.Printf("vespa version %s compiled with %v on %v/%v", build.Version, runtime.Version(), runtime.GOOS, runtime.GOARCH)
 		if !skipVersionCheck && sp.isTerminal() {
-			if err := checkVersion(); err != nil {
-				fatalErr(err)
-			}
+			return checkVersion()
 		}
+		return nil
 	},
 }
 

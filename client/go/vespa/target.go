@@ -291,6 +291,9 @@ func (t *cloudTarget) PrepareApiRequest(req *http.Request, sigKeyId string) erro
 
 func (t *cloudTarget) addAuth0AccessToken(request *http.Request) error {
 	a, err := auth0.GetAuth0(t.authConfigPath, t.systemName, t.apiURL)
+	if err != nil {
+		return err
+	}
 	system, err := a.PrepareSystem(auth0.ContextWithCancel())
 	if err != nil {
 		return err
@@ -562,7 +565,7 @@ func wait(fn responseFunc, reqFn requestFunc, certificate *tls.Certificate, time
 				return statusCode, nil
 			}
 		}
-		timeLeft := deadline.Sub(time.Now())
+		timeLeft := time.Until(deadline)
 		if loopOnce || timeLeft < retryInterval {
 			break
 		}

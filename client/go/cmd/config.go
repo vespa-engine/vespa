@@ -46,10 +46,10 @@ instead.
 Configuration is written to $HOME/.vespa by default. This path can be
 overridden by setting the VESPA_CLI_HOME environment variable.`,
 	DisableAutoGenTag: true,
-	Run: func(cmd *cobra.Command, args []string) {
-		// Root command does nothing
-		cmd.Help()
-		exitFunc(1)
+	SilenceUsage:      false,
+	Args:              cobra.MinimumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return fmt.Errorf("invalid command: %s", args[0])
 	},
 }
 
@@ -58,20 +58,17 @@ var setConfigCmd = &cobra.Command{
 	Short:             "Set a configuration option.",
 	Example:           "$ vespa config set target cloud",
 	DisableAutoGenTag: true,
+	SilenceUsage:      true,
 	Args:              cobra.ExactArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := LoadConfig()
 		if err != nil {
-			fatalErr(err, "Could not load config")
-			return
+			return err
 		}
 		if err := cfg.Set(args[0], args[1]); err != nil {
-			fatalErr(err)
-		} else {
-			if err := cfg.Write(); err != nil {
-				fatalErr(err)
-			}
+			return err
 		}
+		return cfg.Write()
 	},
 }
 
@@ -82,13 +79,12 @@ var getConfigCmd = &cobra.Command{
 $ vespa config get target`,
 	Args:              cobra.MaximumNArgs(1),
 	DisableAutoGenTag: true,
-	Run: func(cmd *cobra.Command, args []string) {
+	SilenceUsage:      true,
+	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := LoadConfig()
 		if err != nil {
-			fatalErr(err, "Could not load config")
-			return
+			return err
 		}
-
 		if len(args) == 0 { // Print all values
 			var flags []string
 			for flag := range flagToConfigBindings {
@@ -101,6 +97,7 @@ $ vespa config get target`,
 		} else {
 			printOption(cfg, args[0])
 		}
+		return nil
 	},
 }
 
@@ -118,11 +115,11 @@ type KeyPair struct {
 func LoadConfig() (*Config, error) {
 	home, err := vespaCliHome()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not detect config directory: %w", err)
 	}
 	c := &Config{Home: home, createDirs: true}
 	if err := c.load(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not load config: %w", err)
 	}
 	return c, nil
 }
