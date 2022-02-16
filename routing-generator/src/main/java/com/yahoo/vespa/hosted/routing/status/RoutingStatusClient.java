@@ -17,6 +17,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.NoopUserTokenHandler;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
@@ -60,6 +61,8 @@ public class RoutingStatusClient extends AbstractComponent implements RoutingSta
                                                                        .build())
                                  .setSSLContext(provider.getIdentitySslContext())
                                  .setSSLHostnameVerifier(createHostnameVerifier(config))
+                                 // Required to enable connection pooling, which is disabled by default when using mTLS
+                                 .setUserTokenHandler(NoopUserTokenHandler.INSTANCE)
                                  .setUserAgent("hosted-vespa-routing-status-client")
                                  .build(),
                 URI.create(config.configserverVipUrl())
