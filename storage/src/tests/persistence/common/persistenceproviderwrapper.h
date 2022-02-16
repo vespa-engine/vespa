@@ -72,8 +72,14 @@ public:
     /**
      * Set a mask for operations to fail with _result
      */
-    void setFailureMask(uint32_t mask) { _failureMask = mask; }
-    uint32_t getFailureMask() const { return _failureMask; }
+    void setFailureMask(uint32_t mask) {
+        Guard guard(_lock);
+        _failureMask = mask;
+    }
+    uint32_t getFailureMask() const {
+        Guard guard(_lock);
+        return _failureMask;
+    }
 
     /**
      * Get a string representation of all the operations performed on the
