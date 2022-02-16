@@ -210,7 +210,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
                 .withSuccessCount(report.getTestsSucceededCount())
                 .withAbortedCount(report.getTestsAbortedCount())
                 .withIgnoredCount(report.getTestsSkippedCount())
-                .withFailedCount(report.getTestsFailedCount() - inconclusive)
+                .withFailedCount(report.getTotalFailureCount() - inconclusive)
                 .withInconclusiveCount(inconclusive)
                 .withFailures(failures)
                 .withLogs(logRecords.values())
