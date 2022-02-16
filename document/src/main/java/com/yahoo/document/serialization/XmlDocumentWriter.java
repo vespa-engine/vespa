@@ -105,7 +105,8 @@ public final class XmlDocumentWriter implements DocumentWriter {
         if (lastModified != null) {
             buffer.addAttribute("lastmodifiedtime", lastModified);
         }
-        write(null, value.getHeader());
+        StructuredFieldValue asStructured = value;
+        write(null, asStructured);
 
         buffer.endTag();
     }
@@ -228,14 +229,13 @@ public final class XmlDocumentWriter implements DocumentWriter {
 
     @Override
     public void write(FieldBase field, Struct value) {
-        optionalWrapperStart(field);
-        XmlSerializationHelper.printStructXml(value, buffer);
-        optionalWrapperEnd(field);
+        StructuredFieldValue asStructured = value;
+        write(field, asStructured);
     }
 
     @Override
     public void write(FieldBase field, StructuredFieldValue value) {
-        buffer.beginTag(field.getName());
+        optionalWrapperStart(field);
         Iterator<Map.Entry<Field, FieldValue>> i = value.iterator();
         while (i.hasNext()) {
             Map.Entry<Field, FieldValue> v = i.next();
@@ -243,7 +243,7 @@ public final class XmlDocumentWriter implements DocumentWriter {
             v.getValue().printXml(buffer);
             buffer.endTag();
         }
-        buffer.endTag();
+        optionalWrapperEnd(field);
     }
 
     @Override

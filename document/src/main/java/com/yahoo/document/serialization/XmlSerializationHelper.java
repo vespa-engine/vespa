@@ -54,7 +54,7 @@ public class XmlSerializationHelper {
         if (lastModified != null) {
             xml.addAttribute("lastmodifiedtime", lastModified);
         }
-        doc.getHeader().printXml(xml);
+        printStructured(doc, xml);
     }
 
     public static void printDoubleXml(DoubleFieldValue d, XmlStream xml) {
@@ -97,7 +97,7 @@ public class XmlSerializationHelper {
         }
     }
 
-    public static void printStructXml(Struct s, XmlStream xml) {
+    private static void printStructured(StructuredFieldValue s, XmlStream xml) {
         Iterator<Map.Entry<Field, FieldValue>> it = s.iterator();
         while (it.hasNext()) {
             Map.Entry<Field, FieldValue> val = it.next();
@@ -105,6 +105,9 @@ public class XmlSerializationHelper {
             val.getValue().printXml(xml);
             xml.endTag();
         }
+    }
+    public static void printStructXml(Struct s, XmlStream xml) {
+        printStructured(s, xml);
     }
 
     public static void printWeightedSetXml(WeightedSet ws, XmlStream xml) {

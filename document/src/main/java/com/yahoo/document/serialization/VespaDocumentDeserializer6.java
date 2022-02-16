@@ -116,13 +116,11 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         doc.setDataType(readDocumentType());
         doc.setId(documentId);
 
-        Struct h = doc.getHeader();
-        h.clear();
         if ((content & 0x2) != 0) {
-            readHeaderBody(h);
+            readHeaderBody(doc);
         }
         if ((content & 0x4) != 0) {
-            readHeaderBody(h);
+            readHeaderBody(doc);
         }
 
         if (dataLength != (position() - dataPos)) {
@@ -322,15 +320,12 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         buf = bigBuf;
     }
 
-    private void readHeaderBody(Struct primary) {
-        primary.setVersion(version);
-
+    private void readHeaderBody(Document target) {
         if (version < 8) {
             throw new DeserializationException("Illegal document serialization version " + version);
         }
 
         int dataSize = getInt(null);
-
         byte comprCode = getByte(null);
         CompressionType compression = CompressionType.valueOf(comprCode);
 
@@ -366,7 +361,8 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         // for a while: deserialize from this buffer instead:
         buf = GrowableByteBuffer.wrap(destination);
 
-        StructDataType priType = primary.getDataType();
+        StructDataType priType = target.getDataType().contentStruct();
+
         for (int i=0; i<numberOfFields; ++i) {
             int posBefore = position();
             Integer f_id = fieldIdsAndLengths.get(i).first;
@@ -374,7 +370,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
             if (structField != null) {
                 FieldValue value = structField.getDataType().createFieldValue();
                 value.deserialize(structField, this);
-                primary.setFieldValue(structField, value);
+                target.setFieldValue(structField, value);
             }
             //jump to beginning of next field:
             position(posBefore + fieldIdsAndLengths.get(i).second.intValue());
