@@ -26,9 +26,7 @@ DistributorNode::DistributorNode(
     : StorageNode(configUri, context, generationFetcher,
                   std::make_unique<HostInfo>(),
                   !communicationManager ? NORMAL : SINGLE_THREADED_TEST_MODE),
-      // TODO STRIPE: Change waitTime default to 100ms when legacy mode is removed.
-      _threadPool(framework::TickingThreadPool::createDefault("distributor",
-                                                              (num_distributor_stripes > 0) ? 100ms : 5ms)),
+      _threadPool(framework::TickingThreadPool::createDefault("distributor", 100ms, 1, 5s)),
       _stripe_pool(std::make_unique<distributor::DistributorStripePool>()),
       _context(context),
       _timestamp_mutex(),
@@ -72,9 +70,6 @@ DistributorNode::handleConfigChange(vespa::config::content::core::StorDistributo
 {
     framework::TickingLockGuard guard(_threadPool->freezeAllTicks());
     _context.getComponentRegister().setDistributorConfig(c);
-    _threadPool->updateParametersAllThreads(std::chrono::milliseconds(c.ticksWaitTimeMs),
-                                            std::chrono::milliseconds(c.maxProcessTimeMs),
-                                            c.ticksBeforeWait);
 }
 
 void

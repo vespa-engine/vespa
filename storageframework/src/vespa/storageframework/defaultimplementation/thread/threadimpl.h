@@ -75,8 +75,6 @@ public:
         return _properties.getTicksBeforeWait();
     }
 
-    void updateParameters(vespalib::duration waitTime, vespalib::duration maxProcessTime, int ticksBeforeWait) override;
-
     void setTickData(const ThreadTickData&);
     ThreadTickData getTickData() const;
     const ThreadProperties& getProperties() const { return _properties; }
