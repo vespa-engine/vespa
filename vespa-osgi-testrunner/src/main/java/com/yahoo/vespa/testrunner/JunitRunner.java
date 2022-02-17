@@ -205,10 +205,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         var failures = report.getFailures().stream()
                 .map(failure -> new TestReport.Failure(failure.getTestIdentifier().getUniqueId(), failure.getException()))
                 .collect(Collectors.toList());
-        long inconclusive = failures.stream()
-                                    .filter(failure ->    failure.exception() != null
-                                                       && failure.exception().getClass().getName().equals(InconclusiveTestException.class.getName()))
-                                    .count();
+        long inconclusive = failures.stream().filter(failure -> failure.exception() instanceof InconclusiveTestException).count();
         return TestReport.builder()
                 .withSuccessCount(report.getTestsSucceededCount())
                 .withAbortedCount(report.getTestsAbortedCount())
