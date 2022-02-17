@@ -116,8 +116,8 @@ public class NotificationsDbTest {
         assertEquals(expected, curatorDb.readNotifications(tenant));
 
         // One resource is at warning
-        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.85, 0.9, 0.3, 0.5, Map.of())));
-        expected.add(notification(12345, Type.feedBlock, Level.warning, sourceCluster1, "disk (usage: 85.0%, feed block limit: 90.0%)"));
+        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.88, 0.9, 0.3, 0.5, Map.of())));
+        expected.add(notification(12345, Type.feedBlock, Level.warning, sourceCluster1, "disk (usage: 88.0%, feed block limit: 90.0%)"));
         assertEquals(expected, curatorDb.readNotifications(tenant));
 
         // Both resources over the limit
@@ -142,17 +142,17 @@ public class NotificationsDbTest {
 
         // Cluster1 and cluster2 are having feed block issues, cluster 3 is reindexing
         notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(
-                clusterMetrics("cluster1", 0.85, 0.9, 0.3, 0.5, Map.of()), clusterMetrics("cluster2", 0.6, 0.8, 0.9, 0.75, Map.of()), clusterMetrics("cluster3", 0.1, 0.8, 0.2, 0.9, Map.of("announcements", 0.75, "build", 0.5))));
-        expected.add(notification(12345, Type.feedBlock, Level.warning, sourceCluster1, "disk (usage: 85.0%, feed block limit: 90.0%)"));
+                clusterMetrics("cluster1", 0.88, 0.9, 0.3, 0.5, Map.of()), clusterMetrics("cluster2", 0.6, 0.8, 0.9, 0.75, Map.of()), clusterMetrics("cluster3", 0.1, 0.8, 0.2, 0.9, Map.of("announcements", 0.75, "build", 0.5))));
+        expected.add(notification(12345, Type.feedBlock, Level.warning, sourceCluster1, "disk (usage: 88.0%, feed block limit: 90.0%)"));
         expected.add(notification(12345, Type.feedBlock, Level.error, sourceCluster2, "memory (usage: 90.0%, feed block limit: 75.0%)"));
         expected.add(notification(12345, Type.reindex, Level.info, sourceCluster3, "document type 'announcements' (75.0% done)", "document type 'build' (50.0% done)"));
         assertEquals(expected, curatorDb.readNotifications(tenant));
 
         // Cluster1 improves, while cluster3 starts having feed block issues and finishes reindexing 'build' documents
         notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(
-                clusterMetrics("cluster1", 0.15, 0.9, 0.3, 0.5, Map.of()), clusterMetrics("cluster2", 0.6, 0.8, 0.9, 0.75, Map.of()), clusterMetrics("cluster3", 0.75, 0.8, 0.2, 0.9,  Map.of("announcements", 0.9))));
+                clusterMetrics("cluster1", 0.15, 0.9, 0.3, 0.5, Map.of()), clusterMetrics("cluster2", 0.6, 0.8, 0.9, 0.75, Map.of()), clusterMetrics("cluster3", 0.78, 0.8, 0.2, 0.9,  Map.of("announcements", 0.9))));
         expected.set(6, notification(12345, Type.feedBlock, Level.error, sourceCluster2, "memory (usage: 90.0%, feed block limit: 75.0%)"));
-        expected.set(7, notification(12345, Type.feedBlock, Level.warning, sourceCluster3, "disk (usage: 75.0%, feed block limit: 80.0%)"));
+        expected.set(7, notification(12345, Type.feedBlock, Level.warning, sourceCluster3, "disk (usage: 78.0%, feed block limit: 80.0%)"));
         expected.set(8, notification(12345, Type.reindex, Level.info, sourceCluster3, "document type 'announcements' (90.0% done)"));
         assertEquals(expected, curatorDb.readNotifications(tenant));
     }
