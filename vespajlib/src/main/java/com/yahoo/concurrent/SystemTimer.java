@@ -2,6 +2,8 @@
 package com.yahoo.concurrent;
 
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This is an implementation of {@link Timer} that is backed by an actual system timer.
@@ -12,9 +14,27 @@ public enum SystemTimer implements Timer {
 
     INSTANCE;
 
+    private static final Logger log = Logger.getLogger(SystemTimer.class.getName());
+
     private volatile long millis;
 
-    private SystemTimer() {
+    private static int detectHz() {
+        String hzEnv = System.getenv("VESPA_TIMER_HZ");
+        int hz = 1000;
+        if ((hzEnv != null) && !hzEnv.isBlank()) {
+            try {
+                hz = Integer.parseInt(hzEnv);
+            } catch (NumberFormatException e) {
+                log.log(Level.WARNING, "Failed parsing VESPA_TIMER_HZ='" + hzEnv + "'", e);
+            }
+        };
+        hz = Math.min(1000, Math.max(1, hz)); // Capping to valid range [1...1000]hz
+        log.fine("vespa-system-timer running at " + hz + "hz. VESPA_TIMER_HZ='" + hzEnv + "'");
+        return hz;
+    }
+
+    SystemTimer() {
+        int napTime = 1000 / detectHz();
         millis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
         Thread thread = new Thread() {
 
@@ -23,7 +43,7 @@ public enum SystemTimer implements Timer {
                 while (true) {
                     millis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
                     try {
-                        Thread.sleep(1);
+                        Thread.sleep(napTime);
                     } catch (InterruptedException e) {
                         break;
                     }
@@ -31,6 +51,7 @@ public enum SystemTimer implements Timer {
             }
         };
         thread.setDaemon(true);
+        thread.setName("vespa-system-timer");
         thread.start();
     }
 
