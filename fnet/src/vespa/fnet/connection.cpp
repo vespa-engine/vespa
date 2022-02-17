@@ -125,8 +125,8 @@ FNET_Connection::SetState(State state)
 
     std::vector<FNET_Channel::UP> toDelete;
     std::unique_lock<std::mutex> guard(_ioc_lock);
-    oldstate = _state;
-    _state = state;
+    oldstate = GetState();
+    _state.store(state, std::memory_order_relaxed);
     if (LOG_WOULD_LOG(debug) && state != oldstate) {
         LOG(debug, "Connection(%s): State transition: %s -> %s", GetSpec(),
             GetStateString(oldstate), GetStateString(state));
@@ -570,7 +570,7 @@ FNET_Connection::Init()
     }
 
     // handle close by admin channel init
-    if (_state == FNET_CLOSED) {
+    if (GetState() == FNET_CLOSED) {
         return false;
     }
 
@@ -600,7 +600,7 @@ FNET_Connection::handle_handshake_act()
 {
     assert(_flags._handshake_work_pending);
     _flags._handshake_work_pending = false;
-    return ((_state == FNET_CONNECTING) && handshake());
+    return ((GetState() == FNET_CONNECTING) && handshake());
 }
 
 void
@@ -619,7 +619,7 @@ FNET_Connection::OpenChannel(FNET_IPacketHandler *handler,
     FNET_Channel * ret = nullptr;
 
     std::unique_lock<std::mutex> guard(_ioc_lock);
-    if (__builtin_expect(_state < FNET_CLOSING, true)) {
+    if (__builtin_expect(GetState() < FNET_CLOSING, true)) {
         newChannel->SetID(GetNextID());
         if (chid != nullptr) {
             *chid = newChannel->GetID();
@@ -698,7 +698,7 @@ FNET_Connection::PostPacket(FNET_Packet *packet, uint32_t chid)
 
     assert(packet != nullptr);
     std::unique_lock<std::mutex> guard(_ioc_lock);
-    if (_state >= FNET_CLOSING) {
+    if (GetState() >= FNET_CLOSING) {
         if (_flags._discarding) {
             _queue.QueuePacket_NoLock(packet, FNET_Context(chid));
         } else {
@@ -710,7 +710,7 @@ FNET_Connection::PostPacket(FNET_Packet *packet, uint32_t chid)
     writeWork = _writeWork;
     _writeWork++;
     _queue.QueuePacket_NoLock(packet, FNET_Context(chid));
-    if ((writeWork == 0) && (_state == FNET_CONNECTED)) {
+    if ((writeWork == 0) && (GetState() == FNET_CONNECTED)) {
         AddRef_NoLock();
         guard.unlock();
         Owner()->EnableWrite(this, /* needRef = */ false);
@@ -756,7 +756,7 @@ FNET_Connection::HandleReadEvent()
 {
     bool broken = false;  // is connection broken ?
 
-    switch(_state) {
+    switch(GetState()) {
     case FNET_CONNECTING:
         broken = !handshake();
         break;
@@ -776,7 +776,7 @@ bool
 FNET_Connection::writePendingAfterConnect()
 {
     std::lock_guard<std::mutex> guard(_ioc_lock);
-    _state = FNET_CONNECTED; // SetState(FNET_CONNECTED)
+    _state.store(FNET_CONNECTED, std::memory_order_relaxed); // SetState(FNET_CONNECTED)
     LOG(debug, "Connection(%s): State transition: %s -> %s", GetSpec(),
         GetStateString(FNET_CONNECTING), GetStateString(FNET_CONNECTED));
     return (_writeWork > 0);
@@ -787,7 +787,7 @@ FNET_Connection::HandleWriteEvent()
 {
     bool broken = false;  // is connection broken ?
 
-    switch(_state) {
+    switch(GetState()) {
     case FNET_CONNECTING:
         broken = !handshake();
         break;

@@ -100,7 +100,7 @@ private:
     vespalib::CryptoSocket::UP _socket;          // socket for this conn
     ResolveHandlerSP         _resolve_handler; // async resolve callback
     FNET_Context             _context;         // connection context
-    State                    _state;           // connection state
+    std::atomic<State>       _state;           // connection state. May be polled outside lock
     Flags                    _flags;           // Packed flags.
     uint32_t                 _packetLength;    // packet length
     uint32_t                 _packetCode;      // packet code
@@ -339,9 +339,9 @@ public:
 
 
     /**
-     * @return current connection state.
+     * @return current connection state. May be stale if read outside lock.
      **/
-    State GetState() { return _state; }
+    State GetState() const noexcept { return _state.load(std::memory_order_relaxed); }
 
 
     /**
