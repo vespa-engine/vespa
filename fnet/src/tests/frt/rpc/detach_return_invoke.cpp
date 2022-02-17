@@ -5,15 +5,16 @@
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/invoker.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <atomic>
 #include <thread>
 
 struct Receptor : public FRT_IRequestWait
 {
-    FRT_RPCRequest *req;
+    std::atomic<FRT_RPCRequest*> req;
 
-    Receptor() : req(0) {}
+    Receptor() : req(nullptr) {}
     void RequestDone(FRT_RPCRequest *r) override {
-        req = r;
+        req.store(r);
     }
 };
 
@@ -55,18 +56,18 @@ TEST("detach return invoke") {
     target->InvokeSync(req, 5.0);
     EXPECT_TRUE(!req->IsError());
     for (uint32_t i = 0; i < 1000; ++i) {
-        if (receptor.req != 0) {
+        if (receptor.req.load() != nullptr) {
             break;
         }
         std::this_thread::sleep_for(10ms);
     }
     req->SubRef();
     target->SubRef();
-    if (receptor.req != 0) {
-        EXPECT_TRUE(!receptor.req->IsError());
-        receptor.req->SubRef();
+    if (receptor.req.load() != nullptr) {
+        EXPECT_TRUE(!receptor.req.load()->IsError());
+        receptor.req.load()->SubRef();
     }
-    EXPECT_TRUE(receptor.req != 0);
+    EXPECT_TRUE(receptor.req.load() != nullptr);
 };
 
 TEST_MAIN() { TEST_RUN_ALL(); }
