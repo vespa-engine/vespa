@@ -293,22 +293,23 @@ class JobControllerApiHandlerHelper {
 
                 Cursor latestVersionsObject = stepObject.setObject("latestVersions");
                 List<ChangeBlocker> blockers = application.deploymentSpec().requireInstance(stepStatus.instance()).changeBlocker();
+                var deployments = application.require(stepStatus.instance()).productionDeployments().values();
                 latestVersionWithCompatibleConfidenceAndNotNewerThanSystem(versionStatus.versions(),
                                                                            application.deploymentSpec().requireInstance(stepStatus.instance()).upgradePolicy())
                           .ifPresent(latestPlatform -> {
                               Cursor latestPlatformObject = latestVersionsObject.setObject("platform");
                               latestPlatformObject.setString("platform", latestPlatform.versionNumber().toFullString());
                               latestPlatformObject.setLong("at", latestPlatform.committedAt().toEpochMilli());
-                              latestPlatformObject.setBool("upgrade", application.require(stepStatus.instance()).productionDeployments().values().stream()
-                                                                                 .anyMatch(deployment -> deployment.version().isBefore(latestPlatform.versionNumber())));
+                              latestPlatformObject.setBool("upgrade",    change.platform().map(latestPlatform.versionNumber()::isAfter).orElse(true) && deployments.isEmpty()
+                                                                      || deployments.stream().anyMatch(deployment -> deployment.version().isBefore(latestPlatform.versionNumber())));
                               toSlime(latestPlatformObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksVersions));
                           });
                 application.latestVersion().ifPresent(latestApplication -> {
                     Cursor latestApplicationObject = latestVersionsObject.setObject("application");
                     toSlime(latestApplicationObject.setObject("application"), latestApplication);
                     latestApplicationObject.setLong("at", latestApplication.buildTime().orElse(Instant.EPOCH).toEpochMilli());
-                    latestApplicationObject.setBool("upgrade", application.require(stepStatus.instance()).productionDeployments().values().stream()
-                                                                          .anyMatch(deployment -> deployment.applicationVersion().compareTo(latestApplication) < 0));
+                    latestApplicationObject.setBool("upgrade",    change.application().map(latestApplication::compareTo).orElse(1) > 0 && deployments.isEmpty()
+                                                               || deployments.stream().anyMatch(deployment -> deployment.applicationVersion().compareTo(latestApplication) < 0));
                     toSlime(latestApplicationObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksRevisions));
                 });
             }
