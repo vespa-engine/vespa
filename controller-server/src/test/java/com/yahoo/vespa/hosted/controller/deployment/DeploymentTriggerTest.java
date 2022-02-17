@@ -1419,7 +1419,7 @@ public class DeploymentTriggerTest {
     }
 
     @Test
-    public void testsVeryLengthyPipelineRevisions() {
+    public void testVeryLengthyPipelineRevisions() {
         String lengthyDeploymentSpec =
                 "<deployment version='1.0'>\n" +
                 "    <instance id='alpha'>\n" +
@@ -1517,7 +1517,7 @@ public class DeploymentTriggerTest {
     }
 
     @Test
-    public void testsVeryLengthyPipelineUpgrade() {
+    public void testVeryLengthyPipelineUpgrade() {
         String lengthyDeploymentSpec =
                 "<deployment version='1.0'>\n" +
                 "    <instance id='alpha'>\n" +
