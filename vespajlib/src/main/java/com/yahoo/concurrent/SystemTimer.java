@@ -14,11 +14,10 @@ public enum SystemTimer implements Timer {
 
     INSTANCE;
 
-    private static final Logger log = Logger.getLogger(SystemTimer.class.getName());
-
     private volatile long millis;
 
     private static int detectHz() {
+        Logger log = Logger.getLogger(SystemTimer.class.getName());
         String hzEnv = System.getenv("VESPA_TIMER_HZ");
         int hz = 1000;
         if ((hzEnv != null) && !hzEnv.isBlank()) {
