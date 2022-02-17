@@ -42,7 +42,7 @@ public class Range<NAMETYPE extends Name> extends CompositeTensorFunction<NAMETY
     }
 
     @Override
-    public String toString(ToStringContext context) {
+    public String toString(ToStringContext<NAMETYPE> context) {
         return "range(" + dimensionNames().collect(Collectors.joining(",")) + ")" + rangeFunction;
     }
 

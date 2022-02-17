@@ -998,7 +998,8 @@ public class RankProfile implements Cloneable {
         return featureTypes;
     }
     
-    public MapEvaluationTypeContext typeContext(QueryProfileRegistry queryProfiles, Map<Reference, TensorType> featureTypes) {
+    public MapEvaluationTypeContext typeContext(QueryProfileRegistry queryProfiles,
+                                                Map<Reference, TensorType> featureTypes) {
         MapEvaluationTypeContext context = new MapEvaluationTypeContext(getExpressionFunctions(), featureTypes);
 
         // Add small and large constants, respectively

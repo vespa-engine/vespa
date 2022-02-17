@@ -38,7 +38,7 @@ public class Random<NAMETYPE extends Name> extends CompositeTensorFunction<NAMET
     }
 
     @Override
-    public String toString(ToStringContext context) {
+    public String toString(ToStringContext<NAMETYPE> context) {
         return "random(" + dimensionNames().collect(Collectors.joining(",")) + ")";
     }
 

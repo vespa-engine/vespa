@@ -41,7 +41,7 @@ public class Diag<NAMETYPE extends Name> extends CompositeTensorFunction<NAMETYP
     }
 
     @Override
-    public String toString(ToStringContext context) {
+    public String toString(ToStringContext<NAMETYPE> context) {
         return "diag(" + dimensionNames().collect(Collectors.joining(",")) + ")" + diagFunction;
     }
 

@@ -285,7 +285,7 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
     }
 
     @Override
-    public String toString(ToStringContext context) {
+    public String toString(ToStringContext<NAMETYPE> context) {
         return "concat(" + argumentA.toString(context) + ", " + argumentB.toString(context) + ", " + dimension + ")";
     }
 

@@ -42,9 +42,11 @@ public final class ReferenceNode extends CompositeNode {
         return reference.name();
     }
 
+    @Override
     public int hashCode() {
         return reference.hashCode();
     }
+
     /** Returns the arguments, never null */
     public Arguments getArguments() { return reference.arguments(); }
 
@@ -118,7 +120,7 @@ public final class ReferenceNode extends CompositeNode {
             throw new IllegalArgumentException(reference + " is invalid", e);
         }
         if (type == null)
-            throw new IllegalArgumentException("Unknown feature '" + toString() + "'");
+            throw new IllegalArgumentException("Unknown feature '" + this + "'");
         return type;
     }
 

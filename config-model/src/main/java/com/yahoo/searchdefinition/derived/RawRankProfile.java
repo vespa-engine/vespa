@@ -63,8 +63,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                           QueryProfileRegistry queryProfiles, ImportedMlModels importedModels,
                           AttributeFields attributeFields, ModelContext.Properties deployProperties) {
         this.name = rankProfile.name();
-        compressedProperties = compress(new Deriver(rankProfile.compile(queryProfiles, importedModels),
-                                                    attributeFields, deployProperties).derive(largeExpressions));
+        compressedProperties = compress(new Deriver(rankProfile.compile(queryProfiles, importedModels), attributeFields, deployProperties, queryProfiles)
+                                                .derive(largeExpressions));
     }
 
     private Compressor.Compression compress(List<Pair<String, String>> properties) {
@@ -156,7 +156,10 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         /**
          * Creates a raw rank profile from the given rank profile
          */
-        Deriver(RankProfile compiled, AttributeFields attributeFields, ModelContext.Properties deployProperties) {
+        Deriver(RankProfile compiled,
+                AttributeFields attributeFields,
+                ModelContext.Properties deployProperties,
+                QueryProfileRegistry queryProfiles) {
             rankprofileName = compiled.name();
             attributeTypes = compiled.getAttributeTypes();
             queryFeatureTypes = compiled.getQueryFeatureTypes();
@@ -179,7 +182,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             Map<String, RankProfile.RankingExpressionFunction> functions = compiled.getFunctions();
             List<ExpressionFunction> functionExpressions = functions.values().stream().map(f -> f.function()).collect(Collectors.toList());
             Map<String, String> functionProperties = new LinkedHashMap<>();
-            SerializationContext functionSerializationContext = new SerializationContext(functionExpressions);
+            SerializationContext functionSerializationContext = new SerializationContext(functionExpressions,
+                                                                                         Map.of(),
+                                                                                         compiled.typeContext(queryProfiles));
 
             if (firstPhaseRanking != null) {
                 functionProperties.putAll(firstPhaseRanking.getRankProperties(functionSerializationContext));
@@ -201,8 +206,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         }
 
         private void derivePropertiesAndFeaturesFromFunctions(Map<String, RankProfile.RankingExpressionFunction> functions,
-                                                                     Map<String, String> functionProperties,
-                                                                     SerializationContext functionContext) {
+                                                              Map<String, String> functionProperties,
+                                                              SerializationContext functionContext) {
             if (functions.isEmpty()) return;
 
             replaceFunctionFeatures(summaryFeatures, functionContext);

@@ -128,7 +128,7 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
     }
 
     @Override
-    public String toString(ToStringContext context) {
+    public String toString(ToStringContext<NAMETYPE> context) {
         return "rename(" + argument.toString(context) + ", " +
                        toVectorString(fromDimensions) + ", " + toVectorString(toDimensions) + ")";
     }
