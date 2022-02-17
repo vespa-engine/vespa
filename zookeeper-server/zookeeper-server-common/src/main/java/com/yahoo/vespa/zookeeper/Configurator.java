@@ -36,6 +36,9 @@ public class Configurator {
         this.configFilePath = makeAbsolutePath(zookeeperServerConfig.zooKeeperConfigFile());
         System.setProperty(ZOOKEEPER_JMX_LOG4J_DISABLE, "true");
         System.setProperty("zookeeper.snapshot.trust.empty", Boolean.valueOf(zookeeperServerConfig.trustEmptySnapshot()).toString());
+        // Max serialization length. Has effect for both client and server.
+        // Doc says that it is max size of data in a zookeeper node, but it goes for everything that
+        // needs to be serialized, see https://issues.apache.org/jira/browse/ZOOKEEPER-1162 for details
         System.setProperty(ZOOKEEPER_JUTE_MAX_BUFFER, Integer.valueOf(zookeeperServerConfig.juteMaxBuffer()).toString());
         // Need to set this as a system property instead of config, config does not work
         System.setProperty("zookeeper.authProvider.x509", "com.yahoo.vespa.zookeeper.VespaMtlsAuthenticationProvider");
