@@ -1419,7 +1419,105 @@ public class DeploymentTriggerTest {
     }
 
     @Test
-    public void testsVeryLengthyPipeline() {
+    public void testsVeryLengthyPipelineRevisions() {
+        String lengthyDeploymentSpec =
+                "<deployment version='1.0'>\n" +
+                "    <instance id='alpha'>\n" +
+                "        <test />\n" +
+                "        <staging />\n" +
+                "        <upgrade revision='latest' />\n" +
+                "        <prod>\n" +
+                "            <region>us-east-3</region>\n" +
+                "            <test>us-east-3</test>\n" +
+                "        </prod>\n" +
+                "    </instance>\n" +
+                "    <instance id='beta'>\n" +
+                "        <upgrade revision='separate' />\n" +
+                "        <prod>\n" +
+                "            <region>us-east-3</region>\n" +
+                "            <test>us-east-3</test>\n" +
+                "        </prod>\n" +
+                "    </instance>\n" +
+                "    <instance id='gamma'>\n" +
+                "        <upgrade revision='separate' />\n" + // TODO: change to new, even stricter policy.
+                "        <prod>\n" +
+                "            <region>us-east-3</region>\n" +
+                "            <test>us-east-3</test>\n" +
+                "        </prod>\n" +
+                "    </instance>\n" +
+                "</deployment>\n";
+        var appPackage = ApplicationPackageBuilder.fromDeploymentXml(lengthyDeploymentSpec);
+        var alpha = tester.newDeploymentContext("t", "a", "alpha");
+        var beta  = tester.newDeploymentContext("t", "a", "beta");
+        var gamma = tester.newDeploymentContext("t", "a", "gamma");
+        alpha.submit(appPackage).deploy();
+
+        // revision2 is submitted, and rolls through alpha.
+        var revision1 = alpha.lastSubmission();
+        alpha.submit(appPackage);
+        var revision2 = alpha.lastSubmission();
+
+        alpha.runJob(systemTest).runJob(stagingTest)
+             .runJob(productionUsEast3).runJob(testUsEast3);
+        assertEquals(Optional.empty(), alpha.instance().change().application());
+
+        // revision3 is submitted when revision2 is half-way.
+        tester.outstandingChangeDeployer().run();
+        beta.runJob(productionUsEast3);
+        alpha.submit(appPackage);
+        var revision3 = alpha.lastSubmission();
+        beta.runJob(testUsEast3);
+        assertEquals(Optional.empty(), beta.instance().change().application());
+
+        // revision3 is the target for alpha, beta is done, version1 is the target for gamma.
+        tester.outstandingChangeDeployer().run();
+        assertEquals(revision3, alpha.instance().change().application());
+        assertEquals(Optional.empty(), beta.instance().change().application());
+        assertEquals(revision2, gamma.instance().change().application());
+
+        // revision3 rolls to beta, then a couple of new revisions are submitted to alpha, and the latter is the new target.
+        alpha.runJob(systemTest).runJob(stagingTest)
+             .runJob(productionUsEast3).runJob(testUsEast3);
+        tester.outstandingChangeDeployer().run();
+        assertEquals(Optional.empty(), alpha.instance().change().application());
+        assertEquals(revision3, beta.instance().change().application());
+
+        // revision5 supersedes revision4
+        alpha.submit(appPackage);
+        var revision4 = alpha.lastSubmission();
+        alpha.runJob(systemTest).runJob(stagingTest)
+             .runJob(productionUsEast3);
+        alpha.submit(appPackage);
+        var revision5 = alpha.lastSubmission();
+        alpha.runJob(systemTest).runJob(stagingTest)
+             .runJob(productionUsEast3).runJob(testUsEast3);
+        tester.outstandingChangeDeployer().run();
+        assertEquals(Optional.empty(), alpha.instance().change().application());
+        assertEquals(revision3, beta.instance().change().application());
+
+        // revision6 rolls through alpha, and becomes the next target for beta
+        alpha.submit(appPackage);
+        var revision6 = alpha.lastSubmission();
+        alpha.runJob(systemTest).runJob(stagingTest)
+             .runJob(productionUsEast3)
+             .runJob(testUsEast3);
+        beta.runJob(productionUsEast3).runJob(testUsEast3);
+        tester.outstandingChangeDeployer().run();
+        assertEquals(Optional.empty(), alpha.instance().change().application());
+        assertEquals(revision6, beta.instance().change().application());
+
+        // revision6 rolls through beta, but revision3 is the next target for the strictest revision policy, in gamma
+        alpha.jobAborted(stagingTest).runJob(stagingTest);
+        beta.runJob(productionUsEast3).runJob(testUsEast3);
+        gamma.runJob(productionUsEast3).runJob(testUsEast3);
+        tester.outstandingChangeDeployer().run();
+        assertEquals(Optional.empty(), alpha.instance().change().application());
+        assertEquals(Optional.empty(), beta.instance().change().application());
+        // TODO: assertEquals(revision3, gamma.instance().change().application());
+    }
+
+    @Test
+    public void testsVeryLengthyPipelineUpgrade() {
         String lengthyDeploymentSpec =
                 "<deployment version='1.0'>\n" +
                 "    <instance id='alpha'>\n" +
