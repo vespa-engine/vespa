@@ -134,15 +134,16 @@ public class LogFileHandlerTestCase {
         firstHandler.shutdown();
 
         assertThat(Files.size(Paths.get(firstHandler.getFileName()))).isEqualTo(5);
-        assertThat(root.toPath().resolve("symlink").toRealPath().toString()).isEqualTo(firstHandler.getFileName());
+        assertThat(root.toPath().resolve("symlink").toRealPath().toString()).isEqualTo(
+                   Paths.get(firstHandler.getFileName()).toRealPath().toString());
 
         LogFileHandler<String> secondHandler = new LogFileHandler<>(
                 Compression.ZSTD, BUFFER_SIZE, root.getAbsolutePath() + "/compressespreviouslogfile.%Y%m%d%H%M%S%s", new long[]{0}, "symlink", 2048, "thread-name", new StringLogWriter());
         secondHandler.publishAndWait("test");
         secondHandler.rotateNow();
 
-        assertThat(root.toPath().resolve("symlink").toRealPath().toString()).isEqualTo(secondHandler.getFileName());
-
+        assertThat(root.toPath().resolve("symlink").toRealPath().toString()).isEqualTo(
+                   Paths.get(secondHandler.getFileName()).toRealPath().toString());
         while (Files.exists(root.toPath().resolve(firstHandler.getFileName()))) Thread.sleep(1);
 
         assertThat(Files.exists(Paths.get(firstHandler.getFileName() + ".zst"))).isTrue();
