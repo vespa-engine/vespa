@@ -3,11 +3,14 @@ package com.yahoo.vespa.curator;
 
 import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.net.HostName;
+import com.yahoo.path.Path;
+import com.yahoo.text.Utf8;
 import org.junit.Test;
 
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Very simple testing of setting up curator
@@ -40,6 +43,21 @@ public class CuratorTest {
         }
     }
 
+    @Test
+    public void require_that_write_fails_if_data_is_more_than_jute_max_buffer() {
+        CuratorConfig.Builder builder = new CuratorConfig.Builder();
+        builder.server(createZKBuilder(localhost, port1));
+        try (Curator curator = createCurator(new CuratorConfig(builder), 1)) {
+            try {
+                curator.set(Path.createRoot().append("foo"), Utf8.toBytes("more than 1 byte"));
+                fail("Did not fail when writing more than juteMaxBuffer bytes");
+            } catch (IllegalArgumentException e) {
+                assertEquals("Cannot not set data at /foo, 16 bytes is too much, max number of bytes allowed per node is 1",
+                             e.getMessage());
+            }
+        }
+    }
+
     private CuratorConfig createTestConfig() {
         CuratorConfig.Builder builder = new CuratorConfig.Builder();
         builder.server(createZKBuilder(localhost, port1));
@@ -55,11 +73,16 @@ public class CuratorTest {
     }
 
     private Curator createCurator(CuratorConfig curatorConfig)  {
+        return createCurator(curatorConfig, Curator.defaultJuteMaxBuffer);
+    }
+
+    private Curator createCurator(CuratorConfig curatorConfig, long juteMaxBuffer)  {
         return new Curator(ConnectionSpec.create(curatorConfig.server(),
                                                  CuratorConfig.Server::hostname,
                                                  CuratorConfig.Server::port,
                                                  curatorConfig.zookeeperLocalhostAffinity()),
-                           Optional.empty());
+                           Optional.empty(),
+                           juteMaxBuffer);
     }
 
 }
