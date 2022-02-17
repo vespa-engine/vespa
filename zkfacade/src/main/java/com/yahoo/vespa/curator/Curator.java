@@ -61,8 +61,7 @@ public class Curator implements VespaCurator, AutoCloseable {
     private static final Duration BASE_SLEEP_TIME = Duration.ofSeconds(1);
     private static final int MAX_RETRIES = 10;
     private static final RetryPolicy DEFAULT_RETRY_POLICY = new ExponentialBackoffRetry((int) BASE_SLEEP_TIME.toMillis(), MAX_RETRIES);
-
-    protected final RetryPolicy retryPolicy = DEFAULT_RETRY_POLICY;
+    private static final long juteMaxBuffer = 52428800;  // Should correspond with value in ZookeeperServerConfig
 
     private final CuratorFramework curatorFramework;
     private final ConnectionSpec connectionSpec;
@@ -183,6 +182,10 @@ public class Curator implements VespaCurator, AutoCloseable {
      */
     // TODO: Use create().orSetData() in Curator 4 and later
     public void set(Path path, byte[] data) {
+        if (data.length > juteMaxBuffer)
+            throw new IllegalArgumentException("Cannot not set data at " + path.getAbsolute() + ", " +
+                                               data.length + " bytes, max bytes is " + juteMaxBuffer);
+
         if ( ! exists(path))
             create(path);
 
