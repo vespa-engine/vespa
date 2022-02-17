@@ -48,41 +48,4 @@ public class FindUsagesTest extends PluginTestBase {
         assertEquals(93 + 6, usage.getNavigationRange().getEndOffset());
     }
 
-    private static class UsagesTester {
-
-        final Project project;
-        final Schema schema;
-        final SdFindUsagesHandler handler;
-        final MockUsageProcessor usageProcessor = new MockUsageProcessor();
-
-        UsagesTester(String schemaName, Project project) {
-            this.project = project;
-            this.schema = Schema.fromProjectFile(project, Path.fromString(schemaName));
-            this.handler = new SdFindUsagesHandler(schema.definition());
-        }
-
-        List<UsageInfo> assertFunctionUsages(String explanation, int expectedUsages, String profileName, String functionName) {
-            var function = schema.rankProfiles().get(profileName).definedFunctions().get(functionName).get(0).definition();
-            var options = new FindUsagesOptions(project);
-            usageProcessor.usages.clear();
-            options.isUsages = true;
-            handler.processElementUsages(function, usageProcessor, options);
-            assertEquals(explanation, expectedUsages, usageProcessor.usages.size());
-            return usageProcessor.usages;
-        }
-
-    }
-
-    private static class MockUsageProcessor implements Processor<UsageInfo> {
-
-        List<UsageInfo> usages = new ArrayList<>();
-
-        @Override
-        public boolean process(UsageInfo usageInfo) {
-            usages.add(usageInfo);
-            return true;
-        }
-
-    }
-
 }

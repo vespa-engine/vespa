@@ -6,12 +6,10 @@ import ai.vespa.intellij.schema.model.RankProfile;
 import ai.vespa.intellij.schema.model.Schema;
 import ai.vespa.intellij.schema.psi.SdFunctionDefinition;
 import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
-import ai.vespa.intellij.schema.utils.Path;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.progress.ProgressIndicatorProvider;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
-import com.intellij.psi.PsiFile;
 import com.intellij.psi.impl.source.tree.LeafPsiElement;
 import com.intellij.psi.search.SearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
@@ -28,19 +26,16 @@ import java.util.Set;
  *
  * @author bratseth
  */
-public class FunctionUsageFinder {
+public class FunctionUsageFinder extends UsageFinder {
 
     private final SdFunctionDefinition functionToFind;
     private final String functionNameToFind;
-    private final SearchScope scope;
-    private final Processor<? super UsageInfo> processor;
     private final Set<RankProfile> visited = new HashSet<>();
 
     public FunctionUsageFinder(SdFunctionDefinition functionToFind, SearchScope scope, Processor<? super UsageInfo> processor) {
+        super(scope, processor);
         this.functionToFind = functionToFind;
         this.functionNameToFind = ReadAction.compute(functionToFind::getName);
-        this.scope = scope;
-        this.processor = processor;
     }
 
     /**
@@ -54,41 +49,28 @@ public class FunctionUsageFinder {
      * on that.
      */
     public void findUsages() {
-        Schema schema = ReadAction.compute(this::resolveSchema);
+        Schema schema = ReadAction.compute(() -> resolveSchema(functionToFind));
         var rankProfile = ReadAction.compute(() -> schema.rankProfiles()
                                                          .get(PsiTreeUtil.getParentOfType(functionToFind, SdRankProfileDefinition.class).getName()));
         findUsagesBelow(rankProfile);
     }
 
-    private Schema resolveSchema() {
-        PsiFile file = functionToFind.getContainingFile();
-        if (file.getVirtualFile().getPath().endsWith(".profile")) {
-            Path schemaFile = Path.fromString(file.getVirtualFile().getParent().getPath() + ".sd");
-            return ReadAction.compute(() -> Schema.fromProjectFile(functionToFind.getProject(), schemaFile));
-        }
-        else { // schema
-            return ReadAction.compute(() -> Schema.fromProjectFile(functionToFind.getProject(), Path.fromString(file.getVirtualFile().getPath())));
-        }
-    }
-
-    private void findUsagesBelow(RankProfile rankProfile) {
+    private void findUsagesBelow(RankProfile profile) {
         ProgressIndicatorProvider.checkCanceled();
-        if (visited.contains(rankProfile)) return;
-        visited.add(rankProfile);
-        ReadAction.compute(() -> findUsagesIn(rankProfile));
-        Collection<RankProfile> children = ReadAction.compute(() -> rankProfile.children());
-        for (var child : children)
+        if ( ! visited.add(profile)) return;
+        ReadAction.compute(() -> findUsagesIn(profile));
+        for (var child : ReadAction.compute(() -> profile.children()))
             findUsagesBelow(child);
     }
 
-    private boolean findUsagesIn(RankProfile rankProfile) {
-        if ( ! scope.contains(rankProfile.definition().getContainingFile().getVirtualFile())) return false;
-        Collection<List<Function>> functions = ReadAction.compute(() -> rankProfile.definedFunctions().values());
+    private boolean findUsagesIn(RankProfile profile) {
+        if ( ! scope().contains(profile.definition().getContainingFile().getVirtualFile())) return false;
+        Collection<List<Function>> functions = ReadAction.compute(() -> profile.definedFunctions().values());
         for (var functionList : functions) {
             for (var function : functionList) {
                 var matchingVisitor = new MatchingVisitor(functionNameToFind,
                                                           functionToFind == function.definition(),
-                                                          processor);
+                                                          processor());
                 ReadAction.compute(() -> { function.definition().accept(matchingVisitor); return null; } );
             }
         }

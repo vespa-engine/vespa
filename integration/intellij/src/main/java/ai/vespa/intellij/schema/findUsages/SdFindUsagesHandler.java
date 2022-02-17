@@ -31,12 +31,10 @@ public class SdFindUsagesHandler extends FindUsagesHandler {
             if (elementToSearch instanceof SdFunctionDefinition) {
                 new FunctionUsageFinder((SdFunctionDefinition) elementToSearch, options.searchScope, processor).findUsages();
             } else {
-                boolean success =
-                        ReferencesSearch.search(createSearchParameters(elementToSearch, options.searchScope, options))
-                                        .forEach((PsiReference ref) -> processor.process(new UsageInfo(ref)));
-                if (!success) return false;
+                new FunctionDefinitionFinder(elementToSearch, options.searchScope, processor).findDefinition();
             }
         }
+
         if (options.isSearchForTextOccurrences && options.searchScope instanceof GlobalSearchScope) {
             if (options.fastTrack != null)
                 options.fastTrack.searchCustom(consumer -> processUsagesInText(elementToSearch,
@@ -45,6 +43,7 @@ public class SdFindUsagesHandler extends FindUsagesHandler {
             else
                 return processUsagesInText(elementToSearch, processor, (GlobalSearchScope)options.searchScope);
         }
+
         return true;
     }
 
