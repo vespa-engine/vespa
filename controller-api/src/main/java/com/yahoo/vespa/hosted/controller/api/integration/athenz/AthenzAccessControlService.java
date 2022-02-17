@@ -63,6 +63,8 @@ public class AthenzAccessControlService implements AccessControlService {
     @Override
     public boolean hasPendingAccessRequests(TenantName tenantName) {
         var role = sshRole(tenantName);
+        if (!vespaZmsClient.listRoles(role.domain()).contains(role))
+            return false;
         var pendingApprovals = vespaZmsClient.listPendingRoleApprovals(role);
         return pendingApprovals.containsKey(vespaTeam);
     }
@@ -73,6 +75,10 @@ public class AthenzAccessControlService implements AccessControlService {
     @Override
     public boolean approveSshAccess(TenantName tenantName, Instant expiry) {
         var role = sshRole(tenantName);
+
+        if (!vespaZmsClient.listRoles(role.domain()).contains(role))
+            vespaZmsClient.createRole(role, Map.of());
+
         if (vespaZmsClient.getMembership(role, vespaTeam))
             return false;
 
@@ -90,8 +96,13 @@ public class AthenzAccessControlService implements AccessControlService {
     @Override
     public boolean requestSshAccess(TenantName tenantName) {
         var role = sshRole(tenantName);
+
+        if (!vespaZmsClient.listRoles(role.domain()).contains(role))
+            vespaZmsClient.createRole(role, Map.of());
+
         if (vespaZmsClient.getMembership(role, vespaTeam))
             return false;
+
         vespaZmsClient.addRoleMember(role, vespaTeam, Optional.empty());
         return true;
     }
