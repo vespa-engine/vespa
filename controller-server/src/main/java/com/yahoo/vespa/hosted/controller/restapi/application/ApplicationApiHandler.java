@@ -1845,16 +1845,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private ApplicationVersion getApplicationVersion(Application application, Long build) {
-        // Check whether this is the latest version, and possibly return that.
-        // Otherwise, look through historic runs for a proper ApplicationVersion.
-        return application.latestVersion()
+        return application.versions().stream()
                           .filter(version -> version.buildNumber().stream().anyMatch(build::equals))
-                          .or(() -> controller.jobController().deploymentStatus(application).jobs()
-                                            .asList().stream()
-                                            .flatMap(job -> job.runs().values().stream())
-                                            .map(run -> run.versions().targetApplication())
-                                            .filter(version -> version.buildNumber().stream().anyMatch(build::equals))
-                                            .findAny())
+                          .findFirst()
                           .filter(version -> controller.applications().applicationStore().hasBuild(application.id().tenant(),
                                                                                                    application.id().application(),
                                                                                                    build))
