@@ -2,7 +2,6 @@
 package com.yahoo.vespa.curator;
 
 import com.google.inject.Inject;
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.curator.api.VespaCurator;
@@ -92,15 +91,6 @@ public class Curator implements VespaCurator, AutoCloseable {
              Optional.of(ZK_CLIENT_CONFIG_FILE));
     }
 
-    // TODO: This can be removed when this package is no longer public API.
-    public Curator(ConfigserverConfig configserverConfig, @SuppressWarnings("unused") VespaZooKeeperServer server) {
-        this(ConnectionSpec.create(configserverConfig.zookeeperserver(),
-                                   ConfigserverConfig.Zookeeperserver::hostname,
-                                   ConfigserverConfig.Zookeeperserver::port,
-                                   configserverConfig.zookeeperLocalhostAffinity()),
-             Optional.of(ZK_CLIENT_CONFIG_FILE));
-    }
-
     protected Curator(String connectionSpec, String zooKeeperEnsembleConnectionSpec, Function<RetryPolicy, CuratorFramework> curatorFactory) {
         this(ConnectionSpec.create(connectionSpec, zooKeeperEnsembleConnectionSpec), curatorFactory.apply(DEFAULT_RETRY_POLICY));
     }
@@ -138,16 +128,6 @@ public class Curator implements VespaCurator, AutoCloseable {
             return new ZKClientConfig();
         }
     }
-
-    /**
-     * Returns the ZooKeeper "connect string" used by curator: a comma-separated list of
-     * host:port of ZooKeeper endpoints to connect to. This may be a subset of
-     * zooKeeperEnsembleConnectionSpec() if there's some affinity, e.g. for
-     * performance reasons.
-     *
-     * This may be empty but never null 
-     */
-    public String connectionSpec() { return connectionSpec.local(); }
 
     /** For internal use; prefer creating a {@link CuratorCounter} */
     public DistributedAtomicLong createAtomicCounter(String path) {
