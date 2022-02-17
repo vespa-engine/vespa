@@ -140,11 +140,6 @@ FNET_Scheduler::CheckTasks()
     const auto now = _sampler ? *_sampler : vespalib::steady_clock::now();
     std::unique_lock guard(_lock);
     _now = now;
-    // assume timely value propagation
-
-    if (_slots[NUM_SLOTS] == nullptr && _now < _next)
-        return;
-
     // perform urgent tasks
 
     PerformTasks(guard, NUM_SLOTS, 0);
