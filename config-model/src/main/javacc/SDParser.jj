@@ -549,9 +549,18 @@ Object documentBody(SDDocumentType document, Schema schema) :
 }
 
 void rawAsBase64(Schema schema) :
-{}
 {
-    <RAW_AS_BASE64_IN_SUMMARY> { schema.enableRawAsBase64(); }
+    boolean enabled = false;
+}
+{
+    <RAW_AS_BASE64_IN_SUMMARY>
+    {
+        enabled = true;
+    }
+    [ <COLON> ( <TRUE> | ( <FALSE> { enabled = false; } ) ) ]
+    {
+        schema.enableRawAsBase64(enabled);
+    }
 }
 
 /**

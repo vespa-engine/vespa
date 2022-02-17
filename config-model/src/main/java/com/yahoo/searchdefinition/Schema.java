@@ -185,11 +185,12 @@ public class Schema implements ImmutableSchema {
      */
     public boolean isRawAsBase64() {
         if (rawAsBase64 != null) return rawAsBase64;
+        // TODO Vespa 8: flip default:
         if (inherited.isEmpty()) return false;
         return requireInherited().isRawAsBase64();
     }
 
-    public void enableRawAsBase64() { rawAsBase64 = true; }
+    public void enableRawAsBase64(boolean value) { rawAsBase64 = value; }
 
     /**
      * Sets the stemming default of fields. Default is ALL
