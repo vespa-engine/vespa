@@ -579,7 +579,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.matching.query_setup_time.max"));
         metrics.add(new Metric("content.proton.documentdb.matching.query_setup_time.sum"));
         metrics.add(new Metric("content.proton.documentdb.matching.query_setup_time.count"));
-        metrics.add(new Metric("content.proton.documentdb.matching.docs_matched.rate")); // TODO: Consider remove in Vespa 8
+        metrics.add(new Metric("content.proton.documentdb.matching.docs_matched.rate"));
         metrics.add(new Metric("content.proton.documentdb.matching.docs_matched.count"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.queries.rate"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.soft_doomed_queries.rate"));
