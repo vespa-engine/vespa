@@ -15,7 +15,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -168,7 +167,7 @@ public class NotificationsDb {
             String resource, Optional<Double> util, Optional<Double> feedBlockLimit) {
         if (util.isEmpty() || feedBlockLimit.isEmpty()) return Optional.empty();
         double utilRelativeToLimit = util.get() / feedBlockLimit.get();
-        if (utilRelativeToLimit < 0.9) return Optional.empty();
+        if (utilRelativeToLimit < 0.95) return Optional.empty();
 
         String message = Text.format("%s (usage: %.1f%%, feed block limit: %.1f%%)",
                 resource, 100 * util.get(), 100 * feedBlockLimit.get());
