@@ -2,6 +2,7 @@
 
 #include "extract_features.h"
 #include "match_tools.h"
+#include <vespa/vespalib/util/doom.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/runnable.h>
@@ -10,6 +11,7 @@
 #include <vespa/searchlib/fef/rank_program.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
+using vespalib::Doom;
 using vespalib::Runnable;
 using vespalib::ThreadBundle;
 using search::FeatureSet;
@@ -54,15 +56,19 @@ struct MyChunk : Runnable {
     const std::pair<uint32_t,uint32_t> *begin;
     const std::pair<uint32_t,uint32_t> *end;
     FeatureValues &result;
+    const Doom &doom;
     MyChunk(const std::pair<uint32_t,uint32_t> *begin_in,
-           const std::pair<uint32_t,uint32_t> *end_in,
-           FeatureValues &result_in)
-      : begin(begin_in), end(end_in), result(result_in) {}
+            const std::pair<uint32_t,uint32_t> *end_in,
+            FeatureValues &result_in, const Doom &doom_in)
+      : begin(begin_in), end(end_in), result(result_in), doom(doom_in) {}
     void calculate_features(SearchIterator &search, const FeatureResolver &resolver) {
         assert(end > begin);
         assert(resolver.num_features() == result.names.size());
         search.initRange(begin[0].first, end[-1].first + 1);
         for (auto pos = begin; pos != end; ++pos) {
+            if (doom.hard_doom()) {
+                return;
+            }
             search.unpack(pos->first);
             auto *dst = &result.values[pos->second * resolver.num_features()];
             extract_values(resolver, pos->first, dst);
@@ -76,9 +82,10 @@ struct FirstChunk : MyChunk {
     FirstChunk(const std::pair<uint32_t,uint32_t> *begin_in,
                const std::pair<uint32_t,uint32_t> *end_in,
                FeatureValues &result_in,
+               const Doom &doom_in,
                SearchIterator &search_in,
                const FeatureResolver &resolver_in)
-      : MyChunk(begin_in, end_in, result_in),
+      : MyChunk(begin_in, end_in, result_in, doom_in),
         search(search_in),
         resolver(resolver_in) {}
     void run() override { calculate_features(search, resolver); }
@@ -89,8 +96,9 @@ struct LaterChunk : MyChunk {
     LaterChunk(const std::pair<uint32_t,uint32_t> *begin_in,
                const std::pair<uint32_t,uint32_t> *end_in,
                FeatureValues &result_in,
+               const Doom &doom_in,
                const MatchToolsFactory &mtf_in)
-      : MyChunk(begin_in, end_in, result_in),
+      : MyChunk(begin_in, end_in, result_in, doom_in),
         mtf(mtf_in) {}
     void run() override {
         auto tools = mtf.createMatchTools();
@@ -119,13 +127,16 @@ struct MyWork {
 } // unnamed
 
 FeatureSet::UP
-ExtractFeatures::get_feature_set(SearchIterator &search, RankProgram &rank_program, const std::vector<uint32_t> &docs)
+ExtractFeatures::get_feature_set(SearchIterator &search, RankProgram &rank_program, const std::vector<uint32_t> &docs, const Doom &doom)
 {
     FeatureResolver resolver(rank_program.get_seeds(false));
     auto result = std::make_unique<FeatureSet>(extract_names(resolver), docs.size());
     if (!docs.empty()) {
         search.initRange(docs.front(), docs.back()+1);
         for (uint32_t docid: docs) {
+            if (doom.hard_doom()) {
+                return result;
+            }
             search.unpack(docid);
             auto *dst = result->getFeaturesByIndex(result->addDocId(docid));
             extract_values(resolver, docid, dst);
@@ -153,9 +164,9 @@ ExtractFeatures::get_match_features(const MatchToolsFactory &mtf, const OrderedD
             break;
         }
         if (i == 0) {
-            work.chunks.push_back(std::make_unique<FirstChunk>(&docs[idx], &docs[idx + chunk_size], result, tools->search(), resolver));
+            work.chunks.push_back(std::make_unique<FirstChunk>(&docs[idx], &docs[idx + chunk_size], result, tools->getDoom(), tools->search(), resolver));
         } else {
-            work.chunks.push_back(std::make_unique<LaterChunk>(&docs[idx], &docs[idx + chunk_size], result, mtf));
+            work.chunks.push_back(std::make_unique<LaterChunk>(&docs[idx], &docs[idx + chunk_size], result, tools->getDoom(), mtf));
         }
         idx += chunk_size;
     }
