@@ -144,6 +144,11 @@ public class VespaMetricSet {
         metrics.add(new Metric("serverNumConnections.max"));
         metrics.add(new Metric("serverNumConnections.last"));
 
+        metrics.add(new Metric("serverBytesReceived.sum"));
+        metrics.add(new Metric("serverBytesReceived.count"));
+        metrics.add(new Metric("serverBytesSent.sum"));
+        metrics.add(new Metric("serverBytesSent.count"));
+
         {
             List<String> suffixes = List.of("sum", "count", "last", "min", "max");
             addMetric(metrics, "jdisc.thread_pool.unhandled_exceptions", suffixes);
