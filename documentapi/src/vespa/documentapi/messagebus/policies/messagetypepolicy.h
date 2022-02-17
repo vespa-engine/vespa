@@ -4,17 +4,20 @@
 #include <vespa/messagebus/routing/iroutingpolicy.h>
 #include <vespa/vespalib/util/ptrholder.h>
 #include <vespa/config-messagetyperouteselectorpolicy.h>
-#include <vespa/config/config.h>
-#include <vespa/config/helper/configfetcher.h>
+#include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/documentapi/common.h>
 
+namespace config {
+    class ConfigUri;
+    class ConfigFetcher;
+}
 namespace mbus {
     class RoutingContext;
     class Route;
 }
 namespace documentapi {
 
-namespace policy {class MessageTypeMap; }
+namespace policy { class MessageTypeMap; }
 /**
  * This policy is responsible for selecting among the given recipient routes
  * according to the configured document selection properties. To factilitate
@@ -31,7 +34,7 @@ private:
 
     MessageTypeHolder     _map;
     RouteHolder           _defaultRoute;
-    config::ConfigFetcher _fetcher;
+    std::unique_ptr<config::ConfigFetcher> _fetcher;
 
 public:
     /**

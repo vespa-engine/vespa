@@ -31,6 +31,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.internal.GeoPosType;
 import com.yahoo.document.json.readers.DocumentParseInfo;
 import com.yahoo.document.json.readers.VespaJsonDocumentReader;
 import com.yahoo.document.serialization.DocumentSerializer;
@@ -149,6 +150,7 @@ public class JsonReaderTestCase {
             DocumentType x = new DocumentType("testsinglepos");
             DataType d = PositionDataType.INSTANCE;
             x.addField(new Field("singlepos", d));
+            x.addField(new Field("geopos", new GeoPosType(8)));
             types.registerDocumentType(x);
         }
         {
@@ -609,6 +611,43 @@ public class JsonReaderTestCase {
         assertSame(Struct.class, f.getClass());
         assertEquals(10393333, PositionDataType.getXValue(f).getInteger());
         assertEquals(63429722, PositionDataType.getYValue(f).getInteger());
+    }
+
+    @Test
+    public void testPositionGeoPos() throws IOException {
+        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testsinglepos::bamf',",
+                "  'fields': {",
+                "    'geopos': 'N63.429722;E10.393333' }}"));
+        FieldValue f = doc.getFieldValue(doc.getField("geopos"));
+        assertSame(Struct.class, f.getClass());
+        assertEquals(10393333, PositionDataType.getXValue(f).getInteger());
+        assertEquals(63429722, PositionDataType.getYValue(f).getInteger());
+        assertEquals(f.getDataType(), PositionDataType.INSTANCE);
+    }
+
+    @Test
+    public void testPositionOldGeoPos() throws IOException {
+        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testsinglepos::bamf',",
+                "  'fields': {",
+                "    'geopos': {'x':10393333,'y':63429722} }}"));
+        FieldValue f = doc.getFieldValue(doc.getField("geopos"));
+        assertSame(Struct.class, f.getClass());
+        assertEquals(10393333, PositionDataType.getXValue(f).getInteger());
+        assertEquals(63429722, PositionDataType.getYValue(f).getInteger());
+        assertEquals(f.getDataType(), PositionDataType.INSTANCE);
+    }
+
+    @Test
+    public void testGeoPositionGeoPos() throws IOException {
+        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testsinglepos::bamf',",
+                "  'fields': {",
+                "    'geopos': {'lat':63.429722,'lng':10.393333} }}"));
+        FieldValue f = doc.getFieldValue(doc.getField("geopos"));
+        assertSame(Struct.class, f.getClass());
+        assertEquals(10393333, PositionDataType.getXValue(f).getInteger());
+        assertEquals(63429722, PositionDataType.getYValue(f).getInteger());
+        assertEquals(f.getDataType(), PositionDataType.INSTANCE);
+        assertEquals(PositionDataType.INSTANCE, f.getDataType());
     }
 
     @Test

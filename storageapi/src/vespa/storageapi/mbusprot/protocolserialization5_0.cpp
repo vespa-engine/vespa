@@ -538,6 +538,7 @@ ProtocolSerialization5_0::onEncode(GBBuf& buf, const api::CreateVisitorReply& ms
     buf.putLong(msg.getVisitorStatistics().getBytesVisited());
     buf.putLong(msg.getVisitorStatistics().getDocumentsReturned());
     buf.putLong(msg.getVisitorStatistics().getBytesReturned());
+    // TODO remove second pass concept on Vespa 8
     buf.putLong(msg.getVisitorStatistics().getSecondPassDocumentsReturned());
     buf.putLong(msg.getVisitorStatistics().getSecondPassBytesReturned());
 }
@@ -554,6 +555,7 @@ ProtocolSerialization5_0::onDecodeCreateVisitorReply(const SCmd& cmd, BBuf& buf)
     vs.setBytesVisited(SH::getLong(buf));
     vs.setDocumentsReturned(SH::getLong(buf));
     vs.setBytesReturned(SH::getLong(buf));
+    // TODO remove second pass concept on Vespa 8
     vs.setSecondPassDocumentsReturned(SH::getLong(buf));
     vs.setSecondPassBytesReturned(SH::getLong(buf));
     msg->setVisitorStatistics(vs);

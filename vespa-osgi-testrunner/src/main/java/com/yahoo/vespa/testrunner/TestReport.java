@@ -6,6 +6,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.LogRecord;
 
+import static com.yahoo.vespa.testrunner.TestRunner.Status.FAILURE;
+import static com.yahoo.vespa.testrunner.TestRunner.Status.INCONCLUSIVE;
+import static com.yahoo.vespa.testrunner.TestRunner.Status.SUCCESS;
+
 /**
  * @author mortent
  */
@@ -14,15 +18,17 @@ public class TestReport {
     final long totalCount;
     final long successCount;
     final long failedCount;
+    final long inconclusiveCount;
     final long ignoredCount;
     final long abortedCount;
     final List<Failure> failures;
     final List<LogRecord> logLines;
 
-    private TestReport(long totalCount, long successCount, long failedCount, long ignoredCount, long abortedCount, List<Failure> failures, List<LogRecord> logLines) {
+    private TestReport(long totalCount, long successCount, long failedCount, long inconclusiveCount, long ignoredCount, long abortedCount, List<Failure> failures, List<LogRecord> logLines) {
         this.totalCount = totalCount;
         this.successCount = successCount;
         this.failedCount = failedCount;
+        this.inconclusiveCount = inconclusiveCount;
         this.ignoredCount = ignoredCount;
         this.abortedCount = abortedCount;
         this.failures = failures;
@@ -33,8 +39,8 @@ public class TestReport {
         return logLines;
     }
 
-    public boolean isSuccess() {
-        return (failedCount + abortedCount) == 0;
+    public TestRunner.Status status() {
+        return failedCount > 0 ? FAILURE : inconclusiveCount > 0 ? INCONCLUSIVE : SUCCESS;
     }
 
     public static Builder builder(){
@@ -47,13 +53,14 @@ public class TestReport {
         private long totalCount;
         private long successCount;
         private long failedCount;
+        private long inconclusiveCount;
         private long ignoredCount;
         private long abortedCount;
         private List<Failure> failures = Collections.emptyList();
         private List<LogRecord> logLines = Collections.emptyList();
 
         public TestReport build() {
-            return new TestReport(totalCount, successCount, failedCount, ignoredCount, abortedCount, failures, logLines);
+            return new TestReport(totalCount, successCount, failedCount, inconclusiveCount, ignoredCount, abortedCount, failures, logLines);
         }
 
         public Builder withTotalCount(long totalCount) {
@@ -68,6 +75,11 @@ public class TestReport {
 
         public Builder withFailedCount(long failedCount) {
             this.failedCount = failedCount;
+            return this;
+        }
+
+        public Builder withInconclusiveCount(long inconclusiveCount) {
+            this.inconclusiveCount = inconclusiveCount;
             return this;
         }
 
@@ -95,6 +107,7 @@ public class TestReport {
 
 
     public static class Failure {
+
         private final String testId;
         private final Throwable exception;
 

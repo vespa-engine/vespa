@@ -106,6 +106,7 @@ private:
     void verifyOperationContainsBuckets();
     void verifyOperationHasSuperbucketAndProgress();
     void verifyOperationSentToCorrectDistributor();
+    void verify_fieldset_makes_sense_for_visiting();
     bool verifyCreateVisitorCommand(DistributorStripeMessageSender& sender);
     bool pickBucketsToVisit(const std::vector<BucketDatabase::Entry>& buckets);
     bool expandBucketContaining();

@@ -108,16 +108,7 @@ public class ConfigKey<CONFIGCLASS extends ConfigInstance> implements Comparable
         return configClass;
     }
 
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("name=");
-        sb.append(name);
-        sb.append(",namespace=");
-        sb.append(namespace);
-        sb.append(",configId=");
-        sb.append(configId);
-        return sb.toString();
-    }
+    public String toString() { return "name=" + namespace  + "." + name  + ",configId=" + configId; }
 
     public static ConfigKey<?> createFull(String name, String configId, String namespace) {
         return new ConfigKey<>(name, configId, namespace, null);

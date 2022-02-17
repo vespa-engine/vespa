@@ -22,7 +22,7 @@ public interface TestRunner {
     default TestReport getReport() { return null; }
 
     enum Status {
-        NOT_STARTED, RUNNING, FAILURE, ERROR, SUCCESS
+        NOT_STARTED, RUNNING, FAILURE, INCONCLUSIVE, ERROR, SUCCESS
     }
 
     enum Suite {

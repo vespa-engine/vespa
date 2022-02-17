@@ -138,6 +138,7 @@ public class ApplicationClusterEndpoint {
     }
 
     public static class DnsName {
+
         private static final int MAX_LABEL_LENGTH = 63;
 
         private final String name;
@@ -150,21 +151,11 @@ public class ApplicationClusterEndpoint {
             return name;
         }
 
-        // TODO: remove when 7.508 is latest version
-        public static DnsName sharedNameFrom(ClusterSpec.Id cluster, ApplicationId applicationId, String suffix) {
-            return sharedNameFrom(SystemName.main, cluster, applicationId, suffix);
-        }
-
         public static DnsName sharedNameFrom(SystemName systemName, ClusterSpec.Id cluster, ApplicationId applicationId, String suffix) {
             String name = dnsParts(systemName, cluster, applicationId)
                     .filter(Objects::nonNull)             // remove null values that were "default"
                     .collect(Collectors.joining("--"));
             return new DnsName(sanitize(name) + suffix); // Need to sanitize name since it is considered one label
-        }
-
-        // TODO remove this method when 7.508 is latest version
-        public static DnsName sharedL4NameFrom(ClusterSpec.Id cluster, ApplicationId applicationId, String suffix) {
-            return sharedL4NameFrom(SystemName.main, cluster, applicationId, suffix);
         }
 
         public static DnsName sharedL4NameFrom(SystemName systemName, ClusterSpec.Id cluster, ApplicationId applicationId, String suffix) {

@@ -8,9 +8,9 @@ import com.google.inject.Injector;
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.component.Vtag;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigInterruptedException;
+import com.yahoo.config.subscription.SubscriberClosedException;
 import com.yahoo.container.Container;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ChainsConfig;
@@ -26,13 +26,17 @@ import com.yahoo.jdisc.application.Application;
 import com.yahoo.jdisc.application.BindingRepository;
 import com.yahoo.jdisc.application.ContainerActivator;
 import com.yahoo.jdisc.application.ContainerBuilder;
+import com.yahoo.jdisc.application.DeactivatedContainer;
 import com.yahoo.jdisc.application.GuiceRepository;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.jrt.Acceptor;
+import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.ListenFailedException;
+import com.yahoo.jrt.Method;
+import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
@@ -42,19 +46,17 @@ import com.yahoo.log.LogSetup;
 import com.yahoo.messagebus.network.rpc.SlobrokConfigSubscriber;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.Exceptions;
+import com.yahoo.yolean.UncheckedInterruptedException;
 
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.WeakHashMap;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,10 +69,9 @@ import static com.yahoo.collections.CollectionUtil.first;
 public final class ConfiguredApplication implements Application {
 
     private static final Logger log = Logger.getLogger(ConfiguredApplication.class.getName());
-    private static final Set<ClientProvider> startedClients = Collections.newSetFromMap(new WeakHashMap<>());
-    static final String SANITIZE_FILENAME = "[/,;]";
-
-    private static final Set<ServerProvider> startedServers = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Object monitor = new Object();
+    private final Set<ClientProvider> startedClients = createIdentityHashSet();
+    private final Set<ServerProvider> startedServers = createIdentityHashSet();
     private final SubscriberFactory subscriberFactory;
     private final Metric metric;
     private final ContainerActivator activator;
@@ -78,11 +79,12 @@ public final class ConfiguredApplication implements Application {
     private final OsgiFramework osgiFramework;
     private final com.yahoo.jdisc.Timer timerSingleton;
     private final AtomicBoolean dumpHeapOnShutdownTimeout = new AtomicBoolean(false);
-    private final AtomicDouble shudownTimeoutS = new AtomicDouble(50.0);
+    private final AtomicDouble shutdownTimeoutS = new AtomicDouble(50.0);
     // Subscriber that is used when this is not a standalone-container. Subscribes
     // to config to make sure that container will be registered in slobrok (by {@link com.yahoo.jrt.slobrok.api.Register})
     // if slobrok config changes (typically slobroks moving to other nodes)
     private final Optional<SlobrokConfigSubscriber> slobrokConfigSubscriber;
+    private final ShutdownDeadline shutdownDeadline;
 
     //TODO: FilterChainRepository should instead always be set up in the model.
     private final FilterChainRepository defaultFilterChainRepository =
@@ -92,15 +94,16 @@ public final class ConfiguredApplication implements Application {
                                       new ComponentRegistry<>(),
                                       new ComponentRegistry<>());
     private final OsgiFramework restrictedOsgiFramework;
+    private final Phaser nonTerminatedContainerTracker = new Phaser(1);
+    private final Thread reconfigurerThread;
+    private final Thread portWatcher;
     private HandlersConfigurerDi configurer;
-    private ScheduledThreadPoolExecutor shutdownDeadlineExecutor;
-    private Thread reconfigurerThread;
-    private Thread portWatcher;
     private QrConfig qrConfig;
 
     private Register slobrokRegistrator = null;
     private Supervisor supervisor = null;
     private Acceptor acceptor = null;
+    private volatile boolean shutdownReconfiguration = false;
 
     static {
         LogSetup.initVespaLogging("Container");
@@ -133,6 +136,9 @@ public final class ConfiguredApplication implements Application {
                 ? Optional.of(new SlobrokConfigSubscriber(configId))
                 : Optional.empty();
         this.restrictedOsgiFramework = new DisableOsgiFramework(new RestrictedBundleContext(osgiFramework.bundleContext()));
+        this.shutdownDeadline = new ShutdownDeadline(configId);
+        this.reconfigurerThread = new Thread(this::doReconfigurationLoop, "configured-application-reconfigurer");
+        this.portWatcher = new Thread(this::watchPortChange, "configured-application-port-watcher");
     }
 
     @Override
@@ -143,35 +149,34 @@ public final class ConfiguredApplication implements Application {
 
         ContainerBuilder builder = createBuilderWithGuiceBindings();
         configurer = createConfigurer(builder.guiceModules().activate());
-        initializeAndActivateContainer(builder);
-        startReconfigurerThread();
-        portWatcher = new Thread(this::watchPortChange);
+        initializeAndActivateContainer(builder, () -> {});
+        reconfigurerThread.setDaemon(true);
+        reconfigurerThread.start();
+
         portWatcher.setDaemon(true);
         portWatcher.start();
-        slobrokRegistrator = registerInSlobrok(qrConfig); // marks this as up
+        if (setupRpc()) {
+            slobrokRegistrator = registerInSlobrok(qrConfig); // marks this as up
+        }
     }
 
-    /**
-     * The container has no RPC methods, but we still need an RPC server
-     * to register in Slobrok to enable orchestration.
-     */
-    private Register registerInSlobrok(QrConfig qrConfig) {
-        if ( ! qrConfig.rpc().enabled()) return null;
-
-        // 1. Set up RPC server
-        supervisor = new Supervisor(new Transport("slobrok")).setDropEmptyBuffers(true);
+    private boolean setupRpc() {
+        if ( ! qrConfig.rpc().enabled()) return false;
+        supervisor = new Supervisor(new Transport("configured-application")).setDropEmptyBuffers(true);
+        supervisor.addMethod(new Method("prepareStop", "d", "", this::prepareStop));
         Spec listenSpec = new Spec(qrConfig.rpc().port());
         try {
             acceptor = supervisor.listen(listenSpec);
-        }
-        catch (ListenFailedException e) {
+            return true;
+        } catch (ListenFailedException e) {
             throw new RuntimeException("Could not create rpc server listening on " + listenSpec, e);
         }
+    }
 
-        // 2. Register it in slobrok
+    private Register registerInSlobrok(QrConfig qrConfig) {
         SlobrokList slobrokList = getSlobrokList();
         Spec mySpec = new Spec(HostName.getLocalhost(), acceptor.port());
-        slobrokRegistrator = new Register(supervisor, slobrokList, mySpec);
+        Register slobrokRegistrator = new Register(supervisor, slobrokList, mySpec);
         slobrokRegistrator.registerName(qrConfig.rpc().slobrokId());
         log.log(Level.INFO, "Registered name '" + qrConfig.rpc().slobrokId() +
                                "' at " + mySpec + " with: " + slobrokList);
@@ -245,22 +250,38 @@ public final class ConfiguredApplication implements Application {
 
     void reconfigure(QrConfig qrConfig) {
         dumpHeapOnShutdownTimeout.set(qrConfig.shutdown().dumpHeapOnTimeout());
-        shudownTimeoutS.set(qrConfig.shutdown().timeout());
+        shutdownTimeoutS.set(qrConfig.shutdown().timeout());
     }
 
-    private void initializeAndActivateContainer(ContainerBuilder builder) {
+    private void initializeAndActivateContainer(ContainerBuilder builder, Runnable cleanupTask) {
         addHandlerBindings(builder, Container.get().getRequestHandlerRegistry(),
                            configurer.getComponent(ApplicationContext.class).discBindingsConfig);
-        installServerProviders(builder);
+        List<ServerProvider> currentServers = Container.get().getServerProviderRegistry().allComponents();
+        for (ServerProvider server : currentServers) {
+            builder.serverProviders().install(server);
+        }
+        activateContainer(builder, cleanupTask);
+        startAndStopServers(currentServers);
 
-        activator.activateContainer(builder); // TODO: .notifyTermination(.. decompose previous component graph ..)
-
-        startClients();
-        startAndStopServers();
+        startAndRemoveClients(Container.get().getClientProviderRegistry().allComponents());
 
         log.info("Switching to the latest deployed set of configurations and components. " +
                  "Application config generation: " + configurer.generation());
         metric.set("application_generation", configurer.generation(), metric.createContext(Map.of()));
+    }
+
+    private void activateContainer(ContainerBuilder builder, Runnable onPreviousContainerTermination) {
+        DeactivatedContainer deactivated = activator.activateContainer(builder);
+        if (deactivated != null) {
+            nonTerminatedContainerTracker.register();
+            deactivated.notifyTermination(() -> {
+                try {
+                    onPreviousContainerTermination.run();
+                } finally {
+                    nonTerminatedContainerTracker.arriveAndDeregister();
+                }
+            });
+        }
     }
 
     private ContainerBuilder createBuilderWithGuiceBindings() {
@@ -269,30 +290,28 @@ public final class ConfiguredApplication implements Application {
         return builder;
     }
 
-    private void startReconfigurerThread() {
-        reconfigurerThread = new Thread(() -> {
-            while ( ! Thread.interrupted()) {
-                try {
-                    ContainerBuilder builder = createBuilderWithGuiceBindings();
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
+    private void doReconfigurationLoop() {
+        while (!shutdownReconfiguration) {
+            try {
+                ContainerBuilder builder = createBuilderWithGuiceBindings();
 
-                    // Block until new config arrives, and it should be applied
-                    configurer.getNewComponentGraph(builder.guiceModules().activate(), false);
-                    initializeAndActivateContainer(builder);
-                } catch (ConfigInterruptedException e) {
-                    break;
-                } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
-                    tryReportFailedComponentGraphConstructionMetric(configurer, e);
-                    log.log(Level.SEVERE,
-                            "Reconfiguration failed, your application package must be fixed, unless this is a " +
-                            "JNI reload issue: " + Exceptions.toMessageString(e), e);
-                } catch (Error e) {
-                    com.yahoo.protect.Process.logAndDie("java.lang.Error on reconfiguration: We are probably in " +
-                                                        "a bad state and will terminate", e);
-                }
+                // Block until new config arrives, and it should be applied
+                Runnable cleanupTask = configurer.waitForNextGraphGeneration(builder.guiceModules().activate(), false);
+                initializeAndActivateContainer(builder, cleanupTask);
+            } catch (UncheckedInterruptedException | SubscriberClosedException | ConfigInterruptedException e) {
+                break;
+            } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
+                tryReportFailedComponentGraphConstructionMetric(configurer, e);
+                log.log(Level.SEVERE,
+                        "Reconfiguration failed, your application package must be fixed, unless this is a " +
+                                "JNI reload issue: " + Exceptions.toMessageString(e), e);
+            } catch (Error e) {
+                com.yahoo.protect.Process.logAndDie("java.lang.Error on reconfiguration: We are probably in " +
+                        "a bad state and will terminate", e);
             }
-            log.fine("Shutting down HandlersConfigurerDi");
-        });
-        reconfigurerThread.start();
+        }
+        log.fine("Reconfiguration loop exited");
     }
 
     private static void tryReportFailedComponentGraphConstructionMetric(HandlersConfigurerDi configurer, Throwable error) {
@@ -307,47 +326,47 @@ public final class ConfiguredApplication implements Application {
         }
     }
 
-    private static void installServerProviders(ContainerBuilder builder) {
-        List<ServerProvider> serverProviders = Container.get().getServerProviderRegistry().allComponents();
-        for (ServerProvider server : serverProviders) {
-            builder.serverProviders().install(server);
-        }
-    }
-
-    private static void startClients() {
-        for (ClientProvider client : Container.get().getClientProviderRegistry().allComponents()) {
-            if (!startedClients.contains(client)) {
-                client.start();
-                startedClients.add(client);
+    private void startAndStopServers(List<ServerProvider> currentServers) {
+        synchronized (monitor) {
+            Set<ServerProvider> serversToClose = createIdentityHashSet(startedServers);
+            serversToClose.removeAll(currentServers);
+            if (serversToClose.size() > 0) {
+                log.info(String.format("Closing %d server instances", serversToClose.size()));
+                for (ServerProvider server : serversToClose) {
+                    server.close();
+                    startedServers.remove(server);
+                }
+            }
+            for (ServerProvider server : currentServers) {
+                if (!startedServers.contains(server)) {
+                    server.start();
+                    startedServers.add(server);
+                }
             }
         }
     }
 
-    private static void startAndStopServers() {
-        List<ServerProvider> currentServers = Container.get().getServerProviderRegistry().allComponents();
-        HashSet<ServerProvider> serversToClose = new HashSet<>(startedServers);
-        serversToClose.removeAll(currentServers);
-        for (ServerProvider server : serversToClose) {
-            closeServer(server);
-        }
-        for (ServerProvider server : currentServers) {
-            if (!startedServers.contains(server)) {
-                server.start();
-                startedServers.add(server);
+    private void startAndRemoveClients(List<ClientProvider> currentClients) {
+        synchronized (monitor) {
+            Set<ClientProvider> clientToRemove = createIdentityHashSet(startedClients);
+            clientToRemove.removeAll(currentClients);
+            for (ClientProvider client : clientToRemove) {
+                startedClients.remove(client);
+            }
+            for (ClientProvider client : currentClients) {
+                if (!startedClients.contains(client)) {
+                    client.start();
+                    startedClients.add(client);
+                }
             }
         }
-    }
-
-    private static void closeServer(ServerProvider server) {
-        server.close();
-        startedServers.remove(server);
     }
 
     private HandlersConfigurerDi createConfigurer(Injector discInjector) {
         return new HandlersConfigurerDi(subscriberFactory,
                                         Container.get(),
                                         configId,
-                                        new Deconstructor(Deconstructor.Mode.RECONFIG),
+                                        new Deconstructor(),
                                         discInjector,
                                         osgiFramework);
     }
@@ -367,69 +386,63 @@ public final class ConfiguredApplication implements Application {
 
     @Override
     public void stop() {
-        startShutdownDeadlineExecutor();
-        shutdownReconfigurerThread();
-
-        log.info("Stop: Closing servers");
-        for (ServerProvider server : Container.get().getServerProviderRegistry().allComponents()) {
-            if (startedServers.contains(server)) {
-                closeServer(server);
-            }
-        }
-
-        log.info("Stop: Shutting container down");
-        configurer.shutdown(new Deconstructor(Deconstructor.Mode.SHUTDOWN));
-        slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
-        Container.get().shutdown();
-
-        unregisterInSlobrok();
-        LogSetup.cleanup();
+        log.info("Stop: Initiated");
+        shutdownDeadline.schedule((long)(shutdownTimeoutS.get() * 1000), dumpHeapOnShutdownTimeout.get());
+        stopServersAndAwaitTermination();
         log.info("Stop: Finished");
     }
 
-    private void shutdownReconfigurerThread() {
-        if (reconfigurerThread == null) return;
-        reconfigurerThread.interrupt();
+    private void prepareStop(Request request) {
+        log.info("PrepareStop: Initiated");
+        long timeoutMillis = (long) (request.parameters().get(0).asDouble() * 1000);
+        try (ShutdownDeadline ignored =
+                     new ShutdownDeadline(configId).schedule(timeoutMillis, dumpHeapOnShutdownTimeout.get())) {
+            stopServersAndAwaitTermination();
+            log.info("PrepareStop: Finished");
+        } catch (Exception e) {
+            request.setError(ErrorCode.METHOD_FAILED, e.getMessage());
+            throw e;
+        }
+    }
+
+    private void stopServersAndAwaitTermination() {
+        shutdownReconfigurer();
+        startAndStopServers(List.of());
+        startAndRemoveClients(List.of());
+        activateContainer(null, () -> log.info("Last active container generation has terminated"));
+        nonTerminatedContainerTracker.arriveAndAwaitAdvance();
+    }
+
+    private void shutdownReconfigurer() {
+        if (!reconfigurerThread.isAlive()) return;
+        log.info("Shutting down reconfiguration thread");
+        long start = System.currentTimeMillis();
+        shutdownReconfiguration = true;
+        configurer.shutdownConfigRetriever();
         try {
-            //Workaround for component constructors masking InterruptedException.
-            while (reconfigurerThread.isAlive()) {
-                reconfigurerThread.interrupt();
-                long millis = 200;
-                reconfigurerThread.join(millis);
-            }
+            reconfigurerThread.join();
+            log.info(String.format(
+                    "Reconfiguration thread shutdown completed in %.3f seconds", (System.currentTimeMillis() - start) / 1000D));
         } catch (InterruptedException e) {
-            log.info("Interrupted while joining on HandlersConfigurer reconfigure thread.");
-            Thread.currentThread().interrupt();
+            String message = "Interrupted while waiting for reconfiguration shutdown";
+            log.warning(message);
+            log.log(Level.FINE, e.getMessage(), e);
+            throw new UncheckedInterruptedException(message, true);
         }
     }
 
     @Override
     public void destroy() {
-        if (shutdownDeadlineExecutor != null) { //stop() is not called when exception happens during start
-            shutdownDeadlineExecutor.shutdownNow();
+        log.info("Destroy: Shutting down container now");
+        if (configurer != null) {
+            configurer.shutdown();
         }
-    }
-
-    static String santizeFileName(String s) {
-        return s.trim()
-                .replace('\\', '.')
-                .replaceAll(SANITIZE_FILENAME, ".");
-    }
-
-    // Workaround for ApplicationLoader.stop not being able to shutdown
-    private void startShutdownDeadlineExecutor() {
-        shutdownDeadlineExecutor = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("Shutdown deadline timer"));
-        shutdownDeadlineExecutor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
-        long delayMillis = (long)(shudownTimeoutS.get() * 1000.0);
-        shutdownDeadlineExecutor.schedule(() -> {
-            if (dumpHeapOnShutdownTimeout.get()) {
-                String heapDumpName = Defaults.getDefaults().underVespaHome("var/crash/java_pid.") + santizeFileName(configId) + "." + ProcessHandle.current().pid() + ".hprof";
-                com.yahoo.protect.Process.dumpHeap(heapDumpName, true);
-            }
-            com.yahoo.protect.Process.logAndDie(
-                    "Timed out waiting for application shutdown. Please check that all your request handlers " +
-                            "drain their request content channels.", true);
-        }, delayMillis, TimeUnit.MILLISECONDS);
+        slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
+        Container.get().shutdown();
+        unregisterInSlobrok();
+        LogSetup.cleanup();
+        shutdownDeadline.cancel();
+        log.info("Destroy: Finished");
     }
 
     private static void addHandlerBindings(ContainerBuilder builder,
@@ -453,6 +466,16 @@ public final class ConfiguredApplication implements Application {
         for (String uri : uriPatterns) {
             bindings.bind(uri, target);
         }
+    }
+
+    private static <E> Set<E> createIdentityHashSet() {
+        return Collections.newSetFromMap(new IdentityHashMap<>());
+    }
+
+    private static <E> Set<E> createIdentityHashSet(Collection<E> items) {
+        Set<E> set = createIdentityHashSet();
+        set.addAll(items);
+        return set;
     }
 
     public static final class ApplicationContext {

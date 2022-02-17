@@ -70,6 +70,7 @@ public class MockNodeRepository extends NodeRepository {
               Optional.empty(),
               new InMemoryFlagSource(),
               new MemoryMetricsDb(Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z"))),
+              new OrchestratorMock(),
               true,
               0, 1000);
         this.flavors = flavors;

@@ -22,7 +22,7 @@ enum Policy {
 
     /** Full access to everything. */
     operator(Privilege.grant(Action.all())
-                      .on(PathGroup.allExcept(PathGroup.billingPaths()))
+                      .on(PathGroup.allExcept(PathGroup.operatorRestrictedPaths()))
                       .in(SystemName.all()),
              Privilege.grant(Action.read)
                       .on(PathGroup.billingPathsNoToken())
@@ -49,7 +49,7 @@ enum Policy {
     /** Access to create a user tenant in select systems. */
     user(Privilege.grant(Action.create, Action.update)
                   .on(PathGroup.user)
-                  .in(SystemName.main, SystemName.cd, SystemName.dev)),
+                  .in(SystemName.main, SystemName.cd)),
 
     /** Access to create a tenant. */
     tenantCreate(Privilege.grant(Action.create)
@@ -130,7 +130,7 @@ enum Policy {
     /** Read access to all information in select systems. */
     classifiedRead(Privilege.grant(Action.read)
                             .on(PathGroup.allExcept(PathGroup.classifiedOperator))
-                            .in(SystemName.main, SystemName.cd, SystemName.dev)),
+                            .in(SystemName.main, SystemName.cd)),
 
     /** Read access to public info. */
     publicRead(Privilege.grant(Action.read)
@@ -187,6 +187,10 @@ enum Policy {
     billingInformationRead(Privilege.grant(Action.read)
                                     .on(PathGroup.billingList, PathGroup.billing)
                                     .in(SystemName.PublicCd, SystemName.Public)),
+
+    accessRequests(Privilege.grant(Action.all())
+            .on(PathGroup.accessRequests, PathGroup.accessRequestApproval)
+            .in(SystemName.PublicCd)),
 
     /** Invoice management */
     hostedAccountant(Privilege.grant(Action.all())

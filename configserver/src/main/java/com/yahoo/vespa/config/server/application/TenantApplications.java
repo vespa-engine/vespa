@@ -472,7 +472,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                 // If some are missing, quorum is enough, but wait for all up to 5 seconds before returning
                 if (respondents.size() >= barrierMemberCount()) {
                     if (gotQuorumTime.isBefore(startTime))
-                        gotQuorumTime = Instant.now();
+                        gotQuorumTime = clock.instant();
 
                     // Give up if more than some time has passed since we got quorum, otherwise continue
                     if (Duration.between(Instant.now(), gotQuorumTime.plus(waitForAll)).isNegative()) {

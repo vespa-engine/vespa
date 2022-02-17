@@ -3,6 +3,7 @@
 #include "resultconfig.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <atomic>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.resultconfig");
@@ -117,6 +118,13 @@ ResultConfig::CreateEnumMaps()
     }
 }
 
+namespace {
+std::atomic<bool> global_useV8geoPositions = false;
+}
+
+bool ResultConfig::wantedV8geoPositions() {
+    return global_useV8geoPositions;
+}
 
 bool
 ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const char *configId)
@@ -126,6 +134,7 @@ ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const 
     int    maxclassID = 0x7fffffff; // avoid negative classids
     _defaultSummaryId = cfg.defaultsummaryid;
     _useV8geoPositions = cfg.usev8geopositions;
+    global_useV8geoPositions = cfg.usev8geopositions;
 
     for (uint32_t i = 0; rc && i < cfg.classes.size(); i++) {
         const auto& cfg_class = cfg.classes[i];

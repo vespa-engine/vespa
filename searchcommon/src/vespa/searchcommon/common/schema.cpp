@@ -48,7 +48,7 @@ writeFieldSets(vespalib::asciistream &os,
 
 struct FieldName {
     vespalib::string name;
-    FieldName(const std::vector<vespalib::string> & lines)
+    FieldName(const config::StringVector & lines)
         : name(ConfigParser::parse<vespalib::string>("name", lines))
     {
     }
@@ -64,8 +64,7 @@ getFieldId(vespalib::stringref name, const T &map)
 
 }  // namespace
 
-namespace search {
-namespace index {
+namespace search::index {
 
 const uint32_t Schema::UNKNOWN_FIELD_ID(std::numeric_limits<uint32_t>::max());
 
@@ -88,7 +87,7 @@ Schema::Field::Field(vespalib::stringref n, DataType dt, CollectionType ct, vesp
 }
 
 // XXX: Resource leak if exception is thrown.
-Schema::Field::Field(const std::vector<vespalib::string> & lines)
+Schema::Field::Field(const config::StringVector & lines)
     : _name(ConfigParser::parse<vespalib::string>("name", lines)),
       _dataType(schema::dataTypeFromName(ConfigParser::parse<vespalib::string>("datatype", lines))),
       _collectionType(schema::collectionTypeFromName(ConfigParser::parse<vespalib::string>("collectiontype", lines)))
@@ -140,7 +139,7 @@ Schema::IndexField::IndexField(vespalib::stringref name, DataType dt,
 {
 }
 
-Schema::IndexField::IndexField(const std::vector<vespalib::string> &lines)
+Schema::IndexField::IndexField(const config::StringVector &lines)
     : Field(lines),
       _avgElemLen(ConfigParser::parse<int32_t>("averageelementlen", lines, 512)),
       _interleaved_features(ConfigParser::parse<bool>("interleavedfeatures", lines, false))
@@ -181,11 +180,11 @@ Schema::IndexField::operator!=(const IndexField &rhs) const
             _interleaved_features != rhs._interleaved_features;
 }
 
-Schema::FieldSet::FieldSet(const std::vector<vespalib::string> & lines) :
+Schema::FieldSet::FieldSet(const config::StringVector & lines) :
     _name(ConfigParser::parse<vespalib::string>("name", lines)),
     _fields()
 {
-    std::vector<FieldName> fn = ConfigParser::parseArray<FieldName>("field", lines);
+    std::vector<FieldName> fn = ConfigParser::parseArray<std::vector<FieldName>>("field", lines);
     for (size_t i = 0; i < fn.size(); ++i) {
         _fields.push_back(fn[i].name);
     }
@@ -238,16 +237,16 @@ Schema::loadFromFile(const vespalib::string & fileName)
         LOG(warning, "Could not open input file '%s' as part of loadFromFile()", fileName.c_str());
         return false;
     }
-    std::vector<vespalib::string> lines;
+    config::StringVector lines;
     std::string tmpLine;
     while (file) {
         getline(file, tmpLine);
         lines.push_back(tmpLine);
     }
-    _indexFields = ConfigParser::parseArray<IndexField>("indexfield", lines);
-    _attributeFields = ConfigParser::parseArray<AttributeField>("attributefield", lines);
-    _summaryFields = ConfigParser::parseArray<SummaryField>("summaryfield", lines);
-    _fieldSets = ConfigParser::parseArray<FieldSet>("fieldset", lines);
+    _indexFields = ConfigParser::parseArray<std::vector<IndexField>>("indexfield", lines);
+    _attributeFields = ConfigParser::parseArray<std::vector<AttributeField>>("attributefield", lines);
+    _summaryFields = ConfigParser::parseArray<std::vector<SummaryField>>("summaryfield", lines);
+    _fieldSets = ConfigParser::parseArray<std::vector<FieldSet>>("fieldset", lines);
     _importedAttributeFields.clear(); // NOTE: these are not persisted to disk
     _indexIds.clear();
     for (size_t i(0), m(_indexFields.size()); i < m; i++) {
@@ -290,18 +289,13 @@ Schema::saveToFile(const vespalib::string & fileName) const
     FastOS_File s;
     s.OpenReadWrite(fileName.c_str());
     if (!s.IsOpened()) {
-        LOG(warning,
-            "Could not open schema file '%s' for fsync",
-            fileName.c_str());
+        LOG(warning, "Could not open schema file '%s' for fsync", fileName.c_str());
         return false;
     } else {
         if (!s.Sync()) {
-            LOG(warning,
-                "Could not fsync schema file '%s'",
-                fileName.c_str());
+            LOG(warning, "Could not fsync schema file '%s'", fileName.c_str());
             return false;
         }
-        s.Close();
     }
     return true;
 }
@@ -584,5 +578,4 @@ Schema::empty() const
             _importedAttributeFields.empty();
 }
 
-} // namespace search::index
-} // namespace search
+}

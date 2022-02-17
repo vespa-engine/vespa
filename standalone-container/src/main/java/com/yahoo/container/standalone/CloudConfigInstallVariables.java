@@ -95,6 +95,11 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
     }
 
     @Override
+    public Optional<String> cloud() {
+        return Optional.ofNullable(System.getenv("VESPA_CLOUD"));
+    }
+
+    @Override
     public Optional<Boolean> useVespaVersionInRequest() {
         return getInstallVariable("use_vespa_version_in_request", Boolean::parseBoolean);
     }
@@ -119,12 +124,6 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
     @Override
     public Optional<String> ztsUrl() {
         return getInstallVariable("zts_url");
-    }
-
-    @Override
-    public String zooKeeperSnapshotMethod() {
-        String vespaZookeeperSnapshotMethod = System.getenv("VESPA_ZOOKEEPER_SNAPSHOT_METHOD");
-        return vespaZookeeperSnapshotMethod == null ? "" : vespaZookeeperSnapshotMethod;
     }
 
     static ConfigServer[] toConfigServers(String configserversString) {

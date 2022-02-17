@@ -61,9 +61,9 @@ public interface ZmsClient extends AutoCloseable {
 
     Optional<AthenzPolicy> getPolicy(AthenzDomain domain, String name);
 
-    Map<AthenzUser, String> listPendingRoleApprovals(AthenzRole athenzRole);
+    Map<AthenzIdentity, String> listPendingRoleApprovals(AthenzRole athenzRole);
 
-    void approvePendingRoleMembership(AthenzRole athenzRole, AthenzUser athenzUser, Instant expiry, Optional<String> reason);
+    void approvePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry, Optional<String> reason);
 
     List<AthenzIdentity> listMembers(AthenzRole athenzRole);
 
@@ -80,6 +80,8 @@ public interface ZmsClient extends AutoCloseable {
     Set<String> listPolicies(AthenzDomain domain);
 
     void deleteRole(AthenzRole athenzRole);
+
+    void createSubdomain(AthenzDomain parent, String name);
 
     void close();
 }

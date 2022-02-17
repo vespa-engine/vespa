@@ -2,6 +2,7 @@
 package com.yahoo.vespa.testrunner;
 
 import ai.vespa.hosted.api.TestConfig;
+import com.yahoo.vespa.testrunner.VespaCliTestRunner.NoTestsException;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -51,8 +52,8 @@ class VespaCliTestRunnerTest {
 
         Path systemTests = Files.createDirectory(tests.resolve("system-test"));
         assertTrue(runner.isSupported());
-        IllegalStateException ise = assertThrows(IllegalStateException.class,
-                                                 () -> runner.testRunProcessBuilder(TestRunner.Suite.STAGING_TEST, testConfig));
+        NoTestsException ise = assertThrows(NoTestsException.class,
+                                            () -> runner.testRunProcessBuilder(TestRunner.Suite.STAGING_TEST, testConfig));
         assertEquals("No tests found, for suite 'STAGING_TEST'", ise.getMessage());
 
         ProcessBuilder builder = runner.testRunProcessBuilder(TestRunner.Suite.SYSTEM_TEST, testConfig);

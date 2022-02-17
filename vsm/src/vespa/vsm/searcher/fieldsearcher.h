@@ -99,6 +99,7 @@ private:
     void setCurrentElementId(int32_t weight) { _currentElementId = weight; }
     bool onSearch(const StorageDocument & doc);
     virtual void onValue(const document::FieldValue & fv) = 0;
+    virtual void onStructValue(const document::StructFieldValue &) { }
     FieldIdT      _field;
     MatchType     _matchType;
     unsigned      _maxFieldLength;

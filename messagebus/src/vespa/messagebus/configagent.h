@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <memory>
 #include <vespa/messagebus/common.h>
 #include <vespa/config/helper/configfetcher.h>
 #include <vespa/messagebus/config-messagebus.h>

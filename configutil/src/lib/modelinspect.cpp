@@ -7,6 +7,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cstdlib>
+#include <set>
 
 using configdefinitions::tagsContain;
 using configdefinitions::upcase;
@@ -32,7 +33,7 @@ ModelInspect::ModelInspect(Flags flags, const config::ConfigUri uri, std::ostrea
     } catch (config::ConfigRuntimeException &e) {
         std::cerr << e.getMessage() << "\n";
     }
-    if (_cfg.get() != NULL) {
+    if (_cfg) {
         if (_flags.verbose) std::cerr << "success!\n";
     } else {
         std::cerr << "FATAL ERROR: failed to get model configuration.\n";
@@ -40,9 +41,7 @@ ModelInspect::ModelInspect(Flags flags, const config::ConfigUri uri, std::ostrea
     }
 }
 
-ModelInspect::~ModelInspect()
-{
-}
+ModelInspect::~ModelInspect() = default;
 
 void
 ModelInspect::printPort(const vespalib::string &host, int port,

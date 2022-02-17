@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <stdlib.h>
+#include "traits.h"
+#include <cstdint>
+#include <cstdlib>
 #include <cassert>
 #include <algorithm>
-#include "traits.h"
 
 namespace vespalib {
 

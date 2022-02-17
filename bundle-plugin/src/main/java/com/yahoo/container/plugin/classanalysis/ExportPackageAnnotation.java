@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
  * @author ollivir
  */
 public class ExportPackageAnnotation {
+
     private final int major;
     private final int minor;
     private final int micro;
@@ -59,4 +60,5 @@ public class ExportPackageAnnotation {
     public int hashCode() {
         return Objects.hash(major, minor, micro, qualifier);
     }
+
 }

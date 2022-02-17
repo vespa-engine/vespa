@@ -10,7 +10,6 @@
 #include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/vespalib/util/threadexecutor.h>
 
 namespace search { class IBucketizer; }
 namespace search::common { class FileHeaderContext; }
@@ -60,7 +59,7 @@ private:
 
 public:
     typedef std::shared_ptr<SummaryManager> SP;
-    SummaryManager(vespalib::ThreadExecutor & executor,
+    SummaryManager(vespalib::Executor &shared_executor,
                    const search::LogDocumentStore::Config & summary,
                    const search::GrowStrategy & growStrategy,
                    const vespalib::string &baseDir,

@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "compression.h"
 #include "posocccompression.h"
 #include "posocc_fields_params.h"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include <vespa/searchlib/index/postinglistparams.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/data/fileheader.h>
 
@@ -36,8 +36,7 @@ EG2PosOccDecodeContext<bigEndian>::
 readHeader(const vespalib::GenericHeader &header,
            const vespalib::string &prefix)
 {
-    const_cast<PosOccFieldsParams *>(_fieldsParams)->readHeader(header,
-            prefix);
+    const_cast<PosOccFieldsParams *>(_fieldsParams)->readHeader(header, prefix);
 }
 
 

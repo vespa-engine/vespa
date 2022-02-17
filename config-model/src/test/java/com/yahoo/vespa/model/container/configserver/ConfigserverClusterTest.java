@@ -73,7 +73,7 @@ public class ConfigserverClusterTest {
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::hostname, "cfg1", "localhost", "cfg3");
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::id, 4, 2, 3);
         assertEquals(2, config.myid());
-        assertEquals("", config.snapshotMethod());
+        assertEquals("gz", config.snapshotMethod());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -152,8 +152,7 @@ public class ConfigserverClusterTest {
                 .useVespaVersionInRequest(true)
                 .hostedVespa(hostedVespa)
                 .environment("test")
-                .region("bar")
-                .zooKeeperSnapshotMethod(hostedVespa ? "gz" : "");
+                .region("bar");
 
         Optional.of(configServerHostnames)
                 .filter(hostnames -> !hostnames.isEmpty())

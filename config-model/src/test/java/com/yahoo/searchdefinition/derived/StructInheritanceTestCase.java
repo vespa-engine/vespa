@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.derived;
 
 
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Rule;
@@ -31,8 +31,8 @@ public class StructInheritanceTestCase extends AbstractExportingTestCase {
     @Test
     public void requireThatStructCanInherit() throws IOException, ParseException {
         String dir = "src/test/derived/structinheritance/";
-        SchemaBuilder builder = new SchemaBuilder();
-        builder.importFile(dir + "simple.sd");
+        ApplicationBuilder builder = new ApplicationBuilder();
+        builder.addSchemaFile(dir + "simple.sd");
         builder.build(false);
         derive("structinheritance", builder, builder.getSchema("simple"));
         assertCorrectConfigFiles("structinheritance");
@@ -43,9 +43,9 @@ public class StructInheritanceTestCase extends AbstractExportingTestCase {
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage("cannot inherit from base and redeclare field name");
         String dir = "src/test/derived/structinheritance/";
-        SchemaBuilder builder = new SchemaBuilder();
-        builder.importFile(dir + "bad.sd");
-        builder.build();
+        ApplicationBuilder builder = new ApplicationBuilder();
+        builder.addSchemaFile(dir + "bad.sd");
+        builder.build(true);
         derive("structinheritance", builder, builder.getSchema("bad"));
     }
 

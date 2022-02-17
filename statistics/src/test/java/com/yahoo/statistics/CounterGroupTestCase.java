@@ -18,7 +18,7 @@ import static org.junit.Assert.assertFalse;
  *
  * @author Steinar Knutsen
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation","removal"}) // TODO Vespa 8: remove
 public class CounterGroupTestCase {
 
     private volatile boolean gotRecord = false;

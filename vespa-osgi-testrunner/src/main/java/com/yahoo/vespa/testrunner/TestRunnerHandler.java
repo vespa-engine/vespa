@@ -6,7 +6,7 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.EmptyResponse;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.exception.ExceptionUtils;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
@@ -27,10 +27,10 @@ import static com.yahoo.jdisc.Response.Status;
 
 /**
  * @author valerijf
- * @author jvenstad
+ * @author jonmv
  * @author mortent
  */
-public class TestRunnerHandler extends LoggingRequestHandler {
+public class TestRunnerHandler extends ThreadedHttpRequestHandler {
 
     private final TestRunner testRunner;
 

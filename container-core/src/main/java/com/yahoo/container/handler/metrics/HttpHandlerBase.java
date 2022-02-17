@@ -11,6 +11,7 @@ import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.restapi.Path;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -28,12 +29,23 @@ import static java.util.logging.Level.WARNING;
 public abstract class HttpHandlerBase extends ThreadedHttpRequestHandler {
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
+    private final Duration defaultTimeout;
 
     protected HttpHandlerBase(Executor executor) {
+        this(executor, Duration.ofSeconds(25));
+    }
+
+    protected HttpHandlerBase(Executor executor, Duration defaultTimeout) {
         super(executor);
+        this.defaultTimeout = defaultTimeout;
     }
 
     protected abstract Optional<HttpResponse> doHandle(URI requestUri, Path apiPath, String consumer);
+
+    @Override
+    public Duration getTimeout() {
+        return defaultTimeout;
+    }
 
     @Override
     public final HttpResponse handle(HttpRequest request) {

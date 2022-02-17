@@ -7,13 +7,11 @@ include "docproc.rnc"
 include "routing.rnc"
 include "containercluster.rnc"
 include "genericcluster.rnc"
-include "legacygenericcluster.rnc"
 
 start = element services {
    attribute version { "1.0" }? &
    attribute application-type { "hosted-infrastructure" }? &
    element legacy { element v7-geo-positions { xsd:boolean } }? &
-   LegacyGenericCluster* &
    GenericCluster* &
    GenericConfig* &
    Admin? &

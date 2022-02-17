@@ -435,7 +435,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
             config.setInputStream(new IndexingInput(script));
             setIndexingScript(ScriptExpression.newInstance(config));
         } catch (ParseException e) {
-            throw new RuntimeException("Failed to parser script '" + script + "'.", e);
+            throw new IllegalArgumentException("Failed to parse script '" + script + "'", e);
         }
     }
 

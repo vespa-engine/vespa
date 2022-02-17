@@ -40,7 +40,7 @@ public class ZmsClientMock implements ZmsClient {
     private final AthenzDbMock athenz;
     private final AthenzIdentity controllerIdentity;
     private static final Pattern TENANT_RESOURCE_PATTERN = Pattern.compile("service\\.hosting\\.tenant\\.(?<tenantDomain>[\\w\\-_]+)\\..*");
-    private static final Pattern APPLICATION_RESOURCE_PATTERN = Pattern.compile("service\\.hosting\\.tenant\\.[\\w\\-_]+\\.res_group\\.(?<resourceGroup>[\\w\\-_]+)\\.wildcard");
+    private static final Pattern APPLICATION_RESOURCE_PATTERN = Pattern.compile("service\\.hosting\\.tenant\\.[\\w\\-_]+\\.res_group\\.(?<resourceGroup>[\\w\\-_]+)\\.(?<environment>[\\w\\-_]+)");
 
     public ZmsClientMock(AthenzDbMock athenz, AthenzIdentity controllerIdentity) {
         this.athenz = athenz;
@@ -200,12 +200,12 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public Map<AthenzUser,String> listPendingRoleApprovals(AthenzRole athenzRole) {
+    public Map<AthenzIdentity,String> listPendingRoleApprovals(AthenzRole athenzRole) {
         return Map.of();
     }
 
     @Override
-    public void approvePendingRoleMembership(AthenzRole athenzRole, AthenzUser athenzUser, Instant expiry, Optional<String> reason) {
+    public void approvePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry, Optional<String> reason) {
     }
 
     @Override
@@ -255,6 +255,10 @@ public class ZmsClientMock implements ZmsClient {
     public void deleteRole(AthenzRole athenzRole) {
         athenz.domains.get(athenzRole.domain()).roles.removeIf(role -> role.name().equals(athenzRole.roleName()));
     }
+
+    @Override
+    public void createSubdomain(AthenzDomain parent, String name) {}
+
     @Override
     public void close() {}
 

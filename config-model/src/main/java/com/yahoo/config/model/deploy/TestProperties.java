@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.deploy;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
@@ -52,29 +51,30 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Quota quota = Quota.unlimited();
     private boolean useAsyncMessageHandlingOnSchedule = false;
     private double feedConcurrency = 0.5;
-    private boolean enableFeedBlockInDistributor = true;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
     private String jvmOmitStackTraceInFastThrowOption;
     private int maxConcurrentMergesPerNode = 16;
     private int maxMergeQueueSize = 100;
-    private boolean ignoreMergeQueueLimit = true;
     private boolean allowDisableMtls = true;
     private List<X509Certificate> operatorCertificates = Collections.emptyList();
-    private double resourceLimitDisk = 0.8;
+    private double resourceLimitDisk = 0.75;
     private double resourceLimitMemory = 0.8;
     private double minNodeRatioPerGroup = 0.0;
     private boolean containerDumpHeapOnShutdownTimeout = false;
     private double containerShutdownTimeout = 50.0;
-    private int distributorMergeBusyWait = 1;
     private int maxUnCommittedMemory = 123456;
-    private boolean distributorEnhancedMaintenanceScheduling = true;
-    private boolean asyncApplyBucketDiff = true;
     private boolean unorderedMergeChaining = true;
     private List<String> zoneDnsSuffixes = List.of();
     private int maxCompactBuffers = 1;
     private boolean failDeploymentWithInvalidJvmOptions = false;
     private String persistenceAsyncThrottling = "UNLIMITED";
+    private String mergeThrottlingPolicy = "STATIC";
+    private double persistenceThrottlingWsDecrementFactor = 1.2;
+    private double persistenceThrottlingWsBackoff = 0.95;
+    private boolean inhibitDefaultMergesWhenGlobalMergesPending = false;
+    private boolean useV8GeoPositions = false;
+    private List<String> environmentVariables = List.of();
     private boolean avoidRenamingSummaryFeatures = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
@@ -107,7 +107,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public Quota quota() { return quota; }
     @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
     @Override public double feedConcurrency() { return feedConcurrency; }
-    @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
     @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
     @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
     @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return jvmOmitStackTraceInFastThrowOption; }
@@ -115,22 +114,23 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
     @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerNode; }
     @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
-    @Override public boolean ignoreMergeQueueLimit() { return ignoreMergeQueueLimit; }
     @Override public double resourceLimitDisk() { return resourceLimitDisk; }
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
     @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
-    @Override public int metricsproxyNumThreads() { return 1; }
     @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
     @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
-    @Override public int distributorMergeBusyWait() { return distributorMergeBusyWait; }
-    @Override public boolean distributorEnhancedMaintenanceScheduling() { return distributorEnhancedMaintenanceScheduling; }
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
-    @Override public boolean asyncApplyBucketDiff() { return asyncApplyBucketDiff; }
     @Override public boolean unorderedMergeChaining() { return unorderedMergeChaining; }
     @Override public List<String> zoneDnsSuffixes() { return zoneDnsSuffixes; }
     @Override public int maxCompactBuffers() { return maxCompactBuffers; }
     @Override public boolean failDeploymentWithInvalidJvmOptions() { return failDeploymentWithInvalidJvmOptions; }
     @Override public String persistenceAsyncThrottling() { return persistenceAsyncThrottling; }
+    @Override public String mergeThrottlingPolicy() { return mergeThrottlingPolicy; }
+    @Override public double persistenceThrottlingWsDecrementFactor() { return persistenceThrottlingWsDecrementFactor; }
+    @Override public double persistenceThrottlingWsBackoff() { return persistenceThrottlingWsBackoff; }
+    @Override public boolean inhibitDefaultMergesWhenGlobalMergesPending() { return inhibitDefaultMergesWhenGlobalMergesPending; }
+    @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
+    @Override public List<String> environmentVariables() { return environmentVariables; }
     @Override public boolean avoidRenamingSummaryFeatures() { return this.avoidRenamingSummaryFeatures; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
@@ -199,11 +199,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties setIgnoreMergeQueueLimit(boolean ignoreMergeQueueLimit) {
-        this.ignoreMergeQueueLimit = ignoreMergeQueueLimit;
-        return this;
-    }
-
     public TestProperties setDefaultTermwiseLimit(double limit) {
         defaultTermwiseLimit = limit;
         return this;
@@ -230,7 +225,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
 
     public TestProperties setConfigServerSpecs(List<Spec> configServerSpecs) {
-        this.configServerSpecs = ImmutableList.copyOf(configServerSpecs);
+        this.configServerSpecs = List.copyOf(configServerSpecs);
         return this;
     }
 
@@ -256,11 +251,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setQuota(Quota quota) {
         this.quota = quota;
-        return this;
-    }
-
-    public TestProperties enableFeedBlockInDistributor(boolean enabled) {
-        enableFeedBlockInDistributor = enabled;
         return this;
     }
 
@@ -304,21 +294,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties setDistributorMergeBusyWait(int value) {
-        distributorMergeBusyWait = value;
-        return this;
-    }
-
-    public TestProperties distributorEnhancedMaintenanceScheduling(boolean enhancedScheduling) {
-        distributorEnhancedMaintenanceScheduling = enhancedScheduling;
-        return this;
-    }
-
-    public TestProperties setAsyncApplyBucketDiff(boolean value) {
-        asyncApplyBucketDiff = value;
-        return this;
-    }
-
     public TestProperties setUnorderedMergeChaining(boolean unordered) {
         unorderedMergeChaining = unordered;
         return this;
@@ -341,6 +316,36 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setPersistenceAsyncThrottling(String type) {
         this.persistenceAsyncThrottling = type;
+        return this;
+    }
+
+    public TestProperties setMergeThrottlingPolicy(String policy) {
+        this.mergeThrottlingPolicy = policy;
+        return this;
+    }
+
+    public TestProperties setPersistenceThrottlingWsDecrementFactor(double factor) {
+        this.persistenceThrottlingWsDecrementFactor = factor;
+        return this;
+    }
+
+    public TestProperties setPersistenceThrottlingWsBackoff(double backoff) {
+        this.persistenceThrottlingWsBackoff = backoff;
+        return this;
+    }
+
+    public TestProperties inhibitDefaultMergesWhenGlobalMergesPending(boolean value) {
+        this.inhibitDefaultMergesWhenGlobalMergesPending = value;
+        return this;
+    }
+
+    public TestProperties setUseV8GeoPositions(boolean value) {
+        this.useV8GeoPositions = value;
+        return this;
+    }
+
+    public TestProperties setEnvironmentVariables(List<String> value) {
+        this.environmentVariables = value;
         return this;
     }
 

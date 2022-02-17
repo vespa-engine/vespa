@@ -24,5 +24,5 @@ func TestLog(t *testing.T) {
 	assert.Equal(t, expected, out)
 
 	_, errOut := execute(command{homeDir: homeDir, args: []string{"log", "--from", "2021-09-27T13:12:49Z", "--to", "2021-09-27T13:15:00", "1h"}}, t, httpClient)
-	assert.Equal(t, "Error: Invalid period\ncannot combine --from/--to with relative value: 1h\n", errOut)
+	assert.Equal(t, "Error: invalid period: cannot combine --from/--to with relative value: 1h\n", errOut)
 }

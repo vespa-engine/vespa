@@ -35,9 +35,9 @@ public class ReservedFunctionNames extends Processor {
             for (String functionName : rp.getFunctions().keySet()) {
                 if (reservedNames.contains(functionName)) {
                     deployLogger.logApplicationPackage(Level.WARNING, "Function '" + functionName + "' " +
-                                                    "in rank profile '" + rp.getName() + "' " +
-                                                    "has a reserved name. This might mean that the function shadows " +
-                                                    "the built-in function with the same name."
+                                                                      "in rank profile '" + rp.name() + "' " +
+                                                                      "has a reserved name. This might mean that the function shadows " +
+                                                                      "the built-in function with the same name."
                     );
                 }
             }

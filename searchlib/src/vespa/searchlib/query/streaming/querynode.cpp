@@ -71,11 +71,12 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
         qn = std::make_unique<FalseNode>();
         break;
     case ParseItem::ITEM_GEO_LOCATION_TERM:
-        // TODO implement this:
-        // vespalib::string field = queryRep.getIndexName();
-        // vespalib::stringref location_term = queryRep.getTerm();
-        // qn = std::make_unique<LocationQueryNode> ...something ....
-        // break;
+        // just keep the string representation here; parsed in vsm::GeoPosFieldSearcher
+        qn = std::make_unique<QueryTerm>(factory.create(),
+                                         queryRep.getTerm(),
+                                         queryRep.getIndexName(),
+                                         QueryTerm::Type::GEO_LOCATION);
+        break;
     case ParseItem::ITEM_NUMTERM:
     case ParseItem::ITEM_TERM:
     case ParseItem::ITEM_PREFIXTERM:

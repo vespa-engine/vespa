@@ -168,11 +168,11 @@ public abstract class Container extends AbstractService implements
     public void addBuiltinHandlers() { }
 
     @Override
-    public void initService(DeployLogger deployLogger) {
+    public void initService(DeployState deployState) {
         if (isInitialized()) return;
 
         // XXX: Must be called first, to set the baseport
-        super.initService(deployLogger);
+        super.initService(deployState);
 
         if (getHttp() == null) {
             initDefaultJettyConnector();
@@ -281,7 +281,7 @@ public abstract class Container extends AbstractService implements
     }
 
     protected int allocatedRpcPort = 0;
-    private int getRpcPort() {
+    protected int getRpcPort() {
         return allocatedRpcPort;
     }
     protected int numRpcPorts() { return rpcServerEnabled() ? 1 : 0; }

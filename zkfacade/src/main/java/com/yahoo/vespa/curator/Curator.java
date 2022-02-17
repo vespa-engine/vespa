@@ -2,7 +2,6 @@
 package com.yahoo.vespa.curator;
 
 import com.google.inject.Inject;
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.curator.api.VespaCurator;
@@ -62,8 +61,7 @@ public class Curator implements VespaCurator, AutoCloseable {
     private static final Duration BASE_SLEEP_TIME = Duration.ofSeconds(1);
     private static final int MAX_RETRIES = 10;
     private static final RetryPolicy DEFAULT_RETRY_POLICY = new ExponentialBackoffRetry((int) BASE_SLEEP_TIME.toMillis(), MAX_RETRIES);
-
-    protected final RetryPolicy retryPolicy = DEFAULT_RETRY_POLICY;
+    private static final long juteMaxBuffer = 52428800;  // Should correspond with value in ZookeeperServerConfig
 
     private final CuratorFramework curatorFramework;
     private final ConnectionSpec connectionSpec;
@@ -89,15 +87,6 @@ public class Curator implements VespaCurator, AutoCloseable {
                                    CuratorConfig.Server::hostname,
                                    CuratorConfig.Server::port,
                                    curatorConfig.zookeeperLocalhostAffinity()),
-             Optional.of(ZK_CLIENT_CONFIG_FILE));
-    }
-
-    // TODO: This can be removed when this package is no longer public API.
-    public Curator(ConfigserverConfig configserverConfig, @SuppressWarnings("unused") VespaZooKeeperServer server) {
-        this(ConnectionSpec.create(configserverConfig.zookeeperserver(),
-                                   ConfigserverConfig.Zookeeperserver::hostname,
-                                   ConfigserverConfig.Zookeeperserver::port,
-                                   configserverConfig.zookeeperLocalhostAffinity()),
              Optional.of(ZK_CLIENT_CONFIG_FILE));
     }
 
@@ -138,16 +127,6 @@ public class Curator implements VespaCurator, AutoCloseable {
             return new ZKClientConfig();
         }
     }
-
-    /**
-     * Returns the ZooKeeper "connect string" used by curator: a comma-separated list of
-     * host:port of ZooKeeper endpoints to connect to. This may be a subset of
-     * zooKeeperEnsembleConnectionSpec() if there's some affinity, e.g. for
-     * performance reasons.
-     *
-     * This may be empty but never null 
-     */
-    public String connectionSpec() { return connectionSpec.local(); }
 
     /** For internal use; prefer creating a {@link CuratorCounter} */
     public DistributedAtomicLong createAtomicCounter(String path) {
@@ -203,6 +182,10 @@ public class Curator implements VespaCurator, AutoCloseable {
      */
     // TODO: Use create().orSetData() in Curator 4 and later
     public void set(Path path, byte[] data) {
+        if (data.length > juteMaxBuffer)
+            throw new IllegalArgumentException("Cannot not set data at " + path.getAbsolute() + ", " +
+                                               data.length + " bytes, max bytes is " + juteMaxBuffer);
+
         if ( ! exists(path))
             create(path);
 

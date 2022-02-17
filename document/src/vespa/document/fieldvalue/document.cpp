@@ -10,7 +10,6 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/fieldset/fieldsets.h>
-#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>

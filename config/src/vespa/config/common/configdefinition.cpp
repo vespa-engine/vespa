@@ -12,8 +12,8 @@ ConfigDefinition::ConfigDefinition()
     : _schema()
 {}
 
-ConfigDefinition::ConfigDefinition(const std::vector<vespalib::string> & schema)
-    : _schema(schema)
+ConfigDefinition::ConfigDefinition(StringVector schema)
+    : _schema(std::move(schema))
 {}
 
 void
@@ -36,8 +36,8 @@ vespalib::string
 ConfigDefinition::asString() const
 {
     vespalib::asciistream as;
-    for (auto it(_schema.begin()), mt(_schema.end()); it != mt; it++) {
-        as << *it;
+    for (const auto & line : _schema) {
+        as << line;
     }
     return as.str();
 }

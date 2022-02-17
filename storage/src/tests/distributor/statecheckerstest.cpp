@@ -175,6 +175,8 @@ struct StateCheckersTest : Test, DistributorStripeTestUtil {
         bool _includeSchedulingPriority {false};
         bool _merge_operations_disabled {false};
         bool _prioritize_global_bucket_merges {true};
+        bool _config_enable_default_space_merge_inhibition {false};
+        bool _merges_inhibited_in_bucket_space {false};
         CheckerParams();
         ~CheckerParams();
 
@@ -222,6 +224,14 @@ struct StateCheckersTest : Test, DistributorStripeTestUtil {
             _bucket_space = bucket_space;
             return *this;
         }
+        CheckerParams& config_enable_default_space_merge_inhibition(bool enabled) noexcept {
+            _config_enable_default_space_merge_inhibition = enabled;
+            return *this;
+        }
+        CheckerParams& merges_inhibited_in_bucket_space(bool inhibited) noexcept {
+            _merges_inhibited_in_bucket_space = inhibited;
+            return *this;
+        }
     };
 
     template <typename CheckerImpl>
@@ -236,10 +246,12 @@ struct StateCheckersTest : Test, DistributorStripeTestUtil {
         vespa::config::content::core::StorDistributormanagerConfigBuilder config;
         config.mergeOperationsDisabled = params._merge_operations_disabled;
         config.prioritizeGlobalBucketMerges = params._prioritize_global_bucket_merges;
+        config.inhibitDefaultMergesWhenGlobalMergesPending = params._config_enable_default_space_merge_inhibition;
         configure_stripe(config);
         if (!params._pending_cluster_state.empty()) {
             simulate_set_pending_cluster_state(params._pending_cluster_state);
         }
+        getBucketSpaceRepo().get(params._bucket_space).set_merges_inhibited(params._merges_inhibited_in_bucket_space);
         NodeMaintenanceStatsTracker statsTracker;
         StateChecker::Context c(node_context(),
                                 operation_context(),
@@ -816,6 +828,32 @@ TEST_F(StateCheckersTest, no_merge_operation_generated_if_merges_explicitly_conf
             .bucketInfo("0=1,2=2")
             .clusterState("distributor:1 storage:3")
             .merge_operations_disabled(true));
+}
+
+TEST_F(StateCheckersTest, no_merge_operation_generated_if_merges_inhibited_in_default_bucket_space_and_config_allowed) {
+    // Technically, the state checker doesn't look at global vs. non-global but instead defers
+    // to the distributor bucket space repo to set the inhibition flag on the correct bucket space.
+    // This particular logic is tested at a higher repo-level.
+    runAndVerify<SynchronizeAndMoveStateChecker>(
+            CheckerParams()
+                    .expect("NO OPERATIONS GENERATED") // Would normally generate a merge op
+                    .bucketInfo("0=1,2=2")
+                    .config_enable_default_space_merge_inhibition(true)
+                    .merges_inhibited_in_bucket_space(true)
+                    .clusterState("distributor:1 storage:3"));
+}
+
+TEST_F(StateCheckersTest, merge_operation_still_generated_if_merges_inhibited_in_default_bucket_space_but_config_disallowed) {
+    runAndVerify<SynchronizeAndMoveStateChecker>(
+            CheckerParams()
+                    .expect("[Moving bucket to ideal node 1]"
+                            "[Synchronizing buckets with different checksums "
+                            "node(idx=0,crc=0x1,docs=1/1,bytes=1/1,trusted=false,active=false,ready=false), "
+                            "node(idx=2,crc=0x2,docs=2/2,bytes=2/2,trusted=false,active=false,ready=false)]")
+                    .bucketInfo("0=1,2=2")
+                    .config_enable_default_space_merge_inhibition(false)
+                    .merges_inhibited_in_bucket_space(true)
+                    .clusterState("distributor:1 storage:3"));
 }
 
 std::string

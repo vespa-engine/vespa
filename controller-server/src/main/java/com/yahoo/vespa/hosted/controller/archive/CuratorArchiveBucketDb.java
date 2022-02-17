@@ -5,9 +5,6 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.text.Text;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
@@ -37,36 +34,19 @@ public class CuratorArchiveBucketDb {
 
     private final ArchiveService archiveService;
     private final CuratorDb curatorDb;
-    private final BooleanFlag enableFlag;
     private final SystemName system;
 
     public CuratorArchiveBucketDb(Controller controller) {
         this.archiveService = controller.serviceRegistry().archiveService();
         this.curatorDb = controller.curator();
-        this.enableFlag = Flags.ENABLE_ONPREM_TENANT_S3_ARCHIVE.bindTo(controller.flagSource());
         this.system = controller.zoneRegistry().system();
     }
 
-    public Optional<URI> archiveUriFor(ZoneId zoneId, TenantName tenant) {
-        if (enabled(zoneId, tenant)) {
-            return Optional.of(URI.create(Text.format("s3://%s/%s/", findOrAssignBucket(zoneId, tenant), tenant.value())));
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    private boolean enabled(ZoneId zone, TenantName tenant) {
-        return system.isPublic() ||
-                enableFlag
-                        .with(FetchVector.Dimension.ZONE_ID, zone.value())
-                        .with(FetchVector.Dimension.TENANT_ID, tenant.value())
-                        .value();
-    }
-
-    private String findOrAssignBucket(ZoneId zoneId, TenantName tenant) {
+    public Optional<URI> archiveUriFor(ZoneId zoneId, TenantName tenant, boolean createIfMissing) {
         return getBucketNameFromCache(zoneId, tenant)
                 .or(() -> findAndUpdateArchiveUriCache(zoneId, tenant, buckets(zoneId)))
-                .orElseGet(() -> assignToBucket(zoneId, tenant));
+                .or(() -> createIfMissing ? Optional.of(assignToBucket(zoneId, tenant)) : Optional.empty())
+                .map(bucketName -> URI.create(Text.format("s3://%s/%s/", bucketName, tenant.value())));
     }
 
     private String assignToBucket(ZoneId zoneId, TenantName tenant) {
@@ -92,8 +72,7 @@ public class CuratorArchiveBucketDb {
                         }
 
                         // We'll have to create a new bucket
-                        var newBucket = archiveService.createArchiveBucketFor(zoneId, tenantsPerBucket().isPresent())
-                                .withTenant(tenant);
+                        var newBucket = archiveService.createArchiveBucketFor(zoneId).withTenant(tenant);
                         zoneBuckets.add(newBucket);
                         curatorDb.writeArchiveBuckets(zoneId, zoneBuckets);
                         updateArchiveUriCache(zoneId, zoneBuckets);

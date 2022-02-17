@@ -146,6 +146,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private final ComponentGroup<Component<?, ?>> componentGroup;
     private final boolean isHostedVespa;
     private final boolean zooKeeperLocalhostAffinity;
+    private final int numAvailableProcessors;
 
     private final Map<String, String> concreteDocumentTypes = new LinkedHashMap<>();
 
@@ -160,23 +161,25 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     private boolean deferChangesUntilRestart = false;
 
-    public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity) {
+    public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity, int defaultPoolNumThreads) {
         super(parent, configSubId);
         this.name = clusterId;
         this.isHostedVespa = stateIsHosted(deployState);
         this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
         this.zooKeeperLocalhostAffinity = zooKeeperLocalhostAffinity;
+        numAvailableProcessors = deployState.featureFlags().availableProcessors();
 
         componentGroup = new ComponentGroup<>(this, "component");
 
         addCommonVespaBundles();
 
-        // TODO Vespa 8: remove LoggingRequestHandler.Context (replaced by ThreadedHttpRequestHandler.Context)
-        addSimpleComponent(com.yahoo.container.jdisc.LoggingRequestHandler.Context.class);
+        // TODO Vespa 8: remove LoggingRequestHandler.Context component if we can break binary compatibility
+        //               (ThreadedHttpRequestHandler.Context is source compatible.)
+        addSimpleComponent("com.yahoo.container.jdisc.LoggingRequestHandler$Context");
 
         addComponent(new StatisticsComponent());
         addSimpleComponent(AccessLog.class);
-        addComponent(new DefaultThreadpoolProvider(this, deployState.featureFlags().metricsproxyNumThreads()));
+        addComponent(new DefaultThreadpoolProvider(this, defaultPoolNumThreads));
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricConsumerProviderProvider");
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricProvider");
@@ -331,8 +334,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public SearchChains getSearchChains() {
         if (containerSearch == null)
-            throw new IllegalStateException("Search components not found in container cluster '" + getSubId() +
-                                            "': Add <search/> to the cluster in services.xml");
+            throw new IllegalArgumentException("Search components not found in container cluster '" + getSubId() +
+                                               "': Add <search/> to the cluster in services.xml");
         return containerSearch.getChains();
     }
 
@@ -371,8 +374,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public DocprocChains getDocprocChains() {
         if (containerDocproc == null)
-            throw new IllegalStateException("Document processing components not found in container cluster '" + getSubId() +
-                                                    "': Add <document-processing/> to the cluster in services.xml");
+            throw new IllegalArgumentException("Document processing components not found in container cluster '" + getSubId() +
+                                            "': Add <document-processing/> to the cluster in services.xml");
         return containerDocproc.getChains();
     }
 
@@ -493,7 +496,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public void getConfig(QrStartConfig.Builder builder) {
         builder.jvm
                 .verbosegc(false)
-                .availableProcessors(2)
+                .availableProcessors(numAvailableProcessors)
                 .compressedClassSpaceSize(32)
                 .minHeapsize(32)
                 .heapsize(256)
@@ -576,6 +579,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         builder.system(zone.system().value());
         builder.environment(zone.environment().value());
         builder.region(zone.region().value());
+        builder.cloud(zone.getCloud().name().value());
     }
 
     @Override

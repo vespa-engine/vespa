@@ -21,13 +21,14 @@ public class FieldSetRepo {
     FieldSet parseSpecialValues(String name)
     {
         if (name.equals(DocIdOnly.NAME)) { return new DocIdOnly(); }
+        else if (name.equals(DocumentOnly.NAME)) { return (new DocumentOnly()); }
         else if (name.equals(AllFields.NAME)) { return (new AllFields()); }
         else if (name.equals(NoFields.NAME)) { return (new NoFields()); }
         else if (name.equals("[docid]")) { return (new DocIdOnly()); }
         else {
             throw new IllegalArgumentException(
                     "The only special names (enclosed in '[]') allowed are " +
-                    "id, all, none");
+                    "id, all, document, none");
         }
     }
 
@@ -101,6 +102,8 @@ public class FieldSetRepo {
             return NoFields.NAME;
         } else if (fieldSet instanceof DocIdOnly) {
             return DocIdOnly.NAME;
+        } else if (fieldSet instanceof DocumentOnly) {
+            return DocumentOnly.NAME;
         } else {
             throw new IllegalArgumentException("Unknown field set type " + fieldSet);
         }
@@ -112,6 +115,18 @@ public class FieldSetRepo {
      * fieldset.
      */
     public void copyFields(Document source, Document target, FieldSet fieldSet) {
+        if (fieldSet instanceof DocumentOnly) {
+            var actual = source.getDataType().fieldSet(DocumentOnly.NAME);
+            if (actual != null) {
+                for (Iterator<Map.Entry<Field, FieldValue>> i = source.iterator(); i.hasNext();) {
+                    Map.Entry<Field, FieldValue> v = i.next();
+                    if (actual.contains(v.getKey())) {
+                        target.setFieldValue(v.getKey(), v.getValue());
+                    }
+                }
+                return;
+            }
+        }
         for (Iterator<Map.Entry<Field, FieldValue>> i = source.iterator(); i.hasNext();) {
             Map.Entry<Field, FieldValue> v = i.next();
 
@@ -126,6 +141,21 @@ public class FieldSetRepo {
      */
     public void stripFields(Document target, FieldSet fieldSet) {
         List<Field> toStrip = new ArrayList<>();
+        if (fieldSet instanceof DocumentOnly) {
+            var actual = target.getDataType().fieldSet(DocumentOnly.NAME);
+            if (actual != null) {
+                for (Iterator<Map.Entry<Field, FieldValue>> i = target.iterator(); i.hasNext();) {
+                    Map.Entry<Field, FieldValue> v = i.next();
+                    if (! actual.contains(v.getKey())) {
+                        toStrip.add(v.getKey());
+                    }
+                }
+                for (Field f : toStrip) {
+                    target.removeFieldValue(f);
+                }
+                return;
+            }
+        }
         for (Iterator<Map.Entry<Field, FieldValue>> i = target.iterator(); i.hasNext();) {
             Map.Entry<Field, FieldValue> v = i.next();
 

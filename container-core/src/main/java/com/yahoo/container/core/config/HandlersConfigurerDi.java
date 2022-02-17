@@ -71,7 +71,8 @@ public class HandlersConfigurerDi {
 
         this.vespaContainer = vespaContainer;
         container = new Container(subscriberFactory, configId, deconstructor, osgiWrapper);
-        getNewComponentGraph(discInjector, true);
+        Runnable cleanupTask = waitForNextGraphGeneration(discInjector, true);
+        cleanupTask.run();
     }
 
     private static class ContainerAndDiOsgi extends OsgiImpl implements OsgiWrapper {
@@ -106,11 +107,15 @@ public class HandlersConfigurerDi {
 
     /**
      * Wait for new config to arrive and produce the new graph
+     * @return Task for deconstructing previous component graph and bundles
      */
-    public void getNewComponentGraph(Injector discInjector, boolean isInitializing) {
-        currentGraph = container.getNewComponentGraph(currentGraph,
-                                                      createFallbackInjector(vespaContainer, discInjector),
-                                                      isInitializing);
+    public Runnable waitForNextGraphGeneration(Injector discInjector, boolean isInitializing) {
+        Container.ComponentGraphResult result = container.waitForNextGraphGeneration(
+                this.currentGraph,
+                createFallbackInjector(vespaContainer, discInjector),
+                isInitializing);
+        this.currentGraph = result.newGraph();
+        return result.oldComponentsCleanupTask();
     }
 
     @SuppressWarnings("deprecation")
@@ -138,9 +143,9 @@ public class HandlersConfigurerDi {
         return currentGraph.getInstance(componentClass);
     }
 
-    public void shutdown(ComponentDeconstructor deconstructor) {
-        container.shutdown(currentGraph, deconstructor);
-    }
+    public void shutdown() { container.shutdown(currentGraph); }
+
+    public void shutdownConfigRetriever() { container.shutdownConfigRetriever(); }
 
     /** Returns the currently active application configuration generation */
     public long generation() { return currentGraph.generation(); }

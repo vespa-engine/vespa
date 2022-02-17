@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics.rule;
 
-import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.semantics.engine.NameSpace;
 import com.yahoo.prelude.semantics.engine.RuleBaseLinguistics;
 import com.yahoo.prelude.semantics.engine.RuleEvaluation;
@@ -49,6 +48,9 @@ public class TermCondition extends Condition {
         }
     }
 
+    public String term() { return term; }
+
+    @Override
     public String toInnerString() {
         return getLabelString() + term;
     }

@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.deploy;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ServiceInfo;
@@ -19,6 +20,9 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.ApplicationRepository.ActionTimer;
 import com.yahoo.vespa.config.server.ApplicationRepository.Activation;
 import com.yahoo.vespa.config.server.TimeoutBudget;
+import com.yahoo.vespa.config.server.application.Application;
+import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
+import com.yahoo.vespa.config.server.application.ConfigNotConvergedException;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.ReindexActions;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
@@ -34,6 +38,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
 
 /**
  * The process of deploying an application.
@@ -149,6 +155,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         RestartActions restartActions = configChangeActions.getRestartActions().useForInternalRestart(internalRedeploy);
 
         if ( ! restartActions.isEmpty()) {
+
+            waitForConfigToConverge(applicationId);
+
             Set<String> hostnames = restartActions.getEntries().stream()
                                                   .flatMap(entry -> entry.getServices().stream())
                                                   .map(ServiceInfo::getHostName)
@@ -162,6 +171,30 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
             this.configChangeActions = new ConfigChangeActions(
                     new RestartActions(), configChangeActions.getRefeedActions(), configChangeActions.getReindexActions());
+        }
+    }
+
+    private void waitForConfigToConverge(ApplicationId applicationId) {
+        deployLogger.log(Level.INFO, "Wait for all services to use new config generation before restarting");
+        while (true) {
+            try {
+                params.get().getTimeoutBudget().assertNotTimedOut(
+                        () -> "Timeout exceeded while waiting for config convergence for " + applicationId);
+            } catch (UncheckedTimeoutException e) {
+                throw new ConfigNotConvergedException(e);
+            }
+
+            ConfigConvergenceChecker convergenceChecker = applicationRepository.configConvergenceChecker();
+            Application app = applicationRepository.getActiveApplication(applicationId);
+            ServiceListResponse response = convergenceChecker.checkConvergenceUnlessDeferringChangesUntilRestart(app);
+            if (response.converged) {
+                deployLogger.log(Level.INFO, "Services converged on new config generation " + response.currentGeneration);
+                return;
+            } else {
+                deployLogger.log(Level.INFO, "Services did not converge on new config generation " +
+                        response.wantedGeneration + ", current generation: " + response.currentGeneration + ", will retry");
+                try { Thread.sleep(10_000); } catch (InterruptedException e) { /* ignore */ }
+            }
         }
     }
 

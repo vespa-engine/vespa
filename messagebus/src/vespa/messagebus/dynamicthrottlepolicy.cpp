@@ -12,8 +12,8 @@ DynamicThrottlePolicy::DynamicThrottlePolicy() :
     _timer(new SteadyTimer()),
     _numSent(0),
     _numOk(0),
-    _resizeRate(3),
-    _resizeTime(_timer->getMilliTime()),
+    _resizeRate(3.0),
+    _resizeTime(0),
     _timeOfLastMessage(_timer->getMilliTime()),
     _idleTimePeriod(60000),
     _efficiencyThreshold(1),
@@ -21,6 +21,7 @@ DynamicThrottlePolicy::DynamicThrottlePolicy() :
     _windowSize(_windowSizeIncrement),
     _maxWindowSize(INT_MAX),
     _minWindowSize(_windowSizeIncrement),
+    _decrementFactor(2.0),
     _windowSizeBackOff(0.9),
     _weight(1),
     _localMaxThroughput(0)
@@ -30,8 +31,8 @@ DynamicThrottlePolicy::DynamicThrottlePolicy(double windowSizeIncrement) :
     _timer(new SteadyTimer()),
     _numSent(0),
     _numOk(0),
-    _resizeRate(3),
-    _resizeTime(_timer->getMilliTime()),
+    _resizeRate(3.0),
+    _resizeTime(0),
     _timeOfLastMessage(_timer->getMilliTime()),
     _idleTimePeriod(60000),
     _efficiencyThreshold(1),
@@ -39,6 +40,7 @@ DynamicThrottlePolicy::DynamicThrottlePolicy(double windowSizeIncrement) :
     _windowSize(_windowSizeIncrement),
     _maxWindowSize(INT_MAX),
     _minWindowSize(_windowSizeIncrement),
+    _decrementFactor(2.0),
     _windowSizeBackOff(0.9),
     _weight(1),
     _localMaxThroughput(0)
@@ -48,8 +50,8 @@ DynamicThrottlePolicy::DynamicThrottlePolicy(ITimer::UP timer) :
     _timer(std::move(timer)),
     _numSent(0),
     _numOk(0),
-    _resizeRate(3),
-    _resizeTime(_timer->getMilliTime()),
+    _resizeRate(3.0),
+    _resizeTime(0),
     _timeOfLastMessage(_timer->getMilliTime()),
     _idleTimePeriod(60000),
     _efficiencyThreshold(1),
@@ -57,6 +59,7 @@ DynamicThrottlePolicy::DynamicThrottlePolicy(ITimer::UP timer) :
     _windowSize(_windowSizeIncrement),
     _maxWindowSize(INT_MAX),
     _minWindowSize(_windowSizeIncrement),
+    _decrementFactor(2.0),
     _windowSizeBackOff(0.9),
     _weight(1),
     _localMaxThroughput(0)
@@ -73,20 +76,21 @@ DynamicThrottlePolicy &
 DynamicThrottlePolicy::setWindowSizeIncrement(double windowSizeIncrement)
 {
     _windowSizeIncrement = windowSizeIncrement;
+    _windowSize = std::max(_windowSize, _windowSizeIncrement);
     return *this;
 }
 
 DynamicThrottlePolicy &
 DynamicThrottlePolicy::setWindowSizeBackOff(double windowSizeBackOff)
 {
-    _windowSizeBackOff = windowSizeBackOff;
+    _windowSizeBackOff = std::max(0.0, std::min(1.0, windowSizeBackOff));
     return *this;
 }
 
 DynamicThrottlePolicy &
-DynamicThrottlePolicy::setResizeRate(uint32_t resizeRate)
+DynamicThrottlePolicy::setResizeRate(double resizeRate)
 {
-    _resizeRate = resizeRate;
+    _resizeRate = std::max(2.0, resizeRate);
     return *this;
 }
 
@@ -115,6 +119,14 @@ DynamicThrottlePolicy &
 DynamicThrottlePolicy::setMinWindowSize(double min)
 {
     _minWindowSize = min;
+    _windowSize = std::max(_minWindowSize, _windowSizeIncrement);
+    return *this;
+}
+
+DynamicThrottlePolicy&
+DynamicThrottlePolicy::setWindowSizeDecrementFactor(double decrementFactor)
+{
+    _decrementFactor = decrementFactor;
     return *this;
 }
 
@@ -134,10 +146,14 @@ DynamicThrottlePolicy::canSend(const Message &msg, uint32_t pendingCount)
     }
     uint64_t time = _timer->getMilliTime();
     if (time - _timeOfLastMessage > _idleTimePeriod) {
-        _windowSize = std::min(_windowSize, (double) pendingCount + _windowSizeIncrement);
+        _windowSize = std::max(_minWindowSize, std::min(_windowSize, pendingCount + _windowSizeIncrement));
+        LOG(debug, "Idle time exceeded; WindowSize = %.2f", _windowSize);
     }
     _timeOfLastMessage = time;
-    return pendingCount < _windowSize;
+    auto windowSizeFloored = static_cast<uint32_t>(_windowSize);
+    // Use floating point window sizes, so the algorithm sees the difference between 1.1 and 1.9 window size.
+    bool carry = _numSent < ((_windowSize * _resizeRate) * (_windowSize - windowSizeFloored));
+    return pendingCount < (windowSizeFloored + (carry ? 1 : 0));
 }
 
 void
@@ -156,7 +172,7 @@ DynamicThrottlePolicy::processMessage(Message &msg)
     _numSent = 0;
     _numOk = 0;
 
-    if (throughput > _localMaxThroughput * 1.01) {
+    if (throughput > _localMaxThroughput) {
         LOG(debug, "WindowSize = %.2f, Throughput = %f", _windowSize, throughput);
         _localMaxThroughput = throughput;
         _windowSize += _weight*_windowSizeIncrement;
@@ -170,15 +186,15 @@ DynamicThrottlePolicy::processMessage(Message &msg)
             period *= 0.1;
         }
         double efficiency = throughput*period/_windowSize;
-        LOG(debug, "WindowSize = %.2f, Throughput = %f, Efficiency = %.2f, Elapsed = %.2f, Period = %.2f", _windowSize, throughput, efficiency, elapsed, period);
 
         if (efficiency < _efficiencyThreshold) {
-            double newSize = std::min(throughput * period, _windowSize);
-            _windowSize = std::min(newSize * _windowSizeBackOff, _windowSize - 2 * _windowSizeIncrement);
+            _windowSize = std::min(_windowSize * _windowSizeBackOff, _windowSize - _decrementFactor * _windowSizeIncrement);
             _localMaxThroughput = 0;
         } else {
             _windowSize += _weight*_windowSizeIncrement;
         }
+        LOG(debug, "WindowSize = %.2f, Throughput = %f, Efficiency = %.2f, Elapsed = %.2f, Period = %.2f",
+            _windowSize, throughput, efficiency, elapsed, period);
     }
     _windowSize = std::max(_minWindowSize, _windowSize);
     _windowSize = std::min(_maxWindowSize, _windowSize);

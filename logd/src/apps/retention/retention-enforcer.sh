@@ -64,6 +64,7 @@ mark_pid() {
 }
 
 check_pidfile() {
+	[ -f $PIDF ] || return 0
 	read pid < $PIDF
 	[ "$pid" = $$ ] && return 0
 	if [ "$pid" ] && [ $pid -gt $$ ]; then
@@ -105,8 +106,17 @@ maybe_collect() {
 process_file() {
 	dbfile="$1"
 	now=$(date +%s)
+	dbf_ts_prefix=${dbfile##*.}
+	dbf_ts_beg=${dbf_ts_prefix}00000
+	dbf_ts_end=${dbf_ts_prefix}99999
+	add=$((86400 * $RETAIN_DAYS))
+	earliest_expire=$((${dbf_ts_beg} + $add))
+	if [ $earliest_expire -gt $now ]; then
+		return 0
+	fi
 	found=0
 	while read timestamp logfilename; do
+		sleep 1
 		for fn in $logfilename $logfilename.*z*; do
 			if [ -f "$fn" ]; then
 				found=1
@@ -115,8 +125,7 @@ process_file() {
 		done
 	done < $dbfile
 	if [ $found = 0 ]; then
-		ts=${dbfile##*.}99999
-		maybe_collect "$ts" "$dbfile"
+		maybe_collect "${dbf_ts_end}" "$dbfile"
 	fi
 }
 
@@ -124,6 +133,7 @@ process_all() {
 	for dbf in $DBDIR/logfiles.* ; do
 		[ -f "$dbf" ] || continue
 		process_file "$dbf"
+		sleep 1
 	done
 }
 
@@ -139,5 +149,6 @@ mainloop() {
 # MAIN:
 
 prepare_stuff
+sleep 600
 mainloop
 exit 0

@@ -5,6 +5,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Service that manages archive storage URIs for tenant nodes.
@@ -14,7 +15,9 @@ import java.util.Map;
  */
 public interface ArchiveService {
 
-    ArchiveBucket createArchiveBucketFor(ZoneId zoneId, boolean sharded);
+    ArchiveBucket createArchiveBucketFor(ZoneId zoneId);
 
-    void updateBucketAndKeyPolicy(ZoneId zoneId, ArchiveBucket bucket, Map<TenantName, String> authorizeIamRoleByTenantName);
+    void updateBucketPolicy(ZoneId zoneId, ArchiveBucket bucket, Map<TenantName, String> authorizeIamRoleByTenantName);
+
+    void updateKeyPolicy(ZoneId zoneId, String keyArn, Set<String> tenantAuthorizedIamRoles);
 }

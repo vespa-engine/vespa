@@ -14,7 +14,7 @@ namespace vespalib {
  * Interface class to run multiple tasks in parallel, but tasks with same
  * id has to be run in sequence.
  */
-class ISequencedTaskExecutor : public vespalib::IWakeup
+class ISequencedTaskExecutor : public IWakeup
 {
 public:
     class ExecutorId {
@@ -28,6 +28,7 @@ public:
     private:
         uint32_t _id;
     };
+    using TaskList = std::vector<std::pair<ExecutorId, Executor::Task::UP>>;
     ISequencedTaskExecutor(uint32_t numExecutors);
     virtual ~ISequencedTaskExecutor();
 
@@ -40,7 +41,7 @@ public:
     virtual ExecutorId getExecutorId(uint64_t componentId) const = 0;
     uint32_t getNumExecutors() const { return _numExecutors; }
 
-    ExecutorId getExecutorIdFromName(vespalib::stringref componentId) const;
+    ExecutorId getExecutorIdFromName(stringref componentId) const;
 
     /**
      * Returns an executor id that is NOT equal to the given executor id,
@@ -58,7 +59,13 @@ public:
      * @param id     which internal executor to use
      * @param task   unique pointer to the task to be executed
      */
-    virtual void executeTask(ExecutorId id, vespalib::Executor::Task::UP task) = 0;
+    virtual void executeTask(ExecutorId id, Executor::Task::UP task) = 0;
+    /**
+     * Schedule a list of tasks to run after all previously scheduled tasks with
+     * same id. Default is to just iterate and execute one by one, but implementations
+     * that can schedule all in one go more efficiently can implement this one.
+     */
+    virtual void executeTasks(TaskList tasks);
     /**
      * Call this one to ensure you get the attention of the workers.
      */
@@ -74,7 +81,7 @@ public:
      */
     template <class FunctionType>
     void executeLambda(ExecutorId id, FunctionType &&function) {
-        executeTask(id, vespalib::makeLambdaTask(std::forward<FunctionType>(function)));
+        executeTask(id, makeLambdaTask(std::forward<FunctionType>(function)));
     }
     /**
      * Wait for all scheduled tasks to complete.
@@ -83,7 +90,7 @@ public:
 
     virtual void setTaskLimit(uint32_t taskLimit) = 0;
 
-    virtual vespalib::ExecutorStats getStats() = 0;
+    virtual ExecutorStats getStats() = 0;
 
     /**
      * Wrap lambda function into a task and schedule it to be run.
@@ -96,7 +103,7 @@ public:
     template <class FunctionType>
     void execute(uint64_t componentId, FunctionType &&function) {
         ExecutorId id = getExecutorId(componentId);
-        executeTask(id, vespalib::makeLambdaTask(std::forward<FunctionType>(function)));
+        executeTask(id, makeLambdaTask(std::forward<FunctionType>(function)));
     }
 
     /**
@@ -109,7 +116,7 @@ public:
      */
     template <class FunctionType>
     void execute(ExecutorId id, FunctionType &&function) {
-        executeTask(id, vespalib::makeLambdaTask(std::forward<FunctionType>(function)));
+        executeTask(id, makeLambdaTask(std::forward<FunctionType>(function)));
     }
 
 private:

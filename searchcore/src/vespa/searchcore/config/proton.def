@@ -81,6 +81,10 @@ flush.memory.conservative.memorylimitfactor double default=0.5
 ## In this case this factor is multiplied with 'maxtlssize' to calculate a conservative value to use instead.
 flush.memory.conservative.disklimitfactor double default=0.5
 
+## The factor used to multiply with the resource limits for disk / memory to find the high
+## watermark indicating when to from normal into conservative mode for the flush strategy.
+flush.memory.conservative.highwatermarkfactor double default=0.95
+
 ## The factor used to multiply with the resource limits for disk / memory to find the low
 ## watermark indicating when to go back from conservative to normal mode for the flush strategy.
 flush.memory.conservative.lowwatermarkfactor double default=0.9
@@ -442,7 +446,7 @@ initialize.threads int default = 0
 
 ## Portion of max address space used in components in attribute vectors
 ## before put and update operations in feed is blocked.
-writefilter.attribute.address_space_limit double default = 0.9
+writefilter.attribute.address_space_limit double default = 0.92
 
 ## Portion of physical memory that can be resident memory in anonymous mapping
 ## by the proton process before put and update portion of feed is blocked.
@@ -543,3 +547,11 @@ tensor_implementation enum {TENSOR_ENGINE, FAST_VALUE} default = FAST_VALUE
 
 ## Whether to report issues back to the container via protobuf field
 forward_issues bool default = true
+
+## Chooses the throttling policy used to control the window size
+## of the SharedOperationThrottler component used by the transaction log replay feed state.
+replay_throttling_policy.type enum { UNLIMITED, DYNAMIC } default=UNLIMITED
+## Only used if replay_throttling_policy.type == DYNAMIC:
+replay_throttling_policy.min_window_size int default=100
+replay_throttling_policy.max_window_size int default=10000
+replay_throttling_policy.window_size_increment int default=20

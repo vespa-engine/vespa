@@ -25,7 +25,7 @@ public class StructTestCase extends AbstractSchemaTestCase {
     @Test
     public void testBadStruct() throws IOException {
         try {
-            SchemaBuilder.buildFromFile("src/test/examples/badstruct.sd");
+            ApplicationBuilder.buildFromFile("src/test/examples/badstruct.sd");
             fail("Should throw exception.");
         } catch (ParseException expected) {
             // success
@@ -46,7 +46,7 @@ public class StructTestCase extends AbstractSchemaTestCase {
      */
     @Test(expected = IllegalArgumentException.class)
     public void testStructOutsideDocumentIllegal() throws IOException, ParseException {
-        SchemaBuilder.buildFromFile("src/test/examples/structoutsideofdocument.sd");
+        ApplicationBuilder.buildFromFile("src/test/examples/structoutsideofdocument.sd");
     }
 
 }

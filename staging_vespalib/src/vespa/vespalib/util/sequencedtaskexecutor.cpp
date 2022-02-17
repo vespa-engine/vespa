@@ -3,6 +3,7 @@
 #include "sequencedtaskexecutor.h"
 #include "adaptive_sequenced_executor.h"
 #include "singleexecutor.h"
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/stllike/hashtable.h>
@@ -46,30 +47,34 @@ SequencedTaskExecutor::create(Runnable::init_fun_t func, uint32_t threads) {
 
 std::unique_ptr<ISequencedTaskExecutor>
 SequencedTaskExecutor::create(Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit) {
-    return create(func, threads, taskLimit, OptimizeFor::LATENCY);
+    return create(func, threads, taskLimit, true, OptimizeFor::LATENCY);
 }
 
 std::unique_ptr<ISequencedTaskExecutor>
-SequencedTaskExecutor::create(Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit, OptimizeFor optimize) {
-    return create(func, threads, taskLimit, optimize, 0);
+SequencedTaskExecutor::create(Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit, bool is_task_limit_hard, OptimizeFor optimize) {
+    return create(func, threads, taskLimit, is_task_limit_hard, optimize, 0);
 }
 
 std::unique_ptr<ISequencedTaskExecutor>
 SequencedTaskExecutor::create(Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit,
-                              OptimizeFor optimize, uint32_t kindOfWatermark)
+                              bool is_task_limit_hard, OptimizeFor optimize, uint32_t kindOfWatermark)
 {
     if (optimize == OptimizeFor::ADAPTIVE) {
         size_t num_strands = std::min(taskLimit, threads*32);
-        return std::make_unique<AdaptiveSequencedExecutor>(num_strands, threads, kindOfWatermark, taskLimit);
+        return std::make_unique<AdaptiveSequencedExecutor>(num_strands, threads, kindOfWatermark, taskLimit, is_task_limit_hard);
     } else {
         auto executors = std::vector<std::unique_ptr<SyncableThreadExecutor>>();
         executors.reserve(threads);
         for (uint32_t id = 0; id < threads; ++id) {
             if (optimize == OptimizeFor::THROUGHPUT) {
                 uint32_t watermark = (kindOfWatermark == 0) ? taskLimit / 10 : kindOfWatermark;
-                executors.push_back(std::make_unique<SingleExecutor>(func, taskLimit, watermark, 100ms));
+                executors.push_back(std::make_unique<SingleExecutor>(func, taskLimit, is_task_limit_hard, watermark, 100ms));
             } else {
-                executors.push_back(std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit, func));
+                if (is_task_limit_hard) {
+                    executors.push_back(std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit, func));
+                } else {
+                    executors.push_back(std::make_unique<ThreadStackExecutor>(1, stackSize, func));
+                }
             }
         }
         return std::unique_ptr<ISequencedTaskExecutor>(new SequencedTaskExecutor(std::move(executors)));

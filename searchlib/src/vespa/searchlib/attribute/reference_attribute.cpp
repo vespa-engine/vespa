@@ -41,7 +41,7 @@ extractUniqueValueCount(const vespalib::GenericHeader &header)
 ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName,
                                        const Config & cfg)
     : NotImplementedAttribute(baseFileName, cfg),
-      _store(),
+      _store({}),
       _indices(getGenerationHolder()),
       _compaction_spec(),
       _gidToLidMapperFactory(),

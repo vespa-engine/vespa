@@ -7,6 +7,8 @@ import com.yahoo.prelude.semantics.engine.Match;
 import com.yahoo.prelude.semantics.engine.RuleEvaluation;
 import com.yahoo.protect.Validator;
 
+import java.util.List;
+
 /**
  * A literal term produced by a production rule
  *
@@ -63,13 +65,13 @@ public class LiteralTermProduction extends TermProduction {
         if (replacing) {
             Match matched = e.getNonreferencedMatch(0);
             newItem.setWeight(matched.getItem().getWeight());
-            insertMatch(e, matched, newItem, offset);
+            insertMatch(e, matched, List.of(newItem), offset);
         }
         else {
             newItem.setWeight(getWeight());
             if (e.getTraceLevel() >= 6)
                 e.trace(6, "Adding '" + newItem + "'");
-            e.addItem(newItem, getTermType());
+            e.addItems(List.of(newItem), getTermType());
         }
     }
 

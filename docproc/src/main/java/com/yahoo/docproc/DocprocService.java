@@ -30,10 +30,10 @@ import java.util.logging.Logger;
  *
  * @author bratseth
  */
-//TODO Vespa 8 This class and a lot of other in this package should not be part of PublicAPI
+//TODO: Vespa 8: This class and a lot of other in this package should not be part of PublicAPI
 public class DocprocService extends AbstractComponent {
 
-    private static Logger log = Logger.getLogger(DocprocService.class.getName());
+    private static final Logger log = Logger.getLogger(DocprocService.class.getName());
     private volatile DocprocExecutor executor;
 
     /** The processings currently in progress at this service */

@@ -3,6 +3,7 @@ vespa_add_library(searchlib_tensor OBJECT
     SOURCES
     angular_distance.cpp
     bitvector_visited_tracker.cpp
+    blob_sequence_reader.cpp
     default_nearest_neighbor_index_factory.cpp
     dense_tensor_attribute.cpp
     dense_tensor_attribute_saver.cpp

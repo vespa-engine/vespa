@@ -16,10 +16,10 @@ class StreamedValueIndex : public Value::Index
 private:
     uint32_t _num_mapped_dims;
     uint32_t _num_subspaces;
-    const std::vector<string_id> &_labels_ref;
+    const StringIdVector &_labels_ref;
 
 public:
-    StreamedValueIndex(uint32_t num_mapped_dims, uint32_t num_subspaces, const std::vector<string_id> &labels_ref)
+    StreamedValueIndex(uint32_t num_mapped_dims, uint32_t num_subspaces, const StringIdVector &labels_ref)
         : _num_mapped_dims(num_mapped_dims),
           _num_subspaces(num_subspaces),
           _labels_ref(labels_ref)

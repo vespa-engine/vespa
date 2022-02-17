@@ -48,7 +48,7 @@ public class Argmin<NAMETYPE extends Name> extends CompositeTensorFunction<NAMET
     }
 
     @Override
-    public String toString(ToStringContext context) {
+    public String toString(ToStringContext<NAMETYPE> context) {
         return "argmin(" + argument.toString(context) + Reduce.commaSeparated(dimensions) + ")";
     }
 

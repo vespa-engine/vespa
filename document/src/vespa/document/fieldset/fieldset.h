@@ -20,7 +20,8 @@ public:
         SET,
         ALL,
         NONE,
-        DOCID
+        DOCID,
+        DOCUMENT_ONLY
     };
 
     using SP = std::shared_ptr<FieldSet>;

@@ -2,12 +2,14 @@
 
 #include "summaryfieldconverter.h"
 #include "linguisticsannotation.h"
+#include "resultconfig.h"
 #include "searchdatatype.h"
 #include <vespa/document/annotation/alternatespanlist.h>
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/annotation/spantreevisitor.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/boolfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
@@ -472,6 +474,18 @@ private:
     }
 
     void visit(const StructFieldValue &value) override {
+        if (value.getDataType() == &document::PositionDataType::getInstance()
+            && ResultConfig::wantedV8geoPositions())
+        {
+            auto xv = value.getValue("x");
+            auto yv = value.getValue("y");
+            if (xv && yv) {
+                Cursor &c = _inserter.insertObject();
+                c.setDouble("lat", double(yv->getAsInt()) / 1.0e6);
+                c.setDouble("lng", double(xv->getAsInt()) / 1.0e6);
+                return;
+            }
+        }
         if (*value.getDataType() == *SearchDataType::URI) {
             FieldValue::UP uriAllValue = value.getValue("all");
             if (uriAllValue &&

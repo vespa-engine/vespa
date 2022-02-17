@@ -2,14 +2,21 @@
 #include "configvalue.h"
 #include "payload_converter.h"
 #include "misc.h"
+#include <vespa/config/frt/protocol.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
 namespace config {
 
-ConfigValue::ConfigValue(const std::vector<vespalib::string> & lines, const vespalib::string & xxhash)
+ConfigValue::ConfigValue(StringVector lines, const vespalib::string & xxhash)
     : _payload(),
-      _lines(lines),
+      _lines(std::move(lines)),
       _xxhash64(xxhash)
+{ }
+
+ConfigValue::ConfigValue(StringVector lines)
+    : _payload(),
+      _lines(std::move(lines)),
+      _xxhash64(calculateContentXxhash64(_lines))
 { }
 
 ConfigValue::ConfigValue()
@@ -26,7 +33,6 @@ ConfigValue::ConfigValue(PayloadPtr payload, const vespalib::string & xxhash)
 
 ConfigValue::ConfigValue(const ConfigValue &) = default;
 ConfigValue & ConfigValue::operator = (const ConfigValue &) = default;
-
 ConfigValue::~ConfigValue() = default;
 
 int
@@ -41,10 +47,10 @@ ConfigValue::operator!=(const ConfigValue & rhs) const
     return (!(*this == rhs));
 }
 
-std::vector<vespalib::string>
+StringVector
 ConfigValue::getLegacyFormat() const
 {
-    std::vector<vespalib::string> lines;
+    StringVector lines;
     if (_payload) {
         const vespalib::slime::Inspector & payload(_payload->getSlimePayload());
         PayloadConverter converter(payload);
@@ -69,7 +75,7 @@ void
 ConfigValue::serializeV1(vespalib::slime::Cursor & cursor) const
 {
     // TODO: Remove v1 when we can bump disk format.
-    std::vector<vespalib::string> lines(getLegacyFormat());
+    StringVector lines(getLegacyFormat());
     for (size_t i = 0; i < lines.size(); i++) {
         cursor.addString(vespalib::Memory(lines[i]));
     }

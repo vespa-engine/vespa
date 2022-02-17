@@ -64,17 +64,14 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
         return controller.policies().read(deployment).of(id);
     }
 
-    /**
-     * Extension of a {@link DeploymentRoutingContext} for deployments using either {@link RoutingMethod#shared} or
-     * {@link RoutingMethod#sharedLayer4} routing.
-     */
+    /** Extension of a {@link DeploymentRoutingContext} for deployments using {@link RoutingMethod#sharedLayer4} routing */
     public static class SharedDeploymentRoutingContext extends DeploymentRoutingContext {
 
         private final Clock clock;
         private final ConfigServer configServer;
 
         public SharedDeploymentRoutingContext(DeploymentId deployment, RoutingController controller, ConfigServer configServer, Clock clock) {
-            super(deployment, RoutingMethod.shared, controller);
+            super(deployment, RoutingMethod.sharedLayer4, controller);
             this.clock = Objects.requireNonNull(clock);
             this.configServer = Objects.requireNonNull(configServer);
         }

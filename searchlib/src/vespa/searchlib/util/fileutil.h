@@ -8,7 +8,6 @@
 #include <vespa/vespalib/stllike/string.h>
 
 using vespalib::GenericHeader;
-class Fast_BufferedFile;
 
 namespace search {
 
@@ -104,67 +103,6 @@ public:
     }
 };
 
-class SequentialFileArray
-{
-public:
-    SequentialFileArray(const vespalib::string & fname);
-    virtual ~SequentialFileArray();
-    const vespalib::string & getName() const { return _name; }
-    void rewind();
-    void close();
-    void erase();
-protected:
-    void openReadOnly();
-    void openWriteOnly();
-    std::unique_ptr<Fast_BufferedFile> _backingFile;
-    vespalib::string _name;
-};
-
-template <typename T>
-class SequentialFileArrayRead : public SequentialFileArray
-{
-public:
-    SequentialFileArrayRead(const vespalib::string & fname);
-    ~SequentialFileArrayRead();
-    T getNext() const { return _fileReader.readHostOrder(); }
-    bool hasNext() const;
-    size_t size() const;
-private:
-    mutable FileReader<T> _fileReader;
-};
-
-template <typename T>
-class SequentialFileArrayWrite : public SequentialFileArray
-{
-public:
-    SequentialFileArrayWrite(const vespalib::string & fname);
-    void push_back(const T & v) { _count++; _fileWriter.write(&v, sizeof(v)); }
-    size_t size() const { return _count; }
-    bool empty() const { return _count == 0; }
-private:
-    size_t _count;
-    FileWriterBase    _fileWriter;
-};
-
-template <typename T, typename S>
-class MergeSorter
-{
-public:
-    MergeSorter(const vespalib::string & name, size_t chunkSize);
-    void push_back(const T & v);
-    void commit() { sortChunk(); merge(); }
-    const vespalib::string & getName() const { return _name; }
-    void rewind() { }
-private:
-    vespalib::string genName(size_t n);
-    void merge();
-    void sortChunk();
-
-    std::vector<T> _chunk;
-    size_t _chunkCount;
-    vespalib::string _name;
-};
-
 template <typename T>
 class SequentialReadModifyWriteInterface
 {
@@ -197,33 +135,6 @@ public:
 private:
     size_t _rp;
     size_t _wp;
-};
-
-template <typename T, typename R, typename W>
-class SequentialReaderWriter : public SequentialReadModifyWriteInterface<T>
-{
-public:
-    SequentialReaderWriter(R & reader, W & writer);
-    ~SequentialReaderWriter();
-    virtual const T & read()        { return _lastRead; }
-    virtual void write(const T & v) { _writer.push_back(v); }
-    virtual bool next() {
-        bool hasMore(_reader.hasNext());
-        if (hasMore) {
-            _lastRead = _reader.getNext();
-        }
-        return hasMore;
-    }
-    virtual size_t size()     const { return _reader.size(); }
-    virtual void rewind() {
-        _reader.rewind();
-        next();
-        _writer.rewind();
-    }
-private:
-    T   _lastRead;
-    R & _reader;
-    W & _writer;
 };
 
 }

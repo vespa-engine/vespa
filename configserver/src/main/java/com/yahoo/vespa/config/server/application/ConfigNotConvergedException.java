@@ -5,7 +5,13 @@ package com.yahoo.vespa.config.server.application;
  * @author Ulf Lilleengen
  */
 public class ConfigNotConvergedException extends RuntimeException {
+
+    public ConfigNotConvergedException(Throwable t) {
+        super(t);
+    }
+
     public ConfigNotConvergedException(String message) {
         super(message);
     }
+
 }

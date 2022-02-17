@@ -2,13 +2,13 @@
   "endpoints": [
     {
       "name": "default",
-      "dnsName": "a1--t1.global.vespa.oath.cloud",
-      "routingMethod": "shared",
+      "dnsName": "a1.t1.global.vespa.oath.cloud",
+      "routingMethod": "sharedLayer4",
       "cluster": "default",
       "scope": "global",
       "zones": [
         {
-          "routingMethod": "shared",
+          "routingMethod": "sharedLayer4",
           "instance": "t1:a1:default",
           "environment": "prod",
           "region": "us-east-3",
@@ -17,7 +17,7 @@
           "changedAt": 1497618757000
         },
         {
-          "routingMethod": "shared",
+          "routingMethod": "sharedLayer4",
           "instance": "t1:a1:default",
           "environment": "prod",
           "region": "us-west-1",

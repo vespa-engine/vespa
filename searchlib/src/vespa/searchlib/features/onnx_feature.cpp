@@ -150,6 +150,7 @@ OnnxBlueprint::setup(const IIndexEnvironment &env,
             return fail("undefined input: %s (->%s)", input_feature.value().c_str(), model_input.name.c_str());
         }
     }
+    planner.prepare_output_types(*_model);
     for (size_t i = 0; i < _model->outputs().size(); ++i) {
         const auto &model_output = _model->outputs()[i];
         auto output_name = model_cfg->output_name(model_output.name);

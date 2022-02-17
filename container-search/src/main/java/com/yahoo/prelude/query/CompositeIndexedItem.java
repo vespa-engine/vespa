@@ -22,9 +22,7 @@ public abstract class CompositeIndexedItem extends CompositeTaggableItem impleme
 
     private String index = "";
 
-    /**
-     * The name of the index this belongs to, or "" (never null) if not specified
-     **/
+    /** The name of the index this belongs to, or "" (never null) if not specified */
     public String getIndexName() {
         return index;
     }

@@ -6,6 +6,7 @@
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/cpu_usage.h>
 
 #include <vespa/log/log.h>
 
@@ -34,12 +35,14 @@ public:
 };
 
 VESPA_THREAD_STACK_TAG(match_engine_executor)
+VESPA_THREAD_STACK_TAG(match_engine_thread_bundle)
 
 } // namespace anon
 
 namespace proton {
 
 using namespace vespalib::slime;
+using vespalib::CpuUsage;
 
 MatchEngine::MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t distributionKey, bool async)
     : _lock(),
@@ -48,8 +51,10 @@ MatchEngine::MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t di
       _closed(false),
       _forward_issues(true),
       _handlers(),
-      _executor(std::max(size_t(1), numThreads / threadsPerSearch), 256_Ki, match_engine_executor),
-      _threadBundlePool(std::max(size_t(1), threadsPerSearch)),
+      _executor(std::max(size_t(1), numThreads / threadsPerSearch), 256_Ki,
+                CpuUsage::wrap(match_engine_executor, CpuUsage::Category::READ)),
+      _threadBundlePool(std::max(size_t(1), threadsPerSearch),
+                        CpuUsage::wrap(match_engine_thread_bundle, CpuUsage::Category::READ)),
       _nodeUp(false),
       _nodeMaintenance(false)
 {
@@ -147,6 +152,9 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req)
             }
         }
         _threadBundlePool.release(std::move(threadBundle));
+        if (searchRequest->expired()) {
+            vespalib::Issue::report("search request timed out; results may be incomplete");
+        }
     }
     ret->request = req.release();
     if (_forward_issues) {

@@ -2,6 +2,7 @@
 
 #include "compacter.h"
 #include "logdatastore.h"
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/array.hpp>
 
 #include <vespa/log/log.h>
@@ -11,6 +12,10 @@ namespace search::docstore {
 
 using vespalib::alloc::Alloc;
 
+namespace {
+    static constexpr size_t INITIAL_BACKING_BUFFER_SIZE = 64_Mi;
+}
+
 void
 Compacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) {
     (void) chunkId;
@@ -18,7 +23,8 @@ Compacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *bu
     _ds.write(std::move(guard), fileId, lid, buffer, sz);
 }
 
-BucketCompacter::BucketCompacter(size_t maxSignificantBucketBits, const CompressionConfig & compression, LogDataStore & ds, Executor & executor, const IBucketizer & bucketizer, FileId source, FileId destination) :
+BucketCompacter::BucketCompacter(size_t maxSignificantBucketBits, const CompressionConfig & compression, LogDataStore & ds,
+                                 Executor & executor, const IBucketizer & bucketizer, FileId source, FileId destination) :
     _unSignificantBucketBits((maxSignificantBucketBits > 8) ? (maxSignificantBucketBits - 8) : 0),
     _sourceFileId(source),
     _destinationFileId(destination),
@@ -28,7 +34,7 @@ BucketCompacter::BucketCompacter(size_t maxSignificantBucketBits, const Compress
     _maxBucketGuardDuration(vespalib::duration::zero()),
     _lastSample(vespalib::steady_clock::now()),
     _lock(),
-    _backingMemory(Alloc::alloc(0x40000000), &_lock),
+    _backingMemory(Alloc::alloc(INITIAL_BACKING_BUFFER_SIZE), &_lock),
     _tmpStore(),
     _lidGuard(ds.getLidReadGuard()),
     _bucketizerGuard(),

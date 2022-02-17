@@ -16,7 +16,7 @@ SingleValueEnumAttribute<B>::
 SingleValueEnumAttribute(const vespalib::string &baseFileName,
                          const AttributeVector::Config &cfg)
     : B(baseFileName, cfg),
-      SingleValueEnumAttributeBase(cfg, getGenerationHolder())
+      SingleValueEnumAttributeBase(cfg, getGenerationHolder(), this->get_initial_alloc())
 {
 }
 

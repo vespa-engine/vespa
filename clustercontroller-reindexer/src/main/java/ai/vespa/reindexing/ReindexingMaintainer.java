@@ -100,17 +100,23 @@ public class ReindexingMaintainer extends AbstractComponent {
                 reindexer.shutdown();
 
             executor.shutdown();
-            if ( ! executor.awaitTermination(45, TimeUnit.SECONDS))
+
+            executor.awaitTermination(5, TimeUnit.SECONDS); // Give it 5s to complete gracefully.
+
+            curator.close(); // Close the underlying curator independently to force shutdown
+
+            if ( !executor.isShutdown() && ! executor.awaitTermination(5, TimeUnit.SECONDS))
                 log.log(WARNING, "Failed to shut down reindexing within timeout");
         }
         catch (InterruptedException e) {
             log.log(WARNING, "Interrupted while waiting for reindexing to shut down");
             Thread.currentThread().interrupt();
         }
-        if ( ! executor.isShutdown())
-            executor.shutdownNow();
+        if ( ! executor.isShutdown()) {
+            List<Runnable> remaining = executor.shutdownNow();
+            log.log(WARNING, "Number of tasks remaining at hard shutdown: " + remaining.size());
+        }
 
-        curator.close();
     }
 
     static List<Trigger> parseReady(ReindexingConfig.Clusters cluster, DocumentTypeManager manager) {

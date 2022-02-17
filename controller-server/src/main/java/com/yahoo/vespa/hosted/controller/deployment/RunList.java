@@ -26,7 +26,7 @@ public class RunList extends AbstractFilteringList<Run, RunList> {
         return from(job.runs().descendingMap().values());
     }
 
-    /** Returns the jobs with runs matching the given versions — targets only for system test, everything present otherwise. */
+    /** Returns the jobs with runs matching the given versions — targets only for system test, everything present otherwise. */
     public RunList on(Versions versions) {
         return matching(run -> matchingVersions(run, versions));
     }

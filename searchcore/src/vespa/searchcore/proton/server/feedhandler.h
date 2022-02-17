@@ -36,6 +36,7 @@ class IReplayConfig;
 class JoinBucketsOperation;
 class PutOperation;
 class RemoveOperation;
+class ReplayThrottlingPolicy;
 class SplitBucketOperation;
 class UpdateOperation;
 
@@ -189,7 +190,8 @@ public:
                          SerialNum flushedSummaryMgrSerial,
                          SerialNum oldestFlushedSerial,
                          SerialNum newestFlushedSerial,
-                         ConfigStore &config_store);
+                         ConfigStore &config_store,
+                         const ReplayThrottlingPolicy& replay_throttling_policy);
 
     /**
      * Called when a flush is done and allows pruning of the transaction log.

@@ -46,6 +46,7 @@ public class Reindexer {
     private static final Logger log = Logger.getLogger(Reindexer.class.getName());
 
     static final Duration failureGrace = Duration.ofMinutes(10);
+    static final Duration PROGRESS_TOKEN_STORE_INTERVAL = Duration.ofSeconds(60);
 
     private final Cluster cluster;
     private final List<Trigger> ready;
@@ -160,7 +161,7 @@ public class Reindexer {
             public void onProgress(ProgressToken token) {
                 super.onProgress(token);
                 status.updateAndGet(value -> value.progressed(token));
-                if (progressLastStored.get().isBefore(clock.instant().minusSeconds(10))) {
+                if (progressLastStored.get().isBefore(clock.instant().minus(PROGRESS_TOKEN_STORE_INTERVAL))) {
                     progressLastStored.set(clock.instant());
                     database.writeReindexing(reindexing.updateAndGet(value -> value.with(type, status.get())), cluster.name());
                     metrics.dump(reindexing.get());
@@ -208,6 +209,7 @@ public class Reindexer {
         parameters.setThrottlePolicy(new DynamicThrottlePolicy().setWindowSizeIncrement(speed)
                                                                 .setWindowSizeDecrementFactor(3)
                                                                 .setResizeRate(5)
+                                                                .setMaxWindowSize(128)
                                                                 .setMinWindowSize(3 + (int) (5 * speed)));
         parameters.setRemoteDataHandler(cluster.name());
         parameters.setMaxPending(8);

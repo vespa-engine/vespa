@@ -10,6 +10,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -18,6 +19,8 @@ import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
+import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
+import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -53,14 +56,16 @@ public class Nodes {
 
     private static final Logger log = Logger.getLogger(Nodes.class.getName());
 
+    private final CuratorDatabaseClient db;
     private final Zone zone;
     private final Clock clock;
-    private final CuratorDatabaseClient db;
+    private final Orchestrator orchestrator;
 
-    public Nodes(CuratorDatabaseClient db, Zone zone, Clock clock) {
+    public Nodes(CuratorDatabaseClient db, Zone zone, Clock clock, Orchestrator orchestrator) {
         this.zone = zone;
         this.clock = clock;
         this.db = db;
+        this.orchestrator = orchestrator;
     }
 
     /** Read and write all nodes to make sure they are stored in the latest version of the serialized format */
@@ -474,7 +479,7 @@ public class Nodes {
         if (node.state() == Node.State.ready) return node;
 
         Node parentHost = node.parentHostname().flatMap(this::node).orElse(node);
-        List<String> failureReasons = NodeFailer.reasonsToFailParentHost(parentHost);
+        List<String> failureReasons = NodeFailer.reasonsToFailHost(parentHost);
         if ( ! failureReasons.isEmpty())
             illegal(node + " cannot be readied because it has hard failures: " + failureReasons);
 
@@ -728,15 +733,25 @@ public class Nodes {
         return canAllocateTenantNodeTo(host, zone.getCloud().dynamicProvisioning());
     }
 
-    public static boolean canAllocateTenantNodeTo(Node host, boolean dynamicProvisioning) {
+    public boolean canAllocateTenantNodeTo(Node host, boolean dynamicProvisioning) {
         if ( ! host.type().canRun(NodeType.tenant)) return false;
         if (host.status().wantToRetire()) return false;
         if (host.allocation().map(alloc -> alloc.membership().retired()).orElse(false)) return false;
+        if (suspended(host)) return false;
 
         if (dynamicProvisioning)
             return EnumSet.of(Node.State.active, Node.State.ready, Node.State.provisioned).contains(host.state());
         else
             return host.state() == Node.State.active;
+    }
+
+    public boolean suspended(Node node) {
+        try {
+            return orchestrator.getNodeStatus(new HostName(node.hostname())).isSuspended();
+        } catch (HostNameNotFoundException e) {
+            // Treat it as not suspended
+            return false;
+        }
     }
 
     /** Create a lock which provides exclusive rights to making changes to the given application */
@@ -819,6 +834,7 @@ public class Nodes {
     private static boolean parkOnDeallocationOf(Node node, Agent agent) {
         if (node.state() == Node.State.parked) return false;
         if (agent == Agent.operator) return false;
+        if (!node.type().isHost() && node.status().wantToDeprovision()) return false;
         boolean retirementRequestedByOperator = node.status().wantToRetire() &&
                                                 node.history().event(History.Event.Type.wantToRetire)
                                                     .map(History.Event::agent)

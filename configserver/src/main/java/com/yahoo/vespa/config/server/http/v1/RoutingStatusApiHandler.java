@@ -63,6 +63,7 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
 
     private static RestApi createRestApiDefinition(RoutingStatusApiHandler self) {
         return RestApi.builder()
+                // TODO(mpolden): Remove this route when clients have migrated to v2
                 .addRoute(RestApi.route("/routing/v1/status")
                     .get(self::listInactiveDeployments))
                 .addRoute(RestApi.route("/routing/v1/status/zone")
@@ -72,7 +73,25 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
                 .addRoute(RestApi.route("/routing/v1/status/{upstreamName}")
                     .get(self::getDeploymentStatus)
                     .put(self::changeDeploymentStatus))
+                .addRoute(RestApi.route("/routing/v2/status")
+                                 .get(self::getDeploymentStatusV2))
                 .build();
+    }
+
+    /* Get inactive deployments and zone status */
+    private SlimeJsonResponse getDeploymentStatusV2(RestApi.RequestContext context) {
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        Cursor inactiveDeploymentsArray = root.setArray("inactiveDeployments");
+        curator.getChildren(DEPLOYMENT_STATUS_ROOT).stream()
+               .filter(upstreamName -> deploymentStatus(upstreamName).status() == RoutingStatus.out)
+               .sorted()
+               .forEach(upstreamName -> {
+                   Cursor deploymentObject = inactiveDeploymentsArray.addObject();
+                   deploymentObject.setString("upstreamName", upstreamName);
+               });
+        root.setBool("zoneActive", zoneStatus() == RoutingStatus.in);
+        return new SlimeJsonResponse(slime);
     }
 
     /** Get upstream of all deployments with status OUT */

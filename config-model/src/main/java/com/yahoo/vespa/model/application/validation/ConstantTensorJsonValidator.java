@@ -90,7 +90,7 @@ public class ConstantTensorJsonValidator {
                         validateTensorValue();
                     }
                 } else {
-                    throw new InvalidConstantTensor(parser, "Only 'address' or 'value' fields are permitted within a cell object");
+                    throw new InvalidConstantTensorException(parser, "Only 'address' or 'value' fields are permitted within a cell object");
                 }
             }
 
@@ -110,11 +110,11 @@ public class ConstantTensorJsonValidator {
             String dimensionName = parser.getCurrentName();
             TensorType.Dimension dimension = tensorDimensions.get(dimensionName);
             if (dimension == null) {
-                throw new InvalidConstantTensor(parser, String.format("Tensor dimension '%s' does not exist", parser.getCurrentName()));
+                throw new InvalidConstantTensorException(parser, String.format("Tensor dimension '%s' does not exist", parser.getCurrentName()));
             }
 
             if (!cellDimensions.contains(dimensionName)) {
-                throw new InvalidConstantTensor(parser, String.format("Duplicate tensor dimension '%s'", parser.getCurrentName()));
+                throw new InvalidConstantTensorException(parser, String.format("Duplicate tensor dimension '%s'", parser.getCurrentName()));
             }
 
             cellDimensions.remove(dimensionName);
@@ -122,7 +122,7 @@ public class ConstantTensorJsonValidator {
         }
 
         if (!cellDimensions.isEmpty()) {
-            throw new InvalidConstantTensor(parser, String.format("Tensor address missing dimension(s) %s", Joiner.on(", ").join(cellDimensions)));
+            throw new InvalidConstantTensorException(parser, String.format("Tensor address missing dimension(s) %s", Joiner.on(", ").join(cellDimensions)));
         }
     }
 
@@ -134,7 +134,7 @@ public class ConstantTensorJsonValidator {
     private void validateLabel(TensorType.Dimension dimension) throws IOException {
         JsonToken token = parser.nextToken();
         if (token != JsonToken.VALUE_STRING)
-            throw new InvalidConstantTensor(parser, String.format("Tensor label is not a string (%s)", token.toString()));
+            throw new InvalidConstantTensorException(parser, String.format("Tensor label is not a string (%s)", token.toString()));
 
         if (dimension instanceof TensorType.IndexedBoundDimension) {
             validateBoundIndex((TensorType.IndexedBoundDimension) dimension);
@@ -148,7 +148,7 @@ public class ConstantTensorJsonValidator {
             try {
                 int value = Integer.parseInt(parser.getValueAsString());
                 if (value >= dimension.size().get())
-                    throw new InvalidConstantTensor(parser, String.format("Index %s not within limits of bound dimension '%s'", value, dimension.name()));
+                    throw new InvalidConstantTensorException(parser, String.format("Index %s not within limits of bound dimension '%s'", value, dimension.name()));
             } catch (NumberFormatException e) {
                 throwCoordinateIsNotInteger(parser.getValueAsString(), dimension.name());
             }
@@ -166,14 +166,14 @@ public class ConstantTensorJsonValidator {
     }
 
     private void throwCoordinateIsNotInteger(String value, String dimensionName) {
-        throw new InvalidConstantTensor(parser, String.format("Index '%s' for dimension '%s' is not an integer", value, dimensionName));
+        throw new InvalidConstantTensorException(parser, String.format("Index '%s' for dimension '%s' is not an integer", value, dimensionName));
     }
 
     private void validateTensorValue() throws IOException {
         JsonToken token = parser.nextToken();
 
         if (token != JsonToken.VALUE_NUMBER_FLOAT && token != JsonToken.VALUE_NUMBER_INT) {
-            throw new InvalidConstantTensor(parser, String.format("Tensor value is not a number (%s)", token.toString()));
+            throw new InvalidConstantTensorException(parser, String.format("Tensor value is not a number (%s)", token.toString()));
         }
     }
 
@@ -187,7 +187,7 @@ public class ConstantTensorJsonValidator {
 
     private void assertTokenIs(JsonToken token, JsonToken wantedToken) {
         if (token != wantedToken) {
-            throw new InvalidConstantTensor(parser, String.format("Expected JSON token %s, but got %s", wantedToken.toString(), token.toString()));
+            throw new InvalidConstantTensorException(parser, String.format("Expected JSON token %s, but got %s", wantedToken.toString(), token.toString()));
         }
     }
 
@@ -195,17 +195,17 @@ public class ConstantTensorJsonValidator {
         String actualFieldName = parser.getCurrentName();
 
         if (!actualFieldName.equals(wantedFieldName)) {
-            throw new InvalidConstantTensor(parser, String.format("Expected field name '%s', got '%s'", wantedFieldName, actualFieldName));
+            throw new InvalidConstantTensorException(parser, String.format("Expected field name '%s', got '%s'", wantedFieldName, actualFieldName));
         }
     }
 
-    static class InvalidConstantTensor extends RuntimeException {
+    static class InvalidConstantTensorException extends IllegalArgumentException {
 
-        InvalidConstantTensor(JsonParser parser, String message) {
+        InvalidConstantTensorException(JsonParser parser, String message) {
             super(message + " " + parser.getCurrentLocation().toString());
         }
 
-        InvalidConstantTensor(JsonParser parser, Exception base) {
+        InvalidConstantTensorException(JsonParser parser, Exception base) {
             super("Failed to parse JSON stream " + parser.getCurrentLocation().toString(), base);
         }
 
@@ -220,7 +220,7 @@ public class ConstantTensorJsonValidator {
         try {
             lambda.invoke();
         } catch (IOException e) {
-            throw new InvalidConstantTensor(parser, e);
+            throw new InvalidConstantTensorException(parser, e);
         }
     }
 

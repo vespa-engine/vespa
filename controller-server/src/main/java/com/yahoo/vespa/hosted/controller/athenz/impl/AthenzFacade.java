@@ -5,7 +5,9 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -248,9 +250,9 @@ public class AthenzFacade implements AccessControl {
     }
 
     public boolean hasApplicationAccess(
-            AthenzIdentity identity, ApplicationAction action, AthenzDomain tenantDomain, ApplicationName applicationName) {
+            AthenzIdentity identity, ApplicationAction action, AthenzDomain tenantDomain, ApplicationName applicationName, Optional<Zone> zone) {
         return hasAccess(
-                action.name(), applicationResourceString(tenantDomain, applicationName), identity);
+                action.name(), applicationResourceString(tenantDomain, applicationName, zone), identity);
     }
 
     public boolean hasTenantAdminAccess(AthenzIdentity identity, AthenzDomain tenantDomain) {
@@ -325,8 +327,10 @@ public class AthenzFacade implements AccessControl {
         return resourceStringPrefix(tenantDomain) + ".wildcard";
     }
 
-    private String applicationResourceString(AthenzDomain tenantDomain, ApplicationName applicationName) {
-        return resourceStringPrefix(tenantDomain) + "." + "res_group" + "." + applicationName.value() + ".wildcard";
+    private String applicationResourceString(AthenzDomain tenantDomain, ApplicationName applicationName, Optional<Zone> zone) {
+        // If environment is not provided, add .wildcard to match .* in the policy resource (* is not allowed in the request)
+        String environment = zone.map(Zone::environment).map(Environment::value).orElse("wildcard");
+        return resourceStringPrefix(tenantDomain) + "." + "res_group" + "." + applicationName.value() + "." + environment;
     }
 
     private enum TenantAction {

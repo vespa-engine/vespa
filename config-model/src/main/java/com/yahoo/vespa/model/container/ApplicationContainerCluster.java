@@ -40,13 +40,13 @@ import com.yahoo.vespa.model.utils.FileSender;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.yahoo.config.model.api.ApplicationClusterEndpoint.RoutingMethod.shared;
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.RoutingMethod.sharedLayer4;
 
 /**
@@ -94,14 +94,14 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private List<ApplicationClusterEndpoint> endpointList = List.of();
 
     public ApplicationContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
-        super(parent, configSubId, clusterId, deployState, true);
+        super(parent, configSubId, clusterId, deployState, true, 10);
         this.tlsClientAuthority = deployState.tlsClientAuthority();
-        previousHosts = deployState.getPreviousModel().stream()
-                                   .map(Model::allocatedHosts)
-                                   .map(AllocatedHosts::getHosts)
-                                   .flatMap(Collection::stream)
-                                   .map(HostSpec::hostname)
-                                   .collect(Collectors.toUnmodifiableSet());
+        previousHosts = Collections.unmodifiableSet(deployState.getPreviousModel().stream()
+                                                               .map(Model::allocatedHosts)
+                                                               .map(AllocatedHosts::getHosts)
+                                                               .flatMap(Collection::stream)
+                                                               .map(HostSpec::hostname)
+                                                               .collect(Collectors.toCollection(() -> new LinkedHashSet<>())));
 
         addSimpleComponent("com.yahoo.language.provider.DefaultLinguisticsProvider");
         addSimpleComponent("com.yahoo.language.provider.DefaultEmbedderProvider");
@@ -179,21 +179,18 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         return Optional.empty();
     }
 
-    /*
-      Create list of endpoints, these will be consumed later by the LBservicesProducer
-     */
+    /** Create list of endpoints, these will be consumed later by LbServicesProducer */
     private void createEndpointList(DeployState deployState) {
         if(!deployState.isHosted()) return;
         if(deployState.getProperties().applicationId().instance().isTester()) return;
         List<ApplicationClusterEndpoint> endpoints = new ArrayList<>();
-        // Add zone local endpoints using zone dns suffixes, tenant, application and cluster id.
-        // For now support both L7 and L4 routing
 
+        // Add zone local endpoints using zone dns suffixes, tenant, application and cluster id.
         List<String> hosts = getContainers().stream()
                 .map(AbstractService::getHostName)
                 .collect(Collectors.toList());
-        for(String suffix : deployState.getProperties().zoneDnsSuffixes()) {
-            // L4
+
+        for (String suffix : deployState.getProperties().zoneDnsSuffixes()) {
             ApplicationClusterEndpoint.DnsName l4Name = ApplicationClusterEndpoint.DnsName.sharedL4NameFrom(
                     deployState.zone().system(),
                     ClusterSpec.Id.from(getName()),
@@ -206,28 +203,13 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                                   .hosts(hosts)
                                   .clusterId(getName())
                                   .build());
-
-            // L7
-            ApplicationClusterEndpoint.DnsName l7Name = ApplicationClusterEndpoint.DnsName.sharedNameFrom(
-                    deployState.zone().system(),
-                    ClusterSpec.Id.from(getName()),
-                    deployState.getProperties().applicationId(),
-                    suffix);
-            endpoints.add(ApplicationClusterEndpoint.builder()
-                                  .zoneScope()
-                                  .sharedRouting()
-                                  .dnsName(l7Name)
-                                  .hosts(hosts)
-                                  .clusterId(getName())
-                                  .build());
         }
 
-        // Then get all endpoints provided by controller.
-        Set<ApplicationClusterEndpoint.RoutingMethod> supportedRoutingMethods = Set.of(shared, sharedLayer4);
+        // Include all endpoints provided by controller
         Set<ContainerEndpoint> endpointsFromController = deployState.getEndpoints();
         endpointsFromController.stream()
                 .filter(ce -> ce.clusterId().equals(getName()))
-                .filter(ce -> supportedRoutingMethods.contains(ce.routingMethod()))
+                .filter(ce -> ce.routingMethod() == sharedLayer4)
                 .forEach(ce -> ce.names().forEach(
                         name -> endpoints.add(ApplicationClusterEndpoint.builder()
                                                       .scope(ce.scope())
@@ -309,8 +291,9 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             ZookeeperServerConfig.Server.Builder serverBuilder = new ZookeeperServerConfig.Server.Builder();
             serverBuilder.hostname(container.getHostName())
                          .id(container.index())
-                         .joining(!previousHosts.isEmpty() &&
-                                  !previousHosts.contains(container.getHostName()));
+                         .joining( ! previousHosts.isEmpty() &&
+                                   ! previousHosts.contains(container.getHostName()))
+                         .retired(container.isRetired());
             builder.server(serverBuilder);
             builder.dynamicReconfiguration(true);
         }
@@ -342,6 +325,9 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     public List<ApplicationClusterEndpoint> endpoints() {
         return endpointList;
     }
+
+    @Override
+    public String name() { return getName(); }
 
     public static class MbusParams {
         // the amount of the maxpendingbytes to process concurrently, typically 0.2 (20%)

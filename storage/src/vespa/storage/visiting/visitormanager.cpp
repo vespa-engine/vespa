@@ -8,8 +8,10 @@
 #include "recoveryvisitor.h"
 #include "reindexing_visitor.h"
 #include <vespa/storage/common/statusmessages.h>
+#include <vespa/config/subscription/configuri.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/config/helper/configfetcher.hpp>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -30,8 +32,8 @@ VisitorManager::VisitorManager(const config::ConfigUri & configUri,
       _visitorLock(),
       _visitorCond(),
       _visitorCounter(0),
-      _configFetcher(configUri.getContext()),
-      _metrics(new VisitorMetrics),
+      _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
+      _metrics(std::make_shared<VisitorMetrics>()),
       _maxFixedConcurrentVisitors(1),
       _maxVariableConcurrentVisitors(0),
       _maxVisitorQueueSize(1024),
@@ -46,10 +48,10 @@ VisitorManager::VisitorManager(const config::ConfigUri & configUri,
       _enforceQueueUse(false),
       _visitorFactories(externalFactories)
 {
-    _configFetcher.subscribe<vespa::config::content::core::StorVisitorConfig>(configUri.getConfigId(), this);
-    _configFetcher.start();
+    _configFetcher->subscribe<vespa::config::content::core::StorVisitorConfig>(configUri.getConfigId(), this);
+    _configFetcher->start();
     _component.registerMetric(*_metrics);
-    _thread = _component.startThread(*this, 30s, 1s);
+    _thread = _component.startThread(*this, 30s, 1s, 1, vespalib::CpuUsage::Category::READ);
     _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
     _visitorFactories["dumpvisitor"] = std::make_shared<DumpVisitorSingleFactory>();
     _visitorFactories["dumpvisitorsingle"] = std::make_shared<DumpVisitorSingleFactory>();
@@ -81,7 +83,7 @@ void
 VisitorManager::onClose()
 {
         // Avoid getting config during shutdown
-    _configFetcher.close();
+    _configFetcher->close();
     {
         std::lock_guard sync(_visitorLock);
         for (CommandQueue<api::CreateVisitorCommand>::iterator it

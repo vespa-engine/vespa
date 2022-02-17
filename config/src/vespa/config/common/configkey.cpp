@@ -20,7 +20,7 @@ ConfigKey::ConfigKey(vespalib::stringref configId,
                      vespalib::stringref defName,
                      vespalib::stringref defNamespace,
                      vespalib::stringref defMd5,
-                     const std::vector<vespalib::string> & defSchema)
+                     const StringVector & defSchema)
     : _configId(configId),
       _defName(defName),
       _defNamespace(defNamespace),
@@ -30,19 +30,12 @@ ConfigKey::ConfigKey(vespalib::stringref configId,
 {
 }
 
-ConfigKey::ConfigKey()
-    : _configId(),
-      _defName(),
-      _defNamespace(),
-      _defMd5(),
-      _defSchema(),
-      _key()
-{}
-
+ConfigKey::ConfigKey() = default;
 ConfigKey::ConfigKey(const ConfigKey &) = default;
 ConfigKey & ConfigKey::operator = (const ConfigKey &) = default;
-
-ConfigKey::~ConfigKey() { }
+ConfigKey::ConfigKey(ConfigKey &&) noexcept = default;
+ConfigKey & ConfigKey::operator = (ConfigKey &&) noexcept = default;
+ConfigKey::~ConfigKey() = default;
 
 bool
 ConfigKey::operator<(const ConfigKey & rhs) const
@@ -66,16 +59,16 @@ const vespalib::string & ConfigKey::getDefName() const { return _defName; }
 const vespalib::string & ConfigKey::getConfigId() const { return _configId; }
 const vespalib::string & ConfigKey::getDefNamespace() const { return _defNamespace; }
 const vespalib::string & ConfigKey::getDefMd5() const { return _defMd5; }
-const std::vector<vespalib::string> & ConfigKey::getDefSchema() const { return _defSchema; }
+const StringVector & ConfigKey::getDefSchema() const { return _defSchema; }
 
 const vespalib::string
 ConfigKey::toString() const
 {
     vespalib::string s;
     s.append("name=");
-    s.append(_defName);
-    s.append(",namespace=");
     s.append(_defNamespace);
+    s.append(".");
+    s.append(_defName);
     s.append(",configId=");
     s.append(_configId);
     return s;

@@ -3,34 +3,34 @@
 #include "filesource.h"
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/config/common/misc.h>
-#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/config/common/iconfigholder.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 
 using vespalib::asciistream;
 
 namespace config {
 
-FileSource::FileSource(const IConfigHolder::SP & holder, const vespalib::string & fileName)
-    : _holder(holder),
+FileSource::FileSource(std::shared_ptr<IConfigHolder> holder, const vespalib::string & fileName)
+    : _holder(std::move(holder)),
       _fileName(fileName),
       _lastLoaded(-1),
       _generation(1)
 { }
 
+FileSource::~FileSource() = default;
+
 void
 FileSource::getConfig()
 {
-    std::vector<vespalib::string> lines(readConfigFile(_fileName));
+    StringVector lines(readConfigFile(_fileName));
     int64_t last = getLast(_fileName);
 
     if (last > _lastLoaded) {
-        _holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(lines, calculateContentXxhash64(lines)), true, _generation)));
+        _holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(lines), true, _generation));
         _lastLoaded = last;
     } else {
-        _holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(lines, calculateContentXxhash64(lines)), false, _generation)));
+        _holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(lines), false, _generation));
     }
 }
 
@@ -49,11 +49,11 @@ FileSource::getLast(const vespalib::string & fileName)
     return filestat.st_mtime;
 }
 
-std::vector<vespalib::string>
+StringVector
 FileSource::readConfigFile(const vespalib::string & fileName)
 {
     asciistream is(asciistream::createFromFile(fileName));
-    return is.getlines();
+    return getlines(is);
 }
 
 void

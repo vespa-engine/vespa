@@ -15,6 +15,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -35,14 +36,16 @@ public class ArchiveAccessMaintainerTest {
         createTenantWithAccessRole(tester, "tenant2", tenant2role);
 
         ZoneId testZone = ZoneId.from("prod.aws-us-east-1c");
-        tester.controller().archiveBucketDb().archiveUriFor(testZone, tenant1);
+        tester.controller().archiveBucketDb().archiveUriFor(testZone, tenant1, true);
         var testBucket = new ArchiveBucket("bucketName", "keyArn").withTenant(tenant1);
 
         MockArchiveService archiveService = (MockArchiveService) tester.controller().serviceRegistry().archiveService();
-        assertNull(archiveService.authorizedIamRoles.get(testBucket));
+        assertNull(archiveService.authorizedIamRolesForBucket.get(testBucket));
+        assertNull(archiveService.authorizedIamRolesForKey.get(testBucket.keyArn()));
         MockMetric metric = new MockMetric();
         new ArchiveAccessMaintainer(tester.controller(), metric, Duration.ofMinutes(10)).maintain();
-        assertEquals(Map.of(tenant1, tenant1role), archiveService.authorizedIamRoles.get(testBucket));
+        assertEquals(Map.of(tenant1, tenant1role), archiveService.authorizedIamRolesForBucket.get(testBucket));
+        assertEquals(Set.of(tenant1role), archiveService.authorizedIamRolesForKey.get(testBucket.keyArn()));
 
         var expected = Map.of("archive.bucketCount",
                 tester.controller().zoneRegistry().zones().all().ids().stream()

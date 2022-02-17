@@ -42,9 +42,8 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
     private final boolean hasIndexedDocumentType;
     private final boolean useThreePhaseUpdates;
     private final int maxActivationInhibitedOutOfSyncGroups;
-    private final int mergeBusyWait;
-    private final boolean enhancedMaintenanceScheduling;
     private final boolean unorderedMergeChaining;
+    private final boolean inhibitDefaultMergesWhenGlobalMergesPending;
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<DistributorCluster> {
 
@@ -107,16 +106,13 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
             final boolean hasIndexedDocumentType = clusterContainsIndexedDocumentType(documentsNode);
             boolean useThreePhaseUpdates = deployState.getProperties().featureFlags().useThreePhaseUpdates();
             int maxInhibitedGroups = deployState.getProperties().featureFlags().maxActivationInhibitedOutOfSyncGroups();
-            int mergeBusyWait = deployState.getProperties().featureFlags().distributorMergeBusyWait();
-            boolean useEnhancedMaintenanceScheduling = deployState.getProperties().featureFlags().distributorEnhancedMaintenanceScheduling();
             boolean unorderedMergeChaining = deployState.getProperties().featureFlags().unorderedMergeChaining();
+            boolean inhibitDefaultMerges = deployState.getProperties().featureFlags().inhibitDefaultMergesWhenGlobalMergesPending();
 
             return new DistributorCluster(parent,
                     new BucketSplitting.Builder().build(new ModelElement(producerSpec)), gc,
                     hasIndexedDocumentType, useThreePhaseUpdates,
-                    maxInhibitedGroups, mergeBusyWait,
-                    useEnhancedMaintenanceScheduling,
-                    unorderedMergeChaining);
+                    maxInhibitedGroups, unorderedMergeChaining, inhibitDefaultMerges);
         }
     }
 
@@ -124,9 +120,8 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
                                GcOptions gc, boolean hasIndexedDocumentType,
                                boolean useThreePhaseUpdates,
                                int maxActivationInhibitedOutOfSyncGroups,
-                               int mergeBusyWait,
-                               boolean enhancedMaintenanceScheduling,
-                               boolean unorderedMergeChaining)
+                               boolean unorderedMergeChaining,
+                               boolean inhibitDefaultMergesWhenGlobalMergesPending)
     {
         super(parent, "distributor");
         this.parent = parent;
@@ -135,9 +130,8 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         this.hasIndexedDocumentType = hasIndexedDocumentType;
         this.useThreePhaseUpdates = useThreePhaseUpdates;
         this.maxActivationInhibitedOutOfSyncGroups = maxActivationInhibitedOutOfSyncGroups;
-        this.mergeBusyWait = mergeBusyWait;
-        this.enhancedMaintenanceScheduling = enhancedMaintenanceScheduling;
         this.unorderedMergeChaining = unorderedMergeChaining;
+        this.inhibitDefaultMergesWhenGlobalMergesPending = inhibitDefaultMergesWhenGlobalMergesPending;
     }
 
     @Override
@@ -151,9 +145,8 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         builder.disable_bucket_activation(hasIndexedDocumentType == false);
         builder.enable_metadata_only_fetch_phase_for_inconsistent_updates(useThreePhaseUpdates);
         builder.max_activation_inhibited_out_of_sync_groups(maxActivationInhibitedOutOfSyncGroups);
-        builder.inhibit_merge_sending_on_busy_node_duration_sec(mergeBusyWait);
-        builder.implicitly_clear_bucket_priority_on_schedule(enhancedMaintenanceScheduling);
         builder.use_unordered_merge_chaining(unorderedMergeChaining);
+        builder.inhibit_default_merges_when_global_merges_pending(inhibitDefaultMergesWhenGlobalMergesPending);
 
         bucketSplitting.getConfig(builder);
     }

@@ -13,6 +13,7 @@ vespa_add_library(vsm_vsmsearcher OBJECT
     floatfieldsearcher.cpp
     ${SSE2_FILES}
     futf8strchrfieldsearcher.cpp
+    geo_pos_field_searcher.cpp
     intfieldsearcher.cpp
     strchrfieldsearcher.cpp
     utf8flexiblestringfieldsearcher.cpp

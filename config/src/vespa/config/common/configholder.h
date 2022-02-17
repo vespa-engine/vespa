@@ -16,15 +16,15 @@ public:
     ConfigHolder();
     ~ConfigHolder() override;
 
-    ConfigUpdate::UP provide() override;
-    void handle(ConfigUpdate::UP update) override;
+    std::unique_ptr<ConfigUpdate> provide() override;
+    void handle(std::unique_ptr<ConfigUpdate> update) override;
     bool wait(milliseconds timeoutInMillis) override;
     bool poll() override;
     void interrupt() override;
 public:
-    std::mutex              _lock;
-    std::condition_variable _cond;
-    ConfigUpdate::UP        _current;
+    std::mutex                    _lock;
+    std::condition_variable       _cond;
+    std::unique_ptr<ConfigUpdate> _current;
 };
 
 } // namespace config

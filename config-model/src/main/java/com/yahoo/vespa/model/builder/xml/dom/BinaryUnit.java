@@ -10,8 +10,9 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  * @author Tony Vaagenes
  */
 public class BinaryUnit {
-    //The pattern must match the one given in the schema
-    private static Pattern pattern = Pattern.compile("(\\d+(\\.\\d*)?)\\s*([kmgKMG])?");
+
+    // The pattern must match the one given in the schema
+    private static final Pattern pattern = Pattern.compile("(\\d+(\\.\\d*)?)\\s*([kmgKMG])?");
 
     public static double valueOf(String valueString) {
         Matcher matcher = pattern.matcher(valueString);
@@ -28,13 +29,13 @@ public class BinaryUnit {
     }
 
     private static double unitToValue(char unit) {
-           final char units[] = {'k', 'm', 'g'};
-           for (int i=0; i<units.length; ++i) {
+           char[] units = {'k', 'm', 'g'};
+           for (int i = 0; i < units.length; ++i) {
                if (units[i] == unit) {
                    return Math.pow(2, 10*(i+1));
                }
            }
 
-           throw new RuntimeException("No such unit: '" + unit + "'");
+           throw new IllegalArgumentException("No such unit: '" + unit + "'");
     }
 }

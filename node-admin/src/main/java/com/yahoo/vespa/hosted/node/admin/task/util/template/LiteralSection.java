@@ -11,7 +11,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.text.CursorRange;
  */
 class LiteralSection extends Section {
     LiteralSection(CursorRange range) {
-        super(range);
+        super("literal", range);
     }
 
     @Override

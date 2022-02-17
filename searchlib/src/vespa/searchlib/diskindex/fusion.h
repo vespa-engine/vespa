@@ -3,7 +3,7 @@
 #pragma once
 
 #include "fusion_output_index.h"
-#include <vespa/vespalib/util/threadexecutor.h>
+#include <vespa/vespalib/util/executor.h>
 
 namespace search {
 class IFlushToken;
@@ -25,7 +25,7 @@ class Fusion
 private:
     using Schema = index::Schema;
 
-    bool mergeFields(vespalib::ThreadExecutor& executor, std::shared_ptr<IFlushToken> flush_token);
+    bool mergeFields(vespalib::Executor& shared_executor, std::shared_ptr<IFlushToken> flush_token);
     bool readSchemaFiles();
     bool checkSchemaCompat();
 
@@ -43,7 +43,7 @@ public:
     ~Fusion();
     void set_dynamic_k_pos_index_format(bool dynamic_k_pos_index_format) { _fusion_out_index.set_dynamic_k_pos_index_format(dynamic_k_pos_index_format); }
     void set_force_small_merge_chunk(bool force_small_merge_chunk) { _fusion_out_index.set_force_small_merge_chunk(force_small_merge_chunk); }
-    bool merge(vespalib::ThreadExecutor& executor, std::shared_ptr<IFlushToken> flush_token);
+    bool merge(vespalib::Executor& shared_executor, std::shared_ptr<IFlushToken> flush_token);
 };
 
 }

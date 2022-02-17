@@ -20,9 +20,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
@@ -52,6 +52,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialRe
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.broken;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.normal;
+import static java.util.Comparator.reverseOrder;
 
 /**
  * Implements the REST API for the job controller delegated from the Application API.
@@ -230,6 +231,7 @@ class JobControllerApiHandlerHelper {
 
     private static String nameOf(RunStatus status) {
         switch (status) {
+            case reset:                      // This means the run will reset and keep running.
             case running:                    return "running";
             case aborted:                    return "aborted";
             case error:                      return "error";
@@ -256,7 +258,7 @@ class JobControllerApiHandlerHelper {
         responseObject.setString("application", id.application().value());
         application.projectId().ifPresent(projectId -> responseObject.setLong("projectId", projectId));
 
-        Map<JobId, List<Versions>> jobsToRun = status.jobsToRun();
+        Map<JobId, List<DeploymentStatus.Job>> jobsToRun = status.jobsToRun();
         Cursor stepsArray = responseObject.setArray("steps");
         VersionStatus versionStatus = controller.readVersionStatus();
         for (DeploymentStatus.StepStatus stepStatus : status.allSteps()) {
@@ -292,22 +294,23 @@ class JobControllerApiHandlerHelper {
 
                 Cursor latestVersionsObject = stepObject.setObject("latestVersions");
                 List<ChangeBlocker> blockers = application.deploymentSpec().requireInstance(stepStatus.instance()).changeBlocker();
+                var deployments = application.require(stepStatus.instance()).productionDeployments().values();
                 latestVersionWithCompatibleConfidenceAndNotNewerThanSystem(versionStatus.versions(),
                                                                            application.deploymentSpec().requireInstance(stepStatus.instance()).upgradePolicy())
                           .ifPresent(latestPlatform -> {
                               Cursor latestPlatformObject = latestVersionsObject.setObject("platform");
                               latestPlatformObject.setString("platform", latestPlatform.versionNumber().toFullString());
                               latestPlatformObject.setLong("at", latestPlatform.committedAt().toEpochMilli());
-                              latestPlatformObject.setBool("upgrade", application.require(stepStatus.instance()).productionDeployments().values().stream()
-                                                                                 .anyMatch(deployment -> deployment.version().isBefore(latestPlatform.versionNumber())));
+                              latestPlatformObject.setBool("upgrade",    change.platform().map(latestPlatform.versionNumber()::isAfter).orElse(true) && deployments.isEmpty()
+                                                                      || deployments.stream().anyMatch(deployment -> deployment.version().isBefore(latestPlatform.versionNumber())));
                               toSlime(latestPlatformObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksVersions));
                           });
                 application.latestVersion().ifPresent(latestApplication -> {
                     Cursor latestApplicationObject = latestVersionsObject.setObject("application");
                     toSlime(latestApplicationObject.setObject("application"), latestApplication);
                     latestApplicationObject.setLong("at", latestApplication.buildTime().orElse(Instant.EPOCH).toEpochMilli());
-                    latestApplicationObject.setBool("upgrade", application.require(stepStatus.instance()).productionDeployments().values().stream()
-                                                                          .anyMatch(deployment -> deployment.applicationVersion().compareTo(latestApplication) < 0));
+                    latestApplicationObject.setBool("upgrade",    change.application().map(latestApplication::compareTo).orElse(1) > 0 && deployments.isEmpty()
+                                                               || deployments.stream().anyMatch(deployment -> deployment.applicationVersion().compareTo(latestApplication) < 0));
                     toSlime(latestApplicationObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksRevisions));
                 });
             }
@@ -330,22 +333,25 @@ class JobControllerApiHandlerHelper {
 
                 JobStatus jobStatus = status.jobs().get(job).get();
                 Cursor toRunArray = stepObject.setArray("toRun");
-                for (Versions versions : jobsToRun.getOrDefault(job, List.of())) {
+                for (DeploymentStatus.Job versions : jobsToRun.getOrDefault(job, List.of())) {
                     boolean running = jobStatus.lastTriggered()
                                                .map(run ->    jobStatus.isRunning()
-                                                           && versions.targetsMatch(run.versions())
-                                                           && (job.type().isProduction() || versions.sourcesMatchIfPresent(run.versions())))
+                                                           && versions.versions().targetsMatch(run.versions())
+                                                           && (job.type().isProduction() || versions.versions().sourcesMatchIfPresent(run.versions())))
                                                .orElse(false);
                     if (running)
                         continue; // Run will be contained in the "runs" array.
 
                     Cursor runObject = toRunArray.addObject();
-                    toSlime(runObject.setObject("versions"), versions);
+                    toSlime(runObject.setObject("versions"), versions.versions());
                 }
 
                 toSlime(stepObject.setArray("runs"), jobStatus.runs().descendingMap().values(), 10, baseUriForJob);
             });
         }
+
+        Cursor buildsArray = responseObject.setArray("builds");
+        application.versions().stream().sorted(reverseOrder()).forEach(version -> applicationVersionToSlime(buildsArray.addObject(), version));
 
         return new SlimeJsonResponse(slime);
     }

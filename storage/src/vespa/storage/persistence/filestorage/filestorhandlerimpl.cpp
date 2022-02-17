@@ -40,14 +40,14 @@ uint32_t per_stripe_merge_limit(uint32_t num_threads, uint32_t num_stripes) noex
 
 FileStorHandlerImpl::FileStorHandlerImpl(MessageSender& sender, FileStorMetrics& metrics,
                                          ServiceLayerComponentRegister& compReg)
-    : FileStorHandlerImpl(1, 1, sender, metrics, compReg, SharedOperationThrottler::make_unlimited_throttler())
+    : FileStorHandlerImpl(1, 1, sender, metrics, compReg, vespalib::SharedOperationThrottler::make_unlimited_throttler())
 {
 }
 
 FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripes, MessageSender& sender,
                                          FileStorMetrics& metrics,
                                          ServiceLayerComponentRegister& compReg,
-                                         std::unique_ptr<SharedOperationThrottler> operation_throttler)
+                                         std::unique_ptr<vespalib::SharedOperationThrottler> operation_throttler)
     : _component(compReg, "filestorhandlerimpl"),
       _state(FileStorHandler::AVAILABLE),
       _metrics(nullptr),
@@ -920,7 +920,7 @@ FileStorHandler::LockedMessage
 FileStorHandlerImpl::Stripe::getNextMessage(vespalib::duration timeout)
 {
     std::unique_lock guard(*_lock);
-    SharedOperationThrottler::Token throttle_token;
+    ThrottleToken throttle_token;
     // Try to grab a message+lock, immediately retrying once after a wait
     // if none can be found and then exiting if the same is the case on the
     // second attempt. This is key to allowing the run loop to register
@@ -997,7 +997,7 @@ FileStorHandlerImpl::Stripe::get_next_async_message(monitor_guard& guard)
 
 FileStorHandler::LockedMessage
 FileStorHandlerImpl::Stripe::getMessage(monitor_guard & guard, PriorityIdx & idx, PriorityIdx::iterator iter,
-                                        SharedOperationThrottler::Token throttle_token)
+                                        ThrottleToken throttle_token)
 {
     std::chrono::milliseconds waitTime(uint64_t(iter->_timer.stop(_metrics->averageQueueWaitingTime)));
 

@@ -12,7 +12,7 @@ namespace {
 struct ConfigFixture {
     MyConfigBuilder builder;
     ConfigSet set;
-    ConfigContext::SP context;
+    std::shared_ptr<IConfigContext> context;
     ConfigFixture() : builder(), set(), context() {
         set.addBuilder("cfgid", &builder);
         context = std::make_shared<ConfigContext>(set);

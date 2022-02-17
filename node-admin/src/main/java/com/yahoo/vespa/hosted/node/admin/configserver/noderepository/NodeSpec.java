@@ -26,7 +26,7 @@ import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
 public class NodeSpec {
 
     private final String hostname;
-    private final Optional<String> id;
+    private final String id;
     private final NodeState state;
     private final NodeType type;
     private final String flavor;
@@ -72,7 +72,7 @@ public class NodeSpec {
 
     public NodeSpec(
             String hostname,
-            Optional<String> id,
+            String id,
             Optional<DockerImage> wantedDockerImage,
             Optional<DockerImage> currentDockerImage,
             NodeState state,
@@ -148,8 +148,8 @@ public class NodeSpec {
         return hostname;
     }
 
-    /** Returns the cloud-specific ID of the host. */
-    public Optional<String> id() {
+    /** Returns unique node ID */
+    public String id() {
         return id;
     }
 
@@ -406,7 +406,7 @@ public class NodeSpec {
 
     public static class Builder {
         private String hostname;
-        private Optional<String> id = Optional.empty();
+        private String id;
         private NodeState state;
         private NodeType type;
         private String flavor;
@@ -441,6 +441,7 @@ public class NodeSpec {
 
         public Builder(NodeSpec node) {
             hostname(node.hostname);
+            id(node.id);
             state(node.state);
             type(node.type);
             flavor(node.flavor);
@@ -477,7 +478,7 @@ public class NodeSpec {
         }
 
         public Builder id(String id) {
-            this.id = Optional.of(id);
+            this.id = id;
             return this;
         }
 
@@ -786,6 +787,7 @@ public class NodeSpec {
          */
         public static Builder testSpec(String hostname, NodeState state) {
             Builder builder = new Builder()
+                    .id(hostname)
                     .hostname(hostname)
                     .state(state)
                     .type(NodeType.tenant)

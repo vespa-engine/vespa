@@ -12,6 +12,7 @@ vespa_add_library(searchlib_common OBJECT
     featureset.cpp
     fileheadercontext.cpp
     flush_token.cpp
+    geo_gcd.cpp
     geo_location.cpp
     geo_location_parser.cpp
     geo_location_spec.cpp

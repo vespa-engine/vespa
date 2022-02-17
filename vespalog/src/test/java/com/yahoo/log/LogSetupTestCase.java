@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.log;
 
+import com.yahoo.log.impl.LogUtils;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -23,6 +25,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author Bjorn Borud
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class LogSetupTestCase {
     // For testing zookeeper log records
     protected static LogRecord zookeeperLogRecord;
@@ -51,8 +54,8 @@ public class LogSetupTestCase {
         curatorLogRecord.setLoggerName("org.apache.curator.utils.DefaultTracerDriver");
         curatorLogRecord.setInstant(Instant.ofEpochMilli(1107011348029L));
 
-        hostname = Util.getHostName();
-        pid = Util.getPID();
+        hostname = LogUtils.getHostName();
+        pid = LogUtils.getPID();
 
         zookeeperLogRecordString = "1107011348.029000\t"
                 + hostname

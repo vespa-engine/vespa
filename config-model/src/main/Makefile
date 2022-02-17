@@ -5,12 +5,12 @@ outputdir=../../target/generated-sources/trang/resources/schema
 
 trangjar=../../target/trang.jar
 
-all: ${outputdir} ${outputdir}/services.rng ${outputdir}/hosts.rng ${outputdir}/container-include.rng ${outputdir}/services.xsd ${outputdir}/hosts.xsd ${outputdir}/container-include.xsd ${outputdir}/deployment.xsd
+all: ${outputdir} ${outputdir}/services.rng ${outputdir}/hosts.rng ${outputdir}/container-include.rng ${outputdir}/services.xsd ${outputdir}/hosts.xsd ${outputdir}/container-include.xsd ${outputdir}/deployment.xsd ${outputdir}/validation-overrides.xsd
 
 ${outputdir}:
 	mkdir -p ${outputdir}
 
-${outputdir}/services.rng: ${srcdir}/services.rnc ${srcdir}/common.rnc ${srcdir}/admin.rnc ${srcdir}/clients.rnc ${srcdir}/docproc.rnc ${srcdir}/routing.rnc ${srcdir}/clients-v2.rnc ${srcdir}/content.rnc ${srcdir}/genericmodule.rnc ${srcdir}/legacygenericcluster.rnc ${srcdir}/genericcluster.rnc ${srcdir}/legacygenericmodule.rnc ${srcdir}/containercluster.rnc
+${outputdir}/services.rng: ${srcdir}/services.rnc ${srcdir}/common.rnc ${srcdir}/admin.rnc ${srcdir}/clients.rnc ${srcdir}/docproc.rnc ${srcdir}/routing.rnc ${srcdir}/clients-v2.rnc ${srcdir}/content.rnc ${srcdir}/genericmodule.rnc ${srcdir}/genericcluster.rnc ${srcdir}/legacygenericmodule.rnc ${srcdir}/containercluster.rnc
 	java -jar $(trangjar) -I rnc -O rng ${srcdir}/services.rnc ${outputdir}/services.rng
 
 ${outputdir}/services.xsd: ${outputdir}/services.rng
@@ -39,7 +39,7 @@ ${outputdir}/deployment.xsd: ${outputdir}/deployment.rng
 ${outputdir}/validation-overrides.rng: ${srcdir}/validation-overrides.rnc
 	java -jar $(trangjar) -I rnc -O rng ${srcdir}/validation-overrides.rnc ${outputdir}/validation-overrides.rng
 
-${outputdir}/deployment.xsd: ${outputdir}/validation-overrides.rng
+${outputdir}/validation-overrides.xsd: ${outputdir}/validation-overrides.rng
 	java -jar $(trangjar) -I rng -O xsd ${outputdir}/validation-overrides.rng ${outputdir}/validation-overrides.xsd
 
 clean:

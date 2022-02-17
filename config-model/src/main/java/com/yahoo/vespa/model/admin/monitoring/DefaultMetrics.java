@@ -21,7 +21,7 @@ public class DefaultMetrics {
 
     public static final String defaultMetricSetId = "default";
 
-    public static MetricSet defaultMetricSet = createMetricSet();
+    public static final MetricSet defaultMetricSet = createMetricSet();
 
     private static MetricSet createMetricSet() {
         return new MetricSet(defaultMetricSetId,

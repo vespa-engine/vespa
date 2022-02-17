@@ -49,11 +49,13 @@ import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
+import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -370,7 +372,11 @@ public class JobController {
             for (Step step : report.allPrerequisites(unlockedRun.steps().keySet()))
                 locks.add(curator.lock(id.application(), id.type(), step));
 
-            locked(id, run -> { // Store the modified run after it has been written to history, in case the latter fails.
+            locked(id, run -> {
+                // If run should be reset, just return here.
+                if (run.status() == reset) return run.reset();
+
+                // Store the modified run after it has been written to history, in case the latter fails.
                 Run finishedRun = run.finished(controller.clock().instant());
                 locked(id.application(), id.type(), runs -> {
                     runs.put(run.id(), finishedRun);
@@ -378,14 +384,14 @@ public class JobController {
                     long successes = runs.values().stream().filter(old -> old.status() == RunStatus.success).count();
                     var oldEntries = runs.entrySet().iterator();
                     for (var old = oldEntries.next();
-                         old.getKey().number() <= last - historyLength
+                            old.getKey().number() <= last - historyLength
                          || old.getValue().start().isBefore(controller.clock().instant().minus(maxHistoryAge));
                          old = oldEntries.next()) {
 
                         // Make sure we keep the last success and the first failing
-                        if (successes == 1
-                            && old.getValue().status() == RunStatus.success
-                            && !old.getValue().start().isBefore(controller.clock().instant().minus(maxHistoryAge))) {
+                        if (     successes == 1
+                            &&   old.getValue().status() == RunStatus.success
+                            && ! old.getValue().start().isBefore(controller.clock().instant().minus(maxHistoryAge))) {
                             oldEntries.next();
                             continue;
                         }
@@ -439,7 +445,8 @@ public class JobController {
                                                 applicationPackage.buildTime(),
                                                 sourceUrl,
                                                 revision.map(SourceRevision::commit),
-                                                false));
+                                                false,
+                                                Optional.of(applicationPackage.bundleHash())));
             byte[] diff = application.get().latestVersion()
                     .map(v -> v.buildNumber().getAsLong())
                     .flatMap(prevBuild -> controller.applications().applicationStore().find(id.tenant(), id.application(), prevBuild))
@@ -512,7 +519,7 @@ public class JobController {
 
         long build = 1 + lastRun.map(run -> run.versions().targetApplication().buildNumber().orElse(0)).orElse(0L);
         ApplicationVersion version = ApplicationVersion.from(Optional.empty(), build, Optional.empty(), Optional.empty(),
-                Optional.empty(), Optional.empty(), Optional.empty(), true);
+                Optional.empty(), Optional.empty(), Optional.empty(), true, Optional.empty());
 
         byte[] diff = lastRun.map(run -> run.versions().targetApplication())
                 .map(prevVersion -> ApplicationPackageDiff.diff(new ApplicationPackage(controller.applications().applicationStore().get(deploymentId, prevVersion)), applicationPackage))
@@ -594,7 +601,7 @@ public class JobController {
                        .flatMap(List::stream)
                        .map(Deployment::applicationVersion)
                        .filter(version -> ! version.isUnknown() && ! version.isDeployedDirectly())
-                       .min(Comparator.comparingLong(applicationVersion -> applicationVersion.buildNumber().getAsLong()))
+                       .min(naturalOrder())
                        .ifPresent(oldestDeployed -> {
                            controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed);
                            controller.applications().applicationStore().pruneTesters(id.tenant(), id.application(), oldestDeployed);

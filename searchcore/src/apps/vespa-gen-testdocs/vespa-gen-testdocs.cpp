@@ -12,13 +12,13 @@
 #include <openssl/evp.h>
 #include <cassert>
 #include <getopt.h>
+#include <vector>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-gen-testdocs");
 
 typedef vespalib::hash_set<vespalib::string> StringSet;
 typedef std::vector<vespalib::string> StringArray;
-typedef std::shared_ptr<StringArray> StringArraySP;
 using namespace vespalib::alloc;
 using vespalib::string;
 
@@ -38,10 +38,7 @@ void
 usageHeader()
 {
     using std::cerr;
-    cerr <<
-        "vespa-gen-testdocs version 0.0\n"
-        "\n"
-        "USAGE:\n";
+    cerr << "vespa-gen-testdocs version 0.0\n\nUSAGE:\n";
 }
 
 string
@@ -71,8 +68,7 @@ splitArg(const string &arg)
 }
 
 void
-shafile(const string &baseDir,
-        const string &file)
+shafile(const string &baseDir, const string &file)
 {
     unsigned char digest[EVP_MAX_MD_SIZE];
     unsigned int digest_len = 0;
@@ -98,7 +94,6 @@ shafile(const string &baseDir,
         EVP_DigestUpdate(md_ctx.get(), buf.get(), thistime);
         remainder -= thistime;
     }
-    f.Close();
     EVP_DigestFinal_ex(md_ctx.get(), &digest[0], &digest_len);
     assert(digest_len > 0u && digest_len <= EVP_MAX_MD_SIZE);
     for (unsigned int i = 0; i < digest_len; ++i) {
@@ -106,10 +101,7 @@ shafile(const string &baseDir,
         os.fill('0');
         os << std::hex << static_cast<unsigned int>(digest[i]);
     }
-    LOG(info,
-        "SHA256(%s)= %s",
-        file.c_str(),
-        os.str().c_str());
+    LOG(info, "SHA256(%s)= %s", file.c_str(), os.str().c_str());
 }
 
 class StringGenerator
@@ -119,14 +111,9 @@ class StringGenerator
 public:
     StringGenerator(vespalib::Rand48 &rnd);
 
-    void
-    rand_string(string &res, uint32_t minLen, uint32_t maxLen);
+    void rand_string(string &res, uint32_t minLen, uint32_t maxLen);
 
-    void
-    rand_unique_array(StringArray &res,
-                      uint32_t minLen,
-                      uint32_t maxLen,
-                      uint32_t size);
+    void rand_unique_array(StringArray &res, uint32_t minLen, uint32_t maxLen, uint32_t size);
 };
 
 
@@ -590,7 +577,8 @@ DocumentGenerator::generate(uint32_t docMin, uint32_t docIdLimit,
         }
     }
     f.Flush();
-    f.Close();
+    bool close_ok = f.Close();
+    assert(close_ok);
     LOG(info, "Calculating sha256 for %s", feedFileName.c_str());
     shafile(baseDir, feedFileName);
 }

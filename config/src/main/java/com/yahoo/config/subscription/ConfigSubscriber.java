@@ -28,7 +28,9 @@ import static java.util.stream.Collectors.toList;
  * {@link ConfigHandle} which {@link #subscribe(Class, String)} returned.
  *
  * @author Vegard Havdal
+ * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
+@Deprecated(forRemoval = true, since = "7")
 public class ConfigSubscriber implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger(ConfigSubscriber.class.getName());
@@ -154,6 +156,7 @@ public class ConfigSubscriber implements AutoCloseable {
      *                       false if this is for reconfiguration
      * @return true if a config/reconfig of your system should happen
      * @throws ConfigInterruptedException if thread performing this call interrupted.
+     * @throws SubscriberClosedException if subscriber is closed
      */
     public boolean nextConfig(boolean isInitializing) {
         return nextConfig(TimingValues.defaultNextConfigTimeout, isInitializing);
@@ -185,6 +188,7 @@ public class ConfigSubscriber implements AutoCloseable {
      *                       false if this is for reconfiguration
      * @return true if a config/reconfig of your system should happen
      * @throws ConfigInterruptedException if thread performing this call interrupted.
+     * @throws SubscriberClosedException if subscriber is closed
      */
     public boolean nextConfig(long timeoutMillis, boolean isInitializing) {
         return acquireSnapshot(timeoutMillis, true, isInitializing);
@@ -216,6 +220,7 @@ public class ConfigSubscriber implements AutoCloseable {
      *                       false if this is for reconfiguration
      * @return true if generations for all configs have been updated.
      * @throws ConfigInterruptedException if thread performing this call interrupted.
+     * @throws SubscriberClosedException if subscriber is closed
      */
     public boolean nextGeneration(boolean isInitializing) {
         return nextGeneration(TimingValues.defaultNextConfigTimeout, isInitializing);
@@ -247,6 +252,7 @@ public class ConfigSubscriber implements AutoCloseable {
      *                       false if this is for reconfiguration
      * @return true if generations for all configs have been updated.
      * @throws ConfigInterruptedException if thread performing this call interrupted.
+     * @throws SubscriberClosedException if subscriber is closed
      */
     public boolean nextGeneration(long timeoutMillis, boolean isInitializing) {
         return acquireSnapshot(timeoutMillis, false, isInitializing);
@@ -269,11 +275,12 @@ public class ConfigSubscriber implements AutoCloseable {
     private boolean acquireSnapshot(long timeoutInMillis, boolean requireChange, boolean isInitializing) {
         boolean applyOnRestartOnly;
         synchronized (monitor) {
-            if (state == State.CLOSED) return false;
+            if (state == State.CLOSED) throw new SubscriberClosedException();
             state = State.FROZEN;
             applyOnRestartOnly = applyOnRestart;
         }
-        long started = System.currentTimeMillis();
+        boolean expiredOnEntry = (timeoutInMillis <= 0);
+        long started = now(expiredOnEntry);
         long timeLeftMillis = timeoutInMillis;
         boolean anyConfigChanged = false;
 
@@ -302,7 +309,7 @@ public class ConfigSubscriber implements AutoCloseable {
                 allGenerationsChanged &= config.isGenerationChanged();
                 anyConfigChanged      |= config.isConfigChanged();
                 applyOnRestartOnly    |= config.applyOnRestart();
-                timeLeftMillis = timeoutInMillis + started - System.currentTimeMillis();
+                timeLeftMillis = timeoutInMillis + started - now(expiredOnEntry);
             }
             reconfigDue = (isInitializing || !applyOnRestartOnly) && (anyConfigChanged || !requireChange)
                           && allGenerationsChanged && allGenerationsTheSame;
@@ -327,6 +334,10 @@ public class ConfigSubscriber implements AutoCloseable {
             }
         }
         return reconfigDue;
+    }
+
+    private long now(boolean alreadyExpired) {
+        return alreadyExpired ? 0 : System.currentTimeMillis();
     }
 
     private void sleep(long timeLeftMillis) {

@@ -51,10 +51,15 @@ public final class DocsumDefinitionSet {
         }
         if (ds == null) {
             throw new ConfigurationException("Fetched hit with summary class " + summaryClass +
-                                             ", but this summary class is not in current summary config (" + toString() + ")" +
+                                             ", but this summary class is not in current summary config (" + this + ")" +
                                              " (that is, you asked for something unknown, and no default was found)");
         }
         return ds;
+    }
+
+    /** Do we have a summary definition with the given name */
+    public boolean hasDocsum(String summaryClass) {
+        return definitionsByName.containsKey(summaryClass);
     }
 
     /**
@@ -66,7 +71,7 @@ public final class DocsumDefinitionSet {
      * @return Error message or null on success.
      * @throws ConfigurationException if the summary class of this hit is missing
      */
-    public final String lazyDecode(String summaryClass, byte[] data, FastHit hit) {
+    public String lazyDecode(String summaryClass, byte[] data, FastHit hit) {
         ByteBuffer buffer = ByteBuffer.wrap(data);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         long docsumClassId = buffer.getInt();
@@ -83,6 +88,7 @@ public final class DocsumDefinitionSet {
         return null;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, DocsumDefinition> e : definitionsByName.entrySet() ) {

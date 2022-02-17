@@ -177,15 +177,15 @@ public class PermanentFlags {
             APPLICATION_ID);
 
     public static final UnboundDoubleFlag RESOURCE_LIMIT_DISK = defineDoubleFlag(
-            "resource-limit-disk", 0.8,
-            "Resource limit (between 0.0 and 1.0) for disk used by cluster controller for when to block feed",
+            "resource-limit-disk", 0.75,
+            "Resource limit (between 0.0 and 1.0) for disk usage on content nodes, used by cluster controller for when to block feed",
             "Takes effect on next deployment",
             APPLICATION_ID
     );
 
     public static final UnboundDoubleFlag RESOURCE_LIMIT_MEMORY = defineDoubleFlag(
             "resource-limit-memory", 0.8,
-            "Resource limit (between 0.0 and 1.0) for memory used by cluster controller for when to block feed",
+            "Resource limit (between 0.0 and 1.0) for memory usage on content nodes, used by cluster controller for when to block feed",
             "Takes effect on next deployment",
             APPLICATION_ID
     );
@@ -196,6 +196,14 @@ public class PermanentFlags {
                     "Each item should be on the form <service>:<component> <level>=on",
             "Takes effect on container restart",
             APPLICATION_ID, HOSTNAME
+    );
+
+    public static final UnboundListFlag<String> ENVIRONMENT_VARIABLES = defineListFlag(
+            "environment-variables", List.of(), String.class,
+            "A list of environment variables set for all services. " +
+                    "Each item should be on the form <ENV_VAR>=<VALUE>",
+            "Takes effect on service restart",
+            ZONE_ID, APPLICATION_ID
     );
 
     public static final UnboundStringFlag CONFIG_PROXY_JVM_ARGS = defineStringFlag(

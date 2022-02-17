@@ -46,6 +46,7 @@ printenv > $cfpfile || exit 1
 
 
 getconfig() {
+    set -e
     qrstartcfg=""
     case "${VESPA_CONFIG_ID}" in
         dir:*)
@@ -58,6 +59,7 @@ getconfig() {
     esac
     cmds=`echo "$qrstartcfg" | perl -ne 's/^(\w+)\.(\w+) (.*)/$1_$2=$3/ && print'`
     eval "$cmds"
+    set +e
 }
 
 # Print the value of the cgroups v2 interface filename $1 for current process,

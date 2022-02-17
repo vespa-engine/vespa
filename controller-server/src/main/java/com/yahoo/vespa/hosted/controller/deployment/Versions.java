@@ -126,8 +126,9 @@ public class Versions {
 
     private static ApplicationVersion targetApplication(Application application, Change change,
                                                         Optional<Deployment> deployment) {
-        return max(change.application(), deployment.map(Deployment::applicationVersion))
-                .orElseGet(() -> defaultApplicationVersion(application));
+        return change.application()
+                     .or(() -> deployment.map(Deployment::applicationVersion))
+                     .orElseGet(() -> defaultApplicationVersion(application));
     }
 
     private static ApplicationVersion defaultApplicationVersion(Application application) {

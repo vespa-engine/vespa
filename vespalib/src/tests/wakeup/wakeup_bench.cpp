@@ -5,6 +5,7 @@
 #include <condition_variable>
 #include <thread>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/cpu_usage.h>
 
 #ifdef __linux__
 #include <linux/futex.h>
@@ -121,18 +122,33 @@ struct UsePipe : State {
         set_wakeup();
         char token = 'T';
         [[maybe_unused]] ssize_t res = write(pipefd[1], &token, 1);
-        assert(res == 1);
+        // assert(res == 1);
     }
     void stop() {
         set_stop();
         char token = 'T';
         [[maybe_unused]] ssize_t res = write(pipefd[1], &token, 1);
-        assert(res == 1);
+        // assert(res == 1);
     }
     void wait() {
         char token_trash[128];
         [[maybe_unused]] ssize_t res = read(pipefd[0], token_trash, sizeof(token_trash));
-        assert(res == 1);
+        // assert(res == 1);
+    }
+};
+
+struct UseAtomic : State {
+    void wakeup() {
+        set_wakeup();
+        value.notify_one();
+    }
+    void stop() {
+        set_stop();
+        value.notify_one();
+    }
+    void wait() {
+        value.wait(0);
+        // assert(!is_ready());
     }
 };
 
@@ -162,9 +178,11 @@ struct Wakeup : T {
     using T::should_stop;
     using T::set_ready;
     using T::wait;
+    cpu_usage::ThreadSampler::UP cpu;
     std::thread thread;
     Wakeup() : thread([this]{ run(); }) {}
     void run() {
+        cpu = cpu_usage::create_thread_sampler();
         while (!should_stop()) {
             set_ready();
             wait();
@@ -211,6 +229,15 @@ void wait_until_ready(const T &list) {
 }
 
 template <typename T>
+duration sample_cpu(T &list) {
+    duration result = duration::zero();
+    for (auto *item: list) {
+        result += item->cpu->sample();
+    }
+    return result;
+}
+
+template <typename T>
 auto perform_wakeups(T &list, size_t target) __attribute__((noinline));
 template <typename T>
 auto perform_wakeups(T &list, size_t target) {
@@ -239,11 +266,17 @@ void benchmark() {
         perform_wakeups(list, WAKE_CNT / 64);
     }
     auto t1 = steady_clock::now();
+    auto cpu0 = sample_cpu(list);
     auto res = perform_wakeups(list, WAKE_CNT);
     auto t2 = steady_clock::now();
+    auto cpu1 = sample_cpu(list);
     wait_until_ready(list);
     destroy_list(list);
-    fprintf(stderr, "wakeups per second: %zu (skipped: %zu)\n", size_t(res.first / to_s(t2 - t1)), res.second);
+    double run_time = to_s(t2 - t1);
+    double cpu_time = to_s(cpu1 - cpu0);
+    double cpu_load = (cpu_time / (N * run_time));
+    fprintf(stderr, "wakeups per second: %zu (skipped: %zu, cpu load: %.3f)\n",
+            size_t(res.first / run_time), res.second, cpu_load);
 }
 
 TEST(WakeupBench, using_spin) { benchmark<Wakeup<UseSpin>>(); }
@@ -251,6 +284,7 @@ TEST(WakeupBench, using_spin_yield) { benchmark<Wakeup<UseSpinYield>>(); }
 TEST(WakeupBench, using_cond) { benchmark<Wakeup<UseCond>>(); }
 TEST(WakeupBench, using_cond_nolock) { benchmark<Wakeup<UseCondNolock>>(); }
 TEST(WakeupBench, using_pipe) { benchmark<Wakeup<UsePipe>>(); }
+TEST(WakeupBench, using_atomic) { benchmark<Wakeup<UseAtomic>>(); }
 
 #ifdef __linux__
 TEST(WakeupBench, using_futex) { benchmark<Wakeup<UseFutex>>(); }

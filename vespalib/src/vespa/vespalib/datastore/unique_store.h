@@ -13,6 +13,8 @@
 #include "unique_store_comparator.h"
 #include "unique_store_entry.h"
 
+namespace vespalib::alloc { class MemoryAllocator; }
+
 namespace vespalib::datastore {
 
 template <typename Allocator>
@@ -47,8 +49,8 @@ private:
     using generation_t = vespalib::GenerationHandler::generation_t;
 
 public:
-    UniqueStore();
-    UniqueStore(std::unique_ptr<IUniqueStoreDictionary> dict);
+    UniqueStore(std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
+    UniqueStore(std::unique_ptr<IUniqueStoreDictionary> dict, std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
     ~UniqueStore();
     void set_dictionary(std::unique_ptr<IUniqueStoreDictionary> dict);
     UniqueStoreAddResult add(EntryConstRefType value);

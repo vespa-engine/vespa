@@ -1,8 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/config/config.h>
 #include <vespa/config/common/configparser.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config/common/configvalue.h>
+#include <vespa/config/common/misc.h>
 #include "config-foo.h"
 #include <fstream>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -23,7 +24,7 @@ namespace {
     ConfigValue readConfig(const vespalib::string & fileName)
     {
         asciistream is(asciistream::createFromFile(fileName));
-        return ConfigValue(is.getlines(), "");
+        return ConfigValue(getlines(is), "");
     }
 }
 
@@ -102,14 +103,14 @@ TEST("require that array lengths may be specified")
 }
 
 TEST("require that escaped values are properly unescaped") {
-    std::vector<vespalib::string> payload;
+    StringVector payload;
     payload.push_back("foo \"a\\nb\\rc\\\\d\\\"e\x42g\"");
     vespalib::string value(ConfigParser::parse<vespalib::string>("foo", payload));
     ASSERT_EQUAL("a\nb\rc\\d\"eBg", value);
 }
 
 TEST("verify that locale does not affect double parsing") {
-    std::vector<vespalib::string> payload;
+    StringVector payload;
     setlocale(LC_NUMERIC, "nb_NO.UTF-8");
     payload.push_back("foo 3,14");
     ASSERT_EXCEPTION(ConfigParser::parse<double>("foo", payload), InvalidConfigException, "Value 3,14 is not a legal double");
@@ -127,7 +128,7 @@ TEST("require that maps can be parsed")
 }
 
 TEST("handles quotes for bool values") {
-    std::vector<vespalib::string> payload;
+    StringVector payload;
     payload.push_back("foo \"true\"");
     payload.push_back("bar \"123\"");
     payload.push_back("baz \"1234\"");

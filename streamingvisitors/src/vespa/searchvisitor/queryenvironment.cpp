@@ -54,6 +54,19 @@ QueryEnvironment::QueryEnvironment(const string & location_str,
 
 QueryEnvironment::~QueryEnvironment() {}
 
+void QueryEnvironment::addGeoLocation(const vespalib::string &field, const vespalib::string &location_str) {
+    GeoLocationParser locationParser;
+    if (! locationParser.parseNoField(location_str)) {
+        LOG(warning, "Location parse error (location: '%s'): %s. Location ignored.",
+                     location_str.c_str(), locationParser.getParseError());
+        return;
+    }
+    auto loc = locationParser.getGeoLocation();
+    if (loc.has_point) {
+        _locations.push_back(GeoLocationSpec{field, loc});
+    }
+}
+
 QueryEnvironment::GeoLocationSpecPtrs
 QueryEnvironment::getAllLocations() const
 {

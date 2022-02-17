@@ -2,70 +2,113 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/client/go/auth0"
 	"github.com/vespa-engine/vespa/client/go/curl"
+	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 var curlDryRun bool
+var curlService string
 
 func init() {
 	rootCmd.AddCommand(curlCmd)
 	curlCmd.Flags().BoolVarP(&curlDryRun, "dry-run", "n", false, "Print the curl command that would be executed")
+	curlCmd.Flags().StringVarP(&curlService, "service", "s", "query", "Which service to query. Must be \"deploy\", \"document\" or \"query\"")
 }
 
 var curlCmd = &cobra.Command{
 	Use:   "curl [curl-options] path",
-	Short: "Query Vespa using curl",
-	Long: `Query Vespa using curl.
+	Short: "Access Vespa directly using curl",
+	Long: `Access Vespa directly using curl.
 
-Execute curl with the appropriate URL, certificate and private key for your application.`,
-	Example: `$ vespa curl /search/?yql=query
-$ vespa curl -- -v --data-urlencode "yql=select * from sources * where title contains 'foo';" /search/
-$ vespa curl -t local -- -v /search/?yql=query
+Execute curl with the appropriate URL, certificate and private key for your application.
+
+For a more high-level interface to query and feeding, see the 'query' and 'document' commands.
 `,
+	Example: `$ vespa curl /ApplicationStatus
+$ vespa curl -- -X POST -H "Content-Type:application/json" --data-binary @src/test/resources/A-Head-Full-of-Dreams.json /document/v1/namespace/music/docid/1
+$ vespa curl -- -v --data-urlencode "yql=select * from music where album contains 'head';" /search/\?hits=5`,
 	DisableAutoGenTag: true,
+	SilenceUsage:      true,
 	Args:              cobra.MinimumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := LoadConfig()
 		if err != nil {
-			fatalErr(err, "Could not load config")
-			return
+			return err
 		}
-		app := getApplication()
-		privateKeyFile, err := cfg.PrivateKeyPath(app)
+		app, err := getApplication()
 		if err != nil {
-			fatalErr(err)
-			return
+			return err
 		}
-		certificateFile, err := cfg.CertificatePath(app)
+		service, err := getService(curlService, 0, "")
 		if err != nil {
-			fatalErr(err)
-			return
+			return err
 		}
-		service := getService("query", 0, "")
 		url := joinURL(service.BaseURL, args[len(args)-1])
 		rawArgs := args[:len(args)-1]
 		c, err := curl.RawArgs(url, rawArgs...)
 		if err != nil {
-			fatalErr(err)
-			return
+			return err
 		}
-		c.PrivateKey = privateKeyFile
-		c.Certificate = certificateFile
+		switch curlService {
+		case "deploy":
+			t, err := getTarget()
+			if err != nil {
+				return err
+			}
+			if t.Type() == "cloud" {
+				if !vespa.Auth0AccessTokenEnabled() {
+					return errors.New("accessing control plane using curl subcommand is only supported for Auth0 device flow")
+				}
+				if err := addCloudAuth0Authentication(cfg, c); err != nil {
+					return err
+				}
+			}
+		case "document", "query":
+			privateKeyFile, err := cfg.PrivateKeyPath(app)
+			if err != nil {
+				return err
+			}
+			certificateFile, err := cfg.CertificatePath(app)
+			if err != nil {
+				return err
+			}
+			c.PrivateKey = privateKeyFile
+			c.Certificate = certificateFile
+		default:
+			return fmt.Errorf("service not found: %s", curlService)
+		}
 
 		if curlDryRun {
 			log.Print(c.String())
 		} else {
 			if err := c.Run(os.Stdout, os.Stderr); err != nil {
-				fatalErr(err, "Failed to run curl")
-				return
+				return fmt.Errorf("failed to execute curl: %w", err)
 			}
 		}
+		return nil
 	},
+}
+
+func addCloudAuth0Authentication(cfg *Config, c *curl.Command) error {
+	a, err := auth0.GetAuth0(cfg.AuthConfigPath(), getSystemName(), getApiURL())
+	if err != nil {
+		return err
+	}
+
+	system, err := a.PrepareSystem(auth0.ContextWithCancel())
+	if err != nil {
+		return err
+	}
+	c.Header("Authorization", "Bearer "+system.AccessToken)
+	return nil
 }
 
 func joinURL(baseURL, path string) string {

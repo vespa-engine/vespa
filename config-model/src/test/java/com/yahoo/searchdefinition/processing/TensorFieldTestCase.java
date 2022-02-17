@@ -6,7 +6,7 @@ import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
 
-import static com.yahoo.searchdefinition.SchemaBuilder.createFromString;
+import static com.yahoo.searchdefinition.ApplicationBuilder.createFromString;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

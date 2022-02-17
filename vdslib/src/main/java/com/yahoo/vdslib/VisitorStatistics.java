@@ -23,22 +23,47 @@ public class VisitorStatistics {
     public int getBucketsVisited() { return bucketsVisited; }
     public void setBucketsVisited(int bucketsVisited) { this.bucketsVisited = bucketsVisited; }
 
+    /**
+     * @return the number of documents matching the document selection in the backend and that
+     *   has been passed to the client-specified visitor instance (dumpvisitor, searchvisitor etc).
+     */
     public long getDocumentsVisited() { return documentsVisited; }
     public void setDocumentsVisited(long documentsVisited) { this.documentsVisited = documentsVisited; }
 
     public long getBytesVisited() { return bytesVisited; }
     public void setBytesVisited(long bytesVisited) { this.bytesVisited = bytesVisited; }
 
+    /**
+     * @return Number of documents returned to the visitor client by the backend. This number may
+     *   be lower than that returned by getDocumentsVisited() since the client-specified visitor
+     *   instance may further have filtered the set of documents returned by the backend.
+     */
     public long getDocumentsReturned() { return documentsReturned; }
     public void setDocumentsReturned(long documentsReturned) { this.documentsReturned = documentsReturned; }
 
     public long getBytesReturned() { return bytesReturned; }
     public void setBytesReturned(long bytesReturned) { this.bytesReturned = bytesReturned; }
 
+    /**
+     * @deprecated Use getDocumentsReturned() instead
+     */
+    @Deprecated(since = "7", forRemoval = true) // TODO: Vespa 8: remove
     public long getSecondPassDocumentsReturned() { return secondPassDocumentsReturned; }
+    /**
+     * @deprecated only applies for deprecated "orderdoc" ID scheme
+     */
+    @Deprecated(since = "7", forRemoval = true)// TODO: Vespa 8: remove
     public void setSecondPassDocumentsReturned(long secondPassDocumentsReturned) { this.secondPassDocumentsReturned = secondPassDocumentsReturned; }
 
+    /**
+     * @deprecated Use getBytesReturned() instead
+     */
+    @Deprecated(since = "7", forRemoval = true) // TODO: Vespa 8: remove
     public long getSecondPassBytesReturned() { return secondPassBytesReturned; }
+    /**
+     * @deprecated only applies for deprecated "orderdoc" ID scheme
+     */
+    @Deprecated(since = "7", forRemoval = true) // TODO: Vespa 8: remove
     public void setSecondPassBytesReturned(long secondPassBytesReturned) { this.secondPassBytesReturned = secondPassBytesReturned; }
 
     public String toString() {

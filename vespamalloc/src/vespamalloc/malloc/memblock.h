@@ -3,7 +3,7 @@
 
 #include <vespamalloc/util/callstack.h>
 #include <vespamalloc/malloc/common.h>
-#include <stdio.h>
+#include <cstdio>
 
 namespace vespamalloc {
 
@@ -12,7 +12,7 @@ class MemBlockT : public CommonT<MinSizeClassC>
 {
 public:
     using Parent = CommonT<MinSizeClassC>;
-    using Stack = StackEntry<StackReturnEntry>;
+    using Stack = StackEntry;
     enum {
         MaxSizeClassMultiAlloc = MaxSizeClassMultiAllocC,
         SizeClassSpan = (MaxSizeClassMultiAllocC-MinSizeClassC)
@@ -40,17 +40,14 @@ public:
     bool allocated()    const { return false; }
     uint32_t threadId()      const { return 0; }
     void info(FILE *, unsigned level=0) const  { (void) level; }
-    Stack * callStack()                   { return nullptr; }
+    const Stack * callStack()           const  { return nullptr; }
     size_t callStackLen()           const { return 0; }
     void fillMemory(size_t)               { }
-    void logBigBlock(size_t exact, size_t adjusted, size_t gross) const __attribute__((noinline));
 
     static size_t adjustSize(size_t sz)   { return sz; }
     static size_t adjustSize(size_t sz, std::align_val_t)   { return sz; }
     static size_t unAdjustSize(size_t sz) { return sz; }
     static void dumpInfo(size_t level);
-    static void dumpFile(FILE * fp)       { _logFile = fp; }
-    static void bigBlockLimit(size_t lim);
     static void setFill(uint8_t ) { }
     static bool verifySizeClass(int sc) { (void) sc; return true; }
     static size_t getMinSizeForAlignment(size_t align, size_t sz) {
@@ -60,11 +57,9 @@ public:
     }
 private:
     void * _ptr;
-    static FILE *_logFile;
-    static size_t _bigBlockLimit;
 };
 
-typedef MemBlockT<5, 20> MemBlock;
+using MemBlock = MemBlockT<5, 20>;
 template <> void MemBlock::dumpInfo(size_t level);
 extern template class MemBlockT<5, 20>;
 

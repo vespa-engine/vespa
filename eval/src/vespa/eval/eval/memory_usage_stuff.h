@@ -10,8 +10,9 @@ namespace vespalib::eval {
 template <typename T>
 MemoryUsage self_memory_usage() { return MemoryUsage(sizeof(T), sizeof(T), 0, 0); }
 
-template <typename T>
-MemoryUsage vector_extra_memory_usage(const std::vector<T> &vec) {
+template <typename V>
+MemoryUsage vector_extra_memory_usage(const V &vec) {
+    using T = typename V::value_type;
     MemoryUsage usage;
     usage.incAllocatedBytes(sizeof(T) * vec.capacity());
     usage.incUsedBytes(sizeof(T) * vec.size());

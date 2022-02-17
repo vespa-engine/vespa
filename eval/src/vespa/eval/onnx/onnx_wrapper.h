@@ -85,12 +85,17 @@ public:
     private:
         std::map<vespalib::string,ValueType> _input_types;
         std::map<vespalib::string,size_t> _symbolic_sizes;
-        std::set<size_t> _bound_unknown_sizes;
+        std::map<vespalib::string,Onnx::TensorType> _output_types;
+
+        bool need_model_probe(const Onnx &model) const;
+        void do_model_probe(const Onnx &model);
     public:
-        WirePlanner() : _input_types(), _symbolic_sizes(), _bound_unknown_sizes() {}
+        WirePlanner() : _input_types(), _symbolic_sizes(), _output_types() {}
         ~WirePlanner();
         static CellType best_cell_type(Onnx::ElementType type);
         bool bind_input_type(const ValueType &vespa_in, const TensorInfo &onnx_in);
+        std::map<vespalib::string,size_t> get_bound_sizes(const TensorInfo &onnx_in) const;
+        void prepare_output_types(const Onnx &model);
         ValueType make_output_type(const TensorInfo &onnx_out) const;
         WireInfo get_wire_info(const Onnx &model) const;
     };
@@ -102,8 +107,6 @@ public:
     private:
         using param_fun_t = void (*)(EvalContext &, size_t i, const Value &);
         using result_fun_t = void (*)(EvalContext &, size_t i);
-
-        static Ort::AllocatorWithDefaultOptions _alloc;
 
         const Onnx                  &_model;
         const WireInfo              &_wire_info;
@@ -148,6 +151,8 @@ private:
         static Shared &get();
         Ort::Env &env() { return _env; }
     };
+
+    static Ort::AllocatorWithDefaultOptions _alloc;
 
     Shared                   &_shared;
     Ort::SessionOptions       _options;

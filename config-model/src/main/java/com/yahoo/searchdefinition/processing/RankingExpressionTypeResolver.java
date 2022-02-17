@@ -89,10 +89,10 @@ public class RankingExpressionTypeResolver extends Processor {
             if ( context.tensorsAreUsed() &&
                  ! context.queryFeaturesNotDeclared().isEmpty() &&
                  ! warnedAbout.containsAll(context.queryFeaturesNotDeclared())) {
-                deployLogger.logApplicationPackage(Level.WARNING, "The following query features used in '" + profile.getName() +
-                                                "' are not declared in query profile " +
-                                                "types and will be interpreted as scalars, not tensors: " +
-                                                context.queryFeaturesNotDeclared());
+                deployLogger.logApplicationPackage(Level.WARNING, "The following query features used in '" + profile.name() +
+                                                                  "' are not declared in query profile " +
+                                                                  "types and will be interpreted as scalars, not tensors: " +
+                                                                  context.queryFeaturesNotDeclared());
                 warnedAbout.addAll(context.queryFeaturesNotDeclared());
             }
         }

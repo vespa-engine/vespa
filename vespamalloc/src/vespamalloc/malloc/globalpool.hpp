@@ -11,7 +11,7 @@ template <typename MemBlockPtrT>
 size_t AllocPoolT<MemBlockPtrT>::_threadCacheLimit __attribute__((visibility("hidden"))) = 0x10000;
 
 template <typename MemBlockPtrT>
-AllocPoolT<MemBlockPtrT>::AllocPoolT(DataSegment<MemBlockPtrT> & ds)
+AllocPoolT<MemBlockPtrT>::AllocPoolT(DataSegment & ds)
     : _chunkPool(nullptr),
       _scList(),
       _dataSegment(ds),
@@ -127,7 +127,7 @@ AllocPoolT<MemBlockPtrT>::exactAlloc(size_t exactSize, SizeClassT sc,
     csl->add(mem);
     ChunkSList * ncsl = csl;
     USE_STAT2(_stat[sc]._exactAlloc.fetch_add(1, std::memory_order_relaxed));
-    mem.logBigBlock(exactSize, mem.adjustSize(exactSize), MemBlockPtrT::classSize(sc));
+    logBigBlock(mem.ptr(), exactSize, mem.adjustSize(exactSize), MemBlockPtrT::classSize(sc));
     PARANOID_CHECK1( if (ncsl->empty() || (ncsl->count() > ChunkSList::NumBlocks)) { *(int*)0 = 0; } );
     return ncsl;
 }
@@ -143,7 +143,7 @@ AllocPoolT<MemBlockPtrT>::returnMemory(SizeClassT sc, typename AllocPoolT<MemBlo
     for(; !csl->empty(); ) {
         MemBlockPtrT mem;
         csl->sub(mem);
-        mem.logBigBlock(mem.size(), mem.adjustSize(mem.size()), MemBlockPtrT::classSize(sc));
+        logBigBlock(mem.ptr(), mem.size(), mem.adjustSize(mem.size()), MemBlockPtrT::classSize(sc));
         _dataSegment.returnBlock(mem.rawPtr());
     }
     completelyEmpty = csl;
@@ -234,7 +234,7 @@ AllocPoolT<MemBlockPtrT>::allocChunkList(const Guard & guard)
 {
     (void) guard;
     size_t blockSize(sizeof(ChunkSList)*0x2000);
-    void * block = _dataSegment.getBlock(blockSize, _dataSegment.SYSTEM_BLOCK);
+    void * block = _dataSegment.getBlock(blockSize, segment::SYSTEM_BLOCK);
     ChunkSList * newList(nullptr);
     if (block != nullptr) {
         size_t chunksInBlock(blockSize/sizeof(ChunkSList));

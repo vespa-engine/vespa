@@ -17,7 +17,7 @@ SequencedTaskExecutorObserver::SequencedTaskExecutorObserver(ISequencedTaskExecu
 SequencedTaskExecutorObserver::~SequencedTaskExecutorObserver() = default;
 
 void
-SequencedTaskExecutorObserver::executeTask(ExecutorId id, vespalib::Executor::Task::UP task)
+SequencedTaskExecutorObserver::executeTask(ExecutorId id, Executor::Task::UP task)
 {
     ++_executeCnt;
     {
@@ -25,6 +25,19 @@ SequencedTaskExecutorObserver::executeTask(ExecutorId id, vespalib::Executor::Ta
         _executeHistory.emplace_back(id.getId());
     }
     _executor.executeTask(id, std::move(task));
+}
+
+void
+SequencedTaskExecutorObserver::executeTasks(TaskList tasks)
+{
+    _executeCnt += tasks.size();
+    {
+        std::lock_guard<std::mutex> guard(_mutex);
+        for (const auto & task : tasks) {
+            _executeHistory.emplace_back(task.first.getId());
+        }
+    }
+    _executor.executeTasks(std::move(tasks));
 }
 
 void
@@ -45,7 +58,7 @@ void SequencedTaskExecutorObserver::setTaskLimit(uint32_t taskLimit) {
     _executor.setTaskLimit(taskLimit);
 }
 
-vespalib::ExecutorStats SequencedTaskExecutorObserver::getStats() {
+ExecutorStats SequencedTaskExecutorObserver::getStats() {
     return _executor.getStats();
 }
 

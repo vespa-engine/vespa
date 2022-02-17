@@ -34,7 +34,10 @@ public class ConfigGetter<T extends ConfigInstance> {
      *
      * @param source a {@link ConfigSource}
      * @param clazz  a config class
+     *
+     * @deprecated Config should always be injected via the component class constructor. For unit tests, use config builders.
      */
+    @Deprecated(forRemoval = true, since = "7")
     public ConfigGetter(ConfigSource source, Class<T> clazz) {
         this.clazz = clazz;
         this.source = source;
@@ -74,7 +77,10 @@ public class ConfigGetter<T extends ConfigInstance> {
      * @param configId a config id to use when getting the config
      * @param source   a {@link ConfigSource}
      * @return an instance of a config class
+     *
+     * @deprecated Config should always be injected via the component class constructor. For unit tests, use config builders.
      */
+    @Deprecated(forRemoval = true, since = "7")
     public static <T extends ConfigInstance> T getConfig(Class<T> c, String configId, ConfigSource source) {
         ConfigGetter<T> getter = new ConfigGetter<>(source, c);
         return getter.getConfig(configId);

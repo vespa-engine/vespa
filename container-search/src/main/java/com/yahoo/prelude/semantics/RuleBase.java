@@ -1,10 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics;
 
-import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
-import com.yahoo.language.process.StemMode;
-import com.yahoo.prelude.semantics.engine.RuleBaseLinguistics;
 import com.yahoo.prelude.semantics.rule.CompositeCondition;
 import com.yahoo.prelude.semantics.rule.Condition;
 import com.yahoo.prelude.semantics.rule.NamedCondition;
@@ -76,12 +73,9 @@ public class RuleBase {
      */
     private boolean usesAutomata = false;
 
-    private RuleBaseLinguistics linguistics;
-
     /** Creates an empty rule base */
-    public RuleBase(String name, Linguistics linguistics) {
+    public RuleBase(String name) {
         this.name = name;
-        this.linguistics = new RuleBaseLinguistics(StemMode.BEST, Language.ENGLISH, linguistics);
     }
 
     /**
@@ -284,7 +278,7 @@ public class RuleBase {
     }
 
     /**
-     * Set to truew if this uses an automata, even if an automata is not present right now.
+     * Set to true if this uses an automata, even if an automata is not present right now.
      * Useful to validate without having automatas available
      */
     void setUsesAutomata(boolean usesAutomata) { this.usesAutomata = usesAutomata; }
@@ -342,7 +336,7 @@ public class RuleBase {
     }
 
     // TODO: Values are not added right now
-    protected void annotatePhrase(PhraseMatcher.Phrase phrase,Query query,int traceLevel) {
+    protected void annotatePhrase(PhraseMatcher.Phrase phrase, Query query, int traceLevel) {
         for (StringTokenizer tokens = new StringTokenizer(phrase.getData(), "|", false); tokens.hasMoreTokens(); ) {
             String token = tokens.nextToken();
             int semicolonIndex = token.indexOf(";");
@@ -357,12 +351,12 @@ public class RuleBase {
             phrase.getItem(0).addAnnotation(annotation, phrase);
             if (traceLevel >= 4)
                 query.trace("   Annotating '" + phrase + "' as " + annotation +
-                        (value.equals("") ? "" :"=" + value),false,1);
+                            (value.equals("") ? "" :"=" + value),false,1);
         }
     }
 
     private void makeReferences() {
-        for (Iterator<ProductionRule> i=ruleIterator(); i.hasNext(); ) {
+        for (Iterator<ProductionRule> i = ruleIterator(); i.hasNext(); ) {
             ProductionRule rule = i.next();
             rule.makeReferences(this);
         }

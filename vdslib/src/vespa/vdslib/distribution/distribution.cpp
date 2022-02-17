@@ -6,13 +6,10 @@
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/util/bobhash.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/config/config.h>
 #include <vespa/config/print/asciiconfigwriter.h>
-#include <vespa/config/print/asciiconfigreader.h>
+#include <vespa/config/print/asciiconfigreader.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/config-stor-distribution.h>
-#include <list>
-#include <algorithm>
 #include <cmath>
 #include <cassert>
 

@@ -126,7 +126,7 @@ public class InactiveAndFailedExpirerTest {
         );
         Orchestrator orchestrator = mock(Orchestrator.class);
         doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
-        new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer, new TestMetric(),
+        new RetiredExpirer(tester.nodeRepository(), deployer, new TestMetric(),
                            Duration.ofDays(30), Duration.ofMinutes(10)).run();
         assertEquals(1, tester.nodeRepository().nodes().list(Node.State.inactive).size());
 

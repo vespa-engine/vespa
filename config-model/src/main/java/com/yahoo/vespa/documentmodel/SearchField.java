@@ -8,10 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author    baldersheim
- * @since     2010-02-19
+ * @author baldersheim
  */
 public class SearchField extends Field {
+
     /// Indicate if field shall be stored in memory for attribute usage.
     private boolean attribute = false;
     /// Indicate if the field is Vespa indexed.
@@ -45,7 +45,6 @@ public class SearchField extends Field {
         validate();
     }
 
-    @SuppressWarnings({ "deprecation" })
     private void validate() {
         if (attribute || !indexed) {
             return;
@@ -55,17 +54,14 @@ public class SearchField extends Field {
         if (DataType.STRING.equals(primiType) || DataType.URI.equals(primiType)) {
             return;
         }
-        throw new IllegalStateException("Expected type " + DataType.STRING.getName() + " for indexed field '" +
-                                        getName() + "', got " + fieldType.getName() + ".");
+        throw new IllegalArgumentException("Expected type " + DataType.STRING.getName() + " for indexed field '" +
+                                           getName() + "', got " + fieldType.getName() + ".");
     }
 
-    public SearchField   setIndexed() { indexed = true; validate(); return this; }
+    public SearchField setIndexed() { indexed = true; validate(); return this; }
     public SearchField setAttribute() { attribute = true; validate(); return this; }
     public boolean isAttribute() { return attribute; }
-    /**
-     * True if field is Vespa indexed
-     * @return true if indexed
-     */
+
     public boolean   isIndexed() { return indexed; }
     public SearchField addFeature(Feature feature) { featureList.add(feature); validate(); return this; }
 }

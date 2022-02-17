@@ -6,33 +6,36 @@
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/doneinitializehandler.h>
-#include <vespa/vdslib/state/cluster_state_bundle.h>
-#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/messagebucket.h>
 #include <vespa/storage/persistence/bucketownershipnotifier.h>
-#include <vespa/storage/persistence/persistencethread.h>
 #include <vespa/storage/persistence/persistencehandler.h>
+#include <vespa/storage/persistence/persistencethread.h>
 #include <vespa/storage/persistence/provider_error_wrapper.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/stat.h>
+#include <vespa/storageapi/message/state.h>
+#include <vespa/vdslib/state/cluster_state_bundle.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
-#include <algorithm>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/config/subscription/configuri.h>
+#include <vespa/config/helper/configfetcher.hpp>
 #include <thread>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.filestor.manager");
 
-using std::shared_ptr;
 using document::BucketSpace;
-using vespalib::make_string_short::fmt;
+using std::shared_ptr;
 using vespa::config::content::StorFilestorConfig;
+using vespalib::CpuUsage;
+using vespalib::make_string_short::fmt;
 
 namespace {
 
@@ -71,7 +74,7 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _persistenceHandlers(),
       _threads(),
       _bucketOwnershipNotifier(std::make_unique<BucketOwnershipNotifier>(_component, *this)),
-      _configFetcher(configUri.getContext()),
+      _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
       _use_async_message_handling_on_schedule(false),
       _metrics(std::make_unique<FileStorMetrics>()),
       _filestorHandler(),
@@ -81,8 +84,8 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _host_info_reporter(_component.getStateUpdater()),
       _resource_usage_listener_registration(provider.register_resource_usage_listener(_host_info_reporter))
 {
-    _configFetcher.subscribe(configUri.getConfigId(), this);
-    _configFetcher.start();
+    _configFetcher->subscribe(configUri.getConfigId(), this);
+    _configFetcher->start();
     _component.registerMetric(*_metrics);
     _component.registerStatusPage(*this);
     _component.getStateUpdater().addStateListener(*this);
@@ -143,16 +146,31 @@ selectSequencer(StorFilestorConfig::ResponseSequencerType sequencerType) {
     }
 }
 
-std::unique_ptr<SharedOperationThrottler>
+vespalib::SharedOperationThrottler::DynamicThrottleParams
+dynamic_throttle_params_from_config(const StorFilestorConfig& config, size_t num_threads)
+{
+    const auto& cfg_params = config.asyncOperationThrottler;
+    auto win_size_incr = std::max(static_cast<size_t>(std::max(cfg_params.windowSizeIncrement, 1)), num_threads);
+
+    vespalib::SharedOperationThrottler::DynamicThrottleParams params;
+    params.window_size_increment        = win_size_incr;
+    params.min_window_size              = win_size_incr;
+    params.window_size_decrement_factor = cfg_params.windowSizeDecrementFactor;
+    params.window_size_backoff          = cfg_params.windowSizeBackoff;
+    return params;
+}
+
+std::unique_ptr<vespalib::SharedOperationThrottler>
 make_operation_throttler_from_config(const StorFilestorConfig& config, size_t num_threads)
 {
-    const bool use_dynamic_throttling = (config.asyncOperationThrottlerType == StorFilestorConfig::AsyncOperationThrottlerType::DYNAMIC);
+    // TODO only use struct config field instead once config model is updated
+    const bool use_dynamic_throttling = ((config.asyncOperationThrottlerType  == StorFilestorConfig::AsyncOperationThrottlerType::DYNAMIC) ||
+                                         (config.asyncOperationThrottler.type == StorFilestorConfig::AsyncOperationThrottler::Type::DYNAMIC));
     if (use_dynamic_throttling) {
-        auto config_win_size_incr = std::max(config.asyncOperationDynamicThrottlingWindowIncrement, 1);
-        auto win_size_increment = std::max(static_cast<size_t>(config_win_size_incr), num_threads);
-        return SharedOperationThrottler::make_dynamic_throttler(win_size_increment);
+        auto dyn_params = dynamic_throttle_params_from_config(config, num_threads);
+        return vespalib::SharedOperationThrottler::make_dynamic_throttler(dyn_params);
     } else {
-        return SharedOperationThrottler::make_unlimited_throttler();
+        return vespalib::SharedOperationThrottler::make_unlimited_throttler();
     }
 }
 
@@ -217,8 +235,9 @@ FileStorManager::configure(std::unique_ptr<StorFilestorConfig> config)
         _filestorHandler = std::make_unique<FileStorHandlerImpl>(numThreads, numStripes, *this, *_metrics,
                                                                  _compReg, std::move(operation_throttler));
         uint32_t numResponseThreads = computeNumResponseThreads(_config->numResponseThreads);
-        _sequencedExecutor = vespalib::SequencedTaskExecutor::create(response_executor, numResponseThreads, 10000,
-                                                                     selectSequencer(_config->responseSequencerType));
+        _sequencedExecutor = vespalib::SequencedTaskExecutor::create(CpuUsage::wrap(response_executor, CpuUsage::Category::WRITE),
+                                                                     numResponseThreads, 10000,
+                                                                     true, selectSequencer(_config->responseSequencerType));
         assert(_sequencedExecutor);
         LOG(spam, "Setting up the disk");
         for (uint32_t i = 0; i < numThreads; i++) {
@@ -227,10 +246,9 @@ FileStorManager::configure(std::unique_ptr<StorFilestorConfig> config)
         }
         _bucketExecutorRegistration = _provider->register_executor(std::make_shared<BucketExecutorWrapper>(*this));
     } else {
-        std::lock_guard guard(_lock);        
-        for (auto& handler : _persistenceHandlers) {
-            handler->configure(*config);
-        }
+        assert(_filestorHandler);
+        auto updated_dyn_throttle_params = dynamic_throttle_params_from_config(*config, _threads.size());
+        _filestorHandler->operation_throttler().reconfigure_dynamic_throttling(updated_dyn_throttle_params);
     }
 }
 
@@ -834,7 +852,7 @@ void FileStorManager::onClose()
     _bucketExecutorRegistration.reset();
     _resource_usage_listener_registration.reset();
     // Avoid getting config during shutdown
-    _configFetcher.close();
+    _configFetcher->close();
     LOG(debug, "Closed _configFetcher.");
     _filestorHandler->close();
     LOG(debug, "Closed _filestorHandler.");

@@ -14,6 +14,8 @@
 #include <vespa/config/subscription/configsubscription.h>
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config/frt/protocol.h>
+#include <vespa/config/retriever/configsnapshot.hpp>
 #include <thread>
 #include <atomic>
 
@@ -34,7 +36,7 @@ struct ConfigTestFixture {
     BootstrapConfigBuilder bootstrapBuilder;
     map<std::string, ComponentFixture::SP> componentConfig;
     ConfigSet set;
-    IConfigContext::SP context;
+    std::shared_ptr<IConfigContext> context;
     int idcounter;
 
     ConfigTestFixture(const std::string & id)
@@ -115,11 +117,11 @@ struct MySource : public Source
 
 struct SubscriptionFixture
 {
-    IConfigHolder::SP holder;
-    ConfigSubscription::SP sub;
+    std::shared_ptr<IConfigHolder> holder;
+    std::shared_ptr<ConfigSubscription> sub;
     SubscriptionFixture(const ConfigKey & key, const ConfigValue value)
-        : holder(new ConfigHolder()),
-          sub(new ConfigSubscription(0, key, holder, Source::UP(new MySource())))
+        : holder(std::make_shared<ConfigHolder>()),
+          sub(std::make_shared<ConfigSubscription>(0, key, holder, std::make_unique<MySource>()))
     {
         holder->handle(std::make_unique<ConfigUpdate>(value, 3, 3));
         ASSERT_TRUE(sub->nextUpdate(0, 0ms));
@@ -215,7 +217,7 @@ TEST("require that SimpleConfigRetriever usage works") {
     barBuilder.barValue = "fooz";
     set.addBuilder("id", &fooBuilder);
     set.addBuilder("id", &barBuilder);
-    IConfigContext::SP ctx(new ConfigContext(set));
+    auto ctx = std::make_shared<ConfigContext>(set);
     ConfigKeySet sub;
     sub.add<FooConfig>("id");
     sub.add<BarConfig>("id");
@@ -281,7 +283,7 @@ TEST_F("require that SimpleConfigurer usage works", ConfigurableFixture()) {
     barBuilder.barValue = "fooz";
     set.addBuilder("id", &fooBuilder);
     set.addBuilder("id", &barBuilder);
-    IConfigContext::SP ctx(new ConfigContext(set));
+    auto ctx = std::make_shared<ConfigContext>(set);
     ConfigKeySet sub;
     sub.add<FooConfig>("id");
     sub.add<BarConfig>("id");
@@ -351,8 +353,8 @@ TEST_FF("require that snapshots throws exception if invalid key", ConfigTestFixt
     f1.addComponent("c3", "foo3", "bar3");
     ConfigSnapshot snap1 = f2.retriever->getBootstrapConfigs();
     ASSERT_FALSE(snap1.hasConfig<BarConfig>("doesnotexist"));
-    ASSERT_EXCEPTION(snap1.getConfig<BarConfig>("doesnotexist"), IllegalConfigKeyException, "Unable to find config for key name=bar,namespace=config,configId=doesnotexist");
-    ASSERT_EXCEPTION(snap1.isChanged<BarConfig>("doesnotexist", 0), IllegalConfigKeyException, "Unable to find config for key name=bar,namespace=config,configId=doesnotexist");
+    ASSERT_EXCEPTION(snap1.getConfig<BarConfig>("doesnotexist"), IllegalConfigKeyException, "Unable to find config for key name=config.bar,configId=doesnotexist");
+    ASSERT_EXCEPTION(snap1.isChanged<BarConfig>("doesnotexist", 0), IllegalConfigKeyException, "Unable to find config for key name=config.bar,configId=doesnotexist");
     ASSERT_TRUE(snap1.hasConfig<BootstrapConfig>("myid"));
 }
 

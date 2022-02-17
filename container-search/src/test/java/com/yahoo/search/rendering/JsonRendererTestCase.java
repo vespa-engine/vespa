@@ -54,6 +54,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.text.Utf8;
+import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.trace.TraceNode;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,6 +70,7 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Functional testing of {@link JsonRenderer}.
@@ -165,11 +167,26 @@ public class JsonRendererTestCase {
         h.setField("tensor_mixed", new TensorFieldValue(Tensor.from("tensor(x{},y[2]):{a:[1,2], b:[3,4]}")));
         h.setField("summaryfeatures", summaryFeatures);
 
-        Result r = new Result(new Query("/?format.tensors=short"));
-        r.hits().add(h);
-        r.setTotalHitCount(1L);
-        String summary = render(r);
-        assertEqualJson(expected, summary);
+        Result result1 = new Result(new Query("/?presentation.format.tensors=short"));
+        result1.hits().add(h);
+        result1.setTotalHitCount(1L);
+        String summary1 = render(result1);
+        assertEqualJson(expected, summary1);
+
+        Result result2 = new Result(new Query("/?format.tensors=short"));
+        result2.hits().add(h);
+        result2.setTotalHitCount(1L);
+        String summary2 = render(result2);
+        assertEqualJson(expected, summary2);
+
+        try {
+            render(new Result(new Query("/?presentation.format.tensors=unknown")));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Could not set 'presentation.format.tensors' to 'unknown': Value must be 'long' or 'short', not 'unknown'",
+                         Exceptions.toMessageString(e));
+        }
     }
 
     @Test
@@ -1276,7 +1293,9 @@ public class JsonRendererTestCase {
                 "      f1: [ 'v1', { mykey1: 'myvalue1', mykey2: 'myvalue2' } ]," +
                 "      f2: { i1: 'v2', i2: { mykey3: 'myvalue3' }, i3: 'v3' }," +
                 "      f3: { j1: 42, j2: 17.75, j3: [ 'v4', 'v5' ] }," +
-                "      f4: { mykey4: 'myvalue4', mykey5: 'myvalue5' }" +
+                "      f4: { mykey4: 'myvalue4', mykey5: 'myvalue5' }," +
+                "      f5: { '10001': 'myvalue6', '10002': 'myvalue7' }," +
+                "      f6: { i4: 'v6', i5: { '-17': 'myvalue8', '-42': 'myvalue9' } }" +
                 "    }" +
                 "  } ]" +
                 "}}");
@@ -1285,6 +1304,8 @@ public class JsonRendererTestCase {
         h.setField("f2", dataFromSimplified("{ i1: 'v2', i2: [ { key: 'mykey3', value: 'myvalue3' } ], i3: 'v3' }"));
         h.setField("f3", dataFromSimplified("{ j1: 42, j2: 17.75, j3: [ 'v4', 'v5' ] }"));
         h.setField("f4", dataFromSimplified("[ { key: 'mykey4', value: 'myvalue4' }, { key: 'mykey5', value: 'myvalue5' } ]"));
+        h.setField("f5", dataFromSimplified("[ { key: 10001, value: 'myvalue6' }, { key: 10002, value: 'myvalue7' } ]"));
+        h.setField("f6", dataFromSimplified("{ i4: 'v6', i5: [ {key: -17, value: 'myvalue8' }, { key: -42, value: 'myvalue9' } ] }"));
         r.hits().add(h);
         r.setTotalHitCount(1L);
         String summary = render(r);
@@ -1298,7 +1319,51 @@ public class JsonRendererTestCase {
                 "      f1: [ 'v1', [ { key: 'mykey1', value: 'myvalue1' }, { key: 'mykey2', value: 'myvalue2' } ] ]," +
                 "      f2: { i1: 'v2', i2: [ { key: 'mykey3', value: 'myvalue3' } ], i3: 'v3' }," +
                 "      f3: { j1: 42, j2: 17.75, j3: [ 'v4', 'v5' ] }," +
-                "      f4: { mykey4: 'myvalue4', mykey5: 'myvalue5' }" +
+                "      f4: { mykey4: 'myvalue4', mykey5: 'myvalue5' }," +
+                "      f5: [ { key: 10001, value: 'myvalue6' }, { key: 10002, value: 'myvalue7' } ]," +
+                "      f6: { i4: 'v6', i5: [ { key: -17, value: 'myvalue8' }, { key: -42, value: 'myvalue9' } ] }" +
+                "    }" +
+                "  } ]" +
+                "}}");
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+        summary = render(r);
+        assertEqualJson(expected.toString(), summary);
+    }
+
+    @Test
+    public void testWsetInFields() throws IOException, InterruptedException, ExecutionException {
+        Result r = new Result(new Query("/?renderer.json.jsonWsets=true"));
+        var expected = dataFromSimplified(
+                "{root: { id:'toplevel', relevance:1.0, fields: { totalCount: 1 }," +
+                "  children: [ { id: 'myHitName', relevance: 1.0," +
+                "    fields: { " +
+                "      f1: [ 'v1', { mykey1: 10, mykey2: 20 } ]," +
+                "      f2: { i1: 'v2', i2: { mykey3: 30 }, i3: 'v3' }," +
+                "      f3: { j1: 42, j2: 17.75, j3: [ 'v4', 'v5' ] }," +
+                "      f4: { mykey4: 40, mykey5: 50 }" +
+                "    }" +
+                "  } ]" +
+                "}}");
+        Hit h = new Hit("myHitName");
+        h.setField("f1", dataFromSimplified("[ 'v1', [ { item: 'mykey1', weight: 10 }, { item: 'mykey2', weight: 20 } ] ]"));
+        h.setField("f2", dataFromSimplified("{ i1: 'v2', i2: [ { item: 'mykey3', weight: 30 } ], i3: 'v3' }"));
+        h.setField("f3", dataFromSimplified("{ j1: 42, j2: 17.75, j3: [ 'v4', 'v5' ] }"));
+        h.setField("f4", dataFromSimplified("[ { item: 'mykey4', weight: 40 }, { item: 'mykey5', weight: 50 } ]"));
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+        String summary = render(r);
+        assertEqualJson(expected.toString(), summary);
+
+        r = new Result(new Query("/?renderer.json.jsonWsets=false"));
+        expected = dataFromSimplified(
+                "{root:{id:'toplevel',relevance:1.0,fields:{totalCount:1}," +
+                "  children: [ { id: 'myHitName', relevance: 1.0," +
+                "    fields: { " +
+                "      f1: [ 'v1', [ { item: 'mykey1', weight: 10 }, { item: 'mykey2', weight: 20 } ] ]," +
+                "      f2: { i1: 'v2', i2: [ { item: 'mykey3', weight: 30 } ], i3: 'v3' }," +
+                "      f3: { j1: 42, j2: 17.75, j3: [ 'v4', 'v5' ] }," +
+                "      f4: [ { item: 'mykey4', weight: 40 }, { item: 'mykey5', weight: 50 } ]" +
                 "    }" +
                 "  } ]" +
                 "}}");

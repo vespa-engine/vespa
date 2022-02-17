@@ -3,12 +3,13 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.documentmodel.NewDocumentType;
 
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toSet;
 
 /**
  * Performs the following validations:
@@ -29,7 +30,7 @@ public class GlobalDistributionValidator {
     private static void verifyReferredDocumentsArePresent(Map<String, NewDocumentType> documentDefinitions) {
         Set<NewDocumentType.Name> unknowDocuments = getReferencedDocuments(documentDefinitions)
                 .filter(name -> !documentDefinitions.containsKey(name.toString()))
-                .collect(toSet());
+                .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
         if (!unknowDocuments.isEmpty()) {
             throw new IllegalArgumentException("The following document types are referenced from other documents, " +
                     "but are not listed in services.xml: " + asPrintableString(unknowDocuments.stream()));
@@ -41,7 +42,7 @@ public class GlobalDistributionValidator {
         Set<NewDocumentType> nonGlobalReferencedDocuments = getReferencedDocuments(documentDefinitions)
                 .map(name -> documentDefinitions.get(name.toString()))
                 .filter(documentType -> !globallyDistributedDocuments.contains(documentType))
-                .collect(toSet());
+                .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
         if (!nonGlobalReferencedDocuments.isEmpty()) {
             throw new IllegalArgumentException("The following document types are referenced from other documents, " +
                     "but are not globally distributed: " + asPrintableString(toDocumentNameStream(nonGlobalReferencedDocuments)));

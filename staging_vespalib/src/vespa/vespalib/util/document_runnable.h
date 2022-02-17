@@ -19,6 +19,7 @@
 #pragma once
 
 #include <vespa/fastos/thread.h>
+#include <atomic>
 
 namespace document {
 
@@ -29,16 +30,17 @@ public:
 private:
     mutable std::mutex _stateLock;
     mutable std::condition_variable _stateCond;
-    State _state;
+    std::atomic<State> _state;
 
     void Run(FastOS_ThreadInterface*, void*) override;
+    void set_state(State new_state) noexcept; // _stateLock must be held
 public:
     /**
      * Create a runnable.
      * @param pool If set, runnable will be started in constructor.
      */
     Runnable();
-    ~Runnable();
+    ~Runnable() override;
 
     /**
      * Start this runnable.
@@ -71,26 +73,21 @@ public:
      */
     virtual void run() = 0;
 
-    /** Get the current state of this runnable. */
-    State getState() const { return _state; }
+    /**
+     * Get the current state of this runnable.
+     * Thread safe (but relaxed) read; may be stale if done outside _stateLock.
+     */
+    [[nodiscard]] State getState() const noexcept {
+        return _state.load(std::memory_order_relaxed);
+    }
 
     /** Check if system is in the process of stopping. */
-    bool stopping() const
-    {
-        State s(getState());
-        return (s == STOPPING) || (s == RUNNING && GetThread()->GetBreakFlag());
-    }
+    [[nodiscard]] bool stopping() const noexcept;
 
     /**
      * Checks if runnable is running or not. (Started is considered running)
      */
-    bool running() const
-    {
-        State s(getState());
-        // Must check breakflag too, as threadpool will use that to close
-        // down.
-        return (s == STARTING || (s == RUNNING && !GetThread()->GetBreakFlag()));
-    }
+    [[nodiscard]] bool running() const noexcept;
 };
 
 }

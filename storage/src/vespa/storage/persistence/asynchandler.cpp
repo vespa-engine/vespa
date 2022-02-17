@@ -19,6 +19,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".storage.persistence.asynchandler");
 
+using vespalib::CpuUsage;
 using vespalib::make_string_short::fmt;
 namespace storage {
 
@@ -113,7 +114,7 @@ class UnrevertableRemoveEntryProcessor : public BucketProcessor::EntryProcessor 
 public:
     using DocumentIdsAndTimeStamps = std::vector<std::pair<spi::Timestamp, spi::DocumentId>>;
     UnrevertableRemoveEntryProcessor(DocumentIdsAndTimeStamps & to_remove)
-            : _to_remove(to_remove)
+        : _to_remove(to_remove)
     {}
 
     void process(spi::DocEntry& entry) override {
@@ -410,9 +411,13 @@ AsyncHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd, MessageTrack
     spi::Bucket bucket(cmd.getBucket());
     UnrevertableRemoveEntryProcessor::DocumentIdsAndTimeStamps to_remove;
     UnrevertableRemoveEntryProcessor processor(to_remove);
-    BucketProcessor::iterateAll(_spi, bucket, cmd.getDocumentSelection(),
-                                std::make_shared<document::DocIdOnly>(),
-                                processor, spi::NEWEST_DOCUMENT_ONLY,tracker->context());
+
+    {
+        auto usage = vespalib::CpuUsage::use(CpuUsage::Category::READ);
+        BucketProcessor::iterateAll(_spi, bucket, cmd.getDocumentSelection(),
+                                    std::make_shared<document::DocIdOnly>(),
+                                    processor, spi::NEWEST_DOCUMENT_ONLY, tracker->context());
+    }
 
     auto task = makeResultTask([&cmd, tracker = std::move(tracker), removed = to_remove.size()](spi::Result::UP response) {
         tracker->checkForError(*response);

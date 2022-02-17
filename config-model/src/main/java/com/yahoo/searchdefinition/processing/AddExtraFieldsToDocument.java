@@ -26,11 +26,6 @@ public class AddExtraFieldsToDocument extends Processor {
         super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
-    //TODO This is a tempoarry hack to avoid producing illegal code for fields not wanted anyway.
-    private boolean dirtyLegalFieldNameCheck(String fieldName) {
-        return ! fieldName.contains(".") && !"rankfeatures".equals(fieldName) && !"summaryfeatures".equals(fieldName);
-    }
-
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         SDDocumentType document = schema.getDocument();
@@ -38,10 +33,21 @@ public class AddExtraFieldsToDocument extends Processor {
             for (SDField field : schema.extraFieldList()) {
                 addSdField(schema, document, field, validate);
             }
-            //TODO Vespa 8 or sooner we should avoid the dirty addition of fields from dirty 'default' summary to document at all
-            for (SummaryField field : schema.getSummary("default").getSummaryFields().values()) {
-                if (dirtyLegalFieldNameCheck(field.getName())) {
-                    addSummaryField(schema, document, field, validate);
+            for (var docsum : schema.getSummaries().values()) {
+                for (var summaryField : docsum.getSummaryFields().values()) {
+                    switch (summaryField.getTransform()) {
+                    case NONE:
+                    case BOLDED:
+                    case DYNAMICBOLDED:
+                    case DYNAMICTEASER:
+                    case TEXTEXTRACTOR:
+                        addSummaryField(schema, document, summaryField, validate);
+                        break;
+                    default:
+                        // skip: generated from attribute or similar,
+                        // so does not need to be included as an extra
+                        // field in the document type
+                    }
                 }
             }
         }
@@ -52,14 +58,7 @@ public class AddExtraFieldsToDocument extends Processor {
             return;
         }
         for (Attribute atr : field.getAttributes().values()) {
-            // TODO Vespa 8 or before: Check if this should be removed or changed to _zcurve.
-            if (atr.getName().equals(field.getName() + "_position")) {
-                DataType type = PositionDataType.INSTANCE;
-                if (atr.getCollectionType().equals(Attribute.CollectionType.ARRAY)) {
-                    type = DataType.getArray(type);
-                }
-                addField(schema, document, new SDField(document, atr.getName(), type), validate);
-            } else if (!atr.getName().equals(field.getName())) {
+            if (!atr.getName().equals(field.getName())) {
                 addField(schema, document, new SDField(document, atr.getName(), atr.getDataType()), validate);
             }
         }

@@ -14,7 +14,6 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsFetcher;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
-import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.time.Duration;
@@ -35,7 +34,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     @Inject
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, InfraDeployer infraDeployer,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
-                                     Zone zone, Orchestrator orchestrator, Metric metric,
+                                     Zone zone, Metric metric,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource,
                                      MetricsFetcher metricsFetcher) {
         DefaultTimes defaults = new DefaultTimes(zone, deployer);
@@ -46,11 +45,11 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         maintainers.add(periodicApplicationMaintainer);
         maintainers.add(infrastructureProvisioner);
 
-        maintainers.add(new NodeFailer(deployer, nodeRepository, defaults.failGrace, defaults.nodeFailerInterval, orchestrator, defaults.throttlePolicy, metric));
+        maintainers.add(new NodeFailer(deployer, nodeRepository, defaults.failGrace, defaults.nodeFailerInterval, defaults.throttlePolicy, metric));
         maintainers.add(new NodeHealthTracker(hostLivenessTracker, serviceMonitor, nodeRepository, defaults.nodeFailureStatusUpdateInterval, metric));
         maintainers.add(new ExpeditedChangeApplicationMaintainer(deployer, metric, nodeRepository, defaults.expeditedChangeRedeployInterval));
         maintainers.add(new ReservationExpirer(nodeRepository, defaults.reservationExpiry, metric));
-        maintainers.add(new RetiredExpirer(nodeRepository, orchestrator, deployer, metric, defaults.retiredInterval, defaults.retiredExpiry));
+        maintainers.add(new RetiredExpirer(nodeRepository, deployer, metric, defaults.retiredInterval, defaults.retiredExpiry));
         maintainers.add(new InactiveExpirer(nodeRepository, defaults.inactiveExpiry, Map.of(NodeType.config, defaults.inactiveConfigServerExpiry,
                                                                                             NodeType.controller, defaults.inactiveControllerExpiry),
                                             metric));
@@ -58,7 +57,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         maintainers.add(new DirtyExpirer(nodeRepository, defaults.dirtyExpiry, metric));
         maintainers.add(new ProvisionedExpirer(nodeRepository, defaults.provisionedExpiry, metric));
         maintainers.add(new NodeRebooter(nodeRepository, flagSource, metric));
-        maintainers.add(new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, defaults.metricsInterval));
+        maintainers.add(new MetricsReporter(nodeRepository, metric, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, defaults.metricsInterval));
         maintainers.add(new SpareCapacityMaintainer(deployer, nodeRepository, metric, defaults.spareCapacityMaintenanceInterval));
         maintainers.add(new OsUpgradeActivator(nodeRepository, defaults.osUpgradeActivatorInterval, metric));
         maintainers.add(new Rebalancer(deployer, nodeRepository, metric, defaults.rebalancerInterval));

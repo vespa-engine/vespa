@@ -106,7 +106,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
                 .orElse(null);
         if (tenantDomain == null) {
             if (explicitDomain == null) {
-                throw new IllegalStateException("No Athenz domain provided for 'access-control'");
+                throw new IllegalArgumentException("No Athenz domain provided for 'access-control'");
             }
             deployState.getDeployLogger().logApplicationPackage(Level.WARNING, "Athenz tenant is not provided by deploy call. This will soon be handled as failure.");
         }

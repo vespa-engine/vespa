@@ -330,7 +330,7 @@ public class TenantRepository {
     private Tenant createTenant(TenantName tenantName, Instant created) {
         if (tenants.containsKey(tenantName)) return getTenant(tenantName);
 
-        Instant start = Instant.now();
+        Instant start = clock.instant();
         log.log(Level.FINE, () -> "Adding tenant '" + tenantName);
         TenantApplications applicationRepo =
                 new TenantApplications(tenantName,
@@ -375,7 +375,7 @@ public class TenantRepository {
                                                                     configDefinitionRepo,
                                                                     zookeeperServerConfig.juteMaxBuffer());
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created +
-                            ". Bootstrapping in " + Duration.between(start, Instant.now()));
+                            ". Bootstrapping in " + Duration.between(start, clock.instant()));
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, created);
         createAndWriteTenantMetaData(tenant);
         tenants.putIfAbsent(tenantName, tenant);

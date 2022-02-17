@@ -12,10 +12,11 @@
 #include <vespa/messagebus/routing/routingtable.h>
 #include <vespa/messagebus/messagebus.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <vespa/log/log.h>
+#include <vespa/config/helper/configfetcher.hpp>
+#include <vespa/config/subscription/configuri.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".documentrouteselectorpolicy");
 
 using document::select::Result;
@@ -30,11 +31,13 @@ DocumentRouteSelectorPolicy::DocumentRouteSelectorPolicy(
     _lock(),
     _config(),
     _error("Not configured."),
-    _fetcher(configUri.getContext())
+    _fetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext()))
 {
-    _fetcher.subscribe<messagebus::protocol::DocumentrouteselectorpolicyConfig>(configUri.getConfigId(), this);
-    _fetcher.start();
+    _fetcher->subscribe<messagebus::protocol::DocumentrouteselectorpolicyConfig>(configUri.getConfigId(), this);
+    _fetcher->start();
 }
+
+DocumentRouteSelectorPolicy::~DocumentRouteSelectorPolicy() = default;
 
 void
 DocumentRouteSelectorPolicy::configure(std::unique_ptr<messagebus::protocol::DocumentrouteselectorpolicyConfig> cfg)

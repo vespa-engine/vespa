@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.derived.AbstractExportingTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
@@ -64,7 +64,7 @@ public class IndexingValidationTestCase extends AbstractExportingTestCase {
         assertIndexing(
                 Arrays.asList("clear_state | guard { input my_index | tokenize normalize stem:\"BEST\" | index my_index | summary my_index }",
                               "clear_state | guard { input my_input | tokenize normalize stem:\"BEST\" | index my_extra | summary my_extra }"),
-                SchemaBuilder.buildFromFile("src/test/examples/indexing_extra.sd"));
+                ApplicationBuilder.buildFromFile("src/test/examples/indexing_extra.sd"));
     }
 
     @Test

@@ -8,6 +8,7 @@ import java.io.File;
  * @author ollivir
  */
 public class TestUtilities {
+
     public static ClassFileMetaData analyzeClass(Class<?> clazz) {
         return Analyze.analyzeClass(classFile(name(clazz)));
     }
@@ -19,4 +20,5 @@ public class TestUtilities {
     public static String name(Class<?> clazz) {
         return clazz.getName();
     }
+
 }

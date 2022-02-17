@@ -44,7 +44,7 @@ TEST("require that correct pid file succeeds") {
     FastOS_File::MakeDirIfNotPresentOrExit("var/run");
     FastOS_File pid_file("var/run/configproxy.pid");
     pid_file.OpenWriteOnlyTruncate();
-    pid_file.Close();
+    ASSERT_TRUE(pid_file.Close());
 
     ASSERT_EQUAL(0, setenv(VESPA_HOME, cwd, 1));
     vespa::Defaults::bootstrap(cwd);

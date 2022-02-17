@@ -556,8 +556,8 @@ public class ApplicationHandlerTest {
 
         { // Known service
             HttpResponse response = createResponse(new ServiceResponse(ServiceResponse.Status.ok,
-                                                                       3L,
-                                                                       3L,
+                                                                       3,
+                                                                       3,
                                                                        true),
                                                    hostAndPort,
                                                    uri);
@@ -601,9 +601,9 @@ public class ApplicationHandlerTest {
         {
             HttpServiceListResponse response =
                     new HttpServiceListResponse(new ServiceListResponse(Map.of(createServiceInfo(hostname, port), 3L),
-                                                                        requestUrl,
                                                                         3L,
-                                                                        3L));
+                                                                        3L),
+                                                requestUrl);
             assertResponse("{\n" +
                                    "  \"services\": [\n" +
                                    "    {\n" +
@@ -635,9 +635,9 @@ public class ApplicationHandlerTest {
 
             HttpServiceListResponse response =
                     new HttpServiceListResponse(new ServiceListResponse(serviceInfos,
-                                                                        requestUrl,
                                                                         4L,
-                                                                        3L));
+                                                                        3L),
+                                                requestUrl);
             assertResponse("{\n" +
                                    "  \"services\": [\n" +
                                    "    {\n" +
@@ -756,7 +756,7 @@ public class ApplicationHandlerTest {
                           "/environment/" + zone.environment().value() +
                           "/region/" + zone.region().value() +
                           "/instance/" + applicationId.instance().value() + "\"]";
-        ListApplicationsHandler listApplicationsHandler = new ListApplicationsHandler(ListApplicationsHandler.testOnlyContext(),
+        ListApplicationsHandler listApplicationsHandler = new ListApplicationsHandler(ListApplicationsHandler.testContext(),
                                                                                       tenantRepository,
                                                                                       Zone.defaultZone());
         ListApplicationsHandlerTest.assertResponse(listApplicationsHandler,
@@ -808,7 +808,7 @@ public class ApplicationHandlerTest {
     }
 
     private ApplicationHandler createApplicationHandler(ApplicationRepository applicationRepository) {
-        return new ApplicationHandler(ApplicationHandler.testOnlyContext(), Zone.defaultZone(), applicationRepository);
+        return new ApplicationHandler(ApplicationHandler.testContext(), Zone.defaultZone(), applicationRepository);
     }
 
     private PrepareParams prepareParams(ApplicationId applicationId) {

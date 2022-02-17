@@ -3,6 +3,7 @@
 #include "process_memory_stats.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <algorithm>
+#include <vector>
 
 #include <vespa/log/log.h>
 

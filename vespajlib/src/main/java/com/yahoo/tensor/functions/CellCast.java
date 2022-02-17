@@ -107,7 +107,7 @@ public class CellCast<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAM
     }
 
     @Override
-    public String toString(ToStringContext context) {
+    public String toString(ToStringContext<NAMETYPE> context) {
         return "cell_cast(" + argument.toString(context) + ", " + valueType + ")";
     }
 

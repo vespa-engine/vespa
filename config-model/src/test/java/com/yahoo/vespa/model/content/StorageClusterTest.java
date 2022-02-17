@@ -160,21 +160,22 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void ignore_merge_queue_limit_can_be_controlled_by_feature_flag() {
-        var config = configFromProperties(new TestProperties().setIgnoreMergeQueueLimit(true));
-        assertTrue(config.disable_queue_limits_for_chained_merges());
-
-        config = configFromProperties(new TestProperties().setIgnoreMergeQueueLimit(false));
-        assertFalse(config.disable_queue_limits_for_chained_merges());
+    public void merge_throttling_policy_config_defaults_to_static() {
+        var config = configFromProperties(new TestProperties());
+        assertEquals(StorServerConfig.Merge_throttling_policy.Type.STATIC, config.merge_throttling_policy().type());
     }
 
     @Test
-    public void async_apply_bucket_diff_can_be_controlled_by_feature_flag() {
-        var config = filestorConfigFromProperties(new TestProperties());
-        assertTrue(config.async_apply_bucket_diff());
+    public void merge_throttling_policy_config_is_derived_from_flag() {
+        var config = configFromProperties(new TestProperties().setMergeThrottlingPolicy("STATIC"));
+        assertEquals(StorServerConfig.Merge_throttling_policy.Type.STATIC, config.merge_throttling_policy().type());
 
-        config = filestorConfigFromProperties(new TestProperties().setAsyncApplyBucketDiff(false));
-        assertFalse(config.async_apply_bucket_diff());
+        config = configFromProperties(new TestProperties().setMergeThrottlingPolicy("DYNAMIC"));
+        assertEquals(StorServerConfig.Merge_throttling_policy.Type.DYNAMIC, config.merge_throttling_policy().type());
+
+        // Invalid enum values fall back to the default
+        config = configFromProperties(new TestProperties().setMergeThrottlingPolicy("UKULELE"));
+        assertEquals(StorServerConfig.Merge_throttling_policy.Type.STATIC, config.merge_throttling_policy().type());
     }
 
     @Test
@@ -308,20 +309,40 @@ public class StorageClusterTest {
     @Test
     public void persistence_async_throttle_config_defaults_to_unlimited() {
         var config = filestorConfigFromProducer(simpleCluster(new TestProperties()));
-        assertEquals(StorFilestorConfig.Async_operation_throttler_type.UNLIMITED, config.async_operation_throttler_type());
+        assertEquals(StorFilestorConfig.Async_operation_throttler_type.UNLIMITED, config.async_operation_throttler_type()); // TODO remove
+        assertEquals(StorFilestorConfig.Async_operation_throttler.Type.UNLIMITED, config.async_operation_throttler().type());
     }
 
     @Test
     public void persistence_async_throttle_config_is_derived_from_flag() {
         var config = filestorConfigFromProducer(simpleCluster(new TestProperties().setPersistenceAsyncThrottling("UNLIMITED")));
-        assertEquals(StorFilestorConfig.Async_operation_throttler_type.UNLIMITED, config.async_operation_throttler_type());
+        assertEquals(StorFilestorConfig.Async_operation_throttler_type.UNLIMITED, config.async_operation_throttler_type()); // TODO remove
+        assertEquals(StorFilestorConfig.Async_operation_throttler.Type.UNLIMITED, config.async_operation_throttler().type());
 
         config = filestorConfigFromProducer(simpleCluster(new TestProperties().setPersistenceAsyncThrottling("DYNAMIC")));
-        assertEquals(StorFilestorConfig.Async_operation_throttler_type.DYNAMIC, config.async_operation_throttler_type());
+        assertEquals(StorFilestorConfig.Async_operation_throttler_type.DYNAMIC, config.async_operation_throttler_type()); // TODO remove
+        assertEquals(StorFilestorConfig.Async_operation_throttler.Type.DYNAMIC, config.async_operation_throttler().type());
 
         // Invalid enum values fall back to the default
         config = filestorConfigFromProducer(simpleCluster(new TestProperties().setPersistenceAsyncThrottling("BANANAS")));
-        assertEquals(StorFilestorConfig.Async_operation_throttler_type.UNLIMITED, config.async_operation_throttler_type());
+        assertEquals(StorFilestorConfig.Async_operation_throttler_type.UNLIMITED, config.async_operation_throttler_type()); // TODO remove
+        assertEquals(StorFilestorConfig.Async_operation_throttler.Type.UNLIMITED, config.async_operation_throttler().type());
+    }
+
+    @Test
+    public void persistence_dynamic_throttling_parameters_have_sane_defaults() {
+        var config = filestorConfigFromProducer(simpleCluster(new TestProperties()));
+        assertEquals(1.2, config.async_operation_throttler().window_size_decrement_factor(), 0.0001);
+        assertEquals(0.95, config.async_operation_throttler().window_size_backoff(), 0.0001);
+    }
+
+    @Test
+    public void persistence_dynamic_throttling_parameters_can_be_set_through_feature_flags() {
+        var config = filestorConfigFromProducer(simpleCluster(new TestProperties()
+                .setPersistenceThrottlingWsDecrementFactor(1.5)
+                .setPersistenceThrottlingWsBackoff(0.8)));
+        assertEquals(1.5, config.async_operation_throttler().window_size_decrement_factor(), 0.0001);
+        assertEquals(0.8, config.async_operation_throttler().window_size_backoff(), 0.0001);
     }
 
     @Test
@@ -432,8 +453,8 @@ public class StorageClusterTest {
             ContentClusterUtils.createCluster(xml, root);
             fail("Did not fail when having both group and nodes");
         } catch (RuntimeException e) {
-            e.printStackTrace();
-            assertEquals("Both group and nodes exists, only one of these tags is legal", e.getMessage());
+            assertEquals("Both <group> and <nodes> is specified: Only one of these tags can be used in the same configuration",
+                         e.getMessage());
         }
     }
 

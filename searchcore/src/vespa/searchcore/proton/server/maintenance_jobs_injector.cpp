@@ -17,7 +17,7 @@ namespace proton {
 namespace {
 
 IMaintenanceJob::UP
-trackJob(IJobTracker::SP tracker, std::shared_ptr<IMaintenanceJob> job)
+trackJob(std::shared_ptr<IJobTracker> tracker, std::shared_ptr<IMaintenanceJob> job)
 {
     return std::make_unique<JobTrackedMaintenanceJob>(std::move(tracker), std::move(job));
 }
@@ -28,7 +28,7 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
                              storage::spi::BucketExecutor & bucketExecutor,
                              ILidSpaceCompactionHandler::Vector lscHandlers,
                              IOperationStorer &opStorer,
-                             IJobTracker::SP tracker,
+                             std::shared_ptr<IJobTracker> tracker,
                              IDiskMemUsageNotifier &diskMemUsageNotifier,
                              IClusterStateChangedNotifier &clusterStateChangedNotifier,
                              const std::shared_ptr<IBucketStateCalculator> &calc,
@@ -89,7 +89,8 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     AttributeUsageFilter &attributeUsageFilter)
 {
     controller.registerJobInMasterThread(std::make_unique<HeartBeatJob>(hbHandler, config.getHeartBeatConfig()));
-    controller.registerJobInDefaultPool(std::make_unique<PruneSessionCacheJob>(scPruner, config.getSessionCachePruneInterval()));
+    controller.registerJobInSharedExecutor(
+            std::make_unique<PruneSessionCacheJob>(scPruner, config.getSessionCachePruneInterval()));
 
     const auto & docTypeName = controller.getDocTypeName().getName();
     const MaintenanceDocumentSubDB &mRemSubDB(controller.getRemSubDB());

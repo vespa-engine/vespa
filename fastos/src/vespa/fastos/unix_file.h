@@ -58,10 +58,10 @@ public:
     { }
 
     void ReadBuf(void *buffer, size_t length, int64_t readOffset) override;
-    ssize_t Read(void *buffer, size_t len) override;
-    ssize_t Write2(const void *buffer, size_t len) override;
+    [[nodiscard]] ssize_t Read(void *buffer, size_t len) override;
+    [[nodiscard]] ssize_t Write2(const void *buffer, size_t len) override;
     bool Open(unsigned int openFlags, const char *filename) override;
-    bool Close() override;
+    [[nodiscard]] bool Close() override;
     bool IsOpened() const override { return _filedes >= 0; }
 
     void enableMemoryMap(int flags) override {
@@ -87,7 +87,7 @@ public:
     int64_t GetSize() override;
     time_t GetModificationTime() override;
     bool Delete() override;
-    bool Sync() override;
+    [[nodiscard]] bool Sync() override;
     bool SetSize(int64_t newSize) override;
     void dropFromCache() const override;
 

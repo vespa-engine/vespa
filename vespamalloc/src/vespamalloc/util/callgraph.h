@@ -11,7 +11,7 @@ template<typename T, typename AddSub>
 class CallGraphNode
 {
 public:
-    CallGraphNode() : _callers(NULL), _next(NULL), _content(), _count(0) { }
+    CallGraphNode() : _callers(nullptr), _next(nullptr), _content(), _count(0) { }
     const CallGraphNode *next()    const { return _next; }
     const CallGraphNode *callers() const { return _callers; }
     const T & content()            const { return _content; }
@@ -21,7 +21,7 @@ public:
     size_t count()                 const { return _count; }
     void content(const T & v)            { _content = v; }
     template <typename Store>
-    bool addStack(T * stack, size_t nelem, Store & store);
+    bool addStack(const T * stack, size_t nelem, Store & store);
     template<typename Object>
     void traverseDepth(size_t depth, size_t width, Object func);
     template<typename Object>
@@ -38,16 +38,16 @@ private:
 
 template<typename T, typename AddSub>
 template <typename Store>
-bool CallGraphNode<T, AddSub>::addStack(T * stack, size_t nelem, Store & store) {
+bool CallGraphNode<T, AddSub>::addStack(const T * stack, size_t nelem, Store & store) {
     bool retval(false);
     if (nelem == 0) {
         retval = true;
     } else if (_content == stack[0]) {
         _count++;
         if (nelem > 1) {
-            if (_callers == NULL) {
+            if (_callers == nullptr) {
                 _callers = store.alloc();
-                if (_callers != NULL) {
+                if (_callers != nullptr) {
                     _callers->content(stack[1]);
                 }
             }
@@ -58,9 +58,9 @@ bool CallGraphNode<T, AddSub>::addStack(T * stack, size_t nelem, Store & store) 
             retval = true;
         }
     } else {
-        if (_next == NULL) {
+        if (_next == nullptr) {
             _next = store.alloc();
-            if (_next != NULL) {
+            if (_next != nullptr) {
                 _next->content(stack[0]);
             }
         }
@@ -102,7 +102,7 @@ class ArrayStore
 {
 public:
     ArrayStore() : _used(0) { }
-    T * alloc() { return (_used < MaxElem) ? &_array[_used++] : NULL; }
+    T * alloc() { return (_used < MaxElem) ? &_array[_used++] : nullptr; }
     AddSub size() const { return _used; }
 private:
     AddSub _used;
@@ -113,19 +113,19 @@ template <typename Content, size_t MaxElems, typename AddSub>
 class CallGraph
 {
 public:
-    typedef CallGraphNode<Content, AddSub> Node;
+    using Node = CallGraphNode<Content, AddSub>;
 
     CallGraph() :
-        _root(NULL),
-        _nodeStore(new NodeStore())
+        _root(nullptr),
+        _nodeStore(std::make_unique<NodeStore>())
     { }
     CallGraph(Content root) :
-        _root(NULL),
-        _nodeStore(new NodeStore())
+        _root(nullptr),
+        _nodeStore(std::make_unique<NodeStore>())
     {
         checkOrSetRoot(root);
     }
-    bool addStack(Content * stack, size_t nelem) {
+    bool addStack(const Content * stack, size_t nelem) {
         checkOrSetRoot(stack[0]);
         return _root->addStack(stack, nelem, *_nodeStore);
     }
@@ -143,14 +143,14 @@ private:
     CallGraph(const CallGraph &);
     CallGraph & operator = (const CallGraph &);
     bool checkOrSetRoot(const Content & root) {
-        if (_root == NULL) {
+        if (_root == nullptr) {
             _root = _nodeStore->alloc();
             _root->content(root);
         }
-        return (_root != NULL);
+        return (_root != nullptr);
     }
     typedef ArrayStore<Node, MaxElems, AddSub> NodeStore;
-    Node      * _root;
+    Node                       * _root;
     std::unique_ptr<NodeStore>   _nodeStore;
 };
 

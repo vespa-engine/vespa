@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application.pkg;
 
+import com.google.common.hash.Funnel;
 import com.google.common.hash.Hashing;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.FileSystemWrapper;
@@ -37,8 +38,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toMap;
@@ -62,6 +66,7 @@ public class ApplicationPackage {
     private static final String servicesFile = "services.xml";
 
     private final String contentHash;
+    private final String bundleHash; // Hash of all files except deployment.xml and build-meta
     private final byte[] zippedContent;
     private final DeploymentSpec deploymentSpec;
     private final ValidationOverrides validationOverrides;
@@ -102,6 +107,8 @@ public class ApplicationPackage {
         this.buildTime = buildMetaObject.flatMap(object -> parse(object, "buildTime", field -> Instant.ofEpochMilli(field.asLong())));
 
         this.trustedCertificates = files.get(trustedCertificatesFile).map(bytes -> X509CertificateUtils.certificateListFromPem(new String(bytes, UTF_8))).orElse(List.of());
+
+        this.bundleHash = calculateBundleHash();
     }
 
     /** Returns a copy of this with the given certificate appended. */
@@ -117,6 +124,10 @@ public class ApplicationPackage {
 
     /** Returns a hash of the content of this package */
     public String hash() { return contentHash; }
+
+    public String bundleHash() {
+        return bundleHash;
+    }
     
     /** Returns the content of this package. The content <b>must not</b> be modified. */
     public byte[] zippedContent() { return zippedContent; }
@@ -207,6 +218,17 @@ public class ApplicationPackage {
         validationOverridesContents.append("</validation-overrides>\n");
 
         return ValidationOverrides.fromXml(validationOverridesContents.toString());
+    }
+
+    // Hashes all files that require a deployment to be forwarded to configservers
+    private String calculateBundleHash() {
+        Predicate<String> entryMatcher = name -> !name.endsWith(deploymentFile) && !name.endsWith(buildMetaFile);
+        SortedMap<String, Long> entryCRCs = ZipStreamReader.getEntryCRCs(new ByteArrayInputStream(zippedContent), entryMatcher);
+        Funnel<SortedMap<String, Long>> funnel = (from, into) -> from.entrySet().forEach(entry -> {
+            into.putBytes(entry.getKey().getBytes());
+            into.putLong(entry.getValue());
+        });
+        return Hashing.sha1().hashObject(entryCRCs, funnel).toString();
     }
 
 

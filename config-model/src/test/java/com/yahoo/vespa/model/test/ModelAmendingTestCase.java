@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.test;
 
 import com.yahoo.component.ComponentId;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelRegistry;
@@ -10,6 +9,7 @@ import com.yahoo.config.model.MapConfigModelRegistry;
 import com.yahoo.config.model.admin.AdminModel;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
@@ -152,13 +152,13 @@ public class ModelAmendingTestCase {
         @Override
         public void doBuild(AdminModelAmender model, Element spec, ConfigModelContext modelContext) {
             for (AdminModel adminModel : model.adminModels)
-                amend(modelContext.getDeployLogger(), adminModel);
+                amend(modelContext.getDeployState(), adminModel);
         }
 
-        private void amend(DeployLogger deployLogger, AdminModel adminModel) {
+        private void amend(DeployState deployState, AdminModel adminModel) {
             for (HostResource host : adminModel.getAdmin().hostSystem().getHosts()) {
                 if ( ! host.getHost().getChildrenByTypeRecursive(AmendedService.class).isEmpty()) continue; // already amended
-                adminModel.getAdmin().addAndInitializeService(deployLogger, host, new AmendedService(host.getHost()));
+                adminModel.getAdmin().addAndInitializeService(deployState, host, new AmendedService(host.getHost()));
             }
         }
 

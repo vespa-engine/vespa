@@ -24,6 +24,7 @@ import com.yahoo.config.provision.TransientException;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
+import com.yahoo.vespa.model.application.validation.Validator;
 import com.yahoo.yolean.Exceptions;
 import org.xml.sax.SAXException;
 
@@ -50,11 +51,13 @@ public class VespaModelFactory implements ModelFactory {
     private final Zone zone;
     private final Clock clock;
     private final Version version;
+    private final List<Validator> additionalValidators;
 
     /** Creates a factory for Vespa models for this version of the source */
     @Inject
     public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
                              ComponentRegistry<MlModelImporter> modelImporters,
+                             ComponentRegistry<Validator> additionalValidators,
                              Zone zone) {
         this.version = new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
         List<ConfigModelBuilder> modelBuilders = new ArrayList<>();
@@ -66,6 +69,7 @@ public class VespaModelFactory implements ModelFactory {
         this.configModelRegistry = new MapConfigModelRegistry(modelBuilders);
         this.modelImporters = modelImporters.allComponents();
         this.zone = zone;
+        this.additionalValidators = List.copyOf(additionalValidators.allComponents());
 
         this.clock = Clock.systemUTC();
     }
@@ -91,6 +95,7 @@ public class VespaModelFactory implements ModelFactory {
             this.configModelRegistry = configModelRegistry;
         }
         this.modelImporters = Collections.emptyList();
+        this.additionalValidators = List.of();
         this.zone = zone;
         this.clock = clock;
     }
@@ -158,7 +163,7 @@ public class VespaModelFactory implements ModelFactory {
         try {
             return new VespaModel(configModelRegistry, deployState);
         } catch (IOException | SAXException e) {
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException(e);
         }
     }
 
@@ -197,7 +202,7 @@ public class VespaModelFactory implements ModelFactory {
 
     private List<ConfigChangeAction> validateModel(VespaModel model, DeployState deployState, ValidationParameters validationParameters) {
         try {
-            return Validation.validate(model, validationParameters, deployState);
+            return new Validation(additionalValidators).validate(model, validationParameters, deployState);
         } catch (ValidationOverrides.ValidationException e) {
             if (deployState.isHosted() && zone.environment().isManuallyDeployed())
                 deployState.getDeployLogger().logApplicationPackage(Level.WARNING,

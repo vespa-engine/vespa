@@ -91,7 +91,8 @@ public class RunSerializerTest {
                                                                         Optional.of(Instant.ofEpochMilli(100)),
                                                                         Optional.empty(),
                                                                         Optional.empty(),
-                                                                        true);
+                                                                        true,
+                                                                        Optional.empty());
         assertEquals(applicationVersion, run.versions().targetApplication());
         assertEquals(applicationVersion.authorEmail(), run.versions().targetApplication().authorEmail());
         assertEquals(applicationVersion.buildTime(), run.versions().targetApplication().buildTime());

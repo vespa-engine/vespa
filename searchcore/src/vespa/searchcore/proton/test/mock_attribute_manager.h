@@ -14,7 +14,7 @@ private:
     std::vector<search::AttributeVector*> _writables;
     std::unique_ptr<ImportedAttributesRepo> _importedAttributes;
     vespalib::ISequencedTaskExecutor* _writer;
-    vespalib::ThreadExecutor* _shared;
+    vespalib::Executor* _shared;
 
 public:
     MockAttributeManager()
@@ -33,7 +33,7 @@ public:
     void set_writer(vespalib::ISequencedTaskExecutor& writer) {
         _writer = &writer;
     }
-    void set_shared_executor(vespalib::ThreadExecutor& shared) {
+    void set_shared_executor(vespalib::Executor& shared) {
         _shared = &shared;
     }
     search::AttributeGuard::UP getAttribute(const vespalib::string &name) const override {
@@ -72,7 +72,7 @@ public:
         assert(_writer != nullptr);
         return *_writer;
     }
-    vespalib::ThreadExecutor& get_shared_executor() const override {
+    vespalib::Executor& get_shared_executor() const override {
         assert(_shared != nullptr);
         return *_shared;
     }

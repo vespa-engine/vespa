@@ -2,29 +2,30 @@
 #pragma once
 
 #include <vespa/config/common/source.h>
-#include <vespa/config/common/iconfigholder.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/noncopyable.hpp>
+#include <vespa/config/common/types.h>
 
 namespace config {
 
 class FileSpec;
 class DirSpec;
+class IConfigHolder;
 
-class FileSource : public Source,
-                   public vespalib::noncopyable
+class FileSource : public Source
 {
 private:
-    IConfigHolder::SP _holder;
+    std::shared_ptr<IConfigHolder> _holder;
     const vespalib::string _fileName;
     int64_t _lastLoaded;
     int64_t _generation;
 
-    std::vector<vespalib::string> readConfigFile(const vespalib::string & fileName);
+    StringVector readConfigFile(const vespalib::string & fileName);
     int64_t getLast(const vespalib::string & fileName);
 
 public:
-    FileSource(const IConfigHolder::SP & holder, const vespalib::string & fileName);
+    FileSource(std::shared_ptr<IConfigHolder> holder, const vespalib::string & fileName);
+    FileSource(const FileSource &) = delete;
+    FileSource & operator = (const FileSource &) = delete;
+    ~FileSource() override;
     void getConfig() override;
     void close() override;
     void reload(int64_t generation) override;

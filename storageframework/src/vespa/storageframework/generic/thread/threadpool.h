@@ -16,6 +16,8 @@
 #include <vespa/storageframework/generic/thread/runnable.h>
 #include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/storageframework/generic/clock/time.h>
+#include <vespa/vespalib/util/cpu_usage.h>
+#include <optional>
 #include <vector>
 
 namespace storage::framework {
@@ -32,7 +34,7 @@ private:
      * Time this thread should maximum use to process before a tick is
      * registered. (Including wait time if wait time is not set)
      */
-    std::atomic<vespalib::duration> _maxProcessTime;
+    vespalib::duration _maxProcessTime;
     /**
      * Time this thread will wait in a non-interrupted wait cycle.
      * Used in cases where a wait cycle is registered. As long as no other
@@ -40,28 +42,23 @@ private:
      * wait time here. The deadlock detector should add a configurable
      * global time period before flagging deadlock anyways.
      */
-    std::atomic<vespalib::duration> _waitTime;
+    vespalib::duration _waitTime;
     /**
      * Number of ticks to be done before a wait.
      */
-    std::atomic_uint _ticksBeforeWait;
+    uint32_t _ticksBeforeWait;
 
  public:
     ThreadProperties(vespalib::duration waitTime,
                      vespalib::duration maxProcessTime,
                      int ticksBeforeWait);
 
-    void setMaxProcessTime(vespalib::duration);
-    void setWaitTime(vespalib::duration);
-    void setTicksBeforeWait(int);
-
-    vespalib::duration getMaxProcessTime() const;
-    vespalib::duration getWaitTime() const;
-    int getTicksBeforeWait() const;
+    vespalib::duration getMaxProcessTime() const { return _maxProcessTime; }
+    vespalib::duration getWaitTime() const { return _waitTime; }
+    int getTicksBeforeWait() const { return _ticksBeforeWait; }
 
     vespalib::duration getMaxCycleTime() const {
-      return std::max(_maxProcessTime.load(std::memory_order_relaxed),
-                      _waitTime.load(std::memory_order_relaxed));
+      return std::max(_maxProcessTime, _waitTime);
     }
 };
 
@@ -88,7 +85,8 @@ struct ThreadPool {
                                    vespalib::stringref id,
                                    vespalib::duration waitTime,
                                    vespalib::duration maxProcessTime,
-                                   int ticksBeforeWait) = 0;
+                                   int ticksBeforeWait,
+                                   std::optional<vespalib::CpuUsage::Category> cpu_category) = 0;
 
     virtual void visitThreads(ThreadVisitor&) const = 0;
 };

@@ -19,8 +19,6 @@ private:
     std::mutex     &_lock;
 
 public:
-    typedef std::shared_ptr<JobTracker> SP;
-
     JobTracker(time_point now, std::mutex &lock);
 
     /**
@@ -29,10 +27,8 @@ public:
      */
     double sampleLoad(time_point now, const std::lock_guard<std::mutex> &guard);
 
-    // Implements IJobTracker
-    virtual void start() override;
-    virtual void end() override;
+    void start() override;
+    void end() override;
 };
 
-} // namespace proton
-
+}

@@ -31,7 +31,7 @@ const (
 	queryService    = "query"
 	documentService = "document"
 
-	waitRetryInterval = 2 * time.Second
+	retryInterval = 2 * time.Second
 )
 
 // Service represents a Vespa service.
@@ -291,6 +291,9 @@ func (t *cloudTarget) PrepareApiRequest(req *http.Request, sigKeyId string) erro
 
 func (t *cloudTarget) addAuth0AccessToken(request *http.Request) error {
 	a, err := auth0.GetAuth0(t.authConfigPath, t.systemName, t.apiURL)
+	if err != nil {
+		return err
+	}
 	system, err := a.PrepareSystem(auth0.ContextWithCancel())
 	if err != nil {
 		return err
@@ -412,7 +415,7 @@ func (t *cloudTarget) printLog(response jobResponse, last int64) int64 {
 	var msgs []logMessage
 	for step, stepMsgs := range response.Log {
 		for _, msg := range stepMsgs {
-			if step == "copyVespaLogs" && LogLevel(msg.Type) > t.logOptions.Level {
+			if step == "copyVespaLogs" && LogLevel(msg.Type) > t.logOptions.Level || LogLevel(msg.Type) == 3 {
 				continue
 			}
 			msgs = append(msgs, msg)
@@ -562,11 +565,11 @@ func wait(fn responseFunc, reqFn requestFunc, certificate *tls.Certificate, time
 				return statusCode, nil
 			}
 		}
-		timeLeft := deadline.Sub(time.Now())
-		if loopOnce || timeLeft < waitRetryInterval {
+		timeLeft := time.Until(deadline)
+		if loopOnce || timeLeft < retryInterval {
 			break
 		}
-		time.Sleep(waitRetryInterval)
+		time.Sleep(retryInterval)
 	}
 	return statusCode, httpErr
 }

@@ -42,6 +42,8 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import static org.junit.Assert.assertEquals;
 
@@ -89,12 +91,14 @@ public class ApplicationSerializerTest {
                                                                         Optional.of(Instant.ofEpochMilli(666)),
                                                                         Optional.empty(),
                                                                         Optional.of("best commit"),
-                                                                        true);
+                                                                        true,
+                                                                        Optional.of("hash1"));
         assertEquals("https://github/org/repo/tree/commit1", applicationVersion1.sourceUrl().get());
 
         ApplicationVersion applicationVersion2 = ApplicationVersion
                 .from(new SourceRevision("repo1", "branch1", "commit1"), 32, "a@b",
                       Version.fromString("6.3.1"), Instant.ofEpochMilli(496));
+        SortedSet<ApplicationVersion> versions = new TreeSet<>(Set.of(applicationVersion2));
         Instant activityAt = Instant.parse("2018-06-01T10:15:30.00Z");
         deployments.add(new Deployment(zone1, applicationVersion1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3),
                                        DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none, OptionalDouble.empty()));
@@ -120,13 +124,15 @@ public class ApplicationSerializerTest {
                                                         Map.of(JobType.systemTest, Instant.ofEpochMilli(333)),
                                                         List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of("us-west-1"))),
                                                         rotationStatus,
-                                                        Change.of(new Version("6.1"))),
+                                                        Change.of(new Version("6.1")),
+                                                        Optional.of(applicationVersion2)),
                                            new Instance(id3,
                                                         List.of(),
                                                         Map.of(),
                                                         List.of(),
                                                         RotationStatus.EMPTY,
-                                                        Change.of(Version.fromString("6.7")).withPin()));
+                                                        Change.of(Version.fromString("6.7")).withPin(),
+                                                        Optional.empty()));
 
         Application original = new Application(TenantAndApplicationId.from(id1),
                                                Instant.now().truncatedTo(ChronoUnit.MILLIS),
@@ -140,6 +146,7 @@ public class ApplicationSerializerTest {
                                                Set.of(publicKey, otherPublicKey),
                                                projectId,
                                                Optional.of(applicationVersion1),
+                                               versions,
                                                instances);
 
         Application serialized = APPLICATION_SERIALIZER.fromSlime(SlimeUtils.toJsonBytes(APPLICATION_SERIALIZER.toSlime(original)));
@@ -151,6 +158,10 @@ public class ApplicationSerializerTest {
         assertEquals(original.latestVersion().get().buildTime(), serialized.latestVersion().get().buildTime());
         assertEquals(original.latestVersion().get().sourceUrl(), serialized.latestVersion().get().sourceUrl());
         assertEquals(original.latestVersion().get().commit(), serialized.latestVersion().get().commit());
+        assertEquals(original.latestVersion().get().bundleHash(), serialized.latestVersion().get().bundleHash());
+        assertEquals(original.versions(), serialized.versions());
+        assertEquals(original.versions(), serialized.versions());
+
 
         assertEquals(original.deploymentSpec().xmlForm(), serialized.deploymentSpec().xmlForm());
         assertEquals(original.validationOverrides().xmlForm(), serialized.validationOverrides().xmlForm());
@@ -181,6 +192,9 @@ public class ApplicationSerializerTest {
 
         assertEquals(original.require(id1.instance()).change(), serialized.require(id1.instance()).change());
         assertEquals(original.require(id3.instance()).change(), serialized.require(id3.instance()).change());
+
+        assertEquals(original.require(id1.instance()).latestDeployed(), serialized.require(id1.instance()).latestDeployed());
+        assertEquals(original.require(id3.instance()).latestDeployed(), serialized.require(id3.instance()).latestDeployed());
 
         // Test metrics
         assertEquals(original.metrics().queryServiceQuality(), serialized.metrics().queryServiceQuality(), Double.MIN_VALUE);

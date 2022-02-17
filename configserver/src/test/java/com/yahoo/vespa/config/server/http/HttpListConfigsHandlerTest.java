@@ -70,7 +70,7 @@ public class HttpListConfigsHandlerTest {
                 .build();
         applicationRepository.deploy(testApp, prepareParams());
 
-        HttpListConfigsHandler.Context ctx = HttpListConfigsHandler.testOnlyContext();
+        HttpListConfigsHandler.Context ctx = HttpListConfigsHandler.testContext();
         handler = new HttpListConfigsHandler(ctx, tenantRepository);
         namedHandler = new HttpListNamedConfigsHandler(ctx, tenantRepository);
     }

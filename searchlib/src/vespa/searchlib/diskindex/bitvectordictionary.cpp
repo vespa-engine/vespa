@@ -19,12 +19,7 @@ BitVectorDictionary::BitVectorDictionary()
 { }
 
 
-BitVectorDictionary::~BitVectorDictionary()
-{
-    if (_datFile) {
-        _datFile->Close();
-    }
-}
+BitVectorDictionary::~BitVectorDictionary() = default;
 
 
 bool
@@ -35,31 +30,33 @@ BitVectorDictionary::open(const vespalib::string &pathPrefix,
     vespalib::string booloccIdxName = pathPrefix + "boolocc" +
                                       getBitVectorKeyScopeSuffix(scope);
     vespalib::string booloccDatName = pathPrefix + "boolocc.bdat";
-    FastOS_File idxFile;
-    idxFile.OpenReadOnly(booloccIdxName.c_str());
-    if (!idxFile.IsOpened()) {
-        LOG(warning, "Could not open bitvector idx file '%s'",
-            booloccIdxName.c_str());
-        return false;
-    }
+    {
+        FastOS_File idxFile;
+        idxFile.OpenReadOnly(booloccIdxName.c_str());
+        if (!idxFile.IsOpened()) {
+            LOG(warning, "Could not open bitvector idx file '%s'",
+                booloccIdxName.c_str());
+            return false;
+        }
 
-    vespalib::FileHeader idxHeader;
-    uint32_t idxHeaderLen = idxHeader.readFile(idxFile);
-    idxFile.SetPosition(idxHeaderLen);
-    assert(idxHeader.hasTag("frozen"));
-    assert(idxHeader.hasTag("docIdLimit"));
-    assert(idxHeader.hasTag("numKeys"));
-    assert(idxHeader.getTag("frozen").asInteger() != 0);
-    _docIdLimit = idxHeader.getTag("docIdLimit").asInteger();
-    uint32_t numEntries = idxHeader.getTag("numKeys").asInteger();
+        vespalib::FileHeader idxHeader;
+        uint32_t idxHeaderLen = idxHeader.readFile(idxFile);
+        idxFile.SetPosition(idxHeaderLen);
+        assert(idxHeader.hasTag("frozen"));
+        assert(idxHeader.hasTag("docIdLimit"));
+        assert(idxHeader.hasTag("numKeys"));
+        assert(idxHeader.getTag("frozen").asInteger() != 0);
+        _docIdLimit = idxHeader.getTag("docIdLimit").asInteger();
+        uint32_t numEntries = idxHeader.getTag("numKeys").asInteger();
 
-    _entries.resize(numEntries);
-    size_t bufSize = sizeof(WordSingleKey) * numEntries;
-    assert(idxFile.GetSize() >= static_cast<int64_t>(idxHeaderLen + bufSize));
-    if (bufSize > 0) {
-        idxFile.Read(&_entries[0], bufSize);
+        _entries.resize(numEntries);
+        size_t bufSize = sizeof(WordSingleKey) * numEntries;
+        assert(idxFile.GetSize() >= static_cast<int64_t>(idxHeaderLen + bufSize));
+        if (bufSize > 0) {
+            ssize_t has_read = idxFile.Read(&_entries[0], bufSize);
+            assert(has_read == ssize_t(bufSize));
+        }
     }
-    idxFile.Close();
 
     _vectorSize = BitVector::getFileBytes(_docIdLimit);
     _datFile = std::make_unique<FastOS_File>();
@@ -79,7 +76,7 @@ BitVectorDictionary::open(const vespalib::string &pathPrefix,
     vespalib::FileHeader datHeader(64);
     _datHeaderLen = datHeader.readFile(*_datFile);
     assert(_datFile->GetSize() >=
-           static_cast<int64_t>(_vectorSize) * numEntries + _datHeaderLen);
+           static_cast<int64_t>(_vectorSize * _entries.size() + _datHeaderLen));
     return true;
 }
 

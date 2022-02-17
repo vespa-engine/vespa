@@ -63,8 +63,8 @@ public class ConstantTensorTransformer extends ExpressionTransformer<RankProfile
 
         TensorValue tensorValue = (TensorValue)value;
         String tensorType = tensorValue.asTensor().type().toString();
-        context.rankProperties().put(constantReference.toString() + ".value", tensorValue.toString());
-        context.rankProperties().put(constantReference.toString() + ".type", tensorType);
+        context.rankProperties().put(constantReference + ".value", tensorValue.toString());
+        context.rankProperties().put(constantReference + ".type", tensorType);
         return new ReferenceNode(constantReference);
     }
 

@@ -1,12 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "configkey.h"
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
+#include "types.h"
 #include <memory>
 
 namespace vespalib {
+    class asciistream;
     class Slime;
     namespace slime {
         struct Inspector;
@@ -19,7 +18,7 @@ namespace config {
 /**
  * Miscellaneous utility functions specific to config.
  */
-vespalib::string calculateContentXxhash64(const std::vector<vespalib::string> & fileContents);
+vespalib::string calculateContentXxhash64(const StringVector & fileContents);
 
 bool isGenerationNewer(int64_t newGen, int64_t oldGen);
 
@@ -33,5 +32,7 @@ typedef std::shared_ptr<const vespalib::Slime> SlimePtr;
  * Copy slime objects from under src to dest, recursively.
  */
 void copySlimeObject(const vespalib::slime::Inspector & src, vespalib::slime::Cursor & dest);
+
+StringVector getlines(vespalib::asciistream & is, char delim='\n');
 
 }

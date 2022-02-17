@@ -25,7 +25,7 @@ zookeeper_session_timeout double default=30.0
 master_zookeeper_cooldown_period double default=60.0
 
 ## Sets how many fleetcontrollers will gather state. A fleetcontroller
-## gathering state can take over quicker should ## the master fail.
+## gathering state can take over quicker should the master fail.
 ## If set to 1, only master will gather state. If set higher, others will
 ## also do so, prioritizing those fleetcontrollers likely to be the ones to
 ## take over if the master fails.
@@ -40,14 +40,14 @@ rpc_port int default=6500 restart
 ## Port where fleetcontroller listens for HTTP status request
 http_port int default=0 restart
 
-## Maximum number of milliseconds a storage will be automatically reported in
-## maintenance due to node recently being availble. (If 0, no time at all)
+## Maximum number of milliseconds a storage node will be automatically reported
+## in maintenance due to node recently being available. (If 0, no time at all)
 storage_transition_time int default=30000
 
 ## Maximum number of milliseconds a distributor will be automatically reported
-## in maintenance due to node recently being availble. (If 0, no time at all)
+## in maintenance due to node recently being available. (If 0, no time at all)
 ##
-## Currently default is 0.. Should probably be more then we know it is working
+## Currently default is 0.. Should probably be more when we know it is working
 ## correctly
 distributor_transition_time int default=0
 
@@ -190,7 +190,7 @@ determine_buckets_from_bucket_space_metric bool default=true
 # If one resource category from one content node is above the configured limit, feed is blocked.
 # This information is pushed to all distributor nodes via a new cluster state bundle.
 # The distributor nodes handle the actual feed blocking based on this information.
-enable_cluster_feed_block bool default=false
+enable_cluster_feed_block bool default=true
 
 # Contains all resource categories (key) with its corresponding feed block limit (value)
 # used when the cluster controller decides whether external feed should be blocked (or unblocked) in the entire cluster.

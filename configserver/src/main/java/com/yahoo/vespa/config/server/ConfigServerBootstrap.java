@@ -17,6 +17,7 @@ import com.yahoo.vespa.config.server.version.VersionState;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.yolean.Exceptions;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -73,6 +74,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private final RedeployingApplicationsFails exitIfRedeployingApplicationsFails;
     private final ExecutorService rpcServerExecutor;
     private final ConfigServerMaintenance configServerMaintenance;
+    private final Clock clock;
 
     @SuppressWarnings("unused") //  Injected component
     @Inject
@@ -83,21 +85,22 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
              applicationRepository.configserverConfig().hostedVespa()
                      ? VipStatusMode.VIP_STATUS_FILE
                      : VipStatusMode.VIP_STATUS_PROGRAMMATICALLY,
-             flagSource, convergence);
+             flagSource, convergence, Clock.systemUTC());
     }
 
     // For testing only
     ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server, VersionState versionState,
                           StateMonitor stateMonitor, VipStatus vipStatus, VipStatusMode vipStatusMode,
-                          FlagSource flagSource, ConfigConvergenceChecker convergence) {
+                          FlagSource flagSource, ConfigConvergenceChecker convergence, Clock clock) {
         this(applicationRepository, server, versionState, stateMonitor, vipStatus,
-             FOR_TESTING_NO_BOOTSTRAP_OF_APPS, CONTINUE, vipStatusMode, flagSource, convergence);
+             FOR_TESTING_NO_BOOTSTRAP_OF_APPS, CONTINUE, vipStatusMode, flagSource, convergence, clock);
     }
 
     private ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
                                   VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
                                   Mode mode, RedeployingApplicationsFails exitIfRedeployingApplicationsFails,
-                                  VipStatusMode vipStatusMode, FlagSource flagSource, ConfigConvergenceChecker convergence) {
+                                  VipStatusMode vipStatusMode, FlagSource flagSource, ConfigConvergenceChecker convergence,
+                                  Clock clock) {
         this.applicationRepository = applicationRepository;
         this.server = server;
         this.versionState = versionState;
@@ -107,6 +110,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         this.maxDurationOfRedeployment = Duration.ofSeconds(configserverConfig.maxDurationOfBootstrap());
         this.sleepTimeWhenRedeployingFails = Duration.ofSeconds(configserverConfig.sleepTimeWhenRedeployingFails());
         this.exitIfRedeployingApplicationsFails = exitIfRedeployingApplicationsFails;
+        this.clock = clock;
         rpcServerExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("config server RPC server"));
 
         configServerMaintenance = new ConfigServerMaintenance(configserverConfig,
@@ -197,8 +201,8 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private void startRpcServerWithFileDistribution() {
         rpcServerExecutor.execute(server);
 
-        Instant end = Instant.now().plus(Duration.ofSeconds(10));
-        while (!server.isRunning() && Instant.now().isBefore(end)) {
+        Instant end = clock.instant().plus(Duration.ofSeconds(10));
+        while (!server.isRunning() && clock.instant().isBefore(end)) {
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
@@ -220,7 +224,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     }
 
     private void redeployAllApplications() throws InterruptedException {
-        Instant end = Instant.now().plus(maxDurationOfRedeployment);
+        Instant end = clock.instant().plus(maxDurationOfRedeployment);
         List<ApplicationId> applicationsToRedeploy = applicationRepository.listApplications();
         Collections.shuffle(applicationsToRedeploy);
         long failCount = 0;
@@ -233,7 +237,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                 log.log(Level.INFO, "Redeployment of " + applicationsToRedeploy + " not finished, will retry in " + sleepTime);
                 Thread.sleep(sleepTime.toMillis());
             }
-        } while ( ! applicationsToRedeploy.isEmpty() && Instant.now().isBefore(end));
+        } while ( ! applicationsToRedeploy.isEmpty() && clock.instant().isBefore(end));
 
         if ( ! applicationsToRedeploy.isEmpty())
             throw new RuntimeException("Redeploying applications not finished after " + maxDurationOfRedeployment +
@@ -296,11 +300,11 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     }
 
     private void logProgress(LogState logState, int failedDeployments, int finishedDeployments) {
-        if ( ! Duration.between(logState.lastLogged, Instant.now()).minus(Duration.ofSeconds(10)).isNegative()
+        if ( ! Duration.between(logState.lastLogged, clock.instant()).minus(Duration.ofSeconds(10)).isNegative()
                 && (logState.failedDeployments != failedDeployments || logState.finishedDeployments != finishedDeployments)) {
             log.log(Level.INFO, () -> finishedDeployments + " of " + logState.applicationCount + " apps redeployed " +
                     "(" + failedDeployments + " failed)");
-            logState.update(Instant.now(), failedDeployments, finishedDeployments);
+            logState.update(clock.instant(), failedDeployments, finishedDeployments);
         }
     }
 

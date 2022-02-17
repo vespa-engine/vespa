@@ -1,7 +1,7 @@
 {
   "zones": [
     {
-      "routingMethod": "shared",
+      "routingMethod": "sharedLayer4",
       "environment": "test",
       "region": "us-east-1",
       "status": "in",
@@ -9,7 +9,7 @@
       "changedAt": 0
     },
     {
-      "routingMethod": "shared",
+      "routingMethod": "sharedLayer4",
       "environment": "staging",
       "region": "us-east-3",
       "status": "in",
@@ -17,7 +17,7 @@
       "changedAt": 0
     },
     {
-      "routingMethod": "shared",
+      "routingMethod": "sharedLayer4",
       "environment": "dev",
       "region": "us-east-1",
       "status": "in",
@@ -25,7 +25,7 @@
       "changedAt": 0
     },
     {
-      "routingMethod": "shared",
+      "routingMethod": "sharedLayer4",
       "environment": "dev",
       "region": "aws-us-east-2a",
       "status": "in",
@@ -33,7 +33,7 @@
       "changedAt": 0
     },
     {
-      "routingMethod": "shared",
+      "routingMethod": "sharedLayer4",
       "environment": "perf",
       "region": "us-east-3",
       "status": "in",
@@ -41,7 +41,7 @@
       "changedAt": 0
     },
     {
-      "routingMethod": "shared",
+      "routingMethod": "sharedLayer4",
       "environment": "prod",
       "region": "aws-us-east-1a",
       "status": "in",
@@ -49,7 +49,7 @@
       "changedAt": 0
     },
     {
-      "routingMethod": "shared",
+      "routingMethod": "sharedLayer4",
       "environment": "prod",
       "region": "ap-northeast-1",
       "status": "in",
@@ -57,7 +57,7 @@
       "changedAt": 0
     },
     {
-      "routingMethod": "shared",
+      "routingMethod": "sharedLayer4",
       "environment": "prod",
       "region": "ap-northeast-2",
       "status": "in",
@@ -65,7 +65,7 @@
       "changedAt": 0
     },
     {
-      "routingMethod": "shared",
+      "routingMethod": "sharedLayer4",
       "environment": "prod",
       "region": "ap-southeast-1",
       "status": "in",
@@ -73,7 +73,7 @@
       "changedAt": 0
     },
     {
-      "routingMethod": "shared",
+      "routingMethod": "sharedLayer4",
       "environment": "prod",
       "region": "us-east-3",
       "status": "in",
@@ -81,7 +81,7 @@
       "changedAt": 0
     },
     {
-      "routingMethod": "shared",
+      "routingMethod": "sharedLayer4",
       "environment": "prod",
       "region": "us-west-1",
       "status": "in",
@@ -89,7 +89,7 @@
       "changedAt": 0
     },
     {
-      "routingMethod": "shared",
+      "routingMethod": "sharedLayer4",
       "environment": "prod",
       "region": "us-central-1",
       "status": "in",
@@ -97,7 +97,7 @@
       "changedAt": 0
     },
     {
-      "routingMethod": "shared",
+      "routingMethod": "sharedLayer4",
       "environment": "prod",
       "region": "eu-west-1",
       "status": "in",

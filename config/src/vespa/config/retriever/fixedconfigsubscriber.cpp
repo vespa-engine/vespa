@@ -3,9 +3,9 @@
 
 namespace config {
 FixedConfigSubscriber::FixedConfigSubscriber(const ConfigKeySet & keySet,
-                                             const IConfigContext::SP & context,
+                                             std::shared_ptr<IConfigContext> context,
                                              milliseconds subscribeTimeout)
-    : _set(context),
+    : _set(std::move(context)),
       _subscriptionList()
 {
     for (const ConfigKey & key : keySet) {

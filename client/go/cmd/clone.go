@@ -45,62 +45,61 @@ directory can be overriden by setting the VESPA_CLI_CACHE_DIR environment
 variable.`,
 	Example:           "$ vespa clone vespa-cloud/album-recommendation my-app",
 	DisableAutoGenTag: true,
-	Run: func(cmd *cobra.Command, args []string) {
+	SilenceUsage:      true,
+	RunE: func(cmd *cobra.Command, args []string) error {
 		if listApps {
 			apps, err := listSampleApps()
 			if err != nil {
-				fatalErr(err, "Could not list sample applications")
-				return
+				return fmt.Errorf("could not list sample applications: %w", err)
 			}
 			for _, app := range apps {
 				log.Print(app)
 			}
-		} else {
-			if len(args) != 2 {
-				fatalErr(nil, "Expected exactly 2 arguments")
-				return
-			}
-			cloneApplication(args[0], args[1])
+			return nil
 		}
+		if len(args) != 2 {
+			return fmt.Errorf("expected exactly 2 arguments, got %d", len(args))
+		}
+		return cloneApplication(args[0], args[1])
 	},
 }
 
-func cloneApplication(source string, name string) {
-	zipFile := getSampleAppsZip()
+func cloneApplication(applicationName string, applicationDir string) error {
+	zipFile, err := getSampleAppsZip()
+	if err != nil {
+		return err
+	}
 	defer zipFile.Close()
 
-	zipReader, zipOpenError := zip.OpenReader(zipFile.Name())
-	if zipOpenError != nil {
-		fatalErr(zipOpenError, "Could not open sample apps zip '", color.Cyan(zipFile.Name()), "'")
-		return
+	r, err := zip.OpenReader(zipFile.Name())
+	if err != nil {
+		return fmt.Errorf("could not open sample apps zip '%s': %w", color.Cyan(zipFile.Name()), err)
 	}
-	defer zipReader.Close()
+	defer r.Close()
 
 	found := false
-	for _, f := range zipReader.File {
-		zipEntryPrefix := "sample-apps-master/" + source + "/"
-		if strings.HasPrefix(f.Name, zipEntryPrefix) {
+	for _, f := range r.File {
+		dirPrefix := "sample-apps-master/" + applicationName + "/"
+		if strings.HasPrefix(f.Name, dirPrefix) {
 			if !found { // Create destination directory lazily when source is found
-				createErr := os.Mkdir(name, 0755)
+				createErr := os.Mkdir(applicationDir, 0755)
 				if createErr != nil {
-					fatalErr(createErr, "Could not create directory '", color.Cyan(name), "'")
-					return
+					return fmt.Errorf("could not create directory '%s': %w", color.Cyan(applicationDir), createErr)
 				}
 			}
 			found = true
 
-			copyError := copy(f, name, zipEntryPrefix)
-			if copyError != nil {
-				fatalErr(copyError, "Could not copy zip entry '", color.Cyan(f.Name), "' to ", color.Cyan(name))
-				return
+			if err := copy(f, applicationDir, dirPrefix); err != nil {
+				return fmt.Errorf("could not copy zip entry '%s': %w", color.Cyan(f.Name), err)
 			}
 		}
 	}
 	if !found {
-		fatalErrHint(fmt.Errorf("Could not find source application '%s'", color.Cyan(source)), "Use -f to ignore the cache")
+		return errHint(fmt.Errorf("could not find source application '%s'", color.Cyan(applicationName)), "Use -f to ignore the cache")
 	} else {
-		log.Print("Created ", color.Cyan(name))
+		log.Print("Created ", color.Cyan(applicationDir))
 	}
+	return nil
 }
 
 func openOutputFile() (*os.File, error) {
@@ -126,72 +125,66 @@ func useCache(cacheFile *os.File) (bool, error) {
 	return stat.Size() > 0 && time.Now().Before(expiry), nil
 }
 
-func getSampleAppsZip() *os.File {
+func getSampleAppsZip() (*os.File, error) {
 	f, err := openOutputFile()
 	if err != nil {
-		fatalErr(err, "Could not determine location of cache file")
-		return nil
+		return nil, fmt.Errorf("could not determine location of cache file: %w", err)
 	}
 	useCache, err := useCache(f)
 	if err != nil {
-		fatalErr(err, "Could not determine cache status", "Try ignoring the cache with the -f flag")
-		return nil
+		return nil, errHint(fmt.Errorf("could not determine cache status: %w", err), "Try ignoring the cache with the -f flag")
 	}
 	if useCache {
 		log.Print(color.Yellow("Using cached sample apps ..."))
-		return f
+		return f, nil
 	}
-
 	err = util.Spinner(color.Yellow("Downloading sample apps ...").String(), func() error {
 		request, err := http.NewRequest("GET", "https://github.com/vespa-engine/sample-apps/archive/refs/heads/master.zip", nil)
 		if err != nil {
-			fatalErr(err, "Invalid URL")
-			return nil
+			return fmt.Errorf("invalid url: %w", err)
 		}
 		response, err := util.HttpDo(request, time.Minute*60, "GitHub")
 		if err != nil {
-			fatalErr(err, "Could not download sample apps from GitHub")
-			return nil
+			return fmt.Errorf("could not download sample apps: %w", err)
 		}
 		defer response.Body.Close()
 		if response.StatusCode != 200 {
-			fatalErr(nil, "Could not download sample apps from GitHub: ", response.StatusCode)
-			return nil
+			return fmt.Errorf("could not download sample apps: github returned status %d", response.StatusCode)
+		}
+		if err := f.Truncate(0); err != nil {
+			return fmt.Errorf("could not truncate sample apps file: %s: %w", f.Name(), err)
 		}
 		if _, err := io.Copy(f, response.Body); err != nil {
-			fatalErr(err, "Could not write sample apps to file: ", f.Name())
-			return nil
+			return fmt.Errorf("could not write sample apps to file: %s: %w", f.Name(), err)
 		}
-		return err
+		return nil
 	})
-
-	return f
+	return f, err
 }
 
 func copy(f *zip.File, destinationDir string, zipEntryPrefix string) error {
 	destinationPath := filepath.Join(destinationDir, filepath.FromSlash(strings.TrimPrefix(f.Name, zipEntryPrefix)))
 	if strings.HasSuffix(f.Name, "/") {
 		if f.Name != zipEntryPrefix { // root is already created
-			createError := os.Mkdir(destinationPath, 0755)
-			if createError != nil {
-				return createError
+			if err := os.Mkdir(destinationPath, 0755); err != nil {
+				return err
 			}
 		}
 	} else {
-		zipEntry, zipEntryOpenError := f.Open()
-		if zipEntryOpenError != nil {
-			return zipEntryOpenError
+		r, err := f.Open()
+		if err != nil {
+			return err
 		}
-		defer zipEntry.Close()
-
-		destination, createError := os.Create(destinationPath)
-		if createError != nil {
-			return createError
+		defer r.Close()
+		destination, err := os.Create(destinationPath)
+		if err != nil {
+			return err
 		}
-
-		_, copyError := io.Copy(destination, zipEntry)
-		if copyError != nil {
-			return copyError
+		if _, err := io.Copy(destination, r); err != nil {
+			return err
+		}
+		if err := os.Chmod(destinationPath, f.Mode()); err != nil {
+			return err
 		}
 	}
 	return nil

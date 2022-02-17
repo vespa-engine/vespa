@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.QueryTree;
 
@@ -19,6 +20,8 @@ public class QueryCanonicalizer {
     /** The name of the operation performed by this, for use in search chain ordering */
     public static final String queryCanonicalization = "queryCanonicalization";
 
+    private static final CompoundName MAX_QUERY_ITEMS = new CompoundName("maxQueryItems");
+
     /**
      * Validates this query and carries out possible operations on this query
      * which simplifies it without changing its semantics.
@@ -26,7 +29,17 @@ public class QueryCanonicalizer {
      * @return null if the query is valid, an error message if it is invalid
      */
     public static String canonicalize(Query query) {
-        return canonicalize(query.getModel().getQueryTree());
+        Integer maxQueryItems = query.properties().getInteger(MAX_QUERY_ITEMS, Integer.MAX_VALUE);
+        return canonicalize(query.getModel().getQueryTree(), maxQueryItems);
+    }
+
+    /**
+     * Canonicalizes this query, allowing any query tree size
+     *
+     * @return null if the query is valid, an error message if it is invalid
+     */
+    public static String canonicalize(QueryTree queryTree) {
+        return canonicalize(queryTree, Integer.MAX_VALUE);
     }
 
     /**
@@ -34,10 +47,12 @@ public class QueryCanonicalizer {
      * 
      * @return null if the query is valid, an error message if it is invalid
      */
-    public static String canonicalize(QueryTree query) {
+    private static String canonicalize(QueryTree query, Integer maxQueryItems) {
         ListIterator<Item> rootItemIterator = query.getItemIterator();
         CanonicalizationResult result = recursivelyCanonicalize(rootItemIterator.next(), rootItemIterator);
         if (query.isEmpty() && ! result.isError()) result = CanonicalizationResult.error("No query");
+        int itemCount = query.treeSize();
+        if (itemCount > maxQueryItems) result = CanonicalizationResult.error(String.format("Query tree exceeds allowed item count. Configured limit: %d - Item count: %d", maxQueryItems, itemCount));
         return result.error().orElse(null); // preserve old API, unfortunately
     }
 

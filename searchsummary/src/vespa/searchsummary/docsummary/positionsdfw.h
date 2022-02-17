@@ -3,6 +3,7 @@
 #pragma once
 
 #include "attributedfw.h"
+#include "resultconfig.h"
 #include <vespa/searchlib/common/geo_location_spec.h>
 
 namespace search::docsummary {
@@ -35,6 +36,8 @@ public:
 class AbsDistanceDFW : public LocationAttrDFW
 {
 private:
+    double kmMinDistance(uint32_t docid, GetDocsumsState *state,
+                         const std::vector<const GeoLoc *> &locations);
     uint64_t findMinDistance(uint32_t docid, GetDocsumsState *state,
                              const std::vector<const GeoLoc *> &locations);
 public:
@@ -43,22 +46,24 @@ public:
     bool IsGenerated() const override { return true; }
     void insertField(uint32_t docid, GetDocsumsState *state,
                      ResType type, vespalib::slime::Inserter &target) override;
+
+    static UP create(const char *attribute_name, IAttributeManager *index_man);
+
 };
 
 //--------------------------------------------------------------------------
 
 class PositionsDFW : public AttrDFW
 {
+private:
+    bool _useV8geoPositions;
 public:
     typedef std::unique_ptr<PositionsDFW> UP;
-
-    PositionsDFW(const vespalib::string & attrName);
-
+    PositionsDFW(const vespalib::string & attrName, bool useV8geoPositions);
     bool IsGenerated() const override { return true; }
     void insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) override;
+    static UP create(const char *attribute_name, IAttributeManager *index_man, bool useV8geoPositions);
 };
 
-PositionsDFW::UP createPositionsDFW(const char *attribute_name, IAttributeManager *index_man);
-AbsDistanceDFW::UP createAbsDistanceDFW(const char *attribute_name, IAttributeManager *index_man);
 
 }

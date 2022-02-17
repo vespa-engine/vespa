@@ -4,7 +4,6 @@
 #include <vespa/storageframework/defaultimplementation/component/testcomponentregister.h>
 #include <vespa/storageframework/generic/thread/tickingthread.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <thread>
 
@@ -86,7 +85,7 @@ MyApp::MyApp(int threadCount, bool doCritOverlapTest)
     : _critOverlapCounter(0),
       _doCritOverlapTest(doCritOverlapTest),
       _critOverlap(false),
-      _threadPool(TickingThreadPool::createDefault("testApp"))
+      _threadPool(TickingThreadPool::createDefault("testApp", 100ms))
 {
     for (int i=0; i<threadCount; ++i) {
         _threadPool->addThread(*this);
@@ -100,8 +99,7 @@ MyApp::~MyApp() = default;
 
 TEST(TickingThreadTest, test_ticks_before_wait_basic)
 {
-    TestComponentRegister testReg(
-            ComponentRegisterImpl::UP(new ComponentRegisterImpl));
+    TestComponentRegister testReg(std::make_unique<ComponentRegisterImpl>());
     int threadCount = 1;
     MyApp app(threadCount);
     app.start(testReg.getThreadPoolImpl());
@@ -114,29 +112,6 @@ TEST(TickingThreadTest, test_ticks_before_wait_basic)
         totalSleepMs++;
     }
     EXPECT_GT(totalSleepMs, 10);
-    app._threadPool->stop();
-}
-
-TEST(TickingThreadTest, test_ticks_before_wait_live_update)
-{
-    TestComponentRegister testReg = std::make_unique<ComponentRegisterImpl>();
-    int threadCount = 1;
-    MyApp app(threadCount);
-    // Configure thread pool to send bulks of 5000 ticks each second.
-    long unsigned int ticksBeforeWaitMs = 5000;
-    app.start(testReg.getThreadPoolImpl());
-    app._threadPool->updateParametersAllThreads(
-        1s, 234234ms, ticksBeforeWaitMs);
-
-    // Check that 5000 ticks are received instantly (usually <2 ms)
-    // (if live update is broken it will take more than an hour).
-    int maxAttempts = 120000;  // a bit more than 120 secs
-    while (app.getTotalNonCritTicks() < ticksBeforeWaitMs && maxAttempts-->0) {
-        std::this_thread::sleep_for(1ms);
-    }
-
-    EXPECT_GT(maxAttempts, 0);
-    EXPECT_GE(app.getTotalNonCritTicks(), ticksBeforeWaitMs);
     app._threadPool->stop();
 }
 

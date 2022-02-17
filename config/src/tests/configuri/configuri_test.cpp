@@ -1,7 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/config/config.h>
 #include <vespa/config/common/configcontext.h>
+#include <vespa/config/subscription/configsubscriber.hpp>
+#include <vespa/config/subscription/configuri.h>
 #include "config-my.h"
 
 using namespace config;
@@ -47,7 +48,7 @@ TEST("Require that URI can be created from  instance") {
 
 }
 
-TEST_F("Require that URI can be \"forked\"", IConfigContext::SP(new ConfigContext())) {
+TEST_F("Require that URI can be \"forked\"", std::shared_ptr<IConfigContext>(std::make_shared<ConfigContext>())) {
     assertConfigId("baz", ConfigUri("foo/bar").createWithNewId("baz"));
     ConfigUri parent("foo", f1);
     ConfigUri child = parent.createWithNewId("baz");

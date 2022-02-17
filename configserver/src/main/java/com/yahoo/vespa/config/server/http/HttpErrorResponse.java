@@ -2,13 +2,13 @@
 package com.yahoo.vespa.config.server.http;
 
 import com.yahoo.container.jdisc.HttpResponse;
-import java.util.logging.Level;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
@@ -50,7 +50,8 @@ public class HttpErrorResponse extends HttpResponse {
         UNKNOWN_VESPA_VERSION,
         PARENT_HOST_NOT_READY,
         CERTIFICATE_NOT_READY,
-        LOAD_BALANCER_NOT_READY
+        LOAD_BALANCER_NOT_READY,
+        CONFIG_NOT_CONVERGED
     }
 
     public static HttpErrorResponse notFoundError(String msg) {
@@ -99,6 +100,10 @@ public class HttpErrorResponse extends HttpResponse {
 
     public static HttpErrorResponse certificateNotReady(String msg) {
         return new HttpErrorResponse(CONFLICT, ErrorCode.CERTIFICATE_NOT_READY.name(), msg);
+    }
+
+    public static HttpErrorResponse configNotConverged(String msg) {
+        return new HttpErrorResponse(CONFLICT, ErrorCode.CONFIG_NOT_CONVERGED.name(), msg);
     }
 
     public static HttpErrorResponse loadBalancerNotReady(String msg) {

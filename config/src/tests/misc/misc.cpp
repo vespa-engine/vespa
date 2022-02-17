@@ -3,6 +3,7 @@
 #include <vespa/config/common/configupdate.h>
 #include <vespa/config/common/misc.h>
 #include <vespa/config/common/configvalue.h>
+#include <vespa/config/common/configkey.h>
 #include <vespa/config/common/errorcode.h>
 #include <vespa/config/common/vespa_version.h>
 #include <vespa/config/subscription/sourcespec.h>
@@ -12,7 +13,7 @@
 using namespace config;
 
 TEST("requireThatConfigUpdateWorks") {
-    std::vector<vespalib::string> lines;
+    StringVector lines;
     lines.push_back("foo");
 
     ConfigUpdate up(ConfigValue(lines, "myxxhash"), true, 1337);
@@ -25,13 +26,13 @@ TEST("requireThatConfigUpdateWorks") {
 }
 
 TEST("requireThatConfigValueWorks") {
-    std::vector<vespalib::string> lines;
+    StringVector lines;
     lines.push_back("myFooField \"bar\"");
-    ConfigValue v1(lines, calculateContentXxhash64(lines));
-    ConfigValue v2(lines, calculateContentXxhash64(lines));
-    ConfigValue v3(lines, calculateContentXxhash64(lines));
+    ConfigValue v1(lines);
+    ConfigValue v2(lines);
+    ConfigValue v3(lines);
     lines.push_back("myFooField \"bar2\"");
-    ConfigValue v4(lines, calculateContentXxhash64(lines));
+    ConfigValue v4(lines);
     ASSERT_TRUE(v1 == v2);
     ASSERT_TRUE(v1 == v3);
 }
@@ -108,11 +109,11 @@ TEST("requireThatConfigKeyWorks") {
 
 TEST("require that config key initializes schema")
 {
-    std::vector<vespalib::string> schema;
+    StringVector schema;
     schema.push_back("foo");
     schema.push_back("bar");
     ConfigKey key("id1", "def1", "namespace1", "xxhash1", schema);
-    const std::vector<vespalib::string> &vref(key.getDefSchema());
+    const StringVector &vref(key.getDefSchema());
     for (size_t i = 0; i < schema.size(); i++) {
         ASSERT_EQUAL(schema[i], vref[i]);
     }

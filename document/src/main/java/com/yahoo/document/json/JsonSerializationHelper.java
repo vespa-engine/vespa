@@ -25,6 +25,7 @@ import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.internal.GeoPosType;
 import com.yahoo.document.json.readers.TensorReader;
 import com.yahoo.document.json.readers.TensorRemoveUpdateReader;
 import com.yahoo.document.serialization.FieldWriter;
@@ -153,12 +154,32 @@ public class JsonSerializationHelper {
         });
     }
 
+    private static void serializeGeoPos(JsonGenerator generator, FieldBase field, Struct value, GeoPosType dataType) {
+        fieldNameIfNotNull(generator, field);
+        wrapIOException(() -> {
+                generator.writeStartObject();
+                generator.writeFieldName("lat");
+                generator.writeRawValue(dataType.fmtLatitude(value));
+                generator.writeFieldName("lng");
+                generator.writeRawValue(dataType.fmtLongitude(value));
+                generator.writeEndObject();
+        });
+    }
+
     public static void serializeStructField(FieldWriter fieldWriter, JsonGenerator generator, FieldBase field, Struct value) {
-        if (value.getDataType() == PositionDataType.INSTANCE) {
+        DataType dt = value.getDataType();
+        // TODO remove in Vespa 8:
+        if (dt == PositionDataType.INSTANCE) {
             serializeString(generator, field, PositionDataType.renderAsString(value));
             return;
         }
-
+        if (dt instanceof GeoPosType) {
+            var gpt = (GeoPosType)dt;
+            if (gpt.renderJsonAsVespa8()) {
+                serializeGeoPos(generator, field, value, gpt);
+                return;
+            }
+        }
         serializeStructuredField(fieldWriter, generator, field, value);
     }
 

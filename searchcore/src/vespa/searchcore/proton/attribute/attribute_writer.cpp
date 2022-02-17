@@ -14,10 +14,10 @@
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/tensor/prepare_result.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
-#include <vespa/vespalib/util/threadexecutor.h>
 #include <future>
 
 #include <vespa/log/log.h>
@@ -29,6 +29,7 @@ using namespace search;
 using ExecutorId = vespalib::ISequencedTaskExecutor::ExecutorId;
 using search::attribute::ImportedAttributeVector;
 using search::tensor::PrepareResult;
+using vespalib::CpuUsage;
 using vespalib::GateCallback;
 using vespalib::ISequencedTaskExecutor;
 
@@ -631,7 +632,7 @@ AttributeWriter::internalPut(SerialNum serialNum, const Document &doc, DocumentI
             wc.consider_build_field_paths(doc);
             auto prepare_task = std::make_unique<PreparePutTask>(serialNum, lid, wc, doc);
             auto complete_task = std::make_unique<CompletePutTask>(*prepare_task, onWriteDone);
-            _shared_executor.execute(std::move(prepare_task));
+            _shared_executor.execute(CpuUsage::wrap(std::move(prepare_task), CpuUsage::Category::WRITE));
             _attributeFieldWriter.executeTask(wc.getExecutorId(), std::move(complete_task));
         } else {
             if (allAttributes || wc.hasStructFieldAttribute()) {
@@ -781,7 +782,7 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
             auto complete_task = std::make_unique<CompletePutTask>(*prepare_task, onWriteDone);
             LOG(debug, "About to handle assign update as two phase put for docid %u in attribute vector '%s'",
                 lid, attrp->getName().c_str());
-            _shared_executor.execute(std::move(prepare_task));
+            _shared_executor.execute(CpuUsage::wrap(std::move(prepare_task), CpuUsage::Category::WRITE));
             _attributeFieldWriter.executeTask(itr->second.executor_id, std::move(complete_task));
         } else {
             args[itr->second.executor_id.getId()]->_updates.emplace_back(attrp, &fupd);

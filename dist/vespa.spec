@@ -51,6 +51,7 @@ BuildRequires: maven
 BuildRequires: python3-pytest
 %else
 BuildRequires: devtoolset-11-gcc-c++
+BuildRequires: devtoolset-11-libasan-devel
 BuildRequires: devtoolset-11-libatomic-devel
 BuildRequires: devtoolset-11-binutils
 BuildRequires: rh-maven35
@@ -66,11 +67,13 @@ BuildRequires: python3-devel
 %if 0%{?_centos_stream}
 BuildRequires: gcc-toolset-11-gcc-c++
 BuildRequires: gcc-toolset-11-binutils
+BuildRequires: gcc-toolset-11-libasan-devel
 BuildRequires: gcc-toolset-11-libatomic-devel
 %define _devtoolset_enable /opt/rh/gcc-toolset-11/enable
 %else
 BuildRequires: gcc-toolset-11-gcc-c++
 BuildRequires: gcc-toolset-11-binutils
+BuildRequires: gcc-toolset-11-libasan-devel
 BuildRequires: gcc-toolset-11-libatomic-devel
 %define _devtoolset_enable /opt/rh/gcc-toolset-11/enable
 %endif
@@ -90,6 +93,8 @@ BuildRequires: glibc-langpack-en
 %endif
 %if 0%{?fedora}
 BuildRequires: gcc-c++
+BuildRequires: libasan
+BuildRequires: libasan-static
 BuildRequires: libatomic
 BuildRequires: pybind11-devel
 BuildRequires: python3-pytest
@@ -124,7 +129,7 @@ BuildRequires: (llvm-devel >= 13.0.0 and llvm-devel < 14)
 BuildRequires: (llvm-devel >= 12.0.0 and llvm-devel < 13)
 %endif
 %else
-BuildRequires: (llvm-devel >= 10.0.1 and llvm-devel < 11)
+BuildRequires: (llvm-devel >= 12.0.1 and llvm-devel < 13)
 %endif
 BuildRequires: vespa-boost-devel >= 1.76.0-1
 BuildRequires: vespa-openssl-devel >= 1.1.1l-1
@@ -156,20 +161,6 @@ BuildRequires: openssl-devel
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.7.1
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
-%if 0%{?fc32}
-BuildRequires: protobuf-devel
-BuildRequires: llvm-devel >= 10.0.0
-BuildRequires: boost-devel >= 1.69
-BuildRequires: gtest-devel
-BuildRequires: gmock-devel
-%endif
-%if 0%{?fc33}
-BuildRequires: protobuf-devel
-BuildRequires: llvm-devel >= 11.0.0
-BuildRequires: boost-devel >= 1.73
-BuildRequires: gtest-devel
-BuildRequires: gmock-devel
-%endif
 %if 0%{?fc34}
 BuildRequires: protobuf-devel
 BuildRequires: llvm-devel >= 12.0.0
@@ -302,7 +293,7 @@ Requires: vespa-gtest = 1.11.0
 %define _vespa_llvm_version 12
 %endif
 %else
-%define _vespa_llvm_version 10
+%define _vespa_llvm_version 12
 %endif
 Requires: vespa-gtest = 1.11.0
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
@@ -316,12 +307,6 @@ Requires: gtest
 %endif
 %if 0%{?fedora}
 Requires: gtest
-%if 0%{?fc32}
-%define _vespa_llvm_version 10
-%endif
-%if 0%{?fc33}
-%define _vespa_llvm_version 11
-%endif
 %if 0%{?fc34}
 %define _vespa_llvm_version 12
 %endif
@@ -432,7 +417,7 @@ Requires: (llvm-libs >= 13.0.0 and llvm-libs < 14)
 Requires: (llvm-libs >= 12.0.0 and llvm-libs < 13)
 %endif
 %else
-Requires: (llvm-libs >= 10.0.1 and llvm-libs < 11)
+Requires: (llvm-libs >= 12.0.1 and llvm-libs < 13)
 %endif
 Requires: vespa-protobuf = 3.19.1
 %endif
@@ -442,12 +427,6 @@ Requires: protobuf
 %endif
 %if 0%{?fedora}
 Requires: protobuf
-%if 0%{?fc32}
-Requires: llvm-libs >= 10.0.0
-%endif
-%if 0%{?fc33}
-Requires: llvm-libs >= 11.0.0
-%endif
 %if 0%{?fc34}
 Requires: llvm-libs >= 12.0.0
 %endif

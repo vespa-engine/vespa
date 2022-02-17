@@ -4,14 +4,14 @@ package com.yahoo.jdisc.cloud.aws;
 import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.io.IOUtils;
+import com.yahoo.jdisc.cloud.aws.AwsParameterStore.AwsSettings;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.yolean.Exceptions;
-import com.yahoo.jdisc.cloud.aws.AwsParameterStore.AwsSettings;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  *
  * @author ogronnesby
  */
-public class AwsParameterStoreValidationHandler extends LoggingRequestHandler {
+public class AwsParameterStoreValidationHandler extends ThreadedHttpRequestHandler {
 
     private static final Logger log = Logger.getLogger(AwsParameterStoreValidationHandler.class.getName());
 

@@ -15,14 +15,14 @@ class FixedConfigSubscriber
 {
 public:
     using milliseconds = std::chrono::milliseconds;
-    FixedConfigSubscriber(const ConfigKeySet & keySet, const IConfigContext::SP & context, milliseconds subscribeTimeout);
+    FixedConfigSubscriber(const ConfigKeySet & keySet, std::shared_ptr<IConfigContext> context, milliseconds subscribeTimeout);
     bool nextGeneration(milliseconds timeoutInMillis);
     void close();
     int64_t getGeneration() const;
     ConfigSnapshot getConfigSnapshot() const;
 private:
     ConfigSubscriptionSet _set;
-    std::vector<ConfigSubscription::SP> _subscriptionList;
+    std::vector<std::shared_ptr<ConfigSubscription>> _subscriptionList;
 };
 
 } // namespace config

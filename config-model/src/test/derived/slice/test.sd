@@ -1,0 +1,23 @@
+search test {
+
+    document test {
+    }
+
+    rank-profile parent {
+
+        function inline myFunction() {
+            expression: myValue * query(myTensor){MY_KEY1} * mySlice(query(myTensor))
+        }
+
+        function inline myValue() {
+            expression: 4
+        }
+
+        function inline mySlice(myTensor) {
+            # TODO: We are missing type resolving across function calls in serialization,
+            #       so using the short form (without 'key') here will fail
+            expression: myTensor{key:MY_KEY2}
+        }
+    }
+
+}

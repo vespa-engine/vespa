@@ -133,7 +133,7 @@ func (ap *ApplicationPackage) zipReader(test bool) (io.ReadCloser, error) {
 	if !ap.IsZip() {
 		tempZip, err := ioutil.TempFile("", "vespa")
 		if err != nil {
-			return nil, fmt.Errorf("Could not create a temporary zip file for the application package: %w", err)
+			return nil, fmt.Errorf("could not create a temporary zip file for the application package: %w", err)
 		}
 		defer func() {
 			tempZip.Close()
@@ -146,7 +146,7 @@ func (ap *ApplicationPackage) zipReader(test bool) (io.ReadCloser, error) {
 	}
 	f, err := os.Open(zipFile)
 	if err != nil {
-		return nil, fmt.Errorf("Could not open application package at %s: %w", ap.Path, err)
+		return nil, fmt.Errorf("could not open application package at %s: %w", ap.Path, err)
 	}
 	return f, nil
 }
@@ -403,9 +403,9 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOpts) (int64, error) 
 
 func checkResponse(req *http.Request, response *http.Response, serviceDescription string) error {
 	if response.StatusCode/100 == 4 {
-		return fmt.Errorf("Invalid application package (%s)\n\n%s", response.Status, extractError(response.Body))
+		return fmt.Errorf("invalid application package (%s)\n%s", response.Status, extractError(response.Body))
 	} else if response.StatusCode != 200 {
-		return fmt.Errorf("Error from %s at %s (%s):\n%s", strings.ToLower(serviceDescription), req.URL.Host, response.Status, util.ReaderToJSON(response.Body))
+		return fmt.Errorf("error from %s at %s (%s):\n%s", strings.ToLower(serviceDescription), req.URL.Host, response.Status, util.ReaderToJSON(response.Body))
 	}
 	return nil
 }

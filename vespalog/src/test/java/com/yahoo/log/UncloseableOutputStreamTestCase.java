@@ -10,6 +10,7 @@ import java.io.OutputStream;
 /**
  * @author Simon Thoresen Hult
  */
+@SuppressWarnings("removal")
 public class UncloseableOutputStreamTestCase {
 
     @Test

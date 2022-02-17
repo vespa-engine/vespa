@@ -114,7 +114,7 @@ public class DocumentTypeManagerTestCase {
         assertSame(docType2, manager.getDocumentType(new DataTypeName("foo1")));
         assertSame(docType3, manager.getDocumentType(new DataTypeName("foo2")));
         assertSame(docType4, manager.getDocumentType(new DataTypeName("foo3")));
-        
+
         assertEquals(manager.getDocumentTypes().size(), 5);
         assertNotNull(manager.getDocumentTypes().get(new DataTypeName("document")));
         assertEquals(manager.getDocumentTypes().get(new DataTypeName("foo0")), docType1);
@@ -585,6 +585,18 @@ search annotationsimplicitstruct {
         assertTrue(docType.hasImportedField("my_cool_imported_field"));
         assertTrue(docType.hasImportedField("my_awesome_imported_field"));
         assertFalse(docType.hasImportedField("a_missing_imported_field"));
+    }
+
+    @Test
+    public void position_type_is_recognized_as_v8() {
+        var manager = DocumentTypeManager.fromFile("src/test/document/documentmanager.testv8pos.cfg");
+        var docType = manager.getDocumentType("foobar");
+        var simplepos = docType.getField("simplepos").getDataType();
+        assertTrue(simplepos instanceof StructDataType);
+        var arraypos = docType.getField("arraypos").getDataType();
+        assertTrue(arraypos instanceof ArrayDataType);
+        var array = (ArrayDataType) arraypos;
+        assertTrue(array.getNestedType() instanceof StructDataType);
     }
 
     // TODO test clone(). Also fieldSets not part of clone()..!

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.template;
 
+import com.yahoo.vespa.hosted.node.admin.task.util.file.FileWriter;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.text.CursorRange;
 
@@ -25,12 +26,15 @@ import java.util.Optional;
  *     id: a valid Java identifier
  * </pre>
  *
+ * <p>Other directive delimiters than "%{" and "}" may be used, see {@link TemplateDescriptor}.</p>
+ *
  * <p>Fill the template with variable values ({@link #set(String, String) set()}, set if conditions
  * ({@link #set(String, boolean)}), add list elements ({@link #add(String) add()}, etc, and finally
  * render it as a String ({@link #render()}).</p>
  *
  * <p>To reuse a template, create the template and work on snapshots of that ({@link #snapshot()}).</p>
  *
+ * @see TemplateDescriptor
  * @author hakonhall
  */
 public class Template implements Form {
@@ -83,6 +87,11 @@ public class Template implements Form {
         Template template = builder.build();
         values.forEach(template::set);
         return template;
+    }
+
+    public FileWriter getFileWriterTo(Path path) {
+        String content = render();
+        return new FileWriter(path, () -> content);
     }
 
     /** Must be called (if there is a parent) before any other method. */

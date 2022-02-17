@@ -5,9 +5,6 @@
 package cmd
 
 import (
-	"fmt"
-	"github.com/vespa-engine/vespa/client/go/util"
-	"github.com/vespa-engine/vespa/client/go/vespa"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -15,6 +12,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/vespa-engine/vespa/client/go/util"
+	"github.com/vespa-engine/vespa/client/go/vespa"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -40,7 +40,6 @@ func TestSuite(t *testing.T) {
 		requests = append(requests, createSearchRequest(baseUrl+"/search/"))
 	}
 	assertRequests(requests, client, t)
-	fmt.Println(outBytes)
 	assert.Equal(t, string(expectedBytes), outBytes)
 	assert.Equal(t, "", errBytes)
 }
@@ -51,7 +50,7 @@ func TestIllegalFileReference(t *testing.T) {
 	client.NextStatus(200)
 	_, errBytes := execute(command{args: []string{"test", "testdata/tests/production-test/illegal-reference.json"}}, t, client)
 	assertRequests([]*http.Request{createRequest("GET", "http://127.0.0.1:8080/search/", "{}")}, client, t)
-	assert.Equal(t, "\nError: path may not point outside src/test/application, but 'foo/../../../../this-is-not-ok.json' does\nHint: Error in Step 2\nHint: See https://cloud.vespa.ai/en/reference/testing\n", errBytes)
+	assert.Equal(t, "\nError: error in Step 2: path may not point outside src/test/application, but 'foo/../../../../this-is-not-ok.json' does\nHint: See https://cloud.vespa.ai/en/reference/testing\n", errBytes)
 }
 
 func TestProductionTest(t *testing.T) {
@@ -72,7 +71,7 @@ func TestTestWithoutAssertions(t *testing.T) {
 func TestSuiteWithoutTests(t *testing.T) {
 	client := &mockHttpClient{}
 	_, errBytes := execute(command{args: []string{"test", "testdata/tests/staging-test"}}, t, client)
-	assert.Equal(t, "Error: Failed to find any tests at testdata/tests/staging-test\nHint: See https://cloud.vespa.ai/en/reference/testing\n", errBytes)
+	assert.Equal(t, "Error: failed to find any tests at testdata/tests/staging-test\nHint: See https://cloud.vespa.ai/en/reference/testing\n", errBytes)
 }
 
 func TestSingleTest(t *testing.T) {

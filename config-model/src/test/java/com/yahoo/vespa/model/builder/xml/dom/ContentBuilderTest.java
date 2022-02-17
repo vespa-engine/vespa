@@ -13,6 +13,7 @@ import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.config.GenericConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
+import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
@@ -35,7 +36,6 @@ import java.util.List;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 import static com.yahoo.vespa.config.search.core.ProtonConfig.Feeding.Shared_field_writer_executor;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -328,10 +328,64 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals(200000, b.getRootGroup().getMmapNoCoreLimit().get().longValue());
 
         assertEquals(2, s.getSearchNodes().size());
-        assertEquals(200000, s.getSearchNodes().get(0).getMMapNoCoreLimit());
-        assertEquals(200000, s.getSearchNodes().get(1).getMMapNoCoreLimit());
-        assertEquals("VESPA_MMAP_NOCORE_LIMIT=200000 ", s.getSearchNodes().get(0).getMMapNoCoreEnvVariable());
-        assertEquals("VESPA_MMAP_NOCORE_LIMIT=200000 ", s.getSearchNodes().get(1).getMMapNoCoreEnvVariable());
+        assertTrue(s.getSearchNodes().get(0).getEnv().contains("VESPA_MMAP_NOCORE_LIMIT=200000"));
+        assertTrue(s.getSearchNodes().get(1).getEnv().contains("VESPA_MMAP_NOCORE_LIMIT=200000"));
+    }
+
+    @Test
+    public void canAddEnvironmentVariable() {
+        ContentCluster b = createContent(
+                "<content version =\"1.0\" id=\"b\">" +
+                        "    <redundancy>1</redundancy>" +
+                        "      <documents>" +
+                        "        <document type='music' mode='index'/>" +
+                        "      </documents>" +
+                        "    <group>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
+                        "    </group>" +
+                        "</content>");
+        ContentSearchCluster s;
+
+        s = b.getSearch();
+        assertTrue(s.hasIndexedCluster());
+        assertNotNull(s.getIndexed());
+        assertEquals(1, b.getStorageCluster().getChildren().size());
+
+        assertEquals(1, s.getSearchNodes().size());
+        AbstractService node = s.getSearchNodes().get(0);
+        node.addEnvironmentVariable("MY_ENV_1", 7);
+        node.addEnvironmentVariable("MY_ENV_2", "7 8");
+        assertTrue(node.getEnv().contains("MY_ENV_1=7"));
+        assertTrue(node.getEnv().contains("MY_ENV_2=\"7 8\""));
+        node.addEnvironmentVariable("MY_PARSED_ENV_1=7");
+        node.addEnvironmentVariable("MY_PARSED_ENV_2=7 8");
+        assertTrue(node.getEnv().contains("MY_PARSED_ENV_1=\"7\""));
+        assertTrue(node.getEnv().contains("MY_PARSED_ENV_2=\"7 8\""));
+    }
+
+    @Test
+    public void addsEnvironmentVariablesfromFeatureFlag() {
+        ContentCluster b = createContent(
+                "<content version =\"1.0\" id=\"b\">" +
+                        "    <redundancy>1</redundancy>" +
+                        "      <documents>" +
+                        "        <document type='music' mode='index'/>" +
+                        "      </documents>" +
+                        "    <group>" +
+                        "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
+                        "    </group>" +
+                        "</content>", new TestProperties().setEnvironmentVariables(List.of("MY_1_ENV=xyz abc", "MY_2_ENV=2")));
+        ContentSearchCluster s;
+
+        s = b.getSearch();
+        assertTrue(s.hasIndexedCluster());
+        assertNotNull(s.getIndexed());
+        assertEquals(1, b.getStorageCluster().getChildren().size());
+
+        assertEquals(1, s.getSearchNodes().size());
+        AbstractService node = s.getSearchNodes().get(0);
+        assertTrue(node.getEnv().contains("MY_1_ENV=\"xyz abc\""));
+        assertTrue(node.getEnv().contains("MY_2_ENV=\"2\""));
     }
 
     @Test
@@ -357,10 +411,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertTrue(b.getRootGroup().getCoreOnOOM().get());
 
         assertEquals(2, s.getSearchNodes().size());
-        assertTrue(s.getSearchNodes().get(0).getCoreOnOOM());
-        assertTrue(s.getSearchNodes().get(1).getCoreOnOOM());
-        assertEquals("", s.getSearchNodes().get(0).getCoreOnOOMEnvVariable());
-        assertEquals("", s.getSearchNodes().get(1).getCoreOnOOMEnvVariable());
+        assertFalse(s.getSearchNodes().get(0).getEnv().contains("VESPA_SILENCE_CORE_ON_OOM=true"));
+        assertFalse(s.getSearchNodes().get(1).getEnv().contains("VESPA_SILENCE_CORE_ON_OOM=true"));
     }
 
     @Test
@@ -383,10 +435,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertFalse(b.getRootGroup().getCoreOnOOM().isPresent());
 
         assertEquals(2, s.getSearchNodes().size());
-        assertFalse(s.getSearchNodes().get(0).getCoreOnOOM());
-        assertFalse(s.getSearchNodes().get(1).getCoreOnOOM());
-        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true ", s.getSearchNodes().get(0).getCoreOnOOMEnvVariable());
-        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true ", s.getSearchNodes().get(1).getCoreOnOOMEnvVariable());
+        assertTrue(s.getSearchNodes().get(0).getEnv().contains("VESPA_SILENCE_CORE_ON_OOM=true"));
+        assertTrue(s.getSearchNodes().get(1).getEnv().contains("VESPA_SILENCE_CORE_ON_OOM=true"));
     }
 
     @Test
@@ -409,10 +459,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertFalse(b.getRootGroup().getMmapNoCoreLimit().isPresent());
 
         assertEquals(2, s.getSearchNodes().size());
-        assertEquals(200000, s.getSearchNodes().get(0).getMMapNoCoreLimit());
-        assertEquals(-1, s.getSearchNodes().get(1).getMMapNoCoreLimit());
-        assertEquals("VESPA_MMAP_NOCORE_LIMIT=200000 ", s.getSearchNodes().get(0).getMMapNoCoreEnvVariable());
-        assertEquals("", s.getSearchNodes().get(1).getMMapNoCoreEnvVariable());
+        assertTrue(s.getSearchNodes().get(0).getEnv().contains("VESPA_MMAP_NOCORE_LIMIT=200000"));
+        assertFalse(s.getSearchNodes().get(1).getEnv().contains("VESPA_MMAP_NOCORE_LIMIT="));
     }
 
     @Test
@@ -435,10 +483,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertFalse(b.getRootGroup().getCoreOnOOM().isPresent());
 
         assertEquals(2, s.getSearchNodes().size());
-        assertTrue(s.getSearchNodes().get(0).getCoreOnOOM());
-        assertFalse(s.getSearchNodes().get(1).getCoreOnOOM());
-        assertEquals("", s.getSearchNodes().get(0).getCoreOnOOMEnvVariable());
-        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true ", s.getSearchNodes().get(1).getCoreOnOOMEnvVariable());
+        assertFalse(s.getSearchNodes().get(0).getEnv().contains("VESPA_SILENCE_CORE_ON_OOM=true"));
+        assertTrue(s.getSearchNodes().get(1).getEnv().contains("VESPA_SILENCE_CORE_ON_OOM=true"));
     }
 
     @Test
@@ -471,15 +517,7 @@ public class ContentBuilderTest extends DomBuilderTest {
 
         assertEquals(4, s.getSearchNodes().size());
         for (SearchNode n : s.getSearchNodes()) {
-            assertEquals("proton", n.getNoVespaMalloc());
-            assertEquals("VESPA_USE_NO_VESPAMALLOC=\"proton\" ", n.getNoVespaMallocEnvVariable());
-            assertEquals("distributord", n.getVespaMallocDebug());
-            assertEquals("VESPA_USE_VESPAMALLOC=\"storaged\" ", n.getVespaMallocEnvVariable());
-            assertEquals("all", n.getVespaMallocDebugStackTrace());
-            assertEquals("VESPA_USE_VESPAMALLOC_D=\"distributord\" ", n.getVespaMallocDebugEnvVariable());
-            assertEquals("storaged", n.getVespaMalloc());
-            assertEquals("VESPA_USE_VESPAMALLOC_DST=\"all\" ", n.getVespaMallocDebugStackTraceEnvVariable());
-            assertEquals("VESPA_SILENCE_CORE_ON_OOM=true OMP_NUM_THREADS=1 VESPA_USE_NO_VESPAMALLOC=\"proton\" VESPA_USE_VESPAMALLOC=\"storaged\" VESPA_USE_VESPAMALLOC_D=\"distributord\" VESPA_USE_VESPAMALLOC_DST=\"all\" ", n.getEnvVariables());
+            assertEquals("OMP_NUM_THREADS=1 VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_NO_VESPAMALLOC=\"proton\" VESPA_USE_VESPAMALLOC=\"storaged\" VESPA_USE_VESPAMALLOC_D=\"distributord\" VESPA_USE_VESPAMALLOC_DST=\"all\"", n.getEnv());
         }
     }
 
@@ -508,10 +546,10 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertFalse(b.getRootGroup().getVespaMallocDebugStackTrace().isPresent());
 
         assertEquals(4, s.getSearchNodes().size());
-        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true OMP_NUM_THREADS=1 VESPA_USE_NO_VESPAMALLOC=\"proton\" ", s.getSearchNodes().get(0).getEnvVariables());
-        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true OMP_NUM_THREADS=1 VESPA_USE_VESPAMALLOC_D=\"distributord\" ", s.getSearchNodes().get(1).getEnvVariables());
-        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true OMP_NUM_THREADS=1 VESPA_USE_VESPAMALLOC_DST=\"all\" ", s.getSearchNodes().get(2).getEnvVariables());
-        assertEquals("VESPA_SILENCE_CORE_ON_OOM=true OMP_NUM_THREADS=1 VESPA_USE_VESPAMALLOC=\"storaged\" ", s.getSearchNodes().get(3).getEnvVariables());
+        assertEquals("OMP_NUM_THREADS=1 VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_NO_VESPAMALLOC=\"proton\"", s.getSearchNodes().get(0).getEnv());
+        assertEquals("OMP_NUM_THREADS=1 VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_VESPAMALLOC_D=\"distributord\"", s.getSearchNodes().get(1).getEnv());
+        assertEquals("OMP_NUM_THREADS=1 VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_VESPAMALLOC_DST=\"all\"", s.getSearchNodes().get(2).getEnv());
+        assertEquals("OMP_NUM_THREADS=1 VESPA_SILENCE_CORE_ON_OOM=true VESPA_USE_VESPAMALLOC=\"storaged\"", s.getSearchNodes().get(3).getEnv());
     }
 
     @Test
@@ -908,6 +946,9 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     private ContentCluster createContent(String xml) {
+        return createContent(xml, new TestProperties());
+    }
+    private ContentCluster createContent(String xml, TestProperties props) {
         String combined =  "" +
                 "<services>"+
                 "  <admin version='2.0'>" +
@@ -917,12 +958,13 @@ public class ContentBuilderTest extends DomBuilderTest {
                 "</services>";
 
 
+        var deployStateBuilder = new DeployState.Builder().properties(props);
         VespaModel m = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
-                                                                .withHosts(getHosts())
-                                                                .withServices(combined)
-                                                                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
-                                                                .build())
-                .create();
+                .withHosts(getHosts())
+                .withServices(combined)
+                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
+                .build())
+                .create(deployStateBuilder);
 
         return m.getContentClusters().isEmpty()
                 ? null

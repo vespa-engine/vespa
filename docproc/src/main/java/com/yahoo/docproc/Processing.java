@@ -20,23 +20,23 @@ import java.util.Map;
  */
 public class Processing {
 
-    /** The name of the service which owns this processing. Null is the same as "default" */
+    /** The name of the service which owns this processing. Null is the same as "default". */
     private String service = null;
 
-    /** The processors to call the next work is done on this processing */
+    /** The processors to call the next work is done on this processing. */
     private CallStack callStack = null;
 
-    /** The collection of documents or document updates processed by this. This is never null */
+    /** The collection of documents or document updates processed by this. This is never null. */
     private final List<DocumentOperation> documentOperations;
 
     /**
      * Documents or document updates which should be added to <code>documents</code> before
      * the next access, or null if documents or document updates have never been added to
-     * this processing
+     * this processing.
      */
     private List<DocumentOperation> documentsToAdd = null;
 
-    /** The processing context variables */
+    /** The processing context variables. */
     private Map<String, Object> context = null;
 
     /** The endpoint of this processing. */
@@ -113,6 +113,7 @@ public class Processing {
     }
 
     /**
+     * Creates a Processing from a list of operations.
      *
      * @param service               the unique name of the service processing this
      * @param documentsAndUpdates   the document operation list. This <b>transfers ownership</b> of this list
@@ -121,7 +122,9 @@ public class Processing {
      *                              This <b>transfers ownership</b> of this structure
      *                              to this class. The caller <i>must not</i> modify it
      */
-    public static Processing createProcessingFromDocumentOperations(String service, List<DocumentOperation> documentsAndUpdates, CallStack callStack) {
+    public static Processing createProcessingFromDocumentOperations(String service,
+                                                                    List<DocumentOperation> documentsAndUpdates,
+                                                                    CallStack callStack) {
         return new Processing(service, documentsAndUpdates, callStack, null, false);
     }
 
@@ -245,6 +248,15 @@ public class Processing {
         this.callStack = callStack;
     }
 
+    List<DocumentOperation> getOnceOperationsToBeProcessed() {
+        if (operationsGotten)
+            return Collections.emptyList();
+
+        operationsGotten = true;
+        return getDocumentOperations();
+    }
+
+    @Override
     public String toString() {
         String previousCall = "";
         if (callStack != null) {
@@ -266,11 +278,4 @@ public class Processing {
         }
     }
 
-    List<DocumentOperation> getOnceOperationsToBeProcessed() {
-        if (operationsGotten)
-            return Collections.emptyList();
-
-        operationsGotten = true;
-        return getDocumentOperations();
-    }
 }

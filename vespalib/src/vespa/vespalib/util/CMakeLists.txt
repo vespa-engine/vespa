@@ -42,6 +42,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     mmap_file_allocator.cpp
     mmap_file_allocator_factory.cpp
     monitored_refcount.cpp
+    nice.cpp
     printable.cpp
     priority_queue.cpp
     random.cpp
@@ -56,6 +57,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     runnable_pair.cpp
     sequence.cpp
     sha1.cpp
+    shared_operation_throttler.cpp
     shared_string_repo.cpp
     sig_catch.cpp
     signalhandler.cpp

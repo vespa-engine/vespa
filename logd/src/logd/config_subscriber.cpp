@@ -3,6 +3,7 @@
 #include "config_subscriber.h"
 #include "empty_forwarder.h"
 #include "rpc_forwarder.h"
+#include <vespa/config/subscription/configsubscriber.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("");

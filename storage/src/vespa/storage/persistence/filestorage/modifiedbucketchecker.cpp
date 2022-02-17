@@ -4,6 +4,8 @@
 #include "filestormanager.h"
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config/subscription/configuri.h>
+#include <vespa/config/helper/configfetcher.hpp>
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -47,7 +49,7 @@ ModifiedBucketChecker::ModifiedBucketChecker(
       _provider(provider),
       _component(),
       _thread(),
-      _configFetcher(configUri.getContext()),
+      _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
       _monitor(),
       _stateLock(),
       _bucketSpaces(),
@@ -56,8 +58,8 @@ ModifiedBucketChecker::ModifiedBucketChecker(
       _maxPendingChunkSize(100),
       _singleThreadMode(false)
 {
-    _configFetcher.subscribe<vespa::config::content::core::StorServerConfig>(configUri.getConfigId(), this);
-    _configFetcher.start();
+    _configFetcher->subscribe<vespa::config::content::core::StorServerConfig>(configUri.getConfigId(), this);
+    _configFetcher->start();
 
     std::ostringstream threadName;
     threadName << "Modified bucket checker " << static_cast<void*>(this);
@@ -97,7 +99,9 @@ ModifiedBucketChecker::onClose()
     if (_singleThreadMode) {
         return;
     }
-    assert(_thread);
+    if (!_thread) {
+        return; // Aborted startup; onOpen() was never called so there's nothing to close.
+    }
     LOG(debug, "Interrupting modified bucket checker thread");
     _thread->interrupt();
     _cond.notify_one();
@@ -193,7 +197,7 @@ ModifiedBucketChecker::tick()
     // Do two phases of locking, as we want tick() to both fetch modified
     // buckets and send the first chunk for these in a single call. However,
     // we want getModifiedBuckets() to called outside the lock.
-    bool shouldRequestFromProvider = false;
+    bool shouldRequestFromProvider;
     {
         std::lock_guard guard(_stateLock);
         if (!currentChunkFinished()) {

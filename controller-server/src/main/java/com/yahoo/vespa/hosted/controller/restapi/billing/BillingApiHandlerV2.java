@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.restapi.billing;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.RestApi;
 import com.yahoo.restapi.RestApiException;
@@ -48,7 +48,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     private final BillingController billing;
     private final Clock clock;
 
-    public BillingApiHandlerV2(LoggingRequestHandler.Context context, Controller controller) {
+    public BillingApiHandlerV2(ThreadedHttpRequestHandler.Context context, Controller controller) {
         super(context, BillingApiHandlerV2::createRestApi);
         this.applications = controller.applications();
         this.tenants = controller.tenants();

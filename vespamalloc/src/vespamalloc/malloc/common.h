@@ -55,7 +55,7 @@ static constexpr uint32_t NUM_THREADS = 16384;
 using OSMemory = MmapMemory;
 using SizeClassT = int;
 
-constexpr size_t ALWAYS_REUSE_LIMIT = 0x200000ul;
+constexpr size_t ALWAYS_REUSE_LIMIT = 0x100000ul;
    
 inline constexpr int msbIdx(uint64_t v) {
     return (sizeof(v)*8 - 1) - __builtin_clzl(v);
@@ -67,11 +67,11 @@ class CommonT
 public:
     static constexpr size_t MAX_ALIGN = 0x200000ul;
     enum {MinClassSize = MinClassSizeC};
-    static inline constexpr SizeClassT sizeClass(size_t sz) {
+    static constexpr SizeClassT sizeClass(size_t sz) noexcept {
         SizeClassT tmp(msbIdx(sz - 1) - (MinClassSizeC - 1));
         return (sz <= (1 << MinClassSizeC )) ? 0 : tmp;
     }
-    static inline constexpr size_t classSize(SizeClassT sc) { return (size_t(1) << (sc + MinClassSizeC)); }
+    static constexpr size_t classSize(SizeClassT sc) noexcept { return (size_t(1) << (sc + MinClassSizeC)); }
 };
 
 inline void crash() { *((volatile unsigned *) nullptr) = 0; }
@@ -122,6 +122,11 @@ public:
 };
 
 void info();
+void logBigBlock(const void * ptr, size_t exact, size_t adjusted, size_t gross) __attribute__((noinline));
+void logStackTrace() __attribute__((noinline));
+
+extern FILE * _G_logFile;
+extern size_t _G_bigBlockLimit;
 
 }
 

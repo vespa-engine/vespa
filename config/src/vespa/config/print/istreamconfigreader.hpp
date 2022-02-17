@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <istream>
+#include "istreamconfigreader.h"
+#include <sstream>
 
 namespace config {
 
@@ -19,19 +20,19 @@ IstreamConfigReader<ConfigType>::read(const ConfigFormatter & formatter)
     buf << _is.rdbuf();
     buffer.setEncodedString(buf.str());
     formatter.decode(buffer);
-    return std::unique_ptr<ConfigType>(new ConfigType(buffer));
+    return std::make_unique<ConfigType>(buffer);
 }
 
 template <typename ConfigType>
 std::unique_ptr<ConfigType>
 IstreamConfigReader<ConfigType>::read()
 {
-    std::vector<vespalib::string> lines;
+    StringVector lines;
     std::string line;
     while (getline(_is, line)) {
         lines.push_back(line);
     }
-    return std::unique_ptr<ConfigType>(new ConfigType(ConfigValue(lines, calculateContentXxhash64(lines))));
+    return std::make_unique<ConfigType>(ConfigValue(std::move(lines)));
 }
 
 } // namespace config

@@ -223,6 +223,7 @@ public class FileServer {
     }
 
     private static ConnectionPool createConnectionPool(List<String> configServers, Supervisor supervisor) {
+        @SuppressWarnings("removal") // TODO Vespa 8: remove
         ConfigSourceSet configSourceSet = new ConfigSourceSet(configServers);
         if (configServers.size() == 0) return FileDownloader.emptyConnectionPool();
 

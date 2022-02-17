@@ -6,14 +6,19 @@
 #include <map>
 #include <vespa/messagebus/routing/iroutingpolicy.h>
 #include <vespa/documentapi/common.h>
-#include <vespa/config/config.h>
-#include <vespa/config/helper/configfetcher.h>
+#include <vespa/config/helper/ifetchercallback.h>
+#include <mutex>
 
 namespace document { class DocumentTypeRepo; }
 
 namespace mbus {
     class Route;
     class RoutingContext;
+}
+
+namespace config {
+    class ConfigUri;
+    class ConfigFetcher;
 }
 
 namespace documentapi {
@@ -31,11 +36,11 @@ private:
     typedef std::shared_ptr<document::select::Node> SelectorPtr;
     typedef std::map<string, SelectorPtr> ConfigMap;
 
-    const document::DocumentTypeRepo &_repo;
-    mutable std::mutex                _lock;
-    ConfigMap                         _config;
-    string                            _error;
-    config::ConfigFetcher             _fetcher;
+    const document::DocumentTypeRepo      &_repo;
+    mutable std::mutex                     _lock;
+    ConfigMap                              _config;
+    string                                 _error;
+    std::unique_ptr<config::ConfigFetcher> _fetcher;
 
     /**
      * This method runs the selector associated with the given location on the content of the message. If the selector
@@ -56,6 +61,7 @@ public:
      */
     DocumentRouteSelectorPolicy(const document::DocumentTypeRepo &repo,
                                 const config::ConfigUri &configUri);
+    ~DocumentRouteSelectorPolicy() override;
 
     /**
      * This is a safety mechanism to allow the constructor to fail and signal that it can not be used.

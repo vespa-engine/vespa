@@ -205,5 +205,20 @@ void Array<T>::cleanup()
     Alloc().swap(_array);
 }
 
+template <typename T>
+void Array<T>::reset()
+{
+    std::destroy(array(0), array(_sz));
+    _sz = 0;
+    _array.reset();
+}
+
+template <typename T>
+Array<T>
+Array<T>::create() const
+{
+    return Array<T>(_array); // Use same memory allocator
+}
+
 }
 

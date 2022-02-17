@@ -1,7 +1,7 @@
 {
   "url": "http://localhost:8080/nodes/v2/node/host55.yahoo.com",
   "id": "node55",
-  "state": "parked",
+  "state": "dirty",
   "type": "tenant",
   "hostname": "host55.yahoo.com",
   "flavor": "[vcpu: 2.0, memory: 8.0 Gb, disk 50.0 Gb, bandwidth: 1.0 Gbps, storage type: local]",
@@ -22,7 +22,7 @@
       "agent": "system"
     },
     {
-      "event": "parked",
+      "event": "deallocated",
       "at": 123,
       "agent": "system"
     }

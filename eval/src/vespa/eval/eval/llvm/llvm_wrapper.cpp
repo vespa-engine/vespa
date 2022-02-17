@@ -21,6 +21,8 @@
 #include <vespa/eval/eval/check_type.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/approx.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/malloc_mmap_guard.h>
 #include <limits>
 
 double vespalib_eval_ldexp(double a, double b) { return std::ldexp(a, b); }
@@ -728,6 +730,8 @@ LLVMWrapper::compile(llvm::raw_ostream * dumpStream)
     // Set relocation model to silence valgrind on CentOS 8 / aarch64
     _engine.reset(llvm::EngineBuilder(std::move(_module)).setOptLevel(llvm::CodeGenOpt::Aggressive).setRelocationModel(llvm::Reloc::Static).create());
     assert(_engine && "llvm jit not available for your platform");
+
+    MallocMmapGuard largeAllocsAsMMap(1_Mi);
     _engine->finalizeObject();
 }
 

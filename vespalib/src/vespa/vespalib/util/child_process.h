@@ -28,6 +28,7 @@ private:
         std::condition_variable _cond;
         std::queue<std::string> _queue;
         std::string             _data;
+        int                     _num_streams;
         bool                    _gotEOF;
         int                     _waitCnt;
         bool                    _readEOF;
@@ -38,7 +39,7 @@ private:
         void updateEOF();
 
     public:
-        Reader();
+        Reader(int num_streams);
         ~Reader() override;
 
         uint32_t read(char *buf, uint32_t len, int msTimeout);
@@ -57,6 +58,7 @@ private:
 public:
     ChildProcess(const ChildProcess &) = delete;
     ChildProcess &operator=(const ChildProcess &) = delete;
+    struct capture_stderr_tag{};
     
     /**
      * @brief Run a child process
@@ -65,6 +67,15 @@ public:
      * @param cmd A shell command line to run
      **/
     explicit ChildProcess(const char *cmd);
+
+    /**
+     * @brief Run a child process
+     *
+     * Starts a process running the given command. stderr is
+     * redirected into stdout.
+     * @param cmd A shell command line to run
+     **/
+    explicit ChildProcess(const char *cmd, capture_stderr_tag);
 
     /** @brief destructor doing cleanup if needed */
     ~ChildProcess();

@@ -6,6 +6,7 @@
 #include <vespa/searchlib/common/stringmap.h>
 #include <vector>
 
+namespace vespalib { class Doom; };
 namespace vespalib { struct ThreadBundle; };
 namespace search::queryeval { class SearchIterator; }
 namespace search::fef { class RankProgram; }
@@ -27,8 +28,7 @@ struct ExtractFeatures {
      * documents (must be in ascending order) using unpack information
      * from a search.
      **/
-    static FeatureSet::UP get_feature_set(SearchIterator &search, RankProgram &rank_program, const std::vector<uint32_t> &docs, const StringStringMap &renames);
-
+    static FeatureSet::UP get_feature_set(SearchIterator &search, RankProgram &rank_program, const std::vector<uint32_t> &docs, const vespalib::Doom &doom, const StringStringMap &renames);
 
     // first: docid, second: result index (must be sorted on docid)
     using OrderedDocs = std::vector<std::pair<uint32_t,uint32_t>>;

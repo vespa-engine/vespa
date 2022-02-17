@@ -2,6 +2,7 @@
 package com.yahoo.prelude.semantics.engine;
 
 import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.semantics.RuleBase;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.QueryTree;
 
@@ -32,11 +33,13 @@ public class Evaluation {
     /** The rule evaluation context, can be reset once the rule is evaluated */
     private final RuleEvaluation ruleEvaluation;
 
+    private final RuleBase ruleBase;
+
     /**
      * The amount of context information to collect about this evaluation.
      * 0 means no context information, higher numbers means more context information.
      */
-    private int traceLevel = 0;
+    private final int traceLevel;
 
     private String traceIndentation = "";
 
@@ -49,8 +52,8 @@ public class Evaluation {
     /** Should we allow stemmed matches? */
     private boolean stemming = true;
 
-    public Evaluation(Query query) {
-        this(query,0);
+    public Evaluation(Query query, RuleBase ruleBase) {
+        this(query, ruleBase, 0);
     }
 
     /**
@@ -59,12 +62,16 @@ public class Evaluation {
      * @param query the query this evaluation is for
      * @param traceLevel the amount of tracing to do
      */
-    public Evaluation(Query query, int traceLevel) {
+    public Evaluation(Query query, RuleBase ruleBase, int traceLevel) {
         this.query = query;
+        this.ruleBase = ruleBase;
         this.traceLevel = traceLevel;
         reset();
         ruleEvaluation = new RuleEvaluation(this);
     }
+
+    /** Returns the rule base this evaluates over */
+    public RuleBase ruleBase() { return ruleBase; }
 
     /** Resets the item iterator to point to the first item */
     public void reset() {
@@ -134,11 +141,11 @@ public class Evaluation {
     /** Adds an item to the query being evaluated in a way consistent with the query type */
     // TODO: Add this functionality to Query?
     public void addItem(Item item, TermType termType) {
-        Item root= query.getModel().getQueryTree().getRoot();
-        if (root==null)
+        Item root = query.getModel().getQueryTree().getRoot();
+        if (root == null)
             query.getModel().getQueryTree().setRoot(item);
         else
-            query.getModel().getQueryTree().setRoot(combineItems(root,item,termType));
+            query.getModel().getQueryTree().setRoot(combineItems(root, item, termType));
     }
 
     /** Removes this item */
@@ -151,18 +158,18 @@ public class Evaluation {
      * equal items
      */
     public void removeItemByIdentity(Item item) {
-        int position=findIndexByIdentity(item);
-        if (position>=0)
+        int position = findIndexByIdentity(item);
+        if (position >= 0)
             item.getParent().removeItem(position);
         else
             item.getParent().removeItem(item); // Fallback to removeField by equal()
     }
 
     private int findIndexByIdentity(Item item) {
-        int position=0;
-        for (Iterator<Item> i=item.getParent().getItemIterator(); i.hasNext(); ) {
-            Item child=i.next();
-            if (item==child) {
+        int position = 0;
+        for (Iterator<Item> i = item.getParent().getItemIterator(); i.hasNext(); ) {
+            Item child = i.next();
+            if (item == child) {
                 return position;
             }
             position++;
@@ -172,7 +179,7 @@ public class Evaluation {
 
     /** Removes an item, prefers the one at/close to the given position if there are multiple ones */
     public void removeItem(int position,Item item) {
-        Item removeCandidate=item.getParent().getItem(position);
+        Item removeCandidate = item.getParent().getItem(position);
         if (removeCandidate.equals(item)) // Remove based on position
             item.getParent().removeItem(position);
         else
@@ -189,7 +196,7 @@ public class Evaluation {
         if (!(item instanceof SegmentItem)) {
             return item;
         }
-        CompositeItem converted = null;
+        CompositeItem converted;
         if (item instanceof AndSegmentItem) {
             converted = new AndItem();
         } else if (item instanceof PhraseSegmentItem) {
@@ -238,16 +245,21 @@ public class Evaluation {
     /**
      * Inserts an item to the query being evaluated in a way consistent with the query type
      *
-     * @param item the item to insert
-     * @param parent the parent of this item, or null to set the root
-     * @param index the index at which to insert this into the parent
-     * @param desiredParentType the desired type of the composite which contains item when this returns
+     * @param items the items to insert
+     * @param parent the parent of these items, or null to set the root
+     * @param index the index at which to insert these into the parent
+     * @param desiredParentType the desired type of the composite which contains items when this returns
      */
-    public void insertItem(Item item, CompositeItem parent, int index, TermType desiredParentType) {
+    public void insertItems(List<Item> items, CompositeItem parent, int index, TermType desiredParentType) {
         if (isEmpty(parent)) {
-            CompositeItem newParent = (CompositeItem)desiredParentType.createItemClass();
-            newParent.addItem(item);
-            query.getModel().getQueryTree().setRoot(newParent);
+            if (items.size() == 1 && desiredParentType.hasItemClass(items.get(0).getClass())) {
+                query.getModel().getQueryTree().setRoot(items.get(0));
+            }
+            else {
+                CompositeItem newParent = (CompositeItem) desiredParentType.createItemClass();
+                items.forEach(item -> newParent.addItem(item));
+                query.getModel().getQueryTree().setRoot(newParent);
+            }
             return;
         }
 
@@ -260,26 +272,29 @@ public class Evaluation {
         }
 
         if (( desiredParentType == TermType.DEFAULT || desiredParentType.hasItemClass(parent.getClass()) )
-             && equalIndexNameIfParentIsPhrase(item, parent)) {
-            addItem(parent, index, item, desiredParentType);
+             && equalIndexNameIfParentIsPhrase(items, parent)) {
+            for (Item item : items)
+                addItem(parent, index, item, desiredParentType);
         }
-        else if (incompatible(desiredParentType, parent)) {
-            insertIncompatibleItem(item, parent, query, desiredParentType);
+        else if (parent.items().isEmpty()) {
+            CompositeItem parentsParent = parent.getParent();
+            CompositeItem newParent = newParent(desiredParentType);
+            items.forEach(item -> newParent.addItem(item));
+            parentsParent.setItem(parentsParent.getItemIndex(parent), newParent);
+        }
+        else if (items.size() == 1 && desiredParentType.hasItemClass(items.get(0).getClass())) {
+            addItem(parent, index, items.get(0), desiredParentType);
         }
         else {
-            insertIncompatibleItemAsParent(item, parent, query, desiredParentType);
+            insertWithDesiredParentType(items, parent, desiredParentType);
         }
     }
 
+    /** Returns true if this item represents an empty query *tree*. */
     private boolean isEmpty(Item item) {
         if (item == null) return true;
         if (item instanceof QueryTree && ((QueryTree) item).isEmpty()) return true;
         return false;
-    }
-
-    /** Returns true if the desired type cannot have childCandidate as a child */
-    private boolean incompatible(TermType desiredParentType, Item childCandidate) {
-        return desiredParentType == TermType.EQUIV && childCandidate.getItemType() != Item.ItemType.EQUIV;
     }
 
     private void addItem(CompositeItem parent, int index, Item item, TermType desiredParentType) {
@@ -287,7 +302,7 @@ public class Evaluation {
             if (index == 0 && parent.getItem(0) == null) { // Case 1: The current positive is null and we are adding a positive
                 parent.setItem(0, item);
             }
-            else if (index<=1 && !(parent.getItem(0) instanceof CompositeItem))  { // Case 2: The positive must become a composite
+            else if (index <= 1 && !(parent.getItem(0) instanceof CompositeItem))  { // Case 2: The positive must become a composite
                 CompositeItem positiveComposite = (CompositeItem)desiredParentType.createItemClass();
                 positiveComposite.addItem(parent.getItem(0));
                 positiveComposite.addItem(index, item);
@@ -313,50 +328,45 @@ public class Evaluation {
     }
 
     /** A special purpose check used to simplify the above */
-    private boolean equalIndexNameIfParentIsPhrase(Item item,CompositeItem parent) {
+    private boolean equalIndexNameIfParentIsPhrase(List<Item> items, CompositeItem parent) {
         if ( ! (parent instanceof PhraseItem)) return true;
-        if ( ! (item instanceof IndexedItem)) return true;
+        var phrase = (PhraseItem)parent;
 
-        return ((PhraseItem)parent).getIndexName().equals(((IndexedItem)item).getIndexName());
+        for (Item item : items) {
+            if ( ! (item instanceof IndexedItem)) continue;
+            var indexedItem = (IndexedItem)item;
+            if (! indexedItem.getIndexName().equals(phrase.getIndexName())) return false;
+        }
+        return true;
     }
 
-    private void insertIncompatibleItem(Item item, CompositeItem parent, Query query, TermType desiredParentType) {
-        CompositeItem newParent;
-        if (desiredParentType == TermType.DEFAULT)
-            newParent = new AndItem();
-        else
-            newParent = (CompositeItem)desiredParentType.createItemClass();
-
-        newParent.addItem(item);
-        parent.addItem(newParent);
-    }
-
-    private void insertIncompatibleItemAsParent(Item item, CompositeItem parent, Query query, TermType desiredParentType) {
-        // Create new parent
-        CompositeItem newParent;
-        if (desiredParentType == TermType.DEFAULT)
-            newParent = new AndItem();
-        else
-            newParent = (CompositeItem)desiredParentType.createItemClass();
-
-        // Save previous parent parent
+    private void insertWithDesiredParentType(List<Item> items, CompositeItem parent, TermType desiredParentType) {
         CompositeItem parentsParent = parent.getParent();
 
-        // Add items to new parent
-        newParent.addItem(parent);
-        newParent.addItem(item);
+        CompositeItem newParent = newParent(desiredParentType);
 
-        // Insert new parent as root or child of old parents parent
-        if (parentsParent == null) {
-            query.getModel().getQueryTree().setRoot(newParent);
-
+        if (! (parentsParent instanceof QueryTree) && parentsParent.getItemType() == newParent.getItemType()) { // Collapse
+            newParent = parentsParent;
         }
-        else {
-            parentsParent.setItem(parentsParent.getItemIndex(parent), newParent);
+
+        for (Item item : items)
+            newParent.addItem(item);
+
+        if (desiredParentType == TermType.EQUIV || desiredParentType == TermType.PHRASE) { // insert new parent below the current
+            parent.addItem(newParent);
+        }
+        else { // insert new parent above the current
+            newParent.addItem(parent);
+            if (newParent != parentsParent) // Insert new parent as root or child of old parent's parent
+                parentsParent.setItem(parentsParent.getItemIndex(parent), newParent);
         }
     }
 
-    private Item combineItems(Item first,Item second,TermType termType) {
+    private CompositeItem newParent(TermType desiredParentType) {
+        return desiredParentType == TermType.DEFAULT ? new AndItem() : (CompositeItem)desiredParentType.createItemClass();
+    }
+
+    private Item combineItems(Item first, Item second, TermType termType) {
         if (first instanceof NullItem) {
             return second;
         } else if (first instanceof NotItem) {
@@ -378,6 +388,10 @@ public class Evaluation {
                 return composite;
             }
             else {
+                if (combined instanceof EquivItem) {
+                    first = makeEquivCompatible(first);
+                    second = makeEquivCompatible(second);
+                }
                 combined.addItem(first);
                 combined.addItem(second); // Also works for nots
                 return combined;
@@ -391,6 +405,22 @@ public class Evaluation {
         }
         else {
             throw new RuntimeException("Don't know how to add an item to type " + first.getClass());
+        }
+    }
+
+    private Item makeEquivCompatible(Item item) {
+        if (item instanceof AndItem || item instanceof WeakAndItem) {
+            PhraseItem phrase = new PhraseItem();
+            List<Item> children = ((CompositeItem)item).items();
+            if (children.isEmpty()) return phrase;
+            String index = ((IndexedItem)children.get(0)).getIndexName();
+            for (var child : ((CompositeItem)item).items())
+                phrase.addItem(child);
+            phrase.setIndexName(index);
+            return phrase;
+        }
+        else {
+            return item; // Compatible, or can't be made so
         }
     }
 

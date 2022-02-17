@@ -1045,6 +1045,28 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(7, resolveMaxCompactBuffers(OptionalInt.of(7)));
     }
 
+    private ProtonConfig.Replay_throttling_policy.Type.Enum resolveReplayThrottlePolicyType(Optional<String> throttlerType) {
+        TestProperties testProperties = new TestProperties();
+        if (throttlerType.isPresent()) {
+            testProperties.setPersistenceAsyncThrottling(throttlerType.get());
+        }
+        VespaModel model = createEnd2EndOneNode(testProperties);
+        ContentCluster cc = model.getContentClusters().get("storage");
+        ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
+        cc.getSearch().getConfig(protonBuilder);
+        ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
+        assertEquals(1, protonConfig.documentdb().size());
+        return protonConfig.replay_throttling_policy().type();
+    }
+
+    @Test
+    public void replay_throttling_policy_type_controlled_by_properties() {
+        assertEquals(ProtonConfig.Replay_throttling_policy.Type.Enum.UNLIMITED, resolveReplayThrottlePolicyType(Optional.empty()));
+        assertEquals(ProtonConfig.Replay_throttling_policy.Type.Enum.UNLIMITED, resolveReplayThrottlePolicyType(Optional.of("UNLIMITED")));
+        assertEquals(ProtonConfig.Replay_throttling_policy.Type.Enum.UNLIMITED, resolveReplayThrottlePolicyType(Optional.of("INVALID")));
+        assertEquals(ProtonConfig.Replay_throttling_policy.Type.Enum.DYNAMIC, resolveReplayThrottlePolicyType(Optional.of("DYNAMIC")));
+    }
+
     private long resolveMaxTLSSize(Optional<Flavor> flavor) throws Exception {
         TestProperties testProperties = new TestProperties();
 
@@ -1120,40 +1142,6 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
-    public void distributor_merge_busy_wait_controlled_by_properties() throws Exception {
-        assertEquals(1, resolveDistributorMergeBusyWaitConfig(Optional.empty()));
-        assertEquals(5, resolveDistributorMergeBusyWaitConfig(Optional.of(5)));
-    }
-
-    private int resolveDistributorMergeBusyWaitConfig(Optional<Integer> mergeBusyWait) throws Exception {
-        var props = new TestProperties();
-        if (mergeBusyWait.isPresent()) {
-            props.setDistributorMergeBusyWait(mergeBusyWait.get());
-        }
-        var cluster = createOneNodeCluster(props);
-        var builder = new StorDistributormanagerConfig.Builder();
-        cluster.getDistributorNodes().getConfig(builder);
-        return (new StorDistributormanagerConfig(builder)).inhibit_merge_sending_on_busy_node_duration_sec();
-    }
-
-    @Test
-    public void distributor_enhanced_maintenance_scheduling_controlled_by_properties() throws Exception {
-        assertFalse(resolveDistributorEnhancedSchedulingConfig(Optional.of(false)));
-        assertTrue(resolveDistributorEnhancedSchedulingConfig(Optional.empty()));
-    }
-
-    private boolean resolveDistributorEnhancedSchedulingConfig(Optional<Boolean> enhancedScheduling) throws Exception {
-        var props = new TestProperties();
-        if (enhancedScheduling.isPresent()) {
-            props.distributorEnhancedMaintenanceScheduling(enhancedScheduling.get());
-        }
-        var cluster = createOneNodeCluster(props);
-        var builder = new StorDistributormanagerConfig.Builder();
-        cluster.getDistributorNodes().getConfig(builder);
-        return (new StorDistributormanagerConfig(builder)).implicitly_clear_bucket_priority_on_schedule();
-    }
-
-    @Test
     public void unordered_merge_chaining_config_controlled_by_properties() throws Exception {
         assertFalse(resolveUnorderedMergeChainingConfig(Optional.of(false)));
         assertTrue(resolveUnorderedMergeChainingConfig(Optional.empty()));
@@ -1168,6 +1156,24 @@ public class ContentClusterTest extends ContentBaseTest {
         var builder = new StorDistributormanagerConfig.Builder();
         cluster.getDistributorNodes().getConfig(builder);
         return (new StorDistributormanagerConfig(builder)).use_unordered_merge_chaining();
+    }
+
+    @Test
+    public void inhibit_default_merges_when_global_merges_pending_controlled_by_properties() throws Exception {
+        assertFalse(resolveInhibitDefaultMergesConfig(Optional.empty()));
+        assertFalse(resolveInhibitDefaultMergesConfig(Optional.of(false)));
+        assertTrue(resolveInhibitDefaultMergesConfig(Optional.of(true)));
+    }
+
+    private boolean resolveInhibitDefaultMergesConfig(Optional<Boolean> inhibitDefaultMerges) throws Exception {
+        var props = new TestProperties();
+        if (inhibitDefaultMerges.isPresent()) {
+            props.inhibitDefaultMergesWhenGlobalMergesPending(inhibitDefaultMerges.get());
+        }
+        var cluster = createOneNodeCluster(props);
+        var builder = new StorDistributormanagerConfig.Builder();
+        cluster.getDistributorNodes().getConfig(builder);
+        return (new StorDistributormanagerConfig(builder)).inhibit_default_merges_when_global_merges_pending();
     }
 
     @Test

@@ -72,6 +72,7 @@ public class StatisticsSearcher extends Searcher {
     private static final String RELEVANCE_AT_1_METRIC = "relevance.at_1";
     private static final String RELEVANCE_AT_3_METRIC = "relevance.at_3";
     private static final String RELEVANCE_AT_10_METRIC = "relevance.at_10";
+    private static final String QUERY_ITEM_COUNT = "query_item_count";
 
     @SuppressWarnings("unused") // all the work is done by the callback
     private final PeakQpsReporter peakQpsReporter;
@@ -264,6 +265,8 @@ public class StatisticsSearcher extends Searcher {
 
         addRelevanceMetrics(query, execution, result);
 
+        addItemCountMetric(query, metricContext);
+
         return result;
     }
 
@@ -394,6 +397,10 @@ public class StatisticsSearcher extends Searcher {
         if (minQueue.size() == pos) {
             metric.set(name, minQueue.poll(), context);
         }
+    }
+
+    private void addItemCountMetric(Query query, Metric.Context context) {
+        metric.set(QUERY_ITEM_COUNT, query.getModel().getQueryTree().treeSize(), context);
     }
 
     /**

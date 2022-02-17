@@ -87,9 +87,7 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.codegen.ConfiggenUtil.createClassName;
 import static com.yahoo.text.StringUtilities.quote;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Collectors.toUnmodifiableMap;
-import static java.util.stream.Collectors.toUnmodifiableSet;
 
 /**
  * <p>
@@ -229,7 +227,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     private static Set<String> documentTypesWithIndex(ContentCluster content) {
         Set<String> typesWithIndexMode = content.getSearch().getDocumentTypesWithIndexedCluster().stream()
                                                 .map(type -> type.getFullName().getName())
-                                                .collect(toSet());
+                                                .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
 
         Set<String> typesWithIndexedFields = content.getSearch().getIndexed() == null
                                              ? Set.of()
@@ -239,9 +237,10 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                                                                   .allConcreteFields()
                                                                                   .stream().anyMatch(SDField::doesIndexing))
                                                       .map(database -> database.getInputDocType())
-                                                      .collect(toSet());
+                                                      .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
 
-        return typesWithIndexMode.stream().filter(typesWithIndexedFields::contains).collect(toUnmodifiableSet());
+        return typesWithIndexMode.stream().filter(typesWithIndexedFields::contains)
+                                          .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
     }
 
     private void propagateRestartOnDeploy() {
@@ -324,7 +323,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         for (var futureConvertedModel : futureModels) {
             try {
                 futureConvertedModel.get();
-            } catch (ExecutionException |InterruptedException e) {
+            } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -620,7 +619,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      * @param configId   the id to register with, not necessarily equal to descendant.getConfigId().
      * @param descendant The configProducer descendant to add
      */
-    public void addDescendant(String configId, AbstractConfigProducer descendant) {
+    public void addDescendant(String configId, AbstractConfigProducer<?> descendant) {
         if (id2producer.containsKey(configId)) {
             throw new RuntimeException
                     ("Config ID '" + configId + "' cannot be reserved by an instance of class '" +
@@ -695,7 +694,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                       .map(HostResource::spec)
                                       .filter(spec -> spec.membership().isPresent())
                                       .map(spec -> spec.membership().get().cluster().id())
-                                      .collect(Collectors.toSet());
+                                      .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
     }
 
     @Override

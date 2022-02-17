@@ -52,26 +52,28 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
      */
     public ZoneRegistryMock(SystemName system) {
         this.system = system;
-        this.zones = system.isPublic() ?
-                List.of(ZoneApiMock.fromId("test.aws-us-east-1c"),
-                        ZoneApiMock.fromId("staging.aws-us-east-1c"),
-                        ZoneApiMock.fromId("prod.aws-us-east-1c"),
-                        ZoneApiMock.fromId("prod.aws-eu-west-1a")) :
-                List.of(ZoneApiMock.fromId("test.us-east-1"),
-                        ZoneApiMock.fromId("staging.us-east-3"),
-                        ZoneApiMock.fromId("dev.us-east-1"),
-                        ZoneApiMock.fromId("dev.aws-us-east-2a"),
-                        ZoneApiMock.fromId("perf.us-east-3"),
-                        ZoneApiMock.fromId("prod.aws-us-east-1a"),
-                        ZoneApiMock.fromId("prod.ap-northeast-1"),
-                        ZoneApiMock.fromId("prod.ap-northeast-2"),
-                        ZoneApiMock.fromId("prod.ap-southeast-1"),
-                        ZoneApiMock.fromId("prod.us-east-3"),
-                        ZoneApiMock.fromId("prod.us-west-1"),
-                        ZoneApiMock.fromId("prod.us-central-1"),
-                        ZoneApiMock.fromId("prod.eu-west-1"));
-        // All zones use a shared routing method by default
-        setRoutingMethod(this.zones, system.isPublic() ? RoutingMethod.exclusive : RoutingMethod.shared);
+        if (system.isPublic()) {
+            this.zones = List.of(ZoneApiMock.fromId("test.aws-us-east-1c"),
+                                 ZoneApiMock.fromId("staging.aws-us-east-1c"),
+                                 ZoneApiMock.fromId("prod.aws-us-east-1c"),
+                                 ZoneApiMock.fromId("prod.aws-eu-west-1a"));
+            setRoutingMethod(this.zones, RoutingMethod.exclusive);
+        } else {
+            this.zones = List.of(ZoneApiMock.fromId("test.us-east-1"),
+                                 ZoneApiMock.fromId("staging.us-east-3"),
+                                 ZoneApiMock.fromId("dev.us-east-1"),
+                                 ZoneApiMock.fromId("dev.aws-us-east-2a"),
+                                 ZoneApiMock.fromId("perf.us-east-3"),
+                                 ZoneApiMock.fromId("prod.aws-us-east-1a"),
+                                 ZoneApiMock.fromId("prod.ap-northeast-1"),
+                                 ZoneApiMock.fromId("prod.ap-northeast-2"),
+                                 ZoneApiMock.fromId("prod.ap-southeast-1"),
+                                 ZoneApiMock.fromId("prod.us-east-3"),
+                                 ZoneApiMock.fromId("prod.us-west-1"),
+                                 ZoneApiMock.fromId("prod.us-central-1"),
+                                 ZoneApiMock.fromId("prod.eu-west-1"));
+            setRoutingMethod(this.zones, RoutingMethod.sharedLayer4);
+        }
     }
 
     public ZoneRegistryMock setDeploymentTimeToLive(ZoneId zone, Duration duration) {
@@ -117,18 +119,15 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     public ZoneRegistryMock setRoutingMethod(ZoneApi zone, RoutingMethod... routingMethods) {
-        return setRoutingMethod(zone, List.of(routingMethods));
+        return setRoutingMethod(zone, Set.of(routingMethods));
     }
 
     public ZoneRegistryMock setRoutingMethod(List<? extends ZoneApi> zones, RoutingMethod... routingMethods) {
-        zones.forEach(zone -> setRoutingMethod(zone, List.of(routingMethods)));
+        zones.forEach(zone -> setRoutingMethod(zone, Set.of(routingMethods)));
         return this;
     }
 
-    public ZoneRegistryMock setRoutingMethod(ZoneApi zone, List<RoutingMethod> routingMethods) {
-        if (routingMethods.stream().distinct().count() != routingMethods.size()) {
-            throw new IllegalArgumentException("Routing methods must be distinct");
-        }
+    private ZoneRegistryMock setRoutingMethod(ZoneApi zone, Set<RoutingMethod> routingMethods) {
         this.zoneRoutingMethods.put(zone, List.copyOf(routingMethods));
         return this;
     }

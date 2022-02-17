@@ -4,12 +4,9 @@
 #include "value_converter.h"
 #include <vespa/vespalib/data/slime/object_traverser.h>
 #include <vespa/vespalib/stllike/string.h>
-
 #include <map>
 
-namespace config {
-
-namespace internal {
+namespace config::internal {
 
 template<typename T, typename Converter = config::internal::ValueConverter<T> >
 class MapInserter : public ::vespalib::slime::ObjectTraverser {
@@ -20,9 +17,4 @@ private:
     std::map<vespalib::string, T> & _map;
 };
 
-} // namespace internal
-
-} // namespace config
-
-#include "map_inserter.hpp"
-
+}

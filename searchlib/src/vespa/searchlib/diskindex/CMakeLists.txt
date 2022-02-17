@@ -11,6 +11,8 @@ vespa_add_library(searchlib_diskindex OBJECT
     docidmapper.cpp
     extposocc.cpp
     field_merger.cpp
+    field_mergers_state.cpp
+    field_merger_task.cpp
     fieldreader.cpp
     fieldwriter.cpp
     field_length_scanner.cpp

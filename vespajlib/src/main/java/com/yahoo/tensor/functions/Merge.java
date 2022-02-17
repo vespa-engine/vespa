@@ -70,7 +70,7 @@ public class Merge<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
     }
 
     @Override
-    public String toString(ToStringContext context) {
+    public String toString(ToStringContext<NAMETYPE> context) {
         return "merge(" + argumentA.toString(context) + ", " + argumentB.toString(context) + ", " + merger + ")";
     }
 

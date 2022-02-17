@@ -13,7 +13,7 @@ class Component {
 
 public:
     bool matches(const char *pattern);
-    void modifyLevels(char *levels);
+    void modifyLevels(const char *levels);
     void display();
     const char *endPointer() const { return _charLevels + Logger::NUM_LOGLEVELS*sizeof(int); }
     explicit Component(char *);

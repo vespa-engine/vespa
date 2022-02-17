@@ -23,6 +23,7 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
     @Test
     public void testClone() throws Exception {
         assertTrue(new AllFields().clone() instanceof AllFields);
+        assertTrue(new DocumentOnly().clone() instanceof DocumentOnly);
         assertTrue(new NoFields().clone() instanceof NoFields);
         assertTrue(new DocIdOnly().clone() instanceof DocIdOnly);
     }
@@ -32,6 +33,7 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
         FieldSetRepo repo = new FieldSetRepo();
 
         assertTrue(repo.parse(docMan, AllFields.NAME) instanceof AllFields);
+        assertTrue(repo.parse(docMan, DocumentOnly.NAME) instanceof DocumentOnly);
         assertTrue(repo.parse(docMan, NoFields.NAME) instanceof NoFields);
         assertTrue(repo.parse(docMan, DocIdOnly.NAME) instanceof DocIdOnly);
 
@@ -72,20 +74,29 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
         assertTrue(intAttr.contains(new DocIdOnly()));
         assertTrue(intAttr.contains(new NoFields()));
         assertFalse(intAttr.contains(new AllFields()));
+        assertFalse(intAttr.contains(new DocumentOnly()));
 
         assertFalse(new NoFields().contains(intAttr));
         assertFalse(new NoFields().contains(new AllFields()));
         assertFalse(new NoFields().contains(new DocIdOnly()));
+        assertFalse(new NoFields().contains(new DocumentOnly()));
 
         assertTrue(new AllFields().contains(intAttr));
         assertTrue(new AllFields().contains(rawAttr));
         assertTrue(new AllFields().contains(new DocIdOnly()));
+        assertTrue(new AllFields().contains(new DocumentOnly()));
         assertTrue(new AllFields().contains(new NoFields()));
         assertTrue(new AllFields().contains(new AllFields()));
 
         assertTrue(new DocIdOnly().contains(new NoFields()));
         assertTrue(new DocIdOnly().contains(new DocIdOnly()));
+        assertFalse(new DocIdOnly().contains(new DocumentOnly()));
         assertFalse(new DocIdOnly().contains(intAttr));
+
+        assertTrue(new DocumentOnly().contains(new NoFields()));
+        assertTrue(new DocumentOnly().contains(new DocIdOnly()));
+        assertTrue(new DocumentOnly().contains(new DocumentOnly()));
+        assertFalse(new DocumentOnly().contains(intAttr));
 
         assertContains("testdoc:rawattr,intattr", "testdoc:intattr");
         assertNotContains("testdoc:intattr", "testdoc:rawattr,intattr");
@@ -124,6 +135,7 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
         doc.removeFieldValue("rawattr");
 
         assertEquals("floatattr:3.56,stringattr:tjohei,intattr:50,byteattr:30", doCopyFields(doc, AllFields.NAME));
+        assertEquals("stringattr:tjohei,intattr:50", doCopyFields(doc, DocumentOnly.NAME));
         assertEquals("floatattr:3.56,byteattr:30", doCopyFields(doc, "testdoc:floatattr,byteattr"));
     }
 
@@ -140,6 +152,7 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
         doc.removeFieldValue("rawattr");
 
         assertEquals("floatattr:3.56,stringattr:tjohei,intattr:50,byteattr:30", doStripFields(doc, AllFields.NAME));
+        assertEquals("stringattr:tjohei,intattr:50", doStripFields(doc, DocumentOnly.NAME));
         assertEquals("floatattr:3.56,byteattr:30", doStripFields(doc, "testdoc:floatattr,byteattr"));
     }
 
@@ -150,6 +163,7 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
                         AllFields.NAME,
                         NoFields.NAME,
                         DocIdOnly.NAME,
+                        DocumentOnly.NAME,
                         "testdoc:rawattr",
                         "testdoc:rawattr,intattr"
                 };

@@ -10,8 +10,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * An implementation of {@link RoutingContext} for a zone, using either {@link RoutingMethod#shared} or
- * {@link RoutingMethod#sharedLayer4} routing.
+ * An implementation of {@link RoutingContext} for a zone, using {@link RoutingMethod#sharedLayer4} routing.
  *
  * @author mpolden
  */
@@ -42,7 +41,7 @@ public class SharedZoneRoutingContext implements RoutingContext {
 
     @Override
     public RoutingMethod routingMethod() {
-        return RoutingMethod.shared;
+        return RoutingMethod.sharedLayer4;
     }
 
 }

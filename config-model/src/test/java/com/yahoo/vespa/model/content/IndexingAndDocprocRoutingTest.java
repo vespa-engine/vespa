@@ -444,7 +444,7 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
 
         for (SearchClusterSpec cluster : searchClusterSpecs) {
             for (SearchDefSpec def : cluster.searchDefs) {
-                sds.add(ApplicationPackageUtils.generateSearchDefinition(def.typeName, def.field1Name, def.field2Name));
+                sds.add(ApplicationPackageUtils.generateSchema(def.typeName, def.field1Name, def.field2Name));
             }
         }
 

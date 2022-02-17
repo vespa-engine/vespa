@@ -2,6 +2,7 @@
 
 #include "configsetsource.h"
 #include <vespa/config/print/asciiconfigwriter.h>
+#include <vespa/config/common/iconfigholder.h>
 #include <vespa/config/common/exceptions.h>
 
 #include <vespa/log/log.h>
@@ -9,17 +10,17 @@ LOG_SETUP(".config.set.configsetsource");
 
 namespace config {
 
-ConfigSetSource::ConfigSetSource(const IConfigHolder::SP & holder, const ConfigKey & key, const BuilderMapSP & builderMap)
-    : _holder(holder),
+ConfigSetSource::ConfigSetSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key, BuilderMapSP builderMap)
+    : _holder(std::move(holder)),
       _key(key),
       _generation(1),
-      _builderMap(builderMap)
+      _builderMap(std::move(builderMap))
 {
     if (!validRequest(key))
         throw ConfigRuntimeException("Invalid subscribe for key " + key.toString() + ", not builder found");
 }
 
-ConfigSetSource::~ConfigSetSource() { }
+ConfigSetSource::~ConfigSetSource() = default;
 
 void
 ConfigSetSource::getConfig()
@@ -29,17 +30,17 @@ ConfigSetSource::getConfig()
     vespalib::asciistream ss;
     AsciiConfigWriter writer(ss);
     writer.write(*instance);
-    std::vector<vespalib::string> lines(ss.getlines());
-    std::string currentXxhash64(calculateContentXxhash64(lines));
+    StringVector lines(getlines(ss));
+    vespalib::string currentXxhash64(calculateContentXxhash64(lines));
 
     if (isGenerationNewer(_generation, _lastState.generation) && currentXxhash64.compare(_lastState.xxhash64) != 0) {
         LOG(debug, "New generation, updating");
-        _holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(lines, currentXxhash64), true, _generation)));
+        _holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(std::move(lines), currentXxhash64), true, _generation));
         _lastState.xxhash64 = currentXxhash64;
         _lastState.generation = _generation;
     } else {
         LOG(debug, "Sending timestamp update");
-        _holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(lines, currentXxhash64), false, _generation)));
+        _holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(std::move(lines), currentXxhash64), false, _generation));
         _lastState.generation = _generation;
     }
 }

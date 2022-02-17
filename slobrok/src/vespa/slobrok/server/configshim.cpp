@@ -18,11 +18,11 @@ ConfigShim::ConfigShim(uint32_t port, const std::string& cfgId)
       _factory(config::ConfigUri(_configId))
 {}
 
-ConfigShim::ConfigShim(uint32_t port, const std::string& cfgId, config::IConfigContext::SP cfgCtx)
+ConfigShim::ConfigShim(uint32_t port, const std::string& cfgId, std::shared_ptr<config::IConfigContext> cfgCtx)
     : _port(port),
       _enableStateServer(false),
       _configId(cfgId),
-      _factory(config::ConfigUri(cfgId, cfgCtx))
+      _factory(config::ConfigUri(cfgId, std::move(cfgCtx)))
 {}
 
 ConfigShim::~ConfigShim() = default;

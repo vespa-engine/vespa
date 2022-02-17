@@ -197,32 +197,30 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
      * Returns a summary field which merges the settings in the given field
      * into this field
      *
-     * @param  merge the field to merge with this, if null, the merged field is
-     *         <code>this</code> field
+     * @param  merge the field to merge with this, if null, the merged field is *this* field
      * @throws RuntimeException if the two fields can not be merged
      */
     public SummaryField mergeWith(SummaryField merge) {
-        if (merge==null) return this;
+        if (merge == null) return this;
         if (this.isImplicit()) return merge;
         if (merge.isImplicit()) return this;
 
         if (!merge.getName().equals(getName()))
             throw new IllegalArgumentException(merge + " conflicts with " + this + ": different names");
 
-        if (!merge.getTransform().equals(getTransform()))
+        if (merge.getTransform() != getTransform())
             throw new IllegalArgumentException(merge + " conflicts with " + this + ": different transforms");
 
         if (!merge.getDataType().equals(getDataType()))
             throw new IllegalArgumentException(merge + " conflicts with " + this + ": different types");
 
-        if (!merge.isImplicit())
-            setImplicit(false);
+        setImplicit(false);
 
-        if (isHeadOf(this.sourceIterator(),merge.sourceIterator())) {
+        if (isHeadOf(this.sourceIterator(), merge.sourceIterator())) {
             // Ok
         }
-        else if (isHeadOf(merge.sourceIterator(),this.sourceIterator())) {
-            sources=new LinkedHashSet<>(merge.sources);
+        else if (isHeadOf(merge.sourceIterator(), this.sourceIterator())) {
+            sources = new LinkedHashSet<>(merge.sources);
         }
         else {
             throw new IllegalArgumentException(merge + " conflicts with " + this +
@@ -277,13 +275,14 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
         return "'summary " + getName() + " type " + toLowerCase(getDataType().getName()) + "' in '" + getDestinationString() + "'";
     }
 
+    @Override
     public SummaryField clone() {
         try {
-            SummaryField clone=(SummaryField)super.clone();
-            if (this.sources!=null)
-                clone.sources=new LinkedHashSet<>(this.sources);
-            if (this.destinations!=null)
-                clone.destinations=new LinkedHashSet<>(destinations);
+            SummaryField clone = (SummaryField)super.clone();
+            if (this.sources != null)
+                clone.sources = new LinkedHashSet<>(this.sources);
+            if (this.destinations != null)
+                clone.destinations = new LinkedHashSet<>(destinations);
             return clone;
         }
         catch (CloneNotSupportedException e) {

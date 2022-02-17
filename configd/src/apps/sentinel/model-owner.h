@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/config-model.h>
-#include <vespa/config/config.h>
+#include <vespa/config/subscription/configsubscriber.h>
 #include <optional>
 #include <mutex>
 

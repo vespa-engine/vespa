@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.application.validation;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import org.junit.Test;
 
-import static com.yahoo.vespa.model.application.validation.RankingConstantsValidator.TensorValidationFailed;
+import static com.yahoo.vespa.model.application.validation.RankingConstantsValidator.TensorValidationException;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -20,7 +20,7 @@ public class RankingConstantsValidatorTest {
         try {
             new VespaModelCreatorWithFilePkg("src/test/cfg/application/validation/ranking_constants_fail/").create();
             fail();
-        } catch (TensorValidationFailed e) {
+        } catch (TensorValidationException e) {
             assertTrue(e.getMessage().contains("Ranking constant 'constant_tensor_2' (tensors/constant_tensor_2.json): Tensor label is not a string (VALUE_NUMBER_INT)"));
             assertTrue(e.getMessage().contains("Ranking constant 'constant_tensor_3' (tensors/constant_tensor_3.json): Tensor dimension 'cd' does not exist"));
             assertTrue(e.getMessage().contains("Ranking constant 'constant_tensor_4' (tensors/constant_tensor_4.json): Tensor dimension 'z' does not exist"));

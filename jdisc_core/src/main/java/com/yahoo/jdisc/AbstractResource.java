@@ -5,7 +5,6 @@ import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.refcount.DebugReferencesByContextMap;
 import com.yahoo.jdisc.refcount.DebugReferencesWithStack;
 import com.yahoo.jdisc.refcount.DestructableResource;
-import com.yahoo.jdisc.refcount.ReferencesByCount;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.jdisc.refcount.References;
@@ -25,12 +24,10 @@ public abstract class AbstractResource implements SharedResource {
 
     protected AbstractResource() {
         DestructableResource destructable = new WrappedResource(this);
-        if (debug == Debug.SIMPLE) {
-            references = new DebugReferencesByContextMap(destructable, this);
-        } else if (debug == Debug.STACK) {
+        if (debug == Debug.STACK) {
             references = new DebugReferencesWithStack(destructable);
         } else {
-            references = new ReferencesByCount(destructable);
+            references = new DebugReferencesByContextMap(destructable, this);
         }
     }
 

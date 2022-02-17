@@ -7,7 +7,7 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.TensorFieldType;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.yolean.Exceptions;
@@ -33,8 +33,8 @@ public class RankingExpressionTypeResolverTestCase {
     @Test
     public void tensorFirstPhaseMustProduceDouble() throws Exception {
         try {
-            SchemaBuilder builder = new SchemaBuilder();
-            builder.importString(joinLines(
+            ApplicationBuilder builder = new ApplicationBuilder();
+            builder.addSchema(joinLines(
                     "search test {",
                     "  document test { ",
                     "    field a type tensor(x[10],y[3]) {",
@@ -48,7 +48,7 @@ public class RankingExpressionTypeResolverTestCase {
                     "  }",
                     "}"
             ));
-            builder.build();
+            builder.build(true);
             fail("Expected exception");
         }
         catch (IllegalArgumentException expected) {
@@ -61,8 +61,8 @@ public class RankingExpressionTypeResolverTestCase {
     @Test
     public void tensorFirstPhaseFromConstantMustProduceDouble() throws Exception {
         try {
-            SchemaBuilder builder = new SchemaBuilder();
-            builder.importString(joinLines(
+            ApplicationBuilder builder = new ApplicationBuilder();
+            builder.addSchema(joinLines(
                     "search test {",
                     "  document test { ",
                     "    field a type tensor(d0[3]) {",
@@ -96,7 +96,7 @@ public class RankingExpressionTypeResolverTestCase {
                     "  }",
                     "}"
             ));
-            builder.build();
+            builder.build(true);
             fail("Expected exception");
         }
         catch (IllegalArgumentException expected) {
@@ -110,8 +110,8 @@ public class RankingExpressionTypeResolverTestCase {
     @Test
     public void tensorSecondPhaseMustProduceDouble() throws Exception {
         try {
-            SchemaBuilder builder = new SchemaBuilder();
-            builder.importString(joinLines(
+            ApplicationBuilder builder = new ApplicationBuilder();
+            builder.addSchema(joinLines(
                     "search test {",
                     "  document test { ",
                     "    field a type tensor(x[10],y[3]) {",
@@ -128,7 +128,7 @@ public class RankingExpressionTypeResolverTestCase {
                     "  }",
                     "}"
             ));
-            builder.build();
+            builder.build(true);
             fail("Expected exception");
         }
         catch (IllegalArgumentException expected) {
@@ -140,8 +140,8 @@ public class RankingExpressionTypeResolverTestCase {
     @Test
     public void tensorConditionsMustHaveTypeCompatibleBranches() throws Exception {
         try {
-            SchemaBuilder schemaBuilder = new SchemaBuilder();
-            schemaBuilder.importString(joinLines(
+            ApplicationBuilder schemaBuilder = new ApplicationBuilder();
+            schemaBuilder.addSchema(joinLines(
                     "search test {",
                     "  document test { ",
                     "    field a type tensor(x[10],y[5]) {",
@@ -158,7 +158,7 @@ public class RankingExpressionTypeResolverTestCase {
                     "  }",
                     "}"
             ));
-            schemaBuilder.build();
+            schemaBuilder.build(true);
             fail("Expected exception");
         }
         catch (IllegalArgumentException expected) {
@@ -172,8 +172,8 @@ public class RankingExpressionTypeResolverTestCase {
     @Test
     public void testFunctionInvocationTypes() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(joinLines(
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        builder.addSchema(joinLines(
                 "search test {",
                 "  document test { ",
                 "    field a type tensor(x[10],y[3]) {",
@@ -194,7 +194,7 @@ public class RankingExpressionTypeResolverTestCase {
                 "  }",
                 "}"
         ));
-        builder.build();
+        builder.build(true);
         RankProfile profile =
                 builder.getRankProfileRegistry().get(builder.getSchema(), "my_rank_profile");
         assertEquals(TensorType.fromSpec("tensor(x[10],y[3])"),
@@ -205,8 +205,8 @@ public class RankingExpressionTypeResolverTestCase {
 
     @Test
     public void testTensorFunctionInvocationTypes_Nested() throws Exception {
-        SchemaBuilder builder = new SchemaBuilder();
-        builder.importString(joinLines(
+        ApplicationBuilder builder = new ApplicationBuilder();
+        builder.addSchema(joinLines(
                 "search test {",
                 "  document test { ",
                 "    field a type tensor(x[10],y[1]) {",
@@ -236,7 +236,7 @@ public class RankingExpressionTypeResolverTestCase {
                 "  }",
                 "}"
         ));
-        builder.build();
+        builder.build(true);
         RankProfile profile =
                 builder.getRankProfileRegistry().get(builder.getSchema(), "my_rank_profile");
         assertEquals(TensorType.fromSpec("tensor(x[10],y[1])"),
@@ -247,8 +247,8 @@ public class RankingExpressionTypeResolverTestCase {
 
     @Test
     public void testAttributeInvocationViaBoundIdentifier() throws Exception {
-        SchemaBuilder builder = new SchemaBuilder();
-        builder.importString(joinLines(
+        ApplicationBuilder builder = new ApplicationBuilder();
+        builder.addSchema(joinLines(
                                  "search newsarticle {",
                                  "    document newsarticle {",
                                  "        field title type string {",
@@ -280,14 +280,14 @@ public class RankingExpressionTypeResolverTestCase {
                                  "        first-phase { expression: commonfirstphase(eustaticrank) }",
                                  "    }",
                                  "}"));
-        builder.build();
+        builder.build(true);
         RankProfile profile = builder.getRankProfileRegistry().get(builder.getSchema(), "eurank");
     }
 
     @Test
     public void testTensorFunctionInvocationTypes_NestedSameName() throws Exception {
-        SchemaBuilder builder = new SchemaBuilder();
-        builder.importString(joinLines(
+        ApplicationBuilder builder = new ApplicationBuilder();
+        builder.addSchema(joinLines(
                 "search test {",
                 "  document test { ",
                 "    field a type tensor(x[10],y[1]) {",
@@ -320,7 +320,7 @@ public class RankingExpressionTypeResolverTestCase {
                 "  }",
                 "}"
         ));
-        builder.build();
+        builder.build(true);
         RankProfile profile =
                 builder.getRankProfileRegistry().get(builder.getSchema(), "my_rank_profile");
         assertEquals(TensorType.fromSpec("tensor(x[10],y[1])"),
@@ -331,8 +331,8 @@ public class RankingExpressionTypeResolverTestCase {
 
     @Test
     public void testTensorFunctionInvocationTypes_viaFuncWithExpr() throws Exception {
-        SchemaBuilder builder = new SchemaBuilder();
-        builder.importString(joinLines(
+        ApplicationBuilder builder = new ApplicationBuilder();
+        builder.addSchema(joinLines(
                                  "search test {",
                                  "    document test {",
                                  "        field t1 type tensor<float>(y{}) { indexing: attribute | summary }",
@@ -345,7 +345,7 @@ public class RankingExpressionTypeResolverTestCase {
                                  "        summary-features { test_func_via_func_with_expr }",
                                  "    }",
                                  "}"));
-        builder.build();
+        builder.build(true);
         RankProfile profile = builder.getRankProfileRegistry().get(builder.getSchema(), "test");
         assertEquals(TensorType.fromSpec("tensor<float>(y{})"),
                      summaryFeatures(profile).get("test_func_via_func_with_expr").type(profile.typeContext(builder.getQueryProfileRegistry())));
@@ -353,8 +353,8 @@ public class RankingExpressionTypeResolverTestCase {
 
     @Test
     public void importedFieldsAreAvailable() throws Exception {
-        SchemaBuilder builder = new SchemaBuilder();
-        builder.importString(joinLines(
+        ApplicationBuilder builder = new ApplicationBuilder();
+        builder.addSchema(joinLines(
                 "search parent {",
                 "  document parent {",
                 "    field a type tensor(x[5],y[1000]) {",
@@ -363,7 +363,7 @@ public class RankingExpressionTypeResolverTestCase {
                 "  }",
                 "}"
         ));
-        builder.importString(joinLines(
+        builder.addSchema(joinLines(
                 "search child {",
                 "  document child { ",
                 "    field ref type reference<parent> {",
@@ -378,14 +378,14 @@ public class RankingExpressionTypeResolverTestCase {
                 "  }",
                 "}"
         ));
-        builder.build();
+        builder.build(true);
     }
 
     @Test
     public void undeclaredQueryFeaturesAreAccepted() throws Exception {
         InspectableDeployLogger logger = new InspectableDeployLogger();
-        SchemaBuilder builder = new SchemaBuilder(logger);
-        builder.importString(joinLines(
+        ApplicationBuilder builder = new ApplicationBuilder(logger);
+        builder.addSchema(joinLines(
                 "search test {",
                 "  document test { ",
                 "    field anyfield type double {" +
@@ -410,8 +410,8 @@ public class RankingExpressionTypeResolverTestCase {
     @Test
     public void undeclaredQueryFeaturesAreAcceptedWithWarningWhenUsingTensors() throws Exception {
         InspectableDeployLogger logger = new InspectableDeployLogger();
-        SchemaBuilder builder = new SchemaBuilder(logger);
-        builder.importString(joinLines(
+        ApplicationBuilder builder = new ApplicationBuilder(logger);
+        builder.addSchema(joinLines(
                 "search test {",
                 "  document test { ",
                 "    field anyfield type tensor(d[2]) {",
@@ -439,7 +439,7 @@ public class RankingExpressionTypeResolverTestCase {
     @Test
     public void noWarningWhenUsingTensorsWhenQueryFeaturesAreDeclared() throws Exception {
         InspectableDeployLogger logger = new InspectableDeployLogger();
-        SchemaBuilder builder = new SchemaBuilder(logger);
+        ApplicationBuilder builder = new ApplicationBuilder(logger);
         QueryProfileType myType = new QueryProfileType("mytype");
         myType.addField(new FieldDescription("rank.feature.query(foo)",
                                              new TensorFieldType(TensorType.fromSpec("tensor(d[2])"))),
@@ -451,7 +451,7 @@ public class RankingExpressionTypeResolverTestCase {
                                              new TensorFieldType(TensorType.fromSpec("tensor(d[2])"))),
                         builder.getQueryProfileRegistry().getTypeRegistry());
         builder.getQueryProfileRegistry().getTypeRegistry().register(myType);
-        builder.importString(joinLines(
+        builder.addSchema(joinLines(
                 "search test {",
                 "  document test { ",
                 "    field anyfield type tensor(d[2]) {",

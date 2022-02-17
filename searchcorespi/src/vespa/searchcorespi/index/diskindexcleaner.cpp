@@ -1,7 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "diskindexcleaner.h"
-#include "activediskindexes.h"
+#include "disk_indexes.h"
+#include "indexdisklayout.h"
+#include "index_disk_dir.h"
 #include <vespa/fastos/file.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <sstream>
@@ -80,13 +82,13 @@ bool isOldIndex(const string &index, uint32_t last_fusion_id) {
 }
 
 void removeOld(const string &base_dir, const vector<string> &indexes,
-               const ActiveDiskIndexes &active_indexes, bool remove) {
+               DiskIndexes &disk_indexes, bool remove) {
     uint32_t last_fusion_id = findLastFusionId(base_dir, indexes);
     for (size_t i = 0; i < indexes.size(); ++i) {
         const string index_dir = base_dir + "/" + indexes[i];
+        auto index_disk_dir = IndexDiskLayout::get_index_disk_dir(indexes[i]);
         if (isOldIndex(indexes[i], last_fusion_id) &&
-            !active_indexes.isActive(index_dir))
-        {
+            disk_indexes.remove(index_disk_dir)) {
             if (remove) {
                 removeDir(index_dir);
             } else {
@@ -108,16 +110,16 @@ void removeInvalid(const string &base_dir, const vector<string> &indexes) {
 }  // namespace
 
 void DiskIndexCleaner::clean(const string &base_dir,
-                             const ActiveDiskIndexes &active_indexes) {
+                             DiskIndexes &disk_indexes) {
     vector<string> indexes = readIndexes(base_dir);
-    removeOld(base_dir, indexes, active_indexes, false);
+    removeOld(base_dir, indexes, disk_indexes, false);
     removeInvalid(base_dir, indexes);
 }
 
 void DiskIndexCleaner::removeOldIndexes(
-        const string &base_dir, const ActiveDiskIndexes &active_indexes) {
+        const string &base_dir, DiskIndexes &disk_indexes) {
     vector<string> indexes = readIndexes(base_dir);
-    removeOld(base_dir, indexes, active_indexes, true);
+    removeOld(base_dir, indexes, disk_indexes, true);
 }
 
 }

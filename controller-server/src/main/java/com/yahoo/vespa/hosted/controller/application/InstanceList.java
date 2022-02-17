@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
@@ -81,10 +82,14 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
         return matching(id -> instance(id).change().hasTargets());
     }
 
+    /** Returns the subset of instances which are currently deploying a new revision */
+    public InstanceList changingRevision() {
+        return matching(id -> instance(id).change().application().isPresent());
+    }
+
     /** Returns the subset of instances which currently have failing jobs on the given version */
     public InstanceList failingOn(Version version) {
-        return matching(id -> ! instances.get(id).instanceJobs().get(id).failing()
-                                         .not().withStatus(outOfCapacity)
+        return matching(id -> ! instances.get(id).instanceJobs().get(id).failingHard()
                                          .lastCompleted().on(version).isEmpty());
     }
 
@@ -93,14 +98,14 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
         return matching(id -> ! instance(id).change().isPinned());
     }
 
-    /** Returns the subset of instances which are not currently failing any jobs. */
+    /** Returns the subset of instances which are currently failing a job. */
     public InstanceList failing() {
-        return matching(id -> ! instances.get(id).instanceJobs().get(id).failing().not().withStatus(outOfCapacity).isEmpty());
+        return matching(id -> ! instances.get(id).instanceJobs().get(id).failingHard().isEmpty());
     }
 
     /** Returns the subset of instances which are currently failing an upgrade. */
     public InstanceList failingUpgrade() {
-        return matching(id -> ! instances.get(id).instanceJobs().get(id).failing().not().failingApplicationChange().isEmpty());
+        return matching(id -> ! instances.get(id).instanceJobs().get(id).failingHard().not().failingApplicationChange().isEmpty());
     }
 
     /** Returns the subset of instances which are upgrading (to any version), not considering block windows. */

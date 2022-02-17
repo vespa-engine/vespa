@@ -45,8 +45,8 @@ class Activator {
 
     /** Activate required resources for application guarded by given lock */
     public void activate(Collection<HostSpec> hosts, long generation, ApplicationTransaction transaction) {
-        activateNodes(hosts, generation, transaction);
-        activateLoadBalancers(hosts, transaction);
+        NodeList newActive = activateNodes(hosts, generation, transaction);
+        activateLoadBalancers(hosts, newActive, transaction);
     }
 
     /**
@@ -62,8 +62,9 @@ class Activator {
      * @param generation the application config generation that is activated
      * @param transaction transaction with operations to commit together with any operations done within the repository,
      *                    while holding the node repository lock on this application
+     * @return the nodes that will be active when transaction is committed
      */
-    private void activateNodes(Collection<HostSpec> hosts, long generation, ApplicationTransaction transaction) {
+    private NodeList activateNodes(Collection<HostSpec> hosts, long generation, ApplicationTransaction transaction) {
         Instant activationTime = nodeRepository.clock().instant(); // Use one timestamp for all activation changes
         ApplicationId application = transaction.application();
         Set<String> hostnames = hosts.stream().map(HostSpec::hostname).collect(Collectors.toSet());
@@ -95,6 +96,7 @@ class Activator {
                                oldActive.not().retired(),
                                newActive.not().retired());
         unreserveParentsOf(reserved);
+        return newActive;
     }
 
     private void deactivate(NodeList toDeactivate, ApplicationTransaction transaction) {
@@ -149,8 +151,8 @@ class Activator {
     }
 
     /** Activate load balancers */
-    private void activateLoadBalancers(Collection<HostSpec> hosts, ApplicationTransaction transaction) {
-        loadBalancerProvisioner.ifPresent(provisioner -> provisioner.activate(allClustersOf(hosts), transaction));
+    private void activateLoadBalancers(Collection<HostSpec> hosts, NodeList newActive, ApplicationTransaction transaction) {
+        loadBalancerProvisioner.ifPresent(provisioner -> provisioner.activate(allClustersOf(hosts), newActive, transaction));
     }
 
     private static Set<ClusterSpec> allClustersOf(Collection<HostSpec> hosts) {

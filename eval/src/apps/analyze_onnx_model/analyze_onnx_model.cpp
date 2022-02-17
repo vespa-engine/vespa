@@ -4,6 +4,7 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/eval/test/test_io.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/guard.h>
@@ -11,8 +12,17 @@
 
 using vespalib::make_string_short::fmt;
 
+using vespalib::Slime;
+using vespalib::slime::JsonFormat;
+using vespalib::slime::Inspector;
+using vespalib::slime::Cursor;
 using vespalib::FilePointer;
 using namespace vespalib::eval;
+using namespace vespalib::eval::test;
+
+struct MyError {
+    vespalib::string msg;
+};
 
 bool read_line(FilePointer &file, vespalib::string &line) {
     char line_buffer[1024];
@@ -133,15 +143,50 @@ struct MakeInputType {
     }
 };
 
+vespalib::string make_bound_str(const std::map<vespalib::string,size_t> &bound) {
+    vespalib::string result;
+    if (!bound.empty()) {
+        for (const auto &[name, size]: bound) {
+            if (result.empty()) {
+                result.append(" (");
+            } else {
+                result.append(",");
+            }
+            result.append(fmt("%s=%zu", name.c_str(), size));
+        }
+        result.append(")");
+    }
+    return result;
+}
+
+void bind_input(Onnx::WirePlanner &planner, const Onnx::TensorInfo &input, const ValueType &type) {
+    auto bound = planner.get_bound_sizes(input);
+    if (!planner.bind_input_type(type, input)) {
+        auto bound_str = make_bound_str(bound);
+        throw MyError{fmt("incompatible type for input '%s': %s -> %s%s",
+                          input.name.c_str(), type.to_spec().c_str(), input.type_as_string().c_str(), bound_str.c_str())};
+    }
+}
+
+ValueType make_output(const Onnx::WirePlanner &planner, const Onnx::TensorInfo &output) {
+    auto type = planner.make_output_type(output);
+    if (type.is_error()) {
+        throw MyError{fmt("unable to make compatible type for output '%s': %s -> error",
+                          output.name.c_str(), output.type_as_string().c_str())};
+    }
+    return type;
+}
+
 Onnx::WireInfo make_plan(Options &opts, const Onnx &model) {
     Onnx::WirePlanner planner;
     MakeInputType make_input_type(opts);
     for (const auto &input: model.inputs()) {
         auto type = make_input_type(input);
-        REQUIRE(planner.bind_input_type(type, input));
+        bind_input(planner, input, type);
     }
+    planner.prepare_output_types(model);
     for (const auto &output: model.outputs()) {
-        REQUIRE(!planner.make_output_type(output).is_error());
+        make_output(planner, output);
     }
     return planner.get_wire_info(model);
 }
@@ -168,13 +213,56 @@ int usage(const char *self) {
     fprintf(stderr, "  load onnx model and report memory usage\n");
     fprintf(stderr, "  options are used to specify unknown values, like dimension sizes\n");
     fprintf(stderr, "  options are accepted in the order in which they are needed\n");
-    fprintf(stderr, "  tip: run without options first, to see which you need\n");
+    fprintf(stderr, "  tip: run without options first, to see which you need\n\n");
+    fprintf(stderr, "usage: %s --probe-types\n", self);
+    fprintf(stderr, "  use onnx model to infer/probe output types based on input types\n");
+    fprintf(stderr, "  parameters are read from stdin and results are written to stdout\n");
+    fprintf(stderr, "  input format (json): {model:<filename>, inputs:{<name>:vespa-type-string}}\n");
+    fprintf(stderr, "  output format (json): {outputs:{<name>:vespa-type-string}}\n");
     return 1;
+}
+
+int probe_types() {
+    StdIn std_in;
+    StdOut std_out;
+    Slime params;
+    if (!JsonFormat::decode(std_in, params)) {
+        throw MyError{"invalid json"};
+    }
+    Slime result;
+    auto &root = result.setObject();
+    auto &types = root.setObject("outputs");
+    Onnx model(params["model"].asString().make_string(), Onnx::Optimize::DISABLE);
+    Onnx::WirePlanner planner;
+    for (size_t i = 0; i < model.inputs().size(); ++i) {
+        auto spec = params["inputs"][model.inputs()[i].name].asString().make_string();
+        auto input_type = ValueType::from_spec(spec);
+        if (input_type.is_error()) {
+            if (!params["inputs"][model.inputs()[i].name].valid()) {
+                throw MyError{fmt("missing type for model input '%s'",
+                                  model.inputs()[i].name.c_str())};
+            } else {
+                throw MyError{fmt("invalid type for model input '%s': '%s'",
+                                  model.inputs()[i].name.c_str(), spec.c_str())};
+            }
+        }
+        bind_input(planner, model.inputs()[i], input_type);
+    }
+    planner.prepare_output_types(model);
+    for (const auto &output: model.outputs()) {
+        auto output_type = make_output(planner, output);
+        types.setString(output.name, output_type.to_spec());
+    }
+    write_compact(result, std_out);
+    return 0;
 }
 
 int my_main(int argc, char **argv) {
     if (argc < 2) {
         return usage(argv[0]);
+    }
+    if ((argc == 2) && (vespalib::string(argv[1]) == "--probe-types")) {
+        return probe_types();
     }
     Options opts;
     for (int i = 2; i < argc; ++i) {
@@ -210,6 +298,9 @@ int my_main(int argc, char **argv) {
 int main(int argc, char **argv) {
     try {
         return my_main(argc, argv);
+    } catch (const MyError &err) {
+        fprintf(stderr, "error: %s\n", err.msg.c_str());
+        return 3;
     } catch (const std::exception &ex) {
         fprintf(stderr, "got exception: %s\n", ex.what());
         return 2;

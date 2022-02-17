@@ -17,6 +17,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// ErrCLI is an error returned to the user. It wraps an exit status, a regular error and optional hints for resolving
+// the error.
+type ErrCLI struct {
+	Status int
+	quiet  bool
+	hints  []string
+	error
+}
+
 var (
 	rootCmd = &cobra.Command{
 		Use:   "vespa command-name",
@@ -28,8 +37,14 @@ Prefer web service API's to this in production.
 
 Vespa documentation: https://docs.vespa.ai`,
 		DisableAutoGenTag: true,
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			configureOutput()
+		SilenceErrors:     true, // We have our own error printing
+		SilenceUsage:      false,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			return configureOutput()
+		},
+		Args: cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fmt.Errorf("invalid command: %s", args[0])
 		},
 	}
 
@@ -64,7 +79,7 @@ func isTerminal() bool {
 	return false
 }
 
-func configureOutput() {
+func configureOutput() error {
 	if quietArg {
 		stdout = ioutil.Discard
 	}
@@ -73,11 +88,11 @@ func configureOutput() {
 
 	config, err := LoadConfig()
 	if err != nil {
-		fatalErr(err, "Could not load config")
+		return err
 	}
 	colorValue, err := config.Get(colorFlag)
 	if err != nil {
-		fatalErr(err)
+		return err
 	}
 
 	colorize := false
@@ -88,9 +103,10 @@ func configureOutput() {
 		colorize = true
 	case "never":
 	default:
-		fatalErrHint(fmt.Errorf("Invalid value for %s option", colorFlag), "Must be \"auto\", \"never\" or \"always\"")
+		return errHint(fmt.Errorf("invalid value for %s option", colorFlag), "Must be \"auto\", \"never\" or \"always\"")
 	}
 	color = aurora.NewAurora(colorize)
+	return nil
 }
 
 func init() {
@@ -106,5 +122,20 @@ func init() {
 	bindFlagToConfig(quietFlag, rootCmd)
 }
 
-// Execute executes the root command.
-func Execute() error { return rootCmd.Execute() }
+// errHint creates a new CLI error, with optional hints that will be printed after the error
+func errHint(err error, hints ...string) ErrCLI { return ErrCLI{Status: 1, hints: hints, error: err} }
+
+// Execute executes command and prints any errors.
+func Execute() error {
+	err := rootCmd.Execute()
+	if err != nil {
+		if cliErr, ok := err.(ErrCLI); ok {
+			if !cliErr.quiet {
+				printErrHint(cliErr, cliErr.hints...)
+			}
+		} else {
+			printErr(err)
+		}
+	}
+	return err
+}

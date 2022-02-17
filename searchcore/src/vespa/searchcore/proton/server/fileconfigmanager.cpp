@@ -68,7 +68,6 @@ fsyncFile(const vespalib::string &fileName)
     if (!f.Sync()) {
         LOG(error, "Could not fsync file '%s'", fileName.c_str());
     }
-    f.Close();
 }
 
 template <class Config>
@@ -131,7 +130,6 @@ ConfigFile::ConfigFile(const vespalib::string &name, const vespalib::string &ful
     _content.resize(fileSize);
     file.ReadBuf(&_content[0], fileSize);
     _modTime = file.GetModificationTime();
-    file.Close();
 }
 
 nbostream &

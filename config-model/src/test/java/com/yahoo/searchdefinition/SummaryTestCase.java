@@ -39,7 +39,7 @@ public class SummaryTestCase {
                 "  }",
                 "}");
         DeployLoggerStub logger = new DeployLoggerStub();
-        SchemaBuilder.createFromString(sd, logger);
+        ApplicationBuilder.createFromString(sd, logger);
         assertTrue(logger.entries.isEmpty());
     }
 
@@ -61,7 +61,7 @@ public class SummaryTestCase {
                 "  }",
                 "}");
         DeployLoggerStub logger = new DeployLoggerStub();
-        SchemaBuilder.createFromString(sd, logger);
+        ApplicationBuilder.createFromString(sd, logger);
         assertEquals(1, logger.entries.size());
         assertEquals(Level.WARNING, logger.entries.get(0).level);
         assertEquals("summary field 'foo2' in document summary 'foobar' references source field 'ondisk', " +
@@ -89,7 +89,7 @@ public class SummaryTestCase {
                 "  }",
                 "}");
         DeployLoggerStub logger = new DeployLoggerStub();
-        SchemaBuilder.createFromString(sd, logger);
+        ApplicationBuilder.createFromString(sd, logger);
         assertTrue(logger.entries.isEmpty());
     }
 
@@ -120,7 +120,7 @@ public class SummaryTestCase {
                 "  }",
                 "}");
         DeployLoggerStub logger = new DeployLoggerStub();
-        SchemaBuilder.createFromString(sd, logger);
+        ApplicationBuilder.createFromString(sd, logger);
         assertTrue(logger.entries.isEmpty());
     }
 
@@ -156,7 +156,7 @@ public class SummaryTestCase {
                 "  }",
                 "}");
         var logger = new DeployLoggerStub();
-        var search = SchemaBuilder.createFromString(sd, logger).getSchema();
+        var search = ApplicationBuilder.createFromString(sd, logger).getSchema();
         assertEquals(List.of(), logger.entries);
 
         var titleField = "title";
@@ -208,7 +208,7 @@ public class SummaryTestCase {
                 "}");
         var logger = new DeployLoggerStub();
         try {
-            SchemaBuilder.createFromString(sd, logger);
+            ApplicationBuilder.createFromString(sd, logger);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals("For schema 'music', summary class 'title2', summary field 'title': Can not use " +
@@ -228,7 +228,7 @@ public class SummaryTestCase {
                     "  }" +
                     "}");
             DeployLoggerStub logger = new DeployLoggerStub();
-            SchemaBuilder.createFromStrings(logger, schema);
+            ApplicationBuilder.createFromStrings(logger, schema);
             assertEquals("document summary 'test_summary' inherits nonesuch but this is not present in schema 'test'",
                          logger.entries.get(0).message);
             // fail("Expected failure");
@@ -264,7 +264,7 @@ public class SummaryTestCase {
                 "  }" +
                 "}");
         DeployLoggerStub logger = new DeployLoggerStub();
-        SchemaBuilder.createFromStrings(logger, parent, child);
+        ApplicationBuilder.createFromStrings(logger, parent, child);
         logger.entries.forEach(e -> System.out.println(e));
         //assertTrue(logger.entries.isEmpty());
     }

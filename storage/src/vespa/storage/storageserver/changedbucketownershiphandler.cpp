@@ -11,6 +11,9 @@
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/metrics/metrictimer.h>
+#include <vespa/config/subscription/configuri.h>
+#include <vespa/config/helper/configfetcher.hpp>
+
 
 
 #include <vespa/log/bufferedlogger.h>
@@ -24,7 +27,7 @@ ChangedBucketOwnershipHandler::ChangedBucketOwnershipHandler(
     : StorageLink("Changed bucket ownership handler"),
       _component(compReg, "changedbucketownershiphandler"),
       _metrics(),
-      _configFetcher(configUri.getContext()),
+      _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
       _stateLock(),
       _currentState(), // Not set yet, so ownership will not be valid
       _currentOwnership(std::make_shared<OwnershipState>(
@@ -33,8 +36,8 @@ ChangedBucketOwnershipHandler::ChangedBucketOwnershipHandler(
       _abortMutatingIdealStateOps(false),
       _abortMutatingExternalLoadOps(false)
 {
-    _configFetcher.subscribe<vespa::config::content::PersistenceConfig>(configUri.getConfigId(), this);
-    _configFetcher.start();
+    _configFetcher->subscribe<vespa::config::content::PersistenceConfig>(configUri.getConfigId(), this);
+    _configFetcher->start();
     _component.registerMetric(_metrics);
 }
 

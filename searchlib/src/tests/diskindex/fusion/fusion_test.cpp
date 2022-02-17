@@ -63,12 +63,14 @@ class FusionTest : public ::testing::Test
 {
 protected:
     Schema _schema;
+    bool   _force_small_merge_chunk;
     const Schema & getSchema() const { return _schema; }
 
     void requireThatFusionIsWorking(const vespalib::string &prefix, bool directio, bool readmmap, bool force_short_merge_chunk);
     void make_simple_index(const vespalib::string &dump_dir, const IFieldLengthInspector &field_length_inspector);
     bool try_merge_simple_indexes(const vespalib::string &dump_dir, const std::vector<vespalib::string> &sources, std::shared_ptr<IFlushToken> flush_token);
     void merge_simple_indexes(const vespalib::string &dump_dir, const std::vector<vespalib::string> &sources);
+    void reconstruct_interleaved_features();
 public:
     FusionTest();
 };
@@ -494,6 +496,7 @@ FusionTest::try_merge_simple_indexes(const vespalib::string &dump_dir, const std
     SelectorArray selector(20, 0);
     Fusion fusion(_schema, dump_dir, sources, selector,
                   tuneFileIndexing, fileHeaderContext);
+    fusion.set_force_small_merge_chunk(_force_small_merge_chunk);
     return fusion.merge(executor, flush_token);
 }
 
@@ -505,7 +508,8 @@ FusionTest::merge_simple_indexes(const vespalib::string &dump_dir, const std::ve
 
 FusionTest::FusionTest()
     : ::testing::Test(),
-      _schema(make_schema(false))
+      _schema(make_schema(false)),
+      _force_small_merge_chunk(false)
 {
 }
 
@@ -557,7 +561,8 @@ TEST_F(FusionTest, require_that_average_field_length_is_preserved)
     clean_field_length_testdirs();
 }
 
-TEST_F(FusionTest, require_that_interleaved_features_can_be_reconstructed)
+void
+FusionTest::reconstruct_interleaved_features()
 {
     clean_field_length_testdirs();
     make_simple_index("fldump2", MockFieldLengthInspector());
@@ -571,6 +576,17 @@ TEST_F(FusionTest, require_that_interleaved_features_can_be_reconstructed)
     assert_interleaved_features(disk_index, "f2", "ay", 10, 1, 4);
     assert_interleaved_features(disk_index, "f3", "wx", 10, 1, 2);
     clean_field_length_testdirs();
+}
+
+TEST_F(FusionTest, require_that_interleaved_features_can_be_reconstructed)
+{
+    reconstruct_interleaved_features();
+}
+
+TEST_F(FusionTest, require_that_interleaved_features_can_be_reconstructed_with_small_merge_chunk)
+{
+    _force_small_merge_chunk = true;
+    reconstruct_interleaved_features();
 }
 
 namespace {

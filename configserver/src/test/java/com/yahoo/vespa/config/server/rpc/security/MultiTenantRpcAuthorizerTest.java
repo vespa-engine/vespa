@@ -116,7 +116,7 @@ public class MultiTenantRpcAuthorizerTest {
                 new ConfigKey<>(LbServicesConfig.CONFIG_DEF_NAME, "*", LbServicesConfig.CONFIG_DEF_NAMESPACE),
                 HOSTNAME);
 
-        exceptionRule.expectMessage("Node with type 'tenant' is not allowed to access global config [name=lb-services,namespace=cloud.config,configId=*]");
+        exceptionRule.expectMessage("Node with type 'tenant' is not allowed to access global config [name=cloud.config.lb-services,configId=*]");
         exceptionRule.expectCause(instanceOf(AuthorizationException.class));
 
         authorizer.authorizeConfigRequest(configRequest)

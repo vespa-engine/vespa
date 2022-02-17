@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.model.test.TestRoot;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
@@ -33,7 +34,7 @@ public class RankProfileRegistryTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testRankProfileDuplicateNameIsIllegal() {
-        Schema schema = new Schema("foo");
+        Schema schema = new Schema("foo", MockApplicationPackage.createEmpty());
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
         RankProfile barRankProfile = new RankProfile("bar", schema, rankProfileRegistry, schema.rankingConstants());
         rankProfileRegistry.add(barRankProfile);
@@ -42,7 +43,7 @@ public class RankProfileRegistryTest {
 
     @Test
     public void testRankProfileDuplicateNameLegalForOverridableRankProfiles() {
-        Schema schema = new Schema("foo");
+        Schema schema = new Schema("foo", MockApplicationPackage.createEmpty());
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
 
         for (String rankProfileName : RankProfileRegistry.overridableRankProfileNames) {

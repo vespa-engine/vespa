@@ -11,7 +11,6 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/typify.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".searchlib.tensor.streamed_value_store");
@@ -22,6 +21,7 @@ using namespace vespalib::eval;
 using vespalib::ConstArrayRef;
 using vespalib::MemoryUsage;
 using vespalib::string_id;
+using vespalib::StringIdVector;
 
 namespace search::tensor {
 
@@ -61,12 +61,12 @@ struct MyFastValueView final : Value {
     const ValueType &my_type;
     FastValueIndex my_index;
     TypedCells my_cells;
-    MyFastValueView(const ValueType &type_ref, const std::vector<string_id> &handle_view, TypedCells cells, size_t num_mapped, size_t num_spaces)
+    MyFastValueView(const ValueType &type_ref, const StringIdVector &handle_view, TypedCells cells, size_t num_mapped, size_t num_spaces)
         : my_type(type_ref),
           my_index(num_mapped, handle_view, num_spaces),
           my_cells(cells)
     {
-        const std::vector<string_id> &labels = handle_view;
+        const StringIdVector &labels = handle_view;
         for (size_t i = 0; i < num_spaces; ++i) {
             ConstArrayRef<string_id> addr(&labels[i * num_mapped], num_mapped);
             my_index.map.add_mapping(FastAddrMap::hash_labels(addr));

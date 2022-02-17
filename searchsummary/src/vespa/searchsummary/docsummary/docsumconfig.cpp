@@ -72,19 +72,19 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
     } else if (overrideName == "absdist") {
         if (getEnvironment()) {
             IAttributeManager *am = getEnvironment()->getAttributeManager();
-            fieldWriter = createAbsDistanceDFW(argument.c_str(), am);
+            fieldWriter = AbsDistanceDFW::create(argument.c_str(), am);
             rc = fieldWriter.get();
         }
     } else if (overrideName == "positions") {
         if (getEnvironment()) {
             IAttributeManager *am = getEnvironment()->getAttributeManager();
-            fieldWriter = createPositionsDFW(argument.c_str(), am);
+            fieldWriter = PositionsDFW::create(argument.c_str(), am, resultConfig.useV8geoPositions());
             rc = fieldWriter.get();
         }
     } else if (overrideName == "geopos") {
         if (getEnvironment()) {
             IAttributeManager *am = getEnvironment()->getAttributeManager();
-            fieldWriter = GeoPositionDFW::create(argument.c_str(), am);
+            fieldWriter = GeoPositionDFW::create(argument.c_str(), am, resultConfig.useV8geoPositions());
             rc = fieldWriter.get();
         }
     } else if (overrideName == "attribute") {

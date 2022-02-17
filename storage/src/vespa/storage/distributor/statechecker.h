@@ -82,6 +82,7 @@ public:
         const DistributorStripeOperationContext& op_ctx;
         const BucketDatabase& db;
         NodeMaintenanceStatsTracker& stats;
+        const bool merges_inhibited_in_bucket_space;
 
         const BucketDatabase::Entry& getSiblingEntry() const {
             return siblingEntry;
@@ -97,7 +98,7 @@ public:
     class ResultImpl
     {
     public:
-        virtual ~ResultImpl() {}
+        virtual ~ResultImpl() = default;
         virtual IdealStateOperation::UP createOperation() = 0;
         virtual MaintenancePriority getPriority() const = 0;
         virtual MaintenanceOperation::Type getType() const = 0;

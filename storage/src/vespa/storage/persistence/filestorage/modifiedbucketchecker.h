@@ -9,8 +9,12 @@
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storage/persistence/types.h>
 #include <vespa/document/bucket/bucketidlist.h>
-#include <vespa/config/config.h>
+#include <vespa/config/helper/ifetchercallback.h>
 
+namespace config {
+    class ConfigUri;
+    class ConfigFetcher;
+}
 namespace storage {
 
 namespace spi { struct PersistenceProvider; }
@@ -80,18 +84,18 @@ private:
         void pop_back() { _buckets.pop_back(); }
     };
 
-    spi::PersistenceProvider& _provider;
-    ServiceLayerComponent::UP _component;
-    framework::Thread::UP _thread;
-    config::ConfigFetcher _configFetcher;
-    std::mutex _monitor;
-    std::condition_variable _cond;
-    std::mutex _stateLock;
-    CyclicBucketSpaceIterator::UP _bucketSpaces;
-    BucketIdListResult  _rechecksNotStarted;
-    size_t _pendingRequests;
-    size_t _maxPendingChunkSize;
-    bool _singleThreadMode; // For unit testing only
+    spi::PersistenceProvider              & _provider;
+    ServiceLayerComponent::UP               _component;
+    framework::Thread::UP                   _thread;
+    std::unique_ptr<config::ConfigFetcher>  _configFetcher;
+    std::mutex                              _monitor;
+    std::condition_variable                 _cond;
+    std::mutex                              _stateLock;
+    CyclicBucketSpaceIterator::UP           _bucketSpaces;
+    BucketIdListResult                      _rechecksNotStarted;
+    size_t                                  _pendingRequests;
+    size_t                                  _maxPendingChunkSize;
+    bool                                    _singleThreadMode; // For unit testing only
 };
 
 } // ns storage

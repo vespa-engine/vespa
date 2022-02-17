@@ -19,7 +19,7 @@ public:
     /**
      * Create source handling config described by key.
      */
-    Source::UP createSource(const IConfigHolder::SP & holder, const ConfigKey & key) const override;
+    std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key) const override;
 
 private:
     ConnectionFactory::SP _connectionFactory;

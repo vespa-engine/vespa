@@ -5,6 +5,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.persistencehandler");
 
+using vespalib::CpuUsage;
+
 namespace storage {
 
 PersistenceHandler::PersistenceHandler(vespalib::ISequencedTaskExecutor & sequencedExecutor,
@@ -19,8 +21,7 @@ PersistenceHandler::PersistenceHandler(vespalib::ISequencedTaskExecutor & sequen
       _processAllHandler(_env, provider),
       _mergeHandler(_env, provider, component.cluster_context(), _clock, sequencedExecutor,
                     cfg.bucketMergeChunkSize,
-                    cfg.commonMergeChainOptimalizationMinimumSize,
-                    cfg.asyncApplyBucketDiff),
+                    cfg.commonMergeChainOptimalizationMinimumSize),
       _asyncHandler(_env, provider, bucketOwnershipNotifier, sequencedExecutor, component.getBucketIdFactory()),
       _splitJoinHandler(_env, provider, bucketOwnershipNotifier, cfg.enableMultibitSplitOptimalization),
       _simpleHandler(_env, provider)
@@ -54,7 +55,10 @@ PersistenceHandler::handleCommandSplitByType(api::StorageCommand& msg, MessageTr
     OperationSyncPhaseTrackingGuard sync_guard(*tracker);
     switch (msg.getType().getId()) {
     case api::MessageType::GET_ID:
+    {
+        auto usage = vespalib::CpuUsage::use(CpuUsage::Category::READ);
         return _simpleHandler.handleGet(static_cast<api::GetCommand&>(msg), std::move(tracker));
+    }
     case api::MessageType::PUT_ID:
         return _asyncHandler.handlePut(static_cast<api::PutCommand&>(msg), std::move(tracker));
     case api::MessageType::REMOVE_ID:
@@ -87,9 +91,15 @@ PersistenceHandler::handleCommandSplitByType(api::StorageCommand& msg, MessageTr
     case api::MessageType::INTERNAL_ID:
         switch(static_cast<api::InternalCommand&>(msg).getType()) {
         case GetIterCommand::ID:
+        {
+            auto usage = vespalib::CpuUsage::use(CpuUsage::Category::READ);
             return _simpleHandler.handleGetIter(static_cast<GetIterCommand&>(msg), std::move(tracker));
+        }
         case CreateIteratorCommand::ID:
+        {
+            auto usage = vespalib::CpuUsage::use(CpuUsage::Category::READ);
             return _simpleHandler.handleCreateIterator(static_cast<CreateIteratorCommand&>(msg), std::move(tracker));
+        }
         case ReadBucketList::ID:
             return _simpleHandler.handleReadBucketList(static_cast<ReadBucketList&>(msg), std::move(tracker));
         case ReadBucketInfo::ID:
@@ -169,12 +179,6 @@ PersistenceHandler::processLockedMessage(FileStorHandler::LockedMessage lock) co
     if (tracker) {
         tracker->sendReply();
     }
-}
-
-void
-PersistenceHandler::configure(vespa::config::content::StorFilestorConfig& config) noexcept
-{
-    _mergeHandler.configure(config.asyncApplyBucketDiff);
 }
 
 }

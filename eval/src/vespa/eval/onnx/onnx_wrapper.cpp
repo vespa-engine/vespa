@@ -75,6 +75,21 @@ struct CreateOnnxTensor {
     }
 };
 
+struct CreateEmptyOnnxTensor {
+    template <typename T> static Ort::Value invoke(const std::vector<int64_t> &sizes, size_t num_cells, OrtAllocator *alloc) {
+        auto value = Ort::Value::CreateTensor<T>(alloc, sizes.data(), sizes.size());
+        T *cells = value.template GetTensorMutableData<T>();
+        for (size_t i = 0; i < num_cells; ++i) {
+            cells[i] = T{};
+        }
+        return value;
+    }
+    Ort::Value operator()(Onnx::ElementType elements, const std::vector<int64_t> &sizes, size_t num_cells, OrtAllocator *alloc) {
+        return typify_invoke<1,MyTypify,CreateEmptyOnnxTensor>(elements, sizes, num_cells, alloc);
+    }
+};
+CreateEmptyOnnxTensor create_empty_onnx_tensor;
+
 struct CreateVespaTensorRef {
     template <typename T> static Value::UP invoke(const ValueType &type_ref, Ort::Value &value) {
         size_t num_cells = type_ref.dense_subspace_size();
@@ -205,6 +220,18 @@ Onnx::TensorInfo make_tensor_info(const OnnxString &name, const Ort::TypeInfo &t
     return Onnx::TensorInfo{vespalib::string(name.get()), make_dimensions(tensor_info), make_element_type(element_type)};
 }
 
+Onnx::TensorType get_type_of(const Ort::Value &value) {
+    auto tensor_info = value.GetTensorTypeAndShapeInfo();
+    auto element_type = tensor_info.GetElementType();
+    auto shape = tensor_info.GetShape();
+    for (int64_t dim_size: shape) {
+        if (dim_size < 1) {
+            throw Ort::Exception("[onnx wrapper] actual value has unknown dimension size", ORT_FAIL);
+        }
+    }
+    return Onnx::TensorType(make_element_type(element_type), shape);
+}
+
 std::vector<int64_t> extract_sizes(const ValueType &type) {
     std::vector<int64_t> sizes;
     for (const auto &dim: type.dimensions()) {
@@ -253,6 +280,58 @@ Onnx::TensorType::type_as_string() const
 
 Onnx::WireInfo::~WireInfo() = default;
 
+bool
+Onnx::WirePlanner::need_model_probe(const Onnx &model) const
+{
+    for (const auto &output: model.outputs()) {
+        for (const auto &dim: output.dimensions) {
+            if (dim.is_symbolic()) {
+                if (_symbolic_sizes.find(dim.name) == _symbolic_sizes.end()) {
+                    // symbolic output dimension with unknown size
+                    return true;
+                }
+            } else if (dim.value == 0) {
+                // non-symbolic output dimension with unknown size
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void
+Onnx::WirePlanner::do_model_probe(const Onnx &model)
+{
+    try {
+        std::vector<Ort::Value> param_values;
+        param_values.reserve(model.inputs().size());
+        for (const auto &input: model.inputs()) {
+            const auto &pos = _input_types.find(input.name);
+            assert(pos != _input_types.end());
+            auto vespa_type = pos->second;
+            auto sizes = extract_sizes(vespa_type);
+            size_t num_cells = vespa_type.dense_subspace_size();
+            param_values.push_back(create_empty_onnx_tensor(input.elements, sizes, num_cells, _alloc));
+        }
+        std::vector<Ort::Value> result_values;
+        result_values.reserve(model.outputs().size());
+        for (size_t i = 0; i < model.outputs().size(); ++i) {
+            result_values.emplace_back(nullptr);
+        }
+        Ort::RunOptions run_opts(nullptr);
+        Ort::Session &session = const_cast<Ort::Session&>(model._session);
+        session.Run(run_opts,
+                    model._input_name_refs.data(), param_values.data(), param_values.size(),
+                    model._output_name_refs.data(), result_values.data(), result_values.size());
+        for (size_t i = 0; i < model.outputs().size(); ++i) {
+            _output_types.emplace(model.outputs()[i].name, get_type_of(result_values[i]));
+        }
+    } catch (const Ort::Exception &ex) {
+        _output_types.clear();
+        LOG(warning, "model probe failed: %s", ex.what());
+    }
+}
+
 Onnx::WirePlanner::~WirePlanner() = default;
 
 CellType
@@ -289,7 +368,6 @@ Onnx::WirePlanner::bind_input_type(const ValueType &vespa_in, const TensorInfo &
                 return false;
             }
         } else {
-            _bound_unknown_sizes.insert(type.dimensions()[i].size);
             if (dimensions[i].is_symbolic()) {
                 auto &bound_size = _symbolic_sizes[dimensions[i].name];
                 if (bound_size == 0) {
@@ -304,13 +382,39 @@ Onnx::WirePlanner::bind_input_type(const ValueType &vespa_in, const TensorInfo &
     return true;
 }
 
+std::map<vespalib::string,size_t>
+Onnx::WirePlanner::get_bound_sizes(const TensorInfo &onnx_in) const
+{
+    std::map<vespalib::string,size_t> result;
+    for (const auto &dim: onnx_in.dimensions) {
+        if (dim.is_symbolic()) {
+            auto pos = _symbolic_sizes.find(dim.name);
+            if (pos != _symbolic_sizes.end()) {
+                assert(pos->second != 0);
+                result.emplace(dim.name, pos->second);
+            }
+        }
+    }
+    return result;
+}
+
+void
+Onnx::WirePlanner::prepare_output_types(const Onnx &model)
+{
+    if (need_model_probe(model)) {
+        do_model_probe(model);
+    }
+}
+
 ValueType
 Onnx::WirePlanner::make_output_type(const TensorInfo &onnx_out) const
 {
     const auto &dimensions = onnx_out.dimensions;
     const auto &elements = onnx_out.elements;
+    auto probed = _output_types.find(onnx_out.name);
     std::vector<ValueType::Dimension> dim_list;
-    for (const auto &dim: dimensions) {
+    for (size_t i = 0; i < dimensions.size(); ++i) {
+        const auto &dim = dimensions[i];
         size_t dim_size = dim.value;
         if (dim.is_symbolic()) {
             auto pos = _symbolic_sizes.find(dim.name);
@@ -318,14 +422,23 @@ Onnx::WirePlanner::make_output_type(const TensorInfo &onnx_out) const
                 dim_size = pos->second;
             }
         }
-        // if the output dimension is still unknown, but all unknown
-        // input dimensions have been bound to the same size, we use
-        // that size as a guess for the size of the unknown output
-        // dimension as well. (typical scenario would be batch
-        // dimension not tagged as having the same symbolic size
-        // across input and output values).
-        if ((dim_size == 0) && (_bound_unknown_sizes.size() == 1)) {
-            dim_size = *_bound_unknown_sizes.begin();
+        if (probed != _output_types.end()) {
+            const auto &type = probed->second;
+            if (type.dimensions.size() != dimensions.size()) {
+                LOG(warning, "probed output '%s' does not have the same number of dimensions as "
+                    "the output declared by the model (probed: %zu, declared: %zu)", onnx_out.name.c_str(),
+                    type.dimensions.size(), dimensions.size());
+                return ValueType::error_type();
+            }
+            size_t probed_size = type.dimensions[i];
+            if (dim_size == 0) {
+                dim_size = probed_size;
+            } else if (probed_size != dim_size) {
+                LOG(warning, "probed dimension size for output '%s' dimension %zu does not match symbolic "
+                    "dimension size inferred from inputs (probed: %zu, inferred: %zu)", onnx_out.name.c_str(),
+                    i, probed_size, dim_size);
+                return ValueType::error_type();
+            }
         }
         if ((dim_size == 0) || (dim_list.size() > 9)) {
             return ValueType::error_type();
@@ -371,8 +484,6 @@ Onnx::WirePlanner::get_wire_info(const Onnx &model) const
 }
 
 //-----------------------------------------------------------------------------
-
-Ort::AllocatorWithDefaultOptions Onnx::EvalContext::_alloc;
 
 template <typename T>
 void
@@ -514,6 +625,8 @@ Onnx::EvalContext::get_result(size_t i) const
 }
 
 //-----------------------------------------------------------------------------
+
+Ort::AllocatorWithDefaultOptions Onnx::_alloc;
 
 Onnx::Shared::Shared()
     : _env(ORT_LOGGING_LEVEL_WARNING, "vespa-onnx-wrapper")

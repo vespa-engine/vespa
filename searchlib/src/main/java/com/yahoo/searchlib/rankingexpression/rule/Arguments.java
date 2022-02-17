@@ -15,7 +15,9 @@ import java.util.List;
  * @author bratseth
  */
 public final class Arguments implements Serializable {
+
     public static final Arguments EMPTY = new Arguments();
+
     private final ImmutableList<ExpressionNode> expressions;
 
     public Arguments() {
@@ -47,9 +49,9 @@ public final class Arguments implements Serializable {
 
     /** Evaluate all arguments in this */
     public Value[] evaluate(Context context) {
-        Value[] values=new Value[expressions.size()];
-        for (int i=0; i<expressions.size(); i++)
-            values[i]=expressions.get(i).evaluate(context);
+        Value[] values = new Value[expressions.size()];
+        for (int i = 0; i < expressions.size(); i++)
+            values[i] = expressions.get(i).evaluate(context);
         return values;
     }
 

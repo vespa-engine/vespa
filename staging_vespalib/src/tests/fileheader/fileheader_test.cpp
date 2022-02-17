@@ -4,7 +4,6 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/fastos/file.h>
-#include <iostream>
 
 using namespace vespalib;
 
@@ -302,7 +301,7 @@ void
 Test::testBufferAccess()
 {
     DataBuffer buf;
-    uint32_t len = 0;
+    uint32_t len;
     {
         GenericHeader header;
         header.putTag(GenericHeader::Tag("foo", 6.9));
@@ -345,8 +344,6 @@ Test::testFileReader()
             buf[i] = (uint8_t)i;
         }
         EXPECT_EQUAL(256, file.Write2(buf, 256));
-
-        file.Close();
     }
     {
         FastOS_File file;
@@ -364,7 +361,7 @@ Test::testFileReader()
         }
         EXPECT_EQUAL(256u, sum);
 
-        file.Close();
+        ASSERT_TRUE(file.Close());
         file.Delete();
     }
 }
@@ -399,7 +396,7 @@ Test::testFileWriter()
             EXPECT_EQUAL(i, (uint32_t)buf[i]);
         }
 
-        file.Close();
+        ASSERT_TRUE(file.Close());
         file.Delete();
     }
 }
@@ -418,7 +415,6 @@ Test::testFileHeader()
         ASSERT_TRUE(file.OpenWriteOnlyTruncate("fileheader.tmp"));
         len = header.writeFile(file);
         EXPECT_EQUAL(len, header.getSize());
-        file.Close();
     }
     {
         FastOS_File file;
@@ -440,8 +436,6 @@ Test::testFileHeader()
         header.putTag(FileHeader::Tag("baz", "999666"));
         EXPECT_EQUAL(len, header.getSize());
         EXPECT_EQUAL(len, header.rewriteFile(file));
-
-        file.Close();
     }
     {
         FileHeader header;
@@ -450,7 +444,7 @@ Test::testFileHeader()
         ASSERT_TRUE(file.OpenReadOnly("fileheader.tmp"));
         EXPECT_EQUAL(len, header.readFile(file));
         EXPECT_EQUAL(len, header.getSize());
-        file.Close();
+        ASSERT_TRUE(file.Close());
         file.Delete();
 
         EXPECT_TRUE(header.hasTag("foo"));
@@ -575,34 +569,36 @@ Test::testRewriteErrors()
     header.putTag(FileHeader::Tag("foo", "bar"));
     uint32_t len = header.getSize();
 
-    FastOS_File file;
-    ASSERT_TRUE(file.OpenWriteOnlyTruncate("fileheader.tmp"));
-    EXPECT_EQUAL(len, header.writeFile(file));
-    file.Close();
-
-    ASSERT_TRUE(file.OpenReadWrite("fileheader.tmp"));
-    header.putTag(FileHeader::Tag("baz", "cox"));
-    EXPECT_TRUE(len != header.getSize());
-    try {
-        header.rewriteFile(file);
-        EXPECT_TRUE(false);
-    } catch (IllegalHeaderException &e) {
-        EXPECT_EQUAL("Failed to rewrite resized header.", e.getMessage());
+    {
+        FastOS_File file;
+        ASSERT_TRUE(file.OpenWriteOnlyTruncate("fileheader.tmp"));
+        EXPECT_EQUAL(len, header.writeFile(file));
     }
-    file.Close();
+    {
+        FastOS_File file;
+        ASSERT_TRUE(file.OpenReadWrite("fileheader.tmp"));
+        header.putTag(FileHeader::Tag("baz", "cox"));
+        EXPECT_TRUE(len != header.getSize());
+        try {
+            header.rewriteFile(file);
+            EXPECT_TRUE(false);
+        } catch (IllegalHeaderException &e) {
+            EXPECT_EQUAL("Failed to rewrite resized header.", e.getMessage());
+        }
+    }
 }
 
 void
 Test::testLayout()
 {
-    FastOS_File file;
-    const std::string fileName = TEST_PATH("fileheader.dat");
-    ASSERT_TRUE(file.OpenReadOnly(fileName.c_str()));
-
     FileHeader header;
-    uint32_t len = header.readFile(file);
-    EXPECT_EQUAL(len, header.getSize());
-    file.Close();
+    {
+        FastOS_File file;
+        const std::string fileName = TEST_PATH("fileheader.dat");
+        ASSERT_TRUE(file.OpenReadOnly(fileName.c_str()));
+        uint32_t len = header.readFile(file);
+        EXPECT_EQUAL(len, header.getSize());
+    }
 
     EXPECT_TRUE(header.hasTag("foo"));
     EXPECT_EQUAL(6.9, header.getTag("foo").asFloat());
@@ -621,7 +617,7 @@ Test::testReadSize(bool mapped)
         buf.writeInt32(21);
         buf.writeInt32(GenericHeader::VERSION);
         buf.writeInt32(1);
-        uint32_t headerLen = 0u;
+        uint32_t headerLen;
         if (mapped) {
             GenericHeader::MMapReader reader(buf.getData(), buf.getDataLen());
             headerLen = FileHeader::readSize(reader);

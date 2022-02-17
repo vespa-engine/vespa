@@ -2,9 +2,10 @@
 #pragma once
 
 #include "configkey.h"
-#include <vespa/config/subscription/configsubscription.h>
 
 namespace config {
+
+class ConfigSubscription;
 
 struct SubscribeHandler
 {
@@ -18,8 +19,8 @@ struct SubscribeHandler
      * @param timeoutInMillis the timeout of the subscribe call.
      * @return subscription object containing data relevant to client
      */
-    virtual ConfigSubscription::SP subscribe(const ConfigKey & key, milliseconds timeoutInMillis) = 0;
-    virtual ~SubscribeHandler() { }
+    virtual std::shared_ptr<ConfigSubscription> subscribe(const ConfigKey & key, milliseconds timeoutInMillis) = 0;
+    virtual ~SubscribeHandler() = default;
 };
 
 }

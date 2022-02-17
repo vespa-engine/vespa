@@ -523,9 +523,6 @@ public class VdsVisit {
             if (line.hasOption("processtime")) {
                 allParams.setProcessTime(((Number) line.getParsedOptionValue("processtime")).intValue());
             }
-            if (line.hasOption("maxhits")) {
-                params.setMaxFirstPassHits(((Number)line.getParsedOptionValue("maxhits")).intValue());
-            }
             if (line.hasOption("maxtotalhits")) {
                 params.setMaxTotalHits(((Number)line.getParsedOptionValue("maxtotalhits")).intValue());
             }

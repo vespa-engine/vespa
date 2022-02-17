@@ -24,7 +24,6 @@ import com.yahoo.vespa.model.application.validation.change.RedundancyIncreaseVal
 import com.yahoo.vespa.model.application.validation.change.ResourcesReductionValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
-import com.yahoo.vespa.model.application.validation.first.AccessControlOnFirstDeploymentValidator;
 import com.yahoo.vespa.model.application.validation.first.RedundancyOnFirstDeploymentValidator;
 
 import java.time.Instant;
@@ -50,6 +49,13 @@ import static java.util.stream.Collectors.toList;
  */
 public class Validation {
 
+    private final List<Validator> additionalValidators;
+
+    public Validation() { this(List.of()); }
+
+    /** Create instance taking additional validators (e.g for cloud applications) */
+    public Validation(List<Validator> additionalValidators) { this.additionalValidators = additionalValidators; }
+
     /**
      * Validates the model supplied, and if there already exists a model for the application validates changes
      * between the previous and current model
@@ -57,7 +63,7 @@ public class Validation {
      * @return a list of required changes needed to make this configuration live
      * @throws ValidationOverrides.ValidationException if the change fails validation
      */
-    public static List<ConfigChangeAction> validate(VespaModel model, ValidationParameters validationParameters, DeployState deployState) {
+    public List<ConfigChangeAction> validate(VespaModel model, ValidationParameters validationParameters, DeployState deployState) {
         if (validationParameters.checkRouting()) {
             new RoutingValidator().validate(model, deployState);
             new RoutingSelectorValidator().validate(model, deployState);
@@ -76,9 +82,10 @@ public class Validation {
         new EndpointCertificateSecretsValidator().validate(model, deployState);
         new AccessControlFilterValidator().validate(model, deployState);
         new CloudWatchValidator().validate(model, deployState);
-        new AwsAccessControlValidator().validate(model, deployState);
         new QuotaValidator().validate(model, deployState);
         new UriBindingsValidator().validate(model, deployState);
+
+        additionalValidators.forEach(v -> v.validate(model, deployState));
 
         List<ConfigChangeAction> result = Collections.emptyList();
         if (deployState.getProperties().isFirstTimeDeployment()) {
@@ -126,7 +133,6 @@ public class Validation {
     }
 
     private static void validateFirstTimeDeployment(VespaModel model, DeployState deployState) {
-        new AccessControlOnFirstDeploymentValidator().validate(model, deployState);
         new RedundancyOnFirstDeploymentValidator().validate(model, deployState);
     }
 
@@ -134,7 +140,7 @@ public class Validation {
         Set<ClusterSpec.Id> clustersToBeRestarted = actions.stream()
                                                            .filter(action -> action.getType() == ConfigChangeAction.Type.RESTART)
                                                            .map(action -> action.clusterId())
-                                                           .collect(Collectors.toSet());
+                                                           .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
         for (var clusterToRestart : clustersToBeRestarted) {
             var containerCluster = model.getContainerClusters().get(clusterToRestart.value());
             if (containerCluster != null)

@@ -5,22 +5,15 @@
 #include <vespa/vespalib/data/slime/array_traverser.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace config {
+namespace config::internal {
 
-namespace internal {
-
-template<typename T, typename Converter = ::config::internal::ValueConverter<T> >
+template<typename V, typename Converter = ::config::internal::ValueConverter<typename V::value_type> >
 class VectorInserter : public ::vespalib::slime::ArrayTraverser {
 public:
-    VectorInserter(std::vector<T> & vector);
+    VectorInserter(V & vector);
     void entry(size_t idx, const ::vespalib::slime::Inspector & inspector) override;
 private:
-    std::vector<T> & _vector;
+    V & _vector;
 };
 
-} // namespace internal
-
-} // namespace config
-
-#include "vector_inserter.hpp"
-
+}

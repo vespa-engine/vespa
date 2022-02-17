@@ -8,7 +8,6 @@ import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -36,7 +35,6 @@ public class RoutingTestCase {
     private static final boolean WRITE_FILES = false;
 
     @Test
-    @Ignore // TODO: Why?
     public void testRoutingContent() throws IOException {
         assertApplication(new File("src/test/cfg/routing/contentsimpleconfig"));
         assertApplication(new File("src/test/cfg/routing/content_two_clusters"));

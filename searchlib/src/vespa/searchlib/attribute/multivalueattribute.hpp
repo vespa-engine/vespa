@@ -28,7 +28,7 @@ MultiValueAttribute(const vespalib::string &baseFileName,
                                                                8 * 1024,
                                                                cfg.getGrowStrategy().getMultiValueAllocGrowFactor(),
                                                                multivalueattribute::enable_free_lists),
-                 cfg.getGrowStrategy().to_generic_strategy())
+                 cfg.getGrowStrategy().to_generic_strategy(), this->get_memory_allocator())
 {
 }
 

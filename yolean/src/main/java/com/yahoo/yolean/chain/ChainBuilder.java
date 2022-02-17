@@ -12,7 +12,9 @@ import java.util.Set;
 /**
  * @author Tony Vaagenes
  * @author gjoranv
+ * @deprecated Will be removed in Vespa 8 with no replacement.
  */
+@Deprecated
 public final class ChainBuilder<T> {
 
     private final String chainId;

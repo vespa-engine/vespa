@@ -9,7 +9,6 @@ import com.yahoo.vespa.athenz.api.AthenzPolicy;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.api.OktaIdentityToken;
 import com.yahoo.vespa.athenz.client.ErrorHandler;
@@ -288,7 +287,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
-    public Map<AthenzUser, String> listPendingRoleApprovals(AthenzRole athenzRole) {
+    public Map<AthenzIdentity, String> listPendingRoleApprovals(AthenzRole athenzRole) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s?pending=true", athenzRole.domain().getName(), athenzRole.roleName()));
         HttpUriRequest request = RequestBuilder.get()
                 .setUri(uri)
@@ -297,16 +296,15 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
 
         return roleEntity.roleMembers().stream()
                 .filter(RoleEntity.Member::pendingApproval)
-                .filter(re -> AthenzIdentities.USER_PRINCIPAL_DOMAIN.equals(AthenzIdentities.from(re.memberName()).getDomain()))
                 .collect(Collectors.toUnmodifiableMap(
-                        m -> (AthenzUser) AthenzIdentities.from(m.memberName()),
+                        m -> AthenzIdentities.from(m.memberName()),
                         m -> m.auditRef() != null ? m.auditRef() : "<no reason provided>"));
     }
 
     @Override
-    public void approvePendingRoleMembership(AthenzRole athenzRole, AthenzUser athenzUser, Instant expiry, Optional<String> reason) {
-        URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s/member/%s/decision", athenzRole.domain().getName(), athenzRole.roleName(), athenzUser.getFullName()));
-        MembershipEntity membership = new MembershipEntity.RoleMembershipEntity(athenzUser.getFullName(), true, athenzRole.roleName(), Long.toString(expiry.getEpochSecond()));
+    public void approvePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry, Optional<String> reason) {
+        URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s/member/%s/decision", athenzRole.domain().getName(), athenzRole.roleName(), athenzIdentity.getFullName()));
+        MembershipEntity membership = new MembershipEntity.RoleMembershipEntity(athenzIdentity.getFullName(), true, athenzRole.roleName(), Long.toString(expiry.getEpochSecond()));
 
         var requestBuilder = RequestBuilder.put()
                 .setUri(uri)
@@ -389,6 +387,20 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     public void deleteRole(AthenzRole role) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s", role.domain().getName(), role.roleName()));
         HttpUriRequest request = RequestBuilder.delete(uri).build();
+        execute(request, response -> readEntity(response, Void.class));
+    }
+
+    @Override
+    public void createSubdomain(AthenzDomain parent, String name) {
+        URI uri = zmsUrl.resolve(String.format("subdomain/%s", parent.getName()));
+        StringEntity entity = toJsonStringEntity(
+                Map.of("name", name,
+                        "parent", parent.getName(),
+                        "adminUsers", List.of(identity.getFullName())) // TODO: createSubdomain should receive an adminUsers argument
+        );
+        var request = RequestBuilder.post(uri)
+                .setEntity(entity)
+                .build();
         execute(request, response -> readEntity(response, Void.class));
     }
 

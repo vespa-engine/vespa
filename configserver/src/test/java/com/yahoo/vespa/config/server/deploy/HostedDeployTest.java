@@ -22,6 +22,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.config.server.MockConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
@@ -432,7 +433,14 @@ public class HostedDeployTest {
                                                                           "reindex please", services, "music"),
                                                     new VespaRestartAction(ClusterSpec.Id.from("test"), "change", services)));
 
-        DeployTester tester = createTester(hosts, modelFactories, prodZone, clock);
+        DeployTester tester = new DeployTester.Builder()
+                .modelFactories(modelFactories)
+                .configserverConfig(createConfigserverConfig(prodZone))
+                .clock(clock)
+                .zone(prodZone)
+                .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true, false))
+                .configConvergenceChecker(new MockConfigConvergenceChecker(2))
+                .build();
         PrepareResult prepareResult = tester.deployApp("src/test/apps/hosted/", "6.1.0");
 
         assertEquals(7, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
@@ -480,7 +488,9 @@ public class HostedDeployTest {
                 .configserverConfig(createConfigserverConfig(prodZone))
                 .clock(clock)
                 .zone(prodZone)
-                .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true, false)).build();
+                .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true, false))
+                .configConvergenceChecker(new MockConfigConvergenceChecker(2))
+                .build();
     }
 
     private static class ConfigChangeActionsModelFactory extends TestModelFactory {

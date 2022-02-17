@@ -656,6 +656,10 @@ public:
             addNode(entry->getNodeRef(i).getNode());
         }
     }
+    MergeNodes(MergeNodes && rhs) noexcept = default;
+    MergeNodes & operator =(MergeNodes && rhs) noexcept = delete;
+    MergeNodes(const MergeNodes & rhs) = delete;
+    MergeNodes & operator =(const MergeNodes & rhs) = delete;
 
     ~MergeNodes();
 
@@ -828,12 +832,20 @@ allCopiesAreInvalid(const StateChecker::Context& c)
     return true;
 }
 
+bool
+merging_effectively_disabled_for_state_checker(const StateChecker::Context& c) noexcept
+{
+    return (c.distributorConfig.merge_operations_disabled()
+            || (c.distributorConfig.inhibit_default_merges_when_global_merges_pending()
+                && c.merges_inhibited_in_bucket_space));
+}
+
 }
 
 StateChecker::Result
 SynchronizeAndMoveStateChecker::check(StateChecker::Context& c)
 {
-    if (c.distributorConfig.merge_operations_disabled()) {
+    if (merging_effectively_disabled_for_state_checker(c)) {
         return Result::noMaintenanceNeeded();
     }
     if (isInconsistentlySplit(c)) {

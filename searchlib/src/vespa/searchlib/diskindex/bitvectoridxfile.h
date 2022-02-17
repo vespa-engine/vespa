@@ -2,11 +2,12 @@
 
 #pragma once
 
-#include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/stllike/string.h>
 #include "bitvectorkeyscope.h"
+
+class Fast_BufferedFile;
 
 namespace search::common { class FileHeaderContext; }
 
@@ -35,18 +36,18 @@ public:
     BitVectorIdxFileWrite& operator=(const BitVectorIdxFileWrite &&) = delete;
     BitVectorIdxFileWrite(BitVectorKeyScope scope);
 
-    ~BitVectorIdxFileWrite();
+    virtual ~BitVectorIdxFileWrite();
 
-    void open(const vespalib::string &name, uint32_t docIdLimit,
-              const TuneFileSeqWrite &tuneFileWrite,
-              const common::FileHeaderContext &fileHeaderContext);
+    virtual void open(const vespalib::string &name, uint32_t docIdLimit,
+                      const TuneFileSeqWrite &tuneFileWrite,
+                      const common::FileHeaderContext &fileHeaderContext);
 
 
 
     void addWordSingle(uint64_t wordNum, uint32_t numDocs);
-    void flush();
-    void sync();
-    void close();
+    virtual void flush();
+    virtual void sync();
+    virtual void close();
 
     static uint32_t getBitVectorLimit(uint32_t docIdLimit) {
         // Must match FastS_BinSizeParams::CalcMaxBinSize()

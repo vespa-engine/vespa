@@ -7,6 +7,7 @@ import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.SharedResource;
+import com.yahoo.yolean.UncheckedInterruptedException;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
@@ -15,12 +16,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,35 +35,20 @@ public class Deconstructor implements ComponentDeconstructor {
 
     private static final Logger log = Logger.getLogger(Deconstructor.class.getName());
 
-    private static final Duration RECONFIG_DECONSTRUCT_DELAY = Duration.ofSeconds(60);
+    private final ExecutorService executor =
+            Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory("component-deconstructor"));
 
     // This must be smaller than the shutdownDeadlineExecutor delay in ConfiguredApplication
-    private static final Duration SHUTDOWN_DECONSTRUCT_TIMEOUT = Duration.ofSeconds(45);
+    private final Duration shutdownTimeout;
 
-    public enum Mode {
-        RECONFIG,  // Delay deconstruction to allow old components to finish processing in-flight requests.
-        SHUTDOWN   // The container is shutting down. Start deconstructing immediately, and wait until all components
-                   // are deconstructed, to prevent shutting down while deconstruct is in progress.
+    public Deconstructor(Duration shutdownTimeout) {
+        this.shutdownTimeout = shutdownTimeout;
     }
 
-    private final ScheduledExecutorService executor =
-            Executors.newScheduledThreadPool(2, ThreadFactoryFactory.getThreadFactory("component-deconstructor"));
-
-    private final Mode mode;
-    private final Duration delay;
-
-    public Deconstructor(Mode mode) {
-        this(mode, (mode == Mode.RECONFIG) ? RECONFIG_DECONSTRUCT_DELAY : Duration.ZERO);
-    }
-
-    // For testing only
-    Deconstructor(Mode mode, Duration reconfigDeconstructDelay) {
-        this.mode = mode;
-        this.delay = reconfigDeconstructDelay;
-    }
+    public Deconstructor() { this(Duration.ofSeconds(45)); }
 
     @Override
-    public void deconstruct(List<Object> components, Collection<Bundle> bundles) {
+    public void deconstruct(long generation, List<Object> components, Collection<Bundle> bundles) {
         Collection<Deconstructable> destructibleComponents = new ArrayList<>();
         for (var component : components) {
             if (component instanceof AbstractComponent) {
@@ -76,41 +59,46 @@ public class Deconstructor implements ComponentDeconstructor {
             } else if (component instanceof Provider) {
                 destructibleComponents.add((Deconstructable) component);
             } else if (component instanceof SharedResource) {
-                log.log(FINE, () -> "Releasing container reference to resource " + component);
-                // No need to delay release, as jdisc does ref-counting
-                ((SharedResource) component).release();
+                // Release shared resources in same order as other components in case of usage without reference counting
+                destructibleComponents.add(new SharedResourceReleaser(component));
             }
         }
         if (!destructibleComponents.isEmpty() || !bundles.isEmpty()) {
-            var task = executor.schedule(new DestructComponentTask(destructibleComponents, bundles),
-                              delay.getSeconds(), TimeUnit.SECONDS);
-            if (mode.equals(Mode.SHUTDOWN)) {
-                waitFor(task, SHUTDOWN_DECONSTRUCT_TIMEOUT);
-            }
+            executor.execute(new DestructComponentTask(generation, destructibleComponents, bundles));
         }
     }
 
-    private void waitFor(ScheduledFuture<?> task, Duration timeout) {
+    @Override
+    public void shutdown() {
+        executor.shutdown();
         try {
-            log.info("Waiting up to " + timeout.toSeconds() + " seconds for all components to deconstruct.");
-            task.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+            log.info("Waiting up to " + shutdownTimeout.toSeconds() + " seconds for all previous components graphs to deconstruct.");
+            if (!executor.awaitTermination(shutdownTimeout.getSeconds(), TimeUnit.SECONDS)) {
+                log.warning("Waiting for deconstruction timed out.");
+            }
         } catch (InterruptedException e) {
             log.info("Interrupted while waiting for component deconstruction to finish.");
-            Thread.currentThread().interrupt();
-        } catch (ExecutionException e) {
-            log.warning("Component deconstruction threw an exception: " + e.getMessage());
-        } catch (TimeoutException e) {
-            log.warning("Component deconstruction timed out.");
+            throw new UncheckedInterruptedException(e, true);
         }
+    }
+
+    private static class SharedResourceReleaser implements Deconstructable {
+        final SharedResource resource;
+
+        private SharedResourceReleaser(Object resource) { this.resource = (SharedResource) resource; }
+
+        @Override public void deconstruct() { resource.release(); }
     }
 
     private static class DestructComponentTask implements Runnable {
 
         private final Random random = new Random(System.nanoTime());
+        private final long generation;
         private final Collection<Deconstructable> components;
         private final Collection<Bundle> bundles;
 
-        DestructComponentTask(Collection<Deconstructable> components, Collection<Bundle> bundles) {
+        DestructComponentTask(long generation, Collection<Deconstructable> components, Collection<Bundle> bundles) {
+            this.generation = generation;
             this.components = components;
             this.bundles = bundles;
         }
@@ -120,12 +108,15 @@ public class Deconstructor implements ComponentDeconstructor {
         * Used to randomize restart to avoid simultaneous cluster restarts.
         */
         private Duration getRandomizedShutdownDelay() {
-            long seconds = (long) random.nextDouble() * 60 * 10;
+            long seconds = (long) (random.nextDouble() * 60 * 10);
             return Duration.ofSeconds(seconds);
         }
 
         @Override
         public void run() {
+            long start = System.currentTimeMillis();
+            log.info(String.format("Starting deconstruction of %d components and %d bundles from generation %d",
+                    components.size(), bundles.size(), generation));
             for (var component : components) {
                 log.log(FINE, () -> "Starting deconstruction of " + component);
                 try {
@@ -156,6 +147,7 @@ public class Deconstructor implements ComponentDeconstructor {
                     log.log(SEVERE, "Could not uninstall bundle " + bundle);
                 }
             }
+            log.info(String.format("Completed deconstruction in %.3f seconds", (System.currentTimeMillis() - start) / 1000D));
             // NOTE: It could be tempting to refresh packages here, but if active bundles were using any of
             //       the removed ones, they would switch wiring in the middle of a generation's lifespan.
             //       This would happen if the dependent active bundle has not been rebuilt with a new version

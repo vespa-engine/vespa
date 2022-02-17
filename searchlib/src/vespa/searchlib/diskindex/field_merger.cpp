@@ -43,6 +43,7 @@ constexpr uint32_t renumber_word_ids_heap_limit = 4;
 constexpr uint32_t renumber_word_ids_merge_chunk = 1000000;
 constexpr uint32_t merge_postings_heap_limit = 4;
 constexpr uint32_t merge_postings_merge_chunk = 50000;
+constexpr uint32_t scan_chunk = 80000;
 
 vespalib::string
 createTmpPath(const vespalib::string & base, uint32_t index) {
@@ -69,6 +70,8 @@ FieldMerger::FieldMerger(uint32_t id, const FusionOutputIndex& fusion_out_index,
       _readers(),
       _heap(),
       _writer(),
+      _field_length_scanner(),
+      _open_reader_idx(std::numeric_limits<uint32_t>::max()),
       _state(State::MERGE_START),
       _failed(false)
 {
@@ -228,7 +231,7 @@ FieldMerger::renumber_word_ids_failed()
     LOG(error, "Could not renumber field word ids for field %s dir %s", _field_name.c_str(), _field_dir.c_str());
 }
 
-std::shared_ptr<FieldLengthScanner>
+void
 FieldMerger::allocate_field_length_scanner()
 {
     SchemaUtil::IndexIterator index(_fusion_out_index.get_schema(), _id);
@@ -242,34 +245,71 @@ FieldMerger::allocate_field_length_scanner()
                 const Schema &old_schema = old_index.getSchema();
                 if (index.hasOldFields(old_schema) &&
                     !index.has_matching_use_interleaved_features(old_schema)) {
-                    return std::make_shared<FieldLengthScanner>(_fusion_out_index.get_doc_id_limit());
+                    _field_length_scanner = std::make_shared<FieldLengthScanner>(_fusion_out_index.get_doc_id_limit());
+                    return;
                 }
             }
         }
     }
-    return std::shared_ptr<FieldLengthScanner>();
 }
 
 bool
+FieldMerger::open_input_field_reader()
+{
+    auto& oi = _fusion_out_index.get_old_indexes()[_open_reader_idx];
+    if (!_readers.back()->open(oi.getPath() + "/" + _field_name + "/", _fusion_out_index.get_tune_file_indexing()._read)) {
+        _readers.pop_back();
+        return false;
+    }
+    return true;
+}
+
+void
 FieldMerger::open_input_field_readers()
 {
-    _readers.reserve(_fusion_out_index.get_old_indexes().size());
     SchemaUtil::IndexIterator index(_fusion_out_index.get_schema(), _id);
-    auto field_length_scanner = allocate_field_length_scanner();
-    for (const auto &oi : _fusion_out_index.get_old_indexes()) {
+    for (; _open_reader_idx < _fusion_out_index.get_old_indexes().size(); ++_open_reader_idx) {
+        auto& oi = _fusion_out_index.get_old_indexes()[_open_reader_idx];
         const Schema &oldSchema = oi.getSchema();
         if (!index.hasOldFields(oldSchema)) {
             continue; // drop data
         }
-        auto reader = FieldReader::allocFieldReader(index, oldSchema, field_length_scanner);
-        reader->setup(_word_num_mappings[oi.getIndex()], oi.getDocIdMapping());
-        if (!reader->open(oi.getPath() + "/" + _field_name + "/", _fusion_out_index.get_tune_file_indexing()._read)) {
-            return false;
+        _readers.push_back(FieldReader::allocFieldReader(index, oldSchema, _field_length_scanner));
+        auto& reader = *_readers.back();
+        reader.setup(_word_num_mappings[oi.getIndex()], oi.getDocIdMapping());
+        if (!open_input_field_reader()) {
+            merge_postings_failed();
+            return;
         }
-        _readers.push_back(std::move(reader));
+        if (reader.need_regenerate_interleaved_features_scan()) {
+            _state = State::SCAN_ELEMENT_LENGTHS;
+            return;
+        }
     }
-    return true;
+    _field_length_scanner.reset();
+    _open_reader_idx = std::numeric_limits<uint32_t>::max();
+    _state = State::OPEN_POSTINGS_FIELD_READERS_FINISH;
 }
+
+void
+FieldMerger::scan_element_lengths()
+{
+    auto& reader = *_readers.back();
+    if (reader.isValid()) {
+        reader.scan_element_lengths(_fusion_out_index.get_force_small_merge_chunk() ? 1u : scan_chunk);
+        if (reader.isValid()) {
+            return;
+        }
+    }
+    reader.close();
+    if (!open_input_field_reader()) {
+        merge_postings_failed();
+    } else {
+        ++_open_reader_idx;
+        _state = State::OPEN_POSTINGS_FIELD_READERS;
+    }
+}
+
 
 bool
 FieldMerger::open_field_writer()
@@ -368,19 +408,25 @@ FieldMerger::setup_merge_heap()
     return true;
 }
 
-bool
+void
 FieldMerger::merge_postings_start()
 {
     /* OUTPUT */
     _writer = std::make_unique<FieldWriter>(_fusion_out_index.get_doc_id_limit(), _num_word_ids);
+    _readers.reserve(_fusion_out_index.get_old_indexes().size());
+    allocate_field_length_scanner();
+    _open_reader_idx = 0;
+    _state = State::OPEN_POSTINGS_FIELD_READERS;
+}
 
-    if (!open_input_field_readers()) {
-        return false;
+void
+FieldMerger::merge_postings_open_field_readers_done()
+{
+    if (!open_field_writer() || !setup_merge_heap()) {
+        merge_postings_failed();
+    } else {
+        _state = State::MERGE_POSTINGS;
     }
-    if (!open_field_writer()) {
-        return false;
-    }
-    return setup_merge_heap();
 }
 
 void
@@ -457,7 +503,6 @@ FieldMerger::merge_field_finish()
     bool res = merge_postings_finish();
     if (!res) {
         merge_postings_failed();
-        _failed = true;
         return;
     }
     if (!FileKit::createStamp(_field_dir +  "/.mergeocc_done")) {
@@ -489,11 +534,19 @@ FieldMerger::process_merge_field()
     case State::RENUMBER_WORD_IDS_FINISH:
         if (!renumber_word_ids_finish()) {
             renumber_word_ids_failed();
-        } else if (!merge_postings_start()) {
-            merge_postings_failed();
+            break;
         } else {
-            _state = State::MERGE_POSTINGS;
+            merge_postings_start();
         }
+        [[fallthrough]];
+    case State::OPEN_POSTINGS_FIELD_READERS:
+        open_input_field_readers();
+        break;
+    case State::SCAN_ELEMENT_LENGTHS:
+        scan_element_lengths();
+        break;
+    case State::OPEN_POSTINGS_FIELD_READERS_FINISH:
+        merge_postings_open_field_readers_done();
         break;
     case State::MERGE_POSTINGS:
         merge_postings_main();
@@ -505,15 +558,6 @@ FieldMerger::process_merge_field()
     default:
         LOG_ABORT("should not be reached");
     }
-}
-
-bool
-FieldMerger::merge_field()
-{
-    while (!_failed && _state != State::MERGE_DONE) {
-        process_merge_field();
-    }
-    return !_failed;
 }
 
 }

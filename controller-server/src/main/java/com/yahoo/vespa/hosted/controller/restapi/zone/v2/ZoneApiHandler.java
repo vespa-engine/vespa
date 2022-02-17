@@ -5,7 +5,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.config.provision.zone.ZoneList;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.SlimeJsonResponse;
@@ -34,7 +34,7 @@ public class ZoneApiHandler extends AuditLoggingRequestHandler {
     private final ZoneRegistry zoneRegistry;
     private final ConfigServerRestExecutor proxy;
 
-    public ZoneApiHandler(LoggingRequestHandler.Context parentCtx, ServiceRegistry serviceRegistry,
+    public ZoneApiHandler(ThreadedHttpRequestHandler.Context parentCtx, ServiceRegistry serviceRegistry,
                           ConfigServerRestExecutor proxy, Controller controller) {
         super(parentCtx, controller.auditLogger());
         this.zoneRegistry = serviceRegistry.zoneRegistry();

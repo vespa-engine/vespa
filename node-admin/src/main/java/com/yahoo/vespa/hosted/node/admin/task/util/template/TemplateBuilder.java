@@ -35,8 +35,7 @@ class TemplateBuilder {
 
         ListSection existing = lists.get(section.name());
         if (existing != null)
-            throw new NameAlreadyExistsTemplateException(section.name(), existing.nameOffset(),
-                                                         section.nameOffset());
+            throw new NameAlreadyExistsTemplateException(section.name(), existing, section);
 
         sampleVariables.put(section.name(), section);
         allSections.add(section);
@@ -48,8 +47,7 @@ class TemplateBuilder {
 
         ListSection list = lists.get(section.name());
         if (list != null)
-            throw new NameAlreadyExistsTemplateException(section.name(), list.nameOffset(),
-                                                         section.nameOffset());
+            throw new NameAlreadyExistsTemplateException(section.name(), list, section);
 
         sampleIfSections.put(section.name(), section);
         allSections.add(section);
@@ -58,18 +56,15 @@ class TemplateBuilder {
     void addListSection(ListSection section) {
         VariableSection variableSection = sampleVariables.get(section.name());
         if (variableSection != null)
-            throw new NameAlreadyExistsTemplateException(section.name(), variableSection.nameOffset(),
-                                                         section.nameOffset());
+            throw new NameAlreadyExistsTemplateException(section.name(), variableSection, section);
 
         IfSection ifSection = sampleIfSections.get(section.name());
         if (ifSection != null)
-            throw new NameAlreadyExistsTemplateException(section.name(), ifSection.nameOffset(),
-                                                         section.nameOffset());
+            throw new NameAlreadyExistsTemplateException(section.name(), ifSection, section);
 
         ListSection previous = lists.put(section.name(), section);
         if (previous != null)
-            throw new NameAlreadyExistsTemplateException(section.name(), previous.nameOffset(),
-                                                         section.nameOffset());
+            throw new NameAlreadyExistsTemplateException(section.name(), previous, section);
         allSections.add(section);
     }
 

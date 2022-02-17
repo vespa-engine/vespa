@@ -5,6 +5,7 @@
 #include <vespa/log/internal.h>
 #include <vespa/log/component.h>
 
+#include <optional>
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/stat.h>
@@ -14,9 +15,9 @@ LOG_SETUP("vespa-logctl");
 
 using namespace ns_log;
 
-static void modifyLevels(const char *file, char *component, char *levels,
+static void modifyLevels(const char *file, const char *component, const char *levels,
              bool shouldCreateFile, bool shouldCreateEntry);
-static void readLevels(const char *file, char *component);
+static void readLevels(const char *file, const char *component);
 
 
 static void
@@ -148,7 +149,7 @@ main(int argc, char **argv)
     strlist_t services;
 
     char nullComponent[] = "default";
-    char *component = nullComponent;
+    std::string component(nullComponent);
 
     if (doAllFiles) {
         services = findAllFiles(dir);
@@ -166,28 +167,26 @@ main(int argc, char **argv)
             fprintf(stderr, "ERROR: Missing service argument!\n");
             return EXIT_FAILURE;
         }
-        char *service = strdup(argv[optind]);
+        std::string service(argv[optind]);
         ++optind;
 
-        char *delim = strchr(service, ':');
-        if (delim) {
-            *delim = 0;
-            services.push_back(service);
-            *delim = '.';
-            component = delim;
+        auto delim_pos = service.find(':');
+        if (delim_pos != std::string::npos) {
+            services.push_back(service.substr(0, delim_pos));
+            component = '.' + service.substr(delim_pos + 1);
         } else {
             services.push_back(service);
         }
     }
 
     char defLevels[] = "all=on,debug=off,spam=off";
-    char *levels = NULL;
+    std::optional<std::string> levels;
 
     if (doResetLevels) {
         levels = defLevels;
     } else {
         if (argc > optind) {
-            levels = strdup(argv[optind]);
+            levels = argv[optind];
             ++optind;
         }
     }
@@ -210,10 +209,10 @@ main(int argc, char **argv)
         // fprintf(stderr, "Log control file %s:\n", file);
 
         try {
-            if (levels) {
-                modifyLevels(file, component, levels, shouldCreateFile, shouldCreateEntry);
+            if (levels.has_value()) {
+                modifyLevels(file, component.c_str(), levels.value().c_str(), shouldCreateFile, shouldCreateEntry);
             } else {
-                readLevels(file, component);
+                readLevels(file, component.c_str());
             }
             hadSuccess = true;
         } catch (InvalidLogException& x) {
@@ -230,7 +229,7 @@ main(int argc, char **argv)
 }
 
 static void
-modifyLevels(const char *file, char *componentPattern, char *levels,
+modifyLevels(const char *file, const char *componentPattern, const char *levels,
              bool shouldCreateFile, bool shouldCreateEntry)
 {
     ControlFile cf(file, shouldCreateFile
@@ -250,7 +249,7 @@ modifyLevels(const char *file, char *componentPattern, char *levels,
 }
 
 static void
-readLevels(const char *file, char *componentPattern)
+readLevels(const char *file, const char *componentPattern)
 {
     ControlFile cf(file, ControlFile::READONLY);
     Component *c;

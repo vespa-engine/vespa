@@ -39,6 +39,7 @@ import java.util.concurrent.Executors;
 */
 public class HandlersConfigurerTestWrapper {
 
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private final ConfigSourceSet configSources =
             new ConfigSourceSet(this.getClass().getSimpleName() + ": " + new Random().nextLong());
     private final HandlersConfigurerDi configurer;
@@ -109,7 +110,7 @@ public class HandlersConfigurerTestWrapper {
     }
 
     private ComponentDeconstructor getTestDeconstructor() {
-        return (components, bundles) -> components.forEach(component -> {
+        return (generation, components, bundles) -> components.forEach(component -> {
             if (component instanceof AbstractComponent) {
                 AbstractComponent abstractComponent = (AbstractComponent) component;
                 if (abstractComponent.isDeconstructable()) abstractComponent.deconstruct();
@@ -120,11 +121,12 @@ public class HandlersConfigurerTestWrapper {
 
     public void reloadConfig() {
         configurer.reloadConfig(++lastGeneration);
-        configurer.getNewComponentGraph(guiceInjector(), false);
+        Runnable cleanupTask = configurer.waitForNextGraphGeneration(guiceInjector(), false);
+        cleanupTask.run();
     }
 
     public void shutdown() {
-        configurer.shutdown(getTestDeconstructor());
+        configurer.shutdown();
         // TODO: Remove once tests use ConfigSet rather than dir:
         for (File f : createdFiles) {
             f.delete();

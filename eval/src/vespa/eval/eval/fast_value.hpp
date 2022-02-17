@@ -139,7 +139,7 @@ struct FastIterateView : public Value::Index::View {
 // operations by calling inline functions directly.
 struct FastValueIndex final : Value::Index {
     FastAddrMap map;
-    FastValueIndex(size_t num_mapped_dims_in, const std::vector<string_id> &labels, size_t expected_subspaces_in)
+    FastValueIndex(size_t num_mapped_dims_in, const StringIdVector &labels, size_t expected_subspaces_in)
         : map(num_mapped_dims_in, labels, expected_subspaces_in) {}
     size_t size() const override { return map.size(); }
     std::unique_ptr<View> create_view(ConstArrayRef<size_t> dims) const override;
@@ -168,29 +168,19 @@ struct FastCells {
     static constexpr size_t elem_size = sizeof(T);
     size_t capacity;
     size_t size;
-    void *memory;
-    FastCells(size_t initial_capacity)
-        : capacity(roundUp2inN(initial_capacity)),
-          size(0),
-          memory(malloc(elem_size * capacity))
-    {
-        static_assert(std::is_trivially_copyable_v<T>);
-        static_assert(can_skip_destruction<T>::value);
-    }
-    ~FastCells() {
-        free(memory);
-    }
+    mutable alloc::Alloc memory;
+    FastCells(size_t initial_capacity);
+    FastCells(const FastCells &) = delete;
+    FastCells & operator = (const FastCells &) = delete;
+    ~FastCells();
     void ensure_free(size_t need) {
         if (__builtin_expect((size + need) > capacity, false)) {
-            capacity = roundUp2inN(size + need);
-            void *new_memory = malloc(elem_size * capacity);
-            memcpy(new_memory, memory, elem_size * size);
-            free(memory);
-            memory = new_memory;
+            reallocate(need);
         }
     }
+    void reallocate(size_t need);
     constexpr T *get(size_t offset) const {
-        return reinterpret_cast<T*>(memory) + offset;
+        return reinterpret_cast<T*>(memory.get()) + offset;
     }
     void push_back_fast(T value) {
         *get(size++) = value;
@@ -209,17 +199,38 @@ struct FastCells {
     }
 };
 
+template <typename T>
+FastCells<T>::FastCells(size_t initial_capacity)
+    : capacity(roundUp2inN(initial_capacity)),
+      size(0),
+      memory(alloc::Alloc::alloc(elem_size * capacity))
+{
+    static_assert(std::is_trivially_copyable_v<T>);
+    static_assert(can_skip_destruction<T>::value);
+}
+
+template <typename T>
+void
+FastCells<T>::reallocate(size_t need) {
+    capacity = roundUp2inN(size + need);
+    alloc::Alloc new_memory = alloc::Alloc::alloc(elem_size * capacity);
+    memcpy(new_memory.get(), memory.get(), elem_size * size);
+    memory = std::move(new_memory);
+}
+
+template <typename T>
+FastCells<T>::~FastCells() = default;
+
 //-----------------------------------------------------------------------------
 
 template <typename T, bool transient>
 struct FastValue final : Value, ValueBuilder<T> {
-
     using Handles = typename std::conditional<transient,
-                                     std::vector<string_id>,
+                                     StringIdVector,
                                      SharedStringRepo::Handles>::type;
 
-    static const std::vector<string_id> &get_view(const std::vector<string_id> &handles) { return handles; }
-    static const std::vector<string_id> &get_view(const SharedStringRepo::Handles &handles) { return handles.view(); }
+    static const StringIdVector &get_view(const StringIdVector &handles) { return handles; }
+    static const StringIdVector &get_view(const SharedStringRepo::Handles &handles) { return handles.view(); }
 
     ValueType my_type;
     size_t my_subspace_size;
@@ -227,14 +238,7 @@ struct FastValue final : Value, ValueBuilder<T> {
     FastValueIndex my_index;
     FastCells<T> my_cells;
 
-    FastValue(const ValueType &type_in, size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces_in)
-        : my_type(type_in), my_subspace_size(subspace_size_in),
-          my_handles(),
-          my_index(num_mapped_dims_in, get_view(my_handles), expected_subspaces_in),
-          my_cells(subspace_size_in * expected_subspaces_in)
-    {
-        my_handles.reserve(expected_subspaces_in * num_mapped_dims_in);
-    }
+    FastValue(const ValueType &type_in, size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces_in);
     ~FastValue() override;
     const ValueType &type() const override { return my_type; }
     const Value::Index &index() const override { return my_index; }
@@ -245,7 +249,7 @@ struct FastValue final : Value, ValueBuilder<T> {
             // not called
             abort();
         } else {
-            return TypedCells(my_cells.memory, get_cell_type<T>(), my_cells.size);
+            return TypedCells(my_cells.memory.get(), get_cell_type<T>(), my_cells.size);
         }
     }
     void add_mapping(ConstArrayRef<vespalib::stringref> addr) {
@@ -310,7 +314,20 @@ struct FastValue final : Value, ValueBuilder<T> {
         return usage;
     }
 };
-template <typename T,bool transient> FastValue<T,transient>::~FastValue() = default;
+
+template <typename T,bool transient>
+FastValue<T,transient>::FastValue(const ValueType &type_in, size_t num_mapped_dims_in,
+                                  size_t subspace_size_in, size_t expected_subspaces_in)
+    : my_type(type_in), my_subspace_size(subspace_size_in),
+      my_handles(),
+      my_index(num_mapped_dims_in, get_view(my_handles), expected_subspaces_in),
+      my_cells(subspace_size_in * expected_subspaces_in)
+{
+    my_handles.reserve(expected_subspaces_in * num_mapped_dims_in);
+}
+
+template <typename T,bool transient>
+FastValue<T,transient>::~FastValue() = default;
 
 //-----------------------------------------------------------------------------
 
@@ -328,7 +345,7 @@ struct FastDenseValue final : Value, ValueBuilder<T> {
     ~FastDenseValue() override;
     const ValueType &type() const override { return my_type; }
     const Value::Index &index() const override { return TrivialIndex::get(); }
-    TypedCells cells() const override { return TypedCells(my_cells.memory, get_cell_type<T>(), my_cells.size); }
+    TypedCells cells() const override { return TypedCells(my_cells.memory.get(), get_cell_type<T>(), my_cells.size); }
     ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref>) override {
         return ArrayRef<T>(my_cells.get(0), my_cells.size);
     }

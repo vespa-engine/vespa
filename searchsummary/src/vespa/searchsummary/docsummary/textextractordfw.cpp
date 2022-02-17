@@ -27,7 +27,7 @@ TextExtractorDFW::init(const vespalib::string & fieldName, const vespalib::strin
 }
 
 void
-TextExtractorDFW::insertField(uint32_t, GeneralResult *gres, GetDocsumsState *state, ResType,
+TextExtractorDFW::insertField(uint32_t, GeneralResult *gres, GetDocsumsState *, ResType,
                               vespalib::slime::Inserter &target)
 {
     vespalib::string extracted;
@@ -35,7 +35,7 @@ TextExtractorDFW::insertField(uint32_t, GeneralResult *gres, GetDocsumsState *st
     if (entry != nullptr) {
         const char * buf = nullptr;
         uint32_t buflen = 0;
-        entry->_resolve_field(&buf, &buflen, &state->_docSumFieldSpace);
+        entry->_resolve_field(&buf, &buflen);
         // extract the text
         Tokenizer tokenizer(buf, buflen);
         while (tokenizer.hasMoreTokens()) {

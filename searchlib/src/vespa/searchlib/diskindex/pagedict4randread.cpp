@@ -255,10 +255,10 @@ PageDict4RandRead::close()
 
     _ssReadContext.dropComprBuf();
     _ssReadContext.setFile(nullptr);
-    _ssfile->Close();
-    _spfile->Close();
-    _pfile->Close();
-    return true;
+    bool ok = _ssfile->Close();
+    ok &= _spfile->Close();
+    ok &= _pfile->Close();
+    return ok;
 }
 
 uint64_t

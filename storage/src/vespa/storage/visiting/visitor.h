@@ -89,24 +89,11 @@ public:
     class HitCounter {
     public:
         HitCounter();
-
         void addHit(const document::DocumentId& hit, uint32_t size);
-
-        void updateVisitorStatistics(vdslib::VisitorStatistics& statistics);
-
-        uint32_t getFirstPassHits() const { return _firstPassHits; }
-
-        uint64_t getFirstPassBytes() const { return _firstPassBytes; }
-
-        uint32_t getSecondPassHits() const { return _secondPassHits; }
-
-        uint64_t getSecondPassBytes() const { return _secondPassBytes; }
-
+        void updateVisitorStatistics(vdslib::VisitorStatistics& statistics) const;
     private:
-        uint32_t _firstPassHits;
-        uint64_t _firstPassBytes;
-        uint32_t _secondPassHits;
-        uint64_t _secondPassBytes;
+        uint32_t _doc_hits;
+        uint64_t _doc_bytes;
     };
 
     enum VisitorState

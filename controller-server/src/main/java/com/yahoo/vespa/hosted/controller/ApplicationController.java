@@ -87,6 +87,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -370,7 +371,6 @@ public class ApplicationController {
             try (Lock lock = lock(applicationId)) {
                 LockedApplication application = new LockedApplication(requireApplication(applicationId), lock);
                 Instance instance = application.get().require(job.application().instance());
-                rejectOldChange(instance, platform, revision, job, zone);
 
                 if (   ! applicationPackage.trustedCertificates().isEmpty()
                     &&   run.testerCertificate().isPresent())
@@ -392,6 +392,8 @@ public class ApplicationController {
             // the source since it's the same application, so it should have the same warnings
             NotificationSource source = zone.environment().isManuallyDeployed() ?
                     NotificationSource.from(deployment) : NotificationSource.from(applicationId);
+
+            @SuppressWarnings("deprecation")
             List<String> warnings = Optional.ofNullable(result.prepareResponse().log)
                     .map(logs -> logs.stream()
                             .filter(log -> log.applicationPackage)
@@ -442,6 +444,23 @@ public class ApplicationController {
             if (notification.source().instance().isPresent() &&
                     ! notification.source().zoneId().map(application.get().require(notification.source().instance().get()).deployments()::containsKey).orElse(false))
                 controller.notificationsDb().removeNotifications(notification.source());
+        }
+
+        var oldestDeployedVersion = application.get().productionDeployments().values().stream()
+                                               .flatMap(List::stream)
+                                               .map(Deployment::applicationVersion)
+                                               .filter(version -> ! version.isDeployedDirectly())
+                                               .min(naturalOrder())
+                                               .orElse(ApplicationVersion.unknown);
+
+        var olderVersions = application.get().versions().stream()
+                .filter(version -> version.compareTo(oldestDeployedVersion) < 0)
+                .sorted()
+                .collect(Collectors.toList());
+
+        // Remove any version not deployed anywhere - but keep one
+        for (int i = 0; i < olderVersions.size() - 1; i++) {
+            application = application.withoutVersion(olderVersions.get(i));
         }
 
         store(application);
@@ -799,20 +818,6 @@ public class ApplicationController {
                 throw new IllegalArgumentException("Athenz domain in deployment.xml: [" + identityDomain.get().getName() + "] " +
                                                    "must match tenant domain: [" + tenantDomain.getName() + "]");
         }
-    }
-
-    private void rejectOldChange(Instance instance, Version platform, ApplicationVersion revision, JobId job, ZoneId zone) {
-        Deployment deployment = instance.deployments().get(zone);
-        if (deployment == null) return;
-        if (!zone.environment().isProduction()) return;
-
-        boolean platformIsOlder = platform.compareTo(deployment.version()) < 0 && !instance.change().isPinned();
-        boolean revisionIsOlder = revision.compareTo(deployment.applicationVersion()) < 0 &&
-                                  !(revision.isUnknown() && controller.system().isCd());
-        if (platformIsOlder || revisionIsOlder)
-            throw new IllegalArgumentException(Text.format("Rejecting deployment of application %s to %s, as the requested versions (platform: %s, application: %s)" +
-                                                             " are older than the currently deployed (platform: %s, application: %s).",
-                                                             job.application(), zone, platform, revision, deployment.version(), deployment.applicationVersion()));
     }
 
     private TenantAndApplicationId dashToUnderscore(TenantAndApplicationId id) {

@@ -12,12 +12,15 @@
 
 #include <vespa/storage/config/config-stor-status.h>
 #include <vespa/storageframework/generic/thread/runnable.h>
-#include <vespa/config/config.h>
-#include <vespa/config/helper/configfetcher.h>
+#include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/vespalib/portal/portal.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <list>
 
+namespace config {
+    class ConfigUri;
+    class ConfigFetcher;
+}
 namespace storage {
 
 namespace framework {
@@ -28,6 +31,7 @@ namespace framework {
     class HttpUrlPath;
     class Component;
 }
+
 class StatusWebServer : private config::IFetcherCallback<vespa::config::content::core::StorStatusConfig>
 {
     class WebServer : public vespalib::Portal::GetHandler {
@@ -64,7 +68,7 @@ class StatusWebServer : private config::IFetcherCallback<vespa::config::content:
     framework::StatusReporterMap&          _reporterMap;
     uint16_t                               _port;
     std::unique_ptr<WebServer>             _httpServer;
-    config::ConfigFetcher                  _configFetcher;
+    std::unique_ptr<config::ConfigFetcher> _configFetcher;
     std::unique_ptr<framework::Component>  _component;
 
 public:

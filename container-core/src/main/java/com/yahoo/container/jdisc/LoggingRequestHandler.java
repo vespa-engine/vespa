@@ -25,8 +25,11 @@ import java.util.logging.Level;
  * ThreadedHttpRequestHandler with access logging.
  *
  * @author Steinar Knutsen
+ *
+ * @deprecated  Use {@link ThreadedHttpRequestHandler}, which provides the same level of functionality.
  */
 // TODO Vespa 8: Remove deprecated constructors
+@Deprecated
 public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
 
     // TODO: Deprecate
@@ -58,7 +61,6 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
 
     }
 
-    // TODO: Deprecate
     public static Context testOnlyContext() {
         return new Context(new Executor() {
                 @Override

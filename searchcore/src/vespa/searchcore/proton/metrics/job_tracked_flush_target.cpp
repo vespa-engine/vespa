@@ -8,11 +8,11 @@ using searchcorespi::FlushTask;
 
 namespace proton {
 
-JobTrackedFlushTarget::JobTrackedFlushTarget(const IJobTracker::SP &tracker,
-                                             const IFlushTarget::SP &target)
+JobTrackedFlushTarget::JobTrackedFlushTarget(std::shared_ptr<IJobTracker> tracker,
+                                             std::shared_ptr<IFlushTarget> target)
     : IFlushTarget(target->getName(), target->getType(), target->getComponent()),
-      _tracker(tracker),
-      _target(target)
+      _tracker(std::move(tracker)),
+      _target(std::move(target))
 {
 }
 

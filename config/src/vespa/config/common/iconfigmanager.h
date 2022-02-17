@@ -12,7 +12,7 @@ class IConfigManager : public SubscribeHandler,
                        public ReloadHandler
 {
 public:
-    virtual ~IConfigManager() { }
+    virtual ~IConfigManager() = default;
 };
 
 } // namespace config

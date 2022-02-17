@@ -1,11 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
+import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import com.yahoo.config.subscription.ConfigGetter;
-import com.yahoo.config.subscription.FileSource;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
-import com.yahoo.path.Path;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
@@ -19,6 +18,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * @author lesters
@@ -26,10 +26,12 @@ import static org.junit.Assert.assertTrue;
 public class OnnxEvaluatorTest {
 
     private static final double delta = 0.00000000001;
+    private static final String CONFIG_DIR = "src/test/resources/config/onnx/";
 
     @Test
     public void testOnnxEvaluation() {
-        ModelsEvaluator models = createModels("src/test/resources/config/onnx/");
+        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
+        ModelsEvaluator models = createModels();
 
         assertTrue(models.models().containsKey("add_mul"));
         assertTrue(models.models().containsKey("one_layer"));
@@ -49,24 +51,23 @@ public class OnnxEvaluatorTest {
         assertEquals(function.evaluate(), Tensor.from("tensor<float>(d0[2],d1[1]):[0.63931,0.67574]"));
     }
 
-    private ModelsEvaluator createModels(String path) {
-        Path configDir = Path.fromString(path);
-        RankProfilesConfig config = new ConfigGetter<>(new FileSource(configDir.append("rank-profiles.cfg").toFile()),
-                                                       RankProfilesConfig.class).getConfig("");
-        RankingConstantsConfig constantsConfig = new ConfigGetter<>(new FileSource(configDir.append("ranking-constants.cfg").toFile()),
-                                                                    RankingConstantsConfig.class).getConfig("");
-        RankingExpressionsConfig expressionsConfig = new ConfigGetter<>(new FileSource(configDir.append("ranking-expressions.cfg").toFile()),
-                                                                        RankingExpressionsConfig.class).getConfig("");
-        OnnxModelsConfig onnxModelsConfig = new ConfigGetter<>(new FileSource(configDir.append("onnx-models.cfg").toFile()),
-                                                               OnnxModelsConfig.class).getConfig("");
+    private ModelsEvaluator createModels() {
+        RankProfilesConfig config = ConfigGetter.getConfig(RankProfilesConfig.class, fileConfigId("rank-profiles.cfg"));
+        RankingConstantsConfig constantsConfig = ConfigGetter.getConfig(RankingConstantsConfig.class, fileConfigId("ranking-constants.cfg"));
+        RankingExpressionsConfig expressionsConfig = ConfigGetter.getConfig(RankingExpressionsConfig.class, fileConfigId("ranking-expressions.cfg"));
+        OnnxModelsConfig onnxModelsConfig = ConfigGetter.getConfig(OnnxModelsConfig.class, fileConfigId("onnx-models.cfg"));
 
         Map<String, File> fileMap = new HashMap<>();
         for (OnnxModelsConfig.Model onnxModel : onnxModelsConfig.model()) {
-            fileMap.put(onnxModel.fileref().value(), new File(path + onnxModel.fileref().value()));
+            fileMap.put(onnxModel.fileref().value(), new File(CONFIG_DIR + onnxModel.fileref().value()));
         }
         FileAcquirer fileAcquirer = MockFileAcquirer.returnFiles(fileMap);
 
         return new ModelsEvaluator(config, constantsConfig, expressionsConfig, onnxModelsConfig, fileAcquirer);
+    }
+
+    private static String fileConfigId(String filename) {
+        return "file:" + CONFIG_DIR + filename;
     }
 
 }

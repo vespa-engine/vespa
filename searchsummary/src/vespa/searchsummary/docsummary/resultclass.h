@@ -71,10 +71,7 @@ struct ResEntry
         void *_pt;
     };
 
-    bool _extract_field(search::RawBuf *target) const;
-
-    uint32_t _get_length() const { return (_len & 0x7fffffff); }
-    bool _is_compressed() const { return (_len & 0x80000000) != 0; }
+    uint32_t _get_length() const { return _len; }
     uint32_t _get_real_length() const
     {
         // precond: IsVariableSize(_type) && _len >= sizeof(uint32_t)
@@ -83,29 +80,11 @@ struct ResEntry
         memcpy(&rlen, _pt, sizeof(rlen));
         return rlen;
     }
-    const void *_get_compressed() const
-    {
-        // precond: IsVariableSize(_type) && _len >= sizeof(uint32_t)
-
-        return (const void *)(((const char *) _pt) + sizeof(uint32_t));
-    }
-    void _resolve_field(const char **buf, uint32_t *buflen,
-                        search::RawBuf *target) const
+    void _resolve_field(const char **buf, uint32_t *buflen) const
     {
         // precond: IsVariableSize(_type)
-
-        if (_is_compressed()) {
-            if (_extract_field(target)) {
-                *buf    = target->GetDrainPos();
-                *buflen = target->GetUsedLen();
-            } else {
-                *buf    = NULL;
-                *buflen = 0;
-            }
-        } else {
-            *buf    = (char *) _pt;
-            *buflen = _len;
-        }
+        *buf    = (char *) _pt;
+        *buflen = _len;
     }
 };
 

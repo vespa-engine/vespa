@@ -21,8 +21,8 @@ public:
 } // namespace <unnamed>
 
 namespace search::fef {
-    
-using namespace indexproperties;    
+
+using namespace indexproperties;
 
 RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &indexEnv)
     : _factory(factory),

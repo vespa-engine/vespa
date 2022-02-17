@@ -4,7 +4,7 @@ package com.yahoo.vespa.http.server;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
@@ -18,7 +18,6 @@ import com.yahoo.vespa.http.client.core.Headers;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -33,7 +32,7 @@ import java.util.logging.Logger;
  *
  * @author dybis
  */
-public class FeedHandlerV3 extends LoggingRequestHandler {
+public class FeedHandlerV3 extends ThreadedHttpRequestHandler {
 
     private DocumentTypeManager docTypeManager;
     private final Map<String, ClientFeederV3> clientFeederByClientId = new HashMap<>();
@@ -53,8 +52,8 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
         docTypeManager = new DocumentTypeManager(documentManagerConfig);
         this.sessionCache = sessionCache;
         feedReplyHandler = new FeedReplyReader(metric, metricsHelper);
-        cron = new ScheduledThreadPoolExecutor(1, ThreadFactoryFactory.getThreadFactory("feedhandlerv3.cron"));
-        cron.scheduleWithFixedDelay(this::removeOldClients, 16, 11, TimeUnit.MINUTES);
+        cron = new ScheduledThreadPoolExecutor(1, ThreadFactoryFactory.getThreadFactory("feed-handler-v3-janitor"));
+        cron.scheduleWithFixedDelay(this::removeOldClients, 3, 3, TimeUnit.SECONDS);
         this.metric = metric;
     }
 
@@ -101,19 +100,18 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
 
     @Override
     protected void destroy() {
-        // We are forking this to avoid that accidental dereferrencing causes any random thread doing destruction.
+        // We are forking this to avoid that accidental de-referencing causes any random thread doing destruction.
         // This caused a deadlock when the single Messenger thread in MessageBus was the last one referring this
         // and started destructing something that required something only the messenger thread could provide.
         Thread destroyer = new Thread(() -> {
-            super.destroy();
             cron.shutdown();
             synchronized (monitor) {
-                for (ClientFeederV3 client : clientFeederByClientId.values()) {
-                    client.kill();
+                for (var iterator = clientFeederByClientId.values().iterator(); iterator.hasNext(); ) {
+                    iterator.next().kill();
+                    iterator.remove();
                 }
-                clientFeederByClientId.clear();
             }
-        });
+        }, "feed-handler-v3-adhoc-destroyer");
         destroyer.setDaemon(true);
         destroyer.start();
     }
@@ -142,9 +140,8 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
 
     private void removeOldClients() {
         synchronized (monitor) {
-            for (Iterator<Map.Entry<String, ClientFeederV3>> iterator = clientFeederByClientId
-                    .entrySet().iterator(); iterator.hasNext();) {
-                ClientFeederV3 client = iterator.next().getValue();
+            for (var iterator = clientFeederByClientId.values().iterator(); iterator.hasNext(); ) {
+                ClientFeederV3 client = iterator.next();
                 if (client.timedOut()) {
                     client.kill();
                     iterator.remove();

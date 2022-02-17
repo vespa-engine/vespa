@@ -45,14 +45,15 @@ Component::matches(const char *pattern)
 }
 
 void
-Component::modifyLevels(char *levels)
+Component::modifyLevels(const char *levels)
 {
     // levels is a comma-separated list of level={on|off} pairs.
 
     // the levels string can always be converted to a
     // AND bitmask -- for all levels to be removed
     // and an OR bitmask -- for all levels to be added
-    char *s = levels;
+    std::string levels_copy(levels);
+    char *s = &levels_copy[0];
 
     LOG(spam, "Will modify levels for '%.*s' according to \"%s\"",
         (int)strcspn(_name, " :\n"), _name, levels);

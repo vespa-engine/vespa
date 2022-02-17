@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvid
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
+import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -267,6 +268,7 @@ public class SpareCapacityMaintainerTest {
                                                 Optional.empty(),
                                                 new InMemoryFlagSource(),
                                                 new MemoryMetricsDb(clock),
+                                                new OrchestratorMock(),
                                                 true,
                                                 1, 1000);
             deployer = new MockDeployer(nodeRepository);

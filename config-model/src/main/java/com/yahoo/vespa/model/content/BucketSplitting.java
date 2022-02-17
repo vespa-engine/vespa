@@ -8,9 +8,9 @@ import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
  * Represents configuration for bucket splitting.
  */
 public class BucketSplitting implements StorDistributormanagerConfig.Producer {
-    Integer maxDocuments;
-    Integer splitSize;
-    Integer minSplitCount;
+    private final Integer maxDocuments;
+    private final Integer splitSize;
+    private final Integer minSplitCount;
 
     public static class Builder {
         public BucketSplitting build(ModelElement clusterElem) {

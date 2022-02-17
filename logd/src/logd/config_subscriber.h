@@ -3,7 +3,8 @@
 
 #include "forwarder.h"
 #include <logd/config-logd.h>
-#include <vespa/config/config.h>
+#include <vespa/config/subscription/configsubscriber.h>
+#include <vespa/config/subscription/configuri.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/vespalib/util/time.h>
 

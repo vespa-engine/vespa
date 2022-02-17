@@ -2,14 +2,21 @@
 #pragma once
 
 #include <vespamalloc/malloc/threadpool.h>
+#include <malloc.h>
 
 namespace vespamalloc {
+
+namespace {
+    constexpr size_t MMAP_LIMIT_MIN = 0x100000; // 1M
+    constexpr size_t MMAP_LIMIT_MAX = 0x40000000; // 1G
+}
 
 template <typename MemBlockPtrT, typename ThreadStatT>
 size_t ThreadPoolT<MemBlockPtrT, ThreadStatT>::_threadCacheLimit __attribute__((visibility("hidden"))) = 0x10000;
 
 template <typename MemBlockPtrT, typename ThreadStatT>
-void ThreadPoolT<MemBlockPtrT, ThreadStatT>::info(FILE * os, size_t level, const DataSegment<MemBlockPtrT> & ds) const {
+void
+ThreadPoolT<MemBlockPtrT, ThreadStatT>::info(FILE * os, size_t level, const DataSegment & ds) const {
     if (level > 0) {
         for (size_t i=0; i < NELEMS(_stat); i++) {
             const ThreadStatT & s = _stat[i];
@@ -49,7 +56,8 @@ void ThreadPoolT<MemBlockPtrT, ThreadStatT>::info(FILE * os, size_t level, const
 }
 
 template <typename MemBlockPtrT, typename ThreadStatT >
-void ThreadPoolT<MemBlockPtrT, ThreadStatT>::
+void
+ThreadPoolT<MemBlockPtrT, ThreadStatT>::
 mallocHelper(size_t exactSize,
              SizeClassT sc,
              typename ThreadPoolT<MemBlockPtrT, ThreadStatT>::AllocFree & af,
@@ -70,13 +78,20 @@ mallocHelper(size_t exactSize,
                 PARANOID_CHECK2( *(int *)2 = 2; );
             }
         } else {
-            af._allocFrom = _allocPool->exactAlloc(exactSize, sc, af._allocFrom);
-            _stat[sc].incExactAlloc();
-            if (af._allocFrom) {
-                af._allocFrom->sub(mem);
-                PARANOID_CHECK2( if (!mem.ptr()) { *(int *)3 = 3; } );
+            if (exactSize > _mmapLimit) {
+                mem = MemBlockPtrT(_mmapPool->mmap(MemBlockPtrT::classSize(sc)), MemBlockPtrT::classSize(sc));
+                // The below settings are to allow the sanity checks conducted at the call site to succeed
+                mem.setExact(exactSize);
+                mem.free();
             } else {
-                PARANOID_CHECK2( *(int *)4 = 4; );
+                af._allocFrom = _allocPool->exactAlloc(exactSize, sc, af._allocFrom);
+                _stat[sc].incExactAlloc();
+                if (af._allocFrom) {
+                    af._allocFrom->sub(mem);
+                    PARANOID_CHECK2(if (!mem.ptr()) { *(int *) 3 = 3; });
+                } else {
+                    PARANOID_CHECK2(*(int *) 4 = 4;);
+                }
             }
         }
     }
@@ -85,6 +100,8 @@ mallocHelper(size_t exactSize,
 template <typename MemBlockPtrT, typename ThreadStatT >
 ThreadPoolT<MemBlockPtrT, ThreadStatT>::ThreadPoolT() :
     _allocPool(nullptr),
+    _mmapPool(nullptr),
+    _mmapLimit(MMAP_LIMIT_MAX),
     _threadId(0),
     _osThreadId(0)
 {
@@ -92,6 +109,16 @@ ThreadPoolT<MemBlockPtrT, ThreadStatT>::ThreadPoolT() :
 
 template <typename MemBlockPtrT, typename ThreadStatT >
 ThreadPoolT<MemBlockPtrT, ThreadStatT>::~ThreadPoolT() = default;
+
+template <typename MemBlockPtrT, typename ThreadStatT >
+int ThreadPoolT<MemBlockPtrT, ThreadStatT>::mallopt(int param, int value) {
+    size_t limit = value;
+    if (param == M_MMAP_THRESHOLD) {
+        _mmapLimit = std::min(MMAP_LIMIT_MAX, std::max(MMAP_LIMIT_MIN, limit));
+        return 1;
+    }
+    return 0;
+}
 
 template <typename MemBlockPtrT, typename ThreadStatT >
 void ThreadPoolT<MemBlockPtrT, ThreadStatT>::malloc(size_t sz, MemBlockPtrT & mem)

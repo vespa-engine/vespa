@@ -1,7 +1,7 @@
 {
   "deployments": [
     {
-      "routingMethod": "shared",
+      "routingMethod": "sharedLayer4",
       "instance": "tenant:application:default",
       "environment": "prod",
       "region": "us-west-1",

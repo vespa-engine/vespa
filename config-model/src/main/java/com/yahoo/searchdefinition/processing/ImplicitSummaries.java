@@ -48,7 +48,7 @@ public class ImplicitSummaries extends Processor {
         sdField.addSummaryFieldSources(summaryField);
     }
 
-    private void collectSummaries(SDField field , Schema schema, boolean validate) {
+    private void collectSummaries(SDField field, Schema schema, boolean validate) {
         SummaryField addedSummaryField = null;
 
         // Implicit
@@ -91,9 +91,16 @@ public class ImplicitSummaries extends Processor {
         if (field.doesSummarying()) {
             for (Attribute attribute : field.getAttributes().values()) {
                 if ( ! attribute.isPosition()) continue;
-                DocumentSummary attributePrefetchSummary = getOrCreateAttributePrefetchSummary(schema);
-                attributePrefetchSummary.add(field.getSummaryField(PositionDataType.getDistanceSummaryFieldName(fieldName)));
-                attributePrefetchSummary.add(field.getSummaryField(PositionDataType.getPositionSummaryFieldName(fieldName)));
+                var distField = field.getSummaryField(PositionDataType.getDistanceSummaryFieldName(fieldName));
+                if (distField != null) {
+                    DocumentSummary attributePrefetchSummary = getOrCreateAttributePrefetchSummary(schema);
+                    attributePrefetchSummary.add(distField);
+                }
+                var posField = field.getSummaryField(PositionDataType.getPositionSummaryFieldName(fieldName));
+                if (posField != null) {
+                    DocumentSummary attributePrefetchSummary = getOrCreateAttributePrefetchSummary(schema);
+                    attributePrefetchSummary.add(posField);
+                }
             }
         }
 
@@ -104,7 +111,6 @@ public class ImplicitSummaries extends Processor {
             if (attribute != null && summaryField.getTransform() == SummaryTransform.NONE) {
                 summaryField.setTransform(SummaryTransform.ATTRIBUTE);
             }
-
             if (isValid(summaryField, schema, validate)) {
                 addToDestinations(summaryField, schema);
             }
@@ -203,8 +209,9 @@ public class ImplicitSummaries extends Processor {
             addToDestination("default", summaryField, schema);
         }
         else {
-            for (String destinationName : summaryField.getDestinations())
+            for (String destinationName : summaryField.getDestinations()) {
                 addToDestination(destinationName, summaryField, schema);
+            }
         }
     }
 

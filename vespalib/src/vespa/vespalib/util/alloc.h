@@ -62,6 +62,13 @@ public:
         std::swap(_alloc, rhs._alloc);
         std::swap(_allocator, rhs._allocator);
     }
+    void reset() {
+        if (_alloc.first != nullptr) {
+            _allocator->free(_alloc);
+            _alloc.first = nullptr;
+            _alloc.second = 0u;
+        }
+    }
     Alloc create(size_t sz) const noexcept {
         return (sz == 0) ? Alloc(_allocator) : Alloc(_allocator, sz);
     }

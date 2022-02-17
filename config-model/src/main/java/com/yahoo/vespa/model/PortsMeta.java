@@ -14,7 +14,7 @@ import java.util.List;
 public class PortsMeta implements Serializable {
 
     /** A list of all ports. The list elements are lists of strings. */
-    private List<LinkedList<String>> ports;
+    private final List<LinkedList<String>> ports;
 
     /** Remember the rpc admin port offset. */
     private Integer rpcAdminOffset   = null;
@@ -35,8 +35,9 @@ public class PortsMeta implements Serializable {
 
     /**
      * Set up the port to tag, for chained usage.
-     * @param offset The relative port to tag.
-     * @return this portsmeta, to allow .tag calls.
+     *
+     * @param offset the relative port to tag
+     * @return this portsmeta, to allow .tag calls
      */
     public PortsMeta on(int offset) {
         this.currentOffset = offset;
@@ -45,8 +46,9 @@ public class PortsMeta implements Serializable {
 
     /**
      * Tag a previously setup port (using 'on') with the specified tag.
-     * @param meta The tag to apply to the current port.
-     * @return this portsmeta, to allow further .tag calls.
+     *
+     * @param meta the tag to apply to the current port
+     * @return this portsmeta, to allow further .tag calls
      */
     public PortsMeta tag(String meta) {
         if (currentOffset == null) {
@@ -57,9 +59,10 @@ public class PortsMeta implements Serializable {
 
     /**
      * Register a given metainfo string to the port at offset.
+     *
      * @param offset 0-based index to identify the port
-     * @param meta a String to be added to the given ports meta set.
-     * @return this for convenient chaining.
+     * @param meta a String to be added to the given ports meta set
+     * @return this for convenient chaining
      */
     private PortsMeta register(int offset, String meta) {
         // Allocate new LinkedLists on each element up-to-and-including offset
@@ -73,8 +76,9 @@ public class PortsMeta implements Serializable {
 
     /**
      * Check if the port at a specific offset contains a particular meta attribute.
-     * @param offset The relative port offset
-     * @param meta The meta info we want to check for
+     *
+     * @param offset the relative port offset
+     * @param meta the meta info we want to check for
      * @return boolean true if the specific port has registered the meta
      */
     public boolean contains(int offset, String meta) {
@@ -83,7 +87,8 @@ public class PortsMeta implements Serializable {
 
     /**
      * Get the number of ports with registered meta.
-     * @return the number of ports that have been registered.
+     *
+     * @return the number of ports that have been registered
      */
     public int getNumPorts() {
         return ports.size();
@@ -91,21 +96,23 @@ public class PortsMeta implements Serializable {
 
     /**
      * Get an iterator of the Strings registered at the specific point.
-     * @param offset The relative offset to inquire about tags.
+     *
+     * @param offset the relative offset to inquire about tags
      * @return List of tags.
      */
     public List<String> getTagsAt(int offset) {
         try {
             return ports.get(offset);
         } catch (IndexOutOfBoundsException e) {
-            throw new RuntimeException("Trying to get ports meta with offset " + offset +
-            ", which is outside the range 0 to " + ports.size(), e);
+            throw new IllegalArgumentException("Trying to get ports meta with offset " + offset +
+                                               ", which is outside the range 0 to " + ports.size(), e);
         }
     }
 
     /**
      * Get the offset to the rpc port used for admin.
-     * @return Integer the offset, or null if none set.
+     *
+     * @return the offset, or null if none set
      */
     public Integer getRpcAdminOffset() {
         if (rpcAdminOffset == null) {

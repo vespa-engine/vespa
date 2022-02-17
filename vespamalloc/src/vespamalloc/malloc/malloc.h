@@ -11,9 +11,23 @@
 
 namespace vespamalloc {
 
+template <typename MemBlockPtrT>
+class MemBlockInfoT final : public segment::IMemBlockInfo {
+public:
+    MemBlockInfoT(void *ptr) : _mem(ptr, 0, false) { }
+    bool allocated() const override { return _mem.allocated(); }
+    uint32_t threadId() const override { return _mem.threadId(); }
+    void info(FILE * os, int level) const override { _mem.info(os, level); }
+    uint32_t callStackLen() const override { return _mem.callStackLen(); }
+    const StackEntry * callStack() const override { return _mem.callStack(); }
+private:
+    MemBlockPtrT _mem;
+};
+
 template <typename MemBlockPtrT, typename ThreadListT>
-class MemoryManager : public IAllocator
+class MemoryManager : public IAllocator, public segment::IHelper
 {
+    using DataSegment = segment::DataSegment;
 public:
     MemoryManager(size_t logLimitAtStart);
     ~MemoryManager() override;
@@ -24,26 +38,45 @@ public:
         MemBlockPtrT::Stack::setStopAddress(returnAddressStop);
     }
     size_t getMaxNumThreads() const override { return _threadList.getMaxNumThreads(); }
+    size_t classSize(SizeClassT sc) const override { return MemBlockPtrT::classSize(sc); }
+    void dumpInfo(int level) const override { MemBlockPtrT::dumpInfo(level); }
+    std::unique_ptr<segment::IMemBlockInfo>
+    createMemblockInfo(void * ptr) const override {
+        return std::make_unique<MemBlockInfoT<MemBlockPtrT>>(ptr);
+    }
 
+    int mallopt(int param, int value);
     void *malloc(size_t sz);
     void *malloc(size_t sz, std::align_val_t);
     void *realloc(void *oldPtr, size_t sz);
     void free(void *ptr) {
-        freeSC(ptr, _segment.sizeClass(ptr));
+        if (_segment.containsPtr(ptr)) {
+            freeSC(ptr, _segment.sizeClass(ptr));
+        } else {
+            _mmapPool.unmap(MemBlockPtrT(ptr).rawPtr());
+        }
     }
     void free(void *ptr, size_t sz) {
-        freeSC(ptr, MemBlockPtrT::sizeClass(MemBlockPtrT::adjustSize(sz)));
+        if (_segment.containsPtr(ptr)) {
+            freeSC(ptr, MemBlockPtrT::sizeClass(MemBlockPtrT::adjustSize(sz)));
+        } else {
+            _mmapPool.unmap(MemBlockPtrT(ptr).rawPtr());
+        }
     }
     void free(void *ptr, size_t sz, std::align_val_t alignment) {
-        freeSC(ptr, MemBlockPtrT::sizeClass(MemBlockPtrT::adjustSize(sz, alignment)));
+        if (_segment.containsPtr(ptr)) {
+            freeSC(ptr, MemBlockPtrT::sizeClass(MemBlockPtrT::adjustSize(sz, alignment)));
+        } else {
+            _mmapPool.unmap(MemBlockPtrT(ptr).rawPtr());
+        }
     }
     size_t getMinSizeForAlignment(size_t align, size_t sz) const { return MemBlockPtrT::getMinSizeForAlignment(align, sz); }
     size_t sizeClass(const void *ptr) const { return _segment.sizeClass(ptr); }
     size_t usable_size(void *ptr) const {
-        return MemBlockPtrT::usable_size(ptr, _segment.getMaxSize(ptr));
+        return MemBlockPtrT::usable_size(ptr, _segment.getMaxSize<MemBlockPtrT>(ptr));
     }
 
-    void *calloc(size_t nelm, size_t esz) {
+    void * calloc(size_t nelm, size_t esz) {
         void * ptr = malloc(nelm * esz);
         if (ptr) {
             memset(ptr, 0, nelm * esz);
@@ -63,25 +96,28 @@ public:
         _threadList.setParams(threadCacheLimit);
         _allocPool.setParams(threadCacheLimit);
     }
-    const DataSegment<MemBlockPtrT> & dataSegment() const { return _segment; }
+    const DataSegment & dataSegment() const { return _segment; }
+    const MMapPool & mmapPool() const { return _mmapPool; }
 private:
     void freeSC(void *ptr, SizeClassT sc);
-    void crash() __attribute__((noinline));;
-    typedef AllocPoolT<MemBlockPtrT> AllocPool;
-    typedef typename ThreadListT::ThreadPool  ThreadPool;
-    size_t                     _prAllocLimit;
-    DataSegment<MemBlockPtrT>  _segment;
-    AllocPool                  _allocPool;
-    ThreadListT                _threadList;
+    void crash() __attribute__((noinline));
+    using AllocPool = AllocPoolT<MemBlockPtrT>;
+    using ThreadPool = typename ThreadListT::ThreadPool;
+    size_t       _prAllocLimit;
+    DataSegment  _segment;
+    AllocPool    _allocPool;
+    MMapPool     _mmapPool;
+    ThreadListT  _threadList;
 };
 
 template <typename MemBlockPtrT, typename ThreadListT>
 MemoryManager<MemBlockPtrT, ThreadListT>::MemoryManager(size_t logLimitAtStart) :
     IAllocator(),
     _prAllocLimit(logLimitAtStart),
-    _segment(),
+    _segment(*this),
     _allocPool(_segment),
-    _threadList(_allocPool)
+    _mmapPool(),
+    _threadList(_allocPool, _mmapPool)
 {
     setAllocatorForThreads(this);
     initThisThread();
@@ -122,18 +158,7 @@ template <typename MemBlockPtrT, typename ThreadListT>
 void MemoryManager<MemBlockPtrT, ThreadListT>::crash()
 {
     fprintf(stderr, "vespamalloc detected unrecoverable error.\n");
-#if 0
-    if (_invalidMemLogLevel > 0) {
-        static size_t numRecurse=0;
-        if (numRecurse++ == 0) {
-            MemBlockPtrT::dumpInfo(_invalidMemLogLevel);
-        }
-        numRecurse--;
-    }
-    sleep(1);
-#else
     abort();
-#endif
 }
 
 template <typename MemBlockPtrT, typename ThreadListT>
@@ -146,6 +171,11 @@ void MemoryManager<MemBlockPtrT, ThreadListT>::info(FILE * os, size_t level)
     _allocPool.info(os, level);
     _threadList.info(os, level);
     fflush(os);
+}
+
+template <typename MemBlockPtrT, typename ThreadListT>
+int MemoryManager<MemBlockPtrT, ThreadListT>::mallopt(int param, int value) {
+    return _threadList.getCurrent().mallopt(param, value);
 }
 
 template <typename MemBlockPtrT, typename ThreadListT>
@@ -205,35 +235,37 @@ void MemoryManager<MemBlockPtrT, ThreadListT>::freeSC(void *ptr, SizeClassT sc)
 template <typename MemBlockPtrT, typename ThreadListT>
 void * MemoryManager<MemBlockPtrT, ThreadListT>::realloc(void *oldPtr, size_t sz)
 {
-    void *ptr(NULL);
-    if (oldPtr) {
-        MemBlockPtrT mem(oldPtr);
-        mem.readjustAlignment(_segment);
-        if (! mem.validAlloc()) {
-            fprintf(stderr, "Someone has tamper with my pre/post signatures of my memoryblock %p(%ld).\n", mem.ptr(), mem.size());
-            crash();
-        }
-        SizeClassT sc(_segment.sizeClass(oldPtr));
-        if (sc >= 0) {
-            size_t oldSz(_segment.getMaxSize(oldPtr));
-            if (sz > oldSz) {
-                ptr = malloc(sz);
-                if (ptr) {
-                    memcpy(ptr, oldPtr, oldSz);
-                    free(oldPtr);
-                }
-            } else {
-                mem.setExact(sz);
-                ptr = oldPtr;
-            }
-        } else {
+    if (oldPtr == nullptr) return malloc(sz);
+    if ( ! _segment.containsPtr(oldPtr)) {
+        void * ptr = malloc(sz);
+        size_t oldBlockSize = _mmapPool.get_size(MemBlockPtrT(oldPtr).rawPtr());
+        memcpy(ptr, oldPtr, MemBlockPtrT::unAdjustSize(oldBlockSize));
+        _mmapPool.unmap(MemBlockPtrT(oldPtr).rawPtr());
+        return ptr;
+    }
+
+    MemBlockPtrT mem(oldPtr);
+    mem.readjustAlignment(_segment);
+    if (! mem.validAlloc()) {
+        fprintf(stderr, "Someone has tampered with the pre/post signatures of my memoryblock %p(%ld).\n", mem.ptr(), mem.size());
+        crash();
+    }
+
+    SizeClassT sc(_segment.sizeClass(oldPtr));
+    void * ptr;
+    if (sc >= 0) {
+        size_t oldSz(_segment.getMaxSize<MemBlockPtrT>(oldPtr));
+        if (sz > oldSz) {
             ptr = malloc(sz);
-            if (ptr) {
-                memcpy(ptr, oldPtr, sz);
-            }
+            memcpy(ptr, oldPtr, oldSz);
+            free(oldPtr);
+        } else {
+            mem.setExact(sz);
+            ptr = oldPtr;
         }
     } else {
         ptr = malloc(sz);
+        memcpy(ptr, oldPtr, sz);
     }
     PARANOID_CHECK2( { MemBlockPtrT mem(ptr); mem.readjustAlignment(_segment); if (! mem.validAlloc()) { crash(); } });
     return ptr;

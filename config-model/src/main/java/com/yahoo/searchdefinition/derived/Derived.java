@@ -76,7 +76,7 @@ public abstract class Derived implements Exportable {
     protected abstract String getDerivedName();
 
     /** Returns the value of getName if true, the given number as a string otherwise */
-    protected String getIndex(int number,boolean labels) {
+    protected String getIndex(int number, boolean labels) {
         return labels ? getName() : String.valueOf(number);
     }
 
@@ -87,12 +87,12 @@ public abstract class Derived implements Exportable {
      * @param toDirectory the directory to export to, or null
      *
      */
-    public final void export(String toDirectory)
-            throws IOException {
-        Writer writer=null;
+    public final void export(String toDirectory) throws IOException {
+        Writer writer = null;
         try {
-            String fileName=getDerivedName() + ".cfg";
-            if (toDirectory!=null) writer=IOUtils.createWriter(toDirectory + "/" + fileName,false);
+            String fileName = getDerivedName() + ".cfg";
+            if (toDirectory != null)
+                writer = IOUtils.createWriter(toDirectory + "/" + fileName,false);
             try {
                 exportBuilderConfig(writer);
             } catch (ReflectiveOperationException | SecurityException | IllegalArgumentException e) {
@@ -100,7 +100,7 @@ public abstract class Derived implements Exportable {
             }
         }
         finally {
-            if (writer!=null) IOUtils.closeWriter(writer);
+            if (writer != null) IOUtils.closeWriter(writer);
         }
     }
 

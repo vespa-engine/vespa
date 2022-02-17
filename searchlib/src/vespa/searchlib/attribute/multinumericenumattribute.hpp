@@ -6,7 +6,6 @@
 #include "load_utils.h"
 #include "loadednumericvalue.h"
 #include "multinumericenumattribute.h"
-#include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/util/fileutil.hpp>

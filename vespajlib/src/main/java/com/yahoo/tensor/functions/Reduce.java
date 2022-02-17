@@ -86,7 +86,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
     }
 
     @Override
-    public String toString(ToStringContext context) {
+    public String toString(ToStringContext<NAMETYPE> context) {
         return "reduce(" + argument.toString(context) + ", " + aggregator + commaSeparated(dimensions) + ")";
     }
 

@@ -5,9 +5,9 @@ namespace=vespa.config.content.core
 maxpendingidealstateoperations int default=100
 
 ## The total size of unique documents in a bucket before we split it due to
-## being too big. By default this is now 32 MB.
-splitsize int default=33544432
-        
+## being too big. By default this is now 16 MB. Should be kept in sync with stor-filestor.def:bucket_merge_chunk_size.
+splitsize int default=16772216
+
 ## The maximum amount of entries in a file before we should attempt to split it.
 ## A meta data entry in a slotfile currently uses 40 bytes. It is probably
 ## good to have the split size, such that all meta data entries are normally
@@ -293,3 +293,9 @@ implicitly_clear_bucket_priority_on_schedule bool default=true
 ## involved in a given merge have previously reported (as part of bucket info fetching)
 ## that they support the unordered merge feature.
 use_unordered_merge_chaining bool default=true
+
+## If true, inhibits _all_ merges to buckets in the default bucket space if the current
+## cluster state bundle indicates that global merges are pending in the cluster, i.e.
+## one or more nodes is in maintenance mode in the default bucket space but marked up in
+## the global bucket space.
+inhibit_default_merges_when_global_merges_pending bool default=false

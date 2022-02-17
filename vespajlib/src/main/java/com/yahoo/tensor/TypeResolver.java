@@ -2,13 +2,9 @@
 
 package com.yahoo.tensor;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static com.yahoo.tensor.TensorType.Dimension;
@@ -61,7 +57,7 @@ public class TypeResolver {
 
     static public TensorType peek(TensorType inputType, List<String> peekDimensions) {
         if (peekDimensions.isEmpty()) {
-            throw new IllegalArgumentException("peeking no dimensions makes no sense");
+            throw new IllegalArgumentException("Peeking no dimensions makes no sense");
         }
         Map<String, Dimension> map = new HashMap<>();
         for (Dimension dim : inputType.dimensions()) {
@@ -71,7 +67,7 @@ public class TypeResolver {
             if (map.containsKey(name)) {
                 map.remove(name);
             } else {
-                throw new IllegalArgumentException("peeking non-existing dimension "+name+" in type "+inputType);
+                throw new IllegalArgumentException("Peeking non-existing dimension '" + name + "'");
             }
         }
         if (map.isEmpty()) {
@@ -83,10 +79,10 @@ public class TypeResolver {
 
     static public TensorType rename(TensorType inputType, List<String> from, List<String> to) {
         if (from.isEmpty()) {
-            throw new IllegalArgumentException("renaming no dimensions");
+            throw new IllegalArgumentException("Renaming no dimensions");
         }
         if (from.size() != to.size()) {
-            throw new IllegalArgumentException("bad rename, from size "+from.size()+" != to.size "+to.size());
+            throw new IllegalArgumentException("Bad rename, from size "+from.size()+" != to.size "+to.size());
         }
         Map<String,Dimension> oldDims = new HashMap<>();
         for (Dimension dim : inputType.dimensions()) {
@@ -100,7 +96,7 @@ public class TypeResolver {
                 var dim = oldDims.remove(oldName);
                 newDims.put(newName, dim.withName(newName));
             } else {
-                logger.log(Level.WARNING, "renaming non-existing dimension "+oldName+" in type "+inputType);
+                logger.log(Level.WARNING, "Renaming non-existing dimension "+oldName+" in type "+inputType);
                 // throw new IllegalArgumentException("bad rename, dimension  "+oldName+" not found");
             }
         }
@@ -110,13 +106,13 @@ public class TypeResolver {
         if (inputType.dimensions().size() == newDims.size()) {
             return new TensorType(inputType.valueType(), newDims.values());
         } else {
-            throw new IllegalArgumentException("bad rename, lost some dimenions");
+            throw new IllegalArgumentException("Bad rename, lost some dimensions");
         }
     }
 
     static public TensorType cell_cast(TensorType inputType, Value toCellType) {
         if (toCellType != Value.DOUBLE && inputType.dimensions().isEmpty()) {
-            throw new IllegalArgumentException("cannot cast "+inputType+" to valueType"+toCellType);
+            throw new IllegalArgumentException("Cannot cast "+inputType+" to valueType"+toCellType);
         }
         return new TensorType(toCellType, inputType.dimensions());
     }
@@ -192,7 +188,7 @@ public class TypeResolver {
         if (allOk) {
             return join(lhs, rhs);
         } else {
-            throw new IllegalArgumentException("types in merge() dimensions mismatch: "+lhs+" != "+rhs);                
+            throw new IllegalArgumentException("Types in merge() dimensions mismatch: "+lhs+" != "+rhs);
         }
     }
 

@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.inject.Inject;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.restapi.RestApi;
 import com.yahoo.restapi.RestApiException;
 import com.yahoo.restapi.RestApiRequestHandler;
@@ -27,7 +27,7 @@ public class IdentityProviderRequestHandler extends RestApiRequestHandler<Identi
     private final InstanceValidator instanceValidator;
 
     @Inject
-    public IdentityProviderRequestHandler(LoggingRequestHandler.Context context,
+    public IdentityProviderRequestHandler(ThreadedHttpRequestHandler.Context context,
                                           IdentityDocumentGenerator documentGenerator,
                                           InstanceValidator instanceValidator) {
         super(context, IdentityProviderRequestHandler::createRestApi);

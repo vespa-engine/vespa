@@ -138,11 +138,8 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
                 continue;
             }
             if (tagName.equals("config")) {
-                // TODO: disallow on Vespa 8
+                // Top level config, mainly to be used by the Vespa team.
                 continue;
-            }
-            if (tagName.equals("cluster")) {
-                throw new IllegalArgumentException("<" + tagName + "> on top-level is not allowed anymore");
             }
             if ((tagName.equals("clients")) && deployState.isHosted())
                 throw new IllegalArgumentException("<" + tagName + "> is not allowed when running Vespa in a hosted environment");
@@ -153,7 +150,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
             Collection<ConfigModelBuilder> builders = configModelRegistry.resolve(xmlId);
 
             if (builders.isEmpty())
-                throw new RuntimeException("Could not resolve tag <" + tagName + " version=\"" + tagVersion + "\"> to a config model component");
+                throw new IllegalArgumentException("Could not resolve tag <" + tagName + " version=\"" + tagVersion + "\"> to a config model component");
 
             for (ConfigModelBuilder builder : builders) {
                 if ( ! model2Element.containsKey(builder)) {

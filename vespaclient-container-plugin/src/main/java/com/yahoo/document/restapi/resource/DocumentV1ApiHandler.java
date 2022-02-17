@@ -20,6 +20,7 @@ import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.document.fieldset.AllFields;
+import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.document.fieldset.DocIdOnly;
 import com.yahoo.document.idstring.IdIdString;
 import com.yahoo.document.json.DocumentOperationType;
@@ -379,6 +380,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             StorageCluster destination = resolveCluster(Optional.of(requireProperty(request, DESTINATION_CLUSTER)), clusters);
             VisitorParameters parameters = parseParameters(request, path);
             parameters.setRemoteDataHandler("[Content:cluster=" + destination.name() + "]"); // Bypass indexing.
+            // TODO Vespa 8: change to DocumentOnly.NAME
             parameters.setFieldSet(AllFields.NAME);
             return () -> {
                 visitWithRemote(request, parameters, handler);
@@ -1088,6 +1090,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             throw new IllegalArgumentException("Must set 'cluster' parameter to a valid content cluster id when visiting at a root /document/v1/ level");
 
         VisitorParameters parameters = parseCommonParameters(request, path, cluster);
+        // TODO Vespa 8: change to DocumentOnly.NAME
         parameters.setFieldSet(getProperty(request, FIELD_SET).orElse(path.documentType().map(type -> type + ":[document]").orElse(AllFields.NAME)));
         parameters.setMaxTotalHits(wantedDocumentCount);
         parameters.visitInconsistentBuckets(true);

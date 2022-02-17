@@ -18,6 +18,7 @@ import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.path.Path;
+import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
@@ -42,6 +43,7 @@ import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.config.server.ConfigServerBootstrap.VipStatusMode;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.VipStatusMode.VIP_STATUS_FILE;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.VipStatusMode.VIP_STATUS_PROGRAMMATICALLY;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createHostedModelFactory;
@@ -56,6 +58,7 @@ import static org.junit.Assert.assertTrue;
 public class ConfigServerBootstrapTest {
 
     private final MockCurator curator = new MockCurator();
+    private final ManualClock clock = new ManualClock();
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -177,7 +180,7 @@ public class ConfigServerBootstrapTest {
         waitUntil(() -> bootstrap.vipStatus().isInRotation(), "failed waiting for server to be in rotation");
     }
 
-    private ConfigServerBootstrap createBootstrap(DeployTester tester, RpcServer rpcServer, ConfigServerBootstrap.VipStatusMode vipStatusProgrammatically) throws IOException {
+    private ConfigServerBootstrap createBootstrap(DeployTester tester, RpcServer rpcServer, VipStatusMode vipStatusMode) throws IOException {
         VersionState versionState = createVersionState();
         assertTrue(versionState.isUpgraded());
 
@@ -188,9 +191,10 @@ public class ConfigServerBootstrapTest {
                                          versionState,
                                          stateMonitor,
                                          vipStatus,
-                                         vipStatusProgrammatically,
+                                         vipStatusMode,
                                          new InMemoryFlagSource(),
-                                         new ConfigConvergenceChecker());
+                                         new ConfigConvergenceChecker(),
+                                         clock);
     }
 
     private void waitUntil(BooleanSupplier booleanSupplier, String messageIfWaitingFails) throws InterruptedException {
@@ -223,7 +227,7 @@ public class ConfigServerBootstrapTest {
                                               .fileReferencesDir(temporaryFolder.newFolder("filedistribution").getAbsolutePath())
                                               .hostedVespa(hosted)
                                               .multitenant(hosted)
-                                              .maxDurationOfBootstrap(2) /* seconds */
+                                              .maxDurationOfBootstrap(0) /* seconds, 0 => it will not retry deployment if bootstrap fails */
                                               .sleepTimeWhenRedeployingFails(0)); /* seconds */
     }
 

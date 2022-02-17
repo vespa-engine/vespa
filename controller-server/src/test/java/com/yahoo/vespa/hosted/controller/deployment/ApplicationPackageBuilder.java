@@ -57,9 +57,10 @@ public class ApplicationPackageBuilder {
     private OptionalInt majorVersion = OptionalInt.empty();
     private String instances = "default";
     private String upgradePolicy = null;
+    private String upgradeRevision = "latest";
     private String upgradeRollout = null;
     private String globalServiceId = null;
-    private String athenzIdentityAttributes = null;
+    private String athenzIdentityAttributes = "athenz-domain='domain' athenz-service='service'";
     private String searchDefinition = "search test { }";
     private boolean explicitSystemTest = false;
     private boolean explicitStagingTest = false;
@@ -77,6 +78,11 @@ public class ApplicationPackageBuilder {
 
     public ApplicationPackageBuilder upgradePolicy(String upgradePolicy) {
         this.upgradePolicy = upgradePolicy;
+        return this;
+    }
+
+    public ApplicationPackageBuilder upgradeRevision(String upgradeRevision) {
+        this.upgradeRevision = upgradeRevision;
         return this;
     }
 
@@ -195,7 +201,12 @@ public class ApplicationPackageBuilder {
 
     public ApplicationPackageBuilder athenzIdentity(AthenzDomain domain, AthenzService service) {
         this.athenzIdentityAttributes = Text.format("athenz-domain='%s' athenz-service='%s'", domain.value(),
-                                                      service.value());
+                                                    service.value());
+        return this;
+    }
+
+    public ApplicationPackageBuilder withoutAthenzIdentity() {
+        this.athenzIdentityAttributes = null;
         return this;
     }
 
@@ -248,9 +259,10 @@ public class ApplicationPackageBuilder {
         }
         xml.append(">\n");
         xml.append("  <instance id='").append(instances).append("'>\n");
-        if (upgradePolicy != null || upgradeRollout != null) {
+        if (upgradePolicy != null || upgradeRevision != null || upgradeRollout != null) {
             xml.append("    <upgrade ");
             if (upgradePolicy != null) xml.append("policy='").append(upgradePolicy).append("' ");
+            if (upgradeRevision != null) xml.append("revision='").append(upgradeRevision).append("' ");
             if (upgradeRollout != null) xml.append("rollout='").append(upgradeRollout).append("' ");
             xml.append("/>\n");
         }

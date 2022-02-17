@@ -354,6 +354,8 @@ public class MbusServerTestCase {
         @Override
         public void connect() { }
 
+        @Override public void disconnect() {}
+
         @Override
         public ResourceReference refer() {
             ++refCount;

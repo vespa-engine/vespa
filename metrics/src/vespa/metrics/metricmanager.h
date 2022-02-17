@@ -43,7 +43,6 @@
  */
 #pragma once
 
-#include <vespa/metrics/config-metricsmanager.h>
 #include "metricset.h"
 #include "metricsnapshot.h"
 #include "memoryconsumption.h"
@@ -52,7 +51,9 @@
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/vespalib/util/jsonwriter.h>
-#include <vespa/config/config.h>
+#include <vespa/metrics/config-metricsmanager.h>
+#include <vespa/config/subscription/configsubscriber.h>
+#include <vespa/config/subscription/configuri.h>
 #include <map>
 #include <list>
 
@@ -96,7 +97,7 @@ public:
 private:
     MetricSnapshot _activeMetrics;
     std::unique_ptr<config::ConfigSubscriber> _configSubscriber;
-    config::ConfigHandle<MetricsmanagerConfig>::UP _configHandle;
+    std::unique_ptr<config::ConfigHandle<MetricsmanagerConfig>> _configHandle;
     std::unique_ptr<MetricsmanagerConfig> _config;
     std::map<Metric::String, ConsumerSpec::SP> _consumerConfig;
     std::list<UpdateHook*> _periodicUpdateHooks;

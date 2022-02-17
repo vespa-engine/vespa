@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author hakonhall
@@ -145,6 +146,70 @@ public class TemplateTest {
                      "inner varvalue2\n" +
                      "val2\n",
                      template.render());
+    }
+
+    @Test
+    void badTemplates() {
+        assertException(BadTemplateException.class, "Unknown section 'zoo' at line 2 and column 6",
+                        () -> Template.from("foo\nbar%{zoo}"));
+
+        assertException(BadTemplateException.class, "Expected identifier at line 1 and column 4",
+                        () -> Template.from("%{="));
+
+        assertException(BadTemplateException.class, "Expected identifier at line 1 and column 4",
+                        () -> Template.from("%{=&notatoken}"));
+
+        assertException(BadTemplateException.class, "Expected identifier at line 1 and column 8",
+                        () -> Template.from("%{list &notatoken}"));
+
+        assertException(BadTemplateException.class, "Missing end directive for section started at line 1 and column 12",
+                        () -> Template.from("%{list foo}missing end"));
+
+        assertException(BadTemplateException.class, "Stray 'end' at line 1 and column 3",
+                        () -> Template.from("%{end}stray end"));
+
+        assertException(TemplateNameNotSetException.class, "Variable at line 1 and column 4 has not been set: notset",
+                        () -> Template.from("%{=notset}").render());
+
+        assertException(TemplateNameNotSetException.class, "Variable at line 1 and column 6 has not been set: cond",
+                        () -> Template.from("%{if cond}%{end}").render());
+
+        assertException(NotBooleanValueTemplateException.class, "cond was set to a non-boolean value: must be true or false",
+                        () -> Template.from("%{if cond}%{end}").set("cond", 1).render());
+
+        assertException(NoSuchNameTemplateException.class, "No such element 'listname' in the template section starting at " +
+                                                           "line 1 and column 1, and ending at line 1 and column 4",
+                        () -> Template.from("foo").add("listname"));
+
+        assertException(NameAlreadyExistsTemplateException.class,
+                        "The name 'a' of the list section at line 1 and column 16 is in conflict with the identically " +
+                        "named list section at line 1 and column 1",
+                        () -> Template.from("%{list a}%{end}%{list a}%{end}"));
+
+        assertException(NameAlreadyExistsTemplateException.class,
+                        "The name 'a' of the list section at line 1 and column 6 is in conflict with the identically " +
+                        "named variable section at line 1 and column 1",
+                        () -> Template.from("%{=a}%{list a}%{end}"));
+
+        assertException(NameAlreadyExistsTemplateException.class,
+                        "The name 'a' of the variable section at line 1 and column 16 is in conflict with the identically " +
+                        "named list section at line 1 and column 1",
+                        () -> Template.from("%{list a}%{end}%{=a}"));
+
+        assertException(NameAlreadyExistsTemplateException.class,
+                        "The name 'a' of the list section at line 1 and column 14 is in conflict with the identically " +
+                        "named if section at line 1 and column 1",
+                        () -> Template.from("%{if a}%{end}%{list a}%{end}"));
+
+        assertException(NameAlreadyExistsTemplateException.class,
+                        "The name 'a' of the if section at line 1 and column 16 is in conflict with the identically " +
+                        "named list section at line 1 and column 1",
+                        () -> Template.from("%{list a}%{end}%{if a}%{end}"));
+    }
+
+    private <T extends Throwable> void assertException(Class<T> class_, String message, Runnable runnable) {
+        T exception = assertThrows(class_, runnable::run);
+        assertEquals(message, exception.getMessage());
     }
 
     private Template getTemplate(String filename) {

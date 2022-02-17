@@ -82,7 +82,7 @@ func assertQueryStatusError(target string, args []string, t *testing.T) {
 	cmd = append(cmd, args...)
 	_, outErr := execute(command{args: cmd}, t, client)
 	assert.Equal(t,
-		"Error: Container (query API) at "+target+" is not ready\nStatus 500\n",
+		"Error: Container (query API) at "+target+" is not ready: status 500\n",
 		outErr,
 		"vespa status container")
 }

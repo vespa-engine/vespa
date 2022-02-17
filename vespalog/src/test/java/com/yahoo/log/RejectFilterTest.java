@@ -10,6 +10,7 @@ import static org.junit.Assert.assertTrue;
  * @author Ulf Lilleengen
  * @since 5.1
  */
+@SuppressWarnings("removal")
 public class RejectFilterTest {
     @Test
     public void testBasicPatternMatching() {

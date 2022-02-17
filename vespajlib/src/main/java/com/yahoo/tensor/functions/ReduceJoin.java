@@ -314,7 +314,7 @@ public class ReduceJoin<NAMETYPE extends Name> extends CompositeTensorFunction<N
     }
 
     @Override
-    public String toString(ToStringContext context) {
+    public String toString(ToStringContext<NAMETYPE> context) {
         return "reduce_join(" + argumentA.toString(context) + ", " +
                                 argumentB.toString(context) + ", " +
                                 combinator + ", " +
@@ -324,8 +324,8 @@ public class ReduceJoin<NAMETYPE extends Name> extends CompositeTensorFunction<N
 
     private static class MultiDimensionIterator {
 
-        private long[] bounds;
-        private long[] iterator;
+        private final long[] bounds;
+        private final long[] iterator;
         private int remaining;
 
         MultiDimensionIterator(TensorType type) {
@@ -364,9 +364,11 @@ public class ReduceJoin<NAMETYPE extends Name> extends CompositeTensorFunction<N
             remaining -= 1;
         }
 
+        @Override
         public String toString() {
             return Arrays.toString(iterator);
         }
+
     }
 
 }

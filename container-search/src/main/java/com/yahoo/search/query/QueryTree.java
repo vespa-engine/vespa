@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 
 /**
  * The root node of a query tree. This is always present above the actual semantic root to ease query manipulation,
@@ -177,6 +178,25 @@ public class QueryTree extends CompositeItem {
         } else if (item instanceof TermItem) {
             terms.add((TermItem)item);
         }
+    }
+
+    /**
+     * Returns the total number of items in this query tree.
+     */
+    public int treeSize() {
+        if (isEmpty()) return 0;
+        return(countItemsRecursively(getItemIterator().next()));
+    }
+
+    private int countItemsRecursively(Item item) {
+        int children = 0;
+        if (item instanceof CompositeItem) {
+            CompositeItem composite = (CompositeItem)item;
+            for (ListIterator<Item> i = composite.getItemIterator(); i.hasNext(); ) {
+                children += countItemsRecursively(i.next());
+            }
+        }
+        return children + 1;
     }
 
 }

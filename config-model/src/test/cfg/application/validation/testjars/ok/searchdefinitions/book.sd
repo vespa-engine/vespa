@@ -1,0 +1,184 @@
+search book {
+        document book inherits base {
+                field title type string {
+                        bolding: on
+                        index-to: default, title
+                        indexing: index|summary
+                        rank-type: about
+                }
+                field dispauthor type string {
+                        bolding: on
+                        index-to: default, dispauthor
+                        indexing: index|summary
+                        rank-type: about
+                }
+                field author type string {
+                        bolding: on
+                        index-to: default, author
+                        indexing: index|summary
+                        rank-type: about
+                }
+                field keys type string {
+                        index-to: default, keys
+                        indexing: index
+                        rank-type: about
+                }
+                field isbn type string {
+                        index-to: default, isbn
+                        indexing: index|summary
+                        rank-type: about
+                }
+                field series type string {
+                        index-to: default, series
+                        indexing: index
+                        rank-type: about
+                }
+                field url type string {
+                        indexing: summary
+                }
+                field image type string {
+                        indexing: summary
+                }
+                field img85 type string {
+                        indexing: summary
+                }
+                field img110 type string {
+                        indexing: summary
+                }
+    field limg type string {
+      indexing: summary
+    }
+                field did type string {
+                        indexing: attribute|index|summary
+			attribute : no-update
+                }
+                field price type string {
+                        indexing: summary
+                }
+                field categories type string {
+                        indexing: attribute|index|summary
+			attribute : no-update
+                }
+                field mid type int {
+                        indexing: attribute|summary|collapse
+                }
+                field pfrom type long {
+                        indexing: attribute|summary
+                }
+                field pto type string {
+                        indexing: summary
+                }
+                field fmt type string {
+                        indexing: index|summary
+                }
+                field data type string {
+                        indexing: summary
+                }
+                field weight type float {
+                        indexing {
+                                field weight * 6 | summary;
+                        }
+                }
+                field year type int {
+                        indexing: attribute|summary
+                }
+                field newestedition type int {
+                        indexing: attribute|summary
+                }
+                field woty type int {
+                        indexing: attribute|summary
+                }
+                field formats type string {
+                        indexing: index|summary
+                }
+                field age type string {
+                        indexing: index|summary
+                }
+                field sales type int {
+                        indexing: attribute|summary
+                }
+                field more_url type string {
+                        indexing: summary
+                }
+                field more_price type string {
+                        indexing: summary
+                }
+                field more_format type string {
+                        indexing: summary
+                }
+                field pid type string {
+                        indexing: index|summary
+                }
+                field userrate type int {
+                        indexing: attribute|summary
+                }
+                field numreview type int {
+                        indexing: summary
+                }
+                field cbid type string {
+                        indexing: attribute|index|summary
+ 			attribute: no-update
+                        rank-type: about
+                }
+                field scid type string {
+                        indexing: index|summary
+                        rank-type: about
+                }
+                field w1 type float {
+                        indexing {
+                                field weight * 6 + field w1 | staticrank weight1 | summary;
+                        }
+                }
+                field w2 type float {
+                        indexing {
+                                field w2 + field weight | staticrank weight2 | summary;
+                        }
+                }
+                field w3 type float {
+                        indexing {
+                                field w3 + field weight | staticrank weight3 | summary;
+                        }
+                }
+                field w4 type float {
+                        indexing {
+                                field w4 + field weight | staticrank weight4 | summary;
+                        }
+                }
+                field sw1 type float {
+                        indexing {
+                                field weight * 6 + field w1 + field w2 | staticrank | summary;
+                        }
+                }
+                field sw2 type float {
+                        indexing {
+                                field weight | staticrank sw2 | summary;
+                        }
+                }
+                field sw3 type float {
+                        indexing {
+                                field weight | staticrank sw3 | summary;
+                        }
+                }
+                field sw4 type float {
+                        indexing {
+                                field weight | staticrank sw4 | summary;
+                        }
+                }
+        }
+
+        field didinteger type int {
+                indexing {
+                        field did | split_foreach " " { attribute; } | summary;
+                }
+                attribute: multivalued
+        }
+
+        rank-profile rp1 inherits default {
+        }
+        rank-profile rp2 inherits default {
+        }
+        rank-profile rp3 inherits default {
+        }
+        rank-profile rp4 inherits default {
+        }
+}

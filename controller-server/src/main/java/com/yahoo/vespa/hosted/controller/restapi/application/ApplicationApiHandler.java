@@ -23,7 +23,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.handler.metrics.JsonResponse;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.restapi.ByteArrayResponse;
 import com.yahoo.restapi.ErrorResponse;
@@ -70,6 +70,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringData;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
+import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
@@ -96,11 +97,11 @@ import com.yahoo.vespa.hosted.controller.maintenance.ResourceMeterMaintainer;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.SupportAccessSerializer;
+import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
+import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationStatus;
-import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
-import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
 import com.yahoo.vespa.hosted.controller.security.AccessControlRequests;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
@@ -139,7 +140,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Scanner;
@@ -173,7 +173,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private final TestConfigSerializer testConfigSerializer;
 
     @Inject
-    public ApplicationApiHandler(LoggingRequestHandler.Context parentCtx,
+    public ApplicationApiHandler(ThreadedHttpRequestHandler.Context parentCtx,
                                  Controller controller,
                                  AccessControlRequests accessControlRequests) {
         super(parentCtx, controller.auditLogger());
@@ -235,6 +235,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/")) return root(request);
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/access/request/ssh")) return accessRequests(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return tenantInfo(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/notifications")) return notifications(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}/validate")) return validateSecretStore(path.get("tenant"), path.get("name"), request);
@@ -286,6 +287,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse handlePUT(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return updateTenant(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/access/request/ssh")) return requestSshAccess(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/access/approve/ssh")) return approveAccessRequest(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return updateTenantInfo(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/archive-access")) return allowArchiveAccess(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}")) return addSecretStore(path.get("tenant"), path.get("name"), request);
@@ -400,6 +403,44 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Slime slime = new Slime();
         toSlime(slime.setObject(), tenant, controller.applications().asList(tenant.name()), request);
         return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse accessRequests(String tenantName, HttpRequest request) {
+        if (controller.tenants().require(TenantName.from(tenantName)).type() != Tenant.Type.cloud)
+            return ErrorResponse.badRequest("Can only see access requests for cloud tenants");
+
+        var pendingRequests = controller.serviceRegistry().accessControlService().hasPendingAccessRequests(TenantName.from(tenantName));
+        var slime = new Slime();
+        slime.setObject().setBool("hasPendingRequests", pendingRequests);
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse requestSshAccess(String tenantName, HttpRequest request) {
+        if (!isOperator(request)) {
+            return ErrorResponse.forbidden("Only operators are allowed to request ssh access");
+        }
+
+        if (controller.tenants().require(TenantName.from(tenantName)).type() != Tenant.Type.cloud)
+            return ErrorResponse.badRequest("Can only request access for cloud tenants");
+
+        controller.serviceRegistry().accessControlService().requestSshAccess(TenantName.from(tenantName));
+        return new MessageResponse("OK");
+
+    }
+
+    private HttpResponse approveAccessRequest(String tenantName, HttpRequest request) {
+        var tenant = TenantName.from(tenantName);
+
+        if (controller.tenants().require(tenant).type() != Tenant.Type.cloud)
+            return ErrorResponse.badRequest("Can only see access requests for cloud tenants");
+
+        var inspector = toSlime(request.getData()).get();
+        var expiry = inspector.field("expiry").valid() ?
+                Instant.ofEpochMilli(inspector.field("expiry").asLong()) :
+                Instant.now().plus(1, ChronoUnit.DAYS);
+
+        controller.serviceRegistry().accessControlService().approveSshAccess(tenant, expiry);
+        return new MessageResponse("OK");
     }
 
     private HttpResponse tenantInfo(String tenantName, HttpRequest request) {
@@ -1379,18 +1420,18 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         EndpointList zoneEndpoints = controller.routing().readEndpointsOf(deploymentId)
                                                .scope(Endpoint.Scope.zone);
         if (!legacyEndpoints) {
-            zoneEndpoints = zoneEndpoints.not().legacy();
+            zoneEndpoints = zoneEndpoints.not().legacy().direct();
         }
-        for (var endpoint : controller.routing().directEndpoints(zoneEndpoints, deploymentId.applicationId())) {
+        for (var endpoint : zoneEndpoints) {
             toSlime(endpoint, endpointArray.addObject());
         }
         // Add declared endpoints
         EndpointList declaredEndpoints = controller.routing().declaredEndpointsOf(application)
                                                    .targets(deploymentId);
         if (!legacyEndpoints) {
-            declaredEndpoints = declaredEndpoints.not().legacy();
+            declaredEndpoints = declaredEndpoints.not().legacy().direct();
         }
-        for (var endpoint : controller.routing().directEndpoints(declaredEndpoints, deploymentId.applicationId())) {
+        for (var endpoint : declaredEndpoints) {
             toSlime(endpoint, endpointArray.addObject());
         }
 
@@ -1439,7 +1480,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         response.setDouble("quota", deployment.quota().rate());
         deployment.cost().ifPresent(cost -> response.setDouble("cost", cost));
 
-        controller.archiveBucketDb().archiveUriFor(deploymentId.zoneId(), deploymentId.applicationId().tenant())
+        controller.archiveBucketDb().archiveUriFor(deploymentId.zoneId(), deploymentId.applicationId().tenant(), false)
                 .ifPresent(archiveUri -> response.setString("archiveUri", archiveUri.toString()));
 
         Cursor activity = response.setObject("activity");
@@ -1719,7 +1760,19 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         TenantName tenant = TenantName.from(tenantName);
         Inspector requestObject = toSlime(request.getData()).get();
         controller.tenants().create(accessControlRequests.specification(tenant, requestObject),
-                                    accessControlRequests.credentials(tenant, requestObject, request.getJDiscRequest()));
+                accessControlRequests.credentials(tenant, requestObject, request.getJDiscRequest()));
+        if (controller.system().isPublic()) {
+            User user = getAttribute(request, User.ATTRIBUTE_NAME, User.class);
+            TenantInfo info = controller.tenants().require(tenant, CloudTenant.class)
+                    .info()
+                    .withContactName(user.name())
+                    .withContactEmail(user.email());
+            // Store changes
+            controller.tenants().lockOrThrow(tenant, LockedTenant.Cloud.class, lockedTenant -> {
+                lockedTenant = lockedTenant.withInfo(info);
+                controller.tenants().store(lockedTenant);
+            });
+        }
         return tenant(controller.tenants().require(TenantName.from(tenantName)), request);
     }
 
@@ -1792,16 +1845,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private ApplicationVersion getApplicationVersion(Application application, Long build) {
-        // Check whether this is the latest version, and possibly return that.
-        // Otherwise, look through historic runs for a proper ApplicationVersion.
-        return application.latestVersion()
+        return application.versions().stream()
                           .filter(version -> version.buildNumber().stream().anyMatch(build::equals))
-                          .or(() -> controller.jobController().deploymentStatus(application).jobs()
-                                            .asList().stream()
-                                            .flatMap(job -> job.runs().values().stream())
-                                            .map(run -> run.versions().targetApplication())
-                                            .filter(version -> version.buildNumber().stream().anyMatch(build::equals))
-                                            .findAny())
+                          .findFirst()
                           .filter(version -> controller.applications().applicationStore().hasBuild(application.id().tenant(),
                                                                                                    application.id().application(),
                                                                                                    build))
@@ -2077,7 +2123,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return new SlimeJsonResponse(testConfigSerializer.configSlime(id,
                                                                       type,
                                                                       false,
-                                                                      controller.routing().readZoneEndpointsOf(deployments),
+                                                                      controller.routing().readTestRunnerEndpointsOf(deployments),
                                                                       controller.applications().reachableContentClustersByZone(deployments)));
     }
 

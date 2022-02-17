@@ -22,19 +22,33 @@ public:
     virtual void send(ResultUP result, bool documentWasFound) = 0;
 };
 
+
+/*
+ * Interface class for feed token state.
+ */
+class IState : public vespalib::IDestructorCallback {
+public:
+    virtual bool is_replay() const noexcept = 0;
+    virtual void fail() = 0;
+    virtual void setResult(ResultUP result, bool documentWasFound) = 0;
+    virtual const storage::spi::Result &getResult() = 0;
+};
+
+
 /**
  * This holds the result of the feed operation until it is either failed or acked.
  * Guarantees that the result is propagated back to the invoker via ITransport interface.
  */
-class State : public vespalib::IDestructorCallback {
+class State : public IState {
 public:
     State(const State &) = delete;
     State & operator = (const State &) = delete;
     State(ITransport & transport);
     ~State() override;
-    void fail();
-    void setResult(ResultUP result, bool documentWasFound);
-    const storage::spi::Result &getResult() { return *_result; }
+    bool is_replay() const noexcept override;
+    void fail() override;
+    void setResult(ResultUP result, bool documentWasFound) override;
+    const storage::spi::Result &getResult() override { return *_result; }
 protected:
     void ack();
 private:
@@ -71,7 +85,7 @@ make(std::shared_ptr<ITransport> transport) {
 
 }
 
-using FeedToken = std::shared_ptr<feedtoken::State>;
+using FeedToken = std::shared_ptr<feedtoken::IState>;
 
 } // namespace proton
 

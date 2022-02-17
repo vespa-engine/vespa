@@ -238,7 +238,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     @Test
     public void create_application_on_deploy() {
         var application = ApplicationName.from("unique");
-        var applicationPackage = new ApplicationPackageBuilder().build();
+        var applicationPackage = new ApplicationPackageBuilder().withoutAthenzIdentity().build();
 
         assertTrue(tester.controller().applications().getApplication(TenantAndApplicationId.from(tenantName, application)).isEmpty());
 
@@ -256,6 +256,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         var application = ApplicationName.from("unique");
         var applicationPackage = new ApplicationPackageBuilder()
                 .trustDefaultCertificate()
+                .withoutAthenzIdentity()
                 .build();
 
         assertTrue(tester.controller().applications().getApplication(TenantAndApplicationId.from(tenantName, application)).isEmpty());
@@ -273,6 +274,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
     private ApplicationPackageBuilder prodBuilder() {
         return new ApplicationPackageBuilder()
+                .withoutAthenzIdentity()
                 .instances("default")
                 .region("aws-us-east-1c");
     }

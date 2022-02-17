@@ -87,7 +87,7 @@ public class ConvertedModel {
         ApplicationPackage applicationPackage = context.rankProfile().applicationPackage();
         ImportedMlModel sourceModel = // TODO: Convert to name here, make sure its done just one way
                 context.importedModels().get(sourceModelFile(applicationPackage, modelPath));
-        ModelName modelName = new ModelName(context.rankProfile().getName(), modelPath, pathIsFile);
+        ModelName modelName = new ModelName(context.rankProfile().name(), modelPath, pathIsFile);
 
         if (sourceModel == null && ! new ModelStore(applicationPackage, modelName).exists())
             throw new IllegalArgumentException("No model '" + modelPath + "' is available. Available models: " +

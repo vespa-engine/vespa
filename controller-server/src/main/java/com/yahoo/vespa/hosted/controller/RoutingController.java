@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
@@ -15,9 +13,6 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -73,7 +68,6 @@ public class RoutingController {
     private final Controller controller;
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
-    private final BooleanFlag hideSharedRoutingEndpoint;
 
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
@@ -81,7 +75,6 @@ public class RoutingController {
         this.rotationRepository = new RotationRepository(Objects.requireNonNull(rotationsConfig, "rotationsConfig must be non-null"),
                                                          controller.applications(),
                                                          controller.curator());
-        this.hideSharedRoutingEndpoint = Flags.HIDE_SHARED_ROUTING_ENDPOINT.bindTo(controller.flagSource());
     }
 
     /** Create a routing context for given deployment */
@@ -115,13 +108,10 @@ public class RoutingController {
     public EndpointList readEndpointsOf(DeploymentId deployment) {
         Set<Endpoint> endpoints = new LinkedHashSet<>();
         boolean isSystemApplication = SystemApplication.matching(deployment.applicationId()).isPresent();
-        // Avoid reading application more than once per call to this
-        Supplier<DeploymentSpec> deploymentSpec = Suppliers.memoize(() -> controller.applications().requireApplication(TenantAndApplicationId.from(deployment.applicationId())).deploymentSpec());
         // To discover the cluster name for a zone-scoped endpoint, we need to read routing policies
         for (var policy : routingPolicies.read(deployment)) {
             if (!policy.status().isActive()) continue;
             for (var routingMethod :  controller.zoneRegistry().routingMethods(policy.id().zone())) {
-                if (routingMethod.isDirect() && !isSystemApplication && !canRouteDirectlyTo(deployment, deploymentSpec.get())) continue;
                 endpoints.addAll(policy.zoneEndpointsIn(controller.system(), routingMethod, controller.zoneRegistry()));
                 endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod));
             }
@@ -186,17 +176,21 @@ public class RoutingController {
         return EndpointList.copyOf(endpoints);
     }
 
-    /** Read and return zone-scoped endpoints for given deployments, grouped by their zone */
-    public Map<ZoneId, List<Endpoint>> readZoneEndpointsOf(Collection<DeploymentId> deployments) {
-        var endpoints = new TreeMap<ZoneId, List<Endpoint>>(Comparator.comparing(ZoneId::value));
+    /** Read test runner endpoints for given deployments, grouped by their zone */
+    public Map<ZoneId, List<Endpoint>> readTestRunnerEndpointsOf(Collection<DeploymentId> deployments) {
+        TreeMap<ZoneId, List<Endpoint>> endpoints = new TreeMap<>(Comparator.comparing(ZoneId::value));
         for (var deployment : deployments) {
-            EndpointList zoneEndpoints = readEndpointsOf(deployment).scope(Endpoint.Scope.zone).not().legacy();
-            zoneEndpoints = directEndpoints(zoneEndpoints, deployment.applicationId());
+            EndpointList zoneEndpoints = readEndpointsOf(deployment).scope(Endpoint.Scope.zone)
+                                                                    .not().legacy();
+            EndpointList directEndpoints = zoneEndpoints.direct();
+            if (!directEndpoints.isEmpty()) {
+                zoneEndpoints = directEndpoints; // Use only direct endpoints if we have any
+            }
             if  ( ! zoneEndpoints.isEmpty()) {
                 endpoints.put(deployment.zoneId(), zoneEndpoints.asList());
             }
         }
-        return Collections.unmodifiableMap(endpoints);
+        return Collections.unmodifiableSortedMap(endpoints);
     }
 
     /** Returns certificate DNS names (CN and SAN values) for given deployment */
@@ -355,17 +349,6 @@ public class RoutingController {
                                                                        Priority.normal));
     }
 
-    /** Returns direct routing endpoints if any exist and feature flag is set for given application */
-    // TODO: Remove this when feature flag is removed, and in-line .direct() filter where relevant
-    public EndpointList directEndpoints(EndpointList endpoints, ApplicationId application) {
-        boolean hideSharedEndpoint = hideSharedRoutingEndpoint.with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm()).value();
-        EndpointList directEndpoints = endpoints.direct();
-        if (hideSharedEndpoint && !directEndpoints.isEmpty()) {
-            return directEndpoints;
-        }
-        return endpoints;
-    }
-
     /**
      * Assigns one or more global rotations to given application, if eligible. The given application is implicitly
      * stored, ensuring that the assigned rotation(s) are persisted when this returns.
@@ -386,7 +369,7 @@ public class RoutingController {
     }
 
     /** Returns the routing methods that are available across all given deployments */
-    private List<RoutingMethod> routingMethodsOfAll(Collection<DeploymentId> deployments, DeploymentSpec deploymentSpec) {
+    private List<RoutingMethod> routingMethodsOfAll(Collection<DeploymentId> deployments) {
         var deploymentsByMethod = new HashMap<RoutingMethod, Set<DeploymentId>>();
         for (var deployment : deployments) {
             for (var method : controller.zoneRegistry().routingMethods(deployment.zoneId())) {
@@ -397,40 +380,17 @@ public class RoutingController {
         var routingMethods = new ArrayList<RoutingMethod>();
         deploymentsByMethod.forEach((method, supportedDeployments) -> {
             if (supportedDeployments.containsAll(deployments)) {
-                if (method.isDirect() && !canRouteDirectlyTo(deployments, deploymentSpec)) return;
                 routingMethods.add(method);
             }
         });
         return Collections.unmodifiableList(routingMethods);
     }
 
-    /** Returns whether traffic can be directly routed to all given deployments */
-    private boolean canRouteDirectlyTo(Collection<DeploymentId> deployments, DeploymentSpec deploymentSpec) {
-        return deployments.stream().allMatch(deployment -> canRouteDirectlyTo(deployment, deploymentSpec));
-    }
-
-    /** Returns whether traffic can be directly routed to given deployment */
-    private boolean canRouteDirectlyTo(DeploymentId deploymentId, DeploymentSpec deploymentSpec) {
-        if (controller.system().isPublic()) return true; // Public always supports direct routing
-        if (controller.system().isCd()) return true; // CD deploys directly so we cannot enforce all requirements below
-        if (deploymentId.zoneId().environment().isManuallyDeployed()) return true; // Manually deployed zones always support direct routing
-
-        // Check Athenz service presence. The test framework uses this identity when sending requests to the
-        // deployment's container(s).
-        var athenzService = deploymentSpec.instance(deploymentId.applicationId().instance())
-                                          .flatMap(instance -> instance.athenzService(deploymentId.zoneId().environment(),
-                                                                                      deploymentId.zoneId().region()));
-        if (athenzService.isEmpty()) return false;
-        return true;
-    }
-
     /** Compute global endpoints for given routing ID, application and deployments */
     private List<Endpoint> computeGlobalEndpoints(RoutingId routingId, ClusterSpec.Id cluster, List<DeploymentId> deployments, DeploymentSpec deploymentSpec) {
         var endpoints = new ArrayList<Endpoint>();
         var directMethods = 0;
-        var availableRoutingMethods = routingMethodsOfAll(deployments, deploymentSpec);
-        boolean legacyNamesAvailable = requiresLegacyNames(deploymentSpec, routingId.instance().instance());
-
+        var availableRoutingMethods = routingMethodsOfAll(deployments);
         for (var method : availableRoutingMethods) {
             if (method.isDirect() && ++directMethods > 1) {
                 throw new IllegalArgumentException("Invalid routing methods for " + routingId + ": Exceeded maximum " +
@@ -441,21 +401,6 @@ public class RoutingController {
                                   .on(Port.fromRoutingMethod(method))
                                   .routingMethod(method)
                                   .in(controller.system()));
-            // Add legacy endpoints
-            if (legacyNamesAvailable && method == RoutingMethod.shared) {
-                endpoints.add(Endpoint.of(routingId.instance())
-                                      .target(routingId.endpointId(), cluster, deployments)
-                                      .on(Port.plain(4080))
-                                      .legacy()
-                                      .routingMethod(method)
-                                      .in(controller.system()));
-                endpoints.add(Endpoint.of(routingId.instance())
-                                      .target(routingId.endpointId(), cluster, deployments)
-                                      .on(Port.tls(4443))
-                                      .legacy()
-                                      .routingMethod(method)
-                                      .in(controller.system()));
-            }
         }
         return endpoints;
     }

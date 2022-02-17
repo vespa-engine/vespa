@@ -102,8 +102,8 @@ public class Matching implements Cloneable, Serializable {
         }
         if (m.isTypeUserSet()) {
             this.setType(m.getType());
-            if (m.getType()==Type.GRAM)
-              gramSize=m.gramSize;
+            if (m.getType() == Type.GRAM)
+              gramSize = m.gramSize;
         }
         if (m.getExactMatchTerminator() != null) {
             this.setExactMatchTerminator(m.getExactMatchTerminator());
@@ -125,8 +125,10 @@ public class Matching implements Cloneable, Serializable {
         this.exactMatchTerminator = exactMatchTerminator;
     }
 
+    @Override
     public String toString() {
-        return type + " matching [" + (type==Type.GRAM ? "gram size " + gramSize : "supports " + algorithm) + "], [exact-terminator "+exactMatchTerminator+"]";
+        return type + " matching [" + (type==Type.GRAM ? "gram size " + gramSize : "supports " + algorithm) +
+               "], [exact-terminator "+exactMatchTerminator+"]";
     }
 
     public Matching clone() {
@@ -145,10 +147,10 @@ public class Matching implements Cloneable, Serializable {
         Matching other=(Matching)o;
         if ( ! other.type.equals(this.type)) return false;
         if ( ! other.algorithm.equals(this.algorithm)) return false;
-        if ( this.exactMatchTerminator==null && other.exactMatchTerminator!=null) return false;
-        if ( this.exactMatchTerminator!=null && ( ! this.exactMatchTerminator.equals(other.exactMatchTerminator)) )
+        if ( this.exactMatchTerminator == null && other.exactMatchTerminator != null) return false;
+        if ( this.exactMatchTerminator != null && ( ! this.exactMatchTerminator.equals(other.exactMatchTerminator)) )
             return false;
-        if ( gramSize!=other.gramSize) return false;
+        if ( gramSize != other.gramSize) return false;
         return true;
     }
 

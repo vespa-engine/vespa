@@ -3,15 +3,14 @@
 #include "asciistream.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/memory.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/fastos/file.h>
 #include <limits>
-#include <stdexcept>
 #include <cassert>
-#include <cmath>
 #include <charconv>
+#include <vector>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.stllike.asciistream");
@@ -19,20 +18,23 @@ LOG_SETUP(".vespalib.stllike.asciistream");
 namespace vespalib {
 
 namespace {
-    std::vector<string> getPrecisions(const char type) {
-        std::vector<string> result(VESPALIB_ASCIISTREAM_MAX_PRECISION + 1);
-        for (uint32_t i=0; i<result.size(); ++i) {
-            char buf[8];
-            int count = snprintf(buf, sizeof(buf), "%%.%u%c", i, type);
-            assert(size_t(count) < sizeof(buf));  // Assert no truncation.
-            (void) count;
-            result[i] = buf;
-        }
-        return result;
+
+std::vector<string>
+getPrecisions(const char type) {
+    std::vector<string> result(VESPALIB_ASCIISTREAM_MAX_PRECISION + 1);
+    for (uint32_t i=0; i<result.size(); ++i) {
+        char buf[8];
+        int count = snprintf(buf, sizeof(buf), "%%.%u%c", i, type);
+        assert(size_t(count) < sizeof(buf));  // Assert no truncation.
+        (void) count;
+        result[i] = buf;
     }
-    std::vector<string> fixedPrecisions = getPrecisions('f');
-    std::vector<string> scientificPrecisions = getPrecisions('e');
-    std::vector<string> autoPrecisions = getPrecisions('g');
+    return result;
+}
+std::vector<string> fixedPrecisions = getPrecisions('f');
+std::vector<string> scientificPrecisions = getPrecisions('e');
+std::vector<string> autoPrecisions = getPrecisions('g');
+
 }
 
 asciistream &
@@ -93,7 +95,8 @@ asciistream::asciistream(const asciistream & rhs) :
 {
 }
 
-asciistream & asciistream::operator = (const asciistream & rhs)
+asciistream &
+asciistream::operator = (const asciistream & rhs)
 {
     if (this != &rhs) {
         asciistream newStream(rhs);
@@ -108,7 +111,8 @@ asciistream::asciistream(asciistream && rhs) noexcept
     swap(rhs);
 }
 
-asciistream & asciistream::operator = (asciistream && rhs) noexcept
+asciistream &
+asciistream::operator = (asciistream && rhs) noexcept
 {
     if (this != &rhs) {
         swap(rhs);
@@ -116,7 +120,8 @@ asciistream & asciistream::operator = (asciistream && rhs) noexcept
     return *this;
 }
 
-void asciistream::swap(asciistream & rhs) noexcept
+void
+asciistream::swap(asciistream & rhs) noexcept
 {
     std::swap(_rPos, rhs._rPos);
     // If read-only, _wbuf is empty and _rbuf is set
@@ -150,7 +155,8 @@ void throwUnderflow(size_t pos) __attribute__((noinline));
 template <typename T>
 T strToInt(T & v, const char *begin, const char *end) __attribute__((noinline));
 
-void throwInputError(int e, const char * t, const char * buf)
+void
+throwInputError(int e, const char * t, const char * buf)
 {
     if (e == 0) {
         throw IllegalArgumentException("Failed decoding a " + string(t) + " from '" + string(buf) + "'.", VESPA_STRLOC);
@@ -163,7 +169,8 @@ void throwInputError(int e, const char * t, const char * buf)
     }
 }
 
-void throwInputError(std::errc e, const char * t, const char * buf) {
+void
+throwInputError(std::errc e, const char * t, const char * buf) {
     if (e == std::errc::invalid_argument) {
         throw IllegalArgumentException("Illegal " + string(t) + " value '" + string(buf) + "'.", VESPA_STRLOC);
     } else if (e == std::errc::result_out_of_range) {
@@ -173,12 +180,14 @@ void throwInputError(std::errc e, const char * t, const char * buf) {
     }
 }
 
-void throwUnderflow(size_t pos)
+void
+throwUnderflow(size_t pos)
 {
     throw IllegalArgumentException(make_string("buffer underflow at pos %ld.", pos), VESPA_STRLOC);
 }
 
-int getValue(double & val, const char *buf)
+int
+getValue(double & val, const char *buf)
 {
     char *ebuf;
     errno = 0;
@@ -189,7 +198,8 @@ int getValue(double & val, const char *buf)
     return ebuf - buf;
 }
 
-int getValue(float & val, const char *buf)
+int
+getValue(float & val, const char *buf)
 {
     char *ebuf;
     errno = 0;
@@ -201,7 +211,8 @@ int getValue(float & val, const char *buf)
 }
 
 template <typename T>
-T strToInt(T & v, const char *begin, const char *end)
+T
+strToInt(T & v, const char *begin, const char *end)
 {
     const char * curr = begin;
     for (;(curr < end) && std::isspace(*curr); curr++);
@@ -226,7 +237,8 @@ T strToInt(T & v, const char *begin, const char *end)
 
 }
 
-asciistream & asciistream::operator >> (bool & v)
+asciistream &
+asciistream::operator >> (bool & v)
 {
     for (;(_rPos < length()) && std::isspace(_rbuf[_rPos]); _rPos++);
     if (_rPos < length()) {
@@ -237,7 +249,8 @@ asciistream & asciistream::operator >> (bool & v)
     return *this;
 }
 
-asciistream & asciistream::operator >> (char & v)
+asciistream &
+asciistream::operator >> (char & v)
 {
     for (;(_rPos < length()) && std::isspace(_rbuf[_rPos]); _rPos++);
     if (_rPos < length()) {
@@ -248,7 +261,8 @@ asciistream & asciistream::operator >> (char & v)
     return *this;
 }
 
-asciistream & asciistream::operator >> (signed char & v)
+asciistream &
+asciistream::operator >> (signed char & v)
 {
     for (;(_rPos < length()) && std::isspace(_rbuf[_rPos]); _rPos++);
     if (_rPos < length()) {
@@ -259,7 +273,8 @@ asciistream & asciistream::operator >> (signed char & v)
     return *this;
 }
 
-asciistream & asciistream::operator >> (unsigned char & v)
+asciistream &
+asciistream::operator >> (unsigned char & v)
 {
     for (;(_rPos < length()) && std::isspace(_rbuf[_rPos]); _rPos++);
     if (_rPos < length()) {
@@ -270,55 +285,64 @@ asciistream & asciistream::operator >> (unsigned char & v)
     return *this;
 }
 
-asciistream & asciistream::operator >> (unsigned short & v)
+asciistream &
+asciistream::operator >> (unsigned short & v)
 {
     _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
-asciistream & asciistream::operator >> (unsigned int & v)
+asciistream &
+asciistream::operator >> (unsigned int & v)
 {
     _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
-asciistream & asciistream::operator >> (unsigned long & v)
+asciistream &
+asciistream::operator >> (unsigned long & v)
 {
     _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
-asciistream & asciistream::operator >> (unsigned long long & v)
+asciistream &
+asciistream::operator >> (unsigned long long & v)
 {
     _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
-asciistream & asciistream::operator >> (short & v)
+asciistream &
+asciistream::operator >> (short & v)
 {
     _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
-asciistream & asciistream::operator >> (int & v)
+asciistream &
+asciistream::operator >> (int & v)
 {
     _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
-asciistream & asciistream::operator >> (long & v)
+asciistream &
+asciistream::operator >> (long & v)
 {
     _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
-asciistream & asciistream::operator >> (long long & v)
+asciistream &
+asciistream::operator >> (long long & v)
 {
     _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
-asciistream & asciistream::operator >> (double & v)
+asciistream &
+asciistream::operator >> (double & v)
 {
     double l(0);
     _rPos += getValue(l, &_rbuf[_rPos]);
@@ -326,7 +350,8 @@ asciistream & asciistream::operator >> (double & v)
     return *this;
 }
 
-asciistream & asciistream::operator >> (float & v)
+asciistream &
+asciistream::operator >> (float & v)
 {
     float l(0);
     _rPos += getValue(l, &_rbuf[_rPos]);
@@ -334,7 +359,8 @@ asciistream & asciistream::operator >> (float & v)
     return *this;
 }
 
-void asciistream::eatWhite()
+void
+asciistream::eatWhite()
 {
     for (;(_rPos < length()) && isspace(_rbuf[_rPos]); _rPos++);
 }
@@ -344,7 +370,8 @@ void asciistream::eatNonWhite()
     for (;(_rPos < length()) && !isspace(_rbuf[_rPos]); _rPos++);
 }
 
-asciistream & asciistream::operator >> (std::string & v)
+asciistream &
+asciistream::operator >> (std::string & v)
 {
     eatWhite();
     size_t start(_rPos);
@@ -353,7 +380,8 @@ asciistream & asciistream::operator >> (std::string & v)
     return *this;
 }
 
-asciistream & asciistream::operator >> (string & v)
+asciistream &
+asciistream::operator >> (string & v)
 {
     eatWhite();
     size_t start(_rPos);
@@ -366,7 +394,8 @@ asciistream & asciistream::operator >> (string & v)
 namespace {
 const char * _C_char = "0123456789abcdefg";
 
-char * prependInt(char * tmp, Base base)
+char *
+prependInt(char * tmp, Base base)
 {
     if (base == bin) {
         tmp[1] = 'b';
@@ -376,7 +405,8 @@ char * prependInt(char * tmp, Base base)
     return tmp + 2;
 }
 
-char * prependSign(bool sign, char * tmp)
+char *
+prependSign(bool sign, char * tmp)
 {
     if (sign) {
         tmp[0] = '-';
@@ -389,7 +419,8 @@ template <uint8_t base>
 uint8_t printInt(unsigned long long r, char * tmp, uint8_t i) __attribute__((noinline));
 
 template <uint8_t base>
-uint8_t printInt(unsigned long long r, char * tmp, uint8_t i)
+uint8_t
+printInt(unsigned long long r, char * tmp, uint8_t i)
 {
     for(; r; i--, r/=base) {
         uint8_t d = r%base;
@@ -401,7 +432,8 @@ uint8_t printInt(unsigned long long r, char * tmp, uint8_t i)
 }
 
 
-asciistream & asciistream::operator << (long long v)
+asciistream &
+asciistream::operator << (long long v)
 {
     char tmp[72];
     uint8_t i(sizeof(tmp));
@@ -432,14 +464,16 @@ asciistream & asciistream::operator << (long long v)
     return *this;
 }
 
-void asciistream::doReallyFill(size_t currWidth)
+void
+asciistream::doReallyFill(size_t currWidth)
 {
     for (; _width > currWidth; currWidth++) {
         write(&_fill, 1);
     }
 }
 
-asciistream & asciistream::operator << (unsigned long long v)
+asciistream &
+asciistream::operator << (unsigned long long v)
 {
     char tmp[72];
     uint8_t i(sizeof(tmp));
@@ -477,13 +511,15 @@ struct BaseStateSaver {
 };
 }
 
-asciistream& asciistream::operator<<(const void* p)
+asciistream &
+asciistream::operator<<(const void* p)
 {
     BaseStateSaver saver(*this, _base);
     return *this << "0x" << hex << reinterpret_cast<uint64_t>(p);
 }
 
-asciistream & asciistream::operator << (float v)
+asciistream &
+asciistream::operator << (float v)
 {
     if (_floatSpec == fixed) {
         printFixed(v);
@@ -493,7 +529,8 @@ asciistream & asciistream::operator << (float v)
     return *this;
 }
 
-asciistream & asciistream::operator << (double v)
+asciistream &
+asciistream::operator << (double v)
 {
     if (_floatSpec == fixed) {
         printFixed(v);
@@ -516,20 +553,20 @@ void asciistream::printFixed(T v)
 }
 
 namespace {
-    bool hasDotOrIsScientific(const char* string, size_t len) {
-        for (size_t i=0; i<len; ++i) {
-            switch (string[i]) {
-                case '.':
-                case ',':
-                case 'e':
-                case 'E':
-                    return true;
-                default:
-                    break;
-            }
+bool hasDotOrIsScientific(const char* string, size_t len) {
+    for (size_t i=0; i<len; ++i) {
+        switch (string[i]) {
+            case '.':
+            case ',':
+            case 'e':
+            case 'E':
+                return true;
+            default:
+                break;
         }
-        return false;
     }
+    return false;
+}
 }
 
 template <typename T>
@@ -548,7 +585,8 @@ void asciistream::printScientific(T v)
     }
 }
 
-void asciistream::write(const void * buf, size_t len)
+void
+asciistream::write(const void * buf, size_t len)
 {
     if (_rPos > 0 && _rPos == length()) {
         clear();
@@ -564,16 +602,8 @@ void asciistream::write(const void * buf, size_t len)
     _rbuf = _wbuf;
 }
 
-std::vector<string> asciistream::getlines(char delim)
-{
-    std::vector<string> lines;
-    while (!eof()) {
-        lines.push_back(getline(delim));
-    }
-    return lines;
-}
-
-string asciistream::getline(char delim)
+string
+asciistream::getline(char delim)
 {
     string line;
     const size_t start(_rPos);
@@ -588,7 +618,8 @@ string asciistream::getline(char delim)
     return line;
 }
 
-asciistream asciistream::createFromFile(stringref fileName)
+asciistream
+asciistream::createFromFile(stringref fileName)
 {
     FastOS_File file(vespalib::string(fileName).c_str());
     asciistream is;
@@ -597,32 +628,35 @@ asciistream asciistream::createFromFile(stringref fileName)
         if (sz < 0) {
             throw IoException("Failed getting size of  file " + fileName + " : Error=" + file.getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
         }
-        MallocPtr buf(sz);
-        ssize_t actual = file.Read(buf, sz);
+        alloc::Alloc buf = alloc::Alloc::alloc(sz);
+        ssize_t actual = file.Read(buf.get(), sz);
         if (actual != sz) {
             asciistream e;
             e << "Failed reading " << sz << " bytes from file " << fileName;
             throw IoException(e.str() + " : Error=" + file.getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
         }
-        is << stringref(buf.c_str(), buf.size());
+        is << stringref(static_cast<const char *>(buf.get()), sz);
     }
     return is;
 }
 
-asciistream asciistream::createFromDevice(stringref fileName)
+asciistream
+asciistream::createFromDevice(stringref fileName)
 {
     FastOS_File file(vespalib::string(fileName).c_str());
     asciistream is;
     if (file.OpenReadOnly()) {
-        MallocPtr buf(64_Ki);
-        for (ssize_t actual = file.Read(buf, buf.size()); actual > 0; actual = file.Read(buf, buf.size())) {
-            is << stringref(buf.c_str(), actual);
+        constexpr size_t SZ = 64_Ki;
+        auto buf = std::make_unique<char []>(SZ);
+        for (ssize_t actual = file.Read(buf.get(), SZ); actual > 0; actual = file.Read(buf.get(), SZ)) {
+            is << stringref(buf.get(), actual);
         }
     }
     return is;
 }
 
-ssize_t getline(asciistream & is, string & line, char delim)
+ssize_t
+getline(asciistream & is, string & line, char delim)
 {
     line = is.getline(delim);
     return line.size();

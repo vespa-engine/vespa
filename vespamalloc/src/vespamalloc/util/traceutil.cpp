@@ -4,13 +4,9 @@
 
 namespace vespamalloc {
 
-Aggregator::Aggregator()
-{
-}
+Aggregator::Aggregator() = default;
 
-Aggregator::~Aggregator()
-{
-}
+Aggregator::~Aggregator() = default;
 
 struct CmpGraph
 {
@@ -23,8 +19,8 @@ asciistream & operator << (asciistream & os, const Aggregator & v)
 {
     Aggregator::Map map(v._map);
     std::sort(map.begin(), map.end(), CmpGraph());
-    for (Aggregator::Map::const_iterator it=map.begin(); it != map.end(); it++) {
-        os << it->first << " : " << it->second.c_str() << '\n';
+    for (const auto & e : map) {
+        os << e.first << " : " << e.second.c_str() << '\n';
     }
     return os;
 }

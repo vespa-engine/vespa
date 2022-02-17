@@ -2,12 +2,10 @@
 package com.yahoo.container.core.documentapi;
 
 import com.google.inject.Inject;
-import com.yahoo.cloud.config.SlobroksConfig;
-import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
+import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 
@@ -16,7 +14,7 @@ import com.yahoo.vespa.config.content.LoadTypeConfig;
  *
  * @author jonmv
  */
-public class DocumentAccessProvider extends AbstractComponent implements Provider<VespaDocumentAccess> {
+public class DocumentAccessProvider implements Provider<VespaDocumentAccess> {
 
     private final VespaDocumentAccess access;
 
@@ -35,7 +33,7 @@ public class DocumentAccessProvider extends AbstractComponent implements Provide
 
     @Override
     public void deconstruct() {
-        access.shutdown();
+        access.protectedShutdown();
     }
 
 

@@ -1,13 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/config/config.h>
 #include <vespa/config/print/fileconfigwriter.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/messagebus/destinationsession.h>
-#include <vespa/messagebus/protocolset.h>
 #include <vespa/messagebus/rpcmessagebus.h>
 #include <vespa/messagebus/network/rpcnetworkparams.h>
 #include <vespa/vespalib/io/fileutil.h>

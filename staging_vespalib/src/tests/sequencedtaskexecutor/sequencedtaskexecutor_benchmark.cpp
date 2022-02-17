@@ -55,12 +55,12 @@ int main(int argc, char **argv) {
     std::atomic<long> counter(0);
     std::unique_ptr<ISequencedTaskExecutor> executor;
     if (use_adaptive_executor) {
-        executor = std::make_unique<AdaptiveSequencedExecutor>(num_strands, num_threads, max_waiting, task_limit);
+        executor = std::make_unique<AdaptiveSequencedExecutor>(num_strands, num_threads, max_waiting, task_limit, true);
     } else {
         auto optimize = optimize_for_throughput
                         ? vespalib::Executor::OptimizeFor::THROUGHPUT
                         : vespalib::Executor::OptimizeFor::LATENCY;
-        executor = SequencedTaskExecutor::create(sequenced_executor, num_strands, task_limit, optimize);
+        executor = SequencedTaskExecutor::create(sequenced_executor, num_strands, task_limit, true, optimize);
     }
     vespalib::Timer timer;
     for (size_t task_id = 0; task_id < num_tasks; ++task_id) {

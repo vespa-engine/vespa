@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.document.*;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
@@ -16,7 +16,7 @@ import static org.junit.Assert.*;
 public class ImplicitStructTypesTestCase extends AbstractSchemaTestCase {
     @Test
     public void testRequireThatImplicitStructsAreCreated() throws IOException, ParseException {
-        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/nextgen/toggleon.sd");
+        Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/nextgen/toggleon.sd");
         assertNotNull(schema);
 
         SDDocumentType docType = schema.getDocument();
@@ -25,7 +25,7 @@ public class ImplicitStructTypesTestCase extends AbstractSchemaTestCase {
     }
     @Test
     public void testRequireThatImplicitStructsAreUsed() throws IOException, ParseException {
-        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/nextgen/implicitstructtypes.sd");
+        Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/nextgen/implicitstructtypes.sd");
         assertNotNull(schema);
 
         SDDocumentType docType = schema.getDocument();

@@ -39,12 +39,12 @@ isRunnable(const MaintenanceJobRunner & job, const Executor * master) {
 
 }
 
-MaintenanceController::MaintenanceController(ISyncableThreadService &masterThread,
-                                             vespalib::Executor & defaultExecutor,
-                                             MonitoredRefCount & refCount,
-                                             const DocTypeName &docTypeName)
+MaintenanceController::MaintenanceController(ISyncableThreadService& masterThread,
+                                             vespalib::Executor& shared_executor,
+                                             MonitoredRefCount& refCount,
+                                             const DocTypeName& docTypeName)
     : _masterThread(masterThread),
-      _defaultExecutor(defaultExecutor),
+      _shared_executor(shared_executor),
       _refCount(refCount),
       _readySubDB(),
       _remSubDB(),
@@ -70,10 +70,10 @@ MaintenanceController::registerJobInMasterThread(IMaintenanceJob::UP job)
 }
 
 void
-MaintenanceController::registerJobInDefaultPool(IMaintenanceJob::UP job)
+MaintenanceController::registerJobInSharedExecutor(IMaintenanceJob::UP job)
 {
     // Called by master write thread
-    registerJob(_defaultExecutor, std::move(job));
+    registerJob(_shared_executor, std::move(job));
 }
 
 void

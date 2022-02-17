@@ -84,7 +84,7 @@ private:
     // And setFAdviseOptions() per file.
     static int    _defaultFAdviseOptions;
     int           _fAdviseOptions;
-    size_t        _writeChunkSize;
+    size_t        _chunkSize;
     void WriteBufInternal(const void *buffer, size_t length);
 
 protected:
@@ -309,7 +309,7 @@ public:
      * already is closed.
      * @return Boolean success/failure
      */
-    virtual bool Close() = 0;
+    [[nodiscard]] virtual bool Close() = 0;
 
     /**
      * Is the file currently opened?
@@ -324,7 +324,7 @@ public:
      * @return The number of bytes which was actually read,
      *         or -1 on error.
      */
-    virtual ssize_t Read(void *buffer, size_t length) = 0;
+    [[nodiscard]] virtual ssize_t Read(void *buffer, size_t length) = 0;
 
     /**
      * Write [len] bytes from [buffer].  This is just a wrapper for
@@ -334,7 +334,7 @@ public:
      * @param len     number of bytes to write
      * @return Boolean success/failure
      */
-    bool CheckedWrite(const void *buffer, size_t len);
+    [[nodiscard]] bool CheckedWrite(const void *buffer, size_t len);
 
     /**
      * Write [len] bytes from [buffer].
@@ -342,7 +342,7 @@ public:
      * @param len     number of bytes to write
      * @return The number of bytes actually written, or -1 on error
      */
-    virtual ssize_t Write2(const void *buffer, size_t len) = 0;
+    [[nodiscard]] virtual ssize_t Write2(const void *buffer, size_t len) = 0;
 
     /**
      * Read [length] bytes into [buffer]. Caution! If the actual number
@@ -439,7 +439,7 @@ public:
     /**
      * Force completion of pending disk writes (flush cache).
      */
-    virtual bool Sync() = 0;
+    [[nodiscard]] virtual bool Sync() = 0;
 
     /**
      * Are we in some kind of file read mode?
@@ -485,8 +485,8 @@ public:
     /**
      * Set the write chunk size used in WriteBuf.
      */
-    void SetWriteChunkSize(size_t writeChunkSize);
-    size_t getWriteChunkSize() const { return _writeChunkSize; }
+    void setChunkSize(size_t chunkSize) { _chunkSize = chunkSize; }
+    size_t getChunkSize() const { return _chunkSize; }
 
     /**
      * Get restrictions for direct disk I/O. The file should be opened

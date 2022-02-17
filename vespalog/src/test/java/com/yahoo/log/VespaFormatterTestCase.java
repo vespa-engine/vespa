@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.log;
 
+import com.yahoo.log.impl.LogUtils;
+
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -17,6 +19,7 @@ import static org.junit.Assert.fail;
 /**
  * @author  Bjorn Borud
  */
+@SuppressWarnings({"deprecation", "removal"})
 public class VespaFormatterTestCase {
 
     private String hostname;
@@ -33,8 +36,8 @@ public class VespaFormatterTestCase {
 
     @Before
     public void setUp () {
-        hostname = Util.getHostName();
-        pid = Util.getPID();
+        hostname = LogUtils.getHostName();
+        pid = LogUtils.getPID();
 
         testRecord1 = new LogRecord(Level.INFO, "this is a test");
         testRecord1.setInstant(Instant.ofEpochMilli(1098709021843L));

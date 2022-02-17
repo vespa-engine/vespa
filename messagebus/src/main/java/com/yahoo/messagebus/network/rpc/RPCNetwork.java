@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
  */
 public class RPCNetwork implements Network, MethodHandler {
 
-    private static Logger log = Logger.getLogger(RPCNetwork.class.getName());
+    private static final Logger log = Logger.getLogger(RPCNetwork.class.getName());
 
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final Identity identity;
@@ -69,8 +69,8 @@ public class RPCNetwork implements Network, MethodHandler {
     private final LinkedHashMap<String, Route> lruRouteMap = new LinkedHashMap<>(10000, 0.5f, true);
     private final ExecutorService executor =
             new ThreadPoolExecutor(getNumThreads(), getNumThreads(), 0L, TimeUnit.SECONDS,
-                                   new SynchronousQueue<>(false),
-                                   ThreadFactoryFactory.getDaemonThreadFactory("mbus.net"), new ThreadPoolExecutor.CallerRunsPolicy());
+                                   new LinkedBlockingQueue<>(),
+                                   ThreadFactoryFactory.getDaemonThreadFactory("mbus.net"));
 
     private static int getNumThreads() {
         return Math.max(2, Runtime.getRuntime().availableProcessors()/2);

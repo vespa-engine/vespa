@@ -98,7 +98,6 @@ public class NodeTypeProvisioningTest {
                                                                                                               clusterSpec,
                                                                                                               capacity)));
         RetiredExpirer retiredExpirer =  new RetiredExpirer(tester.nodeRepository(),
-                                                            tester.orchestrator(),
                                                             deployer,
                                                             new TestMetric(),
                                                             Duration.ofDays(30),
@@ -166,7 +165,6 @@ public class NodeTypeProvisioningTest {
                                                  Collections.singletonMap(application,
                                                                           new MockDeployer.ApplicationContext(application, clusterSpec, capacity)));
         RetiredExpirer retiredExpirer =  new RetiredExpirer(tester.nodeRepository(),
-                                                            tester.orchestrator(),
                                                             deployer,
                                                             new TestMetric(),
                                                             Duration.ofDays(30),

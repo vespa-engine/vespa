@@ -3,9 +3,12 @@
 #pragma once
 
 #include "documentdbconfig.h"
-#include <vespa/config/config.h>
 #include <mutex>
 
+namespace config {
+    class ConfigRetriever;
+    class DirSpec;
+}
 namespace proton {
 
 class BootstrapConfig;

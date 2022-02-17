@@ -7,8 +7,8 @@ using document::Document;
 
 namespace proton {
 
-UpdateDoneContext::UpdateDoneContext(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted, const document::DocumentUpdate::SP &upd)
-    : OperationDoneContext(std::move(token)),
+UpdateDoneContext::UpdateDoneContext(std::shared_ptr<feedtoken::IState> token, IPendingLidTracker::Token uncommitted, const document::DocumentUpdate::SP &upd)
+    : OperationDoneContext(std::move(token), {}),
       _uncommitted(std::move(uncommitted)),
       _upd(upd),
       _doc()

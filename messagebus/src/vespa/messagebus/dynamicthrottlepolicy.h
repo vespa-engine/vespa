@@ -19,7 +19,7 @@ private:
     ITimer::UP  _timer;
     uint32_t    _numSent;
     uint32_t    _numOk;
-    uint32_t    _resizeRate;
+    double      _resizeRate;
     uint64_t    _resizeTime;
     uint64_t    _timeOfLastMessage;
     uint64_t    _idleTimePeriod;
@@ -28,6 +28,7 @@ private:
     double      _windowSize;
     double      _maxWindowSize;
     double      _minWindowSize;
+    double      _decrementFactor;
     double      _windowSizeBackOff;
     double      _weight;
     double      _localMaxThroughput;
@@ -96,7 +97,7 @@ public:
      * @param resizeRate The rate to set.
      * @return This, to allow chaining.
      */
-    DynamicThrottlePolicy &setResizeRate(uint32_t resizeRate);
+    DynamicThrottlePolicy &setResizeRate(double resizeRate);
 
     /**
      * Sets the weight for this client. The larger the value, the more resources
@@ -149,6 +150,14 @@ public:
      * @return This, to allow chaining.
      */
     DynamicThrottlePolicy &setMinWindowSize(double min);
+
+    /**
+    * Sets the relative step size when decreasing window size.
+    *
+    * @param decrementFactor the step size to set
+    * @return this, to allow chaining
+    */
+    DynamicThrottlePolicy& setWindowSizeDecrementFactor(double decrementFactor);
 
     /**
      * Get the minimum number of pending operations allowed at any time.

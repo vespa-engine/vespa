@@ -3,7 +3,7 @@ package com.yahoo.restapi;
 
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.container.jdisc.RequestHandlerSpec;
 import com.yahoo.jdisc.Metric;
 
@@ -12,7 +12,7 @@ import java.util.concurrent.Executor;
 /**
  * @author bjorncs
  */
-public abstract class RestApiRequestHandler<T extends RestApiRequestHandler<T>> extends LoggingRequestHandler {
+public abstract class RestApiRequestHandler<T extends RestApiRequestHandler<T>> extends ThreadedHttpRequestHandler {
 
     private final RestApi restApi;
 
@@ -24,7 +24,7 @@ public abstract class RestApiRequestHandler<T extends RestApiRequestHandler<T>> 
      * Caller must ensure that provider instance does not try to access any uninitialized fields.
      */
     @SuppressWarnings("unchecked")
-    protected RestApiRequestHandler(LoggingRequestHandler.Context context, RestApiProvider<T> provider) {
+    protected RestApiRequestHandler(ThreadedHttpRequestHandler.Context context, RestApiProvider<T> provider) {
         super(context);
         this.restApi = provider.createRestApi((T)this);
     }
@@ -38,7 +38,7 @@ public abstract class RestApiRequestHandler<T extends RestApiRequestHandler<T>> 
         this.restApi = provider.createRestApi((T)this);
     }
 
-    protected RestApiRequestHandler(LoggingRequestHandler.Context context, RestApi restApi) {
+    protected RestApiRequestHandler(ThreadedHttpRequestHandler.Context context, RestApi restApi) {
         super(context);
         this.restApi = restApi;
     }

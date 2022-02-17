@@ -9,8 +9,12 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -46,7 +50,7 @@ public class ZipStreamReader {
                 if (entry.getName().equals(name))
                     continue;
 
-                zipOut.putNextEntry(entry);
+                zipOut.putNextEntry(new ZipEntry(entry.getName()));
                 zipIn.transferTo(zipOut);
                 zipOut.closeEntry();
             }
@@ -57,6 +61,24 @@ public class ZipStreamReader {
         catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    public static SortedMap<String, Long> getEntryCRCs(InputStream in, Predicate<String> entryNameMatcher) {
+        SortedMap<String, Long> entryCRCs = new TreeMap<>();
+        byte[] buffer = new byte[2048];
+        try (ZipInputStream zipIn = new ZipInputStream(in);
+             OutputStream os = new ByteArrayOutputStream()) {
+            for (ZipEntry entry = zipIn.getNextEntry(); entry != null; entry = zipIn.getNextEntry()) {
+                if (!entryNameMatcher.test(entry.getName()))
+                    continue;
+                // CRC is not set until entry is read
+                while ( -1 != zipIn.read(buffer)){}
+                entryCRCs.put(entry.getName(), entry.getCrc());
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return entryCRCs;
     }
 
     private ZipEntryWithContent readContent(ZipEntry zipEntry, ZipInputStream zipInput, boolean throwIfEntryExceedsMaxSize) {

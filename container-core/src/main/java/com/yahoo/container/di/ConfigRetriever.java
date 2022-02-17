@@ -70,12 +70,6 @@ public final class ConfigRetriever {
         allKeys.addAll(bootstrapKeys);
         setupComponentSubscriber(allKeys);
 
-        var maybeSnapshot = getConfigsOptional(leastGeneration, isInitializing);
-        log.log(FINE, () -> "getConfigsOnce returning " + maybeSnapshot);
-        return maybeSnapshot;
-    }
-
-    private Optional<ConfigSnapshot> getConfigsOptional(long leastGeneration, boolean isInitializing) {
         if (componentSubscriber.generation() < bootstrapSubscriber.generation()) {
             return getComponentsSnapshot(leastGeneration, isInitializing);
         }
@@ -87,7 +81,21 @@ public final class ConfigRetriever {
         if (newestBootstrapGeneration < leastGeneration) {
             return Optional.empty();
         }
-        return bootstrapConfigIfChanged();
+        return bootstrapConfigIfChanged()
+                // At this point, we normally assume that the bootstrap subscriber is one generation ahead
+                // of the component subscriber, but this is not always the case in practice.
+                .or(this::componentsSnapshotReceivedBeforeBootstrap);
+    }
+
+    private Optional<ConfigSnapshot> componentsSnapshotReceivedBeforeBootstrap() {
+        if (componentSubscriber.generation() == bootstrapSubscriber.generation()) {
+            // The component subscriber originally had a newer config generation than the bootstrap subscriber.
+            // Ensure that this generation is applied if it contains changed configs.
+            // The root cause is probably that the component subscriber skipped a generation and got
+            // one ahead of the bootstrap subscriber.
+            return componentsConfigIfChanged();
+        }
+        return Optional.empty();
     }
 
     private Optional<ConfigSnapshot> getComponentsSnapshot(long leastGeneration, boolean isInitializing) {

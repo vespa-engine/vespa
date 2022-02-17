@@ -1,12 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.ml;
 
+import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.models.evaluation.FunctionEvaluator;
 import ai.vespa.models.evaluation.ModelsEvaluator;
 import com.yahoo.tensor.Tensor;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * Tests the ModelsEvaluatorTester.
@@ -17,6 +19,7 @@ public class ModelsEvaluatorTest {
 
     @Test
     public void testModelsEvaluatorTester() {
+        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
         ModelsEvaluator modelsEvaluator = ModelsEvaluatorTester.create("src/test/cfg/application/stateless_eval");
         assertEquals(3, modelsEvaluator.models().size());
 

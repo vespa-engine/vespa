@@ -51,7 +51,7 @@ public class ValidateFieldTypesTest {
 
     private static Schema createSearch(String documentType) {
         return new Schema(documentType,
-                          new Application(MockApplicationPackage.createEmpty()),
+                          MockApplicationPackage.createEmpty(),
                           new MockFileRegistry(),
                           new TestableDeployLogger(),
                           new TestProperties());

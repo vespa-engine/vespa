@@ -5,6 +5,7 @@ package com.yahoo.log.event;
  *
  * @author  Bjorn Borud
  */
+@Deprecated(forRemoval = true, since = "7")
 public class Reloading extends Event {
     public Reloading () {
     }

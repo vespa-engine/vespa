@@ -24,7 +24,7 @@ jvm.stacksize int default=512 restart
 jvm.compressedClassSpaceSize int default=32 restart
 
 ## Base value of maximum direct memory size (in megabytes)
-jvm.baseMaxDirectMemorySize int default=75 restart
+jvm.baseMaxDirectMemorySize int default=16 restart
 
 ## Amount of direct memory used for caching. (in megabytes)
 jvm.directMemorySizeCache int default=0 restart

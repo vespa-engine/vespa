@@ -10,28 +10,29 @@
 #include <vespa/documentapi/messagebus/policies/messagetypepolicy.h>
 #include <vespa/documentapi/messagebus/policies/roundrobinpolicy.h>
 #include <vespa/documentapi/messagebus/policies/subsetservicepolicy.h>
+#include <vespa/config/subscription/configuri.h>
 
 using namespace documentapi;
 
 mbus::IRoutingPolicy::UP
 RoutingPolicyFactories::AndPolicyFactory::createPolicy(const string &param) const
 {
-    return mbus::IRoutingPolicy::UP(new ANDPolicy(param));
+    return std::make_unique<ANDPolicy>(param);
 }
 
 mbus::IRoutingPolicy::UP
 RoutingPolicyFactories::MessageTypePolicyFactory::createPolicy(const string &param) const
 {
-    return mbus::IRoutingPolicy::UP(new MessageTypePolicy(param));
+    return std::make_unique<MessageTypePolicy>(param);
 }
 
 mbus::IRoutingPolicy::UP
 RoutingPolicyFactories::ContentPolicyFactory::createPolicy(const string &param) const
 {
-    mbus::IRoutingPolicy::UP ret(new ContentPolicy(param));
+    auto ret = std::make_unique<ContentPolicy>(param);
     string error = static_cast<ContentPolicy&>(*ret).getError();
     if (!error.empty()) {
-        ret.reset(new ErrorPolicy(error));
+        return std::make_unique<ErrorPolicy>(error);
     }
     return ret;
 }
@@ -43,7 +44,7 @@ RoutingPolicyFactories::LoadBalancerPolicyFactory::createPolicy(const string &pa
     string error = static_cast<LoadBalancerPolicy&>(*ret).getError();
     if (!error.empty()) {
         fprintf(stderr, "Got error %s\n", error.c_str());
-        ret.reset(new ErrorPolicy(error));
+        return std::make_unique<ErrorPolicy>(error);
     }
     return ret;
 }
@@ -60,11 +61,10 @@ DocumentRouteSelectorPolicyFactory(const document::DocumentTypeRepo &repo,
 mbus::IRoutingPolicy::UP
 RoutingPolicyFactories::DocumentRouteSelectorPolicyFactory::createPolicy(const string &param) const
 {
-    mbus::IRoutingPolicy::UP ret(new DocumentRouteSelectorPolicy(
-                    _repo, param.empty() ? _configId : param));
+    auto ret = std::make_unique<DocumentRouteSelectorPolicy>(_repo, param.empty() ? _configId : param);
     string error = static_cast<DocumentRouteSelectorPolicy&>(*ret).getError();
     if (!error.empty()) {
-        ret.reset(new ErrorPolicy(error));
+        return std::make_unique<ErrorPolicy>(error);
     }
     return ret;
 }
@@ -83,17 +83,17 @@ RoutingPolicyFactories::ExternPolicyFactory::createPolicy(const string &param) c
 mbus::IRoutingPolicy::UP
 RoutingPolicyFactories::LocalServicePolicyFactory::createPolicy(const string &param) const
 {
-    return mbus::IRoutingPolicy::UP(new LocalServicePolicy(param));
+    return std::make_unique<LocalServicePolicy>(param);
 }
 
 mbus::IRoutingPolicy::UP
 RoutingPolicyFactories::RoundRobinPolicyFactory::createPolicy(const string &param) const
 {
-    return mbus::IRoutingPolicy::UP(new RoundRobinPolicy(param));
+    return std::make_unique<RoundRobinPolicy>(param);
 }
 
 mbus::IRoutingPolicy::UP
 RoutingPolicyFactories::SubsetServicePolicyFactory::createPolicy(const string &param) const
 {
-    return mbus::IRoutingPolicy::UP(new SubsetServicePolicy(param));
+    return std::make_unique<SubsetServicePolicy>(param);
 }

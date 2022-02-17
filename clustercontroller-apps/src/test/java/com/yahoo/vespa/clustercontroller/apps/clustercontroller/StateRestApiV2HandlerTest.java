@@ -18,7 +18,7 @@ public class StateRestApiV2HandlerTest {
         ClusterInfoConfig config = new ClusterInfoConfig(
                 new ClusterInfoConfig.Builder().clusterId("cluster-id").nodeCount(1));
         ClusterInfoConfig.Builder clusterConfig = new ClusterInfoConfig.Builder();
-        new StateRestApiV2Handler(controller, config, StateRestApiV2Handler.testOnlyContext());
+        new StateRestApiV2Handler(controller, config, StateRestApiV2Handler.testContext());
     }
 
     @Test

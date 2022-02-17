@@ -2,6 +2,7 @@
 
 package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 
 import java.time.Instant;
@@ -26,6 +27,21 @@ public class MockAccessControlService implements AccessControlService {
     @Override
     public Collection<AthenzUser> listMembers() {
         return Set.copyOf(members);
+    }
+
+    @Override
+    public boolean approveSshAccess(TenantName tenantName, Instant expiry) {
+        return false;
+    }
+
+    @Override
+    public boolean requestSshAccess(TenantName tenantName) {
+        return false;
+    }
+
+    @Override
+    public boolean hasPendingAccessRequests(TenantName tenantName) {
+        return false;
     }
 
     public void addPendingMember(AthenzUser user) {

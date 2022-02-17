@@ -60,9 +60,10 @@ Signal::Signal() noexcept
 {}
 Signal::~Signal() = default;
 
-SimpleThreadBundle::Pool::Pool(size_t bundleSize)
+SimpleThreadBundle::Pool::Pool(size_t bundleSize, init_fun_t init_fun)
     : _lock(),
       _bundleSize(bundleSize),
+      _init_fun(init_fun),
       _bundles()
 {
 }
@@ -86,7 +87,7 @@ SimpleThreadBundle::Pool::obtain()
             return ret;
         }
     }
-    return std::make_unique<SimpleThreadBundle>(_bundleSize);
+    return std::make_unique<SimpleThreadBundle>(_bundleSize, _init_fun);
 }
 
 void
@@ -99,7 +100,7 @@ SimpleThreadBundle::Pool::release(SimpleThreadBundle::UP bundle)
 
 //-----------------------------------------------------------------------------
 
-SimpleThreadBundle::SimpleThreadBundle(size_t size_in, Strategy strategy)
+SimpleThreadBundle::SimpleThreadBundle(size_t size_in, Runnable::init_fun_t init_fun, Strategy strategy)
     : _work(),
       _signals(),
       _workers(),
@@ -134,7 +135,7 @@ SimpleThreadBundle::SimpleThreadBundle(size_t size_in, Strategy strategy)
             _hook = std::move(hook);
         } else {
             size_t signal_idx = (strategy == USE_BROADCAST) ? 0 : (i - 1);
-            _workers.push_back(std::make_unique<Worker>(_signals[signal_idx], std::move(hook)));
+            _workers.push_back(std::make_unique<Worker>(_signals[signal_idx], init_fun, std::move(hook)));
         }
     }
 }
@@ -175,19 +176,19 @@ SimpleThreadBundle::run(const std::vector<Runnable*> &targets)
     latch.await();
 }
 
-SimpleThreadBundle::Worker::Worker(Signal &s, Runnable::UP h)
-    : thread(*this, simple_thread_bundle_executor),
-      signal(s),
-      hook(std::move(h))
+SimpleThreadBundle::Worker::Worker(Signal &s, Runnable::init_fun_t init_fun, Runnable::UP h)
+  : thread(*this, std::move(init_fun)),
+    signal(s),
+    hook(std::move(h))
 {
     thread.start();
 }
+
 void
 SimpleThreadBundle::Worker::run() {
     for (size_t gen = 0; signal.wait(gen) > 0; ) {
-    hook->run();
-}
-
+        hook->run();
+    }
 }
 
 } // namespace vespalib

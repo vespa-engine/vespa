@@ -63,9 +63,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
     public RawRankProfile(RankProfile rankProfile, LargeRankExpressions largeExpressions,
                           QueryProfileRegistry queryProfiles, ImportedMlModels importedModels,
                           AttributeFields attributeFields, ModelContext.Properties deployProperties) {
-        this.name = rankProfile.getName();
-        compressedProperties = compress(new Deriver(rankProfile.compile(queryProfiles, importedModels),
-                                                    attributeFields, deployProperties).derive(largeExpressions));
+        this.name = rankProfile.name();
+        compressedProperties = compress(new Deriver(rankProfile.compile(queryProfiles, importedModels), attributeFields, deployProperties, queryProfiles)
+                                                .derive(largeExpressions));
     }
 
     private Compressor.Compression compress(List<Pair<String, String>> properties) {
@@ -159,9 +159,11 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         /**
          * Creates a raw rank profile from the given rank profile
          */
-        Deriver(RankProfile compiled, AttributeFields attributeFields, ModelContext.Properties deployProperties)
-        {
-            rankprofileName = compiled.getName();
+        Deriver(RankProfile compiled,
+                AttributeFields attributeFields,
+                ModelContext.Properties deployProperties,
+                QueryProfileRegistry queryProfiles) {
+            rankprofileName = compiled.name();
             attributeTypes = compiled.getAttributeTypes();
             queryFeatureTypes = compiled.getQueryFeatureTypes();
             firstPhaseRanking = compiled.getFirstPhaseRanking();
@@ -184,7 +186,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             Map<String, RankProfile.RankingExpressionFunction> functions = compiled.getFunctions();
             List<ExpressionFunction> functionExpressions = functions.values().stream().map(f -> f.function()).collect(Collectors.toList());
             Map<String, String> functionProperties = new LinkedHashMap<>();
-            SerializationContext functionSerializationContext = new SerializationContext(functionExpressions);
+            SerializationContext functionSerializationContext = new SerializationContext(functionExpressions,
+                                                                                         Map.of(),
+                                                                                         compiled.typeContext(queryProfiles));
 
             if (firstPhaseRanking != null) {
                 functionProperties.putAll(firstPhaseRanking.getRankProperties(functionSerializationContext));
@@ -206,8 +210,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         }
 
         private void derivePropertiesAndFeaturesFromFunctions(Map<String, RankProfile.RankingExpressionFunction> functions,
-                                                                     Map<String, String> functionProperties,
-                                                                     SerializationContext functionContext) {
+                                                              Map<String, String> functionProperties,
+                                                              SerializationContext functionContext) {
             if (functions.isEmpty()) return;
 
             replaceFunctionFeatures(summaryFeatures, functionContext);
@@ -287,14 +291,15 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private void deriveRankTypeSetting(RankProfile rankProfile, AttributeFields attributeFields) {
             for (Iterator<RankProfile.RankSetting> i = rankProfile.rankSettingIterator(); i.hasNext(); ) {
                 RankProfile.RankSetting setting = i.next();
-                if (!setting.getType().equals(RankProfile.RankSetting.Type.RANKTYPE)) continue;
+                if (setting.getType() != RankProfile.RankSetting.Type.RANKTYPE) continue;
 
                 deriveNativeRankTypeSetting(setting.getFieldName(), (RankType) setting.getValue(), attributeFields,
-                        hasDefaultRankTypeSetting(rankProfile, setting.getFieldName()));
+                                            hasDefaultRankTypeSetting(rankProfile, setting.getFieldName()));
             }
         }
 
-        private void deriveNativeRankTypeSetting(String fieldName, RankType rankType, AttributeFields attributeFields, boolean isDefaultSetting) {
+        private void deriveNativeRankTypeSetting(String fieldName, RankType rankType, AttributeFields attributeFields,
+                                                 boolean isDefaultSetting) {
             if (isDefaultSetting) return;
 
             NativeRankTypeDefinition definition = nativeRankTypeDefinitions.getRankTypeDefinition(rankType);
@@ -422,7 +427,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             for (Map.Entry<String, String> queryFeatureType : queryFeatureTypes.entrySet()) {
                 properties.add(new Pair<>("vespa.type.query." + queryFeatureType.getKey(), queryFeatureType.getValue()));
             }
-            if (properties.size() >= 1000000) throw new RuntimeException("Too many rank properties");
+            if (properties.size() >= 1000000) throw new IllegalArgumentException("Too many rank properties");
             distributeLargeExpressionsAsFiles(properties, largeRankExpressions);
             return properties;
         }
@@ -461,8 +466,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         }
 
         private void deriveOnnxModelFunctionsAndFeatures(RankProfile rankProfile) {
-            if (rankProfile.getSearch() == null) return;
-            if (rankProfile.getSearch().onnxModels().asMap().isEmpty()) return;
+            if (rankProfile.schema() == null) return;
+            if (rankProfile.schema().onnxModels().asMap().isEmpty()) return;
             replaceOnnxFunctionInputs(rankProfile);
             replaceImplicitOnnxConfigFeatures(summaryFeatures, rankProfile);
             replaceImplicitOnnxConfigFeatures(matchFeatures, rankProfile);
@@ -471,7 +476,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private void replaceOnnxFunctionInputs(RankProfile rankProfile) {
             Set<String> functionNames = rankProfile.getFunctions().keySet();
             if (functionNames.isEmpty()) return;
-            for (OnnxModel onnxModel: rankProfile.getSearch().onnxModels().asMap().values()) {
+            for (OnnxModel onnxModel: rankProfile.schema().onnxModels().asMap().values()) {
                 for (Map.Entry<String, String> mapping : onnxModel.getInputMap().entrySet()) {
                     String source = mapping.getValue();
                     if (functionNames.contains(source)) {

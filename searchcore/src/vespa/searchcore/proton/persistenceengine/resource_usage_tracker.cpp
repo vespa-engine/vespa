@@ -94,8 +94,13 @@ void
 ResourceUsageTracker::notifyDiskMemUsage(DiskMemUsageState state)
 {
     std::lock_guard guard(_lock);
-    // TODO: Subtract transient resource (memory and disk) usage from the absolute numbers.
-    _resource_usage = ResourceUsage(state.diskState().usage(), state.memoryState().usage(), _resource_usage.get_attribute_address_space_usage());
+    // The transient resource usage is subtracted from the total resource usage
+    // before it eventually is reported to the cluster controller (to decide whether to block client feed).
+    // This ensures that the transient resource usage is covered by the resource headroom on the content node,
+    // instead of leading to feed blocked due to natural fluctuations.
+    _resource_usage = ResourceUsage(state.non_transient_disk_usage(),
+                                    state.non_transient_memory_usage(),
+                                    _resource_usage.get_attribute_address_space_usage());
     if (_listener != nullptr) {
         _listener->update_resource_usage(_resource_usage);
     }

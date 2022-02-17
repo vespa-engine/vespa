@@ -22,7 +22,7 @@ namespace vespalib {
 class CountDownLatch
 {
 private:
-    std::mutex              _lock;
+    mutable std::mutex      _lock;
     std::condition_variable _cond;
     uint32_t                _count;
 
@@ -44,7 +44,7 @@ public:
      * blocked in the await method will be unblocked.
      **/
     void countDown() {
-        std::lock_guard<std::mutex> guard(_lock);
+        std::lock_guard guard(_lock);
         if (_count != 0) {
             --_count;
             if (_count == 0) {
@@ -59,7 +59,7 @@ public:
      * reduce the count to 0.
      **/
     void await() {
-        std::unique_lock<std::mutex> guard(_lock);
+        std::unique_lock guard(_lock);
         _cond.wait(guard, [this]() { return (_count == 0); });
     }
 
@@ -72,7 +72,7 @@ public:
      * @return true if the counter reached 0, false if we timed out
      **/
     bool await(vespalib::duration maxwait) {
-        std::unique_lock<std::mutex> guard(_lock);
+        std::unique_lock guard(_lock);
         return _cond.wait_for(guard, maxwait, [this]() { return (_count == 0); });
     }
 
@@ -82,7 +82,10 @@ public:
      *
      * @return current count
      **/
-    uint32_t getCount() const { return _count; }
+    [[nodiscard]] uint32_t getCount() const noexcept {
+        std::lock_guard guard(_lock);
+        return _count;
+    }
 
     /**
      * Empty. Needs to be virtual to reduce compiler warnings.

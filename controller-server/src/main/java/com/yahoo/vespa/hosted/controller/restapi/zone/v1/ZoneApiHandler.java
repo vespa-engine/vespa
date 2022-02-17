@@ -6,7 +6,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
@@ -27,11 +27,11 @@ import java.util.stream.Collectors;
  * @author mpolden
  */
 @SuppressWarnings("unused")
-public class ZoneApiHandler extends LoggingRequestHandler {
+public class ZoneApiHandler extends ThreadedHttpRequestHandler {
 
     private final ZoneRegistry zoneRegistry;
 
-    public ZoneApiHandler(LoggingRequestHandler.Context parentCtx, ServiceRegistry serviceRegistry) {
+    public ZoneApiHandler(ThreadedHttpRequestHandler.Context parentCtx, ServiceRegistry serviceRegistry) {
         super(parentCtx);
         this.zoneRegistry = serviceRegistry.zoneRegistry();
     }

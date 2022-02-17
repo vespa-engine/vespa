@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
@@ -20,7 +20,7 @@ public class CasingTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testCasing() throws IOException, ParseException {
-        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/casing.sd");
+        Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/casing.sd");
         assertEquals(schema.getIndex("color").getName(), "color");
         assertEquals(schema.getIndex("Foo").getName(), "Foo");
         assertEquals(schema.getIndex("Price").getName(), "Price");

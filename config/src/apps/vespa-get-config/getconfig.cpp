@@ -2,10 +2,10 @@
 
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
-#include <vespa/config/config.h>
 #include <vespa/config/frt/frtconfigrequestfactory.h>
 #include <vespa/config/frt/frtconnection.h>
 #include <vespa/config/common/payload_converter.h>
+#include <vespa/config/common/configvalue.h>
 #include <vespa/fastos/app.h>
 
 #include <string>
@@ -92,8 +92,8 @@ GetConfig::Main()
     bool debugging = false;
     int c = -1;
 
-    std::vector<vespalib::string> defSchema;
-    const char *schema = nullptr;
+    StringVector defSchema;
+    const char *schemaString = nullptr;
     const char *defName = nullptr;
     const char *defMD5 = "";
     std::string defNamespace("config");
@@ -119,7 +119,7 @@ GetConfig::Main()
         int retval = 1;
         switch (c) {
         case 'a':
-            schema = optArg;
+            schemaString = optArg;
             break;
         case 'n':
             defName = optArg;
@@ -184,17 +184,32 @@ GetConfig::Main()
         defNamespace = std::string(tmp, defName - tmp - 1);
     }
 
-    if (schema != nullptr) {
-        std::ifstream is;
-        is.open(schema);
-        std::string item;
-        while (std::getline(is, item)) {
-            if (item.find("namespace=") == std::string::npos) {
-                defSchema.push_back(item);
-            }
-        }
-        is.close();
+    std::string schema;
+    if (schemaString == nullptr) {
+      std::ostringstream tmp;
+      tmp << getenv("VESPA_HOME");
+      tmp << "/share/vespa/configdefinitions/";
+      tmp << defNamespace;
+      tmp << ".";
+      tmp << defName;
+      tmp << ".def";
+      schema = tmp.str();
+    } else {
+      schema = schemaString;
     }
+    if (debugging) {
+      printf("Using schema in %s\n", schema.c_str());
+    }
+    std::ifstream is;
+    is.open(schema);
+    std::string item;
+    while (std::getline(is, item)) {
+      if (item.find("namespace=") == std::string::npos) {
+        defSchema.push_back(item);
+      }
+    }
+    is.close();
+
     std::ostringstream tmp;
     tmp << "tcp/";
     tmp << serverHost;
@@ -228,8 +243,8 @@ GetConfig::Main()
     } else {
         response->fill();
         ConfigKey rKey(response->getKey());
-        ConfigState rState(response->getConfigState());
-        ConfigValue rValue(response->getValue());
+        const ConfigState & rState = response->getConfigState();
+        const ConfigValue & rValue = response->getValue();
         if (debugging) {
             printf("defName    %s\n", rKey.getDefName().c_str());
             printf("defMD5     %s\n", rKey.getDefMd5().c_str());
@@ -247,7 +262,7 @@ GetConfig::Main()
         if (printAsJson) {
             printf("%s\n", rValue.asJson().c_str());
         } else {
-            std::vector<vespalib::string> lines = rValue.getLegacyFormat();
+            StringVector lines = rValue.getLegacyFormat();
             for (uint32_t j = 0; j < lines.size(); j++) {
                 printf("%s\n",  lines[j].c_str());
             }

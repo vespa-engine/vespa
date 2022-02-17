@@ -107,12 +107,12 @@ private:
 };
 
 class TickingThreadPoolImpl final : public TickingThreadPool {
-    vespalib::string                     _name;
+    const vespalib::string               _name;
+    const vespalib::duration             _waitTime;
+    const vespalib::duration             _maxProcessTime;
+    const uint32_t                       _ticksBeforeWait;
     std::mutex                           _lock;
     std::condition_variable              _cond;
-    std::atomic<vespalib::duration>      _waitTime;
-    std::atomic_uint                     _ticksBeforeWait;
-    std::atomic<vespalib::duration>      _maxProcessTime;
     std::vector<TickingThreadRunner::SP> _tickers;
     std::vector<std::shared_ptr<Thread>> _threads;
 
@@ -137,22 +137,12 @@ public:
                           int ticksBeforeWait, vespalib::duration maxProcessTime)
         : _name(name),
           _waitTime(waitTime),
-          _ticksBeforeWait(ticksBeforeWait),
-          _maxProcessTime(maxProcessTime) {}
+          _maxProcessTime(maxProcessTime),
+          _ticksBeforeWait(ticksBeforeWait)
+    { }
 
     ~TickingThreadPoolImpl() override {
         stop();
-    }
-
-    void updateParametersAllThreads(vespalib::duration waitTime, vespalib::duration maxProcessTime,
-                                    int ticksBeforeWait) override {
-        _waitTime.store(waitTime);
-        _maxProcessTime.store(maxProcessTime);
-        _ticksBeforeWait.store(ticksBeforeWait);
-        // TODO: Add locking so threads not deleted while updating
-        for (uint32_t i=0; i<_threads.size(); ++i) {
-            _threads[i]->updateParameters(waitTime, maxProcessTime, ticksBeforeWait);
-        }
     }
 
     void addThread(TickingThread& ticker) override {
@@ -169,9 +159,9 @@ public:
             _threads.push_back(std::shared_ptr<Thread>(pool.startThread(
                     *_tickers[i],
                     ost.str(),
-                    _waitTime.load(std::memory_order_relaxed),
-                    _maxProcessTime.load(std::memory_order_relaxed),
-                    _ticksBeforeWait.load(std::memory_order_relaxed))));
+                    _waitTime,
+                    _maxProcessTime,
+                    _ticksBeforeWait, std::nullopt)));
         }
     }
 
@@ -225,6 +215,12 @@ TickingThreadPool::createDefault(
         vespalib::duration maxProcessTime)
 {
     return std::make_unique<TickingThreadPoolImpl>(name, waitTime, ticksBeforeWait, maxProcessTime);
+}
+
+TickingThreadPool::UP
+TickingThreadPool::createDefault(vespalib::stringref name, vespalib::duration waitTime)
+{
+    return createDefault(name, waitTime, 1, 5s);
 }
 
 } // storage::framework

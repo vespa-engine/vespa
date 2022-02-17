@@ -31,8 +31,8 @@ TopLevelDistributorTestUtil::~TopLevelDistributorTestUtil() = default;
 void
 TopLevelDistributorTestUtil::create_links()
 {
-    _node.reset(new TestDistributorApp(_config.getConfigId()));
-    _thread_pool = framework::TickingThreadPool::createDefault("distributor");
+    _node = std::make_unique<TestDistributorApp>(_config.getConfigId());
+    _thread_pool = framework::TickingThreadPool::createDefault("distributor", 100ms);
     _stripe_pool = DistributorStripePool::make_non_threaded_pool_for_testing();
     _distributor.reset(new TopLevelDistributor(
             _node->getComponentRegister(),
@@ -43,7 +43,7 @@ TopLevelDistributorTestUtil::create_links()
             _num_distributor_stripes,
             _host_info,
             &_message_sender));
-    _component.reset(new storage::DistributorComponent(_node->getComponentRegister(), "distrtestutil"));
+    _component = std::make_unique<storage::DistributorComponent>(_node->getComponentRegister(), "distrtestutil");
 };
 
 void

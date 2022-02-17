@@ -10,7 +10,7 @@ import java.io.Reader;
 import java.io.StringReader;
 
 import static com.yahoo.test.json.JsonTestHelper.inputJson;
-import static com.yahoo.vespa.model.application.validation.ConstantTensorJsonValidator.InvalidConstantTensor;
+import static com.yahoo.vespa.model.application.validation.ConstantTensorJsonValidator.InvalidConstantTensorException;
 
 public class ConstantTensorJsonValidatorTest {
 
@@ -88,7 +88,7 @@ public class ConstantTensorJsonValidatorTest {
 
     @Test
     public void ensure_that_bound_tensor_outside_limits_is_disallowed() {
-        expectedException.expect(InvalidConstantTensor.class);
+        expectedException.expect(InvalidConstantTensorException.class);
         expectedException.expectMessage("Index 5 not within limits of bound dimension 'x'");
 
         validateTensorJson(
@@ -121,7 +121,7 @@ public class ConstantTensorJsonValidatorTest {
 
     @Test
     public void ensure_that_non_integer_strings_in_address_points_are_disallowed_unbound() {
-        expectedException.expect(InvalidConstantTensor.class);
+        expectedException.expect(InvalidConstantTensorException.class);
         expectedException.expectMessage("Index 'a' for dimension 'x' is not an integer");
 
         validateTensorJson(
@@ -139,7 +139,7 @@ public class ConstantTensorJsonValidatorTest {
 
     @Test
     public void ensure_that_tensor_coordinates_are_strings() {
-        expectedException.expect(InvalidConstantTensor.class);
+        expectedException.expect(InvalidConstantTensorException.class);
         expectedException.expectMessage("Tensor label is not a string (VALUE_NUMBER_INT)");
 
         validateTensorJson(
@@ -157,7 +157,7 @@ public class ConstantTensorJsonValidatorTest {
 
     @Test
     public void ensure_that_non_integer_strings_in_address_points_are_disallowed_bounded() {
-        expectedException.expect(InvalidConstantTensor.class);
+        expectedException.expect(InvalidConstantTensorException.class);
         expectedException.expectMessage("Index 'a' for dimension 'x' is not an integer");
 
         validateTensorJson(
@@ -175,7 +175,7 @@ public class ConstantTensorJsonValidatorTest {
 
     @Test
     public void ensure_that_missing_coordinates_fail() {
-        expectedException.expect(InvalidConstantTensor.class);
+        expectedException.expect(InvalidConstantTensorException.class);
         expectedException.expectMessage("Tensor address missing dimension(s) y, z");
 
         validateTensorJson(
@@ -193,7 +193,7 @@ public class ConstantTensorJsonValidatorTest {
 
     @Test
     public void ensure_that_non_number_values_are_disallowed() {
-        expectedException.expect(InvalidConstantTensor.class);
+        expectedException.expect(InvalidConstantTensorException.class);
         expectedException.expectMessage("Tensor value is not a number (VALUE_STRING)");
 
         validateTensorJson(
@@ -211,7 +211,7 @@ public class ConstantTensorJsonValidatorTest {
 
     @Test
     public void ensure_that_extra_dimensions_are_disallowed() {
-        expectedException.expect(InvalidConstantTensor.class);
+        expectedException.expect(InvalidConstantTensorException.class);
         expectedException.expectMessage("Tensor dimension 'z' does not exist");
 
         validateTensorJson(
@@ -229,7 +229,7 @@ public class ConstantTensorJsonValidatorTest {
 
     @Test
     public void ensure_that_duplicate_dimensions_are_disallowed() {
-        expectedException.expect(InvalidConstantTensor.class);
+        expectedException.expect(InvalidConstantTensorException.class);
         expectedException.expectMessage("Duplicate tensor dimension 'y'");
 
         validateTensorJson(
@@ -247,7 +247,7 @@ public class ConstantTensorJsonValidatorTest {
 
     @Test
     public void ensure_that_invalid_json_fails() {
-        expectedException.expect(InvalidConstantTensor.class);
+        expectedException.expect(InvalidConstantTensorException.class);
         expectedException.expectMessage("Failed to parse JSON stream");
 
         validateTensorJson(
@@ -265,7 +265,7 @@ public class ConstantTensorJsonValidatorTest {
 
     @Test
     public void ensure_that_invalid_json_not_in_tensor_format_fails() {
-        expectedException.expect(InvalidConstantTensor.class);
+        expectedException.expect(InvalidConstantTensorException.class);
         expectedException.expectMessage("Expected field name 'cells', got 'stats'");
 
         validateTensorJson(TensorType.fromSpec("tensor(x[], y[])"),

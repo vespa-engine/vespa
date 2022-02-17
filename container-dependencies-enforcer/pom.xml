@@ -35,111 +35,99 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <profiles>
-        <profile>
-            <id>enforce-container-deps</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-                 <property>
-                     <!-- Dependency resolution is broken for old maven used in our CentOS docker containers -->
-                    <name>maven.version</name>
-                    <value>!3.0.5</value>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <!-- To allow running 'mvn enforcer:enforce' from the command line -->
-                                <id>default-cli</id>
-                                <goals>
-                                    <goal>enforce</goal>
-                                </goals>
-                                <configuration>
-                                    <rules>
-                                        <bannedDependencies>
-                                            <excludes>
-                                                <!-- Only allow explicitly listed deps in provided and compile scope -->
-                                                <exclude>*:*:*:jar:provided:*</exclude>
-                                                <exclude>*:*:*:jar:compile:*</exclude>
-                                            </excludes>
-                                            <includes>
-                                                <include>com.yahoo.vespa</include>
-                                                <include>aopalliance:aopalliance:[${aopalliance.version}]:jar:provided</include>
-                                                <include>com.fasterxml.jackson.core:jackson-annotations:[${jackson2.version}]:jar:provided</include>
-                                                <include>com.fasterxml.jackson.core:jackson-core:[${jackson2.version}]:jar:provided</include>
-                                                <include>com.fasterxml.jackson.core:jackson-databind:[${jackson-databind.version}]:jar:provided</include>
-                                                <include>com.fasterxml.jackson.datatype:jackson-datatype-jdk8:[${jackson2.version}]:jar:provided</include>
-                                                <include>com.fasterxml.jackson.datatype:jackson-datatype-jsr310:[${jackson2.version}]:jar:provided</include>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <!-- To allow running 'mvn enforcer:enforce' from the command line -->
+                        <id>default-cli</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <!-- Only allow explicitly listed deps in provided and compile scope -->
+                                        <exclude>*:*:*:jar:provided:*</exclude>
+                                        <exclude>*:*:*:jar:compile:*</exclude>
+                                    </excludes>
+                                    <includes>
+                                        <include>com.yahoo.vespa</include>
+                                        <include>aopalliance:aopalliance:[${aopalliance.version}]:jar:provided</include>
+                                        <include>com.fasterxml.jackson.core:jackson-annotations:[${jackson2.version}]:jar:provided</include>
+                                        <include>com.fasterxml.jackson.core:jackson-core:[${jackson2.version}]:jar:provided</include>
+                                        <include>com.fasterxml.jackson.core:jackson-databind:[${jackson-databind.version}]:jar:provided</include>
+                                        <include>com.fasterxml.jackson.datatype:jackson-datatype-jdk8:[${jackson2.version}]:jar:provided</include>
+                                        <include>com.fasterxml.jackson.datatype:jackson-datatype-jsr310:[${jackson2.version}]:jar:provided</include>
 
 
-                                                <!-- Use version range for jax deps, because jersey and junit affect the versions. -->
-                                                <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:[2.5.4, ${jackson2.version}]:jar:provided</include>
-                                                <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:[2.5.4, ${jackson2.version}]:jar:provided</include>
-                                                <include>com.fasterxml.jackson.module:jackson-module-jaxb-annotations:[2.5.4, ${jackson2.version}]:jar:provided</include>
+                                        <!-- Use version range for jax deps, because jersey and junit affect the versions. -->
+                                        <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:[2.5.4, ${jackson2.version}]:jar:provided</include>
+                                        <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:[2.5.4, ${jackson2.version}]:jar:provided</include>
+                                        <include>com.fasterxml.jackson.module:jackson-module-jaxb-annotations:[2.5.4, ${jackson2.version}]:jar:provided</include>
 
-                                                <include>com.google.code.findbugs:jsr305:[${findbugs.version}]:jar:provided</include>
-                                                <include>com.google.guava:guava:[${guava.version}]:jar:provided</include>
-                                                <include>com.google.inject.extensions:guice-assistedinject:[${guice.version}]:jar:provided</include>
-                                                <include>com.google.inject.extensions:guice-multibindings:[${guice.version}]:jar:provided</include>
-                                                <include>com.google.inject:guice:[${guice.version}]:jar:provided:no_aop</include>
-                                                <include>com.sun.activation:javax.activation:[1.2.0]:jar:provided</include>
-                                                <include>com.sun.xml.bind:jaxb-core:[${jaxb.version}]:jar:provided</include>
-                                                <include>com.sun.xml.bind:jaxb-impl:[${jaxb.version}]:jar:provided</include>
-                                                <include>commons-logging:commons-logging:[1.2]:jar:provided</include>
-                                                <include>javax.annotation:javax.annotation-api:[${javax.annotation-api.version}]:jar:provided</include>
-                                                <include>javax.inject:javax.inject:[${javax.inject.version}]:jar:provided</include>
-                                                <include>javax.servlet:javax.servlet-api:[${javax.servlet-api.version}]:jar:provided</include>
-                                                <include>javax.validation:validation-api:[${javax.validation-api.version}]:jar:provided</include>
-                                                <include>javax.ws.rs:javax.ws.rs-api:[${javax.ws.rs-api.version}]:jar:provided</include>
-                                                <include>javax.xml.bind:jaxb-api:[${jaxb.version}]:jar:provided</include>
-                                                <include>net.jcip:jcip-annotations:[1.0]:jar:provided</include>
-                                                <include>org.lz4:lz4-java:[${org.lz4.version}]:jar:provided</include>
-                                                <include>org.apache.felix:org.apache.felix.framework:[${felix.version}]:jar:provided</include>
-                                                <include>org.apache.felix:org.apache.felix.log:[${felix.log.version}]:jar:provided</include>
-                                                <include>org.apache.felix:org.apache.felix.main:[${felix.version}]:jar:provided</include>
-                                                <include>org.bouncycastle:bcpkix-jdk15on:[${bouncycastle.version}]:jar:provided</include>
-                                                <include>org.bouncycastle:bcprov-jdk15on:[${bouncycastle.version}]:jar:provided</include>
-                                                <include>org.eclipse.jetty:jetty-http:[${jetty.version}]:jar:provided</include>
-                                                <include>org.eclipse.jetty:jetty-io:[${jetty.version}]:jar:provided</include>
-                                                <include>org.eclipse.jetty:jetty-util:[${jetty.version}]:jar:provided</include>
-                                                <include>org.glassfish.hk2.external:aopalliance-repackaged:[${hk2.version}]:jar:provided</include>
-                                                <include>org.glassfish.hk2.external:javax.inject:[${hk2.version}]:jar:provided</include>
-                                                <include>org.glassfish.hk2:hk2-api:[${hk2.version}]:jar:provided</include>
-                                                <include>org.glassfish.hk2:hk2-locator:[${hk2.version}]:jar:provided</include>
-                                                <include>org.glassfish.hk2:hk2-utils:[${hk2.version}]:jar:provided</include>
-                                                <include>org.glassfish.hk2:osgi-resource-locator:[${hk2.osgi-resource-locator.version}]:jar:provided</include>
-                                                <include>org.glassfish.jersey.bundles.repackaged:jersey-guava:[${jersey2.version}]:jar:provided</include>
-                                                <include>org.glassfish.jersey.core:jersey-client:[${jersey2.version}]:jar:provided</include>
-                                                <include>org.glassfish.jersey.core:jersey-common:[${jersey2.version}]:jar:provided</include>
-                                                <include>org.glassfish.jersey.core:jersey-server:[${jersey2.version}]:jar:provided</include>
-                                                <include>org.glassfish.jersey.ext:jersey-entity-filtering:[${jersey2.version}]:jar:provided</include>
-                                                <include>org.glassfish.jersey.ext:jersey-proxy-client:[${jersey2.version}]:jar:provided</include>
-                                                <include>org.glassfish.jersey.media:jersey-media-json-jackson:[${jersey2.version}]:jar:provided</include>
-                                                <include>org.glassfish.jersey.media:jersey-media-multipart:[${jersey2.version}]:jar:provided</include>
-                                                <include>org.javassist:javassist:[${javassist.version}]:jar:provided</include>
-                                                <include>org.json:json:[${org.json.version}]:jar:provided</include>
-                                                <include>org.jvnet.mimepull:mimepull:[${mimepull.version}]:jar:provided</include>
-                                                <include>org.slf4j:jcl-over-slf4j:[${slf4j.version}]:jar:provided</include>
-                                                <include>org.slf4j:log4j-over-slf4j:[${slf4j.version}]:jar:provided</include>
-                                                <include>org.slf4j:slf4j-api:[${slf4j.version}]:jar:provided</include>
-                                                <include>org.slf4j:slf4j-jdk14:[${slf4j.version}]:jar:provided</include>
-                                                <include>xml-apis:xml-apis:[${xml-apis.version}]:jar:provided</include>
-                                            </includes>
-                                        </bannedDependencies>
-                                    </rules>
-                                    <fail>true</fail>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
+                                        <include>com.google.code.findbugs:jsr305:[${findbugs.version}]:jar:provided</include>
+                                        <include>com.google.guava:guava:[${guava.version}]:jar:provided</include>
+                                        <include>com.google.inject.extensions:guice-assistedinject:[${guice.version}]:jar:provided</include>
+                                        <include>com.google.inject.extensions:guice-multibindings:[${guice.version}]:jar:provided</include>
+                                        <include>com.google.inject:guice:[${guice.version}]:jar:provided:no_aop</include>
+                                        <include>com.sun.activation:javax.activation:[1.2.0]:jar:provided</include>
+                                        <include>com.sun.xml.bind:jaxb-core:[${jaxb.version}]:jar:provided</include>
+                                        <include>com.sun.xml.bind:jaxb-impl:[${jaxb.version}]:jar:provided</include>
+                                        <include>commons-logging:commons-logging:[1.2]:jar:provided</include>
+                                        <include>javax.annotation:javax.annotation-api:[${javax.annotation-api.version}]:jar:provided</include>
+                                        <include>javax.inject:javax.inject:[${javax.inject.version}]:jar:provided</include>
+                                        <include>javax.servlet:javax.servlet-api:[${javax.servlet-api.version}]:jar:provided</include>
+                                        <include>javax.validation:validation-api:[${javax.validation-api.version}]:jar:provided</include>
+                                        <include>javax.ws.rs:javax.ws.rs-api:[${javax.ws.rs-api.version}]:jar:provided</include>
+                                        <include>javax.xml.bind:jaxb-api:[${jaxb.version}]:jar:provided</include>
+                                        <include>net.jcip:jcip-annotations:[1.0]:jar:provided</include>
+                                        <include>org.lz4:lz4-java:[${org.lz4.version}]:jar:provided</include>
+                                        <include>org.apache.felix:org.apache.felix.framework:[${felix.version}]:jar:provided</include>
+                                        <include>org.apache.felix:org.apache.felix.log:[${felix.log.version}]:jar:provided</include>
+                                        <include>org.apache.felix:org.apache.felix.main:[${felix.version}]:jar:provided</include>
+                                        <include>org.bouncycastle:bcpkix-jdk15on:[${bouncycastle.version}]:jar:provided</include>
+                                        <include>org.bouncycastle:bcprov-jdk15on:[${bouncycastle.version}]:jar:provided</include>
+                                        <include>org.eclipse.jetty:jetty-http:[${jetty.version}]:jar:provided</include>
+                                        <include>org.eclipse.jetty:jetty-io:[${jetty.version}]:jar:provided</include>
+                                        <include>org.eclipse.jetty:jetty-util:[${jetty.version}]:jar:provided</include>
+                                        <include>org.glassfish.hk2.external:aopalliance-repackaged:[${hk2.version}]:jar:provided</include>
+                                        <include>org.glassfish.hk2.external:javax.inject:[${hk2.version}]:jar:provided</include>
+                                        <include>org.glassfish.hk2:hk2-api:[${hk2.version}]:jar:provided</include>
+                                        <include>org.glassfish.hk2:hk2-locator:[${hk2.version}]:jar:provided</include>
+                                        <include>org.glassfish.hk2:hk2-utils:[${hk2.version}]:jar:provided</include>
+                                        <include>org.glassfish.hk2:osgi-resource-locator:[${hk2.osgi-resource-locator.version}]:jar:provided</include>
+                                        <include>org.glassfish.jersey.bundles.repackaged:jersey-guava:[${jersey2.version}]:jar:provided</include>
+                                        <include>org.glassfish.jersey.core:jersey-client:[${jersey2.version}]:jar:provided</include>
+                                        <include>org.glassfish.jersey.core:jersey-common:[${jersey2.version}]:jar:provided</include>
+                                        <include>org.glassfish.jersey.core:jersey-server:[${jersey2.version}]:jar:provided</include>
+                                        <include>org.glassfish.jersey.ext:jersey-entity-filtering:[${jersey2.version}]:jar:provided</include>
+                                        <include>org.glassfish.jersey.ext:jersey-proxy-client:[${jersey2.version}]:jar:provided</include>
+                                        <include>org.glassfish.jersey.media:jersey-media-json-jackson:[${jersey2.version}]:jar:provided</include>
+                                        <include>org.glassfish.jersey.media:jersey-media-multipart:[${jersey2.version}]:jar:provided</include>
+                                        <include>org.javassist:javassist:[${javassist.version}]:jar:provided</include>
+                                        <include>org.json:json:[${org.json.version}]:jar:provided</include>
+                                        <include>org.jvnet.mimepull:mimepull:[${mimepull.version}]:jar:provided</include>
+                                        <include>org.slf4j:jcl-over-slf4j:[${slf4j.version}]:jar:provided</include>
+                                        <include>org.slf4j:log4j-over-slf4j:[${slf4j.version}]:jar:provided</include>
+                                        <include>org.slf4j:slf4j-api:[${slf4j.version}]:jar:provided</include>
+                                        <include>org.slf4j:slf4j-jdk14:[${slf4j.version}]:jar:provided</include>
+                                        <include>xml-apis:xml-apis:[${xml-apis.version}]:jar:provided</include>
+                                    </includes>
+                                </bannedDependencies>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
     <properties>
         <maven.javadoc.skip>true</maven.javadoc.skip>

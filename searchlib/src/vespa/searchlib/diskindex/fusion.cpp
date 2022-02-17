@@ -3,13 +3,13 @@
 #include "fusion.h"
 #include "fusion_input_index.h"
 #include "field_merger.h"
+#include "field_mergers_state.h"
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/common/documentsummary.h>
 #include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/count_down_latch.h>
 #include <vespa/vespalib/util/error.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
@@ -71,30 +71,19 @@ Fusion::Fusion(const Schema& schema, const vespalib::string& dir,
 Fusion::~Fusion() = default;
 
 bool
-Fusion::mergeFields(vespalib::ThreadExecutor & executor, std::shared_ptr<IFlushToken> flush_token)
+Fusion::mergeFields(vespalib::Executor& shared_executor, std::shared_ptr<IFlushToken> flush_token)
 {
+    FieldMergersState field_mergers_state(_fusion_out_index, shared_executor, flush_token);
     const Schema &schema = getSchema();
-    std::atomic<uint32_t> failed(0);
-    uint32_t maxConcurrentThreads = std::max(1ul, executor.getNumThreads()/2);
-    document::Semaphore concurrent(maxConcurrentThreads);
-    vespalib::CountDownLatch  done(schema.getNumIndexFields());
     for (SchemaUtil::IndexIterator iter(schema); iter.isValid(); ++iter) {
-        concurrent.wait();
-        executor.execute(vespalib::makeLambdaTask([this, index=iter.getIndex(), &failed, &done, &concurrent, flush_token]() {
-            FieldMerger merger(index, _fusion_out_index, flush_token);
-            if (!merger.merge_field()) {
-                failed++;
-            }
-            concurrent.post();
-            done.countDown();
-        }));
+        auto& field_merger = field_mergers_state.alloc_field_merger(iter.getIndex());
+        field_mergers_state.schedule_task(field_merger);
     }
     LOG(debug, "Waiting for %u fields", schema.getNumIndexFields());
-    done.await();
+    field_mergers_state.wait_field_mergers_done();
     LOG(debug, "Done waiting for %u fields", schema.getNumIndexFields());
-    return (failed == 0u);
+    return (field_mergers_state.get_failed() == 0u);
 }
-
 
 bool
 Fusion::checkSchemaCompat()
@@ -114,7 +103,7 @@ Fusion::readSchemaFiles()
 }
 
 bool
-Fusion::merge(vespalib::ThreadExecutor& executor, std::shared_ptr<IFlushToken> flush_token)
+Fusion::merge(vespalib::Executor& shared_executor, std::shared_ptr<IFlushToken> flush_token)
 {
     FastOS_StatInfo statInfo;
     if (!FastOS_File::Stat(_fusion_out_index.get_path().c_str(), &statInfo)) {
@@ -148,7 +137,7 @@ Fusion::merge(vespalib::ThreadExecutor& executor, std::shared_ptr<IFlushToken> f
         if (!readSchemaFiles()) {
             throw IllegalArgumentException("Cannot read schema files for source indexes");
         }
-        return mergeFields(executor, flush_token);
+        return mergeFields(shared_executor, flush_token);
     } catch (const std::exception & e) {
         LOG(error, "%s", e.what());
         return false;

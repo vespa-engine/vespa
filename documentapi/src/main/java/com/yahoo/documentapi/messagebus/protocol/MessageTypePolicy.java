@@ -15,6 +15,7 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 /**
  * @author baldersheim
  */
+@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class MessageTypePolicy implements DocumentProtocolRoutingPolicy, ConfigSubscriber.SingleSubscriber<MessagetyperouteselectorpolicyConfig> {
 
     private final AtomicReference<Map<Integer, Route>> configRef = new AtomicReference<>();

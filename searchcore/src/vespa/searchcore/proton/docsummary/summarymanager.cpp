@@ -145,7 +145,7 @@ SummaryManager::createSummarySetup(const SummaryConfig & summaryCfg, const Summa
                                           juniperCfg, attributeMgr, _docStore, repo);
 }
 
-SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor, const LogDocumentStore::Config & storeConfig,
+SummaryManager::SummaryManager(vespalib::Executor &shared_executor, const LogDocumentStore::Config & storeConfig,
                                const search::GrowStrategy & growStrategy, const vespalib::string &baseDir,
                                const DocTypeName &docTypeName, const TuneFileSummary &tuneFileSummary,
                                const FileHeaderContext &fileHeaderContext, search::transactionlog::SyncProxy &tlSyncer,
@@ -154,7 +154,7 @@ SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor, const LogDoc
       _docTypeName(docTypeName),
       _docStore()
 {
-    _docStore = std::make_shared<LogDocumentStore>(executor, baseDir, storeConfig, growStrategy, tuneFileSummary,
+    _docStore = std::make_shared<LogDocumentStore>(shared_executor, baseDir, storeConfig, growStrategy, tuneFileSummary,
                                                    fileHeaderContext, tlSyncer, std::move(bucketizer));
 }
 

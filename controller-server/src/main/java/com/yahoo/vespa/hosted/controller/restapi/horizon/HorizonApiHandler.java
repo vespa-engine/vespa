@@ -6,7 +6,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
  *
  * @author valerijf
  */
-public class HorizonApiHandler extends LoggingRequestHandler {
+public class HorizonApiHandler extends ThreadedHttpRequestHandler {
 
     private final SystemName systemName;
     private final HorizonClient client;
@@ -46,7 +46,7 @@ public class HorizonApiHandler extends LoggingRequestHandler {
             EnumSet.of(RoleDefinition.hostedOperator, RoleDefinition.hostedSupporter);
 
     @Inject
-    public HorizonApiHandler(LoggingRequestHandler.Context parentCtx, Controller controller, FlagSource flagSource) {
+    public HorizonApiHandler(ThreadedHttpRequestHandler.Context parentCtx, Controller controller, FlagSource flagSource) {
         super(parentCtx);
         this.systemName = controller.system();
         this.client = controller.serviceRegistry().horizonClient();

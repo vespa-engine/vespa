@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
@@ -25,7 +26,7 @@ public class IdTestCase extends AbstractExportingTestCase {
 
     @Test
     public void testExplicitUpperCaseIdField() {
-        Schema schema = new Schema("test");
+        Schema schema = new Schema("test", MockApplicationPackage.createEmpty());
         SDDocumentType document = new SDDocumentType("test");
         schema.addDocument(document);
         SDField uri = new SDField("URI", DataType.URI);

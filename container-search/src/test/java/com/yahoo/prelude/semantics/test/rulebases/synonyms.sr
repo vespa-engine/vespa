@@ -1,0 +1,11 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+index1:[synonyms1] -> =index1:[synonyms1*]; # Replace by equiv(foo, bar, baz) when the query contains foo, bar or baz
+index1:[synonyms2] -> =index1:[synonyms2*]; # with phrase
+
+
+index2:[synonyms1] +> =index2:[synonyms1*]; # Add equiv(foo, bar, baz) when the query contains foo, bar or baz
+index2:[synonyms2] +> =index2:[synonyms2*]; # with phrase
+
+[synonyms1] :- foo, baz, bar;
+[synonyms2] :- word, a phrase;

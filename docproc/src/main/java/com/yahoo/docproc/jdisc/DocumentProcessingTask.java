@@ -32,7 +32,7 @@ public class DocumentProcessingTask implements Runnable {
     private final List<Processing> processingsDone = new ArrayList<>();
 
     private final DocumentProcessingHandler docprocHandler;
-    private RequestContext requestContext;
+    private final RequestContext requestContext;
 
     private final DocprocService service;
     private final ThreadPoolExecutor executor;

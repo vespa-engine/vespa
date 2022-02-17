@@ -13,12 +13,11 @@ import com.yahoo.vespa.model.search.SearchNode;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toSet;
 
 /**
  * Returns any change to the indexing mode of a cluster.
@@ -91,7 +90,7 @@ public class IndexingModeChangeValidator implements ChangeValidator {
     private static Set<String> toDocumentTypeNames(List<NewDocumentType> types) {
         return types.stream()
                 .map(type -> type.getFullName().getName())
-                .collect(toSet());
+                .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
     }
 
 }

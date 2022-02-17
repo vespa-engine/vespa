@@ -67,8 +67,15 @@ public class UserApiTest extends ControllerContainerCloudTest {
         tester.assertResponse(request("/application/v4/tenant/my-tenant", POST)
                                       .roles(operator)
                                       .principal("administrator@tenant")
+                                      .user(new User("administrator@tenant", "administrator", "admin", "picture"))
                                       .data("{\"token\":\"hello\"}"),
                               new File("tenant-without-applications.json"));
+
+        // GET at tenant/info with contact information.
+        tester.assertResponse(request("/application/v4/tenant/my-tenant/info")
+                        .roles(operator)
+                        .principal("administrator@tenant"),
+                new File("tenant-info-after-created.json"));
 
         // GET at user/v1 root fails as no access control is defined there.
         tester.assertResponse(request("/user/v1/"),

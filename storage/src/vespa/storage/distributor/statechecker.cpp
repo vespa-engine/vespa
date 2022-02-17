@@ -63,9 +63,9 @@ StateChecker::Result::createStoredResult(
 
 StateChecker::Context::Context(const DistributorNodeContext& node_ctx_in,
                                const DistributorStripeOperationContext& op_ctx_in,
-                               const DistributorBucketSpace &distributorBucketSpace,
+                               const DistributorBucketSpace& distributorBucketSpace,
                                NodeMaintenanceStatsTracker& statsTracker,
-                               const document::Bucket &bucket_)
+                               const document::Bucket& bucket_)
     : bucket(bucket_),
       siblingBucket(op_ctx_in.get_sibling(bucket.getBucketId())),
       systemState(distributorBucketSpace.getClusterState()),
@@ -77,7 +77,8 @@ StateChecker::Context::Context(const DistributorNodeContext& node_ctx_in,
       node_ctx(node_ctx_in),
       op_ctx(op_ctx_in),
       db(distributorBucketSpace.getBucketDatabase()),
-      stats(statsTracker)
+      stats(statsTracker),
+      merges_inhibited_in_bucket_space(distributorBucketSpace.merges_inhibited())
 {
     idealState = distributorBucketSpace.get_ideal_service_layer_nodes_bundle(bucket.getBucketId()).get_available_nonretired_or_maintenance_nodes();
     unorderedIdealState.insert(idealState.begin(), idealState.end());

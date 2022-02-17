@@ -2,14 +2,15 @@
 #include "frtconfigagent.h"
 #include "frtconfigrequestv3.h"
 #include <vespa/config/common/trace.h>
+#include <vespa/config/common/iconfigholder.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.frt.frtconfigagent");
 
 namespace config {
 
-FRTConfigAgent::FRTConfigAgent(const IConfigHolder::SP & holder, const TimingValues & timingValues)
-    : _holder(holder),
+FRTConfigAgent::FRTConfigAgent(std::shared_ptr<IConfigHolder> holder, const TimingValues & timingValues)
+    : _holder(std::move(holder)),
       _timingValues(timingValues),
       _configState(),
       _latest(),

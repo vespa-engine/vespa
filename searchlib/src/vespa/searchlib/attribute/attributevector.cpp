@@ -23,6 +23,7 @@
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/searchlib/util/logutil.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <thread>
 
@@ -107,6 +108,34 @@ AttributeVector::ValueModifier::~ValueModifier() {
     }
 }
 
+namespace {
+
+bool
+allow_paged(const search::attribute::Config& config)
+{
+    if (!config.paged()) {
+        return false;
+    }
+    using Type = search::attribute::BasicType::Type;
+    if (config.basicType() == Type::REFERENCE || config.basicType() == Type::PREDICATE) {
+        return false;
+    }
+    if (config.basicType() == Type::TENSOR) {
+        return (!config.tensorType().is_error() && config.tensorType().is_dense());
+    }
+    return true;
+}
+
+std::unique_ptr<vespalib::alloc::MemoryAllocator>
+make_memory_allocator(const vespalib::string& name, const search::attribute::Config& config)
+{
+    if (allow_paged(config)) {
+        return vespalib::alloc::MmapFileAllocatorFactory::instance().make_memory_allocator(name);
+    }
+    return {};
+}
+
+}
 
 AttributeVector::AttributeVector(vespalib::stringref baseFileName, const Config &c)
     : _baseFileName(baseFileName),
@@ -124,7 +153,9 @@ AttributeVector::AttributeVector(vespalib::stringref baseFileName, const Config 
       _compactLidSpaceGeneration(0u),
       _hasEnum(false),
       _loaded(false),
-      _isUpdateableInMemoryOnly(attribute::isUpdateableInMemoryOnly(getName(), getConfig()))
+      _isUpdateableInMemoryOnly(attribute::isUpdateableInMemoryOnly(getName(), getConfig())),
+      _nextStatUpdateTime(),
+      _memory_allocator(make_memory_allocator(_baseFileName.getAttributeName(), c))
 {
 }
 
@@ -803,6 +834,12 @@ AttributeVector::update_config(const Config& cfg)
     updateStat(true);
     commit(); // might trigger compaction
     drain_hold(1_Mi); // Wait until 1MiB or less on hold
+}
+
+vespalib::alloc::Alloc
+AttributeVector::get_initial_alloc()
+{
+    return (_memory_allocator ? vespalib::alloc::Alloc::alloc_with_allocator(_memory_allocator.get()) : vespalib::alloc::Alloc::alloc());
 }
 
 template bool AttributeVector::append<StringChangeData>(ChangeVectorT< ChangeTemplate<StringChangeData> > &changes, uint32_t , const StringChangeData &, int32_t, bool);

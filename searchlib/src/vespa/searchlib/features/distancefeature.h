@@ -44,6 +44,7 @@ public:
  */
 class DistanceBlueprint : public fef::Blueprint {
 private:
+    vespalib::string _field_name;
     vespalib::string _arg_string;
     uint32_t _attr_id;
     bool _use_geo_pos;

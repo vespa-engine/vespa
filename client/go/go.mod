@@ -5,7 +5,6 @@ go 1.15
 require (
 	github.com/briandowns/spinner v1.16.0
 	github.com/fatih/color v1.10.0 // indirect
-	github.com/joeshaw/envdecode v0.0.0-20200121155833-099f1fc765bd
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/lestrrat-go/jwx v1.2.9
 	github.com/logrusorgru/aurora/v3 v3.0.0

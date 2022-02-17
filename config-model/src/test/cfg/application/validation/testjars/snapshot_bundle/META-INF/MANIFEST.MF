@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Archiver-Version: Plexus Archiver
+Created-By: vespa container maven plugin
+Built-By: tonyv
+Build-Jdk: 1.6.0_26
+Bundle-Vendor: Yahoo!
+Bundle-ClassPath: .,dependencies/jrt-5.1-SNAPSHOT.jar
+Bundle-Version: 5.1.0.SNAPSHOT
+Bundle-Name: container maven plugin test
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: TestBundle
+

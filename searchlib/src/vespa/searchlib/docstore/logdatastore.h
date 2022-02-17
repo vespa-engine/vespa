@@ -5,12 +5,13 @@
 #include "idatastore.h"
 #include "lid_info.h"
 #include "writeablefilechunk.h"
-#include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
+#include <vespa/vespalib/util/compressionconfig.h>
+#include <vespa/vespalib/util/cpu_usage.h>
+#include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/rcuvector.h>
-#include <vespa/vespalib/util/threadexecutor.h>
 
 #include <set>
 
@@ -84,7 +85,7 @@ public:
      *                          The caller must keep it alive for the semantic
      *                          lifetime of the log data store.
      */
-    LogDataStore(vespalib::ThreadExecutor &executor, const vespalib::string &dirName, const Config & config,
+    LogDataStore(vespalib::Executor &executor, const vespalib::string &dirName, const Config & config,
                  const GrowStrategy &growStrategy, const TuneFileSummary &tune,
                  const search::common::FileHeaderContext &fileHeaderContext,
                  transactionlog::SyncProxy &tlSyncer, IBucketizer::SP bucketizer, bool readOnly = false);
@@ -114,7 +115,8 @@ public:
     const Config & getConfig() const { return _config; }
     Config & getConfig() { return _config; }
 
-    void write(MonitorGuard guard, WriteableFileChunk & destination, uint64_t serialNum, uint32_t lid, const void * buffer, size_t len);
+    void write(MonitorGuard guard, WriteableFileChunk & destination, uint64_t serialNum, uint32_t lid,
+               const void * buffer, size_t len, vespalib::CpuUsage::Category cpu_category);
     void write(MonitorGuard guard, FileId destinationFileId, uint32_t lid, const void * buffer, size_t len);
 
     /**
@@ -215,7 +217,7 @@ private:
     vespalib::string createDatFileName(NameId id) const;
     vespalib::string createIdxFileName(NameId id) const;
 
-    void requireSpace(MonitorGuard guard, WriteableFileChunk & active);
+    void requireSpace(MonitorGuard guard, WriteableFileChunk & active, vespalib::CpuUsage::Category cpu_category);
     bool isReadOnly() const { return _readOnly; }
     void updateSerialNum();
 
@@ -232,7 +234,8 @@ private:
      */
     void unholdFileChunk(FileId fileId);
 
-    SerialNum flushFile(MonitorGuard guard, WriteableFileChunk & file, SerialNum syncToken);
+    SerialNum flushFile(MonitorGuard guard, WriteableFileChunk & file, SerialNum syncToken,
+                        vespalib::CpuUsage::Category cpu_category);
     SerialNum flushActive(SerialNum syncToken);
     void flushActiveAndWait(SerialNum syncToken);
     void flushFileAndWait(MonitorGuard guard, WriteableFileChunk & file, SerialNum syncToken);
@@ -256,7 +259,7 @@ private:
     FileId                                   _prevActive;
     mutable std::mutex                       _updateLock;
     bool                                     _readOnly;
-    vespalib::ThreadExecutor                &_executor;
+    vespalib::Executor                      &_executor;
     SerialNum                                _initFlushSyncToken;
     transactionlog::SyncProxy               &_tlSyncer;
     IBucketizer::SP                          _bucketizer;

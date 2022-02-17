@@ -39,6 +39,7 @@
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/config/subscription/sourcespec.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("persistenceconformance_test");
@@ -178,6 +179,12 @@ private:
     MockSharedThreadingService _shared_service;
     storage::spi::dummy::DummyBucketExecutor _bucketExecutor;
 
+    static std::shared_ptr<ProtonConfig> make_proton_config() {
+        ProtonConfigBuilder proton_config;
+        proton_config.indexing.optimize = ProtonConfigBuilder::Indexing::Optimize::LATENCY;
+        return std::make_shared<ProtonConfig>(proton_config);
+    }
+
 public:
     DocumentDBFactory(const vespalib::string &baseDir, int tlsListenPort);
     ~DocumentDBFactory() override;
@@ -193,10 +200,10 @@ public:
             fileCfg.saveConfig(*snapshot, 1);
         }
         config::DirSpec spec(inputCfg + "/config-1");
-        TuneFileDocumentDB::SP tuneFileDocDB(new TuneFileDocumentDB());
+        auto tuneFileDocDB = std::make_shared<TuneFileDocumentDB>();
         DocumentDBConfigHelper mgr(spec, docType.getName());
         auto b = std::make_shared<BootstrapConfig>(1, factory.getTypeCfg(), factory.getTypeRepo(),
-                                                  std::make_shared<ProtonConfig>(),
+                                                  make_proton_config(),
                                                   std::make_shared<FiledistributorrpcConfig>(),
                                                   std::make_shared<BucketspacesConfig>(),
                                                   tuneFileDocDB, HwInfo());

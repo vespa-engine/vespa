@@ -130,4 +130,6 @@ public final class DestinationSession implements Connectable, MessageHandler {
         mbus.connect(name, broadcastName);
     }
 
+    @Override public void disconnect() { close(); }
+
 }

@@ -20,15 +20,14 @@ public:
     typedef std::set<vespalib::string> AttributeSet;
 
 private:
-    AttributeSet          _acceptedAttributes;
-    IAttributeManager::SP _mgr;
+    AttributeSet                           _acceptedAttributes;
+    IAttributeManager::SP                  _mgr;
     std::vector<search::AttributeVector *> _acceptedWritableAttributes;
 
     bool acceptAttribute(const vespalib::string &name) const;
 
 public:
-    FilterAttributeManager(const AttributeSet &acceptedAttributes,
-                           IAttributeManager::SP mgr);
+    FilterAttributeManager(const AttributeSet &acceptedAttributes, IAttributeManager::SP mgr);
     ~FilterAttributeManager() override;
 
     // Implements search::IAttributeManager
@@ -47,7 +46,7 @@ public:
     void pruneRemovedFields(search::SerialNum serialNum) override;
     const IAttributeFactory::SP &getFactory() const override;
     vespalib::ISequencedTaskExecutor & getAttributeFieldWriter() const override;
-    vespalib::ThreadExecutor& get_shared_executor() const override;
+    vespalib::Executor& get_shared_executor() const override { return _mgr->get_shared_executor(); }
 
     search::AttributeVector * getWritableAttribute(const vespalib::string &name) const override;
     const std::vector<search::AttributeVector *> & getWritableAttributes() const override;

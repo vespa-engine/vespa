@@ -99,6 +99,16 @@ FieldReader::allowRawFeatures()
     return true;
 }
 
+bool
+FieldReader::need_regenerate_interleaved_features_scan()
+{
+    return false;
+}
+
+void
+FieldReader::scan_element_lengths(uint32_t)
+{
+}
 
 void
 FieldReader::setup(const WordNumMapping &wordNumMapping,
@@ -277,27 +287,30 @@ FieldReaderStripInfo::open(const vespalib::string &prefix, const TuneFileSeqRead
             _regenerate_interleaved_features = true;
         }
     }
-    if (_regenerate_interleaved_features && _hasElements && _field_length_scanner) {
-        scan_element_lengths();
-        close();
-        if (!FieldReader::open(prefix, tuneFileRead)) {
-            return false;
-        }
-    }
     return true;
 }
 
-void
-FieldReaderStripInfo::scan_element_lengths()
+bool
+FieldReaderStripInfo::need_regenerate_interleaved_features_scan()
 {
-    for (;;) {
+    return (_regenerate_interleaved_features && _hasElements && _field_length_scanner);
+}
+
+void
+FieldReaderStripInfo::scan_element_lengths(uint32_t scan_chunk)
+{
+    if (!isValid()) {
+        return;
+    }
+    while (scan_chunk != 0u) {
         FieldReader::read();
-        if (_wordNum == noWordNumHigh()) {
+        if (!isValid()) {
             break;
         }
         DocIdAndFeatures &features = _docIdAndFeatures;
         assert(!features.has_raw_data());
         _field_length_scanner->scan_features(features);
+        --scan_chunk;
     }
 }
 

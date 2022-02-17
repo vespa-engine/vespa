@@ -11,6 +11,10 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
+import java.util.Optional;
+
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+
 /**
  * A container that is typically used by container clusters set up from the user application.
  *
@@ -24,6 +28,7 @@ public final class ApplicationContainer extends Container implements
 
     private final boolean isHostedVespa;
     private final boolean enableServerOcspStapling;
+    private final boolean useQrserverServiceName;
 
     public ApplicationContainer(AbstractConfigProducer<?> parent, String name, int index, DeployState deployState) {
         this(parent, name, false, index, deployState);
@@ -33,6 +38,7 @@ public final class ApplicationContainer extends Container implements
         super(parent, name, retired, index, deployState);
         this.isHostedVespa = deployState.isHosted();
         this.enableServerOcspStapling = deployState.featureFlags().enableServerOcspStapling();
+        this.useQrserverServiceName = deployState.featureFlags().useQrserverServiceName();
 
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.NetworkMultiplexerHolder"));
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.NetworkMultiplexerProvider"));
@@ -56,7 +62,7 @@ public final class ApplicationContainer extends Container implements
         if (parent instanceof ContainerCluster) {
             ContainerCluster<?> cluster = (ContainerCluster<?>)parent;
             // TODO: The 'qrserver' name is retained for legacy reasons (e.g. system tests and log parsing).
-            if (cluster.getSearch() != null && cluster.getDocproc() == null && cluster.getDocumentApi() == null) {
+            if (useQrserverServiceName && cluster.getSearch() != null && cluster.getDocproc() == null && cluster.getDocumentApi() == null) {
                 return ContainerServiceType.QRSERVER;
             }
         }
@@ -99,4 +105,11 @@ public final class ApplicationContainer extends Container implements
         return featureFlags.jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type.container);
     }
 
+    @Override
+    public Optional<String> getPreShutdownCommand() {
+        int preshutdownTimeoutSeconds = 360;
+        int rpcTimeoutSeconds = preshutdownTimeoutSeconds + 10;
+        String rpcParams = "-t " + rpcTimeoutSeconds + " tcp/localhost:" + getRpcPort() + " prepareStop d:" + preshutdownTimeoutSeconds;
+        return Optional.of(getDefaults().underVespaHome("bin/vespa-rpc-invoke") + " " + rpcParams);
+    }
 }

@@ -78,7 +78,7 @@ public:
     struct LockedMessage {
         std::shared_ptr<BucketLockInterface> lock;
         std::shared_ptr<api::StorageMessage> msg;
-        SharedOperationThrottler::Token      throttle_token;
+        ThrottleToken                        throttle_token;
 
         LockedMessage() noexcept = default;
         LockedMessage(std::shared_ptr<BucketLockInterface> lock_,
@@ -89,7 +89,7 @@ public:
         {}
         LockedMessage(std::shared_ptr<BucketLockInterface> lock_,
                       std::shared_ptr<api::StorageMessage> msg_,
-                      SharedOperationThrottler::Token token) noexcept
+                      ThrottleToken token) noexcept
                 : lock(std::move(lock_)),
                   msg(std::move(msg_)),
                   throttle_token(std::move(token))
@@ -274,7 +274,7 @@ public:
 
     virtual ActiveOperationsStats get_active_operations_stats(bool reset_min_max) const = 0;
 
-    virtual SharedOperationThrottler& operation_throttler() const noexcept = 0;
+    virtual vespalib::SharedOperationThrottler& operation_throttler() const noexcept = 0;
 };
 
 } // storage

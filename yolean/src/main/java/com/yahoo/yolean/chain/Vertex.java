@@ -4,6 +4,7 @@ package com.yahoo.yolean.chain;
 /**
  * @author Tony Vaagenes
  */
+@Deprecated
 interface Vertex {
 
 }

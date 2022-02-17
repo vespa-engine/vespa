@@ -30,6 +30,28 @@ TEST("test that all tasks are executed") {
     EXPECT_EQUAL(10000u, counter);
 }
 
+TEST("test that executor can overflow") {
+    constexpr size_t NUM_TASKS = 1000;
+    std::atomic<uint64_t> counter(0);
+    vespalib::Gate gate;
+    SingleExecutor executor(sequenced_executor, 10, false, 1, 1ms);
+    executor.execute(makeLambdaTask([&gate] { gate.await();}));
+
+    for(size_t i(0); i < NUM_TASKS; i++) {
+        executor.execute(makeLambdaTask([&counter, i] {
+            EXPECT_EQUAL(i, counter);
+            counter++;
+        }));
+    }
+    EXPECT_EQUAL(0u, counter);
+    ExecutorStats stats = executor.getStats();
+    EXPECT_EQUAL(NUM_TASKS + 1, stats.acceptedTasks);
+    EXPECT_EQUAL(NUM_TASKS, stats.queueSize.max());
+    gate.countDown();
+    executor.sync();
+    EXPECT_EQUAL(NUM_TASKS, counter);
+}
+
 void verifyResizeTaskLimit(bool up) {
     std::mutex lock;
     std::condition_variable cond;
@@ -38,7 +60,7 @@ void verifyResizeTaskLimit(bool up) {
     constexpr uint32_t INITIAL = 20;
     const uint32_t INITIAL_2inN = roundUp2inN(INITIAL);
     double waterMarkRatio = 0.5;
-    SingleExecutor executor(sequenced_executor, INITIAL, INITIAL*waterMarkRatio, 10ms);
+    SingleExecutor executor(sequenced_executor, INITIAL, true, INITIAL*waterMarkRatio, 10ms);
     EXPECT_EQUAL(INITIAL_2inN, executor.getTaskLimit());
     EXPECT_EQUAL(uint32_t(INITIAL_2inN*waterMarkRatio), executor.get_watermark());
 

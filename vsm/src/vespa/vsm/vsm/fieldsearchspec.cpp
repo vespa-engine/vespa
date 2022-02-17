@@ -10,6 +10,7 @@
 #include <vespa/vsm/searcher/intfieldsearcher.h>
 #include <vespa/vsm/searcher/boolfieldsearcher.h>
 #include <vespa/vsm/searcher/floatfieldsearcher.h>
+#include <vespa/vsm/searcher/geo_pos_field_searcher.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <regex>
 
@@ -104,6 +105,9 @@ FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & 
         break;
     case VsmfieldsConfig::Fieldspec::Searchmethod::DOUBLE:
         _searcher = std::make_unique<DoubleFieldSearcher>(fid);
+        break;
+    case VsmfieldsConfig::Fieldspec::Searchmethod::GEOPOS:
+        _searcher = std::make_unique<GeoPosFieldSearcher>(fid);
         break;
     }
     if (_searcher) {

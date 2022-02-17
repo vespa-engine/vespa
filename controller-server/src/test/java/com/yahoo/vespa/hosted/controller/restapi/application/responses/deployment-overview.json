@@ -21,7 +21,7 @@
         "platform": {
           "platform": "6.1.0",
           "at": "(ignore)",
-          "upgrade": false,
+          "upgrade": true,
           "blockers": []
         },
         "application": {
@@ -536,7 +536,7 @@
         "platform": {
           "platform": "6.1.0",
           "at": "(ignore)",
-          "upgrade": false,
+          "upgrade": true,
           "blockers": []
         },
         "application": {
@@ -547,7 +547,7 @@
             "commit": "commit1"
           },
           "at": 1000,
-          "upgrade": false,
+          "upgrade": true,
           "blockers": []
         }
       }
@@ -629,6 +629,52 @@
         }
       ],
       "runs": []
+    }
+  ],
+  "builds": [
+    {
+      "hash": "1.0.4-commit1",
+      "build": 4,
+      "source": {
+        "gitRepository": "repository1",
+        "gitBranch": "master",
+        "gitCommit": "commit1"
+      },
+      "sourceUrl": "repository1/tree/commit1",
+      "commit": "commit1"
+    },
+    {
+      "hash": "1.0.3-commit1",
+      "build": 3,
+      "source": {
+        "gitRepository": "repository1",
+        "gitBranch": "master",
+        "gitCommit": "commit1"
+      },
+      "sourceUrl": "repository1/tree/commit1",
+      "commit": "commit1"
+    },
+    {
+      "hash": "1.0.2-commit1",
+      "build": 2,
+      "source": {
+        "gitRepository": "repository1",
+        "gitBranch": "master",
+        "gitCommit": "commit1"
+      },
+      "sourceUrl": "repository1/tree/commit1",
+      "commit": "commit1"
+    },
+    {
+      "hash": "1.0.1-commit1",
+      "build": 1,
+      "source": {
+        "gitRepository": "repository1",
+        "gitBranch": "master",
+        "gitCommit": "commit1"
+      },
+      "sourceUrl": "repository1/tree/commit1",
+      "commit": "commit1"
     }
   ]
 }

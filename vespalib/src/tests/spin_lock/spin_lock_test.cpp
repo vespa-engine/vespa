@@ -1,12 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/spin_lock.h>
+#include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <array>
 
 using namespace vespalib;
+using namespace vespalib::atomic;
 
 bool verbose = false;
 double budget = 0.25;
@@ -25,15 +27,15 @@ struct MyState {
     void update() {
         std::array<size_t,SZ> tmp;
         for (size_t i = 0; i < SZ; ++i) {
-            tmp[i] = state[i];
+            store_ref_relaxed(tmp[i], load_ref_relaxed(state[i]));
         }
         for (size_t i = 0; i < SZ; ++i) {
-            state[i] = tmp[i] + 1;
+            store_ref_relaxed(state[i], load_ref_relaxed(tmp[i]) + 1);
         }
     }
     bool check(size_t expect) const {
-        for (size_t value: state) {
-            if (value != expect) {
+        for (const auto& value: state) {
+            if (load_ref_relaxed(value) != expect) {
                 return false;
             }
         }

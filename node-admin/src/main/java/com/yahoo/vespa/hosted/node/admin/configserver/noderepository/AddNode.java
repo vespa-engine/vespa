@@ -15,7 +15,7 @@ import java.util.Set;
 public class AddNode {
 
     public final String hostname;
-    public final Optional<String> id;
+    public final String id;
     public final Optional<String> parentHostname;
     public final Optional<String> nodeFlavor;
     public final Optional<FlavorOverrides> flavorOverrides;
@@ -24,15 +24,15 @@ public class AddNode {
     public final Set<String> ipAddresses;
     public final Set<String> additionalIpAddresses;
 
-    public static AddNode forHost(String hostname, Optional<String> id, String nodeFlavor, Optional<FlavorOverrides> flavorOverrides, NodeType nodeType, Set<String> ipAddresses, Set<String> additionalIpAddresses) {
+    public static AddNode forHost(String hostname, String id, String nodeFlavor, Optional<FlavorOverrides> flavorOverrides, NodeType nodeType, Set<String> ipAddresses, Set<String> additionalIpAddresses) {
         return new AddNode(hostname, id, Optional.empty(), Optional.of(nodeFlavor), flavorOverrides, Optional.empty(), nodeType, ipAddresses, additionalIpAddresses);
     }
 
-    public static AddNode forNode(String hostname, String parentHostname, NodeResources nodeResources, NodeType nodeType, Set<String> ipAddresses) {
-        return new AddNode(hostname, Optional.empty(), Optional.of(parentHostname), Optional.empty(), Optional.empty(), Optional.of(nodeResources), nodeType, ipAddresses, Set.of());
+    public static AddNode forNode(String hostname, String id, String parentHostname, NodeResources nodeResources, NodeType nodeType, Set<String> ipAddresses) {
+        return new AddNode(hostname, id, Optional.of(parentHostname), Optional.empty(), Optional.empty(), Optional.of(nodeResources), nodeType, ipAddresses, Set.of());
     }
 
-    private AddNode(String hostname, Optional<String> id, Optional<String> parentHostname,
+    private AddNode(String hostname, String id, Optional<String> parentHostname,
                     Optional<String> nodeFlavor, Optional<FlavorOverrides> flavorOverrides,
                     Optional<NodeResources> nodeResources,
                     NodeType nodeType, Set<String> ipAddresses, Set<String> additionalIpAddresses) {

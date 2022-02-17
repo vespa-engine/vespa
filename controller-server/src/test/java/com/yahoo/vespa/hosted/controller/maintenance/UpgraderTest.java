@@ -35,6 +35,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.ALL;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PIN;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -167,7 +168,6 @@ public class UpgraderTest {
         // --- Failing application is repaired by changing the application, causing confidence to move above 'high' threshold
         // Deploy application change
         default0.submit(applicationPackage("default"));
-        default0.triggerJobs().jobAborted(stagingTest);
         default0.deploy();
 
         tester.controllerTester().computeVersionStatus();
@@ -534,7 +534,7 @@ public class UpgraderTest {
     }
 
     @Test
-    public void testBlockVersionChangeHalfwayThoughThenNewRevision() {
+    public void testBlockVersionChangeHalfwayThroughThenNewRevision() {
         // Friday, 16:00
         tester.at(Instant.parse("2017-09-29T16:00:00.00Z"));
 
@@ -542,7 +542,7 @@ public class UpgraderTest {
         tester.controllerTester().upgradeSystem(version);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                // Block upgrades on weekends and ouside working hours
+                // Block upgrades on weekends and outside working hours
                 .blockChange(false, true, "mon-fri", "00-09,17-23", "UTC")
                 .blockChange(false, true, "sat-sun", "00-23", "UTC")
                 .region("us-west-1")
@@ -570,19 +570,20 @@ public class UpgraderTest {
         // A new revision is submitted and starts rolling out.
         app.submit(applicationPackage);
 
-        // production-us-central-1 isn't triggered, as the revision  + platform is the new change to roll out.
+        // production-us-central-1 is re-triggered with upgrade until revision catches up.
         tester.triggerJobs();
-        assertEquals(2, tester.jobs().active().size());
+        assertEquals(3, tester.jobs().active().size());
         app.runJob(systemTest).runJob(stagingTest).runJob(productionUsWest1);
         // us-central-1 has an older version, and needs a new staging test to begin.
-        app.runJob(stagingTest);
+        app.runJob(stagingTest).triggerJobs().jobAborted(productionUsCentral1); // Retry will include revision.
         tester.triggerJobs(); // Triggers us-central-1 before platform upgrade is cancelled.
 
-        // A new version is also released, cancelling the upgrade, since it is failing on a now outdated version.
+        // A new version is also released, and someone cancels the upgrade, suspecting it is faulty.
         tester.clock().advance(Duration.ofHours(17));
         version = Version.fromString("6.4");
         tester.controllerTester().upgradeSystem(version);
         tester.upgrader().maintain();
+        tester.deploymentTrigger().cancelChange(app.instanceId(), PLATFORM);
 
         // us-central-1 succeeds upgrade to 6.3, with the revision, but us-east-3 wants to proceed with only the revision change.
         app.runJob(productionUsCentral1);
@@ -799,8 +800,10 @@ public class UpgraderTest {
                    app.instance().change().application().get().id().equals(applicationVersion));
 
         // Deployment completes
-        app.runJob(systemTest).runJob(stagingTest).runJob(productionUsWest1).runJob(productionUsEast3);
-        assertTrue("All jobs consumed", tester.jobs().active().isEmpty());
+        app.runJob(systemTest).runJob(stagingTest)
+           .runJob(productionUsWest1)
+           .runJob(productionUsEast3);
+        assertEquals("All jobs consumed", List.of(), tester.jobs().active());
 
         for (Deployment deployment : app.instance().deployments().values()) {
             assertEquals(version, deployment.version());

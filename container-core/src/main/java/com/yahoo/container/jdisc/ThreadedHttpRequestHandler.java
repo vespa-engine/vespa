@@ -3,6 +3,7 @@ package com.yahoo.container.jdisc;
 
 import com.google.inject.Inject;
 import com.yahoo.container.logging.AccessLog;
+import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.BufferedContentChannel;
@@ -10,7 +11,10 @@ import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.UnsafeContentInputStream;
 import com.yahoo.jdisc.handler.ResponseHandler;
+import com.yahoo.jdisc.http.server.jetty.AccessLoggingRequestHandler;
+import com.yahoo.yolean.Exceptions;
 
+import java.util.Optional;
 import java.util.logging.Level;
 
 import java.io.IOException;
@@ -244,7 +248,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
                                                                       HttpResponse response,
                                                                       HttpRequest httpRequest,
                                                                       ContentChannelOutputStream rendererWiring) {
-        return null;
+        return new ResponseLogger(httpRequest, response);
     }
 
     protected com.yahoo.jdisc.http.HttpRequest asHttpRequest(Request request) {
@@ -285,6 +289,41 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
         @Deprecated(forRemoval = true, since = "7") public AccessLog getAccessLog() { return null; }
         public Metric getMetric() { return metric; }
 
+    }
+
+
+    private class ResponseLogger implements LoggingCompletionHandler {
+
+        private final com.yahoo.jdisc.http.HttpRequest jdiscRequest;
+        private final HttpResponse httpResponse;
+
+        ResponseLogger(HttpRequest httpRequest, HttpResponse httpResponse) {
+            this.jdiscRequest = httpRequest.getJDiscRequest();
+            this.httpResponse = httpResponse;
+        }
+
+        @Override
+        public void markCommitStart() { }
+
+        @Override
+        public void completed() {
+            writeToAccessLog();
+        }
+
+        @Override
+        public void failed(Throwable throwable) {
+            writeToAccessLog();
+            log.log(Level.FINE, () -> "Got exception when writing to client: " + Exceptions.toMessageString(throwable));
+        }
+
+        private void writeToAccessLog() {
+            Optional<AccessLogEntry> jdiscReqAccessLogEntry = AccessLoggingRequestHandler.getAccessLogEntry(jdiscRequest);
+            AccessLogEntry entry;
+            if (jdiscReqAccessLogEntry.isPresent()) {
+                entry = jdiscReqAccessLogEntry.get();
+                httpResponse.populateAccessLogEntry(entry);
+            }
+        }
     }
 
 }

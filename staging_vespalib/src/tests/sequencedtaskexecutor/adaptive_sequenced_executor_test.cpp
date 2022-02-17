@@ -18,7 +18,7 @@ class Fixture
 public:
     AdaptiveSequencedExecutor _threads;
 
-    Fixture() : _threads(2, 2, 0, 1000) { }
+    Fixture(bool is_max_pending_hard=true) : _threads(2, 2, 0, 1000, is_max_pending_hard) { }
 };
 
 
@@ -231,12 +231,12 @@ TEST_F("require that executeLambda works", Fixture)
 }
 
 TEST("require that you get correct number of executors") {
-    AdaptiveSequencedExecutor seven(7, 1, 0, 10);
+    AdaptiveSequencedExecutor seven(7, 1, 0, 10, true);
     EXPECT_EQUAL(7u, seven.getNumExecutors());
 }
 
 TEST("require that you distribute well") {
-    AdaptiveSequencedExecutor seven(7, 1, 0, 10);
+    AdaptiveSequencedExecutor seven(7, 1, 0, 10, true);
     EXPECT_EQUAL(7u, seven.getNumExecutors());
     for (uint32_t id=0; id < 1000; id++) {
         EXPECT_EQUAL(id%7, seven.getExecutorId(id).getId());

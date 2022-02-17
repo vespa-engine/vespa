@@ -2,7 +2,9 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/util/array.hpp>
+#include <vespa/vespalib/util/round_up_to_page_size.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <deque>
 #include <atomic>
@@ -26,6 +28,11 @@ std::ostream & operator << (std::ostream & os, const Array<T> & a)
 }
 
 }
+
+using alloc::Alloc;
+using alloc::MemoryAllocator;
+using MyMemoryAllocator = vespalib::alloc::test::MemoryAllocatorObserver;
+using AllocStats = MyMemoryAllocator::Stats;
 
 class Clever {
 public:
@@ -324,31 +331,77 @@ TEST("test move assignment")
 
 struct UnreserveFixture {
     Array<int> arr;
-    UnreserveFixture() : arr(1025, 7, alloc::Alloc::allocMMap(0))
+    UnreserveFixture() : arr(page_ints() + 1, 7, alloc::Alloc::allocMMap(0))
     {
-        EXPECT_EQUAL(1025u, arr.size());
-        EXPECT_EQUAL(2048u, arr.capacity());
+        EXPECT_EQUAL(page_ints() + 1, arr.size());
+        EXPECT_EQUAL(2 * page_ints(), arr.capacity());
+    }
+
+    static size_t page_ints() {
+        return round_up_to_page_size(1) / sizeof(int);
     }
 };
 
 TEST_F("require that try_unreserve() fails if wanted capacity >= current capacity", UnreserveFixture)
 {
-    EXPECT_FALSE(f.arr.try_unreserve(2048));
+    EXPECT_FALSE(f.arr.try_unreserve(2 * UnreserveFixture::page_ints()));
 }
 
 TEST_F("require that try_unreserve() fails if wanted capacity < current size", UnreserveFixture)
 {
-    EXPECT_FALSE(f.arr.try_unreserve(1024));
+  EXPECT_FALSE(f.arr.try_unreserve(UnreserveFixture::page_ints()));
 }
 
 TEST_F("require that try_unreserve() succeedes if mmap can be shrinked", UnreserveFixture)
 {
     int *oldPtr = &f.arr[0];
     f.arr.resize(512);
-    EXPECT_TRUE(f.arr.try_unreserve(1023));
-    EXPECT_EQUAL(1_Ki, f.arr.capacity());
+    EXPECT_TRUE(f.arr.try_unreserve(UnreserveFixture::page_ints() - 1));
+    EXPECT_EQUAL(UnreserveFixture::page_ints(), f.arr.capacity());
     int *newPtr = &f.arr[0];
     EXPECT_EQUAL(oldPtr, newPtr);
+}
+
+struct Fixture {
+    AllocStats stats;
+    std::unique_ptr<MemoryAllocator> allocator;
+    Alloc initial_alloc;
+    Array<int> arr;
+
+    Fixture();
+    ~Fixture();
+};
+
+Fixture::Fixture()
+    : stats(),
+      allocator(std::make_unique<MyMemoryAllocator>(stats)),
+      initial_alloc(Alloc::alloc_with_allocator(allocator.get())),
+      arr(initial_alloc)
+{
+}
+
+Fixture::~Fixture() = default;
+
+TEST_F("require that memory allocator can be set", Fixture)
+{
+    f.arr.resize(1);
+    EXPECT_EQUAL(AllocStats(1, 0), f.stats);
+}
+
+TEST_F("require that memory allocator is preserved across reset", Fixture)
+{
+    f.arr.resize(1);
+    f.arr.reset();
+    f.arr.resize(1);
+    EXPECT_EQUAL(AllocStats(2, 1), f.stats);
+}
+
+TEST_F("require that created array uses same memory allocator", Fixture)
+{
+    auto arr2 = f.arr.create();
+    EXPECT_EQUAL(AllocStats(0, 0), f.stats);
+    arr2.resize(1);
+    EXPECT_EQUAL(AllocStats(1, 0), f.stats);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -81,6 +81,10 @@ public class MockTesterCloud implements TesterCloud {
         log.add(entry);
     }
 
+    public void clearLog() {
+        log.clear();
+    }
+
     public void set(Status status) {
         this.status = status;
     }

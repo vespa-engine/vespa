@@ -75,6 +75,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new CloudTrialExpirer(controller, intervals.defaultInterval));
         maintainers.add(new RetriggerMaintainer(controller, intervals.retriggerMaintainer));
         maintainers.add(new UserManagementMaintainer(controller, intervals.userManagementMaintainer, controller.serviceRegistry().roleMaintainer()));
+        maintainers.add(new BillingDatabaseMaintainer(controller, intervals.billingDatabaseMaintainer));
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -132,10 +133,11 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration vcmrMaintainer;
         private final Duration retriggerMaintainer;
         private final Duration userManagementMaintainer;
+        private final Duration billingDatabaseMaintainer;
 
         public Intervals(SystemName system) {
             this.system = Objects.requireNonNull(system);
-            this.defaultInterval = duration(system.isCd() || system == SystemName.dev ? 1 : 5, MINUTES);
+            this.defaultInterval = duration(system.isCd() ? 1 : 5, MINUTES);
             this.outstandingChangeDeployer = duration(3, MINUTES);
             this.versionStatusUpdater = duration(3, MINUTES);
             this.readyJobsTrigger = duration(1, MINUTES);
@@ -166,6 +168,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.vcmrMaintainer = duration(1, HOURS);
             this.retriggerMaintainer = duration(1, MINUTES);
             this.userManagementMaintainer = duration(12, HOURS);
+            this.billingDatabaseMaintainer = duration(5, MINUTES);
         }
 
         private Duration duration(long amount, TemporalUnit unit) {

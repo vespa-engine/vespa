@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.model.test.TestUtil;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.document.Case;
 import com.yahoo.searchdefinition.document.Dictionary;
@@ -30,7 +30,7 @@ public class DictionaryTestCase {
         return builder.build();
     }
     private Schema createSearch(String def) throws ParseException {
-        SchemaBuilder sb = SchemaBuilder.createFromString(def);
+        ApplicationBuilder sb = ApplicationBuilder.createFromString(def);
         return sb.getSchema();
     }
     @Test
@@ -196,7 +196,7 @@ public class DictionaryTestCase {
                 "    }",
                 "}");
         try {
-            SchemaBuilder sb = SchemaBuilder.createFromString(def);
+            ApplicationBuilder sb = ApplicationBuilder.createFromString(def);
             fail("Controlling dictionary for non-numeric fields are not yet supported.");
         } catch (IllegalArgumentException e) {
             assertEquals("For schema 'test', field 'n1': You can only specify 'dictionary:' for numeric or string fields", e.getMessage());
@@ -214,7 +214,7 @@ public class DictionaryTestCase {
                 "    }",
                 "}");
         try {
-            SchemaBuilder sb = SchemaBuilder.createFromString(def);
+            ApplicationBuilder sb = ApplicationBuilder.createFromString(def);
             fail("Controlling dictionary for non-fast-search fields are not allowed.");
         } catch (IllegalArgumentException e) {
             assertEquals("For schema 'test', field 'n1': You must specify 'attribute:fast-search' to allow dictionary control", e.getMessage());

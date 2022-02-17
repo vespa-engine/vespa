@@ -46,11 +46,11 @@ public abstract class DynamicTensor<NAMETYPE extends Name> extends PrimitiveTens
     TensorType type() { return type; }
 
     @Override
-    public String toString(ToStringContext context) {
+    public String toString(ToStringContext<NAMETYPE> context) {
         return type().toString() + ":" + contentToString(context);
     }
 
-    abstract String contentToString(ToStringContext context);
+    abstract String contentToString(ToStringContext<NAMETYPE> context);
 
     /** Creates a dynamic tensor function. The cell addresses must match the type. */
     public static <NAMETYPE extends Name> DynamicTensor<NAMETYPE> from(TensorType type, Map<TensorAddress, ScalarFunction<NAMETYPE>> cells) {
@@ -80,7 +80,7 @@ public abstract class DynamicTensor<NAMETYPE extends Name> extends PrimitiveTens
         }
 
         @Override
-        String contentToString(ToStringContext context) {
+        String contentToString(ToStringContext<NAMETYPE> context) {
             if (type().dimensions().isEmpty()) {
                 if (cells.isEmpty()) return "{}";
                 return "{" + cells.values().iterator().next().toString(context) + "}";
@@ -121,7 +121,7 @@ public abstract class DynamicTensor<NAMETYPE extends Name> extends PrimitiveTens
         }
 
         @Override
-        String contentToString(ToStringContext context) {
+        String contentToString(ToStringContext<NAMETYPE> context) {
             if (type().dimensions().isEmpty()) {
                 if (cells.isEmpty()) return "{}";
                 return "{" + cells.get(0).toString(context) + "}";

@@ -4,6 +4,7 @@ package com.yahoo.container.standalone;
 import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigInterruptedException;
+import com.yahoo.config.subscription.SubscriberClosedException;
 import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.vespa.config.ConfigKey;
@@ -31,6 +32,7 @@ public class StandaloneSubscriberFactory implements SubscriberFactory {
 
         private final Set<ConfigKey<ConfigInstance>> configKeys;
         private long generation = -1L;
+        private volatile boolean shutdown = false;
 
         StandaloneSubscriber(Set<ConfigKey<ConfigInstance>> configKeys) {
             this.configKeys = configKeys;
@@ -41,9 +43,7 @@ public class StandaloneSubscriberFactory implements SubscriberFactory {
             return generation == 0;
         }
 
-        @Override
-        public void close() {
-        }
+        @Override public void close() { shutdown = true; }
 
         @Override
         public Map<ConfigKey<ConfigInstance>, ConfigInstance> config() {
@@ -57,15 +57,17 @@ public class StandaloneSubscriberFactory implements SubscriberFactory {
             return ret;
         }
 
+        @SuppressWarnings("removal") // TODO Vespa 8: remove
         @Override
         public long waitNextGeneration(boolean isInitializing) {
             generation++;
 
             if (generation != 0) {
                 try {
-                    while (!Thread.interrupted()) {
-                        Thread.sleep(10000);
+                    while (!shutdown && !Thread.interrupted()) {
+                        Thread.sleep(100);
                     }
+                    if (shutdown) throw new SubscriberClosedException();
                 } catch (InterruptedException e) {
                     throw new ConfigInterruptedException(e);
                 }

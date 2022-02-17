@@ -1,7 +1,7 @@
 {
   "deployments": [
     {
-      "routingMethod": "shared",
+      "routingMethod": "sharedLayer4",
       "instance": "t1:a1:default",
       "environment": "prod",
       "region": "us-east-3",
@@ -10,7 +10,7 @@
       "changedAt": "(ignore)"
     },
     {
-      "routingMethod": "shared",
+      "routingMethod": "sharedLayer4",
       "instance": "t1:a1:default",
       "environment": "prod",
       "region": "us-west-1",

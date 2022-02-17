@@ -3,9 +3,11 @@
 #pragma once
 
 #include <vespa/storageframework/generic/thread/threadpool.h>
+#include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <array>
 #include <atomic>
+#include <optional>
 
 namespace storage::framework::defaultimplementation {
 
@@ -51,12 +53,14 @@ class ThreadImpl : public Thread
     std::atomic<bool> _interrupted;
     bool _joined;
     BackendThread _thread;
+    std::optional<vespalib::CpuUsage::Category> _cpu_category;
 
     void run();
 
 public:
     ThreadImpl(ThreadPoolImpl&, Runnable&, vespalib::stringref id, vespalib::duration waitTime,
-               vespalib::duration maxProcessTime, int ticksBeforeWait);
+               vespalib::duration maxProcessTime, int ticksBeforeWait,
+               std::optional<vespalib::CpuUsage::Category> cpu_category);
     ~ThreadImpl();
 
     bool interrupted() const override;
@@ -70,8 +74,6 @@ public:
     int getTicksBeforeWait() const override {
         return _properties.getTicksBeforeWait();
     }
-
-    void updateParameters(vespalib::duration waitTime, vespalib::duration maxProcessTime, int ticksBeforeWait) override;
 
     void setTickData(const ThreadTickData&);
     ThreadTickData getTickData() const;

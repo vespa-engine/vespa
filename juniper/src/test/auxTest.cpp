@@ -135,12 +135,12 @@ AuxTest::TestDoubleWidth()
     juniper::Config myConfig("best", juniper);
 
     juniper::QueryParser q("\xef\xbd\x93\xef\xbd\x8f\xef\xbd\x8e\xef\xbd\x99");
-    juniper::QueryHandle qh(q, NULL, juniper.getModifier());
+    juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
     juniper::Result* res = juniper::Analyse(&myConfig, &qh,
             input, 17, 0, 0, 0);
-    _test(res != NULL);
+    _test(res != nullptr);
 
-    juniper::Summary* sum = juniper::GetTeaser(res, NULL);
+    juniper::Summary* sum = juniper::GetTeaser(res, nullptr);
     (void) sum;
     // this should work
     // _test(sum->Length() != 0);
@@ -154,12 +154,13 @@ AuxTest::TestPartialUTF8()
 {
     const int inputSize = 5769; // NB: update this if input is changed
     char input[inputSize];
-    FastOS_File file((GetSourceDirectory() + "partialutf8.input.utf8").c_str());
-    _test(file.OpenReadOnly());
-    _test(file.GetSize() == inputSize);
-    _test(file.Read(input, inputSize));
-    _test(countBrokenUTF8(input, inputSize) == 0);
-    file.Close();
+    {
+        FastOS_File file((GetSourceDirectory() + "partialutf8.input.utf8").c_str());
+        _test(file.OpenReadOnly());
+        _test(file.GetSize() == inputSize);
+        _test(file.Read(input, inputSize));
+        _test(countBrokenUTF8(input, inputSize) == 0);
+    }
 
     juniper::PropertyMap myprops;
     myprops // config taken from vespa test case
@@ -173,12 +174,12 @@ AuxTest::TestPartialUTF8()
     juniper::Config myConfig("best", juniper);
 
     juniper::QueryParser q("ipod");
-    juniper::QueryHandle qh(q, NULL, juniper.getModifier());
+    juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
     juniper::Result* res = juniper::Analyse(&myConfig, &qh,
             input, inputSize, 0, 0, 0);
-    _test(res != NULL);
+    _test(res != nullptr);
 
-    juniper::Summary* sum = juniper::GetTeaser(res, NULL);
+    juniper::Summary* sum = juniper::GetTeaser(res, nullptr);
     _test(sum->Length() != 0);
 
     // check for partial/broken utf-8
@@ -191,12 +192,13 @@ void AuxTest::TestLargeBlockChinese()
 {
     const int inputSize = 10410; // NB: update this if input is changed
     char input[inputSize];
-    FastOS_File file((GetSourceDirectory() + "largeblockchinese.input.utf8").c_str());
-    _test(file.OpenReadOnly());
-    _test(file.GetSize() == inputSize);
-    _test(file.Read(input, inputSize));
-    _test(countBrokenUTF8(input, inputSize) == 0);
-    file.Close();
+    {
+        FastOS_File file((GetSourceDirectory() + "largeblockchinese.input.utf8").c_str());
+        _test(file.OpenReadOnly());
+        _test(file.GetSize() == inputSize);
+        _test(file.Read(input, inputSize));
+        _test(countBrokenUTF8(input, inputSize) == 0);
+    }
 
     juniper::PropertyMap myprops;
     myprops // config taken from reported bug
@@ -212,12 +214,12 @@ void AuxTest::TestLargeBlockChinese()
     juniper::Config myConfig("best", juniper);
 
     juniper::QueryParser q("希望");
-    juniper::QueryHandle qh(q, NULL, juniper.getModifier());
+    juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
     juniper::Result* res = juniper::Analyse(&myConfig, &qh,
             input, inputSize, 0, 0, 0);
-    _test(res != NULL);
+    _test(res != nullptr);
 
-    juniper::Summary* sum = juniper::GetTeaser(res, NULL);
+    juniper::Summary* sum = juniper::GetTeaser(res, nullptr);
     _test(sum->Length() != 0);
 
     // check that the entire block of chinese data is not returned in the summary
@@ -232,7 +234,7 @@ void AuxTest::TestLargeBlockChinese()
 void AuxTest::TestExample()
 {
     juniper::QueryParser q("AND(consume,sleep,tree)");
-    juniper::QueryHandle qh(q, NULL, juniper::_Juniper->getModifier());
+    juniper::QueryHandle qh(q, nullptr, juniper::_Juniper->getModifier());
 
     // some content
     const char* content = "the monkey consumes bananas and sleeps afterwards."
@@ -244,7 +246,7 @@ void AuxTest::TestExample()
                          &qh,
                          content, content_len,
                          0, 0, 0);
-    _test(res != NULL);
+    _test(res != nullptr);
 
     res->Scan();
     Matcher& m = *res->_matcher;
@@ -259,7 +261,7 @@ AuxTest::TestPropertyMap()
     juniper::PropertyMap map;
     IJuniperProperties *props = &map;
     map.set("foo", "bar").set("one", "two");
-    _test(props->GetProperty("bogus") == NULL);
+    _test(props->GetProperty("bogus") == nullptr);
     _test(strcmp(props->GetProperty("bogus", "default"), "default") == 0);
     _test(strcmp(props->GetProperty("foo"), "bar") == 0);
     _test(strcmp(props->GetProperty("one", "default"), "two") == 0);
@@ -395,7 +397,7 @@ void AuxTest::TestUTF8context()
 {
     const char* iso_cont = char_from_u8(u8"AND(m\u00b5ss,fast,s\u00f8kemotor,\u00e5relang)");
     juniper::QueryParser q(iso_cont);
-    juniper::QueryHandle qh(q, NULL, juniper::_Juniper->getModifier());
+    juniper::QueryHandle qh(q, nullptr, juniper::_Juniper->getModifier());
 
     // some content
     std::string s(char_from_u8(u8"Fast leverer s\u00d8kemotorer og andre nyttige ting for \u00e5 finne frem p\u00e5 "));
@@ -409,7 +411,7 @@ void AuxTest::TestUTF8context()
     s.append(char_from_u8(u8"Hvis bare UTF8-kodingen virker som den skal for tegn som tar mer enn \u00e9n byte."));
 
     juniper::Result* res = juniper::Analyse(juniper::TestConfig, &qh, s.c_str(), s.size(), 0, 0, 0);
-    _test(res != NULL);
+    _test(res != nullptr);
 
     size_t charsize;
     Matcher& m = *res->_matcher;
@@ -456,8 +458,6 @@ void AuxTest::TestUTF8context()
 }
 
 
-const char* japanese_sep_ex = "。";
-
 struct TermTextPair
 {
     const char* term;
@@ -477,24 +477,24 @@ static TermTextPair testjap[] =
     { "hit", " -. hit at start" },
     { "hit", "hit at end .,: " },
     { "hit", "---------------------------------------------------------------------------------------------------------------------this is a text that is long enough to generate a hit that does have dots on both sides ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; " },
-    { NULL, NULL }
+    { nullptr, nullptr }
 };
 
 
 void AuxTest::TestJapanese()
 {
-    for (int i = 0; testjap[i].term != NULL; i++)
+    for (int i = 0; testjap[i].term != nullptr; i++)
     {
         const char* qstr = testjap[i].term;
         juniper::QueryParser q(qstr);
-        juniper::QueryHandle qh(q, NULL, juniper::_Juniper->getModifier());
+        juniper::QueryHandle qh(q, nullptr, juniper::_Juniper->getModifier());
 
         const char* content = testjap[i].text;
         int content_len = strlen(content);
         juniper::Result* res = juniper::Analyse(juniper::TestConfig, &qh,
                 content, content_len,
                 0, 0, 0);
-        _test(res != NULL);
+        _test(res != nullptr);
 
         size_t charsize;
         Matcher& m = *res->_matcher;
@@ -506,7 +506,7 @@ void AuxTest::TestJapanese()
             _sumconf = CreateSummaryConfig("<hit>", "</hit>", "...", "", connectors);
 
         SummaryDesc* sumdesc = m.CreateSummaryDesc(256, 256, 4, 80);
-        _test(sumdesc != NULL);
+        _test(sumdesc != nullptr);
         if (!sumdesc)
             return;
         std::string sum = BuildSummary(content, content_len, sumdesc, _sumconf, charsize);
@@ -556,7 +556,7 @@ void AuxTest::test_summary(Matcher& m, const char* content, size_t content_len,
                            int size, int matches, int surround, size_t& charsize)
 {
     SummaryDesc* sum = m.CreateSummaryDesc(size, size, matches, surround);
-    _test(sum != NULL);
+    _test(sum != nullptr);
     if (!sum)
     {
         // No summary generated!
@@ -570,16 +570,6 @@ void AuxTest::test_summary(Matcher& m, const char* content, size_t content_len,
     }
     DeleteSummaryDesc(sum);
 }
-
-
-class DefProps : public IJuniperProperties
-{
-public:
-    const char* GetProperty(const char*, const char* def) override {
-        return def;
-    }
-};
-
 
 void AuxTest::TestStartHits()
 {
@@ -595,9 +585,9 @@ void AuxTest::TestStartHits()
     juniper::Result* res = juniper::Analyse(juniper::TestConfig, &qh,
             content, content_len,
             0, 0, 0);
-    _test(res != NULL);
+    _test(res != nullptr);
 
-    juniper::Summary* sum = juniper::GetTeaser(res, NULL);
+    juniper::Summary* sum = juniper::GetTeaser(res, nullptr);
     (void) sum;
     // TODO: ReEnable    _test(sum->Length() != 0);
     juniper::ReleaseResult(res);
@@ -620,35 +610,12 @@ void AuxTest::TestEndHit()
     juniper::Result* res = juniper::Analyse(juniper::TestConfig, &qh,
             content, content_len,
             0, 0, 0);
-    _test(res != NULL);
+    _test(res != nullptr);
 
-    juniper::Summary* sum = juniper::GetTeaser(res, NULL);
+    juniper::Summary* sum = juniper::GetTeaser(res, nullptr);
     _test(sum->Length() != 0);
     juniper::ReleaseResult(res);
 }
-
-
-
-class TokenChecker : public ITokenProcessor
-{
-private:
-    TokenChecker(const TokenChecker&);
-    TokenChecker& operator= (const TokenChecker&);
-
-    Token* _out;
-    int i;
-public:
-    TokenChecker(Token* output) : _out(output), i(0)
-    {  }
-
-    void handle_token(Token& token) override {
-        _out[i] = token;
-        i++;
-    }
-
-    void handle_end(Token&) override {}
-};
-
 
 void AuxTest::TestJuniperStack()
 {
@@ -673,7 +640,7 @@ void AuxTest::TestJuniperStack()
     q->_arity = 0;
     SimplifyStack(q);
     std::string s1;
-    _test(q == NULL);
+    _test(q == nullptr);
 
     if (GetNumFailed() > 0)
         fprintf(stderr, "TestJuniperStack: %s\n", s.c_str());
@@ -697,7 +664,6 @@ public:
             //_tokens.back().c_str(),
             //(int)t.bytepos, (int)t.wordpos, t.bytelen, t.curlen);
     }
-    void clearTokens() { _tokens.clear(); }
     const std::vector<std::string> & getTokens() const { return _tokens; }
 };
 
@@ -913,11 +879,11 @@ AuxTest::TestWhiteSpacePreserved()
     juniper::Config myConfig("myconfig", juniper);
 
     juniper::QueryParser q("best");
-    juniper::QueryHandle qh(q, NULL, juniper.getModifier());
+    juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
     juniper::Result* res = juniper::Analyse(&myConfig, &qh, input.c_str(), input.size(), 0, 0, 0);
-    _test(res != NULL);
+    _test(res != nullptr);
 
-    juniper::Summary* sum = juniper::GetTeaser(res, NULL);
+    juniper::Summary* sum = juniper::GetTeaser(res, nullptr);
     vespalib::string expected = "<hi>best</hi>  of  \nmetallica";
     vespalib::string actual(sum->Text(), sum->Length());
     _test(actual == expected);

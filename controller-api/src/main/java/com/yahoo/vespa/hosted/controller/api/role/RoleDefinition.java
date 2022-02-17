@@ -60,6 +60,9 @@ public enum RoleDefinition {
               Policy.billingInformationRead,
               Policy.secretStoreOperations),
 
+    /** Developer for manual deployments for a tenant */
+    hostedDeveloper(Policy.developmentDeployment),
+
     /** Admin — the administrative function for user management etc. */
     administrator(Policy.tenantUpdate,
                   Policy.tenantManager,
@@ -72,7 +75,9 @@ public enum RoleDefinition {
                   Policy.paymentInstrumentDelete,
                   Policy.paymentInstrumentCreate,
                   Policy.planUpdate,
-                  Policy.billingInformationRead),
+                  Policy.billingInformationRead,
+                  Policy.accessRequests
+            ),
 
     /** Headless — the application specific role identified by deployment keys for production */
     headless(Policy.submission),

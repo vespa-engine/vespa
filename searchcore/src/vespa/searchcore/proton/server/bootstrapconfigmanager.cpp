@@ -8,6 +8,7 @@
 #include <vespa/config-bucketspaces.h>
 #include <vespa/searchlib/common/tunefileinfo.hpp>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/config/retriever/configsnapshot.hpp>
 #include <cassert>
 
 #include <vespa/log/log.h>

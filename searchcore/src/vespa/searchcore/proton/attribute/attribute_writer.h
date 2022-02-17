@@ -25,7 +25,7 @@ private:
     using FieldValue = document::FieldValue;
     const IAttributeManager::SP _mgr;
     vespalib::ISequencedTaskExecutor &_attributeFieldWriter;
-    vespalib::ThreadExecutor& _shared_executor;
+    vespalib::Executor& _shared_executor;
     using ExecutorId = vespalib::ISequencedTaskExecutor::ExecutorId;
 public:
     /**

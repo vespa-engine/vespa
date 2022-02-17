@@ -1,0 +1,14 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=routing.config
+
+# URL to config server load balancer
+configserverVipUrl string
+
+# Athenz domain/service name of config server
+configserverAthenzDomain string
+configserverAthenzServiceName string
+
+# Tenant config server endpoint, used to fetch tenant (mapping) info
+# Auto detected if empty (from VESPA_CONFIG_SOURCES)
+# E.g.: tcp/cfg1.example.com:19070
+configserver[] string

@@ -173,6 +173,8 @@ public:
         return false;
     }
 
+    // whether last config seen wanted useV8geoPositions = true
+    static bool wantedV8geoPositions();
 
     /**
      * @return the name of the given result field type.

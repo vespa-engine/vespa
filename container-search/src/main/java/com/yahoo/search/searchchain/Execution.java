@@ -8,6 +8,7 @@ import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
 import com.yahoo.language.process.SpecialTokenRegistry;
+import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.processing.Processor;
 import com.yahoo.processing.Request;
 import com.yahoo.processing.Response;
@@ -18,7 +19,6 @@ import com.yahoo.search.cluster.PingableSearcher;
 import com.yahoo.search.rendering.Renderer;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.statistics.TimeTracker;
-
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -41,6 +41,8 @@ import java.util.concurrent.Executors;
  */
 public class Execution extends com.yahoo.processing.execution.Execution {
 
+    /** @deprecated - applications should define their own summary class instead */
+    @Deprecated(since = "7", forRemoval = true)
     public static final String ATTRIBUTEPREFETCH = "attributeprefetch";
 
     /**
@@ -532,18 +534,23 @@ public class Execution extends com.yahoo.processing.execution.Execution {
     }
 
     /**
-     * Fill hit properties with values from all in-memory attributes.
-     * This can be done with good performance on many more hits than
-     * those for which fill is called with the final summary class, so
-     * if filtering can be done using only in-memory attribute data,
-     * this method should be preferred over {@link #fill} to get that data for filtering.
-     * <p>
-     * Calling this on already filled results has no cost.
+     * Fill hit properties with values from some in-memory attributes.
+     * Not all attributes are included, and *which* attributes are
+     * subject to change depending on what Vespa needs internally.
      *
+     * Applications should prefer to define their own summary class
+     * with only the in-memory attributes they need, and call
+     * fill(result, "foo") with the name of their own summary class
+     * instead of "foo".
+     *
+     * @deprecated use fill(Result, String)
+     * 
+     * TODO Remove on Vespa 9.
      * @param result the result to fill
      */
+    @Deprecated
     public void fillAttributes(Result result) {
-        fill(result, ATTRIBUTEPREFETCH);
+        fill(result, VespaBackEndSearcher.SORTABLE_ATTRIBUTES_SUMMARY_CLASS);
     }
 
     /**

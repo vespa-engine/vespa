@@ -28,10 +28,10 @@ public class DocumentTypeRepo implements DocumentTypeCollection {
 
     public DocumentTypeRepo add(NewDocumentType type) {
         if (typeByName.containsKey(type.getFullName())) {
-            throw new IllegalStateException("Document type " + type.toString() + " is already registered");
+            throw new IllegalArgumentException("Document type " + type + " is already registered");
         }
         if (typeById.containsKey(type.getFullName().getId())) {
-            throw new IllegalStateException("Document type " + type.toString() + " is already registered");
+            throw new IllegalArgumentException("Document type " + type + " is already registered");
         }
         typeByName.put(type.getFullName(), type);
         typeById.put(type.getFullName().getId(), type);

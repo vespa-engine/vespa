@@ -131,8 +131,7 @@ void checkWritePositionField(Test &test, AttrType &attr,
     }
 
     MyAttributeManager attribute_man(attr);
-    PositionsDFW::UP writer =
-        createPositionsDFW(attr.getName().c_str(), &attribute_man);
+    PositionsDFW::UP writer = PositionsDFW::create(attr.getName().c_str(), &attribute_man, false);
     ASSERT_TRUE(writer.get());
     ResType res_type = RES_JSONSTRING;
     MyGetDocsumsStateCallback callback;

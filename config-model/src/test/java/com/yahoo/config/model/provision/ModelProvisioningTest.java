@@ -2054,7 +2054,7 @@ public class ModelProvisioningTest {
             assertTrue("Initial servers are not joining", config.build().server().stream().noneMatch(ZookeeperServerConfig.Server::joining));
         }
         {
-            VespaModel nextModel = tester.createModel(Zone.defaultZone(), servicesXml.apply(5), true, false, false, 0, Optional.of(model), new DeployState.Builder());
+            VespaModel nextModel = tester.createModel(Zone.defaultZone(), servicesXml.apply(3), true, false, false, 0, Optional.of(model), new DeployState.Builder(), "node-1-3-10-04", "node-1-3-10-03");
             ApplicationContainerCluster cluster = nextModel.getContainerClusters().get("zk");
             ZookeeperServerConfig.Builder config = new ZookeeperServerConfig.Builder();
             cluster.getContainers().forEach(c -> c.getConfig(config));
@@ -2067,6 +2067,14 @@ public class ModelProvisioningTest {
                                 4, true),
                          config.build().server().stream().collect(Collectors.toMap(ZookeeperServerConfig.Server::id,
                                                                                    ZookeeperServerConfig.Server::joining)));
+            assertEquals("Retired nodes are retired",
+                         Map.of(0, false,
+                                1, true,
+                                2, true,
+                                3, false,
+                                4, false),
+                         config.build().server().stream().collect(Collectors.toMap(ZookeeperServerConfig.Server::id,
+                                                                                   ZookeeperServerConfig.Server::retired)));
         }
     }
 

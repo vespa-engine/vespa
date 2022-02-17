@@ -27,14 +27,14 @@ using DefaultUniqueStoreDictionary = UniqueStoreDictionary<DefaultDictionary>;
 }
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
-UniqueStore<EntryT, RefT, Compare, Allocator>::UniqueStore()
-    : UniqueStore<EntryT, RefT, Compare, Allocator>(std::make_unique<uniquestore::DefaultUniqueStoreDictionary>(std::unique_ptr<EntryComparator>()))
+UniqueStore<EntryT, RefT, Compare, Allocator>::UniqueStore(std::shared_ptr<alloc::MemoryAllocator> memory_allocator)
+    : UniqueStore<EntryT, RefT, Compare, Allocator>(std::make_unique<uniquestore::DefaultUniqueStoreDictionary>(std::unique_ptr<EntryComparator>()), std::move(memory_allocator))
 {
 }
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
-UniqueStore<EntryT, RefT, Compare, Allocator>::UniqueStore(std::unique_ptr<IUniqueStoreDictionary> dict)
-    : _allocator(),
+UniqueStore<EntryT, RefT, Compare, Allocator>::UniqueStore(std::unique_ptr<IUniqueStoreDictionary> dict, std::shared_ptr<alloc::MemoryAllocator> memory_allocator)
+    : _allocator(std::move(memory_allocator)),
       _store(_allocator.get_data_store()),
       _dict(std::move(dict))
 {

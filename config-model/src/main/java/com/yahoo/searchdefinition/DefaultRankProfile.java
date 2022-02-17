@@ -4,52 +4,48 @@ package com.yahoo.searchdefinition;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
  * The rank profile containing default settings. This is derived from the fields
  * whenever this is accessed.
  *
- * @author  bratseth
+ * @author bratseth
  */
 public class DefaultRankProfile extends RankProfile {
 
     /**
      * Creates a new rank profile
      *
-     * @param rankProfileRegistry The {@link com.yahoo.searchdefinition.RankProfileRegistry} to use for storing and looking up rank profiles.
+     * @param rankProfileRegistry the {@link com.yahoo.searchdefinition.RankProfileRegistry}
+     *                            to use for storing and looking up rank profiles
      */
     public DefaultRankProfile(Schema schema, RankProfileRegistry rankProfileRegistry, RankingConstants rankingConstants) {
         super("default", schema, rankProfileRegistry, rankingConstants);
     }
 
-    /**
-     * Does nothing, the default rank profile can not inherit anything
-     */
-    // TODO: Why not? If that's the case, then fail attempts at it
-    public void setInherited(String inheritedName) {
+    /** Ignore self inheriting of default as some applications may use that for historical reasons. */
+    public void inherit(String inheritedName) {
+        if (inheritedName.equals("default")) return;
+        super.inherit(inheritedName);
     }
 
-    /** Returns null, the default rank profile can not inherit anything */
-    public String getInheritedName() {
-        return null;
-    }
-
-    /** Returns the rank boost value of the given field */
-    public RankSetting getRankSetting(String fieldOrIndex,RankSetting.Type type) {
-        RankSetting setting = super.getRankSetting(fieldOrIndex,type);
+    @Override
+    public RankSetting getRankSetting(String fieldOrIndex, RankSetting.Type type) {
+        RankSetting setting = super.getRankSetting(fieldOrIndex, type);
         if (setting != null) return setting;
 
-        ImmutableSDField field = getSearch().getConcreteField(fieldOrIndex);
+        ImmutableSDField field = schema().getConcreteField(fieldOrIndex);
         if (field != null) {
-            setting = toRankSetting(field,type);
+            setting = toRankSetting(field, type);
             if (setting != null)
                 return setting;
         }
 
-        Index index = getSearch().getIndex(fieldOrIndex);
+        Index index = schema().getIndex(fieldOrIndex);
         if (index != null) {
-            setting = toRankSetting(index,type);
+            setting = toRankSetting(index, type);
             if (setting != null)
                 return setting;
         }
@@ -57,13 +53,13 @@ public class DefaultRankProfile extends RankProfile {
         return null;
     }
 
-    private RankSetting toRankSetting(ImmutableSDField field,RankSetting.Type type) {
-        if (type.equals(RankSetting.Type.WEIGHT) && field.getWeight()>0 && field.getWeight()!=100)
-            return new RankSetting(field.getName(),type,field.getWeight());
+    private RankSetting toRankSetting(ImmutableSDField field, RankSetting.Type type) {
+        if (type.equals(RankSetting.Type.WEIGHT) && field.getWeight() > 0 && field.getWeight() != 100)
+            return new RankSetting(field.getName(), type, field.getWeight());
         if (type.equals(RankSetting.Type.RANKTYPE))
-            return new RankSetting(field.getName(),type,field.getRankType());
-        if (type.equals(RankSetting.Type.LITERALBOOST) && field.getLiteralBoost()>0)
-            return new RankSetting(field.getName(),type,field.getLiteralBoost());
+            return new RankSetting(field.getName(), type, field.getRankType());
+        if (type.equals(RankSetting.Type.LITERALBOOST) && field.getLiteralBoost() > 0)
+            return new RankSetting(field.getName(), type, field.getLiteralBoost());
 
         // Index level setting really
         if (type.equals(RankSetting.Type.PREFERBITVECTOR) && field.getRanking().isFilter()) {
@@ -86,18 +82,19 @@ public class DefaultRankProfile extends RankProfile {
      * Returns the names of the fields which have a rank boost setting
      * explicitly in this profile or in fields
      */
+    @Override
     public Set<RankSetting> rankSettings() {
         Set<RankSetting> settings = new LinkedHashSet<>(20);
         settings.addAll(this.rankSettings);
-        for (ImmutableSDField field : getSearch().allConcreteFields() ) {
+        for (ImmutableSDField field : schema().allConcreteFields() ) {
             addSetting(field, RankSetting.Type.WEIGHT, settings);
             addSetting(field, RankSetting.Type.RANKTYPE, settings);
             addSetting(field, RankSetting.Type.LITERALBOOST, settings);
             addSetting(field, RankSetting.Type.PREFERBITVECTOR, settings);
         }
 
-        // Foer settings that really pertains to indexes do the explicit indexes too
-        for (Index index : getSearch().getExplicitIndices()) {
+        // For settings that really pertains to indexes do the explicit indexes too
+        for (Index index : schema().getExplicitIndices()) {
             addSetting(index, RankSetting.Type.PREFERBITVECTOR, settings);
         }
         return settings;

@@ -53,13 +53,14 @@ public:
     ssize_t read(uint32_t lid, SubChunkId chunk, vespalib::DataBuffer & buffer) const override;
     void read(LidInfoWithLidV::const_iterator begin, size_t count, IBufferVisitor & visitor) const override;
 
-    LidInfo append(uint64_t serialNum, uint32_t lid, const void * buffer, size_t len);
-    void flush(bool block, uint64_t syncToken);
+    LidInfo append(uint64_t serialNum, uint32_t lid, const void * buffer, size_t len,
+                   vespalib::CpuUsage::Category cpu_category);
+    void flush(bool block, uint64_t syncToken, vespalib::CpuUsage::Category cpu_category);
     uint64_t   getSerialNum() const { return _serialNum; }
     void setSerialNum(uint64_t serialNum) { _serialNum = std::max(_serialNum, serialNum); }
 
     vespalib::system_time getModificationTime() const override;
-    void freeze();
+    void freeze(vespalib::CpuUsage::Category cpu_category);
     size_t getDiskFootprint() const override;
     size_t getMemoryFootprint() const override;
     size_t getMemoryMetaFootprint() const override;
@@ -80,11 +81,11 @@ private:
     void waitForChunkFlushedToDisk(uint32_t chunkId) const;
     void waitForAllChunksFlushedToDisk() const;
     void fileWriter(const uint32_t firstChunkId);
-    void internalFlush(uint32_t, uint64_t serialNum);
-    void enque(ProcessedChunkUP);
+    void internalFlush(uint32_t, uint64_t serialNum, vespalib::CpuUsage::Category cpu_category);
+    void enque(ProcessedChunkUP, vespalib::CpuUsage::Category cpu_category);
     int32_t flushLastIfNonEmpty(bool force);
     // _writeMonitor should not be held when calling restart
-    void restart(uint32_t nextChunkId);
+    void restart(uint32_t nextChunkId, vespalib::CpuUsage::Category cpu_category);
     ProcessedChunkQ drainQ(unique_lock & guard);
     void readDataHeader();
     void readIdxHeader(FastOS_FileInterface & idxFile);

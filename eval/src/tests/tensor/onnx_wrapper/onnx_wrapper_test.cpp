@@ -2,6 +2,7 @@
 
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/int8float.h>
+#include <vespa/eval/eval/test/eval_onnx.h>
 #include <vespa/eval/onnx/onnx_wrapper.h>
 #include <vespa/eval/onnx/onnx_model_cache.h>
 #include <vespa/vespalib/util/bfloat16.h>
@@ -28,6 +29,7 @@ std::string int_types_model = source_dir + "/int_types.onnx";
 std::string guess_batch_model = source_dir + "/guess_batch.onnx";
 std::string unstable_types_model = source_dir + "/unstable_types.onnx";
 std::string float_to_int8_model = source_dir + "/float_to_int8.onnx";
+std::string probe_model = source_dir + "/probe_model.onnx";
 
 void dump_info(const char *ctx, const std::vector<TensorInfo> &info) {
     fprintf(stderr, "%s:\n", ctx);
@@ -281,7 +283,7 @@ TEST(OnnxTest, int_types_onnx_model_can_be_evaluated)
     //-------------------------------------------------------------------------
 }
 
-TEST(OnnxTest, we_guess_batch_dimension_size_when_inference_fails) {    
+TEST(OnnxTest, we_probe_batch_dimension_size_when_inference_fails) {
     Onnx model(guess_batch_model, Onnx::Optimize::ENABLE);
     Onnx::WirePlanner planner_3;
     Onnx::WirePlanner planner_4;
@@ -298,6 +300,13 @@ TEST(OnnxTest, we_guess_batch_dimension_size_when_inference_fails) {
     EXPECT_TRUE(planner_4.bind_input_type(in_4_type, model.inputs()[0]));
     EXPECT_TRUE(planner_4.bind_input_type(in_4_type, model.inputs()[1]));
 
+    // without model probe
+    EXPECT_TRUE(planner_3.make_output_type(model.outputs()[0]).is_error());
+    EXPECT_TRUE(planner_4.make_output_type(model.outputs()[0]).is_error());
+
+    // with model probe
+    planner_3.prepare_output_types(model);
+    planner_4.prepare_output_types(model);
     EXPECT_EQ(planner_3.make_output_type(model.outputs()[0]).to_spec(), "tensor<float>(d0[3])");
     EXPECT_EQ(planner_4.make_output_type(model.outputs()[0]).to_spec(), "tensor<float>(d0[4])");
 
@@ -495,6 +504,26 @@ TEST(OnnxModelCacheTest, share_and_evict_onnx_models) {
     }
     EXPECT_EQ(OnnxModelCache::num_cached(), 0);
     EXPECT_EQ(OnnxModelCache::count_refs(), 0);
+}
+
+TensorSpec val(const vespalib::string &expr) {
+    auto result = TensorSpec::from_expr(expr);
+    EXPECT_FALSE(ValueType::from_spec(result.type()).is_error());
+    return result;
+}
+
+TEST(OnnxTest, eval_onnx_with_probe_model) {
+    Onnx model(probe_model, Onnx::Optimize::ENABLE);
+    auto in1  = val("tensor<float>( x[2], y[3]):[[ 1, 2, 3],[ 4, 5, 6]]");
+    auto in2  = val("tensor<float>( x[2], y[3]):[[ 7, 8, 9],[ 4, 5, 6]]");
+    auto out1 = val("tensor<float>(d0[2],d1[3]):[[ 8,10,12],[ 8,10,12]]");
+    auto out2 = val("tensor<float>(d0[2],d1[3]):[[-6,-6,-6],[ 0, 0, 0]]");
+    auto out3 = val("tensor<float>(d0[2],d1[3]):[[ 7,16,27],[16,25,36]]");
+    auto result = test::eval_onnx(model, {in1, in2});
+    ASSERT_EQ(result.size(), 3);
+    EXPECT_EQ(result[0], out1);
+    EXPECT_EQ(result[1], out2);
+    EXPECT_EQ(result[2], out3);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

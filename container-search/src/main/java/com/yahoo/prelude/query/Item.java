@@ -39,7 +39,7 @@ public abstract class Item implements Cloneable {
         WORD(4),
         INT(5),
         PHRASE(6),
-        PAREN(7), // TODO not used - remove on Vespa 8
+        // 7 was PAREN, unused in Vespa 7
         PREFIX(8),
         SUBSTRING(9),
         NEAR(11),

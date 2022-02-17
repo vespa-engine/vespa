@@ -28,10 +28,10 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
-import com.yahoo.io.reader.NamedReader;
+import com.yahoo.searchdefinition.Application;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.SchemaBuilder;
-import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.searchdefinition.Schema;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -40,7 +40,6 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.container.search.QueryProfilesBuilder;
 import com.yahoo.vespa.model.container.search.SemanticRuleBuilder;
 import com.yahoo.vespa.model.container.search.SemanticRules;
-import com.yahoo.vespa.model.search.NamedSchema;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -69,7 +68,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final DeployLogger logger;
     private final FileRegistry fileRegistry;
     private final DocumentModel documentModel;
-    private final List<NamedSchema> schemas;
+    private final List<Schema> schemas;
     private final ApplicationPackage applicationPackage;
     private final Optional<ConfigDefinitionRepo> configDefinitionRepo;
     private final Optional<ApplicationPackage> permanentApplicationPackage;
@@ -103,8 +102,7 @@ public class DeployState implements ConfigDefinitionStore {
         return new Builder().applicationPackage(applicationPackage).build();
     }
 
-    private DeployState(ApplicationPackage applicationPackage,
-                        SearchDocumentModel searchDocumentModel,
+    private DeployState(Application application,
                         RankProfileRegistry rankProfileRegistry,
                         FileRegistry fileRegistry,
                         ExecutorService executor,
@@ -130,15 +128,15 @@ public class DeployState implements ConfigDefinitionStore {
         this.fileRegistry = fileRegistry;
         this.executor = executor;
         this.rankProfileRegistry = rankProfileRegistry;
-        this.applicationPackage = applicationPackage;
+        this.applicationPackage = application.applicationPackage();
         this.properties = properties;
         this.vespaVersion = vespaVersion;
         this.previousModel = previousModel;
         this.accessLoggingEnabledByDefault = accessLoggingEnabledByDefault;
         this.provisioner = hostProvisioner.orElse(getDefaultModelHostProvisioner(applicationPackage));
         this.provisioned = provisioned;
-        this.schemas = searchDocumentModel.getSchemas();
-        this.documentModel = searchDocumentModel.getDocumentModel();
+        this.schemas = List.copyOf(application.schemas().values());
+        this.documentModel = application.documentModel();
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = configDefinitionRepo;
         this.endpoints = Set.copyOf(endpoints);
@@ -161,7 +159,7 @@ public class DeployState implements ConfigDefinitionStore {
             return hostsReader == null ? new SingleNodeProvisioner() : new HostsXmlProvisioner(hostsReader);
         }
         catch (IOException e) {
-            throw new IllegalStateException("Could not read hosts.xml", e);
+            throw new RuntimeException("Could not read hosts.xml", e);
         }
     }
 
@@ -217,7 +215,7 @@ public class DeployState implements ConfigDefinitionStore {
         ImportedMlModels importedModels = new ImportedMlModels(importFrom, executor, modelImporters);
         for (var entry : importedModels.getSkippedModels().entrySet()) {
             deployLogger.logApplicationPackage(Level.WARNING, "Skipping import of model " + entry.getKey() + " as an exception " +
-                    "occurred during import. Error: " + entry.getValue());
+                                                              "occurred during import. Error: " + entry.getValue());
         }
         return importedModels;
     }
@@ -236,9 +234,7 @@ public class DeployState implements ConfigDefinitionStore {
         return applicationPackage;
     }
 
-    public List<NamedSchema> getSchemas() {
-        return schemas;
-    }
+    public List<Schema> getSchemas() { return schemas; }
 
     public DocumentModel getDocumentModel() {
         return documentModel;
@@ -444,9 +440,10 @@ public class DeployState implements ConfigDefinitionStore {
             RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
             QueryProfiles queryProfiles = new QueryProfilesBuilder().build(applicationPackage, logger);
             SemanticRules semanticRules = new SemanticRuleBuilder().build(applicationPackage);
-            SearchDocumentModel searchDocumentModel = createSearchDocumentModel(rankProfileRegistry, queryProfiles, validationParameters);
-            return new DeployState(applicationPackage,
-                                   searchDocumentModel,
+            Application application = new ApplicationBuilder(applicationPackage, fileRegistry, logger, properties,
+                                                             rankProfileRegistry, queryProfiles.getRegistry())
+                    .build(! validationParameters.ignoreValidationErrors());
+            return new DeployState(application,
                                    rankProfileRegistry,
                                    fileRegistry,
                                    executor,
@@ -470,46 +467,6 @@ public class DeployState implements ConfigDefinitionStore {
                                    reindexing);
         }
 
-        private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry,
-                                                              QueryProfiles queryProfiles,
-                                                              ValidationParameters validationParameters) {
-            Collection<NamedReader> readers = applicationPackage.getSchemas();
-            Map<String, String> names = new LinkedHashMap<>();
-            SchemaBuilder builder = new SchemaBuilder(applicationPackage, fileRegistry, logger, properties, rankProfileRegistry, queryProfiles.getRegistry());
-            for (NamedReader reader : readers) {
-                try {
-                    String readerName = reader.getName();
-                    String topLevelName = builder.importReader(reader, readerName);
-                    String sdName = stripSuffix(readerName, ApplicationPackage.SD_NAME_SUFFIX);
-                    names.put(topLevelName, sdName);
-                    if ( ! sdName.equals(topLevelName)) {
-                        throw new IllegalArgumentException("Schema file name ('" + sdName + "') and name of " +
-                                                           "top level element ('" + topLevelName +
-                                                           "') are not equal for file '" + readerName + "'");
-                    }
-                } catch (ParseException e) {
-                    throw new IllegalArgumentException("Could not parse schema file '" + reader.getName() + "'", e);
-                } catch (IOException e) {
-                    throw new IllegalArgumentException("Could not read schema file '" + reader.getName() + "'", e);
-                } finally {
-                    closeIgnoreException(reader.getReader());
-                }
-            }
-            builder.build(! validationParameters.ignoreValidationErrors());
-            return SearchDocumentModel.fromBuilderAndNames(builder, names);
-        }
-
-        private static String stripSuffix(String nodeName, String postfix) {
-            assert (nodeName.endsWith(postfix));
-            return nodeName.substring(0, nodeName.length() - postfix.length());
-        }
-
-        @SuppressWarnings("EmptyCatchBlock")
-        private static void closeIgnoreException(Reader reader) {
-            try {
-                reader.close();
-            } catch(Exception e) {}
-        }
     }
 
 }

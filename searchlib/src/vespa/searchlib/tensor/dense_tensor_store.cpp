@@ -45,7 +45,7 @@ DenseTensorStore::TensorSizeCalc::TensorSizeCalc(const ValueType &type)
     _aligned_size = my_align(buf_size, alignment);
 }
 
-DenseTensorStore::BufferType::BufferType(const TensorSizeCalc &tensorSizeCalc, std::unique_ptr<vespalib::alloc::MemoryAllocator> allocator)
+DenseTensorStore::BufferType::BufferType(const TensorSizeCalc &tensorSizeCalc, std::shared_ptr<vespalib::alloc::MemoryAllocator> allocator)
     : vespalib::datastore::BufferType<char>(tensorSizeCalc.alignedSize(), MIN_BUFFER_ARRAYS, RefType::offsetSize()),
       _allocator(std::move(allocator))
 {}
@@ -65,7 +65,7 @@ DenseTensorStore::BufferType::get_memory_allocator() const
     return _allocator.get();
 }
 
-DenseTensorStore::DenseTensorStore(const ValueType &type, std::unique_ptr<vespalib::alloc::MemoryAllocator> allocator)
+DenseTensorStore::DenseTensorStore(const ValueType &type, std::shared_ptr<vespalib::alloc::MemoryAllocator> allocator)
     : TensorStore(_concreteStore),
       _concreteStore(),
       _tensorSizeCalc(type),

@@ -32,10 +32,7 @@ public enum NodeType {
     controller("Controller node"),
 
     /** Host of a controller node */
-    controllerhost("Controller host", controller),
-
-    /** Host capable of running multiple node types, only used in {@link SystemName#dev} */
-    devhost("Dev host", config, controller, tenant);
+    controllerhost("Controller host", controller);
 
     private final String description;
     private final List<NodeType> childNodeTypes;

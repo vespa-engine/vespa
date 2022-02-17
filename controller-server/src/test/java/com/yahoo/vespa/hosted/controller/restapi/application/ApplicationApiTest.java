@@ -26,8 +26,6 @@ import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.api.OktaIdentityToken;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -126,6 +124,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private static final String accessDenied = "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}";
 
     private static final ApplicationPackage applicationPackageDefault = new ApplicationPackageBuilder()
+            .withoutAthenzIdentity()
             .instances("default")
             .globalServiceId("foo")
             .region("us-central-1")
@@ -135,6 +134,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
             .build();
 
     private static final ApplicationPackage applicationPackageInstance1 = new ApplicationPackageBuilder()
+            .withoutAthenzIdentity()
             .instances("instance1")
             .globalServiceId("foo")
             .region("us-central-1")
@@ -338,6 +338,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         app1.runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsCentral1);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .withoutAthenzIdentity()
                 .instances("instance1")
                 .globalServiceId("foo")
                 .region("us-west-1")
@@ -448,7 +449,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         deploymentTester.upgrader().overrideConfidence(Version.fromString("6.1"), VespaVersion.Confidence.broken);
         deploymentTester.controllerTester().computeVersionStatus();
         setDeploymentMaintainedInfo();
-        setZoneInRotation("rotation-fqdn-1", ZoneId.from("prod", "us-central-1"));
 
         // GET tenant application deployments
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", GET)
@@ -817,6 +817,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Sixth attempt has a multi-instance deployment spec, and is accepted.
         ApplicationPackage multiInstanceSpec = new ApplicationPackageBuilder()
+                .withoutAthenzIdentity()
                 .instances("instance1,instance2")
                 .region("us-central-1")
                 .parallel("us-west-1", "us-east-3")
@@ -949,7 +950,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               404);
 
         // GET global rotation status
-        setZoneInRotation("rotation-fqdn-1", ZoneId.from("prod", "us-west-1"));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation", GET)
                                       .userIdentity(USER_ID),
                               new File("global-rotation.json"));
@@ -1000,10 +1000,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Create tenant and deploy
         var app = deploymentTester.newDeploymentContext("tenant1", "application1", "instance1");
         app.submit(applicationPackage).deploy();
-
-        setZoneInRotation("rotation-fqdn-2", ZoneId.from("prod", "us-west-1"));
-        setZoneInRotation("rotation-fqdn-2", ZoneId.from("prod", "us-east-3"));
-        setZoneInRotation("rotation-fqdn-1", ZoneId.from("prod", "eu-west-1"));
 
         // GET global rotation status without specifying endpointId fails
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation", GET)
@@ -1528,7 +1524,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         var app = deploymentTester.newDeploymentContext(createTenantAndApplication());
         var zone = ZoneId.from(Environment.prod, RegionName.from("us-west-1"));
         deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(zone),
-                                                                            List.of(RoutingMethod.exclusive, RoutingMethod.shared));
+                                                                            RoutingMethod.exclusive);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain"), AthenzService.from("service"))
                 .instances("instance1")
@@ -1547,15 +1543,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               new File("deployment-with-routing-policy.json"));
 
-        // GET deployment including legacy endpoints
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/instance1", GET)
-                                      .userIdentity(USER_ID)
-                                      .properties(Map.of("includeLegacyEndpoints", "true")),
-                              new File("deployment-with-routing-policy-legacy.json"));
-
-        // Hide shared endpoints
-        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.HIDE_SHARED_ROUTING_ENDPOINT.id(), true);
-
         // GET deployment
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/instance1", GET)
                                       .userIdentity(USER_ID),
@@ -1566,8 +1553,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     public void support_access() {
         var app = deploymentTester.newDeploymentContext(createTenantAndApplication());
         var zone = ZoneId.from(Environment.prod, RegionName.from("us-west-1"));
-        deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(zone),
-                List.of(RoutingMethod.exclusive, RoutingMethod.shared));
+        deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(zone), RoutingMethod.exclusive);
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain"), AthenzService.from("service"))
@@ -1815,11 +1801,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 }
             });
         }
-    }
-
-    private void setZoneInRotation(String rotationName, ZoneId zone) {
-        tester.serviceRegistry().globalRoutingServiceMock().setStatus(rotationName, zone, com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus.IN);
-        //new RotationStatusUpdater(tester.controller(), Duration.ofDays(1)).run();
     }
 
     private void updateContactInformation() {

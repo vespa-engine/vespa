@@ -2,6 +2,10 @@
 vespa_add_executable(vespamalloc_testatomic_app TEST
     SOURCES
     testatomic.cpp
+    ../../vespamalloc/malloc/mmappool.cpp
+    ../../vespamalloc/malloc/common.cpp
+    DEPENDS
+    vespamalloc_util
     EXTERNAL_DEPENDS
     ${VESPA_ATOMIC_LIB}
 )

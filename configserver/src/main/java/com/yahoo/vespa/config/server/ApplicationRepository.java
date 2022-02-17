@@ -88,7 +88,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
@@ -111,8 +110,8 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
-import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
+import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getFileReferencesOnDisk;
 import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA_TENANT;
@@ -147,6 +146,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final Metric metric;
     private final SecretStoreValidator secretStoreValidator;
     private final ClusterReindexingStatusClient clusterReindexingStatusClient;
+    private final FlagSource flagSource;
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
@@ -203,8 +203,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.metric = Objects.requireNonNull(metric);
         this.secretStoreValidator = Objects.requireNonNull(secretStoreValidator);
         this.clusterReindexingStatusClient = clusterReindexingStatusClient;
+        this.flagSource = flagSource;
     }
 
+    // Should be used by tests only (first constructor in this class makes sure we use injectable components where possible)
     public static class Builder {
         private TenantRepository tenantRepository;
         private Optional<Provisioner> hostProvisioner;
@@ -217,6 +219,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         private Metric metric = new NullMetric();
         private SecretStoreValidator secretStoreValidator = new SecretStoreValidator(new SecretStoreProvider().get());
         private FlagSource flagSource = new InMemoryFlagSource();
+        private ConfigConvergenceChecker configConvergenceChecker = new ConfigConvergenceChecker();
 
         public Builder withTenantRepository(TenantRepository tenantRepository) {
             this.tenantRepository = tenantRepository;
@@ -280,11 +283,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             return this;
         }
 
+        public Builder withConfigConvergenceChecker(ConfigConvergenceChecker configConvergenceChecker) {
+            this.configConvergenceChecker = configConvergenceChecker;
+            return this;
+        }
+
         public ApplicationRepository build() {
             return new ApplicationRepository(tenantRepository,
                                              hostProvisioner,
                                              InfraDeployerProvider.empty().getInfraDeployer(),
-                                             new ConfigConvergenceChecker(),
+                                             configConvergenceChecker,
                                              httpProxy,
                                              configserverConfig,
                                              orchestrator,
@@ -631,7 +639,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private List<String> sortedUnusedFileReferences(File fileReferencesPath, Set<String> fileReferencesInUse, Duration keepFileReferences) {
         Set<String> fileReferencesOnDisk = getFileReferencesOnDisk(fileReferencesPath);
         log.log(Level.FINE, () -> "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
-        Instant instant = Instant.now().minus(keepFileReferences);
+        Instant instant = clock.instant().minus(keepFileReferences);
         return fileReferencesOnDisk
                 .stream()
                 .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
@@ -747,10 +755,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public ServiceListResponse servicesToCheckForConfigConvergence(ApplicationId applicationId,
-                                                                   URI uri,
                                                                    Duration timeoutPerService,
                                                                    Optional<Version> vespaVersion) {
-        return convergeChecker.getServiceConfigGenerations(getApplication(applicationId, vespaVersion), uri, timeoutPerService);
+        return convergeChecker.checkConvergenceForAllServices(getApplication(applicationId, vespaVersion), timeoutPerService);
     }
 
     public ConfigConvergenceChecker configConvergenceChecker() { return convergeChecker; }
@@ -1016,6 +1023,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return applicationId.orElse(null);
     }
 
+    public FlagSource flagSource() { return flagSource; }
+
     private Session validateThatLocalSessionIsNotActive(Tenant tenant, long sessionId) {
         Session session = getLocalSession(tenant, sessionId);
         if (Session.Status.ACTIVATE.equals(session.getStatus())) {
@@ -1040,6 +1049,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public Optional<ApplicationSet> getActiveApplicationSet(ApplicationId appId) {
         return getTenant(appId).getSessionRepository().getActiveApplicationSet(appId);
+    }
+
+    public Application getActiveApplication(ApplicationId applicationId) {
+        return getActiveApplicationSet(applicationId)
+                .map(a -> a.getForVersionOrLatest(Optional.empty(), clock.instant()))
+                .orElseThrow(() -> new RuntimeException("Found no active application for " + applicationId));
     }
 
     private File decompressApplication(InputStream in, String contentType, File tempDir) {

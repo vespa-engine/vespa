@@ -14,7 +14,8 @@ ThreadImpl::ThreadImpl(ThreadPoolImpl& pool,
                        vespalib::stringref id,
                        vespalib::duration waitTime,
                        vespalib::duration maxProcessTime,
-                       int ticksBeforeWait)
+                       int ticksBeforeWait,
+                       std::optional<vespalib::CpuUsage::Category> cpu_category)
     : Thread(id),
       _pool(pool),
       _runnable(runnable),
@@ -23,7 +24,8 @@ ThreadImpl::ThreadImpl(ThreadPoolImpl& pool,
       _tickDataPtr(0),
       _interrupted(false),
       _joined(false),
-      _thread(*this)
+      _thread(*this),
+      _cpu_category(cpu_category)
 {
     _tickData[_tickDataPtr]._lastTick = pool.getClock().getMonotonicTime();
     _thread.start(_pool.getThreadPool());
@@ -38,7 +40,12 @@ ThreadImpl::~ThreadImpl()
 void
 ThreadImpl::run()
 {
-    _runnable.run(*this);
+    if (_cpu_category.has_value()) {
+        auto usage = vespalib::CpuUsage::use(_cpu_category.value());
+        _runnable.run(*this);
+    } else {
+        _runnable.run(*this);
+    }
     _pool.unregisterThread(*this);
     _joined = true;
 }
@@ -107,15 +114,6 @@ ThreadImpl::setTickData(const ThreadTickData& tickData)
     uint32_t nextData = (_tickDataPtr + 1) % _tickData.size();
     _tickData[nextData].storeRelaxed(tickData);
     _tickDataPtr = nextData;
-}
-
-void
-ThreadImpl::updateParameters(vespalib::duration waitTime,
-                             vespalib::duration maxProcessTime,
-                             int ticksBeforeWait) {
-  _properties.setWaitTime(waitTime);
-  _properties.setMaxProcessTime(maxProcessTime);
-  _properties.setTicksBeforeWait(ticksBeforeWait);
 }
 
 ThreadTickData

@@ -55,6 +55,9 @@ public class Schema implements ImmutableSchema {
     /** The unique name of this schema */
     private String name;
 
+    /** The application package this is constructed from */
+    private final ApplicationPackage applicationPackage;
+
     /** The name of the schema this should inherit all the content of, if any */
     private final Optional<String> inherited;
 
@@ -93,21 +96,22 @@ public class Schema implements ImmutableSchema {
     /** The resulting processed field */
     private Optional<ImportedFields> importedFields = Optional.empty();
 
-    private final Application owner;
     private final DeployLogger deployLogger;
     private final ModelContext.Properties properties;
 
+    private Application owner;
+
     /** Testing only */
-    public Schema(String name) {
-        this(name, Optional.empty(), null, null, new BaseDeployLogger(), new TestProperties());
+    public Schema(String name, ApplicationPackage applicationPackage) {
+        this(name, applicationPackage, Optional.empty(), null, new BaseDeployLogger(), new TestProperties());
     }
 
     public Schema(String name,
-                  Application application,
+                  ApplicationPackage applicationPackage,
                   FileRegistry fileRegistry,
                   DeployLogger deployLogger,
                   ModelContext.Properties properties) {
-        this(name, Optional.empty(), application, fileRegistry, deployLogger, properties);
+        this(name, applicationPackage, Optional.empty(), fileRegistry, deployLogger, properties);
     }
 
     /**
@@ -115,30 +119,30 @@ public class Schema implements ImmutableSchema {
      *
      * @param name of the schema
      * @param inherited the schema this inherits, if any
-     * @param application the application containing this
      */
     public Schema(String name,
+                  ApplicationPackage applicationPackage,
                   Optional<String> inherited,
-                  Application application,
                   FileRegistry fileRegistry,
                   DeployLogger deployLogger,
                   ModelContext.Properties properties) {
-        this(inherited, application, fileRegistry, deployLogger, properties, false);
-        this.name = name;
+        this(inherited, applicationPackage, fileRegistry, deployLogger, properties, false);
+        this.name = Objects.requireNonNull(name, "A schema must have a name");
     }
 
-    protected Schema(Application application, FileRegistry fileRegistry, DeployLogger deployLogger, ModelContext.Properties properties) {
-        this(Optional.empty(), application, fileRegistry, deployLogger, properties, true);
+    protected Schema(ApplicationPackage applicationPackage, FileRegistry fileRegistry,
+                     DeployLogger deployLogger, ModelContext.Properties properties) {
+        this(Optional.empty(), applicationPackage, fileRegistry, deployLogger, properties, true);
     }
 
     private Schema(Optional<String> inherited,
-                   Application application,
+                   ApplicationPackage applicationPackage,
                    FileRegistry fileRegistry,
                    DeployLogger deployLogger,
                    ModelContext.Properties properties,
                    boolean documentsOnly) {
         this.inherited = inherited;
-        this.owner = application;
+        this.applicationPackage = applicationPackage;
         this.deployLogger = deployLogger;
         this.properties = properties;
         this.documentsOnly = documentsOnly;
@@ -147,14 +151,21 @@ public class Schema implements ImmutableSchema {
         onnxModels = new OnnxModels(fileRegistry, Optional.of(this));
     }
 
-    protected void setName(String name) {
-        this.name = name;
+    /**
+     * Assigns the owner of this
+     *
+     * @throws IllegalStateException if an owner is already assigned
+     */
+    public void setOwner(Application owner) {
+        if (this.owner != null)
+            throw new IllegalStateException("Cannot reassign the owner of " + this);
+        this.owner = owner;
     }
 
+    protected void setName(String name) { this.name = name; }
+
     @Override
-    public String getName() {
-        return name;
-    }
+    public String getName() {return name; }
 
     /** Returns true if this only defines a document type, not a full schema */
     public boolean isDocumentsOnly() {
@@ -174,11 +185,12 @@ public class Schema implements ImmutableSchema {
      */
     public boolean isRawAsBase64() {
         if (rawAsBase64 != null) return rawAsBase64;
+        // TODO Vespa 8: flip default:
         if (inherited.isEmpty()) return false;
         return requireInherited().isRawAsBase64();
     }
 
-    public void enableRawAsBase64() { rawAsBase64 = true; }
+    public void enableRawAsBase64(boolean value) { rawAsBase64 = value; }
 
     /**
      * Sets the stemming default of fields. Default is ALL
@@ -311,16 +323,13 @@ public class Schema implements ImmutableSchema {
      */
     @Override
     public Reader getRankingExpression(String fileName) {
-        return owner.applicationPackage().getRankingExpression(fileName);
+        return applicationPackage.getRankingExpression(fileName);
     }
 
     public Application application() { return owner; }
 
     @Override
-    public ApplicationPackage applicationPackage() {
-        if (owner == null) return null;
-        return owner.applicationPackage();
-    }
+    public ApplicationPackage applicationPackage() { return applicationPackage; }
 
     @Override
     public DeployLogger getDeployLogger() { return deployLogger; }

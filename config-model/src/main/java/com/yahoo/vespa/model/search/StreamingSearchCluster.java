@@ -85,14 +85,15 @@ public class StreamingSearchCluster extends SearchCluster implements
     @Override
     protected void deriveAllSchemas(List<SchemaSpec> local, DeployState deployState) {
         if (local.size() == 1) {
-            deriveSingleSearchDefinition(local.get(0).getSearchDefinition().getSearch(), deployState);
+            deriveSingleSearchDefinition(local.get(0).getSchema(), deployState);
         } else if (local.size() > 1){
-            throw new IllegalStateException("Logical indexes are not supported: Got " + local.size() + " search definitions, expected 1");
+            throw new IllegalArgumentException("Only a single schema is supported, got " + local.size());
         }
     }
     private void deriveSingleSearchDefinition(Schema localSchema, DeployState deployState) {
         if (!localSchema.getName().equals(docTypeName)) {
-            throw new IllegalStateException("Mismatch between document type name (" + docTypeName + ") and name of search definition (" + localSchema.getName() + ")");
+            throw new IllegalArgumentException("Document type name '" + docTypeName +
+                                               "' must be the same as the schema name '" + localSchema.getName() + "'");
         }
         this.sdConfig = new DerivedConfiguration(localSchema, deployState.getDeployLogger(),
                                                  deployState.getProperties(),

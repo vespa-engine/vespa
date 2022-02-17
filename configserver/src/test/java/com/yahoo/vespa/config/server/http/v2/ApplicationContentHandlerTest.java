@@ -69,7 +69,7 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
                 .build();
 
         applicationRepository.deploy(testApp, prepareParams(appId1));
-        handler = new ApplicationHandler(ApplicationHandler.testOnlyContext(),
+        handler = new ApplicationHandler(ApplicationHandler.testContext(),
                                          Zone.defaultZone(),
                                          applicationRepository);
         pathPrefix = createPath(appId1, Zone.defaultZone());

@@ -3,13 +3,16 @@
 #pragma once
 
 #include <vespa/storage/config/config-stor-prioritymapping.h>
-#include <vespa/config/helper/configfetcher.h>
+#include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/documentapi/messagebus/priority.h>
 #include <atomic>
 #include <array>
 #include <mutex>
 
-namespace config {class ConfigUri; }
+namespace config {
+    class ConfigUri;
+    class ConfigFetcher;
+}
 
 namespace storage {
 
@@ -42,7 +45,7 @@ private:
     std::map<uint8_t, documentapi::Priority::Value> _reverseMapping;
     mutable std::mutex _mutex;
 
-    config::ConfigFetcher _configFetcher;
+    std::unique_ptr<config::ConfigFetcher> _configFetcher;
 };
 
 } // storage

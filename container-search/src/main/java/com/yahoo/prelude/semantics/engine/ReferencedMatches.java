@@ -8,7 +8,7 @@ import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PhraseItem;
 
 /**
- * The Matches referenced by a particular context name in a rule evaluation
+ * The matches referenced by a particular context name in a rule evaluation
  *
  * @author bratseth
  */

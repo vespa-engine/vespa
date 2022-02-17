@@ -13,9 +13,10 @@ namespace vespamalloc {
 template <typename MemBlockPtrT>
 class AllocPoolT
 {
+    using DataSegment = segment::DataSegment;
 public:
     typedef AFList<MemBlockPtrT> ChunkSList;
-    AllocPoolT(DataSegment<MemBlockPtrT> & ds);
+    AllocPoolT(DataSegment & ds);
     ~AllocPoolT();
 
     ChunkSList *getFree(SizeClassT sc, size_t minBlocks);
@@ -24,7 +25,7 @@ public:
     ChunkSList *exactAlloc(size_t exactSize, SizeClassT sc, ChunkSList * csl) __attribute__((noinline));
     ChunkSList *returnMemory(SizeClassT sc, ChunkSList * csl) __attribute__((noinline));
 
-    DataSegment<MemBlockPtrT> & dataSegment()      { return _dataSegment; }
+    DataSegment & dataSegment()      { return _dataSegment; }
     void enableThreadSupport() __attribute__((noinline));
 
     static void setParams(size_t threadCacheLimit);
@@ -71,15 +72,15 @@ private:
         }
     };
 
-    Mutex                       _mutex;
-    ChunkSList                * _chunkPool;
-    AllocFree                   _scList[NUM_SIZE_CLASSES];
-    DataSegment<MemBlockPtrT> & _dataSegment;
-    std::atomic<size_t>         _getChunks;
-    std::atomic<size_t>         _getChunksSum;
-    std::atomic<size_t>         _allocChunkList;
-    Stat                        _stat[NUM_SIZE_CLASSES];
-    static size_t               _threadCacheLimit __attribute__((visibility("hidden")));
+    Mutex                   _mutex;
+    ChunkSList            * _chunkPool;
+    AllocFree               _scList[NUM_SIZE_CLASSES];
+    DataSegment           & _dataSegment;
+    std::atomic<size_t>     _getChunks;
+    std::atomic<size_t>     _getChunksSum;
+    std::atomic<size_t>     _allocChunkList;
+    Stat                    _stat[NUM_SIZE_CLASSES];
+    static size_t           _threadCacheLimit __attribute__((visibility("hidden")));
 };
 
 }

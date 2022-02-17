@@ -108,8 +108,9 @@ public class LogMessage
         if (! m.matches()) {
             throw new InvalidLogFormatException(msg);
         }
-
+        @SuppressWarnings("deprecation")
         Level msgLevel = LogLevel.parse(m.group(6));
+
         Instant timestamp = parseTimestamp(m.group(1));
         String threadProcess = m.group(3);
 
@@ -161,6 +162,7 @@ public class LogMessage
      *         it will return <code>null</code>.
      *
      */
+    @SuppressWarnings("deprecation")
     public Event getEvent () throws MalformedEventException {
         if ((level == LogLevel.EVENT) && (event == null)) {
             try {
@@ -188,7 +190,7 @@ public class LogMessage
                                 + component.length()
                                 + level.toString().length()
                                 + payload.length()
-                                + 1)
+                                + 7)
             .append(timeStr).append("\t")
             .append(host).append("\t")
             .append(threadProcess).append("\t")

@@ -67,6 +67,10 @@ search multiplesummaries {
     field loc type string {
 
     }
+
+    field mytags type array<string> {
+      indexing: index
+    }
   }
 
   field loc_pos type position {
@@ -120,7 +124,7 @@ search multiplesummaries {
   }
 
   # Since a here is a dynamic summary, it will be fetched from disk
-  document-summary notattributesonly2 {
+  document-summary anothernotattributesonly2 {
 
     summary adynamic2 type string { # Should still be dynamic here
         source: a
@@ -130,6 +134,19 @@ search multiplesummaries {
     summary c type string {
     }
 
+    summary alltags type array<string> {
+        source: mytags
+    }
+    summary sometags type array<string> {
+        source: mytags
+        matched-elements-only
+    }
+    summary anothera type string {
+        source: a
+    }
+    summary anotherb type string {
+        source: b
+    }
   }
 
   # Not attributes only because d is bolded
@@ -153,6 +170,7 @@ search multiplesummaries {
     }
 
     summary loc_position type long {
+        source: loc_pos_zcurve
     }
 
   }
@@ -166,7 +184,7 @@ search multiplesummaries {
         source: a
     }
 
-    summary loc_position type long {
+    summary loc_pos_zcurve type long {
     }
 
   }

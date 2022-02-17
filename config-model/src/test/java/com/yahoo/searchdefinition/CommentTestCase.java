@@ -18,7 +18,7 @@ public class CommentTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testComments() throws IOException, ParseException {
-        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/comment.sd");
+        Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/comment.sd");
         SDField field = schema.getConcreteField("a");
         assertEquals("{ input a | tokenize normalize stem:\"BEST\" | summary a | index a; }",
                      field.getIndexingScript().toString());

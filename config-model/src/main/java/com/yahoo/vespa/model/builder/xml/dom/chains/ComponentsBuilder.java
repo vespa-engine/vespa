@@ -134,15 +134,15 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
 
     private void ensureNotDefinition(String componentName, Element componentSpec) {
         if (componentSpec.getAttributes().getLength() > 1 || !XML.getChildren(componentSpec).isEmpty())
-            throw new RuntimeException("Expecting " + componentName +
-                    " to be a reference to a global component with the same name," +
-                    " so no additional attributes or nested elements are allowed");
+            throw new IllegalArgumentException("Expecting " + componentName +
+                                               " to be a reference to a global component with the same name," +
+                                               " so no additional attributes or nested elements are allowed");
     }
 
     private void ensureTypesMatch(ComponentType type1, ComponentType type2, String componentName) {
         if (!type1.equals(type2)) {
-            throw new RuntimeException("Two different types declared for the component with name '" + componentName + "' ("
-                    + type1.name + " != " + type2.name + ").");
+            throw new IllegalArgumentException("Two different types declared for the component with name '" + componentName +
+                                               "' (" + type1.name + " != " + type2.name + ").");
         }
     }
 

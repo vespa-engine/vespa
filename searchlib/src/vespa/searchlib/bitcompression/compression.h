@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/searchlib/util/comprfile.h>
-#include <vespa/searchlib/index/postinglistparams.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <cassert>
 
@@ -14,7 +13,10 @@ template <typename T> class ConstArrayRef;
 
 }
 
-namespace search::index { class DocIdAndFeatures; }
+namespace search::index {
+    class DocIdAndFeatures;
+    class PostingListParams;
+}
 
 namespace search::fef { class TermFieldMatchDataArray; }
 
