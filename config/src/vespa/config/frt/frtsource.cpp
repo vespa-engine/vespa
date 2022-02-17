@@ -32,8 +32,8 @@ FRTSource::FRTSource(const ConnectionFactory::SP & connectionFactory, const FRTC
       _agent(std::move(agent)),
       _currentRequest(),
       _key(key),
-      _task(std::make_unique<GetConfigTask>(_connectionFactory->getScheduler(), this)),
       _lock(),
+      _task(std::make_unique<GetConfigTask>(_connectionFactory->getScheduler(), this)),
       _closed(false)
 {
     LOG(spam, "New source!");
@@ -48,8 +48,8 @@ FRTSource::~FRTSource()
 void
 FRTSource::getConfig()
 {
-    int64_t serverTimeout = _agent->getTimeout();
-    double clientTimeout = (serverTimeout / 1000.0) + 5.0; // The additional 5 seconds is the time allowed for the server to respond after serverTimeout has elapsed.
+    vespalib::duration serverTimeout = _agent->getTimeout();
+    vespalib::duration clientTimeout = serverTimeout + 5s; // The additional 5 seconds is the time allowed for the server to respond after serverTimeout has elapsed.
     Connection * connection = _connectionFactory->getCurrent();
     if (connection == nullptr) {
         LOG(warning, "No connection available - bad config ?");
@@ -110,7 +110,7 @@ FRTSource::scheduleNextGetConfig()
     std::lock_guard guard(_lock);
     if (_closed)
         return;
-    double sec = _agent->getWaitTime() / 1000.0;
+    double sec = vespalib::to_s(_agent->getWaitTime());
     LOG(debug, "Scheduling task in %f seconds", sec);
     _task->Schedule(sec);
     LOG(debug, "Done scheduling task");
@@ -120,12 +120,6 @@ void
 FRTSource::reload(int64_t generation)
 {
     (void) generation;
-}
-
-const FRTConfigRequest &
-FRTSource::getCurrentRequest() const
-{
-    return *_currentRequest;
 }
 
 } // namespace config

@@ -32,10 +32,10 @@ ConfigHolder::handle(std::unique_ptr<ConfigUpdate> update)
 }
 
 bool
-ConfigHolder::wait(milliseconds timeoutInMillis)
+ConfigHolder::wait(vespalib::duration timeout)
 {
     std::unique_lock guard(_lock);
-    return static_cast<bool>(_current) || (_cond.wait_for(guard, timeoutInMillis) == std::cv_status::no_timeout);
+    return static_cast<bool>(_current) || (_cond.wait_for(guard, timeout) == std::cv_status::no_timeout);
 }
 
 bool

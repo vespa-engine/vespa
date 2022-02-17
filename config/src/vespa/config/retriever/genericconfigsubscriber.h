@@ -13,10 +13,9 @@ namespace config {
 class GenericConfigSubscriber
 {
 public:
-    using milliseconds = std::chrono::milliseconds;
     GenericConfigSubscriber(std::shared_ptr<IConfigContext> context);
-    bool nextGeneration(milliseconds timeoutInMillis);
-    std::shared_ptr<ConfigSubscription> subscribe(const ConfigKey & key, milliseconds timeoutInMillis);
+    bool nextGeneration(vespalib::duration timeout);
+    std::shared_ptr<ConfigSubscription> subscribe(const ConfigKey & key, vespalib::duration timeout);
     void close();
     int64_t getGeneration() const;
 private:

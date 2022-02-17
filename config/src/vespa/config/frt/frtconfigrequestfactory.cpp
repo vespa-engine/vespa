@@ -22,7 +22,7 @@ FRTConfigRequestFactory::~FRTConfigRequestFactory() = default;
 
 FRTConfigRequest::UP
 FRTConfigRequestFactory::createConfigRequest(const ConfigKey & key, Connection * connection,
-                                             const ConfigState & state, int64_t serverTimeout) const
+                                             const ConfigState & state, vespalib::duration serverTimeout) const
 {
     return make_unique<FRTConfigRequestV3>(connection, key, state.xxhash64, state.generation, _hostName,
                                            serverTimeout, Trace(_traceLevel), _vespaVersion, _compressionType);

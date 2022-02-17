@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/common/misc.h>
 #include <vespa/config/common/configrequest.h>
+#include <vespa/config/common/configresponse.h>
 #include <vespa/config/common/timingvalues.h>
 #include <vespa/config/common/trace.h>
 #include <vespa/config/common/configkey.h>
@@ -10,7 +11,6 @@
 #include <config-my.h>
 
 using namespace config;
-using namespace std::chrono_literals;
 
 class MyConfigRequest : public ConfigRequest
 {
@@ -91,7 +91,7 @@ public:
         return std::move(_update);
     }
 
-    bool wait(milliseconds timeout) override
+    bool wait(vespalib::duration timeout) override
     {
         (void) timeout;
         return true;
@@ -120,22 +120,22 @@ ConfigValue createValue(const std::string & myField, const std::string & xxhash6
 }
 
 static TimingValues testTimingValues(
-        2000,  // successTimeout
-        500,  // errorTimeout
-        500,   // initialTimeout
+        2000ms,  // successTimeout
+        500ms,  // errorTimeout
+        500ms,   // initialTimeout
         4000ms,  // subscribeTimeout
-        0,     // fixedDelay
-        250,   // successDelay
-        250,   // unconfiguredDelay
-        500,   // configuredErrorDelay
+        0ms,     // fixedDelay
+        250ms,   // successDelay
+        250ms,   // unconfiguredDelay
+        500ms,   // configuredErrorDelay
         5,
-        1000,
-        2000);    // maxDelayMultiplier
+        1000ms,
+        2000ms);    // maxDelayMultiplier
 
 TEST("require that agent returns correct values") {
     FRTConfigAgent handler(std::make_shared<MyHolder>(), testTimingValues);
-    ASSERT_EQUAL(500u, handler.getTimeout());
-    ASSERT_EQUAL(0u, handler.getWaitTime());
+    ASSERT_EQUAL(500ms, handler.getTimeout());
+    ASSERT_EQUAL(0ms, handler.getWaitTime());
     ConfigState cs;
     ASSERT_EQUAL(cs.xxhash64, handler.getConfigState().xxhash64);
     ASSERT_EQUAL(cs.generation, handler.getConfigState().generation);
@@ -192,10 +192,10 @@ TEST("require that successful request sets correct wait time") {
     FRTConfigAgent handler(latch, testTimingValues);
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createOKResponse(testKey, testValue));
-    ASSERT_EQUAL(250u, handler.getWaitTime());
+    ASSERT_EQUAL(250ms, handler.getWaitTime());
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createOKResponse(testKey, testValue));
-    ASSERT_EQUAL(250u, handler.getWaitTime());
+    ASSERT_EQUAL(250ms, handler.getWaitTime());
 }
 
 TEST("require that bad config response returns false") {
@@ -205,36 +205,36 @@ TEST("require that bad config response returns false") {
     FRTConfigAgent handler(latch, testTimingValues);
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createConfigErrorResponse(testKey, testValue));
-    ASSERT_EQUAL(250u, handler.getWaitTime());
-    ASSERT_EQUAL(500u, handler.getTimeout());
+    ASSERT_EQUAL(250ms, handler.getWaitTime());
+    ASSERT_EQUAL(500ms, handler.getTimeout());
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createConfigErrorResponse(testKey, testValue));
-    ASSERT_EQUAL(500u, handler.getWaitTime());
-    ASSERT_EQUAL(500u, handler.getTimeout());
+    ASSERT_EQUAL(500ms, handler.getWaitTime());
+    ASSERT_EQUAL(500ms, handler.getTimeout());
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createConfigErrorResponse(testKey, testValue));
-    ASSERT_EQUAL(750u, handler.getWaitTime());
-    ASSERT_EQUAL(500u, handler.getTimeout());
+    ASSERT_EQUAL(750ms, handler.getWaitTime());
+    ASSERT_EQUAL(500ms, handler.getTimeout());
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createConfigErrorResponse(testKey, testValue));
-    ASSERT_EQUAL(1000u, handler.getWaitTime());
-    ASSERT_EQUAL(500u, handler.getTimeout());
+    ASSERT_EQUAL(1000ms, handler.getWaitTime());
+    ASSERT_EQUAL(500ms, handler.getTimeout());
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createConfigErrorResponse(testKey, testValue));
-    ASSERT_EQUAL(1250u, handler.getWaitTime());
-    ASSERT_EQUAL(500u, handler.getTimeout());
+    ASSERT_EQUAL(1250ms, handler.getWaitTime());
+    ASSERT_EQUAL(500ms, handler.getTimeout());
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createConfigErrorResponse(testKey, testValue));
-    ASSERT_EQUAL(1250u, handler.getWaitTime());
-    ASSERT_EQUAL(500u, handler.getTimeout());
+    ASSERT_EQUAL(1250ms, handler.getWaitTime());
+    ASSERT_EQUAL(500ms, handler.getTimeout());
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createOKResponse(testKey, testValue));
-    ASSERT_EQUAL(250u, handler.getWaitTime());
-    ASSERT_EQUAL(2000u, handler.getTimeout());
+    ASSERT_EQUAL(250ms, handler.getWaitTime());
+    ASSERT_EQUAL(2000ms, handler.getTimeout());
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createConfigErrorResponse(testKey, testValue));
-    ASSERT_EQUAL(500u, handler.getWaitTime());
-    ASSERT_EQUAL(500u, handler.getTimeout());
+    ASSERT_EQUAL(500ms, handler.getWaitTime());
+    ASSERT_EQUAL(500ms, handler.getTimeout());
 }
 
 TEST("require that bad response returns false") {
@@ -245,22 +245,22 @@ TEST("require that bad response returns false") {
     FRTConfigAgent handler(latch, testTimingValues);
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createServerErrorResponse(testKey, testValue));
-    ASSERT_EQUAL(250u, handler.getWaitTime());
+    ASSERT_EQUAL(250ms, handler.getWaitTime());
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createServerErrorResponse(testKey, testValue));
-    ASSERT_EQUAL(500u, handler.getWaitTime());
+    ASSERT_EQUAL(500ms, handler.getWaitTime());
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createServerErrorResponse(testKey, testValue));
-    ASSERT_EQUAL(750u, handler.getWaitTime());
+    ASSERT_EQUAL(750ms, handler.getWaitTime());
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createServerErrorResponse(testKey, testValue));
-    ASSERT_EQUAL(1000u, handler.getWaitTime());
+    ASSERT_EQUAL(1000ms, handler.getWaitTime());
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createServerErrorResponse(testKey, testValue));
-    ASSERT_EQUAL(1250u, handler.getWaitTime());
+    ASSERT_EQUAL(1250ms, handler.getWaitTime());
 
     handler.handleResponse(MyConfigRequest(testKey), MyConfigResponse::createServerErrorResponse(testKey, testValue));
-    ASSERT_EQUAL(1250u, handler.getWaitTime());
+    ASSERT_EQUAL(1250ms, handler.getWaitTime());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

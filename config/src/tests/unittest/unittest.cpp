@@ -11,7 +11,6 @@
 LOG_SETUP("unittest");
 
 using namespace config;
-using namespace std::chrono_literals;
 
 namespace {
     void verifyConfig(const std::string & expected, std::unique_ptr<FooConfig> cfg)

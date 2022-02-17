@@ -27,7 +27,6 @@ namespace config {
 class ConfigSubscriber
 {
 public:
-    using milliseconds = std::chrono::milliseconds;
     typedef std::unique_ptr<ConfigSubscriber> UP;
 
     /**
@@ -53,28 +52,27 @@ public:
     /**
      * Checks if one or more of the configs in the set is updated or not.
      *
-     * @param timeoutInMillis The timeout in milliseconds.
+     * @param timeout The timeout.
      * @return true if new configs are available, false if timeout was reached
      *              or subscriber has been closed.
      */
-    bool nextConfig(milliseconds timeoutInMillis = DEFAULT_NEXTCONFIG_TIMEOUT);
-    bool nextConfigNow() { return nextConfig(milliseconds(0)); }
+    bool nextConfig(vespalib::duration timeout = DEFAULT_NEXTCONFIG_TIMEOUT);
+    bool nextConfigNow() { return nextConfig(vespalib::duration::zero()); }
 
     /**
      * Checks if the generation of this config set is updated.
      *
-     * @param timeoutInMillis The timeout in milliseconds.
+     * @param timeout The timeout
      * @return true if a new generation are available, false if timeout was reached
      *              or subscriber has been closed.
      */
-    bool nextGeneration(milliseconds timeoutInMillis = DEFAULT_NEXTCONFIG_TIMEOUT);
-    bool nextGenerationNow() { return nextGeneration(milliseconds(0)); }
+    bool nextGeneration(vespalib::duration timeout = DEFAULT_NEXTCONFIG_TIMEOUT);
+    bool nextGenerationNow() { return nextGeneration(vespalib::duration::zero()); }
     /**
      * Subscribe to a config fetched from the default source specification.
      *
      * @param configId        The configId to get config for.
-     * @param timeoutInMillis An optional timeout on the subscribe call, in
-     *                        milliseconds.
+     * @param timeout         An optional timeout on the subscribe call
      * @return                A subscription handle which can be used to
      *                        retrieve config.
      * @throws ConfigTimeoutException if subscription timed out.
@@ -82,7 +80,7 @@ public:
      */
     template <typename ConfigType>
     std::unique_ptr<ConfigHandle<ConfigType> >
-    subscribe(const std::string & configId, milliseconds timeoutInMillis = DEFAULT_SUBSCRIBE_TIMEOUT);
+    subscribe(const std::string & configId, vespalib::duration timeout = DEFAULT_SUBSCRIBE_TIMEOUT);
 
     /**
      * Return the current generation number for configs.

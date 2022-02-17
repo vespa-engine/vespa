@@ -19,13 +19,12 @@ class IConfigContext;
 class ConfigFetcher
 {
 public:
-    using milliseconds = std::chrono::milliseconds;
     ConfigFetcher(std::shared_ptr<IConfigContext> context);
     ConfigFetcher(const SourceSpec & spec = ServerSpec());
     ~ConfigFetcher();
 
     template <typename ConfigType>
-    void subscribe(const std::string & configId, IFetcherCallback<ConfigType> * callback, milliseconds subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
+    void subscribe(const std::string & configId, IFetcherCallback<ConfigType> * callback, vespalib::duration subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
 
     void start();
     void close();

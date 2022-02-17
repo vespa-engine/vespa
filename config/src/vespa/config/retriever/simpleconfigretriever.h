@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/config/subscription/configsubscriptionset.h>
-#include <vespa/config/common/timingvalues.h>
 #include "configkeyset.h"
 #include "configsnapshot.h"
+#include <vespa/config/subscription/configsubscriptionset.h>
+#include <vespa/config/common/timingvalues.h>
 
 namespace config {
 
@@ -17,19 +17,18 @@ class SimpleConfigRetriever
 {
 public:
     typedef std::unique_ptr<SimpleConfigRetriever> UP;
-    using milliseconds = std::chrono::milliseconds;
 
     SimpleConfigRetriever(const ConfigKeySet & keySet,
                           std::shared_ptr<IConfigContext> context,
-                          milliseconds subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
+                          vespalib::duration subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
 
     /**
      * Attempt retrieving a snapshot of configs.
-     * @param timeoutInMillis The amount of time to wait for a new snapshot.
+     * @param timeout The amount of time to wait for a new snapshot.
      * @return A new snapshot. The snapshot is empty if timeout was reached or
      *         if the retriever was closed.
      */
-    ConfigSnapshot getConfigs(milliseconds timeoutInMillis = DEFAULT_GETCONFIGS_TIMEOUT);
+    ConfigSnapshot getConfigs(vespalib::duration timeout = DEFAULT_GETCONFIGS_TIMEOUT);
     void close();
     bool isClosed() const;
 

@@ -20,7 +20,7 @@ public:
                        const vespalib::string & configXxhash64,
                        int64_t currentGeneration,
                        const vespalib::string & hostName,
-                       int64_t serverTimeout,
+                       duration serverTimeout,
                        const Trace & trace,
                        const VespaVersion & vespaVersion,
                        const CompressionType & compressionType);

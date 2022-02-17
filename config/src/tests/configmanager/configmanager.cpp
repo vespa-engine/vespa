@@ -11,7 +11,6 @@
 #include "config-my.h"
 
 using namespace config;
-using namespace std::chrono_literals;
 
 namespace {
 
@@ -90,17 +89,17 @@ namespace {
     };
 
     static TimingValues testTimingValues(
-            2000,  // successTimeout
-            500,  // errorTimeout
-            500,   // initialTimeout
+            2000ms,  // successTimeout
+            500ms,  // errorTimeout
+            500ms,   // initialTimeout
             4000ms,  // unsubscribeTimeout
-            0,     // fixedDelay
-            250,   // successDelay
-            250,   // unconfiguredDelay
-            500,   // configuredErrorDelay
+            0ms,     // fixedDelay
+            250ms,   // successDelay
+            250ms,   // unconfiguredDelay
+            500ms,   // configuredErrorDelay
             5,
-            1000,
-            2000);    // maxDelayMultiplier
+            1000ms,
+            2000ms);    // maxDelayMultiplier
 
     class ManagerTester {
     public:

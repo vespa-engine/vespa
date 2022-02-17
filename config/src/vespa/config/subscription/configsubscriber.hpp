@@ -7,10 +7,10 @@ namespace config {
 
 template <typename ConfigType>
 std::unique_ptr<ConfigHandle<ConfigType> >
-ConfigSubscriber::subscribe(const std::string & configId, milliseconds timeoutInMillis)
+ConfigSubscriber::subscribe(const std::string & configId, vespalib::duration timeout)
 {
     const ConfigKey key(ConfigKey::create<ConfigType>(configId));
-    return std::make_unique<ConfigHandle<ConfigType> >(_set.subscribe(key, timeoutInMillis));
+    return std::make_unique<ConfigHandle<ConfigType> >(_set.subscribe(key, timeout));
 }
 
 }

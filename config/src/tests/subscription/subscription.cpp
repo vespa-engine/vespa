@@ -7,7 +7,6 @@
 #include <thread>
 
 using namespace config;
-using namespace std::chrono_literals;
 
 namespace {
 
@@ -79,7 +78,7 @@ TEST_MT_F("requireThatNextUpdateReturnsWhenNotified", 2, SubscriptionFixture(Con
         ASSERT_TRUE(f1.sub.nextUpdate(2, 5000ms));
         ASSERT_TRUE(timer.elapsed() > 200ms);
     } else {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(500ms);
         f1.holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(), 1, 1));
     }
 }
@@ -93,7 +92,7 @@ TEST_MT_F("requireThatNextUpdateReturnsInterrupted", 2, SubscriptionFixture(Conf
         ASSERT_TRUE(f1.sub.nextUpdate(1, 5000ms));
         ASSERT_TRUE(timer.elapsed() > 300ms);
     } else {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(500ms);
         f1.sub.close();
     }
 }

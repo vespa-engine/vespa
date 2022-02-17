@@ -25,21 +25,18 @@ public:
     void close() override;
     void reload(int64_t generation) override;
     void getConfig() override;
-
-    const FRTConfigRequest & getCurrentRequest() const;
-
 private:
     void scheduleNextGetConfig();
 
-    ConnectionFactory::SP _connectionFactory;
+    ConnectionFactory::SP           _connectionFactory;
     const FRTConfigRequestFactory & _requestFactory;
-    ConfigAgent::UP _agent;
-    FRTConfigRequest::UP _currentRequest;
-    const ConfigKey _key;
+    ConfigAgent::UP                 _agent;
+    FRTConfigRequest::UP            _currentRequest;
+    const ConfigKey                 _key;
 
-    std::unique_ptr<FNET_Task> _task;
-    std::mutex _lock; // Protects _task and _closed
-    bool _closed;
+    std::mutex                      _lock; // Protects _task and _closed
+    std::unique_ptr<FNET_Task>      _task;
+    bool                            _closed;
 };
 
 } // namespace config

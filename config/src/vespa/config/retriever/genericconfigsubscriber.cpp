@@ -8,15 +8,15 @@ GenericConfigSubscriber::GenericConfigSubscriber(std::shared_ptr<IConfigContext>
 { }
 
 bool
-GenericConfigSubscriber::nextGeneration(milliseconds timeoutInMillis)
+GenericConfigSubscriber::nextGeneration(vespalib::duration timeout)
 {
-    return _set.acquireSnapshot(timeoutInMillis, true);
+    return _set.acquireSnapshot(timeout, true);
 }
 
 std::shared_ptr<ConfigSubscription>
-GenericConfigSubscriber::subscribe(const ConfigKey & key, milliseconds timeoutInMillis)
+GenericConfigSubscriber::subscribe(const ConfigKey & key, vespalib::duration timeout)
 {
-    return _set.subscribe(key, timeoutInMillis);
+    return _set.subscribe(key, timeout);
 }
 
 void

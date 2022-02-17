@@ -21,11 +21,11 @@ public:
     FRTConfigRequestFactory(int traceLevel, const VespaVersion & vespaVersion, const CompressionType & compressionType);
     ~FRTConfigRequestFactory();
 
-    FRTConfigRequest::UP createConfigRequest(const ConfigKey & key, Connection * connection, const ConfigState & state, int64_t serverTimeout) const;
+    FRTConfigRequest::UP createConfigRequest(const ConfigKey & key, Connection * connection, const ConfigState & state, vespalib::duration serverTimeout) const;
 private:
-    const int _traceLevel;
-    const VespaVersion _vespaVersion;
-    vespalib::string _hostName;
+    const int             _traceLevel;
+    const VespaVersion    _vespaVersion;
+    vespalib::string      _hostName;
     const CompressionType _compressionType;
 };
 

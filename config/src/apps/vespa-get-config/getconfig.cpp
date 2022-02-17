@@ -108,8 +108,8 @@ GetConfig::Main()
         configId = "";
     }
     const char *configXxhash64 = "";
-    int serverTimeout = 3;
-    int clientTimeout = 10;
+    vespalib::duration serverTimeout = 3s;
+    vespalib::duration clientTimeout = 10s;
 
     int serverPort = 19090;
 
@@ -142,10 +142,10 @@ GetConfig::Main()
             defMD5 = optArg;
             break;
         case 't':
-            serverTimeout = atoi(optArg);
+            serverTimeout = vespalib::from_s(atof(optArg));
             break;
         case 'w':
-            clientTimeout = atoi(optArg);
+            clientTimeout = vespalib::from_s(atof(optArg));
             break;
         case 'r':
             traceLevel = atoi(optArg);
@@ -231,9 +231,9 @@ GetConfig::Main()
     FRTConnection connection(spec, _server->supervisor(), TimingValues());
     ConfigKey key(configId, defName, defNamespace, defMD5, defSchema);
     ConfigState state(configXxhash64, generation, false);
-    FRTConfigRequest::UP request = requestFactory.createConfigRequest(key, &connection, state, serverTimeout * 1000);
+    FRTConfigRequest::UP request = requestFactory.createConfigRequest(key, &connection, state, serverTimeout);
 
-    _target->InvokeSync(request->getRequest(), clientTimeout); // seconds
+    _target->InvokeSync(request->getRequest(), vespalib::to_s(clientTimeout)); // seconds
 
     ConfigResponse::UP response = request->createResponse(request->getRequest());
     response->validateResponse();

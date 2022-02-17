@@ -14,7 +14,7 @@ FRTConfigRequestV3::FRTConfigRequestV3(Connection * connection,
                                        const vespalib::string & configXxhash64,
                                        int64_t currentGeneration,
                                        const vespalib::string & hostName,
-                                       int64_t serverTimeout,
+                                       vespalib::duration serverTimeout,
                                        const Trace & trace,
                                        const VespaVersion & vespaVersion,
                                        const CompressionType & compressionType)

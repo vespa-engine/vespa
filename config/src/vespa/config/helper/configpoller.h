@@ -18,12 +18,11 @@ class ConfigSubscriber;
  */
 class ConfigPoller : public vespalib::Runnable {
 public:
-    using milliseconds = std::chrono::milliseconds;
     ConfigPoller(std::shared_ptr<IConfigContext> context);
     ~ConfigPoller() override;
     void run() override;
     template <typename ConfigType>
-    void subscribe(const std::string & configId, IFetcherCallback<ConfigType> * callback, milliseconds subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
+    void subscribe(const std::string & configId, IFetcherCallback<ConfigType> * callback, vespalib::duration subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
     void poll();
     void close();
     int64_t getGeneration() const { return _generation; }

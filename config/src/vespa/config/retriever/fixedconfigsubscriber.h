@@ -14,9 +14,8 @@ namespace config {
 class FixedConfigSubscriber
 {
 public:
-    using milliseconds = std::chrono::milliseconds;
-    FixedConfigSubscriber(const ConfigKeySet & keySet, std::shared_ptr<IConfigContext> context, milliseconds subscribeTimeout);
-    bool nextGeneration(milliseconds timeoutInMillis);
+    FixedConfigSubscriber(const ConfigKeySet & keySet, std::shared_ptr<IConfigContext> context, vespalib::duration subscribeTimeout);
+    bool nextGeneration(vespalib::duration timeout);
     void close();
     int64_t getGeneration() const;
     ConfigSnapshot getConfigSnapshot() const;

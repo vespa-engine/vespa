@@ -19,7 +19,6 @@ using vespalib::Barrier;
 using namespace config::protocol::v2;
 using namespace vespalib::slime;
 using namespace vespalib;
-using namespace std::chrono_literals;
 
 namespace {
 
@@ -175,17 +174,17 @@ struct NetworkFixture {
 
 
 TimingValues testTimingValues(
-    500,  // successTimeout
-    500,  // errorTimeout
-    500,   // initialTimeout
+    500ms,  // successTimeout
+    500ms,  // errorTimeout
+    500ms,   // initialTimeout
     400ms,  // unsubscribeTimeout
-    0,     // fixedDelay
-    250,   // successDelay
-    250,   // unconfiguredDelay
-    500,   // configuredErrorDelay
+    0ms,     // fixedDelay
+    250ms,   // successDelay
+    250ms,   // unconfiguredDelay
+    500ms,   // configuredErrorDelay
     1,      // maxDelayMultiplier
-    600,  // transientDelay
-    1200); // fatalDelay
+    600ms,  // transientDelay
+    1200ms); // fatalDelay
 
 struct ConfigCheckFixture {
     std::shared_ptr<IConfigContext> ctx;
