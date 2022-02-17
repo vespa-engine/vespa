@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.api.integration.certificates;
 
 import com.yahoo.config.provision.ApplicationId;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -69,8 +68,8 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
     }
 
     @Override
-    public String certificateDetails(String id) {
-        return "";
+    public EndpointCertificateDetails certificateDetails(String id) {
+        return null;
     }
 
 }

@@ -20,5 +20,5 @@ public interface EndpointCertificateProvider  {
 
     void deleteCertificate(ApplicationId applicationId, String requestId);
 
-    String certificateDetails(String id) throws IOException;
+    EndpointCertificateDetails certificateDetails(String id) throws IOException;
 }
