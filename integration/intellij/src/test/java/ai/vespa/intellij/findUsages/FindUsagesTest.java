@@ -36,7 +36,7 @@ public class FindUsagesTest extends PluginTestBase {
     public void testFindUsagesInSchemaInheritance() {
         useDir("src/test/applications/schemainheritance");
         var tester = new UsagesTester("parent.sd", getProject());
-        tester.assertFunctionUsages("1 ref in schild schema", 1, "parent_profile", "parentFunction");
+        tester.assertFunctionUsages("1 ref in child schema", 1, "parent_profile", "parentFunction");
     }
 
     @Test
