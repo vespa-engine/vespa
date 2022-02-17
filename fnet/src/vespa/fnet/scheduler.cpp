@@ -137,15 +137,8 @@ FNET_Scheduler::Print(FILE *dst)
 void
 FNET_Scheduler::CheckTasks()
 {
+    std::unique_lock guard(_lock);
     _now = _sampler ? *_sampler : vespalib::steady_clock::now();
-
-    // assume timely value propagation
-
-    if (_slots[NUM_SLOTS] == nullptr && _now < _next)
-        return;
-
-    std::unique_lock<std::mutex> guard(_lock);
-
     // perform urgent tasks
 
     PerformTasks(guard, NUM_SLOTS, 0);
