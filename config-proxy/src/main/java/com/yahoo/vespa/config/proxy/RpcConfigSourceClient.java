@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.proxy;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.config.subscription.impl.JrtConfigRequesters;
@@ -67,7 +68,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
         this.memoryCache = new MemoryCache();
         this.delayedResponses = new DelayedResponses();
         checkConfigSources();
-        nextConfigFuture = nextConfigScheduler.scheduleAtFixedRate(this, 0, 10, MILLISECONDS);
+        nextConfigFuture = nextConfigScheduler.scheduleAtFixedRate(this, 0, 10*1000/SystemTimer.detectHz(), MILLISECONDS);
         this.requesters = new JrtConfigRequesters();
         DelayedResponseHandler command = new DelayedResponseHandler(delayedResponses, memoryCache, responseHandler);
         this.delayedResponsesFuture = delayedResponsesScheduler.scheduleAtFixedRate(command, 5, 1, SECONDS);
