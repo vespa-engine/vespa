@@ -1,0 +1,82 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search foo {
+
+  document foo {
+    field title type string {
+      indexing: summary | index
+    }
+    field year type int {
+      indexing: attribute
+    }
+    field foo1 type double {
+      indexing: attribute
+    }
+    field foo2 type double {
+      indexing: attribute
+    }
+    field bar1 type double {
+      indexing: attribute
+    }
+    field bar2 type double {
+      indexing: attribute
+    }
+    field t1 type tensor(m{},v[3]) {
+      indexing: attribute
+    }
+  }
+
+  rank-profile default {
+      function myplus() {
+        expression: attribute(foo1)+attribute(foo2)
+      }
+      function mymul() {
+        expression: attribute(t1)*query(fromq)
+      }
+      first-phase {
+        expression: classicRank
+      }
+      rank-features: attribute(foo1).out attribute(bar1)
+      rank-features { myplus mymul }
+      ignore-default-rank-features
+  }
+
+  rank-profile withsf {
+      function myplus() {
+        expression: attribute(foo1)+attribute(foo2)
+      }
+      function mymul() {
+        expression: attribute(t1)*query(fromq)
+      }
+      first-phase {
+        expression { attribute(year) }
+      }
+      summary-features: attribute(foo1).out attribute(bar1)
+      summary-features {
+        myplus
+        rankingExpression(mymul)
+      }
+  }
+
+  rank-profile withmf {
+      function myplus() {
+        expression: attribute(foo1)+attribute(foo2)
+      }
+      function mymul() {
+        expression: attribute(t1)*query(fromq)
+      }
+      first-phase {
+        expression: attribute(foo1)
+      }
+      second-phase {
+        expression: attribute(foo2)
+      }
+      match-features: attribute(foo1).out attribute(bar1)
+      match-features {
+        rankingExpression(myplus)
+        mymul
+        firstPhase
+        secondPhase
+      }
+  }
+
+}

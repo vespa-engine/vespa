@@ -21,8 +21,8 @@ public:
 } // namespace <unnamed>
 
 namespace search::fef {
-    
-using namespace indexproperties;    
+
+using namespace indexproperties;
 
 RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &indexEnv)
     : _factory(factory),
@@ -53,6 +53,7 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _match_features(),
       _summaryFeatures(),
       _dumpFeatures(),
+      _feature_rename_map(),
       _ignoreDefaultRankFeatures(false),
       _compiled(false),
       _compileError(false),
@@ -91,6 +92,9 @@ RankSetup::configure()
     std::vector<vespalib::string> dumpFeatures = dump::Feature::lookup(_indexEnv.getProperties());
     for (const auto & feature : dumpFeatures) {
         addDumpFeature(feature);
+    }
+    for (const auto & rename : feature_rename::Rename::lookup(_indexEnv.getProperties())) {
+        _feature_rename_map[rename.first] = rename.second;
     }
     split_unpacking_iterators(matching::SplitUnpackingIterators::check(_indexEnv.getProperties()));
     delay_unpacking_iterators(matching::DelayUnpackingIterators::check(_indexEnv.getProperties()));

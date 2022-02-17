@@ -112,6 +112,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default boolean inhibitDefaultMergesWhenGlobalMergesPending() { return false; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useQrserverServiceName() { return true; }
         @ModelFeatureFlag(owners = {"bjorncs", "baldersheim"}) default boolean enableJdiscPreshutdownCommand() { return true; }
+        @ModelFeatureFlag(owners = {"arnej"}) default boolean avoidRenamingSummaryFeatures() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

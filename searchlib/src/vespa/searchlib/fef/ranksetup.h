@@ -7,6 +7,7 @@
 #include "iqueryenvironment.h"
 #include "blueprintresolver.h"
 #include "rank_program.h"
+#include <vespa/searchlib/common/stringmap.h>
 
 namespace search::fef {
 
@@ -61,6 +62,7 @@ private:
     std::vector<vespalib::string> _match_features;
     std::vector<vespalib::string> _summaryFeatures;
     std::vector<vespalib::string> _dumpFeatures;
+    StringStringMap          _feature_rename_map;
     bool                     _ignoreDefaultRankFeatures;
     bool                     _compiled;
     bool                     _compileError;
@@ -372,6 +374,8 @@ public:
      * @return vector of match feature names.
      **/
     const std::vector<vespalib::string> &get_match_features() const { return _match_features; }
+
+    const StringStringMap &get_feature_rename_map() const { return _feature_rename_map; }
 
     /**
      * Returns a const view of the summary features added.

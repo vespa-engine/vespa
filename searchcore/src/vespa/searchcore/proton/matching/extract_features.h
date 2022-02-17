@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/common/featureset.h>
+#include <vespa/searchlib/common/stringmap.h>
 #include <vector>
 
 namespace vespalib { class Doom; };
@@ -20,13 +21,14 @@ struct ExtractFeatures {
     using ThreadBundle = vespalib::ThreadBundle;
     using SearchIterator = search::queryeval::SearchIterator;
     using RankProgram = search::fef::RankProgram;
+    using StringStringMap = search::StringStringMap;
 
     /**
      * Extract all seed features from a rank program for a list of
      * documents (must be in ascending order) using unpack information
      * from a search.
      **/
-    static FeatureSet::UP get_feature_set(SearchIterator &search, RankProgram &rank_program, const std::vector<uint32_t> &docs, const vespalib::Doom &doom);
+    static FeatureSet::UP get_feature_set(SearchIterator &search, RankProgram &rank_program, const std::vector<uint32_t> &docs, const vespalib::Doom &doom, const StringStringMap &renames);
 
     // first: docid, second: result index (must be sorted on docid)
     using OrderedDocs = std::vector<std::pair<uint32_t,uint32_t>>;

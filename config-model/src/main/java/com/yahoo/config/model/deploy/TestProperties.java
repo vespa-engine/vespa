@@ -75,6 +75,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean inhibitDefaultMergesWhenGlobalMergesPending = false;
     private boolean useV8GeoPositions = false;
     private List<String> environmentVariables = List.of();
+    private boolean avoidRenamingSummaryFeatures = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -130,6 +131,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean inhibitDefaultMergesWhenGlobalMergesPending() { return inhibitDefaultMergesWhenGlobalMergesPending; }
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
+    @Override public boolean avoidRenamingSummaryFeatures() { return this.avoidRenamingSummaryFeatures; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -344,6 +346,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setEnvironmentVariables(List<String> value) {
         this.environmentVariables = value;
+        return this;
+    }
+
+    public TestProperties setAvoidRenamingSummaryFeatures(boolean value) {
+        this.avoidRenamingSummaryFeatures = value;
         return this;
     }
 

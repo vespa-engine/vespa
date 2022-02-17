@@ -23,14 +23,19 @@ using search::queryeval::SearchIterator;
 namespace proton::matching {
 
 using OrderedDocs = ExtractFeatures::OrderedDocs;
+using search::StringStringMap;
 
 namespace {
 
-auto extract_names(const FeatureResolver &resolver) {
+auto extract_names(const FeatureResolver &resolver, const StringStringMap &renames) {
     std::vector<vespalib::string> result;
     result.reserve(resolver.num_features());
     for (size_t i = 0; i < resolver.num_features(); ++i) {
-        result.emplace_back(resolver.name_of(i));
+        vespalib::string name = resolver.name_of(i);
+        if (renames.contains(name)) {
+            name = renames[name];
+        }
+        result.emplace_back(name);
     }
     return result;
 }
@@ -127,10 +132,11 @@ struct MyWork {
 } // unnamed
 
 FeatureSet::UP
-ExtractFeatures::get_feature_set(SearchIterator &search, RankProgram &rank_program, const std::vector<uint32_t> &docs, const Doom &doom)
+ExtractFeatures::get_feature_set(SearchIterator &search, RankProgram &rank_program, const std::vector<uint32_t> &docs,
+                                 const Doom &doom, const StringStringMap &renames)
 {
     FeatureResolver resolver(rank_program.get_seeds(false));
-    auto result = std::make_unique<FeatureSet>(extract_names(resolver), docs.size());
+    auto result = std::make_unique<FeatureSet>(extract_names(resolver, renames), docs.size());
     if (!docs.empty()) {
         search.initRange(docs.front(), docs.back()+1);
         for (uint32_t docid: docs) {
@@ -152,7 +158,7 @@ ExtractFeatures::get_match_features(const MatchToolsFactory &mtf, const OrderedD
     auto tools = mtf.createMatchTools();
     tools->setup_match_features();
     FeatureResolver resolver(tools->rank_program().get_seeds(false));
-    result.names = extract_names(resolver);
+    result.names = extract_names(resolver, mtf.get_feature_rename_map());
     result.values.resize(result.names.size() * docs.size());
     MyWork work(thread_bundle);
     size_t per_thread = docs.size() / work.num_threads;

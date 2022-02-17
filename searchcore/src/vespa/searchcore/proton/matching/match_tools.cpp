@@ -27,6 +27,7 @@ using namespace search::fef::indexproperties::matchphase;
 using namespace search::fef::indexproperties::matching;
 using namespace search::fef::indexproperties;
 using search::IDocumentMetaStore;
+using search::StringStringMap;
 
 namespace proton::matching {
 
@@ -291,6 +292,12 @@ bool
 MatchToolsFactory::has_match_features() const
 {
     return _rankSetup.has_match_features();
+}
+
+const StringStringMap &
+MatchToolsFactory::get_feature_rename_map() const
+{
+    return _rankSetup.get_feature_rename_map();
 }
 
 AttributeOperationTask::AttributeOperationTask(const RequestContext & requestContext,

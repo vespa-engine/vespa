@@ -350,6 +350,13 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID, HOSTNAME, TENANT_ID);
 
+    public static final UnboundBooleanFlag AVOID_RENAMING_SUMMARY_FEATURES = defineFeatureFlag(
+            "avoid-renaming-summary-features", false,
+            List.of("arnej"), "2022-01-15", "2023-12-31",
+            "Tell backend about the original name of summary-features that were wrapped in a rankingExpression feature",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

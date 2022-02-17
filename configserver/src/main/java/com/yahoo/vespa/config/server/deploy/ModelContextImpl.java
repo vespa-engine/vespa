@@ -205,6 +205,7 @@ public class ModelContextImpl implements ModelContext {
         private final double persistenceThrottlingWsBackoff;
         private final boolean inhibitDefaultMergesWhenGlobalMergesPending;
         private final boolean useQrserverServiceName;
+        private final boolean avoidRenamingSummaryFeatures;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -248,6 +249,7 @@ public class ModelContextImpl implements ModelContext {
             this.persistenceThrottlingWsBackoff = flagValue(source, appId, Flags.PERSISTENCE_THROTTLING_WS_BACKOFF);
             this.inhibitDefaultMergesWhenGlobalMergesPending = flagValue(source, appId, Flags.INHIBIT_DEFAULT_MERGES_WHEN_GLOBAL_MERGES_PENDING);
             this.useQrserverServiceName =  flagValue(source, appId, Flags.USE_QRSERVER_SERVICE_NAME);
+            this.avoidRenamingSummaryFeatures = flagValue(source, appId, Flags.AVOID_RENAMING_SUMMARY_FEATURES);
         }
 
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -293,6 +295,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public double persistenceThrottlingWsBackoff() { return persistenceThrottlingWsBackoff; }
         @Override public boolean inhibitDefaultMergesWhenGlobalMergesPending() { return inhibitDefaultMergesWhenGlobalMergesPending; }
         @Override public boolean useQrserverServiceName() { return useQrserverServiceName; }
+        @Override public boolean avoidRenamingSummaryFeatures() { return avoidRenamingSummaryFeatures; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

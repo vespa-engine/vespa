@@ -13,6 +13,7 @@
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
+#include <vespa/searchlib/common/stringmap.h>
 #include <vespa/searchlib/queryeval/idiversifier.h>
 #include <vespa/vespalib/util/doom.h>
 #include <vespa/vespalib/util/clock.h>
@@ -107,6 +108,7 @@ private:
 public:
     using UP = std::unique_ptr<MatchToolsFactory>;
     using BasicType = search::attribute::BasicType;
+    using StringStringMap = search::StringStringMap;
 
     MatchToolsFactory(QueryLimiter & queryLimiter,
                       const vespalib::Doom & softDoom,
@@ -138,6 +140,8 @@ public:
 
     const Query & query() const { return _query; }
     const RequestContext & getRequestContext() const { return _requestContext; }
+
+    const StringStringMap & get_feature_rename_map() const;
 };
 
 }

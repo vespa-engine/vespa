@@ -51,6 +51,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
     public static final String summaryFeatureFefPropertyPrefix = "vespa.summary.feature";
     public static final String matchFeatureFefPropertyPrefix = "vespa.match.feature";
     public static final String rankFeatureFefPropertyPrefix = "vespa.dump.feature";
+    public static final String featureRenameFefPropertyPrefix = "vespa.feature.rename";
 
     private final String name;
 
@@ -124,6 +125,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private final Set<ReferenceNode> summaryFeatures;
         private final Set<ReferenceNode> matchFeatures;
         private final Set<ReferenceNode> rankFeatures;
+        private final Map<String, String> featureRenames = new java.util.LinkedHashMap<>();
         private final List<RankProfile.RankProperty> rankProperties;
 
         /**
@@ -140,6 +142,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private final int numSearchPartitions;
         private final double termwiseLimit;
         private final double rankScoreDropLimit;
+        private final boolean mapBackRankingExpressionFeatures;
 
         /**
          * The rank type definitions used to derive settings for the native rank features
@@ -176,6 +179,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             termwiseLimit = compiled.getTermwiseLimit().orElse(deployProperties.featureFlags().defaultTermwiseLimit());
             keepRankCount = compiled.getKeepRankCount();
             rankScoreDropLimit = compiled.getRankScoreDropLimit();
+            mapBackRankingExpressionFeatures = deployProperties.featureFlags().avoidRenamingSummaryFeatures();
             ignoreDefaultRankFeatures = compiled.getIgnoreDefaultRankFeatures();
             rankProperties = new ArrayList<>(compiled.getRankProperties());
 
@@ -253,8 +257,14 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                     String propertyName = RankingExpression.propertyName(referenceNode.getName());
                     String expressionString = function.getBody().getRoot().toString(context).toString();
                     context.addFunctionSerialization(propertyName, expressionString);
-                    ReferenceNode newReferenceNode = new ReferenceNode("rankingExpression(" + referenceNode.getName() + ")", referenceNode.getArguments().expressions(), referenceNode.getOutput());
-                    functionFeatures.put(referenceNode.getName(), newReferenceNode);
+                    ReferenceNode backendReferenceNode = new ReferenceNode("rankingExpression(" + referenceNode.getName() + ")",
+                                                                           referenceNode.getArguments().expressions(),
+                                                                           referenceNode.getOutput());
+                    if (mapBackRankingExpressionFeatures) {
+                        // tell backend to map back to the name the user expects:
+                        featureRenames.put(backendReferenceNode.toString(), referenceNode.toString());
+                    }
+                    functionFeatures.put(referenceNode.getName(), backendReferenceNode);
                     i.remove(); // Will add the expanded one in next block
                 }
             }
@@ -364,6 +374,10 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             }
             for (ReferenceNode feature : rankFeatures) {
                 properties.add(new Pair<>(rankFeatureFefPropertyPrefix, feature.toString()));
+            }
+            for (var entry : featureRenames.entrySet()) {
+                properties.add(new Pair<>(featureRenameFefPropertyPrefix, entry.getKey()));
+                properties.add(new Pair<>(featureRenameFefPropertyPrefix, entry.getValue()));
             }
             if (numThreadsPerSearch > 0) {
                 properties.add(new Pair<>("vespa.matching.numthreadspersearch", numThreadsPerSearch + ""));
