@@ -116,15 +116,6 @@ ThreadImpl::setTickData(const ThreadTickData& tickData)
     _tickDataPtr = nextData;
 }
 
-void
-ThreadImpl::updateParameters(vespalib::duration waitTime,
-                             vespalib::duration maxProcessTime,
-                             int ticksBeforeWait) {
-  _properties.setWaitTime(waitTime);
-  _properties.setMaxProcessTime(maxProcessTime);
-  _properties.setTicksBeforeWait(ticksBeforeWait);
-}
-
 ThreadTickData
 ThreadImpl::AtomicThreadTickData::loadRelaxed() const noexcept
 {

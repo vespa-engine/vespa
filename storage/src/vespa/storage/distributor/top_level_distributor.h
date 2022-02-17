@@ -106,8 +106,8 @@ public:
 
     bool handleStatusRequest(const DelegatedStatusRequest& request) const override;
 
-    virtual framework::ThreadWaitInfo doCriticalTick(framework::ThreadIndex) override;
-    virtual framework::ThreadWaitInfo doNonCriticalTick(framework::ThreadIndex) override;
+    framework::ThreadWaitInfo doCriticalTick(framework::ThreadIndex) override;
+    framework::ThreadWaitInfo doNonCriticalTick(framework::ThreadIndex) override;
 
     // Called by DistributorStripe threads when they want to notify the cluster controller of changed stats.
     // Thread safe.

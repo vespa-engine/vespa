@@ -13,12 +13,7 @@
 #pragma once
 
 #include "runnable.h"
-#include <vespa/vespalib/stllike/string.h>
 #include <condition_variable>
-
-namespace vespalib {
-    class Monitor;
-}
 
 namespace storage::framework {
 
@@ -29,7 +24,7 @@ public:
     typedef std::unique_ptr<Thread> UP;
 
     Thread(vespalib::stringref id) : _id(id) {}
-    virtual ~Thread() {}
+    virtual ~Thread() = default;
 
     virtual const vespalib::string& getId() const { return _id; }
 
@@ -49,10 +44,6 @@ public:
      * called after thread has already finished, it is a noop.
      */
     virtual void join() = 0;
-
-    virtual void updateParameters(vespalib::duration waitTime,
-                                  vespalib::duration maxProcessTime,
-                                  int ticksBeforeWait) = 0;
 
     /**
      * Utility function to interrupt and join a thread, possibly broadcasting

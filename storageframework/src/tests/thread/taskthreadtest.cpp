@@ -31,7 +31,7 @@ struct MyThread : public TaskThread<Task> {
 
 TEST(TaskThreadTest, test_normal_usage)
 {
-    TickingThreadPool::UP pool(TickingThreadPool::createDefault("testApp"));
+    TickingThreadPool::UP pool(TickingThreadPool::createDefault("testApp", 100ms));
 
     MyThread t(*pool);
     t.addTask(Task("a", 6));
