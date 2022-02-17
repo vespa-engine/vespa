@@ -55,6 +55,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
+import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -600,7 +601,7 @@ public class JobController {
                        .flatMap(List::stream)
                        .map(Deployment::applicationVersion)
                        .filter(version -> ! version.isUnknown() && ! version.isDeployedDirectly())
-                       .min(Comparator.comparingLong(applicationVersion -> applicationVersion.buildNumber().getAsLong()))
+                       .min(naturalOrder())
                        .ifPresent(oldestDeployed -> {
                            controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed);
                            controller.applications().applicationStore().pruneTesters(id.tenant(), id.application(), oldestDeployed);

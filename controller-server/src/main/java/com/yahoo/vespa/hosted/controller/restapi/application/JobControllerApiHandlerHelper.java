@@ -20,9 +20,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
@@ -52,6 +52,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialRe
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.broken;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.normal;
+import static java.util.Comparator.reverseOrder;
 
 /**
  * Implements the REST API for the job controller delegated from the Application API.
@@ -348,6 +349,9 @@ class JobControllerApiHandlerHelper {
                 toSlime(stepObject.setArray("runs"), jobStatus.runs().descendingMap().values(), 10, baseUriForJob);
             });
         }
+
+        Cursor buildsArray = responseObject.setArray("builds");
+        application.versions().stream().sorted(reverseOrder()).forEach(version -> applicationVersionToSlime(buildsArray.addObject(), version));
 
         return new SlimeJsonResponse(slime);
     }
