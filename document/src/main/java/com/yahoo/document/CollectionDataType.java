@@ -41,8 +41,11 @@ public abstract class CollectionDataType extends DataType {
     protected FieldValue createByReflection(Object arg) { return null; }
 
     /**
-     * Sets the nested type of this CollectionDataType.&nbsp;WARNING! Do not use! Only to be used by config system!
+     * WARNING! Do not use! Only to be used by config system!
+     * Sets the nested type of this CollectionDataType.
+     * @deprecated // TODO Vespa 8 remove
      */
+    @Deprecated(forRemoval = true, since = "7")
     public void setNestedType(DataType nestedType) {
         this.nestedType = nestedType;
     }

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
@@ -10,6 +11,7 @@ import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.StructuredDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
+import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.documentmodel.DataTypeCollection;
@@ -258,12 +260,21 @@ public class DocumentModelBuilder {
         }
         else if (type instanceof MapDataType) {
             MapDataType t = (MapDataType) type;
-            t.setKeyType(resolveTemporariesRecurse(t.getKeyType(), repo, docs, replacements));
-            t.setValueType(resolveTemporariesRecurse(t.getValueType(), repo, docs, replacements));
+            var kt = resolveTemporariesRecurse(t.getKeyType(), repo, docs, replacements);
+            var vt = resolveTemporariesRecurse(t.getValueType(), repo, docs, replacements);
+            type = new MapDataType(kt, vt, t.getId());
         }
-        else if (type instanceof CollectionDataType) {
-            CollectionDataType t = (CollectionDataType) type;
-            t.setNestedType(resolveTemporariesRecurse(t.getNestedType(), repo, docs, replacements));
+        else if (type instanceof ArrayDataType) {
+            ArrayDataType t = (ArrayDataType) type;
+            var nt = resolveTemporariesRecurse(t.getNestedType(), repo, docs, replacements);
+            type = new ArrayDataType(nt, t.getId());
+        }
+        else if (type instanceof WeightedSetDataType) {
+            WeightedSetDataType t = (WeightedSetDataType) type;
+            var nt = resolveTemporariesRecurse(t.getNestedType(), repo, docs, replacements);
+            boolean c = t.createIfNonExistent();
+            boolean r = t.removeIfZero();
+            type = new WeightedSetDataType(nt, c, r, t.getId());
         }
         else if (type instanceof ReferenceDataType) {
             ReferenceDataType t = (ReferenceDataType) type;
@@ -311,24 +322,36 @@ public class DocumentModelBuilder {
             dataType = new AnnotationReferenceDataType(target);
             addType(docType, dataType);
             return dataType;
-        } else if (dataType instanceof MapDataType) {
-            MapDataType mapType = (MapDataType)dataType;
-            DataType valueType = specialHandleAnnotationReferenceRecurse(docType, fieldName, mapType.getValueType());
+        }
+        else if (dataType instanceof MapDataType) {
+            MapDataType t = (MapDataType)dataType;
+            DataType valueType = specialHandleAnnotationReferenceRecurse(docType, fieldName, t.getValueType());
             if (valueType == null) {
                 return null;
             }
-            mapType = mapType.clone();
-            mapType.setValueType(valueType);
+            var mapType = new MapDataType(t.getKeyType(), valueType, t.getId());
             addType(docType, mapType);
             return mapType;
-        } else if (dataType instanceof CollectionDataType) {
-            CollectionDataType lstType = (CollectionDataType)dataType;
-            DataType nestedType = specialHandleAnnotationReferenceRecurse(docType, fieldName, lstType.getNestedType());
+        }
+        else if (dataType instanceof ArrayDataType) {
+            ArrayDataType t = (ArrayDataType) dataType;
+            DataType nestedType = specialHandleAnnotationReferenceRecurse(docType, fieldName, t.getNestedType());
             if (nestedType == null) {
                 return null;
             }
-            lstType = lstType.clone();
-            lstType.setNestedType(nestedType);
+            var lstType = new ArrayDataType(nestedType, t.getId());
+            addType(docType, lstType);
+            return lstType;
+        }
+        else if (dataType instanceof WeightedSetDataType) {
+            WeightedSetDataType t = (WeightedSetDataType) dataType;
+            DataType nestedType = specialHandleAnnotationReferenceRecurse(docType, fieldName, t.getNestedType());
+            if (nestedType == null) {
+                return null;
+            }
+            boolean c = t.createIfNonExistent();
+            boolean r = t.removeIfZero();
+            var lstType = new WeightedSetDataType(nestedType, c, r, t.getId());
             addType(docType, lstType);
             return lstType;
         }

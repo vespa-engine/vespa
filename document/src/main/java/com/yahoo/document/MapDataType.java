@@ -21,7 +21,6 @@ public class MapDataType extends DataType {
         super("Map<"+keyType.getName()+","+valueType.getName()+">", id);
         this.keyType=keyType;
         this.valueType = valueType;
-
     }
 
     public MapDataType(DataType keyType, DataType valueType) {
@@ -54,19 +53,24 @@ public class MapDataType extends DataType {
     }
 
     /**
-     * Sets the key type of this MapDataType.&nbsp;WARNING! Do not use! Only to be used by config system!
+     * WARNING! Do not use! Only to be used by config system!
+     * Sets the key type of this MapDataType.
+     * @deprecated // TODO Vespa 8 remove
      */
+    @Deprecated(forRemoval = true, since = "7")
     public void setKeyType(DataType keyType) {
         this.keyType = keyType;
     }
 
     /**
-     * Sets the key type of this MapDataType.&nbsp;WARNING! Do not use! Only to be used by config system!
+     * WARNING! Do not use! Only to be used by config system!
+     * Sets the value type of this MapDataType.
+     * @deprecated // TODO Vespa 8 remove
      */
+    @Deprecated(forRemoval = true, since = "7")
     public void setValueType(DataType valueType) {
         this.valueType = valueType;
     }
-
 
     @Override
     public MapFieldValue createFieldValue() {
