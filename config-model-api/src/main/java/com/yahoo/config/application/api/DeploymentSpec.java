@@ -552,7 +552,9 @@ public class DeploymentSpec {
 
     /** Determines when application changes deploy, when an older revision is already rolling out. */
     public enum UpgradeRevision {
-        /** Separate: Application changes wait for previous application changes to complete, unless they fail. */
+        /** Exclusive: Application changes are rolled one at a time through this instance, even when they fail. */
+        exclusive,
+        /** Separate: Application changes wait for already rolling application changes to complete, unless they fail. */
         separate,
         /** Latest: Application changes immediately supersede previous application changes, unless currently blocked. */
         latest

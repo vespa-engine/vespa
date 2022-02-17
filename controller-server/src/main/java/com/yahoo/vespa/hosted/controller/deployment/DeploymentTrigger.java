@@ -388,10 +388,13 @@ public class DeploymentTrigger {
 
     private boolean acceptNewApplicationVersion(DeploymentStatus status, InstanceName instance, ApplicationVersion version) {
         if (status.application().deploymentSpec().instance(instance).isEmpty()) return false; // Unknown instance.
-        if (status.hasFailures(version)) return true; // Allow changes to fix upgrade or previous revision problems.
-        DeploymentInstanceSpec spec = status.application().deploymentSpec().requireInstance(instance);
-        Change change = status.application().require(instance).change();
-        return change.application().isEmpty() || spec.upgradeRevision() != DeploymentSpec.UpgradeRevision.separate;
+        boolean isChangingRevision = status.application().require(instance).change().application().isPresent();
+        switch (status.application().deploymentSpec().requireInstance(instance).upgradeRevision()) {
+            case exclusive: return ! isChangingRevision;
+            case separate:  return ! isChangingRevision || status.hasFailures(version);
+            case latest:    return true;
+            default:        throw new IllegalStateException("Unknown revision upgrade policy");
+        }
     }
 
     private Instance withRemainingChange(Instance instance, Change change, DeploymentStatus status) {

@@ -1439,7 +1439,7 @@ public class DeploymentTriggerTest {
                 "        </prod>\n" +
                 "    </instance>\n" +
                 "    <instance id='gamma'>\n" +
-                "        <upgrade revision='separate' />\n" + // TODO: change to new, even stricter policy.
+                "        <upgrade revision='exclusive' />\n" +
                 "        <prod>\n" +
                 "            <region>us-east-3</region>\n" +
                 "            <test>us-east-3</test>\n" +
@@ -1506,14 +1506,30 @@ public class DeploymentTriggerTest {
         assertEquals(Optional.empty(), alpha.instance().change().application());
         assertEquals(revision6, beta.instance().change().application());
 
-        // revision6 rolls through beta, but revision3 is the next target for the strictest revision policy, in gamma
+        // revision6 rolls through beta, but revision3 is the next target for gamma with "exclusive" revision upgrades
         alpha.jobAborted(stagingTest).runJob(stagingTest);
         beta.runJob(productionUsEast3).runJob(testUsEast3);
-        gamma.runJob(productionUsEast3).runJob(testUsEast3);
+
+        // revision 2 fails, but this does not bring on revision 3
+        gamma.failDeployment(productionUsEast3);
+        tester.outstandingChangeDeployer().run();
+        assertEquals(Optional.empty(), beta.instance().change().application());
+        assertEquals(revision2, gamma.instance().change().application());
+
+        // revision 2 completes
+        gamma.runJob(productionUsEast3)
+             .runJob(testUsEast3);
         tester.outstandingChangeDeployer().run();
         assertEquals(Optional.empty(), alpha.instance().change().application());
         assertEquals(Optional.empty(), beta.instance().change().application());
-        // TODO: assertEquals(revision3, gamma.instance().change().application());
+        assertEquals(revision3, gamma.instance().change().application());
+
+        // revision 6 is next, once 3 is done
+        // revision 3 completes
+        gamma.runJob(productionUsEast3)
+             .runJob(testUsEast3);
+        tester.outstandingChangeDeployer().run();
+        assertEquals(revision6, gamma.instance().change().application());
     }
 
     @Test

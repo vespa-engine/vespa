@@ -486,6 +486,7 @@ public class DeploymentSpecXmlReader {
             return DeploymentSpec.UpgradeRevision.separate;
 
         switch (revision) {
+            case "exclusive": return DeploymentSpec.UpgradeRevision.exclusive;
             case "separate": return DeploymentSpec.UpgradeRevision.separate;
             case "latest": return DeploymentSpec.UpgradeRevision.latest;
             default: throw new IllegalArgumentException("Illegal upgrade revision '" + revision + "': " +

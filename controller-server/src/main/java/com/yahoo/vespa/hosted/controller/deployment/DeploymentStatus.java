@@ -36,11 +36,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.config.application.api.DeploymentSpec.UpgradeRevision.exclusive;
 import static com.yahoo.config.provision.Environment.prod;
 import static com.yahoo.config.provision.Environment.staging;
 import static com.yahoo.config.provision.Environment.test;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static java.util.Collections.reverseOrder;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
@@ -247,23 +249,24 @@ public class DeploymentStatus {
     }
 
     /**
-     * The change of this application's latest submission, if this upgrades any of its production deployments,
-     * and has not yet started rolling out, due to some other change or a block window being present at the time of submission.
+     * The change to a revision which all dependencies of the given instance has completed,
+     * which does not downgrade any deployments in the instance,
+     * which is not already rolling out to the instance, and
+     * which causes at least one job to run if deployed to the instance.
+     * For the "exclusive" revision upgrade policy it is the oldest such revision; otherwise, it is the latest.
      */
     public Change outstandingChange(InstanceName instance) {
-        return nextVersion(instance).map(Change::of)
-                          .filter(change -> application.require(instance).change().application().map(change::upgrades).orElse(true))
-                          .filter(change -> ! jobsToRun(Map.of(instance, change)).isEmpty())
-                          .orElse(Change.empty());
-    }
-
-    /** The next application version to roll out to instance. */
-    private Optional<ApplicationVersion> nextVersion(InstanceName instance) {
-        return Optional.ofNullable(instanceSteps().get(instance)).stream()
-                       .flatMap(this::allDependencies)
-                       .flatMap(step -> step.instance.latestDeployed().stream())
-                       .min(naturalOrder())
-                       .or(application::latestVersion);
+        return Optional.ofNullable(instanceSteps().get(instance))
+                       .flatMap(instanceStatus -> application.versions().stream()
+                                                             .sorted(application.deploymentSpec().requireInstance(instance).upgradeRevision() == exclusive ? naturalOrder() : reverseOrder())
+                                                             .filter(version -> instanceStatus.dependenciesCompletedAt(Change.of(version), Optional.empty()).map(at -> ! at.isAfter(now)).orElse(false))
+                                                             .filter(version -> application.productionDeployments().getOrDefault(instance, List.of()).stream()
+                                                                                           .noneMatch(deployment -> deployment.applicationVersion().compareTo(version) > 0))
+                                                             .map(Change::of)
+                                                             .filter(change -> application.require(instance).change().application().map(change::upgrades).orElse(true))
+                                                             .filter(change -> ! jobsToRun(Map.of(instance, change)).isEmpty())
+                                                             .findFirst())
+                       .orElse(Change.empty());
     }
 
     private Stream<InstanceStatus> allDependencies(StepStatus step) {
