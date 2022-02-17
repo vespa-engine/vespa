@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.JobMetrics;
+import com.yahoo.vespa.hosted.controller.deployment.JobProfile;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
@@ -44,6 +45,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
@@ -380,8 +382,11 @@ public class JobRunnerTest {
         ApplicationId id = appId.defaultInstance();
         jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), 2, applicationPackage, new byte[0]);
 
+        for (Step step : JobProfile.of(systemTest).steps())
+            outcomes.put(step, running);
+
         for (RunStatus status : RunStatus.values()) {
-            if (status == success) continue; // Status not used for steps.
+            if (status == success || status == reset) continue; // Status not used for steps.
             outcomes.put(deployTester, status);
             jobs.start(id, systemTest, versions);
             runner.run();
@@ -394,7 +399,7 @@ public class JobRunnerTest {
                                              "test", "true",
                                              "zone", "test.us-east-1");
         MetricsMock metric = ((MetricsMock) tester.controller().metric());
-        assertEquals(RunStatus.values().length - 1, metric.getMetric(context::equals, JobMetrics.start).get().intValue());
+        assertEquals(RunStatus.values().length - 2, metric.getMetric(context::equals, JobMetrics.start).get().intValue());
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.abort).get().intValue());
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.error).get().intValue());
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.success).get().intValue());

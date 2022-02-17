@@ -50,12 +50,15 @@ import java.util.logging.Level;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static java.util.Comparator.naturalOrder;
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -375,6 +378,7 @@ public class JobController {
             locked(id, run -> {
                 // If run should be reset, just return here.
                 if (run.status() == reset) return run.reset();
+                if (run.status() == running && run.stepStatuses().values().stream().anyMatch(not(succeeded::equals))) return run;
 
                 // Store the modified run after it has been written to history, in case the latter fails.
                 Run finishedRun = run.finished(controller.clock().instant());
@@ -416,7 +420,6 @@ public class JobController {
                             else
                                 controller.applications().applicationStore().pruneDiffs(deploymentId.applicationId().tenant(), deploymentId.applicationId().application(), oldestBuild);
                         });
-
                 return finishedRun;
             });
         }
