@@ -3,6 +3,9 @@
 #include "time.h"
 #include <thread>
 
+#include <vespa/log/log.h>
+
+LOG_SETUP(".vespalib.time");
 namespace vespalib {
 
 system_time
@@ -10,6 +13,21 @@ to_utc(steady_time ts) {
     system_clock::time_point nowUtc = system_clock::now();
     steady_time nowSteady = steady_clock::now();
     return system_time(std::chrono::duration_cast<system_time::duration>(nowUtc.time_since_epoch() - nowSteady.time_since_epoch() + ts.time_since_epoch()));
+}
+
+uint32_t
+getVespaTimerHz() {
+    const char * vespa_timer_hz = getenv("VESPA_TIMER_HZ");
+    if (vespa_timer_hz != nullptr) {
+        try {
+            size_t idx(0);
+            uint32_t tmp = std::stoi(vespa_timer_hz, &idx, 0);
+            return std::max(1u, std::min(1000u, tmp));
+        } catch (const std::exception & e) {
+            LOG(warning, "Parsing environment VESPA_TIMER_HZ='%s' failed with exception: %s", vespa_timer_hz, e.what());
+        }
+    }
+    return 1000u;
 }
 
 namespace {

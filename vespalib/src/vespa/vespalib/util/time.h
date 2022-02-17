@@ -88,4 +88,9 @@ public:
     static void waitAtLeast(duration dur, bool busyWait);
 };
 
+/**
+ * The default frequency (1000hz) for vespa timer, with environment override VESPA_TIMER_HZ capped to [1..1000]
+ */
+uint32_t getVespaTimerHz();
+
 }

@@ -3,8 +3,8 @@
 #pragma once
 
 #include "subscriptionid.h"
+#include <vespa/vespalib/util/time.h>
 #include <atomic>
-#include <chrono>
 #include <memory>
 #include <vector>
 
@@ -21,7 +21,6 @@ class ConfigKey;
 class ConfigSubscriptionSet
 {
 public:
-    using milliseconds = std::chrono::milliseconds;
     /**
      * Constructs a new ConfigSubscriptionSet object which can be used to subscribe for 1
      * or more configs from a specific source.
@@ -53,16 +52,17 @@ public:
     bool isClosed() const;
 
     // Helpers for doing the subscription
-    std::shared_ptr<ConfigSubscription> subscribe(const ConfigKey & key, milliseconds timeoutInMillis);
+    std::shared_ptr<ConfigSubscription> subscribe(const ConfigKey & key, vespalib::duration timeout);
 
     // Tries to acquire a new snapshot of config within the timeout
-    bool acquireSnapshot(milliseconds timeoutInMillis, bool requireDifference);
+    bool acquireSnapshot(vespalib::duration timeout, bool requireDifference);
 
 private:
     // Describes the state of the subscriber.
     enum SubscriberState { OPEN, FROZEN, CONFIGURED, CLOSED };
     using SubscriptionList = std::vector<std::shared_ptr<ConfigSubscription>>;
 
+    const vespalib::duration        _maxNapTime;
     std::shared_ptr<IConfigContext> _context;             // Context to keep alive managers.
     IConfigManager &                _mgr;                 // The config manager that we use.
     int64_t                         _currentGeneration;   // Holds the current config generation.

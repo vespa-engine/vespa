@@ -17,7 +17,8 @@ using namespace std::chrono;
 namespace config {
 
 ConfigSubscriptionSet::ConfigSubscriptionSet(std::shared_ptr<IConfigContext> context)
-    : _context(std::move(context)),
+    : _maxNapTime(vespalib::from_s(10*1.0/vespalib::getVespaTimerHz())), //10x slower than default timer frequency.
+      _context(std::move(context)),
       _mgr(_context->getManagerInstance()),
       _currentGeneration(-1),
       _subscriptionList(),
@@ -30,7 +31,7 @@ ConfigSubscriptionSet::~ConfigSubscriptionSet()
 }
 
 bool
-ConfigSubscriptionSet::acquireSnapshot(milliseconds timeoutInMillis, bool ignoreChange)
+ConfigSubscriptionSet::acquireSnapshot(vespalib::duration timeout, bool ignoreChange)
 {
     if (_state == CLOSED) {
         return false;
@@ -39,7 +40,7 @@ ConfigSubscriptionSet::acquireSnapshot(milliseconds timeoutInMillis, bool ignore
     }
 
     steady_clock::time_point startTime = steady_clock::now();
-    milliseconds timeLeft = timeoutInMillis;
+    vespalib::duration timeLeft = timeout;
     int64_t lastGeneration = _currentGeneration;
     bool inSync = false;
 
@@ -53,7 +54,7 @@ ConfigSubscriptionSet::acquireSnapshot(milliseconds timeoutInMillis, bool ignore
         // Run nextUpdate on all subscribers to get them in sync.
         for (const auto & subscription : _subscriptionList) {
 
-            if (!subscription->nextUpdate(_currentGeneration, timeLeft) && !subscription->hasGenerationChanged()) {
+            if (!subscription->nextUpdate(_currentGeneration, duration_cast<milliseconds>(timeLeft)) && !subscription->hasGenerationChanged()) {
                 subscription->reset();
                 continue;
             }
@@ -76,13 +77,13 @@ ConfigSubscriptionSet::acquireSnapshot(milliseconds timeoutInMillis, bool ignore
                 generationsInSync = false;
             }
             // Adjust timeout
-            timeLeft = timeoutInMillis - duration_cast<milliseconds>(steady_clock::now() - startTime);
+            timeLeft = timeout - (steady_clock::now() - startTime);
         }
         inSync = generationsInSync && (_subscriptionList.size() == numGenerationChanged) && (ignoreChange || numChanged > 0);
         lastGeneration = generation;
-        timeLeft = timeoutInMillis - duration_cast<milliseconds>(steady_clock::now() - startTime);
+        timeLeft = timeout - (steady_clock::now() - startTime);
         if (!inSync && (timeLeft.count() > 0)) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(std::min(INT64_C(10), timeLeft.count())));
+            std::this_thread::sleep_for(std::min(_maxNapTime, timeLeft));
         } else {
             break;
         }
@@ -123,14 +124,14 @@ ConfigSubscriptionSet::isClosed() const
 }
 
 std::shared_ptr<ConfigSubscription>
-ConfigSubscriptionSet::subscribe(const ConfigKey & key, milliseconds timeoutInMillis)
+ConfigSubscriptionSet::subscribe(const ConfigKey & key, vespalib::duration timeout)
 {
     if (_state != OPEN) {
         throw ConfigRuntimeException("Adding subscription after calling nextConfig() is not allowed");
     }
     LOG(debug, "Subscribing with config Id(%s), defName(%s)", key.getConfigId().c_str(), key.getDefName().c_str());
 
-    std::shared_ptr<ConfigSubscription> s = _mgr.subscribe(key, timeoutInMillis);
+    std::shared_ptr<ConfigSubscription> s = _mgr.subscribe(key, duration_cast<milliseconds>(timeout));
     _subscriptionList.push_back(s);
     return s;
 }
