@@ -100,7 +100,7 @@ public class SdFindUsagesHandler extends FindUsagesHandler {
                                     Processor<? super UsageInfo> processor) {
         ProgressIndicatorProvider.checkCanceled();
         ReadAction.compute(() -> findFunctionUsagesInThis(functionNameToFind, functionToFind, rankProfile, scope, processor));
-        Collection<RankProfile> children = ReadAction.compute(() -> rankProfile.children().values());
+        Collection<RankProfile> children = ReadAction.compute(() -> rankProfile.children());
         for (var child : children)
             findFunctionUsages(functionNameToFind, functionToFind, child, scope, processor);
     }

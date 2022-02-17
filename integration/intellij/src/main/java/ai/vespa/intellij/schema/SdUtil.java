@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.intellij.schema;
 
-import ai.vespa.intellij.schema.model.Function;
 import ai.vespa.intellij.schema.model.RankProfile;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -33,9 +32,7 @@ import ai.vespa.intellij.schema.psi.SdSummaryDefinition;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -158,7 +155,7 @@ public class SdUtil {
                                                              .filter(f -> f.getName().equals(functionName))
                                                              .findAny();
         if (function.isPresent()) return function;
-        for (var parent : profile.inherited().values()) {
+        for (var parent : profile.parents().values()) {
             function = findFunction(functionName, parent);
             if (function.isPresent()) return function;
         }

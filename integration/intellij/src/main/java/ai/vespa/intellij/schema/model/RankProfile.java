@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -27,14 +26,14 @@ public class RankProfile {
 
     private final Schema owner;
 
-    /** The functions defined in this, lazily computed */
+    /** The functions defined in this. Resolved lazily. */
     private Map<String, List<Function>> functions = null;
 
-    /** The profiles inherited by this - lazily initialized. */
-    private Map<String, RankProfile> inherited = null;
+    /** The profiles inherited by this. Resolved lazily. */
+    private Map<String, RankProfile> parents = null;
 
-    /** The children of this - lazily inherited */
-    private Map<String, RankProfile> children = null;
+    /** The children of this. Resolved lazily. */
+    private List<RankProfile> children = null;
 
     public RankProfile(SdRankProfileDefinition definition, Schema owner) {
         this.definition = Objects.requireNonNull(definition);
@@ -50,14 +49,30 @@ public class RankProfile {
      *
      * @return the profiles this inherits from, empty if none
      */
-    public Map<String, RankProfile> inherited() {
-        if (inherited != null) return inherited;
-        return inherited = AST.inherits(definition).stream()
-                              .map(parentIdentifierAST -> parentIdentifierAST.getPsi().getReference())
-                              .filter(reference -> reference != null)
-                              .map(reference -> owner.rankProfiles().get(reference.getCanonicalText()))
-                              .filter(r -> r != null)
-                              .collect(Collectors.toMap(p -> p.name(), p -> p));
+    public Map<String, RankProfile> parents() {
+        if (parents != null) return parents;
+        return parents = AST.inherits(definition).stream()
+                            .map(parentIdentifierAST -> parentIdentifierAST.getPsi().getReference())
+                            .filter(reference -> reference != null)
+                            .map(reference -> owner.rankProfiles().get(reference.getCanonicalText()))
+                            .filter(r -> r != null)
+                            .collect(Collectors.toMap(p -> p.name(), p -> p));
+    }
+
+    public List<RankProfile> children() {
+        if (children != null) return children;
+        return children = children(owner);
+    }
+
+    private List<RankProfile> children(Schema schema) {
+        children = new ArrayList<>();
+        for (var profile : schema.rankProfiles().values()) {
+            if (profile.parents().containsKey(this.name()))
+                children.add(profile);
+        }
+        for (var childSchema : schema.children().values())
+            children.addAll(children(childSchema));
+        return children;
     }
 
     /** Returns the functions defined in this. */
@@ -73,16 +88,6 @@ public class RankProfile {
                    .map(secondPhase -> Function.from(secondPhase, this))
                    .ifPresent(secondPhase -> functions.put(secondPhase.name(), List.of(secondPhase)));
         return functions;
-    }
-
-    public Map<String, RankProfile> children() {
-        if (children != null) return children;
-        children = new HashMap<>();
-        for (var profile : owner.rankProfiles().values()) {
-            if (profile.inherited().containsKey(this.name()))
-                children.put(profile.name(), profile);
-        }
-        return children;
     }
 
     @Override

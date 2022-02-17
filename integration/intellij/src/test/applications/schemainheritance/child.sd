@@ -23,6 +23,9 @@ schema child inherits parent {
     }
 
     rank-profile  child_profile   inherits other_child_profile, parent_profile {
+        second-phase {
+            expression: parentFunction
+        }
     }
 
     rank-profile other_child_profile {

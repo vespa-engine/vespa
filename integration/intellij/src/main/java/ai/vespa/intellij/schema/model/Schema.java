@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -27,7 +28,10 @@ public class Schema {
     private final SdFile definition;
 
     /** The schema this inherits, or empty if none. Resolved lazily. */
-    private Optional<Schema> inherited = null;
+    private Optional<Schema> parent = null;
+
+    /** The children of this. Resolved lazily. */
+    private Map<String, Schema> children = null;
 
     /** The profiles of this, either defined inside it or in separate .profile files. Resolved lazily. */
     private Map<String, RankProfile> rankProfiles = null;
@@ -43,14 +47,25 @@ public class Schema {
     /** The path of the location of this schema from the project root. */
     public Path path() { return Path.fromString(definition.getContainingDirectory().getVirtualFile().getPath()); }
 
-    public Optional<Schema> inherited() {
-        if (inherited != null) return inherited;
+    public Optional<Schema> parent() {
+        if (parent != null) return parent;
         Optional<SdSchemaDefinition> schemaDefinition = PsiTreeUtil.collectElementsOfType(definition, SdSchemaDefinition.class).stream().findFirst();
         if (schemaDefinition.isEmpty()) return Optional.empty(); // No valid schema definition in schema file
-        return inherited = AST.inherits(schemaDefinition.get())
-                              .stream()
-                              .findFirst() // Only one schema can be inherited; ignore any following
-                              .map(inheritedNode -> fromProjectFile(definition.getProject(), path().getParentPath().append(inheritedNode.getText() + ".sd")));
+        return parent = AST.inherits(schemaDefinition.get())
+                           .stream()
+                           .findFirst() // Only one schema can be inherited; ignore any following
+                           .map(inheritedNode -> fromProjectFile(definition.getProject(), path().getParentPath().append(inheritedNode.getText() + ".sd")));
+    }
+
+    public Map<String, Schema> children() {
+        if (children != null) return children;
+        children = new HashMap<>();
+        for (PsiFile file : Files.allFilesIn(path(),"sd", definition().getProject())) {
+            Schema schema = new Schema((SdFile)file);
+            if ( schema.parent().isPresent() && Objects.equals(schema.parent().get().name(), name()))
+                children.put(schema.name(), schema);
+        }
+        return children;
     }
 
     /**
@@ -59,7 +74,7 @@ public class Schema {
      */
     public Map<String, RankProfile> rankProfiles() {
         if (rankProfiles != null) return rankProfiles;
-        rankProfiles = inherited().isPresent() ? inherited().get().rankProfiles() : new HashMap<>();
+        rankProfiles = parent().isPresent() ? parent().get().rankProfiles() : new HashMap<>();
 
         for (var profileDefinition : PsiTreeUtil.collectElementsOfType(definition, SdRankProfileDefinition.class))
             rankProfiles.put(profileDefinition.getName(), new RankProfile(profileDefinition, this));

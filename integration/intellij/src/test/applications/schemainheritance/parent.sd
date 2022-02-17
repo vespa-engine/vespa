@@ -23,6 +23,9 @@ schema parent {
         indexing: input pf1 | lowercase | index | attribute | summary
     }
     rank-profile parent_profile {
+        function parentFunction() {
+            expression: random
+        }
     }
     constant parent_constant {
         file: constants/my_constant_tensor_file.json

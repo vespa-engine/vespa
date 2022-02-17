@@ -20,7 +20,7 @@ import java.util.List;
 public class FindUsagesTest extends PluginTestBase {
 
     @Test
-    public void testFindUsages() {
+    public void testFindUsagesInRankProfileModularity() {
         useDir("src/test/applications/rankprofilemodularity");
         var tester = new UsagesTester("test.sd", getProject());
         tester.assertFunctionUsages("0 refs",       0, "in_schema1", "tensorFunction");
@@ -30,6 +30,13 @@ public class FindUsagesTest extends PluginTestBase {
         tester.assertFunctionUsages("1 local ref", 1, "outside_schema1", "local1");
         tester.assertFunctionUsages("4 local refs", 4, "outside_schema1", "local12");
         tester.assertFunctionUsages("3 refs in parent schema", 3, "outside_schema2", "fo2");
+    }
+
+    @Test
+    public void testFindUsagesInSchemaInheritance() {
+        useDir("src/test/applications/schemainheritance");
+        var tester = new UsagesTester("parent.sd", getProject());
+        tester.assertFunctionUsages("1 ref in schild schema", 1, "parent_profile", "parentFunction");
     }
 
     @Test
