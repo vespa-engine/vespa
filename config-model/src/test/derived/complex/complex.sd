@@ -140,6 +140,7 @@ search complex {
  fieldset special {
    fields: special1, special2, special3
  }
+ raw-as-base64-in-summary : false
  fieldset all {
    fields: combineda, combinedb
  }

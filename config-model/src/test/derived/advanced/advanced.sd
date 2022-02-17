@@ -99,6 +99,7 @@ search advanced {
     fieldset titleabstract {
       fields: title
     }
+    raw-as-base64-in-summary : true
     fieldset default {
       fields: title
     }
