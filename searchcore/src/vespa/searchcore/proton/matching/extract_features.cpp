@@ -133,7 +133,7 @@ struct MyWork {
 
 FeatureSet::UP
 ExtractFeatures::get_feature_set(SearchIterator &search, RankProgram &rank_program, const std::vector<uint32_t> &docs,
-                                 const Doom &doom, const MatchToolsFactory::StringStringMap &renames)
+                                 const Doom &doom, const StringStringMap &renames)
 {
     FeatureResolver resolver(rank_program.get_seeds(false));
     auto result = std::make_unique<FeatureSet>(extract_names(resolver, renames), docs.size());
