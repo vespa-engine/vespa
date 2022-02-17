@@ -152,6 +152,9 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req)
             }
         }
         _threadBundlePool.release(std::move(threadBundle));
+        if (searchRequest->expired()) {
+            vespalib::Issue::report("search request timed out; results may be incomplete");
+        }
     }
     ret->request = req.release();
     if (_forward_issues) {

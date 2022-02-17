@@ -143,6 +143,9 @@ SummaryEngine::getDocsums(DocsumRequest::UP req)
             }
         }
         updateDocsumMetrics(vespalib::to_s(req->getTimeUsed()), getNumDocs(*reply));
+        if (req->expired()) {
+            vespalib::Issue::report("docsum request timed out; results may be incomplete");
+        }
     }
     if (! reply) {
         reply = std::make_unique<DocsumReply>();
