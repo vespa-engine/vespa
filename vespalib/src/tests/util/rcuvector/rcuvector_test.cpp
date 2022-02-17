@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/round_up_to_page_size.h>
 #include <vespa/vespalib/util/size_literals.h>
 
 using namespace vespalib;
@@ -240,15 +241,20 @@ TEST("test shrink() with buffer copying")
 
 struct ShrinkFixture {
     GenerationHolder g;
+    size_t initial_capacity;
+    size_t initial_size;
     RcuVectorBase<int> vec;
     int *oldPtr;
-    ShrinkFixture() : g(), vec(4_Ki, 50, 0, g, alloc::Alloc::allocMMap()), oldPtr()
+    ShrinkFixture() : g(),
+                      initial_capacity(4 * page_ints()),
+                      initial_size(initial_capacity / 1024 * 1000),
+                      vec(initial_capacity, 50, 0, g, alloc::Alloc::allocMMap()), oldPtr()
     {
-        for (size_t i = 0; i < 4000; ++i) {
+        for (size_t i = 0; i < initial_size; ++i) {
             vec.push_back(7);
         }
-        EXPECT_EQUAL(4000u, vec.size());
-        EXPECT_EQUAL(4_Ki, vec.capacity());
+        EXPECT_EQUAL(initial_size, vec.size());
+        EXPECT_EQUAL(initial_capacity, vec.capacity());
         assertEmptyHoldList();
         oldPtr = &vec[0];
     }
@@ -258,22 +264,24 @@ struct ShrinkFixture {
     void assertEmptyHoldList() {
         EXPECT_EQUAL(0u, g.getHeldBytes());
     }
+    static size_t page_ints() { return round_up_to_page_size(1) / sizeof(int); }
 };
 
 TEST_F("require that shrink() does not increase allocated memory", ShrinkFixture)
 {
-    f.vec.shrink(2732);
-    EXPECT_EQUAL(2732u, f.vec.size());
-    EXPECT_EQUAL(4_Ki, f.vec.capacity());
+    size_t shrink_size = f.initial_capacity * 2 / 3 + 2;
+    f.vec.shrink(shrink_size);
+    EXPECT_EQUAL(shrink_size, f.vec.size());
+    EXPECT_EQUAL(f.initial_capacity, f.vec.capacity());
     TEST_DO(f.assertOldEqualNewBuffer());
     TEST_DO(f.assertEmptyHoldList());
 }
 
 TEST_F("require that shrink() can shrink mmap allocation", ShrinkFixture)
 {
-    f.vec.shrink(2048);
-    EXPECT_EQUAL(2048u, f.vec.size());
-    EXPECT_EQUAL(3072u, f.vec.capacity());
+    f.vec.shrink(2 * f.page_ints());
+    EXPECT_EQUAL(2 * f.page_ints(), f.vec.size());
+    EXPECT_EQUAL(3 * f.page_ints(), f.vec.capacity());
     TEST_DO(f.assertOldEqualNewBuffer());
     TEST_DO(f.assertEmptyHoldList());
 }
