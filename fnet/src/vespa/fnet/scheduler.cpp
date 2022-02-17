@@ -137,9 +137,8 @@ FNET_Scheduler::Print(FILE *dst)
 void
 FNET_Scheduler::CheckTasks()
 {
-    const auto now = _sampler ? *_sampler : vespalib::steady_clock::now();
     std::unique_lock guard(_lock);
-    _now = now;
+    _now = _sampler ? *_sampler : vespalib::steady_clock::now();
     // perform urgent tasks
 
     PerformTasks(guard, NUM_SLOTS, 0);
