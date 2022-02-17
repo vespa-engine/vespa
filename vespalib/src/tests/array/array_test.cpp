@@ -4,6 +4,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/util/array.hpp>
+#include <vespa/vespalib/util/round_up_to_page_size.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <deque>
 #include <atomic>
@@ -333,18 +334,18 @@ struct UnreserveFixture {
     UnreserveFixture() : arr(1025, 7, alloc::Alloc::allocMMap(0))
     {
         EXPECT_EQUAL(1025u, arr.size());
-        EXPECT_EQUAL(2048u, arr.capacity());
+        EXPECT_EQUAL(round_up_to_page_size(1) == 64_Ki ? 16_Ki : 2_Ki, arr.capacity());
     }
 };
 
 TEST_F("require that try_unreserve() fails if wanted capacity >= current capacity", UnreserveFixture)
 {
-    EXPECT_FALSE(f.arr.try_unreserve(2048));
+    EXPECT_FALSE(f.arr.try_unreserve(32_Ki));
 }
 
 TEST_F("require that try_unreserve() fails if wanted capacity < current size", UnreserveFixture)
 {
-    EXPECT_FALSE(f.arr.try_unreserve(1024));
+    EXPECT_FALSE(f.arr.try_unreserve(1_Ki));
 }
 
 TEST_F("require that try_unreserve() succeedes if mmap can be shrinked", UnreserveFixture)
@@ -352,7 +353,7 @@ TEST_F("require that try_unreserve() succeedes if mmap can be shrinked", Unreser
     int *oldPtr = &f.arr[0];
     f.arr.resize(512);
     EXPECT_TRUE(f.arr.try_unreserve(1023));
-    EXPECT_EQUAL(1_Ki, f.arr.capacity());
+    EXPECT_EQUAL(round_up_to_page_size(1) == 64_Ki ? 16_Ki : 1_Ki, f.arr.capacity());
     int *newPtr = &f.arr[0];
     EXPECT_EQUAL(oldPtr, newPtr);
 }
