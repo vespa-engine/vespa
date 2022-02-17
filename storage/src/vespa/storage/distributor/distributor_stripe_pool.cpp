@@ -3,6 +3,7 @@
 #include "distributor_stripe_thread.h"
 #include <vespa/storage/common/bucket_stripe_utils.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/clock.h>
 #include <cassert>
 
 namespace storage::distributor {
@@ -15,7 +16,7 @@ DistributorStripePool::DistributorStripePool(bool test_mode, PrivateCtorTag)
       _mutex(),
       _parker_cond(),
       _parked_threads(0),
-      _bootstrap_tick_wait_duration(1ms),
+      _bootstrap_tick_wait_duration(vespalib::from_s(1.0/vespalib::getVespaTimerHz())),
       _bootstrap_ticks_before_wait(10),
       _single_threaded_test_mode(test_mode),
       _stopped(false)

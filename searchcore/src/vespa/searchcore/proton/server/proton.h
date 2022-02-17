@@ -65,7 +65,6 @@ private:
     using DocumentDBMap = std::map<DocTypeName, DocumentDB::SP>;
     using InitializeThreads = std::shared_ptr<vespalib::ThreadExecutor>;
     using BucketSpace = document::BucketSpace;
-    using InvokeService = vespalib::InvokeService;
 
     class ProtonFileHeaderContext : public search::common::FileHeaderContext
     {

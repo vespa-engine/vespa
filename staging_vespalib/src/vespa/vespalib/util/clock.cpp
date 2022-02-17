@@ -9,6 +9,15 @@
 
 namespace vespalib {
 
+uint32_t
+getVespaTimerHz() {
+    const char * vespa_timer_hz = getenv("VESPA_TIMER_HZ");
+    if (vespa_timer_hz != nullptr) {
+        uint32_t tmp = atoi(vespa_timer_hz);
+        return std::max(1u, std::min(1000u, tmp));
+    }
+    return 1000u;
+}
 namespace clock::internal {
 
 class Updater : public FastOS_Runnable

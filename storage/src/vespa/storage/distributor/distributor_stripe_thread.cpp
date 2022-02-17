@@ -3,6 +3,7 @@
 #include "distributor_stripe.h"
 #include "distributor_stripe_pool.h"
 #include "tickable_stripe.h"
+#include <vespa/vespalib/util/clock.h>
 #include <cassert>
 
 namespace storage::distributor {
@@ -11,7 +12,7 @@ DistributorStripeThread::DistributorStripeThread(TickableStripe& stripe,
                                                  DistributorStripePool& stripe_pool)
     : _stripe(stripe),
       _stripe_pool(stripe_pool),
-      _tick_wait_duration(1ms),
+      _tick_wait_duration(vespalib::from_s(1.0/vespalib::getVespaTimerHz())),
       _mutex(),
       _event_cond(),
       _park_cond(),

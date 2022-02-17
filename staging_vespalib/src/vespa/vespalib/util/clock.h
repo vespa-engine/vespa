@@ -9,6 +9,8 @@ class FastOS_Runnable;
 
 namespace vespalib {
 
+uint32_t getVespaTimerHz();
+
 namespace clock::internal { class Updater; }
 
 /**
