@@ -88,7 +88,7 @@ ShardedHashMap::KvType*
 ShardedHashMap::find(const EntryComparator& comp, EntryRef key_ref)
 {
     ShardedHashComparator shardedComp(comp, key_ref, num_shards);
-    auto map = _maps[shardedComp.shard_idx()].load(std::memory_order_relaxed);
+    auto map = _maps[shardedComp.shard_idx()].load(std::memory_order_acquire);
     if (map == nullptr) {
         return nullptr;
     }
@@ -99,7 +99,7 @@ const ShardedHashMap::KvType*
 ShardedHashMap::find(const EntryComparator& comp, EntryRef key_ref) const
 {
     ShardedHashComparator shardedComp(comp, key_ref, num_shards);
-    auto map = _maps[shardedComp.shard_idx()].load(std::memory_order_relaxed);
+    auto map = _maps[shardedComp.shard_idx()].load(std::memory_order_acquire);
     if (map == nullptr) {
         return nullptr;
     }
@@ -135,7 +135,7 @@ ShardedHashMap::size() const noexcept
 {
     size_t result = 0;
     for (size_t i = 0; i < num_shards; ++i) {
-        auto map = _maps[i].load(std::memory_order_relaxed);
+        auto map = _maps[i].load(std::memory_order_acquire);
         if (map != nullptr) {
             result += map->size();
         }
@@ -148,7 +148,7 @@ ShardedHashMap::get_memory_usage() const
 {
     MemoryUsage memory_usage(sizeof(ShardedHashMap), sizeof(ShardedHashMap), 0, 0);
     for (size_t i = 0; i < num_shards; ++i) {
-        auto map = _maps[i].load(std::memory_order_relaxed);
+        auto map = _maps[i].load(std::memory_order_acquire);
         if (map != nullptr) {
             memory_usage.merge(map->get_memory_usage());
         }
@@ -163,7 +163,7 @@ void
 ShardedHashMap::foreach_key(std::function<void(EntryRef)> callback) const
 {
     for (size_t i = 0; i < num_shards; ++i) {
-        auto map = _maps[i].load(std::memory_order_relaxed);
+        auto map = _maps[i].load(std::memory_order_acquire);
         if (map != nullptr) {
             map->foreach_key(callback);
         }
@@ -211,7 +211,7 @@ void
 ShardedHashMap::foreach_value(std::function<void(const std::vector<EntryRef>&)> callback, const EntryRefFilter& filter)
 {
     for (size_t i = 0; i < num_shards; ++i) {
-        auto map = _maps[i].load(std::memory_order_relaxed);
+        auto map = _maps[i].load(std::memory_order_acquire);
         if (map != nullptr) {
             map->foreach_value(callback, filter);
         }
