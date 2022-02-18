@@ -3,8 +3,7 @@ package com.yahoo.vespa.hosted.controller.security;
 
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
-import com.yahoo.vespa.athenz.api.OktaAccessToken;
-import com.yahoo.vespa.athenz.api.OktaIdentityToken;
+import com.yahoo.vespa.athenz.api.OAuthCredentials;
 
 import static java.util.Objects.requireNonNull;
 
@@ -18,15 +17,12 @@ import static java.util.Objects.requireNonNull;
 public class AthenzCredentials extends Credentials {
 
     private final AthenzDomain domain;
-    private final OktaIdentityToken identityToken;
-    private final OktaAccessToken accessToken;
+    private final OAuthCredentials oAuthCredentials;
 
-    public AthenzCredentials(AthenzPrincipal user, AthenzDomain domain,
-                             OktaIdentityToken identityToken, OktaAccessToken accessToken) {
+    public AthenzCredentials(AthenzPrincipal user, AthenzDomain domain, OAuthCredentials oAuthCredentials) {
         super(user);
         this.domain = requireNonNull(domain);
-        this.accessToken = requireNonNull(accessToken);
-        this.identityToken = requireNonNull(identityToken);
+        this.oAuthCredentials = requireNonNull(oAuthCredentials);
     }
 
     @Override
@@ -35,11 +31,7 @@ public class AthenzCredentials extends Credentials {
     /** Returns the Athenz domain of the tenant on whose behalf this request is made. */
     public AthenzDomain domain() { return domain; }
 
-    /** Returns the Okta access token required for Athenz tenancy operation */
-    public OktaAccessToken accessToken() { return accessToken; }
-
-    /** Returns the Okta identity token required for Athenz tenancy operation */
-    public OktaIdentityToken identityToken() { return identityToken; }
-
+    /** Returns the OAuth credentials required for Athenz tenancy operation */
+    public OAuthCredentials oAuthCredentials() { return oAuthCredentials; }
 
 }

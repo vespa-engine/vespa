@@ -16,8 +16,7 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.athenz.api.OktaAccessToken;
-import com.yahoo.vespa.athenz.api.OktaIdentityToken;
+import com.yahoo.vespa.athenz.api.OAuthCredentials;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
@@ -320,7 +319,7 @@ public final class ControllerTester {
                                                            new Property("Property" + propertyId),
                                                            Optional.ofNullable(propertyId).map(Object::toString).map(PropertyId::new));
         AthenzCredentials credentials = new AthenzCredentials(
-                new AthenzPrincipal(user), domain, new OktaIdentityToken("okta-identity-token"), new OktaAccessToken("okta-access-token"));
+                new AthenzPrincipal(user), domain, OAuthCredentials.createForTesting("okta-access-token", "okta-identity-token"));
         controller().tenants().create(tenantSpec, credentials);
         contact.ifPresent(value -> controller().tenants().lockOrThrow(name, LockedTenant.Athenz.class, tenant ->
                 controller().tenants().store(tenant.with(value))));
@@ -342,8 +341,7 @@ public final class ControllerTester {
             case athenz:
                 return new AthenzCredentials(new AthenzPrincipal(new AthenzUser("user")),
                                                                              ((AthenzTenant) tenant).domain(),
-                                                                             new OktaIdentityToken("okta-identity-token"),
-                                                                             new OktaAccessToken("okta-access-token"));
+                                                                             OAuthCredentials.createForTesting("okta-access-token", "okta-identity-token"));
             case cloud:
                 return new Credentials(new SimplePrincipal("dev"));
 
