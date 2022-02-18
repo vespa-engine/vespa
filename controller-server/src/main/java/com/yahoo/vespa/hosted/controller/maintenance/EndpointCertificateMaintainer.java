@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -164,23 +163,25 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
         List<String> rootRequestIds = storedEndpointCertificateMetadata.values().stream().map(EndpointCertificateMetadata::rootRequestId).collect(Collectors.toList());
 
         for (var providerCertificateMetadata : endpointCertificateMetadata) {
-            if (!leafRequestIds.contains(providerCertificateMetadata.requestId()) && !leafRequestIds.contains(providerCertificateMetadata.requestId())) {
+            if (!rootRequestIds.contains(providerCertificateMetadata.requestId()) && !leafRequestIds.contains(providerCertificateMetadata.requestId())) {
 
                 // It could just be a refresh we're not aware of yet. See if it matches the cert/keyname of any known cert
                 try {
                     EndpointCertificateDetails unknownCertDetails = endpointCertificateProvider.certificateDetails(providerCertificateMetadata.requestId());
                     boolean matchFound = false;
-                    for (Map.Entry<ApplicationId,EndpointCertificateMetadata> entry: storedEndpointCertificateMetadata.entrySet()) {
-                        if(entry.getValue().certName().equals(unknownCertDetails.cert_key_kgname() + unknownCertDetails.cert_key_keyname())) {
+                    for (Map.Entry<ApplicationId,EndpointCertificateMetadata> storedAppEntry: storedEndpointCertificateMetadata.entrySet()) {
+                        ApplicationId storedApp = storedAppEntry.getKey();
+                        EndpointCertificateMetadata storedAppMetadata = storedAppEntry.getValue();
+                        if(storedAppMetadata.certName().equals(unknownCertDetails.cert_key_kgname() + unknownCertDetails.cert_key_keyname())) {
                             matchFound = true;
-                            try (Lock lock = lock(entry.getKey())) {
-                                if (Optional.of(entry.getValue()).equals(curator.readEndpointCertificateMetadata(entry.getKey()))) {
+                            try (Lock lock = lock(storedApp)) {
+                                if (Optional.of(storedAppMetadata).equals(curator.readEndpointCertificateMetadata(storedApp))) {
                                     if (deleteUnmaintainedCertificates.value()) {
-                                        log.log(Level.INFO, "Cert for app " + entry.getKey().serializedForm()
+                                        log.log(Level.INFO, "Cert for app " + storedApp.serializedForm()
                                                 + " has a new leafRequestId " + unknownCertDetails.request_id() + ", updating in ZK");
-                                        curator.writeEndpointCertificateMetadata(entry.getKey(), entry.getValue().withLeafRequestId(Optional.of(unknownCertDetails.request_id())));
+                                        curator.writeEndpointCertificateMetadata(storedApp, storedAppMetadata.withLeafRequestId(Optional.of(unknownCertDetails.request_id())));
                                     } else {
-                                        log.log(Level.INFO, "Cert for app " + entry.getKey().serializedForm()
+                                        log.log(Level.INFO, "Cert for app " + storedApp.serializedForm()
                                                 + " has a new leafRequestId " + unknownCertDetails.request_id());
                                     }
                                 }
