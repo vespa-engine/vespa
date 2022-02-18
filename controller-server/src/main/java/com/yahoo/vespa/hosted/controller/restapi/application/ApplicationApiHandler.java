@@ -144,6 +144,9 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Scanner;
 import java.util.StringJoiner;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -233,11 +236,12 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse handleGET(Path path, HttpRequest request) {
         if (path.matches("/application/v4/")) return root(request);
+        if (path.matches("/application/v4/notifications")) return notifications(request, Optional.ofNullable(request.getProperty("tenant")), true);
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/access/request/ssh")) return accessRequests(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return tenantInfo(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/notifications")) return notifications(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/notifications")) return notifications(request, Optional.of(path.get("tenant")), false);
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}/validate")) return validateSecretStore(path.get("tenant"), path.get("name"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
@@ -542,26 +546,38 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 .withAddress(updateTenantInfoAddress(insp.field("address"), oldContact.address()));
     }
 
-    private HttpResponse notifications(String tenantName, HttpRequest request) {
-        NotificationSource notificationSource = new NotificationSource(TenantName.from(tenantName),
-                Optional.ofNullable(request.getProperty("application")).map(ApplicationName::from),
-                Optional.ofNullable(request.getProperty("instance")).map(InstanceName::from),
-                Optional.empty(), Optional.empty(), Optional.empty(), OptionalLong.empty());
-
+    private HttpResponse notifications(HttpRequest request, Optional<String> tenant, boolean includeTenantFieldInResponse) {
+        boolean productionOnly = showOnlyProductionInstances(request);
         Slime slime = new Slime();
         Cursor notificationsArray = slime.setObject().setArray("notifications");
-        controller.notificationsDb().listNotifications(notificationSource, showOnlyProductionInstances(request))
-                .forEach(notification -> toSlime(notificationsArray.addObject(), notification));
+
+        tenant.map(t -> Stream.of(TenantName.from(t)))
+                .orElseGet(() -> controller.notificationsDb().listTenantsWithNotifications().stream())
+                .flatMap(tenantName -> controller.notificationsDb().listNotifications(NotificationSource.from(tenantName), productionOnly).stream())
+                .filter(notification ->
+                        propertyEquals(request, "application", ApplicationName::from, notification.source().application()) &&
+                        propertyEquals(request, "instance", InstanceName::from, notification.source().instance()) &&
+                        propertyEquals(request, "zone", ZoneId::from, notification.source().zoneId()) &&
+                        propertyEquals(request, "job", JobType::fromJobName, notification.source().jobType()) &&
+                        propertyEquals(request, "type", Notification.Type::valueOf, Optional.of(notification.type())) &&
+                        propertyEquals(request, "level", Notification.Level::valueOf, Optional.of(notification.level())))
+                .forEach(notification -> toSlime(notificationsArray.addObject(), notification, includeTenantFieldInResponse));
         return new SlimeJsonResponse(slime);
     }
+    private static <T> boolean propertyEquals(HttpRequest request, String property, Function<String, T> mapper, Optional<T> value) {
+        return Optional.ofNullable(request.getProperty(property))
+                .map(propertyValue -> value.isPresent() && mapper.apply(propertyValue).equals(value.get()))
+                .orElse(true);
+    }
 
-    private static void toSlime(Cursor cursor, Notification notification) {
+    private static void toSlime(Cursor cursor, Notification notification, boolean includeTenantFieldInResponse) {
         cursor.setLong("at", notification.at().toEpochMilli());
         cursor.setString("level", notificationLevelAsString(notification.level()));
         cursor.setString("type", notificationTypeAsString(notification.type()));
         Cursor messagesArray = cursor.setArray("messages");
         notification.messages().forEach(messagesArray::addString);
 
+        if (includeTenantFieldInResponse) cursor.setString("tenant", notification.source().tenant().value());
         notification.source().application().ifPresent(application -> cursor.setString("application", application.value()));
         notification.source().instance().ifPresent(instance -> cursor.setString("instance", instance.value()));
         notification.source().zoneId().ifPresent(zoneId -> {

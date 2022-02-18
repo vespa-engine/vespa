@@ -625,7 +625,7 @@ public class CuratorDb {
     }
 
 
-    public List<TenantName> listNotifications() {
+    public List<TenantName> listTenantsWithNotifications() {
         return curator.getChildren(notificationsRoot).stream()
                 .map(TenantName::from)
                 .collect(Collectors.toUnmodifiableList());
