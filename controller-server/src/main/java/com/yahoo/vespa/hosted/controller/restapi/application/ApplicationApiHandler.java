@@ -548,6 +548,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse notifications(HttpRequest request, Optional<String> tenant, boolean includeTenantFieldInResponse) {
         boolean productionOnly = showOnlyProductionInstances(request);
+        boolean excludeMessages = "true".equals(request.getProperty("excludeMessages"));
         Slime slime = new Slime();
         Cursor notificationsArray = slime.setObject().setArray("notifications");
 
@@ -561,7 +562,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                         propertyEquals(request, "job", JobType::fromJobName, notification.source().jobType()) &&
                         propertyEquals(request, "type", Notification.Type::valueOf, Optional.of(notification.type())) &&
                         propertyEquals(request, "level", Notification.Level::valueOf, Optional.of(notification.level())))
-                .forEach(notification -> toSlime(notificationsArray.addObject(), notification, includeTenantFieldInResponse));
+                .forEach(notification -> toSlime(notificationsArray.addObject(), notification, includeTenantFieldInResponse, excludeMessages));
         return new SlimeJsonResponse(slime);
     }
     private static <T> boolean propertyEquals(HttpRequest request, String property, Function<String, T> mapper, Optional<T> value) {
@@ -570,12 +571,14 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 .orElse(true);
     }
 
-    private static void toSlime(Cursor cursor, Notification notification, boolean includeTenantFieldInResponse) {
+    private static void toSlime(Cursor cursor, Notification notification, boolean includeTenantFieldInResponse, boolean excludeMessages) {
         cursor.setLong("at", notification.at().toEpochMilli());
         cursor.setString("level", notificationLevelAsString(notification.level()));
         cursor.setString("type", notificationTypeAsString(notification.type()));
-        Cursor messagesArray = cursor.setArray("messages");
-        notification.messages().forEach(messagesArray::addString);
+        if (!excludeMessages) {
+            Cursor messagesArray = cursor.setArray("messages");
+            notification.messages().forEach(messagesArray::addString);
+        }
 
         if (includeTenantFieldInResponse) cursor.setString("tenant", notification.source().tenant().value());
         notification.source().application().ifPresent(application -> cursor.setString("application", application.value()));

@@ -863,7 +863,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         addNotifications(TenantName.from("tenant1"));
         addNotifications(TenantName.from("tenant2"));
         tester.assertResponse(request("/application/v4/notifications", GET)
-                        .properties(Map.of("type", "applicationPackage")).userIdentity(HOSTED_VESPA_OPERATOR),
+                        .properties(Map.of("type", "applicationPackage", "excludeMessages", "true")).userIdentity(HOSTED_VESPA_OPERATOR),
                 new File("notifications-applicationPackage.json"));
         tester.assertResponse(request("/application/v4/tenant/tenant1/notifications", GET).userIdentity(USER_ID),
                 new File("notifications-tenant1.json"));
