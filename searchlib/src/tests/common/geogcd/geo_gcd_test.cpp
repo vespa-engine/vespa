@@ -49,7 +49,7 @@ TEST(GeoGcdTest, computed_distances_seem_legit) {
             double miles = km / 1.609344;
             EXPECT_GE(miles, 0);
             if (from.name == to.name) {
-                EXPECT_EQ(miles, 0.0);
+                EXPECT_DOUBLE_EQ(miles, 0.0);
             } else {
                 double exact = exact_distances[i][j];
                 printf("Distance from %s to %s (in miles): %.1f [more exact would be %.1f]\n", from.name, to.name, miles, exact);
