@@ -3,9 +3,12 @@
 #include "threadimpl.h"
 #include "threadpoolimpl.h"
 #include <vespa/storageframework/generic/clock/clock.h>
+#include <vespa/vespalib/util/atomic.h>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".framework.thread.impl");
+
+using namespace vespalib::atomic;
 
 namespace storage::framework::defaultimplementation {
 
@@ -27,7 +30,7 @@ ThreadImpl::ThreadImpl(ThreadPoolImpl& pool,
       _thread(*this),
       _cpu_category(cpu_category)
 {
-    _tickData[_tickDataPtr]._lastTick = pool.getClock().getMonotonicTime();
+    _tickData[load_relaxed(_tickDataPtr)]._lastTick = pool.getClock().getMonotonicTime();
     _thread.start(_pool.getThreadPool());
 }
 
@@ -105,15 +108,15 @@ ThreadImpl::registerTick(CycleType cycleType, vespalib::steady_time now)
 ThreadTickData
 ThreadImpl::getTickData() const
 {
-    return _tickData[_tickDataPtr].loadRelaxed();
+    return _tickData[load_acquire(_tickDataPtr)].loadRelaxed();
 }
 
 void
 ThreadImpl::setTickData(const ThreadTickData& tickData)
 {
-    uint32_t nextData = (_tickDataPtr + 1) % _tickData.size();
+    uint32_t nextData = (load_relaxed(_tickDataPtr) + 1) % _tickData.size();
     _tickData[nextData].storeRelaxed(tickData);
-    _tickDataPtr = nextData;
+    store_release(_tickDataPtr, nextData);
 }
 
 ThreadTickData

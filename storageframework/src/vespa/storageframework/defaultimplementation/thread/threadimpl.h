@@ -49,7 +49,7 @@ class ThreadImpl : public Thread
     Runnable& _runnable;
     ThreadProperties _properties;
     std::array<AtomicThreadTickData, 3> _tickData;
-    uint32_t _tickDataPtr;
+    std::atomic<uint32_t> _tickDataPtr;
     std::atomic<bool> _interrupted;
     bool _joined;
     BackendThread _thread;
