@@ -19,10 +19,10 @@ ConfigRetriever::ConfigRetriever(const ConfigKeySet & bootstrapSet,
       _subscriptionList(),
       _lastKeySet(),
       _context(context),
-      _closed(false),
       _generation(-1),
       _subscribeTimeout(subscribeTimeout),
-      _bootstrapRequired(true)
+      _bootstrapRequired(true),
+      _closed(false)
 {
 }
 

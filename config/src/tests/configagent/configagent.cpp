@@ -1,6 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/config/common/misc.h>
 #include <vespa/config/common/configrequest.h>
 #include <vespa/config/common/configresponse.h>
 #include <vespa/config/common/timingvalues.h>
@@ -21,7 +20,6 @@ public:
 
     const ConfigKey & getKey() const override { return _key; }
     bool abort() override { return false; }
-    bool isAborted() const override { return false; }
     void setError(int errorCode) override { (void) errorCode; }
     bool verifyState(const ConfigState &) const override { return false; }
     const ConfigKey _key;
@@ -64,17 +62,17 @@ public:
     Trace _trace;
 
 
-    static ConfigResponse::UP createOKResponse(const ConfigKey & key, const ConfigValue & value, uint64_t timestamp = 10, const vespalib::string & xxhash64 = "a")
+    static std::unique_ptr<ConfigResponse> createOKResponse(const ConfigKey & key, const ConfigValue & value, uint64_t timestamp = 10, const vespalib::string & xxhash64 = "a")
     {
         return std::make_unique<MyConfigResponse>(key, value, true, timestamp, xxhash64, "", 0, false);
     }
 
-    static ConfigResponse::UP createServerErrorResponse(const ConfigKey & key, const ConfigValue & value)
+    static std::unique_ptr<ConfigResponse> createServerErrorResponse(const ConfigKey & key, const ConfigValue & value)
     {
         return std::make_unique<MyConfigResponse>(key, value, true, 10, "a", "whinewhine", 2, true);
     }
 
-    static ConfigResponse::UP createConfigErrorResponse(const ConfigKey & key, const ConfigValue & value)
+    static std::unique_ptr<ConfigResponse> createConfigErrorResponse(const ConfigKey & key, const ConfigValue & value)
     {
         return std::make_unique<MyConfigResponse>(key, value, false, 10, "a", "", 0, false);
     }

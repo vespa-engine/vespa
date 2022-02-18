@@ -2,6 +2,10 @@
 #include "frtconfigrequest.h"
 #include "frtconfigresponse.h"
 #include "frtsource.h"
+#include "frtconfigagent.h"
+#include "connectionfactory.h"
+#include "connection.h"
+#include "frtconfigrequestfactory.h"
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -26,8 +30,9 @@ private:
     FRTSource * _source;
 };
 
-FRTSource::FRTSource(const ConnectionFactory::SP & connectionFactory, const FRTConfigRequestFactory & requestFactory, ConfigAgent::UP agent, const ConfigKey & key)
-    : _connectionFactory(connectionFactory),
+FRTSource::FRTSource(std::shared_ptr<ConnectionFactory> connectionFactory, const FRTConfigRequestFactory & requestFactory,
+                     std::unique_ptr<ConfigAgent> agent, const ConfigKey & key)
+    : _connectionFactory(std::move(connectionFactory)),
       _requestFactory(requestFactory),
       _agent(std::move(agent)),
       _currentRequest(),
@@ -59,7 +64,7 @@ FRTSource::getConfig()
  //   LOG(debug, "invoking request with md5 %s, gen %" PRId64 ", servertimeout(%" PRId64 "), client(%f)", state.md5.c_str(), state.generation, serverTimeout, clientTimeout);
 
 
-    FRTConfigRequest::UP request = _requestFactory.createConfigRequest(_key, connection, state, serverTimeout);
+    std::unique_ptr<FRTConfigRequest> request = _requestFactory.createConfigRequest(_key, connection, state, serverTimeout);
     FRT_RPCRequest * req = request->getRequest();
 
     _currentRequest = std::move(request);

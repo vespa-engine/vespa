@@ -2,6 +2,7 @@
 #include "frtconfigagent.h"
 #include "frtconfigrequestv3.h"
 #include <vespa/config/common/trace.h>
+#include <vespa/config/common/configresponse.h>
 #include <vespa/config/common/iconfigholder.h>
 
 #include <vespa/log/log.h>
@@ -24,7 +25,7 @@ FRTConfigAgent::FRTConfigAgent(std::shared_ptr<IConfigHolder> holder, const Timi
 FRTConfigAgent::~FRTConfigAgent() = default;
 
 void
-FRTConfigAgent::handleResponse(const ConfigRequest & request, ConfigResponse::UP response)
+FRTConfigAgent::handleResponse(const ConfigRequest & request, std::unique_ptr<ConfigResponse> response)
 {
     if (LOG_WOULD_LOG(spam)) {
         const ConfigKey & key(request.getKey());
@@ -38,7 +39,7 @@ FRTConfigAgent::handleResponse(const ConfigRequest & request, ConfigResponse::UP
 }
 
 void
-FRTConfigAgent::handleOKResponse(const ConfigRequest & request, ConfigResponse::UP response)
+FRTConfigAgent::handleOKResponse(const ConfigRequest & request, std::unique_ptr<ConfigResponse> response)
 {
     _failedRequests = 0;
     response->fill();
@@ -79,7 +80,7 @@ FRTConfigAgent::handleUpdatedGeneration(const ConfigKey & key, const ConfigState
 using vespalib::to_s;
 
 void
-FRTConfigAgent::handleErrorResponse(const ConfigRequest & request, ConfigResponse::UP response)
+FRTConfigAgent::handleErrorResponse(const ConfigRequest & request, std::unique_ptr<ConfigResponse> response)
 {
     _failedRequests++;
     int multiplier = std::min(_failedRequests, _timingValues.maxDelayMultiplier);

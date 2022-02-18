@@ -33,7 +33,7 @@ public:
                        const vespalib::string & methodName);
     ~SlimeConfigRequest();
     bool verifyState(const ConfigState & state) const override;
-    virtual ConfigResponse::UP createResponse(FRT_RPCRequest * request) const override = 0;
+    virtual std::unique_ptr<ConfigResponse> createResponse(FRT_RPCRequest * request) const override = 0;
 private:
     void populateSlimeRequest(const ConfigKey & key,
                               const vespalib::string & configXxhash64,

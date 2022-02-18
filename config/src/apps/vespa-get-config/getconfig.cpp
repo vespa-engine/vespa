@@ -4,11 +4,15 @@
 #include <vespa/fnet/frt/target.h>
 #include <vespa/config/frt/frtconfigrequestfactory.h>
 #include <vespa/config/frt/frtconnection.h>
+#include <vespa/config/frt/protocol.h>
+#include <vespa/config/frt/frtconfigrequest.h>
 #include <vespa/config/common/payload_converter.h>
 #include <vespa/config/common/configvalue.h>
+#include <vespa/config/common/configstate.h>
+#include <vespa/config/common/configresponse.h>
+#include <vespa/config/common/trace.h>
 #include <vespa/fastos/app.h>
 
-#include <string>
 #include <sstream>
 #include <fstream>
 
@@ -231,11 +235,11 @@ GetConfig::Main()
     FRTConnection connection(spec, _server->supervisor(), TimingValues());
     ConfigKey key(configId, defName, defNamespace, defMD5, defSchema);
     ConfigState state(configXxhash64, generation, false);
-    FRTConfigRequest::UP request = requestFactory.createConfigRequest(key, &connection, state, serverTimeout);
+    std::unique_ptr<FRTConfigRequest> request = requestFactory.createConfigRequest(key, &connection, state, serverTimeout);
 
     _target->InvokeSync(request->getRequest(), vespalib::to_s(clientTimeout)); // seconds
 
-    ConfigResponse::UP response = request->createResponse(request->getRequest());
+    std::unique_ptr<ConfigResponse> response = request->createResponse(request->getRequest());
     response->validateResponse();
     if (response->isError()) {
         fprintf(stderr, "error %d: %s\n",

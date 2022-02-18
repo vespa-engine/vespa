@@ -98,10 +98,10 @@ private:
     ConfigKeySet                                     _lastKeySet;
     std::shared_ptr<IConfigContext>                  _context;
     std::unique_ptr<SourceSpec>                      _spec;
-    bool                        _closed;
-    int64_t                     _generation;
-    vespalib::duration                _subscribeTimeout;
-    bool                        _bootstrapRequired;
+    int64_t              _generation;
+    vespalib::duration   _subscribeTimeout;
+    bool                 _bootstrapRequired;
+    bool                 _closed;
 };
 
 } // namespace config

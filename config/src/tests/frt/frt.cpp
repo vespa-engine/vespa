@@ -9,6 +9,9 @@
 #include <vespa/config/frt/frtsource.h>
 #include <vespa/config/frt/frtconfigrequestv3.h>
 #include <vespa/config/frt/frtconfigresponsev3.h>
+#include <vespa/config/frt/connectionfactory.h>
+#include <vespa/config/frt/frtconfigagent.h>
+#include <vespa/config/frt/frtconfigrequestfactory.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/data/simple_buffer.h>
@@ -153,13 +156,13 @@ namespace {
         const ConfigState & getConfigState() const override { return result->state; }
         duration getWaitTime () const override { return result->waitTime; }
         duration getTimeout() const override { return result->timeout; }
-        void handleResponse(const ConfigRequest & request, ConfigResponse::UP response) override
+        void handleResponse(const ConfigRequest & request, std::unique_ptr<ConfigResponse> response) override
         {
             (void) request;
             (void) response;
             result->notified = true;
         }
-        void handleRequest(ConfigRequest::UP request)
+        void handleRequest(std::unique_ptr<ConfigResponse> request)
         {
             (void) request;
         }
@@ -278,7 +281,7 @@ TEST("require that v3 request is correctly initialized") {
     ConfigDefinition def;
     def.deserialize(root[REQUEST_DEF_CONTENT]);
     EXPECT_EQUAL(origDef.asString(), def.asString());
-    ConfigResponse::UP response(v3req.createResponse(req));
+    std::unique_ptr<ConfigResponse> response(v3req.createResponse(req));
     req->GetReturn()->AddString("foobar");
     req->GetReturn()->AddData("foo", 3);
     EXPECT_TRUE(response->validateResponse());
