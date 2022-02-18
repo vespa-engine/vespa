@@ -64,4 +64,8 @@ TEST(TimeTest, conversion_of_max) {
     EXPECT_EQ(9223372036.8547764, vespalib::to_s(vespalib::duration::max()));
 }
 
+TEST(TimeTest, default_timer_frequency_is_1000_hz) {
+    EXPECT_EQ(1000u, getVespaTimerHz());
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
