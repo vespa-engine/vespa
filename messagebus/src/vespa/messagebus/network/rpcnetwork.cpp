@@ -423,6 +423,8 @@ RPCNetwork::sync()
 void
 RPCNetwork::shutdown()
 {
+    // Unschedule any pending target pool flush task that may race with shutdown target flushing
+    _scheduler.Unschedule(_targetPoolTask.get());
     _transport->ShutDown(true);
     _threadPool->Close();
     _executor->shutdown().sync();
