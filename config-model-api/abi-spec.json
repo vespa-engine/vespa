@@ -379,6 +379,7 @@
       "public static com.yahoo.config.application.api.DeploymentSpec$UpgradeRevision valueOf(java.lang.String)"
     ],
     "fields": [
+      "public static final enum com.yahoo.config.application.api.DeploymentSpec$UpgradeRevision exclusive",
       "public static final enum com.yahoo.config.application.api.DeploymentSpec$UpgradeRevision separate",
       "public static final enum com.yahoo.config.application.api.DeploymentSpec$UpgradeRevision latest"
     ]
