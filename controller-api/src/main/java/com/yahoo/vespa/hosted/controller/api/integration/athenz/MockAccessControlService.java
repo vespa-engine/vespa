@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzUser;
+import com.yahoo.vespa.athenz.api.OAuthCredentials;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -30,7 +31,7 @@ public class MockAccessControlService implements AccessControlService {
     }
 
     @Override
-    public boolean approveSshAccess(TenantName tenantName, Instant expiry) {
+    public boolean approveSshAccess(TenantName tenantName, Instant expiry, OAuthCredentials oAuthCredentials) {
         return false;
     }
 

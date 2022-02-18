@@ -201,7 +201,7 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public void approvePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry, Optional<String> reason) {
+    public void approvePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry, Optional<String> reason, Optional<OAuthCredentials> oAuthCredentials) {
     }
 
     @Override

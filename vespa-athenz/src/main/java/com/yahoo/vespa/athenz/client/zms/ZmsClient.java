@@ -59,7 +59,8 @@ public interface ZmsClient extends AutoCloseable {
 
     Map<AthenzIdentity, String> listPendingRoleApprovals(AthenzRole athenzRole);
 
-    void approvePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry, Optional<String> reason);
+    void approvePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry,
+                                      Optional<String> reason, Optional<OAuthCredentials> oAuthCredentials);
 
     List<AthenzIdentity> listMembers(AthenzRole athenzRole);
 

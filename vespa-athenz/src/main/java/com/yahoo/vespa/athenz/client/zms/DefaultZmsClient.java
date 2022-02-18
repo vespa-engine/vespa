@@ -301,13 +301,16 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
-    public void approvePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry, Optional<String> reason) {
+    public void approvePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry,
+                                             Optional<String> reason, Optional<OAuthCredentials> oAuthCredentials) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s/member/%s/decision", athenzRole.domain().getName(), athenzRole.roleName(), athenzIdentity.getFullName()));
         MembershipEntity membership = new MembershipEntity.RoleMembershipEntity(athenzIdentity.getFullName(), true, athenzRole.roleName(), Long.toString(expiry.getEpochSecond()));
 
         var requestBuilder = RequestBuilder.put()
                 .setUri(uri)
                 .setEntity(toJsonStringEntity(membership));
+
+        oAuthCredentials.ifPresent(creds -> requestBuilder.addHeader(createCookieHeader(creds)));
 
         if (reason.filter(s -> !s.isBlank()).isPresent()) {
             requestBuilder.addHeader("Y-Audit-Ref", reason.get());
