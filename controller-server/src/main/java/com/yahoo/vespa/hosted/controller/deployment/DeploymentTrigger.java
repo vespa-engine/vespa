@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
-import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.text.Text;
@@ -389,11 +388,11 @@ public class DeploymentTrigger {
     private boolean acceptNewApplicationVersion(DeploymentStatus status, InstanceName instance, ApplicationVersion version) {
         if (status.application().deploymentSpec().instance(instance).isEmpty()) return false; // Unknown instance.
         boolean isChangingRevision = status.application().require(instance).change().application().isPresent();
-        switch (status.application().deploymentSpec().requireInstance(instance).upgradeRevision()) {
-            case exclusive: return ! isChangingRevision;
-            case separate:  return ! isChangingRevision || status.hasFailures(version);
-            case latest:    return true;
-            default:        throw new IllegalStateException("Unknown revision upgrade policy");
+        switch (status.application().deploymentSpec().requireInstance(instance).revisionChange()) {
+            case whenClear:   return ! isChangingRevision;
+            case whenFailing: return ! isChangingRevision || status.hasFailures(version);
+            case always:      return true;
+            default:          throw new IllegalStateException("Unknown revision upgrade policy");
         }
     }
 

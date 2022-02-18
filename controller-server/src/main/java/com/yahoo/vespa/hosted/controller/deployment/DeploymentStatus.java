@@ -36,7 +36,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.config.application.api.DeploymentSpec.UpgradeRevision.exclusive;
+import static com.yahoo.config.application.api.DeploymentSpec.RevisionTarget.next;
 import static com.yahoo.config.provision.Environment.prod;
 import static com.yahoo.config.provision.Environment.staging;
 import static com.yahoo.config.provision.Environment.test;
@@ -258,7 +258,7 @@ public class DeploymentStatus {
     public Change outstandingChange(InstanceName instance) {
         return Optional.ofNullable(instanceSteps().get(instance))
                        .flatMap(instanceStatus -> application.versions().stream()
-                                                             .sorted(application.deploymentSpec().requireInstance(instance).upgradeRevision() == exclusive ? naturalOrder() : reverseOrder())
+                                                             .sorted(application.deploymentSpec().requireInstance(instance).revisionTarget() == next ? naturalOrder() : reverseOrder())
                                                              .filter(version -> instanceStatus.dependenciesCompletedAt(Change.of(version), Optional.empty()).map(at -> ! at.isAfter(now)).orElse(false))
                                                              .filter(version -> application.productionDeployments().getOrDefault(instance, List.of()).stream()
                                                                                            .noneMatch(deployment -> deployment.applicationVersion().compareTo(version) > 0))

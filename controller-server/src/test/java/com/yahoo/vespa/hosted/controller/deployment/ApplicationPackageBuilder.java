@@ -57,7 +57,8 @@ public class ApplicationPackageBuilder {
     private OptionalInt majorVersion = OptionalInt.empty();
     private String instances = "default";
     private String upgradePolicy = null;
-    private String upgradeRevision = "latest";
+    private String revisionTarget = "latest";
+    private String revisionChange = "always";
     private String upgradeRollout = null;
     private String globalServiceId = null;
     private String athenzIdentityAttributes = "athenz-domain='domain' athenz-service='service'";
@@ -81,8 +82,13 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
-    public ApplicationPackageBuilder upgradeRevision(String upgradeRevision) {
-        this.upgradeRevision = upgradeRevision;
+    public ApplicationPackageBuilder revisionTarget(String revisionTarget) {
+        this.revisionTarget = revisionTarget;
+        return this;
+    }
+
+    public ApplicationPackageBuilder revisionChange(String revisionChange) {
+        this.revisionChange = revisionChange;
         return this;
     }
 
@@ -259,10 +265,11 @@ public class ApplicationPackageBuilder {
         }
         xml.append(">\n");
         xml.append("  <instance id='").append(instances).append("'>\n");
-        if (upgradePolicy != null || upgradeRevision != null || upgradeRollout != null) {
+        if (upgradePolicy != null || revisionTarget != null || revisionChange != null || upgradeRollout != null) {
             xml.append("    <upgrade ");
             if (upgradePolicy != null) xml.append("policy='").append(upgradePolicy).append("' ");
-            if (upgradeRevision != null) xml.append("revision='").append(upgradeRevision).append("' ");
+            if (revisionTarget != null) xml.append("revision-target='").append(revisionTarget).append("' ");
+            if (revisionChange != null) xml.append("revision-change='").append(revisionChange).append("' ");
             if (upgradeRollout != null) xml.append("rollout='").append(upgradeRollout).append("' ");
             xml.append("/>\n");
         }

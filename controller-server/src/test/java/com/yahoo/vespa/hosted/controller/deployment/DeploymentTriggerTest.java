@@ -107,10 +107,10 @@ public class DeploymentTriggerTest {
     }
 
     @Test
-    public void separateRevisionMakesApplicationChangeWaitForPreviousToComplete() {
+    public void revisionChangeWhenFailingMakesApplicationChangeWaitForPreviousToComplete() {
         DeploymentContext app = tester.newDeploymentContext();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .upgradeRevision(null) // separate by default, but we override this in test builder
+                .revisionChange(null) // separate by default, but we override this in test builder
                 .region("us-east-3")
                 .test("us-east-3")
                 .build();
@@ -863,7 +863,7 @@ public class DeploymentTriggerTest {
         DeploymentContext i4 = tester.newDeploymentContext("t", "a", "i4");
         ApplicationPackage applicationPackage = ApplicationPackageBuilder
                 .fromDeploymentXml("<deployment version='1'>\n" +
-                                   "  <upgrade revision='separate' />\n" +
+                                   "  <upgrade revision-change='when-failing' />\n" +
                                    "  <parallel>\n" +
                                    "    <instance id='i1'>\n" +
                                    "      <prod>\n" +
@@ -1425,21 +1425,21 @@ public class DeploymentTriggerTest {
                 "    <instance id='alpha'>\n" +
                 "        <test />\n" +
                 "        <staging />\n" +
-                "        <upgrade revision='latest' />\n" +
+                "        <upgrade revision-change='always' />\n" +
                 "        <prod>\n" +
                 "            <region>us-east-3</region>\n" +
                 "            <test>us-east-3</test>\n" +
                 "        </prod>\n" +
                 "    </instance>\n" +
                 "    <instance id='beta'>\n" +
-                "        <upgrade revision='separate' />\n" +
+                "        <upgrade revision-change='when-failing' />\n" +
                 "        <prod>\n" +
                 "            <region>us-east-3</region>\n" +
                 "            <test>us-east-3</test>\n" +
                 "        </prod>\n" +
                 "    </instance>\n" +
                 "    <instance id='gamma'>\n" +
-                "        <upgrade revision='exclusive' />\n" +
+                "        <upgrade revision-change='when-clear' revision-target='next' />\n" +
                 "        <prod>\n" +
                 "            <region>us-east-3</region>\n" +
                 "            <test>us-east-3</test>\n" +

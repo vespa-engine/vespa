@@ -121,7 +121,8 @@ public class DeploymentSpecTest {
         assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
 
         assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, spec.requireInstance("default").upgradePolicy());
-        assertEquals(DeploymentSpec.UpgradeRevision.separate, spec.requireInstance("default").upgradeRevision());
+        assertEquals(DeploymentSpec.RevisionTarget.latest, spec.requireInstance("default").revisionTarget());
+        assertEquals(DeploymentSpec.RevisionChange.whenFailing, spec.requireInstance("default").revisionChange());
         assertEquals(DeploymentSpec.UpgradeRollout.separate, spec.requireInstance("default").upgradeRollout());
     }
 
@@ -365,18 +366,22 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void productionSpecWithUpgradeRevision() {
+    public void productionSpecWithUpgradeRevisionSettings() {
         StringReader r = new StringReader(
                 "<deployment>" +
                 "   <instance id='default'>" +
-                "      <upgrade revision='latest' />" +
+                "      <upgrade revision-change='when-clear' revision-target='next' />" +
                 "   </instance>" +
-                "   <instance id='custom'/>" +
+                "   <instance id='custom'>" +
+                "      <upgrade revision-change='always' />" +
+                "   </instance>" +
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals("latest", spec.requireInstance("default").upgradeRevision().toString());
-        assertEquals("separate", spec.requireInstance("custom").upgradeRevision().toString());
+        assertEquals("next", spec.requireInstance("default").revisionTarget().toString());
+        assertEquals("latest", spec.requireInstance("custom").revisionTarget().toString());
+        assertEquals("whenClear", spec.requireInstance("default").revisionChange().toString());
+        assertEquals("always", spec.requireInstance("custom").revisionChange().toString());
     }
 
     @Test
@@ -417,10 +422,10 @@ public class DeploymentSpecTest {
     public void upgradePolicyDefault() {
         StringReader r = new StringReader(
                 "<deployment version='1.0'>" +
-                "   <upgrade policy='canary' rollout='leading' revision='latest' />" +
+                "   <upgrade policy='canary' rollout='leading' revision-target='next' revision-change='when-clear' />" +
                 "   <instance id='instance1'/>" +
                 "   <instance id='instance2'>" +
-                "      <upgrade policy='conservative' rollout='separate' revision='separate'/>" +
+                "      <upgrade policy='conservative' rollout='separate' revision-target='latest' revision-change='when-failing' />" +
                 "   </instance>" +
                 "</deployment>"
         );
@@ -428,8 +433,10 @@ public class DeploymentSpecTest {
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals("canary", spec.requireInstance("instance1").upgradePolicy().toString());
         assertEquals("conservative", spec.requireInstance("instance2").upgradePolicy().toString());
-        assertEquals("latest", spec.requireInstance("instance1").upgradeRevision().toString());
-        assertEquals("separate", spec.requireInstance("instance2").upgradeRevision().toString());
+        assertEquals("next", spec.requireInstance("instance1").revisionTarget().toString());
+        assertEquals("latest", spec.requireInstance("instance2").revisionTarget().toString());
+        assertEquals("whenClear", spec.requireInstance("instance1").revisionChange().toString());
+        assertEquals("whenFailing", spec.requireInstance("instance2").revisionChange().toString());
         assertEquals("leading", spec.requireInstance("instance1").upgradeRollout().toString());
         assertEquals("separate", spec.requireInstance("instance2").upgradeRollout().toString());
     }

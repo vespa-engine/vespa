@@ -28,10 +28,9 @@ public class OutstandingChangeDeployerTest {
     @Test
     public void testChangeDeployer() {
         DeploymentTester tester = new DeploymentTester();
-        OutstandingChangeDeployer deployer = new OutstandingChangeDeployer(tester.controller(), Duration.ofMinutes(10));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .region("us-west-1")
-                .upgradeRevision("separate")
+                .revisionChange("when-failing")
                 .build();
 
         var app = tester.newDeploymentContext().submit(applicationPackage).deploy();
