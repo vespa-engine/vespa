@@ -54,7 +54,7 @@ public class Schema {
         return parent = AST.inherits(schemaDefinition.get())
                            .stream()
                            .findFirst() // Only one schema can be inherited; ignore any following
-                           .map(inheritedNode -> fromProjectFile(definition.getProject(), path().getParentPath().append(inheritedNode.getText() + ".sd")));
+                           .map(inheritedNode -> fromProjectFile(definition.getProject(), path().append(inheritedNode.getText() + ".sd")));
     }
 
     public Map<String, Schema> children() {

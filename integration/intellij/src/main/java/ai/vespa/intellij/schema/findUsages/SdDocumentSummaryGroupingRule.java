@@ -12,7 +12,7 @@ import ai.vespa.intellij.schema.SdLanguage;
 import ai.vespa.intellij.schema.psi.SdDocumentSummaryDefinition;
 
 /**
- * A Document Summary that groups elements in the "Find Usages" window.
+ * A grouping rule that groups elements in the "Find Usages" window.
  *
  * @author Shahar Ariel
  */

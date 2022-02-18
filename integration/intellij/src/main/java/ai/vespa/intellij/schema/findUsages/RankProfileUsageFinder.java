@@ -37,8 +37,9 @@ public class RankProfileUsageFinder extends UsageFinder {
         if ( ! visited.add(profile)) return;
 
         if ( ! profile.equals(this.profile))
-            processor().process(new UsageInfo(profile.definition()));
-        profile.children().forEach(child -> findUsagesBelow(child));
+            ReadAction.compute(() -> processor().process(new UsageInfo(profile.definition())));
+        for (var child : ReadAction.compute(() -> profile.children()))
+            findUsagesBelow(child);
     }
 
 }
