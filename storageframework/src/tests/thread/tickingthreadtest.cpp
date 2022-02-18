@@ -5,24 +5,31 @@
 #include <vespa/storageframework/generic/thread/tickingthread.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/atomic.h>
 #include <thread>
+
+using namespace vespalib::atomic;
 
 namespace storage::framework::defaultimplementation {
 
 namespace {
 
 struct Context {
-    uint64_t _critTickCount;
-    uint64_t _nonCritTickCount;
+    std::atomic<uint64_t> _critTickCount;
+    std::atomic<uint64_t> _nonCritTickCount;
 
-    Context() : _critTickCount(0), _nonCritTickCount(0) {}
+    constexpr Context() noexcept : _critTickCount(0), _nonCritTickCount(0) {}
+    Context(const Context& rhs) noexcept
+        : _critTickCount(load_relaxed(rhs._critTickCount)),
+          _nonCritTickCount(load_relaxed(rhs._nonCritTickCount))
+    {}
 };
 
 struct MyApp : public TickingThread {
-    uint32_t _critOverlapCounter;
-    bool _doCritOverlapTest;
-    bool _critOverlap;
-    std::vector<Context> _context;
+    std::atomic<uint32_t> _critOverlapCounter;
+    std::atomic<bool>     _critOverlap;
+    bool                  _doCritOverlapTest;
+    std::vector<Context>  _context;
     TickingThreadPool::UP _threadPool;
 
     MyApp(int threadCount, bool doCritOverlapTest = false);
@@ -34,62 +41,63 @@ struct MyApp : public TickingThread {
         assert(index < _context.size());
         Context& c(_context[index]);
         if (_doCritOverlapTest) {
-            uint32_t oldTick = _critOverlapCounter;
+            uint32_t oldTick = load_relaxed(_critOverlapCounter);
             std::this_thread::sleep_for(1ms);
-            _critOverlap |= (_critOverlapCounter != oldTick);
-            ++_critOverlapCounter;
+            store_relaxed(_critOverlap, load_relaxed(_critOverlap) || (load_relaxed(_critOverlapCounter) != oldTick));
+            _critOverlapCounter.fetch_add(1, std::memory_order_relaxed);
         }
-        ++c._critTickCount;
+        c._critTickCount.fetch_add(1, std::memory_order_relaxed);
         return ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
     }
     ThreadWaitInfo doNonCriticalTick(ThreadIndex index) override {
         assert(index < _context.size());
         Context& c(_context[index]);
-        ++c._nonCritTickCount;
+        c._nonCritTickCount.fetch_add(1, std::memory_order_relaxed);
         return ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
     }
     uint64_t getMinCritTick() {
         uint64_t min = std::numeric_limits<uint64_t>().max();
         for (uint32_t i=0; i<_context.size(); ++i) {
-            min = std::min(min, _context[i]._critTickCount);
+            min = std::min(min, load_relaxed(_context[i]._critTickCount));
         }
         return min;
     }
     uint64_t getMinNonCritTick() {
         uint64_t min = std::numeric_limits<uint64_t>().max();
         for (uint32_t i=0; i<_context.size(); ++i) {
-            min = std::min(min, _context[i]._critTickCount);
+            min = std::min(min, load_relaxed(_context[i]._critTickCount));
         }
         return min;
     }
-    uint64_t getTotalCritTicks() {
+    uint64_t getTotalCritTicks() const noexcept {
         uint64_t total = 0;
         for (uint32_t i=0; i<_context.size(); ++i) {
-            total += _context[i]._critTickCount;
+            total += load_relaxed(_context[i]._critTickCount);
         }
         return total;
     }
-    uint64_t getTotalNonCritTicks() {
+    uint64_t getTotalNonCritTicks() const noexcept {
         uint64_t total = 0;
         for (uint32_t i=0; i<_context.size(); ++i) {
-            total += _context[i]._nonCritTickCount;
+            total += load_relaxed(_context[i]._nonCritTickCount);
         }
         return total;
     }
-    uint64_t getTotalTicks()
-        { return getTotalCritTicks() + getTotalNonCritTicks(); }
-    bool hasCritOverlap() { return _critOverlap; }
+    uint64_t getTotalTicks() const noexcept {
+        return getTotalCritTicks() + getTotalNonCritTicks();
+    }
+    bool hasCritOverlap() const noexcept { return load_relaxed(_critOverlap); }
 };
 
 MyApp::MyApp(int threadCount, bool doCritOverlapTest)
     : _critOverlapCounter(0),
-      _doCritOverlapTest(doCritOverlapTest),
       _critOverlap(false),
+      _doCritOverlapTest(doCritOverlapTest),
       _threadPool(TickingThreadPool::createDefault("testApp", 100ms))
 {
     for (int i=0; i<threadCount; ++i) {
         _threadPool->addThread(*this);
-        _context.push_back(Context());
+        _context.emplace_back();
     }
 }
 
@@ -182,7 +190,7 @@ TEST(TickingThreadTest, test_lock_critical_ticks)
         app.start(testReg.getThreadPoolImpl());
         while (!app.hasCritOverlap()) {
             std::this_thread::sleep_for(1ms);
-            ++app._critOverlapCounter;
+            app._critOverlapCounter.fetch_add(1, std::memory_order_relaxed);
             ++iterationsBeforeOverlap;
         }
     }
