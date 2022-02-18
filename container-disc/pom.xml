@@ -203,6 +203,7 @@
                 security-utils.jar,
                 bcpkix-jdk15on-${bouncycastle.version}.jar,
                 bcprov-jdk15on-${bouncycastle.version}.jar,
+                bcutil-jdk15on-${bouncycastle.version}.jar,
 
                <!-- Jetty -->
                 <!-- TODO Vespa 8: embed these in container-core/disc, saving a lot of dep management. -->

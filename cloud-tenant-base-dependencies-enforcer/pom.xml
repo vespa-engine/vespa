@@ -250,6 +250,7 @@
                                         <include>org.apache.httpcomponents:httpcore:4.4.13:jar:test</include>
                                         <include>org.apache.opennlp:opennlp-tools:1.9.3:jar:test</include>
                                         <include>org.apiguardian:apiguardian-api:1.1.0:jar:test</include>
+                                        <include>org.bouncycastle:bcutil-jdk15on:[${bouncycastle.version}]:jar:test</include>
                                         <include>org.codehaus.woodstox:stax2-api:3.1.4:jar:test</include>
                                         <include>org.eclipse.jetty.alpn:alpn-api:[${jetty-alpn.version}]:jar:test</include>
                                         <include>org.eclipse.jetty.http2:http2-common:[${jetty.version}]:jar:test</include>
