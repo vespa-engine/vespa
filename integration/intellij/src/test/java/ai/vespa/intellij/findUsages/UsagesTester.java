@@ -36,6 +36,13 @@ class UsagesTester {
         return usageProcessor.usages;
     }
 
+    List<UsageInfo> assertProfileUsages(int expectedUsages, String profileName) {
+        var profile = schema.rankProfiles().get(profileName).definition();
+        findUsages(profile);
+        assertEquals(expectedUsages, usageProcessor.usages.size());
+        return usageProcessor.usages;
+    }
+
     /** Finds the function referred at the given character offset in the given profile. */
     UsageInfo findFunctionDefinition(String profileName, int offset) {
         PsiElement referringElement = schema.rankProfiles().get(profileName).definition().findElementAt(offset);

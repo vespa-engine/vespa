@@ -3,16 +3,12 @@ package ai.vespa.intellij.findUsages;
 
 import ai.vespa.intellij.PluginTestBase;
 import com.intellij.usageView.UsageInfo;
-import com.intellij.util.Processor;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author bratseth
  */
-public class FindDefinitionTest extends PluginTestBase {
+public class FindFunctionDefinitionTest extends PluginTestBase {
 
     @Test
     public void testFindUsagesInRankProfileModularity() {

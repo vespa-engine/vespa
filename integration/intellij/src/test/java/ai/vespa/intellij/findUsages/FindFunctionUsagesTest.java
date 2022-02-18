@@ -2,22 +2,13 @@
 package ai.vespa.intellij.findUsages;
 
 import ai.vespa.intellij.PluginTestBase;
-import ai.vespa.intellij.schema.findUsages.SdFindUsagesHandler;
-import ai.vespa.intellij.schema.model.Schema;
-import ai.vespa.intellij.schema.utils.Path;
-import com.intellij.find.findUsages.FindUsagesOptions;
-import com.intellij.openapi.project.Project;
 import com.intellij.usageView.UsageInfo;
-import com.intellij.util.Processor;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author bratseth
  */
-public class FindUsagesTest extends PluginTestBase {
+public class FindFunctionUsagesTest extends PluginTestBase {
 
     @Test
     public void testFindUsagesInRankProfileModularity() {

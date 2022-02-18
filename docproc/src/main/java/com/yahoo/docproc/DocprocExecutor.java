@@ -32,7 +32,7 @@ public class DocprocExecutor {
     private final String name;
     private final String docCounterName;
     private final Metric metric;
-    private Function<String, Metric.Context> contexts;
+    private final Function<String, Metric.Context> contexts;
     private final CallStack callStack;
 
     /**
