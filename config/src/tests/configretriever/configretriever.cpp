@@ -23,7 +23,6 @@ using namespace config;
 using namespace std;
 using namespace vespalib::slime;
 using namespace vespalib;
-using namespace std::chrono_literals;
 
 struct ComponentFixture {
     typedef std::shared_ptr<ComponentFixture> SP;

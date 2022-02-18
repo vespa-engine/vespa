@@ -7,7 +7,8 @@
 namespace config {
 
 FRTConfigRequest::FRTConfigRequest(Connection * connection, const ConfigKey & key)
-    : _request(connection->allocRPCRequest()),
+    : ConfigRequest(),
+      _request(connection->allocRPCRequest()),
       _parameters(*_request->GetParams()),
       _connection(connection),
       _key(key)
@@ -35,12 +36,6 @@ const ConfigKey &
 FRTConfigRequest::getKey() const
 {
     return _key;
-}
-
-bool
-FRTConfigRequest::isAborted() const
-{
-    return (_request->GetErrorCode() == FRTE_RPC_ABORT);
 }
 
 } // namespace config

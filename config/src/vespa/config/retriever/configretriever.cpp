@@ -5,35 +5,33 @@
 #include <vespa/config/subscription/sourcespec.h>
 #include <cassert>
 
-using std::chrono::milliseconds;
-
 namespace config {
 
- const milliseconds ConfigRetriever::DEFAULT_SUBSCRIBE_TIMEOUT(60000);
- const milliseconds ConfigRetriever::DEFAULT_NEXTGENERATION_TIMEOUT(60000);
+const vespalib::duration ConfigRetriever::DEFAULT_SUBSCRIBE_TIMEOUT(60s);
+const vespalib::duration ConfigRetriever::DEFAULT_NEXTGENERATION_TIMEOUT(60s);
 
 ConfigRetriever::ConfigRetriever(const ConfigKeySet & bootstrapSet,
                                  std::shared_ptr<IConfigContext> context,
-                                 milliseconds subscribeTimeout)
+                                 vespalib::duration subscribeTimeout)
     : _bootstrapSubscriber(bootstrapSet, context, subscribeTimeout),
       _configSubscriber(),
       _lock(),
       _subscriptionList(),
       _lastKeySet(),
       _context(context),
-      _closed(false),
       _generation(-1),
       _subscribeTimeout(subscribeTimeout),
-      _bootstrapRequired(true)
+      _bootstrapRequired(true),
+      _closed(false)
 {
 }
 
 ConfigRetriever::~ConfigRetriever() = default;
 
 ConfigSnapshot
-ConfigRetriever::getBootstrapConfigs(milliseconds timeoutInMillis)
+ConfigRetriever::getBootstrapConfigs(vespalib::duration timeout)
 {
-    bool ret = _bootstrapSubscriber.nextGeneration(timeoutInMillis);
+    bool ret = _bootstrapSubscriber.nextGeneration(timeout);
     if (!ret) {
         return ConfigSnapshot();
     }
@@ -42,7 +40,7 @@ ConfigRetriever::getBootstrapConfigs(milliseconds timeoutInMillis)
 }
 
 ConfigSnapshot
-ConfigRetriever::getConfigs(const ConfigKeySet & keySet, milliseconds timeoutInMillis)
+ConfigRetriever::getConfigs(const ConfigKeySet & keySet, vespalib::duration timeout)
 {
     if (_closed)
         return ConfigSnapshot();
@@ -65,7 +63,7 @@ ConfigRetriever::getConfigs(const ConfigKeySet & keySet, milliseconds timeoutInM
     }
     // Try update the subscribers generation if older than bootstrap
     if (_configSubscriber->getGeneration() < _bootstrapSubscriber.getGeneration())
-        _configSubscriber->nextGeneration(timeoutInMillis);
+        _configSubscriber->nextGeneration(timeout);
 
     // If we failed to get a new generation, the user should call us again.
     if (_configSubscriber->getGeneration() < _bootstrapSubscriber.getGeneration()) {

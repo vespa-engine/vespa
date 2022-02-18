@@ -18,15 +18,15 @@ ConfigSubscriber::ConfigSubscriber(const SourceSpec & spec)
 ConfigSubscriber::~ConfigSubscriber() = default;
 
 bool
-ConfigSubscriber::nextConfig(milliseconds timeoutInMillis)
+ConfigSubscriber::nextConfig(vespalib::duration timeout)
 {
-    return _set.acquireSnapshot(timeoutInMillis, false);
+    return _set.acquireSnapshot(timeout, false);
 }
 
 bool
-ConfigSubscriber::nextGeneration(milliseconds timeoutInMillis)
+ConfigSubscriber::nextGeneration(vespalib::duration timeout)
 {
-    return _set.acquireSnapshot(timeoutInMillis, true);
+    return _set.acquireSnapshot(timeout, true);
 }
 
 void

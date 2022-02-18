@@ -29,7 +29,7 @@ ConfigSubscription::~ConfigSubscription()
 
 
 bool
-ConfigSubscription::nextUpdate(int64_t generation, std::chrono::milliseconds timeout)
+ConfigSubscription::nextUpdate(int64_t generation, vespalib::duration timeout)
 {
     if (_closed || !_holder->poll()) {
         return false;

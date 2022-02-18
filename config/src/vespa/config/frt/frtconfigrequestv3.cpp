@@ -14,7 +14,7 @@ FRTConfigRequestV3::FRTConfigRequestV3(Connection * connection,
                                        const vespalib::string & configXxhash64,
                                        int64_t currentGeneration,
                                        const vespalib::string & hostName,
-                                       int64_t serverTimeout,
+                                       vespalib::duration serverTimeout,
                                        const Trace & trace,
                                        const VespaVersion & vespaVersion,
                                        const CompressionType & compressionType)
@@ -24,10 +24,10 @@ FRTConfigRequestV3::FRTConfigRequestV3(Connection * connection,
 
 
 
-ConfigResponse::UP
+std::unique_ptr<ConfigResponse>
 FRTConfigRequestV3::createResponse(FRT_RPCRequest * request) const
 {
-    return ConfigResponse::UP(new FRTConfigResponseV3(request));
+    return std::make_unique<FRTConfigResponseV3>(request);
 }
 
 }

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <chrono>
+#include <vespa/vespalib/util/time.h>
 
 namespace config {
 
@@ -11,9 +11,8 @@ namespace config {
  */
 struct Waitable
 {
-    using milliseconds = std::chrono::milliseconds;
-    virtual bool wait(milliseconds) = 0;
-    virtual ~Waitable() {}
+    virtual bool wait(vespalib::duration timeout) = 0;
+    virtual ~Waitable() = default;
 };
 
 } // namespace config

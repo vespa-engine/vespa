@@ -2,6 +2,7 @@
 #include "frtconfigagent.h"
 #include "frtconfigrequestv3.h"
 #include <vespa/config/common/trace.h>
+#include <vespa/config/common/configresponse.h>
 #include <vespa/config/common/iconfigholder.h>
 
 #include <vespa/log/log.h>
@@ -24,7 +25,7 @@ FRTConfigAgent::FRTConfigAgent(std::shared_ptr<IConfigHolder> holder, const Timi
 FRTConfigAgent::~FRTConfigAgent() = default;
 
 void
-FRTConfigAgent::handleResponse(const ConfigRequest & request, ConfigResponse::UP response)
+FRTConfigAgent::handleResponse(const ConfigRequest & request, std::unique_ptr<ConfigResponse> response)
 {
     if (LOG_WOULD_LOG(spam)) {
         const ConfigKey & key(request.getKey());
@@ -38,7 +39,7 @@ FRTConfigAgent::handleResponse(const ConfigRequest & request, ConfigResponse::UP
 }
 
 void
-FRTConfigAgent::handleOKResponse(const ConfigRequest & request, ConfigResponse::UP response)
+FRTConfigAgent::handleOKResponse(const ConfigRequest & request, std::unique_ptr<ConfigResponse> response)
 {
     _failedRequests = 0;
     response->fill();
@@ -76,27 +77,30 @@ FRTConfigAgent::handleUpdatedGeneration(const ConfigKey & key, const ConfigState
     _numConfigured++;
 }
 
+using vespalib::to_s;
+
 void
-FRTConfigAgent::handleErrorResponse(const ConfigRequest & request, ConfigResponse::UP response)
+FRTConfigAgent::handleErrorResponse(const ConfigRequest & request, std::unique_ptr<ConfigResponse> response)
 {
     _failedRequests++;
     int multiplier = std::min(_failedRequests, _timingValues.maxDelayMultiplier);
     setWaitTime(_numConfigured > 0 ? _timingValues.configuredErrorDelay : _timingValues.unconfiguredDelay, multiplier);
     _nextTimeout = _timingValues.errorTimeout;
     const ConfigKey & key(request.getKey());
-    LOG(info, "Error response or no response from config server (key: %s) (errcode=%d, validresponse:%d), trying again in %" PRIu64 " milliseconds", key.toString().c_str(), response->errorCode(), response->hasValidResponse() ? 1 : 0, _waitTime);
+    LOG(info, "Error response or no response from config server (key: %s) (errcode=%d, validresponse:%d), trying again in %f seconds",
+        key.toString().c_str(), response->errorCode(), response->hasValidResponse() ? 1 : 0, to_s(_waitTime));
 }
 
 void
-FRTConfigAgent::setWaitTime(uint64_t delay, int multiplier)
+FRTConfigAgent::setWaitTime(duration delay, int multiplier)
 {
-    uint64_t prevWait = _waitTime;
+    duration prevWait = _waitTime;
     _waitTime = _timingValues.fixedDelay + (multiplier * delay);
-    LOG(spam, "Adjusting waittime from %" PRIu64 " to %" PRIu64, prevWait, _waitTime);
+    LOG(spam, "Adjusting waittime from %f to %f", to_s(prevWait), to_s(_waitTime));
 }
 
-uint64_t FRTConfigAgent::getTimeout() const { return _nextTimeout; }
-uint64_t FRTConfigAgent::getWaitTime() const { return _waitTime; }
+vespalib::duration FRTConfigAgent::getTimeout() const { return _nextTimeout; }
+vespalib::duration FRTConfigAgent::getWaitTime() const { return _waitTime; }
 const ConfigState & FRTConfigAgent::getConfigState() const { return _configState; }
 
 }

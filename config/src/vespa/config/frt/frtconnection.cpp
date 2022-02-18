@@ -16,8 +16,8 @@ FRTConnection::FRTConnection(const vespalib::string& address, FRT_Supervisor& su
     : _address(address),
       _supervisor(supervisor),
       _target(0),
-      _suspendedUntil(0),
-      _suspendWarned(0),
+      _suspendedUntil(),
+      _suspendWarned(),
       _transientFailures(0),
       _fatalFailures(0),
       _transientDelay(timingValues.transientDelay),
@@ -46,9 +46,9 @@ FRTConnection::getTarget()
 }
 
 void
-FRTConnection::invoke(FRT_RPCRequest * req, double timeout, FRT_IRequestWait * waiter)
+FRTConnection::invoke(FRT_RPCRequest * req, duration timeout, FRT_IRequestWait * waiter)
 {
-    getTarget()->InvokeAsync(req, timeout, waiter);
+    getTarget()->InvokeAsync(req, vespalib::to_s(timeout), waiter);
 }
 
 void
@@ -79,16 +79,16 @@ void FRTConnection::setSuccess()
 {
     _transientFailures = 0;
     _fatalFailures = 0;
-    _suspendedUntil = 0;
+    _suspendedUntil = system_time(duration::zero());
 }
 
 void FRTConnection::calculateSuspension(ErrorType type)
 {
-    int64_t delay = 0;
+    duration delay = duration::zero();
     switch(type) {
     case TRANSIENT:
         _transientFailures.fetch_add(1);
-        delay = _transientFailures * getTransientDelay();
+        delay = _transientFailures.load(std::memory_order_relaxed) * getTransientDelay();
         if (delay > getMaxTransientDelay()) {
             delay = getMaxTransientDelay();
         }
@@ -96,21 +96,16 @@ void FRTConnection::calculateSuspension(ErrorType type)
         break;
     case FATAL:
         _fatalFailures.fetch_add(1);
-        delay = _fatalFailures * getFatalDelay();
+        delay = _fatalFailures.load(std::memory_order_relaxed) * getFatalDelay();
         if (delay > getMaxFatalDelay()) {
             delay = getMaxFatalDelay();
         }
         break;
     }
-    int64_t now = milliSecsSinceEpoch();
+    system_time now = system_clock::now();
     _suspendedUntil = now + delay;
-    if (_suspendWarned < (now - 5000)) {
-        char date[32];
-        struct tm* timeinfo;
-        time_t suspendedSeconds = _suspendedUntil / 1000;
-        timeinfo = gmtime(&suspendedSeconds);
-        strftime(date, 32, "%Y-%m-%d %H:%M:%S %Z", timeinfo);
-        LOG(warning, "FRT Connection %s suspended until %s", _address.c_str(), date);
+    if (_suspendWarned < (now - 5s)) {
+        LOG(warning, "FRT Connection %s suspended until %s", _address.c_str(), vespalib::to_string(_suspendedUntil).c_str());
         _suspendWarned = now;
     }
 }
@@ -118,12 +113,6 @@ void FRTConnection::calculateSuspension(ErrorType type)
 FRT_RPCRequest *
 FRTConnection::allocRPCRequest() {
     return _supervisor.AllocRPCRequest();
-}
-
-using namespace std::chrono;
-int64_t
-FRTConnection::milliSecsSinceEpoch() {
-    return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 }
 
 }

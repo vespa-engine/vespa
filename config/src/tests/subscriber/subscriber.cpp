@@ -13,7 +13,6 @@
 
 using namespace config;
 using namespace vespalib;
-using namespace std::chrono_literals;
 
 namespace {
 
@@ -79,8 +78,8 @@ namespace {
 
         MyManager() : idCounter(0), numCancel(0) { }
 
-        ConfigSubscription::SP subscribe(const ConfigKey & key, milliseconds timeoutInMillis) override {
-            (void) timeoutInMillis;
+        ConfigSubscription::SP subscribe(const ConfigKey & key, vespalib::duration timeout) override {
+            (void) timeout;
             auto holder = std::make_shared<ConfigHolder>();
             _holders.push_back(holder);
 
@@ -284,9 +283,9 @@ TEST_MT_FFF("requireThatConfigIsReturnedWhenUpdatedDuringNextConfig", 2, MyManag
         verifyConfig("foo2", f3.h1->getConfig());
         verifyConfig("bar", f3.h2->getConfig());
     } else {
-        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+        std::this_thread::sleep_for(300ms);
         f1.updateValue(0, createFooValue("foo2"), 2);
-        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+        std::this_thread::sleep_for(300ms);
         f1.updateGeneration(1, 2);
     }
 }
@@ -332,7 +331,7 @@ TEST_MT_FFF("requireThatNextConfigIsInterruptedOnClose", 2, MyManager, APIFixtur
         ASSERT_TRUE(timer.elapsed() >= 500ms);
         ASSERT_TRUE(timer.elapsed() < 60s);
     } else {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(1000ms);
         f3.s.close();
     }
 }
@@ -515,7 +514,7 @@ TEST_MT_FF("requireThatConfigSubscriberWaitsUntilNextConfigSucceeds", 2, MyManag
         verifyConfig("foo2", h1->getConfig()); // First update is skipped
     } else {
         TEST_BARRIER();
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(1000ms);
         f1.updateValue(0, createFooValue("foo2"), 3);
     }
 }

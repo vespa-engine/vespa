@@ -1,10 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #pragma once
+
 #include "subscriptionid.h"
 #include <vespa/config/common/configkey.h>
 #include <vespa/config/common/source.h>
+#include <vespa/vespalib/util/time.h>
 #include <atomic>
-#include <chrono>
 
 namespace config {
 
@@ -47,7 +49,7 @@ public:
     /// Used by ConfigSubscriptionSet
     SubscriptionId getSubscriptionId() const { return _id; }
     const ConfigKey & getKey() const;
-    bool nextUpdate(int64_t generation, std::chrono::milliseconds timeoutInMillis);
+    bool nextUpdate(int64_t generation, vespalib::duration timeout);
     int64_t getGeneration() const;
     bool hasChanged() const;
     bool hasGenerationChanged() const;

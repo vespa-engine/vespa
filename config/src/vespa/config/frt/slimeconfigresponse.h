@@ -5,6 +5,7 @@
 #include <vespa/config/common/configkey.h>
 #include <vespa/config/common/configvalue.h>
 #include <vespa/config/common/trace.h>
+#include <vespa/config/common/configstate.h>
 #include <vespa/config/common/misc.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include "protocol.h"
@@ -18,10 +19,9 @@ namespace config {
  * Baseclass for config responses.
  */
 class SlimeConfigResponse : public FRTConfigResponse {
-private:
-    SlimeConfigResponse& operator=(const SlimeConfigResponse&);
 public:
     SlimeConfigResponse(FRT_RPCRequest * request);
+    SlimeConfigResponse& operator=(const SlimeConfigResponse&) = delete;
     ~SlimeConfigResponse() override;
 
     const ConfigKey & getKey() const override { return _key; }
@@ -37,11 +37,11 @@ protected:
     virtual ConfigValue readConfigValue() const = 0;
 
 private:
-    ConfigKey _key;
+    ConfigKey   _key;
     ConfigValue _value;
     ConfigState _state;
-    Trace _trace;
-    bool _filled;
+    Trace       _trace;
+    bool        _filled;
 
     ConfigKey readKey() const;
     ConfigState readState() const;

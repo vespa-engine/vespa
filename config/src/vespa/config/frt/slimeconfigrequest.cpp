@@ -19,14 +19,12 @@ using namespace config::protocol::v3;
 
 namespace config {
 
-const vespalib::string SlimeConfigRequest::REQUEST_TYPES = "s";
-
 SlimeConfigRequest::SlimeConfigRequest(Connection * connection,
                                        const ConfigKey & key,
                                        const vespalib::string & configXxhash64,
                                        int64_t currentGeneration,
                                        const vespalib::string & hostName,
-                                       int64_t serverTimeout,
+                                       duration serverTimeout,
                                        const Trace & trace,
                                        const VespaVersion & vespaVersion,
                                        int64_t protocolVersion,
@@ -40,6 +38,8 @@ SlimeConfigRequest::SlimeConfigRequest(Connection * connection,
     _parameters.AddString(createJsonFromSlime(_data).c_str());
 }
 
+SlimeConfigRequest::~SlimeConfigRequest() = default;
+
 bool
 SlimeConfigRequest::verifyState(const ConfigState & state) const
 {
@@ -52,7 +52,7 @@ SlimeConfigRequest::populateSlimeRequest(const ConfigKey & key,
                                          const vespalib::string & configXxhash64,
                                          int64_t currentGeneration,
                                          const vespalib::string & hostName,
-                                         int64_t serverTimeout,
+                                         duration serverTimeout,
                                          const Trace & trace,
                                          const VespaVersion & vespaVersion,
                                          int64_t protocolVersion,
@@ -69,7 +69,7 @@ SlimeConfigRequest::populateSlimeRequest(const ConfigKey & key,
     root.setString(REQUEST_CLIENT_HOSTNAME, Memory(hostName));
     root.setString(REQUEST_CONFIG_XXHASH64, Memory(configXxhash64));
     root.setLong(REQUEST_CURRENT_GENERATION, currentGeneration);
-    root.setLong(REQUEST_TIMEOUT, serverTimeout);
+    root.setLong(REQUEST_TIMEOUT, vespalib::count_ms(serverTimeout));
     trace.serialize(root.setObject(REQUEST_TRACE));
     root.setString(REQUEST_COMPRESSION_TYPE, Memory(compressionTypeToString(compressionType)));
     root.setString(REQUEST_VESPA_VERSION, Memory(vespaVersion.toString()));

@@ -18,7 +18,7 @@ public:
 
     std::unique_ptr<ConfigUpdate> provide() override;
     void handle(std::unique_ptr<ConfigUpdate> update) override;
-    bool wait(milliseconds timeoutInMillis) override;
+    bool wait(vespalib::duration timeoutI) override;
     bool poll() override;
     void interrupt() override;
 public:

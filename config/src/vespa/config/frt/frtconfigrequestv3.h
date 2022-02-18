@@ -20,11 +20,11 @@ public:
                        const vespalib::string & configXxhash64,
                        int64_t currentGeneration,
                        const vespalib::string & hostName,
-                       int64_t serverTimeout,
+                       duration serverTimeout,
                        const Trace & trace,
                        const VespaVersion & vespaVersion,
                        const CompressionType & compressionType);
-    ConfigResponse::UP createResponse(FRT_RPCRequest * request) const override;
+    std::unique_ptr<ConfigResponse> createResponse(FRT_RPCRequest * request) const override;
 };
 
 }

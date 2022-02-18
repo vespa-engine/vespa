@@ -201,7 +201,7 @@ void Test::testSuspensionTimeout() {
     const ServerSpec spec(_sources);
     FRTConnectionPool sourcePool(spec, timingValues);
     Connection* source = sourcePool.getCurrent();
-    source->setTransientDelay(1000);
+    source->setTransientDelay(1s);
     source->setError(FRTE_RPC_CONNECTION);
     for (int i = 0; i < 9; i++) {
         EXPECT_NOT_EQUAL(source->getAddress(), sourcePool.getCurrent()->getAddress());

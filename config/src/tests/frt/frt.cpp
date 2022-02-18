@@ -3,13 +3,15 @@
 #include "config-my.h"
 #include "config-bar.h"
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/config/common/iconfigholder.h>
 #include <vespa/config/common/trace.h>
 #include <vespa/config/common/configdefinition.h>
 #include <vespa/config/frt/connection.h>
 #include <vespa/config/frt/frtsource.h>
 #include <vespa/config/frt/frtconfigrequestv3.h>
 #include <vespa/config/frt/frtconfigresponsev3.h>
+#include <vespa/config/frt/connectionfactory.h>
+#include <vespa/config/frt/frtconfigagent.h>
+#include <vespa/config/frt/frtconfigrequestfactory.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/data/simple_buffer.h>
@@ -29,32 +31,6 @@ using namespace config::protocol::v2;
 using namespace config::protocol::v3;
 
 namespace {
-
-    struct UpdateFixture : public IConfigHolder {
-        std::unique_ptr<ConfigUpdate> update;
-        bool notified;
-
-        UpdateFixture()
-            : update(),
-              notified(false)
-        { }
-        std::unique_ptr<ConfigUpdate> provide() override { return std::unique_ptr<ConfigUpdate>(); }
-        void handle(std::unique_ptr<ConfigUpdate> u) override { update = std::move(u); }
-        bool wait(milliseconds timeoutInMillis) override { (void) timeoutInMillis; return notified; }
-        bool poll() override { return notified; }
-        void interrupt() override { }
-
-        bool waitUntilResponse(vespalib::duration timeout)
-        {
-            vespalib::Timer timer;
-            while (timer.elapsed() < timeout) {
-                if (notified)
-                    break;
-                std::this_thread::sleep_for(100ms);
-            }
-            return notified;
-        }
-    };
 
     struct RPCFixture
     {
@@ -108,17 +84,9 @@ namespace {
         }
     };
 
-
-    struct MyAbortHandler : public FRT_IAbortHandler
-    {
-        bool aborted;
-        MyAbortHandler() : aborted(false) { }
-        bool HandleAbort() override { aborted = true; return true; }
-    };
-
     struct ConnectionMock : public Connection {
         int errorCode;
-        int timeout;
+        duration timeout;
         FRT_RPCRequest * ans;
         fnet::frt::StandaloneFRT server;
         FRT_Supervisor & supervisor;
@@ -128,21 +96,21 @@ namespace {
         ~ConnectionMock();
         FRT_RPCRequest * allocRPCRequest() override { return supervisor.AllocRPCRequest(); }
         void setError(int ec) override { errorCode = ec; }
-        void invoke(FRT_RPCRequest * req, double t, FRT_IRequestWait * waiter) override
+        void invoke(FRT_RPCRequest * req, duration t, FRT_IRequestWait * waiter) override
         {
-            timeout = static_cast<int>(t);
+            timeout = t;
             if (ans != nullptr)
                 waiter->RequestDone(ans);
             else
                 waiter->RequestDone(req);
         }
         const vespalib::string & getAddress() const override { return address; }
-        void setTransientDelay(int64_t delay) override { (void) delay; }
+        void setTransientDelay(duration delay) override { (void) delay; }
     };
 
     ConnectionMock::ConnectionMock(FRT_RPCRequest * answer)
         : errorCode(0),
-          timeout(0),
+          timeout(0ms),
           ans(answer),
           server(),
           supervisor(server.supervisor()),
@@ -152,7 +120,8 @@ namespace {
 
     struct FactoryMock : public ConnectionFactory {
         ConnectionMock * current;
-        FactoryMock(ConnectionMock * c) : current(c) { }
+        FactoryMock(ConnectionMock * c) noexcept : current(c) { }
+        ~FactoryMock() = default;
         Connection * getCurrent() override {
             return current;
         }
@@ -164,10 +133,10 @@ namespace {
     struct AgentResultFixture
     {
         bool notified;
-        uint64_t waitTime;
-        uint64_t timeout;
+        duration waitTime;
+        duration timeout;
         ConfigState state;
-        AgentResultFixture(uint64_t w, uint64_t t)
+        AgentResultFixture(duration w, duration t)
             : notified(false),
               waitTime(w),
               timeout(t),
@@ -185,15 +154,15 @@ namespace {
         }
 
         const ConfigState & getConfigState() const override { return result->state; }
-        uint64_t getWaitTime () const override { return result->waitTime; }
-        uint64_t getTimeout() const override { return result->timeout; }
-        void handleResponse(const ConfigRequest & request, ConfigResponse::UP response) override
+        duration getWaitTime () const override { return result->waitTime; }
+        duration getTimeout() const override { return result->timeout; }
+        void handleResponse(const ConfigRequest & request, std::unique_ptr<ConfigResponse> response) override
         {
             (void) request;
             (void) response;
             result->notified = true;
         }
-        void handleRequest(ConfigRequest::UP request)
+        void handleRequest(std::unique_ptr<ConfigResponse> request)
         {
             (void) request;
         }
@@ -219,11 +188,11 @@ namespace {
         FRTSource src;
 
         FRTFixture(SourceFixture & f1)
-            : result(2000, 10000),
+            : result(2s, 10s),
               requestFactory(3, VespaVersion::fromString("1.2.3"), CompressionType::UNCOMPRESSED),
-              src(ConnectionFactory::SP(new FactoryMock(&f1.conn)),
+              src(std::make_shared<FactoryMock>(&f1.conn),
                   requestFactory,
-                  ConfigAgent::UP(new AgentFixture(&result)),
+                  std::make_unique<AgentFixture>(&result),
                   f1.key)
         { }
     };
@@ -273,7 +242,7 @@ TEST("require that v3 request is correctly initialized") {
     vespalib::string xxhash64 = "myxxhash64";
     int64_t currentGeneration = 3;
     vespalib::string hostName = "myhost";
-    int64_t timeout = 3000;
+    duration timeout = 3s;
     Trace traceIn(3);
     traceIn.trace(2, "Hei");
     FRTConfigRequestV3 v3req(&conn, key, xxhash64, currentGeneration, hostName,
@@ -300,7 +269,7 @@ TEST("require that v3 request is correctly initialized") {
     EXPECT_EQUAL(hostName, root[REQUEST_CLIENT_HOSTNAME].asString().make_string());
     EXPECT_EQUAL(currentGeneration, root[REQUEST_CURRENT_GENERATION].asLong());
     EXPECT_EQUAL(xxhash64, root[REQUEST_CONFIG_XXHASH64].asString().make_string());
-    EXPECT_EQUAL(timeout, root[REQUEST_TIMEOUT].asLong());
+    EXPECT_EQUAL(count_ms(timeout), root[REQUEST_TIMEOUT].asLong());
     EXPECT_EQUAL("LZ4", root[REQUEST_COMPRESSION_TYPE].asString().make_string());
     EXPECT_EQUAL(root[REQUEST_VESPA_VERSION].asString().make_string(), "1.2.3");
     Trace trace;
@@ -308,11 +277,11 @@ TEST("require that v3 request is correctly initialized") {
     EXPECT_TRUE(trace.shouldTrace(2));
     EXPECT_TRUE(trace.shouldTrace(3));
     EXPECT_FALSE(trace.shouldTrace(4));
-    EXPECT_EQUAL(timeout, root[REQUEST_TIMEOUT].asLong());
+    EXPECT_EQUAL(count_ms(timeout), root[REQUEST_TIMEOUT].asLong());
     ConfigDefinition def;
     def.deserialize(root[REQUEST_DEF_CONTENT]);
     EXPECT_EQUAL(origDef.asString(), def.asString());
-    ConfigResponse::UP response(v3req.createResponse(req));
+    std::unique_ptr<ConfigResponse> response(v3req.createResponse(req));
     req->GetReturn()->AddString("foobar");
     req->GetReturn()->AddData("foo", 3);
     EXPECT_TRUE(response->validateResponse());

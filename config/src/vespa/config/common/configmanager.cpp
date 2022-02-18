@@ -8,8 +8,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".config.common.configmanager");
 
-using namespace std::chrono_literals;
-using namespace std::chrono;
 
 namespace config {
 
@@ -24,7 +22,7 @@ ConfigManager::ConfigManager(SourceFactory::UP sourceFactory, int64_t initialGen
 ConfigManager::~ConfigManager() = default;
 
 ConfigSubscription::SP
-ConfigManager::subscribe(const ConfigKey & key, milliseconds timeoutInMillis)
+ConfigManager::subscribe(const ConfigKey & key, vespalib::duration timeout)
 {
     LOG(debug, "subscribing on def %s, configid %s", key.getDefName().c_str(), key.getConfigId().c_str());
 
@@ -37,8 +35,8 @@ ConfigManager::subscribe(const ConfigKey & key, milliseconds timeoutInMillis)
     source->getConfig();
     ConfigSubscription::SP subscription(new ConfigSubscription(id, key, holder, std::move(source)));
 
-    steady_clock::time_point endTime = steady_clock::now() + timeoutInMillis;
-    while (steady_clock::now() < endTime) {
+    vespalib::steady_time endTime = vespalib::steady_clock::now() + timeout;
+    while (vespalib::steady_clock::now() < endTime) {
         if (holder->poll())
             break;
         std::this_thread::sleep_for(10ms);

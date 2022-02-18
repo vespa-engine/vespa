@@ -2,10 +2,6 @@
 #pragma once
 
 #include <vespa/config/common/configresponse.h>
-#include <vespa/config/common/configkey.h>
-#include <vespa/config/common/configvalue.h>
-#include <vespa/config/common/trace.h>
-#include <vespa/config/common/configstate.h>
 
 class FRT_RPCRequest;
 class FRT_Values;

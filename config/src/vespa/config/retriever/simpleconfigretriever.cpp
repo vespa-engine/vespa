@@ -4,7 +4,7 @@
 namespace config {
 SimpleConfigRetriever::SimpleConfigRetriever(const ConfigKeySet & keySet,
                                              std::shared_ptr<IConfigContext> context,
-                                             milliseconds subscribeTimeout)
+                                             vespalib::duration subscribeTimeout)
     : _set(context),
       _subscriptionList()
 {
@@ -14,9 +14,9 @@ SimpleConfigRetriever::SimpleConfigRetriever(const ConfigKeySet & keySet,
 }
 
 ConfigSnapshot
-SimpleConfigRetriever::getConfigs(milliseconds timeoutInMillis)
+SimpleConfigRetriever::getConfigs(vespalib::duration timeout)
 {
-    if (_set.acquireSnapshot(timeoutInMillis, true)) {
+    if (_set.acquireSnapshot(timeout, true)) {
         return ConfigSnapshot(_subscriptionList, _set.getGeneration());
     }
     return ConfigSnapshot();

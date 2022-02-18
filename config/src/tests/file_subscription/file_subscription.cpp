@@ -15,7 +15,6 @@
 LOG_SETUP(".filesubscription_test");
 
 using namespace config;
-using namespace std::chrono_literals;
 
 namespace {
 

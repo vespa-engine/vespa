@@ -24,13 +24,8 @@ public:
     ConfigManager(SourceFactory::UP sourceFactory, int64_t initialGeneration);
     ~ConfigManager() override;
 
-    // Implements IConfigManager
-    ConfigSubscription::SP subscribe(const ConfigKey & key, milliseconds timeoutInMillis) override;
-
-    // Implements IConfigManager
+    ConfigSubscription::SP subscribe(const ConfigKey & key, vespalib::duration timeout) override;
     void unsubscribe(const ConfigSubscription::SP & subscription) override;
-
-    // Implements IConfigManager
     void reload(int64_t generation) override;
 
 private:

@@ -9,7 +9,7 @@ namespace config {
 
 template <typename ConfigType>
 void
-ConfigFetcher::subscribe(const std::string & configId, IFetcherCallback<ConfigType> * callback, milliseconds subscribeTimeout)
+ConfigFetcher::subscribe(const std::string & configId, IFetcherCallback<ConfigType> * callback, vespalib::duration subscribeTimeout)
 {
     _poller->subscribe<ConfigType>(configId, callback, subscribeTimeout);
 }
