@@ -10,9 +10,10 @@ using namespace std::chrono;
 
 namespace mbus {
 
-Resender::Resender(IRetryPolicy::SP retryPolicy) :
-    _queue(),
-    _retryPolicy(retryPolicy)
+Resender::Resender(IRetryPolicy::SP retryPolicy)
+    : _queue_mutex(),
+      _queue(),
+      _retryPolicy(retryPolicy)
 { }
 
 Resender::~Resender()
@@ -26,13 +27,16 @@ Resender::~Resender()
 void
 Resender::resendScheduled()
 {
-    typedef std::vector<RoutingNode*> NodeList;
+    using NodeList = std::vector<RoutingNode*>;
     NodeList sendList;
 
     time_point now = steady_clock::now();
-    while (!_queue.empty() && _queue.top().first <= now) {
-        sendList.push_back(_queue.top().second);
-        _queue.pop();
+    {
+        std::lock_guard guard(_queue_mutex);
+        while (!_queue.empty() && _queue.top().first <= now) {
+            sendList.push_back(_queue.top().second);
+            _queue.pop();
+        }
     }
 
     for (RoutingNode *node : sendList) {
@@ -84,6 +88,7 @@ Resender::scheduleRetry(RoutingNode &node)
         TraceLevel::COMPONENT,
         vespalib::make_string("Message scheduled for retry %u in %.3f seconds.", retry, delay));
     msg.setRetry(retry);
+    std::lock_guard guard(_queue_mutex);
     _queue.push(Entry(steady_clock::now() + delayMS, &node));
     return true;
 }
