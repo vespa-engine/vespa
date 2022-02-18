@@ -24,9 +24,10 @@ public class Tokens {
      * Advances to the next token, if it is of the given type.
      *
      * @return true if the current token was of the given type and we advanced it, false
-     * if it was not and nothing was changed
+     *         if it was not and nothing was changed
      */
     public boolean skip(IElementType... tokenTypes) {
+        if (current() == null) return false;
         boolean is = is(tokenTypes);
         if (is)
             i++;
@@ -40,6 +41,7 @@ public class Tokens {
      * if it was not and nothing was changed
      */
     public boolean skipWhitespace() {
+        if (current() == null) return false;
         boolean is = isWhitespace();
         if (is)
             i++;
@@ -48,6 +50,7 @@ public class Tokens {
 
     /** Returns whether the current token is of the given type */
     public boolean is(IElementType... tokenTypes) {
+        if (current() == null) return false;
         for (IElementType type : tokenTypes)
             if (current().getElementType() == type) return true;
         return false;
@@ -55,11 +58,13 @@ public class Tokens {
 
     /** Returns whether the current token is whitespace */
     public boolean isWhitespace() {
+        if (current() == null) return false;
         return current().getPsi() instanceof PsiWhiteSpace;
     }
 
     /** Returns whether the current token is an element */
     public boolean isElement() {
+        if (current() == null) return false;
         return current() instanceof LeafPsiElement;
     }
 

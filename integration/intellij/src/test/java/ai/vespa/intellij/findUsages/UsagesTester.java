@@ -52,6 +52,15 @@ class UsagesTester {
         return usageProcessor.usages.get(0);
     }
 
+    /** Finds the rank profile referred (by inheritance) at the given character offset in the given profile. */
+    UsageInfo findRankProfileDefinition(String profileName, int offset) {
+        PsiElement referringElement = schema.rankProfiles().get(profileName).definition().findElementAt(offset);
+        findUsages(referringElement);
+        assertEquals("Expected to find definition of " + referringElement.getText(),
+                     1, usageProcessor.usages.size());
+        return usageProcessor.usages.get(0);
+    }
+
     private void findUsages(PsiElement element) {
         var options = new FindUsagesOptions(project);
         usageProcessor.usages.clear();

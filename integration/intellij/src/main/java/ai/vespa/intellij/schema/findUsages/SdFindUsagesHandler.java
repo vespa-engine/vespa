@@ -33,8 +33,10 @@ public class SdFindUsagesHandler extends FindUsagesHandler {
             else if (elementToSearch instanceof SdRankProfileDefinition) {
                 new RankProfileUsageFinder((SdRankProfileDefinition) elementToSearch, options.searchScope, processor).findUsages();
             }
-            else {
-                new FunctionDefinitionFinder(elementToSearch, options.searchScope, processor).findDefinition();
+            else { // try find definitions
+                boolean suitable = new RankProfileDefinitionFinder(elementToSearch, options.searchScope, processor).findDefinition();
+                if ( ! suitable)
+                    new FunctionDefinitionFinder(elementToSearch, options.searchScope, processor).findDefinition();
             }
         }
 
