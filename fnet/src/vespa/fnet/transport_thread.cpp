@@ -9,6 +9,7 @@
 #include "transport.h"
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/net/server_socket.h>
+#include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/gate.h>
 #include <csignal>
 
@@ -19,6 +20,7 @@ using vespalib::ServerSocket;
 using vespalib::SocketHandle;
 using vespalib::SocketSpec;
 using vespalib::steady_clock;
+using namespace vespalib::atomic;
 
 namespace {
 
@@ -46,7 +48,7 @@ FNET_TransportThread::AddComponent(FNET_IOComponent *comp)
         _componentsTail = comp;
         if (_timeOutHead == nullptr)
             _timeOutHead = comp;
-        _componentCnt++;
+        store_relaxed(_componentCnt, load_relaxed(_componentCnt) + 1);
     } else {
         comp->_ioc_prev = nullptr;
         comp->_ioc_next = _componentsHead;
@@ -56,7 +58,7 @@ FNET_TransportThread::AddComponent(FNET_IOComponent *comp)
             _componentsHead->_ioc_prev = comp;
         }
         _componentsHead = comp;
-        _componentCnt++;
+        store_relaxed(_componentCnt, load_relaxed(_componentCnt) + 1);
     }
 }
 
@@ -74,7 +76,7 @@ FNET_TransportThread::RemoveComponent(FNET_IOComponent *comp)
         comp->_ioc_prev->_ioc_next = comp->_ioc_next;
     if (comp->_ioc_next != nullptr)
         comp->_ioc_next->_ioc_prev = comp->_ioc_prev;
-    _componentCnt--;
+    store_relaxed(_componentCnt, load_relaxed(_componentCnt) - 1);
 }
 
 
@@ -549,7 +551,7 @@ FNET_TransportThread::endEventLoop() {
     assert(_componentsHead == nullptr &&
            _componentsTail == nullptr &&
            _timeOutHead    == nullptr &&
-           _componentCnt   == 0    &&
+           load_relaxed(_componentCnt) == 0 &&
            _queue.IsEmpty_NoLock() &&
            _myQueue.IsEmpty_NoLock());
 
