@@ -79,7 +79,7 @@ public class Container {
             newGraph.reuseNodes(oldGraph);
             try {
                 constructComponents(newGraph);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 log.log(Level.WARNING, String.format(
                         "Failed to construct graph for generation '%d' - scheduling partial graph for deconstruction",
                         newGraph.generation()), e);
