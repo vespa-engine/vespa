@@ -39,7 +39,7 @@ private:
     FNET_IOComponent        *_componentsHead; // I/O component list head
     FNET_IOComponent        *_timeOutHead;    // first IOC in list to time out
     FNET_IOComponent        *_componentsTail; // I/O component list tail
-    uint32_t                 _componentCnt;   // # of components
+    std::atomic<uint32_t>    _componentCnt;   // # of components
     FNET_IOComponent        *_deleteList;     // IOC delete list
     Selector                 _selector;       // I/O event generator
     FNET_PacketQueue_NoLock  _queue;          // outer event queue
@@ -266,7 +266,9 @@ public:
      *
      * @return the current number of IOComponents.
      **/
-    uint32_t GetNumIOComponents() { return _componentCnt; }
+    uint32_t GetNumIOComponents() const noexcept {
+        return _componentCnt.load(std::memory_order_relaxed);
+    }
 
     /**
      * Add an I/O component to the working set of this transport
