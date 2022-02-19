@@ -49,7 +49,7 @@ TEST(GeoGcdTest, computed_distances_seem_legit) {
             double miles = km / 1.609344;
             EXPECT_GE(miles, 0);
             if (from.name == to.name) {
-                EXPECT_DOUBLE_EQ(miles, 0.0);
+                EXPECT_NEAR(miles, 0.0, pow(10, -9)); // EXPECT_DOUBLE_EQ does not work on arm64 for some reason
             } else {
                 double exact = exact_distances[i][j];
                 printf("Distance from %s to %s (in miles): %.1f [more exact would be %.1f]\n", from.name, to.name, miles, exact);
