@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.notification;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -39,6 +40,10 @@ public class NotificationsDb {
     NotificationsDb(Clock clock, CuratorDb curatorDb) {
         this.clock = clock;
         this.curatorDb = curatorDb;
+    }
+
+    public List<TenantName> listTenantsWithNotifications() {
+        return curatorDb.listTenantsWithNotifications();
     }
 
     public List<Notification> listNotifications(NotificationSource source, boolean productionOnly) {

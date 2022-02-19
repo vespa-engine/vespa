@@ -1,0 +1,18 @@
+{
+  "notifications": [
+    {
+      "at": "(ignore)",
+      "level": "warning",
+      "type": "applicationPackage",
+      "tenant": "tenant1",
+      "application": "app1"
+    },
+    {
+      "at": "(ignore)",
+      "level": "warning",
+      "type": "applicationPackage",
+      "tenant": "tenant2",
+      "application": "app1"
+    }
+  ]
+}
