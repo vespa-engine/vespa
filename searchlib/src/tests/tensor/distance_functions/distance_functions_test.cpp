@@ -37,7 +37,7 @@ void verify_geo_miles(const DistanceFunction *dist_fun,
         // compare with common Great Circle Distance implementation:
         search::common::GeoGcd gp1{p1[0], p1[1]};
         double km_gcd = gp1.km_great_circle_distance(p2[0], p2[1]);
-        EXPECT_DOUBLE_EQ(km, km_gcd);
+        EXPECT_NEAR(km, km_gcd, 1e-9); // EXPECT_DOUBLE_EQ does not work on arm64 for some reason
     } else {
         EXPECT_LE(d_miles, 7e-13);
         EXPECT_LE(abstract_distance, 6e-33);
