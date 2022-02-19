@@ -31,7 +31,8 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     private final InstanceName name;
 
     private final DeploymentSpec.UpgradePolicy upgradePolicy;
-    private final DeploymentSpec.UpgradeRevision upgradeRevision;
+    private final DeploymentSpec.RevisionTarget revisionTarget;
+    private final DeploymentSpec.RevisionChange revisionChange;
     private final DeploymentSpec.UpgradeRollout upgradeRollout;
     private final List<DeploymentSpec.ChangeBlocker> changeBlockers;
     private final Optional<String> globalServiceId;
@@ -42,7 +43,8 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     public DeploymentInstanceSpec(InstanceName name,
                                   List<DeploymentSpec.Step> steps,
                                   DeploymentSpec.UpgradePolicy upgradePolicy,
-                                  DeploymentSpec.UpgradeRevision upgradeRevision,
+                                  DeploymentSpec.RevisionTarget revisionTarget,
+                                  DeploymentSpec.RevisionChange revisionChange,
                                   DeploymentSpec.UpgradeRollout upgradeRollout,
                                   List<DeploymentSpec.ChangeBlocker> changeBlockers,
                                   Optional<String> globalServiceId,
@@ -53,7 +55,8 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         super(steps);
         this.name = name;
         this.upgradePolicy = upgradePolicy;
-        this.upgradeRevision = upgradeRevision;
+        this.revisionTarget = revisionTarget;
+        this.revisionChange = revisionChange;
         this.upgradeRollout = upgradeRollout;
         this.changeBlockers = changeBlockers;
         this.globalServiceId = globalServiceId;
@@ -150,13 +153,16 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         return true;
     }
 
-    /** Returns the upgrade policy of this, which is defaultPolicy if none is specified */
+    /** Returns the upgrade policy of this, which is {@link DeploymentSpec.UpgradePolicy#defaultPolicy} by default */
     public DeploymentSpec.UpgradePolicy upgradePolicy() { return upgradePolicy; }
 
-    /** Returns the upgrade revision strategy of this, which is separate if none is specified */
-    public DeploymentSpec.UpgradeRevision upgradeRevision() { return upgradeRevision; }
+    /** Returns the revision target choice of this, which is {@link DeploymentSpec.RevisionTarget#latest} by default */
+    public DeploymentSpec.RevisionTarget revisionTarget() { return revisionTarget; }
 
-    /** Returns the upgrade rollout strategy of this, which is separate if none is specified */
+    /** Returns the revision change strategy of this, which is {@link DeploymentSpec.RevisionChange#whenFailing} by default */
+    public DeploymentSpec.RevisionChange revisionChange() { return revisionChange; }
+
+    /** Returns the upgrade rollout strategy of this, which is {@link DeploymentSpec.UpgradeRollout#separate} by default */
     public DeploymentSpec.UpgradeRollout upgradeRollout() { return upgradeRollout; }
 
     /** Returns time windows where upgrades are disallowed for these instances */
@@ -204,7 +210,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         DeploymentInstanceSpec other = (DeploymentInstanceSpec) o;
         return globalServiceId.equals(other.globalServiceId) &&
                upgradePolicy == other.upgradePolicy &&
-               upgradeRevision == other.upgradeRevision &&
+               revisionTarget == other.revisionTarget &&
                upgradeRollout == other.upgradeRollout &&
                changeBlockers.equals(other.changeBlockers) &&
                steps().equals(other.steps()) &&
@@ -215,7 +221,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
 
     @Override
     public int hashCode() {
-        return Objects.hash(globalServiceId, upgradePolicy, upgradeRevision, upgradeRollout, changeBlockers, steps(), athenzService, notifications, endpoints);
+        return Objects.hash(globalServiceId, upgradePolicy, revisionTarget, upgradeRollout, changeBlockers, steps(), athenzService, notifications, endpoints);
     }
 
     @Override
