@@ -29,7 +29,7 @@ public:
     ~DistributorProcess() override;
 
     void shutdown() override;
-    void setupConfig(milliseconds subscribeTimeout) override;
+    void setupConfig(vespalib::duration subscribeTimeout) override;
     void createNode() override;
     bool configUpdated() override;
     void updateConfig() override;

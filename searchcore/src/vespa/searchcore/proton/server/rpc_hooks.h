@@ -85,8 +85,8 @@ public:
         uint32_t          rtcPort;
         uint32_t          numTranportThreads;
 
-        Params(Proton &parent, uint32_t port, const vespalib::string &ident,
-               uint32_t numTransportThreads);
+        Params(Proton &parent, uint32_t port, const config::ConfigUri & configUri,
+               vespalib::stringref slobrokId, uint32_t numTransportThreads);
         ~Params();
     };
     RPCHooksBase(const RPCHooksBase &) = delete;

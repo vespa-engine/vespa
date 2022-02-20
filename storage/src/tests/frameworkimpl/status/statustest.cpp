@@ -108,7 +108,7 @@ TEST_F(StatusTest, index_status_page) {
                             "barid", "Bar impl", "<p>info</p>"));
     StatusWebServer webServer(_node->getComponentRegister(),
                               _node->getComponentRegister(),
-                              "raw:httpport 0");
+                              config::ConfigUri("raw:httpport 0"));
     auto actual = fetch(webServer.getListenPort(), "/");
     std::string expected(
             "HTTP\\/1.1 200 OK\r\n"
@@ -143,7 +143,7 @@ TEST_F(StatusTest, html_status) {
                 "fooid", "Foo impl", "<p>info</p>", "<!-- script -->"));
     StatusWebServer webServer(_node->getComponentRegister(),
                               _node->getComponentRegister(),
-                              "raw:httpport 0");
+                              config::ConfigUri("raw:httpport 0"));
     auto actual = fetch(webServer.getListenPort(), "/fooid?unusedParam");
     std::string expected(
             "HTTP/1.1 200 OK\r\n"
@@ -175,7 +175,7 @@ TEST_F(StatusTest, xml_sStatus) {
                 "fooid", "Foo impl"));
     StatusWebServer webServer(_node->getComponentRegister(),
                               _node->getComponentRegister(),
-                              "raw:httpport 0");
+                              config::ConfigUri("raw:httpport 0"));
     auto actual = fetch(webServer.getListenPort(), "/fooid?unusedParam");
     std::string expected(
             "HTTP/1.1 200 OK\r\n"
@@ -200,7 +200,7 @@ TEST_F(StatusTest, xml_sStatus) {
 TEST_F(StatusTest, test404) {
     StatusWebServer webServer(_node->getComponentRegister(),
                               _node->getComponentRegister(),
-                              "raw:httpport 0");
+                              config::ConfigUri("raw:httpport 0"));
     auto actual = fetch(webServer.getListenPort(), "/fooid?unusedParam");
     std::string expected(
             "HTTP/1.1 404 Not Found\r\n"

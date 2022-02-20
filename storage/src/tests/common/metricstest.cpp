@@ -103,7 +103,7 @@ void MetricsTest::SetUp() {
     _visitorMetrics = std::make_shared<VisitorMetrics>();
     _visitorMetrics->initThreads(4);
     _topSet->registerMetric(*_visitorMetrics);
-    _metricManager->init(_config->getConfigId(), _node->getThreadPool());
+    _metricManager->init(config::ConfigUri(_config->getConfigId()), _node->getThreadPool());
 }
 
 void MetricsTest::TearDown() {

@@ -96,8 +96,8 @@ App::Main()
     auto retryPolicy = std::make_shared<RetryTransientErrorsPolicy>();
     retryPolicy->setBaseDelay(0.1);
     RPCMessageBus mb(MessageBusParams().setRetryPolicy(retryPolicy).addProtocol(std::make_shared<SimpleProtocol>()),
-                     RPCNetworkParams("file:slobrok.cfg").setIdentity(Identity("server/cpp")),
-                     "file:routing.cfg");
+                     RPCNetworkParams(config::ConfigUri("file:slobrok.cfg")).setIdentity(Identity("server/cpp")),
+                     config::ConfigUri("file:routing.cfg"));
     Client client(mb.getMessageBus(), SourceSessionParams().setTimeout(30s));
 
     // let the system 'warm up'

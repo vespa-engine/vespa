@@ -118,7 +118,7 @@ public:
         std::string rtcPattern3 = "*/search/*/realtimecontroller";
 
         try {
-            slobrok::ConfiguratorFactory sbcfg("client");
+            slobrok::ConfiguratorFactory sbcfg(config::ConfigUri("client"));
             slobrok::api::MirrorAPI sbmirror(_frt->supervisor(), sbcfg);
             for (int timeout = 1; timeout < 20; timeout++) {
                 if (!sbmirror.ready()) {
@@ -170,7 +170,7 @@ public:
         std::string rtcPattern = "search/cluster.*/c*/r*/realtimecontroller";
 
         try {
-            slobrok::ConfiguratorFactory sbcfg("client");
+            slobrok::ConfiguratorFactory sbcfg(config::ConfigUri("client"));
             slobrok::api::MirrorAPI sbmirror(_frt->supervisor(), sbcfg);
             for (int timeout = 1; timeout < 20; timeout++) {
                 if (!sbmirror.ready()) {

@@ -23,9 +23,9 @@ int
 App::Main()
 {
     RPCMessageBus mb(ProtocolSet().add(std::make_shared<SimpleProtocol>()),
-                     RPCNetworkParams("file:slobrok.cfg")
+                     RPCNetworkParams(config::ConfigUri("file:slobrok.cfg"))
                      .setIdentity(Identity("server/cpp")),
-                     "file:routing.cfg");
+                     config::ConfigUri("file:routing.cfg"));
 
     Receptor src;
     Message::UP msg;

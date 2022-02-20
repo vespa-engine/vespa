@@ -95,7 +95,7 @@ void StateReporterTest::SetUp() {
     _filestorMetrics->initDiskMetrics(1, 1);
     _topSet->registerMetric(*_filestorMetrics);
 
-    _metricManager->init(_config->getConfigId(), _node->getThreadPool());
+    _metricManager->init(config::ConfigUri(_config->getConfigId()), _node->getThreadPool());
 }
 
 void StateReporterTest::TearDown() {

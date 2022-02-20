@@ -21,6 +21,7 @@
 LOG_SETUP(".test.metricmanager");
 
 using namespace vespalib::atomic;
+using config::ConfigUri;
 
 namespace metrics {
 
@@ -81,7 +82,7 @@ MultiSubMetricSet::MultiSubMetricSet(MetricSet* owner)
     sum.addMetricToSum(b);
 }
 
-MultiSubMetricSet::~MultiSubMetricSet() { }
+MultiSubMetricSet::~MultiSubMetricSet() = default;
 
 struct TestMetricSet {
     MetricSet set;
@@ -114,7 +115,7 @@ TestMetricSet::TestMetricSet()
       val10(&set)
 { }
 
-TestMetricSet::~TestMetricSet() { }
+TestMetricSet::~TestMetricSet() = default;
 
 
 struct MetricNameVisitor : public MetricVisitor {
@@ -155,7 +156,7 @@ getMatchedMetrics(const vespalib::string& config)
     TestMetricSet mySet;
     MetricManager mm;
     mm.registerMetric(mm.getMetricLock(), mySet.set);
-    mm.init(config, pool);
+    mm.init(ConfigUri(config), pool);
     MetricNameVisitor visitor;
 
     /** Take a copy to verify clone works.
@@ -483,14 +484,14 @@ TEST_F(MetricManagerTest, test_snapshots)
         MetricLockGuard lockGuard(mm.getMetricLock());
         mm.registerMetric(lockGuard, mySet.set);
     }
-    mm.init("raw:"
-            "consumer[2]\n"
-            "consumer[0].name snapper\n"
-            "consumer[0].tags[1]\n"
-            "consumer[0].tags[0] snaptest\n"
-            "consumer[1].name log\n"
-            "consumer[1].tags[1]\n"
-            "consumer[1].tags[0] snaptest\n",
+    mm.init(ConfigUri("raw:"
+                      "consumer[2]\n"
+                      "consumer[0].name snapper\n"
+                      "consumer[0].tags[1]\n"
+                      "consumer[0].tags[0] snaptest\n"
+                      "consumer[1].name log\n"
+                      "consumer[1].tags[1]\n"
+                      "consumer[1].tags[0] snaptest\n"),
             pool);
     MetricNameVisitor visitor;
     {
@@ -585,14 +586,14 @@ TEST_F(MetricManagerTest, test_xml_output)
     }
 
     // Initialize metric manager to get snapshots created.
-    mm.init("raw:"
-            "consumer[2]\n"
-            "consumer[0].name snapper\n"
-            "consumer[0].tags[1]\n"
-            "consumer[0].tags[0] snaptest\n"
-            "consumer[1].name log\n"
-            "consumer[1].tags[1]\n"
-            "consumer[1].tags[0] snaptest\n",
+    mm.init(ConfigUri("raw:"
+                      "consumer[2]\n"
+                      "consumer[0].name snapper\n"
+                      "consumer[0].tags[1]\n"
+                      "consumer[0].tags[0] snaptest\n"
+                      "consumer[1].name log\n"
+                      "consumer[1].tags[1]\n"
+                      "consumer[1].tags[0] snaptest\n"),
             pool);
 
     takeSnapshots(mm, 1000);
@@ -663,11 +664,11 @@ TEST_F(MetricManagerTest, test_json_output)
     }
 
     // Initialize metric manager to get snapshots created.
-    mm.init("raw:"
-            "consumer[1]\n"
-            "consumer[0].name snapper\n"
-            "consumer[0].tags[1]\n"
-            "consumer[0].tags[0] snaptest\n",
+    mm.init(ConfigUri("raw:"
+                      "consumer[1]\n"
+                      "consumer[0].name snapper\n"
+                      "consumer[0].tags[1]\n"
+                      "consumer[0].tags[0] snaptest\n"),
             pool);
 
     takeSnapshots(mm, 1000);
@@ -762,12 +763,11 @@ struct MetricSnapshotTestFixture
         }
 
         // Initialize metric manager to get snapshots created.
-        manager.init(
-                "raw:"
-                "consumer[1]\n"
-                "consumer[0].name snapper\n"
-                "consumer[0].addedmetrics[1]\n"
-                "consumer[0].addedmetrics[0] *\n",
+        manager.init(ConfigUri("raw:"
+                               "consumer[1]\n"
+                               "consumer[0].name snapper\n"
+                               "consumer[0].addedmetrics[1]\n"
+                               "consumer[0].addedmetrics[0] *\n"),
                 pool);
 
         test.takeSnapshots(manager, 1000);
@@ -998,14 +998,14 @@ TEST_F(MetricManagerTest, test_text_output)
     mySet.val10.a.val2.addValue(2);
     mySet.val10.b.val1.addValue(1);
         // Initialize metric manager to get snapshots created.
-    mm.init("raw:"
-            "consumer[2]\n"
-            "consumer[0].name snapper\n"
-            "consumer[0].tags[1]\n"
-            "consumer[0].tags[0] snaptest\n"
-            "consumer[1].name log\n"
-            "consumer[1].tags[1]\n"
-            "consumer[1].tags[0] snaptest\n",
+    mm.init(ConfigUri("raw:"
+                      "consumer[2]\n"
+                      "consumer[0].name snapper\n"
+                      "consumer[0].tags[1]\n"
+                      "consumer[0].tags[0] snaptest\n"
+                      "consumer[1].name log\n"
+                      "consumer[1].tags[1]\n"
+                      "consumer[1].tags[0] snaptest\n"),
             pool);
     std::string expected(
         "snapshot \"Active metrics showing updates since last snapshot\" from 1000 to 0 period 0\n"
@@ -1102,14 +1102,14 @@ TEST_F(MetricManagerTest, test_update_hooks)
 
     // Initialize metric manager to get snapshots created.
     output << "Running init\n";
-    mm.init("raw:"
-            "consumer[2]\n"
-            "consumer[0].name snapper\n"
-            "consumer[0].tags[1]\n"
-            "consumer[0].tags[0] snaptest\n"
-            "consumer[1].name log\n"
-            "consumer[1].tags[1]\n"
-            "consumer[1].tags[0] snaptest\n",
+    mm.init(ConfigUri("raw:"
+                      "consumer[2]\n"
+                      "consumer[0].name snapper\n"
+                      "consumer[0].tags[1]\n"
+                      "consumer[0].tags[0] snaptest\n"
+                      "consumer[1].name log\n"
+                      "consumer[1].tags[1]\n"
+                      "consumer[1].tags[0] snaptest\n"),
             pool);
     output << "Init done\n";
 

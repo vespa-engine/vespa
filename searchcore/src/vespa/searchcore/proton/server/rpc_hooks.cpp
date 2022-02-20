@@ -166,11 +166,11 @@ RPCHooksBase::initRPC()
     rb.ReturnDesc("success", "Whether or not prepare for restart was triggered.");
 }
 
-RPCHooksBase::Params::Params(Proton &parent, uint32_t port, const vespalib::string &ident,
-                             uint32_t transportThreads)
+RPCHooksBase::Params::Params(Proton &parent, uint32_t port, const config::ConfigUri & configUri,
+                             vespalib::stringref slobrokId, uint32_t transportThreads)
     : proton(parent),
-      slobrok_config(config::ConfigUri("client")),
-      identity(ident),
+      slobrok_config(configUri.createWithNewId(slobrokId)),
+      identity(configUri.getConfigId()),
       rtcPort(port),
       numTranportThreads(transportThreads)
 { }

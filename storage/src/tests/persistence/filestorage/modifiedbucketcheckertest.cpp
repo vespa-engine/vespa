@@ -47,7 +47,7 @@ ModifiedBucketCheckerTest::SetUp()
     _top.reset(new DummyStorageLink);
     _handler = new ModifiedBucketChecker(_node->getComponentRegister(),
                                          _node->getPersistenceProvider(),
-                                         _config->getConfigId());
+                                         config::ConfigUri(_config->getConfigId()));
     _top->push_back(std::unique_ptr<StorageLink>(_handler));
     _bottom = new DummyStorageLink;
     _handler->push_back(std::unique_ptr<StorageLink>(_bottom));

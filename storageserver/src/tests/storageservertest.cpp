@@ -62,7 +62,7 @@ struct Storage : public Node {
 };
 
 Distributor::Distributor(vdstestlib::DirConfig& config)
-    : _process(config.getConfigId())
+    : _process(config::ConfigUri(config.getConfigId()))
 {
     _process.setupConfig(60000ms);
     _process.createNode();
@@ -71,7 +71,7 @@ Distributor::Distributor(vdstestlib::DirConfig& config)
 Distributor::~Distributor() = default;
 
 Storage::Storage(vdstestlib::DirConfig& config)
-    : _process(config.getConfigId())
+    : _process(config::ConfigUri(config.getConfigId()))
 {
     _process.setupConfig(60000ms);
     _process.createNode();

@@ -30,7 +30,7 @@ Application::Application() :
     _params()
 { }
 
-Application::~Application() {}
+Application::~Application() = default;
 
 
     int
@@ -46,7 +46,7 @@ Application::Main()
 
         auto repo = std::make_shared<DocumentTypeRepo>(
                         *ConfigGetter<DocumenttypesConfig>::getConfig(_params.getDocumentTypesConfigId()));
-        _net = std::make_unique<MyNetwork>(mbus::RPCNetworkParams(_params.getSlobrokConfigId())
+        _net = std::make_unique<MyNetwork>(mbus::RPCNetworkParams(config::ConfigUri(_params.getSlobrokConfigId()))
                 .setIdentity(_params.getRPCNetworkParams().getIdentity())
                 .setListenPort(_params.getRPCNetworkParams().getListenPort()));
         _mbus = std::make_unique<mbus::MessageBus>(

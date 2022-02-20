@@ -183,8 +183,9 @@ TEST_F(SnapshotTest, test_snapshot_two_days)
         MetricLockGuard lockGuard(mm.getMetricLock());
         mm.registerMetric(lockGuard, set);
     }
-    mm.init("raw:consumer[1]\n"
-            "consumer[0].name \"log\"", threadPool, false);
+    mm.init(config::ConfigUri("raw:consumer[1]\n"
+                              "consumer[0].name \"log\""),
+            threadPool, false);
     tick(mm, timer->_timeInSecs * 1000);
 
     for (uint32_t days=0; days<2; ++days) {

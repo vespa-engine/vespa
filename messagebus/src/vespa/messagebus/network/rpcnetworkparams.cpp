@@ -6,7 +6,7 @@
 namespace mbus {
 
 RPCNetworkParams::RPCNetworkParams()
-    : RPCNetworkParams("client")
+    : RPCNetworkParams(config::ConfigUri("client"))
 { }
 
 RPCNetworkParams::RPCNetworkParams(config::ConfigUri configUri) :

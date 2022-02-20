@@ -22,7 +22,7 @@ Process::Process(const config::ConfigUri & configUri)
 Process::~Process() = default;
 
 void
-Process::setupConfig(milliseconds subscribeTimeout)
+Process::setupConfig(vespalib::duration subscribeTimeout)
 {
     _documentHandler = _configSubscriber.subscribe<document::config::DocumenttypesConfig>(_configUri.getConfigId(), subscribeTimeout);
     if (!_configSubscriber.nextConfig()) {

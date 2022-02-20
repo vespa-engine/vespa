@@ -125,7 +125,7 @@ ChangedBucketOwnershipHandlerTest::SetUp()
 
     _app.reset(new TestServiceLayerApp);
     _top.reset(new DummyStorageLink);
-    _handler = new ChangedBucketOwnershipHandler(config.getConfigId(),
+    _handler = new ChangedBucketOwnershipHandler(config::ConfigUri(config.getConfigId()),
                                                  _app->getComponentRegister());
     _top->push_back(std::unique_ptr<StorageLink>(_handler));
     _bottom = new DummyStorageLink;

@@ -37,11 +37,11 @@ Process::UP createProcess(vespalib::stringref configId) {
     config::ConfigUri uri(configId);
     std::unique_ptr<vespa::config::content::core::StorServerConfig> serverConfig = config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(uri.getConfigId(), uri.getContext());
     if (serverConfig->isDistributor) {
-        return std::make_unique<DistributorProcess>(configId);
+        return std::make_unique<DistributorProcess>(uri);
     } else switch (serverConfig->persistenceProvider.type) {
         case vespa::config::content::core::StorServerConfig::PersistenceProvider::Type::STORAGE:
         case vespa::config::content::core::StorServerConfig::PersistenceProvider::Type::DUMMY:
-            return std::make_unique<DummyServiceLayerProcess>(configId);
+            return std::make_unique<DummyServiceLayerProcess>(uri);
         default:
             throw vespalib::IllegalStateException("Unknown persistence provider.", VESPA_STRLOC);
     }
