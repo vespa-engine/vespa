@@ -51,16 +51,18 @@ public class RankProfile {
      */
     public Map<String, RankProfile> parents() {
         if (parents != null) return parents;
+        if (owner == null) return Map.of(); // Some code paths do not yet instantiate from a schema
         return parents = AST.inherits(definition).stream()
                             .map(parentIdentifierAST -> parentIdentifierAST.getPsi().getReference())
                             .filter(reference -> reference != null)
                             .map(reference -> owner.rankProfiles().get(reference.getCanonicalText()))
-                            .filter(r -> r != null)
-                            .collect(Collectors.toMap(p -> p.name(), p -> p));
+                            .filter(profile -> profile != null)
+                            .collect(Collectors.toMap(profile -> profile.name(), profile -> profile));
     }
 
     public List<RankProfile> children() {
         if (children != null) return children;
+        if (owner == null) return List.of(); // Some code paths do not yet instantiate from a schema
         return children = children(owner);
     }
 
