@@ -207,10 +207,12 @@ getFileList(const vespalib::string &snapDir)
 
 }
 
-FileConfigManager::FileConfigManager(const vespalib::string &baseDir,
+FileConfigManager::FileConfigManager(FNET_Transport & transport,
+                                     const vespalib::string &baseDir,
                                      const vespalib::string &configId,
                                      const vespalib::string &docTypeName)
-    : _baseDir(baseDir),
+    : _transport(transport),
+      _baseDir(baseDir),
       _configId(configId),
       _docTypeName(docTypeName),
       _info(baseDir),
@@ -358,7 +360,7 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot, search::S
                                                        bucketspaces,currentSnapshot.getTuneFileDocumentDBSP(),
                                                        sampler.hwInfo());
     dbc.forwardConfig(bootstrap);
-    dbc.nextGeneration(0ms);
+    dbc.nextGeneration(_transport, 0ms);
 
     loadedSnapshot = dbc.getConfig();
     loadedSnapshot->setConfigId(_configId);

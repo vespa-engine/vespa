@@ -176,10 +176,10 @@ class DBContext : public DummyDBOwner
 {
 public:
     DirMaker _dmk;
-    DummyFileHeaderContext _fileHeaderContext;
-    TransLogServer _tls;
+    DummyFileHeaderContext        _fileHeaderContext;
     vespalib::ThreadStackExecutor _summaryExecutor;
-    MockSharedThreadingService _shared_service;
+    MockSharedThreadingService    _shared_service;
+    TransLogServer                _tls;
     storage::spi::dummy::DummyBucketExecutor _bucketExecutor;
     bool _mkdirOk;
     matching::QueryLimiter _queryLimiter;
@@ -198,9 +198,9 @@ public:
     DBContext(const std::shared_ptr<const DocumentTypeRepo> &repo, const char *docTypeName)
         : _dmk(docTypeName),
           _fileHeaderContext(),
-          _tls("tmp", 9013, ".", _fileHeaderContext),
           _summaryExecutor(8, 128_Ki),
           _shared_service(_summaryExecutor, _summaryExecutor),
+          _tls(_shared_service.transport(), "tmp", 9013, ".", _fileHeaderContext),
           _bucketExecutor(2),
           _mkdirOk(FastOS_File::MakeDirectory("tmpdb")),
           _queryLimiter(),
@@ -223,7 +223,7 @@ public:
                                                    std::make_shared<BucketspacesConfig>(),
                                                    _tuneFileDocumentDB, _hwInfo);
         _configMgr.forwardConfig(b);
-        _configMgr.nextGeneration(0ms);
+        _configMgr.nextGeneration(_shared_service.transport(), 0ms);
         if (! FastOS_File::MakeDirectory((std::string("tmpdb/") + docTypeName).c_str())) {
             LOG_ABORT("should not be reached");
         }

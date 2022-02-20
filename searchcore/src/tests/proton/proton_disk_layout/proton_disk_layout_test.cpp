@@ -9,6 +9,8 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/fnet/transport.h>
 
 using search::index::DummyFileHeaderContext;
 using search::transactionlog::client::TransLogClient;
@@ -29,6 +31,8 @@ struct FixtureBase
 
 struct DiskLayoutFixture {
     DummyFileHeaderContext  _fileHeaderContext;
+    FastOS_ThreadPool       _threadPool;
+    FNET_Transport          _transport;
     TransLogServer          _tls;
     vespalib::string        _tlsSpec;
     ProtonDiskLayout        _diskLayout;
@@ -91,13 +95,18 @@ struct DiskLayoutFixture {
 
 DiskLayoutFixture::DiskLayoutFixture()
     : _fileHeaderContext(),
-      _tls("tls", tlsPort, baseDir, _fileHeaderContext),
+      _threadPool(64_Ki),
+      _transport(),
+      _tls(_transport, "tls", tlsPort, baseDir, _fileHeaderContext),
       _tlsSpec(vespalib::make_string("tcp/localhost:%u", tlsPort)),
       _diskLayout(baseDir, _tlsSpec)
 {
+    _transport.Start(&_threadPool);
 }
 
-DiskLayoutFixture::~DiskLayoutFixture() = default;
+DiskLayoutFixture::~DiskLayoutFixture() {
+    _transport.ShutDown(true);
+}
 
 struct Fixture : public FixtureBase, public DiskLayoutFixture
 {

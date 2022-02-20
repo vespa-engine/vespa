@@ -89,13 +89,13 @@ derive_num_threads(uint32_t configured_cores, uint32_t actual_cores) {
 }
 
 void
-TransLogServerApp::start(uint32_t num_cores)
+TransLogServerApp::start(FNET_Transport & transport, uint32_t num_cores)
 {
     std::lock_guard<std::mutex> guard(_lock);
     auto c = _tlsConfig.get();
     DomainConfig domainConfig = getDomainConfig(*c);
     logReconfig(*c, domainConfig);
-   _tls = std::make_shared<TransLogServer>(c->servername, c->listenport, c->basedir, _fileHeaderContext,
+   _tls = std::make_shared<TransLogServer>(transport, c->servername, c->listenport, c->basedir, _fileHeaderContext,
                                             domainConfig, derive_num_threads(c->maxthreads, num_cores));
 }
 

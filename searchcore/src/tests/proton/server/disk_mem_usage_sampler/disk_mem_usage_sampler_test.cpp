@@ -3,8 +3,10 @@
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <vespa/searchcore/proton/server/disk_mem_usage_sampler.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/fastos/thread.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <chrono>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -38,16 +40,23 @@ public:
 };
 
 struct DiskMemUsageSamplerTest : public ::testing::Test {
-    DiskMemUsageSampler sampler;
-    DiskMemUsageSamplerTest():
-        sampler(".",
-                DiskMemUsageSampler::Config(0.8, 0.8,
-                                            50ms, make_hw_info()))
+    FastOS_ThreadPool threadPool;
+    FNET_Transport transport;
+    std::unique_ptr<DiskMemUsageSampler> sampler;
+    DiskMemUsageSamplerTest()
+        : threadPool(64_Ki),
+          transport(),
+          sampler(std::make_unique<DiskMemUsageSampler>(transport, ".", DiskMemUsageSampler::Config(0.8, 0.8, 50ms, make_hw_info())))
     {
-        sampler.add_transient_usage_provider(std::make_shared<MyProvider>(50, 200));
-        sampler.add_transient_usage_provider(std::make_shared<MyProvider>(100, 150));
+        transport.Start(&threadPool);
+        sampler->add_transient_usage_provider(std::make_shared<MyProvider>(50, 200));
+        sampler->add_transient_usage_provider(std::make_shared<MyProvider>(100, 150));
     }
-    const DiskMemUsageFilter& filter() const { return sampler.writeFilter(); }
+    ~DiskMemUsageSamplerTest() {
+        sampler.reset();
+        transport.ShutDown(true);
+    }
+    const DiskMemUsageFilter& filter() const { return sampler->writeFilter(); }
 };
 
 TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled)
