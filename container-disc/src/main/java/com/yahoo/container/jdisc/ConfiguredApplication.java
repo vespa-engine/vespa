@@ -48,7 +48,10 @@ import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.UncheckedInterruptedException;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import java.security.Provider;
+import java.security.Security;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -108,6 +111,23 @@ public final class ConfiguredApplication implements Application {
     static {
         LogSetup.initVespaLogging("Container");
         log.log(Level.INFO, "Starting jdisc" + (Vtag.currentVersion.isEmpty() ? "" : " at version " + Vtag.currentVersion));
+        installBouncyCastleSecurityProvider();
+    }
+
+    /**
+     * Eagerly install BouncyCastle as security provider. It's done here to ensure no bundle is able install this security provider.
+     * If a bundle install this provider and the bundle is later uninstall,
+     * it will break havoc if the installed security provider tries to load new classes.
+     */
+    private static void installBouncyCastleSecurityProvider() {
+        BouncyCastleProvider bcProvider = new BouncyCastleProvider();
+        if (Security.addProvider(bcProvider) != -1) {
+            log.info("Installed '" + bcProvider.getInfo() + "' as Java Security Provider");
+        } else {
+            Provider alreadyInstalledBcProvider = Security.getProvider(BouncyCastleProvider.PROVIDER_NAME);
+            log.warning("Unable to install '" + bcProvider.getInfo() + "' as Java Security Provider. " +
+                    "A provider '" + alreadyInstalledBcProvider.getInfo() + "' is already installed.");
+        }
     }
 
     /**
