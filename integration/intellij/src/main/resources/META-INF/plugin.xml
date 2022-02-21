@@ -18,8 +18,8 @@
     <li>Syntax highlighting</li>
     <li>Structure view</li>
     <li>Find usages</li>
-    <li>Function call hierarchy</li>
     <li>Go to declaration</li>
+    <li>Function call hierarchy</li>
     <li>Go to symbol</li>
     <li>Refactoring</li>
     <li>Turn lines into a comment</li>

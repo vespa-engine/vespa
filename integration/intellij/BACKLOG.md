@@ -27,7 +27,8 @@ the IDE doesn't "jump" to the matching declaration.
 Goto declaration doesn't work for document and schema inherits. E.g. if document A inherits from 
 document B, B doesn't have a reference to its declaration.
 
-There aren't any tests for the plugin.
+There are no tests for the call structure ("hierarchy") functionality, 
+and it is not yet using the model classes.
 
 Semicolons in indexing statements are marked with red background for some reason. 
 They are not marked as errors.
