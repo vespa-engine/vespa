@@ -66,10 +66,9 @@ public class ZipStreamReader {
     public static SortedMap<String, Long> getEntryCRCs(InputStream in, Predicate<String> entryNameMatcher) {
         SortedMap<String, Long> entryCRCs = new TreeMap<>();
         byte[] buffer = new byte[2048];
-        try (ZipInputStream zipIn = new ZipInputStream(in);
-             OutputStream os = new ByteArrayOutputStream()) {
+        try (ZipInputStream zipIn = new ZipInputStream(in)) {
             for (ZipEntry entry = zipIn.getNextEntry(); entry != null; entry = zipIn.getNextEntry()) {
-                if (!entryNameMatcher.test(entry.getName()))
+                if ( ! entryNameMatcher.test(entry.getName()))
                     continue;
                 // CRC is not set until entry is read
                 while ( -1 != zipIn.read(buffer)){}

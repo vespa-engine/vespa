@@ -9,13 +9,20 @@ import com.yahoo.config.provision.RegionName;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.yahoo.config.provision.Environment.prod;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * The deployment spec for an application instance
@@ -222,6 +229,19 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     @Override
     public int hashCode() {
         return Objects.hash(globalServiceId, upgradePolicy, revisionTarget, upgradeRollout, changeBlockers, steps(), athenzService, notifications, endpoints);
+    }
+
+    int deployableHashCode() {
+        List<DeploymentSpec.DeclaredZone> zones = zones().stream().filter(zone -> zone.concerns(prod)).collect(toList());
+        Object[] toHash = new Object[zones.size() + 3];
+        int i = 0;
+        toHash[i++] = name;
+        toHash[i++] = endpoints;
+        toHash[i++] = globalServiceId;
+        for (DeploymentSpec.DeclaredZone zone : zones)
+            toHash[i++] = Objects.hash(zone, zone.athenzService());
+
+        return Arrays.hashCode(toHash);
     }
 
     @Override

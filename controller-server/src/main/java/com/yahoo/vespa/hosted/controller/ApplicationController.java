@@ -150,7 +150,7 @@ public class ApplicationController {
             for (TenantAndApplicationId id : curator.readApplicationIds()) {
                 lockApplicationIfPresent(id, application -> {
                     for (InstanceName instance : application.get().deploymentSpec().instanceNames())
-                        if (!application.get().instances().containsKey(instance))
+                        if ( ! application.get().instances().containsKey(instance))
                             application = withNewInstance(application, id.instance(instance));
                     store(application);
                 });
@@ -416,7 +416,7 @@ public class ApplicationController {
     }
 
     /** Stores the deployment spec and validation overrides from the application package, and runs cleanup. */
-    public LockedApplication storeWithUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
+    public void storeWithUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
         applicationPackageValidator.validate(application.get(), applicationPackage, clock.instant());
 
         application = application.with(applicationPackage.deploymentSpec());
@@ -464,7 +464,6 @@ public class ApplicationController {
         }
 
         store(application);
-        return application;
     }
 
     /** Deploy a system application to given zone */
@@ -770,14 +769,14 @@ public class ApplicationController {
     public void verifyApplicationIdentityConfiguration(TenantName tenantName, Optional<InstanceName> instanceName, Optional<ZoneId> zoneId, ApplicationPackage applicationPackage, Optional<Principal> deployer) {
         Optional<AthenzDomain> identityDomain = applicationPackage.deploymentSpec().athenzDomain()
                                                                   .map(domain -> new AthenzDomain(domain.value()));
-        if(identityDomain.isEmpty()) {
+        if (identityDomain.isEmpty()) {
             // If there is no domain configured in deployment.xml there is nothing to do.
             return;
         }
 
         // Verify that the system supports launching services.
         // Consider adding a capability to the system.
-        if(! (accessControl instanceof AthenzFacade)) {
+        if ( ! (accessControl instanceof AthenzFacade)) {
             throw new IllegalArgumentException("Athenz domain and service specified in deployment.xml, but not supported by system.");
         }
 

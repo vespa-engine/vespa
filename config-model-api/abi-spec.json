@@ -445,7 +445,8 @@
       "public static com.yahoo.config.application.api.DeploymentSpec fromXml(java.lang.String, boolean)",
       "public static java.lang.String toMessageString(java.lang.Throwable)",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
+      "public int hashCode()",
+      "public int deployableHashCode()"
     ],
     "fields": [
       "public static final com.yahoo.config.application.api.DeploymentSpec empty"

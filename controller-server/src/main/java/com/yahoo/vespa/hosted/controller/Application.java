@@ -19,9 +19,12 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.security.PublicKey;
 import java.time.Instant;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -115,6 +118,20 @@ public class Application {
 
     /** Returns the currently deployed versions of the application */
     public SortedSet<ApplicationVersion> versions() {
+        return versions;
+    }
+
+    /** Returns the currently deployed versions of the application */
+    public Collection<ApplicationVersion> deployableVersions(boolean ascending) {
+        Deque<ApplicationVersion> versions = new ArrayDeque<>();
+        String previousHash = "";
+        for (ApplicationVersion version : versions()) {
+            if (previousHash.equals(previousHash = version.bundleHash().orElse("")) && version.bundleHash().isPresent())
+                continue;
+
+            if (ascending) versions.addLast(version);
+            else versions.addFirst(version);
+        }
         return versions;
     }
 
