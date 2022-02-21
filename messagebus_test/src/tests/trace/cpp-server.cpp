@@ -72,7 +72,7 @@ App::Main()
     RPCMessageBus mb(ProtocolSet().add(std::make_shared<SimpleProtocol>()),
                      RPCNetworkParams(config::ConfigUri("file:slobrok.cfg"))
                      .setIdentity(Identity(_argv[1])),
-    config::ConfigUri("file:routing.cfg"));
+                     config::ConfigUri("file:routing.cfg"));
     Server server(mb.getMessageBus(), _argv[1]);
     while (true) {
         std::this_thread::sleep_for(1s);
