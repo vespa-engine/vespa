@@ -38,15 +38,15 @@ TEST("that caught silenced exception causes exitcode 0") {
 }
 
 #ifndef __SANITIZE_ADDRESS__
+#ifdef __APPLE__
+// setrlimit with RLIMIT_AS is broken on Darwin
+#else
 TEST("that mmap within limits are fine cause exitcode 0") {
     ChildProcess proc("exec ./vespalib_mmap_app 150000000 10485760 1");
     proc.wait();
     EXPECT_EQUAL(proc.getExitCode(), 0);
 }
 
-#ifdef __APPLE__
-// setrlimit with RLIMIT_AS is broken on Darwin
-#else
 TEST("that mmap beyond limits cause negative exitcode.") {
     ChildProcess proc("ulimit -c 0 && exec ./vespalib_mmap_app 100000000 10485760 10");
     proc.wait();
