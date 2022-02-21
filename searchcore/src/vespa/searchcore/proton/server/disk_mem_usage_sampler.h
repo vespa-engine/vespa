@@ -5,8 +5,6 @@
 #include <vespa/vespalib/util/time.h>
 #include "disk_mem_usage_filter.h"
 
-class FNET_Transport;
-
 namespace vespalib { class ScheduledExecutor; }
 
 namespace proton {
@@ -53,8 +51,7 @@ public:
         }
     };
 
-    DiskMemUsageSampler(FNET_Transport & transport,
-                        const std::string &path_in,
+    DiskMemUsageSampler(const std::string &path_in,
                         const Config &config);
 
     ~DiskMemUsageSampler();

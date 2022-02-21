@@ -3,7 +3,6 @@
 #include <vespa/searchcore/config/config-proton.h>
 #include <vespa/searchcore/proton/server/shared_threading_service.h>
 #include <vespa/searchcore/proton/server/shared_threading_service_config.h>
-#include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -48,16 +47,14 @@ TEST(SharedThreadingServiceConfigTest, shared_threads_are_derived_from_cpu_cores
 
 class SharedThreadingServiceTest : public ::testing::Test {
 public:
-    TransportMgr transport;
     std::unique_ptr<SharedThreadingService> service;
     SharedThreadingServiceTest()
-        : transport(),
-          service()
-    { }
-    ~SharedThreadingServiceTest() = default;
+        : service()
+    {
+    }
     void setup(double concurrency, uint32_t cpu_cores) {
         service = std::make_unique<SharedThreadingService>(
-                SharedThreadingServiceConfig::make(make_proton_config(concurrency), HwInfo::Cpu(cpu_cores)), transport.transport());
+                SharedThreadingServiceConfig::make(make_proton_config(concurrency), HwInfo::Cpu(cpu_cores)));
     }
     SequencedTaskExecutor* field_writer() {
         return dynamic_cast<SequencedTaskExecutor*>(service->field_writer());

@@ -3,6 +3,7 @@
 
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/fastos/thread.h>
 #include <vector>
 
 class FNET_Transport;
@@ -19,8 +20,10 @@ class TimerTask;
 class ScheduledExecutor
 {
 private:
-    using TaskList = std::vector<std::unique_ptr<TimerTask>>;
-    FNET_Transport & _transport;
+    typedef std::unique_ptr<TimerTask> TimerTaskPtr;
+    typedef std::vector<TimerTaskPtr> TaskList;
+    FastOS_ThreadPool _threadPool;
+    std::unique_ptr<FNET_Transport> _transport;
     std::mutex _lock;
     TaskList   _taskList;
 
@@ -28,7 +31,7 @@ public:
     /**
      * Create a new timer, capable of scheduling tasks at fixed intervals.
      */
-    ScheduledExecutor(FNET_Transport & transport);
+    ScheduledExecutor();
 
     /**
      * Destroys this timer, finishing the current task executing and then
@@ -43,7 +46,7 @@ public:
      * @param delay The delay to wait before first execution.
      * @param interval The interval in seconds.
      */
-    void scheduleAtFixedRate(std::unique_ptr<Executor::Task> task, duration delay, duration interval);
+    void scheduleAtFixedRate(vespalib::Executor::Task::UP task, duration delay, duration interval);
 
     /**
      * Reset timer, clearing the list of task to execute.

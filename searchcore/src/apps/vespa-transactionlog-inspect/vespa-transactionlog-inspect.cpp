@@ -8,14 +8,12 @@
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/vespalib/util/time.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/config/helper/configgetter.hpp>
-#include <vespa/fnet/transport.h>
 #include <vespa/fastos/app.h>
 #include <iostream>
 #include <thread>
@@ -326,7 +324,7 @@ public:
  */
 struct Utility
 {
-    virtual ~Utility() = default;
+    virtual ~Utility() {}
     typedef std::unique_ptr<Utility> UP;
     virtual int run() = 0;
 };
@@ -373,8 +371,6 @@ class BaseUtility : public Utility
 protected:
     const BaseOptions     &_bopts;
     DummyFileHeaderContext _fileHeader;
-    FastOS_ThreadPool      _threadPool;
-    FNET_Transport         _transport;
     TransLogServer         _server;
     client::TransLogClient _client;
 
@@ -382,15 +378,9 @@ public:
     BaseUtility(const BaseOptions &bopts)
         : _bopts(bopts),
           _fileHeader(),
-          _threadPool(64_Ki),
-          _transport(),
-          _server(_transport, _bopts.tlsName, _bopts.listenPort, _bopts.tlsDir, _fileHeader),
+          _server(_bopts.tlsName, _bopts.listenPort, _bopts.tlsDir, _fileHeader),
           _client(vespalib::make_string("tcp/localhost:%d", _bopts.listenPort))
     {
-        _transport.Start(&_threadPool);
-    }
-    ~BaseUtility() override {
-        _transport.ShutDown(true);
     }
     virtual int run() override = 0;
 };
