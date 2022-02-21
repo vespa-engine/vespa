@@ -308,13 +308,14 @@ public class AthenzFacade implements AccessControl {
         return accessRights.test(new AccessTuple(resource, action, identity));
     }
 
-    private boolean lookupAccess(AccessTuple tuple) {
-        log("getAccess(action=%s, resource=%s, principal=%s)", tuple.action, tuple.resource, tuple.identity);
-        return zmsClient.hasAccess(AthenzResourceName.fromString(tuple.resource), tuple.action, tuple.identity);
+    private boolean lookupAccess(AccessTuple t) {
+        boolean result = zmsClient.hasAccess(AthenzResourceName.fromString(t.resource), t.action, t.identity);
+        log("getAccess(action=%s, resource=%s, principal=%s) = %b", t.action, t.resource, t.identity, result);
+        return result;
     }
 
     private static void log(String format, Object... args) {
-        log.log(Level.FINE, format, args);
+        log.log(Level.FINE, String.format(format, args));
     }
 
     private String resourceStringPrefix(AthenzDomain tenantDomain) {
