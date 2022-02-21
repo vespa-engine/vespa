@@ -18,15 +18,17 @@ import (
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"github.com/stretchr/testify/require"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 type command struct {
-	homeDir  string
-	cacheDir string
-	stdin    io.ReadWriter
-	args     []string
-	moreArgs []string
+	homeDir         string
+	cacheDir        string
+	stdin           io.ReadWriter
+	args            []string
+	moreArgs        []string
+	failTestOnError bool
 }
 
 func resetFlag(f *pflag.Flag) {
@@ -76,7 +78,10 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string)
 
 	// Execute command and return output
 	rootCmd.SetArgs(append(cmd.args, cmd.moreArgs...))
-	Execute()
+	err := Execute()
+	if cmd.failTestOnError {
+		require.Nil(t, err)
+	}
 	return capturedOut.String(), capturedErr.String()
 }
 
