@@ -65,7 +65,7 @@ RPCTargetPool::flushTargets(bool force)
             const Entry& entry = it->second;
             if (!entry.inUse(guard) && (force || ((entry.lastUse() + _expireMillis) < currentTime))) {
                 to_erase_on_scope_exit.emplace_back(std::move(it->second));
-                _targets.erase(it++); // postfix increment to move the iterator
+                it = _targets.erase(it);
             } else {
                 ++it;
             }
