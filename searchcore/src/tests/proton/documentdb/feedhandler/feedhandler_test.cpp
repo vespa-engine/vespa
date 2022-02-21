@@ -27,6 +27,7 @@
 #include <vespa/searchcore/proton/server/i_feed_handler_owner.h>
 #include <vespa/searchcore/proton/server/ireplayconfig.h>
 #include <vespa/searchcore/proton/test/dummy_feed_view.h>
+#include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
@@ -35,7 +36,6 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/fnet/transport.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("feedhandler_test");
@@ -409,8 +409,7 @@ struct MyTlsWriter : TlsWriter {
 struct FeedHandlerFixture
 {
     DummyFileHeaderContext       _fileHeaderContext;
-    FastOS_ThreadPool            _threadPool;
-    FNET_Transport               _transport;
+    TransportMgr                 _transport;
     TransLogServer               tls;
     vespalib::string             tlsSpec;
     vespalib::ThreadStackExecutor sharedExecutor;
@@ -427,9 +426,8 @@ struct FeedHandlerFixture
     FeedHandler                  handler;
     FeedHandlerFixture()
         : _fileHeaderContext(),
-          _threadPool(64_Ki),
           _transport(),
-          tls(_transport, "mytls", 9016, "mytlsdir", _fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000)),
+          tls(_transport.transport(), "mytls", 9016, "mytlsdir", _fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000)),
           tlsSpec("tcp/localhost:9016"),
           sharedExecutor(1, 0x10000),
           writeService(sharedExecutor),
@@ -443,7 +441,6 @@ struct FeedHandlerFixture
           handler(writeService, tlsSpec, schema.getDocType(), owner,
                   writeFilter, replayConfig, tls, &tls_writer)
     {
-        _transport.Start(&_threadPool);
         _state.enterLoadState();
         _state.enterReplayTransactionLogState();
         handler.setActiveFeedView(&feedView);
@@ -453,7 +450,6 @@ struct FeedHandlerFixture
 
     ~FeedHandlerFixture() {
         writeService.shutdown();
-        _transport.ShutDown(true);
     }
     template <class FunctionType>
     inline void runAsMaster(FunctionType &&function) {

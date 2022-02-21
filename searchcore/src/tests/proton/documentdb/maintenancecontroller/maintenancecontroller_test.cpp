@@ -33,6 +33,7 @@
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/test/mock_attribute_manager.h>
 #include <vespa/searchcore/proton/test/test.h>
+#include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -43,7 +44,6 @@
 #include <vespa/vespalib/util/monitored_refcount.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/fnet/transport.h>
 #include <unistd.h>
 #include <thread>
 
@@ -349,8 +349,7 @@ public:
     test::DiskMemUsageNotifier         _diskMemUsageNotifier;
     BucketCreateNotifier               _bucketCreateNotifier;
     MonitoredRefCount                  _refCount;
-    FastOS_ThreadPool                  _threadPool;
-    FNET_Transport                     _transport;
+    TransportMgr                       _transport;
     MaintenanceController              _mc;
 
     MaintenanceControllerFixture();
@@ -770,11 +769,9 @@ MaintenanceControllerFixture::MaintenanceControllerFixture()
       _attributeUsageFilter(),
       _bucketCreateNotifier(),
       _refCount(),
-      _threadPool(64_Ki),
       _transport(),
-      _mc(_transport, _threadService, _genericExecutor, _refCount, _docTypeName)
+      _mc(_transport.transport(), _threadService, _genericExecutor, _refCount, _docTypeName)
 {
-    _transport.Start(&_threadPool);
     std::vector<MyDocumentSubDB *> subDBs;
     subDBs.push_back(&_ready);
     subDBs.push_back(&_removed);
@@ -785,7 +782,6 @@ MaintenanceControllerFixture::MaintenanceControllerFixture()
 
 MaintenanceControllerFixture::~MaintenanceControllerFixture()
 {
-    _transport.ShutDown(true);
     stopMaintenance();
 }
 

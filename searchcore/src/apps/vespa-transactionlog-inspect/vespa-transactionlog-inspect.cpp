@@ -387,6 +387,7 @@ public:
           _server(_transport, _bopts.tlsName, _bopts.listenPort, _bopts.tlsDir, _fileHeader),
           _client(vespalib::make_string("tcp/localhost:%d", _bopts.listenPort))
     {
+        _transport.Start(&_threadPool);
     }
     ~BaseUtility() override {
         _transport.ShutDown(true);

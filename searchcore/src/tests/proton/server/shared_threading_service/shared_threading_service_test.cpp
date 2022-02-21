@@ -3,11 +3,9 @@
 #include <vespa/searchcore/config/config-proton.h>
 #include <vespa/searchcore/proton/server/shared_threading_service.h>
 #include <vespa/searchcore/proton/server/shared_threading_service_config.h>
+#include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
-#include <vespa/vespalib/util/size_literals.h>
-#include <vespa/fnet/transport.h>
-#include <vespa/fastos/thread.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace proton;
@@ -50,22 +48,16 @@ TEST(SharedThreadingServiceConfigTest, shared_threads_are_derived_from_cpu_cores
 
 class SharedThreadingServiceTest : public ::testing::Test {
 public:
-    FastOS_ThreadPool threadPool;
-    FNET_Transport transport;
+    TransportMgr transport;
     std::unique_ptr<SharedThreadingService> service;
     SharedThreadingServiceTest()
-        : threadPool(64_Ki),
-          transport(),
+        : transport(),
           service()
-    {
-        transport.Start(&threadPool);
-    }
-    ~SharedThreadingServiceTest() {
-        transport.ShutDown(true);
-    }
+    { }
+    ~SharedThreadingServiceTest() = default;
     void setup(double concurrency, uint32_t cpu_cores) {
         service = std::make_unique<SharedThreadingService>(
-                SharedThreadingServiceConfig::make(make_proton_config(concurrency), HwInfo::Cpu(cpu_cores)), transport);
+                SharedThreadingServiceConfig::make(make_proton_config(concurrency), HwInfo::Cpu(cpu_cores)), transport.transport());
     }
     SequencedTaskExecutor* field_writer() {
         return dynamic_cast<SequencedTaskExecutor*>(service->field_writer());

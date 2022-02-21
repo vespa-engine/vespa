@@ -9,6 +9,7 @@
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/common/subdbtype.h>
+#include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/searchcore/config/config-ranking-expressions.h>
 #include <vespa/searchcore/config/config-onnx-models.h>
@@ -19,7 +20,6 @@
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/fnet/transport.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config-attributes.h>
@@ -65,8 +65,7 @@ struct DoctypeFixture {
 
 struct ConfigTestFixture {
     const std::string configId;
-    FastOS_ThreadPool threadPool;
-    FNET_Transport transport;
+    TransportMgr transport;
     ProtonConfigBuilder protonBuilder;
     DocumenttypesConfigBuilder documenttypesBuilder;
     FiledistributorrpcConfigBuilder filedistBuilder;
@@ -78,7 +77,6 @@ struct ConfigTestFixture {
 
     ConfigTestFixture(const std::string & id)
         : configId(id),
-          threadPool(64_Ki),
           protonBuilder(),
           documenttypesBuilder(),
           filedistBuilder(),
@@ -88,7 +86,6 @@ struct ConfigTestFixture {
           context(std::make_shared<ConfigContext>(set)),
           idcounter(-1)
     {
-        transport.Start(& threadPool);
         set.addBuilder(configId, &protonBuilder);
         set.addBuilder(configId, &documenttypesBuilder);
         set.addBuilder(configId, &filedistBuilder);
@@ -96,9 +93,7 @@ struct ConfigTestFixture {
         addDocType("_alwaysthere_");
     }
 
-    ~ConfigTestFixture() {
-        transport.ShutDown(true);
-    }
+    ~ConfigTestFixture() = default;
 
     DoctypeFixture *addDocType(const std::string &name, bool isGlobal = false) {
         DocumenttypesConfigBuilder::Documenttype dt;
@@ -259,7 +254,7 @@ getDocumentDBConfig(ConfigTestFixture &f, DocumentDBConfigManager &mgr, const Hw
 {
     ConfigRetriever retriever(mgr.createConfigKeySet(), f.context);
     mgr.forwardConfig(f.getBootstrapConfig(1, hwInfo));
-    mgr.update(f.transport, retriever.getBootstrapConfigs()); // Cheating, but we only need the configs
+    mgr.update(f.transport.transport(), retriever.getBootstrapConfigs()); // Cheating, but we only need the configs
     return mgr.getConfig();
 }
 
@@ -310,8 +305,8 @@ TEST_FF("require that documentdb config manager builds schema with imported attr
 TEST_FFF("require that proton config fetcher follows changes to bootstrap",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
-         ProtonConfigFetcher(f1.transport, ConfigUri(f1.configId, f1.context), f2, 60s)) {
-    f3.start(f1.threadPool);
+         ProtonConfigFetcher(f1.transport.transport(), ConfigUri(f1.configId, f1.context), f2, 60s)) {
+    f3.start(f1.transport.threadPool());
     ASSERT_TRUE(f2._configured);
     ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
     f2._configured = false;
@@ -325,8 +320,8 @@ TEST_FFF("require that proton config fetcher follows changes to bootstrap",
 TEST_FFF("require that proton config fetcher follows changes to doctypes",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
-         ProtonConfigFetcher(f1.transport, ConfigUri(f1.configId, f1.context), f2, 60s)) {
-    f3.start(f1.threadPool);
+         ProtonConfigFetcher(f1.transport.transport(), ConfigUri(f1.configId, f1.context), f2, 60s)) {
+    f3.start(f1.transport.threadPool());
 
     f2._configured = false;
     f1.addDocType("typea");
@@ -345,8 +340,8 @@ TEST_FFF("require that proton config fetcher follows changes to doctypes",
 TEST_FFF("require that proton config fetcher reconfigures dbowners",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
-         ProtonConfigFetcher(f1.transport, ConfigUri(f1.configId, f1.context), f2, 60s)) {
-    f3.start(f1.threadPool);
+         ProtonConfigFetcher(f1.transport.transport(), ConfigUri(f1.configId, f1.context), f2, 60s)) {
+    f3.start(f1.transport.threadPool());
     ASSERT_FALSE(f2.getDocumentDBConfig("typea"));
 
     // Add db and verify that config for db is provided

@@ -25,6 +25,7 @@
 #include <vespa/searchcore/proton/server/reconfig_params.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/test/test.h>
+#include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/searchlib/index/docbuilder.h>
@@ -36,8 +37,6 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/config/subscription/sourcespec.h>
-#include <vespa/fastos/thread.h>
-#include <vespa/fnet/transport.h>
 
 using namespace cloud::config::filedistribution;
 using namespace document;
@@ -289,8 +288,7 @@ struct MyConfigSnapshot
 template <typename Traits>
 struct FixtureBase
 {
-    FastOS_ThreadPool        _threadPool;
-    FNET_Transport           _transport;
+    TransportMgr             _transport;
     ThreadStackExecutor      _summaryExecutor;
     ExecutorThreadingService _writeService;
     typename Traits::Config  _cfg;
@@ -303,8 +301,7 @@ struct FixtureBase
     typename Traits::SubDB   _subDb;
     IFeedView::SP            _tmpFeedView;
     FixtureBase()
-        : _threadPool(64_Ki),
-          _transport(),
+        : _transport(),
           _summaryExecutor(1, 64_Ki),
           _writeService(_summaryExecutor),
           _cfg(),
@@ -312,18 +309,16 @@ struct FixtureBase
           _bucketDBHandler(*_bucketDB),
           _ctx(_writeService, _bucketDB, _bucketDBHandler),
           _baseSchema(),
-          _snapshot(std::make_unique<MyConfigSnapshot>(_transport, _baseSchema, Traits::ConfigDir::dir())),
+          _snapshot(std::make_unique<MyConfigSnapshot>(_transport.transport(), _baseSchema, Traits::ConfigDir::dir())),
           _baseDir(BASE_DIR + "/" + SUB_NAME, BASE_DIR),
           _subDb(_cfg._cfg, _ctx._ctx),
           _tmpFeedView()
     {
-        _transport.Start(&_threadPool);
         init();
     }
     ~FixtureBase() {
         _writeService.master().execute(makeLambdaTask([this]() { _subDb.close(); }));
         _writeService.shutdown();
-        _transport.ShutDown(true);
     }
     void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> & calc) {
         vespalib::Gate gate;
@@ -354,7 +349,7 @@ struct FixtureBase
         runInMasterAndSync([&]() { performReconfig(serialNum, reconfigSchema, reconfigConfigDir); });
     }
     void performReconfig(SerialNum serialNum, const Schema &reconfigSchema, const vespalib::string &reconfigConfigDir) {
-        auto newCfg = std::make_unique<MyConfigSnapshot>(_transport, reconfigSchema, reconfigConfigDir);
+        auto newCfg = std::make_unique<MyConfigSnapshot>(_transport.transport(), reconfigSchema, reconfigConfigDir);
         DocumentDBConfig::ComparisonResult cmpResult;
         cmpResult.attributesChanged = true;
         cmpResult.documenttypesChanged = true;
