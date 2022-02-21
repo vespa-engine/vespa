@@ -1,0 +1,26 @@
+schema test {
+
+    document test {
+
+        field tag type string {
+            indexing: attribute
+        }
+
+        struct person {
+            field first_name type string {}
+            field last_name  type string {}
+        }
+
+        field people type array<person> {
+            indexing: summary
+            struct-field first_name { indexing: attribute }
+            struct-field last_name  { indexing: attribute }
+        }
+
+    }
+
+    fieldset default {
+        fields: tag, people.first_name
+    }
+
+}
