@@ -4,6 +4,7 @@
 #include "iretrypolicy.h"
 #include <vespa/messagebus/queue.h>
 #include <vespa/messagebus/reply.h>
+#include <mutex>
 #include <queue>
 #include <vector>
 
@@ -30,6 +31,7 @@ private:
     };
     using PriorityQueue = std::priority_queue<Entry, std::vector<Entry>, Cmp>;
 
+    std::mutex       _queue_mutex;
     PriorityQueue    _queue;
     IRetryPolicy::SP _retryPolicy;
 public:
@@ -45,7 +47,7 @@ public:
      *
      * @param retryPolicy The retry policy to use.
      */
-    Resender(IRetryPolicy::SP retryPolicy);
+    explicit Resender(IRetryPolicy::SP retryPolicy);
 
     /**
      * Empties the retry queue.
@@ -59,7 +61,7 @@ public:
      * @param errorCode The code to check.
      * @return True if the message can be resent.
      */
-    bool canRetry(uint32_t errorCode) const;
+    [[nodiscard]] bool canRetry(uint32_t errorCode) const;
 
     /**
      * Returns whether or not the given reply should be retried.
@@ -67,7 +69,7 @@ public:
      * @param reply The reply to check.
      * @return True if retry is required.
      */
-    bool shouldRetry(const Reply &reply) const;
+    [[nodiscard]] bool shouldRetry(const Reply &reply) const;
 
     /**
      * Schedules the given node for resending, if enabled by message. This will
@@ -78,7 +80,7 @@ public:
      * @param node The node to resend.
      * @return True if the node was queued.
      */
-    bool scheduleRetry(RoutingNode &node);
+    [[nodiscard]] bool scheduleRetry(RoutingNode &node);
 
     /**
      * Invokes {@link RoutingNode#send()} on all routing nodes that are

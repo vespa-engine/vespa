@@ -6,6 +6,7 @@
 #include "runnable.h"
 #include "active.h"
 #include <vespa/fastos/thread.h>
+#include <atomic>
 
 namespace vespalib {
 
@@ -37,7 +38,7 @@ private:
     FastOS_ThreadPool       _pool;
     std::mutex              _lock;
     std::condition_variable _cond;
-    bool                    _stopped;
+    std::atomic<bool>       _stopped;
     bool                    _woken;
 
 public:
@@ -46,7 +47,9 @@ public:
     void start() override;
     Thread &stop() override;
     void join() override;
-    bool stopped() const { return _stopped; }
+    [[nodiscard]] bool stopped() const noexcept {
+        return _stopped.load(std::memory_order_relaxed);
+    }
     bool slumber(double s);
     static Thread &currentThread();
     static void sleep(size_t ms);

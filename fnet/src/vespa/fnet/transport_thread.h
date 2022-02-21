@@ -50,7 +50,7 @@ private:
     std::recursive_mutex     _pseudo_thread;  // used after transport thread has shut down
     std::atomic<bool>        _started;        // event loop started ?
     std::atomic<bool>        _shutdown;       // should stop event loop ?
-    bool                     _finished;       // event loop stopped ?
+    std::atomic<bool>        _finished;       // event loop stopped ?
 
     /**
      * Add an IOComponent to the list of components. This operation is
@@ -171,6 +171,10 @@ private:
 
     bool IsShutDown() const noexcept {
         return _shutdown.load(std::memory_order_relaxed);
+    }
+
+    [[nodiscard]] bool is_finished() const noexcept {
+        return _finished.load(std::memory_order_relaxed);
     }
 
 public:

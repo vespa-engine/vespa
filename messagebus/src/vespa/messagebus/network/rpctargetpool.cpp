@@ -54,14 +54,21 @@ void
 RPCTargetPool::flushTargets(bool force)
 {
     uint64_t currentTime = _timer->getMilliTime();
+    // Erase RPC targets outside our lock to prevent the following mutex order inversion potential:
+    //   flushTargets (pool lock) -> FNET transport thread post event (transport thread lock)
+    //   FNET CheckTasks (transport thread lock) -> periodic flushTargets task run -> flushTargets (pool lock)
+    std::vector<Entry> to_erase_on_scope_exit;
     LockGuard guard(_lock);
-    TargetMap::iterator it = _targets.begin();
-    while (it != _targets.end()) {
-        const Entry &entry = it->second;
-        if ( ! entry.inUse(guard) && (force || ((entry.lastUse() + _expireMillis) < currentTime))) {
-            _targets.erase(it++); // postfix increment to move the iterator
-        } else {
-            ++it;
+    {
+        auto it = _targets.begin();
+        while (it != _targets.end()) {
+            const Entry& entry = it->second;
+            if (!entry.inUse(guard) && (force || ((entry.lastUse() + _expireMillis) < currentTime))) {
+                to_erase_on_scope_exit.emplace_back(std::move(it->second));
+                it = _targets.erase(it);
+            } else {
+                ++it;
+            }
         }
     }
 }

@@ -60,7 +60,7 @@ Thread &
 Thread::stop()
 {
     std::unique_lock guard(_lock);
-    _stopped = true;
+    _stopped.store(true, std::memory_order_relaxed);
     _cond.notify_all();
     return *this;
 }
@@ -75,14 +75,14 @@ bool
 Thread::slumber(double s)
 {
     std::unique_lock guard(_lock);
-    if (!_stopped || _woken) {
+    if (!stopped() || _woken) {
         if (_cond.wait_for(guard, from_s(s)) == std::cv_status::no_timeout) {
-            _woken = _stopped;
+            _woken = stopped();
         }
     } else {
         _woken = true;
     }
-    return !_stopped;
+    return !stopped();
 }
 
 Thread &

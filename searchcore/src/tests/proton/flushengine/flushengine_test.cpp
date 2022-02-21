@@ -118,7 +118,7 @@ public:
     search::SerialNum         _currentSerial;
     uint32_t                  _pendingDone;
     uint32_t                  _taskDone;
-    std::mutex                _lock;
+    mutable std::mutex        _lock;
     vespalib::CountDownLatch  _done;
     FlushDoneHistory          _flushDoneHistory;
 
@@ -146,7 +146,7 @@ public:
     std::vector<IFlushTarget::SP>
     getFlushTargets() override {
         {
-            std::lock_guard<std::mutex> guard(_lock);
+            std::lock_guard guard(_lock);
             _pendingDone += _taskDone;
             _taskDone = 0;
         }
@@ -160,7 +160,7 @@ public:
 
     // Called once by flush engine thread for each task done
     void taskDone() {
-        std::lock_guard<std::mutex> guard(_lock);
+        std::lock_guard guard(_lock);
         ++_taskDone;
     }
 
@@ -168,7 +168,7 @@ public:
     // added to flush engine and when one or more flush tasks related
     // to flush handler have completed.
     void flushDone(search::SerialNum oldestSerial) override {
-        std::lock_guard<std::mutex> guard(_lock);
+        std::lock_guard guard(_lock);
         LOG(info, "SimpleHandler(%s)::flushDone(%" PRIu64 ")", getName().c_str(), oldestSerial);
         _oldestSerial = std::max(_oldestSerial, oldestSerial);
         _flushDoneHistory.push_back(oldestSerial);
@@ -179,8 +179,13 @@ public:
     }
 
     FlushDoneHistory getFlushDoneHistory() {
-        std::lock_guard<std::mutex> guard(_lock);
+        std::lock_guard guard(_lock);
         return _flushDoneHistory;
+    }
+
+    [[nodiscard]] search::SerialNum oldest_serial() const noexcept {
+        std::lock_guard guard(_lock);
+        return _oldestSerial;
     }
 };
 
@@ -440,11 +445,11 @@ struct Fixture
         using namespace std::chrono_literals;
         for (int pass = 0; pass < 600; ++pass) {
             std::this_thread::sleep_for(100ms);
-            if (handler._oldestSerial == expOldestSerial) {
+            if (handler.oldest_serial() == expOldestSerial) {
                 break;
             }
         }
-        EXPECT_EQUAL(expOldestSerial, handler._oldestSerial);
+        EXPECT_EQUAL(expOldestSerial, handler.oldest_serial());
     }
 };
 
