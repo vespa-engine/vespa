@@ -3,16 +3,12 @@
 #include <vespa/config/file_acquirer/file_acquirer.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/rpcrequest.h>
-#include <vespa/fnet/transport.h>
-#include <vespa/fastos/thread.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using namespace config;
 
 struct ServerFixture : FRT_Invokable {
     fnet::frt::StandaloneFRT server;
-    FastOS_ThreadPool threadPool;
-    FNET_Transport transport;
     FRT_Supervisor &orb;
     vespalib::string spec;
 
@@ -24,16 +20,10 @@ struct ServerFixture : FRT_Invokable {
         rb.ReturnDesc("file_path", "actual path to the requested file");
     }
 
-    ServerFixture()
-        : server(),
-          threadPool(64_Ki),
-          transport(),
-          orb(server.supervisor())
-    {
+    ServerFixture() : server(), orb(server.supervisor()) {
         init_rpc();
         orb.Listen(0);
         spec = vespalib::make_string("tcp/localhost:%d", orb.GetListenPort());
-        transport.Start(&threadPool);
     }
 
     void RPC_waitFor(FRT_RPCRequest *req) {
@@ -46,12 +36,10 @@ struct ServerFixture : FRT_Invokable {
         }
     }
 
-    ~ServerFixture() {
-        transport.ShutDown(true);
-    }
+    ~ServerFixture() = default;
 };
 
-TEST_FF("require that files can be acquired over rpc", ServerFixture(), RpcFileAcquirer(f1.transport, f1.spec)) {
+TEST_FF("require that files can be acquired over rpc", ServerFixture(), RpcFileAcquirer(f1.spec)) {
     EXPECT_EQUAL("my_path", f2.wait_for("my_ref", 60.0));
     EXPECT_EQUAL("", f2.wait_for("bogus_ref", 60.0));
 }

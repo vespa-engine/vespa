@@ -81,19 +81,19 @@ VESPA_THREAD_STACK_TAG(tls_executor);
 
 }
 
-TransLogServer::TransLogServer(FNET_Transport & transport, const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
+TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
                                const FileHeaderContext &fileHeaderContext)
-    : TransLogServer(transport, name, listenPort, baseDir, fileHeaderContext,
+    : TransLogServer(name, listenPort, baseDir, fileHeaderContext,
                      DomainConfig().setEncoding(Encoding(Encoding::xxh64, Encoding::Compression::zstd))
                                         .setPartSizeLimit(0x10000000).setChunkSizeLimit(0x40000))
 {}
 
-TransLogServer::TransLogServer(FNET_Transport & transport, const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
+TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
                                const FileHeaderContext &fileHeaderContext, const DomainConfig &  cfg)
-    : TransLogServer(transport, name, listenPort, baseDir, fileHeaderContext, cfg, 4)
+    : TransLogServer(name, listenPort, baseDir, fileHeaderContext, cfg, 4)
 {}
 
-TransLogServer::TransLogServer(FNET_Transport & transport, const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
+TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
                                const FileHeaderContext &fileHeaderContext, const DomainConfig & cfg, size_t maxThreads)
     : FRT_Invokable(),
       _name(name),
@@ -101,7 +101,8 @@ TransLogServer::TransLogServer(FNET_Transport & transport, const vespalib::strin
       _domainConfig(cfg),
       _executor(maxThreads, 128_Ki, CpuUsage::wrap(tls_executor, CpuUsage::Category::WRITE)),
       _threadPool(std::make_unique<FastOS_ThreadPool>(120_Ki)),
-      _supervisor(std::make_unique<FRT_Supervisor>(&transport)),
+      _transport(std::make_unique<FNET_Transport>()),
+      _supervisor(std::make_unique<FRT_Supervisor>(_transport.get())),
       _domains(),
       _reqQ(),
       _fileHeaderContext(fileHeaderContext),
@@ -129,6 +130,7 @@ TransLogServer::TransLogServer(FNET_Transport & transport, const vespalib::strin
             bool listenOk(false);
             for (int i(600); !listenOk && i; i--) {
                 if (_supervisor->Listen(listenSpec)) {
+                    _transport->Start(_threadPool.get());
                     listenOk = true;
                 } else {
                     LOG(warning, "Failed listening at port %s trying for %d seconds more.", listenSpec, i);
@@ -155,6 +157,7 @@ TransLogServer::~TransLogServer()
     _executor.sync();
     _executor.shutdown();
     _executor.sync();
+    _transport->ShutDown(true);
 }
 
 bool

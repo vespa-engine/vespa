@@ -15,6 +15,7 @@
 #include "replay_throttling_policy.h"
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/metrics/updatehook.h>
+#include <vespa/searchcore/proton/attribute/attribute_config_inspector.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
@@ -219,7 +220,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _feedHandler(std::make_unique<FeedHandler>(_writeService, tlsSpec, docTypeName, *this, _writeFilter, *this, tlsWriterFactory)),
       _subDBs(*this, *this, *_feedHandler, _docTypeName, _writeService, shared_service.warmup(), fileHeaderContext,
               metricsWireService, getMetrics(), queryLimiter, clock, _configMutex, _baseDir, hwInfo),
-      _maintenanceController(shared_service.transport(), _writeService.master(), shared_service.shared(), _refCount, _docTypeName),
+      _maintenanceController(_writeService.master(), shared_service.shared(), _refCount, _docTypeName),
       _jobTrackers(),
       _calc(),
       _metricsUpdater(_subDBs, _writeService, _jobTrackers, *_sessionManager, _writeFilter, *_feedHandler)

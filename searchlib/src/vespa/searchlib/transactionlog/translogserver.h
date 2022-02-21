@@ -24,11 +24,11 @@ public:
     friend class TransLogServerExplorer;
     using SP = std::shared_ptr<TransLogServer>;
     using DomainSP = std::shared_ptr<Domain>;
-    TransLogServer(FNET_Transport & transport, const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
+    TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
                    const common::FileHeaderContext &fileHeaderContext, const DomainConfig & cfg, size_t maxThreads);
-    TransLogServer(FNET_Transport & transport, const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
+    TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
                    const common::FileHeaderContext &fileHeaderContext, const DomainConfig & cfg);
-    TransLogServer(FNET_Transport & transport, const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
+    TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
                    const common::FileHeaderContext &fileHeaderContext);
     ~TransLogServer() override;
     DomainStats getDomainStats() const;
@@ -85,6 +85,7 @@ private:
     DomainConfig                        _domainConfig;
     vespalib::ThreadStackExecutor       _executor;
     std::unique_ptr<FastOS_ThreadPool>  _threadPool;
+    std::unique_ptr<FNET_Transport>     _transport;
     std::unique_ptr<FRT_Supervisor>     _supervisor;
     DomainList                          _domains;
     mutable std::shared_mutex           _domainMutex;;          // Protects _domains

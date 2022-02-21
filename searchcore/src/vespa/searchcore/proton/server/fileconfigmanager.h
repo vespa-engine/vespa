@@ -11,12 +11,11 @@ namespace proton {
 
 class FileConfigManager : public ConfigStore {
 private:
-    FNET_Transport        & _transport;
-    vespalib::string        _baseDir;
-    vespalib::string        _configId;
-    vespalib::string        _docTypeName;
-    search::IndexMetaInfo   _info;
-    ProtonConfigSP          _protonConfig;
+    vespalib::string      _baseDir;
+    vespalib::string      _configId;
+    vespalib::string      _docTypeName;
+    search::IndexMetaInfo _info;
+    ProtonConfigSP        _protonConfig;
 
 public:
     /**
@@ -25,8 +24,9 @@ public:
      * @param baseDir the directory in which config snapshots are saved and loaded.
      * @param configId the configId that was used to subscribe to config that is later handled by this manager.
      */
-    FileConfigManager(FNET_Transport & transport, const vespalib::string &baseDir,
-                      const vespalib::string &configId, const vespalib::string &docTypeName);
+    FileConfigManager(const vespalib::string &baseDir,
+                      const vespalib::string &configId,
+                      const vespalib::string &docTypeName);
 
     ~FileConfigManager() override;
 

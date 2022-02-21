@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-class FNET_Transport;
-
 namespace vespalib {
 class ISequencedTaskExecutor;
 class ThreadExecutor;
@@ -16,7 +14,7 @@ namespace proton {
  */
 class ISharedThreadingService {
 public:
-    virtual ~ISharedThreadingService() = default;
+    virtual ~ISharedThreadingService() {}
 
     /**
      * Returns the executor used for warmup (e.g. index warmup).
@@ -46,11 +44,6 @@ public:
      * Returns an InvokeService intended for regular wakeup calls.
      */
     virtual vespalib::InvokeService & invokeService() = 0;
-
-    /**
-     * Returns a shared transport object that can be utilized by multiple services.
-     */
-    virtual FNET_Transport & transport() = 0;
 };
 
 }

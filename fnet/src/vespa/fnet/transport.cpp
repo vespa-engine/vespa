@@ -6,11 +6,8 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/rendezvous.h>
-#include <vespa/vespalib/util/backtrace.h>
+#include <chrono>
 #include <xxhash.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".fnet.transport");
 
 namespace {
 
@@ -133,8 +130,6 @@ FNET_Transport::FNET_Transport(const TransportConfig &cfg)
       _threads(),
       _config(cfg.config())
 {
-    // TODO Temporary logging to track down overspend
-    LOG(debug, "FNET_Transport threads=%d from :%s", cfg.num_threads(), vespalib::getStackTrace(0).c_str());
     assert(cfg.num_threads() >= 1);
     for (size_t i = 0; i < cfg.num_threads(); ++i) {
         _threads.emplace_back(std::make_unique<FNET_TransportThread>(*this));

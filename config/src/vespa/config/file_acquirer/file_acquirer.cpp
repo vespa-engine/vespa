@@ -13,10 +13,14 @@ LOG_SETUP(".config.file_acquirer");
 
 namespace config {
 
-RpcFileAcquirer::RpcFileAcquirer(FNET_Transport & transport, const vespalib::string &spec)
-    : _orb(std::make_unique<FRT_Supervisor>(&transport)),
+RpcFileAcquirer::RpcFileAcquirer(const vespalib::string &spec)
+    : _threadPool(std::make_unique<FastOS_ThreadPool>(60_Ki)),
+      _transport(std::make_unique<FNET_Transport>()),
+      _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
       _spec(spec)
-{ }
+{
+    _transport->Start(_threadPool.get());
+}
 
 vespalib::string
 RpcFileAcquirer::wait_for(const vespalib::string &file_ref, double timeout_s)
@@ -38,6 +42,9 @@ RpcFileAcquirer::wait_for(const vespalib::string &file_ref, double timeout_s)
     return path;
 }
 
-RpcFileAcquirer::~RpcFileAcquirer() = default;
+RpcFileAcquirer::~RpcFileAcquirer()
+{
+    _transport->ShutDown(true);
+}
 
 } // namespace config
