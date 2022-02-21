@@ -187,4 +187,9 @@ public class ExportingTestCase extends AbstractExportingTestCase {
         assertCorrectDeriving("rankprofilemodularity");
     }
 
+    @Test
+    public void testStructAndFieldSet() throws IOException, ParseException {
+        assertCorrectDeriving("structandfieldset");
+    }
+
 }
