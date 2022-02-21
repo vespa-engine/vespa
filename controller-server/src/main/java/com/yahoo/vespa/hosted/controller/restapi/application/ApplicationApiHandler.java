@@ -519,6 +519,19 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 .withAddress(updateTenantInfoAddress(insp.field("address"), oldInfo.address()))
                 .withBillingContact(updateTenantInfoBillingContact(insp.field("billingContact"), oldInfo.billingContact()));
 
+        // Assert that we have a valid tenant info
+        if (mergedInfo.contactName().isBlank()) {
+            return new MessageResponse(400, "'contactName' cannot be empty");
+        }
+        if (mergedInfo.contactEmail().isBlank()) {
+            return new MessageResponse(400, "'contactEmail' cannot be empty");
+        }
+        if (! mergedInfo.contactEmail().contains("@")) {
+            // email address validation is notoriously hard - we should probably just try to send a
+            // verification email to this address.  checking for @ is a simple best-effort.
+            return new MessageResponse(400, "'contactEmail' needs to be an email address");
+        }
+
         // Store changes
         controller.tenants().lockOrThrow(tenant.name(), LockedTenant.Cloud.class, lockedTenant -> {
             lockedTenant = lockedTenant.withInfo(mergedInfo);

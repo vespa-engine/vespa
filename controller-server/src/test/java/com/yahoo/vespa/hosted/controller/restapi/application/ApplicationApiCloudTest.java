@@ -6,6 +6,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -30,6 +32,7 @@ import org.junit.Test;
 
 import javax.ws.rs.ForbiddenException;
 import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
@@ -85,7 +88,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 .roles(Set.of(Role.reader(tenantName)));
         tester.assertResponse(infoRequest, "{}", 200);
 
-        String partialInfo = "{\"name\":\"newName\", \"billingContact\":{\"name\":\"billingName\"}}";
+        String partialInfo = "{\"contactName\":\"newName\", \"contactEmail\": \"foo@example.com\", \"billingContact\":{\"name\":\"billingName\"}}";
 
         var postPartial =
                 request("/application/v4/tenant/scoober/info", PUT)
@@ -94,11 +97,11 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         tester.assertResponse(postPartial, "{\"message\":\"Tenant info updated\"}", 200);
 
         // Read back the updated info
-        tester.assertResponse(infoRequest, "{\"name\":\"newName\",\"email\":\"\",\"website\":\"\",\"invoiceEmail\":\"\",\"contactName\":\"\",\"contactEmail\":\"\",\"billingContact\":{\"name\":\"billingName\",\"email\":\"\",\"phone\":\"\"}}", 200);
+        tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"invoiceEmail\":\"\",\"contactName\":\"newName\",\"contactEmail\":\"foo@example.com\",\"billingContact\":{\"name\":\"billingName\",\"email\":\"\",\"phone\":\"\"}}", 200);
 
         String fullAddress = "{\"addressLines\":\"addressLines\",\"postalCodeOrZip\":\"postalCodeOrZip\",\"city\":\"city\",\"stateRegionProvince\":\"stateRegionProvince\",\"country\":\"country\"}";
         String fullBillingContact = "{\"name\":\"name\",\"email\":\"email\",\"phone\":\"phone\",\"address\":" + fullAddress + "}";
-        String fullInfo = "{\"name\":\"name\",\"email\":\"email\",\"website\":\"webSite\",\"invoiceEmail\":\"invoiceEmail\",\"contactName\":\"contactName\",\"contactEmail\":\"contanctEmail\",\"address\":" + fullAddress + ",\"billingContact\":" + fullBillingContact + "}";
+        String fullInfo = "{\"name\":\"name\",\"email\":\"foo@example\",\"website\":\"webSite\",\"invoiceEmail\":\"invoiceEmail\",\"contactName\":\"contactName\",\"contactEmail\":\"contact@example.com\",\"address\":" + fullAddress + ",\"billingContact\":" + fullBillingContact + "}";
 
         // Now set all fields
         var postFull =
@@ -109,6 +112,48 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
         // Now compare the updated info with the full info we sent
         tester.assertResponse(infoRequest, fullInfo, 200);
+    }
+
+    @Test
+    public void tenant_info_missing_fields() {
+        // tenants can be created with empty tenant info - they're not part of the POST to v4/tenant
+        var infoRequest =
+                request("/application/v4/tenant/scoober/info", GET)
+                        .roles(Set.of(Role.reader(tenantName)));
+        tester.assertResponse(infoRequest, "{}", 200);
+
+        // name needs to be present and not blank
+        var partialInfoMissingName = "{\"contactName\": \" \"}";
+        var missingNameResponse = request("/application/v4/tenant/scoober/info", PUT)
+                .data(partialInfoMissingName)
+                .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(missingNameResponse, "{\"message\":\"'contactName' cannot be empty\"}", 400);
+
+        // email needs to be present, not blank, and contain an @
+        var partialInfoMissingEmail = "{\"contactName\": \"Scoober Rentals Inc.\", \"contactEmail\": \" \"}";
+        var missingEmailResponse = request("/application/v4/tenant/scoober/info", PUT)
+                .data(partialInfoMissingEmail)
+                .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(missingEmailResponse, "{\"message\":\"'contactEmail' cannot be empty\"}", 400);
+
+        var partialInfoBadEmail = "{\"contactName\": \"Scoober Rentals Inc.\", \"contactEmail\": \"somethingweird\"}";
+        var badEmailResponse = request("/application/v4/tenant/scoober/info", PUT)
+                .data(partialInfoBadEmail)
+                .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(badEmailResponse, "{\"message\":\"'contactEmail' needs to be an email address\"}", 400);
+
+        // updating a tenant that already has the fields set works
+        var basicInfo = "{\"contactName\": \"Scoober Rentals Inc.\", \"contactEmail\": \"foo@example.com\"}";
+        var basicInfoResponse = request("/application/v4/tenant/scoober/info", PUT)
+                .data(basicInfo)
+                .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(basicInfoResponse, "{\"message\":\"Tenant info updated\"}", 200);
+
+        var otherInfo = "{\"billingContact\":{\"name\":\"billingName\"}}";
+        var otherInfoResponse = request("/application/v4/tenant/scoober/info", PUT)
+                .data(otherInfo)
+                .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(otherInfoResponse, "{\"message\":\"Tenant info updated\"}", 200);
     }
 
     @Test
