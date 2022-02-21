@@ -79,7 +79,7 @@ void FRTConnection::setSuccess()
 {
     _transientFailures = 0;
     _fatalFailures = 0;
-    _suspendedUntil = system_time(duration::zero());
+    _suspendedUntil = system_time();
 }
 
 void FRTConnection::calculateSuspension(ErrorType type)
@@ -103,7 +103,7 @@ void FRTConnection::calculateSuspension(ErrorType type)
         break;
     }
     system_time now = system_clock::now();
-    _suspendedUntil = now + delay;
+    _suspendedUntil = now + std::chrono::duration_cast<system_time::duration>(delay);
     if (_suspendWarned < (now - 5s)) {
         LOG(warning, "FRT Connection %s suspended until %s", _address.c_str(), vespalib::to_string(_suspendedUntil).c_str());
         _suspendWarned = now;
