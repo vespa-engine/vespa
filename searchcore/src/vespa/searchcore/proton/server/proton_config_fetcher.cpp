@@ -26,7 +26,9 @@ ProtonConfigFetcher::ProtonConfigFetcher(FNET_Transport & transport, const confi
       _retriever(_bootstrapConfigManager.createConfigKeySet(), configUri.getContext(), subscribeTimeout),
       _owner(owner),
       _mutex(),
+      _cond(),
       _dbManagerMap(),
+      _running(false),
       _oldDocumentTypeRepos(),
       _currentDocumentTypeRepo()
 {
@@ -50,6 +52,9 @@ ProtonConfigFetcher::Run(FastOS_ThreadInterface * thread, void *arg)
             std::this_thread::sleep_for(100ms);
         }
     }
+    lock_guard guard(_mutex);
+    _running = false;
+    _cond.notify_all();
 }
 
 const ConfigKeySet
@@ -168,6 +173,8 @@ ProtonConfigFetcher::start(FastOS_ThreadPool & threadPool)
         throw vespalib::IllegalStateException(
                 "Failed starting thread for proton config fetcher");
     }
+    lock_guard guard(_mutex);
+    _running = true;
 }
 
 void
@@ -175,6 +182,10 @@ ProtonConfigFetcher::close()
 {
     if (!_retriever.isClosed()) {
         _retriever.close();
+    }
+    std::unique_lock<std::mutex> guard(_mutex);
+    while (_running) {
+        _cond.wait(guard);
     }
 }
 

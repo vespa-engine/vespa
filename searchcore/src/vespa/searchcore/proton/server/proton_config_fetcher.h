@@ -57,7 +57,9 @@ private:
     IProtonConfigurer       & _owner;
 
     mutable std::mutex        _mutex; // Protects maps
+    std::condition_variable   _cond;
     DBManagerMap              _dbManagerMap;
+    bool                      _running;
 
     std::deque<OldDocumentTypeRepo>                   _oldDocumentTypeRepos;
     std::shared_ptr<const document::DocumentTypeRepo> _currentDocumentTypeRepo;

@@ -35,6 +35,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/config/subscription/sourcespec.h>
+#include <vespa/fnet/transport.h>
 #include <iostream>
 
 using namespace cloud::config::filedistribution;
@@ -177,6 +178,8 @@ Fixture::Fixture(bool file_config)
 
 Fixture::~Fixture()
 {
+    _db->close();
+    _shared_service.transport().ShutDown(true);
 }
 
 std::unique_ptr<ConfigStore>
