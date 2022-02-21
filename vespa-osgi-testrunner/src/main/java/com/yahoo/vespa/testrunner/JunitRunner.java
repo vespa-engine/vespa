@@ -113,7 +113,8 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
             if (testDescriptor.isEmpty()) {
                 throw new RuntimeException("Could not find test descriptor");
             }
-            execution = CompletableFuture.supplyAsync(() -> launchJunit(loadClasses(testBundle.get(), testDescriptor.get(), toCategory(suite))));
+            execution = CompletableFuture.supplyAsync(() -> launchJunit(loadClasses(testBundle.get(), testDescriptor.get(), toCategory(suite)),
+                                                                        suite == Suite.PRODUCTION_TEST));
         } catch (Exception e) {
             execution = CompletableFuture.completedFuture(createReportWithFailedInitialization(e));
         }
@@ -180,7 +181,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         }
     }
 
-    private TestReport launchJunit(List<Class<?>> testClasses) {
+    private TestReport launchJunit(List<Class<?>> testClasses, boolean isProductionTest) {
         LauncherDiscoveryRequest discoveryRequest = LauncherDiscoveryRequestBuilder.request()
                 .selectors(
                         testClasses.stream().map(DiscoverySelectors::selectClass).collect(Collectors.toList())
@@ -205,7 +206,10 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         var failures = report.getFailures().stream()
                 .map(failure -> new TestReport.Failure(failure.getTestIdentifier().getUniqueId(), failure.getException()))
                 .collect(Collectors.toList());
-        long inconclusive = failures.stream().filter(failure -> failure.exception() instanceof InconclusiveTestException).count();
+        long inconclusive = isProductionTest ? failures.stream()
+                                                       .filter(failure -> failure.exception() instanceof InconclusiveTestException)
+                                                       .count()
+                                             : 0;
         return TestReport.builder()
                 .withSuccessCount(report.getTestsSucceededCount())
                 .withAbortedCount(report.getTestsAbortedCount())
