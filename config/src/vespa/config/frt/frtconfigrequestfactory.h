@@ -11,7 +11,7 @@ namespace config {
 class FRTConfigRequest;
 class ConfigKey;
 class Connection;
-class ConfigState;
+struct ConfigState;
 
 /**
  * Factory for creating config requests depending on protocol version;
