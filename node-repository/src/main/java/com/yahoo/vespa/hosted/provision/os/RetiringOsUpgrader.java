@@ -37,10 +37,10 @@ public class RetiringOsUpgrader implements OsUpgrader {
         NodeList allNodes = nodeRepository.nodes().list();
         Instant now = nodeRepository.clock().instant();
         NodeList candidates = candidates(now, target, allNodes);
-        candidates.not().deprovisioning()
+        candidates.not().matching(host -> deprovisioning(host, allNodes))
                   .byIncreasingOsVersion()
-                  .first(1)
-                  .forEach(node -> deprovision(node, target.version(), now));
+                  .first()
+                  .ifPresent(node -> deprovision(node, target.version(), now));
     }
 
     @Override
@@ -62,12 +62,18 @@ public class RetiringOsUpgrader implements OsUpgrader {
 
     /** Upgrade given host by retiring and deprovisioning it */
     private void deprovision(Node host, Version target, Instant now) {
-        LOG.info("Retiring and deprovisioning " + host + ": On stale OS version " +
+        LOG.info("Retiring and deprovisioning " + host + " and its children: On stale OS version " +
                  host.status().osVersion().current().map(Version::toFullString).orElse("<unset>") +
                  ", want " + target);
         nodeRepository.nodes().deprovision(host.hostname(), Agent.RetiringUpgrader, now);
         nodeRepository.nodes().upgradeOs(NodeListFilter.from(host), Optional.of(target));
         nodeRepository.osVersions().writeChange((change) -> change.withRetirementAt(now, host.type()));
+    }
+
+    /** Returns whether host and all its children are deprovisioning */
+    private static boolean deprovisioning(Node host, NodeList allNodes) {
+        return host.status().wantToRetire() && host.status().wantToDeprovision() &&
+               allNodes.childrenOf(host).not().deprovisioning().isEmpty();
     }
 
 }

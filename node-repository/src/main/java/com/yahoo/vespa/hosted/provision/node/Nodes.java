@@ -244,8 +244,9 @@ public class Nodes {
         if ( ! zone.environment().isProduction() || zone.system().isCd())
             return deallocate(nodes, Agent.application, "Deactivated by application", transaction.nested());
 
-        var stateless = NodeList.copyOf(nodes).stateless();
-        var stateful  = NodeList.copyOf(nodes).stateful();
+        NodeList nodeList = NodeList.copyOf(nodes);
+        NodeList stateless = nodeList.stateless();
+        NodeList stateful  = nodeList.stateful();
         List<Node> written = new ArrayList<>();
         written.addAll(deallocate(stateless.asList(), Agent.application, "Deactivated by application", transaction.nested()));
         written.addAll(db.writeTo(Node.State.inactive, stateful.asList(), Agent.application, Optional.empty(), transaction.nested()));
