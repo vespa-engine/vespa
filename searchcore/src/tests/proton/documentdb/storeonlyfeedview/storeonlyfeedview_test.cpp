@@ -3,7 +3,6 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/putdonecontext.h>
 #include <vespa/searchcore/proton/server/removedonecontext.h>
 #include <vespa/searchcore/proton/server/storeonlyfeedview.h>
@@ -12,9 +11,11 @@
 #include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
 #include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/test/mock_summary_adapter.h>
+#include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
@@ -211,8 +212,7 @@ struct FixtureBase {
     std::atomic<int> heartbeatCount;
     std::atomic<int> outstandingMoveOps;
     DocumentMetaStore::SP metaStore;
-    vespalib::ThreadStackExecutor sharedExecutor;
-    ExecutorThreadingService writeService;
+    TransportAndExecutorService _service;
     std::shared_ptr<PendingLidTrackerBase> pendingLidsForCommit;
     typename FeedViewType::UP feedview;
     SerialNum serial_num;
@@ -226,8 +226,7 @@ struct FixtureBase {
                                                         DocumentMetaStore::getFixedName(),
                                                         search::GrowStrategy(),
                                                         subDbType)),
-          sharedExecutor(1, 0x10000),
-          writeService(sharedExecutor),
+          _service(1),
           pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
           feedview(),
           serial_num(2u)
@@ -235,7 +234,7 @@ struct FixtureBase {
         StoreOnlyFeedView::PersistentParams params(0, 0, DocTypeName("foo"), subdb_id, subDbType);
         metaStore->constructFreeList();
         ISummaryAdapter::SP adapter = std::make_shared<MySummaryAdapter>(removeCount, putCount, heartbeatCount);
-        feedview = std::make_unique<FeedViewType>(adapter, metaStore, writeService,
+        feedview = std::make_unique<FeedViewType>(adapter, metaStore, _service.write(),
                                                   params, pendingLidsForCommit, outstandingMoveOps);
     }
 
@@ -263,11 +262,11 @@ struct FixtureBase {
 
     template <typename FunctionType>
     void runInMasterAndSync(FunctionType func) {
-        test::runInMasterAndSync(writeService, func);
+        test::runInMasterAndSync(_service.write(), func);
     }
     template <typename FunctionType>
     void runInMaster(FunctionType func) {
-        test::runInMaster(writeService, func);
+        test::runInMaster(_service.write(), func);
     }
 
     void force_commit() {

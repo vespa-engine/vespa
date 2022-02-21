@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "transport_helper.h"
 #include <vespa/searchcore/proton/server/idocumentsubdb.h>
-#include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/docsummary/isummarymanager.h>
 #include <vespa/searchcorespi/index/iindexmanager.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
@@ -21,15 +21,14 @@ namespace proton::test {
 struct DummyDocumentSubDb : public IDocumentSubDB
 {
     using IIndexManager = searchcorespi::IIndexManager;
-    uint32_t                 _subDbId;
-    DocumentMetaStoreContext _metaStoreCtx;
-    ISummaryManager::SP      _summaryManager;
-    IIndexManager::SP        _indexManager;
-    ISummaryAdapter::SP      _summaryAdapter;
-    IIndexWriter::SP         _indexWriter;
-    vespalib::ThreadStackExecutor _sharedExecutor;
-    std::unique_ptr<ExecutorThreadingService> _writeService;
-    PendingLidTracker        _pendingLidTracker;
+    uint32_t                    _subDbId;
+    DocumentMetaStoreContext    _metaStoreCtx;
+    ISummaryManager::SP         _summaryManager;
+    IIndexManager::SP           _indexManager;
+    ISummaryAdapter::SP         _summaryAdapter;
+    IIndexWriter::SP            _indexWriter;
+    mutable TransportAndExecutorService _service;
+    PendingLidTracker           _pendingLidTracker;
 
     DummyDocumentSubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB, uint32_t subDbId)
         : _subDbId(subDbId),
@@ -38,8 +37,8 @@ struct DummyDocumentSubDb : public IDocumentSubDB
           _indexManager(),
           _summaryAdapter(),
           _indexWriter(),
-          _sharedExecutor(1, 0x10000),
-          _writeService(std::make_unique<ExecutorThreadingService>(_sharedExecutor, 1))
+          _service(1),
+          _pendingLidTracker()
     {
     }
     ~DummyDocumentSubDb() override { }
@@ -49,7 +48,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     DocumentSubDbInitializer::UP
     createInitializer(const DocumentDBConfig &, SerialNum,const index::IndexConfig &) const override {
         return std::make_unique<DocumentSubDbInitializer>
-            (const_cast<DummyDocumentSubDb &>(*this), _writeService->master());
+            (const_cast<DummyDocumentSubDb &>(*this), _service.write().master());
     }
     void setup(const DocumentSubDbInitializerResult &) override {}
     void initViews(const DocumentDBConfig &, const proton::matching::SessionManager::SP &) override {}

@@ -2,7 +2,7 @@
 
 #include <vespa/fastos/file.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
-#include <vespa/searchcore/proton/server/executorthreadingservice.h>
+#include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchcorespi/index/index_manager_stats.h>
 #include <vespa/searchcorespi/index/indexcollection.h>
 #include <vespa/searchcorespi/index/indexflushtarget.h>
@@ -24,7 +24,6 @@
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/time.h>
 #include <set>
 #include <thread>
@@ -53,7 +52,6 @@ using search::memoryindex::FieldIndexCollection;
 using search::queryeval::Source;
 using std::set;
 using std::string;
-using vespalib::ThreadStackExecutor;
 using vespalib::makeLambdaTask;
 using std::chrono::duration_cast;
 
@@ -108,8 +106,7 @@ struct IndexManagerTest : public ::testing::Test {
     SerialNum _serial_num;
     IndexManagerDummyReconfigurer _reconfigurer;
     DummyFileHeaderContext _fileHeaderContext;
-    vespalib::ThreadStackExecutor _sharedExecutor;
-    ExecutorThreadingService _writeService;
+    TransportAndExecutorService _service;
     std::unique_ptr<IndexManager> _index_manager;
     Schema _schema;
     DocBuilder _builder;
@@ -118,8 +115,7 @@ struct IndexManagerTest : public ::testing::Test {
         : _serial_num(0),
           _reconfigurer(),
           _fileHeaderContext(),
-          _sharedExecutor(1, 0x10000),
-          _writeService(_sharedExecutor),
+          _service(1),
           _index_manager(),
           _schema(getSchema()),
           _builder(_schema)
@@ -130,13 +126,13 @@ struct IndexManagerTest : public ::testing::Test {
     }
 
     ~IndexManagerTest() {
-        _writeService.shutdown();
+        _service.shutdown();
     }
 
     template <class FunctionType>
     inline void runAsMaster(FunctionType &&function) {
         vespalib::Gate gate;
-        _writeService.master().execute(makeLambdaTask([&gate,function = std::move(function)]() {
+        _service.write().master().execute(makeLambdaTask([&gate,function = std::move(function)]() {
             function();
             gate.countDown();
         }));
@@ -145,7 +141,7 @@ struct IndexManagerTest : public ::testing::Test {
     template <class FunctionType>
     inline void runAsIndex(FunctionType &&function) {
         vespalib::Gate gate;
-        _writeService.index().execute(makeLambdaTask([&gate,function = std::move(function)]() {
+        _service.write().index().execute(makeLambdaTask([&gate,function = std::move(function)]() {
             function();
             gate.countDown();
         }));
@@ -210,7 +206,7 @@ IndexManagerTest::resetIndexManager()
 {
     _index_manager.reset();
     _index_manager = std::make_unique<IndexManager>(index_dir, IndexConfig(), getSchema(), 1,
-                             _reconfigurer, _writeService, _sharedExecutor,
+                             _reconfigurer, _service.write(), _service.shared(),
                              TuneFileIndexManager(), TuneFileAttributes(), _fileHeaderContext);
 }
 
