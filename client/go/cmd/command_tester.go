@@ -103,12 +103,16 @@ type mockHttpClient struct {
 
 type mockResponse struct {
 	status int
-	body   string
+	body   []byte
 }
 
-func (c *mockHttpClient) NextStatus(status int) { c.NextResponse(status, "") }
+func (c *mockHttpClient) NextStatus(status int) { c.NextResponseBytes(status, nil) }
 
 func (c *mockHttpClient) NextResponse(status int, body string) {
+	c.NextResponseBytes(status, []byte(body))
+}
+
+func (c *mockHttpClient) NextResponseBytes(status int, body []byte) {
 	c.nextResponses = append(c.nextResponses, mockResponse{status: status, body: body})
 }
 
@@ -123,7 +127,7 @@ func (c *mockHttpClient) Do(request *http.Request, timeout time.Duration) (*http
 	return &http.Response{
 			Status:     "Status " + strconv.Itoa(response.status),
 			StatusCode: response.status,
-			Body:       ioutil.NopCloser(bytes.NewBufferString(response.body)),
+			Body:       ioutil.NopCloser(bytes.NewBuffer(response.body)),
 			Header:     make(http.Header),
 		},
 		nil

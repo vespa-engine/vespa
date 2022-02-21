@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -20,7 +21,10 @@ import (
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
-const sampleAppsCacheTTL = time.Hour * 168 // 1 week
+const (
+	sampleAppsCacheTTL = time.Hour * 168 // 1 week
+	sampleAppsFilename = "sample-apps-master.zip"
+)
 
 var listApps bool
 var forceClone bool
@@ -65,7 +69,7 @@ variable.`,
 }
 
 func cloneApplication(applicationName string, applicationDir string) error {
-	zipFile, err := getSampleAppsZip()
+	zipFile, err := openSampleAppsZip()
 	if err != nil {
 		return err
 	}
@@ -102,43 +106,21 @@ func cloneApplication(applicationName string, applicationDir string) error {
 	return nil
 }
 
-func openOutputFile() (*os.File, error) {
-	cacheDir, err := vespaCliCacheDir()
-	if err != nil {
-		return nil, err
-	}
-	cacheFile := filepath.Join(cacheDir, "sample-apps-master.zip")
-	return os.OpenFile(cacheFile, os.O_RDWR|os.O_CREATE, 0755)
-}
-
-func useCache(cacheFile *os.File) (bool, error) {
+func useCache(stat os.FileInfo) (bool, error) {
 	if forceClone {
 		return false, nil
-	}
-	stat, err := cacheFile.Stat()
-	if errors.Is(err, os.ErrNotExist) {
-		return false, nil
-	} else if err != nil {
-		return false, err
 	}
 	expiry := stat.ModTime().Add(sampleAppsCacheTTL)
 	return stat.Size() > 0 && time.Now().Before(expiry), nil
 }
 
-func getSampleAppsZip() (*os.File, error) {
-	f, err := openOutputFile()
+func fetchSampleAppsZip(destination string) error {
+	f, err := ioutil.TempFile(filepath.Dir(destination), "sample-apps")
 	if err != nil {
-		return nil, fmt.Errorf("could not determine location of cache file: %w", err)
+		return fmt.Errorf("could not create temporary file: %w", err)
 	}
-	useCache, err := useCache(f)
-	if err != nil {
-		return nil, errHint(fmt.Errorf("could not determine cache status: %w", err), "Try ignoring the cache with the -f flag")
-	}
-	if useCache {
-		log.Print(color.Yellow("Using cached sample apps ..."))
-		return f, nil
-	}
-	err = util.Spinner(color.Yellow("Downloading sample apps ...").String(), func() error {
+	defer f.Close()
+	return util.Spinner(color.Yellow("Downloading sample apps ...").String(), func() error {
 		request, err := http.NewRequest("GET", "https://github.com/vespa-engine/sample-apps/archive/refs/heads/master.zip", nil)
 		if err != nil {
 			return fmt.Errorf("invalid url: %w", err)
@@ -148,18 +130,47 @@ func getSampleAppsZip() (*os.File, error) {
 			return fmt.Errorf("could not download sample apps: %w", err)
 		}
 		defer response.Body.Close()
-		if response.StatusCode != 200 {
+		if response.StatusCode != http.StatusOK {
 			return fmt.Errorf("could not download sample apps: github returned status %d", response.StatusCode)
-		}
-		if err := f.Truncate(0); err != nil {
-			return fmt.Errorf("could not truncate sample apps file: %s: %w", f.Name(), err)
 		}
 		if _, err := io.Copy(f, response.Body); err != nil {
 			return fmt.Errorf("could not write sample apps to file: %s: %w", f.Name(), err)
 		}
+		f.Close()
+		if err := os.Rename(f.Name(), destination); err != nil {
+			return fmt.Errorf("could not move sample apps to cache path")
+		}
 		return nil
 	})
-	return f, err
+}
+
+func openSampleAppsZip() (*os.File, error) {
+	cacheDir, err := vespaCliCacheDir()
+	if err != nil {
+		return nil, err
+	}
+	path := filepath.Join(cacheDir, sampleAppsFilename)
+	cacheExists := true
+	stat, err := os.Stat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		cacheExists = false
+	} else if err != nil {
+		return nil, fmt.Errorf("could not stat existing cache file: %w", err)
+	}
+	if cacheExists {
+		useCache, err := useCache(stat)
+		if err != nil {
+			return nil, errHint(fmt.Errorf("could not determine cache status: %w", err), "Try ignoring the cache with the -f flag")
+		}
+		if useCache {
+			log.Print(color.Yellow("Using cached sample apps ..."))
+			return os.Open(path)
+		}
+	}
+	if err := fetchSampleAppsZip(path); err != nil {
+		return nil, fmt.Errorf("could not fetch sample apps: %w", err)
+	}
+	return os.Open(path)
 }
 
 func copy(f *zip.File, destinationDir string, zipEntryPrefix string) error {

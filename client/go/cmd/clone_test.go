@@ -5,12 +5,13 @@
 package cmd
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
@@ -19,14 +20,28 @@ func TestClone(t *testing.T) {
 }
 
 func assertCreated(sampleAppName string, app string, t *testing.T) {
-	testFile := filepath.Join("testdata", "sample-apps-master.zip")
-	now := time.Now()
-	if err := os.Chtimes(testFile, now, now); err != nil { // Ensure test file is considered new enough by cache mechanism
-		t.Fatal(err)
-	}
-	out, _ := execute(command{cacheDir: filepath.Dir(testFile), args: []string{"clone", sampleAppName, app}}, t, nil)
+	appCached := app + "-cache"
+	httpClient := &mockHttpClient{}
+	testdata, err := ioutil.ReadFile(filepath.Join("testdata", "sample-apps-master.zip"))
+	require.Nil(t, err)
+	httpClient.NextResponseBytes(200, testdata)
+	cacheDir := t.TempDir()
+	require.Nil(t, err)
+	defer func() {
+		os.RemoveAll(cacheDir)
+	}()
+	out, _ := execute(command{failTestOnError: true, cacheDir: cacheDir, args: []string{"clone", sampleAppName, app}}, t, httpClient)
 	defer os.RemoveAll(app)
-	assert.Equal(t, "Using cached sample apps ...\nCreated "+app+"\n", out)
+	assert.Equal(t, "Created "+app+"\n", out)
+	assertFiles(t, app)
+
+	outCached, _ := execute(command{failTestOnError: true, cacheDir: cacheDir, args: []string{"clone", sampleAppName, appCached}}, t, nil)
+	defer os.RemoveAll(appCached)
+	assert.Equal(t, "Using cached sample apps ...\nCreated "+appCached+"\n", outCached)
+	assertFiles(t, appCached)
+}
+
+func assertFiles(t *testing.T, app string) {
 	assert.True(t, util.PathExists(filepath.Join(app, "README.md")))
 	assert.True(t, util.PathExists(filepath.Join(app, "src", "main", "application")))
 	assert.True(t, util.IsDirectory(filepath.Join(app, "src", "main", "application")))
