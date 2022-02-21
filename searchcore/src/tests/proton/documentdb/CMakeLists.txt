@@ -3,6 +3,7 @@ vespa_add_executable(searchcore_documentdb_test_app TEST
     SOURCES
     documentdb_test.cpp
     DEPENDS
+    searchcore_test
     searchcore_server
     searchcore_initializer
     searchcore_reprocessing

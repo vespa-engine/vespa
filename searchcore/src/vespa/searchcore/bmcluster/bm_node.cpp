@@ -449,7 +449,6 @@ class MyBmNode : public BmNode
     int                                        _distributor_mbus_port;
     int                                        _distributor_rpc_port;
     int                                        _distributor_status_port;
-    TransLogServer                             _tls;
     vespalib::string                           _tls_spec;
     proton::matching::QueryLimiter             _query_limiter;
     vespalib::Clock                            _clock;
@@ -457,6 +456,7 @@ class MyBmNode : public BmNode
     proton::MemoryConfigStores                 _config_stores;
     vespalib::ThreadStackExecutor              _summary_executor;
     proton::MockSharedThreadingService         _shared_service;
+    TransLogServer                             _tls;
     proton::DummyDBOwner                       _document_db_owner;
     BucketSpace                                _bucket_space;
     std::shared_ptr<DocumentDB>                _document_db;
@@ -514,7 +514,6 @@ MyBmNode::MyBmNode(const vespalib::string& base_dir, int base_port, uint32_t nod
       _distributor_mbus_port(port_number(base_port, PortBias::DISTRIBUTOR_MBUS_PORT)),
       _distributor_rpc_port(port_number(base_port, PortBias::DISTRIBUTOR_RPC_PORT)),
       _distributor_status_port(port_number(base_port, PortBias::DISTRIBUTOR_STATUS_PORT)),
-      _tls("tls", _tls_listen_port, _base_dir, _file_header_context),
       _tls_spec(vespalib::make_string("tcp/localhost:%d", _tls_listen_port)),
       _query_limiter(),
       _clock(),
@@ -522,6 +521,7 @@ MyBmNode::MyBmNode(const vespalib::string& base_dir, int base_port, uint32_t nod
       _config_stores(),
       _summary_executor(8, 128_Ki),
       _shared_service(_summary_executor, _summary_executor),
+      _tls(_shared_service.transport(), "tls", _tls_listen_port, _base_dir, _file_header_context),
       _document_db_owner(),
       _bucket_space(document::test::makeBucketSpace(_doc_type_name.getName())),
       _document_db(),
@@ -568,7 +568,7 @@ MyBmNode::create_document_db(const BmClusterParams& params)
     vespalib::mkdir(_base_dir + "/" + _doc_type_name.getName(), false);
     vespalib::string input_cfg = _base_dir + "/" + _doc_type_name.getName() + "/baseconfig";
     {
-        proton::FileConfigManager fileCfg(input_cfg, "", _doc_type_name.getName());
+        proton::FileConfigManager fileCfg(_shared_service.transport(), input_cfg, "", _doc_type_name.getName());
         fileCfg.saveConfig(*_document_db_config, 1);
     }
     config::DirSpec spec(input_cfg + "/config-1");
@@ -590,7 +590,7 @@ MyBmNode::create_document_db(const BmClusterParams& params)
                                                               std::make_shared<BucketspacesConfig>(),
                                                               tuneFileDocDB, HwInfo());
     mgr.forwardConfig(bootstrap_config);
-    mgr.nextGeneration(0ms);
+    mgr.nextGeneration(_shared_service.transport(), 0ms);
     _document_db = DocumentDB::create(_base_dir, mgr.getConfig(), _tls_spec, _query_limiter, _clock, _doc_type_name,
                                       _bucket_space, *bootstrap_config->getProtonConfigSP(), _document_db_owner,
                                       _shared_service, *_persistence_engine, _tls,

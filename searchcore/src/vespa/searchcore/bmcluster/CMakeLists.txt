@@ -32,6 +32,7 @@ vespa_add_library(searchcore_bmcluster STATIC
     storage_api_rpc_bm_feed_handler.cpp
     storage_reply_error_checker.cpp
     DEPENDS
+    searchcore_test
     searchcore_server
     searchcore_initializer
     searchcore_reprocessing

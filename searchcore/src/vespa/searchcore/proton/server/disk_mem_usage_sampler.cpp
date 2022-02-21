@@ -10,12 +10,12 @@ using vespalib::makeLambdaTask;
 
 namespace proton {
 
-DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in, const Config &config)
+DiskMemUsageSampler::DiskMemUsageSampler(FNET_Transport & transport, const std::string &path_in, const Config &config)
     : _filter(config.hwInfo),
       _path(path_in),
       _sampleInterval(60s),
       _lastSampleTime(vespalib::steady_clock::now()),
-      _periodicTimer(),
+      _periodicTimer(std::make_unique<vespalib::ScheduledExecutor>(transport)),
       _lock(),
       _transient_usage_providers()
 {
@@ -30,12 +30,11 @@ DiskMemUsageSampler::~DiskMemUsageSampler()
 void
 DiskMemUsageSampler::setConfig(const Config &config)
 {
-    _periodicTimer.reset();
+    _periodicTimer->reset();
     _filter.setConfig(config.filterConfig);
     _sampleInterval = config.sampleInterval;
     sampleUsage();
     _lastSampleTime = vespalib::steady_clock::now();
-    _periodicTimer = std::make_unique<vespalib::ScheduledExecutor>();
     vespalib::duration maxInterval = std::min(vespalib::duration(1s), _sampleInterval);
     _periodicTimer->scheduleAtFixedRate(makeLambdaTask([this]() {
                                             if (_filter.acceptWriteOperation() && (vespalib::steady_clock::now() < (_lastSampleTime + _sampleInterval))) {

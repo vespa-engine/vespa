@@ -169,14 +169,14 @@ class DocumentDBFactory : public DummyDBOwner {
 private:
     vespalib::string          _baseDir;
     DummyFileHeaderContext    _fileHeaderContext;
-    TransLogServer            _tls;
     vespalib::string          _tlsSpec;
     matching::QueryLimiter    _queryLimiter;
     vespalib::Clock           _clock;
-    mutable DummyWireService  _metricsWireService;
-    mutable MemoryConfigStores _config_stores;
+    mutable DummyWireService      _metricsWireService;
+    mutable MemoryConfigStores    _config_stores;
     vespalib::ThreadStackExecutor _summaryExecutor;
-    MockSharedThreadingService _shared_service;
+    MockSharedThreadingService    _shared_service;
+    TransLogServer                _tls;
     storage::spi::dummy::DummyBucketExecutor _bucketExecutor;
 
     static std::shared_ptr<ProtonConfig> make_proton_config() {
@@ -196,7 +196,7 @@ public:
         vespalib::mkdir(_baseDir + "/" + docType.toString(), false);
         vespalib::string inputCfg = _baseDir + "/" + docType.toString() + "/baseconfig";
         {
-            FileConfigManager fileCfg(inputCfg, "", docType.getName());
+            FileConfigManager fileCfg(_shared_service.transport(), inputCfg, "", docType.getName());
             fileCfg.saveConfig(*snapshot, 1);
         }
         config::DirSpec spec(inputCfg + "/config-1");
@@ -208,7 +208,7 @@ public:
                                                   std::make_shared<BucketspacesConfig>(),
                                                   tuneFileDocDB, HwInfo());
         mgr.forwardConfig(b);
-        mgr.nextGeneration(0ms);
+        mgr.nextGeneration(_shared_service.transport(), 0ms);
         return DocumentDB::create(_baseDir, mgr.getConfig(), _tlsSpec, _queryLimiter, _clock, docType, bucketSpace,
                                   *b->getProtonConfigSP(), const_cast<DocumentDBFactory &>(*this),
                                   _shared_service, _bucketExecutor, _tls, _metricsWireService,
@@ -221,13 +221,13 @@ public:
 DocumentDBFactory::DocumentDBFactory(const vespalib::string &baseDir, int tlsListenPort)
     : _baseDir(baseDir),
       _fileHeaderContext(),
-      _tls("tls", tlsListenPort, baseDir, _fileHeaderContext),
       _tlsSpec(vespalib::make_string("tcp/localhost:%d", tlsListenPort)),
       _queryLimiter(),
       _clock(),
       _metricsWireService(),
       _summaryExecutor(8, 128_Ki),
       _shared_service(_summaryExecutor, _summaryExecutor),
+      _tls(_shared_service.transport(), "tls", tlsListenPort, baseDir, _fileHeaderContext),
       _bucketExecutor(2)
 {}
 DocumentDBFactory::~DocumentDBFactory()  = default;

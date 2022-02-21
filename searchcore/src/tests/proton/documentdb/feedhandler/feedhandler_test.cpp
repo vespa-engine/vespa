@@ -27,12 +27,14 @@
 #include <vespa/searchcore/proton/server/i_feed_handler_owner.h>
 #include <vespa/searchcore/proton/server/ireplayconfig.h>
 #include <vespa/searchcore/proton/test/dummy_feed_view.h>
+#include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/io/fileutil.h>
 
 #include <vespa/log/log.h>
@@ -407,6 +409,7 @@ struct MyTlsWriter : TlsWriter {
 struct FeedHandlerFixture
 {
     DummyFileHeaderContext       _fileHeaderContext;
+    TransportMgr                 _transport;
     TransLogServer               tls;
     vespalib::string             tlsSpec;
     vespalib::ThreadStackExecutor sharedExecutor;
@@ -423,7 +426,8 @@ struct FeedHandlerFixture
     FeedHandler                  handler;
     FeedHandlerFixture()
         : _fileHeaderContext(),
-          tls("mytls", 9016, "mytlsdir", _fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000)),
+          _transport(),
+          tls(_transport.transport(), "mytls", 9016, "mytlsdir", _fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000)),
           tlsSpec("tcp/localhost:9016"),
           sharedExecutor(1, 0x10000),
           writeService(sharedExecutor),

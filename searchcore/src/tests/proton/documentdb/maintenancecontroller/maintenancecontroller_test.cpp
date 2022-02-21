@@ -33,6 +33,7 @@
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/test/mock_attribute_manager.h>
 #include <vespa/searchcore/proton/test/test.h>
+#include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -348,6 +349,7 @@ public:
     test::DiskMemUsageNotifier         _diskMemUsageNotifier;
     BucketCreateNotifier               _bucketCreateNotifier;
     MonitoredRefCount                  _refCount;
+    TransportMgr                       _transport;
     MaintenanceController              _mc;
 
     MaintenanceControllerFixture();
@@ -767,7 +769,8 @@ MaintenanceControllerFixture::MaintenanceControllerFixture()
       _attributeUsageFilter(),
       _bucketCreateNotifier(),
       _refCount(),
-      _mc(_threadService, _genericExecutor, _refCount, _docTypeName)
+      _transport(),
+      _mc(_transport.transport(), _threadService, _genericExecutor, _refCount, _docTypeName)
 {
     std::vector<MyDocumentSubDB *> subDBs;
     subDBs.push_back(&_ready);

@@ -3,6 +3,7 @@ vespa_add_executable(searchcore_disk_mem_usage_sampler_test_app TEST
     SOURCES
     disk_mem_usage_sampler_test.cpp
     DEPENDS
+    searchcore_test
     searchcore_server
     GTest::GTest
 )
