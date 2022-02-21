@@ -44,7 +44,7 @@ public:
 SearchVisitorTest::SearchVisitorTest() :
     vespalib::TestApp(),
     _componentRegister(),
-    _env("dir:" + TEST_PATH("cfg"))
+    _env(::config::ConfigUri("dir:" + TEST_PATH("cfg")))
 {
     _componentRegister.setNodeInfo("mycluster", lib::NodeType::STORAGE, 1);
     _componentRegister.setClock(_clock);
@@ -69,7 +69,8 @@ createDocuments(const vespalib::string & dir)
 void
 SearchVisitorTest::testCreateSearchVisitor(const vespalib::string & dir, const vdslib::Parameters & params)
 {
-    SearchVisitorFactory sFactory(dir);
+    ::config::ConfigUri uri(dir);
+    SearchVisitorFactory sFactory(uri);
     VisitorFactory & factory(sFactory);
     std::unique_ptr<Visitor> sv(static_cast<SearchVisitor *>(factory.makeVisitor(*_component, _env, params)));
     document::BucketId bucketId;
@@ -107,7 +108,7 @@ SearchVisitorTest::testSearchVisitor()
 void
 SearchVisitorTest::testOnlyRequireWeakReadConsistency()
 {
-    SearchVisitorFactory factory("dir:" + TEST_PATH("cfg"));
+    SearchVisitorFactory factory(::config::ConfigUri("dir:" + TEST_PATH("cfg")));
     VisitorFactory& factoryBase(factory);
     vdslib::Parameters params;
     std::unique_ptr<Visitor> sv(factoryBase.makeVisitor(*_component, _env, params));

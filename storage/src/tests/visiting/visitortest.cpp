@@ -166,7 +166,7 @@ VisitorTest::initializeTest(const TestParams& params)
     _top.reset(new DummyStorageLink());
     _top->push_back(std::unique_ptr<StorageLink>(_manager
             = new VisitorManager(
-                config.getConfigId(),
+                    config::ConfigUri(config.getConfigId()),
                 _node->getComponentRegister(), *_messageSessionFactory)));
     _bottom = new DummyStorageLink();
     _top->push_back(std::unique_ptr<StorageLink>(_bottom));

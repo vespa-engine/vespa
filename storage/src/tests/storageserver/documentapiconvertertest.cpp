@@ -3,7 +3,6 @@
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/bucket/bucketidfactory.h>
-#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/select/parser.h>
@@ -74,7 +73,7 @@ struct DocumentApiConverterTest : Test {
     }
 
     void SetUp() override {
-        _converter = std::make_unique<DocumentApiConverter>("raw:", _bucketResolver);
+        _converter = std::make_unique<DocumentApiConverter>(config::ConfigUri("raw:"), _bucketResolver);
     };
 
     template <typename DerivedT, typename BaseT>

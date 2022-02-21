@@ -17,29 +17,12 @@ class SourceSpec;
  */
 class ConfigUri {
 public:
-    /**
-     * Construct a config URI from a given config id.
-     * @param configId The config id.
-     */
-    ConfigUri(const char * configId) : ConfigUri(vespalib::string(configId)) {}
 
     /**
      * Construct a config URI from a given config id.
      * @param configId The config id.
      */
-    ConfigUri(const std::string &configId) : ConfigUri(vespalib::string(configId)) {}
-
-    /**
-     * Construct a config URI from a given config id.
-     * @param configId The config id.
-     */
-    ConfigUri(vespalib::stringref configId) : ConfigUri(vespalib::string(configId)) {}
-
-    /**
-     * Construct a config URI from a given config id.
-     * @param configId The config id.
-     */
-    ConfigUri(const vespalib::string &configId);
+    explicit ConfigUri(vespalib::stringref configId);
 
     /**
      * Construct a config URI from a config id and a context.

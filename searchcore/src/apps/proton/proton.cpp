@@ -185,7 +185,9 @@ App::Main()
         LOG(debug, "identity: '%s'", params.identity.c_str());
         LOG(debug, "serviceidentity: '%s'", params.serviceidentity.c_str());
         LOG(debug, "subscribeTimeout: '%" PRIu64 "'", params.subscribeTimeout);
-        protonUP = std::make_unique<proton::Proton>(params.identity, _argc > 0 ? _argv[0] : "proton", std::chrono::milliseconds(params.subscribeTimeout));
+        std::chrono::milliseconds subscribeTimeout(params.subscribeTimeout);
+        config::ConfigUri identityUri(params.identity);
+        protonUP = std::make_unique<proton::Proton>(identityUri, _argc > 0 ? _argv[0] : "proton", subscribeTimeout);
         proton::Proton & proton = *protonUP;
         proton::BootstrapConfig::SP configSnapshot = proton.init();
         if (proton.hasAbortedInit()) {
@@ -200,13 +202,14 @@ App::Main()
             }
             configSnapshot.reset();
             std::unique_ptr<ProtonServiceLayerProcess> spiProton;
+
             if ( ! params.serviceidentity.empty()) {
-                spiProton = std::make_unique<ProtonServiceLayerProcess>(params.serviceidentity, proton);
-                spiProton->setupConfig(std::chrono::milliseconds(params.subscribeTimeout));
+                spiProton = std::make_unique<ProtonServiceLayerProcess>(identityUri.createWithNewId(params.serviceidentity), proton);
+                spiProton->setupConfig(subscribeTimeout);
                 spiProton->createNode();
                 EV_STARTED("servicelayer");
             } else {
-                proton.getMetricManager().init(params.identity, proton.getThreadPool());
+                proton.getMetricManager().init(identityUri, proton.getThreadPool());
             }
             EV_STARTED("proton");
             while (!(SIG::INT.check() || SIG::TERM.check() || (spiProton && spiProton->getNode().attemptedStopped()))) {

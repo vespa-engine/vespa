@@ -41,7 +41,7 @@ Server::handleMessage(Message::UP msg) {
     msg->getTrace().trace(1, _name + " (message)", false);
     if (!msg->getRoute().hasHops()) {
         fprintf(stderr, "**** Server '%s' replying.\n", _name.c_str());
-        Reply::UP reply(new EmptyReply());
+        auto reply = std::make_unique<EmptyReply>();
         msg->swapState(*reply);
         handleReply(std::move(reply));
     } else {
@@ -70,9 +70,9 @@ App::Main()
         return 1;
     }
     RPCMessageBus mb(ProtocolSet().add(std::make_shared<SimpleProtocol>()),
-                     RPCNetworkParams("file:slobrok.cfg")
+                     RPCNetworkParams(config::ConfigUri("file:slobrok.cfg"))
                      .setIdentity(Identity(_argv[1])),
-                     "file:routing.cfg");
+                     config::ConfigUri("file:routing.cfg"));
     Server server(mb.getMessageBus(), _argv[1]);
     while (true) {
         std::this_thread::sleep_for(1s);

@@ -54,7 +54,7 @@ struct TestVisitorMessageSessionFactory : public VisitorMessageSessionFactory
 
     TestVisitorMessageSessionFactory(vespalib::stringref configId = "")
         : _createAutoReplyVisitorSessions(false),
-          _priConverter(configId) {}
+          _priConverter(config::ConfigUri(configId)) {}
 
     VisitorMessageSession::UP createSession(Visitor& v, VisitorThread& vt) override {
         std::lock_guard lock(_accessLock);

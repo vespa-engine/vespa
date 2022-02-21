@@ -1,6 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/documentapi/documentapi.h>
 #include <vespa/storage/storageserver/priorityconverter.h>
 #include <tests/common/testhelper.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -14,16 +13,14 @@ struct PriorityConverterTest : Test {
 
     void SetUp() override {
         vdstestlib::DirConfig config(getStandardConfig(true));
-        _converter = std::make_unique<PriorityConverter>(config.getConfigId());
+        _converter = std::make_unique<PriorityConverter>(config::ConfigUri(config.getConfigId()));
     };
 };
 
 TEST_F(PriorityConverterTest, normal_usage) {
     for (int p = 0; p < 16; ++p) {
-        EXPECT_EQ(
-                (50 + p * 10),
-                _converter->toStoragePriority(
-                        static_cast<documentapi::Priority::Value>(p)));
+        EXPECT_EQ((50 + p * 10),
+                  _converter->toStoragePriority(static_cast<documentapi::Priority::Value>(p)));
     }
     for (int i = 0; i < 256; ++i) {
         uint8_t p = i;

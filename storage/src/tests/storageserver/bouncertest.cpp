@@ -72,7 +72,7 @@ void BouncerTest::setUpAsNode(const lib::NodeType& type) {
         _node.reset(new TestDistributorApp(NodeIndex(2), config.getConfigId()));
     }
     _upper.reset(new DummyStorageLink());
-    _manager = new Bouncer(_node->getComponentRegister(), config.getConfigId());
+    _manager = new Bouncer(_node->getComponentRegister(), config::ConfigUri(config.getConfigId()));
     _lower = new DummyStorageLink();
     _upper->push_back(std::unique_ptr<StorageLink>(_manager));
     _upper->push_back(std::unique_ptr<StorageLink>(_lower));

@@ -11,7 +11,7 @@ bool checkEmpty(const vespalib::string & configId) {
 }
 namespace config {
 
-ConfigUri::ConfigUri(const vespalib::string &configId)
+ConfigUri::ConfigUri(vespalib::stringref configId)
     : _configId(legacyConfigId2ConfigId(configId)),
       _context(std::make_shared<ConfigContext>(*legacyConfigId2Spec(configId))),
       _empty(checkEmpty(configId))

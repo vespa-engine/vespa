@@ -55,7 +55,7 @@ adjusted_num_distributor_stripes(int32_t cfg_n_stripes)
 }
 
 void
-DistributorProcess::setupConfig(milliseconds subscribeTimeout)
+DistributorProcess::setupConfig(vespalib::duration subscribeTimeout)
 {
     using vespa::config::content::core::StorDistributormanagerConfig;
     using vespa::config::content::core::StorVisitordispatcherConfig;

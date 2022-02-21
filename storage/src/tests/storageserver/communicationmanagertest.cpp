@@ -60,9 +60,9 @@ TEST_F(CommunicationManagerTest, simple) {
     TestDistributorApp distNode(distConfig.getConfigId());
 
     CommunicationManager distributor(distNode.getComponentRegister(),
-                                     distConfig.getConfigId());
+                                     config::ConfigUri(distConfig.getConfigId()));
     CommunicationManager storage(storNode.getComponentRegister(),
-                                 storConfig.getConfigId());
+                                 config::ConfigUri(storConfig.getConfigId()));
     DummyStorageLink *distributorLink = new DummyStorageLink();
     DummyStorageLink *storageLink = new DummyStorageLink();
     distributor.push_back(std::unique_ptr<StorageLink>(distributorLink));
@@ -112,7 +112,7 @@ CommunicationManagerTest::doTestConfigPropagation(bool isContentNode)
     }
 
     CommunicationManager commMgr(node->getComponentRegister(),
-                                 config.getConfigId());
+                                 config::ConfigUri(config.getConfigId()));
     DummyStorageLink *storageLink = new DummyStorageLink();
     commMgr.push_back(std::unique_ptr<StorageLink>(storageLink));
     commMgr.open();
@@ -158,7 +158,7 @@ TEST_F(CommunicationManagerTest, commands_are_dequeued_in_fifo_order) {
     TestServiceLayerApp storNode(storConfig.getConfigId());
 
     CommunicationManager storage(storNode.getComponentRegister(),
-                                 storConfig.getConfigId());
+                                 config::ConfigUri(storConfig.getConfigId()));
     DummyStorageLink *storageLink = new DummyStorageLink();
     storage.push_back(std::unique_ptr<StorageLink>(storageLink));
     storage.open();
@@ -191,7 +191,7 @@ TEST_F(CommunicationManagerTest, replies_are_dequeued_in_fifo_order) {
     TestServiceLayerApp storNode(storConfig.getConfigId());
 
     CommunicationManager storage(storNode.getComponentRegister(),
-                                 storConfig.getConfigId());
+                                 config::ConfigUri(storConfig.getConfigId()));
     DummyStorageLink *storageLink = new DummyStorageLink();
     storage.push_back(std::unique_ptr<StorageLink>(storageLink));
     storage.open();
@@ -232,7 +232,7 @@ struct CommunicationManagerFixture {
 
         node = std::make_unique<TestServiceLayerApp>(stor_config.getConfigId());
         comm_mgr = std::make_unique<CommunicationManager>(node->getComponentRegister(),
-                                                          stor_config.getConfigId());
+                                                          config::ConfigUri(stor_config.getConfigId()));
         bottom_link = new DummyStorageLink();
         comm_mgr->push_back(std::unique_ptr<StorageLink>(bottom_link));
         comm_mgr->open();

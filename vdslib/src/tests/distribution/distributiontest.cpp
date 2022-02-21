@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/config-stor-distribution.h>
-#include <vespa/config/helper/configfetcher.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/fastos/file.h>
@@ -48,7 +47,7 @@ TEST(DistributionTest, test_verify_java_distributions)
         }
         ClusterState state(mystate);
         Distribution distr(readConfig<vespa::config::content::StorDistributionConfig>(
-                "file:distribution/testdata/java_" + test + ".cfg"));
+                config::ConfigUri("file:distribution/testdata/java_" + test + ".cfg")));
         std::ofstream of("distribution/testdata/cpp_" + test + ".distribution");
 
         long maxBucket = 1;

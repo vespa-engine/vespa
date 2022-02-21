@@ -23,7 +23,7 @@ RoutingPolicyFactories::AndPolicyFactory::createPolicy(const string &param) cons
 mbus::IRoutingPolicy::UP
 RoutingPolicyFactories::MessageTypePolicyFactory::createPolicy(const string &param) const
 {
-    return std::make_unique<MessageTypePolicy>(param);
+    return std::make_unique<MessageTypePolicy>(config::ConfigUri(param));
 }
 
 mbus::IRoutingPolicy::UP
@@ -61,7 +61,7 @@ DocumentRouteSelectorPolicyFactory(const document::DocumentTypeRepo &repo,
 mbus::IRoutingPolicy::UP
 RoutingPolicyFactories::DocumentRouteSelectorPolicyFactory::createPolicy(const string &param) const
 {
-    auto ret = std::make_unique<DocumentRouteSelectorPolicy>(_repo, param.empty() ? _configId : param);
+    auto ret = std::make_unique<DocumentRouteSelectorPolicy>(_repo, config::ConfigUri(param.empty() ? _configId : param));
     string error = static_cast<DocumentRouteSelectorPolicy&>(*ret).getError();
     if (!error.empty()) {
         return std::make_unique<ErrorPolicy>(error);
@@ -72,10 +72,10 @@ RoutingPolicyFactories::DocumentRouteSelectorPolicyFactory::createPolicy(const s
 mbus::IRoutingPolicy::UP
 RoutingPolicyFactories::ExternPolicyFactory::createPolicy(const string &param) const
 {
-    mbus::IRoutingPolicy::UP ret(new ExternPolicy(param));
+    auto ret = std::make_unique<ExternPolicy>(param);
     string error = static_cast<ExternPolicy&>(*ret).getError();
     if (!error.empty()) {
-        ret.reset(new ErrorPolicy(error));
+        return std::make_unique<ErrorPolicy>(error);
     }
     return ret;
 }

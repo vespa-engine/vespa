@@ -2,23 +2,19 @@
 #include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
 #include <tests/common/teststorageapp.h>
-#include <tests/common/dummystoragelink.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/messagebus/dynamicthrottlepolicy.h>
-#include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storage/storageserver/mergethrottler.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <unordered_set>
 #include <memory>
 #include <iterator>
 #include <vector>
-#include <algorithm>
 #include <chrono>
 #include <thread>
 
@@ -178,7 +174,7 @@ MergeThrottlerTest::SetUp()
         std::unique_ptr<DummyStorageLink> top;
 
         top = std::make_unique<DummyStorageLink>();
-        MergeThrottler* throttler = new MergeThrottler(config.getConfigId(), server->getComponentRegister());
+        MergeThrottler* throttler = new MergeThrottler(::config::ConfigUri(config.getConfigId()), server->getComponentRegister());
         // MergeThrottler will be sandwiched in between two dummy links
         top->push_back(std::unique_ptr<StorageLink>(throttler));
         DummyStorageLink* bottom = new DummyStorageLink;

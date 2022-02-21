@@ -57,7 +57,7 @@ struct FixtureBase {
         config.getConfig("stor-server").set("node_index", "1");
         addSlobrokConfig(config, slobrok);
 
-        shared_rpc_resources = std::make_unique<SharedRpcResources>(config.getConfigId(), 0, 1, 1);
+        shared_rpc_resources = std::make_unique<SharedRpcResources>(config::ConfigUri(config.getConfigId()), 0, 1, 1);
         cc_service = std::make_unique<ClusterControllerApiRpcService>(dispatcher, *shared_rpc_resources);
         shared_rpc_resources->start_server_and_register_slobrok("my_cool_rpc_test");
     }

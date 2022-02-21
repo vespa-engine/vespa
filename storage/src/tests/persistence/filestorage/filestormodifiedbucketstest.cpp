@@ -39,7 +39,7 @@ struct BucketCheckerInjector : FileStorTestFixture::StorageLinkInjector
        link.push_back(std::make_unique<ModifiedBucketChecker>(
                _node.getComponentRegister(),
                _node.getPersistenceProvider(),
-               _fixture._config->getConfigId()));
+               config::ConfigUri(_fixture._config->getConfigId())));
     }
 };
 

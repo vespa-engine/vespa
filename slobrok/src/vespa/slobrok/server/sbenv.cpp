@@ -173,7 +173,7 @@ SBEnv::MainLoop()
 
     std::unique_ptr<ReconfigurableStateServer> stateServer;
     if (_configShim.enableStateServer()) {
-        stateServer = std::make_unique<ReconfigurableStateServer>(_configShim.configId(), _health, _metrics, _components);
+        stateServer = std::make_unique<ReconfigurableStateServer>(config::ConfigUri(_configShim.configId()), _health, _metrics, _components);
     }
 
     try {

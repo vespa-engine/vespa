@@ -8,15 +8,11 @@
 #include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/sourcesession.h>
 #include <vespa/messagebus/rpcmessagebus.h>
-#include <vespa/messagebus/intermediatesession.h>
-#include <vespa/messagebus/destinationsession.h>
-#include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/messagebus/routing/routingspec.h>
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/sourcesessionparams.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
-#include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <iostream>
 #include <thread>
@@ -61,8 +57,8 @@ Test::Main()
     
     EXPECT_TRUE(system((ctl_script + " start all").c_str()) == 0);
     RPCMessageBus mb(ProtocolSet().add(std::make_shared<SimpleProtocol>()),
-                     RPCNetworkParams("file:slobrok.cfg"),
-                     "file:routing.cfg");
+                     RPCNetworkParams(config::ConfigUri("file:slobrok.cfg")),
+                     config::ConfigUri("file:routing.cfg"));
     EXPECT_TRUE(waitSlobrok(mb, "server/cpp/1/A/session"));
     EXPECT_TRUE(waitSlobrok(mb, "server/cpp/2/A/session"));
     EXPECT_TRUE(waitSlobrok(mb, "server/cpp/2/B/session"));

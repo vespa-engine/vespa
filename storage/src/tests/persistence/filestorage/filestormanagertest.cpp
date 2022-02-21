@@ -247,7 +247,7 @@ struct TestFileStorComponents {
     explicit TestFileStorComponents(FileStorTestBase& test, bool use_small_config = false)
         : manager(nullptr)
     {
-        auto fsm = std::make_unique<FileStorManager>((use_small_config ? test.smallConfig : test.config)->getConfigId(),
+        auto fsm = std::make_unique<FileStorManager>(config::ConfigUri((use_small_config ? test.smallConfig : test.config)->getConfigId()),
                                                      test._node->getPersistenceProvider(),
                                                      test._node->getComponentRegister(), *test._node, test._node->get_host_info());
         manager = fsm.get();
