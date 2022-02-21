@@ -10,11 +10,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
-
-import java.security.cert.X509Certificate;
-import java.time.Instant;
-import java.util.Date;
-import java.util.logging.Level;
 import com.yahoo.restapi.Path;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -35,7 +30,10 @@ import com.yahoo.yolean.Exceptions;
 
 import java.net.URI;
 import java.security.Principal;
+import java.security.cert.X509Certificate;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -44,7 +42,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities.SCREWDRIVER_DOMAIN;
 
@@ -170,6 +170,9 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
 
         for (Future<?> future : futures)
             future.get(30, TimeUnit.SECONDS);
+
+        logger.log(Level.FINE, () -> "Roles for principal (" + principal.getName() + "): " +
+                                     roleMemberships.stream().map(role -> role.definition().name()).collect(Collectors.joining()));
 
         return roleMemberships.isEmpty()
                 ? Set.of(Role.everyone())
