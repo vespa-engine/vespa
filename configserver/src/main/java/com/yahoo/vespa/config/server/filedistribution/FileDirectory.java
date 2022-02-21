@@ -3,8 +3,6 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.io.IOUtils;
-import java.util.logging.Level;
-
 import com.yahoo.text.Utf8;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
@@ -19,6 +17,9 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.time.Instant;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class FileDirectory  {
@@ -118,6 +119,11 @@ public class FileDirectory  {
                     "' has content that does not match its hash, deleting everything in " +
                     destinationDir.getAbsolutePath());
             IOUtils.recursiveDeleteDir(destinationDir);
+        } else {
+            // Update last access time (used to keep track of when we can delete unused file references
+            // so update when adding and it already exists)
+            FileTime fileTime = FileTime.from(Instant.now());
+            Files.setAttribute(destinationDir.toPath(), "basic:lastAccessTime", fileTime);
         }
     }
 
