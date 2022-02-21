@@ -16,8 +16,7 @@ import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.athenz.api.OktaAccessToken;
-import com.yahoo.vespa.athenz.api.OktaIdentityToken;
+import com.yahoo.vespa.athenz.api.OAuthCredentials;
 import com.yahoo.vespa.athenz.client.zms.RoleAction;
 import com.yahoo.vespa.athenz.client.zms.ZmsClient;
 import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
@@ -109,7 +108,7 @@ public class AthenzFacade implements AccessControl {
         }
         else { // Create tenant resources in Athenz if domain is not already taken.
             log("createTenancy(tenantDomain=%s, service=%s)", domain, service);
-            zmsClient.createTenancy(domain, service, athenzCredentials.identityToken(), athenzCredentials.accessToken());
+            zmsClient.createTenancy(domain, service, athenzCredentials.oAuthCredentials());
         }
 
         return tenant;
@@ -150,14 +149,14 @@ public class AthenzFacade implements AccessControl {
         }
         else { // Delete and recreate tenant, and optionally application, resources in Athenz otherwise.
             log("createTenancy(tenantDomain=%s, service=%s)", newDomain, service);
-            zmsClient.createTenancy(newDomain, service, athenzCredentials.identityToken(), athenzCredentials.accessToken());
+            zmsClient.createTenancy(newDomain, service, athenzCredentials.oAuthCredentials());
             for (Application application : applications)
-                createApplication(newDomain, application.id().application(), athenzCredentials.identityToken(), athenzCredentials.accessToken());
+                createApplication(newDomain, application.id().application(), athenzCredentials.oAuthCredentials());
 
             log("deleteTenancy(tenantDomain=%s, service=%s)", oldDomain, service);
             for (Application application : applications)
-                deleteApplication(oldDomain, application.id().application(), athenzCredentials.identityToken(), athenzCredentials.accessToken());
-            zmsClient.deleteTenancy(oldDomain, service, athenzCredentials.identityToken(), athenzCredentials.accessToken());
+                deleteApplication(oldDomain, application.id().application(), athenzCredentials.oAuthCredentials());
+            zmsClient.deleteTenancy(oldDomain, service, athenzCredentials.oAuthCredentials());
         }
 
         return tenant;
@@ -169,7 +168,7 @@ public class AthenzFacade implements AccessControl {
         AthenzDomain tenantDomain = athenzCredentials.domain();
         log("deleteTenancy(tenantDomain=%s, service=%s)", tenantDomain, service);
         try {
-            zmsClient.deleteTenancy(tenantDomain, service, athenzCredentials.identityToken(), athenzCredentials.accessToken());
+            zmsClient.deleteTenancy(tenantDomain, service, athenzCredentials.oAuthCredentials());
         } catch (ZmsClientException e) {
             if (e.getErrorCode() == 404) {
                 log.log(Level.WARNING,
@@ -185,16 +184,16 @@ public class AthenzFacade implements AccessControl {
     @Override
     public void createApplication(TenantAndApplicationId id, Credentials credentials) {
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
-        createApplication(athenzCredentials.domain(), id.application(), athenzCredentials.identityToken(), athenzCredentials.accessToken());
+        createApplication(athenzCredentials.domain(), id.application(), athenzCredentials.oAuthCredentials());
     }
 
-    private void createApplication(AthenzDomain domain, ApplicationName application, OktaIdentityToken identityToken, OktaAccessToken accessToken) {
+    private void createApplication(AthenzDomain domain, ApplicationName application, OAuthCredentials oAuthCredentials) {
         Set<RoleAction> tenantRoleActions = createTenantRoleActions();
         log("createProviderResourceGroup(" +
             "tenantDomain=%s, providerDomain=%s, service=%s, resourceGroup=%s, roleActions=%s)",
             domain, service.getDomain().getName(), service.getName(), application, tenantRoleActions);
         try {
-            zmsClient.createProviderResourceGroup(domain, service, application.value(), tenantRoleActions, identityToken, accessToken);
+            zmsClient.createProviderResourceGroup(domain, service, application.value(), tenantRoleActions, oAuthCredentials);
         }
         catch (ZmsClientException e) {
             if (e.getErrorCode() == com.yahoo.jdisc.Response.Status.FORBIDDEN)
@@ -211,7 +210,7 @@ public class AthenzFacade implements AccessControl {
             athenzCredentials.domain(), service.getDomain().getName(), service.getName(), id.application());
         try {
             zmsClient.deleteProviderResourceGroup(athenzCredentials.domain(), service, id.application().value(),
-                    athenzCredentials.identityToken(), athenzCredentials.accessToken());
+                    athenzCredentials.oAuthCredentials());
         } catch (ZmsClientException e) {
             if (e.getErrorCode() == 404) {
                 log.log(Level.WARNING,
@@ -243,10 +242,10 @@ public class AthenzFacade implements AccessControl {
         zmsClient.addRoleMember(new AthenzRole(tenantDomain, "tenancy." + service.getFullName() + ".admin"), user, Optional.empty());
     }
 
-    private void deleteApplication(AthenzDomain domain, ApplicationName application, OktaIdentityToken identityToken, OktaAccessToken accessToken) {
+    private void deleteApplication(AthenzDomain domain, ApplicationName application, OAuthCredentials oAuthCredentials) {
         log("deleteProviderResourceGroup(tenantDomain=%s, providerDomain=%s, service=%s, resourceGroup=%s)",
             domain, service.getDomain().getName(), service.getName(), application);
-        zmsClient.deleteProviderResourceGroup(domain, service, application.value(), identityToken, accessToken);
+        zmsClient.deleteProviderResourceGroup(domain, service, application.value(), oAuthCredentials);
     }
 
     public boolean hasApplicationAccess(

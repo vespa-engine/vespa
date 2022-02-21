@@ -8,6 +8,7 @@ import com.yahoo.vespa.athenz.api.AthenzGroup;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzUser;
+import com.yahoo.vespa.athenz.api.OAuthCredentials;
 import com.yahoo.vespa.athenz.client.zms.ZmsClient;
 
 import java.time.Instant;
@@ -42,7 +43,7 @@ public class AthenzAccessControlService implements AccessControlService {
         }
         Map<AthenzIdentity, String> users = zmsClient.listPendingRoleApprovals(dataPlaneAccessRole);
         if (users.containsKey(user)) {
-            zmsClient.approvePendingRoleMembership(dataPlaneAccessRole, user, expiry, Optional.empty());
+            zmsClient.approvePendingRoleMembership(dataPlaneAccessRole, user, expiry, Optional.empty(), Optional.empty());
             return true;
         }
         return false;
@@ -73,7 +74,7 @@ public class AthenzAccessControlService implements AccessControlService {
      * @return true if access has been granted - false if already member
      */
     @Override
-    public boolean approveSshAccess(TenantName tenantName, Instant expiry) {
+    public boolean approveSshAccess(TenantName tenantName, Instant expiry, OAuthCredentials oAuthCredentials) {
         var role = sshRole(tenantName);
 
         if (!vespaZmsClient.listRoles(role.domain()).contains(role))
@@ -85,8 +86,7 @@ public class AthenzAccessControlService implements AccessControlService {
         if (!hasPendingAccessRequests(tenantName)) {
             vespaZmsClient.addRoleMember(role, vespaTeam, Optional.empty());
         }
-        // TODO: Pass along auth0 credentials
-        vespaZmsClient.approvePendingRoleMembership(role, vespaTeam, expiry, Optional.empty());
+        vespaZmsClient.approvePendingRoleMembership(role, vespaTeam, expiry, Optional.empty(), Optional.of(oAuthCredentials));
         return true;
     }
 

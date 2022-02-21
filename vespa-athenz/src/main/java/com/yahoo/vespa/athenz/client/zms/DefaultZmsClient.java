@@ -9,8 +9,7 @@ import com.yahoo.vespa.athenz.api.AthenzPolicy;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.api.OktaAccessToken;
-import com.yahoo.vespa.athenz.api.OktaIdentityToken;
+import com.yahoo.vespa.athenz.api.OAuthCredentials;
 import com.yahoo.vespa.athenz.client.ErrorHandler;
 import com.yahoo.vespa.athenz.client.common.ClientBase;
 import com.yahoo.vespa.athenz.client.zms.bindings.AccessResponseEntity;
@@ -74,33 +73,33 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
-    public void createTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService, OktaIdentityToken identityToken, OktaAccessToken accessToken) {
+    public void createTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService, OAuthCredentials oAuthCredentials) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/tenancy/%s", tenantDomain.getName(), providerService.getFullName()));
         HttpUriRequest request = RequestBuilder.put()
                 .setUri(uri)
-                .addHeader(createCookieHeaderWithOktaTokens(identityToken, accessToken))
+                .addHeader(createCookieHeader(oAuthCredentials))
                 .setEntity(toJsonStringEntity(new TenancyRequestEntity(tenantDomain, providerService, Collections.emptyList())))
                 .build();
         execute(request, response -> readEntity(response, Void.class));
     }
 
     @Override
-    public void deleteTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService, OktaIdentityToken identityToken, OktaAccessToken accessToken) {
+    public void deleteTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService, OAuthCredentials oAuthCredentials) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/tenancy/%s", tenantDomain.getName(), providerService.getFullName()));
         HttpUriRequest request = RequestBuilder.delete()
                 .setUri(uri)
-                .addHeader(createCookieHeaderWithOktaTokens(identityToken, accessToken))
+                .addHeader(createCookieHeader(oAuthCredentials))
                 .build();
         execute(request, response -> readEntity(response, Void.class));
     }
 
     @Override
     public void createProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup,
-                                            Set<RoleAction> roleActions, OktaIdentityToken identityToken, OktaAccessToken accessToken) {
+                                            Set<RoleAction> roleActions, OAuthCredentials oAuthCredentials) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/provDomain/%s/provService/%s/resourceGroup/%s", tenantDomain.getName(), providerService.getDomainName(), providerService.getName(), resourceGroup));
         HttpUriRequest request = RequestBuilder.put()
                 .setUri(uri)
-                .addHeader(createCookieHeaderWithOktaTokens(identityToken, accessToken))
+                .addHeader(createCookieHeader(oAuthCredentials))
                 .setEntity(toJsonStringEntity(new ResourceGroupRolesEntity(providerService, tenantDomain, roleActions, resourceGroup)))
                 .build();
         execute(request, response -> readEntity(response, Void.class)); // Note: The ZMS API will actually return a json object that is similar to ProviderResourceGroupRolesRequestEntity
@@ -108,11 +107,11 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
 
     @Override
     public void deleteProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup,
-                                            OktaIdentityToken identityToken, OktaAccessToken accessToken) {
+                                            OAuthCredentials oAuthCredentials) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/provDomain/%s/provService/%s/resourceGroup/%s", tenantDomain.getName(), providerService.getDomainName(), providerService.getName(), resourceGroup));
         HttpUriRequest request = RequestBuilder.delete()
                 .setUri(uri)
-                .addHeader(createCookieHeaderWithOktaTokens(identityToken, accessToken))
+                .addHeader(createCookieHeader(oAuthCredentials))
                 .build();
         execute(request, response -> readEntity(response, Void.class));
     }
@@ -302,13 +301,16 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
-    public void approvePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry, Optional<String> reason) {
+    public void approvePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry,
+                                             Optional<String> reason, Optional<OAuthCredentials> oAuthCredentials) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s/member/%s/decision", athenzRole.domain().getName(), athenzRole.roleName(), athenzIdentity.getFullName()));
         MembershipEntity membership = new MembershipEntity.RoleMembershipEntity(athenzIdentity.getFullName(), true, athenzRole.roleName(), Long.toString(expiry.getEpochSecond()));
 
         var requestBuilder = RequestBuilder.put()
                 .setUri(uri)
                 .setEntity(toJsonStringEntity(membership));
+
+        oAuthCredentials.ifPresent(creds -> requestBuilder.addHeader(createCookieHeader(creds)));
 
         if (reason.filter(s -> !s.isBlank()).isPresent()) {
             requestBuilder.addHeader("Y-Audit-Ref", reason.get());
@@ -404,8 +406,8 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
         execute(request, response -> readEntity(response, Void.class));
     }
 
-    private static Header createCookieHeaderWithOktaTokens(OktaIdentityToken identityToken, OktaAccessToken accessToken) {
-        return new BasicHeader("Cookie", String.format("okta_at=%s; okta_it=%s", accessToken.token(), identityToken.token()));
+    private static Header createCookieHeader(OAuthCredentials oAuthCredentials) {
+        return new BasicHeader("Cookie", oAuthCredentials.asCookie());
     }
 
 }

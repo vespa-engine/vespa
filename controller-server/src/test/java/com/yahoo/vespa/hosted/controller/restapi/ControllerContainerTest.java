@@ -7,8 +7,7 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.athenz.api.OktaAccessToken;
-import com.yahoo.vespa.athenz.api.OktaIdentityToken;
+import com.yahoo.vespa.athenz.api.OAuthCredentials;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
 import org.junit.After;
 import org.junit.Before;
@@ -163,13 +162,9 @@ public class ControllerContainerTest {
         return request;
     }
 
-    protected static Request addOktaIdentityToken(Request request, OktaIdentityToken token) {
-        request.getHeaders().put(OKTA_IDENTITY_TOKEN_HEADER_NAME, token.token());
-        return request;
-    }
-
-    protected static Request addOktaAccessToken(Request request, OktaAccessToken token) {
-        request.getHeaders().put(OKTA_ACCESS_TOKEN_HEADER_NAME, token.token());
+    protected static Request addOAuthCredentials(Request request, OAuthCredentials oAuthCredentials) {
+        request.getHeaders().put(OKTA_IDENTITY_TOKEN_HEADER_NAME, oAuthCredentials.idToken());
+        request.getHeaders().put(OKTA_ACCESS_TOKEN_HEADER_NAME, oAuthCredentials.accessToken());
         return request;
     }
 

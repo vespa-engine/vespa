@@ -24,8 +24,7 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.athenz.api.OktaAccessToken;
-import com.yahoo.vespa.athenz.api.OktaIdentityToken;
+import com.yahoo.vespa.athenz.api.OAuthCredentials;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -150,8 +149,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private static final UserId USER_ID = new UserId("myuser");
     private static final UserId OTHER_USER_ID = new UserId("otheruser");
     private static final UserId HOSTED_VESPA_OPERATOR = new UserId("johnoperator");
-    private static final OktaIdentityToken OKTA_IT = new OktaIdentityToken("okta-it");
-    private static final OktaAccessToken OKTA_AT = new OktaAccessToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.he0ErCNloe4J7Id0Ry2SEDg09lKkZkfsRiGsdX_vgEg");
+    private static final OAuthCredentials OKTA_CREDENTIALS = OAuthCredentials.createForTesting("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.he0ErCNloe4J7Id0Ry2SEDg09lKkZkfsRiGsdX_vgEg", "okta-it");
 
 
     private ContainerTester tester;
@@ -175,12 +173,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
                                       .userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               new File("tenant-without-applications.json"));
         // PUT (modify) a tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", PUT)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT)
+                                      .oAuthCredentials(OKTA_CREDENTIALS)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}"),
                               new File("tenant-without-applications.json"));
 
@@ -192,13 +190,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // POST (add) a tenant with property ID
         tester.assertResponse(request("/application/v4/tenant/tenant2", POST)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT)
+                                      .oAuthCredentials(OKTA_CREDENTIALS)
                                       .data("{\"athensDomain\":\"domain2\", \"property\":\"property2\", \"propertyId\":\"1234\"}"),
                               new File("tenant-without-applications-with-id.json"));
         // PUT (modify) a tenant with property ID
         tester.assertResponse(request("/application/v4/tenant/tenant2", PUT)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT)
+                                      .oAuthCredentials(OKTA_CREDENTIALS)
                                       .data("{\"athensDomain\":\"domain2\", \"property\":\"property2\", \"propertyId\":\"1234\"}"),
                               new File("tenant-without-applications-with-id.json"));
         // GET a tenant with property ID and contact information
@@ -211,7 +209,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // POST (create) an application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", POST)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               new File("instance-reference.json"));
         // GET a tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", GET).userIdentity(USER_ID),
@@ -322,7 +320,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // DELETE a user instance
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/myuser", DELETE)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               "{\"message\":\"Deleted instance tenant1.application1.myuser\"}");
 
         addScrewdriverUserToDeployRole(SCREWDRIVER_ID,
@@ -349,7 +347,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // POST (create) another application
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/default", POST)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               new File("instance-reference-2.json"));
 
         ApplicationId id2 = ApplicationId.from("tenant2", "application2", "instance1");
@@ -436,13 +434,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // DELETE instance 1 of 2
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/default", DELETE)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               "{\"message\":\"Deleted instance tenant2.application2.default\"}");
 
         // DELETE application with only one instance left
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", DELETE)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               "{\"message\":\"Deleted application tenant2.application2\"}");
 
         // Set version 6.1 to broken to change compile version for.
@@ -707,7 +705,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // DELETE application with active deployments fails
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               new File("delete-with-active-deployments.json"), 400);
 
         // DELETE (deactivate) a deployment - dev
@@ -874,17 +872,17 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // DELETE the application which no longer has any deployments
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               "{\"message\":\"Deleted application tenant1.application1\"}");
 
         // DELETE an empty tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE).userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               "{\"message\":\"Deleted tenant tenant1\"}");
 
         // The tenant is not found
         tester.assertResponse(request("/application/v4/tenant/tenant1", GET).userIdentity(USER_ID)
-                        .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                        .oAuthCredentials(OKTA_CREDENTIALS),
                 "{\"error-code\":\"NOT_FOUND\",\"message\":\"Tenant 'tenant1' does not exist\"}", 404);
 
         // ... unless we specify to show deleted tenants
@@ -895,14 +893,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Tenant cannot be recreated
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST).userIdentity(USER_ID)
                         .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
-                        .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                        .oAuthCredentials(OKTA_CREDENTIALS),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Tenant 'tenant1' already exists\"}", 400);
 
 
         // Forget a deleted tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE).properties(Map.of("forget", "true"))
                         .data("{\"athensDomain\":\"domain1\"}")
-                        .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT)
+                        .oAuthCredentials(OKTA_CREDENTIALS)
                         .userIdentity(HOSTED_VESPA_OPERATOR),
                 "{\"message\":\"Deleted tenant tenant1\"}");
         tester.assertResponse(request("/application/v4/tenant/tenant1", GET).properties(Map.of("includeDeleted", "true"))
@@ -1072,7 +1070,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         tester.assertResponse(request("/application/v4/tenant/doesnotexist/application/doesnotexist/metering", GET)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               new File("instance1-metering.json"));
     }
 
@@ -1100,7 +1098,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deployment", DELETE)
                         .userIdentity(USER_ID)
-                        .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                        .oAuthCredentials(OKTA_CREDENTIALS),
                 "{\"message\":\"All deployments removed\"}");
 
         assertEquals(Set.of(ZoneId.from("dev.us-east-1")), app.instance().deployments().keySet());
@@ -1113,7 +1111,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // PUT (update) non-existing tenant returns 403 as tenant access cannot be determined when the tenant does not exist
         tester.assertResponse(request("/application/v4/tenant/tenant1", PUT)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT)
+                                      .oAuthCredentials(OKTA_CREDENTIALS)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}"),
                               accessDenied,
                               403);
@@ -1146,21 +1144,21 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
                                       .userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               new File("tenant-without-applications.json"));
 
         // POST (add) another tenant under the same domain
         tester.assertResponse(request("/application/v4/tenant/tenant2", POST)
                                       .userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not create tenant 'tenant2': The Athens domain 'domain1' is already connected to tenant 'tenant1'\"}",
                               400);
 
         // Add the same tenant again
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT)
+                                      .oAuthCredentials(OKTA_CREDENTIALS)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}"),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Tenant 'tenant1' already exists\"}",
                               400);
@@ -1169,7 +1167,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/my_tenant_2", POST)
                                       .userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"New tenant or application names must start with a letter, may contain no more than 20 characters, and may only contain lowercase letters, digits or dashes, but no double-dashes.\"}",
                               400);
 
@@ -1177,19 +1175,19 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/hosted-vespa", POST)
                                       .userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Tenant 'hosted-vespa' already exists\"}",
                               400);
 
         // POST (create) an (empty) application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", POST)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               new File("instance-reference.json"));
 
         // Create the same application again
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", POST)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT)
+                                      .oAuthCredentials(OKTA_CREDENTIALS)
                                       .userIdentity(USER_ID),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not create 'tenant1.application1.instance1': Instance already exists\"}",
                               400);
@@ -1226,18 +1224,18 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // DELETE tenant which has an application
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not delete tenant 'tenant1': This tenant has active applications\"}",
                               400);
 
         // DELETE application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               "{\"message\":\"Deleted instance tenant1.application1.instance1\"}");
         // DELETE application again - should produce 404
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT)
+                                      .oAuthCredentials(OKTA_CREDENTIALS)
                                       .userIdentity(USER_ID),
                               "{\"error-code\":\"NOT_FOUND\",\"message\":\"Could not delete instance 'tenant1.application1.instance1': Instance not found\"}",
                               404);
@@ -1245,14 +1243,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // DELETE and forget an application as non-operator
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE).properties(Map.of("forget", "true"))
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               "{\"error-code\":\"FORBIDDEN\",\"message\":\"Only operators can forget a tenant\"}",
                               403);
 
         // DELETE tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               "{\"message\":\"Deleted tenant tenant1\"}");
         // DELETE tenant again returns 403 as tenant access cannot be determined when the tenant does not exist
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE)
@@ -1268,7 +1266,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/my-tenant", POST)
                                       .userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Tenant 'my-tenant' already exists\"}",
                               400);
     }
@@ -1296,7 +1294,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Creating a tenant for an Athens domain the user is not admin for is disallowed
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT)
+                                      .oAuthCredentials(OKTA_CREDENTIALS)
                                       .userIdentity(unauthorizedUser),
                               "{\"error-code\":\"FORBIDDEN\",\"message\":\"The user 'user.othertenant' is not admin in Athenz domain 'domain1'\"}",
                               403);
@@ -1305,21 +1303,21 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
                                       .userIdentity(authorizedUser)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               new File("tenant-without-applications.json"),
                               200);
 
         // Creating an application for an Athens domain the user is not admin for is disallowed
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", POST)
                                       .userIdentity(unauthorizedUser)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               accessDenied,
                               403);
 
         // (Create it with the right tenant id)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", POST)
                                       .userIdentity(authorizedUser)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               new File("instance-reference.json"),
                               200);
 
@@ -1340,14 +1338,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Create another instance under the application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default", POST)
                                       .userIdentity(authorizedUser)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               new File("instance-reference-default.json"),
                               200);
 
         // (Deleting the application with the right tenant id)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE)
                                       .userIdentity(authorizedUser)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               "{\"message\":\"Deleted application tenant1.application1\"}",
                               200);
 
@@ -1363,7 +1361,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1", PUT)
                                       .data("{\"athensDomain\":\"domain2\", \"property\":\"property1\"}")
                                       .userIdentity(authorizedUser)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               new File("tenant1.json"),
                               200);
 
@@ -1468,7 +1466,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 new Property("vespa"),
                 Optional.empty());
         AthenzCredentials credentials = new AthenzCredentials(
-                new AthenzPrincipal(new AthenzUser(developer.id())), sandboxDomain, OKTA_IT, OKTA_AT);
+                new AthenzPrincipal(new AthenzUser(developer.id())), sandboxDomain, OKTA_CREDENTIALS);
         tester.controller().tenants().create(tenantSpec, credentials);
         tester.controller().applications().createApplication(TenantAndApplicationId.from("sandbox", "myapp"), credentials);
 
@@ -1634,21 +1632,21 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Not allowed to request apis not listed in feature flag allowed-service-view-apis. e.g /document/v1
         tester.assertResponse(request(serviceApi + "/storagenode-awe3slno6mmq2fye191y324jl/document/v1/", GET)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               "{\"error-code\":\"FORBIDDEN\",\"message\":\"Access denied\"}",
                               403);
 
         // Test path traversal
         tester.assertResponse(request(serviceApi + "/storagenode-awe3slno6mmq2fye191y324jl/state/v1/../../document/v1/", GET)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               "{\"error-code\":\"FORBIDDEN\",\"message\":\"Access denied\"}",
                               403);
 
         // Test urlencoded path traversal
         tester.assertResponse(request(serviceApi + "/storagenode-awe3slno6mmq2fye191y324jl/state%2Fv1%2F..%2F..%2Fdocument%2Fv1%2F", GET)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               "{\"error-code\":\"FORBIDDEN\",\"message\":\"Access denied\"}",
                               403);
     }
@@ -1662,7 +1660,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Create tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST).userIdentity(USER_ID)
                         .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
-                        .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                        .oAuthCredentials(OKTA_CREDENTIALS),
                 new File("tenant-without-applications.json"));
 
         // Deploy application
@@ -1675,8 +1673,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // POST (deploy) an application to start a manual deployment to dev
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploy/dev-us-east-1/", POST)
                         .data(entity)
-                        .oktaIdentityToken(OKTA_IT)
-                        .oktaAccessToken(OKTA_AT)
+                        .oAuthCredentials(OKTA_CREDENTIALS)
+                        
                         .userIdentity(USER_ID),
                 "{\"message\":\"Deployment started in run 1 of dev-us-east-1 for tenant1.application1.instance1. This may take about 15 minutes the first time.\",\"run\":1}");
 
@@ -1772,11 +1770,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
                                       .userIdentity(USER_ID)
                                       .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               new File("tenant-without-applications.json"));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", POST)
                                       .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
                               new File("instance-reference.json"));
         addScrewdriverUserToDeployRole(SCREWDRIVER_ID, ATHENZ_TENANT_DOMAIN, ApplicationName.from("application1"));
 
@@ -1874,8 +1872,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         private final Request.Method method;
         private byte[] data = new byte[0];
         private AthenzIdentity identity;
-        private OktaIdentityToken oktaIdentityToken;
-        private OktaAccessToken oktaAccessToken;
+        private OAuthCredentials oAuthCredentials;
         private String contentType = "application/json";
         private final Map<String, List<String>> headers = new HashMap<>();
         private final Map<String, String> properties = new HashMap<>();
@@ -1893,8 +1890,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         private RequestBuilder userIdentity(UserId userId) { this.identity = HostedAthenzIdentities.from(userId); return this; }
         private RequestBuilder screwdriverIdentity(ScrewdriverId screwdriverId) { this.identity = HostedAthenzIdentities.from(screwdriverId); return this; }
-        private RequestBuilder oktaIdentityToken(OktaIdentityToken oktaIdentityToken) { this.oktaIdentityToken = oktaIdentityToken; return this; }
-        private RequestBuilder oktaAccessToken(OktaAccessToken oktaAccessToken) { this.oktaAccessToken = oktaAccessToken; return this; }
+        private RequestBuilder oAuthCredentials(OAuthCredentials oAuthCredentials) { this.oAuthCredentials = oAuthCredentials; return this; }
         private RequestBuilder contentType(String contentType) { this.contentType = contentType; return this; }
         private RequestBuilder recursive(String recursive) {return properties(Map.of("recursive", recursive)); }
         private RequestBuilder properties(Map<String, String> properties) { this.properties.putAll(properties); return this; }
@@ -1914,15 +1910,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
             request.getHeaders().addAll(headers);
             request.getHeaders().put("Content-Type", contentType);
             // user and domain parameters are translated to a Principal by MockAuthorizer as we do not run HTTP filters
-            if (identity != null) {
-                addIdentityToRequest(request, identity);
-            }
-            if (oktaIdentityToken != null) {
-                addOktaIdentityToken(request, oktaIdentityToken);
-            }
-            if (oktaAccessToken != null) {
-                addOktaAccessToken(request, oktaAccessToken);
-            }
+            if (identity != null) addIdentityToRequest(request, identity);
+            if (oAuthCredentials != null) addOAuthCredentials(request, oAuthCredentials);
             return request;
         }
     }

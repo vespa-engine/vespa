@@ -8,9 +8,7 @@ import com.yahoo.vespa.athenz.api.AthenzPolicy;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.athenz.api.OktaAccessToken;
-import com.yahoo.vespa.athenz.api.OktaIdentityToken;
+import com.yahoo.vespa.athenz.api.OAuthCredentials;
 
 import java.time.Instant;
 import java.util.List;
@@ -23,17 +21,15 @@ import java.util.Set;
  */
 public interface ZmsClient extends AutoCloseable {
 
-    void createTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService,
-                       OktaIdentityToken identityToken, OktaAccessToken accessToken);
+    void createTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService, OAuthCredentials oAuthCredentials);
 
-    void deleteTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService,
-                       OktaIdentityToken identityToken, OktaAccessToken accessToken);
+    void deleteTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService, OAuthCredentials oAuthCredentials);
 
     void createProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup,
-                                     Set<RoleAction> roleActions, OktaIdentityToken identityToken, OktaAccessToken accessToken);
+                                     Set<RoleAction> roleActions, OAuthCredentials oAuthCredentials);
 
     void deleteProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup,
-                                     OktaIdentityToken identityToken, OktaAccessToken accessToken);
+                                     OAuthCredentials oAuthCredentials);
 
     /** For manual tenancy provisioning - only creates roles/policies on provider domain */
     void createTenantResourceGroup(AthenzDomain tenantDomain, AthenzIdentity provider, String resourceGroup,
@@ -63,7 +59,8 @@ public interface ZmsClient extends AutoCloseable {
 
     Map<AthenzIdentity, String> listPendingRoleApprovals(AthenzRole athenzRole);
 
-    void approvePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry, Optional<String> reason);
+    void approvePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry,
+                                      Optional<String> reason, Optional<OAuthCredentials> oAuthCredentials);
 
     List<AthenzIdentity> listMembers(AthenzRole athenzRole);
 

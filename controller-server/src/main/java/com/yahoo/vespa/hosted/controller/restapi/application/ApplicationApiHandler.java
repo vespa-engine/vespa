@@ -38,6 +38,7 @@ import com.yahoo.slime.JsonParseException;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Text;
+import com.yahoo.vespa.athenz.api.OAuthCredentials;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -443,7 +444,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 Instant.ofEpochMilli(inspector.field("expiry").asLong()) :
                 Instant.now().plus(1, ChronoUnit.DAYS);
 
-        controller.serviceRegistry().accessControlService().approveSshAccess(tenant, expiry);
+        controller.serviceRegistry().accessControlService().approveSshAccess(tenant, expiry, OAuthCredentials.fromAuth0RequestContext(request.getJDiscRequest().context()));
         return new MessageResponse("OK");
     }
 
