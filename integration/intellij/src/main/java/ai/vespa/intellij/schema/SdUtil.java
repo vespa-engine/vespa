@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.intellij.schema;
 
-import com.intellij.lang.ASTNode;
+import ai.vespa.intellij.schema.model.RankProfile;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
@@ -29,62 +29,27 @@ import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
 import ai.vespa.intellij.schema.psi.SdSchemaAnnotationDefinition;
 import ai.vespa.intellij.schema.psi.SdSchemaFieldDefinition;
 import ai.vespa.intellij.schema.psi.SdSummaryDefinition;
-import ai.vespa.intellij.schema.psi.SdTypes;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Util class for the plugin's code.
  *
  * @author Shahar Ariel
+ * @author bratseth
  */
 public class SdUtil {
     
-    public static HashMap<String, List<PsiElement>> createMacrosMap(SdFile file) {
-        HashMap<String, List<PsiElement>> macrosMap = new HashMap<>();
-        for (SdRankProfileDefinition rankProfile : PsiTreeUtil
-            .findChildrenOfType(file, SdRankProfileDefinition.class)) {
-            for (SdFunctionDefinition macro : PsiTreeUtil.findChildrenOfType(rankProfile, SdFunctionDefinition.class)) {
-                macrosMap.computeIfAbsent(macro.getName(), k -> new ArrayList<>()).add(macro);
-            }
-        }
-        return macrosMap;
-    }
-    
-    /**
-     * @param baseRankProfile the rank-profile node to find its parent
-     * @return the rank-profile that the baseRankProfile inherits from, or null if it doesn't exist
-     */
-    public static PsiElement getRankProfileParent(SdRankProfileDefinition baseRankProfile) {
-        if (baseRankProfile == null) {
-            return null;
-        }
-        ASTNode inheritsNode = baseRankProfile.getNode().findChildByType(SdTypes.INHERITS);
-        if (inheritsNode == null) {
-            return null;
-        }
-        ASTNode ancestorAST = baseRankProfile.getNode().findChildByType(SdTypes.IDENTIFIER_VAL, inheritsNode);
-        if (ancestorAST == null) {
-            ancestorAST = baseRankProfile.getNode().findChildByType(SdTypes.IDENTIFIER_WITH_DASH_VAL, inheritsNode);
-            if (ancestorAST == null) {
-                return null;
-            }
-        }
-        SdIdentifier ancestorIdentifier = (SdIdentifier) ancestorAST.getPsi();
-        PsiReference ref = ancestorIdentifier.getReference();
-        return ref != null ? ref.resolve() : null;
-    }
-    
-    public static String createFunctionDescription(SdFunctionDefinition macro) {
-        SdRankProfileDefinition rankProfile = PsiTreeUtil.getParentOfType(macro, SdRankProfileDefinition.class);
+    public static String createFunctionDescription(SdFunctionDefinition function) {
+        SdRankProfileDefinition rankProfile = PsiTreeUtil.getParentOfType(function, SdRankProfileDefinition.class);
         String rankProfileName;
         if (rankProfile != null) {
             rankProfileName = rankProfile.getName();
-            List<SdArgumentDefinition> args = macro.getArgumentDefinitionList();
-            StringBuilder text = new StringBuilder(rankProfileName + "." + macro.getName() + "(");
+            List<SdArgumentDefinition> args = function.getArgumentDefinitionList();
+            StringBuilder text = new StringBuilder(rankProfileName + "." + function.getName() + "(");
             for (int i = 0; i < args.size(); i++) {
                 text.append(args.get(i).getName());
                 if (i < args.size() - 1) {
@@ -94,7 +59,7 @@ public class SdUtil {
             text.append(")");
             return text.toString();
         } else {
-            return macro.getName();
+            return function.getName();
         }
     }
     
@@ -108,11 +73,10 @@ public class SdUtil {
         }
         return result;
     }
-    
-    
+
     public static List<SdDeclaration> findDeclarationsByScope(PsiElement file, PsiElement element, String name) {
         List<SdDeclaration> result = new ArrayList<>();
-        
+
         // If element is a field declared in another file (to be imported), return the declaration from the other file
         // if found, else return an empty result list
         if (element.getParent() instanceof SdImportFieldDefinition &&
@@ -141,37 +105,33 @@ public class SdUtil {
             return result;
         }
         
-        // If element is the macro's name in the macro definition, return the macro definition
+        // If element is the function's name in the function definition, return the function definition
         if (element.getParent() instanceof SdFunctionDefinition) {
             result.add((SdDeclaration) element.getParent());
             return result;
         }
         
-        // Check if element is inside a macro body
+        // Check if element is inside a function body
         SdFunctionDefinition macroParent = PsiTreeUtil.getParentOfType(element, SdFunctionDefinition.class);
         if (macroParent != null) {
             for (SdArgumentDefinition arg : PsiTreeUtil.findChildrenOfType(macroParent, SdArgumentDefinition.class)) {
-                if (name.equals(arg.getName())) { // if the element was declared as an argument of the macro
+                if (name.equals(arg.getName())) { // if the element was declared as an argument of the function
                     result.add(arg);
                     return result;
                 }
             }
         }
         
-        // If element is a macro's name, return the most specific declaration of the macro
+        // If element is a function's name, return the most specific declaration of the function
         if (((SdIdentifier) element).isFunctionName(file, name)) {
-            PsiElement curRankProfile = PsiTreeUtil.getParentOfType(element, SdRankProfileDefinition.class);
-            while (curRankProfile != null) {
-                for (SdFunctionDefinition macro : PsiTreeUtil.collectElementsOfType(curRankProfile, SdFunctionDefinition.class)) {
-                    if (macro.getName() != null && macro.getName().equals(name)) {
-                        result.add(macro);
-                        return result;
-                    }
-                }
-                curRankProfile = getRankProfileParent((SdRankProfileDefinition) curRankProfile);
+            var profile = (SdRankProfileDefinition)PsiTreeUtil.getParentOfType(element, SdRankProfileDefinition.class);
+            Optional<SdFunctionDefinition> function = findFunction(name, new RankProfile(profile, null));
+            if (function.isPresent()) {
+                result.add(function.get());
+                return result;
             }
         }
-        
+
         for (PsiElement declaration : PsiTreeUtil.collectElements(file, psiElement ->
             psiElement instanceof SdDeclaration && !(psiElement instanceof SdArgumentDefinition))) {
             if (name.equals(((SdDeclaration) declaration).getName())) {
@@ -181,6 +141,25 @@ public class SdUtil {
         }
         
         return result;
+    }
+
+    /**
+     * Returns the first encountered function of the given name in the inheritance hierarchy
+     * of the given profile, or empty if it is not present.
+     *
+     * NOTE: Only profiles in the same file is considered
+     */
+    private static Optional<SdFunctionDefinition> findFunction(String functionName, RankProfile profile) {
+        Optional<SdFunctionDefinition> function = PsiTreeUtil.collectElementsOfType(profile.definition(), SdFunctionDefinition.class)
+                                                             .stream()
+                                                             .filter(f -> f.getName().equals(functionName))
+                                                             .findAny();
+        if (function.isPresent()) return function;
+        for (var parent : profile.parents().values()) {
+            function = findFunction(functionName, parent);
+            if (function.isPresent()) return function;
+        }
+        return Optional.empty();
     }
     
     public static List<SdDeclaration> findDeclarations(PsiElement element) {
@@ -217,5 +196,5 @@ public class SdUtil {
     public static List<PsiElement> findDocumentSummaryChildren(PsiElement element) {
         return new ArrayList<>(PsiTreeUtil.collectElementsOfType(element, SdSummaryDefinition.class));
     }
-    
+
 }

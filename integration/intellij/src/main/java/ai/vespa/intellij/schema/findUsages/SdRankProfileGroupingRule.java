@@ -12,7 +12,7 @@ import ai.vespa.intellij.schema.SdLanguage;
 import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
 
 /**
- * A Rank Profile that groups elements in the "Find Usages" window.
+ * A grouping rule that groups elements in the "Find Usages" window.
  *
  * @author Shahar Ariel
  */
@@ -25,7 +25,7 @@ public class SdRankProfileGroupingRule extends SingleParentUsageGroupingRule imp
         
         while (psiElement != null) {
             if (psiElement instanceof SdRankProfileDefinition) {
-                final SdRankProfileDefinition componentElement = (SdRankProfileDefinition) psiElement;
+                SdRankProfileDefinition componentElement = (SdRankProfileDefinition) psiElement;
                 return new SdUsageGroup(componentElement);
             }
             psiElement = psiElement.getParent();

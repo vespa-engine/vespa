@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.intellij.schema.hierarchy;
 
+import ai.vespa.intellij.schema.model.Function;
+import ai.vespa.intellij.schema.model.RankProfile;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNamedElement;
@@ -14,6 +16,8 @@ import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A Callee tree in the "Call Hierarchy" window.
@@ -27,39 +31,39 @@ public class SdCalleeTreeStructure extends SdCallTreeStructure {
     }
         
     @Override
-    protected HashSet<PsiElement> getChildren(SdFunctionDefinition element) {
-        return getCallees(element, macrosMap);
+    protected Set<Function> getChildren(SdFunctionDefinition element) {
+        return getCallees(element, functionsMap);
     }
     
-    private HashSet<PsiElement> getCallees(SdFunctionDefinition macro, HashMap<String, List<PsiElement>> macrosMap) {
-        final HashSet<PsiElement> results = new HashSet<>();
-        SdExpressionDefinition expression = PsiTreeUtil.findChildOfType(macro, SdExpressionDefinition.class);
+    private Set<Function> getCallees(SdFunctionDefinition function, Map<String, List<Function>> functions) {
+        Set<Function> results = new HashSet<>();
+        SdExpressionDefinition expression = PsiTreeUtil.findChildOfType(function, SdExpressionDefinition.class);
         if (expression == null) {
             return results;
         }
         for (SdIdentifier identifier : PsiTreeUtil.collectElementsOfType(expression, SdIdentifier.class)) {
-            if (macrosMap.containsKey(((PsiNamedElement) identifier).getName())) {
+            if (functions.containsKey(((PsiNamedElement) identifier).getName())) {
                 PsiReference identifierRef = identifier.getReference();
                 if (identifierRef != null) {
-                    results.add(identifierRef.resolve());
+                    results.add(Function.from((SdFunctionDefinition)identifierRef.resolve(), null));
                 }
             }
         }
         
-        SdRankProfileDefinition rankProfile = PsiTreeUtil.getParentOfType(macro, SdRankProfileDefinition.class);
+        SdRankProfileDefinition rankProfile = PsiTreeUtil.getParentOfType(function, SdRankProfileDefinition.class);
         if (rankProfile == null) {
             return results;
         }
         String rankProfileName = rankProfile.getName();
         if (!ranksHeritageMap.containsKey(rankProfileName)) {
-            ranksHeritageMap.put(rankProfileName, SdHierarchyUtil.getRankProfileChildren(myFile, rankProfile));
+            ranksHeritageMap.put(rankProfileName, SdHierarchyUtil.getRankProfileChildren(myFile, new RankProfile(rankProfile, null)));
         }
         
-        HashSet<SdRankProfileDefinition> inheritedRanks = ranksHeritageMap.get(rankProfileName);
+        Set<SdRankProfileDefinition> inheritedRanks = ranksHeritageMap.get(rankProfileName);
         
-        for (PsiElement macroImpl : macrosMap.get(macro.getName())) {
-            if (inheritedRanks.contains(PsiTreeUtil.getParentOfType(macroImpl, SdRankProfileDefinition.class))) {
-                results.add(macroImpl);
+        for (Function functionImpl : functions.get(function.getName())) {
+            if (inheritedRanks.contains(PsiTreeUtil.getParentOfType(functionImpl.definition(), SdRankProfileDefinition.class))) {
+                results.add(functionImpl);
             }
 
         }

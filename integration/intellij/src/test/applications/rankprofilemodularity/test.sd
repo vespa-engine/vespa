@@ -1,0 +1,83 @@
+schema test {
+
+    document test {
+
+        field title type string {
+            indexing: index
+        }
+
+        field myTensor type tensor(x{}) {
+        }
+
+    }
+
+    rank-profile default inherits outside_schema2 {
+    }
+
+    rank-profile in_schema0 inherits outside_schema2 {
+    }
+
+    rank-profile in_schema1 {
+
+        first-phase {
+            expression: nativeRank
+        }
+
+        function tensorFunction(tensor1, tensor2, tensor3, tensor4, tensor) {
+            expression {
+                tensor1{key} +
+                tensor2[1] +
+                tensor3{key:key1,x:1} +
+                tensor4{key:key1,x:(3-2)} +
+                tensor1{"key"} +
+                tensor3{key:"key1",x:1} +
+                tensor(x{}):{x1:3, x2:4} +
+                tensor(x{}):{x1:t1[1], x2:t1[0]} +
+                tensor(x{},y[2]):{{x:x1, y:0}:3, {x:x2, y:1}:4}
+            }
+        }
+
+    }
+
+    # A comment
+    rank-profile in_schema2 inherits outside_schema2 {
+
+        first-phase {
+            expression: f2 + ff1
+        }
+
+        macro f2() { # legacy name
+            expression: fieldMatch(title) + fo2 + ff1
+        }
+
+        function ff1() {
+            expression: random
+        }
+
+    }
+
+    rank-profile in_schema3 inherits outside_schema1, outside_schema2 {
+
+        function f2() {
+            expression: fieldMatch(title) + fo2
+        }
+
+        first-phase {
+            expression: f2 + fo2
+        }
+
+    }
+
+    rank-profile in_schema4 {
+
+        function f2() {
+            expression: fieldMatch(title)
+        }
+
+        first-phase {
+            expression: f2
+        }
+
+    }
+
+}

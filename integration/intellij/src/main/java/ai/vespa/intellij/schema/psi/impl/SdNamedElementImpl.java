@@ -76,9 +76,9 @@ public abstract class SdNamedElementImpl extends ASTWrapperPsiElement implements
         } else if (this instanceof SdRankProfileDefinition) {
             return SdDeclarationType.RANK_PROFILE;
         } else if (this instanceof SdFunctionDefinition) {
-            return SdDeclarationType.MACRO;
+            return SdDeclarationType.FUNCTION;
         } else if (this instanceof SdArgumentDefinition) {
-            return SdDeclarationType.MACRO_ARGUMENT;
+            return SdDeclarationType.FIUNCTION_ARGUMENT;
         } else if (this instanceof SdDocumentDefinition) {
             return SdDeclarationType.DOCUMENT;
         } else if (this instanceof SdDocumentStructDefinition) {

@@ -15,7 +15,11 @@ public class SdFindUsagesHandlerFactory extends FindUsagesHandlerFactory {
     
     @Override
     public boolean canFindUsages(PsiElement element) {
-        return element instanceof PsiNamedElement;
+        if (element == null) return false;
+        if (element.getContainingFile() == null) return false;
+        if (element.getContainingFile().getVirtualFile() == null) return false;
+        String extension = element.getContainingFile().getVirtualFile().getExtension();
+        return ("sd".equals(extension) || "profile".equals(extension));
     }
     
     @Override

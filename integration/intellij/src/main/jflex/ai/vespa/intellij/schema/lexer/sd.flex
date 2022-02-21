@@ -34,7 +34,10 @@ ID_WITH_DASH = [a-zA-Z_][a-zA-Z0-9_-]*
 WHITE_SPACE=[ \t\n\x0B\f\r]+
 
 COMMENT=#.*
-SYMBOL= [!$|:{}(),.\[\]]
+SYMBOL= [!$|:{}().\[\]]
+COMMA= [,]
+//BLOCK_START= \{
+//BLOCK_END= \}
 INTEGER = [0-9]+
 FLOAT = {INTEGER}[.][0-9]+[e]?
 COMPARISON_OPERATOR = [<>]|(==)|(<=)|(>=)|(\~=)
@@ -217,7 +220,7 @@ WORD = \w+
   "evaluation-point"         { return EVALUATION_POINT; }
   "pre-post-filter-tipping-point" { return PRE_POST_FILTER_TIPPING_POINT; }
       
-  // In here, we check for character sequences which matches regular expressions defined above.
+  // Here we check for character sequences which matches regular expressions defined above.
   {ID}                       { return ID_REG; }
   {ID_WITH_DASH}             { return ID_WITH_DASH_REG; }           
                                        
@@ -225,6 +228,9 @@ WORD = \w+
                                     
   {COMMENT}                  { return COMMENT; }  
   {SYMBOL}                   { return SYMBOL; }  
+  {COMMA}                    { return COMMA; }
+  //{BLOCK_START}              { return BLOCK_START; }
+  //{BLOCK_END}                { return BLOCK_END; }
   {INTEGER}                  { return INTEGER_REG; }
   {FLOAT}                    { return FLOAT_REG; }
   {ARITHMETIC_OPERATOR}      { return ARITHMETIC_OPERATOR; }

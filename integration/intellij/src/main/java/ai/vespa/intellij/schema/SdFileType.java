@@ -25,7 +25,7 @@ public class SdFileType extends LanguageFileType {
     
     @Override
     public String getDescription() {
-        return "Sd language file";
+        return "A Vespa schema file";
     }
     
     @Override

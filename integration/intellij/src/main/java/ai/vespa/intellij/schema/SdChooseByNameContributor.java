@@ -16,7 +16,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * This class is used for the extension (in plugin.xml) to enable "Go To Symbol" feature.
+ * This class is used for the extension (in plugin.xml) to enable the "Go To Symbol" feature.
  *
  * @author Shahar Ariel
  */

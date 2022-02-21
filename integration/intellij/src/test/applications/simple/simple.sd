@@ -1,0 +1,15 @@
+schema simple {
+
+  document simple {
+  }
+
+  rank-profile simple-profile inherits parent-profile1, parent-profile2 {
+  }
+
+  rank-profile parent-profile1 {
+  }
+
+  rank-profile parent-profile2 {
+  }
+
+}

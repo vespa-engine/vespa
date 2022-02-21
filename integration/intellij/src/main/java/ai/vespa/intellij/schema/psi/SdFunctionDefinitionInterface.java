@@ -1,7 +1,7 @@
 package ai.vespa.intellij.schema.psi;
 
+import ai.vespa.intellij.schema.model.RankProfile;
 import com.intellij.psi.util.PsiTreeUtil;
-import ai.vespa.intellij.schema.SdUtil;
 
 /**
  * A function's declaration in the SD language.
@@ -11,19 +11,22 @@ import ai.vespa.intellij.schema.SdUtil;
 public interface SdFunctionDefinitionInterface extends SdDeclaration {
 
     default boolean isOverride() {
-        String macroName = this.getName();
-        
-        SdRankProfileDefinition curRankProfile = PsiTreeUtil.getParentOfType(this, SdRankProfileDefinition.class);
-        if (curRankProfile != null) {
-            curRankProfile = (SdRankProfileDefinition) SdUtil.getRankProfileParent(curRankProfile);
+        String functionName = this.getName();
+        SdRankProfileDefinition thisRankProfile = PsiTreeUtil.getParentOfType(this, SdRankProfileDefinition.class);
+        if (thisRankProfile == null) return false;
+        for (var parentProfile : new RankProfile(thisRankProfile, null).parents().values()) {
+            if (containsFunction(functionName, parentProfile))
+                return true;
         }
-        while (curRankProfile != null) {
-            for (SdFunctionDefinition macro : PsiTreeUtil.collectElementsOfType(curRankProfile, SdFunctionDefinition.class)) {
-                if (macro.getName() != null && macro.getName().equals(macroName)) {
-                    return true;
-                }
-            }
-            curRankProfile = (SdRankProfileDefinition) SdUtil.getRankProfileParent(curRankProfile);
+        return false;
+    }
+
+    default boolean containsFunction(String functionName, RankProfile rankProfile) {
+        if (rankProfile.definedFunctions().containsKey(functionName))
+            return true;
+        for (var parentProfile : rankProfile.parents().values()) {
+            if (containsFunction(functionName, parentProfile))
+                return true;
         }
         return false;
     }

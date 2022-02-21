@@ -12,7 +12,7 @@ import ai.vespa.intellij.schema.SdLanguage;
 import ai.vespa.intellij.schema.psi.SdDocumentSummaryDefinition;
 
 /**
- * A Document Summary that groups elements in the "Find Usages" window.
+ * A grouping rule that groups elements in the "Find Usages" window.
  *
  * @author Shahar Ariel
  */
@@ -25,7 +25,7 @@ public class SdDocumentSummaryGroupingRule extends SingleParentUsageGroupingRule
     
         while (psiElement != null) {
             if (psiElement instanceof SdDocumentSummaryDefinition) {
-                final SdDocumentSummaryDefinition componentElement = (SdDocumentSummaryDefinition) psiElement;
+                SdDocumentSummaryDefinition componentElement = (SdDocumentSummaryDefinition) psiElement;
                 return new SdUsageGroup(componentElement);
             }
             psiElement = psiElement.getParent();
@@ -33,4 +33,5 @@ public class SdDocumentSummaryGroupingRule extends SingleParentUsageGroupingRule
     
         return null;
     }
+
 }

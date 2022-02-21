@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.intellij.schema.hierarchy;
 
+import ai.vespa.intellij.schema.model.Function;
+import ai.vespa.intellij.schema.psi.SdSecondPhaseDefinition;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
@@ -15,6 +17,8 @@ import ai.vespa.intellij.schema.psi.SdFunctionDefinition;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -24,43 +28,47 @@ import java.util.function.Consumer;
  */
 public class SdCallerTreeStructure extends SdCallTreeStructure {
     
-    private HashMap<String, HashSet<PsiElement>> macroTreeChildren;
+    private Map<String, Set<Function>> functionTreeChildren;
     
     public SdCallerTreeStructure(Project project, PsiElement element, String currentScopeType) {
         super(project, element, currentScopeType);
-        macroTreeChildren = new HashMap<>();
+        functionTreeChildren = new HashMap<>();
     }
     
     @Override
-    protected HashSet<PsiElement> getChildren(SdFunctionDefinition element) {
-        return getCallers(element, macrosMap);
+    protected Set<Function> getChildren(SdFunctionDefinition element) {
+        return getCallers(element, functionsMap);
     }
     
-    private HashSet<PsiElement> getCallers(SdFunctionDefinition macro, HashMap<String, List<PsiElement>> macrosMap) {
-        String macroName = macro.getName();
-
-        if (macroTreeChildren.containsKey(macroName)) {
-            return macroTreeChildren.get(macroName);
+    private Set<Function> getCallers(SdFunctionDefinition function, Map<String, List<Function>> functionsMap) {
+        String functionName = function.getName();
+        if (functionTreeChildren.containsKey(functionName)) {
+            return functionTreeChildren.get(functionName);
         }
         
-        HashSet<PsiElement> results = new HashSet<>();
-        
-        for (PsiElement macroImpl : macrosMap.get(macroName)) {
-            SearchScope searchScope = getSearchScope(myScopeType, macroImpl);
-            ReferencesSearch.search(macroImpl, searchScope).forEach((Consumer<? super PsiReference>) r -> {
+        Set<Function> results = new HashSet<>();
+        for (Function functionImpl : functionsMap.get(functionName)) {
+            SearchScope searchScope = getSearchScope(myScopeType, functionImpl.definition());
+            ReferencesSearch.search(functionImpl.definition(), searchScope).forEach((Consumer<? super PsiReference>) r -> {
                 ProgressManager.checkCanceled();
                 PsiElement psiElement = r.getElement();
                 SdFunctionDefinition f = PsiTreeUtil.getParentOfType(psiElement, SdFunctionDefinition.class, false);
-                if (f != null && f.getName() != null && !f.getName().equals(macroName)) { 
-                    ContainerUtil.addIfNotNull(results, f); 
+                if (f != null && f.getName() != null && !f.getName().equals(functionName)) {
+                    results.add(Function.from(f, null));
                 } else {
                     SdFirstPhaseDefinition fp = PsiTreeUtil.getParentOfType(psiElement, SdFirstPhaseDefinition.class, false);
-                    ContainerUtil.addIfNotNull(results, fp);
+                    if (fp != null)
+                        results.add(Function.from(fp, null));
+                    else {
+                        SdSecondPhaseDefinition sp = PsiTreeUtil.getParentOfType(psiElement, SdSecondPhaseDefinition.class, false);
+                        if (sp != null)
+                            results.add(Function.from(sp, null));
+                    }
                 }
             });
         }
         
-        macroTreeChildren.put(macroName, results);
+        functionTreeChildren.put(functionName, results);
         return results;
     }
     

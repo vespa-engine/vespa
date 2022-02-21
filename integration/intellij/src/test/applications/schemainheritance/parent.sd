@@ -1,0 +1,44 @@
+schema parent {
+
+    document parent {
+
+        field pf1 type string {
+            indexing: summary
+        }
+
+        field importedschema_ref type reference<importedschema> {
+            indexing: attribute
+        }
+
+    }
+
+    fieldset parent_set {
+        fields: pf1
+    }
+    stemming: none
+    index parent_index {
+        stemming: best
+    }
+    field parent_field type string {
+        indexing: input pf1 | lowercase | index | attribute | summary
+    }
+    rank-profile parent_profile {
+        function parentFunction() {
+            expression: random
+        }
+    }
+    constant parent_constant {
+        file: constants/my_constant_tensor_file.json
+        type: tensor<float>(x{},y{})
+    }
+    onnx-model parent_model {
+        file: small_constants_and_functions.onnx
+    }
+    document-summary parent_summary {
+        summary pf1 type string {
+        }
+    }
+    import field importedschema_ref.importedfield1 as parent_imported {
+    }
+    raw-as-base64-in-summary
+}
