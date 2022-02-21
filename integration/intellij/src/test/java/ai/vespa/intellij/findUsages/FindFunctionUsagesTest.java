@@ -2,6 +2,8 @@
 package ai.vespa.intellij.findUsages;
 
 import ai.vespa.intellij.PluginTestBase;
+import ai.vespa.intellij.schema.model.Schema;
+import ai.vespa.intellij.schema.utils.Path;
 import com.intellij.usageView.UsageInfo;
 import org.junit.Test;
 

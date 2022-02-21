@@ -39,13 +39,14 @@ schema test {
 
     }
 
+    # A comment
     rank-profile in_schema2 inherits outside_schema2 {
 
         first-phase {
             expression: f2 + ff1
         }
 
-        function f2() {
+        macro f2() { # legacy name
             expression: fieldMatch(title) + fo2 + ff1
         }
 

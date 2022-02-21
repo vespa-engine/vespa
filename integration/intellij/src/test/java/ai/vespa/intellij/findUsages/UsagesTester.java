@@ -30,7 +30,9 @@ class UsagesTester {
     }
 
     List<UsageInfo> assertFunctionUsages(String explanation, int expectedUsages, String profileName, String functionName) {
-        var function = schema.rankProfiles().get(profileName).definedFunctions().get(functionName).get(0).definition();
+        var profile = schema.rankProfiles().get(profileName);
+        var functions = profile.definedFunctions().get(functionName);
+        var function = functions.get(0).definition();
         findUsages(function);
         assertEquals(explanation, expectedUsages, usageProcessor.usages.size());
         return usageProcessor.usages;
