@@ -42,7 +42,7 @@ public:
     using UP = std::unique_ptr<MaintenanceController>;
     enum class State {INITIALIZING, STARTED, PAUSED, STOPPING};
 
-    MaintenanceController(ISyncableThreadService& masterThread, vespalib::Executor& shared_executor,
+    MaintenanceController(FNET_Transport & transport, ISyncableThreadService& masterThread, vespalib::Executor& shared_executor,
                           vespalib::MonitoredRefCount& refCount, const DocTypeName& docTypeName);
 
     ~MaintenanceController();

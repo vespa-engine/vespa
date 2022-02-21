@@ -82,6 +82,8 @@ private:
     };
 
     vespalib::CpuUtil                      _cpu_util;
+    std::unique_ptr<FastOS_ThreadPool>     _threadPool;
+    std::unique_ptr<FNET_Transport>        _transport;
     const config::ConfigUri                _configUri;
     mutable std::shared_mutex              _mutex;
     std::unique_ptr<metrics::UpdateHook>   _metricsHook;
@@ -110,7 +112,6 @@ private:
     vespalib::eval::CompileCache::ExecutorBinding::UP _compile_cache_executor_binding;
     matching::QueryLimiter          _queryLimiter;
     vespalib::Clock                 _clock;
-    FastOS_ThreadPool               _threadPool;
     uint32_t                        _distributionKey;
     bool                            _isInitializing;
     bool                            _abortInit;
@@ -146,7 +147,7 @@ public:
 
     Proton(const config::ConfigUri & configUri,
            const vespalib::string &progName,
-           std::chrono::milliseconds subscribeTimeout);
+           vespalib::duration subscribeTimeout);
     ~Proton() override;
 
     /**
@@ -182,7 +183,7 @@ public:
                   const std::shared_ptr<DocumentDBConfig> &documentDBConfig, InitializeThreads initializeThreads);
 
     metrics::MetricManager & getMetricManager();
-    FastOS_ThreadPool & getThreadPool() { return _threadPool; }
+    FastOS_ThreadPool & getThreadPool() { return *_threadPool; }
 
     bool triggerFlush();
     bool prepareRestart();

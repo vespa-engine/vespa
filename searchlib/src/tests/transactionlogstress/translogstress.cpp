@@ -4,8 +4,10 @@
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
 #include <vespa/vespalib/util/rand48.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/searchlib/util/runnable.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/fnet/transport.h>
 #include <vespa/fastos/app.h>
 #include <iostream>
 #include <sstream>
@@ -698,12 +700,12 @@ TransLogStress::Main()
     }
 
     // start transaction log server
+    FastOS_ThreadPool threadPool(256_Ki);
+    FNET_Transport transport;
     DummyFileHeaderContext fileHeaderContext;
-    TransLogServer tls("server", 17897, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(_cfg.domainPartSize));
+    TransLogServer tls(transport, "server", 17897, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(_cfg.domainPartSize));
     TransLogClient client(tlsSpec);
     client.create(domain);
-
-    FastOS_ThreadPool threadPool(256000);
 
     BufferGenerator bufferGenerator(_cfg.minStrLen, _cfg.maxStrLen);
     bufferGenerator.setSeed(_cfg.baseSeed);

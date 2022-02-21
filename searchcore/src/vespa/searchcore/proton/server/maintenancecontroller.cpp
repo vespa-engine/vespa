@@ -7,6 +7,7 @@
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/scheduledexecutor.h>
+#include <vespa/fastos/thread.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -39,7 +40,8 @@ isRunnable(const MaintenanceJobRunner & job, const Executor * master) {
 
 }
 
-MaintenanceController::MaintenanceController(ISyncableThreadService& masterThread,
+MaintenanceController::MaintenanceController(FNET_Transport & transport,
+                                             ISyncableThreadService& masterThread,
                                              vespalib::Executor& shared_executor,
                                              MonitoredRefCount& refCount,
                                              const DocTypeName& docTypeName)
@@ -49,7 +51,7 @@ MaintenanceController::MaintenanceController(ISyncableThreadService& masterThrea
       _readySubDB(),
       _remSubDB(),
       _notReadySubDB(),
-      _periodicTimer(),
+      _periodicTimer(std::make_unique<vespalib::ScheduledExecutor>(transport)),
       _config(),
       _state(State::INITIALIZING),
       _docTypeName(docTypeName),
@@ -93,7 +95,7 @@ MaintenanceController::killJobs()
     // Called by master write thread
     assert(_masterThread.isCurrentThread());
     LOG(debug, "killJobs(): threadId=%zu", (size_t)FastOS_Thread::GetCurrentThreadId());
-    _periodicTimer.reset();
+    _periodicTimer->reset();
     // No need to take _jobsLock as modification of _jobs also happens in master write thread.
     for (auto &job : _jobs) {
         job->stop(); // Make sure no more tasks are added to the executor
@@ -172,7 +174,7 @@ MaintenanceController::restart()
     if (!getStarted() || getStopping() || !_readySubDB.valid()) {
         return;
     }
-    _periodicTimer = std::make_unique<vespalib::ScheduledExecutor>();
+    _periodicTimer->reset();
 
     addJobsToPeriodicTimer();
 }

@@ -3,6 +3,7 @@ vespa_add_executable(searchcore_shared_threading_service_test_app TEST
     SOURCES
     shared_threading_service_test.cpp
     DEPENDS
+    searchcore_test
     searchcore_server
     GTest::GTest
 )

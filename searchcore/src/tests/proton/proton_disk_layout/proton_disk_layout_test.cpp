@@ -2,6 +2,7 @@
 
 #include <vespa/searchcore/proton/server/proton_disk_layout.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
+#include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
@@ -15,6 +16,7 @@ using search::transactionlog::client::TransLogClient;
 using search::transactionlog::TransLogServer;
 using proton::DocTypeName;
 using proton::ProtonDiskLayout;
+using proton::TransportMgr;
 
 static constexpr unsigned int tlsPort = 9018;
 
@@ -29,6 +31,7 @@ struct FixtureBase
 
 struct DiskLayoutFixture {
     DummyFileHeaderContext  _fileHeaderContext;
+    TransportMgr            _transport;
     TransLogServer          _tls;
     vespalib::string        _tlsSpec;
     ProtonDiskLayout        _diskLayout;
@@ -91,7 +94,8 @@ struct DiskLayoutFixture {
 
 DiskLayoutFixture::DiskLayoutFixture()
     : _fileHeaderContext(),
-      _tls("tls", tlsPort, baseDir, _fileHeaderContext),
+      _transport(),
+      _tls(_transport.transport(), "tls", tlsPort, baseDir, _fileHeaderContext),
       _tlsSpec(vespalib::make_string("tcp/localhost:%u", tlsPort)),
       _diskLayout(baseDir, _tlsSpec)
 {

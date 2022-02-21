@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "transport_helper.h"
 #include <vespa/searchcore/proton/server/i_shared_threading_service.h>
 #include <vespa/vespalib/util/invokeserviceimpl.h>
 
@@ -8,21 +9,21 @@ namespace proton {
 
 class MockSharedThreadingService : public ISharedThreadingService {
 private:
-    vespalib::ThreadExecutor& _warmup;
-    vespalib::ThreadExecutor& _shared;
-    vespalib::InvokeServiceImpl _invokeService;
+    using ThreadExecutor = vespalib::ThreadExecutor;
+    ThreadExecutor              & _warmup;
+    ThreadExecutor              & _shared;
+    vespalib::InvokeServiceImpl   _invokeService;
+    TransportMgr                  _transportMgr;
 
 public:
-    MockSharedThreadingService(vespalib::ThreadExecutor& warmup_in,
-                               vespalib::ThreadExecutor& shared_in)
-        : _warmup(warmup_in),
-          _shared(shared_in),
-          _invokeService(10ms)
-    {}
-    vespalib::ThreadExecutor& warmup() override { return _warmup; }
-    vespalib::ThreadExecutor& shared() override { return _shared; }
+    MockSharedThreadingService(ThreadExecutor& warmup_in,
+                               ThreadExecutor& shared_in);
+    ~MockSharedThreadingService() override;
+    ThreadExecutor& warmup() override { return _warmup; }
+    ThreadExecutor& shared() override { return _shared; }
     vespalib::ISequencedTaskExecutor* field_writer() override { return nullptr; }
     vespalib::InvokeService & invokeService() override { return _invokeService; }
+    FNET_Transport & transport() override { return _transportMgr.transport(); }
 };
 
 }

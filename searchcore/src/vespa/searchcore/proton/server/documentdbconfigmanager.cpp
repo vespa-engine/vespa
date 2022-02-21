@@ -272,18 +272,19 @@ build_alloc_config(const ProtonConfig& proton_config, const vespalib::string& do
          distribution_config.redundancy, distribution_config.searchablecopies);
 }
 
-vespalib::string resolve_file(config::RpcFileAcquirer &fileAcquirer, vespalib::TimeBox &timeBox,
-                              const vespalib::string &desc, const vespalib::string &fileref)
+vespalib::string
+resolve_file(config::RpcFileAcquirer &fileAcquirer, vespalib::TimeBox &timeBox,
+             const vespalib::string &desc, const vespalib::string &fileref)
 {
     vespalib::string filePath;
-    LOG(info, "Waiting for file acquirer (%s, ref='%s')", desc.c_str(), fileref.c_str());
+    LOG(debug, "Waiting for file acquirer (%s, ref='%s')", desc.c_str(), fileref.c_str());
     while (timeBox.hasTimeLeft() && (filePath == "")) {
         filePath = fileAcquirer.wait_for(fileref, timeBox.timeLeft());
         if (filePath == "") {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(100ms);
         }
     }
-    LOG(info, "Got file path from file acquirer: '%s' (%s, ref='%s')", filePath.c_str(), desc.c_str(), fileref.c_str());
+    LOG(debug, "Got file path from file acquirer: '%s' (%s, ref='%s')", filePath.c_str(), desc.c_str(), fileref.c_str());
     if (filePath == "") {
         throw config::ConfigTimeoutException(fmt("could not get file path from file acquirer for %s (ref=%s)",
                                                  desc.c_str(), fileref.c_str()));
@@ -294,7 +295,7 @@ vespalib::string resolve_file(config::RpcFileAcquirer &fileAcquirer, vespalib::T
 }
 
 void
-DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
+DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot &snapshot)
 {
     using RankProfilesConfigSP = DocumentDBConfig::RankProfilesConfigSP;
     using RankingConstantsConfigSP = std::shared_ptr<vespa::config::search::core::RankingConstantsConfig>;
@@ -355,7 +356,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
         const vespalib::string &spec = _bootstrapConfig->getFiledistributorrpcConfig().connectionspec;
         RankingConstants::Vector constants;
         if (spec != "") {
-            config::RpcFileAcquirer fileAcquirer(spec);
+            config::RpcFileAcquirer fileAcquirer(transport, spec);
             vespalib::TimeBox timeBox(5*60, 5);
             for (const RankingConstantsConfig::Constant &rc : newRankingConstantsConfig->constant) {
                 auto desc = fmt("name='%s', type='%s'", rc.name.c_str(), rc.type.c_str());
@@ -371,7 +372,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
         const vespalib::string &spec = _bootstrapConfig->getFiledistributorrpcConfig().connectionspec;
         RankingExpressions expressions;
         if (spec != "") {
-            config::RpcFileAcquirer fileAcquirer(spec);
+            config::RpcFileAcquirer fileAcquirer(transport, spec);
             vespalib::TimeBox timeBox(5*60, 5);
             for (const RankingExpressionsConfig::Expression &rc : newRankingExpressionsConfig->expression) {
                 auto desc = fmt("name='%s'", rc.name.c_str());
@@ -387,7 +388,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
         const vespalib::string &spec = _bootstrapConfig->getFiledistributorrpcConfig().connectionspec;
         OnnxModels::Vector models;
         if (spec != "") {
-            config::RpcFileAcquirer fileAcquirer(spec);
+            config::RpcFileAcquirer fileAcquirer(transport, spec);
             vespalib::TimeBox timeBox(5*60, 5);
             for (const OnnxModelsConfig::Model &rc : newOnnxModelsConfig->model) {
                 auto desc = fmt("name='%s'", rc.name.c_str());
@@ -496,12 +497,12 @@ DocumentDBConfigHelper::DocumentDBConfigHelper(const DirSpec &spec, const vespal
 DocumentDBConfigHelper::~DocumentDBConfigHelper() = default;
 
 bool
-DocumentDBConfigHelper::nextGeneration(std::chrono::milliseconds timeoutInMillis)
+DocumentDBConfigHelper::nextGeneration(FNET_Transport & transport, vespalib::duration timeout)
 {
-    ConfigSnapshot snapshot(_retriever->getBootstrapConfigs(timeoutInMillis));
+    ConfigSnapshot snapshot(_retriever->getBootstrapConfigs(timeout));
     if (snapshot.empty())
         return false;
-    _mgr.update(snapshot);
+    _mgr.update(transport, snapshot);
     return true;
 }
 

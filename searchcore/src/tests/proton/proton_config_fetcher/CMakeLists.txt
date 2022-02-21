@@ -3,6 +3,7 @@ vespa_add_executable(searchcore_proton_config_fetcher_test_app TEST
     SOURCES
     proton_config_fetcher_test.cpp
     DEPENDS
+    searchcore_test
     searchcore_server
     searchcore_fconfig
 )
