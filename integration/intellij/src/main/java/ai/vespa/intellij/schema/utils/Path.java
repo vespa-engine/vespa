@@ -154,6 +154,13 @@ public final class Path {
     /** Returns an immutable list of the elements of this path in order */
     public List<String> elements() { return elements; }
 
+    /** Returns the extension of this file name, or an empty string if none. */
+    public String extension() {
+        int dotIndex = last().lastIndexOf('.');
+        if (dotIndex < 0) return "";
+        return last().substring(dotIndex + 1);
+    }
+
     /** Returns this as a string */
     @Override
     public String toString() {

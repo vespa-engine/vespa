@@ -24,10 +24,9 @@ public class Files {
      * @return the file or empty if not found
      */
     public static Optional<PsiFile> open(Path file, Project project) {
-        // Apparently there s no API for getting a file by path.
+        // Apparently there's no API for getting a file by path.
         // This method returns all files having a particular name.
-        for (VirtualFile candidate : FilenameIndex.getVirtualFilesByName(file.last(),
-                                                                         GlobalSearchScope.allScope(project))) {
+        for (VirtualFile candidate : FilenameIndex.getAllFilesByExt(project, file.extension())) {
             // Not safe, but (at least in tests) there doesn't appear to be a way to get the workspace root (/src)
             if (candidate.getPath().endsWith(file.getRelative()))
                 return Optional.of(PsiManager.getInstance(project).findFile(candidate));
