@@ -5,8 +5,6 @@
 #include "i_proton_disk_layout.h"
 #include <vespa/vespalib/stllike/string.h>
 
-class FNET_Transport;
-
 namespace proton {
 
 /**
@@ -16,12 +14,11 @@ namespace proton {
 class ProtonDiskLayout : public IProtonDiskLayout
 {
 private:
-    FNET_Transport         & _transport;
-    const vespalib::string   _baseDir;
-    const vespalib::string   _tlsSpec;
+    const vespalib::string _baseDir;
+    const vespalib::string _tlsSpec;
 
 public:
-    ProtonDiskLayout(FNET_Transport & transport, const vespalib::string &baseDir, const vespalib::string &tlsSpec);
+    ProtonDiskLayout(const vespalib::string &baseDir, const vespalib::string &tlsSpec);
     ~ProtonDiskLayout() override;
     void remove(const DocTypeName &docTypeName) override;
     void initAndPruneUnused(const std::set<DocTypeName> &docTypeNames) override;

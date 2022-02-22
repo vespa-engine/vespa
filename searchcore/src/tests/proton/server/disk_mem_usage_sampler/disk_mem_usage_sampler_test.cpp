@@ -38,7 +38,7 @@ public:
 };
 
 struct DiskMemUsageSamplerTest : public ::testing::Test {
-    Transport transport;
+    TransportMgr transport;
     std::unique_ptr<DiskMemUsageSampler> sampler;
     DiskMemUsageSamplerTest()
         : transport(),

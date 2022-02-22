@@ -13,7 +13,7 @@ private:
     ThreadExecutor              & _warmup;
     ThreadExecutor              & _shared;
     vespalib::InvokeServiceImpl   _invokeService;
-    Transport                     _transport;
+    TransportMgr                  _transportMgr;
 
 public:
     MockSharedThreadingService(ThreadExecutor& warmup_in,
@@ -23,7 +23,7 @@ public:
     ThreadExecutor& shared() override { return _shared; }
     vespalib::ISequencedTaskExecutor* field_writer() override { return nullptr; }
     vespalib::InvokeService & invokeService() override { return _invokeService; }
-    FNET_Transport & transport() override { return _transport.transport(); }
+    FNET_Transport & transport() override { return _transportMgr.transport(); }
 };
 
 }
