@@ -9,7 +9,7 @@ struct ReloadHandler
      * Reload any configs with a given generation.
      */
     virtual void reload(int64_t generation) = 0;
-    virtual ~ReloadHandler() { }
+    virtual ~ReloadHandler() = default;
 };
 
 }

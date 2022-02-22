@@ -13,7 +13,6 @@ class IConfigHolder;
  */
 class SourceFactory {
 public:
-    typedef std::unique_ptr<SourceFactory> UP;
     virtual std::unique_ptr<Source> createSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey & key) const = 0;
     virtual ~SourceFactory() = default;
 };

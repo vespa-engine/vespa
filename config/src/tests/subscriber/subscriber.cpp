@@ -85,7 +85,7 @@ namespace {
 
             return std::make_shared<ConfigSubscription>(0, key, holder, std::make_unique<MySource>());
         }
-        void unsubscribe(const ConfigSubscription::SP & subscription) override {
+        void unsubscribe(const ConfigSubscription & subscription) override {
             (void) subscription;
             numCancel++;
         }
