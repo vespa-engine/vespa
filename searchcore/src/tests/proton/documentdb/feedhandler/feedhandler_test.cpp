@@ -22,6 +22,7 @@
 #include <vespa/searchcore/proton/server/configstore.h>
 #include <vespa/document/util/feed_reject_helper.h>
 #include <vespa/searchcore/proton/server/ddbstate.h>
+#include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/feedhandler.h>
 #include <vespa/searchcore/proton/server/i_feed_handler_owner.h>
 #include <vespa/searchcore/proton/server/ireplayconfig.h>
@@ -408,9 +409,11 @@ struct MyTlsWriter : TlsWriter {
 struct FeedHandlerFixture
 {
     DummyFileHeaderContext       _fileHeaderContext;
-    TransportAndExecutorService  _service;
+    TransportMgr                 _transport;
     TransLogServer               tls;
     vespalib::string             tlsSpec;
+    vespalib::ThreadStackExecutor sharedExecutor;
+    ExecutorThreadingService     writeService;
     SchemaContext                schema;
     MyOwner                      owner;
     MyResourceWriteFilter        writeFilter;
@@ -423,9 +426,11 @@ struct FeedHandlerFixture
     FeedHandler                  handler;
     FeedHandlerFixture()
         : _fileHeaderContext(),
-          _service(1),
-          tls(_service.transport(), "mytls", 9016, "mytlsdir", _fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000)),
+          _transport(),
+          tls(_transport.transport(), "mytls", 9016, "mytlsdir", _fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000)),
           tlsSpec("tcp/localhost:9016"),
+          sharedExecutor(1, 0x10000),
+          writeService(sharedExecutor),
           schema(),
           owner(),
           _state(),
@@ -433,7 +438,7 @@ struct FeedHandlerFixture
           feedView(schema.getRepo(), schema.getDocType()),
           _bucketDB(),
           _bucketDBHandler(_bucketDB),
-          handler(_service.write(), tlsSpec, schema.getDocType(), owner,
+          handler(writeService, tlsSpec, schema.getDocType(), owner,
                   writeFilter, replayConfig, tls, &tls_writer)
     {
         _state.enterLoadState();
@@ -444,15 +449,15 @@ struct FeedHandlerFixture
     }
 
     ~FeedHandlerFixture() {
-        _service.shutdown();
+        writeService.shutdown();
     }
     template <class FunctionType>
     inline void runAsMaster(FunctionType &&function) {
-        _service.write().master().execute(makeLambdaTask(std::move(function)));
+        writeService.master().execute(makeLambdaTask(std::move(function)));
         syncMaster();
     }
     void syncMaster() {
-        _service.write().master().sync();
+        writeService.master().sync();
     }
 };
 

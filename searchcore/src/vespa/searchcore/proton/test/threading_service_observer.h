@@ -49,7 +49,6 @@ public:
     vespalib::Executor &shared() override {
         return _shared;
     }
-    FNET_Transport & transport() override { return _service.transport(); }
     vespalib::ISequencedTaskExecutor &indexFieldInverter() override {
         return _indexFieldInverter;
     }
