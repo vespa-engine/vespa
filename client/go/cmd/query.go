@@ -6,6 +6,8 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -13,13 +15,19 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/client/go/curl"
 	"github.com/vespa-engine/vespa/client/go/util"
+	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
-var queryTimeoutSecs int
+var (
+	queryPrintCurl   bool
+	queryTimeoutSecs int
+)
 
 func init() {
 	rootCmd.AddCommand(queryCmd)
+	queryCmd.PersistentFlags().BoolVarP(&queryPrintCurl, "verbose", "v", false, "Print the equivalent curl command for the query")
 	queryCmd.Flags().IntVarP(&queryTimeoutSecs, "timeout", "T", 10, "Timeout for the query in seconds")
 }
 
@@ -35,12 +43,25 @@ can be set by the syntax [parameter-name]=[value].`,
 	DisableAutoGenTag: true,
 	SilenceUsage:      true,
 	Args:              cobra.MinimumNArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return query(args)
-	},
+	RunE:              query,
 }
 
-func query(arguments []string) error {
+func printCurl(url string, service *vespa.Service) error {
+	out := ioutil.Discard
+	if queryPrintCurl {
+		out = stderr
+	}
+	cmd, err := curl.RawArgs(url)
+	if err != nil {
+		return err
+	}
+	cmd.Certificate = service.TLSOptions.CertificateFile
+	cmd.PrivateKey = service.TLSOptions.PrivateKeyFile
+	_, err = io.WriteString(out, cmd.String()+"\n")
+	return err
+}
+
+func query(cmd *cobra.Command, arguments []string) error {
 	service, err := getService("query", 0, "")
 	if err != nil {
 		return err
@@ -61,6 +82,9 @@ func query(arguments []string) error {
 	deadline, err := time.ParseDuration(queryTimeout)
 	if err != nil {
 		return fmt.Errorf("invalid query timeout: %w", err)
+	}
+	if err := printCurl(url.String(), service); err != nil {
+		return err
 	}
 	response, err := service.Do(&http.Request{URL: url}, deadline+time.Second) // Slightly longer than query timeout
 	if err != nil {

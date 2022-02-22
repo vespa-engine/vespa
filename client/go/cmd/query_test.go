@@ -9,12 +9,22 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestQuery(t *testing.T) {
 	assertQuery(t,
 		"?timeout=10s&yql=select+from+sources+%2A+where+title+contains+%27foo%27",
 		"select from sources * where title contains 'foo'")
+}
+
+func TestQueryVerbose(t *testing.T) {
+	client := &mockHttpClient{}
+	client.NextResponse(200, "{\"query\":\"result\"}")
+	cmd := command{args: []string{"query", "-v", "select from sources * where title contains 'foo'"}}
+	out, errOut := execute(cmd, t, client)
+	assert.Equal(t, "curl http://127.0.0.1:8080/search/\\?timeout=10s\\&yql=select+from+sources+%2A+where+title+contains+%27foo%27\n", errOut)
+	assert.Equal(t, "{\n    \"query\": \"result\"\n}\n", out)
 }
 
 func TestQueryNonJsonResult(t *testing.T) {
@@ -51,9 +61,7 @@ func assertQuery(t *testing.T, expectedQuery string, query ...string) {
 		executeCommand(t, client, []string{"query"}, query),
 		"query output")
 	queryURL, err := queryServiceURL(client)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Nil(t, err)
 	assert.Equal(t, queryURL+"/search/"+expectedQuery, client.lastRequest.URL.String())
 }
 

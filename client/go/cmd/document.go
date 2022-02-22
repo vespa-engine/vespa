@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	printCurl      bool
+	docPrintCurl   bool
 	docTimeoutSecs int
 )
 
@@ -27,7 +27,7 @@ func init() {
 	documentCmd.AddCommand(documentUpdateCmd)
 	documentCmd.AddCommand(documentRemoveCmd)
 	documentCmd.AddCommand(documentGetCmd)
-	documentCmd.PersistentFlags().BoolVarP(&printCurl, "verbose", "v", false, "Print the equivalent curl command for the document operation")
+	documentCmd.PersistentFlags().BoolVarP(&docPrintCurl, "verbose", "v", false, "Print the equivalent curl command for the document operation")
 	documentCmd.PersistentFlags().IntVarP(&docTimeoutSecs, "timeout", "T", 60, "Timeout for the document request in seconds")
 }
 
@@ -153,7 +153,7 @@ func operationOptions() vespa.OperationOptions {
 }
 
 func curlOutput() io.Writer {
-	if printCurl {
+	if docPrintCurl {
 		return stderr
 	}
 	return ioutil.Discard
