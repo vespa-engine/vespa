@@ -18,15 +18,17 @@ import (
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"github.com/stretchr/testify/require"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 type command struct {
-	homeDir  string
-	cacheDir string
-	stdin    io.ReadWriter
-	args     []string
-	moreArgs []string
+	homeDir         string
+	cacheDir        string
+	stdin           io.ReadWriter
+	args            []string
+	moreArgs        []string
+	failTestOnError bool
 }
 
 func resetFlag(f *pflag.Flag) {
@@ -76,7 +78,10 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string)
 
 	// Execute command and return output
 	rootCmd.SetArgs(append(cmd.args, cmd.moreArgs...))
-	Execute()
+	err := Execute()
+	if cmd.failTestOnError {
+		require.Nil(t, err)
+	}
 	return capturedOut.String(), capturedErr.String()
 }
 
@@ -98,12 +103,16 @@ type mockHttpClient struct {
 
 type mockResponse struct {
 	status int
-	body   string
+	body   []byte
 }
 
-func (c *mockHttpClient) NextStatus(status int) { c.NextResponse(status, "") }
+func (c *mockHttpClient) NextStatus(status int) { c.NextResponseBytes(status, nil) }
 
 func (c *mockHttpClient) NextResponse(status int, body string) {
+	c.NextResponseBytes(status, []byte(body))
+}
+
+func (c *mockHttpClient) NextResponseBytes(status int, body []byte) {
 	c.nextResponses = append(c.nextResponses, mockResponse{status: status, body: body})
 }
 
@@ -118,7 +127,7 @@ func (c *mockHttpClient) Do(request *http.Request, timeout time.Duration) (*http
 	return &http.Response{
 			Status:     "Status " + strconv.Itoa(response.status),
 			StatusCode: response.status,
-			Body:       ioutil.NopCloser(bytes.NewBufferString(response.body)),
+			Body:       ioutil.NopCloser(bytes.NewBuffer(response.body)),
 			Header:     make(http.Header),
 		},
 		nil
