@@ -22,6 +22,7 @@ public class ParsedSchema {
     void addImportedField(String asFieldName, String refFieldName, String foregnFieldName) {}
     void addOnnxModel(OnnxModel model) {}
     void addRankingConstant(RankingConstant constant) {}
+    void addRankProfile(ParsedRankProfile profile) {}
     void enableRawAsBase64(boolean value) {}
     void inherit(String other) { inherited.add(other); }
     void setStemming(Stemming value) {}
@@ -35,7 +36,6 @@ public class ParsedSchema {
     void addStruct(ParsedStruct struct) {}
     void addFieldSet(ParsedFieldSet fieldSet) {}
     void addDocumentSummary(ParsedDocumentSummary docsum) {}
-    void addRankProfile(ParsedRankProfile profile) {}
     */
 }
 

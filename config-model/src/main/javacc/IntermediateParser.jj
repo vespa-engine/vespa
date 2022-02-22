@@ -441,11 +441,11 @@ void rootSchemaItem(ParsedSchema schema) : { }
       | importField(schema)
       | rankingConstant(schema)
       | useDocument(schema)
+      | rankProfile(schema)
 /*
       | documentSummary(schema)
       | field(null, schema)
       | index(schema, null)
-      | rankProfile(schema)
       | structOutside(schema)
       | annotationOutside(schema)
       | fieldSet(schema)
@@ -1944,40 +1944,31 @@ String rankingConstantErrorMessage(String name) : {}
 
 /**
  * Consumes a rank-profile block of a schema element.
- *
- * @param schema the schema object to add content to
  */
-void rankProfile(Schema schema) :
+void rankProfile(ParsedSchema schema) :
 {
     String name;
-    RankProfile profile;
+    ParsedRankProfile profile;
 }
 {
     ( ( <MODEL> | <RANKPROFILE> ) name = identifierWithDash()
         {
-            if (documentsOnly) {
-                profile = new DocumentsOnlyRankProfile(name, schema, rankProfileRegistry, schema.rankingConstants());
-            }
-            else if ("default".equals(name)) {
-                profile = rankProfileRegistry.get(schema, "default");
-            } else {
-                profile = new RankProfile(name, schema, rankProfileRegistry, schema.rankingConstants());
-            }
+            profile = new ParsedRankProfile(name);
         }
-      [inheritsRankProfile(profile)]
+      [ inheritsRankProfile(profile) ]
       lbrace() (rankProfileItem(profile) (<NL>)*)* <RBRACE> )
     {
-        if (documentsOnly) return;
-        rankProfileRegistry.add(profile);
+        schema.addRankProfile(profile);
     }
 }
+
 
 /**
  * This rule consumes a single statement for a rank-profile block.
  *
  * @param profile The rank profile to modify.
  */
-void rankProfileItem(RankProfile profile) : { }
+void rankProfileItem(ParsedRankProfile profile) : { }
 {
     ( fieldRankType(profile)
       | fieldWeight(profile)
@@ -1994,7 +1985,7 @@ void rankProfileItem(RankProfile profile) : { }
       | rankFeatures(profile)
       | rankProperties(profile)
       | secondPhase(profile)
-      | rankDegradation(profile)
+      | rankDegradation()
       | constants(profile)
       | matchFeatures(profile)
       | summaryFeatures(profile) )
@@ -2005,13 +1996,13 @@ void rankProfileItem(RankProfile profile) : { }
  *
  * @param profile the profile to modify
  */
-void inheritsRankProfile(RankProfile profile) :
+void inheritsRankProfile(ParsedRankProfile profile) :
 {
     String name;
 }
 {
     <INHERITS> name = identifierWithDash() { profile.inherit(name); }
-    ( <COMMA>  name = identifierWithDash() { profile.inherit(name);; } )*
+    ( <COMMA>  name = identifierWithDash() { profile.inherit(name); } )*
 }
 
 /**
@@ -2019,15 +2010,12 @@ void inheritsRankProfile(RankProfile profile) :
  *
  * @param profile The profile to modify.
  */
-void mutate(RankProfile profile) :
-{
-}
+void mutate(ParsedRankProfile profile) : { }
 {
     <MUTATE> lbrace() (mutate_operation(profile) <NL>)+ <RBRACE>
-    {  }
 }
 
-void mutate_operation(RankProfile profile) :
+void mutate_operation(ParsedRankProfile profile) :
 {
     String attribute, operation;
     RankProfile.MutateOperation.Phase phase;
@@ -2057,20 +2045,25 @@ String mutate_expr() :
  *
  * @param profile The profile to modify.
  */
-void function(RankProfile profile) :
+void function(ParsedRankProfile profile) :
 {
     String name, expression, parameter;
-    List parameters = new ArrayList();
     boolean inline = false;
+    ParsedRankFunction func;
 }
 {
-    (  ( <FUNCTION> | <MACRO> ) inline = inline() name = identifier() [ "$" { name = name + token.image; } ]
-      "("
-          [ parameter = identifier()         { parameters.add(parameter); }
-          ( <COMMA> parameter = identifier() { parameters.add(parameter); } )* ]
+    (  ( <FUNCTION> | <MACRO> ) inline = inline() name = identifier()
+       [ "$" { name = name + token.image; } ]
+      "(" { func = new ParsedRankFunction(name); }
+          [ parameter = identifier()         { func.addParameter(parameter); }
+          ( <COMMA> parameter = identifier() { func.addParameter(parameter); } )* ]
       ")"
       lbrace() expression = expression() (<NL>)* <RBRACE> )
-    { profile.addFunction(name, parameters, expression, inline); }
+    {
+        func.setExpression(expression);
+        func.setInline(inline);
+        profile.addFunction(func);
+    }
 }
 
 boolean inline() :
@@ -2086,7 +2079,7 @@ boolean inline() :
  *
  * @param profile The rank profile to modify.
  */
-void matchPhase(RankProfile profile) :
+void matchPhase(ParsedRankProfile profile) :
 {
     MatchPhaseSettings settings = new MatchPhaseSettings();
 }
@@ -2094,7 +2087,7 @@ void matchPhase(RankProfile profile) :
     <MATCHPHASE> lbrace() (matchPhaseItem(settings) (<NL>)*)* <RBRACE>
     {
         settings.checkValid();
- 	    profile.setMatchPhaseSettings(settings);
+        profile.setMatchPhaseSettings(settings);
     }
 }
 
@@ -2159,7 +2152,7 @@ void diversityItem(DiversitySettings settings) :
  *
  * @param profile The rank profile to modify.
  */
-void firstPhase(RankProfile profile) :
+void firstPhase(ParsedRankProfile profile) :
 {
     String exp;
 }
@@ -2167,16 +2160,16 @@ void firstPhase(RankProfile profile) :
     <FIRSTPHASE> lbrace() (firstPhaseItem(profile) (<NL>)*)* <RBRACE>
 }
 
-void firstPhaseItem(RankProfile profile) :
+void firstPhaseItem(ParsedRankProfile profile) :
 {
-  String expression;
-  int rerankCount;
-  double dropLimit;
+    String expression;
+    int keepRankCount;
+    double dropLimit;
 }
 {
-    ( expression = expression()                        { profile.setFirstPhaseRanking(expression); }
-      | (<KEEPRANKCOUNT> <COLON> rerankCount = integer()) { profile.setKeepRankCount(rerankCount); }
-      | (<RANKSCOREDROPLIMIT> <COLON> dropLimit = consumeFloat()) { profile.setRankScoreDropLimit(dropLimit); }
+    ( expression = expression()                                 { profile.setFirstPhaseRanking(expression); }
+    | (<KEEPRANKCOUNT> <COLON> keepRankCount = integer())       { profile.setKeepRankCount(keepRankCount); }
+    | (<RANKSCOREDROPLIMIT> <COLON> dropLimit = consumeFloat()) { profile.setRankScoreDropLimit(dropLimit); }
     )
 }
 
@@ -2185,7 +2178,7 @@ void firstPhaseItem(RankProfile profile) :
  *
  * @param profile The rank profile to modify.
  */
-void secondPhase(RankProfile profile) : { }
+void secondPhase(ParsedRankProfile profile) : { }
 {
     <SECONDPHASE> lbrace() (secondPhaseItem(profile) (<NL>)*)* <RBRACE>
 }
@@ -2195,23 +2188,24 @@ void secondPhase(RankProfile profile) : { }
  *
  * @param profile The rank profile to modify.
  */
-void secondPhaseItem(RankProfile profile) :
+void secondPhaseItem(ParsedRankProfile profile) :
 {
     String expression;
     int rerankCount;
 }
 {
-    ( expression = expression()                 { profile.setSecondPhaseRanking(expression); }
-      | (<RERANKCOUNT> <COLON> rerankCount = integer()) { profile.setRerankCount(rerankCount); }
+    ( expression = expression()                       { profile.setSecondPhaseRanking(expression); }
+    | (<RERANKCOUNT> <COLON> rerankCount = integer()) { profile.setRerankCount(rerankCount); }
     )
 }
+
 
 /**
  * This rule consumes a summary-features block of a rank profile.
  *
  * @param profile The rank profile to modify.
  */
-void summaryFeatures(RankProfile profile) :
+void summaryFeatures(ParsedRankProfile profile) :
 {
     String features;
     String inherited = null;
@@ -2237,7 +2231,7 @@ void summaryFeatures(RankProfile profile) :
  *
  * @param profile The rank profile to modify.
  */
-void matchFeatures(RankProfile profile) :
+void matchFeatures(ParsedRankProfile profile) :
 {
     String features;
 }
@@ -2258,7 +2252,7 @@ void matchFeatures(RankProfile profile) :
 }
 
 /** Consumes a rank-features block of a rank profile */
-void rankFeatures(RankProfile profile) :
+void rankFeatures(ParsedRankProfile profile) :
 {
     String features;
 }
@@ -2276,7 +2270,7 @@ void rankFeatures(RankProfile profile) :
  *
  * @param profile The rank profile to modify.
  */
-void ignoreRankFeatures(RankProfile profile) : { }
+void ignoreRankFeatures(ParsedRankProfile profile) : { }
 {
     <IGNOREDEFAULTRANKFEATURES> { profile.setIgnoreDefaultRankFeatures(true); }
 }
@@ -2286,7 +2280,7 @@ void ignoreRankFeatures(RankProfile profile) : { }
  *
  * @param profile The rank profile to modify.
  */
-void numThreadsPerSearch(RankProfile profile) :
+void numThreadsPerSearch(ParsedRankProfile profile) :
 {
     int num;
 }
@@ -2299,7 +2293,7 @@ void numThreadsPerSearch(RankProfile profile) :
  *
  * @param profile The rank profile to modify.
  */
-void minHitsPerThread(RankProfile profile) :
+void minHitsPerThread(ParsedRankProfile profile) :
 {
     int num;
 }
@@ -2312,7 +2306,7 @@ void minHitsPerThread(RankProfile profile) :
  *
  * @param profile the rank profile to modify
  */
-void numSearchPartitions(RankProfile profile) :
+void numSearchPartitions(ParsedRankProfile profile) :
 {
     int num;
 }
@@ -2321,24 +2315,26 @@ void numSearchPartitions(RankProfile profile) :
 }
 
 /**
- * This rule consumes a num-threads-per-search statement for a rank profile.
+ * This rule consumes a termwise-limit statement for a rank profile.
  *
  * @param profile the rank profile to modify
  */
-void termwiseLimit(RankProfile profile) :
+void termwiseLimit(ParsedRankProfile profile) :
 {
     double num;
 }
 {
     (<TERMWISELIMIT> <COLON> num = consumeFloat()) { profile.setTermwiseLimit(num); }
 }
+
 /**
- * This rule consumes a rank-properties block of a rank profile. There is a little trick within this rule to allow the
- * final rank property to skip the terminating newline token.
+ * This rule consumes a rank-properties block of a rank profile. There
+ * is a little trick within this rule to allow the final rank property
+ * to skip the terminating newline token.
  *
  * @param profile the rank profile to modify
  */
-void rankProperties(RankProfile profile) : { }
+void rankProperties(ParsedRankProfile profile) : { }
 {
     <RANKPROPERTIES> lbrace() (LOOKAHEAD(rankPropertyItem() <COLON> rankPropertyItem() <NL>)
                                rankProperty(profile) (<NL>)+)* [rankProperty(profile)] <RBRACE>
@@ -2349,7 +2345,7 @@ void rankProperties(RankProfile profile) : { }
  *
  * @param profile the rank profile to modify
  */
-void rankProperty(RankProfile profile) :
+void rankProperty(ParsedRankProfile profile) :
 {
     String key, val;
 }
@@ -2357,7 +2353,6 @@ void rankProperty(RankProfile profile) :
     key = rankPropertyItem() <COLON> val = rankPropertyItem()
     { profile.addRankProperty(key, val); }
 }
-
 
 /**
  * This rule consumes a single rank property for a rank-properties block.
@@ -2380,14 +2375,14 @@ String rankPropertyItem() :
  *
  * @param profile The rank profile to modify.
  */
-void fieldWeight(RankProfile profile) :
+void fieldWeight(ParsedRankProfile profile) :
 {
     Integer num;
     String name;
 }
 {
     <WEIGHT> name = identifier() <COLON> num = integer()
-    { profile.addRankSetting(name, RankProfile.RankSetting.Type.WEIGHT, num); }
+    { profile.addFieldRankWeight(name, num); }
 }
 
 /**
@@ -2395,14 +2390,14 @@ void fieldWeight(RankProfile profile) :
  *
  * @param profile The rank profile to modify.
  */
-void fieldRankType(RankProfile profile) :
+void fieldRankType(ParsedRankProfile profile) :
 {
     String name;
     String type;
 }
 {
     <RANKTYPE> name = identifier() <COLON> type = identifier()
-    { profile.addRankSetting(name, RankProfile.RankSetting.Type.RANKTYPE, RankType.fromString(type)); }
+    { profile.addFieldRankType(name, type); }
 }
 
 /**
@@ -2410,13 +2405,13 @@ void fieldRankType(RankProfile profile) :
  *
  * @param profile The rank profile to modify.
  */
-void fieldRankFilter(RankProfile profile) :
+void fieldRankFilter(ParsedRankProfile profile) :
 {
     String name;
 }
 {
     <RANK> name = identifier() <COLON> <FILTER>
-    { profile.addRankSetting(name, RankProfile.RankSetting.Type.PREFERBITVECTOR, Boolean.TRUE); }
+    { profile.addFieldRankFilter(name, true); }
 }
 
 /**
@@ -2475,7 +2470,7 @@ void rankDegradationItem() :
  *
  * @param profile The rank profile to modify.
  */
-void rankDegradation(RankProfile profile) :
+void rankDegradation() :
 {
     double freq;
 }
@@ -2489,7 +2484,7 @@ void rankDegradation(RankProfile profile) :
 /**
  * Consumes a set of constants available in ranking expressions in the enclosing profile.
  */
-void constants(RankProfile profile) :
+void constants(ParsedRankProfile profile) :
 {
     String name;
 }
@@ -2500,7 +2495,7 @@ void constants(RankProfile profile) :
     <RBRACE>
 }
 
-void constantValue(RankProfile profile, String name) :
+void constantValue(ParsedRankProfile profile, String name) :
 {
     String value;
 }
@@ -2508,7 +2503,7 @@ void constantValue(RankProfile profile, String name) :
     <COLON> value = identifier() { profile.addConstant(name, Value.parse(value)); }
 }
 
-void constantTensor(RankProfile profile, String name) :
+void constantTensor(ParsedRankProfile profile, String name) :
 {
     String tensorString = "";
     TensorType tensorType = null;
@@ -2516,7 +2511,7 @@ void constantTensor(RankProfile profile, String name) :
 {
     <LBRACE> (<NL>)*
       (( tensorString = tensorValue() |
-         tensorType = tensorTypeWithPrefix(constantTensorErrorMessage(profile.name(), name)) ) (<NL>)* )* <RBRACE>
+         tensorType = tensorTypeWithPrefix(constantTensorErrorMessage(profile.getName(), name)) ) (<NL>)* )* <RBRACE>
     {
         if (tensorType != null) {
             profile.addConstantTensor(name, new TensorValue(Tensor.from(tensorType, tensorString)));
