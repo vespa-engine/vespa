@@ -103,6 +103,12 @@ void FRTConnection::calculateSuspension(ErrorType type)
         break;
     }
     system_time now = system_clock::now();
+    /*
+     * On Darwin, the std::chrono::steady_clock period (std::nano) is
+     * not exactly divisible by the std::chrono::system_clock period
+     * (std::micro). Thus we need to use std::chrono::duration_cast to
+     * convert from steady_time::duration to system_time::duration.
+     */
     _suspendedUntil = now + std::chrono::duration_cast<system_time::duration>(delay);
     if (_suspendWarned < (now - 5s)) {
         LOG(warning, "FRT Connection %s suspended until %s", _address.c_str(), vespalib::to_string(_suspendedUntil).c_str());
