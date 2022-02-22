@@ -110,7 +110,7 @@ var prepareCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		sessionID, err := vespa.Prepare(vespa.DeploymentOpts{
+		sessionID, err := vespa.Prepare(vespa.DeploymentOptions{
 			ApplicationPackage: pkg,
 			Target:             target,
 		})
@@ -148,7 +148,7 @@ var activateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		err = vespa.Activate(sessionID, vespa.DeploymentOpts{
+		err = vespa.Activate(sessionID, vespa.DeploymentOptions{
 			ApplicationPackage: pkg,
 			Target:             target,
 		})

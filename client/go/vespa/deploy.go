@@ -42,7 +42,7 @@ type Deployment struct {
 	Zone        ZoneID
 }
 
-type DeploymentOpts struct {
+type DeploymentOptions struct {
 	ApplicationPackage ApplicationPackage
 	Target             Target
 	Deployment         Deployment
@@ -66,13 +66,13 @@ func (d Deployment) String() string {
 	return fmt.Sprintf("deployment of %s in %s", d.Application, d.Zone)
 }
 
-func (d DeploymentOpts) String() string {
+func (d DeploymentOptions) String() string {
 	return fmt.Sprintf("%s to %s", d.Deployment, d.Target.Type())
 }
 
-func (d *DeploymentOpts) IsCloud() bool { return d.Target.Type() == cloudTargetType }
+func (d *DeploymentOptions) IsCloud() bool { return d.Target.Type() == cloudTargetType }
 
-func (d *DeploymentOpts) url(path string) (*url.URL, error) {
+func (d *DeploymentOptions) url(path string) (*url.URL, error) {
 	service, err := d.Target.Service(deployService, 0, 0, "")
 	if err != nil {
 		return nil, err
@@ -196,7 +196,7 @@ func ZoneFromString(s string) (ZoneID, error) {
 }
 
 // Prepare deployment and return the session ID
-func Prepare(deployment DeploymentOpts) (int64, error) {
+func Prepare(deployment DeploymentOptions) (int64, error) {
 	if deployment.IsCloud() {
 		return 0, fmt.Errorf("prepare is not supported with %s target", deployment.Target.Type())
 	}
@@ -229,7 +229,7 @@ func Prepare(deployment DeploymentOpts) (int64, error) {
 }
 
 // Activate deployment with sessionID from a past prepare
-func Activate(sessionID int64, deployment DeploymentOpts) error {
+func Activate(sessionID int64, deployment DeploymentOptions) error {
 	if deployment.IsCloud() {
 		return fmt.Errorf("activate is not supported with %s target", deployment.Target.Type())
 	}
@@ -250,7 +250,7 @@ func Activate(sessionID int64, deployment DeploymentOpts) error {
 	return checkResponse(req, response, serviceDescription)
 }
 
-func Deploy(opts DeploymentOpts) (int64, error) {
+func Deploy(opts DeploymentOptions) (int64, error) {
 	path := "/application/v2/tenant/default/prepareandactivate"
 	if opts.IsCloud() {
 		if err := checkDeploymentOpts(opts); err != nil {
@@ -290,7 +290,7 @@ func copyToPart(dst *multipart.Writer, src io.Reader, fieldname, filename string
 	return nil
 }
 
-func Submit(opts DeploymentOpts) error {
+func Submit(opts DeploymentOptions) error {
 	if !opts.IsCloud() {
 		return fmt.Errorf("%s: submit is unsupported", opts)
 	}
@@ -344,14 +344,14 @@ func Submit(opts DeploymentOpts) error {
 	return checkResponse(request, response, serviceDescription)
 }
 
-func checkDeploymentOpts(opts DeploymentOpts) error {
+func checkDeploymentOpts(opts DeploymentOptions) error {
 	if !opts.ApplicationPackage.HasCertificate() {
 		return fmt.Errorf("%s: missing certificate in package", opts)
 	}
 	return nil
 }
 
-func uploadApplicationPackage(url *url.URL, opts DeploymentOpts) (int64, error) {
+func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (int64, error) {
 	zipReader, err := opts.ApplicationPackage.zipReader(false)
 	if err != nil {
 		return 0, err

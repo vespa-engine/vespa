@@ -242,21 +242,21 @@ func waitForService(service string, sessionOrRunID int64) error {
 	return nil
 }
 
-func getDeploymentOpts(cfg *Config, pkg vespa.ApplicationPackage, target vespa.Target) (vespa.DeploymentOpts, error) {
-	opts := vespa.DeploymentOpts{ApplicationPackage: pkg, Target: target}
+func getDeploymentOpts(cfg *Config, pkg vespa.ApplicationPackage, target vespa.Target) (vespa.DeploymentOptions, error) {
+	opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target}
 	if opts.IsCloud() {
 		deployment, err := deploymentFromArgs()
 		if err != nil {
-			return vespa.DeploymentOpts{}, err
+			return vespa.DeploymentOptions{}, err
 		}
 		if !opts.ApplicationPackage.HasCertificate() {
 			hint := "Try 'vespa auth cert'"
-			return vespa.DeploymentOpts{}, errHint(fmt.Errorf("missing certificate in application package"), "Applications in Vespa Cloud require a certificate", hint)
+			return vespa.DeploymentOptions{}, errHint(fmt.Errorf("missing certificate in application package"), "Applications in Vespa Cloud require a certificate", hint)
 		}
 		if cfg.UseAPIKey(deployment.Application.Tenant) {
 			opts.APIKey, err = cfg.ReadAPIKey(deployment.Application.Tenant)
 			if err != nil {
-				return vespa.DeploymentOpts{}, err
+				return vespa.DeploymentOptions{}, err
 			}
 		}
 		opts.Deployment = deployment
