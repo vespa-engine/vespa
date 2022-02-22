@@ -157,6 +157,13 @@ public:
     SourceFactorySP createSourceFactory(const TimingValues & timingValues) const override;
 
     /**
+     * Add another host to this source spec, allowing failover.
+     *
+     * @param host hostname formatted as tcp/hostname:port
+     */
+    void addHost(const vespalib::string & host) { _hostList.push_back(host); }
+
+    /**
      * Inspect how many hosts this source refers to.
      *
      * @return the number of hosts referred.
@@ -186,9 +193,9 @@ public:
     CompressionType compressionType() const { return _compressionType; }
 private:
     void initialize(const vespalib::string & hostSpec);
-    HostSpecList          _hostList;
-    const int             _protocolVersion;
-    const int             _traceLevel;
+    HostSpecList _hostList;
+    const int _protocolVersion;
+    const int _traceLevel;
     const CompressionType _compressionType;
     const static int DEFAULT_PROXY_PORT = 19090;
 };

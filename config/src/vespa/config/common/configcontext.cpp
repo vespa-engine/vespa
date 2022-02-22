@@ -6,7 +6,9 @@
 namespace config {
 
 ConfigContext::ConfigContext(const SourceSpec & spec)
-    : ConfigContext(TimingValues(), spec)
+    : _timingValues(),
+      _generation(1),
+      _manager(std::make_unique<ConfigManager>(spec.createSourceFactory(_timingValues), _generation))
 { }
 
 ConfigContext::ConfigContext(const TimingValues & timingValues, const SourceSpec & spec)
