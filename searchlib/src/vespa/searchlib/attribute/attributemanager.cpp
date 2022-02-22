@@ -120,16 +120,6 @@ uint64_t AttributeManager::getMemoryFootprint() const
     return sum;
 }
 
-bool AttributeManager::hasReaders() const
-{
-    for(AttributeMap::const_iterator it(_attributes.begin()), mt(_attributes.end()); it != mt; it++) {
-        if (it->second->hasReaders())
-            return true;
-    }
-
-    return false;
-}
-
 const AttributeManager::VectorHolder *
 AttributeManager::findAndLoadAttribute(const string & name) const
 {

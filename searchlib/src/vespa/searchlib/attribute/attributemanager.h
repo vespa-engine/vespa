@@ -54,7 +54,6 @@ public:
     const Snapshot & getSnapshot()         const { return _snapShot; }
     const string & getBaseDir()       const { return _baseDir; }
     void setBaseDir(const string & base);
-    bool hasReaders() const;
     uint64_t getMemoryFootprint() const;
 
 protected:

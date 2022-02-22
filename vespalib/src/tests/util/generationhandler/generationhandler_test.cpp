@@ -97,18 +97,18 @@ Test::requireThatTheFirstUsedGenerationIsCorrect()
     {
         GenGuard g1 = gh.takeGuard();
         gh.incGeneration();
-        EXPECT_EQUAL(true, gh.hasReaders());
+        EXPECT_EQUAL(1u, gh.getGenerationRefCount());
         EXPECT_EQUAL(1u, gh.getFirstUsedGeneration());
     }
     EXPECT_EQUAL(1u, gh.getFirstUsedGeneration());
     gh.updateFirstUsedGeneration();	// Only writer should call this
-    EXPECT_EQUAL(false, gh.hasReaders());
+    EXPECT_EQUAL(0u, gh.getGenerationRefCount());
     EXPECT_EQUAL(2u, gh.getFirstUsedGeneration());
     {
         GenGuard g1 = gh.takeGuard();
         gh.incGeneration();
         gh.incGeneration();
-        EXPECT_EQUAL(true, gh.hasReaders());
+        EXPECT_EQUAL(1u, gh.getGenerationRefCount());
         EXPECT_EQUAL(2u, gh.getFirstUsedGeneration());
         {
             GenGuard g2 = gh.takeGuard();
@@ -117,7 +117,7 @@ Test::requireThatTheFirstUsedGenerationIsCorrect()
     }
     EXPECT_EQUAL(2u, gh.getFirstUsedGeneration());
     gh.updateFirstUsedGeneration();	// Only writer should call this
-    EXPECT_EQUAL(false, gh.hasReaders());
+    EXPECT_EQUAL(0u, gh.getGenerationRefCount());
     EXPECT_EQUAL(4u, gh.getFirstUsedGeneration());
 }
 
