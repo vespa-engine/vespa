@@ -169,12 +169,14 @@ void
 ProtonConfigFetcher::start(FastOS_ThreadPool & threadPool)
 {
     fetchConfigs();
+    lock_guard guard(_mutex);
+    if (_running) return;
+    _running = true;
     if (threadPool.NewThread(this, nullptr) == nullptr) {
+        _running = false;
         throw vespalib::IllegalStateException(
                 "Failed starting thread for proton config fetcher");
     }
-    lock_guard guard(_mutex);
-    _running = true;
 }
 
 void
