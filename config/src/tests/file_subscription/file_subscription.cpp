@@ -58,7 +58,7 @@ TEST("requireThatFileSpecGivesCorrectSource") {
     writeFile("my.cfg", "foobar");
     FileSpec spec("my.cfg");
 
-    auto factory = spec.createSourceFactory(TimingValues());
+    SourceFactory::UP factory(spec.createSourceFactory(TimingValues()));
     ASSERT_TRUE(factory);
     auto holder = std::make_shared<ConfigHolder>();
     std::unique_ptr<Source> src = factory->createSource(holder, ConfigKey("my", "my", "bar", "foo"));

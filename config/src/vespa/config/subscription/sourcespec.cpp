@@ -11,9 +11,6 @@
 #include <vespa/config/set/configinstancesourcefactory.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/config/print/asciiconfigwriter.h>
-#include <vespa/vespalib/util/size_literals.h>
-#include <vespa/fnet/transport.h>
-#include <vespa/fastos/thread.h>
 #include <cassert>
 
 namespace config {
@@ -28,7 +25,7 @@ RawSpec::RawSpec(const vespalib::string & config)
 {
 }
 
-std::unique_ptr<SourceFactory>
+SourceFactory::UP
 RawSpec::createSourceFactory(const TimingValues &) const
 {
     return std::make_unique<RawSourceFactory>(_config);
@@ -52,7 +49,7 @@ FileSpec::verifyName(const vespalib::string & fileName)
     }
 }
 
-std::unique_ptr<SourceFactory>
+SourceFactory::UP
 FileSpec::createSourceFactory(const TimingValues & ) const
 {
     return std::make_unique<FileSourceFactory>(*this);
@@ -63,7 +60,7 @@ DirSpec::DirSpec(const vespalib::string & dirName)
 {
 }
 
-std::unique_ptr<SourceFactory>
+SourceFactory::UP
 DirSpec::createSourceFactory(const TimingValues & ) const
 {
     return std::make_unique<DirSourceFactory>(*this);
@@ -120,15 +117,12 @@ ServerSpec::ServerSpec(const vespalib::string & hostSpec)
     initialize(hostSpec);
 }
 
-std::unique_ptr<SourceFactory>
+SourceFactory::UP
 ServerSpec::createSourceFactory(const TimingValues & timingValues) const
 {
     const auto vespaVersion = VespaVersion::getCurrentVersion();
-    return std::make_unique<FRTSourceFactory>(
-            std::make_unique<FRTConnectionPoolWithTransport>(std::make_unique<FastOS_ThreadPool>(64_Ki),
-                                                             std::make_unique<FNET_Transport>(),
-                                                             *this, timingValues),
-            timingValues, _traceLevel, vespaVersion, _compressionType);
+    return std::make_unique<FRTSourceFactory>(std::make_unique<FRTConnectionPool>(*this, timingValues), timingValues,
+                                              _traceLevel, vespaVersion, _compressionType);
 }
 
 
@@ -137,7 +131,7 @@ ConfigSet::ConfigSet()
 {
 }
 
-std::unique_ptr<SourceFactory>
+SourceFactory::UP
 ConfigSet::createSourceFactory(const TimingValues & ) const
 {
     return std::make_unique<ConfigSetSourceFactory>(_builderMap);

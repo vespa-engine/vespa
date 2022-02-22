@@ -27,8 +27,10 @@ FRTConnectionPool::FRTConnectionKey::operator==(const FRTConnectionKey& right) c
     return _hostname == right._hostname;
 }
 
-FRTConnectionPool::FRTConnectionPool(FNET_Transport & transport, const ServerSpec & spec, const TimingValues & timingValues)
-    : _supervisor(std::make_unique<FRT_Supervisor>(& transport)),
+FRTConnectionPool::FRTConnectionPool(const ServerSpec & spec, const TimingValues & timingValues)
+    :  _threadPool(std::make_unique<FastOS_ThreadPool>(60_Ki)),
+       _transport(std::make_unique<FNET_Transport>()),
+       _supervisor(std::make_unique<FRT_Supervisor>(_transport.get())),
       _selectIdx(0),
       _hostname("")
 {
@@ -37,9 +39,13 @@ FRTConnectionPool::FRTConnectionPool(FNET_Transport & transport, const ServerSpe
         _connections[key] = std::make_shared<FRTConnection>(spec.getHost(i), *_supervisor, timingValues);
     }
     setHostname();
+    _transport->Start(_threadPool.get());
 }
 
-FRTConnectionPool::~FRTConnectionPool() = default;
+FRTConnectionPool::~FRTConnectionPool()
+{
+    _transport->ShutDown(true);
+}
 
 void
 FRTConnectionPool::syncTransport()
@@ -142,21 +148,6 @@ FRTConnectionPool::setHostname()
 FNET_Scheduler *
 FRTConnectionPool::getScheduler() {
     return _supervisor->GetScheduler();
-}
-
-FRTConnectionPoolWithTransport::FRTConnectionPoolWithTransport(std::unique_ptr<FastOS_ThreadPool> threadPool,
-                                                               std::unique_ptr<FNET_Transport> transport,
-                                                               const ServerSpec & spec, const TimingValues & timingValues)
-    :  FRTConnectionPool(*transport, spec, timingValues),
-       _threadPool(std::move(threadPool)),
-       _transport(std::move(transport))
-{
-    _transport->Start(_threadPool.get());
-}
-
-FRTConnectionPoolWithTransport::~FRTConnectionPoolWithTransport()
-{
-    _transport->ShutDown(true);
 }
 
 }

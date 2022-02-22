@@ -3,9 +3,6 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/config/frt/frtconnectionpool.h>
 #include <vespa/fnet/frt/error.h>
-#include <vespa/fnet/transport.h>
-#include <vespa/fastos/thread.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <sstream>
 #include <set>
 #include <unistd.h>
@@ -15,12 +12,8 @@ using namespace config;
 class Test : public vespalib::TestApp {
 private:
     static ServerSpec::HostSpecList _sources;
-    FastOS_ThreadPool _threadPool;
-    FNET_Transport    _transport;
     void verifyAllSourcesInRotation(FRTConnectionPool& sourcePool);
 public:
-    Test();
-    ~Test() override;
     int Main() override;
     void testBasicRoundRobin();
     void testBasicHashBasedSelection();
@@ -31,18 +24,6 @@ public:
     void testSuspensionTimeout();
     void testManySources();
 };
-
-Test::Test()
-    : vespalib::TestApp(),
-      _threadPool(64_Ki),
-      _transport()
-{
-    _transport.Start(&_threadPool);
-}
-
-Test::~Test() {
-    _transport.ShutDown(true);
-}
 
 TEST_APPHOOK(Test);
 
@@ -98,7 +79,7 @@ void Test::verifyAllSourcesInRotation(FRTConnectionPool& sourcePool) {
  */
 void Test::testBasicRoundRobin() {
     const ServerSpec spec(_sources);
-    FRTConnectionPool sourcePool(_transport, spec, timingValues);
+    FRTConnectionPool sourcePool(spec, timingValues);
     for (int i = 0; i < 9; i++) {
         int j = i % _sources.size();
         std::stringstream s;
@@ -112,7 +93,7 @@ void Test::testBasicRoundRobin() {
  */
 void Test::testBasicHashBasedSelection() {
     const ServerSpec spec(_sources);
-    FRTConnectionPool sourcePool(_transport, spec, timingValues);
+    FRTConnectionPool sourcePool(spec, timingValues);
     sourcePool.setHostname("a.b.com");
     for (int i = 0; i < 9; i++) {
         EXPECT_EQUAL("host1", sourcePool.getNextHashBased()->getAddress());
@@ -127,7 +108,7 @@ void Test::testBasicHashBasedSelection() {
     hostnames.push_back("stroustrup-02.example.yahoo.com");
     hostnames.push_back("alexandrescu-03.example.yahoo.com");
     const ServerSpec spec2(hostnames);
-    FRTConnectionPool sourcePool2(_transport, spec2, timingValues);
+    FRTConnectionPool sourcePool2(spec2, timingValues);
     sourcePool2.setHostname("sutter-01.example.yahoo.com");
     EXPECT_EQUAL("stroustrup-02.example.yahoo.com", sourcePool2.getNextHashBased()->getAddress());
     sourcePool2.setHostname("stroustrup-02.example.yahoo.com");
@@ -142,7 +123,7 @@ void Test::testBasicHashBasedSelection() {
  */
 void Test::testSetErrorRoundRobin() {
     const ServerSpec spec(_sources);
-    FRTConnectionPool sourcePool(_transport, spec, timingValues);
+    FRTConnectionPool sourcePool(spec, timingValues);
     FRTConnection* source = sourcePool.getNextRoundRobin();
     source->setError(FRTE_RPC_CONNECTION);
     for (int i = 0; i < 9; i++) {
@@ -157,7 +138,7 @@ void Test::testSetErrorRoundRobin() {
  */
 void Test::testSetErrorAllRoundRobin() {
     const ServerSpec spec(_sources);
-    FRTConnectionPool sourcePool(_transport, spec, timingValues);
+    FRTConnectionPool sourcePool(spec, timingValues);
     for (int i = 0; i < (int)_sources.size(); i++) {
         FRTConnection* source = sourcePool.getNextRoundRobin();
         source->setError(FRTE_RPC_CONNECTION);
@@ -171,7 +152,7 @@ void Test::testSetErrorAllRoundRobin() {
  */
 void Test::testSetErrorHashBased() {
     const ServerSpec spec(_sources);
-    FRTConnectionPool sourcePool(_transport, spec, timingValues);
+    FRTConnectionPool sourcePool(spec, timingValues);
     FRTConnection* source = sourcePool.getNextHashBased();
     source->setError(FRTE_RPC_CONNECTION);
     for (int i = 0; i < (int)_sources.size(); i++) {
@@ -186,7 +167,7 @@ void Test::testSetErrorHashBased() {
  */
 void Test::testSetErrorAllHashBased() {
     const ServerSpec spec(_sources);
-    FRTConnectionPool sourcePool(_transport, spec, timingValues);
+    FRTConnectionPool sourcePool(spec, timingValues);
     FRTConnection* firstSource = sourcePool.getNextHashBased();
     auto readySources = sourcePool.getReadySources();
     for (int i = 0; i < (int)readySources.size(); i++) {
@@ -218,7 +199,7 @@ void Test::testSetErrorAllHashBased() {
  */
 void Test::testSuspensionTimeout() {
     const ServerSpec spec(_sources);
-    FRTConnectionPool sourcePool(_transport, spec, timingValues);
+    FRTConnectionPool sourcePool(spec, timingValues);
     Connection* source = sourcePool.getCurrent();
     source->setTransientDelay(1s);
     source->setError(FRTE_RPC_CONNECTION);
@@ -246,7 +227,7 @@ void Test::testManySources() {
     twoSources.push_back("host1");
 
     const ServerSpec spec(twoSources);
-    FRTConnectionPool sourcePool(_transport, spec, timingValues);
+    FRTConnectionPool sourcePool(spec, timingValues);
 
     for (int i = 0; i < (int)hostnames.size(); i++) {
         sourcePool.setHostname(hostnames[i]);
