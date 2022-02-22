@@ -125,8 +125,10 @@ import javax.ws.rs.NotAuthorizedException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.security.DigestInputStream;
 import java.security.Principal;
 import java.security.PublicKey;
@@ -501,7 +503,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private String getString(Inspector field, String defaultVale) {
-        return field.valid() ? field.asString() : defaultVale;
+        return field.valid() ? field.asString().trim() : defaultVale;
     }
 
     private SlimeJsonResponse updateTenantInfo(CloudTenant tenant, HttpRequest request) {
@@ -521,15 +523,22 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         // Assert that we have a valid tenant info
         if (mergedInfo.contactName().isBlank()) {
-            return new MessageResponse(400, "'contactName' cannot be empty");
+            throw new IllegalArgumentException("'contactName' cannot be empty");
         }
         if (mergedInfo.contactEmail().isBlank()) {
-            return new MessageResponse(400, "'contactEmail' cannot be empty");
+            throw new IllegalArgumentException("'contactEmail' cannot be empty");
         }
         if (! mergedInfo.contactEmail().contains("@")) {
             // email address validation is notoriously hard - we should probably just try to send a
             // verification email to this address.  checking for @ is a simple best-effort.
-            return new MessageResponse(400, "'contactEmail' needs to be an email address");
+            throw new IllegalArgumentException("'contactEmail' needs to be an email address");
+        }
+        if (! mergedInfo.website().isBlank()) {
+            try {
+                new URL(mergedInfo.website());
+            } catch (MalformedURLException e) {
+                throw new IllegalArgumentException("'website' needs to be a valid address");
+            }
         }
 
         // Store changes
@@ -543,19 +552,39 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private TenantInfoAddress updateTenantInfoAddress(Inspector insp, TenantInfoAddress oldAddress) {
         if (!insp.valid()) return oldAddress;
-        return TenantInfoAddress.EMPTY
+        TenantInfoAddress address = TenantInfoAddress.EMPTY
                 .withCountry(getString(insp.field("country"), oldAddress.country()))
                 .withStateRegionProvince(getString(insp.field("stateRegionProvince"), oldAddress.stateRegionProvince()))
                 .withCity(getString(insp.field("city"), oldAddress.city()))
                 .withPostalCodeOrZip(getString(insp.field("postalCodeOrZip"), oldAddress.postalCodeOrZip()))
                 .withAddressLines(getString(insp.field("addressLines"), oldAddress.addressLines()));
+
+        List<String> fields = List.of(address.addressLines(),
+                        address.postalCodeOrZip(),
+                        address.country(),
+                        address.city(),
+                        address.stateRegionProvince());
+
+        if (fields.stream().allMatch(String::isBlank) || fields.stream().noneMatch(String::isBlank))
+            return address;
+
+        throw new IllegalArgumentException("All address fields must be set");
     }
 
     private TenantInfoBillingContact updateTenantInfoBillingContact(Inspector insp, TenantInfoBillingContact oldContact) {
         if (!insp.valid()) return oldContact;
+
+        String email = getString(insp.field("email"), oldContact.email());
+
+        if (!email.isBlank() && !email.contains("@")) {
+            // email address validation is notoriously hard - we should probably just try to send a
+            // verification email to this address.  checking for @ is a simple best-effort.
+            throw new IllegalArgumentException("'email' needs to be an email address");
+        }
+
         return TenantInfoBillingContact.EMPTY
                 .withName(getString(insp.field("name"), oldContact.name()))
-                .withEmail(getString(insp.field("email"), oldContact.email()))
+                .withEmail(email)
                 .withPhone(getString(insp.field("phone"), oldContact.phone()))
                 .withAddress(updateTenantInfoAddress(insp.field("address"), oldContact.address()));
     }
@@ -1834,6 +1863,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     /** Trigger deployment of the given Vespa version if a valid one is given, e.g., "7.8.9". */
     private HttpResponse deployPlatform(String tenantName, String applicationName, String instanceName, boolean pin, HttpRequest request) {
+
         String versionString = readToString(request.getData());
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         StringBuilder response = new StringBuilder();
