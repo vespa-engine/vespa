@@ -2,7 +2,6 @@
 package com.yahoo.vespa.testrunner;
 
 import ai.vespa.hosted.api.TestConfig;
-import com.yahoo.vespa.testrunner.VespaCliTestRunner.NoTestsException;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -12,9 +11,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author jonmv
@@ -48,13 +45,9 @@ class VespaCliTestRunnerTest {
         Path tests = Files.createDirectory(temp.resolve("tests"));
         Path artifacts = Files.createDirectory(temp.resolve("artifacts"));
         VespaCliTestRunner runner = new VespaCliTestRunner(artifacts, tests);
-        assertFalse(runner.isSupported());
 
         Path systemTests = Files.createDirectory(tests.resolve("system-test"));
-        assertTrue(runner.isSupported());
-        NoTestsException ise = assertThrows(NoTestsException.class,
-                                            () -> runner.testRunProcessBuilder(TestRunner.Suite.STAGING_TEST, testConfig));
-        assertEquals("No tests found, for suite 'STAGING_TEST'", ise.getMessage());
+        assertNull(runner.testRunProcessBuilder(TestRunner.Suite.STAGING_TEST, testConfig));
 
         ProcessBuilder builder = runner.testRunProcessBuilder(TestRunner.Suite.SYSTEM_TEST, testConfig);
         assertEquals(List.of("vespa", "test", systemTests.toAbsolutePath().toString(),

@@ -7,23 +7,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 import java.util.logging.LogRecord;
-
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * @author jonmv
  */
 public class AggregateTestRunner implements TestRunner {
-
-    static final TestRunner noRunner = new TestRunner() {
-        final LogRecord record = new LogRecord(Level.WARNING, "No tests were found");
-        @Override public Collection<LogRecord> getLog(long after) { return List.of(record); }
-        @Override public Status getStatus() { return Status.FAILURE; }
-        @Override public CompletableFuture<?> test(Suite suite, byte[] config) { return CompletableFuture.completedFuture(null); }
-        @Override public boolean isSupported() { return true; }
-    };
 
     private final List<TestRunner> wrapped;
     private final AtomicInteger current = new AtomicInteger(-1);
@@ -33,8 +22,7 @@ public class AggregateTestRunner implements TestRunner {
     }
 
     public static TestRunner of(Collection<TestRunner> testRunners) {
-        List<TestRunner> supported = testRunners.stream().filter(TestRunner::isSupported).collect(toUnmodifiableList());
-        return supported.isEmpty() ? noRunner : new AggregateTestRunner(supported);
+        return new AggregateTestRunner(List.copyOf(testRunners));
     }
 
     @Override
@@ -51,17 +39,13 @@ public class AggregateTestRunner implements TestRunner {
         if (current.get() == -1)
             return Status.NOT_STARTED;
 
-        boolean failed = false;
-        boolean inconclusive = false;
+        Status status = Status.NO_TESTS;
         for (int i = 0; i <= current.get(); i++) {
             if (i == wrapped.size())
-                return failed ? Status.FAILURE : inconclusive ? Status.INCONCLUSIVE : Status.SUCCESS;
+                return status;
 
-            switch (wrapped.get(i).getStatus()) {
-                case ERROR: return Status.ERROR;
-                case INCONCLUSIVE: inconclusive = true; break;
-                case FAILURE: failed = true;
-            }
+            Status next = wrapped.get(i).getStatus();
+            status = status.ordinal() < next.ordinal() ? status : next;
         }
         return Status.RUNNING;
     }
@@ -86,11 +70,6 @@ public class AggregateTestRunner implements TestRunner {
             else
                 runNext(suite, config, wrapped.get(next).test(suite, config), aggregate);
         });
-    }
-
-    @Override
-    public boolean isSupported() {
-        return wrapped.stream().anyMatch(TestRunner::isSupported);
     }
 
     @Override

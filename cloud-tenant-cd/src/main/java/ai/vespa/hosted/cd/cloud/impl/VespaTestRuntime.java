@@ -38,6 +38,7 @@ public class VespaTestRuntime implements TestRuntime {
     public VespaTestRuntime(byte[] config) {
         this(fromByteArray(config));
     }
+
     private VespaTestRuntime(TestConfig config) {
         this.config = config;
         DefaultEndpointAuthenticator authenticator = new DefaultEndpointAuthenticator(config.system());
@@ -50,7 +51,8 @@ public class VespaTestRuntime implements TestRuntime {
     public Zone zone() {
         return new Zone(
                 ai.vespa.cloud.Environment.valueOf(config.zone().environment().name()),
-                config.zone().region().value()); }
+                config.zone().region().value());
+    }
 
     /** Returns the deployment this is testing. */
     @Override

@@ -109,8 +109,13 @@ public class TestRunner implements com.yahoo.vespa.testrunner.TestRunner {
             throw new IllegalArgumentException("Tests are already running; should not receive this request now.");
 
         log.clear();
-        status = Status.RUNNING;
 
+        if ( ! hasTestsJar()) {
+            status = Status.NO_TESTS;
+            return CompletableFuture.completedFuture(null);
+        }
+
+        status = Status.RUNNING;
         return CompletableFuture.runAsync(() -> runTests(toProfile(suite), testConfig));
     }
 
@@ -124,8 +129,7 @@ public class TestRunner implements com.yahoo.vespa.testrunner.TestRunner {
         return status;
     }
 
-    @Override
-    public boolean isSupported() {
+    private boolean hasTestsJar() {
         return listFiles(artifactsPath).stream().anyMatch(file -> file.toString().endsWith("tests.jar"));
     }
 
@@ -163,7 +167,7 @@ public class TestRunner implements com.yahoo.vespa.testrunner.TestRunner {
             record.setThrown(exception);
             logger.log(record);
             log.put(record.getSequenceNumber(), record);
-            status = exception instanceof NoTestsException ? Status.FAILURE : Status.ERROR;
+            status = Status.ERROR;
             return;
         }
         status = success ? Status.SUCCESS : Status.FAILURE;

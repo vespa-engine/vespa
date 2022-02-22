@@ -57,6 +57,9 @@ public interface TesterCloud {
         /** The tester encountered an exception. */
         ERROR,
 
+        /** No tests were found. */
+        NO_TESTS,
+
         /** The tests were successful. */
         SUCCESS
 
