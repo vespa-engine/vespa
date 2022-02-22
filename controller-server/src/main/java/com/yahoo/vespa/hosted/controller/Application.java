@@ -126,11 +126,11 @@ public class Application {
         Deque<ApplicationVersion> versions = new ArrayDeque<>();
         String previousHash = "";
         for (ApplicationVersion version : versions()) {
-            if (previousHash.equals(previousHash = version.bundleHash().orElse("")) && version.bundleHash().isPresent())
-                continue;
-
-            if (ascending) versions.addLast(version);
-            else versions.addFirst(version);
+            if (version.bundleHash().isEmpty() || ! previousHash.equals(version.bundleHash().get())) {
+                if (ascending) versions.addLast(version);
+                else versions.addFirst(version);
+            }
+            previousHash = version.bundleHash().orElse("");
         }
         return versions;
     }
