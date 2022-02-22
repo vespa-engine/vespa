@@ -48,7 +48,7 @@ TEST(SharedThreadingServiceConfigTest, shared_threads_are_derived_from_cpu_cores
 
 class SharedThreadingServiceTest : public ::testing::Test {
 public:
-    TransportMgr transport;
+    Transport transport;
     std::unique_ptr<SharedThreadingService> service;
     SharedThreadingServiceTest()
         : transport(),
