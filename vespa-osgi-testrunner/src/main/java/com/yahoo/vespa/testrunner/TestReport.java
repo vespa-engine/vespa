@@ -8,6 +8,7 @@ import java.util.logging.LogRecord;
 
 import static com.yahoo.vespa.testrunner.TestRunner.Status.FAILURE;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.INCONCLUSIVE;
+import static com.yahoo.vespa.testrunner.TestRunner.Status.NO_TESTS;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.SUCCESS;
 
 /**
@@ -40,7 +41,7 @@ public class TestReport {
     }
 
     public TestRunner.Status status() {
-        return failedCount > 0 ? FAILURE : inconclusiveCount > 0 ? INCONCLUSIVE : SUCCESS;
+        return failedCount > 0 ? FAILURE : inconclusiveCount > 0 ? INCONCLUSIVE : totalCount > 0 ? SUCCESS : NO_TESTS;
     }
 
     public static Builder builder(){

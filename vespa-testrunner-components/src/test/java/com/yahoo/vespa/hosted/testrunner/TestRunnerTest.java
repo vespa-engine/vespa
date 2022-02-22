@@ -11,11 +11,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.LogRecord;
 
 import static com.yahoo.vespa.testrunner.TestRunner.Suite.STAGING_TEST;
 import static com.yahoo.vespa.testrunner.TestRunner.Suite.SYSTEM_TEST;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -44,20 +46,13 @@ public class TestRunnerTest {
     }
 
     @Test
-    public void noTestJarIsAFailure() throws InterruptedException, IOException {
+    public void noTestJarIsANoTests() throws InterruptedException, IOException, ExecutionException {
         Files.delete(artifactsPath.resolve("my-tests.jar"));
         TestRunner runner = new TestRunner(artifactsPath, testPath, configFile, settingsFile,
                                            __ -> new ProcessBuilder("This is a command that doesn't exist, for sure!"));
-        runner.test(SYSTEM_TEST, new byte[0]);
-        while (runner.getStatus() == TestRunner.Status.RUNNING) {
-            Thread.sleep(10);
-        }
-        Iterator<LogRecord> log = runner.getLog(-1).iterator();
-        log.next();
-        LogRecord record = log.next();
-        assertEquals("Failed to execute maven command: This is a command that doesn't exist, for sure!", record.getMessage());
-        assertTrue(record.getThrown() instanceof TestRunner.NoTestsException);
-        assertEquals(TestRunner.Status.FAILURE, runner.getStatus());
+        runner.test(SYSTEM_TEST, new byte[0]).get();
+        assertFalse(runner.getLog(-1).iterator().hasNext());
+        assertEquals(TestRunner.Status.NO_TESTS, runner.getStatus());
     }
 
     @Test

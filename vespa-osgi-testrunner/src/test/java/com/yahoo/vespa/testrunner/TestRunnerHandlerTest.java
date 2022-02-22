@@ -83,7 +83,6 @@ class TestRunnerHandlerTest {
     @Test
     public void returnsEmptyResponsesWhenReportNotReady() throws IOException {
         TestRunner testRunner = mock(TestRunner.class);
-        when(testRunner.isSupported()).thenReturn(true);
         when(testRunner.getReport()).thenReturn(null);
         testRunnerHandler = new TestRunnerHandler(
                 Executors.newSingleThreadExecutor(),
@@ -102,24 +101,6 @@ class TestRunnerHandlerTest {
             response.render(out);
             assertEquals("", out.toString(UTF_8));
         }
-    }
-
-    @Test
-    public void usesLegacyTestRunnerWhenNotSupported() throws IOException {
-        TestRunner testRunner = mock(TestRunner.class);
-        when(testRunner.isSupported()).thenReturn(false);
-        TestRunner legacyTestRunner = mock(TestRunner.class);
-        when(legacyTestRunner.isSupported()).thenReturn(true);
-        when(legacyTestRunner.getLog(anyLong())).thenReturn(List.of(logRecord("Legacy log message")));
-        TestRunner aggregate = AggregateTestRunner.of(List.of(testRunner, legacyTestRunner));
-        testRunnerHandler = new TestRunnerHandler(Executors.newSingleThreadExecutor(), aggregate);
-
-        // Prime the aggregate to check for logs in the wrapped runners.
-        aggregate.test(TestRunner.Suite.PRODUCTION_TEST, new byte[0]);
-        HttpResponse response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/log", GET));
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        response.render(out);
-        JsonTestHelper.assertJsonEquals(out.toString(UTF_8), "{\"logRecords\":[{\"id\":0,\"at\":1598432151660,\"type\":\"info\",\"message\":\"Legacy log message\"}]}");
     }
 
     /* Creates a LogRecord that has a known instant and sequence number to get predictable serialization results. */
@@ -151,11 +132,6 @@ class TestRunnerHandlerTest {
             return getReport().logLines().stream()
                               .filter(entry -> entry.getSequenceNumber() > after)
                               .collect(Collectors.toList());
-        }
-
-        @Override
-        public boolean isSupported() {
-            return true;
         }
 
         @Override

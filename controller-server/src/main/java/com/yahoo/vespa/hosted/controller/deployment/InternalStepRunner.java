@@ -153,8 +153,8 @@ public class InternalStepRunner implements StepRunner {
                 case installTester: return installTester(id, logger);
                 case installReal: return installReal(id, logger);
                 case startStagingSetup: return startTests(id, true, logger);
-                case endStagingSetup:
-                case endTests: return endTests(id, logger);
+                case endStagingSetup: return endTests(id, true, logger);
+                case endTests: return endTests(id, false, logger);
                 case startTests: return startTests(id, false, logger);
                 case copyVespaLogs: return copyVespaLogs(id, logger);
                 case deactivateReal: return deactivateReal(id, logger);
@@ -634,7 +634,7 @@ public class InternalStepRunner implements StepRunner {
         return Optional.of(running);
     }
 
-    private Optional<RunStatus> endTests(RunId id, DualLogger logger) {
+    private Optional<RunStatus> endTests(RunId id, boolean isSetup, DualLogger logger) {
         Optional<Deployment> deployment = deployment(id.application(), id.type());
         if (deployment.isEmpty()) {
             logger.log(INFO, "Deployment expired before tests could complete.");
@@ -673,6 +673,13 @@ public class InternalStepRunner implements StepRunner {
                 logger.log(INFO, "Tester failed running its tests!");
                 controller.jobController().updateTestReport(id);
                 return Optional.of(error);
+            case NO_TESTS:
+                TesterCloud.Suite suite = TesterCloud.Suite.of(id.type(), isSetup);
+                logger.log(INFO, "No tests were found in the test package, for test suite '" + suite + "'");
+                logger.log(INFO, "The test package must either contain basic HTTP tests under 'tests/<suite-name>/', " +
+                                 "or a Java test bundle under 'components/' with at least one test with the annotation " +
+                                 "for this suite. See docs.vespa.ai/en/testing.html for details.");
+                return Optional.of(testFailure);
             case SUCCESS:
                 logger.log("Tests completed successfully.");
                 controller.jobController().updateTestReport(id);

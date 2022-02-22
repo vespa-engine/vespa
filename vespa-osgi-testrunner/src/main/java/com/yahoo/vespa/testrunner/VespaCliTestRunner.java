@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.ERROR;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.FAILURE;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.INCONCLUSIVE;
+import static com.yahoo.vespa.testrunner.TestRunner.Status.NO_TESTS;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.RUNNING;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.SUCCESS;
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -74,27 +75,22 @@ public class VespaCliTestRunner implements TestRunner {
         return CompletableFuture.runAsync(() -> runTests(suite, config));
     }
 
-    @Override
-    public boolean isSupported() {
-        return Stream.of(Suite.SYSTEM_TEST, Suite.STAGING_SETUP_TEST, Suite.STAGING_TEST)
-                     .anyMatch(suite -> getChildDirectory(testsPath, toSuiteDirectoryName(suite)).isPresent());
-    }
-
     void runTests(Suite suite, byte[] config) {
         Process process = null;
         try {
             TestConfig testConfig = TestConfig.fromJson(config);
-            process = testRunProcessBuilder(suite, testConfig).start();
+            ProcessBuilder builder = testRunProcessBuilder(suite, testConfig);
+            if (builder == null) {
+                status.set(NO_TESTS);
+                return;
+            }
 
+            process = builder.start();
             HtmlLogger htmlLogger = new HtmlLogger();
             BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
             in.lines().forEach(line -> log(htmlLogger.toLog(line)));
             int exitCode = process.waitFor();
             status.set(exitCode == 0 ? SUCCESS : FAILURE);
-        }
-        catch (NoTestsException e) {
-            log(Level.WARNING, "Did not find expected basic HTTP tests", e);
-            status.set(FAILURE);
         }
         catch (Exception e) {
             if (process != null)
@@ -114,10 +110,11 @@ public class VespaCliTestRunner implements TestRunner {
     }
 
     ProcessBuilder testRunProcessBuilder(Suite suite, TestConfig config) throws IOException {
-        Path suitePath = getChildDirectory(testsPath, toSuiteDirectoryName(suite))
-                .orElseThrow(() -> new NoTestsException("No tests found, for suite '" + suite + "'"));
+        Optional<Path> suitePath = getChildDirectory(testsPath, toSuiteDirectoryName(suite));
+        if (suitePath.isEmpty())
+            return null;
 
-        ProcessBuilder builder = new ProcessBuilder("vespa", "test", suitePath.toAbsolutePath().toString(),
+        ProcessBuilder builder = new ProcessBuilder("vespa", "test", suitePath.get().toAbsolutePath().toString(),
                                                     "--application", config.application().toFullString(),
                                                     "--zone", config.zone().value(),
                                                     "--target", "cloud");
@@ -170,12 +167,6 @@ public class VespaCliTestRunner implements TestRunner {
             endpointObject.setString("url", url.toString());
         });
         return new String(SlimeUtils.toJsonBytes(root), UTF_8);
-    }
-
-    static class NoTestsException extends RuntimeException {
-
-        private NoTestsException(String message) { super(message); }
-
     }
 
 }

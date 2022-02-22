@@ -103,12 +103,13 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         }
         try {
             logRecords.clear();
-            testRuntimeProvider.initialize(testConfig);
             Optional<Bundle> testBundle = findTestBundle();
             if (testBundle.isEmpty()) {
-                throw new RuntimeException("No test bundle available");
+                execution = CompletableFuture.completedFuture(TestReport.builder().build());
+                return execution;
             }
 
+            testRuntimeProvider.initialize(testConfig);
             Optional<TestDescriptor> testDescriptor = loadTestDescriptor(testBundle.get());
             if (testDescriptor.isEmpty()) {
                 throw new RuntimeException("Could not find test descriptor");
@@ -131,11 +132,6 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         return new TestReport.Builder()
                         .withFailures(List.of(failure))
                         .build();
-    }
-
-    @Override
-    public boolean isSupported() {
-        return findTestBundle().isPresent();
     }
 
     private Optional<Bundle> findTestBundle() {
@@ -169,7 +165,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
 
         StringBuffer buffer = new StringBuffer();
         testClasses.forEach(cl -> buffer.append("\t").append(cl.toString()).append(" / ").append(cl.getClassLoader().toString()).append("\n"));
-        logger.info("Loaded testClasses: \n" + buffer.toString());
+        logger.info("Loaded testClasses: \n" + buffer);
         return testClasses;
     }
 
@@ -183,9 +179,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
 
     private TestReport launchJunit(List<Class<?>> testClasses, boolean isProductionTest) {
         LauncherDiscoveryRequest discoveryRequest = LauncherDiscoveryRequestBuilder.request()
-                .selectors(
-                        testClasses.stream().map(DiscoverySelectors::selectClass).collect(Collectors.toList())
-                )
+                .selectors(testClasses.stream().map(DiscoverySelectors::selectClass).collect(Collectors.toList()))
                 .build();
 
         var launcherConfig = LauncherConfig.builder()
