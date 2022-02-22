@@ -787,6 +787,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                   assertArrayEquals(packageWithService.zippedContent(), response.getBody());
                               },
                               200);
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET).userIdentity(HOSTED_VESPA_OPERATOR).properties(Map.of("tests", "true")),
+                              (response) -> {
+                                  assertEquals("attachment; filename=\"tenant1.application1-tests2.zip\"", response.getHeaders().getFirst("Content-Disposition"));
+                                  assertArrayEquals("content".getBytes(UTF_8), response.getBody());
+                              },
+                              200);
 
         // GET application package for previous build
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET)
@@ -1201,11 +1207,18 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               404);
 
         // GET non-existent application package of specific build
+        addScrewdriverUserToDeployRole(SCREWDRIVER_ID, ATHENZ_TENANT_DOMAIN, ApplicationName.from("application1"));
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
+                        .screwdriverIdentity(SCREWDRIVER_ID)
+                        .data(createApplicationSubmissionData(applicationPackageInstance1, 1000)),
+                "{\"message\":\"Application package version: 1.0.1-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET)
                                       .properties(Map.of("build", "42"))
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
                               "{\"error-code\":\"NOT_FOUND\",\"message\":\"No application package found for 'tenant1.application1' with build number 42\"}",
                               404);
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deployment", DELETE).userIdentity(USER_ID).oAuthCredentials(OKTA_CREDENTIALS),
+                "{\"message\":\"All deployments removed\"}");
 
         // GET non-existent application package of invalid build
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET)
