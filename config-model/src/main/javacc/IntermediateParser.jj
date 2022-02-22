@@ -436,21 +436,21 @@ ParsedSchema rootSchema() :
 void rootSchemaItem(ParsedSchema schema) : { }
 {
     ( document(schema)
-/*
       | rawAsBase64(schema)
+      | searchStemming(schema)
+      | importField(schema)
+      | rankingConstant(schema)
+      | useDocument(schema)
+/*
       | documentSummary(schema)
       | field(null, schema)
       | index(schema, null)
-      | rankingConstant(schema)
       | rankProfile(schema)
-      | searchStemming(schema)
-      | useDocument(schema)
       | structOutside(schema)
       | annotationOutside(schema)
       | fieldSet(schema)
-      | importField(schema)
-      | onnxModel(schema)
 */
+      | onnxModel(schema)
  )
 }
 
@@ -483,7 +483,7 @@ void rootDocumentItem(ParsedSchema schema) : { }
  *
  * @param schema the schema object to modify.
  */
-void useDocument(Schema schema) : { }
+void useDocument(ParsedSchema schema) : { }
 {
     <USEDOCUMENT> <COLON> identifier()
     { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'use-document' is deprecated and has no effect."); }
@@ -545,7 +545,7 @@ void documentBody(ParsedDocument document) :
     )
 }
 
-void rawAsBase64(Schema schema) :
+void rawAsBase64(ParsedSchema schema) :
 {
     boolean enabled = false;
 }
@@ -1454,7 +1454,7 @@ void fieldStemming(FieldOperationContainer field) :
  *
  * @param schema the schema to modify
  */
-void searchStemming(Schema schema) :
+void searchStemming(ParsedSchema schema) :
 {
     String setting;
 }
@@ -1851,7 +1851,7 @@ void hnswIndexBody(HnswIndexParams.Builder params) :
  *
  * @param schema the schema object to add content to.
  */
-void onnxModel(Schema schema) :
+void onnxModel(ParsedSchema schema) :
 {
     String name;
     OnnxModel onnxModel;
@@ -1864,7 +1864,7 @@ void onnxModel(Schema schema) :
       lbrace() (onnxModelItem(onnxModel) (<NL>)*)+ <RBRACE> )
     {
         if (documentsOnly) return;
-        schema.onnxModels().add(onnxModel);
+        schema.addOnnxModel(onnxModel);
     }
 }
 
@@ -1901,7 +1901,7 @@ void onnxModelItem(OnnxModel onnxModel) :
  *
  * @param schema the schema object to add content to
  */
-void rankingConstant(Schema schema) :
+void rankingConstant(ParsedSchema schema) :
 {
     String name;
     String path = null;
@@ -1918,7 +1918,7 @@ void rankingConstant(Schema schema) :
     )
     {
         if (documentsOnly) return;
-        schema.rankingConstants().add(new RankingConstant(name, type, path, pathType));
+        schema.addRankingConstant(new RankingConstant(name, type, path, pathType));
     }
 }
 
@@ -2568,7 +2568,7 @@ TensorType tensorType(String errorMessage) :
     }
 }
 
-void importField(Schema schema) :
+void importField(ParsedSchema schema) :
 {
     String fieldRefSpec;
     String aliasFieldName;
@@ -2584,11 +2584,7 @@ void importField(Schema schema) :
         int indexOfDot = fieldRefSpec.indexOf('.');
         String documentReferenceFieldName = fieldRefSpec.substring(0, indexOfDot);
         String foreignFieldName = fieldRefSpec.substring(indexOfDot + 1);
-        TemporaryImportedFields importedFields = schema.temporaryImportedFields().get();
-        if (importedFields.hasField(aliasFieldName)) {
-            throw new IllegalArgumentException("For schema '" + schema.getName() + "', import field as '" + aliasFieldName + "': Field already imported");
-        }
-        importedFields.add(new TemporaryImportedField(aliasFieldName, documentReferenceFieldName, foreignFieldName));
+        schema.addImportedField(aliasFieldName, documentReferenceFieldName, foreignFieldName);
     }
 }
 
