@@ -317,9 +317,6 @@ public abstract class Item implements Cloneable {
      * ([itemName] [body])
      * </pre>
      * where the body may recursively be other items.
-     *
-     * <p>
-     * TODO (Vespa 8?): Output YQL
      */
     @Override
     public String toString() {
