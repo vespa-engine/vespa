@@ -76,6 +76,27 @@ FRTConnectionPool::getNextRoundRobin()
     return nextFRTConnection;
 }
 
+namespace {
+/**
+ * Implementation of the Java hashCode function for the String class.
+ *
+ * Ensures that the same hostname maps to the same configserver/proxy
+ * for both language implementations.
+ *
+ * @param s the string to compute the hash from
+ * @return the hash value
+ */
+int hashCode(const vespalib::string & s) {
+    int hashval = 0;
+
+    for (int i = 0; i < (int) s.length(); i++) {
+        hashval = 31 * hashval + s[i];
+    }
+    return hashval;
+}
+
+}
+
 FRTConnection *
 FRTConnectionPool::getNextHashBased()
 {
@@ -123,20 +144,10 @@ FRTConnectionPool::getSuspendedSources() const
     return suspendedSources;
 }
 
-int FRTConnectionPool::hashCode(const vespalib::string & s)
-{
-    int hashval = 0;
-
-    for (int i = 0; i < (int)s.length(); i++) {
-        hashval = 31 * hashval + s[i];
-    }
-    return hashval;
-}
-
 void
 FRTConnectionPool::setHostname()
 {
-    _hostname = vespalib::HostName::get();
+    setHostname(vespalib::HostName::get());
 }
 
 FNET_Scheduler *
@@ -147,15 +158,16 @@ FRTConnectionPool::getScheduler() {
 FRTConnectionPoolWithTransport::FRTConnectionPoolWithTransport(std::unique_ptr<FastOS_ThreadPool> threadPool,
                                                                std::unique_ptr<FNET_Transport> transport,
                                                                const ServerSpec & spec, const TimingValues & timingValues)
-    :  FRTConnectionPool(*transport, spec, timingValues),
-       _threadPool(std::move(threadPool)),
-       _transport(std::move(transport))
+    :  _threadPool(std::move(threadPool)),
+       _transport(std::move(transport)),
+       _connectionPool(std::make_unique<FRTConnectionPool>(*_transport, spec, timingValues))
 {
     _transport->Start(_threadPool.get());
 }
 
 FRTConnectionPoolWithTransport::~FRTConnectionPoolWithTransport()
 {
+    syncTransport();
     _transport->ShutDown(true);
 }
 
