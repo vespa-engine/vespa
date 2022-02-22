@@ -355,7 +355,9 @@ public class ModelProvisioningTest {
                 "<services>" +
                 "  <container version='1.0' id='container1'>" +
                 "     <document-processing/>" +
-                "     <nodes of='content1' jvm-options='testoption'/>" +
+                "     <nodes of='content1'>" +
+                "       <jvm options='-Dtestoption=foo' />" +
+                "     </nodes>" +
                 "  </container>" +
                 "  <content version='1.0' id='content1'>" +
                 "     <redundancy>2</redundancy>" +
@@ -1508,18 +1510,20 @@ public class ModelProvisioningTest {
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<container version='1.0'>" +
                         "  <search/>" +
-                        "  <nodes jvm-options='xyz' count='3'/>" +
+                        "  <nodes count='3'>" +
+                        "    <jvm options='-DfooOption=xyz' /> " +
+                        "  </nodes>" +
                         "</container>";
         int numberOfHosts = 3;
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
         assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
-        assertEquals("xyz", model.getContainerClusters().get("container").getContainers().get(0).getAssignedJvmOptions());
+        assertEquals("-DfooOption=xyz", model.getContainerClusters().get("container").getContainers().get(0).getAssignedJvmOptions());
     }
 
     @Test
-    public void testJvmOptionsOverridesJvmArgs() {
+    public void testFailWhenBothJvmOptionsAndJvmArgs() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<container version='1.0'>" +
@@ -1834,7 +1838,8 @@ public class ModelProvisioningTest {
                 "    <document-processing/>\n" +
                 "    <document-api/>\n" +
                 "    <search/>\n" +
-                "    <nodes jvm-options=\"-Xms512m -Xmx512m\">\n" +
+                "    <nodes>\n" +
+                "      <jvm options=\"-Xms512m -Xmx512m\"/>\n" +
                 "      <node hostalias=\"vespa-1\"/>\n" +
                 "    </nodes>\n" +
                 "  </container>\n" +
