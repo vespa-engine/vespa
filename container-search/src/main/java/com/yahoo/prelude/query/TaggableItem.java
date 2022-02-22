@@ -25,7 +25,7 @@ public interface TaggableItem {
      * "new" and "york" to ensure that a document containing "List of hotels in New York" is ranked above one containing
      * "List of new hotels in York".
      *
-     * @param item the item this should be connected to - in practice the next consecutive item in the query
+     * @param item the item this should be connected to - in practice the previous item in the query.
      * @param connectivity a value between 0 (none) and 1 (maximal), defining the connectivity between this and the
      *        argument item. The default connectivity is 0.1.
      */
