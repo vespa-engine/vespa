@@ -100,8 +100,8 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"invoiceEmail\":\"\",\"contactName\":\"newName\",\"contactEmail\":\"foo@example.com\",\"billingContact\":{\"name\":\"billingName\",\"email\":\"\",\"phone\":\"\"}}", 200);
 
         String fullAddress = "{\"addressLines\":\"addressLines\",\"postalCodeOrZip\":\"postalCodeOrZip\",\"city\":\"city\",\"stateRegionProvince\":\"stateRegionProvince\",\"country\":\"country\"}";
-        String fullBillingContact = "{\"name\":\"name\",\"email\":\"email\",\"phone\":\"phone\",\"address\":" + fullAddress + "}";
-        String fullInfo = "{\"name\":\"name\",\"email\":\"foo@example\",\"website\":\"webSite\",\"invoiceEmail\":\"invoiceEmail\",\"contactName\":\"contactName\",\"contactEmail\":\"contact@example.com\",\"address\":" + fullAddress + ",\"billingContact\":" + fullBillingContact + "}";
+        String fullBillingContact = "{\"name\":\"name\",\"email\":\"foo@example\",\"phone\":\"phone\",\"address\":" + fullAddress + "}";
+        String fullInfo = "{\"name\":\"name\",\"email\":\"foo@example\",\"website\":\"https://yahoo.com\",\"invoiceEmail\":\"invoiceEmail\",\"contactName\":\"contactName\",\"contactEmail\":\"contact@example.com\",\"address\":" + fullAddress + ",\"billingContact\":" + fullBillingContact + "}";
 
         // Now set all fields
         var postFull =
@@ -127,20 +127,46 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         var missingNameResponse = request("/application/v4/tenant/scoober/info", PUT)
                 .data(partialInfoMissingName)
                 .roles(Set.of(Role.administrator(tenantName)));
-        tester.assertResponse(missingNameResponse, "{\"message\":\"'contactName' cannot be empty\"}", 400);
+        tester.assertResponse(missingNameResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"'contactName' cannot be empty\"}", 400);
 
         // email needs to be present, not blank, and contain an @
         var partialInfoMissingEmail = "{\"contactName\": \"Scoober Rentals Inc.\", \"contactEmail\": \" \"}";
         var missingEmailResponse = request("/application/v4/tenant/scoober/info", PUT)
                 .data(partialInfoMissingEmail)
                 .roles(Set.of(Role.administrator(tenantName)));
-        tester.assertResponse(missingEmailResponse, "{\"message\":\"'contactEmail' cannot be empty\"}", 400);
+        tester.assertResponse(missingEmailResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"'contactEmail' cannot be empty\"}", 400);
 
         var partialInfoBadEmail = "{\"contactName\": \"Scoober Rentals Inc.\", \"contactEmail\": \"somethingweird\"}";
         var badEmailResponse = request("/application/v4/tenant/scoober/info", PUT)
                 .data(partialInfoBadEmail)
                 .roles(Set.of(Role.administrator(tenantName)));
-        tester.assertResponse(badEmailResponse, "{\"message\":\"'contactEmail' needs to be an email address\"}", 400);
+        tester.assertResponse(badEmailResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"'contactEmail' needs to be an email address\"}", 400);
+
+        var invalidWebsite = "{\"contactName\": \"Scoober Rentals Inc.\", \"contactEmail\": \"email@scoober.com\", \"website\": \"scoober\" }";
+        var badWebsiteResponse = request("/application/v4/tenant/scoober/info", PUT)
+                .data(invalidWebsite)
+                .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(badWebsiteResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"'website' needs to be a valid address\"}", 400);
+
+        // If any of the address field is set, all fields in address need to be present
+        var addressInfo = "{\n" +
+                "  \"name\": \"Vespa User\",\n" +
+                "  \"email\": \"user@yahooinc.com\",\n" +
+                "  \"website\": \"\",\n" +
+                "  \"contactName\": \"Vespa User\",\n" +
+                "  \"contactEmail\": \"user@yahooinc.com\",\n" +
+                "  \"address\": {\n" +
+                "    \"addressLines\": \"\",\n" +
+                "    \"postalCodeOrZip\": \"7018\",\n" +
+                "    \"city\": \"\",\n" +
+                "    \"stateRegionProvince\": \"\",\n" +
+                "    \"country\": \"\"\n" +
+                "  }\n" +
+                "}";
+        var addressInfoResponse = request("/application/v4/tenant/scoober/info", PUT)
+                .data(addressInfo)
+                .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(addressInfoResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"All address fields must be set\"}", 400);
 
         // updating a tenant that already has the fields set works
         var basicInfo = "{\"contactName\": \"Scoober Rentals Inc.\", \"contactEmail\": \"foo@example.com\"}";
