@@ -484,6 +484,7 @@ void rootDocumentItem(Schema schema) : { }
 void useDocument(Schema schema) : { }
 {
     <USEDOCUMENT> <COLON> identifier()
+    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'use-document' is deprecated and has no effect."); }
 }
 
 /**
@@ -1690,7 +1691,7 @@ void id(FieldOperationContainer field, SDDocumentType document) :
 void indexingRewrite(FieldOperationContainer field) : { }
 {
     <INDEXINGREWRITE> <COLON> <NONE>
-    { field.addOperation(new IndexingRewriteOperation()); }
+    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'indexing-rewrite' is deprecated and has no effect."); }
 }
 
 /**
