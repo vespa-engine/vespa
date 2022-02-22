@@ -65,7 +65,8 @@ public:
     // May return 0, in which case the window size is unlimited.
     [[nodiscard]] virtual uint32_t current_window_size() const noexcept = 0;
 
-    // Exposed for unit testing only.
+    [[nodiscard]] virtual uint32_t current_active_token_count() const noexcept = 0;
+
     [[nodiscard]] virtual uint32_t waiting_threads() const noexcept = 0;
 
     struct DynamicThrottleParams {
