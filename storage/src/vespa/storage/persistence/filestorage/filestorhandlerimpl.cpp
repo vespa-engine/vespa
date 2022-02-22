@@ -333,6 +333,8 @@ FileStorHandlerImpl::updateMetrics(const MetricLockGuard &)
     _metrics->pendingMerges.addValue(_mergeStates.size());
     _metrics->queueSize.addValue(getQueueSize());
     _metrics->throttle_window_size.addValue(_operation_throttler->current_window_size());
+    _metrics->throttle_waiting_threads.addValue(_operation_throttler->waiting_threads());
+    _metrics->throttle_active_tokens.addValue(_operation_throttler->current_active_token_count());
 
     for (const auto & stripe : _metrics->stripes) {
         const auto & m = stripe->averageQueueWaitingTime;
