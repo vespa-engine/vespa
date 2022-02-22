@@ -13,7 +13,7 @@ import com.yahoo.document.select.Context;
 import com.yahoo.document.select.Visitor;
 
 /**
- * A document type node which returns the document type if exactly the type sopecified or false otherwise:
+ * A document type node which returns the document type if exactly the type specified or false otherwise:
  * For using the exact document type as a condition.
  *
  * @author bratseth
