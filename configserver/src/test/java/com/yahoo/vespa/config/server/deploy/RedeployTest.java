@@ -32,10 +32,10 @@ public class RedeployTest {
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
 
         assertTrue(deployment.isPresent());
-        long activeSessionIdBefore = tester.applicationRepository().getActiveSession(tester.applicationId()).getSessionId();
+        long activeSessionIdBefore = tester.applicationRepository().getActiveSession(tester.applicationId()).get().getSessionId();
         assertEquals(tester.applicationId(), tester.tenant().getSessionRepository().getLocalSession(activeSessionIdBefore).getApplicationId());
         deployment.get().activate();
-        long activeSessionIdAfter =  tester.applicationRepository().getActiveSession(tester.applicationId()).getSessionId();
+        long activeSessionIdAfter =  tester.applicationRepository().getActiveSession(tester.applicationId()).get().getSessionId();
         assertEquals(activeSessionIdAfter, activeSessionIdBefore + 1);
         assertEquals(tester.applicationId(), tester.tenant().getSessionRepository().getLocalSession(activeSessionIdAfter).getApplicationId());
     }

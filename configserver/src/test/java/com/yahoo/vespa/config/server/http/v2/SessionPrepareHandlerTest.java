@@ -296,7 +296,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                                                           "applicationName", applicationId().application().value()));
         applicationRepository.activate(tenantRepository.getTenant(tenant), sessionId, timeoutBudget, false);
         assertEquals(DockerImage.fromString(dockerImageRepository),
-                     applicationRepository.getActiveSession(applicationId()).getDockerImageRepository().get());
+                     applicationRepository.getActiveSession(applicationId()).get().getDockerImageRepository().get());
     }
 
     private Slime getData(HttpResponse response) throws IOException {

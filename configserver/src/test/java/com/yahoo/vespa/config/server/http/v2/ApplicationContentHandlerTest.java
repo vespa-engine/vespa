@@ -105,7 +105,7 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
     @Test
     public void require_that_get_does_not_set_write_flag() throws IOException {
         Tenant tenant1 = applicationRepository.getTenant(appId1);
-        Session session = applicationRepository.getActiveLocalSession(tenant1, appId1);
+        Session session = applicationRepository.getActiveLocalSession(tenant1, appId1).get();
         assertContent("/test.txt", "foo\n");
         assertEquals(Session.Status.ACTIVATE, session.getStatus());
     }

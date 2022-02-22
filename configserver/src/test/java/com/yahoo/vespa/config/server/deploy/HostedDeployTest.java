@@ -87,12 +87,12 @@ public class HostedDeployTest {
                 .configserverConfig(createConfigserverConfig()).build();
         ApplicationId appId = tester.applicationId();
         tester.deployApp("src/test/apps/hosted/");
-        assertFalse(tester.applicationRepository().getActiveSession(appId).getMetaData().isInternalRedeploy());
+        assertFalse(tester.applicationRepository().getActiveSession(appId).get().getMetaData().isInternalRedeploy());
 
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
         assertTrue(deployment.isPresent());
         deployment.get().activate();
-        assertTrue(tester.applicationRepository().getActiveSession(appId).getMetaData().isInternalRedeploy());
+        assertTrue(tester.applicationRepository().getActiveSession(appId).get().getMetaData().isInternalRedeploy());
     }
 
     @Test
