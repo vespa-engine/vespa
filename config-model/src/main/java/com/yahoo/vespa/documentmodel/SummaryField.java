@@ -53,30 +53,6 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
 
     }
 
-    /** A name-value property (used for smart summary) */
-    public static class Property implements Serializable {
-        private String name;
-        private String value;
-        public Property(String name, String value) {
-            this.name = name;
-            this.value = value;
-        }
-        public String getName() { return name; }
-        public String getValue() { return value; }
-        @Override
-        public int hashCode() {
-            return name.hashCode() + 17*value.hashCode();
-        }
-        @Override
-        public boolean equals(Object obj) {
-            if (!(obj instanceof Property)) {
-                return false;
-            }
-            Property other = (Property)obj;
-            return name.equals(other.name) && value.equals(other.value);
-        }
-    }
-
     /** The transform to perform on the stored source */
     private SummaryTransform transform=SummaryTransform.NONE;
 
@@ -95,9 +71,6 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
 
     /** True if this field was defined implicitly */
     private boolean implicit=false;
-
-    /** The list of properties for this summary field */
-    private List<Property> properties = new ArrayList<>();
 
     /** Creates a summary field with NONE as transform */
     public SummaryField(String name, DataType type) {
@@ -296,15 +269,6 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
 
     public void setVsmCommand(VsmCommand vsmCommand) {
         this.vsmCommand = vsmCommand;
-    }
-
-    /** Adds a property to this summary field */
-    public void addProperty(String name, String value) {
-        properties.add(new Property(name, value));
-    }
-
-    public List<Property> getProperties() {
-        return properties;
     }
 
     /**
