@@ -32,6 +32,7 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.application.pkg.ZipStreamReader;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
@@ -40,6 +41,8 @@ import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 
 import javax.security.auth.x500.X500Principal;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
@@ -52,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
@@ -75,6 +79,8 @@ import static org.junit.Assert.assertTrue;
  * @author jonmv
  */
 public class DeploymentContext {
+
+    private final AtomicLong salt = new AtomicLong();
 
     // Application packages are expensive to construct, and a given test typically only needs to the test in the context
     // of a single system. Construct them lazily.
@@ -255,13 +261,28 @@ public class DeploymentContext {
     }
 
     /** Submit given application package for deployment */
+    public DeploymentContext submit(ApplicationPackage applicationPackage, long salt) {
+        return submit(applicationPackage, Optional.of(defaultSourceRevision), salt);
+    }
+
+    /** Submit given application package for deployment */
     public DeploymentContext submit(ApplicationPackage applicationPackage, Optional<SourceRevision> sourceRevision) {
+        return submit(applicationPackage, sourceRevision, salt.getAndIncrement());
+    }
+
+    /** Submit given application package for deployment */
+    public DeploymentContext submit(ApplicationPackage applicationPackage, Optional<SourceRevision> sourceRevision, long salt) {
+        var buffer = new ByteArrayOutputStream();
+        ZipStreamReader.transferAndWrite(buffer,
+                                         new ByteArrayInputStream(applicationPackage.zippedContent()),
+                                         "salt",
+                                         new byte[]{ (byte) (salt >> 56), (byte) (salt >> 48), (byte) (salt >> 40), (byte) (salt >> 32), (byte) (salt >> 24), (byte) (salt >> 16), (byte) (salt >> 8), (byte) salt });
         var projectId = tester.controller().applications()
                               .requireApplication(applicationId)
                               .projectId()
                               .orElse(1000); // These are really set through submission, so just pick one if it hasn't been set.
         lastSubmission = jobs.submit(applicationId, sourceRevision, Optional.of("a@b"), Optional.empty(),
-                                     projectId, applicationPackage, new byte[0]);
+                                     projectId, new ApplicationPackage(buffer.toByteArray()), new byte[0]);
         return this;
     }
 

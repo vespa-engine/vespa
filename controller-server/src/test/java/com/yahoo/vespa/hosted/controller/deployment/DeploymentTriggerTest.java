@@ -203,6 +203,46 @@ public class DeploymentTriggerTest {
     }
 
     @Test
+    public void similarDeploymentSpecsAreNotRolledOut() {
+        ApplicationPackage firstPackage = new ApplicationPackageBuilder()
+                .region("us-east-3")
+                .build();
+
+        DeploymentContext app = tester.newDeploymentContext().submit(firstPackage, 5417);
+        var version = app.lastSubmission();
+        assertEquals(version, app.instance().change().application());
+        app.runJob(systemTest)
+           .runJob(stagingTest)
+           .runJob(productionUsEast3);
+        assertEquals(Change.empty(), app.instance().change());
+
+        // A similar application package is submitted. Since a new job is added, the original revision is again a target.
+        ApplicationPackage secondPackage = new ApplicationPackageBuilder()
+                .systemTest()
+                .stagingTest()
+                .region("us-east-3")
+                .delay(Duration.ofHours(1))
+                .test("us-east-3")
+                .build();
+
+        app.submit(secondPackage, 5417);
+        app.triggerJobs();
+        assertEquals(List.of(), tester.jobs().active());
+        assertEquals(version, app.instance().change().application());
+
+        tester.clock().advance(Duration.ofHours(1));
+        app.runJob(testUsEast3);
+        assertEquals(List.of(), tester.jobs().active());
+        assertEquals(Change.empty(), app.instance().change());
+
+        // The original application package is submitted again. No new jobs are added, so no change needs to roll out now.
+        app.submit(firstPackage, 5417);
+        app.triggerJobs();
+        assertEquals(List.of(), tester.jobs().active());
+        assertEquals(Change.empty(), app.instance().change());
+    }
+
+    @Test
     public void deploymentSpecWithDelays() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .systemTest()

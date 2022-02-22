@@ -257,8 +257,7 @@ public class DeploymentStatus {
      */
     public Change outstandingChange(InstanceName instance) {
         return Optional.ofNullable(instanceSteps().get(instance))
-                       .flatMap(instanceStatus -> application.versions().stream()
-                                                             .sorted(application.deploymentSpec().requireInstance(instance).revisionTarget() == next ? naturalOrder() : reverseOrder())
+                       .flatMap(instanceStatus -> application.deployableVersions(application.deploymentSpec().requireInstance(instance).revisionTarget() == next).stream()
                                                              .filter(version -> instanceStatus.dependenciesCompletedAt(Change.of(version), Optional.empty()).map(at -> ! at.isAfter(now)).orElse(false))
                                                              .filter(version -> application.productionDeployments().getOrDefault(instance, List.of()).stream()
                                                                                            .noneMatch(deployment -> deployment.applicationVersion().compareTo(version) > 0))
@@ -267,14 +266,6 @@ public class DeploymentStatus {
                                                              .filter(change -> ! jobsToRun(Map.of(instance, change)).isEmpty())
                                                              .findFirst())
                        .orElse(Change.empty());
-    }
-
-    private Stream<InstanceStatus> allDependencies(StepStatus step) {
-        return step.dependencies.stream()
-                                .flatMap(dep -> Stream.concat(Stream.of(dep), allDependencies(dep)))
-                                .filter(InstanceStatus.class::isInstance)
-                                .map(InstanceStatus.class::cast)
-                                .distinct();
     }
 
     /** Earliest instant when job was triggered with given versions, or both system and staging tests were successful. */

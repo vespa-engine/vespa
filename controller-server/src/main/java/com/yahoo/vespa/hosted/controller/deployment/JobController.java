@@ -3,7 +3,11 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -45,10 +49,13 @@ import java.util.TreeMap;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.config.provision.Environment.prod;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
@@ -61,6 +68,7 @@ import static java.util.Comparator.naturalOrder;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
@@ -440,22 +448,20 @@ public class JobController {
                                      byte[] testPackageBytes) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockApplicationOrThrow(id, application -> {
-            long run = 1 + application.get().latestVersion()
-                                      .map(latestVersion -> latestVersion.buildNumber().getAsLong())
-                                      .orElse(0L);
-            version.set(ApplicationVersion.from(revision, run, authorEmail,
+            Optional<ApplicationVersion> previousVersion = application.get().latestVersion();
+            Optional<ApplicationPackage> previousPackage = previousVersion.flatMap(previous -> controller.applications().applicationStore().find(id.tenant(), id.application(), previous.buildNumber().getAsLong()))
+                                                                          .map(ApplicationPackage::new);
+            long previousBuild = previousVersion.map(latestVersion -> latestVersion.buildNumber().getAsLong()).orElse(0L);
+            version.set(ApplicationVersion.from(revision, 1 + previousBuild, authorEmail,
                                                 applicationPackage.compileVersion(),
                                                 applicationPackage.buildTime(),
                                                 sourceUrl,
                                                 revision.map(SourceRevision::commit),
                                                 false,
                                                 Optional.of(applicationPackage.bundleHash())));
-            byte[] diff = application.get().latestVersion()
-                    .map(v -> v.buildNumber().getAsLong())
-                    .flatMap(prevBuild -> controller.applications().applicationStore().find(id.tenant(), id.application(), prevBuild))
-                    .map(prevApplication -> ApplicationPackageDiff.diff(new ApplicationPackage(prevApplication), applicationPackage))
-                    .orElseGet(() -> ApplicationPackageDiff.diffAgainstEmpty(applicationPackage));
 
+            byte[] diff = previousPackage.map(previous -> ApplicationPackageDiff.diff(previous, applicationPackage))
+                                         .orElseGet(() -> ApplicationPackageDiff.diffAgainstEmpty(applicationPackage));
             controller.applications().applicationStore().put(id.tenant(),
                                                              id.application(),
                                                              version.get(),

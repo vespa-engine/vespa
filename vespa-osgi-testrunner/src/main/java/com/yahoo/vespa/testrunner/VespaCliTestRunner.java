@@ -90,7 +90,7 @@ public class VespaCliTestRunner implements TestRunner {
             BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
             in.lines().forEach(line -> log(htmlLogger.toLog(line)));
             int exitCode = process.waitFor();
-            status.set(exitCode == 0 ? SUCCESS : exitCode == 3 ? FAILURE : exitCode == 4 ? INCONCLUSIVE : ERROR);
+            status.set(exitCode == 0 ? SUCCESS : FAILURE);
         }
         catch (NoTestsException e) {
             log(Level.WARNING, "Did not find expected basic HTTP tests", e);

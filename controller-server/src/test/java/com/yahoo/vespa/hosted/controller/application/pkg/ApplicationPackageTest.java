@@ -114,16 +114,21 @@ public class ApplicationPackageTest {
     @Test
     public void testBundleHashesAreSameWithDifferentDeploymentXml() throws Exception {
         var originalPackage = getApplicationZip("original.zip");
-        var changedDeploymentXml = getApplicationZip("changed-deployment-xml.zip");
         var changedServices = getApplicationZip("changed-services-xml.zip");
+        var changedDeploymentXml = getApplicationZip("changed-deployment-xml.zip");
+        var similarDeploymentXml = getApplicationZip("similar-deployment-xml.zip");
 
         // services.xml is changed -> different bundle hash
         assertNotEquals(originalPackage.bundleHash(), changedServices.bundleHash());
         assertNotEquals(originalPackage.hash(), changedServices.hash());
 
-        // deployment.xml is changed -> same bundle hash
-        assertEquals(originalPackage.bundleHash(), changedDeploymentXml.bundleHash());
+        // deployment.xml is changed, with real changes -> different bundle hash
+        assertNotEquals(originalPackage.bundleHash(), changedDeploymentXml.bundleHash());
         assertNotEquals(originalPackage.hash(), changedDeploymentXml.hash());
+
+        // deployment.xml is changed, but only deployment orchestration settings -> same bundle hash
+        assertEquals(originalPackage.bundleHash(), similarDeploymentXml.bundleHash());
+        assertNotEquals(originalPackage.hash(), similarDeploymentXml.hash());
     }
 
     private static Map<String, String> unzip(byte[] zip) {

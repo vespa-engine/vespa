@@ -25,6 +25,7 @@ import static com.yahoo.config.application.api.Notifications.When.failing;
 import static com.yahoo.config.application.api.Notifications.When.failingCommit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -1335,6 +1336,131 @@ public class DeploymentSpecTest {
         for (var spec : specs) {
             assertInvalid(spec, "Cannot block Vespa upgrades for longer than 21 consecutive days", clock);
         }
+    }
+
+    @Test
+    public void testDeployableHash() {
+        assertEquals(DeploymentSpec.fromXml("<deployment>\n" +
+                                            "  <instance id='default' />\n" +
+                                            "</deployment>").deployableHashCode(),
+                     DeploymentSpec.fromXml("<deployment major-version='9'>\n" +
+                                            "  <instance id='default'>\n" +
+                                            "    <test />\n" +
+                                            "    <staging tester-flavor='2-8-50' />\n" +
+                                            "    <block-change days='mon' />\n" +
+                                            "    <upgrade policy='canary' revision-target='next' revision-change='when-clear' rollout='simultaneous' />\n" +
+                                            "    <prod />\n" +
+                                            "    <notifications>\n" +
+                                            "      <email role='author' />\n" +
+                                            "      <email address='dev@duff' />\n" +
+                                            "    </notifications>\n" +
+                                            "  </instance>\n" +
+                                            "</deployment>").deployableHashCode());
+
+        assertEquals(DeploymentSpec.fromXml("<deployment>\n" +
+                                            "  <parallel>\n" +
+                                            "    <instance id='one'>\n" +
+                                            "      <prod>\n" +
+                                            "        <region>name</region>\n" +
+                                            "      </prod>\n" +
+                                            "    </instance>\n" +
+                                            "    <instance id='two' />" +
+                                            "  </parallel>\n" +
+                                            "</deployment>").deployableHashCode(),
+                     DeploymentSpec.fromXml("<deployment>\n" +
+                                            "  <instance id='one'>\n" +
+                                            "    <prod>\n" +
+                                            "      <steps>\n" +
+                                            "        <region>name</region>\n" +
+                                            "        <delay hours='3' />\n" +
+                                            "        <test>name</test>\n" +
+                                            "      </steps>\n" +
+                                            "    </prod>\n" +
+                                            "  </instance>\n" +
+                                            "  <instance id='two' />" +
+                                            "</deployment>").deployableHashCode());
+
+        String referenceSpec = "<deployment>\n" +
+                               "  <instance id='default'>" +
+                               "    <prod>" +
+                               "      <region>name</region>\n" +
+                               "    </prod>\n" +
+                               "  </instance>\n" +
+                               "</deployment>";
+
+        assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
+                        DeploymentSpec.fromXml("<deployment />").deployableHashCode());
+
+        assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
+                        DeploymentSpec.fromXml("<deployment>\n" +
+                                               "  <instance id='default' />\n" +
+                                               "</deployment>").deployableHashCode());
+
+        assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
+                        DeploymentSpec.fromXml("<deployment>\n" +
+                                               "  <instance id='custom'>" +
+                                               "    <prod>" +
+                                               "      <region>name</region>\n" +
+                                               "    </prod>\n" +
+                                               "  </instance>\n" +
+                                               "</deployment>").deployableHashCode());
+
+        assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
+                        DeploymentSpec.fromXml("<deployment>\n" +
+                                               "  <instance id='custom'>" +
+                                               "    <prod>" +
+                                               "      <region>other</region>\n" +
+                                               "    </prod>\n" +
+                                               "  </instance>\n" +
+                                               "</deployment>").deployableHashCode());
+
+        assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
+                        DeploymentSpec.fromXml("<deployment athenz-domain='domain' athenz-service='service'>\n" +
+                                               "  <instance id='default'>" +
+                                               "    <prod>" +
+                                               "      <region>name</region>\n" +
+                                               "    </prod>\n" +
+                                               "  </instance>\n" +
+                                               "</deployment>").deployableHashCode());
+
+        assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
+                        DeploymentSpec.fromXml("<deployment athenz-domain='domain'>\n" +
+                                               "  <instance id='default' athenz-service='service'>" +
+                                               "    <prod>" +
+                                               "      <region>name</region>\n" +
+                                               "    </prod>\n" +
+                                               "  </instance>\n" +
+                                               "</deployment>").deployableHashCode());
+
+        assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
+                        DeploymentSpec.fromXml("<deployment athenz-domain='domain'>\n" +
+                                               "  <instance id='default'>" +
+                                               "    <prod athenz-service='prod'>" +
+                                               "      <region>name</region>\n" +
+                                               "    </prod>\n" +
+                                               "  </instance>\n" +
+                                               "</deployment>").deployableHashCode());
+
+        assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
+                        DeploymentSpec.fromXml("<deployment>\n" +
+                                               "  <instance id='default'>" +
+                                               "    <prod global-service-id='service'>" +
+                                               "      <region>name</region>\n" +
+                                               "    </prod>\n" +
+                                               "  </instance>\n" +
+                                               "</deployment>").deployableHashCode());
+
+        assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
+                        DeploymentSpec.fromXml("<deployment>\n" +
+                                               "  <instance id='default'>" +
+                                               "    <prod>" +
+                                               "      <region>name</region>\n" +
+                                               "    </prod>\n" +
+                                               "    <endpoints>" +
+                                               "      <endpoint container-id=\"quux\" />" +
+                                               "    </endpoints>" +
+                                               "  </instance>\n" +
+                                               "</deployment>").deployableHashCode());
     }
 
     private static void assertInvalid(String deploymentSpec, String errorMessagePart) {

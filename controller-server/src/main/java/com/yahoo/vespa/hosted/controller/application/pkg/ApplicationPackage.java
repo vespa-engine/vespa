@@ -17,6 +17,7 @@ import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.deployment.ZipBuilder;
 import com.yahoo.yolean.Exceptions;
 
@@ -66,7 +67,7 @@ public class ApplicationPackage {
     private static final String servicesFile = "services.xml";
 
     private final String contentHash;
-    private final String bundleHash; // Hash of all files except deployment.xml and build-meta
+    private final String bundleHash;
     private final byte[] zippedContent;
     private final DeploymentSpec deploymentSpec;
     private final ValidationOverrides validationOverrides;
@@ -125,6 +126,7 @@ public class ApplicationPackage {
     /** Returns a hash of the content of this package */
     public String hash() { return contentHash; }
 
+    /** Hash of all files and settings that influence what is deployed to config servers. */
     public String bundleHash() {
         return bundleHash;
     }
@@ -133,8 +135,9 @@ public class ApplicationPackage {
     public byte[] zippedContent() { return zippedContent; }
 
     /** 
-     * Returns the deployment spec from the deployment.xml file of the package content.
-     * This is the DeploymentSpec.empty instance if this package does not contain a deployment.xml file.
+     * Returns the deployment spec from the deployment.xml file of the package content.<br>
+     * This is the DeploymentSpec.empty instance if this package does not contain a deployment.xml file.<br>
+     * <em>NB: <strong>Always</strong> read deployment spec from the {@link Application}, for deployment orchestration.</em>
      */
     public DeploymentSpec deploymentSpec() { return deploymentSpec; }
 
@@ -220,15 +223,18 @@ public class ApplicationPackage {
         return ValidationOverrides.fromXml(validationOverridesContents.toString());
     }
 
-    // Hashes all files that require a deployment to be forwarded to configservers
+    // Hashes all files and settings that require a deployment to be forwarded to configservers
     private String calculateBundleHash() {
-        Predicate<String> entryMatcher = name -> !name.endsWith(deploymentFile) && !name.endsWith(buildMetaFile);
+        Predicate<String> entryMatcher = name -> ! name.endsWith(deploymentFile) && ! name.endsWith(buildMetaFile);
         SortedMap<String, Long> entryCRCs = ZipStreamReader.getEntryCRCs(new ByteArrayInputStream(zippedContent), entryMatcher);
         Funnel<SortedMap<String, Long>> funnel = (from, into) -> from.entrySet().forEach(entry -> {
             into.putBytes(entry.getKey().getBytes());
             into.putLong(entry.getValue());
         });
-        return Hashing.sha1().hashObject(entryCRCs, funnel).toString();
+        return Hashing.sha1().newHasher()
+                      .putObject(entryCRCs, funnel)
+                      .putInt(deploymentSpec.deployableHashCode())
+                      .hash().toString();
     }
 
 

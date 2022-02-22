@@ -11,6 +11,7 @@ import com.yahoo.config.provision.RegionName;
 
 import java.io.Reader;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -285,6 +286,19 @@ public class DeploymentSpec {
         return Objects.hash(majorVersion, steps, xmlForm);
     }
 
+    /** Computes a hash of all fields that influence what is deployed with this spec, i.e., not orchestration. */
+    public int deployableHashCode() {
+        Object[] toHash = new Object[instances().size() + 3];
+        int i = 0;
+        toHash[i++] = athenzDomain;
+        toHash[i++] = athenzService;
+        toHash[i++] = endpoints;
+        for (DeploymentInstanceSpec instance : instances())
+            toHash[i++] = instance.deployableHashCode();
+
+        return Arrays.hashCode(toHash);
+    }
+
     /** A deployment step */
     public abstract static class Step {
 
@@ -395,7 +409,7 @@ public class DeploymentSpec {
         public int hashCode() {
             return Objects.hash(environment, region);
         }
-        
+
         @Override
         public boolean equals(Object o) {
             if (o == this) return true;
@@ -405,7 +419,7 @@ public class DeploymentSpec {
             if ( ! this.region.equals(other.region())) return false;
             return true;
         }
-        
+
         @Override
         public String toString() {
             return environment + (region.map(regionName -> "." + regionName).orElse(""));
