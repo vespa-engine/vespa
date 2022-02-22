@@ -536,9 +536,9 @@ void documentBody(ParsedDocument document) :
 {
 }
 {
-    ( compression(null)
-      | headercfg(null)
-      | bodycfg(null)
+    ( compression()
+      | headercfg()
+      | bodycfg()
   /*  | annotation(schema, document)
       | structInside(document, schema)
       | field(document, schema) */
@@ -562,30 +562,24 @@ void rawAsBase64(ParsedSchema schema) :
 
 /**
  * Consumes a document head block.
- *
- * @param document The document type to modify.
  */
-void headercfg(SDDocumentType document) : { }
+void headercfg() : { }
 {
-    <HEADER> lbrace() [compression(document) (<NL>)*] <RBRACE>
+    <HEADER> lbrace() [compression() (<NL>)*] <RBRACE>
 }
 
 /**
  * Consumes a document body block.
- *
- * @param document The document type to modify.
  */
-void bodycfg(SDDocumentType document) : { }
+void bodycfg() : { }
 {
-    <BODY> lbrace() [compression(document) (<NL>)*] <RBRACE>
+    <BODY> lbrace() [compression() (<NL>)*] <RBRACE>
 }
 
 /**
  * Consumes a compression block. This can be set in both document header and -body block.
- *
- * @param document The document type to modify.
  */
-void compression(SDDocumentType document) :
+void compression() :
 {
     deployLogger.logApplicationPackage(Level.WARNING, "'compression' for a document is deprecated and ignored");
 }
@@ -595,7 +589,6 @@ void compression(SDDocumentType document) :
 
 /**
  * Consumes the body of a compression block.
- *
  */
 void compressionItem() :
 { }
@@ -1944,6 +1937,8 @@ String rankingConstantErrorMessage(String name) : {}
 
 /**
  * Consumes a rank-profile block of a schema element.
+ *
+ * @param schema the schema object to add content to
  */
 void rankProfile(ParsedSchema schema) :
 {
@@ -1955,7 +1950,7 @@ void rankProfile(ParsedSchema schema) :
         {
             profile = new ParsedRankProfile(name);
         }
-      [ inheritsRankProfile(profile) ]
+      [inheritsRankProfile(profile)]
       lbrace() (rankProfileItem(profile) (<NL>)*)* <RBRACE> )
     {
         schema.addRankProfile(profile);
@@ -2052,9 +2047,9 @@ void function(ParsedRankProfile profile) :
     ParsedRankFunction func;
 }
 {
-    (  ( <FUNCTION> | <MACRO> ) inline = inline() name = identifier()
-       [ "$" { name = name + token.image; } ]
-      "(" { func = new ParsedRankFunction(name); }
+    (  ( <FUNCTION> | <MACRO> ) inline = inline() name = identifier() [ "$" { name = name + token.image; } ]
+      "("
+                                             { func = new ParsedRankFunction(name); }
           [ parameter = identifier()         { func.addParameter(parameter); }
           ( <COMMA> parameter = identifier() { func.addParameter(parameter); } )* ]
       ")"
@@ -2467,8 +2462,6 @@ void rankDegradationItem() :
 
 /**
  * This rule consumes a rank-degradation statement of a rank profile.
- *
- * @param profile The rank profile to modify.
  */
 void rankDegradation() :
 {
