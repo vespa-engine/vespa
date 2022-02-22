@@ -144,12 +144,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.Scanner;
+import java.util.SortedSet;
 import java.util.StringJoiner;
 import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -708,33 +706,30 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse applicationPackage(String tenantName, String applicationName, HttpRequest request) {
         var tenantAndApplication = TenantAndApplicationId.from(tenantName, applicationName);
+        SortedSet<ApplicationVersion> versions = controller.applications().requireApplication(tenantAndApplication).versions();
+        if (versions.isEmpty())
+            throw new NotExistsException("No application package has been submitted for '" + tenantAndApplication + "'");
 
-        long buildNumber;
-        var requestedBuild = Optional.ofNullable(request.getProperty("build")).map(build -> {
-            try {
-                return Long.parseLong(build);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Invalid build number", e);
-            }
-        });
-        if (requestedBuild.isEmpty()) { // Fall back to latest build
-            var application = controller.applications().requireApplication(tenantAndApplication);
-            var latestBuild = application.latestVersion().map(ApplicationVersion::buildNumber).orElse(OptionalLong.empty());
-            if (latestBuild.isEmpty()) {
-                throw new NotExistsException("No application package has been submitted for '" + tenantAndApplication + "'");
-            }
-            buildNumber = latestBuild.getAsLong();
-        } else {
-            buildNumber = requestedBuild.get();
-        }
-        var applicationPackage = controller.applications().applicationStore().find(tenantAndApplication.tenant(), tenantAndApplication.application(), buildNumber);
-        var filename = tenantAndApplication + "-build" + buildNumber + ".zip";
-        if (applicationPackage.isEmpty()) {
-            throw new NotExistsException("No application package found for '" +
-                                         tenantAndApplication +
-                                         "' with build number " + buildNumber);
-        }
-        return new ZipResponse(filename, applicationPackage.get());
+        ApplicationVersion version = Optional.ofNullable(request.getProperty("build"))
+                .map(build -> {
+                    try {
+                        return Long.parseLong(build);
+                    } catch (NumberFormatException e) {
+                        throw new IllegalArgumentException("Invalid build number", e);
+                    }
+                })
+                .map(build -> versions.stream()
+                        .filter(ver -> ver.buildNumber().orElse(-1) == build)
+                        .findFirst()
+                        .orElseThrow(() -> new NotExistsException("No application package found for '" + tenantAndApplication + "' with build number " + build)))
+                .orElseGet(versions::last);
+
+        boolean tests = request.getBooleanProperty("tests");
+        byte[] applicationPackage = tests ?
+                controller.applications().applicationStore().getTester(tenantAndApplication.tenant(), tenantAndApplication.application(), version) :
+                controller.applications().applicationStore().get(new DeploymentId(tenantAndApplication.defaultInstance(), ZoneId.defaultId()), version);
+        String filename = tenantAndApplication + (tests ? "-tests" : "-build") + version.buildNumber().getAsLong() + ".zip";
+        return new ZipResponse(filename, applicationPackage);
     }
 
     private HttpResponse applicationPackageDiff(String tenant, String application, String number) {
