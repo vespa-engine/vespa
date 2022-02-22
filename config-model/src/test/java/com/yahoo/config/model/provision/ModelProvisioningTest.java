@@ -85,7 +85,9 @@ public class ModelProvisioningTest {
                         "  <handler id='myHandler'>" +
                         "    <component id='injected' />" +
                         "  </handler>" +
-                        "  <nodes count='2' allocated-memory='45%' jvm-gc-options='-XX:+UseParNewGC' jvm-options='-verbosegc' preload='lib/blablamalloc.so'/>" +
+                        "  <nodes count='2' preload='lib/blablamalloc.so'>" +
+                        "    <jvm allocated-memory='45%' gc-options='-XX:+UseParNewGC' options='-verbosegc' />" +
+                        "  </nodes>" +
                         "</container>" +
                         "</services>";
         String hosts ="<hosts>"
