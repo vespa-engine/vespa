@@ -397,10 +397,9 @@ SPECIAL_TOKEN :
  *
  * @return the schema object
  */
-Schema schema(DocumentTypeManager docMan) :
+ParsedSchema schema() :
 {
-    this.docMan = docMan;
-    Schema schema;
+    ParsedSchema schema;
 }
 {
     (<NL>)* (schema = rootSchema() | schema = rootDocument())
@@ -413,17 +412,17 @@ Schema schema(DocumentTypeManager docMan) :
  *
  * @return the schema definition object.
  */
-Schema rootSchema() :
+ParsedSchema rootSchema() :
 {
     String name;
     String inherited = null;
-    Schema schema;
+    ParsedSchema schema;
 }
 {
     ( ( <SCHEMA> | <SEARCH> ) name = identifier() (<INHERITS> inherited = identifier() )? {
-        schema = new Schema(name, applicationPackage, Optional.ofNullable(inherited), fileRegistry, deployLogger, properties);
-        rankProfileRegistry.add(new DefaultRankProfile(schema, rankProfileRegistry, schema.rankingConstants()));
-        rankProfileRegistry.add(new UnrankedRankProfile(schema, rankProfileRegistry, schema.rankingConstants()));}
+        schema = new ParsedSchema(name);
+        if (inherited != null) schema.inherit(inherited);
+      }
       lbrace() (rootSchemaItem(schema) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
     { return schema; }
 }
@@ -434,9 +433,10 @@ Schema rootSchema() :
  *
  * @param schema the schema object to modify.
  */
-void rootSchemaItem(Schema schema) : { }
+void rootSchemaItem(ParsedSchema schema) : { }
 {
     ( document(schema)
+/*
       | rawAsBase64(schema)
       | documentSummary(schema)
       | field(null, schema)
@@ -449,7 +449,9 @@ void rootSchemaItem(Schema schema) : { }
       | annotationOutside(schema)
       | fieldSet(schema)
       | importField(schema)
-      | onnxModel(schema) )
+      | onnxModel(schema)
+*/
+ )
 }
 
 /**
@@ -457,9 +459,9 @@ void rootSchemaItem(Schema schema) : { }
  *
  * @return the schema definition object.
  */
-Schema rootDocument() :
+ParsedSchema rootDocument() :
 {
-    Schema schema = new DocumentOnlySchema(applicationPackage, fileRegistry, deployLogger, properties);
+    ParsedSchema schema = new ParsedSchema("<unnamed>");
 }
 {
     ( (rootDocumentItem(schema) (<NL>)*)*<EOF> )
@@ -471,7 +473,7 @@ Schema rootDocument() :
  *
  * @param schema the schema object to modify.
  */
-void rootDocumentItem(Schema schema) : { }
+void rootDocumentItem(ParsedSchema schema) : { }
 {
     ( namedDocument(schema) )
 }
@@ -492,15 +494,15 @@ void useDocument(Schema schema) : { }
  *
  * @param schema the schema object to add content to.
  */
-void document(Schema schema) :
+void document(ParsedSchema schema) :
 {
     String name = schema.getName();
-    SDDocumentType document;
+    ParsedDocument document;
 }
 {
-    ( <DOCUMENT> (name = identifier())? (<NL>)* { document = new SDDocumentType(name, schema); }
+    ( <DOCUMENT> (name = identifier())? (<NL>)* { document = new ParsedDocument(name); }
       [ inheritsDocument(document) (<NL>)* ]
-      <LBRACE> (<NL>)* (documentBody(document, schema) (<NL>)*)* <RBRACE> )
+      <LBRACE> (<NL>)* (documentBody(document) (<NL>)*)* <RBRACE> )
     {
         schema.addDocument(document);
     }
@@ -511,15 +513,15 @@ void document(Schema schema) :
  *
  * @param schema the schema object to add content to
  */
-void namedDocument(Schema schema) :
+void namedDocument(ParsedSchema schema) :
 {
     String name;
-    SDDocumentType document;
+    ParsedDocument document;
 }
 {
-    ( <DOCUMENT> name = identifier() (<NL>)* { document = new SDDocumentType(name, schema); }
+    ( <DOCUMENT> name = identifier() (<NL>)* { document = new ParsedDocument(name); }
       [ inheritsDocument(document) (<NL>)* ]
-      <LBRACE> (<NL>)* (documentBody(document, schema) (<NL>)*)* <RBRACE> )
+      <LBRACE> (<NL>)* (documentBody(document) (<NL>)*)* <RBRACE> )
     {
         schema.addDocument(document);
     }
@@ -529,18 +531,18 @@ void namedDocument(Schema schema) :
  * Consumes a document body block
  *
  * @param document the document type to modify.
- * @param schema   the schema object to add content to
  */
-void documentBody(SDDocumentType document, Schema schema) :
+void documentBody(ParsedDocument document) :
 {
 }
 {
-    ( annotation(schema, document)
-      | compression(document)
-      | headercfg(document)
-      | bodycfg(document)
+    ( compression(null)
+      | headercfg(null)
+      | bodycfg(null)
+  /*  | annotation(schema, document)
       | structInside(document, schema)
-      | field(document, schema) )
+      | field(document, schema) */
+    )
 }
 
 void rawAsBase64(Schema schema) :
@@ -605,11 +607,11 @@ void compressionItem() :
 }
 
 /**
- * Consumes a document inheritance statement.
+ * Consumes a struct inheritance statement.
  *
- * @param document The document type to modify.
+ * @param document The struct type to modify.
  */
-void inheritsDocument(SDDocumentType document) :
+void inheritsStruct(SDDocumentType document) :
 {
     String name;
 }
@@ -617,6 +619,22 @@ void inheritsDocument(SDDocumentType document) :
     <INHERITS> name = identifier() { document.inherit(new DataTypeName(name)); }
     ( <COMMA>  name = identifier() { document.inherit(new DataTypeName(name)); } )*
 }
+
+
+/**
+ * Consumes a document inheritance statement.
+ *
+ * @param document The document type to modify.
+ */
+void inheritsDocument(ParsedDocument document) :
+{
+    String name;
+}
+{
+    <INHERITS> name = identifier() { document.inherit(name); }
+    ( <COMMA>  name = identifier() { document.inherit(name); } )*
+}
+
 
 /**
  * Consumes a field block from within a document element.
@@ -807,7 +825,7 @@ SDDocumentType structDefinition(Schema schema, SDDocumentType repo) :
 }
 {
     ( <STRUCT> name = identifier() (<NL>)* { struct = new SDDocumentType(name, schema); }
-    [ inheritsDocument(struct) (<NL>)* ]
+    [ inheritsStruct(struct) (<NL>)* ]
     lbrace() (structFieldDefinition(struct) (<NL>)*)* <RBRACE> )
     {
         try {
