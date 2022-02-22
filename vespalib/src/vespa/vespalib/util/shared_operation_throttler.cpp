@@ -18,25 +18,34 @@ public:
     {
     }
     ~NoLimitsOperationThrottler() override {
-        assert(_refs.load(std::memory_order_acquire) == 0u);
+        assert(_refs.load() == 0u);
     }
     Token blocking_acquire_one() noexcept override {
-        ++_refs;
+        internal_ref_count_increase();
         return Token(this, TokenCtorTag{});
     }
     Token blocking_acquire_one(vespalib::duration) noexcept override {
-        ++_refs;
+        internal_ref_count_increase();
         return Token(this, TokenCtorTag{});
     }
     Token try_acquire_one() noexcept override {
-        ++_refs;
+        internal_ref_count_increase();
         return Token(this, TokenCtorTag{});
     }
     uint32_t current_window_size() const noexcept override { return 0; }
+    uint32_t current_active_token_count() const noexcept override {
+        return _refs.load(std::memory_order_relaxed);
+    }
     uint32_t waiting_threads() const noexcept override { return 0; }
     void reconfigure_dynamic_throttling(const DynamicThrottleParams&) noexcept override { /* no-op */ }
 private:
-    void release_one() noexcept override { --_refs; }
+    void internal_ref_count_increase() noexcept {
+        // Relaxed semantics suffice, as there are no transitive memory visibility/ordering requirements.
+        _refs.fetch_add(1u, std::memory_order_relaxed);
+    }
+    void release_one() noexcept override {
+        _refs.fetch_sub(1u, std::memory_order_relaxed);
+    }
     std::atomic<uint32_t> _refs;
 };
 
@@ -261,6 +270,7 @@ public:
     Token blocking_acquire_one(vespalib::duration timeout) noexcept override;
     Token try_acquire_one() noexcept override;
     uint32_t current_window_size() const noexcept override;
+    uint32_t current_active_token_count() const noexcept override;
     uint32_t waiting_threads() const noexcept override;
     void reconfigure_dynamic_throttling(const DynamicThrottleParams& params) noexcept override;
 private:
@@ -369,6 +379,13 @@ DynamicOperationThrottler::current_window_size() const noexcept
 {
     std::unique_lock lock(_mutex);
     return _throttle_policy.current_window_size();
+}
+
+uint32_t
+DynamicOperationThrottler::current_active_token_count() const noexcept
+{
+    std::unique_lock lock(_mutex);
+    return _pending_ops;
 }
 
 uint32_t

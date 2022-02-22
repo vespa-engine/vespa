@@ -29,6 +29,8 @@ TEST("unlimited throttler does not throttle") {
     EXPECT_TRUE(token2.valid());
     // Window size should be zero (i.e. unlimited) for unlimited throttler
     EXPECT_EQUAL(throttler->current_window_size(), 0u);
+    // But we still track the active token count
+    EXPECT_EQUAL(throttler->current_active_token_count(), 2u);
 }
 
 TEST_F("dynamic throttler respects initial window size", DynamicThrottleFixture()) {
@@ -38,6 +40,7 @@ TEST_F("dynamic throttler respects initial window size", DynamicThrottleFixture(
     EXPECT_FALSE(token2.valid());
 
     EXPECT_EQUAL(f1._throttler->current_window_size(), 1u);
+    EXPECT_EQUAL(f1._throttler->current_active_token_count(), 1u);
 }
 
 TEST_F("blocking acquire returns immediately if slot available", DynamicThrottleFixture()) {
@@ -87,9 +90,13 @@ TEST_F("token destruction frees up throttle window slot", DynamicThrottleFixture
     {
         auto token = f1._throttler->try_acquire_one();
         EXPECT_TRUE(token.valid());
+        EXPECT_EQUAL(f1._throttler->current_active_token_count(), 1u);
     }
+    EXPECT_EQUAL(f1._throttler->current_active_token_count(), 0u);
+
     auto token = f1._throttler->try_acquire_one();
     EXPECT_TRUE(token.valid());
+    EXPECT_EQUAL(f1._throttler->current_active_token_count(), 1u);
 }
 
 TEST_F("token can be moved and reset", DynamicThrottleFixture()) {
