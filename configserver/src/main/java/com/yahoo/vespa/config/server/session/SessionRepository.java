@@ -637,7 +637,7 @@ public class SessionRepository {
                         newSessions.add(Long.parseLong(session.getName()));
                 } catch (IOException e) {
                     log.log(Level.FINE, "Unable to find last modified time for " + session.toPath());
-                };
+                }
             }
         }
         return newSessions;
@@ -824,10 +824,7 @@ public class SessionRepository {
     }
 
     private Optional<Long> getActiveSessionId(ApplicationId applicationId) {
-        List<ApplicationId> applicationIds = applicationRepo.activeApplications();
-        return applicationIds.contains(applicationId)
-                ? Optional.of(applicationRepo.requireActiveSessionOf(applicationId))
-                : Optional.empty();
+        return applicationRepo.activeSessionOf(applicationId);
     }
 
     private long getNextSessionId() {

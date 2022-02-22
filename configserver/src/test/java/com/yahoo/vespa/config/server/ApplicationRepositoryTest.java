@@ -155,8 +155,7 @@ public class ApplicationRepositoryTest {
         assertTrue(result.configChangeActions().getReindexActions().isEmpty());
         assertTrue(result.configChangeActions().getRestartActions().isEmpty());
 
-        Session session = applicationRepository.getActiveLocalSession(tenant(), applicationId());
-        session.getAllocatedHosts();
+        applicationRepository.getActiveLocalSession(tenant(), applicationId()).get().getAllocatedHosts();
 
         assertEquals(startTime, tenantMetaData(tenant()).createdTimestamp().toEpochMilli());
         assertEquals(deployTime, tenantMetaData(tenant()).lastDeployTimestamp().toEpochMilli());
@@ -216,7 +215,7 @@ public class ApplicationRepositoryTest {
         long secondSessionId = deployApp(testApp).sessionId();
         assertNotEquals(firstSessionId, secondSessionId);
 
-        Session session = applicationRepository.getActiveLocalSession(tenant(), applicationId());
+        Session session = applicationRepository.getActiveLocalSession(tenant(), applicationId()).get();
         assertEquals(firstSessionId, session.getMetaData().getPreviousActiveGeneration());
     }
 
@@ -330,7 +329,7 @@ public class ApplicationRepositoryTest {
 
             // Delete app and verify that it has been deleted from repos and provisioner and no application set exists
             assertTrue(applicationRepository.delete(applicationId()));
-            assertNull(applicationRepository.getActiveSession(applicationId()));
+            assertTrue(applicationRepository.getActiveSession(applicationId()).isEmpty());
             assertEquals(Optional.empty(), sessionRepository.getRemoteSession(sessionId).applicationSet());
             assertTrue(provisioner.removed());
             assertEquals(tenant().getName(), provisioner.lastApplicationId().tenant());
@@ -366,7 +365,7 @@ public class ApplicationRepositoryTest {
             long sessionId = deployApp(testApp).sessionId();
             assertNotNull(sessionRepository.getRemoteSession(sessionId));
             assertNotNull(applicationRepository.getActiveSession(applicationId()));
-            assertEquals(sessionId, applicationRepository.getActiveSession(applicationId()).getSessionId());
+            assertEquals(sessionId, applicationRepository.getActiveSession(applicationId()).get().getSessionId());
             assertNotNull(applicationRepository.getApplication(applicationId()));
 
             provisioner.failureOnRemove(true);
@@ -378,7 +377,7 @@ public class ApplicationRepositoryTest {
             }
             assertNotNull(sessionRepository.getRemoteSession(sessionId));
             assertNotNull(applicationRepository.getActiveSession(applicationId()));
-            assertEquals(sessionId, applicationRepository.getActiveSession(applicationId()).getSessionId());
+            assertEquals(sessionId, applicationRepository.getActiveSession(applicationId()).get().getSessionId());
 
             // Delete should work when there is no failure anymore
             provisioner.failureOnRemove(false);
@@ -388,7 +387,7 @@ public class ApplicationRepositoryTest {
             Path sessionNode = sessionRepository.getSessionPath(sessionId);
             assertEquals(Session.Status.DELETE.name(), Utf8.toString(curator.getData(sessionNode.append("sessionState")).get()));
             assertNotNull(sessionRepository.getRemoteSession(sessionId)); // session still exists
-            assertNull(applicationRepository.getActiveSession(applicationId())); // but it is not active
+            assertTrue(applicationRepository.getActiveSession(applicationId()).isEmpty()); // but it is not active
             try {
                 applicationRepository.getApplication(applicationId());
                 fail("Should fail with NotFoundException, application should not exist");
@@ -514,7 +513,7 @@ public class ApplicationRepositoryTest {
         prepareAndActivate(testAppJdiscOnly);
 
         Tenant tenant = applicationRepository.getTenant(applicationId());
-        Session session = applicationRepository.getActiveLocalSession(tenant, applicationId());
+        Session session = applicationRepository.getActiveLocalSession(tenant, applicationId()).get();
 
         List<NetworkPorts.Allocation> list = new ArrayList<>();
         list.add(new NetworkPorts.Allocation(8080, "container", "container/container.0", "http"));
@@ -561,7 +560,7 @@ public class ApplicationRepositoryTest {
         exceptionRule.expectMessage("tenant:test1 Session 3 is not prepared");
         activate(applicationId(), sessionId, timeoutBudget);
 
-        Session activeSession = applicationRepository.getActiveSession(applicationId());
+        Session activeSession = applicationRepository.getActiveSession(applicationId()).get();
         assertEquals(firstSession, activeSession.getSessionId());
         assertEquals(Session.Status.ACTIVATE, activeSession.getStatus());
     }
@@ -577,7 +576,7 @@ public class ApplicationRepositoryTest {
         exceptionRule.expectMessage("Timeout exceeded when trying to activate 'test1.testapp'");
         activate(applicationId(), sessionId, new TimeoutBudget(clock, Duration.ofSeconds(0)));
 
-        Session activeSession = applicationRepository.getActiveSession(applicationId());
+        Session activeSession = applicationRepository.getActiveSession(applicationId()).get();
         assertEquals(firstSession, activeSession.getSessionId());
         assertEquals(Session.Status.ACTIVATE, activeSession.getStatus());
     }
@@ -615,7 +614,7 @@ public class ApplicationRepositoryTest {
     @Test
     public void testThatPreviousSessionIsDeactivated() {
         deployApp(testAppJdiscOnly);
-        Session firstSession = applicationRepository.getActiveSession(applicationId());
+        Session firstSession = applicationRepository.getActiveSession(applicationId()).get();
 
         deployApp(testAppJdiscOnly);
 

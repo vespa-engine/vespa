@@ -79,6 +79,10 @@ public class DeployTester {
         return tenantRepository.getTenant(tenantName);
     }
 
+    public Tenant tenant(ApplicationId applicationId) {
+        return tenantRepository.getTenant(applicationId.tenant());
+    }
+
     /** Create a model factory for the version of this source*/
     public static CountingModelFactory createModelFactory(Clock clock) {
         return new CountingModelFactory(clock);
@@ -148,9 +152,8 @@ public class DeployTester {
     }
 
     public AllocatedHosts getAllocatedHostsOf(ApplicationId applicationId) {
-        Tenant tenant = tenant();
-        Session session = applicationRepository.getActiveSession(tenant, applicationId);
-        return session.getAllocatedHosts();
+        Optional<Session> session = applicationRepository.getActiveSession(tenant(applicationId), applicationId);
+        return session.orElseThrow(() -> new IllegalArgumentException("No active session for " + applicationId)).getAllocatedHosts();
     }
 
     public ApplicationId applicationId() { return applicationId; }

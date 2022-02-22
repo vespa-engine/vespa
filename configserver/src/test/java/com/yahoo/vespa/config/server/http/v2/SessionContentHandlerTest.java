@@ -69,7 +69,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
                 .build();
         applicationRepository.deploy(testApp, new PrepareParams.Builder().applicationId(applicationId()).build());
         Tenant tenant = applicationRepository.getTenant(applicationId());
-        sessionId = applicationRepository.getActiveLocalSession(tenant, applicationId()).getSessionId();
+        sessionId = applicationRepository.getActiveLocalSession(tenant, applicationId()).get().getSessionId();
 
         handler = createHandler();
         pathPrefix = "/application/v2/tenant/" + tenantName + "/session/";

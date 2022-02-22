@@ -135,7 +135,7 @@ public class SessionActiveHandlerTest {
             applicationRepository.prepare(sessionId, new PrepareParams.Builder().applicationId(applicationId()).build());
             actResponse = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, sessionId, subPath));
             Tenant tenant = applicationRepository.getTenant(applicationId());
-            Session session = applicationRepository.getActiveLocalSession(tenant, applicationId());
+            Session session = applicationRepository.getActiveLocalSession(tenant, applicationId()).get();
             metaData = session.getMetaData();
             this.sessionId = sessionId;
         }

@@ -22,6 +22,7 @@ import com.yahoo.vespa.flags.FlagSource;
 import java.io.File;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
@@ -64,13 +65,12 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
 
         for (var applicationId : applicationRepository.listApplications()) {
             log.finest(() -> "Verifying application package for " + applicationId);
-            Session session = applicationRepository.getActiveSession(applicationId);
-            if (session == null)
-                continue;  // App might be deleted after call to listApplications() or not activated yet (bootstrap phase)
+            Optional<Session> session = applicationRepository.getActiveSession(applicationId);
+            if (session.isEmpty()) continue; // App might be deleted after call to listApplications() or not activated yet (bootstrap phase)
 
-            FileReference appFileReference = session.getApplicationPackageReference();
+            FileReference appFileReference = session.get().getApplicationPackageReference();
             if (appFileReference != null) {
-                long sessionId = session.getSessionId();
+                long sessionId = session.get().getSessionId();
                 attempts++;
                 if (!fileReferenceExistsOnDisk(downloadDirectory, appFileReference)) {
                     log.fine(() -> "Downloading application package for " + applicationId + " (session " + sessionId + ")");
