@@ -63,6 +63,7 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string)
 	// TODO: Due to the bad design of viper, the only proper fix is to get rid of global state by moving each command to
 	// their own sub-package
 	rootCmd.Flags().VisitAll(resetFlag)
+	queryCmd.Flags().VisitAll(resetFlag)
 	documentCmd.Flags().VisitAll(resetFlag)
 
 	// Capture stdout and execute command
