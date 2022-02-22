@@ -1000,7 +1000,8 @@ public class InternalStepRunner implements StepRunner {
                 "            </config>\n" +
                 "        </component>\n" +
                 "\n" +
-                "        <nodes count=\"1\" allocated-memory=\"" + jdiscMemoryPct + "%\">\n" +
+                "        <nodes count=\"1\">\n" +
+                "            <jvm allocated-memory=\"" + jdiscMemoryPct + "%\"/>\n" +
                 "            " + resourceString + "\n" +
                 "        </nodes>\n" +
                 "    </container>\n" +
