@@ -20,13 +20,15 @@ using namespace std::chrono_literals;
 
 namespace proton {
 
-ProtonConfigFetcher::ProtonConfigFetcher(const config::ConfigUri & configUri, IProtonConfigurer &owner, std::chrono::milliseconds subscribeTimeout)
-    : _bootstrapConfigManager(configUri.getConfigId()),
+ProtonConfigFetcher::ProtonConfigFetcher(FNET_Transport & transport, const config::ConfigUri & configUri, IProtonConfigurer &owner, vespalib::duration subscribeTimeout)
+    : _transport(transport),
+      _bootstrapConfigManager(configUri.getConfigId()),
       _retriever(_bootstrapConfigManager.createConfigKeySet(), configUri.getContext(), subscribeTimeout),
       _owner(owner),
       _mutex(),
+      _cond(),
       _dbManagerMap(),
-      _threadPool(128_Ki, 1),
+      _running(false),
       _oldDocumentTypeRepos(),
       _currentDocumentTypeRepo()
 {
@@ -50,6 +52,9 @@ ProtonConfigFetcher::Run(FastOS_ThreadInterface * thread, void *arg)
             std::this_thread::sleep_for(100ms);
         }
     }
+    lock_guard guard(_mutex);
+    _running = false;
+    _cond.notify_all();
 }
 
 const ConfigKeySet
@@ -60,8 +65,7 @@ ProtonConfigFetcher::pruneManagerMap(const BootstrapConfig::SP & config)
     ConfigKeySet set;
 
     lock_guard guard(_mutex);
-    for (size_t i = 0; i < protonConfig.documentdb.size(); i++) {
-        const ProtonConfig::Documentdb & ddb(protonConfig.documentdb[i]);
+    for (const ProtonConfig::Documentdb & ddb : protonConfig.documentdb) {
         DocTypeName docTypeName(ddb.inputdoctypename);
         LOG(debug, "Document type(%s), configid(%s)", ddb.inputdoctypename.c_str(), ddb.configid.c_str());
         DocumentDBConfigManager::SP mgr;
@@ -83,7 +87,7 @@ ProtonConfigFetcher::updateDocumentDBConfigs(const BootstrapConfig::SP & bootstr
     lock_guard guard(_mutex);
     for (auto & entry : _dbManagerMap) {
         entry.second->forwardConfig(bootstrapConfig);
-        entry.second->update(snapshot);
+        entry.second->update(_transport, snapshot);
     }
 }
 
@@ -162,10 +166,14 @@ ProtonConfigFetcher::getGeneration() const
 }
 
 void
-ProtonConfigFetcher::start()
+ProtonConfigFetcher::start(FastOS_ThreadPool & threadPool)
 {
     fetchConfigs();
-    if (_threadPool.NewThread(this, nullptr) == nullptr) {
+    lock_guard guard(_mutex);
+    if (_running) return;
+    _running = true;
+    if (threadPool.NewThread(this, nullptr) == nullptr) {
+        _running = false;
         throw vespalib::IllegalStateException(
                 "Failed starting thread for proton config fetcher");
     }
@@ -176,7 +184,10 @@ ProtonConfigFetcher::close()
 {
     if (!_retriever.isClosed()) {
         _retriever.close();
-        _threadPool.Close();
+    }
+    std::unique_lock<std::mutex> guard(_mutex);
+    while (_running) {
+        _cond.wait(guard);
     }
 }
 
@@ -189,7 +200,7 @@ ProtonConfigFetcher::rememberDocumentTypeRepo(std::shared_ptr<const document::Do
         return; // no change
     }
     auto &repos = _oldDocumentTypeRepos;
-    TimePoint now = Clock::now();
+    vespalib::steady_time now = vespalib::steady_clock::now();
     while (!repos.empty() && repos.front().first < now) {
         repos.pop_front();
     }

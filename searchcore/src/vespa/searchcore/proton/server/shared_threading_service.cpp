@@ -6,6 +6,8 @@
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/fastos/thread.h>
 
 using vespalib::CpuUsage;
 
@@ -17,8 +19,10 @@ namespace proton {
 
 using SharedFieldWriterExecutor = ThreadingServiceConfig::ProtonConfig::Feeding::SharedFieldWriterExecutor;
 
-SharedThreadingService::SharedThreadingService(const SharedThreadingServiceConfig& cfg)
-    : _warmup(cfg.warmup_threads(), 128_Ki, CpuUsage::wrap(proton_warmup_executor, CpuUsage::Category::COMPACT)),
+SharedThreadingService::SharedThreadingService(const SharedThreadingServiceConfig& cfg, FNET_Transport & transport)
+    :
+      _transport(transport),
+      _warmup(cfg.warmup_threads(), 128_Ki, CpuUsage::wrap(proton_warmup_executor, CpuUsage::Category::COMPACT)),
       _shared(std::make_shared<vespalib::BlockingThreadStackExecutor>(cfg.shared_threads(), 128_Ki,
                                                                       cfg.shared_task_limit(), proton_shared_executor)),
       _field_writer(),

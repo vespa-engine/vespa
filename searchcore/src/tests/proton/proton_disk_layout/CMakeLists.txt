@@ -3,6 +3,7 @@ vespa_add_executable(searchcore_proton_disk_layout_test_app TEST
     SOURCES
     proton_disk_layout_test.cpp
     DEPENDS
+    searchcore_test
     searchcore_server
     searchcore_fconfig
 )

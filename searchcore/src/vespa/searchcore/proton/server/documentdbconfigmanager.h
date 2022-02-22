@@ -5,6 +5,8 @@
 #include "documentdbconfig.h"
 #include <mutex>
 
+class FNET_Transport;
+
 namespace config {
     class ConfigRetriever;
     class DirSpec;
@@ -38,7 +40,7 @@ private:
 public:
     DocumentDBConfigManager(const vespalib::string &configId, const vespalib::string &docTypeName);
     ~DocumentDBConfigManager();
-    void update(const config::ConfigSnapshot & snapshot);
+    void update(FNET_Transport & transport, const config::ConfigSnapshot & snapshot);
 
     DocumentDBConfig::SP getConfig() const;
 
@@ -56,7 +58,7 @@ public:
     DocumentDBConfigHelper(const config::DirSpec &spec, const vespalib::string &docTypeName);
     ~DocumentDBConfigHelper();
 
-    bool nextGeneration(std::chrono::milliseconds timeoutInMillis);
+    bool nextGeneration(FNET_Transport & transport, vespalib::duration timeout);
     DocumentDBConfig::SP getConfig() const;
     void forwardConfig(const std::shared_ptr<BootstrapConfig> & config);
 private:

@@ -32,7 +32,7 @@ public:
 
     TransLogServer::SP getTransLogServer() const;
 
-    void start(uint32_t num_cores);
+    void start(FNET_Transport & transport, uint32_t num_cores);
 };
 
 }

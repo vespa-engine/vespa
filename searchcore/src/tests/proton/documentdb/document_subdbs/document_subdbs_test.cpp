@@ -25,6 +25,7 @@
 #include <vespa/searchcore/proton/server/reconfig_params.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/test/test.h>
+#include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/searchlib/index/docbuilder.h>
@@ -261,7 +262,7 @@ struct MyConfigSnapshot
     DocBuilder _builder;
     DocumentDBConfig::SP _cfg;
     BootstrapConfig::SP  _bootstrap;
-    MyConfigSnapshot(const Schema &schema, const vespalib::string &cfgDir)
+    MyConfigSnapshot(FNET_Transport & transport, const Schema &schema, const vespalib::string &cfgDir)
         : _schema(schema),
           _builder(_schema),
           _cfg(),
@@ -279,7 +280,7 @@ struct MyConfigSnapshot
         ::config::DirSpec spec(cfgDir);
         DocumentDBConfigHelper mgr(spec, "searchdocument");
         mgr.forwardConfig(_bootstrap);
-        mgr.nextGeneration(1ms);
+        mgr.nextGeneration(transport, 1ms);
         _cfg = mgr.getConfig();
     }
 };
@@ -287,26 +288,28 @@ struct MyConfigSnapshot
 template <typename Traits>
 struct FixtureBase
 {
-    ThreadStackExecutor _summaryExecutor;
+    TransportMgr             _transport;
+    ThreadStackExecutor      _summaryExecutor;
     ExecutorThreadingService _writeService;
-    typename Traits::Config _cfg;
+    typename Traits::Config  _cfg;
     std::shared_ptr<bucketdb::BucketDBOwner> _bucketDB;
-    BucketDBHandler _bucketDBHandler;
+    BucketDBHandler          _bucketDBHandler;
     typename Traits::Context _ctx;
-    typename Traits::Schema _baseSchema;
-    MyConfigSnapshot::UP _snapshot;
-    DirectoryHandler _baseDir;
-    typename Traits::SubDB _subDb;
-    IFeedView::SP _tmpFeedView;
+    typename Traits::Schema  _baseSchema;
+    MyConfigSnapshot::UP     _snapshot;
+    DirectoryHandler         _baseDir;
+    typename Traits::SubDB   _subDb;
+    IFeedView::SP            _tmpFeedView;
     FixtureBase()
-        : _summaryExecutor(1, 64_Ki),
+        : _transport(),
+          _summaryExecutor(1, 64_Ki),
           _writeService(_summaryExecutor),
           _cfg(),
           _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
           _bucketDBHandler(*_bucketDB),
           _ctx(_writeService, _bucketDB, _bucketDBHandler),
           _baseSchema(),
-          _snapshot(std::make_unique<MyConfigSnapshot>(_baseSchema, Traits::ConfigDir::dir())),
+          _snapshot(std::make_unique<MyConfigSnapshot>(_transport.transport(), _baseSchema, Traits::ConfigDir::dir())),
           _baseDir(BASE_DIR + "/" + SUB_NAME, BASE_DIR),
           _subDb(_cfg._cfg, _ctx._ctx),
           _tmpFeedView()
@@ -346,7 +349,7 @@ struct FixtureBase
         runInMasterAndSync([&]() { performReconfig(serialNum, reconfigSchema, reconfigConfigDir); });
     }
     void performReconfig(SerialNum serialNum, const Schema &reconfigSchema, const vespalib::string &reconfigConfigDir) {
-        auto newCfg = std::make_unique<MyConfigSnapshot>(reconfigSchema, reconfigConfigDir);
+        auto newCfg = std::make_unique<MyConfigSnapshot>(_transport.transport(), reconfigSchema, reconfigConfigDir);
         DocumentDBConfig::ComparisonResult cmpResult;
         cmpResult.attributesChanged = true;
         cmpResult.documenttypesChanged = true;

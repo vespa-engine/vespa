@@ -26,7 +26,7 @@ class ProtonConfigFetcher : public FastOS_Runnable
 public:
     using BootstrapConfigSP = std::shared_ptr<BootstrapConfig>;
 
-    ProtonConfigFetcher(const config::ConfigUri & configUri, IProtonConfigurer &owner, std::chrono::milliseconds subscribeTimeout);
+    ProtonConfigFetcher(FNET_Transport & transport, const config::ConfigUri & configUri, IProtonConfigurer &owner, vespalib::duration subscribeTimeout);
     ~ProtonConfigFetcher() override;
     /**
      * Get the current config generation.
@@ -36,7 +36,7 @@ public:
     /**
      * Start config fetcher, callbacks may come from now on.
      */
-    void start();
+    void start(FastOS_ThreadPool & threadPool);
 
     /**
      * Shutdown config fetcher, ensuring that no more callbacks arrive
@@ -47,20 +47,21 @@ public:
 
 private:
     typedef std::map<DocTypeName, DocumentDBConfigManager::SP> DBManagerMap;
-    using Clock = std::chrono::steady_clock;
-    using TimePoint = std::chrono::time_point<Clock>;
-    using OldDocumentTypeRepo = std::pair<TimePoint, std::shared_ptr<const document::DocumentTypeRepo>>;
-
-    BootstrapConfigManager  _bootstrapConfigManager;
-    config::ConfigRetriever _retriever;
-    IProtonConfigurer     & _owner;
-
-    mutable std::mutex _mutex; // Protects maps
+    using OldDocumentTypeRepo = std::pair<vespalib::steady_time, std::shared_ptr<const document::DocumentTypeRepo>>;
     using lock_guard = std::lock_guard<std::mutex>;
-    DBManagerMap _dbManagerMap;
 
-    FastOS_ThreadPool _threadPool;
-    std::deque<OldDocumentTypeRepo> _oldDocumentTypeRepos;
+
+    FNET_Transport          & _transport;
+    BootstrapConfigManager    _bootstrapConfigManager;
+    config::ConfigRetriever   _retriever;
+    IProtonConfigurer       & _owner;
+
+    mutable std::mutex        _mutex; // Protects maps
+    std::condition_variable   _cond;
+    DBManagerMap              _dbManagerMap;
+    bool                      _running;
+
+    std::deque<OldDocumentTypeRepo>                   _oldDocumentTypeRepos;
     std::shared_ptr<const document::DocumentTypeRepo> _currentDocumentTypeRepo;
 
     void fetchConfigs();

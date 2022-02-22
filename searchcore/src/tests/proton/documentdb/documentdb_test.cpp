@@ -35,6 +35,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/config/subscription/sourcespec.h>
+#include <vespa/fnet/transport.h>
 #include <iostream>
 
 using namespace cloud::config::filedistribution;
@@ -149,7 +150,7 @@ Fixture::Fixture(bool file_config)
       _bucketExecutor(2),
       _db(),
       _fileHeaderContext(),
-      _tls("tmp", 9014, ".", _fileHeaderContext),
+      _tls(_shared_service.transport(), "tmp", 9014, ".", _fileHeaderContext),
       _queryLimiter(),
       _clock()
 {
@@ -165,7 +166,7 @@ Fixture::Fixture(bool file_config)
                               std::make_shared<BucketspacesConfig>(),
                               tuneFileDocumentDB, HwInfo());
     mgr.forwardConfig(b);
-    mgr.nextGeneration(0ms);
+    mgr.nextGeneration(_shared_service.transport(), 0ms);
     _db = DocumentDB::create(".", mgr.getConfig(), "tcp/localhost:9014", _queryLimiter, _clock, DocTypeName("typea"),
                              makeBucketSpace(),
                              *b->getProtonConfigSP(), _myDBOwner, _shared_service, _bucketExecutor, _tls, _dummy,
@@ -177,13 +178,15 @@ Fixture::Fixture(bool file_config)
 
 Fixture::~Fixture()
 {
+    _db->close();
+    _shared_service.transport().ShutDown(true);
 }
 
 std::unique_ptr<ConfigStore>
 Fixture::make_config_store()
 {
     if (_file_config) {
-        return std::make_unique<FileConfigManager>("config", "", "typea");
+        return std::make_unique<FileConfigManager>(_shared_service.transport(), "config", "", "typea");
     } else {
         return std::make_unique<MemoryConfigStore>();
     }
