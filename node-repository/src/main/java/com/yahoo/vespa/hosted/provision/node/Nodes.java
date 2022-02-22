@@ -244,8 +244,9 @@ public class Nodes {
         if ( ! zone.environment().isProduction() || zone.system().isCd())
             return deallocate(nodes, Agent.application, "Deactivated by application", transaction.nested());
 
-        var stateless = NodeList.copyOf(nodes).stateless();
-        var stateful  = NodeList.copyOf(nodes).stateful();
+        NodeList nodeList = NodeList.copyOf(nodes);
+        NodeList stateless = nodeList.stateless();
+        NodeList stateful  = nodeList.stateful();
         List<Node> written = new ArrayList<>();
         written.addAll(deallocate(stateless.asList(), Agent.application, "Deactivated by application", transaction.nested()));
         written.addAll(db.writeTo(Node.State.inactive, stateful.asList(), Agent.application, Optional.empty(), transaction.nested()));
@@ -470,7 +471,7 @@ public class Nodes {
      */
     public Node markNodeAvailableForNewAllocation(String hostname, Agent agent, String reason) {
         Node node = requireNode(hostname);
-        if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && node.type() == NodeType.tenant) {
+        if (removeOnReadyingOf(node)) {
             if (node.state() != Node.State.dirty)
                 illegal("Cannot make " + node  + " available for new allocation as it is not in state [dirty]");
             return removeRecursively(node, true).get(0);
@@ -843,6 +844,12 @@ public class Nodes {
         return node.status().wantToDeprovision() ||
                node.status().wantToRebuild() ||
                retirementRequestedByOperator;
+    }
+
+    /** Returns whether node should be deleted when it's moved to ready */
+    private static boolean removeOnReadyingOf(Node node) {
+        if (node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER) return false;
+        return node.type() == NodeType.tenant || (node.status().wantToRetire() && node.status().wantToDeprovision());
     }
 
     /** The different ways a host can be decommissioned */
