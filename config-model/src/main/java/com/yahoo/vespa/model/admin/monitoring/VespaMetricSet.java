@@ -663,6 +663,12 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.filestor.alldisks.throttle_window_size.max"));
         metrics.add(new Metric("vds.filestor.alldisks.throttle_window_size.sum"));
         metrics.add(new Metric("vds.filestor.alldisks.throttle_window_size.count"));
+        metrics.add(new Metric("vds.filestor.alldisks.throttle_waiting_threads.max"));
+        metrics.add(new Metric("vds.filestor.alldisks.throttle_waiting_threads.sum"));
+        metrics.add(new Metric("vds.filestor.alldisks.throttle_waiting_threads.count"));
+        metrics.add(new Metric("vds.filestor.alldisks.throttle_active_tokens.max"));
+        metrics.add(new Metric("vds.filestor.alldisks.throttle_active_tokens.sum"));
+        metrics.add(new Metric("vds.filestor.alldisks.throttle_active_tokens.count"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergemetadatareadlatency.max"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergemetadatareadlatency.sum"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergemetadatareadlatency.count"));
