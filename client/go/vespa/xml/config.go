@@ -189,26 +189,32 @@ func ParseResources(s string) (Resources, error) {
 // ParseNodeCount parses a node count range from string s.
 func ParseNodeCount(s string) (int, int, error) {
 	parseErr := fmt.Errorf("invalid node count: %q", s)
+	min, max := 0, 0
 	n, err := strconv.Atoi(s)
 	if err == nil {
-		return n, n, nil
-	}
-	if strings.HasPrefix(s, "[") && strings.HasSuffix(s, "]") {
+		min = n
+		max = n
+	} else if strings.HasPrefix(s, "[") && strings.HasSuffix(s, "]") {
 		parts := strings.Split(s[1:len(s)-1], ",")
 		if len(parts) != 2 {
 			return 0, 0, parseErr
 		}
-		min, err := strconv.Atoi(strings.TrimSpace(parts[0]))
+		min, err = strconv.Atoi(strings.TrimSpace(parts[0]))
 		if err != nil {
 			return 0, 0, parseErr
 		}
-		max, err := strconv.Atoi(strings.TrimSpace(parts[1]))
+		max, err = strconv.Atoi(strings.TrimSpace(parts[1]))
 		if err != nil {
 			return 0, 0, parseErr
 		}
-		return min, max, nil
+	} else {
+		return 0, 0, parseErr
 	}
-	return 0, 0, parseErr
+
+	if min <= 0 || min > max {
+		return 0, 0, parseErr
+	}
+	return min, max, nil
 }
 
 // IsProdRegion returns whether string s is a valid production region.

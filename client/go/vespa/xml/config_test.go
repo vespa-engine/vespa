@@ -258,6 +258,10 @@ func TestParseNodeCount(t *testing.T) {
 
 	assertNodeCount(t, "foo", 0, 0, true)
 	assertNodeCount(t, "[foo,bar]", 0, 0, true)
+
+	assertNodeCount(t, "0", 0, 0, true)
+	assertNodeCount(t, "-1", 0, 0, true)
+	assertNodeCount(t, "[2, 1]", 0, 0, true)
 }
 
 func assertReplace(t *testing.T, input, want, parentElement, element string, data interface{}) {
