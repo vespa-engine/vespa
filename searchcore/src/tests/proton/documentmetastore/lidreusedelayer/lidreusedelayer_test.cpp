@@ -3,11 +3,13 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcore/proton/documentmetastore/i_store.h>
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
-#include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcore/proton/test/threading_service_observer.h>
+#include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/gate.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("lidreusedelayer_test");
@@ -117,20 +119,17 @@ class Fixture
 {
 public:
     using LidReuseDelayer = documentmetastore::LidReuseDelayer;
-    vespalib::ThreadStackExecutor _sharedExecutor;
-    ExecutorThreadingService _writeServiceReal;
+    TransportAndExecutorService _service;
     test::ThreadingServiceObserver _writeService;
     MyMetaStore _store;
     std::unique_ptr<LidReuseDelayer> _lidReuseDelayer;
 
     Fixture()
-        : _sharedExecutor(1, 0x10000),
-          _writeServiceReal(_sharedExecutor),
-          _writeService(_writeServiceReal),
+        : _service(1),
+          _writeService(_service.write()),
           _store(),
           _lidReuseDelayer(std::make_unique<LidReuseDelayer>(_writeService, _store))
-    {
-    }
+    { }
 
     ~Fixture() {
         commit();

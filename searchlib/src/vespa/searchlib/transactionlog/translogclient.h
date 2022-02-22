@@ -23,7 +23,7 @@ class Visitor;
 class TransLogClient : private FRT_Invokable
 {
 public:
-    TransLogClient(const vespalib::string & rpctarget);
+    TransLogClient(FNET_Transport & transport, const vespalib::string & rpctarget);
     TransLogClient(const TransLogClient &) = delete;
     TransLogClient& operator=(const TransLogClient &) = delete;
     ~TransLogClient() override;
@@ -60,8 +60,6 @@ private:
     SessionMap                         _sessions;
     //Brute force lock for subscriptions. For multithread safety.
     std::mutex                         _lock;
-    std::unique_ptr<FastOS_ThreadPool> _threadPool;
-    std::unique_ptr<FNET_Transport>    _transport;
     std::unique_ptr<FRT_Supervisor>    _supervisor;
     FRT_Target                       * _target;
 };

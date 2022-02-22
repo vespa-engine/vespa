@@ -65,8 +65,9 @@ void scanDir(const vespalib::string documentsDir, DocumentDBDirScan &dirs)
 
 }
 
-ProtonDiskLayout::ProtonDiskLayout(const vespalib::string &baseDir, const vespalib::string &tlsSpec)
-    : _baseDir(baseDir),
+ProtonDiskLayout::ProtonDiskLayout(FNET_Transport & transport, const vespalib::string &baseDir, const vespalib::string &tlsSpec)
+    : _transport(transport),
+      _baseDir(baseDir),
       _tlsSpec(tlsSpec)
 {
     vespalib::mkdir(getDocumentsDir(_baseDir), true);
@@ -83,7 +84,7 @@ ProtonDiskLayout::remove(const DocTypeName &docTypeName)
     vespalib::string removedDir(documentsDir + "/" + getRemovedName(name));
     vespalib::rename(normalDir, removedDir, false, false);
     vespalib::File::sync(documentsDir);
-    TransLogClient tlc(_tlsSpec);
+    TransLogClient tlc(_transport, _tlsSpec);
     if (!tlc.remove(name)) {
         LOG(fatal, "Failed to remove tls domain %s", name.c_str());
         LOG_ABORT("Failed to remove tls domain");
