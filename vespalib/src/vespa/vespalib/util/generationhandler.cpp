@@ -184,7 +184,7 @@ GenerationHandler::incGeneration()
         // Last generation is unused, morph it to new generation.  This is
         // the typical case when no readers are present.
         _generation = ngen;
-        last->_generation.store(ngen, std::memory_order_release);
+        last->_generation.store(ngen, std::memory_order_relaxed);
         updateFirstUsedGeneration();
         return;
     }
