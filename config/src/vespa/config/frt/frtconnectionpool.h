@@ -13,7 +13,6 @@ class FastOS_ThreadPool;
 namespace config {
 
 class FRTConnectionPool : public ConnectionFactory {
-
 private:
 
     /**
@@ -32,8 +31,6 @@ private:
         int operator==(const FRTConnectionKey& right) const;
     };
 
-    std::unique_ptr<FastOS_ThreadPool> _threadPool;
-    std::unique_ptr<FNET_Transport> _transport;
     std::unique_ptr<FRT_Supervisor> _supervisor;
     int _selectIdx;
     vespalib::string _hostname;
@@ -41,7 +38,7 @@ private:
     ConnectionMap _connections;
 
 public:
-    FRTConnectionPool(const ServerSpec & spec, const TimingValues & timingValues);
+    FRTConnectionPool(FNET_Transport & transport, const ServerSpec & spec, const TimingValues & timingValues);
     FRTConnectionPool(const FRTConnectionPool&) = delete;
     FRTConnectionPool& operator=(const FRTConnectionPool&) = delete;
     ~FRTConnectionPool() override;
@@ -128,6 +125,19 @@ public:
      * @return the hash value
      */
     static int hashCode(const vespalib::string & s);
+};
+
+class FRTConnectionPoolWithTransport : public FRTConnectionPool {
+public:
+    FRTConnectionPoolWithTransport(std::unique_ptr<FastOS_ThreadPool> threadPool,
+                                   std::unique_ptr<FNET_Transport> transport,
+                                   const ServerSpec & spec, const TimingValues & timingValues);
+    FRTConnectionPoolWithTransport(const FRTConnectionPoolWithTransport&) = delete;
+    FRTConnectionPoolWithTransport& operator=(const FRTConnectionPoolWithTransport&) = delete;
+    ~FRTConnectionPoolWithTransport() override;
+private:
+    std::unique_ptr<FastOS_ThreadPool> _threadPool;
+    std::unique_ptr<FNET_Transport>    _transport;
 };
 
 } // namespace config

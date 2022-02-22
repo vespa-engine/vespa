@@ -11,7 +11,7 @@ LOG_SETUP(".config.common.configmanager");
 
 namespace config {
 
-ConfigManager::ConfigManager(SourceFactory::UP sourceFactory, int64_t initialGeneration)
+ConfigManager::ConfigManager(std::unique_ptr<SourceFactory> sourceFactory, int64_t initialGeneration)
     : _idGenerator(0),
       _sourceFactory(std::move(sourceFactory)),
       _generation(initialGeneration),
@@ -53,10 +53,10 @@ ConfigManager::subscribe(const ConfigKey & key, vespalib::duration timeout)
 }
 
 void
-ConfigManager::unsubscribe(const ConfigSubscription::SP & subscription)
+ConfigManager::unsubscribe(const ConfigSubscription & subscription)
 {
     std::lock_guard guard(_lock);
-    const SubscriptionId id(subscription->getSubscriptionId());
+    const SubscriptionId id(subscription.getSubscriptionId());
     if (_subscriptionMap.find(id) != _subscriptionMap.end())
         _subscriptionMap.erase(id);
 }
