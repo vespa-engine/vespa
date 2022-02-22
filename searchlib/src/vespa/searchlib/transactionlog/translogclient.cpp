@@ -61,6 +61,7 @@ TransLogClient::~TransLogClient()
 {
     disconnect();
     _executor->shutdown().sync();
+    _supervisor->GetTransport()->sync();
 }
 
 bool
