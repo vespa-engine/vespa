@@ -302,8 +302,7 @@ FNET_TransportThread::Add(FNET_IOComponent *comp, bool needRef)
     if (needRef) {
         comp->AddRef();
     }
-    PostEvent(&FNET_ControlPacket::IOCAdd,
-              FNET_Context(comp));
+    PostEvent(&FNET_ControlPacket::IOCAdd, FNET_Context(comp));
 }
 
 
@@ -313,8 +312,7 @@ FNET_TransportThread::EnableWrite(FNET_IOComponent *comp, bool needRef)
     if (needRef) {
         comp->AddRef();
     }
-    PostEvent(&FNET_ControlPacket::IOCEnableWrite,
-              FNET_Context(comp));
+    PostEvent(&FNET_ControlPacket::IOCEnableWrite, FNET_Context(comp));
 }
 
 void
@@ -323,8 +321,7 @@ FNET_TransportThread::handshake_act(FNET_IOComponent *comp, bool needRef)
     if (needRef) {
         comp->AddRef();
     }
-    PostEvent(&FNET_ControlPacket::IOCHandshakeACT,
-              FNET_Context(comp));
+    PostEvent(&FNET_ControlPacket::IOCHandshakeACT, FNET_Context(comp));
 }
 
 void
@@ -333,8 +330,7 @@ FNET_TransportThread::Close(FNET_IOComponent *comp, bool needRef)
     if (needRef) {
         comp->AddRef();
     }
-    PostEvent(&FNET_ControlPacket::IOCClose,
-              FNET_Context(comp));
+    PostEvent(&FNET_ControlPacket::IOCClose, FNET_Context(comp));
 }
 
 

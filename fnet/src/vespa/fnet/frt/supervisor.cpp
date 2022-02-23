@@ -27,8 +27,9 @@ FRT_Supervisor::FRT_Supervisor(FNET_Transport *transport)
 FRT_Supervisor::~FRT_Supervisor()
 {
     if (_connector != nullptr) {
-        _connector->SubRef();
+        _connector->Owner()->Close(_connector, /* needref */ false);
     }
+    _transport->sync();
 }
 
 FNET_Scheduler *
