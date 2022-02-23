@@ -28,7 +28,8 @@ Resources = element resources {
     attribute memory { xsd:string } &
     attribute disk { xsd:string } &
     attribute disk-speed { xsd:string }? &
-    attribute storage-type { xsd:string }?
+    attribute storage-type { xsd:string }? &
+    attribute architecture { xsd:string }?
 }
 
 OptionalDedicatedNodes = element nodes {
