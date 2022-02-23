@@ -8,6 +8,11 @@ import com.yahoo.searchdefinition.document.Stemming;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This class holds the extracted information after parsing
+ * one schema (.sd) file, using simple data structures
+ * as far as possible.  Do not put advanced logic here!
+ **/
 public class ParsedSchema {
     private final String name;
     private final List<String> inherited = new ArrayList<>();

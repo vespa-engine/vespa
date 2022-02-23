@@ -4,6 +4,11 @@ package com.yahoo.searchdefinition.parser;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This class holds the extracted information after parsing a
+ * "document" block in a schema (.sd) file, using simple data
+ * structures as far as possible.  Do not put advanced logic here!
+ **/
 public class ParsedDocument {
     private final String name;
     private final List<String> inherited = new ArrayList<>();
