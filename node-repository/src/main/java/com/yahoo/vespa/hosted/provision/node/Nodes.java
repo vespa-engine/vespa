@@ -834,7 +834,7 @@ public class Nodes {
     private static boolean parkOnDeallocationOf(Node node, Agent agent) {
         if (node.state() == Node.State.parked) return false;
         if (agent == Agent.operator) return false;
-        if (!node.type().isHost() && node.status().wantToDeprovision()) return false;
+        if (node.type() == NodeType.tenant && node.status().wantToDeprovision()) return false;
         boolean retirementRequestedByOperator = node.status().wantToRetire() &&
                                                 node.history().event(History.Event.Type.wantToRetire)
                                                     .map(History.Event::agent)

@@ -486,19 +486,21 @@ public class DynamicProvisioningMaintainerTest {
         tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
         assertEquals("Node moves to inactive", Node.State.inactive, nodeToRemove.get().state());
 
-        // Node is completely removed (done by InactiveExpirer and host-admin in a real system)
-        Node inactiveConfigServer = nodeToRemove.get();
-        int removedIndex = inactiveConfigServer.allocation().get().membership().index();
-        tester.nodeRepository().nodes().removeRecursively(inactiveConfigServer, true);
-        assertEquals(2, tester.nodeRepository().nodes().list().nodeType(hostType.childNodeType()).size());
+        // Node is parked (done by InactiveExpirer and host-admin in a real system)
+        int removedIndex = nodeToRemove.get().allocation().get().membership().index();
+        Node parkedConfigServer = tester.nodeRepository().nodes().deallocate(nodeToRemove.get(), Agent.system, getClass().getSimpleName());
+        assertSame("Node moves to parked", Node.State.parked, parkedConfigServer.state());
+        assertEquals(2, tester.nodeRepository().nodes().list().nodeType(hostType.childNodeType()).state(Node.State.active).size());
 
-        // ExpiredRetirer moves host to inactive after child has moved to parked
+        // ... same for host
         tester.nodeRepository().nodes().deallocate(hostToRemove.get(), Agent.system, getClass().getSimpleName());
         assertSame("Host moves to parked", Node.State.parked, hostToRemove.get().state());
 
-        // Host is removed
+        // Host and child is removed
         dynamicProvisioningTester.maintainer.maintain();
-        assertEquals(2, tester.nodeRepository().nodes().list().nodeType(hostType).size());
+        allNodes = tester.nodeRepository().nodes().list();
+        assertEquals(2, allNodes.nodeType(hostType).size());
+        assertEquals(2, allNodes.nodeType(hostType.childNodeType()).size());
 
         // Deployment by the removed host has no effect
         HostName.setHostNameForTestingOnly("cfg2.example.com");
