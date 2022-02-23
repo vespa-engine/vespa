@@ -48,7 +48,6 @@ public:
         fprintf(stderr, "die\n");
         fprintf(stderr, "getProtonStatus\n");
         fprintf(stderr, "getState\n");
-        fprintf(stderr, "monitor\n");
         fprintf(stderr, "triggerFlush\n");
         fprintf(stderr, "prepareRestart\n");
         return 1;
@@ -84,9 +83,6 @@ public:
             _frt.reset();
         }
     }
-
-    void
-    monitorLoop();
 
     void
     scanSpecs(slobrok::api::MirrorAPI::SpecList &specs,
@@ -337,10 +333,6 @@ public:
             }
         } else if (strcmp(_argv[2], "die") == 0) {
             _req->SetMethodName("pandora.rtc.die");
-
-        } else if (strcmp(_argv[2], "monitor") == 0) {
-            invoked = true;
-            monitorLoop();
         } else {
             finiRPC();
             return usage();
@@ -351,59 +343,6 @@ public:
         return 0;
     }
 };
-
-
-void
-App::monitorLoop()
-{
-    for (;;) {
-        FRT_RPCRequest *req = _frt->supervisor().AllocRPCRequest();
-        req->SetMethodName("pandora.rtc.getIncrementalState");
-        FRT_Values &params = *req->GetParams();
-        params.AddInt32(2000);
-        _target->InvokeSync(req, 1200.0);
-
-        if (req->IsError()) {
-            req->Print(0);
-            req->SubRef();
-            break;
-        }
-        FRT_Values &rvals = *req->GetReturn();
-        FRT_Value &names = rvals.GetValue(0);
-        FRT_Value &values = rvals.GetValue(1);
-        struct timeval tnow;
-        gettimeofday(&tnow, nullptr);
-
-        for (unsigned int i = 0;
-             i < names._string_array._len &&
-                              i < values._string_array._len;
-             i++)
-        {
-            time_t now;
-            struct tm *nowtm;
-
-            now = tnow.tv_sec;
-            nowtm = gmtime(&now);
-            fprintf(stdout,
-                    "%04d-%02d-%02dT%02d:%02d:%02d.%06dZ "
-                    "%010d.%06d ==> ",
-                    nowtm->tm_year + 1900,
-                    nowtm->tm_mon + 1,
-                    nowtm->tm_mday,
-                    nowtm->tm_hour,
-                    nowtm->tm_min,
-                    nowtm->tm_sec,
-                    (int)tnow.tv_usec,
-                    (int)tnow.tv_sec,
-                    (int) tnow.tv_usec);
-            printf("\"%s\", \"%s\"\n",
-                   names._string_array._pt[i]._str,
-                   values._string_array._pt[i]._str);
-        }
-        fflush(stdout);
-        req->SubRef();
-    }
-}
 
 } // namespace pandora::rtc_cmd
 
