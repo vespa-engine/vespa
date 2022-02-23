@@ -119,7 +119,7 @@ func getService(service string, sessionOrRunID int64, cluster string) (*vespa.Se
 	}
 	s, err := t.Service(service, timeout, sessionOrRunID, cluster)
 	if err != nil {
-		return nil, fmt.Errorf("service %s not found: %w", service, err)
+		return nil, fmt.Errorf("service '%s' is unavailable: %w", service, err)
 	}
 	return s, nil
 }

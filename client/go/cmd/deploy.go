@@ -87,8 +87,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 				opts.Deployment.Zone.Environment, opts.Deployment.Zone.Region,
 				sessionOrRunID)))
 		}
-		waitForQueryService(sessionOrRunID)
-		return nil
+		return waitForQueryService(sessionOrRunID)
 	},
 }
 
@@ -157,14 +156,14 @@ var activateCmd = &cobra.Command{
 			return err
 		}
 		printSuccess("Activated ", color.Cyan(pkg.Path), " with session ", sessionID)
-		waitForQueryService(sessionID)
-		return nil
+		return waitForQueryService(sessionID)
 	},
 }
 
-func waitForQueryService(sessionOrRunID int64) {
+func waitForQueryService(sessionOrRunID int64) error {
 	if waitSecsArg > 0 {
 		log.Println()
-		waitForService("query", sessionOrRunID)
+		return waitForService("query", sessionOrRunID)
 	}
+	return nil
 }
