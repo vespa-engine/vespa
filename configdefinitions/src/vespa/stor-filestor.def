@@ -85,6 +85,9 @@ async_operation_throttler.type enum { UNLIMITED, DYNAMIC } default=UNLIMITED res
 async_operation_throttler.window_size_increment int default=20
 async_operation_throttler.window_size_decrement_factor double default=1.2
 async_operation_throttler.window_size_backoff double default=0.95
+async_operation_throttler.min_window_size int default=20
+async_operation_throttler.max_window_size int default=-1 # < 0 implies INT_MAX
+async_operation_throttler.resize_rate double default=3.0
 
 ## Specify throttling used for async persistence operations. This throttling takes place
 ## before operations are dispatched to Proton and serves as a limiter for how many
