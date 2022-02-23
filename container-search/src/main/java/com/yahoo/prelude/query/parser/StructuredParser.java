@@ -7,7 +7,6 @@ import com.yahoo.search.query.parser.ParserEnvironment;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import static com.yahoo.prelude.query.parser.Token.Kind.*;
 
@@ -444,7 +443,7 @@ abstract class StructuredParser extends AbstractParser {
      *
      * @param quoted whether this token is inside quotes
      */
-    private Item word(String indexName, boolean quoted) {
+    protected Item word(String indexName, boolean quoted) {
         int position = tokens.getPosition();
         Item item = null;
 
@@ -470,7 +469,7 @@ abstract class StructuredParser extends AbstractParser {
                     if (buffer == null) {
                         buffer = getStringContents(item);
                     }
-                    buffer.append(token.toString());
+                    buffer.append(token);
                     tokens.skipNoIgnore();
                     token = tokens.currentNoIgnore();
                 }

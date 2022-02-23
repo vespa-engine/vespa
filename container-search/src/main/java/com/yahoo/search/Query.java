@@ -109,7 +109,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         PROGRAMMATIC(5, "prog"),
         YQL(6, "yql"),
         SELECT(7, "select"),
-        WEAKAND(8, "weakAnd");
+        WEAKAND(8, "weakAnd"),
+        NONE(9, "none");
 
         private final int intValue;
         private final String stringValue;

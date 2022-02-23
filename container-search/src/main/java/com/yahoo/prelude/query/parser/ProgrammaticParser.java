@@ -13,7 +13,6 @@ import java.util.Set;
 
 /**
  * @author Simon Thoresen Hult
- * @since 5.1.4
  */
 public final class ProgrammaticParser implements CustomParser {
 
