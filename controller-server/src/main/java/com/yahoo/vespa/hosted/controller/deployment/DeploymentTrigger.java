@@ -411,7 +411,7 @@ public class DeploymentTrigger {
     // ---------- Version and job helpers ----------
 
     private Job deploymentJob(Instance instance, Versions versions, JobType jobType, JobStatus jobStatus, Instant availableSince) {
-        return new Job(instance, versions, jobType, availableSince, jobStatus.isOutOfCapacity(), instance.change().application().isPresent());
+        return new Job(instance, versions, jobType, availableSince, jobStatus.isNodeAllocationFailure(), instance.change().application().isPresent());
     }
 
     // ---------- Data containers ----------

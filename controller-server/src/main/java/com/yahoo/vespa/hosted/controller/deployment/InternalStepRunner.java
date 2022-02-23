@@ -86,7 +86,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Nod
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.nodeAllocationFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
@@ -263,11 +263,11 @@ public class InternalStepRunner implements StepRunner {
                 case PARENT_HOST_NOT_READY:
                     logger.log(e.message()); // Consider splitting these messages in summary and details, on config server.
                     return result;
-                case OUT_OF_CAPACITY:
+                case NODE_ALLOCATION_FAILURE:
                     logger.log(e.message());
                     return controller.system().isCd() && startTime.plus(timeouts.capacity()).isAfter(controller.clock().instant())
                            ? result
-                           : Optional.of(outOfCapacity);
+                           : Optional.of(nodeAllocationFailure);
                 case INVALID_APPLICATION_PACKAGE:
                 case BAD_REQUEST:
                     logger.log(WARNING, e.getMessage());
@@ -812,7 +812,7 @@ public class InternalStepRunner implements StepRunner {
             case success:
                 controller.notificationsDb().removeNotification(source, Notification.Type.deployment);
                 return;
-            case outOfCapacity:
+            case nodeAllocationFailure:
                 if ( ! run.id().type().environment().isTest()) updater.accept("lack of capacity. Please contact the Vespa team to request more!");
                 return;
             case deploymentFailed:
@@ -840,8 +840,8 @@ public class InternalStepRunner implements StepRunner {
             case aborted:
             case success:
                 return Optional.empty();
-            case outOfCapacity:
-                return run.id().type().isProduction() ? Optional.of(mails.outOfCapacity(run.id(), recipients)) : Optional.empty();
+            case nodeAllocationFailure:
+                return run.id().type().isProduction() ? Optional.of(mails.nodeAllocationFailure(run.id(), recipients)) : Optional.empty();
             case deploymentFailed:
                 return Optional.of(mails.deploymentFailure(run.id(), recipients));
             case installationFailed:

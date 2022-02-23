@@ -36,7 +36,7 @@ public class NotificationsSerializerTest {
                         Notification.Type.deployment,
                         Notification.Level.error,
                         NotificationSource.from(new RunId(ApplicationId.from(tenantName.value(), "app1", "instance1"), JobType.systemTest, 12)),
-                        List.of("Failed to deploy: Out of capacity")));
+                        List.of("Failed to deploy: Node allocation failure")));
 
         Slime serialized = NotificationsSerializer.toSlime(notifications);
         assertEquals("{\"notifications\":[" +
@@ -50,7 +50,7 @@ public class NotificationsSerializerTest {
                     "\"at\":2345000," +
                     "\"type\":\"deployment\"," +
                     "\"level\":\"error\"," +
-                    "\"messages\":[\"Failed to deploy: Out of capacity\"]," +
+                    "\"messages\":[\"Failed to deploy: Node allocation failure\"]," +
                     "\"application\":\"app1\"," +
                     "\"instance\":\"instance1\"," +
                     "\"jobId\":\"system-test\"," +

@@ -551,7 +551,7 @@ public abstract class ControllerHttpClient {
             case "aborted":                    return DeploymentLog.Status.aborted;
             case "error":                      return DeploymentLog.Status.error;
             case "testFailure":                return DeploymentLog.Status.testFailure;
-            case "outOfCapacity":              return DeploymentLog.Status.outOfCapacity;
+            case "nodeAllocationFailure":      return DeploymentLog.Status.nodeAllocationFailure;
             case "installationFailed":         return DeploymentLog.Status.installationFailed;
             case "deploymentFailed":           return DeploymentLog.Status.deploymentFailed;
             case "endpointCertificateTimeout": return DeploymentLog.Status.endpointCertificateTimeout;

@@ -790,7 +790,7 @@ public class DeploymentTriggerTest {
     }
 
     @Test
-    public void requeueOutOfCapacityStagingJob() {
+    public void requeueNodeAllocationFailureStagingJob() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .region("us-east-3")
                 .build();
@@ -826,9 +826,9 @@ public class DeploymentTriggerTest {
         tester.readyJobsTrigger().maintain();
         assertEquals(3, tester.jobs().active().size());
 
-        // Remove the jobs for app1 and app2, and then let app3 fail with outOfCapacity.
-        // All three jobs are now eligible, but the one for app3 should trigger first as an outOfCapacity-retry.
-        app3.outOfCapacity(stagingTest);
+        // Remove the jobs for app1 and app2, and then let app3 fail node allocation.
+        // All three jobs are now eligible, but the one for app3 should trigger first as a nodeAllocationFailure-retry.
+        app3.nodeAllocationFailure(stagingTest);
         app1.abortJob(stagingTest);
         app2.abortJob(stagingTest);
 
@@ -858,9 +858,9 @@ public class DeploymentTriggerTest {
         app1.assertRunning(stagingTest);
         assertEquals(2, tester.jobs().active().size());
 
-        // Let the test jobs start, remove everything except system test for app3, which fails with outOfCapacity again.
+        // Let the test jobs start, remove everything except system test for app3, which fails node allocation again.
         tester.triggerJobs();
-        app3.outOfCapacity(systemTest);
+        app3.nodeAllocationFailure(systemTest);
         app1.abortJob(systemTest);
         app1.abortJob(stagingTest);
         app2.abortJob(systemTest);

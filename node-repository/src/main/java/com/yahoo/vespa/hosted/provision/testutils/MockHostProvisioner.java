@@ -7,7 +7,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.OutOfCapacityException;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -59,7 +59,7 @@ public class MockHostProvisioner implements HostProvisioner {
                                                 Optional<ClusterSpec.Type> clusterType) {
         Flavor hostFlavor = this.hostFlavor.orElseGet(() -> flavors.stream().filter(f -> compatible(f, resources))
                                                                    .findFirst()
-                                                                   .orElseThrow(() -> new OutOfCapacityException("No host flavor matches " + resources)));
+                                                                   .orElseThrow(() -> new NodeAllocationException("No host flavor matches " + resources)));
         List<ProvisionedHost> hosts = new ArrayList<>();
         for (int index : provisionIndices) {
             String hostHostname = hostType == NodeType.host ? "hostname" + index : hostType.name() + index;

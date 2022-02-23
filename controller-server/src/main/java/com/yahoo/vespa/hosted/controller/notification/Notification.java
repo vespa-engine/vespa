@@ -69,7 +69,7 @@ public class Notification {
         /** Related to contents of application package, e.g. usage of deprecated features/syntax */
         applicationPackage,
 
-        /** Related to deployment of application, e.g. system test failure, out of capacity, internal errors, etc. */
+        /** Related to deployment of application, e.g. system test failure, node allocation failure, internal errors, etc. */
         deployment,
 
         /** Application cluster is (near) external feed blocked */

@@ -8,7 +8,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.OutOfCapacityException;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
@@ -121,11 +121,11 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         List<Node> excessHosts;
         try {
             excessHosts = provision(nodes);
-        } catch (OutOfCapacityException | IllegalStateException e) {
-            log.log(Level.WARNING, "Failed to provision preprovision capacity and/or find excess hosts: " + e.getMessage());
+        } catch (NodeAllocationException | IllegalStateException e) {
+            log.log(Level.WARNING, "Failed to allocate preprovisioned capacity and/or find excess hosts: " + e.getMessage());
             return;  // avoid removing excess hosts
         } catch (RuntimeException e) {
-            log.log(Level.WARNING, "Failed to provision preprovision capacity and/or find excess hosts", e);
+            log.log(Level.WARNING, "Failed to allocate preprovisioned capacity and/or find excess hosts", e);
             return;  // avoid removing excess hosts
         }
 
@@ -213,7 +213,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
     /**
      * @return the nodes in {@code nodeList} plus all hosts provisioned, plus all preprovision capacity
      *         nodes that were allocated.
-     * @throws OutOfCapacityException if there were problems provisioning hosts, and in case message
+     * @throws NodeAllocationException if there were problems provisioning hosts, and in case message
      *         should be sufficient (avoid no stack trace)
      * @throws IllegalStateException if there was an algorithmic problem, and in case message
      *         should be sufficient (avoid no stack trace).
@@ -251,8 +251,8 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                     .collect(Collectors.toList());
             nodeRepository().nodes().addNodes(hosts, Agent.DynamicProvisioningMaintainer);
             return hosts;
-        } catch (OutOfCapacityException | IllegalArgumentException | IllegalStateException e) {
-            throw new OutOfCapacityException("Failed to provision " + count + " " + nodeResources + ": " + e.getMessage());
+        } catch (NodeAllocationException | IllegalArgumentException | IllegalStateException e) {
+            throw new NodeAllocationException("Failed to provision " + count + " " + nodeResources + ": " + e.getMessage());
         } catch (RuntimeException e) {
             throw new RuntimeException("Failed to provision " + count + " " + nodeResources + ", will retry in " + interval(), e);
         }

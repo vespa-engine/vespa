@@ -109,7 +109,7 @@ public class VespaModelTester {
         this.useDedicatedNodeForLogserver = useDedicatedNodeForLogserver;
     }
 
-    /** Creates a model which uses 0 as start index and fails on out of capacity */
+    /** Creates a model which uses 0 as start index and fails on node allocation */
     public VespaModel createModel(String services, String ... retiredHostNames) {
         return createModel(Zone.defaultZone(), services, true, retiredHostNames);
     }

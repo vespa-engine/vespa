@@ -11,8 +11,8 @@ public enum RunStatus {
     /** Run is still proceeding normally, i.e., without failures. */
     running,
 
-    /** Deployment was rejected due to lack of capacity. */
-    outOfCapacity,
+    /** Deployment was rejected due node allocation failure. */
+    nodeAllocationFailure,
 
     /** Deployment of the real application was rejected. */
     deploymentFailed,

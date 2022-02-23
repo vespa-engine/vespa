@@ -20,10 +20,10 @@ public class DeploymentFailureMails {
         this.registry = registry;
     }
 
-    public Mail outOfCapacity(RunId id, Collection<String> recipients) {
-        return mail(id, recipients, " due to lack of capacity",
-                    "as the zone does not have enough free capacity to " +
-                    "accomodate the deployment. Please contact the Vespa team to request more!");
+    public Mail nodeAllocationFailure(RunId id, Collection<String> recipients) {
+        return mail(id, recipients, " due to node allocation failure",
+                    "as your node resource request could not be " +
+                    "fulfilled for your tenant. Contact Vespa Cloud support.");
     }
 
     public Mail deploymentFailure(RunId id, Collection<String> recipients) {

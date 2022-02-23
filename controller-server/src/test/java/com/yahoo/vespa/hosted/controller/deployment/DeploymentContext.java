@@ -49,7 +49,6 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -299,10 +298,10 @@ public class DeploymentContext {
     }
 
     /** Fail current deployment in given job */
-    public DeploymentContext outOfCapacity(JobType type) {
+    public DeploymentContext nodeAllocationFailure(JobType type) {
         return failDeployment(type,
-                              new ConfigServerException(ConfigServerException.ErrorCode.OUT_OF_CAPACITY,
-                                                        "Out of capacity",
+                              new ConfigServerException(ConfigServerException.ErrorCode.NODE_ALLOCATION_FAILURE,
+                                                        "Node allocation failure",
                                                         "Failed to deploy application"));
     }
 

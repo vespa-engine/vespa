@@ -1867,7 +1867,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 NotificationSource.from(new RunId(ApplicationId.from(tenantName.value(), "app2", "instance1"), JobType.systemTest, 12)),
                 Notification.Type.deployment,
                 Notification.Level.error,
-                "Failed to deploy: Out of capacity");
+                "Failed to deploy: Node allocation failure");
     }
 
     private void assertGlobalRouting(DeploymentId deployment, RoutingStatus.Value value, RoutingStatus.Agent agent) {

@@ -60,7 +60,7 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
     }
 
     public JobList outOfTestCapacity() {
-        return matching(job -> job.isOutOfCapacity() && job.id().type().environment().isTest());
+        return matching(job -> job.isNodeAllocationFailure() && job.id().type().environment().isTest());
     }
 
     public JobList running() {
