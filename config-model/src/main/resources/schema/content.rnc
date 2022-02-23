@@ -86,7 +86,7 @@ DispatchTuning = element dispatch {
     element min-group-coverage { xsd:double }? & # TODO: Ignored, remove on Vespa 8
     element min-active-docs-coverage { xsd:double }? &
     element top-k-probability { xsd:double }? &
-    element use-local-node { string "true" | string "false" }?
+    element use-local-node { string "true" | string "false" }?  # TODO: Ignored, remove on Vespa 8
 }
 
 ClusterTuning = element tuning {
