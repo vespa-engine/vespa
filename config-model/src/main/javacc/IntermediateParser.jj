@@ -18,45 +18,28 @@ PARSER_BEGIN(IntermediateParser)
 
 package com.yahoo.searchdefinition.parser;
 
-import com.yahoo.document.*;
-import com.yahoo.documentmodel.*;
-import com.yahoo.compress.Compressor;
-import com.yahoo.compress.CompressionType;
-import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.searchdefinition.DistributableResource;
-import com.yahoo.searchdefinition.document.*;
-import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
-import com.yahoo.searchdefinition.document.annotation.TemporaryAnnotationReferenceDataType;
-import com.yahoo.searchdefinition.RankingConstant;
-import com.yahoo.searchdefinition.OnnxModel;
-import com.yahoo.searchdefinition.Index;
-import com.yahoo.searchdefinition.RankProfile;
-import com.yahoo.searchdefinition.DocumentsOnlyRankProfile;
-import com.yahoo.searchdefinition.DefaultRankProfile;
-import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.RankProfile.MatchPhaseSettings;
-import com.yahoo.searchdefinition.RankProfile.DiversitySettings;
-import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.DocumentOnlySchema;
-import com.yahoo.searchdefinition.UnrankedRankProfile;
-import com.yahoo.searchdefinition.fieldoperation.*;
-import com.yahoo.searchlib.rankingexpression.FeatureList;
-import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
-import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorType;
-import com.yahoo.vespa.documentmodel.DocumentSummary;
-import com.yahoo.vespa.documentmodel.SummaryField;
-import com.yahoo.vespa.documentmodel.SummaryTransform;
-import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.query.ranking.Diversity;
+import com.yahoo.searchdefinition.DistributableResource;
+import com.yahoo.searchdefinition.OnnxModel;
+import com.yahoo.searchdefinition.RankProfile.DiversitySettings;
+import com.yahoo.searchdefinition.RankProfile.MatchPhaseSettings;
+import com.yahoo.searchdefinition.RankProfile;
+import com.yahoo.searchdefinition.RankingConstant;
+import com.yahoo.searchdefinition.Schema;
+import com.yahoo.searchdefinition.document.HnswIndexParams;
+import com.yahoo.searchdefinition.document.Stemming;
+import com.yahoo.searchdefinition.fieldoperation.IndexingOperation;
+import com.yahoo.searchlib.rankingexpression.FeatureList;
+import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
+import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
+
 import java.util.Optional;
 import java.util.Map;
 import java.util.List;
@@ -69,36 +52,21 @@ import java.util.logging.Level;
  *
  * @author bratseth
  */
-@SuppressWarnings("deprecation")
 public class IntermediateParser {
 
-    private DocumentTypeManager docMan = null;
-    private ApplicationPackage applicationPackage;
-    private FileRegistry fileRegistry;
     private DeployLogger deployLogger;
     private ModelContext.Properties properties;
-    private RankProfileRegistry rankProfileRegistry;
-    private boolean documentsOnly;
 
     /**
      * Creates a parser
-     *
-     * @param documentsOnly true to only parse the document aspect of a schema (e.g skip rank profiles)
      */
     public IntermediateParser(SimpleCharStream stream,
-                    ApplicationPackage applicationPackage,
-                    FileRegistry fileRegistry,
-                    DeployLogger deployLogger,
-                    ModelContext.Properties properties,
-                    RankProfileRegistry rankProfileRegistry,
-                    boolean documentsOnly) {
+                              DeployLogger deployLogger,
+                              ModelContext.Properties properties)
+    {
         this(stream);
-        this.applicationPackage = applicationPackage;
-        this.fileRegistry = fileRegistry;
         this.deployLogger = deployLogger;
         this.properties = properties;
-        this.rankProfileRegistry = rankProfileRegistry;
-        this.documentsOnly = documentsOnly;
     }
 
     /**
@@ -530,9 +498,7 @@ void namedDocument(ParsedSchema schema) :
  *
  * @param document the document type to modify.
  */
-void documentBody(ParsedDocument document) :
-{
-}
+void documentBody(ParsedDocument document) : { }
 {
     ( compression()
       | headercfg()
@@ -582,19 +548,18 @@ void compression() :
     deployLogger.logApplicationPackage(Level.WARNING, "'compression' for a document is deprecated and ignored");
 }
 {
-    <COMPRESSION> lbrace() ( compressionItem() (<NL>)*)* <RBRACE>  { }
+    <COMPRESSION> lbrace() ( compressionItem() (<NL>)*)* <RBRACE>
 }
 
 /**
  * Consumes the body of a compression block.
  */
-void compressionItem() :
-{ }
+void compressionItem() : { }
 {
     ( ( <TYPE> <COLON> <LZ4> )
       | (<COMPRESSIONTHRESHOLD> <COLON> <INTEGER>)
       | (<COMPRESSIONLEVEL> <COLON> <INTEGER>)
-    ) { }
+    )
 }
 
 /**
@@ -870,15 +835,6 @@ ParsedType mapDataType() :
   }
 }
 
-/* Note: not currently used, remove when decided that map type will not support
-polymorphism */
-DataType wildCardType() :
-{
-}
-{
-(<QUESTIONMARK>) { return DataType.NONE; }
-}
-
 /**
  * This rule consumes a field block of a struct body.
  *
@@ -1026,10 +982,7 @@ void weight(ParsedField field) :
     int num;
 }
 {
-    <WEIGHT> <COLON> num = integer()
-    {
-        field.setWeight(num);
-    }
+    <WEIGHT> <COLON> num = integer() { field.setWeight(num); }
 }
 
 /**
@@ -1431,9 +1384,7 @@ void bolding(ParsedField field) :
  *
  * @param field The field to modify.
  */
-void dictionary(ParsedField field) :
-{
-}
+void dictionary(ParsedField field) : { }
 {
     <DICTIONARY>
     ( (<COLON> dictionarySetting(field))
@@ -1442,17 +1393,12 @@ void dictionary(ParsedField field) :
     }
 }
 
-void dictionarySetting(ParsedField field) :
-{
-    Dictionary.Type type;
-}
+void dictionarySetting(ParsedField field) : { }
 {
     (   <HASH>            { field.dictionary(DictionaryOption.HASH); }
       | <BTREE>           { field.dictionary(DictionaryOption.BTREE); }
       | <CASED>           { field.dictionary(DictionaryOption.CASED); }
       | <UNCASED>         { field.dictionary(DictionaryOption.UNCASED); } )
-    {
-    }
 }
 
 /**
@@ -1788,7 +1734,6 @@ void onnxModel(ParsedSchema schema) :
         }
       lbrace() (onnxModelItem(onnxModel) (<NL>)*)+ <RBRACE> )
     {
-        if (documentsOnly) return;
         schema.addOnnxModel(onnxModel);
     }
 }
@@ -1842,7 +1787,6 @@ void rankingConstant(ParsedSchema schema) :
       <RBRACE>
     )
     {
-        if (documentsOnly) return;
         schema.addRankingConstant(new RankingConstant(name, type, path, pathType));
     }
 }
@@ -1993,9 +1937,7 @@ void function(ParsedRankProfile profile) :
     }
 }
 
-boolean inline() :
-{
-}
+boolean inline() : { }
 {
     ( <INLINE> { return true; } ) ?
     { return false; }
@@ -2035,7 +1977,6 @@ void matchPhaseItem(MatchPhaseSettings settings) :
       | <EVALUATION_POINT> <COLON> multiplier = consumeFloat() { settings.setEvaluationPoint(multiplier); }
       | <PRE_POST_FILTER_TIPPING_POINT> <COLON> multiplier = consumeFloat() { settings.setPrePostFilterTippingPoint(multiplier); }
     )
-    { return; }
 }
 
 /**
@@ -2069,7 +2010,6 @@ void diversityItem(DiversitySettings settings) :
           | <LOOSE>  { settings.setCutoffStrategy(Diversity.CutoffStrategy.loose); }
         )
     )
-    { return; }
 }
 
 
@@ -2383,9 +2323,7 @@ void rankDegradationPosbinSize() :
 /**
  * This rule consumes part of a rank-degradation statement of a rank profile.
  */
-void rankDegradationItem() :
-{
-}
+void rankDegradationItem() : { }
 {
     ( rankDegradationBinSize()
       | rankDegradationBinLow()
@@ -2467,7 +2405,7 @@ String tensorValue() :
 TensorType tensorTypeWithPrefix(String errorMessage) :
 { TensorType type; }
 {
-    <TYPE> <COLON> type= tensorType(errorMessage)
+    <TYPE> <COLON> type = tensorType(errorMessage)
     { return type; }
 }
 
