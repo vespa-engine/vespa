@@ -24,11 +24,17 @@ public class ParsedSchema {
 
     String name() { return name; }
 
+    void addAnnotation(ParsedAnnotation annotation) {}
     void addDocument(ParsedDocument document) {}
+    void addDocumentSummary(ParsedDocumentSummary docsum) {}
+    void addField(ParsedField field) {}
+    void addFieldSet(ParsedFieldSet fieldSet) {}
     void addImportedField(String asFieldName, String refFieldName, String foregnFieldName) {}
+    void addIndex(ParsedIndex index) {}
     void addOnnxModel(OnnxModel model) {}
-    void addRankingConstant(RankingConstant constant) {}
     void addRankProfile(ParsedRankProfile profile) {}
+    void addRankingConstant(RankingConstant constant) {}
+    void addStruct(ParsedStruct struct) {}
     void enableRawAsBase64(boolean value) {}
     void inherit(String other) { inherited.add(other); }
     void setStemming(Stemming value) {}
@@ -36,12 +42,6 @@ public class ParsedSchema {
     /*
     private final List<ParsedField> fields = new ArrayList<>();
     List<ParsedField> getFields() { return fields; }
-    void addField(ParsedField field) { fields.add(field); }
-    void addAnnotation(ParsedAnnotation annotation) {}
-    void addIndex(ParsedIndex index) {}
-    void addStruct(ParsedStruct struct) {}
-    void addFieldSet(ParsedFieldSet fieldSet) {}
-    void addDocumentSummary(ParsedDocumentSummary docsum) {}
     */
 }
 
