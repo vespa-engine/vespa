@@ -13,8 +13,6 @@ public class Test {
      * testing.
      **/
     public static class Orb extends Supervisor {
-        public volatile int  initCount         = 0;
-        public volatile int  liveCount         = 0;
         public volatile int  readRequestCount  = 0;
         public volatile int  readReplyCount    = 0;
         public volatile int  readErrorCount    = 0;
@@ -23,8 +21,6 @@ public class Test {
         public volatile int  writeReplyCount   = 0;
         public volatile int  writeErrorCount   = 0;
         public volatile long writeBytes        = 0;
-        public volatile int  downCount         = 0;
-        public volatile int  finiCount         = 0;
 
         public Orb(Transport t) {
             super(t);
@@ -40,30 +36,6 @@ public class Test {
             return (request == writeRequestCount &&
                     reply == writeReplyCount &&
                     error == writeErrorCount);
-        }
-
-        public boolean checkLifeCounts(int init, int fini) {
-            return (init == initCount && fini == finiCount);
-        }
-
-        public void sessionInit(Target target) {
-            initCount++;
-            super.sessionInit(target);
-        }
-
-        public void sessionLive(Target target) {
-            liveCount++;
-            super.sessionLive(target);
-        }
-
-        public void sessionDown(Target target) {
-            downCount++;
-            super.sessionDown(target);
-        }
-
-        public void sessionFini(Target target) {
-            finiCount++;
-            super.sessionFini(target);
         }
 
         public void readPacket(PacketInfo info) {
