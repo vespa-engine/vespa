@@ -1461,7 +1461,6 @@ public class YqlParser implements Parser {
         return (Item) leafStyleSettings(ast, wordItem);
     }
 
-    @SuppressWarnings({"deprecation"})
     private boolean shouldSegment(String field, OperatorNode<ExpressionOperator> ast, boolean fromQuery) {
         return fromQuery && ! indexFactsSession.getIndex(indexNameExpander.expand(field)).isAttribute();
     }
