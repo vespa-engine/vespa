@@ -35,17 +35,6 @@ public:
     std::shared_ptr<Writer> getWriter(const vespalib::string & domainName) const override;
     TransLogServer & setDomainConfig(const DomainConfig & cfg);
 
-    class Session
-    {
-        bool _down;
-    public:
-        typedef std::shared_ptr<Session> SP;
-
-        Session() : _down(false) { }
-        bool getDown() const { return _down; }
-        void setDown() { _down = true; }
-    };
-
 private:
     bool onStop() override;
     void run() override;
@@ -65,16 +54,10 @@ private:
     void domainSessionClose(FRT_RPCRequest *req);
     void domainSync(FRT_RPCRequest *req);
 
-    void initSession(FRT_RPCRequest *req);
-    void finiSession(FRT_RPCRequest *req);
-    void downSession(FRT_RPCRequest *req);
-
     std::vector<vespalib::string> getDomainNames();
     DomainSP findDomain(vespalib::stringref name) const;
     vespalib::string dir()        const { return _baseDir + "/" + _name; }
     vespalib::string domainList() const { return dir() + "/" + _name + ".domains"; }
-
-    static const Session::SP & getSession(FRT_RPCRequest *req);
 
     using DomainList = std::map<vespalib::string, DomainSP >;
     using ReadGuard = std::shared_lock<std::shared_mutex>;
