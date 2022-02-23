@@ -49,7 +49,6 @@ private:
         BufferAndTypeId(void* buffer, uint32_t typeId) : _buffer(buffer), _typeId(typeId) { }
         std::atomic<void*>& get_atomic_buffer() noexcept { return _buffer; }
         void* get_buffer_relaxed() noexcept { return _buffer.load(std::memory_order_relaxed); }
-        const void* get_buffer_relaxed() const noexcept { return _buffer.load(std::memory_order_relaxed); }
         const void* get_buffer_acquire() const noexcept { return _buffer.load(std::memory_order_acquire); }
         uint32_t getTypeId() const { return _typeId; }
         void setTypeId(uint32_t typeId) { _typeId = typeId; }
