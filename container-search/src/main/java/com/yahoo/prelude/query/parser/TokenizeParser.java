@@ -1,17 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.parser;
 
-import com.yahoo.prelude.query.BlockItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
-import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.WeakAndItem;
-import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.query.parser.ParserEnvironment;
 
-import static com.yahoo.prelude.query.parser.Token.Kind.MINUS;
 import static com.yahoo.prelude.query.parser.Token.Kind.NUMBER;
-import static com.yahoo.prelude.query.parser.Token.Kind.UNDERSCORE;
 import static com.yahoo.prelude.query.parser.Token.Kind.WORD;
 
 /**
@@ -20,9 +15,9 @@ import static com.yahoo.prelude.query.parser.Token.Kind.WORD;
  *
  * @author bratseth
  */
-public final class NoGrammarParser extends AbstractParser {
+public final class TokenizeParser extends AbstractParser {
 
-    public NoGrammarParser(ParserEnvironment environment) {
+    public TokenizeParser(ParserEnvironment environment) {
         super(environment);
     }
 

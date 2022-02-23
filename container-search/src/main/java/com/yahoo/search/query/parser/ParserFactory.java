@@ -46,8 +46,8 @@ public final class ParserFactory {
                 return new SelectParser(environment);
             case WEAKAND:
                 return new AllParser(environment, true);
-            case NONE:
-                return new NoGrammarParser(environment);
+            case TOKENIZE:
+                return new TokenizeParser(environment);
             default:
                 throw new UnsupportedOperationException(type.toString());
         }
