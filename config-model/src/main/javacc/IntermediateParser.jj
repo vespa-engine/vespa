@@ -33,6 +33,7 @@ import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.HnswIndexParams;
 import com.yahoo.searchdefinition.document.Stemming;
+import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.fieldoperation.IndexingOperation;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
@@ -652,10 +653,8 @@ void fieldSet(ParsedSchema schema) :
     ((
       ( <FIELDS><COLON> name = identifier() { fieldSet.addField(name); }
               ( <COMMA> name = identifier() { fieldSet.addField(name); } )* )
-    |
-      ( <QUERYCOMMAND> <COLON> (queryCommand = identifierWithDash() | queryCommand = quotedString())) { fieldSet.addQueryCommand(queryCommand); }
-    |
-      ( matchInfo = matchSettings() ) { fieldSet.addMatchSettings(matchInfo); }
+    | ( <QUERYCOMMAND> <COLON> (queryCommand = identifierWithDash() | queryCommand = quotedString())) { fieldSet.addQueryCommand(queryCommand); }
+    | matchSettings(fieldSet.matchSettings())
     ) (<NL>)* )+
   <RBRACE>
   {
@@ -854,7 +853,7 @@ void structFieldDefinition(ParsedStruct struct) :
         }
         field = new ParsedField(name, type);
     }
-    lbrace() (id(field) (<NL>)*)? (match(field) (<NL>)*)* <RBRACE> {
+    lbrace() (id(field) (<NL>)*)? (matchSettings(field.matchSettings()) (<NL>)*)* <RBRACE> {
         struct.addField(field);
     }
 }
@@ -900,7 +899,7 @@ void fieldBody(ParsedField field) : { }
       indexInsideField(field) |
       indexing(field) |
       indexingRewrite(field) |
-      match(field) |
+      matchSettings(field.matchSettings()) |
       normalizing(field) |
       queryCommand(field) |
       rank(field) |
@@ -923,7 +922,7 @@ void structFieldBody(ParsedField field) : { }
     ( summaryInField(field) |
       indexing(field) |
       attribute(field) |
-      match(field) |
+      matchSettings(field.matchSettings()) |
       queryCommand(field) |
       structField(field) |
       summaryTo(field) )
@@ -946,7 +945,14 @@ void indexing(ParsedField field) : { }
  */
 void indexingOperation(ParsedField field, boolean multiLine) : { }
 {
-    { field.addIndexingOperation(newIndexingOperation(multiLine)); }
+    {
+        IndexingOperation oldOp = newIndexingOperation(multiLine);
+        // TODO conversion via SDField is very ugly
+        SDField tmpField = new SDField("temp", com.yahoo.document.DataType.STRING);
+        oldOp.apply(tmpField);
+        ParsedIndexingOp newOp = new ParsedIndexingOp(tmpField.getIndexingScript());
+        field.setIndexingOperation(newOp);
+    }
 }
 
 /**
@@ -1446,22 +1452,10 @@ void alias(ParsedField field) :
     }
 }
 
-void match(ParsedField field) :
-{
-    ParsedMatchSettings matchInfo;
-}
-{
-    matchInfo = matchSettings() { field.addMatchSettings(matchInfo); }
-}
-
-ParsedMatchSettings matchSettings() :
-{
-    ParsedMatchSettings matchInfo = new ParsedMatchSettings();
-}
+void matchSettings(ParsedMatchSettings matchInfo) : { }
 {
     <MATCH> ( (<COLON> matchType(matchInfo))
               | (lbrace() (matchItem(matchInfo) (<NL>)*)* <RBRACE>) )
-    { return matchInfo; }
 }
 
 void matchType(ParsedMatchSettings matchInfo) : { }
@@ -1683,7 +1677,7 @@ void indexBody(ParsedIndex index) :
 {
     ( <PREFIX>                                           { index.setPrefix(true); }
       | <ALIAS> <COLON> str = identifierWithDash()       { index.addAlias(str); }
-      | <STEMMING> <COLON> str = identifierWithDash()    { index.setStemming(str); }
+      | <STEMMING> <COLON> str = identifierWithDash()    { index.setStemming(Stemming.get(str)); }
       | <ARITY> <COLON> arity = integer()                              { index.setArity(arity); }
       | <LOWERBOUND> <COLON> num = consumeLong()                       { index.setLowerBound(num); }
       | <UPPERBOUND> <COLON> num = consumeLong()                       { index.setUpperBound(num); }

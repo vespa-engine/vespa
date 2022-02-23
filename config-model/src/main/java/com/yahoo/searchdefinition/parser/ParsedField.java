@@ -3,6 +3,14 @@ package com.yahoo.searchdefinition.parser;
 
 import com.yahoo.searchdefinition.document.Stemming;
 
+import com.google.common.collect.ImmutableList;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 /**
  * This class holds the extracted information after parsing a "field"
  * block, using simple data structures as far as possible.  Do not put
@@ -13,6 +21,26 @@ class ParsedField {
 
     private final String name;
     private ParsedType type;
+    private boolean hasBolding = false;
+    private boolean isFilter = false;
+    private int overrideId = 0;
+    private boolean isLiteral = false;
+    private boolean isNormal = false;
+    private Integer weight;
+    private String normalizing;
+    private final ParsedMatchSettings matchInfo = new ParsedMatchSettings();
+    private Optional<Stemming> stemming = Optional.empty();
+    private Optional<ParsedIndexingOp> indexingOp = Optional.empty();
+    private Optional<ParsedSorting> sortSettings = Optional.empty();
+
+    private final Map<String, ParsedAttribute> attributes = new HashMap<>();
+    private final Map<String, ParsedIndex> fieldIndexes = new HashMap<>();
+    private final Map<String, String> aliases = new HashMap<>();
+    private final Map<String, String> rankTypes = new HashMap<>();
+    private final Map<String, ParsedField> structFields = new HashMap<>();
+    private final Map<String, ParsedSummaryField> summaryFields = new HashMap<>();
+    private final List<DictionaryOption> dictionaryOptions = new ArrayList<>();
+    private final List<String> queryCommands = new ArrayList<>();
 
     ParsedField(String name, ParsedType type) {
         this.name = name;
@@ -21,25 +49,87 @@ class ParsedField {
 
     String name() { return this.name; }
     ParsedType getType() { return this.type; }
+    boolean getBolding() { return this.hasBolding; }
+    boolean getFilter() { return this.isFilter; }
+    boolean hasIdOverride() { return overrideId != 0; }
+    int idOverride() { return overrideId; }
+    List<DictionaryOption> getDictionaryOptions() { return ImmutableList.copyOf(dictionaryOptions); }
+    List<ParsedIndex> getIndexes() { return ImmutableList.copyOf(fieldIndexes.values()); }
+    List<String> getAliases() { return ImmutableList.copyOf(aliases.keySet()); }
+    String lookupAliasedFrom(String alias) { return aliases.get(alias); }
+    ParsedMatchSettings matchSettings() { return this.matchInfo; }
 
-    void addAlias(String from, String to) {}
-    void addIndex(ParsedIndex index) {}
-    void addRankType(String index, String rankType) {}
-    void dictionary(DictionaryOption option) {}
-    void setBolding(boolean value) {}
-    void setFilter(boolean value) {}
-    void setId(int id) {}
-    void setIndexingRewrite(boolean value) {}
-    void setLiteral(boolean value) {}
-    void setNormal(boolean value) {}
-    void setNormalizing(String value) {}
-    void setSorting(ParsedSorting sorting) {}
-    void setStemming(Stemming stemming) {}
-    void setWeight(int weight) {}
-    void addAttribute(ParsedAttribute attr) {}
-    void addIndexingOperation(Object indx) {}
-    void addMatchSettings(ParsedMatchSettings settings) {}
-    void addQueryCommand(String queryCommand) {}
-    void addStructField(ParsedField structField) {}
-    void addSummaryField(ParsedSummaryField summaryField) {}
+    void addAlias(String from, String to) {
+        if (aliases.containsKey(to)) {
+            throw new IllegalArgumentException("field "+this.name+" already has alias "+to);
+        }
+        aliases.put(to, from);
+    }
+
+    void addIndex(ParsedIndex index) {
+        String idxName = index.name();
+        if (fieldIndexes.containsKey(idxName)) {
+            throw new IllegalArgumentException("field "+this.name+" already has index "+idxName);
+        }
+        fieldIndexes.put(idxName, index);
+    }
+
+    void addRankType(String index, String rankType) {
+        rankTypes.put(index, rankType);
+    }
+
+    void dictionary(DictionaryOption option) {
+        dictionaryOptions.add(option);
+    }
+
+    void setBolding(boolean value) { this.hasBolding = value; }
+    void setFilter(boolean value) { this.isFilter = value; }
+    void setId(int id) { this.overrideId = id; }
+    void setLiteral(boolean value) { this.isLiteral = value; }
+    void setNormal(boolean value) { this.isNormal = value; }
+    void setNormalizing(String value) { this.normalizing = value; }
+    void setStemming(Stemming stemming) { this.stemming = Optional.of(stemming); }
+    void setWeight(int weight) { this.weight = weight; }
+
+    void addAttribute(ParsedAttribute attribute) {
+        String attrName = attribute.name();
+        if (attributes.containsKey(attrName)) {
+            throw new IllegalArgumentException("field "+this.name+" already has attribute "+attrName);
+        }
+        attributes.put(attrName, attribute);
+    }
+
+    void setIndexingOperation(ParsedIndexingOp idxOp) {
+        if (indexingOp.isPresent()) {
+            throw new IllegalArgumentException("field "+this.name+" already has indexing");
+        }
+        indexingOp = Optional.of(idxOp);
+    }
+
+    void setSorting(ParsedSorting sorting) {
+        if (sortSettings.isPresent()) {
+            throw new IllegalArgumentException("field "+this.name+" already has sorting");
+        }
+        this.sortSettings = Optional.of(sorting);
+    }
+
+    void addQueryCommand(String command) {
+        queryCommands.add(command);
+    }
+
+    void addStructField(ParsedField structField) {
+        String fieldName = structField.name();
+        if (structFields.containsKey(fieldName)) {
+            throw new IllegalArgumentException("field "+this.name+" already has struct-field "+fieldName);
+        }
+        structFields.put(fieldName, structField);
+    }
+
+    void addSummaryField(ParsedSummaryField summaryField) {
+        String fieldName = summaryField.name();
+        if (summaryFields.containsKey(fieldName)) {
+            throw new IllegalArgumentException("field "+this.name+" already has summary field "+fieldName);
+        }
+        summaryFields.put(fieldName, summaryField);
+    }
 }

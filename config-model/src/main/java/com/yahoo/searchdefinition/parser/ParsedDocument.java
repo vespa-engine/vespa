@@ -1,8 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.parser;
 
+import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * This class holds the extracted information after parsing a
@@ -13,21 +18,38 @@ import java.util.List;
 public class ParsedDocument {
     private final String name;
     private final List<String> inherited = new ArrayList<>();
+    private final Map<String, ParsedField> docFields = new HashMap<>();
+    private final Map<String, ParsedStruct> docStructs = new HashMap<>();
+    private final Map<String, ParsedAnnotation> docAnnotations = new HashMap<>();
 
-    public  ParsedDocument(String name) {
+    public ParsedDocument(String name) {
         this.name = name;
     }
 
     String name() { return name; }
+    List<String> getInherited() { return ImmutableList.copyOf(inherited); }
+    List<ParsedAnnotation> getAnnotations() { return ImmutableList.copyOf(docAnnotations.values()); }
+    List<ParsedField> getFields() { return ImmutableList.copyOf(docFields.values()); }
+    List<ParsedStruct> getStructs() { return ImmutableList.copyOf(docStructs.values()); }
+
     void inherit(String other) { inherited.add(other); }
 
-    void addField(ParsedField field) {}
-    void addStruct(ParsedStruct type) {}
-    void addAnnotation(ParsedAnnotation type) {}
+    void addField(ParsedField field) {
+        String fieldName = field.name();
+        if (docFields.containsKey(fieldName)) {
+            throw new IllegalArgumentException("document-summary "+this.name+" already has field "+fieldName);
+        }
+        docFields.put(fieldName, field);
+    }
 
-    /*
-    private final List<ParsedField> fields = new ArrayList<>();
-    List<ParsedField> getFields() { return fields; }
-    */
+    void addStruct(ParsedStruct struct) {
+        String sName = struct.name();
+        if (docStructs.containsKey(sName)) {
+            throw new IllegalArgumentException("document "+this.name+" already has struct "+sName);
+        }
+        docStructs.put(sName, struct);
+    }
+
+    void addAnnotation(ParsedAnnotation type) {}
 }
 

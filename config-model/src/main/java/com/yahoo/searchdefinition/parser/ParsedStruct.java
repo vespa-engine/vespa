@@ -1,8 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.parser;
 
+import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This class holds the extracted information after parsing a "struct"
@@ -13,16 +16,24 @@ import java.util.List;
 public class ParsedStruct {
     private final String name;
     private final List<String> inherited = new ArrayList<>();
-    private final List<ParsedField> fields = new ArrayList<>();
+    private final Map<String, ParsedField> fields = new HashMap<>();
 
-    public  ParsedStruct(String name) {
+    public ParsedStruct(String name) {
         this.name = name;
     }
 
-    /* TODO make immutable */
-    List<ParsedField> getFields() { return fields; }
+    String name() { return this.name; }
+    List<ParsedField> getFields() { return ImmutableList.copyOf(fields.values()); }
+    List<String> getInherited() { return ImmutableList.copyOf(inherited); }
+
+    void addField(ParsedField field) {
+        String fieldName = field.name();
+        if (fields.containsKey(fieldName)) {
+            throw new IllegalArgumentException("struct "+this.name+" already has field "+fieldName);
+        }
+        fields.put(fieldName, field);
+    }
 
     void inherit(String other) { inherited.add(other); }
-    void addField(ParsedField field) { fields.add(field); }
 }
 
