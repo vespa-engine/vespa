@@ -43,11 +43,13 @@ public class OnnxModelProbe {
                 String jsonInput = createJsonInput(app.getFileReference(modelPath).getAbsolutePath(), inputTypes);
                 String jsonOutput = callVespaAnalyzeOnnxModel(jsonInput);
                 outputType = outputTypeFromJson(jsonOutput, outputName);
-                writeProbedOutputType(app, modelPath, contextKey, outputType);
+                if ( ! outputType.equals(TensorType.empty)) {
+                    writeProbedOutputType(app, modelPath, contextKey, outputType);
+                }
             }
 
         } catch (IOException | InterruptedException e) {
-            throw new IllegalArgumentException("Unable to probe ONNX model", e);
+            e.printStackTrace(System.err);
         }
 
         return outputType;
