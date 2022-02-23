@@ -101,9 +101,9 @@ void
 BufferState::onActive(uint32_t bufferId, uint32_t typeId,
                       BufferTypeBase *typeHandler,
                       size_t elementsNeeded,
-                      void *&buffer)
+                      std::atomic<void*>& buffer)
 {
-    assert(buffer == nullptr);
+    assert(buffer.load(std::memory_order_relaxed) == nullptr);
     assert(_buffer.get() == nullptr);
     assert(_state == FREE);
     assert(_typeHandler == nullptr);
@@ -125,15 +125,15 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
     auto allocator = typeHandler->get_memory_allocator();
     _buffer = (allocator != nullptr) ? Alloc::alloc_with_allocator(allocator) : Alloc::alloc(0, MemoryAllocator::HUGEPAGE_SIZE);
     _buffer.create(alloc.bytes).swap(_buffer);
-    buffer = _buffer.get();
-    assert(buffer != nullptr || alloc.elements == 0u);
+    assert(_buffer.get() != nullptr || alloc.elements == 0u);
+    buffer.store(_buffer.get(), std::memory_order_release);
     _allocElems = alloc.elements;
     _state = ACTIVE;
     _typeHandler = typeHandler;
     assert(typeId <= std::numeric_limits<uint16_t>::max());
     _typeId = typeId;
     _arraySize = _typeHandler->getArraySize();
-    typeHandler->onActive(bufferId, &_usedElems, &_deadElems, buffer);
+    typeHandler->onActive(bufferId, &_usedElems, &_deadElems, buffer.load(std::memory_order::relaxed));
 }
 
 
@@ -161,9 +161,9 @@ BufferState::onHold(uint32_t buffer_id)
 
 
 void
-BufferState::onFree(void *&buffer)
+BufferState::onFree(std::atomic<void*>& buffer)
 {
-    assert(buffer == _buffer.get());
+    assert(buffer.load(std::memory_order_relaxed) == _buffer.get());
     assert(_state == HOLD);
     assert(_typeHandler != nullptr);
     assert(_deadElems <= _usedElems);
@@ -171,7 +171,7 @@ BufferState::onFree(void *&buffer)
     _typeHandler->destroyElements(buffer, _usedElems);
     Alloc::alloc().swap(_buffer);
     _typeHandler->onFree(_usedElems);
-    buffer = nullptr;
+    buffer.store(nullptr, std::memory_order_release);
     _usedElems = 0;
     _allocElems = 0;
     _deadElems = 0u;
@@ -191,13 +191,13 @@ BufferState::onFree(void *&buffer)
 
 
 void
-BufferState::dropBuffer(uint32_t buffer_id, void *&buffer)
+BufferState::dropBuffer(uint32_t buffer_id, std::atomic<void*>& buffer)
 {
     if (_state == FREE) {
-        assert(buffer == nullptr);
+        assert(buffer.load(std::memory_order_relaxed) == nullptr);
         return;
     }
-    assert(buffer != nullptr || _allocElems == 0);
+    assert(buffer.load(std::memory_order_relaxed) != nullptr || _allocElems == 0);
     if (_state == ACTIVE) {
         onHold(buffer_id);
     }
@@ -205,7 +205,7 @@ BufferState::dropBuffer(uint32_t buffer_id, void *&buffer)
         onFree(buffer);
     }
     assert(_state == FREE);
-    assert(buffer == nullptr);
+    assert(buffer.load(std::memory_order_relaxed) == nullptr);
 }
 
 
@@ -282,7 +282,7 @@ BufferState::disableElemHoldList()
 void
 BufferState::fallbackResize(uint32_t bufferId,
                             size_t elementsNeeded,
-                            void *&buffer,
+                            std::atomic<void*>& buffer,
                             Alloc &holdBuffer)
 {
     assert(_state == ACTIVE);
@@ -292,13 +292,12 @@ BufferState::fallbackResize(uint32_t bufferId,
     assert(alloc.elements >= _usedElems + elementsNeeded);
     assert(alloc.elements > _allocElems);
     Alloc newBuffer = _buffer.create(alloc.bytes);
-    _typeHandler->fallbackCopy(newBuffer.get(), buffer, _usedElems);
+    _typeHandler->fallbackCopy(newBuffer.get(), buffer.load(std::memory_order_relaxed), _usedElems);
     holdBuffer.swap(_buffer);
     std::atomic_thread_fence(std::memory_order_release);
     _buffer = std::move(newBuffer);
-    buffer = _buffer.get();
+    buffer.store(_buffer.get(), std::memory_order_release);
     _allocElems = alloc.elements;
-    std::atomic_thread_fence(std::memory_order_release);
 }
 
 void

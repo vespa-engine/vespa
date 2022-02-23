@@ -94,7 +94,7 @@ public:
      * @param buffer         Start of allocated buffer return value.
      */
     void onActive(uint32_t bufferId, uint32_t typeId, BufferTypeBase *typeHandler,
-                  size_t elementsNeeded, void *&buffer);
+                  size_t elementsNeeded, std::atomic<void*>& buffer);
 
     /**
      * Transition from ACTIVE to HOLD state.
@@ -104,7 +104,7 @@ public:
     /**
      * Transition from HOLD to FREE state.
      */
-    void onFree(void *&buffer);
+    void onFree(std::atomic<void*>& buffer);
 
     /**
      * Set list of buffer states with nonempty free lists.
@@ -157,7 +157,7 @@ public:
     void cleanHold(void *buffer, size_t offset, ElemCount numElems) {
         _typeHandler->cleanHold(buffer, offset, numElems, BufferTypeBase::CleanContext(_extraUsedBytes, _extraHoldBytes));
     }
-    void dropBuffer(uint32_t buffer_id, void *&buffer);
+    void dropBuffer(uint32_t buffer_id, std::atomic<void*>& buffer);
     uint32_t getTypeId() const { return _typeId; }
     uint32_t getArraySize() const { return _arraySize; }
     size_t getDeadElems() const { return _deadElems; }
@@ -167,7 +167,7 @@ public:
     bool getCompacting() const { return _compacting; }
     void setCompacting() { _compacting = true; }
     uint32_t get_used_arrays() const noexcept { return _usedElems / _arraySize; }
-    void fallbackResize(uint32_t bufferId, size_t elementsNeeded, void *&buffer, Alloc &holdBuffer);
+    void fallbackResize(uint32_t bufferId, size_t elementsNeeded, std::atomic<void*>& buffer, Alloc &holdBuffer);
 
     bool isActive(uint32_t typeId) const {
         return ((_state == ACTIVE) && (_typeId == typeId));
