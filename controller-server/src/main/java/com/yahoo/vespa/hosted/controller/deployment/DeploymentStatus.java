@@ -216,7 +216,12 @@ public class DeploymentStatus {
     }
 
     /** The set of jobs that need to run for the given changes to be considered complete. */
-    public Map<JobId, List<Job>> jobsToRun(Map<InstanceName, Change> changes) {
+    public boolean hasCompleted(InstanceName instance, Change change) {
+        return jobsToRun(Map.of(instance, change), false).isEmpty();
+    }
+
+    /** The set of jobs that need to run for the given changes to be considered complete. */
+    private Map<JobId, List<Job>> jobsToRun(Map<InstanceName, Change> changes) {
         return jobsToRun(changes, false);
     }
 
@@ -263,7 +268,7 @@ public class DeploymentStatus {
                                                                                            .noneMatch(deployment -> deployment.applicationVersion().compareTo(version) > 0))
                                                              .map(Change::of)
                                                              .filter(change -> application.require(instance).change().application().map(change::upgrades).orElse(true))
-                                                             .filter(change -> ! jobsToRun(Map.of(instance, change)).isEmpty())
+                                                             .filter(change -> ! hasCompleted(instance, change))
                                                              .findFirst())
                        .orElse(Change.empty());
     }

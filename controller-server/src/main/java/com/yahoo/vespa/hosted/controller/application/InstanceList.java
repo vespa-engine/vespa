@@ -74,7 +74,7 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
 
     /** Returns the subset of instances that has completed deployment of given change */
     public InstanceList hasCompleted(Change change) {
-        return matching(id -> instances.get(id).jobsToRun(Map.of(id.instance(), change)).isEmpty());
+        return matching(id -> instances.get(id).hasCompleted(id.instance(), change));
     }
 
     /** Returns the subset of instances which are currently deploying a change */
