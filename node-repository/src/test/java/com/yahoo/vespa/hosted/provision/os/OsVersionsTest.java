@@ -227,41 +227,25 @@ public class OsVersionsTest {
 
     @Test
     public void upgrade_by_retiring_everything_at_once() {
-        OsVersions versions = new OsVersions(tester.nodeRepository(), true, Integer.MAX_VALUE);
-        int nodeCount = 3;
-        ApplicationId configServerApp = ApplicationId.from("hosted-vespa", "zone-config-servers", "default");
-        List<Node> configHosts = provisionInfraApplication(nodeCount, infraApplication, NodeType.confighost);
-        NodeResources resources = new NodeResources(2, 4, 8, 1);
-        for (int i = 0; i < nodeCount; i++) {
-            tester.makeReadyChildren(1, i, resources, NodeType.config, configHosts.get(i).hostname(), (index) -> "cfg" + index);
-        }
-        tester.prepareAndActivateInfraApplication(configServerApp, NodeType.config);
+        var versions = new OsVersions(tester.nodeRepository(), true, Integer.MAX_VALUE);
+        int hostCount = 3;
+        provisionInfraApplication(hostCount, infraApplication, NodeType.confighost);
+        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list()
+                                                   .nodeType(NodeType.confighost)
+                                                   .not().state(Node.State.deprovisioned);
 
         // Target is set with zero budget and upgrade started
         var version1 = Version.fromString("7.1");
         versions.setTarget(NodeType.confighost, version1, Duration.ZERO,false);
-        for (int i = 0; i < nodeCount; i++) {
+        for (int i = 0; i < hostCount; i++) {
             versions.resumeUpgradeOf(NodeType.confighost, true);
         }
 
         // All hosts are deprovisioning
-        NodeList nodes = tester.nodeRepository().nodes().list().not().state(Node.State.deprovisioned);
-        NodeList configNodes = nodes.nodeType(NodeType.config);
-        assertEquals(nodeCount, nodes.nodeType(NodeType.confighost).deprovisioning().size());
-        assertEquals(nodeCount, configNodes.deprovisioning().size());
-
-        // One child is inadvertently unretired
-        tester.patchNode(configNodes.first().get(), (node) -> node.withWantToRetire(false, false,
-                                                                                    Agent.system, tester.clock().instant()));
-
-        // Resuming upgrade of host re-retires child
-        versions.resumeUpgradeOf(NodeType.confighost, true);
-        nodes = tester.nodeRepository().nodes().list().not().state(Node.State.deprovisioned);
-        assertEquals(nodeCount, nodes.nodeType(NodeType.config).deprovisioning().size());
-
+        assertEquals(hostCount, hostNodes.get().deprovisioning().size());
         // Nodes complete their upgrade by being reprovisioned
-        completeReprovisionOf(nodes.nodeType(NodeType.confighost).deprovisioning().asList(), NodeType.confighost);
-        assertEquals(nodeCount, tester.nodeRepository().nodes().list().nodeType(NodeType.confighost).onOsVersion(version1).size());
+        completeReprovisionOf(hostNodes.get().deprovisioning().asList(), NodeType.confighost);
+        assertEquals(hostCount, hostNodes.get().onOsVersion(version1).size());
     }
 
     @Test
@@ -544,7 +528,7 @@ public class OsVersionsTest {
                 ApplicationId application = node.allocation().get().owner();
                 tester.nodeRepository().nodes().park(node.hostname(), false, Agent.system,
                                                      getClass().getSimpleName());
-                tester.nodeRepository().nodes().removeRecursively(node, true);
+                tester.nodeRepository().nodes().removeRecursively(node.hostname());
                 node = provisionInfraApplication(1, application, nodeType).get(0);
             }
             return node.with(node.status().withOsVersion(node.status().osVersion().withCurrent(wantedOsVersion)));
