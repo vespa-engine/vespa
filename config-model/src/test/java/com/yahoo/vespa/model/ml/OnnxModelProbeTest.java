@@ -30,7 +30,9 @@ public class OnnxModelProbeTest {
             TensorType expected = TensorType.fromSpec("tensor<float>(d0[1],d1[2],d2[2])");
 
             // Can't test model probing directly as 'vespa-analyze-onnx-model' is not available
-
+            TensorType outputType = OnnxModelProbe.probeModel(app, modelPath, output, inputTypes);
+            assertEquals(outputType, TensorType.empty);
+            
             OnnxModelProbe.writeProbedOutputType(app, modelPath, output, inputTypes, expected);
 
             // Test loading from generated info
@@ -38,7 +40,7 @@ public class OnnxModelProbeTest {
             IOUtils.copyDirectory(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                     storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             app = FilesApplicationPackage.fromFile(storedAppDir.toFile());
-            TensorType outputType = OnnxModelProbe.probeModel(app, modelPath, output, inputTypes);
+            outputType = OnnxModelProbe.probeModel(app, modelPath, output, inputTypes);
             assertEquals(outputType, expected);
 
         } finally {
