@@ -205,6 +205,8 @@ TEST_F("Test single threaded lower_bound reader during updates", Fixture)
     f._reportWork = true;
     f._writer.execute(makeLambdaTask([this, cnt]() { f.writeWork(cnt); }));
     f._readers.execute(makeLambdaTask([this]() { f.readWork(); }));
+    f._writer.sync();
+    f._readers.sync();
 }
 
 TEST_F("Test multithreaded lower_bound reader during updates", Fixture)
@@ -216,6 +218,8 @@ TEST_F("Test multithreaded lower_bound reader during updates", Fixture)
     f._readers.execute(makeLambdaTask([this]() { f.readWork(); }));
     f._readers.execute(makeLambdaTask([this]() { f.readWork(); }));
     f._readers.execute(makeLambdaTask([this]() { f.readWork(); }));
+    f._writer.sync();
+    f._readers.sync();
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
