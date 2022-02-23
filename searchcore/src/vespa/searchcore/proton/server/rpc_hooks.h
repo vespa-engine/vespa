@@ -21,40 +21,6 @@ class RPCHooksBase : public FRT_Invokable
 private:
     using ProtoRpcAdapter = search::engine::ProtoRpcAdapter;
 
-    class Session {
-    private:
-        int64_t           _numDocs;
-        vespalib::string  _delayedConfigs;
-        int64_t           _gen;
-    public:
-        typedef std::shared_ptr<Session> SP;
-        Session();
-        int64_t                  getGen() const { return _gen; }
-        Session & setGen(int64_t gen) { _gen = gen; return *this; }
-
-        int64_t getNumDocs() const { return _numDocs; }
-        void setNumDocs(int64_t numDocs) { _numDocs = numDocs; }
-
-        const vespalib::string & getDelayedConfigs() const {
-            return _delayedConfigs;
-        }
-
-        void setDelayedConfigs(const vespalib::string &delayedConfigs) {
-            _delayedConfigs = delayedConfigs;
-        }
-
-    };
-    struct StateArg {
-        StateArg(Session::SP session, FRT_RPCRequest * req, vespalib::steady_time dueTime) :
-            _session(std::move(session)),
-            _req(req),
-            _dueTime(dueTime)
-        { }
-        Session::SP            _session;
-        FRT_RPCRequest       * _req;
-        vespalib::steady_time  _dueTime;
-    };
-
     Proton                         & _proton;
     std::unique_ptr<FNET_Transport>  _transport;
     std::unique_ptr<FRT_Supervisor>  _orb;
@@ -69,11 +35,9 @@ private:
 
     void triggerFlush(FRT_RPCRequest *req);
     void prepareRestart(FRT_RPCRequest *req);
-    void checkState(std::unique_ptr<StateArg> arg);
-    void reportState(Session & session, FRT_RPCRequest * req) __attribute__((noinline));
+    void reportState(FRT_RPCRequest * req) __attribute__((noinline));
     void getProtonStatus(FRT_RPCRequest * req);
 
-    static const Session::SP & getSession(FRT_RPCRequest *req);
 public:
     typedef std::unique_ptr<RPCHooksBase> UP;
     struct Params {
@@ -97,15 +61,9 @@ public:
 
     void rpc_GetState(FRT_RPCRequest *req);
     void rpc_GetProtonStatus(FRT_RPCRequest *req);
-    void rpc_getIncrementalState(FRT_RPCRequest *req);
-    void rpc_Shutdown(FRT_RPCRequest *req);
     void rpc_die(FRT_RPCRequest *req);
     void rpc_triggerFlush(FRT_RPCRequest *req);
     void rpc_prepareRestart(FRT_RPCRequest *req);
-
-    void initSession(FRT_RPCRequest *req);
-    void finiSession(FRT_RPCRequest *req);
-    void mismatch(FRT_RPCRequest *req);
 protected:
     void open(Params & params);
 };
