@@ -30,7 +30,7 @@ public:
 
         static bool valid(uint32_t refCount) { return (refCount & 1) == 0u; }
     public:
-        generation_t _generation;
+        std::atomic<generation_t> _generation;
         GenerationHold *_next;	// next free element or next newer element.
 
         GenerationHold();
@@ -68,13 +68,13 @@ public:
         bool valid() const {
             return _hold != nullptr;
         }
-        generation_t getGeneration() const { return _hold->_generation; }
+        generation_t getGeneration() const { return _hold->_generation.load(std::memory_order_relaxed); }
     };
 
 private:
     generation_t    _generation;
     generation_t    _firstUsedGeneration;
-    GenerationHold *_last;      // Points to "current generation" entry
+    std::atomic<GenerationHold *> _last;      // Points to "current generation" entry
     GenerationHold *_first;     // Points to "firstUsedGeneration" entry
     GenerationHold *_free;      // List of free entries
     uint32_t        _numHolds;  // Number of allocated generation hold entries
@@ -134,13 +134,6 @@ public:
      * Should be called by the writer thread.
      */
     uint64_t getGenerationRefCount() const;
-
-    /**
-     * Returns true if we still have readers.  False positives and
-     * negatives are possible if readers come and go while writer
-     * updates generations.
-     */
-    bool hasReaders() const;
 };
 
 }

@@ -13,7 +13,7 @@ using vespalib::ThreadStackExecutor;
 
 struct WorkContext
 {
-    uint64_t _generation;
+    std::atomic<uint64_t> _generation;
 
     WorkContext() noexcept
         : _generation(0)
@@ -84,7 +84,7 @@ Fixture::readWork(const WorkContext &context)
 
     for (i = 0; i < cnt && _stopRead.load() == 0; ++i) {
         auto guard = _generationHandler.takeGuard();
-        auto generation = context._generation;
+        auto generation = context._generation.load(std::memory_order_relaxed);
         EXPECT_GREATER_EQUAL(generation, guard.getGeneration());
     }
     _doneReadWork += i;
@@ -96,7 +96,7 @@ void
 Fixture::writeWork(uint32_t cnt, WorkContext &context)
 {
     for (uint32_t i = 0; i < cnt; ++i) {
-        context._generation = _generationHandler.getNextGeneration();
+        context._generation.store(_generationHandler.getNextGeneration(), std::memory_order_relaxed);
         _generationHandler.incGeneration();
     }
     _doneWriteWork += cnt;

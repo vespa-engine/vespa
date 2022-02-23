@@ -623,13 +623,6 @@ public:
     }
 
     /**
-     * Returns true if we might still have readers.  False positives
-     * are possible if writer hasn't updated first used generation
-     * after last reader left.
-     */
-    bool hasReaders() const { return _genHandler.hasReaders(); }
-
-    /**
      * Add reserved initial document with docId 0 and undefined value.
      */
     void addReservedDoc();
