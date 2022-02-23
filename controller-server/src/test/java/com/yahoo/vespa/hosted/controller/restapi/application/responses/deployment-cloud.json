@@ -21,9 +21,6 @@
   "revision": "1.0.1-commit1",
   "deployTimeEpochMs": "(ignore)",
   "screwdriverId": "1000",
-  "gitRepository": "repository1",
-  "gitBranch": "master",
-  "gitCommit": "commit1",
   "applicationVersion": {
     "build": 1,
     "compileVersion": "6.1.0",

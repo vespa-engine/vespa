@@ -40,9 +40,6 @@
   "revision": "(ignore)",
   "deployTimeEpochMs": "(ignore)",
   "screwdriverId": "123",
-  "gitRepository": "repository1",
-  "gitBranch": "master",
-  "gitCommit": "commit1",
   "endpointStatus": [
     {
       "endpointId": "default",

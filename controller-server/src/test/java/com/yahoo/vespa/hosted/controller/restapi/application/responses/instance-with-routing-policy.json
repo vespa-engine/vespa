@@ -3,11 +3,6 @@
   "application": "application1",
   "instance": "instance1",
   "deployments": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/",
-  "source": {
-    "gitRepository": "repository1",
-    "gitBranch": "master",
-    "gitCommit": "commit1"
-  },
   "sourceUrl": "repository1/tree/commit1",
   "commit": "commit1",
   "projectId": 1000,

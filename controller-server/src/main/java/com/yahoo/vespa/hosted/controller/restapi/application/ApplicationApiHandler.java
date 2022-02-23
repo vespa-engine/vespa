@@ -1314,7 +1314,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                  request.getUri()).toString());
 
         application.latestVersion().ifPresent(version -> {
-            sourceRevisionToSlime(version.source(), object.setObject("source"));
             version.sourceUrl().ifPresent(url -> object.setString("sourceUrl", url));
             version.commit().ifPresent(commit -> object.setString("commit", commit));
         });
@@ -1503,7 +1502,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                   .ifPresent(deploymentTimeToLive -> response.setLong("expiryTimeEpochMs", lastDeploymentStart.plus(deploymentTimeToLive).toEpochMilli()));
 
         application.projectId().ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
-        sourceRevisionToSlime(deployment.applicationVersion().source(), response);
 
         var instance = application.instances().get(deploymentId.applicationId().instance());
         if (instance != null) {
@@ -1562,23 +1560,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private Instant lastDeploymentStart(ApplicationId instanceId, Deployment deployment) {
         return controller.jobController().jobStarts(new JobId(instanceId, JobType.from(controller.system(), deployment.zone()).get()))
                          .stream().findFirst().orElse(deployment.at());
-    }
-
-    private void toSlime(ApplicationVersion applicationVersion, Cursor object) {
-        if ( ! applicationVersion.isUnknown()) {
-            object.setLong("buildNumber", applicationVersion.buildNumber().getAsLong());
-            object.setString("hash", applicationVersion.id());
-            sourceRevisionToSlime(applicationVersion.source(), object.setObject("source"));
-            applicationVersion.sourceUrl().ifPresent(url -> object.setString("sourceUrl", url));
-            applicationVersion.commit().ifPresent(commit -> object.setString("commit", commit));
-        }
-    }
-
-    private void sourceRevisionToSlime(Optional<SourceRevision> revision, Cursor object) {
-        if (revision.isEmpty()) return;
-        object.setString("gitRepository", revision.get().repository());
-        object.setString("gitBranch", revision.get().branch());
-        object.setString("gitCommit", revision.get().commit());
     }
 
     private void toSlime(RotationState state, Cursor object) {
