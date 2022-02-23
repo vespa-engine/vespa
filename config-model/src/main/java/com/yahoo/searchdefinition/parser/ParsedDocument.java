@@ -21,12 +21,13 @@ public class ParsedDocument {
     String name() { return name; }
     void inherit(String other) { inherited.add(other); }
 
+    void addField(ParsedField field) {}
+    void addStruct(ParsedStruct type) {}
+    void addAnnotation(ParsedAnnotation type) {}
+
     /*
     private final List<ParsedField> fields = new ArrayList<>();
     List<ParsedField> getFields() { return fields; }
-    void addField(ParsedField field) { fields.add(field); }
-    void addStruct(ParsedStruct type) {}
-    void addAnnotation(ParsedAnnotation type) {}
     */
 }
 
