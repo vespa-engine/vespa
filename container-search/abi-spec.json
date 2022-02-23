@@ -1898,7 +1898,8 @@
       "public static final enum com.yahoo.search.Query$Type PROGRAMMATIC",
       "public static final enum com.yahoo.search.Query$Type YQL",
       "public static final enum com.yahoo.search.Query$Type SELECT",
-      "public static final enum com.yahoo.search.Query$Type WEAKAND"
+      "public static final enum com.yahoo.search.Query$Type WEAKAND",
+      "public static final enum com.yahoo.search.Query$Type TOKENIZE"
     ]
   },
   "com.yahoo.search.Query": {

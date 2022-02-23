@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search;
 
-import ai.vespa.cloud.Environment;
-import ai.vespa.cloud.Zone;
 import ai.vespa.cloud.ZoneInfo;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -109,7 +107,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         PROGRAMMATIC(5, "prog"),
         YQL(6, "yql"),
         SELECT(7, "select"),
-        WEAKAND(8, "weakAnd");
+        WEAKAND(8, "weakAnd"),
+        TOKENIZE(9, "tokenize");
 
         private final int intValue;
         private final String stringValue;

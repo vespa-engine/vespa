@@ -2563,4 +2563,23 @@ public class ParseTestCase {
         tester.assertParsed("AND title:199 title:119 title:201 title:149", "title:１９９．１１９．２０１．１４９", Query.Type.ALL);
     }
 
+    @Test
+    public void testNoGrammar1() {
+        tester.assertParsed("WEAKAND(100) foobar", "foobar", Query.Type.TOKENIZE);
+    }
+
+    @Test
+    public void testNoGrammar2() {
+        tester.assertParsed("WEAKAND(100) foobar", "-foobar", Query.Type.TOKENIZE);
+    }
+
+    @Test
+    public void testNoGrammar3() {
+        tester.assertParsed("WEAKAND(100) foo bar", "foo -bar", Query.Type.TOKENIZE);
+    }
+
+    @Test
+    public void testNoGrammar4() {
+        tester.assertParsed("WEAKAND(100) foo bar baz one two 37", "foo -(bar baz \"one two\" 37)", Query.Type.TOKENIZE);
+    }
 }
