@@ -3,8 +3,6 @@
 
 #include "i_thread_service.h"
 
-class FNET_Transport;
-
 namespace vespalib { class ISequencedTaskExecutor; }
 namespace searchcorespi::index {
 
@@ -75,7 +73,6 @@ struct IThreadingService
     virtual IThreadService &index() = 0;
     virtual vespalib::ThreadExecutor &summary() = 0;
     virtual vespalib::Executor &shared() = 0;
-    virtual FNET_Transport &transport() = 0;
     virtual vespalib::ISequencedTaskExecutor &indexFieldInverter() = 0;
     virtual vespalib::ISequencedTaskExecutor &indexFieldWriter() = 0;
     virtual vespalib::ISequencedTaskExecutor &attributeFieldWriter() = 0;
