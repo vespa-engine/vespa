@@ -26,7 +26,6 @@ private:
         int64_t           _numDocs;
         vespalib::string  _delayedConfigs;
         int64_t           _gen;
-        bool              _down;
     public:
         typedef std::shared_ptr<Session> SP;
         Session();
@@ -35,7 +34,6 @@ private:
 
         int64_t getNumDocs() const { return _numDocs; }
         void setNumDocs(int64_t numDocs) { _numDocs = numDocs; }
-        void setDown() { _down = true; }
 
         const vespalib::string & getDelayedConfigs() const {
             return _delayedConfigs;
@@ -107,7 +105,6 @@ public:
 
     void initSession(FRT_RPCRequest *req);
     void finiSession(FRT_RPCRequest *req);
-    void downSession(FRT_RPCRequest *req);
     void mismatch(FRT_RPCRequest *req);
 protected:
     void open(Params & params);
