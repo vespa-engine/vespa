@@ -21,19 +21,19 @@ struct TimingValues;
 class ConfigManager : public IConfigManager
 {
 public:
-    ConfigManager(SourceFactory::UP sourceFactory, int64_t initialGeneration);
+    ConfigManager(std::unique_ptr<SourceFactory> sourceFactory, int64_t initialGeneration);
     ~ConfigManager() override;
 
     ConfigSubscription::SP subscribe(const ConfigKey & key, vespalib::duration timeout) override;
-    void unsubscribe(const ConfigSubscription::SP & subscription) override;
+    void unsubscribe(const ConfigSubscription & subscription) override;
     void reload(int64_t generation) override;
 
 private:
-    std::atomic<SubscriptionId> _idGenerator;
-    SourceFactory::UP _sourceFactory;
-    int64_t _generation;
+    std::atomic<SubscriptionId>    _idGenerator;
+    std::unique_ptr<SourceFactory> _sourceFactory;
+    int64_t                        _generation;
 
-    typedef std::map<SubscriptionId, ConfigSubscription::SP> SubscriptionMap;
+    using SubscriptionMap = std::map<SubscriptionId, ConfigSubscription::SP>;
     SubscriptionMap _subscriptionMap;
     std::mutex _lock;
 };

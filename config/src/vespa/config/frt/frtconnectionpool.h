@@ -13,7 +13,6 @@ class FastOS_ThreadPool;
 namespace config {
 
 class FRTConnectionPool : public ConnectionFactory {
-
 private:
 
     /**
@@ -32,8 +31,6 @@ private:
         int operator==(const FRTConnectionKey& right) const;
     };
 
-    std::unique_ptr<FastOS_ThreadPool> _threadPool;
-    std::unique_ptr<FNET_Transport> _transport;
     std::unique_ptr<FRT_Supervisor> _supervisor;
     int _selectIdx;
     vespalib::string _hostname;
@@ -41,7 +38,7 @@ private:
     ConnectionMap _connections;
 
 public:
-    FRTConnectionPool(const ServerSpec & spec, const TimingValues & timingValues);
+    FRTConnectionPool(FNET_Transport & transport, const ServerSpec & spec, const TimingValues & timingValues);
     FRTConnectionPool(const FRTConnectionPool&) = delete;
     FRTConnectionPool& operator=(const FRTConnectionPool&) = delete;
     ~FRTConnectionPool() override;
@@ -61,21 +58,6 @@ public:
     void setHostname(const vespalib::string & hostname) { _hostname = hostname; }
 
     FNET_Scheduler * getScheduler() override;
-
-    /**
-     * Gets the hostname.
-     *
-     * @return the hostname
-     */
-    vespalib::string & getHostname() { return _hostname; }
-
-    /**
-     * Trim away leading and trailing spaces.
-     *
-     * @param s the string to trim away spaces from
-     * @return string without leading or trailing spaces
-     */
-    vespalib::string trim(vespalib::string s);
 
     /**
      * Returns the current FRTConnection instance, taken from the list of error-free sources.
@@ -117,17 +99,23 @@ public:
      * @param suspendedSources is list of FRTConnection pointers
      */
     std::vector<FRTConnection*> getSuspendedSources() const;
+};
 
-    /**
-     * Implementation of the Java hashCode function for the String class.
-     *
-     * Ensures that the same hostname maps to the same configserver/proxy
-     * for both language implementations.
-     *
-     * @param s the string to compute the hash from
-     * @return the hash value
-     */
-    static int hashCode(const vespalib::string & s);
+class FRTConnectionPoolWithTransport : public ConnectionFactory {
+public:
+    FRTConnectionPoolWithTransport(std::unique_ptr<FastOS_ThreadPool> threadPool,
+                                   std::unique_ptr<FNET_Transport> transport,
+                                   const ServerSpec & spec, const TimingValues & timingValues);
+    FRTConnectionPoolWithTransport(const FRTConnectionPoolWithTransport&) = delete;
+    FRTConnectionPoolWithTransport& operator=(const FRTConnectionPoolWithTransport&) = delete;
+    ~FRTConnectionPoolWithTransport() override;
+    FNET_Scheduler * getScheduler() override { return _connectionPool->getScheduler(); }
+    void syncTransport() override { _connectionPool->syncTransport(); }
+    Connection* getCurrent() override { return _connectionPool->getCurrent(); }
+private:
+    std::unique_ptr<FastOS_ThreadPool> _threadPool;
+    std::unique_ptr<FNET_Transport>    _transport;
+    std::unique_ptr<FRTConnectionPool> _connectionPool;
 };
 
 } // namespace config

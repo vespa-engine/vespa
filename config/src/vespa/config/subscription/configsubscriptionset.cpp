@@ -112,7 +112,7 @@ ConfigSubscriptionSet::close()
 {
     _state = CLOSED;
     for (const auto & subscription : _subscriptionList) {
-        _mgr.unsubscribe(subscription);
+        _mgr.unsubscribe(*subscription);
         subscription->close();
     }
 }
