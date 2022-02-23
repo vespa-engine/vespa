@@ -105,8 +105,7 @@ RPCHooksBase::reportState(Session & session, FRT_RPCRequest * req)
 RPCHooksBase::Session::Session()
     : _numDocs(0u),
       _delayedConfigs(),
-      _gen(-1),
-      _down(false)
+      _gen(-1)
 {
 }
 
@@ -115,7 +114,6 @@ RPCHooksBase::initRPC()
 {
     _orb->SetSessionInitHook(FRT_METHOD(RPCHooksBase::initSession), this);
     _orb->SetSessionFiniHook(FRT_METHOD(RPCHooksBase::finiSession), this);
-    _orb->SetSessionDownHook(FRT_METHOD(RPCHooksBase::downSession), this);
     _orb->SetMethodMismatchHook(FRT_METHOD(RPCHooksBase::mismatch), this);
 
     FRT_ReflectionBuilder rb(_orb.get());
@@ -406,14 +404,6 @@ RPCHooksBase::finiSession(FRT_RPCRequest *req)
 
     auto * sessionspp = static_cast<Session::SP *>(vctx);
     delete sessionspp;
-}
-
-void
-RPCHooksBase::downSession(FRT_RPCRequest *req)
-{
-    LOG(debug, "RPCHooksBase::downSession req=%p connection=%p session=%p",
-               req, req->GetConnection(), req->GetConnection()->GetContext()._value.VOIDP);
-    getSession(req)->setDown();
 }
 
 void
