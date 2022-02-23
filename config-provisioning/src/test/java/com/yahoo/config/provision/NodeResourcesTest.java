@@ -25,10 +25,10 @@ public class NodeResourcesTest {
 
     @Test
     public void testInvalid() {
-        assertInvalid("vcpu",     () -> new NodeResources(Double.NaN, 1.0, 1.0, 1.0));
-        assertInvalid("memory",   () -> new NodeResources(1.0, Double.NaN, 1.0, 1.0));
-        assertInvalid("disk",     () -> new NodeResources(1.0, 1.0, Double.NaN, 1.0));
-        assertInvalid("bandwith", () -> new NodeResources(1.0, 1.0, 1.0, Double.NaN));
+        assertInvalid("vcpu",      () -> new NodeResources(Double.NaN, 1.0, 1.0, 1.0));
+        assertInvalid("memory",    () -> new NodeResources(1.0, Double.NaN, 1.0, 1.0));
+        assertInvalid("disk",      () -> new NodeResources(1.0, 1.0, Double.NaN, 1.0));
+        assertInvalid("bandwidth", () -> new NodeResources(1.0, 1.0, 1.0, Double.NaN));
     }
 
     @Test

@@ -63,7 +63,7 @@ However, maps cannot be indexed as text-search disk indexes.
 
 Vespa instances distribute data automatically within clusters, but these clusters are meant to consist of co-located 
 machines - the distribution algorithm is not suitable for global distribution across datacenters because it cannot 
-seamlessly tolerate datacenter-wide outages and does not attempt to minimize bandwith usage between datacenters.
+seamlessly tolerate datacenter-wide outages and does not attempt to minimize bandwidth usage between datacenters.
 Application usually achieve global precense instead by setting up multiple independent instances in different 
 datacenters and write to all in parallel. This is robust and works well on average, but puts additional burden on 
 applications to achieve cross-datacenter data consistency on datacenter failures, and does not enable automatic 
@@ -93,7 +93,7 @@ These use cases require support for global tensors (tensors available locally on
 but not sent with the query or residing in documents) which are not configured as part of the application package but 
 which are written independently and dynamically updateable at a high write rate. To support this at large scale, with a
 high write rate, we need a small cluster of nodes storing the source of truth of the global tensor and which have 
-perfect consistency. This in turn must push updates to all content nodes in a best effort fashion given a fixed bandwith
+perfect consistency. This in turn must push updates to all content nodes in a best effort fashion given a fixed bandwidth
 budget, such that query execution and document write traffic is prioritized over ensuring perfect consistency of global
 model updates.
 

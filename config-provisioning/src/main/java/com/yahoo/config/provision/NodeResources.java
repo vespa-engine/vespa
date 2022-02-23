@@ -108,7 +108,7 @@ public class NodeResources {
         this.vcpu = validate(vcpu, "vcpu");
         this.memoryGb = validate(memoryGb, "memory");
         this.diskGb = validate(diskGb, "disk");
-        this.bandwidthGbps = validate(bandwidthGbps, "bandwith");
+        this.bandwidthGbps = validate(bandwidthGbps, "bandwidth");
         this.diskSpeed = diskSpeed;
         this.storageType = storageType;
     }
