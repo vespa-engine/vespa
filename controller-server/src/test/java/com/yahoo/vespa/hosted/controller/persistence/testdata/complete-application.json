@@ -6,12 +6,7 @@
   "validationOverrides": "<validation-overrides>\n    <allow until=\"2016-04-28\" comment=\"Renaming content cluster\">content-cluster-removal</allow>\n    <allow until=\"2016-08-22\" comment=\"Migrating us-east-3 to C-2E\">cluster-size-reduction</allow>\n    <allow until=\"2017-06-30\" comment=\"Test Vespa upgrade tests\">force-automatic-tenant-upgrade-test</allow>\n</validation-overrides>\n",
   "projectId": 102889,
   "deployingField": {
-    "buildNumber": 42,
-    "sourceRevision": {
-      "repositoryField": "git@git.host:user/repo.git",
-      "branchField": "origin/master",
-      "commitField": "234f3e4e77049d0b9538c9e1b356d17eb1dedb6a"
-    }
+    "build": 42
   },
   "outstandingChangeField": false,
   "queryQuality": 100,

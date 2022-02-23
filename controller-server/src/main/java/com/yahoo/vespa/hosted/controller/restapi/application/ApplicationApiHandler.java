@@ -1190,7 +1190,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                  request.getUri()).toString());
 
         DeploymentStatus status = controller.jobController().deploymentStatus(application);
-        application.latestVersion().ifPresent(version -> toSlime(version, object.setObject("latestVersion")));
+        application.latestVersion().ifPresent(version -> JobControllerApiHandlerHelper.toSlime(object.setObject("latestVersion"), version));
 
         application.projectId().ifPresent(id -> object.setLong("projectId", id));
 
@@ -1450,7 +1450,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         change.platform().ifPresent(version -> object.setString("version", version.toString()));
         change.application()
               .filter(version -> !version.isUnknown())
-              .ifPresent(version -> toSlime(version, object.setObject("revision")));
+              .ifPresent(version -> JobControllerApiHandlerHelper.toSlime(object.setObject("revision"), version));
     }
 
     private void toSlime(Endpoint endpoint, Cursor object) {
@@ -2500,7 +2500,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         object.setLong("id", run.id().number());
         object.setString("version", run.versions().targetPlatform().toFullString());
         if ( ! run.versions().targetApplication().isUnknown())
-            toSlime(run.versions().targetApplication(), object.setObject("revision"));
+            JobControllerApiHandlerHelper.toSlime(object.setObject("revision"), run.versions().targetApplication());
         object.setString("reason", "unknown reason");
         object.setLong("at", run.end().orElse(run.start()).toEpochMilli());
     }
