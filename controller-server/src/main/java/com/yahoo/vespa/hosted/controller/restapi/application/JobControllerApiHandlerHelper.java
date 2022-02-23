@@ -100,22 +100,6 @@ class JobControllerApiHandlerHelper {
         return new SlimeJsonResponse(slime);
     }
 
-    static void applicationVersionToSlime(Cursor versionObject, ApplicationVersion version) {
-        versionObject.setString("hash", version.id());
-        if (version.isUnknown())
-            return;
-
-        versionObject.setLong("build", version.buildNumber().getAsLong());
-        Cursor sourceObject = versionObject.setObject("source");
-        version.source().ifPresent(source -> {
-            sourceObject.setString("gitRepository", source.repository());
-            sourceObject.setString("gitBranch", source.branch());
-            sourceObject.setString("gitCommit", source.commit());
-        });
-        version.sourceUrl().ifPresent(url -> versionObject.setString("sourceUrl", url));
-        version.commit().ifPresent(commit -> versionObject.setString("commit", commit));
-    }
-
     /**
      * @return Response with logs from a single run
      */
@@ -351,12 +335,12 @@ class JobControllerApiHandlerHelper {
         }
 
         Cursor buildsArray = responseObject.setArray("builds");
-        application.versions().stream().sorted(reverseOrder()).forEach(version -> applicationVersionToSlime(buildsArray.addObject(), version));
+        application.versions().stream().sorted(reverseOrder()).forEach(version -> toSlime(buildsArray.addObject(), version));
 
         return new SlimeJsonResponse(slime);
     }
 
-    private static void toSlime(Cursor versionObject, ApplicationVersion version) {
+    static void toSlime(Cursor versionObject, ApplicationVersion version) {
         version.buildNumber().ifPresent(id -> versionObject.setLong("build", id));
         version.compileVersion().ifPresent(platform -> versionObject.setString("compileVersion", platform.toFullString()));
         version.sourceUrl().ifPresent(url -> versionObject.setString("sourceUrl", url));

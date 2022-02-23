@@ -1516,7 +1516,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                         .map(type -> new JobId(instance.id(), type))
                         .map(status.jobSteps()::get)
                         .ifPresent(stepStatus -> {
-                            JobControllerApiHandlerHelper.applicationVersionToSlime(
+                            JobControllerApiHandlerHelper.toSlime(
                                     response.setObject("applicationVersion"), deployment.applicationVersion());
                             if (!status.jobsToRun().containsKey(stepStatus.job().get()))
                                 response.setString("status", "complete");
