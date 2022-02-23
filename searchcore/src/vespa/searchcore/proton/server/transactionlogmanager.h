@@ -24,7 +24,7 @@ public:
      * @param tlsSpec the spec of the transaction log server.
      * @param domainName the name of the domain this manager should handle.
      **/
-    TransactionLogManager(const vespalib::string &tlsSpec, const vespalib::string &domainName);
+    TransactionLogManager(FNET_Transport & transport, const vespalib::string &tlsSpec, const vespalib::string &domainName);
     ~TransactionLogManager() override;
 
     /**

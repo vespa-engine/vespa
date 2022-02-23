@@ -5,7 +5,6 @@
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
-#include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/isummaryadapter.h>
 #include <vespa/searchcore/proton/server/matchview.h>
 #include <vespa/searchcore/proton/server/searchable_feed_view.h>
@@ -20,6 +19,7 @@
 #include <vespa/searchcore/proton/test/mock_summary_adapter.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcore/proton/test/threading_service_observer.h>
+#include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
@@ -497,8 +497,7 @@ struct FixtureBase
     DocumentMetaStoreContext::SP _dmscReal;
     test::DocumentMetaStoreContextObserver::SP _dmsc;
     ParamsContext         pc;
-    vespalib::ThreadStackExecutor _sharedExecutor;
-    ExecutorThreadingService _writeServiceReal;
+    TransportAndExecutorService    _service;
     test::ThreadingServiceObserver _writeService;
     SerialNum             serial;
     std::shared_ptr<MyGidToLidChangeHandler> _gidToLidChangeHandler;
@@ -690,9 +689,8 @@ FixtureBase::FixtureBase()
       _dmscReal(std::make_shared<DocumentMetaStoreContext>(std::make_shared<bucketdb::BucketDBOwner>())),
       _dmsc(std::make_shared<test::DocumentMetaStoreContextObserver>(*_dmscReal)),
       pc(sc._builder->getDocumentType().getName(), "fileconfig_test"),
-      _sharedExecutor(1, 0x10000),
-      _writeServiceReal(_sharedExecutor),
-      _writeService(_writeServiceReal),
+      _service(1),
+      _writeService(_service.write()),
       serial(0),
       _gidToLidChangeHandler(std::make_shared<MyGidToLidChangeHandler>())
 {
@@ -700,7 +698,7 @@ FixtureBase::FixtureBase()
 }
 
 FixtureBase::~FixtureBase() {
-    _writeServiceReal.shutdown();
+    _service.shutdown();
 }
 
 void

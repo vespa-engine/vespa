@@ -2,7 +2,7 @@
 
 #include <vespa/fastos/file.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
-#include <vespa/searchcore/proton/server/executorthreadingservice.h>
+#include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchcorespi/index/fusionrunner.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/searchlib/common/flush_token.h>
@@ -17,6 +17,7 @@
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <set>
 
 using document::Document;
@@ -66,8 +67,7 @@ class Test : public vespalib::TestApp {
     FixedSourceSelector::UP _selector;
     FusionSpec _fusion_spec;
     DummyFileHeaderContext _fileHeaderContext;
-    vespalib::ThreadStackExecutor _sharedExecutor;
-    ExecutorThreadingService _threadingService;
+    TransportAndExecutorService _service;
     IndexManager::MaintainerOperations _ops;
 
     void setUp();
@@ -85,20 +85,20 @@ class Test : public vespalib::TestApp {
     void requireThatFusionCanBeStopped();
 
 public:
-    Test()
-        : _fusion_runner(),
-          _selector(),
-          _fusion_spec(),
-          _fileHeaderContext(),
-          _sharedExecutor(1, 0x10000),
-          _threadingService(_sharedExecutor),
-          _ops(_fileHeaderContext,
-               TuneFileIndexManager(), 0,
-               _threadingService)
-    {}
-    ~Test() {}
+    Test();
+    ~Test();
     int Main() override;
 };
+
+Test::Test()
+    : _fusion_runner(),
+      _selector(),
+      _fusion_spec(),
+      _fileHeaderContext(),
+      _service(1),
+      _ops(_fileHeaderContext,TuneFileIndexManager(), 0, _service.write())
+{ }
+Test::~Test() = default;
 
 int
 Test::Main()
@@ -180,8 +180,8 @@ void Test::createIndex(const string &dir, uint32_t id, bool fusion) {
     Schema schema = getSchema();
     DocBuilder doc_builder(schema);
     MemoryIndex memory_index(schema, MockFieldLengthInspector(),
-                             _threadingService.indexFieldInverter(),
-                             _threadingService.indexFieldWriter());
+                             _service.write().indexFieldInverter(),
+                             _service.write().indexFieldWriter());
     addDocument(doc_builder, memory_index, *_selector, id, id + 0, term);
     addDocument(doc_builder, memory_index, *_selector, id, id + 1, "bar");
     addDocument(doc_builder, memory_index, *_selector, id, id + 2, "baz");

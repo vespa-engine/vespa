@@ -6,7 +6,6 @@
 #include "i_proton_configurer.h"
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <thread>
 #include <cassert>
 
