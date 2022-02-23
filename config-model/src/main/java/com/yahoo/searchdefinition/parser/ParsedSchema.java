@@ -8,6 +8,12 @@ import com.yahoo.searchdefinition.document.Stemming;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This class holds the extracted information after parsing
+ * one schema (.sd) file, using simple data structures
+ * as far as possible.  Do not put advanced logic here!
+ * @author arnej27959
+ **/
 public class ParsedSchema {
     private final String name;
     private final List<String> inherited = new ArrayList<>();
@@ -16,12 +22,13 @@ public class ParsedSchema {
         this.name = name;
     }
 
-    String getName() { return name; }
+    String name() { return name; }
 
     void addDocument(ParsedDocument document) {}
     void addImportedField(String asFieldName, String refFieldName, String foregnFieldName) {}
     void addOnnxModel(OnnxModel model) {}
     void addRankingConstant(RankingConstant constant) {}
+    void addRankProfile(ParsedRankProfile profile) {}
     void enableRawAsBase64(boolean value) {}
     void inherit(String other) { inherited.add(other); }
     void setStemming(Stemming value) {}
@@ -35,7 +42,6 @@ public class ParsedSchema {
     void addStruct(ParsedStruct struct) {}
     void addFieldSet(ParsedFieldSet fieldSet) {}
     void addDocumentSummary(ParsedDocumentSummary docsum) {}
-    void addRankProfile(ParsedRankProfile profile) {}
     */
 }
 

@@ -2,6 +2,10 @@
 
 // Schema parser.
 //
+// NOTE: A full rewrite of parsing is in progress; avoid changing this
+// file if possible, coordinate with IntermediateParser.jj if you must
+// change something.
+//
 // NOTE: When this is changed, also change integration/intellij/src/main/bnf/ai/vespa/intellij/schema/parser/sd.bnf
 
 options {
