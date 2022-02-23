@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-// Schema parser.
-//
-// NOTE: When this is changed, also change integration/intellij/src/main/bnf/ai/vespa/intellij/schema/parser/sd.bnf
+// Duplicate Schema parser - work in progress
+// @author arnej27959
+// NOTE: When grammar is changed, also change integration/intellij/src/main/bnf/ai/vespa/intellij/schema/parser/sd.bnf
 
 options {
     UNICODE_INPUT = true;

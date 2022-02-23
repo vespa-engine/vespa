@@ -12,6 +12,7 @@ import java.util.List;
  * This class holds the extracted information after parsing
  * one schema (.sd) file, using simple data structures
  * as far as possible.  Do not put advanced logic here!
+ * @author arnej27959
  **/
 public class ParsedSchema {
     private final String name;

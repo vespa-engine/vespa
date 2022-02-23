@@ -11,6 +11,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Value;
  * This class holds the extracted information after parsing a
  * rank-profile block in a schema (.sd) file, using simple data
  * structures as far as possible.  Do not put advanced logic here!
+ * @author arnej27959
  **/
 class ParsedRankProfile {
 
