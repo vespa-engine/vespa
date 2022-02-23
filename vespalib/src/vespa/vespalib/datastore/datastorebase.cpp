@@ -11,7 +11,7 @@
 #include <cassert>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".searchlib.datastore.datastorebase");
+LOG_SETUP(".vespalib.datastore.datastorebase");
 
 using vespalib::GenerationHeldBase;
 
