@@ -89,28 +89,65 @@ public class NodeResources {
 
     }
 
+    public enum Architecture {
+
+        x86_64,
+        aarch64,
+        any;
+
+        public static int compare(Architecture a, Architecture b) {
+            if (a == any) a = x86_64;
+            if (b == any) b = x86_64;
+
+            if (a == x86_64 && b == aarch64) return -1;
+            if (a == aarch64 && b == x86_64) return 1;
+            return 0;
+        }
+
+        public boolean compatibleWith(Architecture other) {
+            return this == any || other == any || other == this;
+        }
+
+        private Architecture combineWith(Architecture other) {
+            if (this == any) return other;
+            if (other == any) return this;
+            if (this == other) return this;
+            throw new IllegalArgumentException(this + " cannot be combined with " + other);
+        }
+
+        public boolean isDefault() { return this == getDefault(); }
+        public static Architecture getDefault() { return x86_64; }
+
+    }
+
     private final double vcpu;
     private final double memoryGb;
     private final double diskGb;
     private final double bandwidthGbps;
     private final DiskSpeed diskSpeed;
     private final StorageType storageType;
+    private final Architecture architecture;
 
     public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps) {
         this(vcpu, memoryGb, diskGb, bandwidthGbps, DiskSpeed.getDefault());
     }
 
     public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps, DiskSpeed diskSpeed) {
-        this(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, StorageType.getDefault());
+        this(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, StorageType.getDefault(), Architecture.getDefault());
     }
 
     public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps, DiskSpeed diskSpeed, StorageType storageType) {
+        this(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, Architecture.getDefault());
+    }
+
+    public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps, DiskSpeed diskSpeed, StorageType storageType, Architecture architecture) {
         this.vcpu = validate(vcpu, "vcpu");
         this.memoryGb = validate(memoryGb, "memory");
         this.diskGb = validate(diskGb, "disk");
         this.bandwidthGbps = validate(bandwidthGbps, "bandwidth");
         this.diskSpeed = diskSpeed;
         this.storageType = storageType;
+        this.architecture = architecture;
     }
 
     public double vcpu() { return vcpu; }
@@ -119,6 +156,7 @@ public class NodeResources {
     public double bandwidthGbps() { return bandwidthGbps; }
     public DiskSpeed diskSpeed() { return diskSpeed; }
     public StorageType storageType() { return storageType; }
+    public Architecture architecture() { return architecture; }
 
     /** Returns the standard cost of these resources, in dollars per hour */
     public double cost() {
@@ -128,37 +166,37 @@ public class NodeResources {
     public NodeResources withVcpu(double vcpu) {
         ensureSpecified();
         if (vcpu == this.vcpu) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
     }
 
     public NodeResources withMemoryGb(double memoryGb) {
         ensureSpecified();
         if (memoryGb == this.memoryGb) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
     }
 
     public NodeResources withDiskGb(double diskGb) {
         ensureSpecified();
         if (diskGb == this.diskGb) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
     }
 
     public NodeResources withBandwidthGbps(double bandwidthGbps) {
         ensureSpecified();
         if (bandwidthGbps == this.bandwidthGbps) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
     }
 
     public NodeResources with(DiskSpeed diskSpeed) {
         ensureSpecified();
         if (diskSpeed == this.diskSpeed) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
     }
 
     public NodeResources with(StorageType storageType) {
         ensureSpecified();
         if (storageType == this.storageType) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
     }
 
     /** Returns this with disk speed and storage type set to any */
@@ -183,7 +221,8 @@ public class NodeResources {
                                  diskGb - other.diskGb,
                                  bandwidthGbps - other.bandwidthGbps,
                                  this.diskSpeed.combineWith(other.diskSpeed),
-                                 this.storageType.combineWith(other.storageType));
+                                 this.storageType.combineWith(other.storageType),
+                                 this.architecture.combineWith(other.architecture));
     }
 
     public NodeResources add(NodeResources other) {
@@ -195,7 +234,8 @@ public class NodeResources {
                                  diskGb + other.diskGb,
                                  bandwidthGbps + other.bandwidthGbps,
                                  this.diskSpeed.combineWith(other.diskSpeed),
-                                 this.storageType.combineWith(other.storageType));
+                                 this.storageType.combineWith(other.storageType),
+                                 this.architecture.combineWith(other.architecture));
     }
 
     private boolean isInterchangeableWith(NodeResources other) {
@@ -204,6 +244,8 @@ public class NodeResources {
         if (this.diskSpeed != DiskSpeed.any && other.diskSpeed != DiskSpeed.any && this.diskSpeed != other.diskSpeed)
             return false;
         if (this.storageType != StorageType.any && other.storageType != StorageType.any && this.storageType != other.storageType)
+            return false;
+        if (this.architecture != other.architecture)
             return false;
         return true;
     }
@@ -219,12 +261,13 @@ public class NodeResources {
         if ( ! equal(this.bandwidthGbps, other.bandwidthGbps)) return false;
         if (this.diskSpeed != other.diskSpeed) return false;
         if (this.storageType != other.storageType) return false;
+        if (this.architecture != other.architecture) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
+        return Objects.hash(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
     }
 
     private static StringBuilder appendDouble(StringBuilder sb, double d) {
@@ -256,6 +299,7 @@ public class NodeResources {
         if ( !storageType.isDefault()) {
             sb.append(", storage type: ").append(storageType);
         }
+        sb.append(", architecture: ").append(architecture);
         sb.append(']');
         return sb.toString();
     }
@@ -277,6 +321,9 @@ public class NodeResources {
         // Same reasoning as the above
         if (other.storageType != StorageType.any && other.storageType != this.storageType) return false;
 
+        // Same reasoning as the above
+        if (other.architecture != Architecture.any && other.architecture != this.architecture) return false;
+
         return true;
     }
 
@@ -288,6 +335,7 @@ public class NodeResources {
         if ( ! equal(this.bandwidthGbps, other.bandwidthGbps)) return false;
         if ( ! this.diskSpeed.compatibleWith(other.diskSpeed)) return false;
         if ( ! this.storageType.compatibleWith(other.storageType)) return false;
+        if ( ! this.architecture.compatibleWith(other.architecture)) return false;
 
         return true;
     }
@@ -339,10 +387,10 @@ public class NodeResources {
         if (cpu == 0) cpu = 0.5;
         if (cpu == 2 && mem == 8 ) cpu = 1.5;
         if (cpu == 2 && mem == 12 ) cpu = 2.3;
-        return new NodeResources(cpu, mem, dsk, 0.3, DiskSpeed.getDefault(), StorageType.getDefault());
+        return new NodeResources(cpu, mem, dsk, 0.3, DiskSpeed.getDefault(), StorageType.getDefault(), Architecture.x86_64);
     }
 
-    private double validate(double value, String  valueName) {
+    private double validate(double value, String valueName) {
         if (Double.isNaN(value)) throw new IllegalArgumentException(valueName + " cannot be NaN");
         if (Double.isInfinite(value)) throw new IllegalArgumentException(valueName + " cannot be infinite");
         return value;

@@ -35,3 +35,6 @@ flavor[].remoteStorage bool default=true
 
 # Expected network interface bandwidth available for this flavor, in Mbit/s.
 flavor[].bandwidth double default=0.0
+
+# The architecture for this flavor
+flavor[].architecture string default="x86_64"
