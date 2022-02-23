@@ -70,9 +70,9 @@ public class ScalingSuggestionsMaintainerTest {
                                                                                    new TestMetric());
         maintainer.maintain();
 
-        assertEquals("12 nodes with [vcpu: 6.0, memory: 5.5 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps]",
+        assertEquals("12 nodes with [vcpu: 6.0, memory: 5.5 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps, architecture: x86_64]",
                      suggestionOf(app1, cluster1, tester).get().resources().toString());
-        assertEquals("8 nodes with [vcpu: 11.0, memory: 4.4 Gb, disk 11.8 Gb, bandwidth: 0.1 Gbps]",
+        assertEquals("8 nodes with [vcpu: 11.0, memory: 4.4 Gb, disk 11.8 Gb, bandwidth: 0.1 Gbps, architecture: x86_64]",
                      suggestionOf(app2, cluster2, tester).get().resources().toString());
 
         // Utilization goes way down
@@ -80,14 +80,14 @@ public class ScalingSuggestionsMaintainerTest {
         addMeasurements(0.10f, 0.10f, 0.10f, 0, 500, app1, tester.nodeRepository());
         maintainer.maintain();
         assertEquals("Suggestion stays at the peak value observed",
-                     "12 nodes with [vcpu: 6.0, memory: 5.5 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps]",
+                     "12 nodes with [vcpu: 6.0, memory: 5.5 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps, architecture: x86_64]",
                      suggestionOf(app1, cluster1, tester).get().resources().toString());
         // Utilization is still way down and a week has passed
         tester.clock().advance(Duration.ofDays(7));
         addMeasurements(0.10f, 0.10f, 0.10f, 0, 500, app1, tester.nodeRepository());
         maintainer.maintain();
         assertEquals("Peak suggestion has been  outdated",
-                     "5 nodes with [vcpu: 1.8, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps]",
+                     "5 nodes with [vcpu: 1.8, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps, architecture: x86_64]",
                      suggestionOf(app1, cluster1, tester).get().resources().toString());
         assertTrue(shouldSuggest(app1, cluster1, tester));
 
