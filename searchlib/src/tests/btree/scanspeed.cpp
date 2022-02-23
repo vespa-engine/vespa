@@ -15,7 +15,7 @@
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/util/time.h>
-#include <vespa/searchlib/common/bitvector.h>
+#include <vector>
 
 #include <vespa/fastos/app.h>
 
@@ -52,7 +52,7 @@ const char *scan_method_name(ScanMethod scan_method)
 class ScanOnce {
 public:
     virtual ~ScanOnce() = default;
-    virtual void operator()(search::BitVector &bv) = 0;
+    virtual void operator()(std::vector<bool>& bv) = 0;
 };
 
 template <typename Tree>
@@ -79,18 +79,18 @@ public:
     {
     }
     ~ScanWithIterator() override = default;
-    void operator()(search::BitVector &bv) override;
+    void operator()(std::vector<bool>& bv) override;
 };
 
 template <typename Tree>
 void
-ScanWithIterator<Tree>::operator()(search::BitVector &bv)
+ScanWithIterator<Tree>::operator()(std::vector<bool>& bv)
 {
     using ConstIterator = typename Tree::ConstIterator;
     ConstIterator itr(BTreeNode::Ref(), this->_tree.getAllocator());
     itr.lower_bound(this->_tree.getRoot(), this->_startval);
     while (itr.valid() && itr.getKey() < this->_endval) {
-        bv.setBit(itr.getKey());
+        bv[itr.getKey()] = true;
         ++itr;
     }
 }
@@ -104,19 +104,19 @@ public:
     {
     }
     ~ScanWithFunctor() override = default;
-    void operator()(search::BitVector &bv) override;
+    void operator()(std::vector<bool>& bv) override;
 };
 
 template <typename Tree>
 void
-ScanWithFunctor<Tree>::operator()(search::BitVector &bv)
+ScanWithFunctor<Tree>::operator()(std::vector<bool>& bv)
 {
     using ConstIterator = typename Tree::ConstIterator;
     ConstIterator start(BTreeNode::Ref(), this->_tree.getAllocator());
     ConstIterator end(BTreeNode::Ref(), this->_tree.getAllocator());
     start.lower_bound(this->_tree.getRoot(), this->_startval);
     end.lower_bound(this->_tree.getRoot(), this->_endval);
-    start.foreach_key_range(end, [&](int key) { bv.setBit(key); } );
+    start.foreach_key_range(end, [&](int key) { bv[key] = true; } );
 }
 
 }
@@ -144,7 +144,7 @@ ScanSpeed::work_loop(ScanMethod scan_method)
     } else {
         scan_once = std::make_unique<ScanWithFunctor<Tree>>(tree, 4, numEntries - 4);
     }
-    auto bv = search::BitVector::create(numEntries);
+    auto bv = std::make_unique<std::vector<bool>>(numEntries);
     vespalib::Timer timer;
     for (size_t innerl = 0; innerl < numInnerLoops; ++innerl) {
         (*scan_once)(*bv);
