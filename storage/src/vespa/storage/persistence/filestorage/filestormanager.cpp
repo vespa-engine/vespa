@@ -147,21 +147,25 @@ selectSequencer(StorFilestorConfig::ResponseSequencerType sequencerType) {
 }
 
 vespalib::SharedOperationThrottler::DynamicThrottleParams
-dynamic_throttle_params_from_config(const StorFilestorConfig& config, size_t num_threads)
+dynamic_throttle_params_from_config(const StorFilestorConfig& config, uint32_t num_threads)
 {
     const auto& cfg_params = config.asyncOperationThrottler;
-    auto win_size_incr = std::max(static_cast<size_t>(std::max(cfg_params.windowSizeIncrement, 1)), num_threads);
+    auto win_size_incr = std::max(static_cast<uint32_t>(std::max(cfg_params.windowSizeIncrement, 1)), num_threads);
 
     vespalib::SharedOperationThrottler::DynamicThrottleParams params;
     params.window_size_increment        = win_size_incr;
-    params.min_window_size              = win_size_incr;
+    params.min_window_size              = std::max(win_size_incr, static_cast<uint32_t>(std::max(1, cfg_params.minWindowSize)));
+    params.max_window_size              = (cfg_params.maxWindowSize > 0)
+                                           ? std::max(static_cast<uint32_t>(cfg_params.maxWindowSize), params.min_window_size)
+                                           : INT_MAX;
+    params.resize_rate                  = cfg_params.resizeRate;
     params.window_size_decrement_factor = cfg_params.windowSizeDecrementFactor;
     params.window_size_backoff          = cfg_params.windowSizeBackoff;
     return params;
 }
 
 std::unique_ptr<vespalib::SharedOperationThrottler>
-make_operation_throttler_from_config(const StorFilestorConfig& config, size_t num_threads)
+make_operation_throttler_from_config(const StorFilestorConfig& config, uint32_t num_threads)
 {
     // TODO only use struct config field instead once config model is updated
     const bool use_dynamic_throttling = ((config.asyncOperationThrottlerType  == StorFilestorConfig::AsyncOperationThrottlerType::DYNAMIC) ||
@@ -227,8 +231,8 @@ FileStorManager::configure(std::unique_ptr<StorFilestorConfig> config)
 
     if (!liveUpdate) {
         _config = std::move(config);
-        size_t numThreads = _config->numThreads;
-        size_t numStripes = std::max(size_t(1u), numThreads / 2);
+        uint32_t numThreads = std::max(1, _config->numThreads);
+        uint32_t numStripes = std::max(1u, numThreads / 2);
         _metrics->initDiskMetrics(numStripes, computeAllPossibleHandlerThreads(*_config));
         auto operation_throttler = make_operation_throttler_from_config(*_config, numThreads);
 
