@@ -5,7 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.OutOfCapacityException;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -125,8 +125,9 @@ public class GroupPreparer {
             }
 
             if (! allocation.fulfilled() && requestedNodes.canFail())
-                throw new OutOfCapacityException((cluster.group().isPresent() ? "Out of capacity on " + cluster.group().get() :"") +
-                                                 allocation.outOfCapacityDetails());
+                throw new NodeAllocationException((cluster.group().isPresent() ? "Node allocation failure on " +
+                                                                                 cluster.group().get() : "") +
+                                                  allocation.allocationFailureDetails());
 
             // Carry out and return allocation
             nodeRepository.nodes().reserve(allocation.reservableNodes());

@@ -7,7 +7,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.OutOfCapacityException;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -133,8 +133,8 @@ public class InPlaceResizeProvisionTest {
         // Attempt to increase resources of the other app
         try {
             new PrepareHelper(tester, app).prepare(container1, 4, 1, largeResources);
-            fail("Expected to fail due to out of capacity");
-        } catch (OutOfCapacityException ignored) { }
+            fail("Expected to fail node allocation");
+        } catch (NodeAllocationException ignored) { }
 
         // Add 2 more parent host, now we should be able to do the same deployment that failed earlier
         // 2 of the nodes will be increased in-place and 2 will be allocated to the new hosts.
@@ -211,7 +211,7 @@ public class InPlaceResizeProvisionTest {
         assertSizeAndResources(listCluster(content1).not().retired(), 8, halvedResources);
     }
 
-    @Test(expected = OutOfCapacityException.class)
+    @Test(expected = NodeAllocationException.class)
     public void cannot_inplace_decrease_resources_while_increasing_cluster_size() {
         addParentHosts(6, mediumResources.with(fast).with(local));
 
@@ -221,7 +221,7 @@ public class InPlaceResizeProvisionTest {
         new PrepareHelper(tester, app).prepare(content1, 6, 1, smallResources);
     }
 
-    @Test(expected = OutOfCapacityException.class)
+    @Test(expected = NodeAllocationException.class)
     public void cannot_inplace_change_resources_while_decreasing_cluster_size() {
         addParentHosts(4, largeResources.with(fast).with(local));
 
@@ -231,7 +231,7 @@ public class InPlaceResizeProvisionTest {
         new PrepareHelper(tester, app).prepare(container1, 2, 1, smallResources);
     }
 
-    @Test(expected = OutOfCapacityException.class)
+    @Test(expected = NodeAllocationException.class)
     public void cannot_inplace_change_resources_while_changing_topology() {
         addParentHosts(4, largeResources.with(fast).with(local));
 

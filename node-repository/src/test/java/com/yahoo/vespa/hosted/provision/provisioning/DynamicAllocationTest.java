@@ -11,7 +11,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.OutOfCapacityException;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
@@ -220,7 +220,7 @@ public class DynamicAllocationTest {
         assertEquals(2, hostsWithChildren.size());
     }
 
-    @Test(expected = OutOfCapacityException.class)
+    @Test(expected = NodeAllocationException.class)
     public void multiple_groups_are_on_separate_parent_hosts() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(5, "host-small", NodeType.host, 32);
@@ -257,7 +257,7 @@ public class DynamicAllocationTest {
         try {
             hosts = tester.prepare(application1, clusterSpec, 4, 1, flavor);
             fail("Was able to deploy with 4 nodes, should not be able to use spare capacity");
-        } catch (OutOfCapacityException ignored) { }
+        } catch (NodeAllocationException ignored) { }
 
         tester.fail(hosts.get(0));
         hosts = tester.prepare(application1, clusterSpec, 3, 1, flavor);
@@ -283,7 +283,7 @@ public class DynamicAllocationTest {
         try {
             tester.prepare(application1, clusterSpec, 4, 1, flavor);
             fail("Should not be able to deploy 4 nodes on 4 hosts because 1 is suspended");
-        } catch (OutOfCapacityException ignored) { }
+        } catch (NodeAllocationException ignored) { }
 
         // Resume the host, the deployment goes through
         tester.orchestrator().resume(randomHost);
@@ -319,7 +319,7 @@ public class DynamicAllocationTest {
         tester.activate(application1, Set.copyOf(hosts));
     }
 
-    @Test(expected = OutOfCapacityException.class)
+    @Test(expected = NodeAllocationException.class)
     public void allocation_should_fail_when_host_is_not_in_allocatable_state() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeProvisionedNodes(3, "host-small", NodeType.host, 32).forEach(node ->
@@ -377,7 +377,7 @@ public class DynamicAllocationTest {
         tester.activate(application, hosts);
     }
 
-    private void provisionFastAndSlowThenDeploy(NodeResources.DiskSpeed requestDiskSpeed, boolean expectOutOfCapacity) {
+    private void provisionFastAndSlowThenDeploy(NodeResources.DiskSpeed requestDiskSpeed, boolean expectNodeAllocationFailure) {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(2, new Flavor(new NodeResources(1, 8, 120, 1, NodeResources.DiskSpeed.fast)), NodeType.host, 10, true);
         tester.makeReadyNodes(2, new Flavor(new NodeResources(1, 8, 120, 1, NodeResources.DiskSpeed.slow)), NodeType.host, 10, true);
@@ -389,12 +389,12 @@ public class DynamicAllocationTest {
 
         try {
             List<HostSpec> hosts = tester.prepare(application, cluster, 4, 1, resources);
-            if (expectOutOfCapacity) fail("Expected out of capacity");
+            if (expectNodeAllocationFailure) fail("Expected node allocation fail");
             assertEquals(4, hosts.size());
             tester.activate(application, hosts);
         }
-        catch (OutOfCapacityException e) {
-            if ( ! expectOutOfCapacity) throw e;
+        catch (NodeAllocationException e) {
+            if ( ! expectNodeAllocationFailure) throw e;
         }
     }
 

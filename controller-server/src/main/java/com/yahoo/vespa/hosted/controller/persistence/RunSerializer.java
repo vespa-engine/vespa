@@ -36,7 +36,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentF
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.endpointCertificateTimeout;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.nodeAllocationFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
@@ -360,7 +360,7 @@ class RunSerializer {
     static String valueOf(RunStatus status) {
         switch (status) {
             case running                    : return "running";
-            case outOfCapacity              : return "outOfCapacity";
+            case nodeAllocationFailure      : return "nodeAllocationFailure";
             case endpointCertificateTimeout : return "endpointCertificateTimeout";
             case deploymentFailed           : return "deploymentFailed";
             case installationFailed         : return "installationFailed";
@@ -377,7 +377,8 @@ class RunSerializer {
     static RunStatus runStatusOf(String status) {
         switch (status) {
             case "running"                    : return running;
-            case "outOfCapacity"              : return outOfCapacity;
+            case "outOfCapacity"              : return nodeAllocationFailure;  // TODO: Remove after March 2022
+            case "nodeAllocationFailure"      : return nodeAllocationFailure;
             case "endpointCertificateTimeout" : return endpointCertificateTimeout;
             case "deploymentFailed"           : return deploymentFailed;
             case "installationFailed"         : return installationFailed;

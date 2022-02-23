@@ -117,7 +117,7 @@ public class DeploymentLog {
         aborted,
         error,
         testFailure,
-        outOfCapacity,
+        nodeAllocationFailure,
         installationFailed,
         deploymentFailed,
         endpointCertificateTimeout,

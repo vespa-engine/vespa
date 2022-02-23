@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.OutOfCapacityException;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -40,10 +40,10 @@ class Preparer {
             prepareLoadBalancer(application, cluster, requestedNodes);
             return nodes;
         }
-        catch (OutOfCapacityException e) {
-            throw new OutOfCapacityException("Could not satisfy " + requestedNodes +
-                                             ( wantedGroups > 1 ? " (in " + wantedGroups + " groups)" : "") +
-                                             " in " + application + " " + cluster + ": " + e.getMessage());
+        catch (NodeAllocationException e) {
+            throw new NodeAllocationException("Could not satisfy " + requestedNodes +
+                                              ( wantedGroups > 1 ? " (in " + wantedGroups + " groups)" : "") +
+                                              " in " + application + " " + cluster + ": " + e.getMessage());
         }
     }
 

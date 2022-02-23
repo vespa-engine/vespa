@@ -67,8 +67,8 @@ public class JobStatus {
         return lastTriggered.isPresent() && ! lastTriggered.get().hasEnded();
     }
 
-    public boolean isOutOfCapacity() {
-        return lastStatus().isPresent() && lastStatus().get() == RunStatus.outOfCapacity;
+    public boolean isNodeAllocationFailure() {
+        return lastStatus().isPresent() && lastStatus().get() == RunStatus.nodeAllocationFailure;
     }
 
     @Override

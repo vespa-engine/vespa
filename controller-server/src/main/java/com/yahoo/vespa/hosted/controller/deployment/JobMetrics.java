@@ -16,7 +16,7 @@ import java.util.function.Supplier;
 public class JobMetrics {
 
     public static final String start = "deployment.start";
-    public static final String outOfCapacity = "deployment.outOfCapacity";
+    public static final String nodeAllocationFailure = "deployment.nodeAllocationFailure";
     public static final String endpointCertificateTimeout = "deployment.endpointCertificateTimeout";
     public static final String deploymentFailure = "deployment.deploymentFailure";
     public static final String convergenceFailure = "deployment.convergenceFailure";
@@ -51,7 +51,7 @@ public class JobMetrics {
 
     static String valueOf(RunStatus status) {
         switch (status) {
-            case outOfCapacity: return outOfCapacity;
+            case nodeAllocationFailure: return nodeAllocationFailure;
             case endpointCertificateTimeout: return endpointCertificateTimeout;
             case deploymentFailed: return deploymentFailure;
             case installationFailed: return convergenceFailure;

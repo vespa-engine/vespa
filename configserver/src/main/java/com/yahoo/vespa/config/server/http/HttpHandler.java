@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.http;
 
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.CertificateNotReadyException;
-import com.yahoo.config.provision.OutOfCapacityException;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.exception.ActivationConflictException;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
@@ -55,8 +55,8 @@ public class HttpHandler extends ThreadedHttpRequestHandler {
             return HttpErrorResponse.invalidApplicationPackage(getMessage(e, request));
         } catch (IllegalArgumentException e) {
             return HttpErrorResponse.badRequest(getMessage(e, request));
-        } catch (OutOfCapacityException e) {
-            return HttpErrorResponse.outOfCapacity(getMessage(e, request));
+        } catch (NodeAllocationException e) {
+            return HttpErrorResponse.nodeAllocationFailure(getMessage(e, request));
         } catch (InternalServerException e) {
             return HttpErrorResponse.internalServerError(getMessage(e, request));
         } catch (UnknownVespaVersionException e) {

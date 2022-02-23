@@ -237,7 +237,7 @@ class JobControllerApiHandlerHelper {
             case error:                      return "error";
             case testFailure:                return "testFailure";
             case endpointCertificateTimeout: return "endpointCertificateTimeout";
-            case outOfCapacity:              return "outOfCapacity";
+            case nodeAllocationFailure:      return "nodeAllocationFailure";
             case installationFailed:         return "installationFailed";
             case deploymentFailed:           return "deploymentFailed";
             case success:                    return "success";
@@ -246,7 +246,8 @@ class JobControllerApiHandlerHelper {
     }
 
     /**
-     * @return Response with all job types that have recorded runs for the application _and_ the status for the last run of that type
+     * Returns response with all job types that have recorded runs for the application
+     * _and_ the status for the last run of that type
      */
     static HttpResponse overviewResponse(Controller controller, TenantAndApplicationId id, URI baseUriForDeployments) {
         Application application = controller.applications().requireApplication(id);

@@ -20,7 +20,6 @@ import static com.yahoo.jdisc.Response.Status.REQUEST_TIMEOUT;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class HttpErrorResponse extends HttpResponse {
 
@@ -45,7 +44,7 @@ public class HttpErrorResponse extends HttpResponse {
         INVALID_APPLICATION_PACKAGE,
         METHOD_NOT_ALLOWED,
         NOT_FOUND,
-        OUT_OF_CAPACITY,
+        NODE_ALLOCATION_FAILURE,
         REQUEST_TIMEOUT,
         UNKNOWN_VESPA_VERSION,
         PARENT_HOST_NOT_READY,
@@ -66,8 +65,8 @@ public class HttpErrorResponse extends HttpResponse {
         return new HttpErrorResponse(BAD_REQUEST, ErrorCode.INVALID_APPLICATION_PACKAGE.name(), msg);
     }
 
-    public static HttpErrorResponse outOfCapacity(String msg) {
-        return new HttpErrorResponse(BAD_REQUEST, ErrorCode.OUT_OF_CAPACITY.name(), msg);
+    public static HttpErrorResponse nodeAllocationFailure(String msg) {
+        return new HttpErrorResponse(BAD_REQUEST, ErrorCode.NODE_ALLOCATION_FAILURE.name(), msg);
     }
 
     public static HttpErrorResponse badRequest(String msg) {

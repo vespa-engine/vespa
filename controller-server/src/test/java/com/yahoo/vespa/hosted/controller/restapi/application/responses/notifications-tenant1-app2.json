@@ -5,7 +5,7 @@
       "level": "error",
       "type": "deployment",
       "messages": [
-        "Failed to deploy: Out of capacity"
+        "Failed to deploy: Node allocation failure"
       ],
       "application": "app2",
       "instance": "instance1",

@@ -14,7 +14,7 @@ import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.OutOfCapacityException;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -333,9 +333,9 @@ public class ProvisioningTest {
         // redeploy a too large application
         try {
             SystemState state2 = prepare(application1, 3, 0, 3, 0, defaultResources, tester);
-            fail("Expected out of capacity exception");
+            fail("Expected node allocation exception");
         }
-        catch (OutOfCapacityException expected) {
+        catch (NodeAllocationException expected) {
         }
 
         // deploy first state again
@@ -626,7 +626,7 @@ public class ProvisioningTest {
             prepare(application, 2, 2, 3, 3, defaultResources, tester);
             fail("Expected exception");
         }
-        catch (OutOfCapacityException e) {
+        catch (NodeAllocationException e) {
             assertTrue(e.getMessage().startsWith("Could not satisfy request"));
         }
     }
@@ -653,7 +653,7 @@ public class ProvisioningTest {
         try {
             prepare(application, 2, 0, 2, 0, defaultResources, tester);
             fail("Expected exception");
-        } catch (OutOfCapacityException e) {
+        } catch (NodeAllocationException e) {
             assertTrue(e.getMessage().startsWith("Could not satisfy request"));
         }
     }
@@ -826,11 +826,11 @@ public class ProvisioningTest {
         ApplicationId application = ProvisioningTester.applicationId();
         tester.makeReadyHosts(2, defaultResources).activateTenantHosts();
 
-        // Deploy fails with out of capacity
+        // Node allocation fails
         try {
             prepare(application, 2, 0, 2, 0, defaultResources, tester);
             fail("Expected exception");
-        } catch (OutOfCapacityException ignored) {}
+        } catch (NodeAllocationException ignored) {}
         assertEquals("Reserved a subset of required nodes", 2,
                      tester.getNodes(application, Node.State.reserved).size());
 

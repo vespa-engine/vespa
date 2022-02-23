@@ -8,7 +8,7 @@ import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.OutOfCapacityException;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.http.HttpRequest;
@@ -246,15 +246,15 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     @Test
     public void test_out_of_capacity_response() throws IOException {
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
-        String exceptionMessage = "Out of capacity";
+        String exceptionMessage = "Node allocation failure";
         FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testContext(),
                                                                                 applicationRepository,
                                                                                 configserverConfig,
-                                                                                new OutOfCapacityException(exceptionMessage));
+                                                                                new NodeAllocationException(exceptionMessage));
         HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
         assertEquals(400, response.getStatus());
         Slime data = getData(response);
-        assertEquals(HttpErrorResponse.ErrorCode.OUT_OF_CAPACITY.name(), data.get().field("error-code").asString());
+        assertEquals(HttpErrorResponse.ErrorCode.NODE_ALLOCATION_FAILURE.name(), data.get().field("error-code").asString());
         assertEquals(exceptionMessage, data.get().field("message").asString());
     }
 

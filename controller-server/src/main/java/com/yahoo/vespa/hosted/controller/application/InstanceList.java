@@ -18,8 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 

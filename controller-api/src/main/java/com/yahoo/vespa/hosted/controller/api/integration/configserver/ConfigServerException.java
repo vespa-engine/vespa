@@ -34,7 +34,7 @@ public class ConfigServerException extends RuntimeException {
         INVALID_APPLICATION_PACKAGE,
         METHOD_NOT_ALLOWED,
         NOT_FOUND,
-        OUT_OF_CAPACITY,
+        NODE_ALLOCATION_FAILURE,
         REQUEST_TIMEOUT,
         UNKNOWN_VESPA_VERSION,
         PARENT_HOST_NOT_READY,

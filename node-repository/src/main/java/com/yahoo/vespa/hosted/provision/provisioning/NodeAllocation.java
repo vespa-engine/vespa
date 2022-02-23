@@ -441,7 +441,7 @@ class NodeAllocation {
                          .collect(Collectors.toList());
     }
 
-    public String outOfCapacityDetails() {
+    public String allocationFailureDetails() {
         List<String> reasons = new ArrayList<>();
         if (rejectedDueToExclusivity > 0)
             reasons.add("host exclusivity constraints");
@@ -453,7 +453,7 @@ class NodeAllocation {
             reasons.add("insufficient real resources on hosts");
 
         if (reasons.isEmpty()) return "";
-        return ": Not enough nodes available due to " + String.join(", ", reasons);
+        return ": Not enough suitable nodes available due to " + String.join(", ", reasons);
     }
 
     private static Integer parseIndex(String hostname) {
