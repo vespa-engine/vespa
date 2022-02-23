@@ -127,7 +127,7 @@ public class OnnxModelProbe {
         ProcessBuilder processBuilder = new ProcessBuilder(binary, "--probe-types");
         processBuilder.redirectErrorStream(true);
         StringBuilder output = new StringBuilder();
-        Process process = processBuilder.start();  // kaster en exception dersom executable ikke finnes
+        Process process = processBuilder.start();
 
         // Write json array to process stdin
         OutputStream os = process.getOutputStream();
