@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -240,6 +241,38 @@ public class DeploymentTriggerTest {
         app.triggerJobs();
         assertEquals(List.of(), tester.jobs().active());
         assertEquals(Change.empty(), app.instance().change());
+    }
+
+    @Test
+    public void testOutstandingChangeWithNextRevisionTarget() {
+        ApplicationPackage appPackage = new ApplicationPackageBuilder().revisionTarget("next")
+                                                                       .revisionChange("when-failing")
+                                                                       .region("us-east-3")
+                                                                       .build();
+        DeploymentContext app = tester.newDeploymentContext()
+                                      .submit(appPackage);
+        Optional<ApplicationVersion> revision0 = app.lastSubmission();
+
+        app.submit(appPackage);
+        Optional<ApplicationVersion> revision1 = app.lastSubmission();
+
+        app.submit(appPackage);
+        Optional<ApplicationVersion> revision2 = app.lastSubmission();
+
+        app.submit(appPackage);
+        Optional<ApplicationVersion> revision3 = app.lastSubmission();
+
+        assertEquals(revision0, app.instance().change().application());
+        assertEquals(revision1, app.deploymentStatus().outstandingChange(InstanceName.defaultName()).application());
+
+        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(revision1.get()));
+        assertEquals(revision1, app.instance().change().application());
+        assertEquals(revision2, app.deploymentStatus().outstandingChange(InstanceName.defaultName()).application());
+
+        app.deploy();
+        tester.outstandingChangeDeployer().run();
+        assertEquals(revision2, app.instance().change().application());
+        assertEquals(revision3, app.deploymentStatus().outstandingChange(InstanceName.defaultName()).application());
     }
 
     @Test
