@@ -18,7 +18,6 @@ public class SummaryInFieldLongOperation extends SummaryInFieldOperation {
     private DataType type;
     private Boolean bold;
     private Set<String> destinations = new java.util.LinkedHashSet<>();
-    private List<SummaryField.Property> properties = new ArrayList<>();
 
     public SummaryInFieldLongOperation(String name) {
         super(name);
@@ -42,11 +41,6 @@ public class SummaryInFieldLongOperation extends SummaryInFieldOperation {
 
     public Iterator<String> destinationIterator() {
         return destinations.iterator();
-    }
-
-
-    public void addProperty(SummaryField.Property property) {
-        properties.add(property);
     }
 
     public void apply(SDField field) {
@@ -73,10 +67,6 @@ public class SummaryInFieldLongOperation extends SummaryInFieldOperation {
 
         for (String destination : destinations) {
             summary.addDestination(destination);
-        }
-
-        for (SummaryField.Property prop : properties) {
-            summary.addProperty(prop.getName(), prop.getValue());
         }
     }
 }

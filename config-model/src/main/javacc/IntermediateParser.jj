@@ -1421,7 +1421,7 @@ void summaryProperty(SummaryInFieldLongOperation field) :
 }
 {
     name = identifierWithDash() <COLON> (value = identifierWithDash() | value = quotedString())
-    { field.addProperty(new SummaryField.Property(name, value)); }
+    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying summary properties is deprecated and has no effect."); }
 }
 
 /**
