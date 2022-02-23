@@ -36,13 +36,15 @@ import java.util.stream.Collectors;
  */
 public class OnnxModelInfo {
 
+    private final ApplicationPackage app;
     private final String modelPath;
     private final String defaultOutput;
     private final Map<String, OnnxTypeInfo> inputs;
     private final Map<String, OnnxTypeInfo> outputs;
     private final Map<String, TensorType> vespaTypes = new HashMap<>();
 
-    private OnnxModelInfo(String path, Map<String, OnnxTypeInfo> inputs, Map<String, OnnxTypeInfo> outputs, String defaultOutput) {
+    private OnnxModelInfo(ApplicationPackage app, String path, Map<String, OnnxTypeInfo> inputs, Map<String, OnnxTypeInfo> outputs, String defaultOutput) {
+        this.app = app;
         this.modelPath = path;
         this.inputs = Collections.unmodifiableMap(inputs);
         this.outputs = Collections.unmodifiableMap(outputs);
@@ -79,7 +81,15 @@ public class OnnxModelInfo {
             Set<Long> unboundSizes = new HashSet<>();
             Map<String, Long> symbolicSizes = new HashMap<>();
             resolveUnknownDimensionSizes(inputTypes, symbolicSizes, unboundSizes);
-            return onnxTypeInfo.toVespaTensorType(symbolicSizes, unboundSizes);
+
+            TensorType type = TensorType.empty;
+            if (inputTypes.size() > 0 && onnxTypeInfo.needModelProbe(symbolicSizes)) {
+                type = OnnxModelProbe.probeModel(app, Path.fromString(modelPath), onnxName, inputTypes);
+            }
+            if (type.equals(TensorType.empty)) {
+                type = onnxTypeInfo.toVespaTensorType(symbolicSizes, unboundSizes);
+            }
+            return type;
         }
         return vespaTypes.computeIfAbsent(onnxName, v -> onnxTypeInfo.toVespaTensorType());
     }
@@ -150,7 +160,8 @@ public class OnnxModelInfo {
             Onnx.ModelProto model = Onnx.ModelProto.parseFrom(inputStream);
             String json = onnxModelToJson(model, path);
             storeGeneratedInfo(json, path, app);
-            return jsonToModelInfo(json);
+            return jsonToModelInfo(json, app);
+
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to parse ONNX model", e);
         }
@@ -159,7 +170,7 @@ public class OnnxModelInfo {
     static private OnnxModelInfo loadFromGeneratedInfo(Path path, ApplicationPackage app) {
         try {
             String json = readGeneratedInfo(path, app);
-            return jsonToModelInfo(json);
+            return jsonToModelInfo(json, app);
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to parse ONNX model", e);
         }
@@ -202,7 +213,7 @@ public class OnnxModelInfo {
         return out.toString();
     }
 
-    static public OnnxModelInfo jsonToModelInfo(String json) throws IOException {
+    static public OnnxModelInfo jsonToModelInfo(String json, ApplicationPackage app) throws IOException {
         ObjectMapper m = new ObjectMapper();
         JsonNode root = m.readTree(json);
         Map<String, OnnxTypeInfo> inputs = new HashMap<>();
@@ -222,7 +233,7 @@ public class OnnxModelInfo {
         if (root.get("outputs").has(0)) {
             defaultOutput = root.get("outputs").get(0).get("name").textValue();
         }
-        return new OnnxModelInfo(path, inputs, outputs, defaultOutput);
+        return new OnnxModelInfo(app, path, inputs, outputs, defaultOutput);
     }
 
     static private void onnxTypeToJson(JsonGenerator g, Onnx.ValueInfoProto valueInfo) throws IOException {
@@ -351,6 +362,21 @@ public class OnnxModelInfo {
                 builder.indexed(dimensionName, onnxDimensionSize);
             }
             return builder.build();
+        }
+
+        boolean needModelProbe(Map<String, Long> symbolicSizes) {
+            for (OnnxDimensionInfo onnxDimension : dimensions) {
+                if (onnxDimension.hasSymbolicName()) {
+                    if (symbolicSizes == null)
+                        return true;
+                    if ( ! symbolicSizes.containsKey(onnxDimension.getSymbolicName())) {
+                        return true;
+                    }
+                } else if (onnxDimension.getSize() == 0) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         @Override
