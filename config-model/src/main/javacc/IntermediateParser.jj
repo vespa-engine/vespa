@@ -496,7 +496,7 @@ void useDocument(ParsedSchema schema) : { }
  */
 void document(ParsedSchema schema) :
 {
-    String name = schema.getName();
+    String name = schema.name();
     ParsedDocument document;
 }
 {
@@ -2504,7 +2504,7 @@ void constantTensor(ParsedRankProfile profile, String name) :
 {
     <LBRACE> (<NL>)*
       (( tensorString = tensorValue() |
-         tensorType = tensorTypeWithPrefix(constantTensorErrorMessage(profile.getName(), name)) ) (<NL>)* )* <RBRACE>
+         tensorType = tensorTypeWithPrefix(constantTensorErrorMessage(profile.name(), name)) ) (<NL>)* )* <RBRACE>
     {
         if (tensorType != null) {
             profile.addConstantTensor(name, new TensorValue(Tensor.from(tensorType, tensorString)));

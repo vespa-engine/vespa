@@ -12,7 +12,7 @@ public class ParsedDocument {
         this.name = name;
     }
 
-    String getName() { return name; }
+    String name() { return name; }
     void inherit(String other) { inherited.add(other); }
 
     /*

@@ -15,7 +15,7 @@ class ParsedRankProfile {
         this.name = name;
     }
 
-    public String getName() { return name; }
+    public String name() { return name; }
 
     void addSummaryFeatures(FeatureList features) {}
     void addMatchFeatures(FeatureList features) {}

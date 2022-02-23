@@ -16,7 +16,7 @@ public class ParsedSchema {
         this.name = name;
     }
 
-    String getName() { return name; }
+    String name() { return name; }
 
     void addDocument(ParsedDocument document) {}
     void addImportedField(String asFieldName, String refFieldName, String foregnFieldName) {}
