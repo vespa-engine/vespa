@@ -142,7 +142,6 @@ public class TestRunnerHandler extends ThreadedHttpRequestHandler {
             return slime;
 
         var summary = root.setObject("summary");
-        summary.setLong("total", testReport.totalCount);
         summary.setLong("success", testReport.successCount);
         summary.setLong("failed", testReport.failedCount);
         summary.setLong("ignored", testReport.ignoredCount);

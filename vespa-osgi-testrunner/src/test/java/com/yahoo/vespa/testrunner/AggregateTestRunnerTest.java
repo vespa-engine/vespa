@@ -77,7 +77,7 @@ class AggregateTestRunnerTest {
         assertEquals(List.of(), runner.getLog(record1.getSequenceNumber()));
 
         // First wrapped runner completes, second is started.
-        first.status = SUCCESS;
+        first.status = NO_TESTS;
         first.future.complete(null);
         assertNotNull(second.future);
         assertFalse(future.isDone());
@@ -87,8 +87,13 @@ class AggregateTestRunnerTest {
         second.log.add(record2);
         assertEquals(List.of(record1, record2), runner.getLog(-1));
 
-        // No failures means success.
+        // No tests in any runner means no tests.
+        second.status = NO_TESTS;
         second.future.complete(null);
+        assertEquals(NO_TESTS, runner.getStatus());
+
+        // No failures, and at least one success, mean success.
+        second.status = SUCCESS;
         assertEquals(SUCCESS, runner.getStatus());
 
         // An inconclusive test means inconclusive.
@@ -122,7 +127,6 @@ class AggregateTestRunnerTest {
         TestReport report = TestReport.builder()
                                       .withLogs(List.of(record1))
                                       .withFailures(List.of(failure))
-                                      .withTotalCount(15)
                                       .withSuccessCount(8)
                                       .withIgnoredCount(4)
                                       .withFailedCount(2)
@@ -135,11 +139,21 @@ class AggregateTestRunnerTest {
         TestReport merged = runner.getReport();
         assertEquals(List.of(record1, record1), merged.logLines);
         assertEquals(List.of(failure, failure), merged.failures);
-        assertEquals(30, merged.totalCount);
         assertEquals(16, merged.successCount);
         assertEquals(8, merged.ignoredCount);
         assertEquals(4, merged.failedCount);
         assertEquals(2, merged.abortedCount);
+    }
+
+    @Test
+    void testReportStatus() {
+        assertEquals(NO_TESTS, TestReport.builder().build().status());
+        assertEquals(SUCCESS, TestReport.builder().withSuccessCount(1).build().status());
+        assertEquals(INCONCLUSIVE, TestReport.builder().withSuccessCount(1).withInconclusiveCount(1).build().status());
+        assertEquals(FAILURE, TestReport.builder().withSuccessCount(1).withFailedCount(1).build().status());
+        assertEquals(SUCCESS, TestReport.builder().withAbortedCount(1).build().status());
+        assertEquals(SUCCESS, TestReport.builder().withIgnoredCount(1).build().status());
+        assertEquals(FAILURE, JunitRunner.createReportWithFailedInitialization(new RuntimeException("hello")).status());
     }
 
     static class MockTestRunner implements TestRunner {

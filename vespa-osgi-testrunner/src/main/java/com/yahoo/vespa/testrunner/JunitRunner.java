@@ -127,22 +127,22 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         return logRecords.tailMap(after + 1).values();
     }
 
-    private static TestReport createReportWithFailedInitialization(Exception exception) {
+    static TestReport createReportWithFailedInitialization(Exception exception) {
         TestReport.Failure failure = new TestReport.Failure("init", exception);
-        return new TestReport.Builder()
-                        .withFailures(List.of(failure))
-                        .build();
+        return new TestReport.Builder().withFailures(List.of(failure))
+                                       .withFailedCount(1)
+                                       .build();
     }
 
     private Optional<Bundle> findTestBundle() {
         return Stream.of(bundleContext.getBundles())
-                .filter(this::isTestBundle)
-                .findAny();
+                     .filter(this::isTestBundle)
+                     .findAny();
     }
 
     private boolean isTestBundle(Bundle bundle) {
         var testBundleHeader = bundle.getHeaders().get("X-JDisc-Test-Bundle-Version");
-        return testBundleHeader != null && !testBundleHeader.isBlank();
+        return testBundleHeader != null && ! testBundleHeader.isBlank();
     }
 
     private Optional<TestDescriptor> loadTestDescriptor(Bundle bundle) {
@@ -229,7 +229,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
     @Override
     public TestRunner.Status getStatus() {
         if (execution == null) return TestRunner.Status.NOT_STARTED;
-        if (!execution.isDone()) return TestRunner.Status.RUNNING;
+        if ( ! execution.isDone()) return TestRunner.Status.RUNNING;
         try {
             return execution.get().status();
         } catch (InterruptedException|ExecutionException e) {

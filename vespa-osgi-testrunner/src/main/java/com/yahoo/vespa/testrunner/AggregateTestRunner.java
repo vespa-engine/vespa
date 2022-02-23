@@ -84,7 +84,6 @@ public class AggregateTestRunner implements TestRunner {
                          .withFailedCount(first.failedCount + second.failedCount)
                          .withIgnoredCount(first.ignoredCount + second.ignoredCount)
                          .withSuccessCount(first.successCount + second.successCount)
-                         .withTotalCount(first.totalCount + second.totalCount)
                          .withFailures(merged(first.failures, second.failures))
                          .withLogs(merged(first.logLines, second.logLines))
                          .build();
