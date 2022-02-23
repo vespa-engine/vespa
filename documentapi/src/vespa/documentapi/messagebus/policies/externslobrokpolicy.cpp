@@ -1,9 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "externslobrokpolicy.h"
+#include "mirror_with_all.h"
 #include <vespa/messagebus/routing/routingcontext.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
@@ -12,15 +14,14 @@
 
 using slobrok::api::IMirrorAPI;
 using slobrok::api::MirrorAPI;
+using slobrok::ConfiguratorFactory;
 
 namespace documentapi {
 
 ExternSlobrokPolicy::ExternSlobrokPolicy(const std::map<string, string>& param)
     : AsyncInitializationPolicy(param),
       _firstTry(true),
-      _threadPool(std::make_unique<FastOS_ThreadPool>(1024*60)),
-      _transport(std::make_unique<FNET_Transport>()),
-      _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
+      _mirrorWithAll(),
       _slobrokConfigId("client")
 {
     if (param.find("config") != param.end()) {
@@ -46,29 +47,24 @@ ExternSlobrokPolicy::ExternSlobrokPolicy(const std::map<string, string>& param)
     }
 }
 
-ExternSlobrokPolicy::~ExternSlobrokPolicy()
-{
-    bool started = (bool)_mirror;
-    _mirror.reset();
-    if (started) {
-        _transport->ShutDown(true);
-    }
+const IMirrorAPI*
+ExternSlobrokPolicy::getMirror() const {
+    return _mirrorWithAll ? _mirrorWithAll->mirror() : nullptr;
 }
+
+ExternSlobrokPolicy::~ExternSlobrokPolicy() = default;
 
 string
 ExternSlobrokPolicy::init() {
+    std::lock_guard guard(_lock);
     if (_slobroks.size() != 0) {
-        slobrok::ConfiguratorFactory config(_slobroks);
-        _mirror = std::make_unique<MirrorAPI>(*_orb, config);
+        ConfiguratorFactory config(_slobroks);
+        _mirrorWithAll = std::make_unique<MirrorAndStuff>(config);
     } else if (_configSources.size() != 0) {
-        slobrok::ConfiguratorFactory config(
-            config::ConfigUri(_slobrokConfigId,
-                             std::make_shared<config::ConfigContext>(config::ServerSpec(_configSources))));
-        _mirror = std::make_unique<MirrorAPI>(*_orb, config);
-    }
-
-    if (_mirror.get()) {
-        _transport->Start(_threadPool.get());
+        ConfiguratorFactory config(
+                config::ConfigUri(_slobrokConfigId,
+                                  std::make_shared<config::ConfigContext>(config::ServerSpec(_configSources))));
+        _mirrorWithAll = std::make_unique<MirrorAndStuff>(config);
     }
 
     return "";
@@ -78,7 +74,8 @@ IMirrorAPI::SpecList
 ExternSlobrokPolicy::lookup(mbus::RoutingContext& context, const string& pattern) {
     std::lock_guard guard(_lock);
 
-    const IMirrorAPI& mirror(_mirror.get()? *_mirror : context.getMirror());
+    const IMirrorAPI * myMirror = getMirror();
+    const IMirrorAPI& mirror(myMirror ? *myMirror : context.getMirror());
 
     IMirrorAPI::SpecList entries = mirror.lookup(pattern);
 

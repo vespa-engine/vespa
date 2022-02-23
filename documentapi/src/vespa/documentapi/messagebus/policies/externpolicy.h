@@ -7,11 +7,9 @@
 #include <vespa/documentapi/common.h>
 #include <mutex>
 
-class FRT_Supervisor;
-class FNET_Transport;
-class FastOS_ThreadPool;
-
 namespace documentapi {
+
+class MirrorAndStuff;
 
 /**
  * This policy implements the necessary logic to communicate with an external Vespa application and resolve its list of
@@ -20,11 +18,8 @@ namespace documentapi {
 class ExternPolicy : public mbus::IRoutingPolicy {
 private:
     using IMirrorAPI = slobrok::api::IMirrorAPI;
-    std::mutex                          _lock;
-    std::unique_ptr<FastOS_ThreadPool>  _threadPool;
-    std::unique_ptr<FNET_Transport>     _transport;
-    std::unique_ptr<FRT_Supervisor>     _orb;
-    std::unique_ptr<IMirrorAPI>         _mirror;
+    std::mutex                       _lock;
+    std::unique_ptr<MirrorAndStuff>  _mirrorWithAll;
     string                           _pattern;
     string                           _session;
     string                           _error;
@@ -70,7 +65,7 @@ public:
      *
      * @return The mirror pointer.
      */
-    slobrok::api::IMirrorAPI &getMirror() { return *_mirror; }
+    const slobrok::api::IMirrorAPI *getMirror() const;
     void select(mbus::RoutingContext &ctx) override;
     void merge(mbus::RoutingContext &ctx) override;
 };

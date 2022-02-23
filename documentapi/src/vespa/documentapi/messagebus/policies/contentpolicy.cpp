@@ -63,10 +63,10 @@ string ContentPolicy::init()
 
     using storage::lib::Distribution;
     config::ConfigUri uri(_clusterConfigId);
-    if (!_configSources.empty()) {
-        _configFetcher.reset(new config::ConfigFetcher(config::ServerSpec(_configSources)));
+    if (!configSources().empty()) {
+        _configFetcher = std::make_unique<config::ConfigFetcher>(config::ServerSpec(configSources()));
     } else {
-        _configFetcher.reset(new config::ConfigFetcher(uri.getContext()));
+        _configFetcher = std::make_unique<config::ConfigFetcher>(uri.getContext());
     }
     _callBack = std::make_unique<CallBack>(*this);
     _configFetcher->subscribe<vespa::config::content::StorDistributionConfig>(uri.getConfigId(), static_cast<CallBack *>(_callBack.get()));

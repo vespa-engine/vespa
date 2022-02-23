@@ -273,9 +273,9 @@ Test::setupExternPolicy(TestFrame &frame, mbus::Slobrok &slobrok, const string &
                     DocumentProtocol::NAME,
                     dir.getName(),
                     dir.getParam()));
-    assertMirrorReady(policy.getMirror());
+    assertMirrorReady(*policy.getMirror());
     if (numEntries >= 0) {
-        assertMirrorContains(policy.getMirror(), pattern, numEntries);
+        assertMirrorContains(*policy.getMirror(), pattern, numEntries);
     }
 }
 
@@ -292,8 +292,7 @@ Test::assertMirrorReady(const slobrok::api::IMirrorAPI &mirror)
 }
 
 void
-Test::assertMirrorContains(const slobrok::api::IMirrorAPI &mirror, const string &pattern,
-                           uint32_t numEntries)
+Test::assertMirrorContains(const slobrok::api::IMirrorAPI &mirror, const string &pattern, uint32_t numEntries)
 {
     for (uint32_t i = 0; i < 6000; ++i) {
         if (mirror.lookup(pattern).size() == numEntries) {
