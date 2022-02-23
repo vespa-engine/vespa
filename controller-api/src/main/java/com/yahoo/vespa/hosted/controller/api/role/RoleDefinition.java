@@ -102,7 +102,8 @@ public enum RoleDefinition {
 
     hostedAccountant(Policy.hostedAccountant,
                      Policy.collectionMethodUpdate,
-                     Policy.planUpdate);
+                     Policy.planUpdate,
+                     Policy.tenantUpdate);
 
     private final Set<RoleDefinition> parents;
     private final Set<Policy> policies;
