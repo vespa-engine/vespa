@@ -207,16 +207,16 @@ private:
     bool addEntry(const Packet::Entry & e);
 
 public:
-    FeederThread(FNET_Transport & transport, const std::string & tlsSpec, const std::string & domain,
+    FeederThread(const std::string & tlsSpec, const std::string & domain,
                  const EntryGenerator & generator, uint32_t feedRate, size_t packetSize);
     ~FeederThread() override;
     void doRun() override;
     SerialNumRange getRange() const { return SerialNumRange(1, _lastCommited); }
 };
 
-FeederThread::FeederThread(FNET_Transport & transport, const std::string & tlsSpec, const std::string & domain,
+FeederThread::FeederThread(const std::string & tlsSpec, const std::string & domain,
                            const EntryGenerator & generator, uint32_t feedRate, size_t packetSize)
-    : _tlsSpec(tlsSpec), _domain(domain), _client(transport, tlsSpec), _session(),
+    : _tlsSpec(tlsSpec), _domain(domain), _client(tlsSpec), _session(),
       _generator(generator), _feedRate(feedRate), _packet(packetSize), _current(1), _lastCommited(1), _timer()
 {}
 FeederThread::~FeederThread() = default;
@@ -301,10 +301,10 @@ protected:
     bool _validate;
 
 public:
-    Agent(FNET_Transport & transport, const std::string & tlsSpec, const std::string & domain,
+    Agent(const std::string & tlsSpec, const std::string & domain,
           const EntryGenerator & generator, const std::string & name, uint32_t id, bool validate) :
         client::Callback(),
-        _tlsSpec(tlsSpec), _domain(domain), _client(transport, tlsSpec),
+        _tlsSpec(tlsSpec), _domain(domain), _client(tlsSpec),
         _generator(generator), _name(name), _id(id), _validate(validate)
     {}
     ~Agent() override {}
@@ -339,9 +339,9 @@ private:
     SerialNum getNext();
 
 public:
-    VisitorAgent(FNET_Transport & transport, const std::string & tlsSpec, const std::string & domain,
+    VisitorAgent(const std::string & tlsSpec, const std::string & domain,
                  const EntryGenerator & generator, uint32_t id, bool validate) :
-        Agent(transport, tlsSpec, domain, generator, "VisitorAgent", id, validate),
+        Agent(tlsSpec, domain, generator, "VisitorAgent", id, validate),
         _visitor(), _from(0), _to(0), _next(0), _state(IDLE) {}
     ~VisitorAgent() override = default;
     void start(SerialNum from, SerialNum to);
@@ -470,23 +470,24 @@ private:
     void makeRandomVisitorVector();
 
 public:
-    ControllerThread(FNET_Transport & transport, const std::string & tlsSpec, const std::string & domain, const EntryGenerator & generator,
+    ControllerThread(const std::string & tlsSpec, const std::string & domain, const EntryGenerator & generator,
                      uint32_t numVisitors, vespalib::duration visitorInterval, vespalib::duration pruneInterval);
     ~ControllerThread();
+    uint32_t runningVisitors();
     std::vector<std::shared_ptr<VisitorAgent> > & getVisitors() { return _visitors; }
     virtual void doRun() override;
 
 };
 
-ControllerThread::ControllerThread(FNET_Transport & transport, const std::string & tlsSpec, const std::string & domain,
+ControllerThread::ControllerThread(const std::string & tlsSpec, const std::string & domain,
                                    const EntryGenerator & generator, uint32_t numVisitors,
                                    vespalib::duration visitorInterval, vespalib::duration pruneInterval)
-    : _tlsSpec(tlsSpec), _domain(domain), _client(transport, tlsSpec.c_str()), _session(),
+    : _tlsSpec(tlsSpec), _domain(domain), _client(tlsSpec.c_str()), _session(),
       _generator(generator), _visitors(), _rndVisitors(), _visitorInterval(visitorInterval),
       _pruneInterval(pruneInterval), _pruneTimer(), _begin(0), _end(0), _count(0)
 {
     for (uint32_t i = 0; i < numVisitors; ++i) {
-        _visitors.push_back(std::make_shared<VisitorAgent>(transport, tlsSpec, domain, generator, i, true));
+        _visitors.push_back(std::make_shared<VisitorAgent>(tlsSpec, domain, generator, i, true));
     }
 }
 ControllerThread::~ControllerThread() = default;
@@ -703,7 +704,7 @@ TransLogStress::Main()
     FNET_Transport transport;
     DummyFileHeaderContext fileHeaderContext;
     TransLogServer tls(transport, "server", 17897, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(_cfg.domainPartSize));
-    TransLogClient client(transport, tlsSpec);
+    TransLogClient client(tlsSpec);
     client.create(domain);
 
     BufferGenerator bufferGenerator(_cfg.minStrLen, _cfg.maxStrLen);
@@ -719,12 +720,12 @@ TransLogStress::Main()
 
 
     // start feeder and controller
-    FeederThread feeder(transport, tlsSpec, domain, generator, _cfg.feedRate, _cfg.packetSize);
+    FeederThread feeder(tlsSpec, domain, generator, _cfg.feedRate, _cfg.packetSize);
     threadPool.NewThread(&feeder);
 
     std::this_thread::sleep_for(sleepTime);
 
-    ControllerThread controller(transport, tlsSpec, domain, generator, _cfg.numVisitors, _cfg.visitorInterval, _cfg.pruneInterval);
+    ControllerThread controller(tlsSpec, domain, generator, _cfg.numVisitors, _cfg.visitorInterval, _cfg.pruneInterval);
     threadPool.NewThread(&controller);
 
     // stop feeder and controller

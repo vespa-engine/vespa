@@ -2,7 +2,6 @@
 
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/threading_service_config.h>
-#include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 
@@ -21,18 +20,17 @@ to_concrete_type(ISequencedTaskExecutor& exec)
 
 class ExecutorThreadingServiceTest : public ::testing::Test {
 public:
-    TransportAndExecutor _transport;
+    vespalib::ThreadStackExecutor shared_executor;
     std::unique_ptr<ISequencedTaskExecutor> field_writer_executor;
     std::unique_ptr<ExecutorThreadingService> service;
     ExecutorThreadingServiceTest()
-        : _transport(1),
+        : shared_executor(1, 1000),
           field_writer_executor(SequencedTaskExecutor::create(my_field_writer_executor, 3, 200)),
           service()
     {
     }
     void setup(uint32_t indexing_threads, SharedFieldWriterExecutor shared_field_writer) {
-        service = std::make_unique<ExecutorThreadingService>(_transport.shared(),
-                                                             _transport.transport(),
+        service = std::make_unique<ExecutorThreadingService>(shared_executor,
                                                              field_writer_executor.get(),
                                                              nullptr,
                                                              ThreadingServiceConfig::make(indexing_threads, shared_field_writer));

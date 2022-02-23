@@ -3,7 +3,6 @@ vespa_add_executable(searchcore_indexmanager_test_app TEST
     SOURCES
     indexmanager_test.cpp
     DEPENDS
-    searchcore_test
     searchcore_server
     searchcore_index
     searchcore_flushengine
@@ -18,7 +17,6 @@ vespa_add_executable(searchcore_fusionrunner_test_app TEST
     SOURCES
     fusionrunner_test.cpp
     DEPENDS
-    searchcore_test
     searchcore_server
     searchcore_index
     searchcore_pcommon

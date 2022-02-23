@@ -482,7 +482,7 @@ createAndFillDomain(const vespalib::string & dir, const vespalib::string & name,
     DummyFileHeaderContext fileHeaderContext;
     TLS tlss(dir, 18377, ".", fileHeaderContext,
              createDomainConfig(0x1000000).setEncoding(encoding), 4);
-    TransLogClient tls(tlss.transport, "tcp/localhost:18377");
+    TransLogClient tls("tcp/localhost:18377");
 
     createDomainTest(tls, name, preExistingDomains);
     auto s1 = openDomainTest(tls, name);
@@ -493,7 +493,7 @@ void
 verifyDomain(const vespalib::string & dir, const vespalib::string & name) {
     DummyFileHeaderContext fileHeaderContext;
     TLS tlss(dir, 18377, ".", fileHeaderContext, createDomainConfig(0x1000000));
-    TransLogClient tls(tlss.transport, "tcp/localhost:18377");
+    TransLogClient tls("tcp/localhost:18377");
     auto s1 = openDomainTest(tls, name);
     visitDomainTest(tls, s1.get(), name);
 }
@@ -504,7 +504,7 @@ void
 testVisitOverGeneratedDomain(const vespalib::string & testDir) {
     DummyFileHeaderContext fileHeaderContext;
     TLS tlss(testDir, 18377, ".", fileHeaderContext, createDomainConfig(0x10000));
-    TransLogClient tls(tlss.transport, "tcp/localhost:18377");
+    TransLogClient tls("tcp/localhost:18377");
 
     vespalib::string name("test1");
     createDomainTest(tls, name);
@@ -522,7 +522,7 @@ testVisitOverPreExistingDomain(const vespalib::string & testDir) {
     // Depends on Test::testVisitOverGeneratedDomain()
     DummyFileHeaderContext fileHeaderContext;
     TLS tlss(testDir, 18377, ".", fileHeaderContext, createDomainConfig(0x10000));
-    TransLogClient tls(tlss.transport, "tcp/localhost:18377");
+    TransLogClient tls("tcp/localhost:18377");
 
     vespalib::string name("test1");
     auto s1 = openDomainTest(tls, name);
@@ -533,7 +533,7 @@ void
 partialUpdateTest(const vespalib::string & testDir) {
     DummyFileHeaderContext fileHeaderContext;
     TLS tlss(testDir, 18377, ".", fileHeaderContext, createDomainConfig(0x10000));
-    TransLogClient tls(tlss.transport, "tcp/localhost:18377");
+    TransLogClient tls("tcp/localhost:18377");
 
     auto s1 = openDomainTest(tls, "test1");
     Session & session = *s1;
@@ -612,7 +612,7 @@ TEST("testRemove") {
     test::DirectoryHandler testDir("testremove");
     DummyFileHeaderContext fileHeaderContext;
     TLS tlss(testDir.getDir(), 18377, ".", fileHeaderContext, createDomainConfig(0x10000));
-    TransLogClient tls(tlss.transport, "tcp/localhost:18377");
+    TransLogClient tls("tcp/localhost:18377");
 
     vespalib::string name("test-delete");
     createDomainTest(tls, name);
@@ -667,7 +667,7 @@ testSendingAlotOfDataSync(const vespalib::string & testDir) {
     {
         DummyFileHeaderContext fileHeaderContext;
         TLS tlss(testDir, 18377, ".", fileHeaderContext, createDomainConfig(0x80000));
-        TransLogClient tls(tlss.transport, "tcp/localhost:18377");
+        TransLogClient tls("tcp/localhost:18377");
 
         createDomainTest(tls, MANY, 0);
         auto s1 = openDomainTest(tls, MANY);
@@ -690,7 +690,7 @@ testSendingAlotOfDataSync(const vespalib::string & testDir) {
     {
         DummyFileHeaderContext fileHeaderContext;
         TLS tlss(testDir, 18377, ".", fileHeaderContext, createDomainConfig(0x1000000));
-        TransLogClient tls(tlss.transport, "tcp/localhost:18377");
+        TransLogClient tls("tcp/localhost:18377");
 
         auto s1 = openDomainTest(tls, "many");
         SerialNum b(0), e(0);
@@ -711,7 +711,7 @@ testSendingAlotOfDataSync(const vespalib::string & testDir) {
     {
         DummyFileHeaderContext fileHeaderContext;
         TLS tlss(testDir, 18377, ".", fileHeaderContext, createDomainConfig(0x1000000));
-        TransLogClient tls(tlss.transport, "tcp/localhost:18377");
+        TransLogClient tls("tcp/localhost:18377");
 
         auto s1 = openDomainTest(tls, MANY);
         SerialNum b(0), e(0);
@@ -739,7 +739,7 @@ void testSendingAlotOfDataAsync(const vespalib::string & testDir) {
     {
         DummyFileHeaderContext fileHeaderContext;
         TLS tlss(testDir, 18377, ".", fileHeaderContext, createDomainConfig(0x80000));
-        TransLogClient tls(tlss.transport, "tcp/localhost:18377");
+        TransLogClient tls("tcp/localhost:18377");
         createDomainTest(tls, MANY, 1);
         auto s1 = openDomainTest(tls, MANY);
         fillDomainTest(tlss.tls, MANY, NUM_PACKETS, NUM_ENTRIES);
@@ -761,7 +761,7 @@ void testSendingAlotOfDataAsync(const vespalib::string & testDir) {
     {
         DummyFileHeaderContext fileHeaderContext;
         TLS tlss(testDir, 18377, ".", fileHeaderContext, createDomainConfig(0x1000000));
-        TransLogClient tls(tlss.transport, "tcp/localhost:18377");
+        TransLogClient tls("tcp/localhost:18377");
 
         auto s1 = openDomainTest(tls, MANY);
         SerialNum b(0), e(0);
@@ -796,7 +796,7 @@ TEST("testErase") {
     {
         DummyFileHeaderContext fileHeaderContext;
         TLS tlss(testDir.getDir(), 18377, ".", fileHeaderContext, createDomainConfig(0x80000));
-        TransLogClient tls(tlss.transport, "tcp/localhost:18377");
+        TransLogClient tls("tcp/localhost:18377");
 
         createDomainTest(tls, "erase", 0);
         auto s1 = openDomainTest(tls, "erase");
@@ -805,7 +805,7 @@ TEST("testErase") {
     {
         DummyFileHeaderContext fileHeaderContext;
         TLS tlss(testDir.getDir(), 18377, ".", fileHeaderContext, createDomainConfig(0x1000000));
-        TransLogClient tls(tlss.transport, "tcp/localhost:18377");
+        TransLogClient tls("tcp/localhost:18377");
 
         auto s1 = openDomainTest(tls, "erase");
 
@@ -893,7 +893,7 @@ TEST("testSync") {
     DummyFileHeaderContext fileHeaderContext;
     test::DirectoryHandler testDir("test9");
     TLS tlss(testDir.getDir(), 18377, ".", fileHeaderContext, createDomainConfig(0x1000000));
-    TransLogClient tls(tlss.transport, "tcp/localhost:18377");
+    TransLogClient tls("tcp/localhost:18377");
 
     createDomainTest(tls, "sync", 0);
     auto s1 = openDomainTest(tls, "sync");
@@ -916,7 +916,7 @@ TEST("test truncate on version mismatch") {
     test::DirectoryHandler testDir("test11");
     {
         TLS tlss(testDir.getDir(), 18377, ".", fileHeaderContext, createDomainConfig(0x1000000));
-        TransLogClient tls(tlss.transport, "tcp/localhost:18377");
+        TransLogClient tls("tcp/localhost:18377");
 
         createDomainTest(tls, "sync", 0);
         auto s1 = openDomainTest(tls, "sync");
@@ -937,7 +937,7 @@ TEST("test truncate on version mismatch") {
     EXPECT_TRUE(f.Close());
     {
         TLS tlss(testDir.getDir(), 18377, ".", fileHeaderContext, createDomainConfig(0x10000));
-        TransLogClient tls(tlss.transport, "tcp/localhost:18377");
+        TransLogClient tls("tcp/localhost:18377");
         auto s1 = openDomainTest(tls, "sync");
         uint64_t from(0), to(0);
         size_t count(0);
@@ -963,7 +963,7 @@ TEST("test truncation after short read") {
     DummyFileHeaderContext fileHeaderContext;
     {
         TLS tlss(topdir.getDir(), 18377, ".", fileHeaderContext, domainConfig);
-        TransLogClient tls(tlss.transport, tlsspec);
+        TransLogClient tls(tlsspec);
         
         createDomainTest(tls, domain, 0);
         auto s1 = openDomainTest(tls, domain);
@@ -977,7 +977,7 @@ TEST("test truncation after short read") {
     EXPECT_EQUAL(2u, countFiles(dir));
     {
         TLS tlss(topdir.getDir(), 18377, ".", fileHeaderContext, domainConfig);
-        TransLogClient tls(tlss.transport, tlsspec);
+        TransLogClient tls(tlsspec);
         auto s1 = openDomainTest(tls, domain);
         checkFilledDomainTest(*s1, TOTAL_NUM_ENTRIES);
     }
@@ -990,7 +990,7 @@ TEST("test truncation after short read") {
     }
     {
         TLS tlss(topdir.getDir(), 18377, ".", fileHeaderContext, domainConfig);
-        TransLogClient tls(tlss.transport, tlsspec);
+        TransLogClient tls(tlsspec);
         auto s1 = openDomainTest(tls, domain);
         checkFilledDomainTest(*s1, TOTAL_NUM_ENTRIES - 1);
     }

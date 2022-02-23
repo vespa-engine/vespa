@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
@@ -11,6 +12,7 @@
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 #include <vespa/searchcore/proton/server/searchable_doc_subdb_configurer.h>
+#include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/fast_access_doc_subdb_configurer.h>
 #include <vespa/searchcore/proton/server/summaryadapter.h>
 #include <vespa/searchcore/proton/server/attribute_writer_factory.h>
@@ -21,13 +23,11 @@
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/searchcore/proton/test/mock_summary_adapter.h>
 #include <vespa/searchcore/proton/test/mock_gid_to_lid_change_handler.h>
-#include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 
 using namespace config;
 using namespace document;
@@ -85,8 +85,9 @@ ViewPtrs::~ViewPtrs() = default;
 struct ViewSet
 {
     IndexManagerDummyReconfigurer _reconfigurer;
-    DummyFileHeaderContext        _fileHeaderContext;
-    TransportAndExecutorService   _service;
+    DummyFileHeaderContext _fileHeaderContext;
+    vespalib::ThreadStackExecutor _sharedExecutor;
+    ExecutorThreadingService _writeService;
     SearchableFeedView::SerialNum serialNum;
     std::shared_ptr<const DocumentTypeRepo> repo;
     DocTypeName _docTypeName;
@@ -113,7 +114,8 @@ struct ViewSet
 ViewSet::ViewSet()
     : _reconfigurer(),
       _fileHeaderContext(),
-      _service(1),
+      _sharedExecutor(1, 0x10000),
+      _writeService(_sharedExecutor),
       serialNum(1),
       repo(createRepo()),
       _docTypeName(DOC_TYPE),
@@ -186,10 +188,10 @@ Fixture::initViewSet(ViewSet &views)
     using IndexConfig = proton::index::IndexConfig;
     auto matchers = std::make_shared<Matchers>(_clock, _queryLimiter, _constantValueRepo);
     auto indexMgr = make_shared<IndexManager>(BASE_DIR, IndexConfig(searchcorespi::index::WarmupConfig(), 2, 0), Schema(), 1,
-                                              views._reconfigurer, views._service.write(), _summaryExecutor,
+                                              views._reconfigurer, views._writeService, _summaryExecutor,
                                               TuneFileIndexManager(), TuneFileAttributes(), views._fileHeaderContext);
     auto attrMgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(), views._fileHeaderContext,
-                                                 views._service.write().attributeFieldWriter(), views._service.write().shared(), views._hwInfo);
+                                                 views._writeService.attributeFieldWriter(), views._writeService.shared(), views._hwInfo);
     auto summaryMgr = make_shared<SummaryManager>
             (_summaryExecutor, search::LogDocumentStore::Config(), search::GrowStrategy(), BASE_DIR, views._docTypeName,
              TuneFileSummary(), views._fileHeaderContext,views._noTlSyncer, search::IBucketizer::SP());
@@ -215,7 +217,7 @@ Fixture::initViewSet(ViewSet &views)
                                                                        views.repo,
                                                                        _pendingLidsForCommit,
                                                                        *views._gidToLidChangeHandler,
-                                                                       views._service.write()),
+                                                                       views._writeService),
                                             SearchableFeedView::PersistentParams(views.serialNum, views.serialNum,
                                                                                  views._docTypeName, 0u, SubDbType::READY),
                                             FastAccessFeedView::Context(attrWriter, views._docIdLimit),
@@ -272,19 +274,21 @@ MyFastAccessFeedView::~MyFastAccessFeedView() = default;
 
 struct FastAccessFixture
 {
-    TransportAndExecutorService  _service;
-    MyFastAccessFeedView          _view;
+    vespalib::ThreadStackExecutor _sharedExecutor;
+    ExecutorThreadingService _writeService;
+    MyFastAccessFeedView _view;
     FastAccessDocSubDBConfigurer _configurer;
     FastAccessFixture()
-        : _service(1),
-          _view(_service.write()),
+        : _sharedExecutor(1, 0x10000),
+          _writeService(_sharedExecutor),
+          _view(_writeService),
           _configurer(_view._feedView, std::make_unique<AttributeWriterFactory>(), "test")
     {
         vespalib::rmdir(BASE_DIR, true);
         vespalib::mkdir(BASE_DIR);
     }
     ~FastAccessFixture() {
-        _service.shutdown();
+        _writeService.shutdown();
     }
 };
 

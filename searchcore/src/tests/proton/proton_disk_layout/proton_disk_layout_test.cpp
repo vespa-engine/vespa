@@ -16,7 +16,7 @@ using search::transactionlog::client::TransLogClient;
 using search::transactionlog::TransLogServer;
 using proton::DocTypeName;
 using proton::ProtonDiskLayout;
-using proton::Transport;
+using proton::TransportMgr;
 
 static constexpr unsigned int tlsPort = 9018;
 
@@ -31,7 +31,7 @@ struct FixtureBase
 
 struct DiskLayoutFixture {
     DummyFileHeaderContext  _fileHeaderContext;
-    Transport               _transport;
+    TransportMgr            _transport;
     TransLogServer          _tls;
     vespalib::string        _tlsSpec;
     ProtonDiskLayout        _diskLayout;
@@ -45,7 +45,7 @@ struct DiskLayoutFixture {
         }
     }
     void createDomains(const std::set<vespalib::string> &domains) {
-        TransLogClient tlc(_transport.transport(), _tlsSpec);
+        TransLogClient tlc(_tlsSpec);
         for (const auto &domain : domains) {
             ASSERT_TRUE(tlc.create(domain));
         }
@@ -53,7 +53,7 @@ struct DiskLayoutFixture {
 
     std::set<vespalib::string> listDomains() {
         std::vector<vespalib::string> domainVector;
-        TransLogClient tlc(_transport.transport(), _tlsSpec);
+        TransLogClient tlc(_tlsSpec);
         ASSERT_TRUE(tlc.listDomains(domainVector));
         std::set<vespalib::string> domains;
         for (const auto &domain : domainVector) {
@@ -97,7 +97,7 @@ DiskLayoutFixture::DiskLayoutFixture()
       _transport(),
       _tls(_transport.transport(), "tls", tlsPort, baseDir, _fileHeaderContext),
       _tlsSpec(vespalib::make_string("tcp/localhost:%u", tlsPort)),
-      _diskLayout(_transport.transport(), baseDir, _tlsSpec)
+      _diskLayout(baseDir, _tlsSpec)
 {
 }
 
