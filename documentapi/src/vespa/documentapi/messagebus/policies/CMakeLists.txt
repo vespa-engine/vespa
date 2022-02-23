@@ -2,18 +2,19 @@
 vespa_add_library(documentapi_documentapipolicies OBJECT
     SOURCES
     andpolicy.cpp
-    externslobrokpolicy.cpp
+    asyncinitializationpolicy.cpp
     contentpolicy.cpp
-    messagetypepolicy.cpp
+    externslobrokpolicy.cpp
     documentrouteselectorpolicy.cpp
     errorpolicy.cpp
     externpolicy.cpp
-    localservicepolicy.cpp
-    roundrobinpolicy.cpp
-    subsetservicepolicy.cpp
     loadbalancer.cpp
     loadbalancerpolicy.cpp
-    asyncinitializationpolicy.cpp
+    localservicepolicy.cpp
+    messagetypepolicy.cpp
+    mirror_with_all.cpp
+    roundrobinpolicy.cpp
+    subsetservicepolicy.cpp
     DEPENDS
 )
 vespa_generate_config(documentapi_documentapipolicies ../../../../main/resources/configdefinitions/document-protocol-policies.def)

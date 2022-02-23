@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "externpolicy.h"
-#include <boost/tokenizer.hpp>
+#include "mirror_with_all.h"
+#include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/slobrok/sbmirror.h>
@@ -14,17 +15,11 @@ LOG_SETUP(".externpolicy");
 using slobrok::api::IMirrorAPI;
 using slobrok::api::MirrorAPI;
 
-typedef boost::char_separator<char> Separator;
-typedef boost::tokenizer<Separator> Tokenizer;
-
 namespace documentapi {
 
 ExternPolicy::ExternPolicy(const string &param) :
     _lock(),
-    _threadPool(std::make_unique<FastOS_ThreadPool>(1024*60)),
-    _transport(std::make_unique<FNET_Transport>()),
-    _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
-    _mirror(),
+    _mirrorWithAll(),
     _pattern(),
     _session(),
     _error("Not initialized."),
@@ -46,11 +41,10 @@ ExternPolicy::ExternPolicy(const string &param) :
 
     // Activate supervisor and register mirror.
     MirrorAPI::StringList spec;
-    string lst = param.substr(0, pos);
-    std::string stdlst(lst);
-    Tokenizer tokens(stdlst, Separator(","));
-    for (Tokenizer::iterator it = tokens.begin(); it != tokens.end(); ++it) {
-        spec.push_back(*it);
+    vespalib::string lst = param.substr(0, pos);
+    vespalib::StringTokenizer slobrokList(lst, ",");
+    for (uint32_t j = 0; j < slobrokList.size(); j++) {
+        spec.push_back(slobrokList[j]);
     }
 
     if (spec.empty()) {
@@ -59,14 +53,9 @@ ExternPolicy::ExternPolicy(const string &param) :
     }
 
     slobrok::ConfiguratorFactory config(spec);
-    _mirror = std::make_unique<MirrorAPI>(*_orb, config);
-    _started = _transport->Start(_threadPool.get());
-    if (!_started) {
-        _error = "Failed to start FNET supervisor.";
-        return;
-    } else {
-        LOG(debug, "Connecting to extern slobrok mirror '%s'..", lst.c_str());
-    }
+    _mirrorWithAll = std::make_unique<MirrorAndStuff>(config);
+     LOG(debug, "Connecting to extern slobrok mirror '%s'..", lst.c_str());
+
 
     // Parse query pattern.
     _pattern = param.substr(pos + 1);
@@ -81,12 +70,11 @@ ExternPolicy::ExternPolicy(const string &param) :
     _error.clear();
 }
 
-ExternPolicy::~ExternPolicy()
-{
-    _mirror.reset();
-    if (_started) {
-        _transport->ShutDown(true);
-    }
+ExternPolicy::~ExternPolicy() = default;
+
+const IMirrorAPI *
+ExternPolicy::getMirror() const {
+    return _mirrorWithAll ? _mirrorWithAll->mirror() : nullptr;
 }
 
 void
@@ -94,7 +82,7 @@ ExternPolicy::select(mbus::RoutingContext &ctx)
 {
     if (!_error.empty()) {
         ctx.setError(DocumentProtocol::ERROR_POLICY_FAILURE, _error);
-    } else if (_mirror->ready()) {
+    } else if (_mirrorWithAll->mirror()->ready()) {
         mbus::Hop hop = getRecipient();
         if (hop.hasDirectives()) {
             mbus::Route route = ctx.getRoute();
@@ -130,15 +118,14 @@ ExternPolicy::getRecipient()
 void
 ExternPolicy::update()
 {
-    uint32_t upd = _mirror->updates();
+    uint32_t upd = _mirrorWithAll->mirror()->updates();
     if (_gen != upd) {
         _gen = upd;
         _recipients.clear();
 
-        IMirrorAPI::SpecList entries = _mirror->lookup(_pattern);
+        IMirrorAPI::SpecList entries = _mirrorWithAll->mirror()->lookup(_pattern);
         if (!entries.empty()) {
-            for (const auto & spec : entries)
-            {
+            for (const auto & spec : entries) {
                 _recipients.push_back(mbus::Hop::parse(spec.second + _session));
             }
         }
