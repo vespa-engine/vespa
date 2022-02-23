@@ -12,9 +12,10 @@ using search::transactionlog::client::Visitor;
 namespace proton {
 
 
-TransactionLogManagerBase::TransactionLogManagerBase(
-        const vespalib::string &tlsSpec, const vespalib::string &domainName) :
-    _tlc(std::make_unique<TransLogClient>(tlsSpec)),
+TransactionLogManagerBase::TransactionLogManagerBase(FNET_Transport & transport,
+                                                     const vespalib::string &tlsSpec,
+                                                     const vespalib::string &domainName) :
+    _tlc(std::make_unique<TransLogClient>(transport, tlsSpec)),
     _tlcSession(),
     _domainName(domainName),
     _replayLock(),

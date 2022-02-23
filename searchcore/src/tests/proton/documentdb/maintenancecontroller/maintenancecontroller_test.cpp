@@ -349,7 +349,7 @@ public:
     test::DiskMemUsageNotifier         _diskMemUsageNotifier;
     BucketCreateNotifier               _bucketCreateNotifier;
     MonitoredRefCount                  _refCount;
-    TransportMgr                       _transport;
+    Transport                       _transport;
     MaintenanceController              _mc;
 
     MaintenanceControllerFixture();

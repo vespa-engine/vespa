@@ -64,8 +64,8 @@ struct DoctypeFixture {
 };
 
 struct ConfigTestFixture {
-    const std::string configId;
-    TransportMgr transport;
+    const std::string   configId;
+    Transport           transport;
     ProtonConfigBuilder protonBuilder;
     DocumenttypesConfigBuilder documenttypesBuilder;
     FiledistributorrpcConfigBuilder filedistBuilder;

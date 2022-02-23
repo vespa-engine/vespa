@@ -25,8 +25,8 @@ TransactionLogManager::doLogReplayComplete(const vespalib::string &domainName,
 }
 
 
-TransactionLogManager::TransactionLogManager(const vespalib::string &tlsSpec, const vespalib::string &domainName)
-    : TransactionLogManagerBase(tlsSpec, domainName),
+TransactionLogManager::TransactionLogManager(FNET_Transport & transport, const vespalib::string &tlsSpec, const vespalib::string &domainName)
+    : TransactionLogManagerBase(transport, tlsSpec, domainName),
       _visitor()
 {
 }

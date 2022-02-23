@@ -127,7 +127,7 @@ addConfigsThatAreNotSavedToDisk(const DocumentDBConfig &cfg)
     return builder.build();
 }
 
-TEST_FF("requireThatConfigCanBeSavedAndLoaded", TransportMgr(), DocumentDBConfig::SP(makeBaseConfigSnapshot(f1.transport())))
+TEST_FF("requireThatConfigCanBeSavedAndLoaded", Transport(), DocumentDBConfig::SP(makeBaseConfigSnapshot(f1.transport())))
 {
 
     DocumentDBConfig::SP fullCfg = addConfigsThatAreNotSavedToDisk(*f2);
@@ -140,7 +140,7 @@ TEST_FF("requireThatConfigCanBeSavedAndLoaded", TransportMgr(), DocumentDBConfig
     assertEqualSnapshot(*f2, *esnap);
 }
 
-TEST_FF("requireThatConfigCanBeSerializedAndDeserialized", TransportMgr(), DocumentDBConfig::SP(makeBaseConfigSnapshot(f1.transport())))
+TEST_FF("requireThatConfigCanBeSerializedAndDeserialized", Transport(), DocumentDBConfig::SP(makeBaseConfigSnapshot(f1.transport())))
 {
     saveBaseConfigSnapshot(f1.transport(), *f2, 30);
     nbostream stream;
@@ -161,7 +161,7 @@ TEST_FF("requireThatConfigCanBeSerializedAndDeserialized", TransportMgr(), Docum
     EXPECT_EQUAL("dummy", fsnap->getDocTypeName());
 }
 
-TEST_FF("requireThatConfigCanBeLoadedWithoutExtraConfigsDataFile", TransportMgr(), DocumentDBConfig::SP(makeBaseConfigSnapshot(f1.transport())))
+TEST_FF("requireThatConfigCanBeLoadedWithoutExtraConfigsDataFile", Transport(), DocumentDBConfig::SP(makeBaseConfigSnapshot(f1.transport())))
 {
     saveBaseConfigSnapshot(f1.transport(), *f2, 70);
     EXPECT_FALSE(vespalib::unlink("out/config-70/extraconfigs.dat"));
@@ -173,7 +173,7 @@ TEST_FF("requireThatConfigCanBeLoadedWithoutExtraConfigsDataFile", TransportMgr(
 }
 
 
-TEST_FF("requireThatVisibilityDelayIsPropagated", TransportMgr(), DocumentDBConfig::SP(makeBaseConfigSnapshot(f1.transport())))
+TEST_FF("requireThatVisibilityDelayIsPropagated", Transport(), DocumentDBConfig::SP(makeBaseConfigSnapshot(f1.transport())))
 {
     saveBaseConfigSnapshot(f1.transport(), *f2, 80);
     DocumentDBConfig::SP esnap(makeEmptyConfigSnapshot());

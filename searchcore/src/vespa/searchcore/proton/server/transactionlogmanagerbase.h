@@ -7,6 +7,8 @@
 #include <mutex>
 #include <condition_variable>
 
+class FNET_Transport;
+
 namespace search::transactionlog::client {
     class TransLogClient;
     class Session;
@@ -58,7 +60,8 @@ public:
      * @param tlsSpec the spec of the transaction log server.
      * @param domainName the name of the domain this manager should handle.
      **/
-    TransactionLogManagerBase(const vespalib::string &tlsSpec,
+    TransactionLogManagerBase(FNET_Transport & transport,
+                              const vespalib::string &tlsSpec,
                               const vespalib::string &domainName);
     virtual ~TransactionLogManagerBase();
 
