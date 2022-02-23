@@ -25,7 +25,6 @@
           "available": [
             {
               "platform": "7.1.0",
-              "at": 0
             }
           ],
           "blockers": [

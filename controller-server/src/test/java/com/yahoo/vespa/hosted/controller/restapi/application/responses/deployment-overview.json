@@ -25,7 +25,6 @@
           "available": [
             {
               "platform": "6.1.0",
-              "at": "(ignore)"
             }
           ],
           "blockers": []
@@ -547,7 +546,6 @@
           "available": [
             {
               "platform": "6.1.0",
-              "at": "(ignore)"
             }
           ],
           "blockers": []
@@ -568,8 +566,7 @@
                 "compileVersion": "6.1.0",
                 "sourceUrl": "repository1/tree/commit1",
                 "commit": "commit1"
-              },
-              "at": 1000
+              }
             },
             {
               "application": {
@@ -577,8 +574,7 @@
                 "compileVersion": "6.1.0",
                 "sourceUrl": "repository1/tree/commit1",
                 "commit": "commit1"
-              },
-              "at": 1000
+              }
             },
             {
               "application": {
@@ -586,8 +582,7 @@
                 "compileVersion": "6.1.0",
                 "sourceUrl": "repository1/tree/commit1",
                 "commit": "commit1"
-              },
-              "at": 1000
+              }
             },
             {
               "application": {
@@ -595,8 +590,7 @@
                 "compileVersion": "6.1.0",
                 "sourceUrl": "repository1/tree/commit1",
                 "commit": "commit1"
-              },
-              "at": 1000
+              }
             }
           ],
           "blockers": []

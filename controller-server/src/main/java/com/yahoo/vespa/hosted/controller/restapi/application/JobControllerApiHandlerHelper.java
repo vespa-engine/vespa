@@ -316,7 +316,6 @@ class JobControllerApiHandlerHelper {
 
                         Cursor availableObject = availableArray.addObject();
                         availableObject.setString("platform", available.versionNumber().toFullString());
-                        availableObject.setLong("at", available.committedAt().toEpochMilli());
                     }
                     toSlime(latestPlatformObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksVersions));
                 }
@@ -339,7 +338,6 @@ class JobControllerApiHandlerHelper {
 
                         Cursor availableObject = availableArray.addObject();
                         toSlime(availableObject.setObject("application"), available);
-                        availableObject.setLong("at", available.buildTime().orElse(Instant.EPOCH).toEpochMilli());
                     }
                     toSlime(latestApplicationObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksRevisions));
                 }
