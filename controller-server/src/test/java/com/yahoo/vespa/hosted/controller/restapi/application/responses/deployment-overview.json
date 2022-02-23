@@ -22,6 +22,11 @@
           "platform": "6.1.0",
           "at": "(ignore)",
           "upgrade": true,
+          "available": [
+            {
+              "platform": "6.1.0"
+            }
+          ],
           "blockers": []
         },
         "application": {
@@ -33,6 +38,7 @@
           },
           "at": 1000,
           "upgrade": false,
+          "available": [],
           "blockers": []
         }
       }
@@ -537,6 +543,11 @@
           "platform": "6.1.0",
           "at": "(ignore)",
           "upgrade": true,
+          "available": [
+            {
+              "platform": "6.1.0"
+            }
+          ],
           "blockers": []
         },
         "application": {
@@ -548,6 +559,40 @@
           },
           "at": 1000,
           "upgrade": true,
+          "available": [
+            {
+              "application": {
+                "build": 4,
+                "compileVersion": "6.1.0",
+                "sourceUrl": "repository1/tree/commit1",
+                "commit": "commit1"
+              }
+            },
+            {
+              "application": {
+                "build": 3,
+                "compileVersion": "6.1.0",
+                "sourceUrl": "repository1/tree/commit1",
+                "commit": "commit1"
+              }
+            },
+            {
+              "application": {
+                "build": 2,
+                "compileVersion": "6.1.0",
+                "sourceUrl": "repository1/tree/commit1",
+                "commit": "commit1"
+              }
+            },
+            {
+              "application": {
+                "build": 1,
+                "compileVersion": "6.1.0",
+                "sourceUrl": "repository1/tree/commit1",
+                "commit": "commit1"
+              }
+            }
+          ],
           "blockers": []
         }
       }

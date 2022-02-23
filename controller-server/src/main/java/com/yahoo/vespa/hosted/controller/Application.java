@@ -116,7 +116,7 @@ public class Application {
         return versions.isEmpty() ? Optional.empty() : Optional.of(versions.last());
     }
 
-    /** Returns the currently deployed versions of the application */
+    /** Returns the currently deployed versions of the application, ordered from oldest to newest. */
     public SortedSet<ApplicationVersion> versions() {
         return versions;
     }

@@ -22,6 +22,11 @@
           "platform": "7.1.0",
           "at": 0,
           "upgrade": true,
+          "available": [
+            {
+              "platform": "7.1.0"
+            }
+          ],
           "blockers": [
             {
               "days": [
@@ -82,6 +87,7 @@
           },
           "at": 1000,
           "upgrade": true,
+          "available": [],
           "blockers": [
             {
               "days": [

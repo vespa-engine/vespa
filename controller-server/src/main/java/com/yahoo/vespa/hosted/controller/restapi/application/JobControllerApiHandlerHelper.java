@@ -38,8 +38,10 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import java.net.URI;
 import java.time.Instant;
 import java.time.format.TextStyle;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -296,24 +298,50 @@ class JobControllerApiHandlerHelper {
                 Cursor latestVersionsObject = stepObject.setObject("latestVersions");
                 List<ChangeBlocker> blockers = application.deploymentSpec().requireInstance(stepStatus.instance()).changeBlocker();
                 var deployments = application.require(stepStatus.instance()).productionDeployments().values();
-                latestVersionWithCompatibleConfidenceAndNotNewerThanSystem(versionStatus.versions(),
-                                                                           application.deploymentSpec().requireInstance(stepStatus.instance()).upgradePolicy())
-                          .ifPresent(latestPlatform -> {
-                              Cursor latestPlatformObject = latestVersionsObject.setObject("platform");
-                              latestPlatformObject.setString("platform", latestPlatform.versionNumber().toFullString());
-                              latestPlatformObject.setLong("at", latestPlatform.committedAt().toEpochMilli());
-                              latestPlatformObject.setBool("upgrade",    change.platform().map(latestPlatform.versionNumber()::isAfter).orElse(true) && deployments.isEmpty()
-                                                                      || deployments.stream().anyMatch(deployment -> deployment.version().isBefore(latestPlatform.versionNumber())));
-                              toSlime(latestPlatformObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksVersions));
-                          });
-                application.latestVersion().ifPresent(latestApplication -> {
+                List<VespaVersion> availablePlatforms = availablePlatforms(versionStatus.versions(),
+                                                                           application.deploymentSpec().requireInstance(stepStatus.instance()).upgradePolicy());
+                if ( ! availablePlatforms.isEmpty()) {
+                    Cursor latestPlatformObject = latestVersionsObject.setObject("platform");
+                    VespaVersion latestPlatform = availablePlatforms.get(0);
+                    latestPlatformObject.setString("platform", latestPlatform.versionNumber().toFullString());
+                    latestPlatformObject.setLong("at", latestPlatform.committedAt().toEpochMilli());
+                    latestPlatformObject.setBool("upgrade",    change.platform().map(latestPlatform.versionNumber()::isAfter).orElse(true) && deployments.isEmpty()
+                                                            || deployments.stream().anyMatch(deployment -> deployment.version().isBefore(latestPlatform.versionNumber())));
+
+                    Cursor availableArray = latestPlatformObject.setArray("available");
+                    for (VespaVersion available : availablePlatforms) {
+                        if (   deployments.stream().anyMatch(deployment -> deployment.version().isAfter(available.versionNumber()))
+                            || deployments.stream().noneMatch(deployment -> deployment.version().isBefore(available.versionNumber())) && ! deployments.isEmpty()
+                            || change.platform().map(available.versionNumber()::compareTo).orElse(1) <= 0)
+                            break;
+
+                        Cursor availableObject = availableArray.addObject();
+                        availableObject.setString("platform", available.versionNumber().toFullString());
+                    }
+                    toSlime(latestPlatformObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksVersions));
+                }
+                List<ApplicationVersion> availableApplications = new ArrayList<>(application.versions());
+                if ( ! availableApplications.isEmpty()) {
+                    Collections.reverse(availableApplications);
+                    var latestApplication = availableApplications.get(0);
                     Cursor latestApplicationObject = latestVersionsObject.setObject("application");
                     toSlime(latestApplicationObject.setObject("application"), latestApplication);
                     latestApplicationObject.setLong("at", latestApplication.buildTime().orElse(Instant.EPOCH).toEpochMilli());
                     latestApplicationObject.setBool("upgrade",    change.application().map(latestApplication::compareTo).orElse(1) > 0 && deployments.isEmpty()
                                                                || deployments.stream().anyMatch(deployment -> deployment.applicationVersion().compareTo(latestApplication) < 0));
+
+                    Cursor availableArray = latestApplicationObject.setArray("available");
+                    for (ApplicationVersion available : availableApplications) {
+                        if (   deployments.stream().anyMatch(deployment -> deployment.applicationVersion().compareTo(available) > 0)
+                            || deployments.stream().noneMatch(deployment -> deployment.applicationVersion().compareTo(available) < 0) && ! deployments.isEmpty()
+                            || change.application().map(available::compareTo).orElse(1) <= 0)
+                            break;
+
+                        Cursor availableObject = availableArray.addObject();
+                        toSlime(availableObject.setObject("application"), available);
+                    }
                     toSlime(latestApplicationObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksRevisions));
-                });
+                }
             }
 
             stepStatus.job().ifPresent(job -> {
@@ -383,22 +411,25 @@ class JobControllerApiHandlerHelper {
         });
     }
 
-    private static Optional<VespaVersion> latestVersionWithCompatibleConfidenceAndNotNewerThanSystem(List<VespaVersion> versions,
-                                                                                                     DeploymentSpec.UpgradePolicy policy) {
+    private static List<VespaVersion> availablePlatforms(List<VespaVersion> versions, DeploymentSpec.UpgradePolicy policy) {
         int i;
         for (i = versions.size(); i-- > 0; )
             if (versions.get(i).isSystemVersion())
                 break;
 
         if (i < 0)
-            return Optional.empty();
+            return List.of();
 
+        List<VespaVersion> candidates = new ArrayList<>();
         VespaVersion.Confidence required = policy == canary ? broken : normal;
         for (int j = i; j >= 0; j--)
             if (versions.get(j).confidence().equalOrHigherThan(required))
-                return Optional.of(versions.get(j));
+                candidates.add(versions.get(j));
 
-        return Optional.of(versions.get(i));
+        if (candidates.isEmpty())
+            candidates.add(versions.get(i));
+
+        return candidates;
     }
 
     private static void toSlime(Cursor runsArray, Collection<Run> runs, int limit, URI baseUriForJob) {
