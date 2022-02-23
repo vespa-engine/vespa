@@ -813,7 +813,7 @@ public class InternalStepRunner implements StepRunner {
                 controller.notificationsDb().removeNotification(source, Notification.Type.deployment);
                 return;
             case nodeAllocationFailure:
-                if ( ! run.id().type().environment().isTest()) updater.accept("lack of capacity. Please contact the Vespa team to request more!");
+                if ( ! run.id().type().environment().isTest()) updater.accept("could not allocate the requested capacity to your tenant. Contact Vespa Cloud support.");
                 return;
             case deploymentFailed:
                 updater.accept("invalid application configuration, or timeout of other deployments of the same application");
