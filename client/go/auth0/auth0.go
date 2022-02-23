@@ -129,6 +129,7 @@ func (a *Auth0) IsLoggedIn() bool {
 	}
 
 	// Check if token is valid.
+	// TODO: Choose issuer based on system
 	if err = jwt.Validate(token, jwt.WithIssuer("https://vespa-cd.auth0.com/")); err != nil {
 		return false
 	}
