@@ -328,6 +328,22 @@ public class Flags {
             "Takes effect on redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundIntFlag PERSISTENCE_THROTTLING_WINDOW_SIZE = defineIntFlag(
+            "persistence-throttling-window-size", -1,
+            List.of("vekterli"), "2022-02-23", "2022-06-01",
+            "If greater than zero, sets both min and max window size to the given number, effectively " +
+            "turning dynamic throttling into a static throttling policy. " +
+            "Only applies if DYNAMIC policy is used.",
+            "Takes effect on redeployment",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundDoubleFlag PERSISTENCE_THROTTLING_WS_RESIZE_RATE = defineDoubleFlag(
+            "persistence-throttling-ws-resize-rate", 3.0,
+            List.of("vekterli"), "2022-02-23", "2022-06-01",
+            "Sets the dynamic throttle policy resize rate. Only applies if DYNAMIC policy is used.",
+            "Takes effect on redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag INHIBIT_DEFAULT_MERGES_WHEN_GLOBAL_MERGES_PENDING = defineFeatureFlag(
             "inhibit-default-merges-when-global-merges-pending", false,
             List.of("geirst", "vekterli"), "2022-02-11", "2022-06-01",
