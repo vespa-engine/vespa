@@ -78,10 +78,6 @@ RPCHooksBase::initRPC()
     rb.ReturnDesc("internalStates", "Array of internal states ");
     rb.ReturnDesc("message", "Array of status messages");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("pandora.rtc.shutdown", "", "",
-                    FRT_METHOD(RPCHooksBase::rpc_Shutdown), this);
-    rb.MethodDesc("Shut down the rtc application");
-    //-------------------------------------------------------------------------
     rb.DefineMethod("pandora.rtc.die", "", "",
                     FRT_METHOD(RPCHooksBase::rpc_die), this);
     rb.MethodDesc("Exit the rtc application without cleanup");
@@ -237,12 +233,6 @@ RPCHooksBase::getProtonStatus(FRT_RPCRequest *req)
                      report.getComponent().c_str(), k[i]._str, internalStates[i]._str, report.getMessage().c_str());
     }
     req->Return();
-}
-
-void
-RPCHooksBase::rpc_Shutdown(FRT_RPCRequest *)
-{
-    LOG(debug, "RPCHooksBase::rpc_Shutdown");
 }
 
 void
