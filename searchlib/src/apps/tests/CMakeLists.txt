@@ -6,13 +6,6 @@ vespa_add_executable(searchlib_biglog_test_app
     searchlib
 )
 vespa_add_test(NAME searchlib_biglog_test_app COMMAND searchlib_biglog_test_app BENCHMARK)
-vespa_add_executable(searchlib_btreestress_test_app
-    SOURCES
-    btreestress_test.cpp
-    DEPENDS
-    searchlib
-)
-vespa_add_test(NAME searchlib_btreestress_test_app COMMAND searchlib_btreestress_test_app BENCHMARK)
 vespa_add_executable(searchlib_memoryindexstress_test_app
     SOURCES
     memoryindexstress_test.cpp
