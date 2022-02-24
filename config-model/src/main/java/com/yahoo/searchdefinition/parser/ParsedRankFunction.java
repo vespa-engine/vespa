@@ -25,9 +25,7 @@ class ParsedRankFunction extends ParsedBlock {
     List<String> getParameters() { return List.copyOf(parameters); }
 
     void addParameter(String param) {
-        if (parameters.contains(param)) {
-            throw new IllegalArgumentException("function "+name()+" cannot have parameter "+param+" twice");
-        }
+        verifyThat(! parameters.contains(param), "cannot have parameter", param, "twice");
         parameters.add(param);
     }
 

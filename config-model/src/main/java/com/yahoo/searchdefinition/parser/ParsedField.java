@@ -65,17 +65,13 @@ class ParsedField extends ParsedBlock {
     Map<String, String> getRankTypes() { return Map.copyOf(rankTypes); }
 
     void addAlias(String from, String to) {
-        if (aliases.containsKey(to)) {
-            throw new IllegalArgumentException("field "+name()+" already has alias "+to);
-        }
+        verifyThat(! aliases.containsKey(to), "already has alias", to);
         aliases.put(to, from);
     }
 
     void addIndex(ParsedIndex index) {
         String idxName = index.name();
-        if (fieldIndexes.containsKey(idxName)) {
-            throw new IllegalArgumentException("field "+name()+" already has index "+idxName);
-        }
+        verifyThat(! fieldIndexes.containsKey(idxName), "already has index", idxName);
         fieldIndexes.put(idxName, index);
     }
 
@@ -98,23 +94,17 @@ class ParsedField extends ParsedBlock {
 
     void addAttribute(ParsedAttribute attribute) {
         String attrName = attribute.name();
-        if (attributes.containsKey(attrName)) {
-            throw new IllegalArgumentException("field "+name()+" already has attribute "+attrName);
-        }
+        verifyThat(! attributes.containsKey(attrName), "already has attribute", attrName);
         attributes.put(attrName, attribute);
     }
 
     void setIndexingOperation(ParsedIndexingOp idxOp) {
-        if (indexingOp != null) {
-            throw new IllegalArgumentException("field "+name()+" already has indexing");
-        }
+        verifyThat(indexingOp == null, "already has indexing");
         indexingOp = idxOp;
     }
 
     void setSorting(ParsedSorting sorting) {
-        if (sortSettings != null) {
-            throw new IllegalArgumentException("field "+name()+" already has sorting");
-        }
+        verifyThat(sortSettings == null, "already has sorting");
         this.sortSettings = sorting;
     }
 
@@ -124,17 +114,13 @@ class ParsedField extends ParsedBlock {
 
     void addStructField(ParsedField structField) {
         String fieldName = structField.name();
-        if (structFields.containsKey(fieldName)) {
-            throw new IllegalArgumentException("field "+name()+" already has struct-field "+fieldName);
-        }
+        verifyThat(! structFields.containsKey(fieldName), "already has struct-field", fieldName);
         structFields.put(fieldName, structField);
     }
 
     void addSummaryField(ParsedSummaryField summaryField) {
         String fieldName = summaryField.name();
-        if (summaryFields.containsKey(fieldName)) {
-            throw new IllegalArgumentException("field "+name()+" already has summary field "+fieldName);
-        }
+        verifyThat(! summaryFields.containsKey(fieldName), "already has summary field", fieldName);
         summaryFields.put(fieldName, summaryField);
     }
 }

@@ -25,9 +25,7 @@ public class ParsedStruct extends ParsedBlock {
 
     void addField(ParsedField field) {
         String fieldName = field.name();
-        if (fields.containsKey(fieldName)) {
-            throw new IllegalArgumentException("struct "+name()+" already has field "+fieldName);
-        }
+        verifyThat(! fields.containsKey(fieldName), "already has field", fieldName);
         fields.put(fieldName, field);
     }
 

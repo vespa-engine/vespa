@@ -30,9 +30,7 @@ class ParsedDocumentSummary extends ParsedBlock {
 
     void addField(ParsedSummaryField field) {
         String fieldName = field.name();
-        if (fields.containsKey(fieldName)) {
-            throw new IllegalArgumentException("document-summary "+name()+" already has field "+fieldName);
-        }
+        verifyThat(! fields.containsKey(fieldName), "already has field", fieldName);
         fields.put(fieldName, field);
     }
 
