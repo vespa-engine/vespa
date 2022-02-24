@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_btree_stress_test_app
     btree_stress_test.cpp
     DEPENDS
     vespalib
+    GTest::GTest
 )
 vespa_add_test(NAME vespalib_btree_stress_test_app COMMAND vespalib_btree_stress_test_app BENCHMARK)
