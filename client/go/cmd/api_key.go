@@ -38,14 +38,12 @@ always be used. It's not possible to specify a tenant-specific key.`
 func init() {
 	apiKeyCmd.Flags().BoolVarP(&overwriteKey, "force", "f", false, "Force overwrite of existing API key")
 	apiKeyCmd.MarkPersistentFlagRequired(applicationFlag)
+	deprecatedApiKeyCmd.Flags().BoolVarP(&overwriteKey, "force", "f", false, "Force overwrite of existing API key")
+	deprecatedApiKeyCmd.MarkPersistentFlagRequired(applicationFlag)
 }
 
 func apiKeyExample() string {
-	if vespa.Auth0AccessTokenEnabled() {
-		return "$ vespa auth api-key -a my-tenant.my-app.my-instance"
-	} else {
-		return "$ vespa api-key -a my-tenant.my-app.my-instance"
-	}
+	return "$ vespa auth api-key -a my-tenant.my-app.my-instance"
 }
 
 var apiKeyCmd = &cobra.Command{
@@ -94,18 +92,7 @@ func doApiKey(_ *cobra.Command, _ []string) error {
 	}
 	if err := ioutil.WriteFile(apiKeyFile, apiKey, 0600); err == nil {
 		printSuccess("API private key written to ", apiKeyFile)
-		printPublicKey(apiKeyFile, app.Tenant)
-		if vespa.Auth0AccessTokenEnabled() {
-			if err == nil {
-				if err := cfg.Set(cloudAuthFlag, "api-key"); err != nil {
-					return fmt.Errorf("could not write config: %w", err)
-				}
-				if err := cfg.Write(); err != nil {
-					return err
-				}
-			}
-		}
-		return nil
+		return printPublicKey(apiKeyFile, app.Tenant)
 	} else {
 		return fmt.Errorf("failed to write: %s: %w", apiKeyFile, err)
 	}

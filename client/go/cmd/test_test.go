@@ -13,10 +13,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestSuite(t *testing.T) {
@@ -93,7 +93,12 @@ func TestSingleTest(t *testing.T) {
 }
 
 func TestSingleTestWithCloudAndEndpoints(t *testing.T) {
-	cmd := command{args: []string{"test", "testdata/tests/system-test/test.json", "-t", "cloud", "-a", "t.a.i"}}
+	apiKey, err := vespa.CreateAPIKey()
+	require.Nil(t, err)
+	cmd := command{
+		args: []string{"test", "testdata/tests/system-test/test.json", "-t", "cloud", "-a", "t.a.i"},
+		env:  map[string]string{"VESPA_CLI_API_KEY": string(apiKey)},
+	}
 	cmd.homeDir = filepath.Join(t.TempDir(), ".vespa")
 	os.MkdirAll(cmd.homeDir, 0700)
 	keyFile := filepath.Join(cmd.homeDir, "key")

@@ -17,6 +17,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/vespa-engine/vespa/client/go/auth0"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
@@ -26,7 +27,10 @@ const (
 	configType = "yaml"
 )
 
-var flagToConfigBindings map[string]*cobra.Command = make(map[string]*cobra.Command)
+var (
+	flagToConfigBindings map[string]*cobra.Command = make(map[string]*cobra.Command)
+	envToConfigBindings  map[string]string         = make(map[string]string)
+)
 
 func init() {
 	rootCmd.AddCommand(configCmd)
@@ -179,17 +183,40 @@ func (c *Config) X509KeyPair(app vespa.ApplicationID) (KeyPair, error) {
 }
 
 func (c *Config) APIKeyPath(tenantName string) string {
-	if override, ok := os.LookupEnv("VESPA_CLI_API_KEY_FILE"); ok {
+	if override, err := c.Get(apiKeyFileFlag); err == nil && override != "" {
 		return override
 	}
 	return filepath.Join(c.Home, tenantName+".api-key.pem")
 }
 
 func (c *Config) ReadAPIKey(tenantName string) ([]byte, error) {
-	if override, ok := os.LookupEnv("VESPA_CLI_API_KEY"); ok {
+	if override, err := c.Get(apiKeyFlag); err == nil && override != "" {
 		return []byte(override), nil
 	}
 	return ioutil.ReadFile(c.APIKeyPath(tenantName))
+}
+
+// UseAPIKey checks if api key should be used be checking if api-key or api-key-file has been set.
+func (c *Config) UseAPIKey(tenantName string) bool {
+	if _, err := c.Get(apiKeyFlag); err == nil {
+		return true
+	}
+	if _, err := c.Get(apiKeyFileFlag); err == nil {
+		return true
+	}
+
+	// If no Auth0 token is created, fall back to tenant api key, but warn that this functionality is deprecated
+	// TODO: Remove this when users have had time to migrate over to Auth0 device flow authentication
+	a, err := auth0.GetAuth0(c.AuthConfigPath(), getSystemName(), getApiURL())
+	if err != nil || !a.HasSystem() {
+		fmt.Fprintln(stderr, "Defaulting to tenant API key is deprecated. Use Auth0 device flow: 'vespa auth login' instead")
+		if !util.PathExists(c.APIKeyPath(tenantName)) {
+			return false
+		}
+		return true
+	}
+
+	return false
 }
 
 func (c *Config) AuthConfigPath() string {
@@ -233,6 +260,9 @@ func (c *Config) load() error {
 	viper.AutomaticEnv()
 	for option, command := range flagToConfigBindings {
 		viper.BindPFlag(option, command.PersistentFlags().Lookup(option))
+	}
+	for option, env := range envToConfigBindings {
+		viper.BindEnv(option, env)
 	}
 	err := viper.ReadInConfig()
 	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
@@ -279,12 +309,9 @@ func (c *Config) Set(option, value string) error {
 			viper.Set(option, value)
 			return nil
 		}
-	case cloudAuthFlag:
-		switch value {
-		case "access-token", "api-key":
-			viper.Set(option, value)
-			return nil
-		}
+	case apiKeyFileFlag:
+		viper.Set(option, value)
+		return nil
 	}
 	return fmt.Errorf("invalid option or value: %q: %q", option, value)
 }
@@ -301,4 +328,8 @@ func printOption(cfg *Config, option string) {
 
 func bindFlagToConfig(option string, command *cobra.Command) {
 	flagToConfigBindings[option] = command
+}
+
+func bindEnvToConfig(option string, env string) {
+	envToConfigBindings[option] = env
 }

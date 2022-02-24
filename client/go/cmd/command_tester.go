@@ -28,6 +28,7 @@ type command struct {
 	stdin           io.ReadWriter
 	args            []string
 	moreArgs        []string
+	env             map[string]string
 	failTestOnError bool
 }
 
@@ -47,6 +48,23 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string)
 	if client != nil {
 		util.ActiveHttpClient = client
 	}
+	originalEnv := map[string]string{}
+	for k, v := range cmd.env {
+		value, ok := os.LookupEnv(k)
+		if ok {
+			originalEnv[k] = value
+		}
+		os.Setenv(k, v)
+	}
+	defer func() {
+		for k, _ := range cmd.env {
+			if v, ok := originalEnv[k]; ok {
+				os.Setenv(k, v)
+			} else {
+				os.Unsetenv(k)
+			}
+		}
+	}()
 
 	// Set Vespa CLI directories. Use a separate one per test if none is specified
 	if cmd.homeDir == "" {

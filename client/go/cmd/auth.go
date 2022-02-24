@@ -4,22 +4,16 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 func init() {
-	if vespa.Auth0AccessTokenEnabled() {
-		rootCmd.AddCommand(authCmd)
-		rootCmd.AddCommand(deprecatedCertCmd)
-		rootCmd.AddCommand(deprecatedApiKeyCmd)
-		authCmd.AddCommand(certCmd)
-		authCmd.AddCommand(apiKeyCmd)
-		authCmd.AddCommand(loginCmd)
-		authCmd.AddCommand(logoutCmd)
-	} else {
-		rootCmd.AddCommand(certCmd)
-		rootCmd.AddCommand(apiKeyCmd)
-	}
+	rootCmd.AddCommand(authCmd)
+	rootCmd.AddCommand(deprecatedCertCmd)
+	rootCmd.AddCommand(deprecatedApiKeyCmd)
+	authCmd.AddCommand(certCmd)
+	authCmd.AddCommand(apiKeyCmd)
+	authCmd.AddCommand(loginCmd)
+	authCmd.AddCommand(logoutCmd)
 }
 
 var authCmd = &cobra.Command{

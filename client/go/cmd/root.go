@@ -53,6 +53,8 @@ Vespa documentation: https://docs.vespa.ai`,
 	waitSecsArg    int
 	colorArg       string
 	quietArg       bool
+	apiKeyFileArg  string
+	apiKeyArg      string
 	stdin          io.ReadWriter = os.Stdin
 
 	color  = aurora.NewAurora(false)
@@ -66,7 +68,8 @@ const (
 	waitFlag        = "wait"
 	colorFlag       = "color"
 	quietFlag       = "quiet"
-	cloudAuthFlag   = "cloudAuth"
+	apiKeyFileFlag  = "api-key-file"
+	apiKeyFlag      = "api-key"
 )
 
 func isTerminal() bool {
@@ -115,11 +118,17 @@ func init() {
 	rootCmd.PersistentFlags().IntVarP(&waitSecsArg, waitFlag, "w", 0, "Number of seconds to wait for a service to become ready")
 	rootCmd.PersistentFlags().StringVarP(&colorArg, colorFlag, "c", "auto", "Whether to use colors in output. Can be \"auto\", \"never\" or \"always\"")
 	rootCmd.PersistentFlags().BoolVarP(&quietArg, quietFlag, "q", false, "Quiet mode. Only errors are printed.")
+	rootCmd.PersistentFlags().StringVarP(&apiKeyFileArg, apiKeyFileFlag, "k", "", "Path to API key used for deployment authentication")
+
 	bindFlagToConfig(targetFlag, rootCmd)
 	bindFlagToConfig(applicationFlag, rootCmd)
 	bindFlagToConfig(waitFlag, rootCmd)
 	bindFlagToConfig(colorFlag, rootCmd)
 	bindFlagToConfig(quietFlag, rootCmd)
+	bindFlagToConfig(apiKeyFileFlag, rootCmd)
+
+	bindEnvToConfig(apiKeyFlag, "VESPA_CLI_API_KEY")
+	bindEnvToConfig(apiKeyFileFlag, "VESPA_CLI_API_KEY_FILE")
 }
 
 // errHint creates a new CLI error, with optional hints that will be printed after the error

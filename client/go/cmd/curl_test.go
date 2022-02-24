@@ -14,12 +14,12 @@ func TestCurl(t *testing.T) {
 	httpClient := &mockHttpClient{}
 	out, _ := execute(command{homeDir: homeDir, args: []string{"curl", "-n", "-a", "t1.a1.i1", "--", "-v", "--data-urlencode", "arg=with space", "/search"}}, t, httpClient)
 
-	expected := fmt.Sprintf("curl --key %s --cert %s -v --data-urlencode 'arg=with space' https://127.0.0.1:8080/search\n",
+	expected := fmt.Sprintf("curl --key %s --cert %s -v --data-urlencode 'arg=with space' http://127.0.0.1:8080/search\n",
 		filepath.Join(homeDir, "t1.a1.i1", "data-plane-private-key.pem"),
 		filepath.Join(homeDir, "t1.a1.i1", "data-plane-public-cert.pem"))
 	assert.Equal(t, expected, out)
 
-	out, _ = execute(command{homeDir: homeDir, args: []string{"curl", "-s", "deploy", "-n", "/application/v4/tenant/foo"}}, t, httpClient)
-	expected = "curl https://127.0.0.1:19071/application/v4/tenant/foo\n"
+	out, _ = execute(command{homeDir: homeDir, args: []string{"curl", "-a", "t1.a1.i1", "-s", "deploy", "-n", "/application/v4/tenant/foo"}}, t, httpClient)
+	expected = "curl http://127.0.0.1:19071/application/v4/tenant/foo\n"
 	assert.Equal(t, expected, out)
 }

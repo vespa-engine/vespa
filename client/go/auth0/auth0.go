@@ -129,6 +129,7 @@ func (a *Auth0) IsLoggedIn() bool {
 	}
 
 	// Check if token is valid.
+	// TODO: Choose issuer based on system
 	if err = jwt.Validate(token, jwt.WithIssuer("https://vespa-cd.auth0.com/")); err != nil {
 		return false
 	}
@@ -231,6 +232,16 @@ func (a *Auth0) getSystem() (*System, error) {
 	}
 
 	return s, nil
+}
+
+// HasSystem checks if the system is configured
+// TODO: Used to print deprecation warning if we fall back to use tenant API key.
+//       Remove when this is not longer needed.
+func (a *Auth0) HasSystem() bool {
+	if _, err := a.getSystem(); err != nil {
+		return false
+	}
+	return true
 }
 
 // AddSystem assigns an existing, or new System. This is expected to be called
