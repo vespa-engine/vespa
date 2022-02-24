@@ -20,6 +20,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/auth0"
 	"github.com/vespa-engine/vespa/client/go/util"
+	"github.com/vespa-engine/vespa/client/go/version"
 )
 
 const (
@@ -54,6 +55,9 @@ type Target interface {
 
 	// SignRequest signs request with given keyID as required by the implementation of this target.
 	SignRequest(request *http.Request, keyID string) error
+
+	// CheckVersion verifies whether clientVersion is compatible with this target.
+	CheckVersion(clientVersion version.Version) error
 }
 
 // TLSOptions configures the certificate to use for service requests.
@@ -87,6 +91,8 @@ type customTarget struct {
 }
 
 func (t *customTarget) SignRequest(req *http.Request, sigKeyId string) error { return nil }
+
+func (t *customTarget) CheckVersion(version version.Version) error { return nil }
 
 // Do sends request to this service. Any required authentication happens automatically.
 func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
@@ -286,6 +292,36 @@ func (t *cloudTarget) SignRequest(req *http.Request, sigKeyId string) error {
 		if err := signer.SignRequest(req); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (t *cloudTarget) CheckVersion(clientVersion version.Version) error {
+	if clientVersion.IsZero() { // development version is always fine
+		return nil
+	}
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/cli/v1/", t.apiURL), nil)
+	if err != nil {
+		return err
+	}
+	response, err := util.HttpDo(req, 10*time.Second, "")
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+	var cliResponse struct {
+		MinVersion string `json:"minVersion"`
+	}
+	dec := json.NewDecoder(response.Body)
+	if err := dec.Decode(&cliResponse); err != nil {
+		return err
+	}
+	minVersion, err := version.Parse(cliResponse.MinVersion)
+	if err != nil {
+		return err
+	}
+	if clientVersion.Less(minVersion) {
+		return fmt.Errorf("client version %s is less than the minimum supported version: %s", clientVersion, minVersion)
 	}
 	return nil
 }

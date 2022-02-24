@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/vespa-engine/vespa/client/go/build"
+	"github.com/vespa-engine/vespa/client/go/version"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
@@ -147,6 +149,21 @@ func getApiURL() string {
 }
 
 func getTarget() (vespa.Target, error) {
+	clientVersion, err := version.Parse(build.Version)
+	if err != nil {
+		return nil, err
+	}
+	target, err := createTarget()
+	if err != nil {
+		return nil, err
+	}
+	if err := target.CheckVersion(clientVersion); err != nil {
+		printErrHint(err, "This is not a fatal error, but this version may not work as expected", "Try 'vespa version' to check for a new version")
+	}
+	return target, nil
+}
+
+func createTarget() (vespa.Target, error) {
 	targetType, err := getTargetType()
 	if err != nil {
 		return nil, err
