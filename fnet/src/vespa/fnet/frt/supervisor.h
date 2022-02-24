@@ -10,7 +10,7 @@
 #include <vespa/fnet/connection.h>
 #include <vespa/fnet/simplepacketstreamer.h>
 
-namespace fnet { class TransportConfig; }
+class TransportConfig;
 class FNET_Transport;
 class FRT_Target;
 class FastOS_ThreadPool;
