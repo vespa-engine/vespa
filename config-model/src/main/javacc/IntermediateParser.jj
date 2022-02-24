@@ -1064,7 +1064,7 @@ void fieldSorting(ParsedField field) :
     ParsedSorting sortInfo;
 }
 {
-    sortInfo = sorting() { field.setSorting(sortInfo); }
+    sortInfo = sorting(field.name(), "field") { field.setSorting(sortInfo); }
 }
 
 /* pick up sorting in field block */
@@ -1073,12 +1073,12 @@ void attributeSorting(ParsedAttribute attribute) :
     ParsedSorting sortInfo;
 }
 {
-    sortInfo = sorting() { attribute.setSorting(sortInfo); }
+    sortInfo = sorting(attribute.name(), "attribute") { attribute.setSorting(sortInfo); }
 }
 
-ParsedSorting sorting() :
+ParsedSorting sorting(String blockName, String blockType) :
 {
-    ParsedSorting sort = new ParsedSorting();
+    ParsedSorting sort = new ParsedSorting(blockName, blockType);
 }
 {
     <SORTING>
