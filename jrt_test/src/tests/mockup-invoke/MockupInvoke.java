@@ -15,8 +15,13 @@ public class MockupInvoke {
 	Request req = new Request("concat");
 	req.parameters().add(new StringValue(args[1]));
 	req.parameters().add(new StringValue(args[2]));
-	orb.invokeBatch(spec, req, 60.0);
-	if (req.isError()) {
+        Target target = orb.connect(spec);
+        try {
+            target.invokeSync(req, 60.0);
+        } finally {
+            target.close();
+        }
+        if (req.isError()) {
 	    System.out.println("error: " + req.errorCode()
 			       + ": " + req.errorMessage());
 	    System.exit(0);
