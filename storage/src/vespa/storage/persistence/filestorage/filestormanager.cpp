@@ -228,6 +228,7 @@ FileStorManager::configure(std::unique_ptr<StorFilestorConfig> config)
 
     _use_async_message_handling_on_schedule = config->useAsyncMessageHandlingOnSchedule;
     _host_info_reporter.set_noise_level(config->resourceUsageReporterNoiseLevel);
+    const bool throttle_merge_feed_ops = config->asyncOperationThrottler.throttleIndividualMergeFeedOps;
 
     if (!liveUpdate) {
         _config = std::move(config);
@@ -253,6 +254,14 @@ FileStorManager::configure(std::unique_ptr<StorFilestorConfig> config)
         assert(_filestorHandler);
         auto updated_dyn_throttle_params = dynamic_throttle_params_from_config(*config, _threads.size());
         _filestorHandler->operation_throttler().reconfigure_dynamic_throttling(updated_dyn_throttle_params);
+    }
+    // TODO remove once desired dynamic throttling behavior is set in stone
+    {
+        _filestorHandler->set_throttle_apply_bucket_diff_ops(!throttle_merge_feed_ops);
+        std::lock_guard guard(_lock);
+        for (auto& ph : _persistenceHandlers) {
+            ph->set_throttle_merge_feed_ops(throttle_merge_feed_ops);
+        }
     }
 }
 

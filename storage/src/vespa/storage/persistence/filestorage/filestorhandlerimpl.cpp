@@ -58,6 +58,7 @@ FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripe
       _getNextMessageTimeout(100ms),
       _max_active_merges_per_stripe(per_stripe_merge_limit(numThreads, numStripes)),
       _paused(false),
+      _throttle_apply_bucket_diff_ops(false),
       _last_active_operations_stats()
 {
     assert(numStripes > 0);
@@ -125,7 +126,7 @@ FileStorHandlerImpl::clearMergeStatus(const document::Bucket& bucket, const api:
     std::lock_guard mlock(_mergeStatesLock);
     auto it = _mergeStates.find(bucket);
     if (it == _mergeStates.end()) {
-        if (code != 0) {
+        if (code != nullptr) {
             LOG(debug, "Merge state not present at the time of clear. "
                 "Could not fail merge of bucket %s with code %s.",
                 bucket.toString().c_str(), code->toString().c_str());
@@ -135,7 +136,7 @@ FileStorHandlerImpl::clearMergeStatus(const document::Bucket& bucket, const api:
         }
         return;
     }
-    if (code != 0) {
+    if (code != nullptr) {
         std::shared_ptr<MergeStatus> statusPtr(it->second);
         assert(statusPtr.get());
         MergeStatus& status(*statusPtr);
@@ -890,10 +891,8 @@ FileStorHandlerImpl::Stripe::Stripe(const FileStorHandlerImpl & owner, MessageSe
       _active_operations_stats()
 {}
 
-namespace {
-
 bool
-operation_type_should_be_throttled(api::MessageType::Id type_id) noexcept
+FileStorHandlerImpl::Stripe::operation_type_should_be_throttled(api::MessageType::Id type_id) const noexcept
 {
     // Note: SetBucketState is intentionally _not_ included in this set, even though it's
     // dispatched async. The rationale behind this is that SetBucketState is very cheap
@@ -911,11 +910,12 @@ operation_type_should_be_throttled(api::MessageType::Id type_id) noexcept
     case api::MessageType::CREATEBUCKET_ID:
     case api::MessageType::DELETEBUCKET_ID:
         return true;
+    case api::MessageType::APPLYBUCKETDIFF_ID:
+    case api::MessageType::APPLYBUCKETDIFF_REPLY_ID:
+        return _owner.throttle_apply_bucket_diff_ops();
     default:
         return false;
     }
-}
-
 }
 
 FileStorHandler::LockedMessage

@@ -275,6 +275,8 @@ public:
     virtual ActiveOperationsStats get_active_operations_stats(bool reset_min_max) const = 0;
 
     virtual vespalib::SharedOperationThrottler& operation_throttler() const noexcept = 0;
+
+    virtual void set_throttle_apply_bucket_diff_ops(bool throttle_apply_bucket_diff) noexcept = 0;
 };
 
 } // storage

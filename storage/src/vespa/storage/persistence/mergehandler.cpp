@@ -36,7 +36,8 @@ MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
       _monitored_ref_count(std::make_unique<MonitoredRefCount>()),
       _maxChunkSize(maxChunkSize),
       _commonMergeChainOptimalizationMinimumSize(commonMergeChainOptimalizationMinimumSize),
-      _executor(executor)
+      _executor(executor),
+      _throttle_merge_feed_ops(true)
 {
 }
 
@@ -514,7 +515,8 @@ MergeHandler::applyDiffEntry(std::shared_ptr<ApplyBucketDiffState> async_results
                              spi::Context& context,
                              const document::DocumentTypeRepo& repo) const
 {
-    auto throttle_token = _operation_throttler.blocking_acquire_one();
+    auto throttle_token = throttle_merge_feed_ops() ? _operation_throttler.blocking_acquire_one()
+                                                    : vespalib::SharedOperationThrottler::Token();
     spi::Timestamp timestamp(e._entry._timestamp);
     if (!(e._entry._flags & (DELETED | DELETED_IN_PLACE))) {
         // Regular put entry
