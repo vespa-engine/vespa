@@ -237,6 +237,12 @@ public class ApplicationPackage {
                       .hash().toString();
     }
 
+    public static String calculateHash(byte[] bytes) {
+        return Hashing.sha1().newHasher()
+                      .putBytes(bytes)
+                      .hash().toString();
+    }
+
 
     /** Maps normalized paths to cached content read from a zip archive. */
     private static class ZipArchiveCache {

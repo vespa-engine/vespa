@@ -272,17 +272,13 @@ public class DeploymentContext {
 
     /** Submit given application package for deployment */
     public DeploymentContext submit(ApplicationPackage applicationPackage, Optional<SourceRevision> sourceRevision, long salt) {
-        var buffer = new ByteArrayOutputStream();
-        ZipStreamReader.transferAndWrite(buffer,
-                                         new ByteArrayInputStream(applicationPackage.zippedContent()),
-                                         "salt",
-                                         new byte[]{ (byte) (salt >> 56), (byte) (salt >> 48), (byte) (salt >> 40), (byte) (salt >> 32), (byte) (salt >> 24), (byte) (salt >> 16), (byte) (salt >> 8), (byte) salt });
         var projectId = tester.controller().applications()
                               .requireApplication(applicationId)
                               .projectId()
                               .orElse(1000); // These are really set through submission, so just pick one if it hasn't been set.
+        var testerpackage = new byte[]{ (byte) (salt >> 56), (byte) (salt >> 48), (byte) (salt >> 40), (byte) (salt >> 32), (byte) (salt >> 24), (byte) (salt >> 16), (byte) (salt >> 8), (byte) salt };
         lastSubmission = jobs.submit(applicationId, sourceRevision, Optional.of("a@b"), Optional.empty(),
-                                     projectId, new ApplicationPackage(buffer.toByteArray()), new byte[0]);
+                                     projectId, applicationPackage, testerpackage);
         return this;
     }
 

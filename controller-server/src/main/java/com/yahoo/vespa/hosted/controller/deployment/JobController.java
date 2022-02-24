@@ -452,13 +452,14 @@ public class JobController {
             Optional<ApplicationPackage> previousPackage = previousVersion.flatMap(previous -> controller.applications().applicationStore().find(id.tenant(), id.application(), previous.buildNumber().getAsLong()))
                                                                           .map(ApplicationPackage::new);
             long previousBuild = previousVersion.map(latestVersion -> latestVersion.buildNumber().getAsLong()).orElse(0L);
+            String packageHash = applicationPackage.bundleHash() + ApplicationPackage.calculateHash(testPackageBytes);
             version.set(ApplicationVersion.from(revision, 1 + previousBuild, authorEmail,
                                                 applicationPackage.compileVersion(),
                                                 applicationPackage.buildTime(),
                                                 sourceUrl,
                                                 revision.map(SourceRevision::commit),
                                                 false,
-                                                Optional.of(applicationPackage.bundleHash())));
+                                                Optional.of(packageHash)));
 
             byte[] diff = previousPackage.map(previous -> ApplicationPackageDiff.diff(previous, applicationPackage))
                                          .orElseGet(() -> ApplicationPackageDiff.diffAgainstEmpty(applicationPackage));
