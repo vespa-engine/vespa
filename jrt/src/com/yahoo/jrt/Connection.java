@@ -40,7 +40,6 @@ class Connection extends Target {
     private final boolean tcpNoDelay;
     private final Map<Integer, ReplyHandler> replyMap = new HashMap<>();
     private final Map<TargetWatcher, TargetWatcher> watchers = new IdentityHashMap<>();
-    private int activeReqs = 0;
     private int writeWork  = 0;
     private boolean pendingHandshakeWork = false;
     private final TransportThread parent;
@@ -60,11 +59,9 @@ class Connection extends Target {
         }
         boolean live = (state == CONNECTED);
         boolean down = (state == CLOSED);
-        boolean fini;
         boolean pendingWrite;
         synchronized (this) {
             this.state = state;
-            fini = down && (activeReqs == 0);
             pendingWrite = (writeWork > 0);
         }
         if (live) {
@@ -74,7 +71,6 @@ class Connection extends Target {
             } else {
                 disableWrite();
             }
-            owner.sessionLive(this);
         }
         if (down) {
             for (ReplyHandler rh : replyMap.values()) {
@@ -83,10 +79,6 @@ class Connection extends Target {
             for (TargetWatcher watcher : watchers.values()) {
                 watcher.notifyTargetInvalid(this);
             }
-            owner.sessionDown(this);
-        }
-        if (fini) {
-            owner.sessionFini(this);
         }
     }
 
@@ -102,7 +94,6 @@ class Connection extends Target {
         maxOutputSize = owner.getMaxOutputBufferSize();
         dropEmptyBuffers = owner.getDropEmptyBuffers();
         server = true;
-        owner.sessionInit(this);
     }
 
     public Connection(TransportThread parent, Supervisor owner, Spec spec, Object context, boolean tcpNoDelay) {
@@ -115,7 +106,6 @@ class Connection extends Target {
         maxOutputSize = owner.getMaxOutputBufferSize();
         dropEmptyBuffers = owner.getDropEmptyBuffers();
         server = false;
-        owner.sessionInit(this);
     }
 
     public TransportThread transportThread() {
@@ -125,8 +115,7 @@ class Connection extends Target {
     public int allocateKey() {
         long v = requestId.getAndIncrement();
         v = v*2 + (server ? 1 : 0);
-        int i = (int)(v & 0x7fffffff);
-        return i;
+        return (int)(v & 0x7fffffff);
     }
 
     public synchronized boolean cancelReply(ReplyHandler handler) {
@@ -278,7 +267,7 @@ class Connection extends Target {
             try {
                 packet = info.decodePacket(rb);
             } catch (RuntimeException e) {
-                log.log(Level.WARNING, "got garbage; closing connection: " + toString());
+                log.log(Level.WARNING, "got garbage; closing connection: " + this);
                 throw new IOException("jrt: decode error", e);
             }
             ReplyHandler handler;
@@ -396,6 +385,10 @@ class Connection extends Target {
         return (state == CLOSED);
     }
 
+    public synchronized boolean isConnected() {
+        return (state == CONNECTED);
+    }
+
     public boolean hasSocket() {
         return ((socket != null) && (socket.channel() != null));
     }
@@ -417,25 +410,16 @@ class Connection extends Target {
     }
 
     public TieBreaker startRequest() {
-        synchronized (this) {
-            activeReqs++;
-        }
         return new TieBreaker();
     }
 
     public boolean completeRequest(TieBreaker done) {
-        boolean signalFini = false;
         synchronized (this) {
             if (!done.first()) {
                 return false;
             }
-            if (--activeReqs == 0 && state == CLOSED) {
-                signalFini = true;
-            }
         }
-        if (signalFini) {
-            owner.sessionFini(this);
-        }
+
         return true;
     }
 
