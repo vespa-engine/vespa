@@ -1,6 +1,5 @@
 package com.yahoo.searchdefinition.parser;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -14,7 +13,7 @@ import java.util.Optional;
 class ParsedAnnotation {
 
     private final String name;
-    private Optional<ParsedStruct> wrappedStruct;
+    private ParsedStruct wrappedStruct = null;
     private final List<String> inherited = new ArrayList<>();
 
     ParsedAnnotation(String name) {
@@ -23,8 +22,8 @@ class ParsedAnnotation {
 
     public String name() { return name; }
     public List<String> getInherited() { return List.copyOf(inherited); }
-    public Optional<ParsedStruct> getStruct() { return wrappedStruct; }
+    public Optional<ParsedStruct> getStruct() { return Optional.ofNullable(wrappedStruct); }
 
-    void setStruct(ParsedStruct struct) { wrappedStruct = Optional.of(struct); }
+    void setStruct(ParsedStruct struct) { this.wrappedStruct = struct; }
     void inherit(String other) { inherited.add(other); }
 }

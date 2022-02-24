@@ -4,12 +4,8 @@ package com.yahoo.searchdefinition.parser;
 import com.yahoo.searchdefinition.document.HnswIndexParams;
 import com.yahoo.searchdefinition.document.Stemming;
 
-
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * This class holds the extracted information after parsing an "index"
@@ -24,7 +20,7 @@ class ParsedIndex {
     private boolean isPrefix = false;
     private HnswIndexParams hnswParams;
     private final List<String> aliases = new ArrayList<>();
-    private Optional<Stemming> stemming = Optional.empty();
+    private Stemming stemming = null;
     private Integer arity;
     private Long lowerBound;
     private Long upperBound;
@@ -39,8 +35,8 @@ class ParsedIndex {
     boolean getPrefix() { return this.isPrefix; }
     HnswIndexParams getHnswIndexParams() { return this.hnswParams; }
     List<String> getAliases() { return List.copyOf(aliases); }
-    boolean hasStemming() { return stemming.isPresent(); }
-    Stemming getStemming() { return stemming.get(); }
+    boolean hasStemming() { return stemming != null; }
+    Stemming getStemming() { return stemming; }
     Integer getArity() { return this.arity; }
     Long getLowerBound() { return this.lowerBound; }
     Long getUpperBound() { return this.upperBound; }
@@ -76,7 +72,7 @@ class ParsedIndex {
     }
 
     void setStemming(Stemming stemming) {
-        this.stemming = Optional.of(stemming);
+        this.stemming = stemming;
     }
 
     void setUpperBound(long value) {

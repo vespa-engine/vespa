@@ -10,25 +10,25 @@ import java.util.Optional;
  **/
 public class ParsedMatchSettings {
 
-    private Optional<MatchType> matchType = Optional.empty();
-    private Optional<MatchCase> matchCase = Optional.empty();
-    private Optional<MatchAlgorithm> matchAlgorithm = Optional.empty();
-    private Optional<String> exactTerminator = Optional.empty();
-    private Optional<Integer> gramSize = Optional.empty();
-    private Optional<Integer> maxLength = Optional.empty();
+    private MatchType matchType = null;
+    private MatchCase matchCase = null;
+    private MatchAlgorithm matchAlgorithm = null;
+    private String exactTerminator = null;
+    private Integer gramSize = null;
+    private Integer maxLength = null;
 
-    Optional<MatchType> getMatchType() { return this.matchType; }
-    Optional<MatchCase> getMatchCase() { return this.matchCase; }
-    Optional<MatchAlgorithm> getMatchAlgorithm() { return this.matchAlgorithm; }
-    Optional<String> getExactTerminator() { return this.exactTerminator; }
-    Optional<Integer> getGramSize() { return this.gramSize; }
-    Optional<Integer> getMaxLength() { return this.maxLength; }
+    Optional<MatchType> getMatchType() { return Optional.ofNullable(matchType); }
+    Optional<MatchCase> getMatchCase() { return Optional.ofNullable(matchCase); }
+    Optional<MatchAlgorithm> getMatchAlgorithm() { return Optional.ofNullable(matchAlgorithm); }
+    Optional<String> getExactTerminator() { return Optional.ofNullable(exactTerminator); }
+    Optional<Integer> getGramSize() { return Optional.ofNullable(gramSize); }
+    Optional<Integer> getMaxLength() { return Optional.ofNullable(maxLength); }
 
     // TODO - consider allowing each set only once:
-    void setType(MatchType value) { this.matchType = Optional.of(value); }
-    void setCase(MatchCase value) { this.matchCase = Optional.of(value); }
-    void setAlgorithm(MatchAlgorithm value) { this.matchAlgorithm = Optional.of(value); }
-    void setExactTerminator(String value) { this.exactTerminator = Optional.of(value); }
-    void setGramSize(int value) { this.gramSize = Optional.of(value); }
-    void setMaxLength(int value) { this.maxLength = Optional.of(value); }
+    void setType(MatchType value) { this.matchType = value; }
+    void setCase(MatchCase value) { this.matchCase = value; }
+    void setAlgorithm(MatchAlgorithm value) { this.matchAlgorithm = value; }
+    void setExactTerminator(String value) { this.exactTerminator = value; }
+    void setGramSize(int value) { this.gramSize = value; }
+    void setMaxLength(int value) { this.maxLength = value; }
 }

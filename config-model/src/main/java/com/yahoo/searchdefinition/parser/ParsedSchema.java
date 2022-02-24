@@ -1,17 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.parser;
 
-
 import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.document.Stemming;
-
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * This class holds the extracted information after parsing
@@ -34,8 +31,8 @@ public class ParsedSchema {
 
     private final String name;
     private boolean rawAsBase64 = false; // TODO Vespa 8 flip default
-    private Optional<ParsedDocument> myDocument = Optional.empty();
-    private Optional<Stemming> defaultStemming = Optional.empty();
+    private ParsedDocument myDocument = null;
+    private Stemming defaultStemming = null;
     private final List<ImportedField> importedFields = new ArrayList<>();
     private final List<OnnxModel> onnxModels = new ArrayList<>();
     private final List<RankingConstant> rankingConstants = new ArrayList<>();
@@ -54,10 +51,10 @@ public class ParsedSchema {
 
     String name() { return name; }
     boolean getRawAsBase64() { return rawAsBase64; }
-    boolean hasDocument() { return myDocument.isPresent(); }
-    ParsedDocument getDocument() { return myDocument.get(); }
-    boolean hasStemming() { return defaultStemming.isPresent(); }
-    Stemming getStemming() { return defaultStemming.get(); }
+    boolean hasDocument() { return myDocument != null; }
+    ParsedDocument getDocument() { return myDocument; }
+    boolean hasStemming() { return defaultStemming != null; }
+    Stemming getStemming() { return defaultStemming; }
     List<ImportedField> getImportedFields() { return List.copyOf(importedFields); }
     List<OnnxModel> getOnnxModels() { return List.copyOf(onnxModels); }
     List<ParsedAnnotation> getAnnotations() { return List.copyOf(extraAnnotations.values()); }
@@ -79,11 +76,11 @@ public class ParsedSchema {
     }
 
     void addDocument(ParsedDocument document) {
-        if (myDocument.isPresent()) {
-            throw new IllegalArgumentException("schema "+this.name+" already has "+myDocument.get().name()
+        if (myDocument != null) {
+            throw new IllegalArgumentException("schema "+this.name+" already has "+myDocument.name()
                                                + "cannot add document "+document.name());
         }
-        myDocument = Optional.of(document);
+        myDocument = document;
     }
 
     void addDocumentSummary(ParsedDocumentSummary docsum) {
@@ -153,10 +150,10 @@ public class ParsedSchema {
     void inherit(String other) { inherited.add(other); }
 
     void setStemming(Stemming value) {
-        if (defaultStemming.isPresent() && (defaultStemming.get() != value)) {
+        if ((defaultStemming != null) && (defaultStemming != value)) {
             throw new IllegalArgumentException("schema " + this.name + " already has stemming "
-                                               + defaultStemming.get() + "cannot also set " + value);
+                                               + defaultStemming + "cannot also set " + value);
         }
-        defaultStemming = Optional.of(value);
+        defaultStemming = value;
     }
 }

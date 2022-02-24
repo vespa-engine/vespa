@@ -3,7 +3,6 @@ package com.yahoo.searchdefinition.parser;
 
 import com.yahoo.tensor.TensorType;
 
-
 /**
  * This class holds the extracted information after parsing a type
  * declaration (typically for a field).  Since types can be complex,

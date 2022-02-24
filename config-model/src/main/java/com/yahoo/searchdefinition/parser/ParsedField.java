@@ -29,10 +29,9 @@ class ParsedField {
     private Integer weight;
     private String normalizing;
     private final ParsedMatchSettings matchInfo = new ParsedMatchSettings();
-    private Optional<Stemming> stemming = Optional.empty();
-    private Optional<ParsedIndexingOp> indexingOp = Optional.empty();
-    private Optional<ParsedSorting> sortSettings = Optional.empty();
-
+    private Stemming stemming = null;
+    private ParsedIndexingOp indexingOp = null;
+    private ParsedSorting sortSettings = null;
     private final Map<String, ParsedAttribute> attributes = new HashMap<>();
     private final Map<String, ParsedIndex> fieldIndexes = new HashMap<>();
     private final Map<String, String> aliases = new HashMap<>();
@@ -54,10 +53,18 @@ class ParsedField {
     boolean hasIdOverride() { return overrideId != 0; }
     int idOverride() { return overrideId; }
     List<DictionaryOption> getDictionaryOptions() { return List.copyOf(dictionaryOptions); }
+    List<ParsedAttribute> getAttributes() { return List.copyOf(attributes.values()); }
     List<ParsedIndex> getIndexes() { return List.copyOf(fieldIndexes.values()); }
+    List<ParsedSummaryField> getSummaryFields() { return List.copyOf(summaryFields.values()); }
+    List<ParsedField> getStructFields() { return List.copyOf(structFields.values()); }
     List<String> getAliases() { return List.copyOf(aliases.keySet()); }
+    List<String> getQueryCommands() { return List.copyOf(queryCommands); }
     String lookupAliasedFrom(String alias) { return aliases.get(alias); }
     ParsedMatchSettings matchSettings() { return this.matchInfo; }
+    Optional<Stemming> getStemming() { return Optional.ofNullable(stemming); }
+    Optional<ParsedIndexingOp> getIndexing() { return Optional.ofNullable(indexingOp); }
+    Optional<ParsedSorting> getSorting() { return Optional.ofNullable(sortSettings); }
+    Map<String, String> getRankTypes() { return Map.copyOf(rankTypes); }
 
     void addAlias(String from, String to) {
         if (aliases.containsKey(to)) {
@@ -88,7 +95,7 @@ class ParsedField {
     void setLiteral(boolean value) { this.isLiteral = value; }
     void setNormal(boolean value) { this.isNormal = value; }
     void setNormalizing(String value) { this.normalizing = value; }
-    void setStemming(Stemming stemming) { this.stemming = Optional.of(stemming); }
+    void setStemming(Stemming stemming) { this.stemming = stemming; }
     void setWeight(int weight) { this.weight = weight; }
 
     void addAttribute(ParsedAttribute attribute) {
@@ -100,17 +107,17 @@ class ParsedField {
     }
 
     void setIndexingOperation(ParsedIndexingOp idxOp) {
-        if (indexingOp.isPresent()) {
+        if (indexingOp != null) {
             throw new IllegalArgumentException("field "+this.name+" already has indexing");
         }
-        indexingOp = Optional.of(idxOp);
+        indexingOp = idxOp;
     }
 
     void setSorting(ParsedSorting sorting) {
-        if (sortSettings.isPresent()) {
+        if (sortSettings != null) {
             throw new IllegalArgumentException("field "+this.name+" already has sorting");
         }
-        this.sortSettings = Optional.of(sorting);
+        this.sortSettings = sorting;
     }
 
     void addQueryCommand(String command) {
