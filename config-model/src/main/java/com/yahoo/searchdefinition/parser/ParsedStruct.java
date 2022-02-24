@@ -12,23 +12,21 @@ import java.util.Map;
  * advanced logic here!
  * @author arnej27959
  **/
-public class ParsedStruct {
-    private final String name;
+public class ParsedStruct extends ParsedBlock {
     private final List<String> inherited = new ArrayList<>();
     private final Map<String, ParsedField> fields = new HashMap<>();
 
     public ParsedStruct(String name) {
-        this.name = name;
+        super(name, "struct");
     }
 
-    String name() { return this.name; }
     List<ParsedField> getFields() { return List.copyOf(fields.values()); }
     List<String> getInherited() { return List.copyOf(inherited); }
 
     void addField(ParsedField field) {
         String fieldName = field.name();
         if (fields.containsKey(fieldName)) {
-            throw new IllegalArgumentException("struct "+this.name+" already has field "+fieldName);
+            throw new IllegalArgumentException("struct "+name()+" already has field "+fieldName);
         }
         fields.put(fieldName, field);
     }

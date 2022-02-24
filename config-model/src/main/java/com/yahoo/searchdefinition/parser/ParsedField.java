@@ -17,9 +17,8 @@ import java.util.Optional;
  * advanced logic here!
  * @author arnej27959
  **/
-class ParsedField {
+class ParsedField extends ParsedBlock {
 
-    private final String name;
     private ParsedType type;
     private boolean hasBolding = false;
     private boolean isFilter = false;
@@ -42,11 +41,10 @@ class ParsedField {
     private final List<String> queryCommands = new ArrayList<>();
 
     ParsedField(String name, ParsedType type) {
-        this.name = name;
+        super(name, "field");
         this.type = type;
     }
 
-    String name() { return this.name; }
     ParsedType getType() { return this.type; }
     boolean getBolding() { return this.hasBolding; }
     boolean getFilter() { return this.isFilter; }
@@ -68,7 +66,7 @@ class ParsedField {
 
     void addAlias(String from, String to) {
         if (aliases.containsKey(to)) {
-            throw new IllegalArgumentException("field "+this.name+" already has alias "+to);
+            throw new IllegalArgumentException("field "+name()+" already has alias "+to);
         }
         aliases.put(to, from);
     }
@@ -76,7 +74,7 @@ class ParsedField {
     void addIndex(ParsedIndex index) {
         String idxName = index.name();
         if (fieldIndexes.containsKey(idxName)) {
-            throw new IllegalArgumentException("field "+this.name+" already has index "+idxName);
+            throw new IllegalArgumentException("field "+name()+" already has index "+idxName);
         }
         fieldIndexes.put(idxName, index);
     }
@@ -101,21 +99,21 @@ class ParsedField {
     void addAttribute(ParsedAttribute attribute) {
         String attrName = attribute.name();
         if (attributes.containsKey(attrName)) {
-            throw new IllegalArgumentException("field "+this.name+" already has attribute "+attrName);
+            throw new IllegalArgumentException("field "+name()+" already has attribute "+attrName);
         }
         attributes.put(attrName, attribute);
     }
 
     void setIndexingOperation(ParsedIndexingOp idxOp) {
         if (indexingOp != null) {
-            throw new IllegalArgumentException("field "+this.name+" already has indexing");
+            throw new IllegalArgumentException("field "+name()+" already has indexing");
         }
         indexingOp = idxOp;
     }
 
     void setSorting(ParsedSorting sorting) {
         if (sortSettings != null) {
-            throw new IllegalArgumentException("field "+this.name+" already has sorting");
+            throw new IllegalArgumentException("field "+name()+" already has sorting");
         }
         this.sortSettings = sorting;
     }
@@ -127,7 +125,7 @@ class ParsedField {
     void addStructField(ParsedField structField) {
         String fieldName = structField.name();
         if (structFields.containsKey(fieldName)) {
-            throw new IllegalArgumentException("field "+this.name+" already has struct-field "+fieldName);
+            throw new IllegalArgumentException("field "+name()+" already has struct-field "+fieldName);
         }
         structFields.put(fieldName, structField);
     }
@@ -135,7 +133,7 @@ class ParsedField {
     void addSummaryField(ParsedSummaryField summaryField) {
         String fieldName = summaryField.name();
         if (summaryFields.containsKey(fieldName)) {
-            throw new IllegalArgumentException("field "+this.name+" already has summary field "+fieldName);
+            throw new IllegalArgumentException("field "+name()+" already has summary field "+fieldName);
         }
         summaryFields.put(fieldName, summaryField);
     }

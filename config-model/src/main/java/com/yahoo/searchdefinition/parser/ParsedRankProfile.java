@@ -13,15 +13,11 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Value;
  * structures as far as possible.  Do not put advanced logic here!
  * @author arnej27959
  **/
-class ParsedRankProfile {
-
-    private final String name;
+class ParsedRankProfile extends ParsedBlock {
 
     ParsedRankProfile(String name) {
-        this.name = name;
+        super(name, "rank-profile");
     }
-
-    public String name() { return name; }
 
     void addSummaryFeatures(FeatureList features) {}
     void addMatchFeatures(FeatureList features) {}

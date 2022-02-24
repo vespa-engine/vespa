@@ -11,9 +11,8 @@ import java.util.List;
  * possible.  Do not put advanced logic here!
  * @author arnej27959
  **/
-class ParsedSummaryField {
+class ParsedSummaryField extends ParsedBlock {
 
-    private final String name;
     private final ParsedType type;
     private boolean isDyn = false;
     private boolean isMEO = false;
@@ -23,16 +22,14 @@ class ParsedSummaryField {
     private final List<String> destinations = new ArrayList<>();
 
     ParsedSummaryField(String name) {
-        this.name = name;
-        this.type = null;
+        this(name, null);
     }
 
     ParsedSummaryField(String name, ParsedType type) {
-        this.name = name;
+        super(name, "summary field");
         this.type = type;
     }
 
-    String name() { return name; }
     ParsedType type() { return type; }
     List<String> getDestinations() { return List.copyOf(destinations); }
     List<String> getSources() { return List.copyOf(sources); }

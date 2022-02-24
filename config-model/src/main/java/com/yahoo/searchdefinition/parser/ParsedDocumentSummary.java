@@ -12,19 +12,17 @@ import java.util.Map;
  * possible.  Do not put advanced logic here!
  * @author arnej27959
  **/
-class ParsedDocumentSummary {
+class ParsedDocumentSummary extends ParsedBlock {
 
-    private final String name;
     private boolean omitSummaryFeatures;
     private boolean fromDisk;
     private final List<String> inherited = new ArrayList<>();
     private final Map<String, ParsedSummaryField> fields = new HashMap<>();
 
     ParsedDocumentSummary(String name) {
-        this.name = name;
+        super(name, "document-summary");
     }
 
-    String name() { return this.name; }
     boolean getOmitSummaryFeatures() { return omitSummaryFeatures; }
     boolean getFromDisk() { return fromDisk; }
     List<ParsedSummaryField> getSummaryFields() { return List.copyOf(fields.values()); }
@@ -33,7 +31,7 @@ class ParsedDocumentSummary {
     void addField(ParsedSummaryField field) {
         String fieldName = field.name();
         if (fields.containsKey(fieldName)) {
-            throw new IllegalArgumentException("document-summary "+this.name+" already has field "+fieldName);
+            throw new IllegalArgumentException("document-summary "+name()+" already has field "+fieldName);
         }
         fields.put(fieldName, field);
     }

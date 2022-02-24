@@ -7,15 +7,11 @@ package com.yahoo.searchdefinition.parser;
  * possible.  Do not put advanced logic here!
  * @author arnej27959
  **/
-class ParsedAttribute {
-
-    private final String name;
+class ParsedAttribute extends ParsedBlock {
 
     ParsedAttribute(String name) {
-        this.name = name;
+        super(name, "attribute");
     }
-
-    public String name() { return name; }
 
     void addAlias(String from, String to) {}
     void setDistanceMetric(String metric) {}
