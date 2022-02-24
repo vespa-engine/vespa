@@ -28,9 +28,11 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageDiff;
+import com.yahoo.vespa.hosted.controller.application.pkg.ZipStreamReader;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
+import java.io.ByteArrayInputStream;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;

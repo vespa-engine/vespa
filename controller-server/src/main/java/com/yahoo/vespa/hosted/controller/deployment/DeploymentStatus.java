@@ -813,6 +813,15 @@ public class DeploymentStatus {
             JobStatus job = status.instanceJobs(instance).get(testType);
             return new JobStepStatus(StepType.test, step, dependencies, job, status) {
                 @Override
+                Optional<Instant> readyAt(Change change, Optional<JobId> dependent) {
+                    JobId prodId = new JobId(status.application().id().instance(instance()), prodType);
+                    Optional<Instant> readyAt = super.readyAt(change, dependent);
+                    Optional<Instant> deployedAt = status.jobSteps().get(prodId).completedAt(change, Optional.of(prodId));
+                    if (readyAt.isEmpty() || deployedAt.isEmpty()) return Optional.empty();
+                    return readyAt.get().isAfter(deployedAt.get()) ? readyAt : deployedAt;
+                }
+
+                @Override
                 Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
                     Versions versions = Versions.from(change, status.application, status.deploymentFor(job.id()), status.systemVersion);
                     return dependent.equals(job()) ? job.lastSuccess()
