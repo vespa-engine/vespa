@@ -144,6 +144,7 @@ public:
     private:
         bool hasActive(monitor_guard & monitor, const AbortBucketOperationsCommand& cmd) const;
         FileStorHandler::LockedMessage get_next_async_message(monitor_guard& guard);
+        [[nodiscard]] bool operation_type_should_be_throttled(api::MessageType::Id type_id) const noexcept;
 
         // Precondition: the bucket used by `iter`s operation is not locked in a way that conflicts
         // with its locking requirements.
@@ -247,6 +248,12 @@ public:
         return *_operation_throttler;
     }
 
+    void set_throttle_apply_bucket_diff_ops(bool throttle_apply_bucket_diff) noexcept override {
+        // Relaxed is fine, worst case from temporarily observing a stale value is that
+        // an ApplyBucketDiff message is (or isn't) throttled at a high level.
+        _throttle_apply_bucket_diff_ops.store(throttle_apply_bucket_diff, std::memory_order_relaxed);
+    }
+
     // Implements ResumeGuard::Callback
     void resume() override;
 
@@ -268,6 +275,7 @@ private:
     mutable std::mutex              _pauseMonitor;
     mutable std::condition_variable _pauseCond;
     std::atomic<bool>               _paused;
+    std::atomic<bool>               _throttle_apply_bucket_diff_ops;
     std::optional<ActiveOperationsStats> _last_active_operations_stats;
 
     // Returns the index in the targets array we are sending to, or -1 if none of them match.
@@ -286,6 +294,10 @@ private:
      * _paused, use relaxed atomics.
      */
     bool isPaused() const { return _paused.load(std::memory_order_relaxed); }
+
+    [[nodiscard]] bool throttle_apply_bucket_diff_ops() const noexcept {
+        return _throttle_apply_bucket_diff_ops.load(std::memory_order_relaxed);
+    }
 
     /**
      * Return whether msg has timed out based on waitTime and the message's

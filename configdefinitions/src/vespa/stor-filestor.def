@@ -88,6 +88,11 @@ async_operation_throttler.window_size_backoff double default=0.95
 async_operation_throttler.min_window_size int default=20
 async_operation_throttler.max_window_size int default=-1 # < 0 implies INT_MAX
 async_operation_throttler.resize_rate double default=3.0
+## If true, each put/remove contained within a merge is individually throttled as if it
+## were a put/remove from a client. If false, merges are throttled at a persistence thread
+## level, i.e. per ApplyBucketDiff message, regardless of how many document operations
+## are contained within.
+async_operation_throttler.throttle_individual_merge_feed_ops bool default=true
 
 ## Specify throttling used for async persistence operations. This throttling takes place
 ## before operations are dispatched to Proton and serves as a limiter for how many
