@@ -177,6 +177,12 @@ ExitOnSignal::operator()()
     }
 }
 
+fnet::TransportConfig
+buildTransportConfig() {
+    uint32_t numProcs = std::thread::hardware_concurrency();
+    return fnet::TransportConfig(std::max(1u, std::min(4u, numProcs/8)));
+}
+
 }
 
 int
@@ -191,8 +197,8 @@ App::Main()
         LOG(debug, "subscribeTimeout: '%" PRIu64 "'", params.subscribeTimeout);
         std::chrono::milliseconds subscribeTimeout(params.subscribeTimeout);
         FastOS_ThreadPool threadPool(128_Ki);
-        uint32_t numProcs = std::thread::hardware_concurrency();
-        FNET_Transport transport(fnet::TransportConfig(std::max(1u, std::min(4u, numProcs/8))));
+
+        FNET_Transport transport(buildTransportConfig());
         transport.Start(&threadPool);
         config::ConfigServerSpec configServerSpec(transport);
         config::ConfigUri identityUri(params.identity, std::make_shared<config::ConfigContext>(configServerSpec));
