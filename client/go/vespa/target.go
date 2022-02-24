@@ -52,7 +52,8 @@ type Target interface {
 	// PrintLog writes the logs of this deployment using given options to control output.
 	PrintLog(options LogOptions) error
 
-	PrepareApiRequest(req *http.Request, sigKeyId string) error
+	// SignRequest signs request with given keyID as required by the implementation of this target.
+	SignRequest(request *http.Request, keyID string) error
 }
 
 // TLSOptions configures the certificate to use for service requests.
@@ -85,7 +86,7 @@ type customTarget struct {
 	baseURL    string
 }
 
-func (t *customTarget) PrepareApiRequest(req *http.Request, sigKeyId string) error { return nil }
+func (t *customTarget) SignRequest(req *http.Request, sigKeyId string) error { return nil }
 
 // Do sends request to this service. Any required authentication happens automatically.
 func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
@@ -265,7 +266,7 @@ func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, c
 	return nil, fmt.Errorf("unknown service: %s", name)
 }
 
-func (t *cloudTarget) PrepareApiRequest(req *http.Request, sigKeyId string) error {
+func (t *cloudTarget) SignRequest(req *http.Request, sigKeyId string) error {
 	if Auth0AccessTokenEnabled() {
 		if t.cloudAuth == "access-token" {
 			if err := t.addAuth0AccessToken(req); err != nil {
@@ -324,7 +325,7 @@ func (t *cloudTarget) PrintLog(options LogOptions) error {
 			q.Set("to", strconv.FormatInt(toMillis, 10))
 		}
 		req.URL.RawQuery = q.Encode()
-		t.PrepareApiRequest(req, t.deployment.Application.SerializedForm())
+		t.SignRequest(req, t.deployment.Application.SerializedForm())
 		return req
 	}
 	logFunc := func(status int, response []byte) (bool, error) {
@@ -380,7 +381,7 @@ func (t *cloudTarget) waitForRun(runID int64, timeout time.Duration) error {
 		q := req.URL.Query()
 		q.Set("after", strconv.FormatInt(lastID, 10))
 		req.URL.RawQuery = q.Encode()
-		if err := t.PrepareApiRequest(req, t.deployment.Application.SerializedForm()); err != nil {
+		if err := t.SignRequest(req, t.deployment.Application.SerializedForm()); err != nil {
 			panic(err)
 		}
 		return req
@@ -439,7 +440,7 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) error {
 	if err != nil {
 		return err
 	}
-	if err := t.PrepareApiRequest(req, t.deployment.Application.SerializedForm()); err != nil {
+	if err := t.SignRequest(req, t.deployment.Application.SerializedForm()); err != nil {
 		return err
 	}
 	urlsByCluster := make(map[string]string)
