@@ -43,8 +43,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -285,19 +287,34 @@ public class RankProfile implements Cloneable {
 
     public MatchPhaseSettings getMatchPhaseSettings() {
         if (matchPhaseSettings != null) return matchPhaseSettings;
-        return inheritedWith(p -> p.getMatchPhaseSettings() != null,"match phase settings")
-                .map(p -> p.getMatchPhaseSettings()).orElse(null);
+        return uniquelyInherited(p -> p.getMatchPhaseSettings(), "match phase settings").orElse(null);
     }
 
-    /** Returns the single profile having the property checked by the given filter, or empty if none */
-    private Optional<RankProfile> inheritedWith(Predicate<RankProfile> property, String propertyDescription) {
-        List<RankProfile> matchingInherited =
-                inherited().stream().filter(profile -> property.test(profile)).collect(Collectors.toList());
-        if (matchingInherited.isEmpty()) return Optional.empty();
-        if (matchingInherited.size() == 1) return Optional.of(matchingInherited.get(0));
-        throw new IllegalArgumentException("Only one of the profiles inherited by " + this + " can contain " +
-                                           propertyDescription + ", but it is present in all of " + matchingInherited);
+    /** Returns the uniquely determined property, where non-empty is defined as non-null */
+    private <T> Optional<T> uniquelyInherited(Function<RankProfile, T> propertyRetriever,
+                                              String propertyDescription) {
+        return uniquelyInherited(propertyRetriever, p -> p != null, propertyDescription);
+    }
 
+    /**
+     * Returns the property retrieved by the given function, if it is only present in a single unique variant
+     * among all profiled inherited by this, or empty if not present.
+     * Note that for properties that don't implement a values-based equals this reverts to the stricter condition that
+     * only one inherited profile can define a non-empty value at all.
+     *
+     * @throws IllegalArgumentException if the inherited profiles defines multiple different values of the property
+     */
+    private <T> Optional<T> uniquelyInherited(Function<RankProfile, T> propertyRetriever,
+                                              Predicate<T> nonEmptyValueFilter,
+                                              String propertyDescription) {
+        Set<T> uniqueProperties = inherited().stream()
+                                             .map(p -> propertyRetriever.apply(p))
+                                             .filter(p -> nonEmptyValueFilter.test(p))
+                                             .collect(Collectors.toSet());
+        if (uniqueProperties.isEmpty()) return Optional.empty();
+        if (uniqueProperties.size() == 1) return Optional.of(uniqueProperties.stream().findAny().get());
+        throw new IllegalArgumentException("Only one of the profiles inherited by " + this + " can contain " +
+                                           propertyDescription + ", but it is present in multiple");
     }
 
     public void addRankSetting(RankSetting rankSetting) {
@@ -337,8 +354,7 @@ public class RankProfile implements Cloneable {
         RankSetting rankSetting = getDeclaredRankSetting(field, type);
         if (rankSetting != null) return rankSetting;
 
-        return inheritedWith(p -> p.getRankSetting(field, type) != null, "rank setting " + type + " on " + field)
-                .map(p -> p.getRankSetting(field, type)).orElse(null);
+        return uniquelyInherited(p -> p.getRankSetting(field, type), "rank setting " + type + " on " + field).orElse(null);
     }
 
     /**
@@ -440,8 +456,7 @@ public class RankProfile implements Cloneable {
 
     public RankingExpressionFunction getFirstPhase() {
         if (firstPhaseRanking != null) return firstPhaseRanking;
-        return inheritedWith(p -> p.getFirstPhase() != null, "first-phase expression")
-                       .map(p -> p.getFirstPhase()).orElse(null);
+        return uniquelyInherited(p -> p.getFirstPhase(), "first-phase expression").orElse(null);
     }
 
     void setFirstPhaseRanking(RankingExpression rankingExpression) {
@@ -468,8 +483,7 @@ public class RankProfile implements Cloneable {
 
     public RankingExpressionFunction getSecondPhase() {
         if (secondPhaseRanking != null) return secondPhaseRanking;
-        return inheritedWith(p -> p.getSecondPhase() != null, "second-phase expression")
-                .map(p -> p.getSecondPhase()).orElse(null);
+        return uniquelyInherited(p -> p.getSecondPhase(), "second-phase expression").orElse(null);
     }
 
     public void setSecondPhaseRanking(String expression) {
@@ -528,8 +542,7 @@ public class RankProfile implements Cloneable {
             return Collections.unmodifiableSet(combined);
         }
         if (summaryFeatures != null) return Collections.unmodifiableSet(summaryFeatures);
-        return inheritedWith(p -> ! p.getSummaryFeatures().isEmpty(), "summary features")
-                .map(p -> p.getSummaryFeatures())
+        return uniquelyInherited(p -> p.getSummaryFeatures(), f -> ! f.isEmpty(), "summary features")
                 .orElse(Set.of());
     }
 
@@ -546,8 +559,7 @@ public class RankProfile implements Cloneable {
             return Collections.unmodifiableSet(combined);
         }
         if (matchFeatures != null) return Collections.unmodifiableSet(matchFeatures);
-        return inheritedWith(p -> ! p.getMatchFeatures().isEmpty(), "match features")
-                .map(p -> p.getMatchFeatures())
+        return uniquelyInherited(p -> p.getMatchFeatures(), f -> ! f.isEmpty(), "match features")
                 .orElse(Set.of());
     }
 
@@ -580,8 +592,8 @@ public class RankProfile implements Cloneable {
     /** Returns a read-only view of the rank features to use in this profile. This is never null */
     public Set<ReferenceNode> getRankFeatures() {
         if (rankFeatures != null) return Collections.unmodifiableSet(rankFeatures);
-        return inheritedWith(p -> ! p.getRankFeatures().isEmpty(), "summary-features")
-                .map(p -> p.getRankFeatures()).orElse(Set.of());
+        return uniquelyInherited(p -> p.getRankFeatures(), f -> ! f.isEmpty(), "summary-features")
+                .orElse(Set.of());
     }
 
     private void addRankFeature(ReferenceNode feature) {
@@ -615,8 +627,8 @@ public class RankProfile implements Cloneable {
         if (rankProperties.size() == 0 && inherited().isEmpty()) return Map.of();
         if (inherited().isEmpty()) return Collections.unmodifiableMap(rankProperties);
 
-        var inheritedProperties = inheritedWith(p -> ! p.getRankPropertyMap().isEmpty(), "rank-properties")
-                .map(p -> p.getRankPropertyMap()).orElse(Map.of());
+        var inheritedProperties = uniquelyInherited(p -> p.getRankPropertyMap(), m -> ! m.isEmpty(), "rank-properties")
+                .orElse(Map.of());
         if (rankProperties.isEmpty()) return inheritedProperties;
 
         // Neither is null
@@ -638,40 +650,37 @@ public class RankProfile implements Cloneable {
 
     public int getRerankCount() {
         if (rerankCount >= 0) return rerankCount;
-        return inheritedWith(p -> p.getRerankCount() >= 0, "rerank-count")
-                .map(p -> p.getRerankCount()).orElse(-1);
+        return uniquelyInherited(p -> p.getRerankCount(), c -> c >= 0, "rerank-count").orElse(-1);
     }
 
     public void setNumThreadsPerSearch(int numThreads) { this.numThreadsPerSearch = numThreads; }
 
     public int getNumThreadsPerSearch() {
         if (numThreadsPerSearch >= 0) return numThreadsPerSearch;
-        return inheritedWith(p -> p.getNumThreadsPerSearch() >= 0, "num-threads-per-search")
-                .map(p -> p.getNumThreadsPerSearch()).orElse(-1);
+        return uniquelyInherited(p -> p.getNumThreadsPerSearch(), n -> n >= 0, "num-threads-per-search")
+                .orElse(-1);
     }
 
     public void setMinHitsPerThread(int minHits) { this.minHitsPerThread = minHits; }
 
     public int getMinHitsPerThread() {
         if (minHitsPerThread >= 0) return minHitsPerThread;
-        return inheritedWith(p -> p.getMinHitsPerThread() >= 0, "min-hits-per-search")
-                .map(p -> p.getMinHitsPerThread()).orElse(-1);
+        return uniquelyInherited(p -> p.getMinHitsPerThread(), n -> n >= 0, "min-hits-per-search").orElse(-1);
     }
 
     public void setNumSearchPartitions(int numSearchPartitions) { this.numSearchPartitions = numSearchPartitions; }
 
     public int getNumSearchPartitions() {
         if (numSearchPartitions >= 0) return numSearchPartitions;
-        return inheritedWith(p -> p.getNumSearchPartitions() >= 0, "num-search-partitions")
-                .map(p -> p.getNumSearchPartitions()).orElse(-1);
+        return uniquelyInherited(p -> p.getNumSearchPartitions(), n -> n >= 0, "num-search-partitions").orElse(-1);
     }
 
     public void setTermwiseLimit(double termwiseLimit) { this.termwiseLimit = termwiseLimit; }
 
     public OptionalDouble getTermwiseLimit() {
         if (termwiseLimit != null) return OptionalDouble.of(termwiseLimit);
-        return inheritedWith(p -> p.getTermwiseLimit().isPresent(), "termwise-limit")
-                .map(p -> p.getTermwiseLimit()).orElse(OptionalDouble.empty());
+        return uniquelyInherited(p -> p.getTermwiseLimit(), l -> l.isPresent(), "termwise-limit")
+                .orElse(OptionalDouble.empty());
     }
 
     /** Whether we should ignore the default rank features. Set to null to use inherited */
@@ -679,26 +688,24 @@ public class RankProfile implements Cloneable {
         this.ignoreDefaultRankFeatures = ignoreDefaultRankFeatures;
     }
 
-    public boolean getIgnoreDefaultRankFeatures() {
+    public Boolean getIgnoreDefaultRankFeatures() {
         if (ignoreDefaultRankFeatures != null) return ignoreDefaultRankFeatures;
-        return inheritedWith(p -> p.ignoreDefaultRankFeatures != null, "ignore-default-rank-features")
-                       .map(p -> p.getIgnoreDefaultRankFeatures()).orElse(false);
+        return uniquelyInherited(p -> p.getIgnoreDefaultRankFeatures(), "ignore-default-rank-features").orElse(false);
     }
 
     public void setKeepRankCount(int rerankArraySize) { this.keepRankCount = rerankArraySize; }
 
     public int getKeepRankCount() {
         if (keepRankCount >= 0) return keepRankCount;
-        return inheritedWith(p -> p.getKeepRankCount() >= 0, "keep-rank-count")
-                .map(p -> p.getKeepRankCount()).orElse(-1);
+        return uniquelyInherited(p -> p.getKeepRankCount(), c -> c >= 0, "keep-rank-count").orElse(-1);
     }
 
     public void setRankScoreDropLimit(double rankScoreDropLimit) { this.rankScoreDropLimit = rankScoreDropLimit; }
 
     public double getRankScoreDropLimit() {
         if (rankScoreDropLimit > -Double.MAX_VALUE) return rankScoreDropLimit;
-        return inheritedWith(p -> p.getRankScoreDropLimit() > -Double.MAX_VALUE, "rank.score-drop-limit")
-                .map(p -> p.getRankScoreDropLimit()).orElse(rankScoreDropLimit);
+        return uniquelyInherited(p -> p.getRankScoreDropLimit(), c -> c > -Double.MAX_VALUE, "rank.score-drop-limit")
+                .orElse(rankScoreDropLimit);
     }
 
     public void addFunction(String name, List<String> arguments, String expression, boolean inline) {
@@ -763,8 +770,7 @@ public class RankProfile implements Cloneable {
     public RankingExpressionFunction findFunction(String name) {
         RankingExpressionFunction function = functions.get(name);
         if (function != null) return function;
-        return inheritedWith(p -> p.findFunction(name) != null, "function '" + name + "'")
-                       .map(p -> p.findFunction(name)).orElse(null);
+        return uniquelyInherited(p -> p.findFunction(name), "function '" + name + "'").orElse(null);
     }
 
     /** Returns an unmodifiable snapshot of the functions in this */
@@ -810,9 +816,8 @@ public class RankProfile implements Cloneable {
 
     /** Returns all filter fields in this profile and any profile it inherits. */
     public Set<String> allFilterFields() {
-        Set<String> inheritedFilterFields =
-                inheritedWith(p -> ! p.allFilterFields().isEmpty(), "filter fields")
-                        .map(p -> p.allFilterFields()).orElse(Set.of());
+        Set<String> inheritedFilterFields = uniquelyInherited(p -> p.allFilterFields(), fields -> ! fields.isEmpty(),
+                                                              "filter fields").orElse(Set.of());
 
         if (inheritedFilterFields.isEmpty()) return Collections.unmodifiableSet(filterFields);
 

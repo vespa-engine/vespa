@@ -30,6 +30,7 @@ public class Application {
     private final ApplicationPackage applicationPackage;
     private final Map<String, Schema> schemas;
     private final DocumentModel documentModel;
+    private final RankProfileRegistry rankProfileRegistry;
 
     public Application(ApplicationPackage applicationPackage,
                        List<Schema> schemas,
@@ -49,6 +50,7 @@ public class Application {
             schemaMap.put(schema.getName(), schema);
         }
         this.schemas = Collections.unmodifiableMap(schemaMap);
+        this.rankProfileRegistry = rankProfileRegistry;
 
         schemas.forEach(schema -> schema.setOwner(this));
         if (validate)
@@ -99,6 +101,8 @@ public class Application {
 
     /** Returns an unmodifiable list of the schemas of this application */
     public Map<String, Schema> schemas() { return schemas; }
+
+    public RankProfileRegistry rankProfileRegistry() { return rankProfileRegistry; }
 
     public DocumentModel documentModel() { return documentModel; }
 

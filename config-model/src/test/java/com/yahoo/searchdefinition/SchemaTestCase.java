@@ -348,7 +348,7 @@ public class SchemaTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Only one of the profiles inherited by rank profile 'r3' can contain first-phase expression, but it is present in all of [rank profile 'r1', rank profile 'r2']",
+            assertEquals("Only one of the profiles inherited by rank profile 'r3' can contain first-phase expression, but it is present in multiple",
                          e.getMessage());
         }
     }
@@ -360,6 +360,10 @@ public class SchemaTestCase {
                 "  document test {" +
                 "    field title type string {" +
                 "      indexing: summary" +
+                "    }" +
+                "    field myFilter type string {" +
+                "      indexing: attribute\n" +
+                "      rank: filter" +
                 "    }" +
                 "  }" +
                 "  rank-profile r1 {" +
@@ -378,7 +382,9 @@ public class SchemaTestCase {
                 "    }" +
                 "  }" +
                 "}");
-        ApplicationBuilder.createFromStrings(new DeployLoggerStub(), profile);
+        var application = ApplicationBuilder.createFromStrings(new DeployLoggerStub(), profile).application();
+        var r3 = application.rankProfileRegistry().resolve(application.schemas().get("test").getDocument(), "r3");
+        assertEquals(1, r3.allFilterFields().size());
     }
 
     @Test
