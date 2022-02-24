@@ -74,6 +74,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double persistenceThrottlingWsBackoff = 0.95;
     private int persistenceThrottlingWindowSize = -1;
     private double persistenceThrottlingWsResizeRate = 3.0;
+    private boolean persistenceThrottlingOfMergeFeedOps = true;
     private boolean inhibitDefaultMergesWhenGlobalMergesPending = false;
     private boolean useV8GeoPositions = false;
     private List<String> environmentVariables = List.of();
@@ -132,6 +133,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double persistenceThrottlingWsBackoff() { return persistenceThrottlingWsBackoff; }
     @Override public int persistenceThrottlingWindowSize() { return persistenceThrottlingWindowSize; }
     @Override public double persistenceThrottlingWsResizeRate() { return persistenceThrottlingWsResizeRate; }
+    @Override public boolean persistenceThrottlingOfMergeFeedOps() { return persistenceThrottlingOfMergeFeedOps; }
     @Override public boolean inhibitDefaultMergesWhenGlobalMergesPending() { return inhibitDefaultMergesWhenGlobalMergesPending; }
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
@@ -345,6 +347,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setPersistenceThrottlingWsResizeRate(double resizeRate) {
         this.persistenceThrottlingWsResizeRate = resizeRate;
+        return this;
+    }
+
+    public TestProperties setPersistenceThrottlingOfMergeFeedOps(boolean throttleOps) {
+        this.persistenceThrottlingOfMergeFeedOps = throttleOps;
         return this;
     }
 
