@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreebuilder.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
 #include <vespa/vespalib/btree/btreeroot.h>
 #include <vespa/vespalib/btree/btreestore.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/rand48.h>
@@ -23,7 +23,7 @@
 #include <vespa/vespalib/btree/btreeaggregator.hpp>
 
 #include <vespa/log/log.h>
-LOG_SETUP("btreestress_test");
+LOG_SETUP("btree_stress_test");
 
 using MyTree = vespalib::btree::BTree<uint32_t, uint32_t>;
 using MyTreeIterator = typename MyTree::Iterator;
@@ -31,8 +31,9 @@ using MyTreeConstIterator = typename MyTree::ConstIterator;
 using GenerationHandler = vespalib::GenerationHandler;
 using vespalib::makeLambdaTask;
 
-struct Fixture
+class Fixture : public testing::Test
 {
+protected:
     GenerationHandler _generationHandler;
     MyTree _tree;
     MyTreeIterator _writeItr;
@@ -43,11 +44,11 @@ struct Fixture
     std::atomic<long> _readSeed;
     std::atomic<long> _doneWriteWork;
     std::atomic<long> _doneReadWork;
-    std::atomic<int> _stopRead;
+    std::atomic<bool> _stopRead;
     bool _reportWork;
 
     Fixture();
-    ~Fixture();
+    ~Fixture() override;
     void commit();
     void adjustWriteIterator(uint32_t key);
     void insert(uint32_t key);
@@ -60,7 +61,8 @@ struct Fixture
 
 
 Fixture::Fixture()
-    : _generationHandler(),
+    : testing::Test(),
+      _generationHandler(),
       _tree(),
       _writeItr(_tree.begin()),
       _writer(1, 128_Ki),
@@ -70,7 +72,7 @@ Fixture::Fixture()
       _readSeed(50),
       _doneWriteWork(0),
       _doneReadWork(0),
-      _stopRead(0),
+      _stopRead(false),
       _reportWork(false)
 {
     _rnd.srand48(32);
@@ -139,7 +141,7 @@ Fixture::readWork(uint32_t cnt)
     vespalib::Rand48 rnd;
     rnd.srand48(++_readSeed);
     uint32_t i;
-    for (i = 0; i < cnt && _stopRead.load() == 0; ++i) {
+    for (i = 0; i < cnt && !_stopRead.load(); ++i) {
         auto guard = _generationHandler.takeGuard();
         uint32_t key = rnd.lrand48() % (_keyLimit + 1);
         MyTreeConstIterator itr = _tree.getFrozenView().lowerBound(key);
@@ -171,55 +173,57 @@ Fixture::writeWork(uint32_t cnt)
         commit();
     }
     _doneWriteWork += cnt;
-    _stopRead = 1;
+    _stopRead = true;
     LOG(info, "done %u write work", cnt);
 }
 
+using BTreeStressTest = Fixture;
 
-TEST_F("Test manual lower bound call", Fixture)
+
+TEST_F(BTreeStressTest, basic_lower_bound)
 {
-    f.insert(1);
-    f.remove(2);
-    f.insert(1);
-    f.insert(5);
-    f.insert(4);
-    f.remove(3);
-    f.remove(5);
-    f.commit();
-    auto itr = f._tree.getFrozenView().lowerBound(3);
+    insert(1);
+    remove(2);
+    insert(1);
+    insert(5);
+    insert(4);
+    remove(3);
+    remove(5);
+    commit();
+    auto itr = _tree.getFrozenView().lowerBound(3);
     EXPECT_TRUE(itr.valid());
-    EXPECT_EQUAL(4u, itr.getKey());
+    EXPECT_EQ(4u, itr.getKey());
 }
 
-TEST_F("Test single threaded lower_bound reader without updates", Fixture)
+TEST_F(BTreeStressTest, single_lower_bound_reader_without_updates)
 {
-    f._reportWork = true;
-    f.writeWork(10);
-    f._stopRead = 0;
-    f.readWork(10);
+    _reportWork = true;
+    writeWork(10);
+    _stopRead = false;
+    readWork(10);
 }
 
-TEST_F("Test single threaded lower_bound reader during updates", Fixture)
-{
-    uint32_t cnt = 1000000;
-    f._reportWork = true;
-    f._writer.execute(makeLambdaTask([this, cnt]() { f.writeWork(cnt); }));
-    f._readers.execute(makeLambdaTask([this]() { f.readWork(); }));
-    f._writer.sync();
-    f._readers.sync();
-}
-
-TEST_F("Test multithreaded lower_bound reader during updates", Fixture)
+TEST_F(BTreeStressTest, single_lower_bound_reader_during_updates)
 {
     uint32_t cnt = 1000000;
-    f._reportWork = true;
-    f._writer.execute(makeLambdaTask([this, cnt]() { f.writeWork(cnt); }));
-    f._readers.execute(makeLambdaTask([this]() { f.readWork(); }));
-    f._readers.execute(makeLambdaTask([this]() { f.readWork(); }));
-    f._readers.execute(makeLambdaTask([this]() { f.readWork(); }));
-    f._readers.execute(makeLambdaTask([this]() { f.readWork(); }));
-    f._writer.sync();
-    f._readers.sync();
+    _reportWork = true;
+    _writer.execute(makeLambdaTask([this, cnt]() { writeWork(cnt); }));
+    _readers.execute(makeLambdaTask([this]() { readWork(); }));
+    _writer.sync();
+    _readers.sync();
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+TEST_F(BTreeStressTest, multiple_lower_bound_readers_during_updates)
+{
+    uint32_t cnt = 1000000;
+    _reportWork = true;
+    _writer.execute(makeLambdaTask([this, cnt]() { writeWork(cnt); }));
+    _readers.execute(makeLambdaTask([this]() { readWork(); }));
+    _readers.execute(makeLambdaTask([this]() { readWork(); }));
+    _readers.execute(makeLambdaTask([this]() { readWork(); }));
+    _readers.execute(makeLambdaTask([this]() { readWork(); }));
+    _writer.sync();
+    _readers.sync();
+}
+
+GTEST_MAIN_RUN_ALL_TESTS()
