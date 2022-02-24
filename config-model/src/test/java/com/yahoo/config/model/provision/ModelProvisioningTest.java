@@ -1654,7 +1654,7 @@ public class ModelProvisioningTest {
     /** Deploying an application with "nodes count" standalone should give a single-node deployment */
     @Test
     public void testThatHostedSyntaxWorksOnStandalone() {
-        String xmlWithNodes =
+        String services =
                 "<?xml version='1.0' encoding='utf-8' ?>" +
                 "<services>" +
                 "  <container version='1.0' id='container1'>" +
@@ -1672,7 +1672,63 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.setHosted(false);
         tester.addHosts(3);
-        VespaModel model = tester.createModel(xmlWithNodes, true);
+        VespaModel model = tester.createModel(services, true);
+
+        assertEquals("Nodes in container cluster", 1,
+                     model.getContainerClusters().get("container1").getContainers().size());
+        assertEquals("Nodes in content cluster (downscaled)", 1,
+                     model.getContentClusters().get("content").getRootGroup().getNodes().size());
+
+        assertEquals(1, model.getAdmin().getSlobroks().size());
+
+        model.getConfig(new StorStatusConfig.Builder(), "default");
+        StorageCluster storage = model.getContentClusters().get("content").getStorageCluster();
+        StorCommunicationmanagerConfig.Builder builder = new StorCommunicationmanagerConfig.Builder();
+        storage.getChildren().get("0").getConfig(builder);
+    }
+
+    /**
+     * Deploying an application with "nodes count" standalone should give a single-node deployment,
+     * also if the user has a lingering hosts file from running self-hosted.
+     *
+     * NOTE: This does *not* work (but gives an understandable error message),
+     *       but the current code does not get provoke the error that is thrown from HostsXmlProvisioner.prepare
+     */
+    @Test
+    public void testThatHostedSyntaxWorksOnStandaloneAlsoWithAHostedFile() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <container version='1.0' id='container1'>" +
+                "     <search/>" +
+                "     <nodes count='1'/>" +
+                "  </container>" +
+                "  <content version='1.0'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2'/>" +
+                "   </content>" +
+                "</services>";
+        String hosts =
+                "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+                "<hosts>\n" +
+                "  <host name=\"vespa-1\">\n" +
+                "    <alias>vespa-1</alias>\n" +
+                "  </host>\n" +
+                "  <host name=\"vespa-2\">\n" +
+                "    <alias>vespa-2</alias>\n" +
+                "  </host>\n" +
+                "  <host name=\"vespa-3\">\n" +
+                "    <alias>vespa-3</alias>\n" +
+                "  </host>\n" +
+                "</hosts>";
+
+        VespaModelTester tester = new VespaModelTester();
+        tester.setHosted(false);
+        tester.addHosts(3);
+        VespaModel model = tester.createModel(services, hosts, true);
 
         assertEquals("Nodes in container cluster", 1,
                      model.getContainerClusters().get("container1").getContainers().size());

@@ -116,7 +116,12 @@ public class VespaModelTester {
 
     /** Creates a model which uses 0 as start index */
     public VespaModel createModel(String services, boolean failOnOutOfCapacity, String ... retiredHostNames) {
-        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, false, false, 0,
+        return createModel(services, null, failOnOutOfCapacity, retiredHostNames);
+    }
+
+    /** Creates a model which uses 0 as start index */
+    public VespaModel createModel(String services, String hosts, boolean failOnOutOfCapacity, String ... retiredHostNames) {
+        return createModel(Zone.defaultZone(), services, hosts, failOnOutOfCapacity, false, false, 0,
                            Optional.empty(), new DeployState.Builder(), retiredHostNames);
     }
 
@@ -156,20 +161,28 @@ public class VespaModelTester {
                            Optional.empty(), deployStateBuilder, retiredHostNames);
     }
 
+    public VespaModel createModel(Zone zone, String services, boolean failOnOutOfCapacity, boolean useMaxResources,
+                                  boolean alwaysReturnOneNode,
+                                  int startIndexForClusters, Optional<VespaModel> previousModel,
+                                  DeployState.Builder deployStatebuilder, String ... retiredHostNames) {
+        return createModel(zone, services, null, failOnOutOfCapacity, useMaxResources, alwaysReturnOneNode,
+                           startIndexForClusters, previousModel, deployStatebuilder, retiredHostNames);
+    }
     /**
      * Creates a model using the hosts already added to this
      *
      * @param services the services xml string
+     * @param hosts the hosts xml string, or null if none
      * @param useMaxResources false to use the minmal resources (when given a range), true to use max
      * @param failOnOutOfCapacity whether we should get an exception when not enough hosts of the requested flavor
      *        is available or if we should just silently receive a smaller allocation
      * @return the resulting model
      */
-    public VespaModel createModel(Zone zone, String services, boolean failOnOutOfCapacity, boolean useMaxResources,
+    public VespaModel createModel(Zone zone, String services, String hosts, boolean failOnOutOfCapacity, boolean useMaxResources,
                                   boolean alwaysReturnOneNode,
                                   int startIndexForClusters, Optional<VespaModel> previousModel,
                                   DeployState.Builder deployStatebuilder, String ... retiredHostNames) {
-        VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(null, services, generateSchemas("type1"));
+        VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(hosts, services, generateSchemas("type1"));
         ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
 
         provisioner = hosted ?        new ProvisionerAdapter(new InMemoryProvisioner(hostsByResources,

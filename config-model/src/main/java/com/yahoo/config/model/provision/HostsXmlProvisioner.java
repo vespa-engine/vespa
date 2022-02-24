@@ -45,9 +45,12 @@ public class HostsXmlProvisioner implements HostProvisioner {
         throw new IllegalArgumentException("Unable to find host for alias '" + alias + "'");
     }
 
+    /** Called when provisioning nodes using &lt;nodes count="..." */
     @Override
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity quantity, ProvisionLogger logger) {
-        throw new UnsupportedOperationException("Prepare on an XML host provisioner is not supported");
+        throw new UnsupportedOperationException("Using <nodes count=\"...\"> is not supported when there is a " +
+                                                "hosts.xml file. Remove hosts.xml to make this deployable on " +
+                                                "Vespa Cloud and single-node self-hosted instances.");
     }
 
     private HostSpec host2HostSpec(Host host) {
