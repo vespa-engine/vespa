@@ -211,7 +211,8 @@ enum PathGroup {
     /** Paths providing public information. */
     publicInfo("/user/v1/user",     // Information about who you are.
                "/badge/v1/{*}",     // Badges for deployment jobs.
-               "/zone/v1/{*}"),     // Lists environment and regions.
+               "/zone/v1/{*}",      // Lists environment and regions.
+               "/cli/v1/{*}"),      // Public information for Vespa CLI.
 
     /** Paths used for deploying system-wide feature flags. */
     systemFlagsDeploy("/system-flags/v1/deploy"),

@@ -20,6 +20,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/auth0"
 	"github.com/vespa-engine/vespa/client/go/util"
+	"github.com/vespa-engine/vespa/client/go/version"
 )
 
 const (
@@ -52,7 +53,11 @@ type Target interface {
 	// PrintLog writes the logs of this deployment using given options to control output.
 	PrintLog(options LogOptions) error
 
-	PrepareApiRequest(req *http.Request, sigKeyId string) error
+	// SignRequest signs request with given keyID as required by the implementation of this target.
+	SignRequest(request *http.Request, keyID string) error
+
+	// CheckVersion verifies whether clientVersion is compatible with this target.
+	CheckVersion(clientVersion version.Version) error
 }
 
 // TLSOptions configures the certificate to use for service requests.
@@ -85,7 +90,9 @@ type customTarget struct {
 	baseURL    string
 }
 
-func (t *customTarget) PrepareApiRequest(req *http.Request, sigKeyId string) error { return nil }
+func (t *customTarget) SignRequest(req *http.Request, sigKeyId string) error { return nil }
+
+func (t *customTarget) CheckVersion(version version.Version) error { return nil }
 
 // Do sends request to this service. Any required authentication happens automatically.
 func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
@@ -265,7 +272,7 @@ func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, c
 	return nil, fmt.Errorf("unknown service: %s", name)
 }
 
-func (t *cloudTarget) PrepareApiRequest(req *http.Request, sigKeyId string) error {
+func (t *cloudTarget) SignRequest(req *http.Request, sigKeyId string) error {
 	if Auth0AccessTokenEnabled() {
 		if t.cloudAuth == "access-token" {
 			if err := t.addAuth0AccessToken(req); err != nil {
@@ -285,6 +292,36 @@ func (t *cloudTarget) PrepareApiRequest(req *http.Request, sigKeyId string) erro
 		if err := signer.SignRequest(req); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (t *cloudTarget) CheckVersion(clientVersion version.Version) error {
+	if clientVersion.IsZero() { // development version is always fine
+		return nil
+	}
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/cli/v1/", t.apiURL), nil)
+	if err != nil {
+		return err
+	}
+	response, err := util.HttpDo(req, 10*time.Second, "")
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+	var cliResponse struct {
+		MinVersion string `json:"minVersion"`
+	}
+	dec := json.NewDecoder(response.Body)
+	if err := dec.Decode(&cliResponse); err != nil {
+		return err
+	}
+	minVersion, err := version.Parse(cliResponse.MinVersion)
+	if err != nil {
+		return err
+	}
+	if clientVersion.Less(minVersion) {
+		return fmt.Errorf("client version %s is less than the minimum supported version: %s", clientVersion, minVersion)
 	}
 	return nil
 }
@@ -324,7 +361,7 @@ func (t *cloudTarget) PrintLog(options LogOptions) error {
 			q.Set("to", strconv.FormatInt(toMillis, 10))
 		}
 		req.URL.RawQuery = q.Encode()
-		t.PrepareApiRequest(req, t.deployment.Application.SerializedForm())
+		t.SignRequest(req, t.deployment.Application.SerializedForm())
 		return req
 	}
 	logFunc := func(status int, response []byte) (bool, error) {
@@ -380,7 +417,7 @@ func (t *cloudTarget) waitForRun(runID int64, timeout time.Duration) error {
 		q := req.URL.Query()
 		q.Set("after", strconv.FormatInt(lastID, 10))
 		req.URL.RawQuery = q.Encode()
-		if err := t.PrepareApiRequest(req, t.deployment.Application.SerializedForm()); err != nil {
+		if err := t.SignRequest(req, t.deployment.Application.SerializedForm()); err != nil {
 			panic(err)
 		}
 		return req
@@ -439,7 +476,7 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) error {
 	if err != nil {
 		return err
 	}
-	if err := t.PrepareApiRequest(req, t.deployment.Application.SerializedForm()); err != nil {
+	if err := t.SignRequest(req, t.deployment.Application.SerializedForm()); err != nil {
 		return err
 	}
 	urlsByCluster := make(map[string]string)

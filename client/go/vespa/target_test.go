@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vespa-engine/vespa/client/go/version"
 )
 
 type mockVespaApi struct {
@@ -22,6 +23,9 @@ type mockVespaApi struct {
 
 func (v *mockVespaApi) mockVespaHandler(w http.ResponseWriter, req *http.Request) {
 	switch req.URL.Path {
+	case "/cli/v1/":
+		response := `{"minVersion":"8.0.0"}`
+		w.Write([]byte(response))
 	case "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1":
 		response := "{}"
 		if v.deploymentConverged {
@@ -135,6 +139,25 @@ func TestLog(t *testing.T) {
 	expected := "[2021-09-27 10:31:30.905535] host1a.dev.aws-us-east-1c info    logserver-container Container.com.yahoo.container.jdisc.ConfiguredApplication\tSwitching to the latest deployed set of configurations and components. Application config generation: 52532\n" +
 		"[2021-09-27 10:31:38.600189] host1a.dev.aws-us-east-1c config  config-sentinel  sentinel.sentinel.config-owner\tSentinel got 3 service elements [tenant(vespa-team), application(music), instance(mpolden)] for config generation 52532\n"
 	assert.Equal(t, expected, buf.String())
+}
+
+func TestCheckVersion(t *testing.T) {
+	vc := mockVespaApi{}
+	srv := httptest.NewServer(http.HandlerFunc(vc.mockVespaHandler))
+	defer srv.Close()
+
+	target := createCloudTarget(t, srv.URL, ioutil.Discard)
+	assert.Nil(t, target.CheckVersion(mustVersion("8.0.0")))
+	assert.Nil(t, target.CheckVersion(mustVersion("8.1.0")))
+	assert.NotNil(t, target.CheckVersion(mustVersion("7.0.0")))
+}
+
+func mustVersion(s string) version.Version {
+	v, err := version.Parse(s)
+	if err != nil {
+		panic(err)
+	}
+	return v
 }
 
 func createCloudTarget(t *testing.T, url string, logWriter io.Writer) Target {

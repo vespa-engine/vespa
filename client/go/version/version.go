@@ -15,6 +15,11 @@ type Version struct {
 	Label string
 }
 
+// IsZero returns whether v is the zero version, 0.0.0.
+func (v Version) IsZero() bool {
+	return v.Major == 0 && v.Minor == 0 && v.Patch == 0
+}
+
 func (v Version) String() string {
 	var sb strings.Builder
 	sb.WriteString(strconv.Itoa(v.Major))

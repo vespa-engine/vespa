@@ -362,7 +362,7 @@ func prompt(r *bufio.Reader, question, defaultAnswer string, validator func(inpu
 		}
 
 		if err := validator(input); err != nil {
-			printErr(err)
+			printErrHint(err)
 			fmt.Fprintln(stderr)
 			input = ""
 		}

@@ -333,7 +333,7 @@ func Submit(opts DeploymentOpts) error {
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 	serviceDescription := "Submit service"
 	sigKeyId := opts.Deployment.Application.SerializedForm()
-	if err := opts.Target.PrepareApiRequest(request, sigKeyId); err != nil {
+	if err := opts.Target.SignRequest(request, sigKeyId); err != nil {
 		return err
 	}
 	response, err := util.HttpDo(request, time.Minute*10, sigKeyId)
@@ -371,7 +371,7 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOpts) (int64, error) 
 	}
 	serviceDescription := "Deploy service"
 	sigKeyId := opts.Deployment.Application.SerializedForm()
-	if err := opts.Target.PrepareApiRequest(request, sigKeyId); err != nil {
+	if err := opts.Target.SignRequest(request, sigKeyId); err != nil {
 		return 0, err
 	}
 

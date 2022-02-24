@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vespa-engine/vespa/client/go/build"
 )
 
 func TestLog(t *testing.T) {
@@ -25,4 +26,22 @@ func TestLog(t *testing.T) {
 
 	_, errOut := execute(command{homeDir: homeDir, args: []string{"log", "--from", "2021-09-27T13:12:49Z", "--to", "2021-09-27T13:15:00", "1h"}}, t, httpClient)
 	assert.Equal(t, "Error: invalid period: cannot combine --from/--to with relative value: 1h\n", errOut)
+}
+
+func TestLogOldClient(t *testing.T) {
+	buildVersion := build.Version
+	build.Version = "7.0.0"
+	homeDir := filepath.Join(t.TempDir(), ".vespa")
+	pkgDir := mockApplicationPackage(t, false)
+	httpClient := &mockHttpClient{}
+	httpClient.NextResponse(200, `{"minVersion": "8.0.0"}`)
+	execute(command{homeDir: homeDir, args: []string{"config", "set", "application", "t1.a1.i1"}}, t, httpClient)
+	execute(command{homeDir: homeDir, args: []string{"config", "set", "target", "cloud"}}, t, httpClient)
+	execute(command{homeDir: homeDir, args: []string{"api-key"}}, t, httpClient)
+	execute(command{homeDir: homeDir, args: []string{"cert", pkgDir}}, t, httpClient)
+	out, errOut := execute(command{homeDir: homeDir, args: []string{"log"}}, t, httpClient)
+	assert.Equal(t, "", out)
+	expected := "Error: client version 7.0.0 is less than the minimum supported version: 8.0.0\nHint: This is not a fatal error, but this version may not work as expected\nHint: Try 'vespa version' to check for a new version\n"
+	assert.Equal(t, expected, errOut)
+	build.Version = buildVersion
 }

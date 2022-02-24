@@ -25,6 +25,20 @@ func TestParse(t *testing.T) {
 	assert.Equal(t, "1.2.3-foo", v.String())
 }
 
+func TestIsZero(t *testing.T) {
+	v, err := Parse("0.0.0")
+	assert.Nil(t, err)
+	assert.True(t, v.IsZero())
+
+	v, err = Parse("0.0.0-foo")
+	assert.Nil(t, err)
+	assert.True(t, v.IsZero())
+
+	v, err = Parse("1.2.3")
+	assert.Nil(t, err)
+	assert.False(t, v.IsZero())
+}
+
 func TestCompare(t *testing.T) {
 	assertComparison(t, "1.2.3", '>', "1.0.0")
 	assertComparison(t, "1.0.0", '<', "1.2.3")
