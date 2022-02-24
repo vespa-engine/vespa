@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class ConnectTest {
@@ -12,25 +11,32 @@ public class ConnectTest {
         Test.Orb client   = new Test.Orb(new Transport());
         Acceptor acceptor = server.listen(new Spec(0));
 
-        Connection target = (Connection) client.connect(new Spec("localhost", acceptor.port()));
+        assertTrue(server.checkLifeCounts(0, 0));
+        assertTrue(client.checkLifeCounts(0, 0));
+
+        Target target = client.connect(new Spec("localhost", acceptor.port()));
 
         for (int i = 0; i < 100; i++) {
-            if (target.isConnected()) {
+            if (client.initCount == 1 && server.initCount == 1) {
                 break;
             }
             try { Thread.sleep(100); } catch (InterruptedException e) {}
         }
-        assertTrue(target.isConnected());
+
+        assertTrue(server.checkLifeCounts(1, 0));
+        assertTrue(client.checkLifeCounts(1, 0));
 
         target.close();
 
         for (int i = 0; i < 100; i++) {
-            if (!target.isClosed()) {
+            if (client.finiCount == 1 && server.finiCount == 1) {
                 break;
             }
             try { Thread.sleep(100); } catch (InterruptedException e) {}
         }
-        assertFalse(target.isClosed());
+
+        assertTrue(server.checkLifeCounts(1, 1));
+        assertTrue(client.checkLifeCounts(1, 1));
 
         acceptor.shutdown().join();
         client.transport().shutdown().join();
