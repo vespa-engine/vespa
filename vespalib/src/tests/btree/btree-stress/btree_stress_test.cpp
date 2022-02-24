@@ -25,16 +25,109 @@
 #include <vespa/log/log.h>
 LOG_SETUP("btree_stress_test");
 
-using MyTree = vespalib::btree::BTree<uint32_t, uint32_t>;
-using MyTreeIterator = typename MyTree::Iterator;
-using MyTreeConstIterator = typename MyTree::ConstIterator;
 using GenerationHandler = vespalib::GenerationHandler;
+using RefType = vespalib::datastore::EntryRefT<22>;
+using vespalib::btree::NoAggregated;
+using vespalib::datastore::EntryRef;
 using vespalib::makeLambdaTask;
+using generation_t = GenerationHandler::generation_t;
 
+namespace {
+
+constexpr uint32_t value_offset = 1000000000;
+
+class RealIntStore {
+    vespalib::datastore::DataStore<uint32_t> _store;
+public:
+    RealIntStore();
+    ~RealIntStore();
+    EntryRef add(uint32_t value) { return _store.addEntry(value); }
+    void hold(EntryRef ref) { _store.holdElem(ref, 1); }
+    void transfer_hold_lists(generation_t gen) { _store.transferHoldLists(gen); }
+    void trim_hold_lists(generation_t gen) { _store.trimHoldLists(gen); }
+
+    uint32_t get(EntryRef ref) const { return _store.getEntry(ref); }
+};
+
+RealIntStore::RealIntStore()
+    : _store()
+{
+}
+
+RealIntStore::~RealIntStore() = default;
+
+class RealIntStoreCompare
+{
+    const RealIntStore& _store;
+    uint32_t _lookup_key;
+public:
+    RealIntStoreCompare(const RealIntStore& store, uint32_t lookup_key)
+        : _store(store),
+          _lookup_key(lookup_key)
+    {
+    }
+    uint32_t get(EntryRef ref) const {
+        return (ref.valid() ? _store.get(ref) : _lookup_key);
+    }
+    bool operator()(EntryRef lhs, EntryRef rhs) const {
+        return get(lhs) < get(rhs);
+    }
+    static EntryRef lookup_key() noexcept { return EntryRef(); }
+    const RealIntStoreCompare& get_compare() const noexcept { return *this; }
+};
+
+class NoIntStore {
+public:
+    NoIntStore() = default;
+    ~NoIntStore() = default;
+    static uint32_t add(uint32_t value) noexcept { return value; }
+    static void hold(uint32_t) noexcept { }
+    static void transfer_hold_lists(generation_t) noexcept { }
+    static void trim_hold_lists(generation_t) noexcept { }
+    static uint32_t get(uint32_t value) noexcept { return value; }
+};
+
+class NoIntStoreCompare
+{
+    uint32_t _lookup_key;
+public:
+    NoIntStoreCompare(const NoIntStore&, uint32_t lookup_key)
+        : _lookup_key(lookup_key)
+    {
+    }
+    bool operator()(uint32_t lhs, uint32_t rhs) const noexcept {
+        return lhs < rhs;
+    }
+    uint32_t lookup_key() const noexcept { return _lookup_key; }
+    static std::less<uint32_t> get_compare() noexcept { return {}; }
+};
+
+}
+
+struct IndirectKeyValueParams {
+    using IntStore = RealIntStore;
+    using MyCompare = RealIntStoreCompare;
+    using MyTree = vespalib::btree::BTree<EntryRef, EntryRef, NoAggregated, RealIntStoreCompare>;
+};
+
+struct DirectKeyValueParams {
+    using IntStore = NoIntStore;
+    using MyCompare = NoIntStoreCompare;
+    using MyTree = vespalib::btree::BTree<uint32_t, uint32_t>;
+};
+
+template <typename Params>
 class Fixture : public testing::Test
 {
 protected:
+    using IntStore = typename Params::IntStore;
+    using MyCompare = typename Params::MyCompare;
+    using MyTree = typename Params::MyTree;
+    using MyTreeIterator = typename MyTree::Iterator;
+    using MyTreeConstIterator = typename MyTree::ConstIterator;
     GenerationHandler _generationHandler;
+    IntStore _keys;
+    IntStore _values;
     MyTree _tree;
     MyTreeIterator _writeItr;
     vespalib::ThreadStackExecutor _writer; // 1 write thread
@@ -50,17 +143,23 @@ protected:
     Fixture();
     ~Fixture() override;
     void commit();
-    void adjustWriteIterator(uint32_t key);
+    bool adjustWriteIterator(uint32_t key);
     void insert(uint32_t key);
     void remove(uint32_t key);
 
     void readWork(uint32_t cnt);
     void readWork();
     void writeWork(uint32_t cnt);
+
+    void basic_lower_bound();
+    void single_lower_bound_reader_without_updates();
+    void single_lower_bound_reader_during_updates();
+    void multiple_lower_bound_readers_during_updates();
 };
 
 
-Fixture::Fixture()
+template <typename Params>
+Fixture<Params>::Fixture()
     : testing::Test(),
       _generationHandler(),
       _tree(),
@@ -78,8 +177,8 @@ Fixture::Fixture()
     _rnd.srand48(32);
 }
 
-
-Fixture::~Fixture()
+template <typename Params>
+Fixture<Params>::~Fixture()
 {
     _readers.sync();
     _readers.shutdown();
@@ -94,73 +193,94 @@ Fixture::~Fixture()
 }
 
 
+template <typename Params>
 void
-Fixture::commit()
+Fixture<Params>::commit()
 {
     auto &allocator = _tree.getAllocator();
     allocator.freeze();
+    auto current_gen = _generationHandler.getCurrentGeneration();
+    allocator.transferHoldLists(current_gen);
+    _keys.transfer_hold_lists(current_gen);
+    _values.transfer_hold_lists(current_gen);
     allocator.transferHoldLists(_generationHandler.getCurrentGeneration());
     _generationHandler.incGeneration();
-    allocator.trimHoldLists(_generationHandler.getFirstUsedGeneration());
+    auto first_used_gen = _generationHandler.getFirstUsedGeneration();
+    allocator.trimHoldLists(first_used_gen);
+    _keys.trim_hold_lists(first_used_gen);
+    _values.trim_hold_lists(first_used_gen);
 }
 
-void
-Fixture::adjustWriteIterator(uint32_t key)
+template <typename Params>
+bool
+Fixture<Params>::adjustWriteIterator(uint32_t key)
 {
-    if (_writeItr.valid() && _writeItr.getKey() < key) {
-        _writeItr.binarySeek(key);
+    MyCompare compare(_keys, key);
+    if (_writeItr.valid() && _keys.get(_writeItr.getKey()) < key) {
+        _writeItr.binarySeek(compare.lookup_key(), compare.get_compare());
     } else {
-        _writeItr.lower_bound(key);
+        _writeItr.lower_bound(compare.lookup_key(), compare.get_compare());
+    }
+    assert(!_writeItr.valid() || _keys.get(_writeItr.getKey()) >= key);
+    return (_writeItr.valid() && _keys.get(_writeItr.getKey()) == key);
+}
+
+template <typename Params>
+void
+Fixture<Params>::insert(uint32_t key)
+{
+    if (!adjustWriteIterator(key)) {
+        _tree.insert(_writeItr, _keys.add(key), _values.add(key + value_offset));
+    } else {
+        EXPECT_EQ(key + value_offset, _values.get(_writeItr.getData()));
     }
 }
 
+template <typename Params>
 void
-Fixture::insert(uint32_t key)
+Fixture<Params>::remove(uint32_t key)
 {
-    adjustWriteIterator(key);
-    assert(!_writeItr.valid() || _writeItr.getKey() >= key);
-    if (!_writeItr.valid() || _writeItr.getKey() != key) {
-        _tree.insert(_writeItr, key, 0u);
-    }
-}
-
-void
-Fixture::remove(uint32_t key)
-{
-    adjustWriteIterator(key);
-    assert(!_writeItr.valid() || _writeItr.getKey() >= key);
-    if (_writeItr.valid() && _writeItr.getKey() == key) {
+    if (adjustWriteIterator(key)) {
+        EXPECT_EQ(key + value_offset, _values.get(_writeItr.getData()));
+        _keys.hold(_writeItr.getKey());
+        _values.hold(_writeItr.getData());
         _tree.remove(_writeItr);
     }
 }
 
-
+template <typename Params>
 void
-Fixture::readWork(uint32_t cnt)
+Fixture<Params>::readWork(uint32_t cnt)
 {
     vespalib::Rand48 rnd;
     rnd.srand48(++_readSeed);
     uint32_t i;
+    uint32_t hits = 0u;
     for (i = 0; i < cnt && !_stopRead.load(); ++i) {
         auto guard = _generationHandler.takeGuard();
         uint32_t key = rnd.lrand48() % (_keyLimit + 1);
-        MyTreeConstIterator itr = _tree.getFrozenView().lowerBound(key);
-        assert(!itr.valid() || itr.getKey() >= key);
+        MyCompare compare(_keys, key);
+        MyTreeConstIterator itr = _tree.getFrozenView().lowerBound(compare.lookup_key(), compare.get_compare());
+        assert(!itr.valid() || _keys.get(itr.getKey()) >= key);
+        if (itr.valid() && _keys.get(itr.getKey()) == key) {
+            EXPECT_EQ(key + value_offset, _values.get(itr.getData()));
+            ++hits;
+        }
     }
     _doneReadWork += i;
-    LOG(info, "done %u read work", i);
+    LOG(info, "done %u read work, %u hits", i, hits);
 }
 
-
+template <typename Params>
 void
-Fixture::readWork()
+Fixture<Params>::readWork()
 {
     readWork(std::numeric_limits<uint32_t>::max());
 }
 
-
+template <typename Params>
 void
-Fixture::writeWork(uint32_t cnt)
+Fixture<Params>::writeWork(uint32_t cnt)
 {
     vespalib::Rand48 &rnd(_rnd);
     for (uint32_t i = 0; i < cnt; ++i) {
@@ -177,10 +297,9 @@ Fixture::writeWork(uint32_t cnt)
     LOG(info, "done %u write work", cnt);
 }
 
-using BTreeStressTest = Fixture;
-
-
-TEST_F(BTreeStressTest, basic_lower_bound)
+template <typename Params>
+void
+Fixture<Params>::basic_lower_bound()
 {
     insert(1);
     remove(2);
@@ -190,12 +309,15 @@ TEST_F(BTreeStressTest, basic_lower_bound)
     remove(3);
     remove(5);
     commit();
-    auto itr = _tree.getFrozenView().lowerBound(3);
-    EXPECT_TRUE(itr.valid());
-    EXPECT_EQ(4u, itr.getKey());
+    MyCompare compare(_keys, 3);
+    auto itr = _tree.getFrozenView().lowerBound(compare.lookup_key(), compare.get_compare());
+    ASSERT_TRUE(itr.valid());
+    EXPECT_EQ(4u, _keys.get(itr.getKey()));
 }
 
-TEST_F(BTreeStressTest, single_lower_bound_reader_without_updates)
+template <typename Params>
+void
+Fixture<Params>::single_lower_bound_reader_without_updates()
 {
     _reportWork = true;
     writeWork(10);
@@ -203,7 +325,9 @@ TEST_F(BTreeStressTest, single_lower_bound_reader_without_updates)
     readWork(10);
 }
 
-TEST_F(BTreeStressTest, single_lower_bound_reader_during_updates)
+template <typename Params>
+void
+Fixture<Params>::single_lower_bound_reader_during_updates()
 {
     uint32_t cnt = 1000000;
     _reportWork = true;
@@ -213,7 +337,9 @@ TEST_F(BTreeStressTest, single_lower_bound_reader_during_updates)
     _readers.sync();
 }
 
-TEST_F(BTreeStressTest, multiple_lower_bound_readers_during_updates)
+template <typename Params>
+void
+Fixture<Params>::multiple_lower_bound_readers_during_updates()
 {
     uint32_t cnt = 1000000;
     _reportWork = true;
@@ -224,6 +350,33 @@ TEST_F(BTreeStressTest, multiple_lower_bound_readers_during_updates)
     _readers.execute(makeLambdaTask([this]() { readWork(); }));
     _writer.sync();
     _readers.sync();
+}
+
+template <typename Params>
+using BTreeStressTest = Fixture<Params>;
+
+using TestTypes = testing::Types<DirectKeyValueParams, IndirectKeyValueParams>;
+
+VESPA_GTEST_TYPED_TEST_SUITE(BTreeStressTest, TestTypes);
+
+TYPED_TEST(BTreeStressTest, basic_lower_bound)
+{
+    this->basic_lower_bound();
+}
+
+TYPED_TEST(BTreeStressTest, single_lower_bound_reader_without_updates)
+{
+    this->single_lower_bound_reader_without_updates();
+}
+
+TYPED_TEST(BTreeStressTest, single_lower_bound_reader_during_updates)
+{
+    this->single_lower_bound_reader_during_updates();
+}
+
+TYPED_TEST(BTreeStressTest, multiple_lower_bound_readers_during_updates)
+{
+    this->multiple_lower_bound_readers_during_updates();
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
