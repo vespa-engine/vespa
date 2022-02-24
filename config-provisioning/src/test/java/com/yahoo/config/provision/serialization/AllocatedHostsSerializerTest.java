@@ -28,7 +28,7 @@ public class AllocatedHostsSerializerTest {
     private static final NodeResources smallSlowDiskSpeedNode = new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.slow);
     private static final NodeResources bigSlowDiskSpeedNode = new NodeResources(1.0, 6.2, 8, 2, NodeResources.DiskSpeed.slow);
     private static final NodeResources anyDiskSpeedNode = new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.any);
-    private static final NodeResources aaarch64Node = new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.any, NodeResources.StorageType.any, NodeResources.Architecture.aarch64);
+    private static final NodeResources arm64Node = new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.any, NodeResources.StorageType.any, NodeResources.Architecture.arm64);
 
     @Test
     public void testAllocatedHostsSerialization() throws IOException {
@@ -71,18 +71,16 @@ public class AllocatedHostsSerializerTest {
                                Optional.of(new NetworkPorts(List.of(new NetworkPorts.Allocation(1234, "service1", "configId1", "suffix1"),
                                                                     new NetworkPorts.Allocation(4567, "service2", "configId2", "suffix2")))),
                                Optional.empty()));
-        /*
-        hosts.add(new HostSpec("aaarch64",
-                               aaarch64Node,
-                               aaarch64Node,
-                               aaarch64Node,
+        hosts.add(new HostSpec("arm64",
+                               arm64Node,
+                               arm64Node,
+                               arm64Node,
                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
                                                       Optional.empty()),
                                Optional.empty(),
                                Optional.of(new NetworkPorts(List.of(new NetworkPorts.Allocation(1234, "service1", "configId1", "suffix1"),
                                                                     new NetworkPorts.Allocation(4567, "service2", "configId2", "suffix2")))),
                                Optional.empty()));
-         */
 
         assertAllocatedHosts(AllocatedHosts.withHosts(hosts));
     }

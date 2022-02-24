@@ -105,7 +105,7 @@ public class AllocatedHostsSerializer {
         resourcesObject.setDouble(bandwidthKey, resources.bandwidthGbps());
         resourcesObject.setString(diskSpeedKey, diskSpeedToString(resources.diskSpeed()));
         resourcesObject.setString(storageTypeKey, storageTypeToString(resources.storageType()));
-        //resourcesObject.setString(architectureKey, architectureToString(resources.architecture())); // TODO: Add when architecture names have been decided
+        resourcesObject.setString(architectureKey, architectureToString(resources.architecture()));
     }
 
     public static AllocatedHosts fromJson(byte[] json) {
@@ -153,8 +153,8 @@ public class AllocatedHostsSerializer {
                                  resources.field(diskKey).asDouble(),
                                  resources.field(bandwidthKey).asDouble(),
                                  diskSpeedFromSlime(resources.field(diskSpeedKey)),
-                                 storageTypeFromSlime(resources.field(storageTypeKey)));
-                                 //architectureFromSlime(resources.field(architectureKey))); // TODO: Add when architecture names have been decided
+                                 storageTypeFromSlime(resources.field(storageTypeKey)),
+                                 architectureFromSlime(resources.field(architectureKey)));
     }
 
     private static NodeResources optionalNodeResourcesFromSlime(Inspector resources) {
@@ -198,24 +198,20 @@ public class AllocatedHostsSerializer {
         }
     }
 
-
-    /*
     private static NodeResources.Architecture architectureFromSlime(Inspector architecture) {
         if ( ! architecture.valid()) return NodeResources.Architecture.x86_64;
         switch (architecture.asString()) {
             case "x86_64" : return NodeResources.Architecture.x86_64;
-            case "aarch64" : return NodeResources.Architecture.aarch64;
+            case "arm64" : return NodeResources.Architecture.arm64;
             case "any" : return NodeResources.Architecture.any;
             default: throw new IllegalStateException("Illegal architecture value '" + architecture.asString() + "'");
         }
     }
 
-     */
-
     private static String architectureToString(NodeResources.Architecture architecture) {
         switch (architecture) {
             case x86_64: return "x86_64";
-            case aarch64: return "aarch64";
+            case arm64: return "arm64";
             case any : return "any";
             default: throw new IllegalStateException("Illegal architecture value '" + architecture + "'");
         }

@@ -8,7 +8,7 @@
 
   <container id="container1" version="1.0">
     <nodes count="[5,7]" required="true">
-      <resources vcpu="1.2" memory="10Gb" disk="0.3 TB" architecture="aarch64"/>
+      <resources vcpu="1.2" memory="10Gb" disk="0.3 TB" architecture="arm64"/>
     </nodes>
   </container>
 
