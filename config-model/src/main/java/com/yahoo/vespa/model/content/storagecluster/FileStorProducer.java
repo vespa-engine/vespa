@@ -51,6 +51,7 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
     private final double persistenceThrottlingWsBackoff;
     private final int persistenceThrottingWindowSize;
     private final double persistenceThrottlingWsResizeRate;
+    private final boolean persistenceThrottlingOfMergeFeedOps;
     private final boolean useAsyncMessageHandlingOnSchedule;
 
     private static StorFilestorConfig.Response_sequencer_type.Enum convertResponseSequencerType(String sequencerType) {
@@ -79,6 +80,7 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         this.persistenceThrottlingWsBackoff = featureFlags.persistenceThrottlingWsBackoff();
         this.persistenceThrottingWindowSize = featureFlags.persistenceThrottlingWindowSize();
         this.persistenceThrottlingWsResizeRate = featureFlags.persistenceThrottlingWsResizeRate();
+        this.persistenceThrottlingOfMergeFeedOps = featureFlags.persistenceThrottlingOfMergeFeedOps();
         this.useAsyncMessageHandlingOnSchedule = featureFlags.useAsyncMessageHandlingOnSchedule();
     }
 
@@ -105,6 +107,7 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
             throttleBuilder.max_window_size(persistenceThrottingWindowSize);
         }
         throttleBuilder.resize_rate(persistenceThrottlingWsResizeRate);
+        throttleBuilder.throttle_individual_merge_feed_ops(persistenceThrottlingOfMergeFeedOps);
         builder.async_operation_throttler(throttleBuilder);
     }
 
