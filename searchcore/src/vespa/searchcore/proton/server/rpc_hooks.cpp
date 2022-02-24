@@ -4,7 +4,6 @@
 #include "proton.h"
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
 
@@ -17,8 +16,6 @@ using vespalib::compression::CompressionConfig;
 namespace {
 
 using Pair = std::pair<string, string>;
-
-VESPA_THREAD_STACK_TAG(proton_rpc_executor)
 
 }
 
@@ -113,10 +110,7 @@ RPCHooksBase::RPCHooksBase(Params &params)
                       _proton.get_search_server(),
                       _proton.get_docsum_server(),
                       _proton.get_monitor_server(), *_orb)),
-      _regAPI(*_orb, slobrok::ConfiguratorFactory(params.slobrok_config)),
-      _stateLock(),
-      _stateCond(),
-      _executor(1u, 128_Ki, proton_rpc_executor)
+      _regAPI(*_orb, slobrok::ConfiguratorFactory(params.slobrok_config))
 { }
 
 void
@@ -142,12 +136,6 @@ RPCHooksBase::close()
 {
     LOG(info, "shutting down monitoring interface");
     _transport->ShutDown(true);
-    _executor.shutdown();
-    {
-        std::lock_guard<std::mutex> guard(_stateLock);
-        _stateCond.notify_all();
-    }
-    _executor.sync();
 }
 
 void
@@ -198,7 +186,7 @@ RPCHooksBase::rpc_GetProtonStatus(FRT_RPCRequest *req)
 {
     LOG(debug, "RPCHooksBase::rpc_GetProtonStatus started");
     req->Detach();
-    _executor.execute(makeLambdaTask([this, req]() { getProtonStatus(req); }));
+    letProtonDo(makeLambdaTask([this, req]() { getProtonStatus(req); }));
 }
 
 void

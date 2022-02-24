@@ -5,10 +5,7 @@
 #include <vespa/slobrok/sbregister.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/searchlib/engine/proto_rpc_adapter.h>
-#include <mutex>
-#include <condition_variable>
 
 class FNET_Transport;
 
@@ -26,9 +23,6 @@ private:
     std::unique_ptr<FRT_Supervisor>  _orb;
     std::unique_ptr<ProtoRpcAdapter> _proto_rpc_adapter;
     slobrok::api::RegisterAPI        _regAPI;
-    std::mutex                       _stateLock;
-    std::condition_variable          _stateCond;
-    vespalib::ThreadStackExecutor    _executor;
 
     void initRPC();
     void letProtonDo(vespalib::Executor::Task::UP task);
