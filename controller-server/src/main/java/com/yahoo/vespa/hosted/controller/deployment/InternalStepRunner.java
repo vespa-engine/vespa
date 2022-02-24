@@ -674,6 +674,9 @@ public class InternalStepRunner implements StepRunner {
                 controller.jobController().updateTestReport(id);
                 return Optional.of(error);
             case NO_TESTS:
+                if (isSetup) {
+                    return Optional.of(running);
+                }
                 TesterCloud.Suite suite = TesterCloud.Suite.of(id.type(), isSetup);
                 logger.log(INFO, "No tests were found in the test package, for test suite '" + suite + "'");
                 logger.log(INFO, "The test package must either contain basic HTTP tests under 'tests/<suite-name>/', " +
