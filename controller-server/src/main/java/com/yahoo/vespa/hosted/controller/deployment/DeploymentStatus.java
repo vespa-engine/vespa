@@ -196,7 +196,7 @@ public class DeploymentStatus {
         jobs.putAll(productionJobs);
         // Add runs for idle, declared test jobs if they have no successes on their instance's change's versions.
         jobSteps.forEach((job, step) -> {
-            if ( ! step.isDeclared() || jobs.containsKey(job))
+            if ( ! step.isDeclared() || step.type() != StepType.test || jobs.containsKey(job))
                 return;
 
             Change change = changes.get(job.application().instance());
@@ -812,6 +812,15 @@ public class DeploymentStatus {
                                                       DeploymentStatus status, InstanceName instance, JobType testType, JobType prodType) {
             JobStatus job = status.instanceJobs(instance).get(testType);
             return new JobStepStatus(StepType.test, step, dependencies, job, status) {
+                @Override
+                Optional<Instant> readyAt(Change change, Optional<JobId> dependent) {
+                    JobId prodId = new JobId(status.application().id().instance(instance()), prodType);
+                    Optional<Instant> readyAt = super.readyAt(change, dependent);
+                    Optional<Instant> deployedAt = status.jobSteps().get(prodId).completedAt(change, Optional.of(prodId));
+                    if (readyAt.isEmpty() || deployedAt.isEmpty()) return Optional.empty();
+                    return readyAt.get().isAfter(deployedAt.get()) ? readyAt : deployedAt;
+                }
+
                 @Override
                 Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
                     Versions versions = Versions.from(change, status.application, status.deploymentFor(job.id()), status.systemVersion);

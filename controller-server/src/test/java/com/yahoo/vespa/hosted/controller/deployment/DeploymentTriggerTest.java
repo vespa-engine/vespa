@@ -1101,6 +1101,23 @@ public class DeploymentTriggerTest {
         tester.clock().advance(Duration.ofMinutes(11)); // Job is cooling down after consecutive failures.
         app.runJob(testUsEast3);
         assertEquals(Change.empty().withPin(), app.instance().change());
+
+        // Same upgrade is attempted, and production tests wait for redeployment.
+        tester.deploymentTrigger().cancelChange(app.instanceId(), ALL);
+        tester.upgrader().overrideConfidence(version1, VespaVersion.Confidence.high);
+        tester.controllerTester().computeVersionStatus();
+        tester.upgrader().maintain();
+
+        app.triggerJobs();
+        app.assertRunning(productionUsEast3);
+        app.assertNotRunning(testUsEast3);
+        app.runJob(productionUsEast3);
+        tester.clock().advance(Duration.ofMinutes(1));
+        app.runJob(testUsEast3).runJob(productionUsWest1).triggerJobs();
+        app.assertRunning(productionUsCentral1);
+        tester.runner().run();
+        app.triggerJobs();
+        app.assertNotRunning(testUsCentral1);
     }
 
     @Test
