@@ -13,7 +13,7 @@ import java.util.List;
  **/
 class ParsedSummaryField extends ParsedBlock {
 
-    private final ParsedType type;
+    private ParsedType type;
     private boolean isDyn = false;
     private boolean isMEO = false;
     private boolean isFull = false;
@@ -30,7 +30,7 @@ class ParsedSummaryField extends ParsedBlock {
         this.type = type;
     }
 
-    ParsedType type() { return type; }
+    ParsedType getType() { return type; }
     List<String> getDestinations() { return List.copyOf(destinations); }
     List<String> getSources() { return List.copyOf(sources); }
     boolean getBolded() { return isBold; }
@@ -44,4 +44,8 @@ class ParsedSummaryField extends ParsedBlock {
     void setDynamic() { this.isDyn = true; }
     void setFull() { this.isFull = true; }
     void setMatchedElementsOnly() { this.isMEO = true; }
+    void setType(ParsedType value) {
+        verifyThat(type == null, "Cannot change type from ", type, "to", value);
+        this.type = value;
+    }
 }

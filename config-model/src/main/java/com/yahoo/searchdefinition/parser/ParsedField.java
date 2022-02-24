@@ -62,6 +62,35 @@ class ParsedField extends ParsedBlock {
     Optional<ParsedSorting> getSorting() { return Optional.ofNullable(sortSettings); }
     Map<String, String> getRankTypes() { return Map.copyOf(rankTypes); }
 
+    /** get an existing summary field for modification, or create it */
+    ParsedSummaryField summaryFieldFor(String name) {
+        if (summaryFields.containsKey(name)) {
+            return summaryFields.get(name);
+        }
+        var sf = new ParsedSummaryField(name, getType());
+        summaryFields.put(name, sf);
+        return sf;
+    }
+
+    /** get an existing summary field for modification, or create it */
+    ParsedSummaryField summaryFieldFor(String name, ParsedType type) {
+        if (summaryFields.containsKey(name)) {
+            var sf = summaryFields.get(name);
+            if (sf.getType() == null) {
+                sf.setType(type);
+            } else {
+                // TODO check that types are properly equal here
+                String oldName = sf.getType().name();
+                String newName = type.name();
+                verifyThat(newName.equals(oldName), "type mismatch for summary field", name, ":", oldName, "/", newName);
+            }
+            return sf;
+        }
+        var sf = new ParsedSummaryField(name, type);
+        summaryFields.put(name, sf);
+        return sf;
+    }
+
     void addAlias(String from, String to) {
         verifyThat(! aliases.containsKey(to), "already has alias", to);
         aliases.put(to, from);
