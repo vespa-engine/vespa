@@ -15,10 +15,7 @@ import java.util.concurrent.atomic.AtomicReference;
  **/
 public class Supervisor {
 
-    private static final int SMALL_INPUT_BUFFER_SIZE = 20 * 1024;  // Large enough too hold the typical application buffersize of 17k.
-    private static final int SMALL_OUTPUT_BUFFER_SIZE = 8 *1024;   // Suitable small buffer usage with many connections and little traffic.
     private final Transport         transport;
-    private SessionHandler          sessionHandler = null;
     private final Object            methodMapLock = new Object();
     private final AtomicReference<HashMap<String, Method>> methodMap = new AtomicReference<>(new HashMap<>());
     private int                     maxInputBufferSize  = 64*1024;
@@ -98,15 +95,6 @@ public class Supervisor {
     }
 
     /**
-     * Set the session handler for this Supervisor
-     *
-     * @param handler the session handler
-     **/
-    public void setSessionHandler(SessionHandler handler) {
-        sessionHandler = handler;
-    }
-
-    /**
      * Add a method to the set of methods held by this Supervisor
      *
      * @param method the method to add
@@ -170,73 +158,6 @@ public class Supervisor {
      **/
     public Acceptor listen(Spec spec) throws ListenFailedException {
         return transport.listen(this, spec);
-    }
-
-    /**
-     * Convenience method for connecting to a peer, invoking a method
-     * and disconnecting.
-     *
-     * @param spec the address to connect to
-     * @param req the invocation request
-     * @param timeout request timeout in seconds
-     **/
-    public void invokeBatch(Spec spec, Request req, double timeout) {
-        Target target = connect(spec);
-        try {
-            target.invokeSync(req, timeout);
-        } finally {
-            target.close();
-        }
-    }
-
-    /**
-     * This method is invoked when a new target is created
-     *
-     * @param target the target
-     **/
-    void sessionInit(Target target) {
-        SessionHandler handler = sessionHandler;
-        if (handler != null) {
-            handler.handleSessionInit(target);
-        }
-    }
-
-    /**
-     * This method is invoked when a target establishes a connection
-     * with its peer
-     *
-     * @param target the target
-     **/
-    void sessionLive(Target target) {
-        SessionHandler handler = sessionHandler;
-        if (handler != null) {
-            handler.handleSessionLive(target);
-        }
-    }
-
-    /**
-     * This method is invoked when a target becomes invalid
-     *
-     * @param target the target
-     **/
-    void sessionDown(Target target) {
-        SessionHandler handler = sessionHandler;
-        if (handler != null) {
-            handler.handleSessionDown(target);
-        }
-    }
-
-    /**
-     * This method is invoked when a target is invalid and no more
-     * invocations are active
-     *
-     * @param target the target
-     **/
-    void sessionFini(Target target) {
-        SessionHandler handler = sessionHandler;
-        if (handler != null) {
-            handler.handleSessionFini(target);
-        }
     }
 
     /**
