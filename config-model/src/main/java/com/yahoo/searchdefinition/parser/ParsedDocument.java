@@ -15,18 +15,16 @@ import java.util.Optional;
  * structures as far as possible.  Do not put advanced logic here!
  * @author arnej27959
  **/
-public class ParsedDocument {
-    private final String name;
+public class ParsedDocument extends ParsedBlock {
     private final List<String> inherited = new ArrayList<>();
     private final Map<String, ParsedField> docFields = new HashMap<>();
     private final Map<String, ParsedStruct> docStructs = new HashMap<>();
     private final Map<String, ParsedAnnotation> docAnnotations = new HashMap<>();
 
     public ParsedDocument(String name) {
-        this.name = name;
+        super(name, "document");
     }
 
-    String name() { return name; }
     List<String> getInherited() { return ImmutableList.copyOf(inherited); }
     List<ParsedAnnotation> getAnnotations() { return ImmutableList.copyOf(docAnnotations.values()); }
     List<ParsedField> getFields() { return ImmutableList.copyOf(docFields.values()); }
@@ -36,25 +34,19 @@ public class ParsedDocument {
 
     void addField(ParsedField field) {
         String fieldName = field.name();
-        if (docFields.containsKey(fieldName)) {
-            throw new IllegalArgumentException("document "+this.name+" already has field "+fieldName);
-        }
+        verifyThat(! docFields.containsKey(fieldName), "already has field", fieldName);
         docFields.put(fieldName, field);
     }
 
     void addStruct(ParsedStruct struct) {
         String sName = struct.name();
-        if (docStructs.containsKey(sName)) {
-            throw new IllegalArgumentException("document "+this.name+" already has struct "+sName);
-        }
+        verifyThat(! docStructs.containsKey(sName), "already has struct", sName);
         docStructs.put(sName, struct);
     }
 
     void addAnnotation(ParsedAnnotation annotation) {
         String annName = annotation.name();
-        if (docAnnotations.containsKey(annName)) {
-            throw new IllegalArgumentException("document "+this.name+" already has annotation "+annName);
-        }
+        verifyThat(! docAnnotations.containsKey(annName), "already has annotation", annName);
         docAnnotations.put(annName, annotation);
     }
 
