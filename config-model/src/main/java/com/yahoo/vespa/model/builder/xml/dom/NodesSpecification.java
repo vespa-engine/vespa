@@ -331,10 +331,10 @@ public class NodesSpecification {
         if (architecture == null) return NodeResources.Architecture.getDefault();
         switch (architecture) {
             case "x86_64" : return NodeResources.Architecture.x86_64;
-            case "aarch64"  : return NodeResources.Architecture.aarch64;
+            case "arm64"  : return NodeResources.Architecture.arm64;
             case "any"    : return NodeResources.Architecture.any;
             default: throw new IllegalArgumentException("Illegal architecture value '" + architecture +
-                                                        "': Legal values are 'x86_64', 'aarch64' and 'any')");
+                                                        "': Legal values are 'x86_64', 'arm64' and 'any')");
         }
     }
 

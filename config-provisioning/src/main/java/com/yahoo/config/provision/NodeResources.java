@@ -92,15 +92,15 @@ public class NodeResources {
     public enum Architecture {
 
         x86_64,
-        aarch64,
+        arm64,
         any;
 
         public static int compare(Architecture a, Architecture b) {
             if (a == any) a = x86_64;
             if (b == any) b = x86_64;
 
-            if (a == x86_64 && b == aarch64) return -1;
-            if (a == aarch64 && b == x86_64) return 1;
+            if (a == x86_64 && b == arm64) return -1;
+            if (a == arm64 && b == x86_64) return 1;
             return 0;
         }
 
