@@ -1,6 +1,6 @@
 package com.yahoo.searchdefinition.parser;
 
-import com.google.common.collect.ImmutableList;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -27,8 +27,8 @@ class ParsedFieldSet {
 
     String name() { return this.name; }
     ParsedMatchSettings matchSettings() { return this.matchInfo; }
-    List<String> getQueryCommands() { return ImmutableList.copyOf(queryCommands); }
-    List<String> getFieldNames() { return ImmutableList.copyOf(fields); }
+    List<String> getQueryCommands() { return List.copyOf(queryCommands); }
+    List<String> getFieldNames() { return List.copyOf(fields); }
 
     void addField(String field) { fields.add(field); }
     void addQueryCommand(String command) { queryCommands.add(command); }

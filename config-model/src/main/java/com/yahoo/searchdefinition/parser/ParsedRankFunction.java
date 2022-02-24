@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.parser;
 
-import com.google.common.collect.ImmutableList;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,7 +25,7 @@ class ParsedRankFunction {
     String name() { return this.name; }
     boolean getInline() { return this.inline; }
     String getExpression() { return this.expression; }
-    List<String> getParameters() { return ImmutableList.copyOf(parameters); }
+    List<String> getParameters() { return List.copyOf(parameters); }
 
     void addParameter(String param) {
         if (parameters.contains(param)) {

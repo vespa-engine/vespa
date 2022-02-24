@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.parser;
 
-import com.google.common.collect.ImmutableList;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -25,10 +25,10 @@ public class ParsedDocument extends ParsedBlock {
         super(name, "document");
     }
 
-    List<String> getInherited() { return ImmutableList.copyOf(inherited); }
-    List<ParsedAnnotation> getAnnotations() { return ImmutableList.copyOf(docAnnotations.values()); }
-    List<ParsedField> getFields() { return ImmutableList.copyOf(docFields.values()); }
-    List<ParsedStruct> getStructs() { return ImmutableList.copyOf(docStructs.values()); }
+    List<String> getInherited() { return List.copyOf(inherited); }
+    List<ParsedAnnotation> getAnnotations() { return List.copyOf(docAnnotations.values()); }
+    List<ParsedField> getFields() { return List.copyOf(docFields.values()); }
+    List<ParsedStruct> getStructs() { return List.copyOf(docStructs.values()); }
 
     void inherit(String other) { inherited.add(other); }
 

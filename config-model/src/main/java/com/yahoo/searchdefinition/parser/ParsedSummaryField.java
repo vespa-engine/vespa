@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.parser;
 
-import com.google.common.collect.ImmutableList;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -39,8 +39,8 @@ class ParsedSummaryField {
 
     String name() { return name; }
     ParsedType type() { return type; }
-    List<String> getDestinations() { return ImmutableList.copyOf(destinations); }
-    List<String> getSources() { return ImmutableList.copyOf(sources); }
+    List<String> getDestinations() { return List.copyOf(destinations); }
+    List<String> getSources() { return List.copyOf(sources); }
     boolean getBolded() { return isBold; }
     boolean getDynamic() { return isDyn; }
     boolean getFull() { return isFull; }

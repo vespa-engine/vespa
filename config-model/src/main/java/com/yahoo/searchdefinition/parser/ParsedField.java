@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.parser;
 
 import com.yahoo.searchdefinition.document.Stemming;
 
-import com.google.common.collect.ImmutableList;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -53,9 +53,9 @@ class ParsedField {
     boolean getFilter() { return this.isFilter; }
     boolean hasIdOverride() { return overrideId != 0; }
     int idOverride() { return overrideId; }
-    List<DictionaryOption> getDictionaryOptions() { return ImmutableList.copyOf(dictionaryOptions); }
-    List<ParsedIndex> getIndexes() { return ImmutableList.copyOf(fieldIndexes.values()); }
-    List<String> getAliases() { return ImmutableList.copyOf(aliases.keySet()); }
+    List<DictionaryOption> getDictionaryOptions() { return List.copyOf(dictionaryOptions); }
+    List<ParsedIndex> getIndexes() { return List.copyOf(fieldIndexes.values()); }
+    List<String> getAliases() { return List.copyOf(aliases.keySet()); }
     String lookupAliasedFrom(String alias) { return aliases.get(alias); }
     ParsedMatchSettings matchSettings() { return this.matchInfo; }
 

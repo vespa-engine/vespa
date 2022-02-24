@@ -1,7 +1,7 @@
 
 package com.yahoo.searchdefinition.parser;
 
-import com.google.common.collect.ImmutableList;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -30,8 +30,8 @@ class ParsedDocumentSummary {
     String name() { return this.name; }
     boolean getOmitSummaryFeatures() { return omitSummaryFeatures; }
     boolean getFromDisk() { return fromDisk; }
-    List<ParsedSummaryField> getSummaryFields() { return ImmutableList.copyOf(fields.values()); }
-    List<String> getInherited() { return ImmutableList.copyOf(inherited); }
+    List<ParsedSummaryField> getSummaryFields() { return List.copyOf(fields.values()); }
+    List<String> getInherited() { return List.copyOf(inherited); }
 
     void addField(ParsedSummaryField field) {
         String fieldName = field.name();

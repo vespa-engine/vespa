@@ -1,6 +1,6 @@
 package com.yahoo.searchdefinition.parser;
 
-import com.google.common.collect.ImmutableList;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -22,7 +22,7 @@ class ParsedAnnotation {
     }
 
     public String name() { return name; }
-    public List<String> getInherited() { return ImmutableList.copyOf(inherited); }
+    public List<String> getInherited() { return List.copyOf(inherited); }
     public Optional<ParsedStruct> getStruct() { return wrappedStruct; }
 
     void setStruct(ParsedStruct struct) { wrappedStruct = Optional.of(struct); }

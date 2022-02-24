@@ -6,7 +6,7 @@ import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.document.Stemming;
 
-import com.google.common.collect.ImmutableList;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -58,17 +58,17 @@ public class ParsedSchema {
     ParsedDocument getDocument() { return myDocument.get(); }
     boolean hasStemming() { return defaultStemming.isPresent(); }
     Stemming getStemming() { return defaultStemming.get(); }
-    List<ImportedField> getImportedFields() { return ImmutableList.copyOf(importedFields); }
-    List<OnnxModel> getOnnxModels() { return ImmutableList.copyOf(onnxModels); }
-    List<ParsedAnnotation> getAnnotations() { return ImmutableList.copyOf(extraAnnotations.values()); }
-    List<ParsedDocumentSummary> getDocumentSummaries() { return ImmutableList.copyOf(docSums.values()); }
-    List<ParsedField> getFields() { return ImmutableList.copyOf(extraFields.values()); }
-    List<ParsedFieldSet> getFieldSets() { return ImmutableList.copyOf(fieldSets.values()); }
-    List<ParsedIndex> getIndexes() { return ImmutableList.copyOf(extraIndexes.values()); }
-    List<ParsedRankProfile> getRankProfiles() { return ImmutableList.copyOf(rankProfiles.values()); }
-    List<ParsedStruct> getStructs() { return ImmutableList.copyOf(extraStructs.values()); }
-    List<RankingConstant> getRankingConstants() { return ImmutableList.copyOf(rankingConstants); }
-    List<String> getInherited() { return ImmutableList.copyOf(inherited); }
+    List<ImportedField> getImportedFields() { return List.copyOf(importedFields); }
+    List<OnnxModel> getOnnxModels() { return List.copyOf(onnxModels); }
+    List<ParsedAnnotation> getAnnotations() { return List.copyOf(extraAnnotations.values()); }
+    List<ParsedDocumentSummary> getDocumentSummaries() { return List.copyOf(docSums.values()); }
+    List<ParsedField> getFields() { return List.copyOf(extraFields.values()); }
+    List<ParsedFieldSet> getFieldSets() { return List.copyOf(fieldSets.values()); }
+    List<ParsedIndex> getIndexes() { return List.copyOf(extraIndexes.values()); }
+    List<ParsedRankProfile> getRankProfiles() { return List.copyOf(rankProfiles.values()); }
+    List<ParsedStruct> getStructs() { return List.copyOf(extraStructs.values()); }
+    List<RankingConstant> getRankingConstants() { return List.copyOf(rankingConstants); }
+    List<String> getInherited() { return List.copyOf(inherited); }
 
     void addAnnotation(ParsedAnnotation annotation) {
         String annName = annotation.name();

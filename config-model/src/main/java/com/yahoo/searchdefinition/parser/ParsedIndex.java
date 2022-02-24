@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.parser;
 import com.yahoo.searchdefinition.document.HnswIndexParams;
 import com.yahoo.searchdefinition.document.Stemming;
 
-import com.google.common.collect.ImmutableList;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +38,7 @@ class ParsedIndex {
     boolean getEnableBm25() { return this.enableBm25; }
     boolean getPrefix() { return this.isPrefix; }
     HnswIndexParams getHnswIndexParams() { return this.hnswParams; }
-    List<String> getAliases() { return ImmutableList.copyOf(aliases); }
+    List<String> getAliases() { return List.copyOf(aliases); }
     boolean hasStemming() { return stemming.isPresent(); }
     Stemming getStemming() { return stemming.get(); }
     Integer getArity() { return this.arity; }
