@@ -5,9 +5,13 @@
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/programoptions.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config/common/configcontext.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/fastos/thread.h>
 #include <vespa/fastos/app.h>
 #include <iostream>
 #include <thread>
@@ -173,6 +177,12 @@ ExitOnSignal::operator()()
     }
 }
 
+fnet::TransportConfig
+buildTransportConfig() {
+    uint32_t numProcs = std::thread::hardware_concurrency();
+    return fnet::TransportConfig(std::max(1u, std::min(4u, numProcs/8)));
+}
+
 }
 
 int
@@ -186,8 +196,14 @@ App::Main()
         LOG(debug, "serviceidentity: '%s'", params.serviceidentity.c_str());
         LOG(debug, "subscribeTimeout: '%" PRIu64 "'", params.subscribeTimeout);
         std::chrono::milliseconds subscribeTimeout(params.subscribeTimeout);
-        config::ConfigUri identityUri(params.identity);
-        protonUP = std::make_unique<proton::Proton>(identityUri, _argc > 0 ? _argv[0] : "proton", subscribeTimeout);
+        FastOS_ThreadPool threadPool(128_Ki);
+
+        FNET_Transport transport(buildTransportConfig());
+        transport.Start(&threadPool);
+        config::ConfigServerSpec configServerSpec(transport);
+        config::ConfigUri identityUri(params.identity, std::make_shared<config::ConfigContext>(configServerSpec));
+        protonUP = std::make_unique<proton::Proton>(threadPool, transport, identityUri,
+                                                    _argc > 0 ? _argv[0] : "proton", subscribeTimeout);
         proton::Proton & proton = *protonUP;
         proton::BootstrapConfig::SP configSnapshot = proton.init();
         if (proton.hasAbortedInit()) {
@@ -228,6 +244,7 @@ App::Main()
                 EV_STOPPING("servicelayer", "clean shutdown");
             }
             protonUP.reset();
+            transport.ShutDown(true);
             EV_STOPPING("proton", "clean shutdown");
         }
     } catch (const vespalib::InvalidCommandLineArgumentsException &e) {
