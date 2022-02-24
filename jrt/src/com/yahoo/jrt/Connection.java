@@ -385,6 +385,10 @@ class Connection extends Target {
         return (state == CLOSED);
     }
 
+    public synchronized boolean isConnected() {
+        return (state == CONNECTED);
+    }
+
     public boolean hasSocket() {
         return ((socket != null) && (socket.channel() != null));
     }

@@ -12,23 +12,26 @@ public class ConnectTest {
         Test.Orb client   = new Test.Orb(new Transport());
         Acceptor acceptor = server.listen(new Spec(0));
 
-        Target target = client.connect(new Spec("localhost", acceptor.port()));
+        Connection target = (Connection) client.connect(new Spec("localhost", acceptor.port()));
 
         for (int i = 0; i < 100; i++) {
-            if (target.isValid()) {
+            if (target.isConnected()) {
                 break;
             }
             try { Thread.sleep(100); } catch (InterruptedException e) {}
         }
-        assertTrue(target.isValid());
+        assertTrue(target.isConnected());
+
         target.close();
+
         for (int i = 0; i < 100; i++) {
-            if (!target.isValid()) {
+            if (!target.isClosed()) {
                 break;
             }
             try { Thread.sleep(100); } catch (InterruptedException e) {}
         }
-        assertFalse(target.isValid());
+        assertFalse(target.isClosed());
+
         acceptor.shutdown().join();
         client.transport().shutdown().join();
         server.transport().shutdown().join();
