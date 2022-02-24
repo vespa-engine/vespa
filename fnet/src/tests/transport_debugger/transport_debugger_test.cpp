@@ -18,7 +18,7 @@ vespalib::CryptoEngine::SP tls_crypto = std::make_shared<vespalib::TlsCryptoEngi
 struct Service : FRT_Invokable {
     fnet::frt::StandaloneFRT frt;
     Service(fnet::TimeTools::SP time_tools)
-      : frt(TransportConfig(4).crypto(tls_crypto).time_tools(time_tools))
+      : frt(fnet::TransportConfig(4).crypto(tls_crypto).time_tools(time_tools))
     {
         init_rpc();
         ASSERT_TRUE(frt.supervisor().Listen(0));
