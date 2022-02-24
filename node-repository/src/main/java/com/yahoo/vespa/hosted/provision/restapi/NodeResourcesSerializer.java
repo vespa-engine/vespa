@@ -16,6 +16,7 @@ public class NodeResourcesSerializer {
         object.setDouble("bandwidthGbps", resources.bandwidthGbps());
         object.setString("diskSpeed", toString(resources.diskSpeed()));
         object.setString("storageType", toString(resources.storageType()));
+        object.setString("architecture", toString(resources.architecture()));
     }
 
     public static NodeResources.DiskSpeed diskSpeedFrom(String diskSpeed) {
@@ -51,6 +52,24 @@ public class NodeResourcesSerializer {
             case local  : return "local";
             case any    : return "any";
             default: throw new IllegalArgumentException("Unknown storage type '" + storageType.name() + "'");
+        }
+    }
+
+    private static String toString(NodeResources.Architecture architecture) {
+        switch (architecture) {
+            case arm64 : return "arm64";
+            case x86_64: return "x86_64";
+            case any   : return "any";
+            default: throw new IllegalArgumentException("Unknown architecture '" + architecture.name() + "'");
+        }
+    }
+
+    public static NodeResources.Architecture architectureFrom(String architecture) {
+        switch (architecture) {
+            case "arm64" : return NodeResources.Architecture.arm64;
+            case "x86_64": return NodeResources.Architecture.x86_64;
+            case "any"   : return NodeResources.Architecture.any;
+            default: throw new IllegalArgumentException("Unknown architecture '" + architecture + "'");
         }
     }
 

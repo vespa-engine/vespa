@@ -20,14 +20,33 @@ public class FlavorConfigBuilder {
     }
 
     public FlavorsConfig.Flavor.Builder addFlavor(String flavorName,
-                                                  double cpu, double mem, double disk, double bandwidth,
+                                                  double cpu,
+                                                  double mem,
+                                                  double disk,
+                                                  double bandwidth,
                                                   Flavor.Type type) {
-        return addFlavor(flavorName, cpu, mem, disk, bandwidth, true, true, type);
+        return addFlavor(flavorName, cpu, mem, disk, bandwidth, true, true, type, "x86_64");
     }
+
     public FlavorsConfig.Flavor.Builder addFlavor(String flavorName,
-                                                  double cpu, double mem, double disk, double bandwidth,
-                                                  boolean fastDisk, boolean remoteStorage,
-                                                  Flavor.Type type) {
+                                                  double cpu,
+                                                  double mem,
+                                                  double disk,
+                                                  double bandwidth,
+                                                  Flavor.Type type,
+                                                  String architecture) {
+        return addFlavor(flavorName, cpu, mem, disk, bandwidth, true, true, type, architecture);
+    }
+
+    public FlavorsConfig.Flavor.Builder addFlavor(String flavorName,
+                                                  double cpu,
+                                                  double mem,
+                                                  double disk,
+                                                  double bandwidth,
+                                                  boolean fastDisk,
+                                                  boolean remoteStorage,
+                                                  Flavor.Type type,
+                                                  String architecture) {
         FlavorsConfig.Flavor.Builder flavor = new FlavorsConfig.Flavor.Builder();
         flavor.name(flavorName);
         flavor.minDiskAvailableGb(disk);
@@ -37,6 +56,7 @@ public class FlavorConfigBuilder {
         flavor.environment(type.name());
         flavor.fastDisk(fastDisk);
         flavor.remoteStorage(remoteStorage);
+        flavor.architecture(architecture);
         builder.flavor(flavor);
         return flavor;
     }

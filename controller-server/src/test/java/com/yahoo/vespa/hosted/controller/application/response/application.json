@@ -13,7 +13,8 @@
           "diskGb": 0.0,
           "bandwidthGbps": 0.0,
           "diskSpeed": "fast",
-          "storageType": "any"
+          "storageType": "any",
+          "architecture": "x86_64"
         }
       },
       "max": {
@@ -25,7 +26,8 @@
           "diskGb": 0.0,
           "bandwidthGbps": 0.0,
           "diskSpeed": "fast",
-          "storageType": "any"
+          "storageType": "any",
+          "architecture": "x86_64"
         }
       },
       "current": {
@@ -37,7 +39,8 @@
           "diskGb": 50.0,
           "bandwidthGbps": 0.3,
           "diskSpeed": "fast",
-          "storageType": "remote"
+          "storageType": "remote",
+          "architecture": "x86_64"
         }
       },
       "suggested": {
@@ -49,7 +52,8 @@
           "diskGb": 75.0,
           "bandwidthGbps": 0.3,
           "diskSpeed": "fast",
-          "storageType": "local"
+          "storageType": "local",
+          "architecture": "x86_64"
         }
       },
       "scalingDuration": 400000,
@@ -67,7 +71,8 @@
           "diskGb": 0.0,
           "bandwidthGbps": 0.0,
           "diskSpeed": "fast",
-          "storageType": "any"
+          "storageType": "any",
+          "architecture": "x86_64"
         }
       },
       "max": {
@@ -79,7 +84,8 @@
           "diskGb": 0.0,
           "bandwidthGbps": 0.0,
           "diskSpeed": "fast",
-          "storageType": "any"
+          "storageType": "any",
+          "architecture": "x86_64"
         }
       },
       "current": {
@@ -91,7 +97,8 @@
           "diskGb": 50.0,
           "bandwidthGbps": 0.3,
           "diskSpeed": "fast",
-          "storageType": "remote"
+          "storageType": "remote",
+          "architecture": "x86_64"
         }
       },
       "suggested": {
@@ -103,7 +110,8 @@
           "diskGb": 50.0,
           "bandwidthGbps": 0.3,
           "diskSpeed": "fast",
-          "storageType": "local"
+          "storageType": "local",
+          "architecture": "x86_64"
         }
       },
       "scalingDuration": 90000,
@@ -121,7 +129,8 @@
           "diskGb": 0.0,
           "bandwidthGbps": 0.0,
           "diskSpeed": "fast",
-          "storageType": "any"
+          "storageType": "any",
+          "architecture": "x86_64"
         }
       },
       "max": {
@@ -133,7 +142,8 @@
           "diskGb": 0.0,
           "bandwidthGbps": 0.0,
           "diskSpeed": "fast",
-          "storageType": "any"
+          "storageType": "any",
+          "architecture": "x86_64"
         }
       },
       "current": {
@@ -145,7 +155,8 @@
           "diskGb": 50.0,
           "bandwidthGbps": 0.3,
           "diskSpeed": "fast",
-          "storageType": "remote"
+          "storageType": "remote",
+          "architecture": "x86_64"
         }
       },
       "suggested": {
@@ -157,7 +168,8 @@
           "diskGb": 50.0,
           "bandwidthGbps": 0.3,
           "diskSpeed": "fast",
-          "storageType": "local"
+          "storageType": "local",
+          "architecture": "x86_64"
         }
       },
       "scalingDuration": 1000000,

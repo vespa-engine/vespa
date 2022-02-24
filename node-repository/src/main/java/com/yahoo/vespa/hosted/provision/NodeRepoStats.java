@@ -66,13 +66,23 @@ public class NodeRepoStats {
             Optional<NodeMetricSnapshot> snapshot = nodeTimeseries.last();
             if (snapshot.isEmpty()) continue;
 
-            load = load.add(snapshot.get().load().multiply(node.get().resources()));
-            totalActiveResources = totalActiveResources.add(node.get().resources().justNumbers());
+            NodeResources resources = node.get().resources();
+
+            // TODO: Skip arm64 for now, add() does not work with mix of x86_64 and arm64 nodes
+            if (resources.architecture() == NodeResources.Architecture.arm64) continue;
+
+            load = load.add(snapshot.get().load().multiply(resources));
+            totalActiveResources = totalActiveResources.add(resources.justNumbers());
         }
 
         NodeResources totalHostResources = NodeResources.zero();
-        for (var host : allNodes.hosts())
+        for (var host : allNodes.hosts()) {
+
+            // TODO: Skip arm64 for now, add() does not work with mix of x86_64 and arm64 nodes
+            if (host.resources().architecture() == NodeResources.Architecture.arm64) continue;
+
             totalHostResources = totalHostResources.add(host.resources().justNumbers());
+        }
 
         return new Pair<>(load.divide(totalHostResources), load.divide(totalActiveResources));
     }
