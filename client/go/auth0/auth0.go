@@ -234,6 +234,16 @@ func (a *Auth0) getSystem() (*System, error) {
 	return s, nil
 }
 
+// HasSystem checks if the system is configured
+// TODO: Used to print deprecation warning if we fall back to use tenant API key.
+//       Remove when this is not longer needed.
+func (a *Auth0) HasSystem() bool {
+	if _, err := a.getSystem(); err != nil {
+		return false
+	}
+	return true
+}
+
 // AddSystem assigns an existing, or new System. This is expected to be called
 // after a login has completed.
 func (a *Auth0) AddSystem(s *System) error {

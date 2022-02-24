@@ -189,34 +189,15 @@ func createTarget() (vespa.Target, error) {
 		}
 
 		var apiKey []byte = nil
-		apiKey, err = cfg.ReadAPIKey(deployment.Application.Tenant)
-		if !vespa.Auth0AccessTokenEnabled() && endpoints == nil {
+		if cfg.UseAPIKey(deployment.Application.Tenant) {
+			apiKey, err = cfg.ReadAPIKey(deployment.Application.Tenant)
 			if err != nil {
-				return nil, errHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
+				return nil, err
 			}
 		}
 		kp, err := cfg.X509KeyPair(deployment.Application)
 		if err != nil {
-			var hint string
-			if vespa.Auth0AccessTokenEnabled() {
-				hint = "Deployment to cloud requires a certificate. Try 'vespa auth cert'"
-			} else {
-				hint = "Deployment to cloud requires a certificate. Try 'vespa cert'"
-			}
-			return nil, errHint(err, hint)
-		}
-		var cloudAuth string
-		if vespa.Auth0AccessTokenEnabled() {
-			cloudAuth, err = cfg.Get(cloudAuthFlag)
-			if err != nil {
-				if apiKey != nil {
-					cloudAuth = "api-key"
-				} else {
-					cloudAuth = "access-token"
-				}
-			}
-		} else {
-			cloudAuth = ""
+			return nil, errHint(err, "Deployment to cloud requires a certificate. Try 'vespa auth cert'")
 		}
 
 		return vespa.CloudTarget(
@@ -234,7 +215,6 @@ func createTarget() (vespa.Target, error) {
 			},
 			cfg.AuthConfigPath(),
 			getSystemName(),
-			cloudAuth,
 			endpoints,
 		), nil
 	}
@@ -270,18 +250,13 @@ func getDeploymentOpts(cfg *Config, pkg vespa.ApplicationPackage, target vespa.T
 			return vespa.DeploymentOpts{}, err
 		}
 		if !opts.ApplicationPackage.HasCertificate() {
-			var hint string
-			if vespa.Auth0AccessTokenEnabled() {
-				hint = "Try 'vespa auth cert'"
-			} else {
-				hint = "Try 'vespa cert'"
-			}
+			hint := "Try 'vespa auth cert'"
 			return vespa.DeploymentOpts{}, errHint(fmt.Errorf("missing certificate in application package"), "Applications in Vespa Cloud require a certificate", hint)
 		}
-		opts.APIKey, err = cfg.ReadAPIKey(deployment.Application.Tenant)
-		if !vespa.Auth0AccessTokenEnabled() {
+		if cfg.UseAPIKey(deployment.Application.Tenant) {
+			opts.APIKey, err = cfg.ReadAPIKey(deployment.Application.Tenant)
 			if err != nil {
-				return vespa.DeploymentOpts{}, errHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
+				return vespa.DeploymentOpts{}, err
 			}
 		}
 		opts.Deployment = deployment

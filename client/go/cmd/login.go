@@ -3,7 +3,6 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/auth0"
-	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 var loginCmd = &cobra.Command{
@@ -24,16 +23,6 @@ var loginCmd = &cobra.Command{
 			return err
 		}
 		_, err = auth0.RunLogin(ctx, a, false)
-		if vespa.Auth0AccessTokenEnabled() {
-			if err == nil {
-				if err := cfg.Set(cloudAuthFlag, "access-token"); err != nil {
-					return err
-				}
-				if err := cfg.Write(); err != nil {
-					return err
-				}
-			}
-		}
 		return err
 	},
 }

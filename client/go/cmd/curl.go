@@ -2,7 +2,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -11,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/auth0"
 	"github.com/vespa-engine/vespa/client/go/curl"
-	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 var curlDryRun bool
@@ -64,9 +62,6 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 				return err
 			}
 			if t.Type() == "cloud" {
-				if !vespa.Auth0AccessTokenEnabled() {
-					return errors.New("accessing control plane using curl subcommand is only supported for Auth0 device flow")
-				}
 				if err := addCloudAuth0Authentication(cfg, c); err != nil {
 					return err
 				}

@@ -166,16 +166,13 @@ func createCloudTarget(t *testing.T, url string, logWriter io.Writer) Target {
 
 	x509KeyPair, err := tls.X509KeyPair(kp.Certificate, kp.PrivateKey)
 	assert.Nil(t, err)
-	var apiKey []byte = nil
-	if !Auth0AccessTokenEnabled() {
-		apiKey, err = CreateAPIKey()
-	}
+	apiKey, err := CreateAPIKey()
 	assert.Nil(t, err)
 
 	target := CloudTarget("https://example.com", Deployment{
 		Application: ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"},
 		Zone:        ZoneID{Environment: "dev", Region: "us-north-1"},
-	}, apiKey, TLSOptions{KeyPair: x509KeyPair}, LogOptions{Writer: logWriter}, "", "", "", nil)
+	}, apiKey, TLSOptions{KeyPair: x509KeyPair}, LogOptions{Writer: logWriter}, "", "", nil)
 	if ct, ok := target.(*cloudTarget); ok {
 		ct.apiURL = url
 	} else {

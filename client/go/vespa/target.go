@@ -12,10 +12,8 @@ import (
 	"math"
 	"net/http"
 	"net/url"
-	"os"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/auth0"
@@ -33,6 +31,11 @@ const (
 	documentService = "document"
 
 	retryInterval = 2 * time.Second
+)
+
+const (
+	CloudAuthApiKey      = "api-key"
+	CloudAuthAccessToken = "access-token"
 )
 
 // Service represents a Vespa service.
@@ -75,14 +78,6 @@ type LogOptions struct {
 	Dequote bool
 	Writer  io.Writer
 	Level   int
-}
-
-func Auth0AccessTokenEnabled() bool {
-	v, present := os.LookupEnv("VESPA_CLI_OAUTH2_DEVICE_FLOW")
-	if !present {
-		return false
-	}
-	return strings.ToLower(v) == "true" || v == "1" || v == ""
 }
 
 type customTarget struct {
@@ -218,7 +213,6 @@ type cloudTarget struct {
 	urlsByCluster  map[string]string
 	authConfigPath string
 	systemName     string
-	cloudAuth      string
 }
 
 func (t *cloudTarget) resolveEndpoint(cluster string) (string, error) {
@@ -272,24 +266,16 @@ func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, c
 	return nil, fmt.Errorf("unknown service: %s", name)
 }
 
+// SignRequest adds authentication data to a http.Request.
+// The api key is used if set on cloudTarget, if not the Auth0 device flow is used.
 func (t *cloudTarget) SignRequest(req *http.Request, sigKeyId string) error {
-	if Auth0AccessTokenEnabled() {
-		if t.cloudAuth == "access-token" {
-			if err := t.addAuth0AccessToken(req); err != nil {
-				return err
-			}
-		} else {
-			if t.apiKey == nil {
-				return fmt.Errorf("Deployment to cloud requires an API key. Try 'vespa api-key'")
-			}
-			signer := NewRequestSigner(sigKeyId, t.apiKey)
-			if err := signer.SignRequest(req); err != nil {
-				return err
-			}
-		}
-	} else {
+	if t.apiKey != nil {
 		signer := NewRequestSigner(sigKeyId, t.apiKey)
 		if err := signer.SignRequest(req); err != nil {
+			return err
+		}
+	} else {
+		if err := t.addAuth0AccessToken(req); err != nil {
 			return err
 		}
 	}
@@ -528,7 +514,7 @@ func CustomTarget(baseURL string) Target {
 
 // CloudTarget creates a Target for the Vespa Cloud platform.
 func CloudTarget(apiURL string, deployment Deployment, apiKey []byte, tlsOptions TLSOptions, logOptions LogOptions,
-	authConfigPath string, systemName string, cloudAuth string, urlsByCluster map[string]string) Target {
+	authConfigPath string, systemName string, urlsByCluster map[string]string) Target {
 	return &cloudTarget{
 		apiURL:         apiURL,
 		targetType:     cloudTargetType,
@@ -538,7 +524,6 @@ func CloudTarget(apiURL string, deployment Deployment, apiKey []byte, tlsOptions
 		logOptions:     logOptions,
 		authConfigPath: authConfigPath,
 		systemName:     systemName,
-		cloudAuth:      cloudAuth,
 		urlsByCluster:  urlsByCluster,
 	}
 }

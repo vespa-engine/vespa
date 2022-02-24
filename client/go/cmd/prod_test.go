@@ -166,7 +166,7 @@ func TestProdSubmit(t *testing.T) {
 	if err := os.Setenv("CI", "true"); err != nil {
 		t.Fatal(err)
 	}
-	out, err := execute(command{homeDir: homeDir, args: []string{"prod", "submit"}}, t, httpClient)
+	out, err := execute(command{homeDir: homeDir, args: []string{"prod", "submit", "-k", filepath.Join(homeDir, "t1.api-key.pem")}}, t, httpClient)
 	assert.Equal(t, "", err)
 	assert.Contains(t, out, "Success: Submitted")
 	assert.Contains(t, out, "See https://console.vespa.oath.cloud/tenant/t1/application/a1/prod/deployment for deployment progress")
@@ -191,7 +191,7 @@ func TestProdSubmitWithJava(t *testing.T) {
 	testZipFile := filepath.Join(testAppDir, "application-test.zip")
 	copyFile(t, filepath.Join(pkgDir, "target", "application-test.zip"), testZipFile)
 
-	out, _ := execute(command{homeDir: homeDir, args: []string{"prod", "submit", pkgDir}}, t, httpClient)
+	out, _ := execute(command{homeDir: homeDir, args: []string{"prod", "submit", "-k", filepath.Join(homeDir, "t1.api-key.pem"), pkgDir}}, t, httpClient)
 	assert.Contains(t, out, "Success: Submitted")
 	assert.Contains(t, out, "See https://console.vespa.oath.cloud/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
