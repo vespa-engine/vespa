@@ -65,6 +65,7 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string)
 	rootCmd.Flags().VisitAll(resetFlag)
 	queryCmd.Flags().VisitAll(resetFlag)
 	documentCmd.Flags().VisitAll(resetFlag)
+	logCmd.Flags().VisitAll(resetFlag)
 
 	// Capture stdout and execute command
 	var capturedOut bytes.Buffer
