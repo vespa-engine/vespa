@@ -45,15 +45,15 @@ protected:
 private:
     class BufferAndTypeId {
     public:
-        using MemPtr = void *;
         BufferAndTypeId() : BufferAndTypeId(nullptr, 0) { }
-        BufferAndTypeId(MemPtr buffer, uint32_t typeId) : _buffer(buffer), _typeId(typeId) { }
-        MemPtr getBuffer() const { return _buffer; }
-        MemPtr & getBuffer() { return _buffer; }
+        BufferAndTypeId(void* buffer, uint32_t typeId) : _buffer(buffer), _typeId(typeId) { }
+        std::atomic<void*>& get_atomic_buffer() noexcept { return _buffer; }
+        void* get_buffer_relaxed() noexcept { return _buffer.load(std::memory_order_relaxed); }
+        const void* get_buffer_acquire() const noexcept { return _buffer.load(std::memory_order_acquire); }
         uint32_t getTypeId() const { return _typeId; }
         void setTypeId(uint32_t typeId) { _typeId = typeId; }
     private:
-        MemPtr     _buffer;
+        std::atomic<void*> _buffer;
         uint32_t   _typeId;
     };
     std::vector<BufferAndTypeId> _buffers; // For fast mapping with known types
@@ -62,7 +62,7 @@ protected:
     // The primary buffer is used for allocations of new element(s) if no available slots are found in free lists.
     std::vector<uint32_t> _primary_buffer_ids;
 
-    void * getBuffer(uint32_t bufferId) { return _buffers[bufferId].getBuffer(); }
+    void* getBuffer(uint32_t bufferId) { return _buffers[bufferId].get_buffer_relaxed(); }
 
     /**
      * Hold list at freeze, when knowing how long elements must be held
@@ -185,7 +185,7 @@ protected:
      * Get the primary buffer for the given type id.
      */
     void* primary_buffer(uint32_t typeId) {
-        return _buffers[_primary_buffer_ids[typeId]].getBuffer();
+        return _buffers[_primary_buffer_ids[typeId]].get_buffer_relaxed();
     }
 
     /**
@@ -277,22 +277,22 @@ public:
 
     template <typename EntryType, typename RefType>
     EntryType *getEntry(RefType ref) {
-        return static_cast<EntryType *>(_buffers[ref.bufferId()].getBuffer()) + ref.offset();
+        return static_cast<EntryType *>(_buffers[ref.bufferId()].get_buffer_relaxed()) + ref.offset();
     }
 
     template <typename EntryType, typename RefType>
     const EntryType *getEntry(RefType ref) const {
-        return static_cast<const EntryType *>(_buffers[ref.bufferId()].getBuffer()) + ref.offset();
+        return static_cast<const EntryType *>(_buffers[ref.bufferId()].get_buffer_acquire()) + ref.offset();
     }
 
     template <typename EntryType, typename RefType>
     EntryType *getEntryArray(RefType ref, size_t arraySize) {
-        return static_cast<EntryType *>(_buffers[ref.bufferId()].getBuffer()) + (ref.offset() * arraySize);
+        return static_cast<EntryType *>(_buffers[ref.bufferId()].get_buffer_relaxed()) + (ref.offset() * arraySize);
     }
 
     template <typename EntryType, typename RefType>
     const EntryType *getEntryArray(RefType ref, size_t arraySize) const {
-        return static_cast<const EntryType *>(_buffers[ref.bufferId()].getBuffer()) + (ref.offset() * arraySize);
+        return static_cast<const EntryType *>(_buffers[ref.bufferId()].get_buffer_acquire()) + (ref.offset() * arraySize);
     }
 
     void dropBuffers();
