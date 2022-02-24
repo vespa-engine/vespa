@@ -17,14 +17,10 @@ import (
 )
 
 func printErrHint(err error, hints ...string) {
-	printErr(err)
+	fmt.Fprintln(stderr, color.Red("Error:"), err)
 	for _, hint := range hints {
 		fmt.Fprintln(stderr, color.Cyan("Hint:"), hint)
 	}
-}
-
-func printErr(err error) {
-	fmt.Fprintln(stderr, color.Red("Error:"), err)
 }
 
 func printSuccess(msg ...interface{}) {

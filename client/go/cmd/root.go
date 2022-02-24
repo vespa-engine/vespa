@@ -134,7 +134,7 @@ func Execute() error {
 				printErrHint(cliErr, cliErr.hints...)
 			}
 		} else {
-			printErr(err)
+			printErrHint(err)
 		}
 	}
 	return err
