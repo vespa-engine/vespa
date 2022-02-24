@@ -46,25 +46,22 @@ struct RpcTask : public vespalib::Executor::Task {
 
 }
 
-TransLogClient::TransLogClient(const vespalib::string & rpcTarget) :
+TransLogClient::TransLogClient(FNET_Transport & transport, const vespalib::string & rpcTarget) :
     _executor(std::make_unique<vespalib::ThreadStackExecutor>(1, 128_Ki, translogclient_rpc_callback)),
     _rpcTarget(rpcTarget),
     _sessions(),
-    _threadPool(std::make_unique<FastOS_ThreadPool>(60_Ki)),
-    _transport(std::make_unique<FNET_Transport>()),
-    _supervisor(std::make_unique<FRT_Supervisor>(_transport.get())),
+    _supervisor(std::make_unique<FRT_Supervisor>(&transport)),
     _target(nullptr)
 {
     reconnect();
     exportRPC(*_supervisor);
-    _transport->Start(_threadPool.get());
 }
 
 TransLogClient::~TransLogClient()
 {
     disconnect();
     _executor->shutdown().sync();
-    _transport->ShutDown(true);
+    _supervisor->GetTransport()->sync();
 }
 
 bool

@@ -314,7 +314,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
         strategy = std::make_shared<SimpleFlush>();
         break;
     }
-    _protonDiskLayout = std::make_unique<ProtonDiskLayout>(protonConfig.basedir, protonConfig.tlsspec);
+    _protonDiskLayout = std::make_unique<ProtonDiskLayout>(*_transport, protonConfig.basedir, protonConfig.tlsspec);
     vespalib::chdir(protonConfig.basedir);
     vespalib::alloc::MmapFileAllocatorFactory::instance().setup(protonConfig.basedir + "/swapdirs");
     _tls->start(*_transport, hwInfo.cpu().cores());
