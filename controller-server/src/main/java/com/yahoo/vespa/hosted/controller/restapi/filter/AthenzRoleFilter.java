@@ -6,8 +6,10 @@ import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
 import com.yahoo.restapi.Path;
@@ -20,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
@@ -60,12 +63,14 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
     private final AthenzFacade athenz;
     private final TenantController tenants;
     private final ExecutorService executor;
+    private final SystemName systemName;
 
     @Inject
     public AthenzRoleFilter(AthenzClientFactory athenzClientFactory, Controller controller) {
         this.athenz = new AthenzFacade(athenzClientFactory);
         this.tenants = controller.tenants();
         this.executor = Executors.newCachedThreadPool();
+        this.systemName = controller.system();
     }
 
     @Override
@@ -98,11 +103,14 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
         path.matches("/application/v4/tenant/{tenant}/application/{application}/{*}");
         Optional<ApplicationName> application = Optional.ofNullable(path.get("application")).map(ApplicationName::from);
 
-        final Optional<Zone> zone;
+        final Optional<ZoneId> zone;
         if(path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/{*}")) {
-            zone = Optional.of(new Zone(Environment.from(path.get("environment")), RegionName.from(path.get("region"))));
+            zone = Optional.of(ZoneId.from(path.get("environment"), path.get("region")));
         } else if(path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/{*}")) {
-            zone = Optional.of(new Zone(Environment.from(path.get("environment")), RegionName.from(path.get("region"))));
+            zone = Optional.of(ZoneId.from(path.get("environment"), path.get("region")));
+        } else if(path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploy/{jobname}")) {
+            var jobtype= JobType.fromJobName(path.get("jobname"));
+            zone = Optional.of(jobtype.zone(systemName));
         } else {
             zone = Optional.empty();
         }
@@ -142,7 +150,7 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
             && zone.isPresent()
             && tenant.isPresent()
             && application.isPresent()) {
-            Zone z = zone.get();
+            ZoneId z = zone.get();
             futures.add(executor.submit(() -> {
                 if (canDeployToManualZones(identity, ((AthenzTenant) tenant.get()).domain(), application.get(), z))
                     roleMemberships.add(Role.hostedDeveloper(tenant.get().name()));
@@ -194,7 +202,7 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
         }
     }
 
-    private boolean hasDeployerAccess(AthenzIdentity identity, AthenzDomain tenantDomain, ApplicationName application, Optional<Zone> zone) {
+    private boolean hasDeployerAccess(AthenzIdentity identity, AthenzDomain tenantDomain, ApplicationName application, Optional<ZoneId> zone) {
         try {
             return athenz.hasApplicationAccess(identity,
                                                ApplicationAction.deploy,
@@ -206,7 +214,7 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
         }
     }
 
-    private boolean canDeployToManualZones(AthenzIdentity identity, AthenzDomain tenantDomain, ApplicationName application, Zone zone) {
+    private boolean canDeployToManualZones(AthenzIdentity identity, AthenzDomain tenantDomain, ApplicationName application, ZoneId zone) {
         if (! zone.environment().isManuallyDeployed()) return false;
         try {
             return athenz.hasApplicationAccess(identity, ApplicationAction.deploy, tenantDomain, application, Optional.of(zone));
