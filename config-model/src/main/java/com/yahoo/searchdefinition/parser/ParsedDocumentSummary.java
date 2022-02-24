@@ -50,9 +50,6 @@ class ParsedDocumentSummary {
     }
 
     void inherit(String other) {
-        if (! inherited.isEmpty()) {
-            throw new IllegalArgumentException("double inherit: document-summary "+this.name);
-        }
         inherited.add(other);
     }
 }

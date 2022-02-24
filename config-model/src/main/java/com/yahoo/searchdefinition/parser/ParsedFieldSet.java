@@ -27,6 +27,8 @@ class ParsedFieldSet {
 
     String name() { return this.name; }
     ParsedMatchSettings matchSettings() { return this.matchInfo; }
+    List<String> getQueryCommands() { return ImmutableList.copyOf(queryCommands); }
+    List<String> getFieldNames() { return ImmutableList.copyOf(fields); }
 
     void addField(String field) { fields.add(field); }
     void addQueryCommand(String command) { queryCommands.add(command); }

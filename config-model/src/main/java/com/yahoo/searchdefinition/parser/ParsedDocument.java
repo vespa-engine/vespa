@@ -37,7 +37,7 @@ public class ParsedDocument {
     void addField(ParsedField field) {
         String fieldName = field.name();
         if (docFields.containsKey(fieldName)) {
-            throw new IllegalArgumentException("document-summary "+this.name+" already has field "+fieldName);
+            throw new IllegalArgumentException("document "+this.name+" already has field "+fieldName);
         }
         docFields.put(fieldName, field);
     }
@@ -50,6 +50,13 @@ public class ParsedDocument {
         docStructs.put(sName, struct);
     }
 
-    void addAnnotation(ParsedAnnotation type) {}
+    void addAnnotation(ParsedAnnotation annotation) {
+        String annName = annotation.name();
+        if (docAnnotations.containsKey(annName)) {
+            throw new IllegalArgumentException("document "+this.name+" already has annotation "+annName);
+        }
+        docAnnotations.put(annName, annotation);
+    }
+
 }
 
