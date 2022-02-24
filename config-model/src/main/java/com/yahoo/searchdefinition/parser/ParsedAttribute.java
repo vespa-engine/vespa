@@ -1,6 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.parser;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 /**
  * This class holds the extracted information after parsing a
  * "attribute" block, using simple data structures as far as
@@ -9,18 +14,50 @@ package com.yahoo.searchdefinition.parser;
  **/
 class ParsedAttribute extends ParsedBlock {
 
+    private boolean enableBitVectors = false;
+    private boolean enableOnlyBitVector = false;
+    private boolean enableFastAccess = false;
+    private boolean enableFastSearch = false;
+    private boolean enableHuge = false;
+    private boolean enableMutable = false;
+    private boolean enablePaged = false;
+    private final Map<String, String> aliases = new HashMap<>();
+    private ParsedSorting sortInfo = null;
+    private String distanceMetric = null;
+
     ParsedAttribute(String name) {
         super(name, "attribute");
     }
 
-    void addAlias(String from, String to) {}
-    void setDistanceMetric(String metric) {}
-    void setEnableBitVectors(boolean value) {}
-    void setEnableOnlyBitVector(boolean value) {}
-    void setFastAccess(boolean value) {}
-    void setFastSearch(boolean value) {}
-    void setHuge(boolean value) {}
-    void setMutable(boolean value) {}
-    void setPaged(boolean value) {}
-    void setSorting(ParsedSorting sorting) {}
+    List<String> getAliases() { return List.copyOf(aliases.keySet()); }
+    String lookupAliasedFrom(String alias) { return aliases.get(alias); }
+    Optional<String> getDistanceMetric() { return Optional.ofNullable(distanceMetric); }
+    boolean getEnableBitVectors() { return this.enableBitVectors; }
+    boolean getEnableOnlyBitVector() { return this.enableOnlyBitVector; }
+    boolean getFastAccess() { return this.enableFastAccess; }
+    boolean getFastSearch() { return this.enableFastSearch; }
+    boolean getHuge() { return this.enableHuge; }
+    boolean getMutable() { return this.enableMutable; }
+    boolean getPaged() { return this.enablePaged; }
+    Optional<ParsedSorting> getSorting() { return Optional.ofNullable(sortInfo); }
+
+    void addAlias(String from, String to) {
+        verifyThat(! aliases.containsKey(to), "already has alias", to);
+        aliases.put(to, from);
+    }
+    void setDistanceMetric(String value) {
+        verifyThat(distanceMetric == null, "already has distance-metric", distanceMetric);
+        this.distanceMetric = value;
+    }
+    void setEnableBitVectors(boolean value) { this.enableBitVectors = value; }
+    void setEnableOnlyBitVector(boolean value) { this.enableOnlyBitVector = value; }
+    void setFastAccess(boolean value) { this.enableFastAccess = true; }
+    void setFastSearch(boolean value) { this.enableFastSearch = true; }
+    void setHuge(boolean value) { this.enableHuge = true; }
+    void setMutable(boolean value) { this.enableMutable = true; }
+    void setPaged(boolean value) { this.enablePaged = true; }
+    void setSorting(ParsedSorting sorting) {
+        verifyThat(this.sortInfo == null, "already has sorting");
+        this.sortInfo = sorting;
+    }
 }

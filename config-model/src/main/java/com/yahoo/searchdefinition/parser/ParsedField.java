@@ -3,9 +3,7 @@ package com.yahoo.searchdefinition.parser;
 
 import com.yahoo.searchdefinition.document.Stemming;
 
-
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
