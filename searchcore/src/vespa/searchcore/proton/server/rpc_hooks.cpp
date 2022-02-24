@@ -16,6 +16,8 @@ using vespalib::compression::CompressionConfig;
 
 namespace {
 
+string delayed_configs_string("delayedConfigs");
+
 using Pair = std::pair<string, string>;
 
 VESPA_THREAD_STACK_TAG(proton_rpc_executor)
@@ -39,7 +41,7 @@ RPCHooksBase::reportState(FRT_RPCRequest * req)
         res.emplace_back("onlineState", "onlineSoon");
     }
 
-    res.emplace_back("delayedConfigs", delayedConfigs);
+    res.emplace_back(delayed_configs_string, delayedConfigs);
     res.emplace_back("onlineDocs", make_string("%" PRId64, numDocs));
 
     FRT_Values &ret = *req->GetReturn();
