@@ -80,9 +80,9 @@ struct TargetPoolTask : public FNET_Task {
     }
 };
 
-fnet::TransportConfig
+TransportConfig
 toFNETConfig(const RPCNetworkParams & params) {
-    return fnet::TransportConfig(params.getNumNetworkThreads())
+    return TransportConfig(params.getNumNetworkThreads())
               .maxInputBufferSize(params.getMaxInputBufferSize())
               .maxOutputBufferSize(params.getMaxOutputBufferSize())
               .tcpNoDelay(params.getTcpNoDelay());
