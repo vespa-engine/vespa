@@ -39,7 +39,6 @@ class ParsedIndex extends ParsedBlock {
     Long getLowerBound() { return this.lowerBound; }
     Long getUpperBound() { return this.upperBound; }
     Double getDensePostingListThreshold() { return this.densePLT; }
-    
 
     void addAlias(String alias) {
         aliases.add(alias);

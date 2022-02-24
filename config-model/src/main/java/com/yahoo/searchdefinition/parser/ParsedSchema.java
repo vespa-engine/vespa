@@ -73,8 +73,8 @@ public class ParsedSchema extends ParsedBlock {
 
     void addDocument(ParsedDocument document) {
         verifyThat(myDocument == null,
-                   "already has", myDocument.name(), "cannot add document", document.name());
-        myDocument = document;
+                   "already has", myDocument, "so cannot add", document);
+        this.myDocument = document;
     }
 
     void addDocumentSummary(ParsedDocumentSummary docsum) {

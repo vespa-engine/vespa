@@ -50,5 +50,6 @@ public class ParsedDocument extends ParsedBlock {
         docAnnotations.put(annName, annotation);
     }
 
+    public String toString() { return "document "+name(); }
 }
 
