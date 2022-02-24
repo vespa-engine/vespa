@@ -634,6 +634,7 @@ public class InternalStepRunner implements StepRunner {
         return Optional.of(running);
     }
 
+    @SuppressWarnings("fallthrough")
     private Optional<RunStatus> endTests(RunId id, boolean isSetup, DualLogger logger) {
         Optional<Deployment> deployment = deployment(id.application(), id.type());
         if (deployment.isEmpty()) {
@@ -674,12 +675,14 @@ public class InternalStepRunner implements StepRunner {
                 controller.jobController().updateTestReport(id);
                 return Optional.of(error);
             case NO_TESTS:
-                TesterCloud.Suite suite = TesterCloud.Suite.of(id.type(), isSetup);
-                logger.log(INFO, "No tests were found in the test package, for test suite '" + suite + "'");
-                logger.log(INFO, "The test package must either contain basic HTTP tests under 'tests/<suite-name>/', " +
-                                 "or a Java test bundle under 'components/' with at least one test with the annotation " +
-                                 "for this suite. See docs.vespa.ai/en/testing.html for details.");
-                return Optional.of(testFailure);
+                if ( ! isSetup) {
+                    TesterCloud.Suite suite = TesterCloud.Suite.of(id.type(), isSetup);
+                    logger.log(INFO, "No tests were found in the test package, for test suite '" + suite + "'");
+                    logger.log(INFO, "The test package must either contain basic HTTP tests under 'tests/<suite-name>/', " +
+                                     "or a Java test bundle under 'components/' with at least one test with the annotation " +
+                                     "for this suite. See docs.vespa.ai/en/testing.html for details.");
+                    return Optional.of(testFailure);
+                }
             case SUCCESS:
                 logger.log("Tests completed successfully.");
                 controller.jobController().updateTestReport(id);
