@@ -11,14 +11,20 @@ import java.util.List;
  **/
 class ParsedFieldSet {
 
-    public final String name;
-    final List<String> fields = new ArrayList<>();
+    private final String name;
+    private final List<String> fields = new ArrayList<>();
+    private final List<String> queryCommands = new ArrayList<>();
+    private final ParsedMatchSettings matchInfo = new ParsedMatchSettings();
 
     ParsedFieldSet(String name) {
         this.name = name;
     }
 
+    String name() { return this.name; }
+    ParsedMatchSettings matchSettings() { return this.matchInfo; }
+    List<String> getQueryCommands() { return List.copyOf(queryCommands); }
+    List<String> getFieldNames() { return List.copyOf(fields); }
+
     void addField(String field) { fields.add(field); }
-    void addQueryCommand(String queryCommand) {}
-    void addMatchSettings(ParsedMatchSettings matchInfo) {}
+    void addQueryCommand(String command) { queryCommands.add(command); }
 }

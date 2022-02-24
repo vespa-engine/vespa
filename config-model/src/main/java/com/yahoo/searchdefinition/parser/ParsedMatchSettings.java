@@ -1,5 +1,7 @@
 package com.yahoo.searchdefinition.parser;
 
+import java.util.Optional;
+
 /**
  * This class holds the extracted information after parsing a "match"
  * block, using simple data structures as far as possible.  Do not put
@@ -8,10 +10,25 @@ package com.yahoo.searchdefinition.parser;
  **/
 public class ParsedMatchSettings {
 
-    void setType(MatchType type) {}
-    void setCase(MatchCase type) {}
-    void setAlgorithm(MatchAlgorithm type) {}
-    void setExactTerminator(String terminator) {}
-    void setGramSize(int size) {}
-    void setMaxLength(int size) {}
+    private MatchType matchType = null;
+    private MatchCase matchCase = null;
+    private MatchAlgorithm matchAlgorithm = null;
+    private String exactTerminator = null;
+    private Integer gramSize = null;
+    private Integer maxLength = null;
+
+    Optional<MatchType> getMatchType() { return Optional.ofNullable(matchType); }
+    Optional<MatchCase> getMatchCase() { return Optional.ofNullable(matchCase); }
+    Optional<MatchAlgorithm> getMatchAlgorithm() { return Optional.ofNullable(matchAlgorithm); }
+    Optional<String> getExactTerminator() { return Optional.ofNullable(exactTerminator); }
+    Optional<Integer> getGramSize() { return Optional.ofNullable(gramSize); }
+    Optional<Integer> getMaxLength() { return Optional.ofNullable(maxLength); }
+
+    // TODO - consider allowing each set only once:
+    void setType(MatchType value) { this.matchType = value; }
+    void setCase(MatchCase value) { this.matchCase = value; }
+    void setAlgorithm(MatchAlgorithm value) { this.matchAlgorithm = value; }
+    void setExactTerminator(String value) { this.exactTerminator = value; }
+    void setGramSize(int value) { this.gramSize = value; }
+    void setMaxLength(int value) { this.maxLength = value; }
 }

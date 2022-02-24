@@ -2,7 +2,9 @@
 package com.yahoo.searchdefinition.parser;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This class holds the extracted information after parsing a
@@ -12,15 +14,39 @@ import java.util.List;
  **/
 class ParsedDocumentSummary {
 
-    public final String name;
-    final List<ParsedSummaryField> fields = new ArrayList<>();
+    private final String name;
+    private boolean omitSummaryFeatures;
+    private boolean fromDisk;
+    private final List<String> inherited = new ArrayList<>();
+    private final Map<String, ParsedSummaryField> fields = new HashMap<>();
 
     ParsedDocumentSummary(String name) {
         this.name = name;
     }
 
-    void addField(ParsedSummaryField field) { fields.add(field); }
-    void setFromDisk(boolean value) {}
-    void setOmitSummaryFeatures(boolean value) {}
-    void inherit(String other) {}
+    String name() { return this.name; }
+    boolean getOmitSummaryFeatures() { return omitSummaryFeatures; }
+    boolean getFromDisk() { return fromDisk; }
+    List<ParsedSummaryField> getSummaryFields() { return List.copyOf(fields.values()); }
+    List<String> getInherited() { return List.copyOf(inherited); }
+
+    void addField(ParsedSummaryField field) {
+        String fieldName = field.name();
+        if (fields.containsKey(fieldName)) {
+            throw new IllegalArgumentException("document-summary "+this.name+" already has field "+fieldName);
+        }
+        fields.put(fieldName, field);
+    }
+
+    void setFromDisk(boolean value) {
+        this.fromDisk = value;
+    }
+
+    void setOmitSummaryFeatures(boolean value) {
+        this.omitSummaryFeatures = value;
+    }
+
+    void inherit(String other) {
+        inherited.add(other);
+    }
 }

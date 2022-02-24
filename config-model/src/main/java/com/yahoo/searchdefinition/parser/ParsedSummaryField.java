@@ -13,27 +13,33 @@ import java.util.List;
  **/
 class ParsedSummaryField {
 
-    public final String name;
-    public final Object type;
+    private final String name;
+    private final ParsedType type;
+    private boolean isDyn = false;
+    private boolean isMEO = false;
+    private boolean isFull = false;
+    private boolean isBold = false;
+    private final List<String> sources = new ArrayList<>();
+    private final List<String> destinations = new ArrayList<>();
 
     ParsedSummaryField(String name) {
         this.name = name;
         this.type = null;
     }
-    ParsedSummaryField(String name, Object type) {
+
+    ParsedSummaryField(String name, ParsedType type) {
         this.name = name;
         this.type = type;
     }
 
-    String getName() { return name; }
-    Object getType() { return type; }
-
-    boolean isDyn = false;
-    boolean isMEO = false;
-    boolean isFull = false;
-    boolean isBold = false;
-    final List<String> sources = new ArrayList<>();
-    final List<String> destinations = new ArrayList<>();
+    String name() { return name; }
+    ParsedType type() { return type; }
+    List<String> getDestinations() { return List.copyOf(destinations); }
+    List<String> getSources() { return List.copyOf(sources); }
+    boolean getBolded() { return isBold; }
+    boolean getDynamic() { return isDyn; }
+    boolean getFull() { return isFull; }
+    boolean getMatchedElementsOnly() { return isMEO; }
 
     void addDestination(String dst) { destinations.add(dst); }
     void addSource(String src) { sources.add(src); }

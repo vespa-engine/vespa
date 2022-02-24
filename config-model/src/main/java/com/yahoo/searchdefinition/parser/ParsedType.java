@@ -3,7 +3,6 @@ package com.yahoo.searchdefinition.parser;
 
 import com.yahoo.tensor.TensorType;
 
-
 /**
  * This class holds the extracted information after parsing a type
  * declaration (typically for a field).  Since types can be complex,
@@ -45,22 +44,20 @@ class ParsedType {
         case "double":    return Variant.DOUBLE;
         case "uri":       return Variant.URI;
         case "predicate": return Variant.PREDICATE;
-        case "tensor":    return Variant.TENSOR;
         case "position":  return Variant.STRUCT;
         }
-        if (name.startsWith("array<"))                  return Variant.ARRAY;
-        if (name.startsWith("weightedset<"))            return Variant.WSET;
-        if (name.startsWith("map<"))                    return Variant.MAP;
-        if (name.startsWith("tensor("))                 return Variant.TENSOR;
-        if (name.startsWith("struct<"))                 return Variant.STRUCT;
-        if (name.startsWith("document<"))               return Variant.DOCUMENT;
-        if (name.startsWith("reference<"))              return Variant.DOC_REFERENCE;
-        if (name.startsWith("annotationreference<"))    return Variant.ANN_REFERENCE;
         return Variant.UNKNOWN;
     }
 
     public String name() { return name; }
     public Variant getVariant() { return variant; }
+    public ParsedType mapKeyType() { assert(variant == Variant.MAP); return keyType; }
+    public ParsedType mapValueType() { assert(variant == Variant.MAP); return valType; }
+    public ParsedType nestedType() { assert(variant == Variant.ARRAY || variant == Variant.WSET); return valType; }
+    public boolean getCreateIfNonExistent() { assert(variant == Variant.WSET); return this.createIfNonExistent; }
+    public boolean getRemoveIfZero() { assert(variant == Variant.WSET); return this.removeIfZero; }
+    public ParsedType getReferencedDocumentType() { assert(variant == Variant.DOC_REFERENCE); return valType; }
+    public TensorType getTensorType() { assert(variant == Variant.TENSOR); return tensorType; }
 
     private ParsedType(String name, Variant variant) {
         this(name, variant, null, null, null);
