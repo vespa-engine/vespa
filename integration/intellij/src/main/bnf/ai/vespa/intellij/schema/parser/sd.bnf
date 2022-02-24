@@ -205,9 +205,9 @@ ArgumentDefinition ::= IdentifierVal
                          implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                        }
 
-SummaryFeaturesDefinition ::= summary-features ((':' RankFeature+) | ((inherits IdentifierVal)? '{' RankFeature* '}'))
+SummaryFeaturesDefinition ::= summary-features ((':' RankFeature+) | ((inherits IdentifierWithDashVal)? '{' RankFeature* '}'))
 
-MatchFeaturesDefinition ::= match-features ((':' RankFeature+) | ((inherits IdentifierVal)? '{' RankFeature* '}'))
+MatchFeaturesDefinition ::= match-features ((':' RankFeature+) | ((inherits IdentifierWithDashVal)? '{' RankFeature* '}'))
 
 RankFeaturesDefinition ::= rank-features ((':' RankFeature+) | ('{' RankFeature* '}'))
 
