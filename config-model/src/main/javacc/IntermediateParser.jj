@@ -432,7 +432,14 @@ ParsedSchema rootDocument() :
 }
 {
     ( (rootDocumentItem(schema) (<NL>)*)*<EOF> )
-    { return schema; }
+    {
+        if (schema.hasDocument()) {
+            ParsedDocument doc = schema.getDocument();
+            schema = new ParsedSchema(doc.name());
+            schema.addDocument(doc);
+        }
+        return schema;
+    }
 }
 
 /**
