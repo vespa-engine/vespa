@@ -65,7 +65,7 @@ SharedRpcResources::SharedRpcResources(const config::ConfigUri& config_uri,
                                        size_t rpc_thread_pool_size,
                                        size_t rpc_events_before_wakeup)
     : _thread_pool(std::make_unique<FastOS_ThreadPool>(1024*60)),
-      _transport(std::make_unique<FNET_Transport>(TransportConfig(rpc_thread_pool_size).
+      _transport(std::make_unique<FNET_Transport>(fnet::TransportConfig(rpc_thread_pool_size).
               events_before_wakeup(rpc_events_before_wakeup))),
       _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
       _slobrok_register(std::make_unique<slobrok::api::RegisterAPI>(*_orb, slobrok::ConfiguratorFactory(config_uri))),

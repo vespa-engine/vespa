@@ -4,8 +4,6 @@
 
 #include "context.h"
 #include "config.h"
-#include <memory>
-#include <vector>
 #include <vespa/vespalib/net/async_resolver.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/util/time.h>
@@ -39,7 +37,6 @@ struct TimeTools {
                                     std::function<vespalib::steady_time()> current_time);
 };
 
-} // fnet
 
 class TransportConfig {
 public:
@@ -96,6 +93,8 @@ private:
     uint32_t                    _num_threads;
 };
 
+} // fnet
+
 /**
  * This class represents the transport layer and handles a collection
  * of transport threads. Note: remember to shut down your transport
@@ -124,12 +123,12 @@ public:
      * the current thread become the transport thread. Main may only
      * be called for single-threaded transports.
      **/
-    explicit FNET_Transport(const TransportConfig &config);
+    explicit FNET_Transport(const fnet::TransportConfig &config);
 
     explicit FNET_Transport(uint32_t num_threads)
-        : FNET_Transport(TransportConfig(num_threads)) {}
+        : FNET_Transport(fnet::TransportConfig(num_threads)) {}
     FNET_Transport()
-        : FNET_Transport(TransportConfig()) {}
+        : FNET_Transport(fnet::TransportConfig()) {}
     ~FNET_Transport();
 
     const FNET_Config & getConfig() const { return _config; }
