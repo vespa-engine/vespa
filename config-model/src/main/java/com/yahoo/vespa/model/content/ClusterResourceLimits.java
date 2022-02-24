@@ -91,8 +91,8 @@ public class ClusterResourceLimits {
             deriveClusterControllerLimit(ctrlBuilder.getDiskLimit(), nodeBuilder.getDiskLimit(), ctrlBuilder::setDiskLimit);
             deriveClusterControllerLimit(ctrlBuilder.getMemoryLimit(), nodeBuilder.getMemoryLimit(), ctrlBuilder::setMemoryLimit);
 
-            deriveContentNodeLimit(nodeBuilder.getDiskLimit(), ctrlBuilder.getDiskLimit(), nodeBuilder::setDiskLimit);
-            deriveContentNodeLimit(nodeBuilder.getMemoryLimit(), ctrlBuilder.getMemoryLimit(), nodeBuilder::setMemoryLimit);
+            deriveContentNodeLimit(nodeBuilder.getDiskLimit(), ctrlBuilder.getDiskLimit(), 0.6, nodeBuilder::setDiskLimit);
+            deriveContentNodeLimit(nodeBuilder.getMemoryLimit(), ctrlBuilder.getMemoryLimit(), 0.5, nodeBuilder::setMemoryLimit);
         }
 
         private void considerSettingDefaultClusterControllerLimit(Optional<Double> clusterControllerLimit,
@@ -117,15 +117,16 @@ public class ClusterResourceLimits {
 
         private void deriveContentNodeLimit(Optional<Double> contentNodeLimit,
                                             Optional<Double> clusterControllerLimit,
+                                            double scaleFactor,
                                             Consumer<Double> setter) {
             if (contentNodeLimit.isEmpty()) {
                 clusterControllerLimit.ifPresent(limit ->
-                        setter.accept(calcContentNodeLimit(limit)));
+                        setter.accept(calcContentNodeLimit(limit, scaleFactor)));
             }
         }
 
-        private double calcContentNodeLimit(double clusterControllerLimit) {
-            return clusterControllerLimit + ((1.0 - clusterControllerLimit) / 2);
+        private double calcContentNodeLimit(double clusterControllerLimit, double scaleFactor) {
+            return clusterControllerLimit + ((1.0 - clusterControllerLimit) * scaleFactor);
         }
 
 
