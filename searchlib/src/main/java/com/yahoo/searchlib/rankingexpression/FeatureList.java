@@ -13,7 +13,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Encapsulates the production rule 'featureList()' int the RankingExpressionParser.
+ * Encapsulates the production rule 'featureList()' in the RankingExpressionParser.
  *
  * @author Simon Thoresen Hult
  */
@@ -69,14 +69,7 @@ public class FeatureList implements Iterable<ReferenceNode> {
             ParseException t = new ParseException();
             throw (ParseException)t.initCause(e);
         }
-        List<ReferenceNode> ret = new ArrayList<ReferenceNode>(lst.size());
-        for (Object obj : lst) {
-            if (!(obj instanceof ReferenceNode)) {
-                throw new IllegalStateException("Feature list contains a " + obj.getClass().getName() + ".");
-            }
-            ret.add((ReferenceNode)obj);
-        }
-        return ret;
+        return lst;
     }
 
     /**
