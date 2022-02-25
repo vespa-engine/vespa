@@ -273,7 +273,7 @@ splitInsert(BTreeInternalNode *splitNode, uint32_t idx, const KeyT &key,
     for (uint32_t i = sih.getMedian(); i < validSlots(); ++i) {
         splitNode->_keys[i - sih.getMedian()] = _keys[i];
         splitNode->setData(i - sih.getMedian(), getData(i));
-        splitLeaves += allocator.validLeaves(getData(i));
+        splitLeaves += allocator.validLeaves(getChild(i));
     }
     splitNode->_validLeaves = splitLeaves;
     this->cleanRange(sih.getMedian(), validSlots());
@@ -316,7 +316,7 @@ BTreeInternalNode<KeyT, AggrT, NumSlots>::countValidLeaves(uint32_t start, uint3
     assert(end <= validSlots());
     uint32_t leaves = 0;
     for (uint32_t i = start; i < end; ++i) {
-        leaves += allocator.validLeaves(getData(i));
+        leaves += allocator.validLeaves(getChild(i));
     }
     return leaves;
 }

@@ -60,7 +60,7 @@ class BTreePrinter
             return;
         }
         for (uint32_t i = 0; i < n.validSlots(); ++i) {
-            printNode(n.getData(i));
+            printNode(n.getChild(i));
         }
     }
 
