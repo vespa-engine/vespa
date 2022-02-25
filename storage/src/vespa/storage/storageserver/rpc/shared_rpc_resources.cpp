@@ -110,7 +110,12 @@ void SharedRpcResources::shutdown() {
     assert(!_shutdown);
     if (listen_port() > 0) {
         _slobrok_register->unregisterName(_handle);
+        // Give slobrok some time to dispatch unregister RPC
+        while (_slobrok_register->busy()) {
+            std::this_thread::sleep_for(10ms);
+        }
     }
+    _slobrok_register.reset(); // Implicitly kill any pending slobrok tasks prior to shutting down transport layer
     _transport->ShutDown(true);
     // FIXME need to reset to break weak_ptrs? But ShutDown should already sync pending resolves...!
     _shutdown = true;
