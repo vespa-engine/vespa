@@ -5,6 +5,8 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provisioning.FlavorsConfig;
 
+import static com.yahoo.config.provision.NodeResources.Architecture;
+
 /**
  * Simplifies creation of a node-repository config containing flavors.
  * This is needed because the config builder API is inconvenient.
@@ -25,7 +27,7 @@ public class FlavorConfigBuilder {
                                                   double disk,
                                                   double bandwidth,
                                                   Flavor.Type type) {
-        return addFlavor(flavorName, cpu, mem, disk, bandwidth, true, true, type, "x86_64");
+        return addFlavor(flavorName, cpu, mem, disk, bandwidth, true, true, type, Architecture.x86_64);
     }
 
     public FlavorsConfig.Flavor.Builder addFlavor(String flavorName,
@@ -34,7 +36,7 @@ public class FlavorConfigBuilder {
                                                   double disk,
                                                   double bandwidth,
                                                   Flavor.Type type,
-                                                  String architecture) {
+                                                  Architecture architecture) {
         return addFlavor(flavorName, cpu, mem, disk, bandwidth, true, true, type, architecture);
     }
 
@@ -46,7 +48,7 @@ public class FlavorConfigBuilder {
                                                   boolean fastDisk,
                                                   boolean remoteStorage,
                                                   Flavor.Type type,
-                                                  String architecture) {
+                                                  Architecture architecture) {
         FlavorsConfig.Flavor.Builder flavor = new FlavorsConfig.Flavor.Builder();
         flavor.name(flavorName);
         flavor.minDiskAvailableGb(disk);
@@ -56,7 +58,7 @@ public class FlavorConfigBuilder {
         flavor.environment(type.name());
         flavor.fastDisk(fastDisk);
         flavor.remoteStorage(remoteStorage);
-        flavor.architecture(architecture);
+        flavor.architecture(architecture.name());
         builder.flavor(flavor);
         return flavor;
     }
