@@ -20,7 +20,7 @@ class FNET_Scheduler
 {
 public:
     using clock = vespalib::steady_clock;
-    static constexpr auto tick_ms = 10ms;
+    static const vespalib::duration tick_ms;
 
     enum scheduler_constants {
         NUM_SLOTS   = 4096,

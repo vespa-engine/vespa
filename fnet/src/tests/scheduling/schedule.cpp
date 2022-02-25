@@ -46,7 +46,7 @@ public:
     if (b < a)
       return false;
 
-    if ((b - a) > (3 * FNET_Scheduler::tick_ms.count()))
+    if ((b - a) > (3 * vespalib::count_ms(FNET_Scheduler::tick_ms)))
       return false;
 
     return true;
