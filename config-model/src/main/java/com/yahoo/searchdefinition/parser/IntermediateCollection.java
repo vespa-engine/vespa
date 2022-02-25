@@ -42,8 +42,7 @@ public class IntermediateCollection {
 
     public ParsedSchema getParsedSchema(String name) { return parsedSchemas.get(name); }
 
-    ParsedSchema addSchemaFromString(String input) {
-        try {
+    ParsedSchema addSchemaFromString(String input) throws ParseException {
             var stream = new SimpleCharStream(input);
             var parser = new IntermediateParser(stream, deployLogger, modelProperties);
             var schema = parser.schema();
@@ -52,13 +51,9 @@ public class IntermediateCollection {
             }
             parsedSchemas.put(schema.name(), schema);
             return schema;
-        } catch (ParseException ex) {
-            throw new IllegalArgumentException("Could parse schema: "+ex.getMessage());
-        }
-
     }
 
-    private void addSchemaFromStringWithFileName(String input, String fileName) {
+    private void addSchemaFromStringWithFileName(String input, String fileName) throws ParseException {
         var parsed = addSchemaFromString(input);
         String nameFromFile = baseName(fileName);
         if (! parsed.name().equals(nameFromFile)) {
@@ -89,7 +84,10 @@ public class IntermediateCollection {
             addSchemaFromStringWithFileName(IOUtils.readAll(reader.getReader()), reader.getName());
         } catch (java.io.IOException ex) {
             throw new IllegalArgumentException("Failed reading from " + reader.getName() + ": " + ex.getMessage());
+        } catch (ParseException ex) {
+            throw new IllegalArgumentException("Failed parsing schema from " + reader.getName() + ": "+ex.getMessage());
         }
+
     }
 
     /** for unit tests */
@@ -98,6 +96,8 @@ public class IntermediateCollection {
             addSchemaFromStringWithFileName(IOUtils.readFile(new File(fileName)), fileName);
         } catch (java.io.IOException ex) {
             throw new IllegalArgumentException("Could not read file " + fileName + ": " + ex.getMessage());
+        } catch (ParseException ex) {
+            throw new IllegalArgumentException("Failed parsing schema file " + fileName + ": "+ex.getMessage());
         }
     }
 
@@ -117,7 +117,7 @@ public class IntermediateCollection {
         } catch (java.io.IOException ex) {
             throw new IllegalArgumentException("Failed reading from " + reader.getName() + ": " + ex.getMessage());
         } catch (ParseException ex) {
-            throw new IllegalArgumentException("Could parse rank profile: "+ex.getMessage());
+            throw new IllegalArgumentException("Failed parsing rank-profile from " + reader.getName() + ": "+ex.getMessage());
         }
     }
 
