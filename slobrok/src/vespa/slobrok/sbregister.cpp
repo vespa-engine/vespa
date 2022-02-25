@@ -125,6 +125,7 @@ RegisterAPI::unregisterName(vespalib::stringref name)
 void
 RegisterAPI::handleReqDone()
 {
+    std::lock_guard guard(_lock);
     if (_reqDone) {
         _reqDone = false;
         if (_req->IsError()) {
@@ -268,11 +269,13 @@ RegisterAPI::PerformTask()
 
 
 void
-RegisterAPI::RequestDone(FRT_RPCRequest *req)
+RegisterAPI::RequestDone([[maybe_unused]] FRT_RPCRequest *req)
 {
-    LOG_ASSERT(req == _req && !_reqDone);
-    (void) req;
-    _reqDone = true;
+    {
+        std::lock_guard guard(_lock);
+        LOG_ASSERT(req == _req && !_reqDone);
+        _reqDone = true;
+    }
     ScheduleNow();
 }
 
