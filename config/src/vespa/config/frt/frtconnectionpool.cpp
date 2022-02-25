@@ -7,6 +7,9 @@
 #include <vespa/fnet/transport.h>
 #include <vespa/fastos/thread.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".config.frt.frtconnectionpool");
+
 namespace config {
 
 FRTConnectionPool::FRTConnectionKey::FRTConnectionKey(int idx, const vespalib::string& hostname)
@@ -39,7 +42,12 @@ FRTConnectionPool::FRTConnectionPool(FNET_Transport & transport, const ServerSpe
     setHostname();
 }
 
-FRTConnectionPool::~FRTConnectionPool() = default;
+FRTConnectionPool::~FRTConnectionPool() {
+    LOG(debug, "Shutting down %lu connections", _connections.size());
+    syncTransport();
+    _connections.clear();
+    syncTransport();
+}
 
 void
 FRTConnectionPool::syncTransport()
