@@ -104,14 +104,14 @@ class ParsedType {
 
     void setCreateIfNonExistent(boolean value) {
         if (variant != Variant.WSET) {
-            throw new IllegalArgumentException("CreateIfNonExistent only valid for weightedset, not "+variant);
+            throw new IllegalArgumentException("CreateIfNonExistent only valid for weightedset, not " + variant);
         }
         this.createIfNonExistent = value;
     }
 
     void setRemoveIfZero(boolean value) {
         if (variant != Variant.WSET) {
-            throw new IllegalArgumentException("RemoveIfZero only valid for weightedset, not "+variant);
+            throw new IllegalArgumentException("RemoveIfZero only valid for weightedset, not " + variant);
         }
         this.removeIfZero = value;
     }
@@ -119,7 +119,7 @@ class ParsedType {
     void setVariant(Variant value) {
         if (variant == value) return; // already OK
         if (variant != Variant.UNKNOWN) {
-            throw new IllegalArgumentException("setVariant("+value+") only valid for UNKNOWN, not: "+variant);
+            throw new IllegalArgumentException("setVariant(" + value + ") only valid for UNKNOWN, not: " + variant);
         }
         // maybe even more checking would be useful
         this.variant = value;

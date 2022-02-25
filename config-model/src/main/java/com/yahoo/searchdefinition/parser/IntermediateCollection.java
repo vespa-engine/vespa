@@ -47,7 +47,7 @@ public class IntermediateCollection {
             var parser = new IntermediateParser(stream, deployLogger, modelProperties);
             var schema = parser.schema();
             if (parsedSchemas.containsKey(schema.name())) {
-                throw new IllegalArgumentException("Duplicate schemas named: "+schema.name());
+                throw new IllegalArgumentException("Duplicate schemas named: " + schema.name());
             }
             parsedSchemas.put(schema.name(), schema);
             return schema;
@@ -60,18 +60,26 @@ public class IntermediateCollection {
             throw new IllegalArgumentException("The file containing schema '"
                                                + parsed.name() + "' must be named '"
                                                + parsed.name() + ApplicationPackage.SD_NAME_SUFFIX
-                                               + "', not " + fileName);
+                                               + "', was '" + stripDirs(fileName) + "'");
         }
     }
 
     private String baseName(String filename) {
         int pos = filename.lastIndexOf('/');
         if (pos != -1) {
-            filename = filename.substring(pos+1);
+            filename = filename.substring(pos + 1);
         }
         pos = filename.lastIndexOf('.');
         if (pos != -1) {
             filename = filename.substring(0, pos);
+        }
+        return filename;
+    }
+
+    private String stripDirs(String filename) {
+        int pos = filename.lastIndexOf('/');
+        if (pos != -1) {
+            return filename.substring(pos + 1);
         }
         return filename;
     }
@@ -85,7 +93,7 @@ public class IntermediateCollection {
         } catch (java.io.IOException ex) {
             throw new IllegalArgumentException("Failed reading from " + reader.getName() + ": " + ex.getMessage());
         } catch (ParseException ex) {
-            throw new IllegalArgumentException("Failed parsing schema from " + reader.getName() + ": "+ex.getMessage());
+            throw new IllegalArgumentException("Failed parsing schema from " + reader.getName() + ": " + ex.getMessage());
         }
 
     }
@@ -97,7 +105,7 @@ public class IntermediateCollection {
         } catch (java.io.IOException ex) {
             throw new IllegalArgumentException("Could not read file " + fileName + ": " + ex.getMessage());
         } catch (ParseException ex) {
-            throw new IllegalArgumentException("Failed parsing schema file " + fileName + ": "+ex.getMessage());
+            throw new IllegalArgumentException("Failed parsing schema file " + fileName + ": " + ex.getMessage());
         }
     }
 
@@ -109,7 +117,7 @@ public class IntermediateCollection {
         try {
             ParsedSchema schema = parsedSchemas.get(schemaName);
             if (schema == null) {
-                throw new IllegalArgumentException("No schema named: "+schemaName);
+                throw new IllegalArgumentException("No schema named: " + schemaName);
             }
             var stream = new SimpleCharStream(IOUtils.readAll(reader.getReader()));
             var parser = new IntermediateParser(stream, deployLogger, modelProperties);
@@ -117,7 +125,7 @@ public class IntermediateCollection {
         } catch (java.io.IOException ex) {
             throw new IllegalArgumentException("Failed reading from " + reader.getName() + ": " + ex.getMessage());
         } catch (ParseException ex) {
-            throw new IllegalArgumentException("Failed parsing rank-profile from " + reader.getName() + ": "+ex.getMessage());
+            throw new IllegalArgumentException("Failed parsing rank-profile from " + reader.getName() + ": " + ex.getMessage());
         }
     }
 
@@ -131,4 +139,8 @@ public class IntermediateCollection {
         }
     }
 
+    void resolveInternalConnections() {
+        var resolver = new InheritanceResolver(parsedSchemas);
+        resolver.resolveInheritance();
+    }
 }

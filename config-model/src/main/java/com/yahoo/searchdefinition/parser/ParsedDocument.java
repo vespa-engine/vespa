@@ -17,6 +17,7 @@ import java.util.Optional;
  **/
 public class ParsedDocument extends ParsedBlock {
     private final List<String> inherited = new ArrayList<>();
+    private final Map<String, ParsedDocument> resolvedInherits = new HashMap();
     private final Map<String, ParsedField> docFields = new HashMap<>();
     private final Map<String, ParsedStruct> docStructs = new HashMap<>();
     private final Map<String, ParsedAnnotation> docAnnotations = new HashMap<>();
@@ -27,6 +28,7 @@ public class ParsedDocument extends ParsedBlock {
 
     List<String> getInherited() { return List.copyOf(inherited); }
     List<ParsedAnnotation> getAnnotations() { return List.copyOf(docAnnotations.values()); }
+    List<ParsedDocument> getResolvedInherits() { return List.copyOf(resolvedInherits.values()); }
     List<ParsedField> getFields() { return List.copyOf(docFields.values()); }
     List<ParsedStruct> getStructs() { return List.copyOf(docStructs.values()); }
 
@@ -50,6 +52,13 @@ public class ParsedDocument extends ParsedBlock {
         docAnnotations.put(annName, annotation);
     }
 
-    public String toString() { return "document "+name(); }
+    public String toString() { return "document " + name(); }
+
+    void resolveInherit(String name, ParsedDocument parsed) {
+        verifyThat(inherited.contains(name), "resolveInherit for non-inherited name", name);
+        verifyThat(name.equals(parsed.name()), "resolveInherit name mismatch for", name);
+        verifyThat(! resolvedInherits.containsKey(name), "double resolveInherit for", name);
+        resolvedInherits.put(name, parsed);
+    }
 }
 
