@@ -89,6 +89,9 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string)
 	originalEnv := setEnv(env)
 	defer resetEnv(env, originalEnv)
 
+	// Reset viper at end of test to ensure vespa config set does not leak between tests
+	t.Cleanup(viper.Reset)
+
 	// Reset flags to their default value - persistent flags in Cobra persists over tests
 	// TODO: Due to the bad design of viper, the only proper fix is to get rid of global state by moving each command to
 	// their own sub-package

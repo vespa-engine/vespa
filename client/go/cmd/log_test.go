@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/vespa-engine/vespa/client/go/build"
 )
@@ -28,7 +27,6 @@ func TestLog(t *testing.T) {
 
 	_, errOut := execute(command{homeDir: homeDir, args: []string{"log", "--from", "2021-09-27T13:12:49Z", "--to", "2021-09-27T13:15:00", "1h"}}, t, httpClient)
 	assert.Equal(t, "Error: invalid period: cannot combine --from/--to with relative value: 1h\n", errOut)
-	viper.Reset()
 }
 
 func TestLogOldClient(t *testing.T) {
@@ -48,5 +46,4 @@ func TestLogOldClient(t *testing.T) {
 	expected := "Error: client version 7.0.0 is less than the minimum supported version: 8.0.0\nHint: This is not a fatal error, but this version may not work as expected\nHint: Try 'vespa version' to check for a new version\n"
 	assert.Equal(t, expected, errOut)
 	build.Version = buildVersion
-	viper.Reset()
 }
