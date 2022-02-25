@@ -71,9 +71,6 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string)
 		util.ActiveHttpClient = client
 	}
 
-	originalEnv := setEnv(cmd.env)
-	defer resetEnv(cmd.env, originalEnv)
-
 	// Set Vespa CLI directories. Use a separate one per test if none is specified
 	if cmd.homeDir == "" {
 		cmd.homeDir = filepath.Join(t.TempDir(), ".vespa")
@@ -82,8 +79,15 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string)
 	if cmd.cacheDir == "" {
 		cmd.cacheDir = filepath.Join(t.TempDir(), ".cache", "vespa")
 	}
-	os.Setenv("VESPA_CLI_HOME", cmd.homeDir)
-	os.Setenv("VESPA_CLI_CACHE_DIR", cmd.cacheDir)
+
+	env := map[string]string{}
+	for k, v := range cmd.env {
+		env[k] = v
+	}
+	env["VESPA_CLI_HOME"] = cmd.homeDir
+	env["VESPA_CLI_CACHE_DIR"] = cmd.cacheDir
+	originalEnv := setEnv(env)
+	defer resetEnv(env, originalEnv)
 
 	// Reset flags to their default value - persistent flags in Cobra persists over tests
 	// TODO: Due to the bad design of viper, the only proper fix is to get rid of global state by moving each command to
