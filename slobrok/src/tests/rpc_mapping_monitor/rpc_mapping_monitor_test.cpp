@@ -28,8 +28,11 @@ struct Server : FRT_Invokable {
             last_conn->AddRef();
         }
     }
-    Server(fnet::TimeTools::SP time_tools) : frt(TransportConfig().time_tools(time_tools)), names(),
-                                             inject_fail_cnt(0), last_conn(nullptr)
+    Server(fnet::TimeTools::SP time_tools)
+        : frt(fnet::TransportConfig().time_tools(time_tools)),
+          names(),
+          inject_fail_cnt(0),
+          last_conn(nullptr)
     {
         FRT_ReflectionBuilder rb(&frt.supervisor());
         rb.DefineMethod("slobrok.callback.listNamesServed", "", "S", FRT_METHOD(Server::rpc_listNamesServed), this);
@@ -103,7 +106,7 @@ struct RpcMappingMonitorTest : public ::testing::Test {
     ServiceMapping baz_b;
     RpcMappingMonitorTest()
       : debugger(),
-        my_frt(TransportConfig().time_tools(debugger.time_tools())),
+        my_frt(fnet::TransportConfig().time_tools(debugger.time_tools())),
         a(debugger.time_tools()),
         b(debugger.time_tools()),
         hist(),

@@ -28,6 +28,7 @@ FRTConnection::FRTConnection(const vespalib::string& address, FRT_Supervisor& su
 FRTConnection::~FRTConnection()
 {
     if (_target != nullptr) {
+        LOG(debug, "Shutting down %s", _address.c_str());
         _target->SubRef();
         _target = nullptr;
     }

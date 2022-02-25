@@ -98,8 +98,6 @@ TimeTools::make_debug(vespalib::duration event_timeout,
     return std::make_shared<DebugTimeTools>(event_timeout, std::move(current_time));
 }
 
-} // fnet
-
 TransportConfig::TransportConfig(int num_threads)
     : _config(),
       _resolver(),
@@ -125,7 +123,9 @@ TransportConfig::time_tools() const {
     return _time_tools ? _time_tools : std::make_shared<DefaultTimeTools>();
 }
 
-FNET_Transport::FNET_Transport(const TransportConfig &cfg)
+} // fnet
+
+FNET_Transport::FNET_Transport(const fnet::TransportConfig &cfg)
     : _async_resolver(cfg.resolver()),
       _crypto_engine(cfg.crypto()),
       _time_tools(cfg.time_tools()),
