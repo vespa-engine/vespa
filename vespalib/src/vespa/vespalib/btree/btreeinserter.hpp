@@ -34,17 +34,17 @@ BTreeInserter<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::rebalanceLeafEn
     auto &pathElem = itr.getPath(0);
     InternalNodeType *parentNode = pathElem.getWNode();
     uint32_t parentIdx = pathElem.getIdx();
-    BTreeNode::Ref leafRef = parentNode->getChild(parentIdx);
+    BTreeNode::Ref leafRef = parentNode->get_child_relaxed(parentIdx);
     BTreeNode::Ref leftRef = BTreeNode::Ref();
     LeafNodeType *leftNode = nullptr;
     BTreeNode::Ref rightRef = BTreeNode::Ref();
     LeafNodeType *rightNode = nullptr;
     if (parentIdx > 0) {
-        leftRef = parentNode->getChild(parentIdx - 1);
+        leftRef = parentNode->get_child_relaxed(parentIdx - 1);
         leftNode = allocator.mapLeafRef(leftRef);
     }
     if (parentIdx + 1 < parentNode->validSlots()) {
-        rightRef = parentNode->getChild(parentIdx + 1);
+        rightRef = parentNode->get_child_relaxed(parentIdx + 1);
         rightNode = allocator.mapLeafRef(rightRef);
     }
     if (leftNode != nullptr && leftNode->validSlots() < LeafNodeType::maxSlots() &&
@@ -138,7 +138,7 @@ insert(BTreeNode::Ref &root,
         idx = pe.getIdx();
         AggrT olda(AggrCalcT::hasAggregated() ?
                    node->getAggregated() : AggrT());
-        BTreeNode::Ref subNode = node->getChild(idx);
+        BTreeNode::Ref subNode = node->get_child_relaxed(idx);
         node->update(idx, *lastKey, subNode);
         node->incValidLeaves(1);
         if (NodeAllocatorType::isValidRef(splitNodeRef)) {

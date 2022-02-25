@@ -106,10 +106,10 @@ normalize()
     /* Adjust validLeaves for rightmost nodes */
     for (level = 0; level < _inodes.size(); level++) {
         InternalNodeType *inode = _inodes[level].data;
-        NodeRef lcRef(inode->getLastChild());
+        NodeRef lcRef(inode->get_last_child_relaxed());
         assert(NodeAllocatorType::isValidRef(lcRef));
         assert((level == 0) == _allocator.isLeafRef(lcRef));
-        inode->incValidLeaves(_allocator.validLeaves(inode->getLastChild()));
+        inode->incValidLeaves(_allocator.validLeaves(inode->get_last_child_relaxed()));
         inode->update(inode->validSlots() - 1,
                       level == 0 ?
                       _allocator.mapLeafRef(lcRef)->getLastKey() :
@@ -134,10 +134,10 @@ normalize()
             inode = _allocator.mapInternalRef(iRef);
             assert(inode != nullptr);
             assert(inode->validSlots() >= 1);
-            child = inode->getLastChild();
+            child = inode->get_last_child_relaxed();
         } else {
             /* Use next to last child of rightmost node on level */
-            child = inode->getChild(inode->validSlots() - 2);
+            child = inode->get_child_relaxed(inode->validSlots() - 2);
         }
         if (level == 0)
             break;
@@ -190,11 +190,11 @@ normalize()
         }
         if (pnode->validSlots() > 0) {
             uint32_t s = pnode->validSlots() - 1;
-            LeafNodeType *l = _allocator.mapLeafRef(pnode->getChild(s));
+            LeafNodeType *l = _allocator.mapLeafRef(pnode->get_child_relaxed(s));
             pnode->writeKey(s, l->getLastKey());
             if (s > 0) {
                 --s;
-                l = _allocator.mapLeafRef(pnode->getChild(s));
+                l = _allocator.mapLeafRef(pnode->get_child_relaxed(s));
                 pnode->writeKey(s, l->getLastKey());
             }
         }
@@ -202,7 +202,7 @@ normalize()
             InternalNodeType *lpnode =
                 _allocator.mapInternalRef(leftInodes[0]);
             uint32_t s = lpnode->validSlots() - 1;
-            LeafNodeType *l = _allocator.mapLeafRef(lpnode->getChild(s));
+            LeafNodeType *l = _allocator.mapLeafRef(lpnode->get_child_relaxed(s));
             lpnode->writeKey(s, l->getLastKey());
         }
     }
@@ -256,11 +256,11 @@ normalize()
         if (pnode->validSlots() > 0) {
             uint32_t s = pnode->validSlots() - 1;
             InternalNodeType *n =
-                _allocator.mapInternalRef(pnode->getChild(s));
+                _allocator.mapInternalRef(pnode->get_child_relaxed(s));
             pnode->writeKey(s, n->getLastKey());
             if (s > 0) {
                 --s;
-                n = _allocator.mapInternalRef(pnode->getChild(s));
+                n = _allocator.mapInternalRef(pnode->get_child_relaxed(s));
                 pnode->writeKey(s, n->getLastKey());
             }
         }
@@ -270,7 +270,7 @@ normalize()
                 _allocator.mapInternalRef(leftInodes[level + 1]);
             uint32_t s = lpnode->validSlots() - 1;
             InternalNodeType *n =
-                _allocator.mapInternalRef(lpnode->getChild(s));
+                _allocator.mapInternalRef(lpnode->get_child_relaxed(s));
             lpnode->writeKey(s, n->getLastKey());
         }
     }
@@ -333,7 +333,7 @@ allocNewLeafNode()
         }
         inode = _inodes[level].data;
         assert(inode->validSlots() > 0);
-        NodeRef lcRef(inode->getLastChild());
+        NodeRef lcRef(inode->get_last_child_relaxed());
         inode->incValidLeaves(_allocator.validLeaves(lcRef));
         inode->update(inode->validSlots() - 1,
                       level == 0 ?
@@ -358,7 +358,7 @@ allocNewLeafNode()
     }
     while (level > 0) {
         assert(inode->validSlots() > 0);
-        child = inode->getLastChild();
+        child = inode->get_last_child_relaxed();
         assert(!_allocator.isLeafRef(child));
         inode = _allocator.mapInternalRef(child);
         level--;

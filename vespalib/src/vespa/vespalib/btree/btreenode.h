@@ -336,8 +336,10 @@ private:
 
 public:
     BTreeNode::Ref getChild(uint32_t idx) const { return getData(idx); }
+    BTreeNode::Ref get_child_relaxed(uint32_t idx) const { return getData(idx); }
     void setChild(uint32_t idx, BTreeNode::Ref child) { setData(idx, child); }
-    BTreeNode::Ref getLastChild() const { return getChild(validSlots() - 1); }
+    void set_child_relaxed(uint32_t idx, BTreeNode::Ref child) { setData(idx, child); }
+    BTreeNode::Ref get_last_child_relaxed() const { return get_child_relaxed(validSlots() - 1); }
     uint32_t validLeaves() const { return _validLeaves; }
     void setValidLeaves(uint32_t newValidLeaves) { _validLeaves = newValidLeaves; }
     void incValidLeaves(uint32_t delta) { _validLeaves += delta; }

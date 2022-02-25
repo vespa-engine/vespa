@@ -25,11 +25,11 @@ steal(InternalNodeType *pNode,
     BTreeNode::Ref rightVictimRef = BTreeNode::Ref();
     NodeType * rightVictim = nullptr;
     if (idx > 0) {
-        leftVictimRef = pNode->getChild(idx - 1);
+        leftVictimRef = pNode->get_child_relaxed(idx - 1);
         leftVictim = allocator.template mapRef<NodeType>(leftVictimRef);
     }
     if (idx + 1 < pNode->validSlots()) {
-        rightVictimRef = pNode->getChild(idx + 1);
+        rightVictimRef = pNode->get_child_relaxed(idx + 1);
         rightVictim = allocator.template mapRef<NodeType>(rightVictimRef);
     }
     if (leftVictim != nullptr &&
@@ -141,7 +141,7 @@ remove(BTreeNode::Ref &root,
         idx = pe.getIdx();
         AggrT olda(AggrCalcT::hasAggregated() ?
                    node->getAggregated() : AggrT());
-        BTreeNode::Ref subNode = node->getChild(idx);
+        BTreeNode::Ref subNode = node->get_child_relaxed(idx);
         node->update(idx, allocator.getLastKey(subNode), subNode);
         node->decValidLeaves(1);
         if (level == 0) {
