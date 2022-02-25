@@ -8,8 +8,16 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.LinkedList;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ExecutorsTestCase {
@@ -137,4 +145,21 @@ public class ExecutorsTestCase {
         assertEquals(9, measureMaxNumThreadsUsage(new ThreadPoolExecutor(100, 100, 0L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(false)), 3000, 10));
         Runner.threadCount.set(0);
     }
+
+    @Test
+    public void requireHzAndAdjustment() {
+        assertEquals(1000, SystemTimer.detectHz());
+
+        assertEquals(1, SystemTimer.adjustTimeoutByDetectedHz(Duration.ofMillis(1)).toMillis());
+        assertEquals(20, SystemTimer.adjustTimeoutByDetectedHz(Duration.ofMillis(20)).toMillis());
+
+        assertEquals(1, SystemTimer.adjustTimeoutByDetectedHz(Duration.ofMillis(1), 1000).toMillis());
+        assertEquals(10, SystemTimer.adjustTimeoutByDetectedHz(Duration.ofMillis(1), 100).toMillis());
+        assertEquals(100, SystemTimer.adjustTimeoutByDetectedHz(Duration.ofMillis(1), 10).toMillis());
+
+        assertEquals(20, SystemTimer.adjustTimeoutByDetectedHz(Duration.ofMillis(20), 1000).toMillis());
+        assertEquals(200, SystemTimer.adjustTimeoutByDetectedHz(Duration.ofMillis(20), 100).toMillis());
+        assertEquals(2000, SystemTimer.adjustTimeoutByDetectedHz(Duration.ofMillis(20), 10).toMillis());
+    }
+
 }

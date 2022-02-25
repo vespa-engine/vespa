@@ -212,7 +212,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         this.asyncSession = access.createAsyncSession(new AsyncParameters());
         this.clusters = parseClusters(clusterListConfig, bucketSpacesConfig);
         this.operations = new ConcurrentLinkedDeque<>();
-        int resendDelayMS = SystemTimer.adjustTimeoutByDetectedHz(executorConfig.resendDelayMillis());
+        long resendDelayMS = SystemTimer.adjustTimeoutByDetectedHz(Duration.ofMillis(executorConfig.resendDelayMillis())).toMillis();
 
         //TODO Here it would be better do have dedicated threads with different wait depending on blocked or empty.
         this.dispatcher.scheduleWithFixedDelay(this::dispatchEnqueued, resendDelayMS, resendDelayMS, MILLISECONDS);
