@@ -139,4 +139,8 @@ public class IntermediateCollection {
         }
     }
 
+    void resolveInternalConnections() {
+        var resolver = new InheritanceResolver(parsedSchemas);
+        resolver.resolveInheritance();
+    }
 }

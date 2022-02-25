@@ -36,6 +36,7 @@ public class ParsedSchema extends ParsedBlock {
     private final List<OnnxModel> onnxModels = new ArrayList<>();
     private final List<RankingConstant> rankingConstants = new ArrayList<>();
     private final List<String> inherited = new ArrayList<>();
+    private final Map<String, ParsedSchema> resolvedInherits = new HashMap();
     private final Map<String, ParsedAnnotation> extraAnnotations = new HashMap<>();
     private final Map<String, ParsedDocumentSummary> docSums = new HashMap<>();
     private final Map<String, ParsedField> extraFields = new HashMap<>();
@@ -64,6 +65,7 @@ public class ParsedSchema extends ParsedBlock {
     List<RankingConstant> getRankingConstants() { return List.copyOf(rankingConstants); }
     List<String> getInherited() { return List.copyOf(inherited); }
     Map<String, ParsedRankProfile> getRankProfiles() { return Map.copyOf(rankProfiles); }
+    List<ParsedSchema> getResolvedInherits() { return List.copyOf(resolvedInherits.values()); }
 
     void addAnnotation(ParsedAnnotation annotation) {
         String annName = annotation.name();
@@ -136,4 +138,12 @@ public class ParsedSchema extends ParsedBlock {
                    "already has stemming", defaultStemming, "cannot also set", value);
         defaultStemming = value;
     }
+
+    void resolveInherit(String name, ParsedSchema parsed) {
+        verifyThat(inherited.contains(name), "resolveInherit for non-inherited name", name);
+        verifyThat(name.equals(parsed.name()), "resolveInherit name mismatch for", name);
+        verifyThat(! resolvedInherits.containsKey(name), "double resolveInherit for", name);
+        resolvedInherits.put(name, parsed);
+    }
+
 }

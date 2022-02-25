@@ -131,4 +131,58 @@ public class IntermediateCollectionTestCase {
         assertTrue(ex.getMessage().startsWith("Failed parsing rank-profile from src/test/examples/structoutsideofdocument.sd: "));
     }
 
+    @Test
+    public void can_resolve_document_inheritance() throws Exception {
+        var collection = new IntermediateCollection();
+        collection.addSchemaFromFile("src/test/derived/deriver/child.sd");
+        collection.addSchemaFromFile("src/test/derived/deriver/grandparent.sd");
+        collection.addSchemaFromFile("src/test/derived/deriver/parent.sd");
+        collection.resolveInternalConnections();
+        var schemes = collection.getParsedSchemas();
+        assertEquals(schemes.size(), 3);
+        var childDoc = schemes.get("child").getDocument();
+        var inherits = childDoc.getResolvedInherits();
+        assertEquals(inherits.size(), 1);
+        var parentDoc = inherits.get(0);
+        assertEquals(parentDoc.name(), "parent");
+        inherits = parentDoc.getResolvedInherits();
+        assertEquals(inherits.size(), 1);
+        assertEquals(inherits.get(0).name(), "grandparent");
+    }
+
+    @Test
+    public void can_detect_schema_inheritance_cycles() throws Exception {
+        var collection = new IntermediateCollection();
+        collection.addSchemaFromString("schema foo inherits bar {}");
+        collection.addSchemaFromString("schema bar inherits qux {}");
+        collection.addSchemaFromString("schema qux inherits foo {}");
+        assertEquals(collection.getParsedSchemas().size(), 3);
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                              collection.resolveInternalConnections());
+        assertTrue(ex.getMessage().startsWith("Inheritance cycle for schemas: "));
+    }
+
+    @Test
+    public void can_detect_document_inheritance_cycles() throws Exception {
+        var collection = new IntermediateCollection();
+        collection.addSchemaFromString("schema foo { document foo inherits bar {} }");
+        collection.addSchemaFromString("schema bar { document bar inherits qux {} }");
+        collection.addSchemaFromString("schema qux { document qux inherits foo {} }");
+        assertEquals(collection.getParsedSchemas().size(), 3);
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                              collection.resolveInternalConnections());
+        assertTrue(ex.getMessage().startsWith("Inheritance cycle for documents: "));
+    }
+
+    @Test
+    public void can_detect_missing_doc() throws Exception {
+        var collection = new IntermediateCollection();
+        collection.addSchemaFromString("schema foo { document foo inherits bar {} }");
+        collection.addSchemaFromString("schema qux { document qux inherits foo {} }");
+        assertEquals(collection.getParsedSchemas().size(), 2);
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                              collection.resolveInternalConnections());
+        assertEquals("document foo inherits from unavailable document bar", ex.getMessage());
+    }
+
 }
