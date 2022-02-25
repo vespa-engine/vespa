@@ -60,10 +60,10 @@ public class ParsedSchema extends ParsedBlock {
     List<ParsedField> getFields() { return List.copyOf(extraFields.values()); }
     List<ParsedFieldSet> getFieldSets() { return List.copyOf(fieldSets.values()); }
     List<ParsedIndex> getIndexes() { return List.copyOf(extraIndexes.values()); }
-    List<ParsedRankProfile> getRankProfiles() { return List.copyOf(rankProfiles.values()); }
     List<ParsedStruct> getStructs() { return List.copyOf(extraStructs.values()); }
     List<RankingConstant> getRankingConstants() { return List.copyOf(rankingConstants); }
     List<String> getInherited() { return List.copyOf(inherited); }
+    Map<String, ParsedRankProfile> getRankProfiles() { return Map.copyOf(rankProfiles); }
 
     void addAnnotation(ParsedAnnotation annotation) {
         String annName = annotation.name();

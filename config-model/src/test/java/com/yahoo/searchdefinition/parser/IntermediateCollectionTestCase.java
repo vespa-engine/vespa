@@ -79,4 +79,31 @@ public class IntermediateCollectionTestCase {
         assertEquals(schema.name(), "grandparent");
     }
 
+    @Test
+    public void can_add_extra_rank_profiles() throws Exception {
+        var collection = new IntermediateCollection();
+        collection.addSchemaFromFile("src/test/derived/rankprofilemodularity/test.sd");
+        collection.addRankProfileFile("test", "src/test/derived/rankprofilemodularity/test/outside_schema1.profile");
+        collection.addRankProfileFile("test", readerOf("src/test/derived/rankprofilemodularity/test/outside_schema2.profile"));
+        var schemes = collection.getParsedSchemas();
+        assertEquals(schemes.size(), 1);
+        var schema = schemes.get("test");
+        assertTrue(schema != null);
+        assertEquals(schema.name(), "test");
+        var rankProfiles = schema.getRankProfiles();
+        assertEquals(rankProfiles.size(), 7);
+        var outside = rankProfiles.get("outside_schema1");
+        assertTrue(outside != null);
+        assertEquals(outside.name(), "outside_schema1");
+        var functions = outside.getFunctions();
+        assertEquals(functions.size(), 1);
+        assertEquals(functions.get(0).name(), "fo1");
+        outside = rankProfiles.get("outside_schema2");
+        assertTrue(outside != null);
+        assertEquals(outside.name(), "outside_schema2");
+        functions = outside.getFunctions();
+        assertEquals(functions.size(), 1);
+        assertEquals(functions.get(0).name(), "fo2");
+    }
+
 }
