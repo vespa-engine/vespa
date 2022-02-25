@@ -107,6 +107,15 @@ public class IntermediateCollectionTestCase {
     }
 
     @Test
+    public void name_mismatch_throws() throws Exception {
+        var collection = new IntermediateCollection();
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                              collection.addSchemaFromReader(readerOf("src/test/cfg/application/sdfilenametest/schemas/notmusic.sd")));
+        assertEquals("The file containing schema 'music' must be named 'music.sd', was 'notmusic.sd'",
+                     ex.getMessage());
+    }
+
+    @Test
     public void bad_parse_throws() throws Exception {
         var collection = new IntermediateCollection();
         var ex = assertThrows(IllegalArgumentException.class, () ->

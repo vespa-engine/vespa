@@ -60,7 +60,7 @@ public class IntermediateCollection {
             throw new IllegalArgumentException("The file containing schema '"
                                                + parsed.name() + "' must be named '"
                                                + parsed.name() + ApplicationPackage.SD_NAME_SUFFIX
-                                               + "', not " + fileName);
+                                               + "', was '" + stripDirs(fileName) + "'");
         }
     }
 
@@ -72,6 +72,14 @@ public class IntermediateCollection {
         pos = filename.lastIndexOf('.');
         if (pos != -1) {
             filename = filename.substring(0, pos);
+        }
+        return filename;
+    }
+
+    private String stripDirs(String filename) {
+        int pos = filename.lastIndexOf('/');
+        if (pos != -1) {
+            return filename.substring(pos + 1);
         }
         return filename;
     }
