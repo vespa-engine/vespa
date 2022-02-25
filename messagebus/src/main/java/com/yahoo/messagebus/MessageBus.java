@@ -95,7 +95,6 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
                 }
             }
             try {
-
                 Thread.sleep(10);
             } catch (InterruptedException e) {
                 return;
