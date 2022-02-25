@@ -92,7 +92,7 @@ private:
   Gid _gid;
 };
 
-struct IndirectCmp : public std::binary_function<Slot*, Slot*, bool> {
+struct IndirectCmp {
     bool operator() (const Slot* s1, const Slot* s2) noexcept {
         return s1->cmp(*s2) < 0;
     }

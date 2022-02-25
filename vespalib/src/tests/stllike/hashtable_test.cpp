@@ -17,7 +17,7 @@ using namespace vespalib;
 namespace {
 
 template<typename T>
-struct Dereference : std::unary_function<T, std::unique_ptr<T>> {
+struct Dereference {
     T &operator()(std::unique_ptr<T>& p) const { return *p; }
     const T& operator()(const std::unique_ptr<T>& p) const { return *p; }
 };
@@ -119,7 +119,7 @@ TEST("require that you can insert duplicates") {
 }
 
 template<typename To, typename Vector>
-struct FirstInVector : std::unary_function<To, Vector> {
+struct FirstInVector {
     To &operator()(Vector& v) const { return v[0]; }
     const To& operator()(const Vector& v) const { return v[0]; }
 };
