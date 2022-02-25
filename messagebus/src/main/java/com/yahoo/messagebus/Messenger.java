@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
+import com.yahoo.concurrent.SystemTimer;
+
 import java.util.logging.Level;
 
 import java.util.ArrayDeque;
@@ -147,12 +149,17 @@ public class Messenger implements Runnable {
 
     @Override
     public void run() {
+        int timeoutMS = 100*1000/SystemTimer.detectHz();
         while (true) {
             Task task = null;
             synchronized (this) {
                 if (queue.isEmpty()) {
                     try {
-                        wait(10);
+                        if (children.isEmpty()) {
+                            wait();
+                        } else {
+                            wait(timeoutMS);
+                        }
                     } catch (final InterruptedException e) {
                         continue;
                     }
@@ -173,8 +180,7 @@ public class Messenger implements Runnable {
                 try {
                     task.destroy();
                 } catch (final Exception e) {
-                    log.warning("An exception was thrown while destroying " + task.getClass().getName() + ": " +
-                                e.toString());
+                    log.warning("An exception was thrown while destroying " + task.getClass().getName() + ": " + e);
                     log.warning("Someone, somewhere might have to wait indefinitely for something.");
                 }
             }
