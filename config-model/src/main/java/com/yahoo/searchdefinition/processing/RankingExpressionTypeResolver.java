@@ -86,13 +86,17 @@ public class RankingExpressionTypeResolver extends Processor {
             profile.getSummaryFeatures().forEach(f -> resolveType(f, "summary feature " + f, context));
             ensureValidDouble(profile.getFirstPhaseRanking(), "first-phase expression", context);
             ensureValidDouble(profile.getSecondPhaseRanking(), "second-phase expression", context);
-            if ( context.tensorsAreUsed() &&
-                 ! context.queryFeaturesNotDeclared().isEmpty() &&
-                 ! warnedAbout.containsAll(context.queryFeaturesNotDeclared())) {
-                deployLogger.logApplicationPackage(Level.WARNING, "The following query features used in '" + profile.name() +
-                                                                  "' are not declared in query profile " +
-                                                                  "types and will be interpreted as scalars, not tensors: " +
-                                                                  context.queryFeaturesNotDeclared());
+            if ( ( context.tensorsAreUsed() || profile.isStrict())
+                 && ! context.queryFeaturesNotDeclared().isEmpty()
+                 && ! warnedAbout.containsAll(context.queryFeaturesNotDeclared())) {
+                if (profile.isStrict())
+                    throw new IllegalArgumentException(profile + " is strict but is missing a query profile type " +
+                                                       "declaration of features " + context.queryFeaturesNotDeclared());
+                else
+                    deployLogger.logApplicationPackage(Level.WARNING, "The following query features used in " + profile +
+                                                                      " are not declared in query profile " +
+                                                                      "types and will be interpreted as scalars, not tensors: " +
+                                                                      context.queryFeaturesNotDeclared());
                 warnedAbout.addAll(context.queryFeaturesNotDeclared());
             }
         }
