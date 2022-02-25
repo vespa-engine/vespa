@@ -1163,13 +1163,13 @@ thaw(BTreeNode::Ref rootRef)
                                  rootRef;
         assert(node == allocator.mapInternalRef(nodeRef));
         if (!node->getFrozen()) {
-            node->setChild(pe.getIdx(), childRef);
+            node->set_child_relaxed(pe.getIdx(), childRef);
             return rootRef;
         }
         InternalNodeTypeRefPair thawed = allocator.thawNode(nodeRef, node);
         node = thawed.data;
         pe.setNode(node);
-        node->setChild(pe.getIdx(), childRef);
+        node->set_child_relaxed(pe.getIdx(), childRef);
         childRef = thawed.ref;
         ++level;
     }
