@@ -408,6 +408,37 @@ public class RankingExpressionTypeResolverTestCase {
     }
 
     @Test
+    public void undeclaredQueryFeaturesAreNotAcceptedWhenStrict() throws Exception {
+        try {
+            InspectableDeployLogger logger = new InspectableDeployLogger();
+            ApplicationBuilder builder = new ApplicationBuilder(logger);
+            builder.addSchema(joinLines(
+                    "search test {",
+                    "  document test { ",
+                    "    field anyfield type double {" +
+                    "      indexing: attribute",
+                    "    }",
+                    "  }",
+                    "  rank-profile my_rank_profile {",
+                    "    strict: true" +
+                    "    first-phase {",
+                    "      expression: query(foo) + f() + sum(attribute(anyfield))",
+                    "    }",
+                    "    function f() {",
+                    "      expression: query(bar) + query(baz)",
+                    "    }",
+                    "  }",
+                    "}"
+            ));
+            builder.build(true);
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("In schema 'test', rank profile 'my_rank_profile': rank profile 'my_rank_profile' is strict but is missing a query profile type declaration of features [query(bar), query(baz), query(foo)]",
+                         Exceptions.toMessageString(e));
+        }
+    }
+
+    @Test
     public void undeclaredQueryFeaturesAreAcceptedWithWarningWhenUsingTensors() throws Exception {
         InspectableDeployLogger logger = new InspectableDeployLogger();
         ApplicationBuilder builder = new ApplicationBuilder(logger);
@@ -431,7 +462,7 @@ public class RankingExpressionTypeResolverTestCase {
         builder.build(true);
         String message = logger.findMessage("The following query features");
         assertNotNull(message);
-        assertEquals("WARNING: The following query features used in 'my_rank_profile' are not declared in query profile types and " +
+        assertEquals("WARNING: The following query features used in rank profile 'my_rank_profile' are not declared in query profile types and " +
                      "will be interpreted as scalars, not tensors: [query(bar), query(baz), query(foo)]",
                      message);
     }

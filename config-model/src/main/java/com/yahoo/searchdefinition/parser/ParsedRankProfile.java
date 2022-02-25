@@ -17,8 +17,9 @@ import java.util.Optional;
  * This class holds the extracted information after parsing a
  * rank-profile block in a schema (.sd) file, using simple data
  * structures as far as possible.  Do not put advanced logic here!
+ *
  * @author arnej27959
- **/
+ */
 class ParsedRankProfile extends ParsedBlock {
 
     private boolean ignoreDefaultRankFeatures = false;
@@ -37,6 +38,7 @@ class ParsedRankProfile extends ParsedBlock {
     private String inheritedSummaryFeatures = null;
     private String inheritedMatchFeatures = null;
     private String secondPhaseExpression = null;
+    private Boolean strict = null;
     private final List<String> inherited = new ArrayList<>();
     private final Map<String, Boolean> fieldsRankFilter = new HashMap<>();
     private final Map<String, Integer> fieldsRankWeight = new HashMap<>();
@@ -72,6 +74,7 @@ class ParsedRankProfile extends ParsedBlock {
     Map<String, Value> getConstants() { return Map.copyOf(constants); }
     Optional<String> getInheritedSummaryFeatures() { return Optional.ofNullable(this.inheritedSummaryFeatures); }
     Optional<String> getSecondPhaseExpression() { return Optional.ofNullable(this.secondPhaseExpression); }
+    Optional<Boolean> isStrict() { return Optional.ofNullable(this.strict); }
 
     void addSummaryFeatures(FeatureList features) {
         verifyThat(summaryFeatures == null, "already has summary-features");
@@ -184,8 +187,15 @@ class ParsedRankProfile extends ParsedBlock {
         this.secondPhaseExpression = expression;
     }
 
+    void setStrict(boolean strict) {
+        verifyThat(this.strict == null, "already has strict");
+        this.strict = strict;
+    }
+  
     void setTermwiseLimit(double limit) {
         verifyThat(termwiseLimit == null, "already has termwise-limit");
         this.termwiseLimit = limit;
     }
+  
+    
 }

@@ -131,6 +131,8 @@ public class RankProfile implements Cloneable {
 
     private List<ImmutableSDField> allFieldsList;
 
+    private Boolean strict;
+
     /** Global onnx models not tied to a search definition */
     private final OnnxModels onnxModels;
     private final RankingConstants rankingConstants;
@@ -200,6 +202,28 @@ public class RankProfile implements Cloneable {
 
     private Stream<ImmutableSDField> allImportedFields() {
         return schema != null ? schema.allImportedFields() : Stream.empty();
+    }
+
+    /**
+     * Returns whether type checking should fail if this profile accesses query features that are
+     * not defined in query profile types.
+     *
+     * Default is false.
+     */
+    public boolean isStrict() {
+        Boolean declaredStrict = declaredStrict();
+        if (declaredStrict != null) return declaredStrict;
+        return false;
+    }
+
+    /** Returns the strict value declared in this or any parent profile. */
+    public Boolean declaredStrict() {
+        if (strict != null) return strict;
+        return uniquelyInherited(p -> p.declaredStrict(), "strict").orElse(null);
+    }
+
+    public void setStrict(Boolean strict) {
+        this.strict = strict;
     }
 
     /**
