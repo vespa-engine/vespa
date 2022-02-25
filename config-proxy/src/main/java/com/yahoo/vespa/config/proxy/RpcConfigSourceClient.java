@@ -17,6 +17,7 @@ import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -68,7 +69,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
         this.memoryCache = new MemoryCache();
         this.delayedResponses = new DelayedResponses();
         checkConfigSources();
-        nextConfigFuture = nextConfigScheduler.scheduleAtFixedRate(this, 0, 10*1000/SystemTimer.detectHz(), MILLISECONDS);
+        nextConfigFuture = nextConfigScheduler.scheduleAtFixedRate(this, 0, SystemTimer.adjustTimeoutByDetectedHz(Duration.ofMillis(10)).toMillis(), MILLISECONDS);
         this.requesters = new JrtConfigRequesters();
         DelayedResponseHandler command = new DelayedResponseHandler(delayedResponses, memoryCache, responseHandler);
         this.delayedResponsesFuture = delayedResponsesScheduler.scheduleAtFixedRate(command, 5, 1, SECONDS);

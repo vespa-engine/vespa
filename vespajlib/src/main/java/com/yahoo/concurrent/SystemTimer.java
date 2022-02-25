@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.concurrent;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -16,10 +17,10 @@ public enum SystemTimer implements Timer {
 
     private volatile long millis;
 
-    public static int detectHz() {
+    public static long detectHz() {
         Logger log = Logger.getLogger(SystemTimer.class.getName());
         String hzEnv = System.getenv("VESPA_TIMER_HZ");
-        int hz = 1000;
+        long hz = 1000;
         if ((hzEnv != null) && !hzEnv.isBlank()) {
             try {
                 hz = Integer.parseInt(hzEnv);
@@ -32,8 +33,15 @@ public enum SystemTimer implements Timer {
         return hz;
     }
 
+    public static Duration adjustTimeoutByDetectedHz(Duration timeout) {
+        return  adjustTimeoutByDetectedHz(timeout, detectHz());
+    }
+    public static Duration adjustTimeoutByDetectedHz(Duration timeout, long hz) {
+        return  timeout.multipliedBy(1000).dividedBy(hz);
+    }
+
     SystemTimer() {
-        int napTime = 1000 / detectHz();
+        long napTime = adjustTimeoutByDetectedHz(Duration.ofMillis(1)).toMillis();
         millis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
         Thread thread = new Thread() {
 

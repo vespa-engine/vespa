@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.container.core.HandlerMetricContextUtil;
 import com.yahoo.container.core.documentapi.VespaDocumentAccess;
 import com.yahoo.container.jdisc.ContentChannelOutputStream;
@@ -20,7 +21,6 @@ import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.document.fieldset.AllFields;
-import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.document.fieldset.DocIdOnly;
 import com.yahoo.document.idstring.IdIdString;
 import com.yahoo.document.json.DocumentOperationType;
@@ -212,14 +212,11 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         this.asyncSession = access.createAsyncSession(new AsyncParameters());
         this.clusters = parseClusters(clusterListConfig, bucketSpacesConfig);
         this.operations = new ConcurrentLinkedDeque<>();
-        this.dispatcher.scheduleWithFixedDelay(this::dispatchEnqueued,
-                                               executorConfig.resendDelayMillis(),
-                                               executorConfig.resendDelayMillis(),
-                                               MILLISECONDS);
-        this.visitDispatcher.scheduleWithFixedDelay(this::dispatchVisitEnqueued,
-                                                    executorConfig.resendDelayMillis(),
-                                                    executorConfig.resendDelayMillis(),
-                                                    MILLISECONDS);
+        long resendDelayMS = SystemTimer.adjustTimeoutByDetectedHz(Duration.ofMillis(executorConfig.resendDelayMillis())).toMillis();
+
+        //TODO Here it would be better do have dedicated threads with different wait depending on blocked or empty.
+        this.dispatcher.scheduleWithFixedDelay(this::dispatchEnqueued, resendDelayMS, resendDelayMS, MILLISECONDS);
+        this.visitDispatcher.scheduleWithFixedDelay(this::dispatchVisitEnqueued, resendDelayMS, resendDelayMS, MILLISECONDS);
     }
 
     // ------------------------------------------------ Requests -------------------------------------------------

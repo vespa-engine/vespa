@@ -3,6 +3,7 @@ package com.yahoo.messagebus;
 
 import com.yahoo.concurrent.SystemTimer;
 
+import java.time.Duration;
 import java.util.logging.Level;
 
 import java.util.ArrayDeque;
@@ -149,7 +150,7 @@ public class Messenger implements Runnable {
 
     @Override
     public void run() {
-        int timeoutMS = 100*1000/SystemTimer.detectHz();
+        long timeoutMS = SystemTimer.adjustTimeoutByDetectedHz(Duration.ofMillis(100)).toMillis();
         while (true) {
             Task task = null;
             synchronized (this) {

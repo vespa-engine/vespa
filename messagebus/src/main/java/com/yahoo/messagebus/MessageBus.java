@@ -2,6 +2,8 @@
 package com.yahoo.messagebus;
 
 import com.yahoo.concurrent.SystemTimer;
+
+import java.time.Duration;
 import java.util.logging.Level;
 import com.yahoo.messagebus.network.Network;
 import com.yahoo.messagebus.network.NetworkMultiplexer;
@@ -88,7 +90,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
     }
 
     private void sendBlockedMessages() {
-        int timeout = 10*1000/SystemTimer.detectHz();
+        long timeout = SystemTimer.adjustTimeoutByDetectedHz(Duration.ofMillis(10)).toMillis();
         while (! destroyed.get()) {
             for (SendBlockedMessages sender : blockedSenders.keySet()) {
                 if (!sender.trySend()) {
