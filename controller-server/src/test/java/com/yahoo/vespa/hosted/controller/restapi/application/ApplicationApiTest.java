@@ -410,6 +410,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               new File("application2-with-patches.json"));
 
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/prod", GET)
+                        .screwdriverIdentity(SCREWDRIVER_ID),
+                new File("application2-prod.json"));
+
         // PATCH in removal of the application major version override removal
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", PATCH)
                                       .userIdentity(USER_ID)

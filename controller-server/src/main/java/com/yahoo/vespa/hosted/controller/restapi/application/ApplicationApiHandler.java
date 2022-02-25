@@ -17,6 +17,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -246,6 +247,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}/validate")) return validateSecretStore(path.get("tenant"), path.get("name"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/prod")) return applicationProd(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/compile-version")) return compileVersion(path.get("tenant"), path.get("application"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deployment")) return JobControllerApiHandlerHelper.overviewResponse(controller, TenantAndApplicationId.from(path.get("tenant"), path.get("application")), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/package")) return applicationPackage(path.get("tenant"), path.get("application"), request);
@@ -745,6 +747,12 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
+    private HttpResponse applicationProd(String tenantName, String applicationName, HttpRequest request) {
+        Slime slime = new Slime();
+        toSlimeProd(slime.setObject(), getApplication(tenantName, applicationName), request);
+        return new SlimeJsonResponse(slime);
+    }
+
     private HttpResponse compileVersion(String tenantName, String applicationName) {
         Slime slime = new Slime();
         slime.setObject().setString("compileVersion",
@@ -1229,6 +1237,101 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         application.ownershipIssueId().ifPresent(issueId -> object.setString("ownershipIssueId", issueId.value()));
         application.owner().ifPresent(owner -> object.setString("owner", owner.username()));
         application.deploymentIssueId().ifPresent(issueId -> object.setString("deploymentIssueId", issueId.value()));
+    }
+
+    private void toSlimeProd(Cursor object, Application application, HttpRequest request) {
+        object.setString("tenant", application.id().tenant().value());
+        object.setString("application", application.id().application().value());
+        object.setString("deployments", withPath("/application/v4" +
+                        "/tenant/" + application.id().tenant().value() +
+                        "/application/" + application.id().application().value() +
+                        "/job/",
+                request.getUri()).toString());
+        DeploymentStatus status = controller.jobController().deploymentStatus(application);
+        application.latestVersion().ifPresent(version -> toSlime(version, object.setObject("latestVersion")));
+        application.projectId().ifPresent(id -> object.setLong("projectId", id));
+        application.majorVersion().ifPresent(majorVersion -> object.setLong("majorVersion", majorVersion));
+        application.deployKeys().stream().map(KeyUtils::toPem).forEach(object.setArray("pemDeployKeys")::addString);
+
+        // Metrics
+        Cursor metricsObject = object.setObject("metrics");
+        metricsObject.setDouble("queryServiceQuality", application.metrics().queryServiceQuality());
+        metricsObject.setDouble("writeServiceQuality", application.metrics().writeServiceQuality());
+
+        // Activity
+        Cursor activity = object.setObject("activity");
+        application.activity().lastQueried().ifPresent(instant -> activity.setLong("lastQueried", instant.toEpochMilli()));
+        application.activity().lastWritten().ifPresent(instant -> activity.setLong("lastWritten", instant.toEpochMilli()));
+        application.activity().lastQueriesPerSecond().ifPresent(value -> activity.setDouble("lastQueriesPerSecond", value));
+        application.activity().lastWritesPerSecond().ifPresent(value -> activity.setDouble("lastWritesPerSecond", value));
+
+        application.ownershipIssueId().ifPresent(issueId -> object.setString("ownershipIssueId", issueId.value()));
+        application.owner().ifPresent(owner -> object.setString("owner", owner.username()));
+        application.deploymentIssueId().ifPresent(issueId -> object.setString("deploymentIssueId", issueId.value()));
+
+        var instances = object.setArray("instances");
+        var instanceNames = Stream.concat(
+                application.deploymentSpec().instanceNames().stream(),
+                application.instances().keySet().stream())
+                .collect(Collectors.toSet());
+
+        for (var instanceName : instanceNames) {
+            var instanceObj = instances.addObject();
+            instanceObj.setString("name", instanceName.value());
+
+            var declaredInstance = application.deploymentSpec().instance(instanceName);
+            var deployedInstance = Optional.ofNullable(application.instances().get(instanceName));
+
+            var declaredZones = declaredInstance.stream().flatMap(i -> i.zones().stream()).collect(Collectors.toList());
+            var deployedZones = deployedInstance.stream().flatMap(i -> i.deployments().keySet().stream()).collect(Collectors.toList());
+
+            var deploymentsObj = instanceObj.setArray("deployments");
+
+            // zones that are declared in deployment.xml but might or might not be deployed to yet
+            for (var declaredZone : declaredZones) {
+                var deploymentObj = deploymentsObj.addObject();
+                var deploymentName = declaredZone.region().isEmpty()
+                        ? declaredZone.environment().name()
+                        : ZoneId.from(declaredZone.environment(), declaredZone.region().get()).value();
+
+                deploymentObj.setString("name", deploymentName);
+                deploymentObj.setBool("declared", true);
+
+                var activeDeployment = findActiveDeployment(declaredZone, deployedInstance);
+                if (activeDeployment.isPresent()) {
+                    var deploymentId = new DeploymentId(deployedInstance.get().id(), activeDeployment.get().zone());
+                    deployedZones.remove(activeDeployment.get().zone());
+                    var activeObj = deploymentObj.setObject("active");
+                    toSlime(activeObj, deploymentId, activeDeployment.get(), request);
+                } else {
+                    deploymentObj.setNix("active");
+                }
+            }
+
+            // zones that we know of but are not mentioned in deployment.xml, probably being removed
+            for (var deployedZone : deployedZones) {
+                var deploymentObj = deploymentsObj.addObject();
+                var deployment = deployedInstance.get().deployments().get(deployedZone);
+                deploymentObj.setString("name", deployedZone.value());
+                deploymentObj.setBool("declared", false);
+                var activeObj = deploymentObj.setObject("active");
+                toSlime(activeObj, new DeploymentId(deployedInstance.get().id(), deployedZone), deployment, request);
+            }
+        }
+    }
+
+    private Optional<Deployment> findActiveDeployment(DeploymentSpec.DeclaredZone zone, Optional<Instance> maybeInstance) {
+        if (maybeInstance.isEmpty()) return Optional.empty();
+        var instance = maybeInstance.get();
+
+        if (zone.region().isEmpty()) {
+            return instance.deployments().entrySet().stream()
+                    .filter(e -> e.getKey().environment().equals(zone.environment()))
+                    .map(Map.Entry::getValue).findFirst();
+        }
+
+        var zoneId = ZoneId.from(zone.environment(), zone.region().get());
+        return Optional.ofNullable(instance.deployments().get(zoneId));
     }
 
     // TODO: Eliminate duplicated code in this and toSlime(Cursor, Instance, DeploymentStatus, HttpRequest)

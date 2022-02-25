@@ -92,6 +92,7 @@ enum PathGroup {
     application(Matcher.tenant,
                 Matcher.application,
                 "/application/v4/tenant/{tenant}/application/{application}",
+                "/application/v4/tenant/{tenant}/application/{application}/prod",
                 "/application/v4/tenant/{tenant}/application/{application}/instance/",
                 "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}"),
 
