@@ -88,6 +88,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
     }
 
     private void sendBlockedMessages() {
+        int timeout = 10*1000/SystemTimer.detectHz();
         while (! destroyed.get()) {
             for (SendBlockedMessages sender : blockedSenders.keySet()) {
                 if (!sender.trySend()) {
@@ -95,7 +96,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
                 }
             }
             try {
-                Thread.sleep(10);
+                Thread.sleep(timeout);
             } catch (InterruptedException e) {
                 return;
             }
