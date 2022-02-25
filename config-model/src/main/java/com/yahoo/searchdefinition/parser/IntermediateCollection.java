@@ -121,4 +121,14 @@ public class IntermediateCollection {
         }
     }
 
+    // for unit test
+    void addRankProfileFile(String schemaName, String fileName) {
+        try {
+            var reader = IOUtils.createReader(fileName, "UTF-8");
+            addRankProfileFile(schemaName, new NamedReader(fileName, reader));
+        } catch (java.io.IOException ex) {
+            throw new IllegalArgumentException("Could not read file " + fileName + ": " + ex.getMessage());
+        }
+    }
+
 }
