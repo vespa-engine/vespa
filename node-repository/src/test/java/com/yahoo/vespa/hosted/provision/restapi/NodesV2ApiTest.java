@@ -886,11 +886,11 @@ public class NodesV2ApiTest {
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + host),
-                                      "\"resources\":{\"vcpu\":64.0,\"memoryGb\":128.0,\"diskGb\":1234.0,\"bandwidthGbps\":15.0,\"diskSpeed\":\"fast\",\"storageType\":\"remote\"}");
+                                      "\"resources\":{\"vcpu\":64.0,\"memoryGb\":128.0,\"diskGb\":1234.0,\"bandwidthGbps\":15.0,\"diskSpeed\":\"fast\",\"storageType\":\"remote\",\"architecture\":\"x86_64\"}");
 
         // Test adding tenant node
         String tenant = "node-1-3.yahoo.com";
-        String resources = "\"resources\":{\"vcpu\":64.0,\"memoryGb\":128.0,\"diskGb\":1234.0,\"bandwidthGbps\":15.0,\"diskSpeed\":\"slow\",\"storageType\":\"remote\"}";
+        String resources = "\"resources\":{\"vcpu\":64.0,\"memoryGb\":128.0,\"diskGb\":1234.0,\"bandwidthGbps\":15.0,\"diskSpeed\":\"slow\",\"storageType\":\"remote\",\"architecture\":\"x86_64\"}";
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                         ("[{\"hostname\":\"" + tenant + "\"," + createIpAddresses("::2") + "\"id\":\"osid-124\"," +
                                 "\"type\":\"tenant\"," + resources + "}]").
@@ -911,13 +911,13 @@ public class NodesV2ApiTest {
                         Request.Method.PATCH),
                 "{\"message\":\"Updated " + host + "\"}");
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + host),
-                                      "\"resources\":{\"vcpu\":64.0,\"memoryGb\":128.0,\"diskGb\":5432.0,\"bandwidthGbps\":15.0,\"diskSpeed\":\"fast\",\"storageType\":\"remote\"}");
+                                      "\"resources\":{\"vcpu\":64.0,\"memoryGb\":128.0,\"diskGb\":5432.0,\"bandwidthGbps\":15.0,\"diskSpeed\":\"fast\",\"storageType\":\"remote\",\"architecture\":\"x86_64\"}");
     }
 
     @Test
     public void test_node_resources() throws Exception {
         String hostname = "node123.yahoo.com";
-        String resources = "\"resources\":{\"vcpu\":5.0,\"memoryGb\":4321.0,\"diskGb\":1234.0,\"bandwidthGbps\":0.3,\"diskSpeed\":\"slow\",\"storageType\":\"local\"}";
+        String resources = "\"resources\":{\"vcpu\":5.0,\"memoryGb\":4321.0,\"diskGb\":1234.0,\"bandwidthGbps\":0.3,\"diskSpeed\":\"slow\",\"storageType\":\"local\",\"architecture\":\"x86_64\"}";
         // Test adding new node with resources
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                                           ("[{\"hostname\":\"" + hostname + "\"," + createIpAddresses("::1") + "\"id\":\"osid-123\"," +
@@ -939,7 +939,7 @@ public class NodesV2ApiTest {
                         Request.Method.PATCH),
                 "{\"message\":\"Updated " + hostname + "\"}");
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + hostname),
-                                      "\"resources\":{\"vcpu\":56.0,\"memoryGb\":34.0,\"diskGb\":12.0,\"bandwidthGbps\":78.0,\"diskSpeed\":\"fast\",\"storageType\":\"remote\"}");
+                                      "\"resources\":{\"vcpu\":56.0,\"memoryGb\":34.0,\"diskGb\":12.0,\"bandwidthGbps\":78.0,\"diskSpeed\":\"fast\",\"storageType\":\"remote\",\"architecture\":\"x86_64\"}");
     }
 
     @Test

@@ -24,6 +24,8 @@ public class NodeResources {
     private String diskSpeed;
     @JsonProperty
     private String storageType;
+    @JsonProperty
+    private String architecture = "x86_64";   // TODO: Remove default value for architecture
 
     public Double getVcpu() {
         return vcpu;
@@ -73,10 +75,19 @@ public class NodeResources {
         this.storageType = storageType;
     }
 
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
+    }
+
     public com.yahoo.config.provision.NodeResources toNodeResources() {
         return new com.yahoo.config.provision.NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps,
                                                             toDiskSpeed(diskSpeed),
-                                                            toStorageType(storageType));
+                                                            toStorageType(storageType),
+                                                            toArchitecture(architecture));
     }
 
     private com.yahoo.config.provision.NodeResources.DiskSpeed toDiskSpeed(String diskSpeed) {
@@ -97,6 +108,15 @@ public class NodeResources {
         }
     }
 
+    private com.yahoo.config.provision.NodeResources.Architecture toArchitecture(String architecture) {
+        switch (architecture) {
+            case "arm64" : return com.yahoo.config.provision.NodeResources.Architecture.arm64;
+            case "x86_64" : return com.yahoo.config.provision.NodeResources.Architecture.x86_64;
+            case "any" : return com.yahoo.config.provision.NodeResources.Architecture.any;
+            default : throw new IllegalArgumentException("Unknown architecture '" + architecture + "'");
+        }
+    }
+
     @Override
     public String toString() {
         return "NodeResources{" +
@@ -106,6 +126,7 @@ public class NodeResources {
                 ", bandwidthGbps=" + bandwidthGbps +
                 ", diskSpeed='" + diskSpeed + '\'' +
                 ", storageType='" + storageType + '\'' +
+                ", architecture='" + architecture + '\'' +
                 '}';
     }
 }

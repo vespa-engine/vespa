@@ -13,7 +13,8 @@
           "diskGb" : 50.0,
           "bandwidthGbps" : 1.0,
           "diskSpeed" : "fast",
-          "storageType" : "any"
+          "storageType" : "any",
+          "architecture":"x86_64"
         }
       },
       "max" : {
@@ -25,7 +26,8 @@
           "diskGb" : 1000.0,
           "bandwidthGbps" : 1.0,
           "diskSpeed" : "fast",
-          "storageType" : "any"
+          "storageType" : "any",
+          "architecture":"x86_64"
         }
       },
       "current" : {
@@ -37,7 +39,8 @@
           "diskGb" : 50.0,
           "bandwidthGbps" : 1.0,
           "diskSpeed" : "fast",
-          "storageType" : "local"
+          "storageType" : "local",
+          "architecture":"x86_64"
         }
       },
       "suggested" : {
@@ -49,7 +52,8 @@
           "diskGb" : 100.0,
           "bandwidthGbps" : 1.0,
           "diskSpeed" : "fast",
-          "storageType" : "any"
+          "storageType" : "any",
+          "architecture":"x86_64"
         }
       },
       "target" : {
@@ -61,7 +65,8 @@
           "diskGb" : 100.0,
           "bandwidthGbps" : 1.0,
           "diskSpeed" : "fast",
-          "storageType" : "any"
+          "storageType" : "any",
+          "architecture":"x86_64"
         }
       },
       "utilization" : {
@@ -86,7 +91,8 @@
               "diskGb": 0.0,
               "bandwidthGbps": 0.0,
               "diskSpeed": "fast",
-              "storageType": "any"
+              "storageType": "any",
+              "architecture":"x86_64"
             }
           },
           "to": {
@@ -98,7 +104,8 @@
               "diskGb": 50.0,
               "bandwidthGbps": 1.0,
               "diskSpeed": "fast",
-              "storageType": "local"
+              "storageType": "local",
+              "architecture":"x86_64"
             }
           },
           "at" : 123

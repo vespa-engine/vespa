@@ -41,8 +41,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 
+import static com.yahoo.config.provision.NodeResources.Architecture;
+import static com.yahoo.config.provision.NodeResources.Architecture.x86_64;
+import static com.yahoo.config.provision.NodeResources.DiskSpeed;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
+import static com.yahoo.config.provision.NodeResources.StorageType;
 import static com.yahoo.config.provision.NodeResources.StorageType.local;
 import static com.yahoo.config.provision.NodeResources.StorageType.remote;
 
@@ -136,7 +140,7 @@ public class MockNodeRepository extends NodeRepository {
         nodes.add(Node.create("dockerhost5", ipConfig(104, 1, 3), "dockerhost5.yahoo.com",
                              flavors.getFlavorOrThrow("large"), NodeType.host).build());
         nodes.add(Node.create("dockerhost6", ipConfig(105, 1, 3), "dockerhost6.yahoo.com",
-                flavors.getFlavorOrThrow("large"), NodeType.host).build());
+                flavors.getFlavorOrThrow("arm64"), NodeType.host).build());
 
         // Config servers
         nodes.add(Node.create("cfg1", ipConfig(201), "cfg1.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config).build());
@@ -238,7 +242,13 @@ public class MockNodeRepository extends NodeRepository {
         return ipConfig(nodeIndex, 1, 0);
     }
 
-    private static Flavor resources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps, NodeResources.DiskSpeed diskSpeed, NodeResources.StorageType storageType) {
-        return new Flavor(new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType));
+    private static Flavor resources(double vcpu, double memoryGb, double diskGb, double bandwidth, DiskSpeed diskSpeed, StorageType storageType) {
+        return resources(vcpu, memoryGb, diskGb, bandwidth, diskSpeed, storageType, x86_64);
     }
+
+    private static Flavor resources(double vcpu, double memoryGb, double diskGb, double bandwidth, DiskSpeed diskSpeed,
+                                    StorageType storageType, Architecture architecture) {
+        return new Flavor(new NodeResources(vcpu, memoryGb, diskGb, bandwidth, diskSpeed, storageType, architecture));
+    }
+
 }
