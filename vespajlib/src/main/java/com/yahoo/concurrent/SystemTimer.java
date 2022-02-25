@@ -32,8 +32,12 @@ public enum SystemTimer implements Timer {
         return hz;
     }
 
+    public static int adjustTimeoutByDetectedHz(int timeoutMS) {
+        return (timeoutMS * 1000)/ detectHz();
+    }
+
     SystemTimer() {
-        int napTime = 1000 / detectHz();
+        int napTime = adjustTimeoutByDetectedHz(1);
         millis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
         Thread thread = new Thread() {
 

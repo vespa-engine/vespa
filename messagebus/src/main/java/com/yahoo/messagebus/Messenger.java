@@ -149,7 +149,7 @@ public class Messenger implements Runnable {
 
     @Override
     public void run() {
-        int timeoutMS = 100*1000/SystemTimer.detectHz();
+        int timeoutMS = SystemTimer.adjustTimeoutByDetectedHz(100);
         while (true) {
             Task task = null;
             synchronized (this) {

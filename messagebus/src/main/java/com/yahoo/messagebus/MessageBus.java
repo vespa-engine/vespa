@@ -88,7 +88,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
     }
 
     private void sendBlockedMessages() {
-        int timeout = 10*1000/SystemTimer.detectHz();
+        int timeout = SystemTimer.adjustTimeoutByDetectedHz(10);
         while (! destroyed.get()) {
             for (SendBlockedMessages sender : blockedSenders.keySet()) {
                 if (!sender.trySend()) {

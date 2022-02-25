@@ -68,7 +68,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
         this.memoryCache = new MemoryCache();
         this.delayedResponses = new DelayedResponses();
         checkConfigSources();
-        nextConfigFuture = nextConfigScheduler.scheduleAtFixedRate(this, 0, 10*1000/SystemTimer.detectHz(), MILLISECONDS);
+        nextConfigFuture = nextConfigScheduler.scheduleAtFixedRate(this, 0, SystemTimer.adjustTimeoutByDetectedHz(10), MILLISECONDS);
         this.requesters = new JrtConfigRequesters();
         DelayedResponseHandler command = new DelayedResponseHandler(delayedResponses, memoryCache, responseHandler);
         this.delayedResponsesFuture = delayedResponsesScheduler.scheduleAtFixedRate(command, 5, 1, SECONDS);
