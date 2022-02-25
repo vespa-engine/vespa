@@ -14,12 +14,12 @@ public class ParsedBlock {
         this.blockType = blockType;
     }
 
-    public String name() { return name; }
+    public final String name() { return name; }
 
     protected void verifyThat(boolean check, String msg, Object ... msgDetails) {
         if (check) return;
         var buf = new StringBuilder();
-        buf.append(blockType).append(" ").append(name).append(": ");
+        buf.append(blockType).append(" '").append(name).append("' error: ");
         buf.append(msg);
         for (Object detail : msgDetails) {
             buf.append(" ");

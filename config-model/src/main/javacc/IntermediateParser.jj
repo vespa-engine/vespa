@@ -431,7 +431,14 @@ ParsedSchema rootDocument() :
 }
 {
     ( (rootDocumentItem(schema) (<NL>)*)*<EOF> )
-    { return schema; }
+    {
+        if (schema.hasDocument()) {
+            ParsedDocument doc = schema.getDocument();
+            schema = new ParsedSchema(doc.name());
+            schema.addDocument(doc);
+        }
+        return schema;
+    }
 }
 
 /**
@@ -968,13 +975,10 @@ void summaryTo(ParsedField field) :
 {
     <SUMMARYTO> [name = identifier()] <COLON> destination = identifier()
     {
-        psf = new ParsedSummaryField(name);
+        psf = field.summaryFieldFor(name);
         psf.addDestination(destination);
     }
     ( <COMMA> destination = identifier() { psf.addDestination(destination); } )*
-    {
-        field.addSummaryField(psf);
-    }
 }
 
 /**
@@ -1056,7 +1060,7 @@ void fieldSorting(ParsedField field) :
     ParsedSorting sortInfo;
 }
 {
-    sortInfo = sorting() { field.setSorting(sortInfo); }
+    sortInfo = sorting(field.name(), "field") { field.setSorting(sortInfo); }
 }
 
 /* pick up sorting in field block */
@@ -1065,12 +1069,12 @@ void attributeSorting(ParsedAttribute attribute) :
     ParsedSorting sortInfo;
 }
 {
-    sortInfo = sorting() { attribute.setSorting(sortInfo); }
+    sortInfo = sorting(attribute.name(), "attribute") { attribute.setSorting(sortInfo); }
 }
 
-ParsedSorting sorting() :
+ParsedSorting sorting(String blockName, String blockType) :
 {
-    ParsedSorting sort = new ParsedSorting();
+    ParsedSorting sort = new ParsedSorting(blockName, blockType);
 }
 {
     <SORTING>
@@ -1176,59 +1180,47 @@ void summaryInDocument(ParsedDocumentSummary docsum) :
  *
  * @param field The field to modify.
  */
-void summaryInField(ParsedField field) :
+void summaryInField(ParsedField field) : { }
 {
-    ParsedSummaryField psf;
-}
-{
-    ( <SUMMARY> ( LOOKAHEAD(2) psf = summaryInFieldShort(field.name())
-                  | psf = summaryInFieldLong(field.name())) )
-    {
-        field.addSummaryField(psf);
-    }
+    <SUMMARY> ( LOOKAHEAD(2) summaryInFieldShort(field)
+              | summaryInFieldLong(field) )
 }
 
 /**
  * This rule consumes a single-line summary field.
- *
- * @return The consumed summary field.
  */
-ParsedSummaryField summaryInFieldShort(String fieldName) :
+void summaryInFieldShort(ParsedField field) :
 {
-    String name = fieldName;
+    String name = field.name();
     ParsedSummaryField psf;
 }
 {
     [ name = identifier() ]
     {
-        psf = new ParsedSummaryField(name);
+        psf = field.summaryFieldFor(name);
     }
     <COLON> ( <DYNAMIC> { psf.setDynamic(); }
               | <MATCHEDELEMENTSONLY> { psf.setMatchedElementsOnly(); }
               | (<FULL> | <STATIC>) { psf.setFull(); }
             )
-    { return psf; }
 }
 
 /**
  * This rule consumes a multi-line summary field.
- *
- * @return The consumed summary field.
  */
-ParsedSummaryField summaryInFieldLong(String fieldName) :
+void summaryInFieldLong(ParsedField field) :
 {
-    String name = fieldName;
-    ParsedType type = null;
+    String name = field.name();
+    ParsedType type = field.getType();
     ParsedSummaryField psf;
 }
 {
     ( [ name = identifier() [ <TYPE> type = dataType() ] ]
       lbrace()
       {
-          psf = new ParsedSummaryField(name, type);
+          psf = field.summaryFieldFor(name, type);
       }
       (summaryItem(psf) (<NL>)*)* <RBRACE> )
-    { return psf; }
 }
 
 /**

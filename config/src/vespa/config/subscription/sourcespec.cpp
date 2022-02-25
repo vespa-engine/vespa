@@ -131,6 +131,22 @@ ServerSpec::createSourceFactory(const TimingValues & timingValues) const
             timingValues, _traceLevel, vespaVersion, _compressionType);
 }
 
+ConfigServerSpec::ConfigServerSpec(FNET_Transport & transport)
+    : ServerSpec(),
+      _transport(transport)
+{
+}
+
+ConfigServerSpec::~ConfigServerSpec() = default;
+
+std::unique_ptr<SourceFactory>
+ConfigServerSpec::createSourceFactory(const TimingValues & timingValues) const
+{
+    const auto vespaVersion = VespaVersion::getCurrentVersion();
+    return std::make_unique<FRTSourceFactory>(
+            std::make_unique<FRTConnectionPool>(_transport, *this, timingValues),
+            timingValues, traceLevel(), vespaVersion, compressionType());
+}
 
 ConfigSet::ConfigSet()
     : _builderMap(std::make_unique<BuilderMap>())

@@ -13,9 +13,8 @@ import java.util.List;
  * advanced logic here!
  * @author arnej27959
  **/
-class ParsedIndex {
+class ParsedIndex extends ParsedBlock {
 
-    private final String name;
     private boolean enableBm25 = false;
     private boolean isPrefix = false;
     private HnswIndexParams hnswParams;
@@ -27,10 +26,9 @@ class ParsedIndex {
     private Double densePLT;
     
     ParsedIndex(String name) {
-        this.name = name;
+        super(name, "index");
     }
 
-    String name() { return this.name; }
     boolean getEnableBm25() { return this.enableBm25; }
     boolean getPrefix() { return this.isPrefix; }
     HnswIndexParams getHnswIndexParams() { return this.hnswParams; }
@@ -41,7 +39,6 @@ class ParsedIndex {
     Long getLowerBound() { return this.lowerBound; }
     Long getUpperBound() { return this.upperBound; }
     Double getDensePostingListThreshold() { return this.densePLT; }
-    
 
     void addAlias(String alias) {
         aliases.add(alias);

@@ -7,6 +7,8 @@
 #include <vector>
 #include <memory>
 
+class FNET_Transport;
+
 namespace config {
 
 class ConfigInstance;
@@ -22,7 +24,6 @@ typedef vespalib::string SourceSpecKey;
 class SourceSpec
 {
 public:
-    using SourceFactorySP = std::unique_ptr<SourceFactory>;
     using UP = std::unique_ptr<SourceSpec>; /// Convenience typedef
 
     /**
@@ -36,7 +37,7 @@ public:
      * @param timingValues Timing values to be used for this source.
      * @return An std::unique_ptr<Source> that can be used to ask for config.
      */
-    virtual SourceFactorySP createSourceFactory(const TimingValues & timingValues) const = 0;
+    virtual std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues & timingValues) const = 0;
     virtual ~SourceSpec() = default;
 };
 
@@ -54,8 +55,7 @@ public:
      */
     RawSpec(const vespalib::string & config);
 
-    // Implements SourceSpec
-    SourceFactorySP createSourceFactory(const TimingValues & timingValues) const override;
+    std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues & timingValues) const override;
 
     /**
      * Returns the string representation of this config.
@@ -89,8 +89,7 @@ public:
      */
     const vespalib::string & getFileName() const { return _fileName; }
 
-    // Implements SourceSpec
-    SourceFactorySP createSourceFactory(const TimingValues & timingValues) const override;
+    std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues & timingValues) const override;
 private:
     void verifyName(const vespalib::string & fileName);
     vespalib::string _fileName;
@@ -117,8 +116,7 @@ public:
      */
     const vespalib::string & getDirName() const { return _dirName; }
 
-    // Implements SourceSpec
-    SourceFactorySP createSourceFactory(const TimingValues & timingValues) const override;
+    std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues & timingValues) const override;
 private:
     vespalib::string _dirName;
 };
@@ -154,7 +152,7 @@ public:
      */
     ServerSpec(const vespalib::string & hostSpec);
 
-    SourceFactorySP createSourceFactory(const TimingValues & timingValues) const override;
+    std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues & timingValues) const override;
 
     /**
      * Inspect how many hosts this source refers to.
@@ -193,6 +191,18 @@ private:
     const static int DEFAULT_PROXY_PORT = 19090;
 };
 
+/**
+ * A ServerSpec that allows providing externally supplied transport
+ */
+class ConfigServerSpec : public config::ServerSpec {
+public:
+    ConfigServerSpec(FNET_Transport & transport);
+    ~ConfigServerSpec() override;
+    std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues & timingValues) const override;
+private:
+    FNET_Transport & _transport;
+};
+
 
 
 /**
@@ -221,8 +231,7 @@ public:
      */
     void addBuilder(const vespalib::string & configId, ConfigInstance * builder);
 
-    // Implements SourceSpec
-    SourceFactorySP createSourceFactory(const TimingValues & timingValues) const override;
+    std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues & timingValues) const override;
 private:
     BuilderMapSP _builderMap;
 };

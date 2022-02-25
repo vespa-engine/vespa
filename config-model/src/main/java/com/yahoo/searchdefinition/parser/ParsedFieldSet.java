@@ -9,18 +9,16 @@ import java.util.List;
  * advanced logic here!
  * @author arnej27959
  **/
-class ParsedFieldSet {
+class ParsedFieldSet extends ParsedBlock {
 
-    private final String name;
     private final List<String> fields = new ArrayList<>();
     private final List<String> queryCommands = new ArrayList<>();
     private final ParsedMatchSettings matchInfo = new ParsedMatchSettings();
 
     ParsedFieldSet(String name) {
-        this.name = name;
+        super(name, "fieldset");
     }
 
-    String name() { return this.name; }
     ParsedMatchSettings matchSettings() { return this.matchInfo; }
     List<String> getQueryCommands() { return List.copyOf(queryCommands); }
     List<String> getFieldNames() { return List.copyOf(fields); }

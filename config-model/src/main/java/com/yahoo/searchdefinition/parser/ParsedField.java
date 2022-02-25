@@ -3,9 +3,7 @@ package com.yahoo.searchdefinition.parser;
 
 import com.yahoo.searchdefinition.document.Stemming;
 
-
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,9 +15,8 @@ import java.util.Optional;
  * advanced logic here!
  * @author arnej27959
  **/
-class ParsedField {
+class ParsedField extends ParsedBlock {
 
-    private final String name;
     private ParsedType type;
     private boolean hasBolding = false;
     private boolean isFilter = false;
@@ -42,11 +39,10 @@ class ParsedField {
     private final List<String> queryCommands = new ArrayList<>();
 
     ParsedField(String name, ParsedType type) {
-        this.name = name;
+        super(name, "field");
         this.type = type;
     }
 
-    String name() { return this.name; }
     ParsedType getType() { return this.type; }
     boolean getBolding() { return this.hasBolding; }
     boolean getFilter() { return this.isFilter; }
@@ -66,18 +62,43 @@ class ParsedField {
     Optional<ParsedSorting> getSorting() { return Optional.ofNullable(sortSettings); }
     Map<String, String> getRankTypes() { return Map.copyOf(rankTypes); }
 
-    void addAlias(String from, String to) {
-        if (aliases.containsKey(to)) {
-            throw new IllegalArgumentException("field "+this.name+" already has alias "+to);
+    /** get an existing summary field for modification, or create it */
+    ParsedSummaryField summaryFieldFor(String name) {
+        if (summaryFields.containsKey(name)) {
+            return summaryFields.get(name);
         }
+        var sf = new ParsedSummaryField(name, getType());
+        summaryFields.put(name, sf);
+        return sf;
+    }
+
+    /** get an existing summary field for modification, or create it */
+    ParsedSummaryField summaryFieldFor(String name, ParsedType type) {
+        if (summaryFields.containsKey(name)) {
+            var sf = summaryFields.get(name);
+            if (sf.getType() == null) {
+                sf.setType(type);
+            } else {
+                // TODO check that types are properly equal here
+                String oldName = sf.getType().name();
+                String newName = type.name();
+                verifyThat(newName.equals(oldName), "type mismatch for summary field", name, ":", oldName, "/", newName);
+            }
+            return sf;
+        }
+        var sf = new ParsedSummaryField(name, type);
+        summaryFields.put(name, sf);
+        return sf;
+    }
+
+    void addAlias(String from, String to) {
+        verifyThat(! aliases.containsKey(to), "already has alias", to);
         aliases.put(to, from);
     }
 
     void addIndex(ParsedIndex index) {
         String idxName = index.name();
-        if (fieldIndexes.containsKey(idxName)) {
-            throw new IllegalArgumentException("field "+this.name+" already has index "+idxName);
-        }
+        verifyThat(! fieldIndexes.containsKey(idxName), "already has index", idxName);
         fieldIndexes.put(idxName, index);
     }
 
@@ -100,23 +121,17 @@ class ParsedField {
 
     void addAttribute(ParsedAttribute attribute) {
         String attrName = attribute.name();
-        if (attributes.containsKey(attrName)) {
-            throw new IllegalArgumentException("field "+this.name+" already has attribute "+attrName);
-        }
+        verifyThat(! attributes.containsKey(attrName), "already has attribute", attrName);
         attributes.put(attrName, attribute);
     }
 
     void setIndexingOperation(ParsedIndexingOp idxOp) {
-        if (indexingOp != null) {
-            throw new IllegalArgumentException("field "+this.name+" already has indexing");
-        }
+        verifyThat(indexingOp == null, "already has indexing");
         indexingOp = idxOp;
     }
 
     void setSorting(ParsedSorting sorting) {
-        if (sortSettings != null) {
-            throw new IllegalArgumentException("field "+this.name+" already has sorting");
-        }
+        verifyThat(sortSettings == null, "already has sorting");
         this.sortSettings = sorting;
     }
 
@@ -126,17 +141,13 @@ class ParsedField {
 
     void addStructField(ParsedField structField) {
         String fieldName = structField.name();
-        if (structFields.containsKey(fieldName)) {
-            throw new IllegalArgumentException("field "+this.name+" already has struct-field "+fieldName);
-        }
+        verifyThat(! structFields.containsKey(fieldName), "already has struct-field", fieldName);
         structFields.put(fieldName, structField);
     }
 
     void addSummaryField(ParsedSummaryField summaryField) {
         String fieldName = summaryField.name();
-        if (summaryFields.containsKey(fieldName)) {
-            throw new IllegalArgumentException("field "+this.name+" already has summary field "+fieldName);
-        }
+        verifyThat(! summaryFields.containsKey(fieldName), "already has summary field", fieldName);
         summaryFields.put(fieldName, summaryField);
     }
 }
