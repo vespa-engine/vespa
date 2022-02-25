@@ -383,6 +383,13 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag REUSE_NODE_INDEXES = defineFeatureFlag(
+            "reuse-node-indexes", false,
+            List.of("bratseth"), "2022-02-25", "2022-04-25",
+            "Whether we should reuse earlier indexes when allocating new nodes",
+            "Takes effect immediately",
+            ZONE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

@@ -9,6 +9,8 @@ import java.util.Optional;
  * @author hakonhall
  */
 public interface FlagSource {
-    /** Get raw flag for the given vector (specifying hostname, application id, etc). */
+
+    /** Returns the raw flag for the given vector (specifying hostname, application id, etc). */
     Optional<RawFlag> fetch(FlagId id, FetchVector vector);
+
 }

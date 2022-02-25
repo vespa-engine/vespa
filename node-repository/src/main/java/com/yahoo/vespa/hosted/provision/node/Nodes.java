@@ -280,8 +280,8 @@ public class Nodes {
     }
 
     public List<Node> deallocateRecursively(String hostname, Agent agent, String reason) {
-        Node nodeToDirty = node(hostname).orElseThrow(() ->
-                                                                 new IllegalArgumentException("Could not deallocate " + hostname + ": Node not found"));
+        Node nodeToDirty = node(hostname).orElseThrow(() -> new IllegalArgumentException("Could not deallocate " +
+                                                                                         hostname + ": Node not found"));
 
         List<Node> nodesToDirty =
                 (nodeToDirty.type().isHost() ?
@@ -289,7 +289,6 @@ public class Nodes {
                  Stream.of(nodeToDirty))
                         .filter(node -> node.state() != Node.State.dirty)
                         .collect(Collectors.toList());
-
         List<String> hostnamesNotAllowedToDirty = nodesToDirty.stream()
                                                               .filter(node -> node.state() != Node.State.provisioned)
                                                               .filter(node -> node.state() != Node.State.failed)

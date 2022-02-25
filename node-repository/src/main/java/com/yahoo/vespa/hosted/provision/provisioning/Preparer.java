@@ -34,9 +34,10 @@ class Preparer {
     }
 
     /** Prepare all required resources for the given application and cluster */
-    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
+    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups,
+                              boolean reuseIndexes) {
         try {
-            var nodes = prepareNodes(application, cluster, requestedNodes, wantedGroups);
+            var nodes = prepareNodes(application, cluster, requestedNodes, wantedGroups, reuseIndexes);
             prepareLoadBalancer(application, cluster, requestedNodes);
             return nodes;
         }
@@ -55,13 +56,14 @@ class Preparer {
      // Note: This operation may make persisted changes to the set of reserved and inactive nodes,
      // but it may not change the set of active nodes, as the active nodes must stay in sync with the
      // active config model which is changed on activate
-    private List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
+    private List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
+                                    int wantedGroups, boolean reuseIndexes) {
         NodesAndHosts<LockedNodeList> allNodesAndHosts = groupPreparer.createNodesAndHostUnlocked();
         NodeList appNodes = allNodesAndHosts.nodes().owner(application);
         List<Node> surplusNodes = findNodesInRemovableGroups(appNodes, cluster, wantedGroups);
 
         List<Integer> usedIndices = appNodes.cluster(cluster.id()).mapToList(node -> node.allocation().get().membership().index());
-        NodeIndices indices = new NodeIndices(usedIndices, ! cluster.type().isContent());
+        NodeIndices indices = new NodeIndices(usedIndices, reuseIndexes || ! cluster.type().isContent());
         List<Node> acceptedNodes = new ArrayList<>();
 
         for (int groupIndex = 0; groupIndex < wantedGroups; groupIndex++) {

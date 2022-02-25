@@ -17,7 +17,9 @@ import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -54,6 +56,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private final AllocationOptimizer allocationOptimizer;
     private final CapacityPolicies capacityPolicies;
     private final Zone zone;
+    private FlagSource flagSource;
     private final Preparer preparer;
     private final Activator activator;
     private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
@@ -62,11 +65,13 @@ public class NodeRepositoryProvisioner implements Provisioner {
     @Inject
     public NodeRepositoryProvisioner(NodeRepository nodeRepository,
                                      Zone zone,
-                                     ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource) {
+                                     ProvisionServiceProvider provisionServiceProvider,
+                                     FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
         this.allocationOptimizer = new AllocationOptimizer(nodeRepository);
         this.capacityPolicies = new CapacityPolicies(nodeRepository);
         this.zone = zone;
+        this.flagSource = flagSource;
         this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService(nodeRepository)
                                                                .map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService));
         this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
@@ -113,7 +118,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                                                                  : requested.minResources().nodeResources();
             nodeSpec = NodeSpec.from(requested.type());
         }
-        return asSortedHosts(preparer.prepare(application, cluster, nodeSpec, groups), resources);
+        var reuseIndexes = Flags.REUSE_NODE_INDEXES.bindTo(flagSource).with(FetchVector.Dimension.ZONE_ID, zone.systemLocalValue()).value();
+        return asSortedHosts(preparer.prepare(application, cluster, nodeSpec, groups, reuseIndexes), resources);
     }
 
     @Override
