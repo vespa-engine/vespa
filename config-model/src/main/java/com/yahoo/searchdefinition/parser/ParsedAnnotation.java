@@ -10,17 +10,15 @@ import java.util.Optional;
  * possible.  Do not put advanced logic here!
  * @author arnej27959
  **/
-class ParsedAnnotation {
+class ParsedAnnotation extends ParsedBlock {
 
-    private final String name;
     private ParsedStruct wrappedStruct = null;
     private final List<String> inherited = new ArrayList<>();
 
     ParsedAnnotation(String name) {
-        this.name = name;
+        super(name, "annotation");
     }
 
-    public String name() { return name; }
     public List<String> getInherited() { return List.copyOf(inherited); }
     public Optional<ParsedStruct> getStruct() { return Optional.ofNullable(wrappedStruct); }
 

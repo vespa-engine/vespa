@@ -11,10 +11,9 @@ import java.util.List;
  * possible.  Do not put advanced logic here!
  * @author arnej27959
  **/
-class ParsedSummaryField {
+class ParsedSummaryField extends ParsedBlock {
 
-    private final String name;
-    private final ParsedType type;
+    private ParsedType type;
     private boolean isDyn = false;
     private boolean isMEO = false;
     private boolean isFull = false;
@@ -23,17 +22,15 @@ class ParsedSummaryField {
     private final List<String> destinations = new ArrayList<>();
 
     ParsedSummaryField(String name) {
-        this.name = name;
-        this.type = null;
+        this(name, null);
     }
 
     ParsedSummaryField(String name, ParsedType type) {
-        this.name = name;
+        super(name, "summary field");
         this.type = type;
     }
 
-    String name() { return name; }
-    ParsedType type() { return type; }
+    ParsedType getType() { return type; }
     List<String> getDestinations() { return List.copyOf(destinations); }
     List<String> getSources() { return List.copyOf(sources); }
     boolean getBolded() { return isBold; }
@@ -47,4 +44,8 @@ class ParsedSummaryField {
     void setDynamic() { this.isDyn = true; }
     void setFull() { this.isFull = true; }
     void setMatchedElementsOnly() { this.isMEO = true; }
+    void setType(ParsedType value) {
+        verifyThat(type == null, "Cannot change type from ", type, "to", value);
+        this.type = value;
+    }
 }
