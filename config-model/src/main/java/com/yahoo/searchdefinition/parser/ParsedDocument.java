@@ -52,7 +52,7 @@ public class ParsedDocument extends ParsedBlock {
         docAnnotations.put(annName, annotation);
     }
 
-    public String toString() { return "document "+name(); }
+    public String toString() { return "document " + name(); }
 
     void resolveInherit(String name, ParsedDocument parsed) {
         verifyThat(inherited.contains(name), "resolveInherit for non-inherited name", name);

@@ -39,7 +39,7 @@ public class InheritanceResolver {
             for (String inherit : schema.getInherited()) {
                 var parent = parsedSchemas.get(inherit);
                 if (parent == null) {
-                    throw new IllegalArgumentException("schema "+schema.name()+" inherits from unavailable schema "+inherit);
+                    throw new IllegalArgumentException("schema " + schema.name() + " inherits from unavailable schema " + inherit);
                 }
                 schema.resolveInherit(inherit, parent);
             }
@@ -67,7 +67,7 @@ public class InheritanceResolver {
             for (String inherit : doc.getInherited()) {
                 var parentDoc = parsedDocs.get(inherit);
                 if (parentDoc == null) {
-                    throw new IllegalArgumentException("document "+doc.name()+" inherits from unavailable document "+inherit);
+                    throw new IllegalArgumentException("document " + doc.name() + " inherits from unavailable document " + inherit);
                 }
                 doc.resolveInherit(inherit, parentDoc);
             }
