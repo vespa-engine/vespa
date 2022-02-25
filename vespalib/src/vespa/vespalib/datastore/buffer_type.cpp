@@ -2,6 +2,7 @@
 
 #include "atomic_entry_ref.h"
 #include "buffer_type.hpp"
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 
