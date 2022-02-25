@@ -44,27 +44,35 @@ func resetFlag(f *pflag.Flag) {
 	}
 }
 
-func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string) {
-	if client != nil {
-		util.ActiveHttpClient = client
-	}
+func setEnv(env map[string]string) map[string]string {
 	originalEnv := map[string]string{}
-	for k, v := range cmd.env {
+	for k, v := range env {
 		value, ok := os.LookupEnv(k)
 		if ok {
 			originalEnv[k] = value
 		}
 		os.Setenv(k, v)
 	}
-	defer func() {
-		for k, _ := range cmd.env {
-			if v, ok := originalEnv[k]; ok {
-				os.Setenv(k, v)
-			} else {
-				os.Unsetenv(k)
-			}
+	return originalEnv
+}
+
+func resetEnv(env map[string]string, original map[string]string) {
+	for k, _ := range env {
+		if v, ok := original[k]; ok {
+			os.Setenv(k, v)
+		} else {
+			os.Unsetenv(k)
 		}
-	}()
+	}
+}
+
+func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string) {
+	if client != nil {
+		util.ActiveHttpClient = client
+	}
+
+	originalEnv := setEnv(cmd.env)
+	defer resetEnv(cmd.env, originalEnv)
 
 	// Set Vespa CLI directories. Use a separate one per test if none is specified
 	if cmd.homeDir == "" {
