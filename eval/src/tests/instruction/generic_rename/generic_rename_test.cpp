@@ -33,6 +33,12 @@ const std::vector<GenSpec> rename_layouts = {
 struct FromTo {
     std::vector<vespalib::string> from;
     std::vector<vespalib::string> to;
+
+    FromTo(const std::vector<vespalib::string>& from_in, const std::vector<vespalib::string>& to_in)
+        : from(from_in),
+          to(to_in)
+    {
+    }
 };
 
 std::vector<FromTo> rename_from_to = {
