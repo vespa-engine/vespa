@@ -21,6 +21,7 @@
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/btree/btreeaggregator.hpp>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("btree_stress_test");
@@ -28,6 +29,7 @@ LOG_SETUP("btree_stress_test");
 using GenerationHandler = vespalib::GenerationHandler;
 using RefType = vespalib::datastore::EntryRefT<22>;
 using vespalib::btree::NoAggregated;
+using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 using vespalib::makeLambdaTask;
 using generation_t = GenerationHandler::generation_t;
@@ -139,6 +141,9 @@ protected:
     std::atomic<long> _doneReadWork;
     std::atomic<bool> _stopRead;
     bool _reportWork;
+    bool _want_compact_tree;
+    uint32_t _consider_compact_tree_checks;
+    uint32_t _compact_tree_count;
 
     Fixture();
     ~Fixture() override;
@@ -146,6 +151,8 @@ protected:
     bool adjustWriteIterator(uint32_t key);
     void insert(uint32_t key);
     void remove(uint32_t key);
+    void compact_tree();
+    void consider_compact_tree();
 
     void readWork(uint32_t cnt);
     void readWork();
@@ -172,7 +179,10 @@ Fixture<Params>::Fixture()
       _doneWriteWork(0),
       _doneReadWork(0),
       _stopRead(false),
-      _reportWork(false)
+      _reportWork(false),
+      _want_compact_tree(false),
+      _consider_compact_tree_checks(0u),
+      _compact_tree_count(0u)
 {
     _rnd.srand48(32);
 }
@@ -250,6 +260,31 @@ Fixture<Params>::remove(uint32_t key)
 
 template <typename Params>
 void
+Fixture<Params>::compact_tree()
+{
+    // Use a compaction strategy that will compact all active buffers
+    CompactionStrategy compaction_strategy(0.0, 0.0, RefType::numBuffers(), 1.0);
+    _tree.compact_worst(compaction_strategy);
+    _writeItr = _tree.begin();
+}
+
+template <typename Params>
+void
+Fixture<Params>::consider_compact_tree()
+{
+    if ((_consider_compact_tree_checks % 1000) == 0) {
+        _want_compact_tree = true;
+    }
+    ++_consider_compact_tree_checks;
+    if (_want_compact_tree && !_tree.getAllocator().getNodeStore().has_held_buffers()) {
+        compact_tree();
+        _want_compact_tree = false;
+        ++_compact_tree_count;
+    }
+}
+
+template <typename Params>
+void
 Fixture<Params>::readWork(uint32_t cnt)
 {
     vespalib::Rand48 rnd;
@@ -284,6 +319,7 @@ Fixture<Params>::writeWork(uint32_t cnt)
 {
     vespalib::Rand48 &rnd(_rnd);
     for (uint32_t i = 0; i < cnt; ++i) {
+        consider_compact_tree();
         uint32_t key = rnd.lrand48() % _keyLimit;
         if ((rnd.lrand48() & 1) == 0) {
             insert(key);
@@ -294,7 +330,7 @@ Fixture<Params>::writeWork(uint32_t cnt)
     }
     _doneWriteWork += cnt;
     _stopRead = true;
-    LOG(info, "done %u write work", cnt);
+    LOG(info, "done %u write work, %u compact tree", cnt, _compact_tree_count);
 }
 
 template <typename Params>
