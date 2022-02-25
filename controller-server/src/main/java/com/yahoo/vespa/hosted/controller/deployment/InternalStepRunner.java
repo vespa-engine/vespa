@@ -682,7 +682,7 @@ public class InternalStepRunner implements StepRunner {
                 logger.log(INFO, "The test package must either contain basic HTTP tests under 'tests/<suite-name>/', " +
                                  "or a Java test bundle under 'components/' with at least one test with the annotation " +
                                  "for this suite. See docs.vespa.ai/en/testing.html for details.");
-                return Optional.of(testFailure);
+                return Optional.of(running); // Let no tests pass until all apps meet this requirement.
             case SUCCESS:
                 logger.log("Tests completed successfully.");
                 controller.jobController().updateTestReport(id);
