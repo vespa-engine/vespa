@@ -775,7 +775,7 @@ public class RankProfile implements Cloneable {
         final Phase phase;
         final String attribute;
         final String operation;
-        MutateOperation(Phase phase, String attribute, String operation) {
+        public MutateOperation(Phase phase, String attribute, String operation) {
             this.phase = phase;
             this.attribute = attribute;
             this.operation = operation;
@@ -785,7 +785,7 @@ public class RankProfile implements Cloneable {
 
     public void addMutateOperation(MutateOperation.Phase phase, String attribute, String operation) {
         mutateOperations.add(new MutateOperation(phase, attribute, operation));
-        String prefix = "vespa.mutate." + phase.toString().replace('-', '_');
+        String prefix = "vespa.mutate." + phase.toString();
         addRankProperty(prefix + ".attribute", attribute);
         addRankProperty(prefix + ".operation", operation);
     }

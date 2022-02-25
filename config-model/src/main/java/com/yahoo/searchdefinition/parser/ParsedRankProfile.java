@@ -39,6 +39,7 @@ class ParsedRankProfile extends ParsedBlock {
     private String inheritedMatchFeatures = null;
     private String secondPhaseExpression = null;
     private Boolean strict = null;
+    private final List<MutateOperation> mutateOperations = new ArrayList<>();
     private final List<String> inherited = new ArrayList<>();
     private final Map<String, Boolean> fieldsRankFilter = new HashMap<>();
     private final Map<String, Integer> fieldsRankWeight = new HashMap<>();
@@ -66,6 +67,7 @@ class ParsedRankProfile extends ParsedBlock {
     Optional<String> getFirstPhaseExpression() { return Optional.ofNullable(this.firstPhaseExpression); }
     Optional<String> getInheritedMatchFeatures() { return Optional.ofNullable(this.inheritedMatchFeatures); }
     List<ParsedRankFunction> getFunctions() { return List.copyOf(functions.values()); }
+    List<MutateOperation> getMutateOperations() { return List.copyOf(mutateOperations); }
     List<String> getInherited() { return List.copyOf(inherited); }
     Map<String, Boolean> getFieldsWithRankFilter() { return Map.copyOf(fieldsRankFilter); }
     Map<String, Integer> getFieldsWithRankWeight() { return Map.copyOf(fieldsRankWeight); }
@@ -127,7 +129,9 @@ class ParsedRankProfile extends ParsedBlock {
         functions.put(func.name(), func);
     }
 
-    void addMutateOperation(MutateOperation.Phase phase, String attrName, String operation) {}
+    void addMutateOperation(MutateOperation.Phase phase, String attrName, String operation) {
+        mutateOperations.add(new MutateOperation(phase, attrName, operation));
+    }
 
     void addRankProperty(String key, String value) {
         verifyThat(! rankProperties.containsKey(key), "already has value for rank property", key);
