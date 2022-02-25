@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,9 +35,6 @@ func TestConfig(t *testing.T) {
 	assertConfigCommand(t, "", homeDir, "config", "set", "wait", "60")
 	assertConfigCommandErr(t, "Error: wait option must be an integer >= 0, got \"foo\"\n", homeDir, "config", "set", "wait", "foo")
 	assertConfigCommand(t, "wait = 60\n", homeDir, "config", "get", "wait")
-
-	// Avoid leaking config settings to other tests
-	viper.Reset()
 }
 
 func assertConfigCommand(t *testing.T, expected, homeDir string, args ...string) {
