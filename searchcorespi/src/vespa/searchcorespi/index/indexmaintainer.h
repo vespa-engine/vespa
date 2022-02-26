@@ -57,6 +57,7 @@ class IndexMaintainer : public IIndexManager,
               _saveInfo(saveInfo.release()),
               _absoluteId(absoluteId)
         { }
+        ~FrozenMemoryIndexRef();
     };
 
     class ChangeGens {
