@@ -48,6 +48,8 @@ Field::Field(vespalib::stringref name, const DataType& dataType)
       _fieldId(calculateIdV7())
 { }
 
+Field::~Field() = default;
+
 FieldValue::UP
 Field::createValue() const {
     return _dataType->createFieldValue();

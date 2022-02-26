@@ -86,6 +86,8 @@ public:
      */
     Field(vespalib::stringref name, const DataType &dataType);
 
+    ~Field() override;
+
     std::unique_ptr<FieldValue> createValue() const;
 
     // Note that only id is checked for equality.
