@@ -149,7 +149,7 @@ inline bool is_fast(const Value::Index &index) {
     return (std::type_index(typeid(index)) == std::type_index(typeid(FastValueIndex)));
 }
 
-inline bool are_fast(const Value::Index &a, const Value::Index &b) {
+__attribute__((always_inline)) inline bool are_fast(const Value::Index &a, const Value::Index &b) {
     return (is_fast(a) && is_fast(b));
 }
 

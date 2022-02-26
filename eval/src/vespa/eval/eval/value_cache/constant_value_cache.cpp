@@ -20,6 +20,8 @@ ConstantValueCache::ConstantValueCache(const ConstantValueFactory &factory)
 {
 }
 
+ConstantValueCache::~ConstantValueCache() = default;
+
 ConstantValue::UP
 ConstantValueCache::create(const vespalib::string &path, const vespalib::string &type) const
 {

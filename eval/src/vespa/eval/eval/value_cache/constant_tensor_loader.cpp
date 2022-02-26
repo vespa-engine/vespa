@@ -68,6 +68,8 @@ void decode_json(const vespalib::string &path, Slime &slime) {
 
 } // namespace vespalib::eval::<unnamed>
 
+ConstantTensorLoader::~ConstantTensorLoader() = default;
+
 ConstantValue::UP
 ConstantTensorLoader::create(const vespalib::string &path, const vespalib::string &type) const
 {

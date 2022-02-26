@@ -79,6 +79,7 @@ TEST("require that different strings give different function keys") {
 struct CheckKeys : test::EvalSpec::EvalTest {
     bool failed = false;
     std::set<vespalib::string> seen_keys;
+    ~CheckKeys() override;
     bool check_key(const vespalib::string &key) {
         bool seen = (seen_keys.count(key) > 0);
         seen_keys.insert(key);
@@ -103,6 +104,8 @@ struct CheckKeys : test::EvalSpec::EvalTest {
                              const vespalib::string &,
                              double) override {}
 };
+
+CheckKeys::~CheckKeys() = default;
 
 TEST_FF("require that all conformance expressions have different function keys",
         CheckKeys(), test::EvalSpec())
@@ -245,6 +248,8 @@ struct CompileCheck : test::EvalSpec::EvalTest {
         double expect;
         Entry(CompileCache::Token::UP fun_in, const std::vector<double> &params_in, double expect_in)
             : fun(std::move(fun_in)), params(params_in), expect(expect_in) {}
+        Entry(Entry&&) noexcept = default;
+        ~Entry();
     };
     std::vector<Entry> list;
     void next_expression(const std::vector<vespalib::string> &,
@@ -272,6 +277,8 @@ struct CompileCheck : test::EvalSpec::EvalTest {
         }
     }
 };
+
+CompileCheck::Entry::~Entry() = default;
 
 TEST_F("compile sequentially, then run all conformance tests", test::EvalSpec()) {
     f1.add_all_cases();

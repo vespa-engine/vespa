@@ -29,6 +29,8 @@ double byte(const vespalib::string &bits) {
 constexpr double my_nan = std::numeric_limits<double>::quiet_NaN();
 constexpr double my_inf = std::numeric_limits<double>::infinity();
 
+EvalSpec::Expression::~Expression() = default;
+
 EvalSpec::Expression &EvalSpec::Expression::add_case(std::initializer_list<double> param_values,
                                                      double expected_result) {
     assert(param_values.size() == param_names.size());

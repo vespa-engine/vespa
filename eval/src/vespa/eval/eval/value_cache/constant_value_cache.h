@@ -50,6 +50,7 @@ private:
 public:
     ConstantValueCache(const ConstantValueFactory &factory);
     ConstantValue::UP create(const vespalib::string &path, const vespalib::string &type) const override;
+    ~ConstantValueCache() override;
 };
 
 } // namespace vespalib::eval

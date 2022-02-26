@@ -270,7 +270,11 @@ struct BenchmarkResult {
     double star_rating;
     BenchmarkResult(const vespalib::string &desc_in, size_t num_values)
         : desc(desc_in), ref_time(std::nullopt), relative_perf(num_values, 0.0) {}
+    BenchmarkResult(const BenchmarkResult&);
+    BenchmarkResult(BenchmarkResult&&) noexcept = default;
     ~BenchmarkResult();
+    BenchmarkResult& operator=(const BenchmarkResult&);
+    BenchmarkResult& operator=(BenchmarkResult&&) noexcept;
     void sample(size_t order, double time) {
         relative_perf[order] = time;
         if (order == 0) {
@@ -305,7 +309,14 @@ struct BenchmarkResult {
         fprintf(stderr, "| %s\n", desc.c_str());
     }
 };
+
+BenchmarkResult::BenchmarkResult(const BenchmarkResult&) = default;
+
 BenchmarkResult::~BenchmarkResult() = default;
+
+BenchmarkResult& BenchmarkResult::operator=(const BenchmarkResult&) = default;
+
+BenchmarkResult& BenchmarkResult::operator=(BenchmarkResult&&) noexcept = default;
 
 std::vector<BenchmarkResult> benchmark_results;
 
