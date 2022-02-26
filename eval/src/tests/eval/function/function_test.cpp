@@ -1035,6 +1035,7 @@ TEST("require that tensor cell cast must have valid cell type") {
 struct CheckExpressions : test::EvalSpec::EvalTest {
     bool failed = false;
     size_t seen_cnt = 0;
+    ~CheckExpressions() override;
     virtual void next_expression(const std::vector<vespalib::string> &param_names,
                                  const vespalib::string &expression) override
     {
@@ -1050,6 +1051,8 @@ struct CheckExpressions : test::EvalSpec::EvalTest {
                              const vespalib::string &,
                              double) override {}
 };
+
+CheckExpressions::~CheckExpressions() = default;
 
 TEST_FF("require that all conformance test expressions can be parsed",
         CheckExpressions(), test::EvalSpec())

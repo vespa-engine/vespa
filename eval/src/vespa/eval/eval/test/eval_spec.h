@@ -32,6 +32,7 @@ private:
         std::vector<Case> cases;
         Expression(std::initializer_list<vespalib::string> param_names_in, vespalib::string expression_in)
             : param_names(param_names_in), expression(expression_in) {}
+        ~Expression();
 
         Expression &add_case(std::initializer_list<double> param_values, double expected_result);
         Expression &add_cases(std::initializer_list<double> a_values, fun_1_ref fun);

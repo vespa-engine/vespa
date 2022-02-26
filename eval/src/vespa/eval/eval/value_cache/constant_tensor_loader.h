@@ -19,6 +19,7 @@ private:
     const ValueBuilderFactory &_factory;
 public:
     ConstantTensorLoader(const ValueBuilderFactory &factory) : _factory(factory) {}
+    ~ConstantTensorLoader();
     ConstantValue::UP create(const vespalib::string &path, const vespalib::string &type) const override;
 };
 

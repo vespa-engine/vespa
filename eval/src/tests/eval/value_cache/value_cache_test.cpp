@@ -21,7 +21,10 @@ struct MyFactory : ConstantValueFactory {
         ++create_cnt;
         return std::make_unique<MyValue>(double(atoi(path.c_str())));
     }
+    ~MyFactory();
 };
+
+MyFactory::~MyFactory() = default;
 
 TEST_FF("require that values can be created", MyFactory(), ConstantValueCache(f1)) {
     ConstantValue::UP res = f2.create("1", "type");

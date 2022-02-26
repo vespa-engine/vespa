@@ -26,6 +26,8 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
     bool print_pass = false;
     bool print_fail = false;
 
+    ~MyEvalTest() override;
+
     virtual void next_expression(const std::vector<vespalib::string> &param_names,
                                  const vespalib::string &expression) override
     {
@@ -85,6 +87,8 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
         report_result(result_value.type().is_double(), result_value.as_double(), expected_result, description);
     }
 };
+
+MyEvalTest::~MyEvalTest() = default;
 
 TEST_FF("require that interpreted evaluation passes all conformance tests", MyEvalTest(), test::EvalSpec()) {
     f1.print_fail = true;
