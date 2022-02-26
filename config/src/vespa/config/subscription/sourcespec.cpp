@@ -63,6 +63,8 @@ DirSpec::DirSpec(const vespalib::string & dirName)
 {
 }
 
+DirSpec::~DirSpec() = default;
+
 std::unique_ptr<SourceFactory>
 DirSpec::createSourceFactory(const TimingValues & ) const
 {

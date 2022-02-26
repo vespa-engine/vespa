@@ -108,6 +108,7 @@ public:
      * @param dirName Directory to serve config from.
      */
     DirSpec(const vespalib::string & dirName);
+    ~DirSpec() override;
 
     /**
      * Get directory handled by this spec.
@@ -237,4 +238,3 @@ private:
 };
 
 }
-
