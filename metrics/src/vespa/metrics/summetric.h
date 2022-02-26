@@ -34,6 +34,7 @@ public:
         StartValue(const AddendMetric &metric)
             : _startValueChildren(),
               _startValue(metric.clone(_startValueChildren, CLONE, 0, false)) {}
+        ~StartValue();
         const AddendMetric &getStartValue() const { return static_cast<const AddendMetric &>(*_startValue); }
     };
 
