@@ -59,7 +59,11 @@ protected:
         (void)buf;
         return true;
     }
+public:
+    ~MyMessageFactory() override;
 };
+
+MyMessageFactory::~MyMessageFactory() = default;
 
 class MyReplyFactory : public RoutableFactories60::DocumentReplyFactory {
 protected:
@@ -73,7 +77,11 @@ protected:
         (void)buf;
         return true;
     }
+public:
+    ~MyReplyFactory() override;
 };
+
+MyReplyFactory::~MyReplyFactory() = default;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
