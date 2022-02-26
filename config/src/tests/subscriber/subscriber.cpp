@@ -77,6 +77,7 @@ namespace {
 
 
         MyManager() : idCounter(0), numCancel(0) { }
+        ~MyManager() override;
 
         ConfigSubscription::SP subscribe(const ConfigKey & key, vespalib::duration timeout) override {
             (void) timeout;
@@ -111,6 +112,8 @@ namespace {
         }
 
     };
+
+    MyManager::~MyManager() = default;
 
     class APIFixture : public IConfigContext
     {

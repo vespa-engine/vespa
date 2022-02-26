@@ -12,9 +12,12 @@ using namespace vespalib::slime;
 struct FixedClock : public Clock
 {
     FixedClock() : _currentTime() { }
+    ~FixedClock() override;
     vespalib::system_time _currentTime;
     vespalib::system_time currentTime() const override { return _currentTime; }
 };
+
+FixedClock::~FixedClock() = default;
 
 TEST("that trace can be serialized and deserialized") {
     Trace trace(4);
