@@ -77,10 +77,13 @@ public:
         : _reconfigurer(reconfigurer),
           _configure(std::move(configure))
     { }
+    ~ReconfigRunnableTask() override;
     void run() override {
         _reconfigurer.reconfigure(std::move(_configure));
     }
 };
+
+ReconfigRunnableTask::~ReconfigRunnableTask() = default;
 
 SerialNum noSerialNumHigh = std::numeric_limits<SerialNum>::max();
 
@@ -163,6 +166,8 @@ DiskIndexWithDestructorCallback::getSearchableStats() const
 
 
 }  // namespace
+
+IndexMaintainer::FrozenMemoryIndexRef::~FrozenMemoryIndexRef() = default;
 
 IndexMaintainer::FusionArgs::FusionArgs()
     : _new_fusion_id(0u),
