@@ -2,6 +2,7 @@
 vespa_add_library(juniper
     SOURCES
     Matcher.cpp
+    appender.cpp
     sumdesc.cpp
     mcand.cpp
     keyocc.cpp
