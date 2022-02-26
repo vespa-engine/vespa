@@ -37,11 +37,14 @@ struct State {
 
 struct Blocker : Runnable {
     Gate start;
+    ~Blocker() override;
     void run() override {
         start.await();
     }
     Gate done; // set externally
 };
+
+Blocker::~Blocker() = default;
 
 TEST_MT_FF("require that signals can be counted and cancelled", 2, Signal, size_t(16000)) {
     if (thread_id == 0) {

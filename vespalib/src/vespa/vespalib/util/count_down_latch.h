@@ -90,7 +90,7 @@ public:
     /**
      * Empty. Needs to be virtual to reduce compiler warnings.
      **/
-    virtual ~CountDownLatch() = default;
+    virtual ~CountDownLatch();
 };
 
 } // namespace vespalib

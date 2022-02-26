@@ -25,6 +25,7 @@ private:
 public:
     explicit TlsCryptoEngine(net::tls::TransportSecurityOptions tls_opts,
                              net::tls::AuthorizationMode authz_mode = net::tls::AuthorizationMode::Enforce);
+    ~TlsCryptoEngine() override;
     std::unique_ptr<TlsCryptoSocket> create_tls_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) override;
     std::unique_ptr<TlsCryptoSocket> create_tls_server_crypto_socket(SocketHandle socket) override;
     bool use_tls_when_client() const override { return true; }

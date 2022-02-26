@@ -124,6 +124,7 @@ private:
 
     AsyncResolver(HostResolver::SP resolver, size_t num_threads);
 public:
+    ~AsyncResolver();
     void resolve_async(const vespalib::string &spec, ResultHandler::WP result_handler);
     void wait_for_pending_resolves();
     static AsyncResolver::SP create(Params params);

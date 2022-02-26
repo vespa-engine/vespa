@@ -155,6 +155,8 @@ AsyncResolver::AsyncResolver(HostResolver::SP resolver, size_t num_threads)
 {
 }
 
+AsyncResolver::~AsyncResolver() = default;
+
 void
 AsyncResolver::wait_for_pending_resolves() {
     _executor->sync();

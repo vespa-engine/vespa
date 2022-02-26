@@ -18,6 +18,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     classname.cpp
     compress.cpp
     compressor.cpp
+    count_down_latch.cpp
     cpu_usage.cpp
     destructor_callbacks.cpp
     dual_merge_director.cpp
@@ -26,6 +27,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     exceptions.cpp
     executor_idle_tracking.cpp
     file_area_freelist.cpp
+    gate.cpp
     gencnt.cpp
     generationhandler.cpp
     generationholder.cpp

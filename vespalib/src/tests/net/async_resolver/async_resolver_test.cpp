@@ -22,11 +22,14 @@ struct MyClock : public AsyncResolver::Clock {
     using time_point = AsyncResolver::time_point;
     using seconds = AsyncResolver::seconds;
     time_point my_now;
+    ~MyClock() override;
     void set_now(seconds t) {
         my_now = time_point(std::chrono::duration_cast<time_point::duration>(t));
     }
     AsyncResolver::time_point now() override { return my_now; }
 };
+
+MyClock::~MyClock() = default;
 
 struct BlockingHostResolver : public AsyncResolver::HostResolver {
     CountDownLatch callers;

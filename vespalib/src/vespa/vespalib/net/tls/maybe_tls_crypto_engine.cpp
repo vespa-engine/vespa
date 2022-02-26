@@ -5,6 +5,8 @@
 
 namespace vespalib {
 
+MaybeTlsCryptoEngine::~MaybeTlsCryptoEngine() = default;
+
 CryptoSocket::UP
 MaybeTlsCryptoEngine::create_client_crypto_socket(SocketHandle socket, const SocketSpec &spec)
 {
