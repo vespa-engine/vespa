@@ -19,9 +19,12 @@ class FreeWorker : public Consumer {
 public:
     FreeWorker(uint32_t maxQueue, bool inverse)
         : Consumer (maxQueue, inverse) {}
+    ~FreeWorker() override;
 private:
     void consume(void * p) override { free(p); }
 };
+
+FreeWorker::~FreeWorker() = default;
 
 //-----------------------------------------------------------------------------
 
@@ -29,10 +32,13 @@ class MallocWorker : public Producer {
 public:
     MallocWorker(uint32_t size, uint32_t cnt, FreeWorker &target)
         : Producer(cnt, target), _size(size) {}
+    ~MallocWorker() override;
 private:
     uint32_t _size;
     void * produce() override { return malloc(_size); }
 };
+
+MallocWorker::~MallocWorker() = default;
 
 //-----------------------------------------------------------------------------
 
@@ -40,12 +46,15 @@ class MallocFreeWorker : public ProducerConsumer {
 public:
     MallocFreeWorker(uint32_t size, uint32_t cnt, bool inverse)
         : ProducerConsumer(cnt, inverse), _size(size) { }
+    ~MallocFreeWorker() override;
 private:
     uint32_t _size;
 
     void * produce() override { return malloc(_size); }
     void consume(void * p) override { free(p); }
 };
+
+MallocFreeWorker::~MallocFreeWorker() = default;
 
 //-----------------------------------------------------------------------------
 
