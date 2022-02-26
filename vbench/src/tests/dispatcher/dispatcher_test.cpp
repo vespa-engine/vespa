@@ -7,8 +7,11 @@ using namespace vbench;
 struct MyHandler : public Handler<int> {
     int value;
     MyHandler() : value(-1) {}
+    ~MyHandler() override;
     void handle(std::unique_ptr<int> v) override { value = (v.get() != 0) ? *v : 0; }
 };
+
+MyHandler::~MyHandler() = default;
 
 struct Fetcher : public vespalib::Runnable {
     Provider<int> &provider;

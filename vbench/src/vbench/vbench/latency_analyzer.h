@@ -35,6 +35,7 @@ public:
         string toString() const;
     };
     LatencyAnalyzer(Handler<Request> &next);
+    ~LatencyAnalyzer() override;
     void handle(Request::UP request) override;
     void report() override;
     void addLatency(double latency);

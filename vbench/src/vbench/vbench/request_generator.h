@@ -22,6 +22,7 @@ private:
 
 public:
     RequestGenerator(const string &inputFile, Handler<Request> &next);
+    ~RequestGenerator() override;
     void abort() override;
     void run() override;
     const Taint &tainted() const override { return _input.tainted(); }
