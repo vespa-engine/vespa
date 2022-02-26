@@ -1055,7 +1055,7 @@ SearchContextTest::testSearchIteratorUnpacking()
     {
         Config cfg(BasicType::INT32, CollectionType::SINGLE);
         cfg.setFastSearch(true);
-        config.emplace_back("sfs-int32", cfg);
+        config.emplace_back(vespalib::string("sfs-int32"), cfg);
     }
     {
         Config cfg(BasicType::INT32, CollectionType::ARRAY);
