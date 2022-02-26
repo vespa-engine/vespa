@@ -48,8 +48,11 @@ public:
     CustomPolicyFactory(bool forward,
                         const std::vector<string> &all,
                         const std::vector<string> &matched);
+    ~CustomPolicyFactory() override;
     IRoutingPolicy::UP create(const string &param) override;
 };
+
+CustomPolicyFactory::~CustomPolicyFactory() = default;
 
 class CustomPolicy : public IRoutingPolicy {
 private:

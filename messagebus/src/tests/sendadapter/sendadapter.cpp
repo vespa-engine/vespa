@@ -26,6 +26,7 @@ private:
 
 public:
     typedef std::shared_ptr<TestProtocol> SP;
+    ~TestProtocol() override;
     mbus::Blob encode(const vespalib::Version &version, const mbus::Routable &routable) const override {
         _lastVersion = version;
         return mbus::SimpleProtocol::encode(version, routable);
@@ -36,6 +37,8 @@ public:
     }
     const vespalib::Version &getLastVersion() { return _lastVersion; }
 };
+
+TestProtocol::~TestProtocol() = default;
 
 class TestData {
 public:

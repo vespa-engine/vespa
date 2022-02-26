@@ -30,7 +30,10 @@ public:
     IRoutingPolicy::UP create(const string &) override {
         return IRoutingPolicy::UP(new AllPolicy());
     }
+    ~AllPolicyFactory() override;
 };
+
+AllPolicyFactory::~AllPolicyFactory() = default;
 
 class HashPolicy : public IRoutingPolicy {
 public:
@@ -53,7 +56,10 @@ public:
     IRoutingPolicy::UP create(const string &) override {
         return IRoutingPolicy::UP(new HashPolicy());
     }
+    ~HashPolicyFactory() override;
 };
+
+HashPolicyFactory::~HashPolicyFactory() = default;
 
 SimpleProtocol::SimpleProtocol() :
     _policies()
