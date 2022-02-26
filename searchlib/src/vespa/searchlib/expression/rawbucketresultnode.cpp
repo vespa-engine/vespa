@@ -40,7 +40,13 @@ RawBucketResultNode::RawBucketResultNode()
       _to(new RawResultNode())
 {}
 
+RawBucketResultNode::RawBucketResultNode(const RawBucketResultNode&) = default;
+
 RawBucketResultNode::~RawBucketResultNode() = default;
+
+RawBucketResultNode& RawBucketResultNode::operator=(const RawBucketResultNode&) = default;
+
+RawBucketResultNode& RawBucketResultNode::operator=(RawBucketResultNode&&) noexcept = default;
 
 int
 RawBucketResultNode::onCmp(const Identifiable & rhs) const

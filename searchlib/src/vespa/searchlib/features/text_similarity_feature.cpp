@@ -172,6 +172,8 @@ const vespalib::string TextSimilarityBlueprint::field_coverage_output("fieldCove
 TextSimilarityBlueprint::TextSimilarityBlueprint()
     : Blueprint("textSimilarity"), _field_id(fef::IllegalHandle) {}
 
+TextSimilarityBlueprint::~TextSimilarityBlueprint() = default;
+
 void
 TextSimilarityBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &env,
                                            fef::IDumpFeatureVisitor &visitor) const

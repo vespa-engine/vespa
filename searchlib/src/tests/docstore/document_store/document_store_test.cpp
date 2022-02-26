@@ -13,6 +13,7 @@ document::DocumentTypeRepo repo;
 
 struct NullDataStore : IDataStore {
     NullDataStore() : IDataStore("") {}
+    ~NullDataStore() override;
     ssize_t read(uint32_t, vespalib::DataBuffer &) const override { return 0; }
     void read(const LidVector &, IBufferVisitor &) const override { }
     void write(uint64_t, uint32_t, const void *, size_t) override {}
@@ -45,6 +46,8 @@ struct NullDataStore : IDataStore {
     size_t getEstimatedShrinkLidSpaceGain() const override { return 0; }
     void shrinkLidSpace() override {}
 };
+
+NullDataStore::~NullDataStore() = default;
 
 TEST_FFF("require that uncache docstore lookups are counted",
          DocumentStore::Config(CompressionConfig::NONE, 0, 0),

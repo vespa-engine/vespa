@@ -40,6 +40,7 @@ vespa_add_library(searchlib_queryeval OBJECT
     nearsearch.cpp
     nns_index_iterator.cpp
     orsearch.cpp
+    posting_info.cpp
     predicate_blueprint.cpp
     predicate_search.cpp
     ranksearch.cpp

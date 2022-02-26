@@ -9,6 +9,12 @@ IMPLEMENT_RESULTNODE(StringBucketResultNode, BucketResultNode);
 
 StringBucketResultNode StringBucketResultNode::_nullResult;
 
+StringBucketResultNode::StringBucketResultNode(const StringBucketResultNode&) = default;
+
+StringBucketResultNode& StringBucketResultNode::operator=(const StringBucketResultNode&) = default;
+
+StringBucketResultNode& StringBucketResultNode::operator=(StringBucketResultNode&&) = default;
+
 size_t
 StringBucketResultNode::hash() const
 {

@@ -124,6 +124,7 @@ public:
     MultiExtAttribute(const vespalib::string &name)
         : Super(name, Config(BasicType::fromType(static_cast<T>(0)),
                              attribute::CollectionType::ARRAY)) {}
+    ~MultiExtAttribute() override;
 
     bool addDoc(typename Super::DocId &docId) override {
         docId = this->_idx.size() - 1;
@@ -146,6 +147,9 @@ public:
         this->_data.reserve(lidLimit);
     }
 };
+
+template <typename T>
+MultiExtAttribute<T>::~MultiExtAttribute() = default;
 
 typedef MultiExtAttribute<int8_t> MultiInt8ExtAttribute;
 typedef MultiExtAttribute<int16_t> MultiInt16ExtAttribute;

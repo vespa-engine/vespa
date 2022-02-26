@@ -244,6 +244,7 @@ struct SingleStringAttrFixture : Fixture {
     SingleStringAttrFixture() : Fixture() {
         setup();
     }
+    ~SingleStringAttrFixture() override;
 
     void setup() {
         this->template reset_with_single_value_reference_mappings<StringAttribute, const char*>(
@@ -252,6 +253,8 @@ struct SingleStringAttrFixture : Fixture {
                  {DocId(4), dummy_gid(7), DocId(7), "bar"}});
     }
 };
+
+SingleStringAttrFixture::~SingleStringAttrFixture() = default;
 
 TEST_F("Single-valued string attribute values can be retrieved via reference", SingleStringAttrFixture)
 {
@@ -329,6 +332,7 @@ struct MultiStringAttrFixture : Fixture {
     MultiStringAttrFixture() : Fixture() {
         setup();
     }
+    ~MultiStringAttrFixture() override;
 
     void setup() {
         reset_with_array_value_reference_mappings<StringAttribute, const char *>(
@@ -337,6 +341,8 @@ struct MultiStringAttrFixture : Fixture {
                  {DocId(4), dummy_gid(7), DocId(7), doc7_values}});
     }
 };
+
+MultiStringAttrFixture::~MultiStringAttrFixture() = default;
 
 TEST_F("Multi-valued string attribute values can be retrieved via reference", MultiStringAttrFixture) {
     assert_multi_value_matches<const char*>(f, DocId(2), f.doc3_values, string_eq);
@@ -368,6 +374,7 @@ struct WeightedMultiStringAttrFixture : Fixture {
     WeightedMultiStringAttrFixture() : Fixture() {
         setup();
     }
+    ~WeightedMultiStringAttrFixture() override;
 
     void setup() {
         reset_with_wset_value_reference_mappings<StringAttribute, WeightedString>(
@@ -376,6 +383,8 @@ struct WeightedMultiStringAttrFixture : Fixture {
                  {DocId(3), dummy_gid(7), DocId(7), doc7_values}});
     }
 };
+
+WeightedMultiStringAttrFixture::~WeightedMultiStringAttrFixture() = default;
 
 TEST_F("Weighted string attribute values can be retrieved via reference", WeightedMultiStringAttrFixture) {
     assert_multi_value_matches<WeightedString>(f, DocId(1), f.doc3_values);
@@ -523,6 +532,7 @@ struct TensorAttrFixture : Fixture {
     {
         setup(dense);
     }
+    ~TensorAttrFixture() override;
     void setup(bool dense) {
         if (dense) {
             tensor1 = createTensor(TensorSpec("tensor(x[2])").add({{"x", 1}}, 11));
@@ -562,6 +572,7 @@ struct TensorAttrFixture : Fixture {
     }
 };
 
+TensorAttrFixture::~TensorAttrFixture() = default;
 
 TEST_F("Imported sparse tensor", TensorAttrFixture(false))
 {

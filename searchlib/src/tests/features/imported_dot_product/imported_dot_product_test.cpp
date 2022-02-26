@@ -94,6 +94,7 @@ struct FixtureBase : ImportedAttributeFixture {
 
 struct ArrayFixture : FixtureBase {
 
+    ~ArrayFixture() override;
     void setup_integer_mappings(BasicType int_type) override {
         reset_with_array_value_reference_mappings<IntegerAttribute, int64_t>(
                 int_type,
@@ -167,6 +168,8 @@ struct ArrayFixture : FixtureBase {
                                  expected, vector, doc_id, shared_param);
     }
 };
+
+ArrayFixture::~ArrayFixture() = default;
 
 TEST_F("Dense i32/i64 array dot products can be evaluated with string parameter", ArrayFixture) {
     f.check_all_integer_executions(2*2 + 3*3 + 5*4, "[2 3 4]", DocId(1));
@@ -261,7 +264,10 @@ struct WsetFixture : FixtureBase {
                 int_type,
                 {{DocId(3), dummy_gid(7), DocId(7), doc7_values}});
     }
+    ~WsetFixture() override;
 };
+
+WsetFixture::~WsetFixture() = default;
 
 TEST_F("i32/i64 wset dot products can be evaluated with string parameter", WsetFixture) {
     f.check_all_integer_executions(21*7 + 19*13, "{200:21,300:19,999:1234}", DocId(3));

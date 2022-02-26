@@ -5,6 +5,7 @@ vespa_add_library(searchlib_query_tree OBJECT
     intermediate.cpp
     intermediatenodes.cpp
     querybuilder.cpp
+    simplequery.cpp
     stackdumpcreator.cpp
     term.cpp
     location.cpp

@@ -43,6 +43,8 @@ RawScoreExecutor::handle_bind_match_data(const fef::MatchData &md)
 
 //-----------------------------------------------------------------------------
 
+RawScoreBlueprint::~RawScoreBlueprint() = default;
+
 bool
 RawScoreBlueprint::setup(const IIndexEnvironment &, const ParameterList &params)
 {

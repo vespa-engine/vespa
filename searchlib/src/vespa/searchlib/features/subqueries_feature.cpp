@@ -44,6 +44,8 @@ SubqueriesExecutor::handle_bind_match_data(const fef::MatchData &md)
 
 //-----------------------------------------------------------------------------
 
+SubqueriesBlueprint::~SubqueriesBlueprint() = default;
+
 bool SubqueriesBlueprint::setup(const IIndexEnvironment &,
                                 const ParameterList &params) {
     _field = params[0].asField();

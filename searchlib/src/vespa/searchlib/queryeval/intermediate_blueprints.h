@@ -60,6 +60,7 @@ private:
 class OrBlueprint : public IntermediateBlueprint
 {
 public:
+    ~OrBlueprint() override;
     bool supports_termwise_children() const override { return true; }
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;

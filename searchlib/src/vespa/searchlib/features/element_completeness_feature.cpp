@@ -96,6 +96,8 @@ ElementCompletenessBlueprint::ElementCompletenessBlueprint()
     _output.push_back("elementWeight");
 }
 
+ElementCompletenessBlueprint::~ElementCompletenessBlueprint() = default;
+
 void
 ElementCompletenessBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &env,
                                                 fef::IDumpFeatureVisitor &visitor) const

@@ -46,6 +46,7 @@ private:
     vespalib::string _label;
 public:
     ItemRawScoreBlueprint() : Blueprint("itemRawScore"), _label() {}
+    ~ItemRawScoreBlueprint() override;
     void visitDumpFeatures(const fef::IIndexEnvironment &, fef::IDumpFeatureVisitor &) const override {}
     fef::Blueprint::UP createInstance() const override {
         return Blueprint::UP(new ItemRawScoreBlueprint());

@@ -179,17 +179,23 @@ struct Fixture {
 
 struct AscendingScoreFixture : Fixture {
     AscendingScoreFixture() : Fixture() {}
+    ~AscendingScoreFixture() override;
     HitRank calculateScore(uint32_t i) override {
         return i + 100;
     }
 };
 
+AscendingScoreFixture::~AscendingScoreFixture() = default;
+
 struct DescendingScoreFixture : Fixture {
     DescendingScoreFixture() : Fixture() {}
+    ~DescendingScoreFixture() override;
     HitRank calculateScore(uint32_t i) override {
         return 100 - i;
     }
 };
+
+DescendingScoreFixture::~DescendingScoreFixture() = default;
 
 TEST_F("testReRank - empty", Fixture) {
     EXPECT_EQUAL(0u, f.reRank());

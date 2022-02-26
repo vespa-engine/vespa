@@ -107,6 +107,8 @@ ClosenessBlueprint::ClosenessBlueprint() :
 {
 }
 
+ClosenessBlueprint::~ClosenessBlueprint() = default;
+
 void
 ClosenessBlueprint::visitDumpFeatures(const IIndexEnvironment &,
                                       IDumpFeatureVisitor &) const

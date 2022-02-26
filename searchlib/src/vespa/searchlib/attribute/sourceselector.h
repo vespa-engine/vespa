@@ -42,6 +42,7 @@ public:
                  uint32_t baseId,
                  uint32_t docIdLimit,
                  AttributeVector & sourceStore);
+        ~SaveInfo();
         const HeaderInfo & getHeader() const { return _header; }
         bool save(const TuneFileAttributes &tuneFileAttributes,
                   const search::common::FileHeaderContext &fileHeaderContext);

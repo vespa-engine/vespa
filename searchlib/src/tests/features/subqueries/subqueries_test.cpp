@@ -38,7 +38,10 @@ struct FeatureDumpFixture : public IDumpFeatureVisitor {
         TEST_ERROR("no features should be dumped");
     }
     FeatureDumpFixture() : IDumpFeatureVisitor() {}
+    ~FeatureDumpFixture() override;
 };
+
+FeatureDumpFixture::~FeatureDumpFixture() = default;
 
 struct RankFixture : BlueprintFactoryFixture, IndexFixture {
     QueryEnvironment         queryEnv;
