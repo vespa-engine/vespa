@@ -90,7 +90,7 @@ TEST("testCache") {
 typedef std::shared_ptr<std::string> MyKey;
 typedef std::shared_ptr<std::string> MyData;
 
-struct SharedEqual : public std::binary_function<MyKey, MyKey, bool> {
+struct SharedEqual {
     bool operator()(const MyKey & a, const MyKey & b) {
         return ((*a) == (*b));
     }
