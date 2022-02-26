@@ -56,7 +56,7 @@ void
 UniqueStoreEnumerator<RefT>::enumerateValues()
 {
     _next_enum_val = 1;
-    _dict_snapshot->foreach_key([this](EntryRef ref) { enumerateValue(ref); });
+    _dict_snapshot->foreach_key([this](EntryRef ref) noexcept { enumerateValue(ref); });
 }
 
 template <typename RefT>

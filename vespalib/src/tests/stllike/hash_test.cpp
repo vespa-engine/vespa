@@ -455,8 +455,8 @@ class WrappedKey
 public:
     WrappedKey() : _key() { }
     WrappedKey(int key) : _key(std::make_unique<const int>(key)) { }
-    size_t hash() const { return vespalib::hash<int>()(*_key); }
-    bool operator==(const WrappedKey &rhs) const { return *_key == *rhs._key; }
+    size_t hash() const noexcept { return vespalib::hash<int>()(*_key); }
+    bool operator==(const WrappedKey &rhs) const noexcept { return *_key == *rhs._key; }
 };
 
 }
