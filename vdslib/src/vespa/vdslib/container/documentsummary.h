@@ -46,7 +46,7 @@ private:
         uint32_t _summaryOffset;
         uint32_t _summaryLen;
     };
-    class Compare : public std::binary_function<Summary, Summary, bool> {
+    class Compare {
     private:
         const char * _buffer;
     public:

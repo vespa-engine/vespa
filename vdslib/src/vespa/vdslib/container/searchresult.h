@@ -99,7 +99,7 @@ private:
         uint32_t _docIdOffset;
         uint32_t _index;  // refers to sortBlob
     };
-    class SortDataCompare : public std::binary_function<Hit, Hit, bool> {
+    class SortDataCompare {
     private:
         const BlobContainer & _sortBlob;
     public:
