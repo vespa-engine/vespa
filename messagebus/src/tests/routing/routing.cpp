@@ -84,8 +84,11 @@ public:
     RemoveReplyPolicyFactory(bool selectOnRetry,
                              const std::vector<uint32_t> &consumableErrors,
                              uint32_t idxRemove);
+    ~RemoveReplyPolicyFactory() override;
     IRoutingPolicy::UP create(const string &param) override;
 };
+
+RemoveReplyPolicyFactory::~RemoveReplyPolicyFactory() = default;
 
 RemoveReplyPolicyFactory::RemoveReplyPolicyFactory(bool selectOnRetry,
                                                    const std::vector<uint32_t> &consumableErrors,
@@ -233,6 +236,7 @@ private:
 public:
     SetReplyPolicyFactory(bool selectOnRetry,
                           const std::vector<uint32_t> &errors);
+    ~SetReplyPolicyFactory() override;
     IRoutingPolicy::UP create(const string &param) override;
 };
 
@@ -243,6 +247,8 @@ SetReplyPolicyFactory::SetReplyPolicyFactory(bool selectOnRetry,
 {
     // empty
 }
+
+SetReplyPolicyFactory::~SetReplyPolicyFactory() = default;
 
 IRoutingPolicy::UP
 SetReplyPolicyFactory::create(const string &param)
@@ -270,11 +276,14 @@ public:
 
 class SelectExceptionPolicyFactory : public SimpleProtocol::IPolicyFactory {
 public:
+    ~SelectExceptionPolicyFactory() override;
     IRoutingPolicy::UP create(const string &param) override {
         (void)param;
         return IRoutingPolicy::UP(new SelectExceptionPolicy());
     }
 };
+
+SelectExceptionPolicyFactory::~SelectExceptionPolicyFactory() = default;
 
 class MergeExceptionPolicy : public IRoutingPolicy {
 private:
@@ -299,10 +308,13 @@ public:
 
 class MergeExceptionPolicyFactory : public SimpleProtocol::IPolicyFactory {
 public:
+    ~MergeExceptionPolicyFactory() override;
     IRoutingPolicy::UP create(const string &param) override {
         return IRoutingPolicy::UP(new MergeExceptionPolicy(param));
     }
 };
+
+MergeExceptionPolicyFactory::~MergeExceptionPolicyFactory() = default;
 
 class MyPolicyFactory : public SimpleProtocol::IPolicyFactory {
 private:

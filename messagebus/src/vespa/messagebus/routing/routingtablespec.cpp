@@ -12,7 +12,11 @@ RoutingTableSpec::RoutingTableSpec(const string &protocol) :
     _routes()
 { }
 
+RoutingTableSpec::RoutingTableSpec(const RoutingTableSpec&) = default;
+
 RoutingTableSpec::~RoutingTableSpec() {}
+
+RoutingTableSpec& RoutingTableSpec::operator=(const RoutingTableSpec&) = default;
 
 HopSpec
 RoutingTableSpec::removeHop(uint32_t i)

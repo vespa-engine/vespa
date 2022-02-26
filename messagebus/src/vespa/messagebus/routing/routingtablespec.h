@@ -31,7 +31,11 @@ public:
      * @param protocol The name of the protocol that this belongs to.
      */
     RoutingTableSpec(const string &protocol);
+    RoutingTableSpec(const RoutingTableSpec&);
+    RoutingTableSpec(RoutingTableSpec&&) noexcept = default;
     ~RoutingTableSpec();
+    RoutingTableSpec &operator=(const RoutingTableSpec&);
+    RoutingTableSpec &operator=(RoutingTableSpec&&) noexcept = default;
 
     /**
      * Returns the name of the protocol that this is the routing table for.
