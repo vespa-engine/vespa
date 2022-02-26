@@ -254,7 +254,7 @@ protected:
 public:
     using SP = std::shared_ptr<SimpleTarget>;
 
-    SimpleTarget(Task::UP task, const std::string &name) :
+    SimpleTarget(Task::UP task, const std::string &name) noexcept :
         test::DummyFlushTarget(name),
         _flushedSerial(0),
         _currentSerial(0),
