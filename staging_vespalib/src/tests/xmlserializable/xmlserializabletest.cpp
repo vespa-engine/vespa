@@ -43,11 +43,11 @@ Test::testNormalUsage()
             << XmlEndTag()
         << XmlEndTag();
     std::string expected =
-        "\n<car>\n"
+        "<car>\n"
         "<door windowstate=\"up\"/>\n"
         "<description>This is a car description used to test</description>\n"
         "</car>";
-    EXPECT_EQUAL(expected, "\n" + ost.str());
+    EXPECT_EQUAL(expected, ost.str());
 }
 
 void
@@ -76,14 +76,14 @@ Test::testEscaping()
             << XmlEndTag()
         << XmlEndTag();
     std::string expected =
-        "\n<__trash_->\n"
+        "<__trash_->\n"
         "<foo bar=\"&lt;100%&quot; &amp;&#10;&gt;\"/>\n"
         "<escaped>&lt;&gt;&amp;\"'% &#13;\n&#9;&#12;&#0;</escaped>\n"
         "<encoded binaryencoding=\"base64\">PD4mIiclIAkMAA==</encoded>\n"
         "<auto1>&lt;&gt;&amp;&#9;&#12;&#13;\nfoo</auto1>\n"
         "<auto2 binaryencoding=\"base64\">PD4mCQANCmZvbw==</auto2>\n"
         "</__trash_->";
-    EXPECT_EQUAL(expected, "\n" + ost.str());
+    EXPECT_EQUAL(expected, ost.str());
 }
 
 namespace {
@@ -118,7 +118,7 @@ Test::testNesting()
             << XmlEndTag()
         << XmlEndTag();
     std::string expected =
-        "\n<car>\n"
+        "<car>\n"
         "<door color=\"blue\">\n"
         "<other count=\"5\">\n"
         "<something>foo</something>\n"
@@ -127,7 +127,7 @@ Test::testNesting()
         "</door>\n"
         "<description>This is a car description used to test</description>\n"
         "</car>";
-    EXPECT_EQUAL(expected, "\n" + ost.str());
+    EXPECT_EQUAL(expected, ost.str());
 }
 
 void
@@ -146,7 +146,7 @@ Test::testIndent()
                 << XmlEndTag()
             << XmlEndTag()
         << XmlEndTag();
-    std::string expected = "\n"
+    std::string expected =
         "<foo>\n"
         "  <bar>2.14</bar>\n"
         "  Litt innhold\n"
@@ -155,7 +155,7 @@ Test::testIndent()
         "    <base binaryencoding=\"base64\">Zm9vYmFy</base>\n"
         "  </nytag>\n"
         "</foo>";
-    EXPECT_EQUAL(expected, "\n" + ost.str());
+    EXPECT_EQUAL(expected, ost.str());
 }
 
 } // vespalib
