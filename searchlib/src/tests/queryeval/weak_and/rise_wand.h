@@ -36,7 +36,7 @@ public:
 private:
     // comparator class that compares two streams. The variables a and b are
     // logically indices into the streams vector.
-    class StreamComparator : public std::binary_function<uint16_t, uint16_t, bool>
+    class StreamComparator
     {
     private:
         const docid_t *_streamDocIds;

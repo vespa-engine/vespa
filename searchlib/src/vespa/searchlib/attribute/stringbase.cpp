@@ -107,7 +107,7 @@ public:
     }
 };
 
-class StdSortDataCharCompare : public std::binary_function<SortDataChar, SortDataChar, bool>
+class StdSortDataCharCompare
 {
 public:
     bool operator() (const SortDataChar & x, const SortDataChar & y) const {

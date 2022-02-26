@@ -48,7 +48,7 @@ struct LoadedStrings
         }
     };
 
-    class ValueCompare : public std::binary_function<LoadedStrings, LoadedStrings, bool> {
+    class ValueCompare {
     public:
         bool operator() (const LoadedStrings & x, const LoadedStrings & y) const {
             return strcmp(x._value, y._value) < 0;

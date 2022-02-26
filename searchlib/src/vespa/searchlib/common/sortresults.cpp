@@ -425,7 +425,7 @@ FastS_insertion_sort(T a[], uint32_t n, Compare *compobj)
     }
 }
 
-class StdSortDataCompare : public std::binary_function<FastS_SortSpec::SortData, FastS_SortSpec::SortData, bool>
+class StdSortDataCompare
 {
 public:
     StdSortDataCompare(const uint8_t * s) : _sortSpec(s) { }

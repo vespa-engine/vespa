@@ -57,20 +57,20 @@ private:
 
 template <typename B>
 struct cmpT {
-    struct less : public std::binary_function<B, B, bool> {
+    struct less {
         bool operator()(const B & a, const B & b) { return a.cmp(b) < 0; }
     };
-    struct equal : public std::binary_function<B, B, bool> {
+    struct equal {
         bool operator()(const B & a, const B & b) { return a.cmp(b) == 0; }
     };
 };
 
 template <typename B, typename V>
 struct contains {
-    struct less : public std::binary_function<B, V, bool> {
+    struct less {
         bool operator()(const B & a, const V & b) { return a.contains(b) < 0; }
     };
-    struct equal : public std::binary_function<B, V, bool> {
+    struct equal {
         bool operator()(const B & a, const V & b) { return a.contains(b) == 0; }
     };
 };

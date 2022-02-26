@@ -33,9 +33,7 @@ public:
         } 
     };
 
-    class EnumCompare : public std::binary_function<LoadedEnumAttribute,
-                                                    LoadedEnumAttribute,
-                                                    bool>
+    class EnumCompare
     {
     public:
         bool

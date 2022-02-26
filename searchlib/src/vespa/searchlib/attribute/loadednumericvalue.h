@@ -20,7 +20,7 @@ struct LoadedNumericValue : public LoadedValue<T>
 {
     LoadedNumericValue() : LoadedValue<T>() { }
 
-    class ValueCompare : public std::binary_function<LoadedNumericValue<T>, LoadedNumericValue<T>, bool>
+    class ValueCompare
     {
     public:
         bool operator()(const LoadedNumericValue<T> &x, const LoadedNumericValue<T> &y) const {
