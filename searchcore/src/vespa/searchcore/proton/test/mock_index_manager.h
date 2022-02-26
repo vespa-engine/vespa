@@ -10,6 +10,7 @@ namespace proton::test {
  */
 struct MockIndexManager : public searchcorespi::IIndexManager
 {
+    ~MockIndexManager() override;
     void putDocument(uint32_t, const Document &, SerialNum, OnWriteDoneType) override {}
     void removeDocuments(LidVector, SerialNum) override {}
     void commit(SerialNum, OnWriteDoneType) override {}

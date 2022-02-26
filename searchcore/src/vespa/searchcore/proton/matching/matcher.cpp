@@ -121,6 +121,8 @@ Matcher::Matcher(const search::index::Schema &schema, const Properties &props, c
     }
 }
 
+Matcher::~Matcher() = default;
+
 MatchingStats
 Matcher::getStats()
 {

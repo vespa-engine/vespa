@@ -185,6 +185,7 @@ struct ProtonConfigOwner : public proton::IProtonConfigurer
     VarHolder<std::shared_ptr<ProtonConfigSnapshot>> _config;
 
     ProtonConfigOwner() : _configured(false), _config() { }
+    ~ProtonConfigOwner() override;
     bool waitUntilConfigured(vespalib::duration timeout) {
         vespalib::Timer timer;
         while (timer.elapsed() < timeout) {
@@ -219,6 +220,8 @@ struct ProtonConfigOwner : public proton::IProtonConfigurer
         }
     }
 };
+
+ProtonConfigOwner::~ProtonConfigOwner() = default;
 
 TEST_F("require that bootstrap config manager creats correct key set", BootstrapConfigManager("foo")) {
     const ConfigKeySet set(f1.createConfigKeySet());

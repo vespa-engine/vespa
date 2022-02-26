@@ -42,6 +42,7 @@ struct MyIndexManager : public test::MockIndexManager
                        wantedLidLimit(0), compactSerial(0)
     {
     }
+    ~MyIndexManager() override;
     std::string getPut(uint32_t lid) {
         return toString(puts[lid]);
     }
@@ -71,6 +72,8 @@ struct MyIndexManager : public test::MockIndexManager
         compactSerial = serialNum;
     }
 };
+
+MyIndexManager::~MyIndexManager() = default;
 
 struct Fixture
 {

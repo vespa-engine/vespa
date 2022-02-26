@@ -31,4 +31,6 @@ SearchContext::SearchContext(const std::shared_ptr<IndexSearchable> &indexSearch
 {
 }
 
+SearchContext::~SearchContext() = default;
+
 } // namespace proton

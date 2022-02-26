@@ -148,6 +148,7 @@ struct MoveOperationFeedView : public MyMinimalFeedView {
             removeIndexFieldsCount(0),
             onWriteDoneContexts()
     {}
+    ~MoveOperationFeedView() override;
     void putAttributes(SerialNum, search::DocumentIdT, const document::Document &, OnPutDoneType onWriteDone) override {
         ++putAttributesCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
@@ -191,6 +192,8 @@ struct MoveOperationFeedView : public MyMinimalFeedView {
         }
     }
 };
+
+MoveOperationFeedView::~MoveOperationFeedView() = default;
 
 struct MoveOperationCallback : public IDestructorCallback {
     std::atomic<int> &outstandingMoveOps;

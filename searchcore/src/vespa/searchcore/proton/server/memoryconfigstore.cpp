@@ -8,6 +8,8 @@ LOG_SETUP(".proton.server.memoryconfigstore");
 
 namespace proton {
 
+ConfigMaps::~ConfigMaps() = default;
+
 MemoryConfigStore::MemoryConfigStore() : _maps(new ConfigMaps) {}
 MemoryConfigStore::MemoryConfigStore(ConfigMaps::SP maps) : _maps(maps) {}
 MemoryConfigStore::~MemoryConfigStore() = default;

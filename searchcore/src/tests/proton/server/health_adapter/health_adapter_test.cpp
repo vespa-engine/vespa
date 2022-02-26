@@ -7,6 +7,7 @@ using namespace proton;
 
 struct MyStatusProducer : public StatusProducer {
     StatusReport::List list;
+    ~MyStatusProducer() override;
     void add(const std::string &comp, StatusReport::State state,
              const std::string &msg)
     {
@@ -17,6 +18,8 @@ struct MyStatusProducer : public StatusProducer {
         return list;
     }
 };
+
+MyStatusProducer::~MyStatusProducer() = default;
 
 TEST_FF("require that empty status list passes health check", MyStatusProducer(), HealthAdapter(f1)) {
     EXPECT_TRUE(f2.getHealth().ok);

@@ -77,6 +77,7 @@ public:
 
     Matcher(const Matcher &) = delete;
     Matcher &operator=(const Matcher &) = delete;
+    ~Matcher();
 
     /**
      * Create a new matcher. The schema represents the current index
