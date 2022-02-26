@@ -475,6 +475,8 @@ RequestBucketInfoCommand::RequestBucketInfoCommand(
 {
 }
 
+RequestBucketInfoCommand::~RequestBucketInfoCommand() = default;
+
 document::Bucket
 RequestBucketInfoCommand::getBucket() const
 {

@@ -354,6 +354,7 @@ public:
     RequestBucketInfoCommand(document::BucketSpace bucketSpace,
                              uint16_t distributor,
                              const lib::ClusterState& state);
+    ~RequestBucketInfoCommand() override;
 
     const std::vector<document::BucketId>& getBuckets() const { return _buckets; }
 
