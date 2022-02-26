@@ -205,7 +205,12 @@ public:
     void addConstKFactory(int kValue, IDecodeFuncFactory factory) {
         (void) kValue;
         assert(static_cast<unsigned int>(kValue) == _constK.size());
+#pragma GCC diagnostic push
+#if !defined(__clang__) && defined(__GNUC__) && __GNUC__ == 12
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
         _constK.push_back(factory);
+#pragma GCC diagnostic pop
     }
 
     IDecodeFuncFactory getConstKFactory(int kValue) const {
