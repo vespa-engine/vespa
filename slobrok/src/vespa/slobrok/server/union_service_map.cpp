@@ -83,7 +83,7 @@ void UnionServiceMap::remove(const ServiceMapping &mapping)
         return;
     }
     size_t old_size = values.size();
-    std::erase_if(values, [] (const CountedSpec &v) { return v.count == 0; });
+    std::erase_if(values, [] (const CountedSpec &v) noexcept { return v.count == 0; });
     if (values.size() == 1u) {
         LOG_ASSERT(old_size == 2u);
         ServiceMapping toAdd{key, values[0].spec};

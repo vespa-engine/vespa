@@ -70,7 +70,7 @@ void ServiceMapHistory::asyncGenerationDiff(DiffCompletionHandler *handler, cons
 }
 
 bool ServiceMapHistory::cancel(DiffCompletionHandler *handler) {
-    size_t removed = std::erase_if(_waitList, [=](const Waiter &elem){ return elem.first == handler; });
+    size_t removed = std::erase_if(_waitList, [=](const Waiter &elem) noexcept { return elem.first == handler; });
     return (removed > 0);
 }
 
