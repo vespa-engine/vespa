@@ -27,7 +27,7 @@ TEST("require that normal sketch is initialized") {
 template <typename NormalSketch>
 void checkBucketValue(NormalSketch &sketch, size_t bucket, uint32_t value) {
 #pragma GCC diagnostic push
-#if !defined(__clang__) && defined(__GNUC__) && __GNUC__ == 11
+#if !defined(__clang__) && defined(__GNUC__) && (__GNUC__ >= 11 || __GNUC__ <= 12)
 #pragma GCC diagnostic ignored "-Warray-bounds"
 #endif
     EXPECT_EQUAL(value, static_cast<size_t>(sketch.bucket[bucket]));
