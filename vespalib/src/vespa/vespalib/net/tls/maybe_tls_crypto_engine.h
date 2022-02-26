@@ -28,6 +28,7 @@ public:
         : _null_engine(std::make_shared<NullCryptoEngine>()),
           _tls_engine(std::move(tls_engine)),
           _use_tls_when_client(use_tls_when_client) {}
+    ~MaybeTlsCryptoEngine() override;
     bool use_tls_when_client() const override { return _use_tls_when_client; }
     bool always_use_tls_when_server() const override { return false; }
     CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) override;

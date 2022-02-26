@@ -6,6 +6,8 @@
 
 namespace vespalib {
 
+TlsCryptoEngine::~TlsCryptoEngine() = default;
+
 TlsCryptoEngine::TlsCryptoEngine(net::tls::TransportSecurityOptions tls_opts, net::tls::AuthorizationMode authz_mode)
     : _tls_ctx(net::tls::TlsContext::create_default_context(tls_opts, authz_mode))
 {

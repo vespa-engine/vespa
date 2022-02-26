@@ -15,6 +15,7 @@ struct Value {
 template <typename T, bool ext_id>
 struct Empty : Rendezvous<int, T, ext_id> {
     Empty(size_t n) : Rendezvous<int, T, ext_id>(n) {}
+    ~Empty() override;
     void mingle() override {}
     T meet(size_t thread_id) {
         if constexpr (ext_id) {
@@ -26,6 +27,9 @@ struct Empty : Rendezvous<int, T, ext_id> {
     }
 };
 
+template <typename T, bool ext_id>
+Empty<T, ext_id>::~Empty() = default;
+
 template <bool ext_id>
 struct Add : Rendezvous<size_t, std::pair<size_t, size_t>, ext_id> {
     using Super = Rendezvous<size_t, std::pair<size_t, size_t>, ext_id>;
@@ -33,6 +37,7 @@ struct Add : Rendezvous<size_t, std::pair<size_t, size_t>, ext_id> {
     using Super::in;
     using Super::out;
     Add(size_t n) : Super(n) {}
+    ~Add() override;
     void mingle() override {
         size_t sum = 0;
         for (size_t i = 0; i < size(); ++i) {
@@ -45,12 +50,16 @@ struct Add : Rendezvous<size_t, std::pair<size_t, size_t>, ext_id> {
 };
 
 template <bool ext_id>
+Add<ext_id>::~Add() = default;
+
+template <bool ext_id>
 struct Modify : Rendezvous<size_t, size_t, ext_id> {
     using Super = Rendezvous<size_t, size_t, ext_id>;
     using Super::size;
     using Super::in;
     using Super::out;
     Modify(size_t n) : Super(n) {}
+    ~Modify() override;
     void mingle() override {
         for (size_t i = 0; i < size(); ++i) {
             in(i) += 1;
@@ -61,6 +70,9 @@ struct Modify : Rendezvous<size_t, size_t, ext_id> {
     }
 };
 
+template <bool ext_id>
+Modify<ext_id>::~Modify() = default;
+
 template <typename T, bool ext_id>
 struct Swap : Rendezvous<T, T, ext_id> {
     using Super = Rendezvous<T, T, ext_id>;
@@ -68,11 +80,15 @@ struct Swap : Rendezvous<T, T, ext_id> {
     using Super::in;
     using Super::out;
     Swap() : Super(2) {}
+    ~Swap() override;
     void mingle() override {
         out(0) = std::move(in(1));
         out(1) = std::move(in(0));
     }
 };
+
+template <typename T, bool ext_id>
+Swap<T, ext_id>::~Swap() = default;
 
 template <bool ext_id>
 struct DetectId : Rendezvous<int, size_t, ext_id> {
@@ -81,6 +97,7 @@ struct DetectId : Rendezvous<int, size_t, ext_id> {
     using Super::in;
     using Super::out;
     DetectId(size_t n) : Super(n) {}
+    ~DetectId() override;
     void mingle() override {
         for (size_t i = 0; i < size(); ++i) {
             out(i) = i;
@@ -96,8 +113,12 @@ struct DetectId : Rendezvous<int, size_t, ext_id> {
     }
 };
 
+template <bool ext_id>
+DetectId<ext_id>::~DetectId() = default;
+
 struct Any : Rendezvous<bool, bool> {
     Any(size_t n) : Rendezvous<bool, bool>(n) {}
+    ~Any() override;
     void mingle() override {
         bool result = false;
         for (size_t i = 0; i < size(); ++i) {
@@ -109,6 +130,8 @@ struct Any : Rendezvous<bool, bool> {
     }
     bool check(bool flag) { return this->rendezvous(flag); }
 };
+
+Any::~Any() = default;
 
 TEST("require that creating an empty rendezvous will fail") {
     EXPECT_EXCEPTION(Add<false>(0), IllegalArgumentException, "");
