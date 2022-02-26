@@ -40,9 +40,7 @@ public:
         }
     };
 
-    class DocOrderCompare : public std::binary_function<LoadedValue<T>,
-                                                        LoadedValue<T>,
-                                                        bool>
+    class DocOrderCompare
     {
     public:
         bool

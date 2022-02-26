@@ -99,7 +99,7 @@ void StringDirectAttribute::onSave(IAttributeSaveTarget & saveTarget)
     }
 }
 
-class stringComp : public std::binary_function<uint32_t, uint32_t, bool> {
+class stringComp {
 public:
     stringComp(const char * buffer) : _buffer(buffer) { }
     bool operator()(uint32_t x, uint32_t y) const { return strcmp(_buffer+x, _buffer+y) < 0; }
