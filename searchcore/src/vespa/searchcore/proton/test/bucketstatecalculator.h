@@ -33,6 +33,7 @@ public:
         _nodeMaintenance(false)
     {
     }
+    ~BucketStateCalculator() override;
     BucketStateCalculator &addReady(const document::BucketId &bucket) {
         _ready.insert(bucket);
         return *this;

@@ -26,6 +26,7 @@ private:
 
 public:
     SearchContext(const std::shared_ptr<IndexSearchable> &indexSearchable, uint32_t docIdLimit);
+    ~SearchContext() override;
 };
 
 } // namespace proton

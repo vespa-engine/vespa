@@ -3,6 +3,7 @@ vespa_add_executable(searchcore_index_writer_test_app TEST
     SOURCES
     index_writer_test.cpp
     DEPENDS
+    searchcore_test
     searchcore_index
     searchcore_pcommon
 )

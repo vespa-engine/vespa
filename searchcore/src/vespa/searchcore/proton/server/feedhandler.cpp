@@ -129,12 +129,15 @@ private:
 class DaisyChainedFeedToken : public feedtoken::ITransport {
 public:
     DaisyChainedFeedToken(FeedToken token) : _token(std::move(token)) {}
+    ~DaisyChainedFeedToken() override;
     void send(ResultUP, bool ) override {
         _token.reset();
     }
 private:
     FeedToken _token;
 };
+
+DaisyChainedFeedToken::~DaisyChainedFeedToken() = default;
 
 }  // namespace
 

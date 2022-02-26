@@ -13,6 +13,7 @@ struct ConfigMaps {
     typedef std::shared_ptr<ConfigMaps> SP;
     std::map<search::SerialNum, DocumentDBConfig::SP> configs;
     std::set<search::SerialNum> _valid;
+    ~ConfigMaps();
 };
 
 class MemoryConfigStore : public ConfigStore {
