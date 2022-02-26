@@ -42,6 +42,7 @@ struct Server : Rpc {
         init_rpc();
         start();
     }
+    ~Server() override;
     void init_rpc() {
         FRT_ReflectionBuilder rb(&orb);
         rb.DefineMethod("inc", "l", "l", FRT_METHOD(Server::rpc_inc), this);
@@ -56,13 +57,18 @@ struct Server : Rpc {
     }
 };
 
+Server::~Server() = default;
+
 struct Client : Rpc {
     uint32_t port;
     Client(CryptoEngine::SP crypto, size_t num_threads, const Server &server, bool drop_empty = false) : Rpc(std::move(crypto), num_threads, drop_empty), port(server.port) {
         start();
     }
+    ~Client() override;
     FRT_Target *connect() { return Rpc::connect(port); }
 };
+
+Client::~Client() = default;
 
 struct Result {
     std::vector<double> req_per_sec;
