@@ -86,6 +86,7 @@ public:
           _executorId(executor.getExecutorId(bucketId.getId()))
     {
     }
+    ~ResultTaskOperationDone() override;
     void onComplete(spi::Result::UP result) noexcept override {
         _task->setResult(std::move(result));
         _executor.executeTask(_executorId, std::move(_task));
@@ -98,6 +99,8 @@ private:
     std::unique_ptr<ResultTask>                    _task;
     vespalib::ISequencedTaskExecutor::ExecutorId   _executorId;
 };
+
+ResultTaskOperationDone::~ResultTaskOperationDone() = default;
 
 bool
 bucketStatesAreSemanticallyEqual(const api::BucketInfo& a, const api::BucketInfo& b) {
