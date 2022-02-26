@@ -117,12 +117,15 @@ TEST_FFFF("require that handler is selected based on longest matching url prefix
 }
 
 struct EchoHost : JsonGetHandler {
+    ~EchoHost() override;
     vespalib::string get(const vespalib::string &host, const vespalib::string &,
                          const std::map<vespalib::string,vespalib::string> &) const override
     {
         return "[\"" + host + "\"]";
     }
 };
+
+EchoHost::~EchoHost() = default;
 
 TEST_FF("require that host is passed correctly", EchoHost(), HttpServer(0)) {
     auto token = f2.repo().bind(my_path, f1);
@@ -140,6 +143,7 @@ struct SamplingHandler : JsonGetHandler {
     mutable vespalib::string my_host;
     mutable vespalib::string my_path;
     mutable std::map<vespalib::string,vespalib::string> my_params;
+    ~SamplingHandler() override;
     vespalib::string get(const vespalib::string &host, const vespalib::string &path,
                          const std::map<vespalib::string,vespalib::string> &params) const override
     {
@@ -152,6 +156,8 @@ struct SamplingHandler : JsonGetHandler {
         return "[]";
     }
 };
+
+SamplingHandler::~SamplingHandler() = default;
 
 TEST_FF("require that request parameters can be inspected", SamplingHandler(), HttpServer(0))
 {
@@ -361,6 +367,7 @@ TEST_FFFFF("require that custom handlers can be added to the state server",
 }
 
 struct EchoConsumer : MetricsProducer {
+    ~EchoConsumer() override;
     vespalib::string getMetrics(const vespalib::string &consumer) override {
         return "[\"" + consumer + "\"]";
     }
@@ -368,6 +375,8 @@ struct EchoConsumer : MetricsProducer {
         return "[\"" + consumer + "\"]";
     }
 };
+
+EchoConsumer::~EchoConsumer() = default;
 
 TEST_FFFF("require that empty v1 metrics consumer defaults to 'statereporter'",
           SimpleHealthProducer(), EchoConsumer(), SimpleComponentConfigProducer(),
