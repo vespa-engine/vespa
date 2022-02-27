@@ -52,6 +52,8 @@ LatencyAnalyzer::LatencyAnalyzer(Handler<Request> &next)
 {
 }
 
+LatencyAnalyzer::~LatencyAnalyzer() = default;
+
 void
 LatencyAnalyzer::handle(Request::UP request)
 {

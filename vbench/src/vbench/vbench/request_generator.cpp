@@ -12,6 +12,8 @@ RequestGenerator::RequestGenerator(const string &inputFile,
 {
 }
 
+RequestGenerator::~RequestGenerator() = default;
+
 void
 RequestGenerator::abort()
 {

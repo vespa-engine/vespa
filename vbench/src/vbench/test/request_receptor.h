@@ -10,6 +10,7 @@ namespace vbench {
 struct RequestReceptor : public Handler<Request> {
     Request::UP request;
     RequestReceptor() : request() {}
+    ~RequestReceptor() override;
     void handle(Request::UP req) override;
 };
 

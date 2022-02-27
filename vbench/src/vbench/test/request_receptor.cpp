@@ -4,6 +4,8 @@
 
 namespace vbench {
 
+RequestReceptor::~RequestReceptor() = default;
+
 void
 RequestReceptor::handle(Request::UP req)
 {
