@@ -68,7 +68,7 @@ public class Zone {
         return region;
     }
 
-    /** Returns the string "region.environment" */
+    /** Returns the string "environment.region" */
     public String systemLocalValue() { return environment + "." + region; }
 
     /** Do not use */
