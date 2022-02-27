@@ -3,6 +3,7 @@
 
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/time.h>
+#include <mutex>
 #include <vector>
 
 class FNET_Transport;
