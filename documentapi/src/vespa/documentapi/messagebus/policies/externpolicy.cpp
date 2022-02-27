@@ -25,8 +25,7 @@ ExternPolicy::ExternPolicy(const string &param) :
     _error("Not initialized."),
     _offset(0),
     _gen(0),
-    _recipients(),
-    _started(false)
+    _recipients()
 {
     // Parse connection spec.
     if (param.empty()) {

@@ -26,7 +26,6 @@ private:
     uint32_t                         _offset;
     uint32_t                         _gen;
     std::vector<mbus::Hop>           _recipients;
-    bool                             _started;
 
 private:
     /**
