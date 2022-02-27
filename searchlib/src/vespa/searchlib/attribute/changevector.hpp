@@ -5,6 +5,7 @@
 #include "changevector.h"
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/util/alloc.h>
+#include <algorithm>
 
 namespace search {
 
