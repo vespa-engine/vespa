@@ -10,7 +10,8 @@ struct Labels {
     virtual ~Labels() {}
 };
 struct NoLabel : public Labels {
-    virtual void inject(Properties &) const override {}    
+    virtual void inject(Properties &) const override {}
+    ~NoLabel() override;
 };
 struct SingleLabel : public Labels {
     vespalib::string label;

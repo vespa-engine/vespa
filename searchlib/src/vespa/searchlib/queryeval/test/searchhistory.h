@@ -17,7 +17,11 @@ struct SearchHistory {
         uint32_t    docid;
         Entry(const std::string &t, const std::string &o, uint32_t id)
             : target(t), op(o), docid(id) {}
+        Entry(const Entry&);
+        Entry(Entry&&) noexcept = default;
         ~Entry() {}
+        Entry& operator=(const Entry&);
+        Entry& operator=(Entry&&) noexcept = default;
         bool operator==(const Entry &rhs) const {
             return ((target == rhs.target) &&
                     (op == rhs.op) &&

@@ -42,7 +42,10 @@ struct FeatureDumpFixture : public IDumpFeatureVisitor {
         TEST_ERROR("no features should be dumped");
     }
     FeatureDumpFixture() : IDumpFeatureVisitor() {}
+    ~FeatureDumpFixture() override;
 };
+
+FeatureDumpFixture::~FeatureDumpFixture() = default;
 
 std::vector<uint32_t> vec() {
     std::vector<uint32_t> ret;

@@ -31,6 +31,7 @@ private:
     const fef::FieldInfo *_field;
 public:
     NativeDotProductBlueprint() : Blueprint("nativeDotProduct"), _field(nullptr) {}
+    ~NativeDotProductBlueprint() override;
     void visitDumpFeatures(const fef::IIndexEnvironment &, fef::IDumpFeatureVisitor &) const override {}
     fef::Blueprint::UP createInstance() const override {
         return Blueprint::UP(new NativeDotProductBlueprint());

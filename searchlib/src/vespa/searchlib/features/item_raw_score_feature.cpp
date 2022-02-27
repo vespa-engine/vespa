@@ -49,6 +49,8 @@ SimpleItemRawScoreExecutor::handle_bind_match_data(const MatchData &md)
 
 //-----------------------------------------------------------------------------
 
+ItemRawScoreBlueprint::~ItemRawScoreBlueprint() = default;
+
 bool
 ItemRawScoreBlueprint::setup(const IIndexEnvironment &,
                              const ParameterList &params)

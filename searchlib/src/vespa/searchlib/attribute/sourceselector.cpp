@@ -64,6 +64,7 @@ SourceSelector::SaveInfo::SaveInfo(const vespalib::string & baseFileName,
     sourceStore.save(_memSaver, _header._baseFileName);
 }
 
+SourceSelector::SaveInfo::~SaveInfo() = default;
 bool
 SourceSelector::SaveInfo::save(const TuneFileAttributes &tuneFileAttributes,
                                const FileHeaderContext &fileHeaderContext)

@@ -65,10 +65,13 @@ struct IndexFixture {
 struct FeatureDumpFixture : public IDumpFeatureVisitor {
     std::vector<vespalib::string> actual;
     FeatureDumpFixture() : IDumpFeatureVisitor(), actual() {}
+    ~FeatureDumpFixture() override;
     virtual void visitDumpFeature(const vespalib::string &name) override {
         actual.push_back(name);
     }
 };
+
+FeatureDumpFixture::~FeatureDumpFixture() = default;
 
 struct RankFixture : BlueprintFactoryFixture {
     RankFixture() : BlueprintFactoryFixture() {}

@@ -23,8 +23,12 @@ public:
     DECLARE_EXPRESSIONNODE(RawBucketResultNode);
     DECLARE_NBO_SERIALIZE;
     RawBucketResultNode();
+    RawBucketResultNode(const RawBucketResultNode&);
+    RawBucketResultNode(RawBucketResultNode&&) noexcept = default;
     RawBucketResultNode(ResultNode::UP from, ResultNode::UP to) : _from(from.release()), _to(to.release()) {}
     ~RawBucketResultNode();
+    RawBucketResultNode& operator=(const RawBucketResultNode&);
+    RawBucketResultNode& operator=(RawBucketResultNode&&) noexcept;
     size_t hash() const override;
     int onCmp(const Identifiable & b) const override;
     int contains(const RawBucketResultNode & b) const;

@@ -21,6 +21,7 @@ struct Fixture : ImportedAttributeFixture {
     Fixture(bool useSearchCache = false, FastSearchConfig fastSearch = FastSearchConfig::Default)
         : ImportedAttributeFixture(useSearchCache, fastSearch)
     {}
+    ~Fixture() override;
 
     std::unique_ptr<ImportedSearchContext>
     create_context(std::unique_ptr<QueryTermSimple> term) {
@@ -49,6 +50,8 @@ struct Fixture : ImportedAttributeFixture {
         EXPECT_EQUAL(SimpleResult(expDocIds), SimpleResult().searchStrict(iter, get_imported_attr()->getNumDocs()));
     }
 };
+
+Fixture::~Fixture() = default;
 
 template <typename Iterator>
 bool is_hit_with_weight(Iterator& iter, TermFieldMatchData& match, DocId lid, int32_t weight) {
@@ -155,7 +158,10 @@ struct ArrayValueFixture : Fixture {
                  {DocId(4), dummy_gid(7), DocId(7), doc7_values},
                  {DocId(5), dummy_gid(8), DocId(8), doc8_values}});
     }
+    ~ArrayValueFixture() override;
 };
+
+ArrayValueFixture::~ArrayValueFixture() = default;
 
 TEST_F("Non-strict iterator handles unmapped LIDs", ArrayValueFixture) {
     auto ctx = f.create_context(word_term("1234"));
@@ -196,7 +202,10 @@ struct WsetValueFixture : Fixture {
                  {DocId(4), dummy_gid(4), DocId(4), doc4_values},
                  {DocId(6), dummy_gid(7), DocId(7), doc7_values}});
     }
+    ~WsetValueFixture() override;
 };
+
+WsetValueFixture::~WsetValueFixture() = default;
 
 TEST_F("Non-strict iterator unpacks target match data for weighted set hit", WsetValueFixture) {
     auto ctx = f.create_context(word_term("foo"));
@@ -243,7 +252,10 @@ struct SingleValueFixture : Fixture {
                  {DocId(5), dummy_gid(8), DocId(8), 5678},
                  {DocId(7), dummy_gid(9), DocId(9), 4321}});
     }
+    ~SingleValueFixture() override;
 };
+
+SingleValueFixture::~SingleValueFixture() = default;
 
 // Strict iteration implicitly tests unmapped LIDs by its nature, so we don't have a separate test for that.
 
@@ -390,7 +402,10 @@ struct SearchCacheFixture : Fixture {
                 FastSearchConfig::ExplicitlyEnabled,
                 FilterConfig::ExplicitlyEnabled);
     }
+    ~SearchCacheFixture() override;
 };
+
+SearchCacheFixture::~SearchCacheFixture() = default;
 
 BitVectorSearchCache::Entry::SP
 makeSearchCacheEntry(const std::vector<uint32_t> docIds, uint32_t docIdLimit)

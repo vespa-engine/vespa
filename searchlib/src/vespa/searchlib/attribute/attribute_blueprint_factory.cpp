@@ -235,6 +235,8 @@ public:
         set_allow_termwise_eval(true);
     }
 
+    ~LocationPreFilterBlueprint();
+
     bool should_use() const { return _should_use; }
 
     SearchIterator::UP
@@ -257,6 +259,8 @@ public:
         }
     }
 };
+
+LocationPreFilterBlueprint::~LocationPreFilterBlueprint() = default;
 
 //-----------------------------------------------------------------------------
 
@@ -281,6 +285,8 @@ public:
         HitEstimate estimate(estHits, estHits == 0);
         setEstimate(estimate);
     }
+
+    ~LocationPostFilterBlueprint();
 
     const common::Location &location() const { return _location; }
 
@@ -334,6 +340,8 @@ make_location_blueprint(const FieldSpec &field, const IAttributeVector &attribut
     return root;
 }
 
+LocationPostFilterBlueprint::~LocationPostFilterBlueprint() = default;
+
 class LookupKey : public IDocumentWeightAttribute::LookupKey {
 public:
     LookupKey(MultiTerm & terms, uint32_t index) : _terms(terms), _index(index) {}
@@ -381,6 +389,7 @@ public:
         _weights.reserve(size_hint);
         _terms.reserve(size_hint);
     }
+    ~DirectWeightedSetBlueprint() override;
 
     void addTerm(const IDocumentWeightAttribute::LookupKey & key, int32_t weight) {
         IDocumentWeightAttribute::LookupResult result = _attr.lookup(key, _dictionary_snapshot);
@@ -421,6 +430,9 @@ public:
         }
     }
 };
+
+template <typename SearchType>
+DirectWeightedSetBlueprint<SearchType>::~DirectWeightedSetBlueprint() = default;
 
 template <typename SearchType>
 std::unique_ptr<SearchIterator>
@@ -467,6 +479,8 @@ public:
         _terms.reserve(size_hint);
     }
 
+    ~DirectWandBlueprint();
+
     void addTerm(const IDocumentWeightAttribute::LookupKey & key, int32_t weight) {
         IDocumentWeightAttribute::LookupResult result = _attr.lookup(key, _dictionary_snapshot);
         HitEstimate childEst(result.posting_size, (result.posting_size == 0));
@@ -496,6 +510,8 @@ public:
     std::unique_ptr<SearchIterator> createFilterSearch(bool strict, FilterConstraint constraint) const override;
     bool always_needs_unpack() const override { return true; }
 };
+
+DirectWandBlueprint::~DirectWandBlueprint() = default;
 
 std::unique_ptr<SearchIterator>
 DirectWandBlueprint::createFilterSearch(bool, FilterConstraint constraint) const

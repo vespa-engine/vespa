@@ -34,6 +34,7 @@ public:
           _minWeight(minWeight),
           _maxWeight(maxWeight)
     {}
+    ~MinMaxPostingInfo() override;
     int32_t getMinWeight() const { return _minWeight; }
     int32_t getMaxWeight() const { return _maxWeight; }
 };

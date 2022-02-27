@@ -296,6 +296,8 @@ AndBlueprint::computeNextHitRate(const Blueprint & child, double hitRate) const 
 
 //-----------------------------------------------------------------------------
 
+OrBlueprint::~OrBlueprint() = default;
+
 Blueprint::HitEstimate
 OrBlueprint::combine(const std::vector<HitEstimate> &data) const
 {

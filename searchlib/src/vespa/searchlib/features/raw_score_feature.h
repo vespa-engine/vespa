@@ -26,6 +26,7 @@ private:
     const fef::FieldInfo *_field;
 public:
     RawScoreBlueprint() : Blueprint("rawScore"), _field(0) {}
+    ~RawScoreBlueprint() override;
     void visitDumpFeatures(const fef::IIndexEnvironment &,
                            fef::IDumpFeatureVisitor &) const override {}
     fef::Blueprint::UP createInstance() const override {

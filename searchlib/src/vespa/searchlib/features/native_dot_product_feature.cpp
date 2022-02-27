@@ -59,6 +59,8 @@ NativeDotProductExecutor::handle_bind_match_data(const fef::MatchData &md)
 
 //-----------------------------------------------------------------------------
 
+NativeDotProductBlueprint::~NativeDotProductBlueprint() = default;
+
 bool
 NativeDotProductBlueprint::setup(const IIndexEnvironment &,
                                  const ParameterList &params)

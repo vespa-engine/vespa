@@ -13,13 +13,30 @@
 
 namespace search::query {
 
-struct SimpleTrue : TrueQueryNode {};
-struct SimpleFalse : FalseQueryNode {};
-struct SimpleAnd : And {};
-struct SimpleAndNot : AndNot {};
-struct SimpleNear : Near { SimpleNear(size_t dist) : Near(dist) {} };
-struct SimpleONear : ONear { SimpleONear(size_t dist) : ONear(dist) {} };
-struct SimpleOr : Or {};
+struct SimpleTrue : TrueQueryNode {
+    ~SimpleTrue() override;
+};
+struct SimpleFalse : FalseQueryNode {
+    ~SimpleFalse() override;
+};
+struct SimpleAnd : And {
+    ~SimpleAnd() override;
+};
+struct SimpleAndNot : AndNot {
+    ~SimpleAndNot() override;
+};
+struct SimpleNear : Near {
+    SimpleNear(size_t dist) : Near(dist) {}
+    ~SimpleNear() override;
+};
+struct SimpleONear : ONear {
+    SimpleONear(size_t dist) : ONear(dist) {}
+    ~SimpleONear() override;
+};
+struct SimpleOr : Or
+{
+    ~SimpleOr() override;
+};
 struct SimpleWeakAnd : WeakAnd {
     SimpleWeakAnd(uint32_t minHits, vespalib::stringref view) :
         WeakAnd(minHits, view)
@@ -28,70 +45,86 @@ struct SimpleWeakAnd : WeakAnd {
 struct SimpleEquiv : Equiv {
     SimpleEquiv(int32_t id, Weight weight)
         : Equiv(id, weight) {}
+    ~SimpleEquiv() override;
 };
 struct SimplePhrase : Phrase {
     SimplePhrase(vespalib::stringref view, int32_t id, Weight weight)
         : Phrase(view, id, weight) {}
+    ~SimplePhrase() override;
 };
 
 struct SimpleSameElement : SameElement {
     SimpleSameElement(vespalib::stringref view) : SameElement(view) {}
+    ~SimpleSameElement() override;
 };
 struct SimpleWeightedSetTerm : WeightedSetTerm {
     SimpleWeightedSetTerm(uint32_t num_terms, vespalib::stringref view, int32_t id, Weight weight)
         : WeightedSetTerm(num_terms, view, id, weight) {}
+    ~SimpleWeightedSetTerm() override;
 };
 struct SimpleDotProduct : DotProduct {
     SimpleDotProduct(uint32_t num_terms, vespalib::stringref view, int32_t id, Weight weight)
         : DotProduct(num_terms, view, id, weight) {}
+    ~SimpleDotProduct() override;
 };
 struct SimpleWandTerm : WandTerm {
     SimpleWandTerm(uint32_t num_terms, vespalib::stringref view, int32_t id, Weight weight,
                    uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor)
         : WandTerm(num_terms, view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor) {}
+    ~SimpleWandTerm() override;
 };
-struct SimpleRank : Rank {};
+struct SimpleRank : Rank
+{
+    ~SimpleRank() override;
+};
 struct SimpleNumberTerm : NumberTerm {
     SimpleNumberTerm(Type term, vespalib::stringref view,
                     int32_t id, Weight weight)
         : NumberTerm(term, view, id, weight) {
     }
+    ~SimpleNumberTerm() override;
 };
 struct SimpleLocationTerm : LocationTerm {
     SimpleLocationTerm(const Type &term, vespalib::stringref view,
                        int32_t id, Weight weight)
         : LocationTerm(term, view, id, weight) {
     }
+    ~SimpleLocationTerm() override;
 };
 struct SimplePrefixTerm : PrefixTerm {
     SimplePrefixTerm(const Type &term, vespalib::stringref view,
                      int32_t id, Weight weight)
         : PrefixTerm(term, view, id, weight) {
     }
+    ~SimplePrefixTerm() override;
 };
 struct SimpleRangeTerm : RangeTerm {
     SimpleRangeTerm(const Type &term, vespalib::stringref view,
                     int32_t id, Weight weight)
         : RangeTerm(term, view, id, weight) {
     }
+    ~SimpleRangeTerm() override;
 };
 struct SimpleStringTerm : StringTerm {
     SimpleStringTerm(const Type &term, vespalib::stringref view,
                      int32_t id, Weight weight)
         : StringTerm(term, view, id, weight) {
     }
+    ~SimpleStringTerm() override;
 };
 struct SimpleSubstringTerm : SubstringTerm {
     SimpleSubstringTerm(const Type &term, vespalib::stringref view,
                      int32_t id, Weight weight)
         : SubstringTerm(term, view, id, weight) {
     }
+    ~SimpleSubstringTerm() override;
 };
 struct SimpleSuffixTerm : SuffixTerm {
     SimpleSuffixTerm(const Type &term, vespalib::stringref view,
                      int32_t id, Weight weight)
         : SuffixTerm(term, view, id, weight) {
     }
+    ~SimpleSuffixTerm() override;
 };
 struct SimplePredicateQuery : PredicateQuery {
     SimplePredicateQuery(PredicateQueryTerm::UP term,
@@ -99,12 +132,14 @@ struct SimplePredicateQuery : PredicateQuery {
                          int32_t id, Weight weight)
         : PredicateQuery(std::move(term), view, id, weight) {
     }
+    ~SimplePredicateQuery() override;
 };
 struct SimpleRegExpTerm : RegExpTerm {
     SimpleRegExpTerm(const Type &term, vespalib::stringref view,
                      int32_t id, Weight weight)
         : RegExpTerm(term, view, id, weight) {
     }
+    ~SimpleRegExpTerm() override;
 };
 struct SimpleNearestNeighborTerm : NearestNeighborTerm {
     SimpleNearestNeighborTerm(vespalib::stringref query_tensor_name, vespalib::stringref field_name,
@@ -115,6 +150,7 @@ struct SimpleNearestNeighborTerm : NearestNeighborTerm {
                               target_num_hits, allow_approximate, explore_additional_hits,
                               distance_threshold)
     {}
+    ~SimpleNearestNeighborTerm() override;
 };
 
 

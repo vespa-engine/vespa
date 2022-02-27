@@ -24,6 +24,7 @@ private:
     const fef::FieldInfo *_field;
 public:
     SubqueriesBlueprint() : Blueprint("subqueries"), _field(nullptr) {}
+    ~SubqueriesBlueprint() override;
     void visitDumpFeatures(const fef::IIndexEnvironment &, fef::IDumpFeatureVisitor &) const override {}
     fef::Blueprint::UP createInstance() const override {
         return Blueprint::UP(new SubqueriesBlueprint);
