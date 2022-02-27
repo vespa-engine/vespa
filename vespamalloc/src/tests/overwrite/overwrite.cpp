@@ -17,6 +17,13 @@ void overwrite_memory_real(char *ptr, int offset)
 
 void (*overwrite_memory)(char *ptr, int offset) = overwrite_memory_real;
 
+void delete_vec_real(char *ptr)
+{
+    delete [] ptr;
+}
+
+void (*delete_vec)(char *ptr) = delete_vec_real;
+
 class Test : public TestApp
 {
 public:
@@ -43,7 +50,7 @@ void Test::testFillValue(char *a)
         char *d = new char[256];
         memset(d, 0x77, 256);
         check_ptr(d);
-        delete [] d;
+        delete_vec(d);
         EXPECT_EQUAL((int)d[0], 0x66);
         EXPECT_EQUAL((int)d[1], 0x66);
         EXPECT_EQUAL((int)d[255], 0x66);
@@ -84,7 +91,7 @@ void Test::verifyWriteAfterFreeDetection()
     // Make sure that enough blocks of memory is allocated and freed.
     char * a = new char[256];
     check_ptr(a);
-    delete [] a;
+    delete_vec(a);
     for (size_t i(0); i < 100; i++) {
         char *d = new char[256];
         check_ptr(d);
