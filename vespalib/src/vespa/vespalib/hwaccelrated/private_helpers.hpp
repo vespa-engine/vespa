@@ -24,15 +24,17 @@ populationCount(const uint64_t *a, size_t sz) {
     return count;
 }
 
-template<typename T>
+template<typename T, unsigned ChunkSize>
 T get(const void * base, bool invert) {
+    static_assert(sizeof(T) == ChunkSize, "sizeof(T) == ChunkSize");
     T v;
     memcpy(&v, base, sizeof(T));
     return __builtin_expect(invert, false) ? ~v : v;
 }
 
-template <typename T>
+template <typename T, unsigned ChunkSize>
 const T * cast(const void * ptr, size_t offsetBytes) {
+    static_assert(sizeof(T) == ChunkSize, "sizeof(T) == ChunkSize");
     return static_cast<const T *>(static_cast<const void *>(static_cast<const char *>(ptr) + offsetBytes));
 }
 
@@ -43,14 +45,14 @@ andChunks(size_t offset, const std::vector<std::pair<const void *, bool>> & src,
     static_assert(sizeof(Chunk) == ChunkSize, "sizeof(Chunk) == ChunkSize");
     static_assert(ChunkSize*Chunks == 64, "ChunkSize*Chunks == 64");
     Chunk * chunk = static_cast<Chunk *>(dest);
-    const Chunk * tmp = cast<Chunk>(src[0].first, offset);
+    const Chunk * tmp = cast<Chunk, ChunkSize>(src[0].first, offset);
     for (size_t n=0; n < Chunks; n++) {
-        chunk[n] = get<Chunk>(tmp+n, src[0].second);
+        chunk[n] = get<Chunk, ChunkSize>(tmp+n, src[0].second);
     }
     for (size_t i(1); i < src.size(); i++) {
-        tmp = cast<Chunk>(src[i].first, offset);
+        tmp = cast<Chunk, ChunkSize>(src[i].first, offset);
         for (size_t n=0; n < Chunks; n++) {
-            chunk[n] &= get<Chunk>(tmp+n, src[i].second);
+            chunk[n] &= get<Chunk, ChunkSize>(tmp+n, src[i].second);
         }
     }
 }
@@ -62,14 +64,14 @@ orChunks(size_t offset, const std::vector<std::pair<const void *, bool>> & src, 
     static_assert(sizeof(Chunk) == ChunkSize, "sizeof(Chunk) == ChunkSize");
     static_assert(ChunkSize*Chunks == 64, "ChunkSize*Chunks == 64");
     Chunk * chunk = static_cast<Chunk *>(dest);
-    const Chunk * tmp = cast<Chunk>(src[0].first, offset);
+    const Chunk * tmp = cast<Chunk, ChunkSize>(src[0].first, offset);
     for (size_t n=0; n < Chunks; n++) {
-        chunk[n] = get<Chunk>(tmp+n, src[0].second);
+        chunk[n] = get<Chunk, ChunkSize>(tmp+n, src[0].second);
     }
     for (size_t i(1); i < src.size(); i++) {
-        tmp = cast<Chunk>(src[i].first, offset);
+        tmp = cast<Chunk, ChunkSize>(src[i].first, offset);
         for (size_t n=0; n < Chunks; n++) {
-            chunk[n] |= get<Chunk>(tmp+n, src[i].second);
+            chunk[n] |= get<Chunk, ChunkSize>(tmp+n, src[i].second);
         }
     }
 }
