@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <random>
+#include <thread>
 
 using vespalib::make_string_short::fmt;
 using namespace vespalib;
