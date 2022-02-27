@@ -68,6 +68,9 @@ public class Zone {
         return region;
     }
 
+    /** Returns the string "environment.region" */
+    public String systemLocalValue() { return environment + "." + region; }
+
     /** Do not use */
     public static Zone defaultZone() {
         return new Zone(Cloud.defaultCloud(), SystemName.defaultSystem(), Environment.defaultEnvironment(), RegionName.defaultName());
