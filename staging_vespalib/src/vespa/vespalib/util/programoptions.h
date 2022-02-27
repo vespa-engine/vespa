@@ -262,6 +262,7 @@ struct ProgramOptions::NumberOptionParser : public OptionParser {
           _number(number),
           _defaultValue(defValue)
     {}
+    ~NumberOptionParser() override;
 
     void set(const std::vector<std::string>& arguments) override;
     void setDefault() override { _number = _defaultValue; }
@@ -269,6 +270,9 @@ struct ProgramOptions::NumberOptionParser : public OptionParser {
         return getTypeName<Number>();
     }
 };
+
+template<typename Number>
+ProgramOptions::NumberOptionParser<Number>::~NumberOptionParser() = default;
 
 struct ProgramOptions::BoolOptionParser : public OptionParser {
     bool& _value;
@@ -285,9 +289,11 @@ struct ProgramOptions::FlagOptionParser : public OptionParser {
 
     FlagOptionParser(const std::string& nameList, bool& value, const std::string& description);
     FlagOptionParser(const std::string& nameList, bool& value, const bool& unsetValue, const std::string& description);
+    ~FlagOptionParser() override;
     void set(const std::vector<std::string>&) override { _value = !_unsetValue; }
     void setDefault() override { _value = _unsetValue; }
 };
+
 
 struct ProgramOptions::StringOptionParser : public OptionParser {
     std::string& _value;
@@ -296,6 +302,7 @@ struct ProgramOptions::StringOptionParser : public OptionParser {
     StringOptionParser(const std::string& nameList, std::string& value, const std::string& description);
     StringOptionParser(const std::string& nameList, std::string& value,
                        const std::string& defVal, const std::string& desc);
+    ~StringOptionParser() override;
 
     void set(const std::vector<std::string>& arguments) override { _value = arguments[0]; }
     void setDefault() override { _value = _defaultValue; }

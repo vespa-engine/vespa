@@ -56,6 +56,10 @@ void ProgramOptions::NumberOptionParser<Number>::set(const std::vector<std::stri
     }
 }
 
+ProgramOptions::FlagOptionParser::~FlagOptionParser() = default;
+
+ProgramOptions::StringOptionParser::~StringOptionParser() = default;
+
 ProgramOptions::OptionParser::OptionParser(
         const std::string& nameList, uint32_t argCount, const std::string& desc)
     : _names(splitString(nameList, ' ')),
