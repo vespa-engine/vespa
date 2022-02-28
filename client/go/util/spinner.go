@@ -3,11 +3,11 @@
 package util
 
 import (
+	"fmt"
 	"os"
 	"time"
 
 	"github.com/briandowns/spinner"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -42,7 +42,7 @@ func loading(initialMsg, doneMsg, failMsg string, fn func() error) error {
 		s.Writer = messages
 
 		if err := s.Color(spinnerColor, "bold"); err != nil {
-			panic(Error(err, "failed setting spinner color"))
+			panic(fmt.Errorf("failed setting spinner color: %w", err))
 		}
 
 		s.Start()
@@ -59,8 +59,4 @@ func loading(initialMsg, doneMsg, failMsg string, fn func() error) error {
 	<-done
 
 	return err
-}
-
-func Error(e error, message string) error {
-	return errors.Wrap(e, message)
 }
