@@ -366,9 +366,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // POST a triggering to force a production job to start without successful tests
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/instance1/job/production-us-west-1", POST)
-                                      .data("{\"skipTests\":true}")
+                                      .data("{ \"skipTests\": true, \"skipRevision\": true, \"skipUpgrade\": true }")
                                       .userIdentity(USER_ID),
-                              "{\"message\":\"Triggered production-us-west-1 for tenant2.application2.instance1\"}");
+                              "{\"message\":\"Triggered production-us-west-1 for tenant2.application2.instance1, without revision and platform upgrade\"}");
         app2.runJob(JobType.productionUsWest1);
 
         // POST a re-triggering to force a production job to start with previous parameters

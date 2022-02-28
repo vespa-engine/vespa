@@ -1159,14 +1159,21 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Inspector requestObject = toSlime(request.getData()).get();
         boolean requireTests = ! requestObject.field("skipTests").asBool();
         boolean reTrigger = requestObject.field("reTrigger").asBool();
+        boolean upgradeRevision = ! requestObject.field("skipRevision").asBool();
+        boolean upgradePlatform = ! requestObject.field("skipUpgrade").asBool();
         String triggered = reTrigger
                            ? controller.applications().deploymentTrigger()
                                        .reTrigger(id, type, "re-triggered by " + request.getJDiscRequest().getUserPrincipal().getName()).type().jobName()
                            : controller.applications().deploymentTrigger()
-                                       .forceTrigger(id, type, "triggered by " + request.getJDiscRequest().getUserPrincipal().getName(), requireTests)
+                                       .forceTrigger(id, type, "triggered by " + request.getJDiscRequest().getUserPrincipal().getName(), requireTests, upgradeRevision, upgradePlatform)
                                        .stream().map(job -> job.type().jobName()).collect(joining(", "));
+        String suppressedUpgrades = ( ! upgradeRevision || ! upgradePlatform ? ", without " : "") +
+                                    (upgradeRevision ? "" : "revision") +
+                                    ( ! upgradeRevision && ! upgradePlatform ? " and " : "") +
+                                    (upgradePlatform ? "" : "platform") +
+                                    ( ! upgradeRevision || ! upgradePlatform ? " upgrade" : "");
         return new MessageResponse(triggered.isEmpty() ? "Job " + type.jobName() + " for " + id + " not triggered"
-                                                       : "Triggered " + triggered + " for " + id);
+                                                       : "Triggered " + triggered + " for " + id + suppressedUpgrades);
     }
 
     private HttpResponse pause(ApplicationId id, JobType type) {

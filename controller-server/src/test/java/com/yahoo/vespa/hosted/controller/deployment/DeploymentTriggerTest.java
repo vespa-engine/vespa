@@ -560,9 +560,11 @@ public class DeploymentTriggerTest {
         // us-east-3 does not automatically trigger when paused, but does when forced.
         tester.triggerJobs();
         app.assertNotRunning(productionUsEast3);
-        tester.deploymentTrigger().forceTrigger(app.instanceId(), productionUsEast3, "mrTrigger", true);
+        tester.deploymentTrigger().forceTrigger(app.instanceId(), productionUsEast3, "mrTrigger", true, true, false);
         app.assertRunning(productionUsEast3);
         assertFalse(app.instance().jobPause(productionUsEast3).isPresent());
+        assertEquals(app.deployment(productionUsEast3.zone(tester.controller().system())).version(),
+                     tester.jobs().last(app.instanceId(), productionUsEast3).get().versions().targetPlatform());
     }
 
     @Test
@@ -1831,7 +1833,7 @@ public class DeploymentTriggerTest {
         app.submit(cdPackage);
         app.runJob(systemTest);
         // Staging test requires unknown initial version, and is broken.
-        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false);
+        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false, true, true);
         app.runJob(productionCdUsEast1)
            .abortJob(stagingTest) // Complete failing run.
            .runJob(stagingTest)   // Run staging-test for production zone with no prior deployment.
@@ -1843,7 +1845,7 @@ public class DeploymentTriggerTest {
         tester.controllerTester().upgradeSystem(version);
         tester.upgrader().maintain();
         // System and staging tests both require unknown versions, and are broken.
-        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false);
+        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false, true, true);
         app.runJob(productionCdUsEast1)
            .triggerJobs()
            .jobAborted(systemTest)
@@ -1857,7 +1859,7 @@ public class DeploymentTriggerTest {
         app.submit(cdPackage);
         app.runJob(systemTest);
         // Staging test requires unknown initial version, and is broken.
-        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false);
+        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false, true, true);
         app.runJob(productionCdUsEast1)
            .jobAborted(stagingTest)
            .runJob(stagingTest)

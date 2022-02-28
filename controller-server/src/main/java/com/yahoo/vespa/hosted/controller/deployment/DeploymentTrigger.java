@@ -197,7 +197,8 @@ public class DeploymentTrigger {
     }
 
     /** Force triggering of a job for given instance. */
-    public List<JobId> forceTrigger(ApplicationId applicationId, JobType jobType, String reason, boolean requireTests) {
+    public List<JobId> forceTrigger(ApplicationId applicationId, JobType jobType, String reason, boolean requireTests,
+                                    boolean upgradeRevision, boolean upgradePlatform) {
         Application application = applications().requireApplication(TenantAndApplicationId.from(applicationId));
         Instance instance = application.require(applicationId.instance());
         JobId job = new JobId(instance.id(), jobType);
@@ -205,7 +206,10 @@ public class DeploymentTrigger {
             return forceTriggerManualJob(job, reason);
 
         DeploymentStatus status = jobs.deploymentStatus(application);
-        Versions versions = Versions.from(instance.change(), application, status.deploymentFor(job), controller.readSystemVersion());
+        Change change = instance.change();
+        if ( ! upgradeRevision && change.application().isPresent()) change = change.withoutApplication();
+        if ( ! upgradePlatform && change.platform().isPresent()) change = change.withoutPlatform();
+        Versions versions = Versions.from(change, application, status.deploymentFor(job), controller.readSystemVersion());
         DeploymentStatus.Job toTrigger = new DeploymentStatus.Job(job.type(), versions, Optional.of(controller.clock().instant()), instance.change());
         Map<JobId, List<DeploymentStatus.Job>> testJobs = status.testJobs(Map.of(job, List.of(toTrigger)));
 
