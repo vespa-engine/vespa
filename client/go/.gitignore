@@ -4,3 +4,5 @@ share/
 !Makefile
 !build/
 !target/
+mytestapp/
+mytestapp-cache/
