@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vespa-engine/vespa/client/go/mock"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
@@ -147,12 +148,12 @@ func TestProdSubmit(t *testing.T) {
 	pkgDir := filepath.Join(t.TempDir(), "app")
 	createApplication(t, pkgDir, false)
 
-	httpClient := &mockHttpClient{}
+	httpClient := &mock.HTTPClient{}
 	httpClient.NextResponse(200, `ok`)
 	execute(command{homeDir: homeDir, args: []string{"config", "set", "application", "t1.a1.i1"}}, t, httpClient)
 	execute(command{homeDir: homeDir, args: []string{"config", "set", "target", "cloud"}}, t, httpClient)
-	execute(command{homeDir: homeDir, args: []string{"api-key"}}, t, httpClient)
-	execute(command{homeDir: homeDir, args: []string{"cert", pkgDir}}, t, httpClient)
+	execute(command{homeDir: homeDir, args: []string{"auth", "api-key"}}, t, httpClient)
+	execute(command{homeDir: homeDir, args: []string{"auth", "cert", pkgDir}}, t, httpClient)
 
 	// Zipping requires relative paths, so much let command run from pkgDir, then reset cwd for subsequent tests.
 	if cwd, err := os.Getwd(); err != nil {
@@ -166,8 +167,8 @@ func TestProdSubmit(t *testing.T) {
 	if err := os.Setenv("CI", "true"); err != nil {
 		t.Fatal(err)
 	}
-	out, err := execute(command{homeDir: homeDir, args: []string{"prod", "submit", "-k", filepath.Join(homeDir, "t1.api-key.pem")}}, t, httpClient)
-	assert.Equal(t, "", err)
+	out, outErr := execute(command{homeDir: homeDir, args: []string{"prod", "submit", "-k", filepath.Join(homeDir, "t1.api-key.pem")}}, t, httpClient)
+	assert.Equal(t, "", outErr)
 	assert.Contains(t, out, "Success: Submitted")
 	assert.Contains(t, out, "See https://console.vespa.oath.cloud/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
@@ -177,12 +178,12 @@ func TestProdSubmitWithJava(t *testing.T) {
 	pkgDir := filepath.Join(t.TempDir(), "app")
 	createApplication(t, pkgDir, true)
 
-	httpClient := &mockHttpClient{}
+	httpClient := &mock.HTTPClient{}
 	httpClient.NextResponse(200, `ok`)
 	execute(command{homeDir: homeDir, args: []string{"config", "set", "application", "t1.a1.i1"}}, t, httpClient)
 	execute(command{homeDir: homeDir, args: []string{"config", "set", "target", "cloud"}}, t, httpClient)
-	execute(command{homeDir: homeDir, args: []string{"api-key"}}, t, httpClient)
-	execute(command{homeDir: homeDir, args: []string{"cert", pkgDir}}, t, httpClient)
+	execute(command{homeDir: homeDir, args: []string{"auth", "api-key"}}, t, httpClient)
+	execute(command{homeDir: homeDir, args: []string{"auth", "cert", pkgDir}}, t, httpClient)
 
 	// Copy an application package pre-assembled with mvn package
 	testAppDir := filepath.Join("testdata", "applications", "withDeployment", "target")
@@ -191,7 +192,8 @@ func TestProdSubmitWithJava(t *testing.T) {
 	testZipFile := filepath.Join(testAppDir, "application-test.zip")
 	copyFile(t, filepath.Join(pkgDir, "target", "application-test.zip"), testZipFile)
 
-	out, _ := execute(command{homeDir: homeDir, args: []string{"prod", "submit", "-k", filepath.Join(homeDir, "t1.api-key.pem"), pkgDir}}, t, httpClient)
+	out, outErr := execute(command{homeDir: homeDir, args: []string{"prod", "submit", "-k", filepath.Join(homeDir, "t1.api-key.pem"), pkgDir}}, t, httpClient)
+	assert.Equal(t, "", outErr)
 	assert.Contains(t, out, "Success: Submitted")
 	assert.Contains(t, out, "See https://console.vespa.oath.cloud/tenant/t1/application/a1/prod/deployment for deployment progress")
 }

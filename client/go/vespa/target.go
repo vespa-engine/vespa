@@ -19,12 +19,21 @@ import (
 	"github.com/vespa-engine/vespa/client/go/auth0"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/version"
+	"github.com/vespa-engine/vespa/client/go/zts"
 )
 
 const (
-	localTargetType  = "local"
-	customTargetType = "custom"
-	cloudTargetType  = "cloud"
+	// A target for a local Vespa service
+	TargetLocal = "local"
+
+	// A target for a custom URL
+	TargetCustom = "custom"
+
+	// A Vespa Cloud target
+	TargetCloud = "cloud"
+
+	// A hosted Vespa target
+	TargetHosted = "hosted"
 
 	deployService   = "deploy"
 	queryService    = "query"
@@ -33,22 +42,21 @@ const (
 	retryInterval = 2 * time.Second
 )
 
-const (
-	CloudAuthApiKey      = "api-key"
-	CloudAuthAccessToken = "access-token"
-)
-
 // Service represents a Vespa service.
 type Service struct {
 	BaseURL    string
 	Name       string
 	TLSOptions TLSOptions
+	ztsClient  ztsClient
 }
 
 // Target represents a Vespa platform, running named Vespa services.
 type Target interface {
 	// Type returns this target's type, e.g. local or cloud.
 	Type() string
+
+	// Deployment returns the deployment managed by this target.
+	Deployment() Deployment
 
 	// Service returns the service for given name. If timeout is non-zero, wait for the service to converge.
 	Service(name string, timeout time.Duration, sessionOrRunID int64, cluster string) (*Service, error)
@@ -63,11 +71,12 @@ type Target interface {
 	CheckVersion(clientVersion version.Version) error
 }
 
-// TLSOptions configures the certificate to use for service requests.
+// TLSOptions configures the client certificate to use for cloud API or service requests.
 type TLSOptions struct {
 	KeyPair         tls.Certificate
 	CertificateFile string
 	PrivateKeyFile  string
+	AthenzDomain    string
 }
 
 // LogOptions configures the log output to produce when writing log messages.
@@ -80,19 +89,40 @@ type LogOptions struct {
 	Level   int
 }
 
+// CloudOptions configures URL and authentication for a cloud target.
+type APIOptions struct {
+	System         System
+	TLSOptions     TLSOptions
+	APIKey         []byte
+	AuthConfigPath string
+}
+
+// CloudDeploymentOptions configures the deployment to manage through a cloud target.
+type CloudDeploymentOptions struct {
+	Deployment  Deployment
+	TLSOptions  TLSOptions
+	ClusterURLs map[string]string // Endpoints keyed on cluster name
+}
+
 type customTarget struct {
 	targetType string
 	baseURL    string
 }
 
-func (t *customTarget) SignRequest(req *http.Request, sigKeyId string) error { return nil }
-
-func (t *customTarget) CheckVersion(version version.Version) error { return nil }
-
 // Do sends request to this service. Any required authentication happens automatically.
 func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
 	if s.TLSOptions.KeyPair.Certificate != nil {
 		util.ActiveHttpClient.UseCertificate([]tls.Certificate{s.TLSOptions.KeyPair})
+	}
+	if s.TLSOptions.AthenzDomain != "" {
+		accessToken, err := s.ztsClient.AccessToken(s.TLSOptions.AthenzDomain, s.TLSOptions.KeyPair)
+		if err != nil {
+			return nil, err
+		}
+		if request.Header == nil {
+			request.Header = make(http.Header)
+		}
+		request.Header.Add("Authorization", "Bearer "+accessToken)
 	}
 	return util.HttpDo(request, timeout, s.Description())
 }
@@ -130,6 +160,8 @@ func (s *Service) Description() string {
 
 func (t *customTarget) Type() string { return t.targetType }
 
+func (t *customTarget) Deployment() Deployment { return Deployment{} }
+
 func (t *customTarget) Service(name string, timeout time.Duration, sessionOrRunID int64, cluster string) (*Service, error) {
 	if timeout > 0 && name != deployService {
 		if err := t.waitForConvergence(timeout); err != nil {
@@ -148,8 +180,12 @@ func (t *customTarget) Service(name string, timeout time.Duration, sessionOrRunI
 }
 
 func (t *customTarget) PrintLog(options LogOptions) error {
-	return fmt.Errorf("reading logs from non-cloud deployment is currently unsupported")
+	return fmt.Errorf("reading logs from non-cloud deployment is unsupported")
 }
+
+func (t *customTarget) SignRequest(req *http.Request, sigKeyId string) error { return nil }
+
+func (t *customTarget) CheckVersion(version version.Version) error { return nil }
 
 func (t *customTarget) urlWithPort(serviceName string) (string, error) {
 	u, err := url.Parse(t.baseURL)
@@ -203,32 +239,30 @@ func (t *customTarget) waitForConvergence(timeout time.Duration) error {
 }
 
 type cloudTarget struct {
-	apiURL     string
-	targetType string
-	deployment Deployment
-	apiKey     []byte
-	tlsOptions TLSOptions
-	logOptions LogOptions
+	apiOptions        APIOptions
+	deploymentOptions CloudDeploymentOptions
+	logOptions        LogOptions
+	ztsClient         ztsClient
+}
 
-	urlsByCluster  map[string]string
-	authConfigPath string
-	systemName     string
+type ztsClient interface {
+	AccessToken(domain string, certficiate tls.Certificate) (string, error)
 }
 
 func (t *cloudTarget) resolveEndpoint(cluster string) (string, error) {
 	if cluster == "" {
-		for _, u := range t.urlsByCluster {
-			if len(t.urlsByCluster) == 1 {
+		for _, u := range t.deploymentOptions.ClusterURLs {
+			if len(t.deploymentOptions.ClusterURLs) == 1 {
 				return u, nil
 			} else {
-				return "", fmt.Errorf("multiple clusters, none chosen: %v", t.urlsByCluster)
+				return "", fmt.Errorf("multiple clusters, none chosen: %v", t.deploymentOptions.ClusterURLs)
 			}
 		}
 	} else {
-		u := t.urlsByCluster[cluster]
+		u := t.deploymentOptions.ClusterURLs[cluster]
 		if u == "" {
-			clusters := make([]string, len(t.urlsByCluster))
-			for c := range t.urlsByCluster {
+			clusters := make([]string, len(t.deploymentOptions.ClusterURLs))
+			for c := range t.deploymentOptions.ClusterURLs {
 				clusters = append(clusters, c)
 			}
 			return "", fmt.Errorf("unknown cluster '%s': must be one of %v", cluster, clusters)
@@ -239,54 +273,57 @@ func (t *cloudTarget) resolveEndpoint(cluster string) (string, error) {
 	return "", fmt.Errorf("no endpoints")
 }
 
-func (t *cloudTarget) Type() string { return t.targetType }
+func (t *cloudTarget) Type() string {
+	switch t.apiOptions.System.Name {
+	case MainSystem.Name, CDSystem.Name:
+		return TargetHosted
+	}
+	return TargetCloud
+}
+
+func (t *cloudTarget) Deployment() Deployment { return t.deploymentOptions.Deployment }
 
 func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, cluster string) (*Service, error) {
-	if name != deployService && t.urlsByCluster == nil {
+	if name != deployService && t.deploymentOptions.ClusterURLs == nil {
 		if err := t.waitForEndpoints(timeout, runID); err != nil {
 			return nil, err
 		}
 	}
 	switch name {
 	case deployService:
-		return &Service{Name: name, BaseURL: t.apiURL}, nil
-	case queryService:
-		queryURL, err := t.resolveEndpoint(cluster)
+		return &Service{Name: name, BaseURL: t.apiOptions.System.URL, TLSOptions: t.apiOptions.TLSOptions, ztsClient: t.ztsClient}, nil
+	case queryService, documentService:
+		url, err := t.resolveEndpoint(cluster)
 		if err != nil {
 			return nil, err
 		}
-		return &Service{Name: name, BaseURL: queryURL, TLSOptions: t.tlsOptions}, nil
-	case documentService:
-		documentURL, err := t.resolveEndpoint(cluster)
-		if err != nil {
-			return nil, err
-		}
-		return &Service{Name: name, BaseURL: documentURL, TLSOptions: t.tlsOptions}, nil
+		t.deploymentOptions.TLSOptions.AthenzDomain = t.apiOptions.System.AthenzDomain
+		return &Service{Name: name, BaseURL: url, TLSOptions: t.deploymentOptions.TLSOptions, ztsClient: t.ztsClient}, nil
 	}
 	return nil, fmt.Errorf("unknown service: %s", name)
 }
 
-// SignRequest adds authentication data to a http.Request.
-// The api key is used if set on cloudTarget, if not the Auth0 device flow is used.
-func (t *cloudTarget) SignRequest(req *http.Request, sigKeyId string) error {
-	if t.apiKey != nil {
-		signer := NewRequestSigner(sigKeyId, t.apiKey)
-		if err := signer.SignRequest(req); err != nil {
-			return err
+func (t *cloudTarget) SignRequest(req *http.Request, keyID string) error {
+	if t.apiOptions.System.IsPublic() {
+		if t.apiOptions.APIKey != nil {
+			signer := NewRequestSigner(keyID, t.apiOptions.APIKey)
+			return signer.SignRequest(req)
+		} else {
+			return t.addAuth0AccessToken(req)
 		}
 	} else {
-		if err := t.addAuth0AccessToken(req); err != nil {
-			return err
+		if t.apiOptions.TLSOptions.KeyPair.Certificate == nil {
+			return fmt.Errorf("system %s requires a certificate for authentication", t.apiOptions.System.Name)
 		}
+		return nil
 	}
-	return nil
 }
 
 func (t *cloudTarget) CheckVersion(clientVersion version.Version) error {
 	if clientVersion.IsZero() { // development version is always fine
 		return nil
 	}
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/cli/v1/", t.apiURL), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/cli/v1/", t.apiOptions.System.URL), nil)
 	if err != nil {
 		return err
 	}
@@ -313,7 +350,7 @@ func (t *cloudTarget) CheckVersion(clientVersion version.Version) error {
 }
 
 func (t *cloudTarget) addAuth0AccessToken(request *http.Request) error {
-	a, err := auth0.GetAuth0(t.authConfigPath, t.systemName, t.apiURL)
+	a, err := auth0.GetAuth0(t.apiOptions.AuthConfigPath, t.apiOptions.System.Name, t.apiOptions.System.URL)
 	if err != nil {
 		return err
 	}
@@ -327,9 +364,9 @@ func (t *cloudTarget) addAuth0AccessToken(request *http.Request) error {
 
 func (t *cloudTarget) logsURL() string {
 	return fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/environment/%s/region/%s/logs",
-		t.apiURL,
-		t.deployment.Application.Tenant, t.deployment.Application.Application, t.deployment.Application.Instance,
-		t.deployment.Zone.Environment, t.deployment.Zone.Region)
+		t.apiOptions.System.URL,
+		t.deploymentOptions.Deployment.Application.Tenant, t.deploymentOptions.Deployment.Application.Application, t.deploymentOptions.Deployment.Application.Instance,
+		t.deploymentOptions.Deployment.Zone.Environment, t.deploymentOptions.Deployment.Zone.Region)
 }
 
 func (t *cloudTarget) PrintLog(options LogOptions) error {
@@ -347,7 +384,7 @@ func (t *cloudTarget) PrintLog(options LogOptions) error {
 			q.Set("to", strconv.FormatInt(toMillis, 10))
 		}
 		req.URL.RawQuery = q.Encode()
-		t.SignRequest(req, t.deployment.Application.SerializedForm())
+		t.SignRequest(req, t.deploymentOptions.Deployment.Application.SerializedForm())
 		return req
 	}
 	logFunc := func(status int, response []byte) (bool, error) {
@@ -376,7 +413,7 @@ func (t *cloudTarget) PrintLog(options LogOptions) error {
 	if options.Follow {
 		timeout = math.MaxInt64 // No timeout
 	}
-	_, err = wait(logFunc, requestFunc, &t.tlsOptions.KeyPair, timeout)
+	_, err = wait(logFunc, requestFunc, &t.apiOptions.TLSOptions.KeyPair, timeout)
 	return err
 }
 
@@ -391,9 +428,9 @@ func (t *cloudTarget) waitForEndpoints(timeout time.Duration, runID int64) error
 
 func (t *cloudTarget) waitForRun(runID int64, timeout time.Duration) error {
 	runURL := fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/job/%s-%s/run/%d",
-		t.apiURL,
-		t.deployment.Application.Tenant, t.deployment.Application.Application, t.deployment.Application.Instance,
-		t.deployment.Zone.Environment, t.deployment.Zone.Region, runID)
+		t.apiOptions.System.URL,
+		t.deploymentOptions.Deployment.Application.Tenant, t.deploymentOptions.Deployment.Application.Application, t.deploymentOptions.Deployment.Application.Instance,
+		t.deploymentOptions.Deployment.Zone.Environment, t.deploymentOptions.Deployment.Zone.Region, runID)
 	req, err := http.NewRequest("GET", runURL, nil)
 	if err != nil {
 		return err
@@ -403,7 +440,7 @@ func (t *cloudTarget) waitForRun(runID int64, timeout time.Duration) error {
 		q := req.URL.Query()
 		q.Set("after", strconv.FormatInt(lastID, 10))
 		req.URL.RawQuery = q.Encode()
-		if err := t.SignRequest(req, t.deployment.Application.SerializedForm()); err != nil {
+		if err := t.SignRequest(req, t.deploymentOptions.Deployment.Application.SerializedForm()); err != nil {
 			panic(err)
 		}
 		return req
@@ -427,7 +464,7 @@ func (t *cloudTarget) waitForRun(runID int64, timeout time.Duration) error {
 		}
 		return true, nil
 	}
-	_, err = wait(jobSuccessFunc, requestFunc, &t.tlsOptions.KeyPair, timeout)
+	_, err = wait(jobSuccessFunc, requestFunc, &t.apiOptions.TLSOptions.KeyPair, timeout)
 	return err
 }
 
@@ -455,14 +492,14 @@ func (t *cloudTarget) printLog(response jobResponse, last int64) int64 {
 
 func (t *cloudTarget) discoverEndpoints(timeout time.Duration) error {
 	deploymentURL := fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/environment/%s/region/%s",
-		t.apiURL,
-		t.deployment.Application.Tenant, t.deployment.Application.Application, t.deployment.Application.Instance,
-		t.deployment.Zone.Environment, t.deployment.Zone.Region)
+		t.apiOptions.System.URL,
+		t.deploymentOptions.Deployment.Application.Tenant, t.deploymentOptions.Deployment.Application.Application, t.deploymentOptions.Deployment.Application.Instance,
+		t.deploymentOptions.Deployment.Zone.Environment, t.deploymentOptions.Deployment.Zone.Region)
 	req, err := http.NewRequest("GET", deploymentURL, nil)
 	if err != nil {
 		return err
 	}
-	if err := t.SignRequest(req, t.deployment.Application.SerializedForm()); err != nil {
+	if err := t.SignRequest(req, t.deploymentOptions.Deployment.Application.SerializedForm()); err != nil {
 		return err
 	}
 	urlsByCluster := make(map[string]string)
@@ -485,13 +522,13 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) error {
 		}
 		return true, nil
 	}
-	if _, err = wait(endpointFunc, func() *http.Request { return req }, &t.tlsOptions.KeyPair, timeout); err != nil {
+	if _, err = wait(endpointFunc, func() *http.Request { return req }, &t.apiOptions.TLSOptions.KeyPair, timeout); err != nil {
 		return err
 	}
 	if len(urlsByCluster) == 0 {
 		return fmt.Errorf("no endpoints discovered")
 	}
-	t.urlsByCluster = urlsByCluster
+	t.deploymentOptions.ClusterURLs = urlsByCluster
 	return nil
 }
 
@@ -504,28 +541,26 @@ func isOK(status int) (bool, error) {
 
 // LocalTarget creates a target for a Vespa platform running locally.
 func LocalTarget() Target {
-	return &customTarget{targetType: localTargetType, baseURL: "http://127.0.0.1"}
+	return &customTarget{targetType: TargetLocal, baseURL: "http://127.0.0.1"}
 }
 
 // CustomTarget creates a Target for a Vespa platform running at baseURL.
 func CustomTarget(baseURL string) Target {
-	return &customTarget{targetType: customTargetType, baseURL: baseURL}
+	return &customTarget{targetType: TargetCustom, baseURL: baseURL}
 }
 
-// CloudTarget creates a Target for the Vespa Cloud platform.
-func CloudTarget(apiURL string, deployment Deployment, apiKey []byte, tlsOptions TLSOptions, logOptions LogOptions,
-	authConfigPath string, systemName string, urlsByCluster map[string]string) Target {
-	return &cloudTarget{
-		apiURL:         apiURL,
-		targetType:     cloudTargetType,
-		deployment:     deployment,
-		apiKey:         apiKey,
-		tlsOptions:     tlsOptions,
-		logOptions:     logOptions,
-		authConfigPath: authConfigPath,
-		systemName:     systemName,
-		urlsByCluster:  urlsByCluster,
+// CloudTarget creates a Target for the Vespa Cloud or hosted Vespa platform.
+func CloudTarget(apiOptions APIOptions, deploymentOptions CloudDeploymentOptions, logOptions LogOptions) (Target, error) {
+	ztsClient, err := zts.NewClient(zts.DefaultURL, util.ActiveHttpClient)
+	if err != nil {
+		return nil, err
 	}
+	return &cloudTarget{
+		apiOptions:        apiOptions,
+		deploymentOptions: deploymentOptions,
+		logOptions:        logOptions,
+		ztsClient:         ztsClient,
+	}, nil
 }
 
 type deploymentEndpoint struct {
@@ -571,7 +606,8 @@ func wait(fn responseFunc, reqFn requestFunc, certificate *tls.Certificate, time
 	deadline := time.Now().Add(timeout)
 	loopOnce := timeout == 0
 	for time.Now().Before(deadline) || loopOnce {
-		response, httpErr = util.HttpDo(reqFn(), 10*time.Second, "")
+		req := reqFn()
+		response, httpErr = util.HttpDo(req, 10*time.Second, "")
 		if httpErr == nil {
 			statusCode = response.StatusCode
 			body, err := ioutil.ReadAll(response.Body)

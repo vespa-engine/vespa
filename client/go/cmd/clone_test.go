@@ -12,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vespa-engine/vespa/client/go/mock"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
@@ -21,7 +22,7 @@ func TestClone(t *testing.T) {
 
 func assertCreated(sampleAppName string, app string, t *testing.T) {
 	appCached := app + "-cache"
-	httpClient := &mockHttpClient{}
+	httpClient := &mock.HTTPClient{}
 	testdata, err := ioutil.ReadFile(filepath.Join("testdata", "sample-apps-master.zip"))
 	require.Nil(t, err)
 	httpClient.NextResponseBytes(200, testdata)

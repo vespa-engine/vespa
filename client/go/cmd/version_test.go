@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vespa-engine/vespa/client/go/mock"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 func TestVersion(t *testing.T) {
-	c := &mockHttpClient{}
+	c := &mock.HTTPClient{}
 	c.NextResponse(200, `[{"tag_name": "v1.2.3", "published_at": "2021-09-10T12:00:00Z"}]`)
 	util.ActiveHttpClient = c
 
@@ -21,7 +22,7 @@ func TestVersion(t *testing.T) {
 }
 
 func TestVersionCheckHomebrew(t *testing.T) {
-	c := &mockHttpClient{}
+	c := &mock.HTTPClient{}
 	c.NextResponse(200, `[{"tag_name": "v1.2.3", "published_at": "2021-09-10T12:00:00Z"}]`)
 	util.ActiveHttpClient = c
 

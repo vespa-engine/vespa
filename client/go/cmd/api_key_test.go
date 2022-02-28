@@ -23,6 +23,8 @@ func testAPIKey(t *testing.T, subcommand []string) {
 	homeDir := filepath.Join(t.TempDir(), ".vespa")
 	keyFile := filepath.Join(homeDir, "t1.api-key.pem")
 
+	execute(command{args: []string{"config", "set", "target", "cloud"}, homeDir: homeDir}, t, nil)
+
 	args := append(subcommand, "-a", "t1.a1.i1")
 	out, _ := execute(command{args: args, homeDir: homeDir}, t, nil)
 	assert.Contains(t, out, "Success: API private key written to "+keyFile+"\n")

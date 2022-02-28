@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 func TestConfig(t *testing.T) {
@@ -16,6 +17,8 @@ func TestConfig(t *testing.T) {
 	assertConfigCommandErr(t, "Error: invalid option or value: \"foo\": \"bar\"\n", homeDir, "config", "set", "foo", "bar")
 	assertConfigCommand(t, "foo = <unset>\n", homeDir, "config", "get", "foo")
 	assertConfigCommand(t, "target = local\n", homeDir, "config", "get", "target")
+	assertConfigCommand(t, "", homeDir, "config", "set", "target", "hosted")
+	assertConfigCommand(t, "target = hosted\n", homeDir, "config", "get", "target")
 	assertConfigCommand(t, "", homeDir, "config", "set", "target", "cloud")
 	assertConfigCommand(t, "target = cloud\n", homeDir, "config", "get", "target")
 	assertConfigCommand(t, "", homeDir, "config", "set", "target", "http://127.0.0.1:8080")
@@ -66,15 +69,15 @@ func TestUseAPIKey(t *testing.T) {
 	homeDir := t.TempDir()
 	c := Config{Home: homeDir}
 
-	assert.False(t, c.UseAPIKey("t1"))
+	assert.False(t, c.UseAPIKey(vespa.PublicSystem, "t1"))
 
 	c.Set(apiKeyFileFlag, "/tmp/foo")
-	assert.True(t, c.UseAPIKey("t1"))
+	assert.True(t, c.UseAPIKey(vespa.PublicSystem, "t1"))
 	c.Set(apiKeyFileFlag, "")
 
 	withEnv("VESPA_CLI_API_KEY", "...", func() {
 		require.Nil(t, c.load())
-		assert.True(t, c.UseAPIKey("t1"))
+		assert.True(t, c.UseAPIKey(vespa.PublicSystem, "t1"))
 	})
 
 	// Test deprecated functionality
@@ -97,8 +100,8 @@ func TestUseAPIKey(t *testing.T) {
 	withEnv("VESPA_CLI_CLOUD_SYSTEM", "public", func() {
 		_, err := os.Create(filepath.Join(homeDir, "t2.api-key.pem"))
 		require.Nil(t, err)
-		assert.True(t, c.UseAPIKey("t2"))
+		assert.True(t, c.UseAPIKey(vespa.PublicSystem, "t2"))
 		require.Nil(t, ioutil.WriteFile(filepath.Join(homeDir, "auth.json"), []byte(authContent), 0600))
-		assert.False(t, c.UseAPIKey("t2"))
+		assert.False(t, c.UseAPIKey(vespa.PublicSystem, "t2"))
 	})
 }

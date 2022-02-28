@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 var DefaultDeployment Deployment
@@ -218,8 +220,9 @@ func ParseNodeCount(s string) (int, int, error) {
 }
 
 // IsProdRegion returns whether string s is a valid production region.
-func IsProdRegion(s string, system string) bool {
-	if system == "publiccd" {
+func IsProdRegion(s string, system vespa.System) bool {
+	// TODO: Add support for cd and main systems
+	if system.Name == vespa.PublicCDSystem.Name {
 		return s == "aws-us-east-1c"
 	}
 	switch s {

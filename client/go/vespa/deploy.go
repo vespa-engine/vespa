@@ -38,15 +38,15 @@ type ZoneID struct {
 }
 
 type Deployment struct {
+	System      System
 	Application ApplicationID
 	Zone        ZoneID
 }
 
-type DeploymentOpts struct {
-	ApplicationPackage ApplicationPackage
+type DeploymentOptions struct {
 	Target             Target
-	Deployment         Deployment
-	APIKey             []byte
+	ApplicationPackage ApplicationPackage
+	Timeout            time.Duration
 }
 
 type ApplicationPackage struct {
@@ -66,13 +66,16 @@ func (d Deployment) String() string {
 	return fmt.Sprintf("deployment of %s in %s", d.Application, d.Zone)
 }
 
-func (d DeploymentOpts) String() string {
-	return fmt.Sprintf("%s to %s", d.Deployment, d.Target.Type())
+func (d DeploymentOptions) String() string {
+	return fmt.Sprintf("%s to %s", d.Target.Deployment(), d.Target.Type())
 }
 
-func (d *DeploymentOpts) IsCloud() bool { return d.Target.Type() == cloudTargetType }
+// IsCloud returns whether this is a deployment to Vespa Cloud or hosted Vespa
+func (d *DeploymentOptions) IsCloud() bool {
+	return d.Target.Type() == TargetCloud || d.Target.Type() == TargetHosted
+}
 
-func (d *DeploymentOpts) url(path string) (*url.URL, error) {
+func (d *DeploymentOptions) url(path string) (*url.URL, error) {
 	service, err := d.Target.Service(deployService, 0, 0, "")
 	if err != nil {
 		return nil, err
@@ -196,7 +199,7 @@ func ZoneFromString(s string) (ZoneID, error) {
 }
 
 // Prepare deployment and return the session ID
-func Prepare(deployment DeploymentOpts) (int64, error) {
+func Prepare(deployment DeploymentOptions) (int64, error) {
 	if deployment.IsCloud() {
 		return 0, fmt.Errorf("prepare is not supported with %s target", deployment.Target.Type())
 	}
@@ -229,7 +232,7 @@ func Prepare(deployment DeploymentOpts) (int64, error) {
 }
 
 // Activate deployment with sessionID from a past prepare
-func Activate(sessionID int64, deployment DeploymentOpts) error {
+func Activate(sessionID int64, deployment DeploymentOptions) error {
 	if deployment.IsCloud() {
 		return fmt.Errorf("activate is not supported with %s target", deployment.Target.Type())
 	}
@@ -250,21 +253,21 @@ func Activate(sessionID int64, deployment DeploymentOpts) error {
 	return checkResponse(req, response, serviceDescription)
 }
 
-func Deploy(opts DeploymentOpts) (int64, error) {
+func Deploy(opts DeploymentOptions) (int64, error) {
 	path := "/application/v2/tenant/default/prepareandactivate"
 	if opts.IsCloud() {
 		if err := checkDeploymentOpts(opts); err != nil {
 			return 0, err
 		}
-		if opts.Deployment.Zone.Environment == "" || opts.Deployment.Zone.Region == "" {
+		if opts.Target.Deployment().Zone.Environment == "" || opts.Target.Deployment().Zone.Region == "" {
 			return 0, fmt.Errorf("%s: missing zone", opts)
 		}
 		path = fmt.Sprintf("/application/v4/tenant/%s/application/%s/instance/%s/deploy/%s-%s",
-			opts.Deployment.Application.Tenant,
-			opts.Deployment.Application.Application,
-			opts.Deployment.Application.Instance,
-			opts.Deployment.Zone.Environment,
-			opts.Deployment.Zone.Region)
+			opts.Target.Deployment().Application.Tenant,
+			opts.Target.Deployment().Application.Application,
+			opts.Target.Deployment().Application.Instance,
+			opts.Target.Deployment().Zone.Environment,
+			opts.Target.Deployment().Zone.Region)
 	}
 	u, err := opts.url(path)
 	if err != nil {
@@ -290,14 +293,14 @@ func copyToPart(dst *multipart.Writer, src io.Reader, fieldname, filename string
 	return nil
 }
 
-func Submit(opts DeploymentOpts) error {
+func Submit(opts DeploymentOptions) error {
 	if !opts.IsCloud() {
-		return fmt.Errorf("%s: submit is unsupported", opts)
+		return fmt.Errorf("%s: submit is unsupported by %s target", opts, opts.Target.Type())
 	}
 	if err := checkDeploymentOpts(opts); err != nil {
 		return err
 	}
-	path := fmt.Sprintf("/application/v4/tenant/%s/application/%s/submit", opts.Deployment.Application.Tenant, opts.Deployment.Application.Application)
+	path := fmt.Sprintf("/application/v4/tenant/%s/application/%s/submit", opts.Target.Deployment().Application.Tenant, opts.Target.Deployment().Application.Application)
 	u, err := opts.url(path)
 	if err != nil {
 		return err
@@ -332,7 +335,7 @@ func Submit(opts DeploymentOpts) error {
 	}
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 	serviceDescription := "Submit service"
-	sigKeyId := opts.Deployment.Application.SerializedForm()
+	sigKeyId := opts.Target.Deployment().Application.SerializedForm()
 	if err := opts.Target.SignRequest(request, sigKeyId); err != nil {
 		return err
 	}
@@ -344,14 +347,14 @@ func Submit(opts DeploymentOpts) error {
 	return checkResponse(request, response, serviceDescription)
 }
 
-func checkDeploymentOpts(opts DeploymentOpts) error {
-	if !opts.ApplicationPackage.HasCertificate() {
+func checkDeploymentOpts(opts DeploymentOptions) error {
+	if opts.Target.Type() == TargetCloud && !opts.ApplicationPackage.HasCertificate() {
 		return fmt.Errorf("%s: missing certificate in package", opts)
 	}
 	return nil
 }
 
-func uploadApplicationPackage(url *url.URL, opts DeploymentOpts) (int64, error) {
+func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (int64, error) {
 	zipReader, err := opts.ApplicationPackage.zipReader(false)
 	if err != nil {
 		return 0, err
@@ -364,15 +367,18 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOpts) (int64, error) 
 		Header: header,
 		Body:   ioutil.NopCloser(zipReader),
 	}
-	serviceDescription := "Deploy service"
-	sigKeyId := opts.Deployment.Application.SerializedForm()
-	if err := opts.Target.SignRequest(request, sigKeyId); err != nil {
+	service, err := opts.Target.Service(deployService, opts.Timeout, 0, "")
+	if err != nil {
 		return 0, err
 	}
 
+	keyID := opts.Target.Deployment().Application.SerializedForm()
+	if err := opts.Target.SignRequest(request, keyID); err != nil {
+		return 0, err
+	}
 	var response *http.Response
 	err = util.Spinner("Uploading application package ...", func() error {
-		response, err = util.HttpDo(request, time.Minute*10, serviceDescription)
+		response, err = service.Do(request, time.Minute*10)
 		return err
 	})
 	if err != nil {
@@ -385,7 +391,7 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOpts) (int64, error) 
 		RunID     int64  `json:"run"`        // Controller
 	}
 	jsonResponse.SessionID = "0" // Set a default session ID for responses that don't contain int (e.g. cloud deployment)
-	if err := checkResponse(request, response, serviceDescription); err != nil {
+	if err := checkResponse(request, response, service.Description()); err != nil {
 		return 0, err
 	}
 	jsonDec := json.NewDecoder(response.Body)

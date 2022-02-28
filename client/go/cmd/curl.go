@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/auth0"
 	"github.com/vespa-engine/vespa/client/go/curl"
+	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 var curlDryRun bool
@@ -61,8 +62,8 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 			if err != nil {
 				return err
 			}
-			if t.Type() == "cloud" {
-				if err := addCloudAuth0Authentication(cfg, c); err != nil {
+			if t.Type() == vespa.TargetCloud {
+				if err := addCloudAuth0Authentication(t.Deployment().System, cfg, c); err != nil {
 					return err
 				}
 			}
@@ -92,17 +93,17 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 	},
 }
 
-func addCloudAuth0Authentication(cfg *Config, c *curl.Command) error {
-	a, err := auth0.GetAuth0(cfg.AuthConfigPath(), getSystemName(), getApiURL())
+func addCloudAuth0Authentication(system vespa.System, cfg *Config, c *curl.Command) error {
+	a, err := auth0.GetAuth0(cfg.AuthConfigPath(), system.Name, system.URL)
 	if err != nil {
 		return err
 	}
 
-	system, err := a.PrepareSystem(auth0.ContextWithCancel())
+	authSystem, err := a.PrepareSystem(auth0.ContextWithCancel())
 	if err != nil {
 		return err
 	}
-	c.Header("Authorization", "Bearer "+system.AccessToken)
+	c.Header("Authorization", "Bearer "+authSystem.AccessToken)
 	return nil
 }
 

@@ -73,6 +73,10 @@ https://cloud.vespa.ai/en/reference/deployment`,
 		if err != nil {
 			return fmt.Errorf("a services.xml declaring your cluster(s) must exist: %w", err)
 		}
+		target, err := getTarget()
+		if err != nil {
+			return err
+		}
 
 		fmt.Fprint(stdout, "This will modify any existing ", color.Yellow("deployment.xml"), " and ", color.Yellow("services.xml"),
 			"!\nBefore modification a backup of the original file will be created.\n\n")
@@ -80,7 +84,7 @@ https://cloud.vespa.ai/en/reference/deployment`,
 		fmt.Fprint(stdout, "Abort the configuration at any time by pressing Ctrl-C. The\nfiles will remain untouched.\n\n")
 		fmt.Fprint(stdout, "See this guide for sizing a Vespa deployment:\n", color.Green("https://docs.vespa.ai/en/performance/sizing-search.html\n\n"))
 		r := bufio.NewReader(stdin)
-		deploymentXML, err = updateRegions(r, deploymentXML)
+		deploymentXML, err = updateRegions(r, deploymentXML, target.Deployment().System)
 		if err != nil {
 			return err
 		}
@@ -127,8 +131,9 @@ $ vespa prod submit`,
 		if err != nil {
 			return err
 		}
-		if target.Type() != "cloud" {
-			return fmt.Errorf("%s target cannot deploy to Vespa Cloud", target.Type())
+		if target.Type() != vespa.TargetCloud {
+			// TODO: Add support for hosted
+			return fmt.Errorf("prod submit does not support %s target", target.Type())
 		}
 		appSource := applicationSource(args)
 		pkg, err := vespa.FindApplicationPackage(appSource, true)
@@ -156,7 +161,7 @@ $ vespa prod submit`,
 			fmt.Fprintln(stderr, color.Yellow("Warning:"), "We recommend doing this only from a CD job")
 			printErrHint(nil, "See https://cloud.vespa.ai/en/getting-to-production")
 		}
-		opts, err := getDeploymentOpts(cfg, pkg, target)
+		opts, err := getDeploymentOptions(cfg, pkg, target)
 		if err != nil {
 			return err
 		}
@@ -165,7 +170,7 @@ $ vespa prod submit`,
 		} else {
 			printSuccess("Submitted ", color.Cyan(pkg.Path), " for deployment")
 			log.Printf("See %s for deployment progress\n", color.Cyan(fmt.Sprintf("%s/tenant/%s/application/%s/prod/deployment",
-				getConsoleURL(), opts.Deployment.Application.Tenant, opts.Deployment.Application.Application)))
+				opts.Target.Deployment().System.ConsoleURL, opts.Target.Deployment().Application.Tenant, opts.Target.Deployment().Application.Application)))
 		}
 		return nil
 	},
@@ -202,8 +207,8 @@ func writeWithBackup(pkg vespa.ApplicationPackage, filename, contents string) er
 	return ioutil.WriteFile(dst, []byte(contents), 0644)
 }
 
-func updateRegions(r *bufio.Reader, deploymentXML xml.Deployment) (xml.Deployment, error) {
-	regions, err := promptRegions(r, deploymentXML)
+func updateRegions(r *bufio.Reader, deploymentXML xml.Deployment, system vespa.System) (xml.Deployment, error) {
+	regions, err := promptRegions(r, deploymentXML, system)
 	if err != nil {
 		return xml.Deployment{}, err
 	}
@@ -222,7 +227,7 @@ func updateRegions(r *bufio.Reader, deploymentXML xml.Deployment) (xml.Deploymen
 	return deploymentXML, nil
 }
 
-func promptRegions(r *bufio.Reader, deploymentXML xml.Deployment) (string, error) {
+func promptRegions(r *bufio.Reader, deploymentXML xml.Deployment, system vespa.System) (string, error) {
 	fmt.Fprintln(stdout, color.Cyan("> Deployment regions"))
 	fmt.Fprintf(stdout, "Documentation: %s\n", color.Green("https://cloud.vespa.ai/en/reference/zones"))
 	fmt.Fprintf(stdout, "Example: %s\n\n", color.Yellow("aws-us-east-1c,aws-us-west-2a"))
@@ -238,7 +243,7 @@ func promptRegions(r *bufio.Reader, deploymentXML xml.Deployment) (string, error
 	validator := func(input string) error {
 		regions := strings.Split(input, ",")
 		for _, r := range regions {
-			if !xml.IsProdRegion(r, getSystem()) {
+			if !xml.IsProdRegion(r, system) {
 				return fmt.Errorf("invalid region %s", r)
 			}
 		}
