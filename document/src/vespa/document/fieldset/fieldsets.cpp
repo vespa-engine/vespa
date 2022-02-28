@@ -27,7 +27,7 @@ computeHash(const Field::Set & set) {
 FieldCollection::FieldCollection(const DocumentType& type, Field::Set set)
     : _set(std::move(set)),
       _hash(computeHash(_set)),
-      _docType(type)
+      _docType(&type)
 { }
 
 FieldCollection::FieldCollection(const FieldCollection&) = default;

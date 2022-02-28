@@ -52,19 +52,21 @@ public:
 
     FieldCollection(const DocumentType& docType, Field::Set set);
     FieldCollection(const FieldCollection &);
-    FieldCollection(FieldCollection&&) = default;
+    FieldCollection(FieldCollection&&) noexcept = default;
     ~FieldCollection() override;
+    FieldCollection& operator=(const FieldCollection&) = default;
+    FieldCollection& operator=(FieldCollection&&) noexcept = default;
 
     bool contains(const FieldSet& fields) const override;
     Type getType() const override { return Type::SET; }
 
-    const DocumentType& getDocumentType() const { return _docType; }
+    const DocumentType& getDocumentType() const { return *_docType; }
     const Field::Set& getFields() const { return _set; }
     uint64_t hash() const { return _hash; }
 private:
     Field::Set          _set;
     uint64_t            _hash;
-    const DocumentType& _docType;
+    const DocumentType* _docType;
 };
 
 }
