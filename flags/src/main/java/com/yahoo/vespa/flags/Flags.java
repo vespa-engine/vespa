@@ -383,6 +383,13 @@ public class Flags {
             "Takes effect immediately",
             ZONE_ID);
 
+    public static final UnboundBooleanFlag ALLOW_NO_TESTS = defineFeatureFlag(
+            "allow-no-tests", false,
+            List.of("jonmv"), "2022-02-28", "2022-06-25",
+            "Whether test jobs without any tests run are acceptable",
+            "Takes effect immediately",
+            TENANT_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
