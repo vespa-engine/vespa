@@ -303,21 +303,20 @@ func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, c
 	return nil, fmt.Errorf("unknown service: %s", name)
 }
 
-func (t *cloudTarget) SignRequest(req *http.Request, sigKeyId string) error {
-	if t.apiOptions.TLSOptions.KeyPair.Certificate != nil {
-		return nil // using mTLS
-	}
-	if t.apiOptions.APIKey != nil {
-		signer := NewRequestSigner(sigKeyId, t.apiOptions.APIKey)
-		if err := signer.SignRequest(req); err != nil {
-			return err
+func (t *cloudTarget) SignRequest(req *http.Request, keyID string) error {
+	if t.apiOptions.System.IsPublic() {
+		if t.apiOptions.APIKey != nil {
+			signer := NewRequestSigner(keyID, t.apiOptions.APIKey)
+			return signer.SignRequest(req)
+		} else {
+			return t.addAuth0AccessToken(req)
 		}
 	} else {
-		if err := t.addAuth0AccessToken(req); err != nil {
-			return err
+		if t.apiOptions.TLSOptions.KeyPair.Certificate == nil {
+			return fmt.Errorf("system %s requires a certificate for authentication", t.apiOptions.System.Name)
 		}
+		return nil
 	}
-	return nil
 }
 
 func (t *cloudTarget) CheckVersion(clientVersion version.Version) error {

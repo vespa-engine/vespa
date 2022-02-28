@@ -49,6 +49,9 @@ type System struct {
 	AthenzDomain string
 }
 
+// IsPublic returns whether system s is a public (Vespa Cloud) system.
+func (s *System) IsPublic() bool { return s.Name == PublicSystem.Name || s.Name == PublicCDSystem.Name }
+
 // GetSystem returns the system of given name.
 func GetSystem(name string) (System, error) {
 	switch name {
