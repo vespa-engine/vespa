@@ -35,7 +35,7 @@ public:
         FieldSet(const FieldSet&) = default;
         FieldSet(FieldSet&&) noexcept = default;
         FieldSet& operator=(const FieldSet&) = default;
-        FieldSet& operator=(FieldSet&&) = default;
+        FieldSet& operator=(FieldSet&&) noexcept = default;
 
         const vespalib::string & getName() const noexcept { return _name; }
         const Fields & getFields() const noexcept { return _fields; }

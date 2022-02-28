@@ -52,10 +52,10 @@ public:
 
     FieldCollection(const DocumentType& docType, Field::Set set);
     FieldCollection(const FieldCollection &);
-    FieldCollection(FieldCollection&&) = default;
+    FieldCollection(FieldCollection&&) noexcept = default;
     ~FieldCollection() override;
     FieldCollection& operator=(const FieldCollection&) = default;
-    FieldCollection& operator=(FieldCollection&&) = default;
+    FieldCollection& operator=(FieldCollection&&) noexcept = default;
 
     bool contains(const FieldSet& fields) const override;
     Type getType() const override { return Type::SET; }
