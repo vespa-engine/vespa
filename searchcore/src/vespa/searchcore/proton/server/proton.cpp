@@ -810,7 +810,7 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
             metrics.shared.update(_shared_service->shared().getStats());
             metrics.warmup.update(_shared_service->warmup().getStats());
             if (_shared_service->field_writer()) {
-                metrics.warmup.update(_shared_service->field_writer()->getStats());
+                metrics.field_writer.update(_shared_service->field_writer()->getStats());
             }
         }
     }
