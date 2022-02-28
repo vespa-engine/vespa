@@ -285,7 +285,7 @@ public class DeploymentTriggerTest {
         assertEquals(revision4, app.deploymentStatus().outstandingChange(InstanceName.defaultName()).application());
 
         // The third revision fails, and the fourth is chosen to replace it.
-        app.triggerJobs().jobAborted(systemTest).jobAborted(stagingTest).timeOutConvergence(systemTest);
+        app.triggerJobs().jobAborted(stagingTest).timeOutConvergence(systemTest);
         tester.outstandingChangeDeployer().run();
         tester.outstandingChangeDeployer().run();
         assertEquals(revision4, app.instance().change().application());

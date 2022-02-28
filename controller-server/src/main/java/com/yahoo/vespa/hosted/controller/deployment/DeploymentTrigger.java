@@ -199,7 +199,7 @@ public class DeploymentTrigger {
 
         DeploymentStatus status = jobs.deploymentStatus(application);
         Versions versions = Versions.from(instance.change(), application, status.deploymentFor(job), controller.readSystemVersion());
-        DeploymentStatus.Job toTrigger = new DeploymentStatus.Job(versions, Optional.of(controller.clock().instant()), instance.change());
+        DeploymentStatus.Job toTrigger = new DeploymentStatus.Job(job.type(), versions, Optional.of(controller.clock().instant()), instance.change());
         Map<JobId, List<DeploymentStatus.Job>> jobs = status.testJobs(Map.of(job, List.of(toTrigger)));
         if (jobs.isEmpty() || ! requireTests)
             jobs = Map.of(job, List.of(toTrigger));

@@ -194,7 +194,7 @@
             {
               "name": "system-test",
               "coolingDownUntil": "(ignore)",
-              "pending": "platform"
+              "pending": "application"
             },
             {
               "name": "staging-test",

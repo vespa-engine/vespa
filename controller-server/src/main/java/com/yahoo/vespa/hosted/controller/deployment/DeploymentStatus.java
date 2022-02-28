@@ -211,7 +211,7 @@ public class DeploymentStatus {
 
             Versions versions = Versions.from(change, application, firstProductionJobWithDeployment.flatMap(this::deploymentFor), systemVersion);
             if (step.completedAt(change, firstProductionJobWithDeployment).isEmpty())
-                jobs.merge(job, List.of(new Job(versions, step.readyAt(change), change)), DeploymentStatus::union);
+                jobs.merge(job, List.of(new Job(job.type(), versions, step.readyAt(change), change)), DeploymentStatus::union);
         });
         return Collections.unmodifiableMap(jobs);
     }
@@ -313,7 +313,8 @@ public class DeploymentStatus {
                 List<Change> changes = changes(job, step, change);
                 if (changes.isEmpty()) return;
                 for (Change partial : changes) {
-                    toRun.add(new Job(Versions.from(partial, application, deployment, systemVersion),
+                    toRun.add(new Job(job.type(),
+                                      Versions.from(partial, application, deployment, systemVersion),
                                       step.readyAt(partial, Optional.of(job)),
                                       partial));
                     // Assume first partial change is applied before the second.
@@ -433,7 +434,8 @@ public class DeploymentStatus {
                     declaredTest(job.application(), testType).ifPresent(testJob -> {
                         for (Job productionJob : versionsList)
                             if (allJobs.successOn(productionJob.versions()).get(testJob).isEmpty())
-                                testJobs.merge(testJob, List.of(new Job(productionJob.versions(),
+                                testJobs.merge(testJob, List.of(new Job(testJob.type(),
+                                                                        productionJob.versions(),
                                                                         jobSteps().get(testJob).readyAt(productionJob.change),
                                                                         productionJob.change)),
                                                DeploymentStatus::union);
@@ -449,7 +451,8 @@ public class DeploymentStatus {
                                                       && testJobs.get(test).stream().anyMatch(testJob -> testJob.versions().equals(productionJob.versions())))) {
                         JobId testJob = firstDeclaredOrElseImplicitTest(testType);
                         testJobs.merge(testJob,
-                                       List.of(new Job(productionJob.versions(),
+                                       List.of(new Job(testJob.type(),
+                                                       productionJob.versions(),
                                                        jobSteps.get(testJob).readyAt(productionJob.change),
                                                        productionJob.change)),
                                        DeploymentStatus::union);
@@ -873,8 +876,8 @@ public class DeploymentStatus {
         private final Optional<Instant> readyAt;
         private final Change change;
 
-        public Job(Versions versions, Optional<Instant> readyAt, Change change) {
-            this.versions = versions;
+        public Job(JobType type, Versions versions, Optional<Instant> readyAt, Change change) {
+            this.versions = type == systemTest ? versions.withoutSources() : versions;
             this.readyAt = readyAt;
             this.change = change;
         }

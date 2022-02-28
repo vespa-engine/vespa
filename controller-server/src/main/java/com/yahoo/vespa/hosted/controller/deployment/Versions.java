@@ -37,6 +37,11 @@ public class Versions {
         this.sourceApplication = requireNonNull(sourceApplication);
     }
 
+    /** A copy of this, without source versions. */
+    public Versions withoutSources() {
+        return new Versions(targetPlatform, targetApplication, Optional.empty(), Optional.empty());
+    }
+
     /** Target platform version for this */
     public Version targetPlatform() {
         return targetPlatform;
