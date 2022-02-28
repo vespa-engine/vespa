@@ -40,6 +40,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -160,7 +161,7 @@ public class EndpointCertificatesTest {
 
     @Test
     public void reuses_stored_certificate_metadata() {
-        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, 7, 0, "request_id",
+        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, 7, 0, "request_id", Optional.of("leaf-request-uuid"),
                 List.of("vt2ktgkqme5zlnp4tj4ttyor7fj3v7q5o.vespa.oath.cloud",
                         "default.default.global.vespa.oath.cloud",
                         "*.default.default.global.vespa.oath.cloud",
@@ -178,7 +179,7 @@ public class EndpointCertificatesTest {
 
     @Test
     public void reprovisions_certificate_when_necessary() {
-        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "uuid", List.of(), "issuer", Optional.empty(), Optional.empty()));
+        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "root-request-uuid", Optional.of("leaf-request-uuid"), List.of(), "issuer", Optional.empty(), Optional.empty()));
         secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), 0);
         secretStore.setSecret("vespa.tls.default.default.default-cert", X509CertificateUtils.toPem(testCertificate) + X509CertificateUtils.toPem(testCertificate), 0);
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, DeploymentSpec.empty);
@@ -191,7 +192,7 @@ public class EndpointCertificatesTest {
     public void reprovisions_certificate_with_added_sans_when_deploying_to_new_zone() {
         ZoneId testZone = tester.zoneRegistry().zones().routingMethod(RoutingMethod.exclusive).in(Environment.prod).zones().stream().skip(1).findFirst().orElseThrow().getId();
 
-        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "original-request-uuid", expectedSans, "mockCa", Optional.empty(), Optional.empty()));
+        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "original-request-uuid", Optional.of("leaf-request-uuid"), expectedSans, "mockCa", Optional.empty(), Optional.empty()));
         secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), -1);
         secretStore.setSecret("vespa.tls.default.default.default-cert", X509CertificateUtils.toPem(testCertificate) + X509CertificateUtils.toPem(testCertificate), -1);
 
@@ -202,7 +203,8 @@ public class EndpointCertificatesTest {
         assertTrue(endpointCertificateMetadata.isPresent());
         assertEquals(0, endpointCertificateMetadata.get().version());
         assertEquals(endpointCertificateMetadata, mockCuratorDb.readEndpointCertificateMetadata(testInstance.id()));
-        assertEquals("original-request-uuid", endpointCertificateMetadata.get().requestId());
+        assertEquals("original-request-uuid", endpointCertificateMetadata.get().rootRequestId());
+        assertNotEquals(Optional.of("leaf-request-uuid"), endpointCertificateMetadata.get().leafRequestId());
         assertEquals(Set.copyOf(expectedCombinedSans), Set.copyOf(endpointCertificateMetadata.get().requestedDnsSans()));
     }
 

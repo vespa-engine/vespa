@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.certificates;
 
 import com.yahoo.config.provision.ApplicationId;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,4 +19,6 @@ public interface EndpointCertificateProvider  {
     List<EndpointCertificateRequestMetadata> listCertificates();
 
     void deleteCertificate(ApplicationId applicationId, String requestId);
+
+    EndpointCertificateDetails certificateDetails(String requestId);
 }

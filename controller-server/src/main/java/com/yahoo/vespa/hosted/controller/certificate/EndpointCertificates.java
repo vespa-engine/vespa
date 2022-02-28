@@ -81,7 +81,7 @@ public class EndpointCertificates {
         if (!currentCertificateMetadata.get().requestedDnsSans().containsAll(requiredSansForZone)) {
             var reprovisionedCertificateMetadata =
                     provisionEndpointCertificate(deployment, currentCertificateMetadata, deploymentSpec)
-                            .withRequestId(currentCertificateMetadata.get().requestId()); // We're required to keep the original request ID
+                            .withRootRequestId(currentCertificateMetadata.get().rootRequestId()); // We're required to keep the original request ID
             curator.writeEndpointCertificateMetadata(instance.id(), reprovisionedCertificateMetadata);
             // Verification is unlikely to succeed in this case, as certificate must be available first - controller will retry
             certificateValidator.validate(reprovisionedCertificateMetadata, instance.id().serializedForm(), zone, requiredSansForZone);

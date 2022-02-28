@@ -33,8 +33,10 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
         long epochSecond = Instant.now().getEpochSecond();
         long inAnHour = epochSecond + 3600;
         String requestId = UUID.randomUUID().toString();
-        EndpointCertificateMetadata metadata = new EndpointCertificateMetadata(endpointCertificatePrefix + "-key", endpointCertificatePrefix + "-cert", 0, 0,
-                requestId, dnsNames, "mockCa", Optional.of(inAnHour), Optional.of(epochSecond));
+        int version = currentMetadata.map(c -> currentMetadata.get().version()+1).orElse(0);
+        EndpointCertificateMetadata metadata = new EndpointCertificateMetadata(endpointCertificatePrefix + "-key", endpointCertificatePrefix + "-cert", version, 0,
+                currentMetadata.map(EndpointCertificateMetadata::rootRequestId).orElse(requestId), Optional.of(requestId), dnsNames, "mockCa", Optional.of(inAnHour), Optional.of(epochSecond));
+        currentMetadata.ifPresent(c -> providerMetadata.remove(c.leafRequestId().orElseThrow()));
         providerMetadata.put(requestId, metadata);
         return metadata;
     }
@@ -44,10 +46,10 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
 
         return providerMetadata.values().stream()
                 .map(p -> new EndpointCertificateRequestMetadata(
-                        p.requestId(),
-                        "mock",
-                        "mock",
-                        "mock",
+                        p.leafRequestId().orElse(p.rootRequestId()),
+                        "requestor",
+                        "ticketId",
+                        "athenzDomain",
                         p.requestedDnsSans().stream()
                                 .map(san -> new EndpointCertificateRequestMetadata.DnsNameStatus(san, "done"))
                                 .collect(Collectors.toUnmodifiableList()),
@@ -67,4 +69,30 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
         providerMetadata.remove(requestId);
     }
 
+    @Override
+    public EndpointCertificateDetails certificateDetails(String requestId) {
+        var metadata = providerMetadata.get(requestId);
+
+        if(metadata==null) throw new RuntimeException("Unknown certificate request");
+
+        return new EndpointCertificateDetails(requestId,
+                "requestor",
+                "ok",
+                "ticket_id",
+                "athenz_domain",
+                metadata.requestedDnsSans().stream().map(name -> new EndpointCertificateRequestMetadata.DnsNameStatus(name, "done")).collect(Collectors.toList()),
+                "duration_sec",
+                "expiry",
+                metadata.keyName(),
+                metadata.keyName(),
+                "0",
+                metadata.certName(),
+                metadata.certName(),
+                "0",
+                "2021-09-28T00:14:31.946562037Z",
+                true,
+                "public_key_algo",
+                "issuer",
+                "serial");
+    }
 }
