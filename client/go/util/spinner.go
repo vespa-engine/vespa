@@ -25,10 +25,6 @@ func Spinner(text string, fn func() error) error {
 	return loading(initialMsg, doneMsg, failMsg, fn)
 }
 
-func Waiting(fn func() error) error {
-	return loading("", "", "", fn)
-}
-
 func loading(initialMsg, doneMsg, failMsg string, fn func() error) error {
 	done := make(chan struct{})
 	errc := make(chan error)
