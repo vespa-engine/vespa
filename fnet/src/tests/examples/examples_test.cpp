@@ -87,10 +87,6 @@ TEST("usage") {
         ChildProcess proc("exec ../../examples/frt/rpc/fnet_rpc_callback_client_app");
         EXPECT_FALSE(runProc(proc, done));
     }
-    {
-        ChildProcess proc("exec ../../examples/frt/rpc/vespa-rpc-proxy");
-        EXPECT_FALSE(runProc(proc, done));
-    }
 }
 
 TEST("timeout") {
@@ -216,25 +212,6 @@ TEST_MT_F("rpc callback client server", 2, std::atomic<bool>()) {
         TEST_BARRIER();
         EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/frt/rpc/fnet_rpc_callback_client_app tcp/localhost:%d",
                                                   PORT0).c_str()));
-        f1 = true;
-    }
-}
-
-TEST_MT_F("rpc callback client server with proxy", 3, std::atomic<bool>()) {
-    if (thread_id == 0) {
-        ChildProcess proc(vespalib::make_string("exec ../../examples/frt/rpc/fnet_rpc_callback_server_app tcp/%d",
-                                             PORT0).c_str());
-        TEST_BARRIER();
-        EXPECT_TRUE(runProc(proc, f1));
-    } else if (thread_id == 1) {
-        ChildProcess proc(vespalib::make_string("exec ../../examples/frt/rpc/vespa-rpc-proxy tcp/%d tcp/localhost:%d",
-                                             PORT1, PORT0).c_str());
-        TEST_BARRIER();
-        EXPECT_TRUE(runProc(proc, f1));
-    } else {
-        TEST_BARRIER();
-        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/frt/rpc/fnet_rpc_callback_client_app tcp/localhost:%d",
-                                                  PORT1).c_str()));
         f1 = true;
     }
 }
