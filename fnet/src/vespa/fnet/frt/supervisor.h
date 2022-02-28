@@ -49,7 +49,6 @@ private:
     FNET_Connector               *_connector;
     FRT_ReflectionManager         _reflectionManager;
     RPCHooks                      _rpcHooks;
-    std::unique_ptr<FRT_Method>   _methodMismatchHook;
 
 public:
     explicit FRT_Supervisor(FNET_Transport *transport);
