@@ -674,15 +674,12 @@ public class InternalStepRunner implements StepRunner {
                 controller.jobController().updateTestReport(id);
                 return Optional.of(error);
             case NO_TESTS:
-                if (isSetup) {
-                    return Optional.of(running);
-                }
                 TesterCloud.Suite suite = TesterCloud.Suite.of(id.type(), isSetup);
                 logger.log(INFO, "No tests were found in the test package, for test suite '" + suite + "'");
                 logger.log(INFO, "The test package must either contain basic HTTP tests under 'tests/<suite-name>/', " +
                                  "or a Java test bundle under 'components/' with at least one test with the annotation " +
                                  "for this suite. See docs.vespa.ai/en/testing.html for details.");
-                return Optional.of(running); // Let no tests pass until all apps meet this requirement.
+                return Optional.of(testFailure);
             case SUCCESS:
                 logger.log("Tests completed successfully.");
                 controller.jobController().updateTestReport(id);
