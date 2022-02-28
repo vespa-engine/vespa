@@ -107,7 +107,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                                 .ifPresent(instance -> instance.productionDeployments().forEach((zone, deployment) -> {
                                     if (deployment.at().isBefore(refreshTime)) {
                                         JobType job = JobType.from(controller().system(), zone).orElseThrow();
-                                        deploymentTrigger.reTrigger(applicationId, job);
+                                        deploymentTrigger.reTrigger(applicationId, job, "re-triggered by EndpointCertificateMaintainer");
                                         log.info("Re-triggering deployment job " + job.jobName() + " for instance " +
                                                 applicationId.serializedForm() + " to roll out refreshed endpoint certificate");
                                     }

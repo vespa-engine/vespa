@@ -105,6 +105,7 @@ class RunSerializer {
     private static final String convergenceSummaryField = "convergenceSummaryV2";
     private static final String testerCertificateField = "testerCertificate";
     private static final String isDryRunField = "isDryRun";
+    private static final String reasonField = "reason";
 
     Run runFromSlime(Slime slime) {
         return runFromSlime(slime.get());
@@ -150,7 +151,8 @@ class RunSerializer {
                        Optional.of(runObject.field(testerCertificateField))
                                .filter(Inspector::valid)
                                .map(certificate -> X509CertificateUtils.fromPem(certificate.asString())),
-                       runObject.field(isDryRunField).valid() && runObject.field(isDryRunField).asBool());
+                       runObject.field(isDryRunField).valid() && runObject.field(isDryRunField).asBool(),
+                       SlimeUtils.optionalString(runObject.field(reasonField)));
     }
 
     private Versions versionsFromSlime(Inspector versionsObject) {
@@ -257,6 +259,7 @@ class RunSerializer {
                     versionsObject.setObject(sourceField));
         });
         runObject.setBool(isDryRunField, run.isDryRun());
+        run.reason().ifPresent(reason -> runObject.setString(reasonField, reason));
     }
 
     private void toSlime(Version platformVersion, ApplicationVersion applicationVersion, Cursor versionsObject) {

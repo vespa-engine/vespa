@@ -31,7 +31,8 @@ public class RetriggerMaintainer extends ControllerMaintainer {
             retriggerEntries.stream()
                     .filter(this::needsTrigger)
                     .filter(entry -> readyToTrigger(entry.jobId()))
-                    .forEach(entry -> controller().applications().deploymentTrigger().reTrigger(entry.jobId().application(), entry.jobId().type()));
+                    .forEach(entry -> controller().applications().deploymentTrigger().reTrigger(entry.jobId().application(), entry.jobId().type(),
+                                                                                                "re-triggered by RetriggerMaintainer"));
 
             // Remove all jobs that has succeeded with the required job run and persist the list
             List<RetriggerEntry> remaining = retriggerEntries.stream()

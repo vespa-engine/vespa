@@ -49,7 +49,7 @@ public class DeploymentUpgrader extends ControllerMaintainer {
                         if ( ! isLikelyNightFor(job)) continue;
 
                         log.log(Level.FINE, "Upgrading deployment of " + instance.id() + " in " + deployment.zone());
-                        controller().jobController().start(instance.id(), JobType.from(controller().system(), deployment.zone()).get(), target, true);
+                        controller().jobController().start(instance.id(), JobType.from(controller().system(), deployment.zone()).get(), target, true, Optional.of("automated upgrade"));
                     } catch (Exception e) {
                         failures.incrementAndGet();
                         log.log(Level.WARNING, "Failed upgrading " + deployment + " of " + instance +

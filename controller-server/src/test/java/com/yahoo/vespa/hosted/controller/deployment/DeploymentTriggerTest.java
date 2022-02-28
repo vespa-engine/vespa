@@ -1988,9 +1988,9 @@ public class DeploymentTriggerTest {
         app.submit();
         tester.triggerJobs();
 
-        tester.deploymentTrigger().reTrigger(app.instanceId(), productionUsEast3);
-        tester.deploymentTrigger().reTriggerOrAddToQueue(app.deploymentIdIn(ZoneId.from("prod", "us-east-3")));
-        tester.deploymentTrigger().reTriggerOrAddToQueue(app.deploymentIdIn(ZoneId.from("prod", "us-east-3")));
+        tester.deploymentTrigger().reTrigger(app.instanceId(), productionUsEast3, null);
+        tester.deploymentTrigger().reTriggerOrAddToQueue(app.deploymentIdIn(ZoneId.from("prod", "us-east-3")), null);
+        tester.deploymentTrigger().reTriggerOrAddToQueue(app.deploymentIdIn(ZoneId.from("prod", "us-east-3")), null);
 
         List<RetriggerEntry> retriggerEntries = tester.controller().curator().readRetriggerEntries();
         Assert.assertEquals(1, retriggerEntries.size());

@@ -99,6 +99,7 @@ public class RunSerializerTest {
         assertEquals(applicationVersion.compileVersion(), run.versions().targetApplication().compileVersion());
         assertEquals("f00bad", run.versions().targetApplication().commit().get());
         assertEquals("https://github.com/user/repo/tree/f00bad", run.versions().targetApplication().sourceUrl().get());
+        assertEquals("because", run.reason().get());
         assertEquals(new Version(1, 2, 2), run.versions().sourcePlatform().get());
         assertEquals(ApplicationVersion.from(new SourceRevision("git@github.com:user/repo.git",
                                                                 "master",
@@ -153,8 +154,9 @@ public class RunSerializerTest {
         assertEquals(run.versions(), phoenix.versions());
         assertEquals(run.steps(), phoenix.steps());
         assertEquals(run.isDryRun(), phoenix.isDryRun());
+        assertEquals(run.reason(), phoenix.reason());
 
-        Run initial = Run.initial(id, run.versions(), run.isRedeployment(), run.start(), JobProfile.production);
+        Run initial = Run.initial(id, run.versions(), run.isRedeployment(), run.start(), JobProfile.production, Optional.empty());
         assertEquals(initial, serializer.runFromSlime(serializer.toSlime(initial)));
     }
 

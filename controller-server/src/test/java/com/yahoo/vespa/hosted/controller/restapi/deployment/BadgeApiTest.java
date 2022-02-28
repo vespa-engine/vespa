@@ -49,7 +49,7 @@ public class BadgeApiTest extends ControllerContainerTest {
         for (int i = 0; i < 31; i++)
             application.failDeployment(JobType.productionUsWest1);
         application.triggerJobs();
-        tester.controller().applications().deploymentTrigger().reTrigger(application.instanceId(), JobType.testEuWest1);
+        tester.controller().applications().deploymentTrigger().reTrigger(application.instanceId(), JobType.testEuWest1, "reason");
 
         tester.assertResponse(authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default"),
                               Files.readString(Paths.get(responseFiles + "overview.svg")), 200);

@@ -1126,7 +1126,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         DeploymentId deployment = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
         Principal principal = requireUserPrincipal(request);
         SupportAccess disallowed = controller.supportAccess().disallow(deployment, principal.getName());
-        controller.applications().deploymentTrigger().reTriggerOrAddToQueue(deployment);
+        controller.applications().deploymentTrigger().reTriggerOrAddToQueue(deployment, "re-triggered to disallow support access, by " + request.getJDiscRequest().getUserPrincipal().getName());
         return new SlimeJsonResponse(SupportAccessSerializer.serializeCurrentState(disallowed, controller.clock().instant()));
     }
 
@@ -1161,9 +1161,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         boolean reTrigger = requestObject.field("reTrigger").asBool();
         String triggered = reTrigger
                            ? controller.applications().deploymentTrigger()
-                                       .reTrigger(id, type).type().jobName()
+                                       .reTrigger(id, type, "re-triggered by " + request.getJDiscRequest().getUserPrincipal().getName()).type().jobName()
                            : controller.applications().deploymentTrigger()
-                                       .forceTrigger(id, type, request.getJDiscRequest().getUserPrincipal().getName(), requireTests)
+                                       .forceTrigger(id, type, "triggered by " + request.getJDiscRequest().getUserPrincipal().getName(), requireTests)
                                        .stream().map(job -> job.type().jobName()).collect(joining(", "));
         return new MessageResponse(triggered.isEmpty() ? "Job " + type.jobName() + " for " + id + " not triggered"
                                                        : "Triggered " + triggered + " for " + id);
