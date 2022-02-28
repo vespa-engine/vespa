@@ -21,6 +21,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -80,15 +81,13 @@ public class EndpointCertificateMaintainerTest {
 
         deploymentContext.submit(applicationPackage).runJob(systemTest).runJob(stagingTest).runJob(productionUsWest1);
 
-
-        tester.curator().writeEndpointCertificateMetadata(appId, exampleMetadata);
-
         assertEquals(1.0, maintainer.maintain(), 0.0000001);
-        assertTrue(tester.curator().readEndpointCertificateMetadata(appId).isPresent()); // cert should not be deleted, the app is deployed!
+        var metadata = tester.curator().readEndpointCertificateMetadata(appId).orElseThrow();
+        tester.controller().serviceRegistry().endpointCertificateProvider().certificateDetails(metadata.rootRequestId()); // cert should not be deleted, the app is deployed!
     }
 
     @Test
-    public void refreshed_certificate_is_deployed_after_four_days() {
+    public void refreshed_certificate_is_discovered_and_after_four_days_deployed() {
         var appId = ApplicationId.from("tenant", "application", "default");
 
         DeploymentTester deploymentTester = new DeploymentTester(tester);
@@ -98,27 +97,31 @@ public class EndpointCertificateMaintainerTest {
                 .build();
 
         DeploymentContext deploymentContext = deploymentTester.newDeploymentContext("tenant", "application", "default");
-
         deploymentContext.submit(applicationPackage).runJob(systemTest).runJob(stagingTest).runJob(productionUsWest1);
+        var originalMetadata = tester.curator().readEndpointCertificateMetadata(appId).orElseThrow();
 
-        tester.curator().writeEndpointCertificateMetadata(appId, exampleMetadata);
-
+        // cert should not be deleted, the app is deployed!
         assertEquals(1.0, maintainer.maintain(), 0.0000001);
-        assertTrue(tester.curator().readEndpointCertificateMetadata(appId).isPresent()); // cert should not be deleted, the app is deployed!
+        assertEquals(tester.curator().readEndpointCertificateMetadata(appId), Optional.of(originalMetadata));
+        tester.controller().serviceRegistry().endpointCertificateProvider().certificateDetails(originalMetadata.rootRequestId());
 
+        // This simulates a cert refresh performed 3 days later
         tester.clock().advance(Duration.ofDays(3));
+        secretStore.setSecret(originalMetadata.keyName(), "foo", 1);
+        secretStore.setSecret(originalMetadata.certName(), "bar", 1);
+        tester.controller().serviceRegistry().endpointCertificateProvider().requestCaSignedCertificate(appId, originalMetadata.requestedDnsSans(), Optional.of(originalMetadata));
 
-        secretStore.setSecret(exampleMetadata.keyName(), "foo", 1);
-        secretStore.setSecret(exampleMetadata.certName(), "bar", 1);
-
-        maintainer.maintain();
-
-        tester.clock().advance(Duration.ofDays(4));
-
+        // We should now pick up the new key and cert version + uuid, but not force trigger deployment yet
+        assertEquals(1.0, maintainer.maintain(), 0.0000001);
         deploymentContext.assertNotRunning(productionUsWest1);
+        var updatedMetadata = tester.curator().readEndpointCertificateMetadata(appId).orElseThrow();
+        assertNotEquals(originalMetadata.leafRequestId().orElseThrow(), updatedMetadata.leafRequestId().orElseThrow());
+        assertEquals(updatedMetadata.version(), originalMetadata.version()+1);
 
-        maintainer.maintain();
-
+        // after another 4 days, we should force trigger deployment if it hasn't already happened
+        tester.clock().advance(Duration.ofDays(4));
+        deploymentContext.assertNotRunning(productionUsWest1);
+        assertEquals(1.0, maintainer.maintain(), 0.0000001);
         deploymentContext.assertRunning(productionUsWest1);
     }
 
