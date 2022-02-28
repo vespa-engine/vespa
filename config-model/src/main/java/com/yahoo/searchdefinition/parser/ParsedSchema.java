@@ -36,7 +36,9 @@ public class ParsedSchema extends ParsedBlock {
     private final List<OnnxModel> onnxModels = new ArrayList<>();
     private final List<RankingConstant> rankingConstants = new ArrayList<>();
     private final List<String> inherited = new ArrayList<>();
+    private final List<String> inheritedByDocument = new ArrayList<>();
     private final Map<String, ParsedSchema> resolvedInherits = new HashMap();
+    private final Map<String, ParsedSchema> allResolvedInherits = new HashMap();
     private final Map<String, ParsedAnnotation> extraAnnotations = new HashMap<>();
     private final Map<String, ParsedDocumentSummary> docSums = new HashMap<>();
     private final Map<String, ParsedField> extraFields = new HashMap<>();
@@ -64,8 +66,10 @@ public class ParsedSchema extends ParsedBlock {
     List<ParsedStruct> getStructs() { return List.copyOf(extraStructs.values()); }
     List<RankingConstant> getRankingConstants() { return List.copyOf(rankingConstants); }
     List<String> getInherited() { return List.copyOf(inherited); }
+    List<String> getInheritedByDocument() { return List.copyOf(inheritedByDocument); }
     Map<String, ParsedRankProfile> getRankProfiles() { return Map.copyOf(rankProfiles); }
     List<ParsedSchema> getResolvedInherits() { return List.copyOf(resolvedInherits.values()); }
+    List<ParsedSchema> getAllResolvedInherits() { return List.copyOf(allResolvedInherits.values()); }
 
     void addAnnotation(ParsedAnnotation annotation) {
         String annName = annotation.name();
@@ -76,6 +80,8 @@ public class ParsedSchema extends ParsedBlock {
     void addDocument(ParsedDocument document) {
         verifyThat(myDocument == null,
                    "already has", myDocument, "so cannot add", document);
+        verifyThat(name().equals(document.name()),
+                   "schema " + name() + "can only contain document named " + name() + ", was: "+ document.name());
         this.myDocument = document;
     }
 
@@ -133,6 +139,8 @@ public class ParsedSchema extends ParsedBlock {
 
     void inherit(String other) { inherited.add(other); }
 
+    void inheritByDocument(String other) { inheritedByDocument.add(other); }
+
     void setStemming(Stemming value) {
         verifyThat((defaultStemming == null) || (defaultStemming == value),
                    "already has stemming", defaultStemming, "cannot also set", value);
@@ -144,6 +152,16 @@ public class ParsedSchema extends ParsedBlock {
         verifyThat(name.equals(parsed.name()), "resolveInherit name mismatch for", name);
         verifyThat(! resolvedInherits.containsKey(name), "double resolveInherit for", name);
         resolvedInherits.put(name, parsed);
+        var old = allResolvedInherits.put(name, parsed);
+        verifyThat(old == null || old == parsed, "conflicting resolveInherit for", name);
+    }
+
+    void resolveInheritByDocument(String name, ParsedSchema parsed) {
+        verifyThat(inheritedByDocument.contains(name),
+                   "resolveInheritByDocument for non-inherited name", name);
+        verifyThat(name.equals(parsed.name()), "resolveInheritByDocument name mismatch for", name);
+        var old = allResolvedInherits.put(name, parsed);
+        verifyThat(old == null || old == parsed, "conflicting resolveInherit for", name);
     }
 
 }

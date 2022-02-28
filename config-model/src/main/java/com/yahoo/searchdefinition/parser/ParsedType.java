@@ -13,10 +13,9 @@ import com.yahoo.tensor.TensorType;
 class ParsedType {
     public enum Variant {
         NONE,
-        BOOL, BYTE, INT, LONG,
-        STRING,
-        FLOAT, DOUBLE,
-        URI, PREDICATE, TENSOR,
+        BUILTIN,
+        POSITION,
+        TENSOR,
         ARRAY, WSET, MAP,
         DOC_REFERENCE,
         ANN_REFERENCE,
@@ -35,16 +34,16 @@ class ParsedType {
 
     private static Variant guessVariant(String name) {
         switch (name) {
-        case "bool":      return Variant.BOOL;
-        case "byte":      return Variant.BYTE;
-        case "int":       return Variant.INT;
-        case "long":      return Variant.LONG;
-        case "string":    return Variant.STRING;
-        case "float":     return Variant.FLOAT;
-        case "double":    return Variant.DOUBLE;
-        case "uri":       return Variant.URI;
-        case "predicate": return Variant.PREDICATE;
-        case "position":  return Variant.STRUCT;
+        case "bool":      return Variant.BUILTIN;
+        case "byte":      return Variant.BUILTIN;
+        case "int":       return Variant.BUILTIN;
+        case "long":      return Variant.BUILTIN;
+        case "string":    return Variant.BUILTIN;
+        case "float":     return Variant.BUILTIN;
+        case "double":    return Variant.BUILTIN;
+        case "uri":       return Variant.BUILTIN;
+        case "predicate": return Variant.BUILTIN;
+        case "position":  return Variant.POSITION;
         }
         return Variant.UNKNOWN;
     }
@@ -53,20 +52,28 @@ class ParsedType {
     public Variant getVariant() { return variant; }
     public ParsedType mapKeyType() { assert(variant == Variant.MAP); return keyType; }
     public ParsedType mapValueType() { assert(variant == Variant.MAP); return valType; }
-    public ParsedType nestedType() { assert(variant == Variant.ARRAY || variant == Variant.WSET); return valType; }
+    public ParsedType nestedType() { assert(variant == Variant.ARRAY || variant == Variant.WSET); assert(valType != null); return valType; }
     public boolean getCreateIfNonExistent() { assert(variant == Variant.WSET); return this.createIfNonExistent; }
     public boolean getRemoveIfZero() { assert(variant == Variant.WSET); return this.removeIfZero; }
     public ParsedType getReferencedDocumentType() { assert(variant == Variant.DOC_REFERENCE); return valType; }
     public TensorType getTensorType() { assert(variant == Variant.TENSOR); return tensorType; }
 
+    public String getNameOfReferencedAnnotation() {
+        assert(variant == Variant.ANN_REFERENCE);
+        String prefix = "annotationreference<";
+        int fromPos = prefix.length();
+        int toPos = name.length() - 1;
+        return name.substring(fromPos, toPos);
+    }
+
     private ParsedType(String name, Variant variant) {
         this(name, variant, null, null, null);
     }
     private ParsedType(String name, Variant variant, ParsedType vt) {
-        this(name, variant, vt, null, null);
+        this(name, variant, null, vt, null);
     }
     private ParsedType(String name, Variant variant, ParsedType kt, ParsedType vt) {
-        this(name, variant, vt, kt, null);
+        this(name, variant, kt, vt, null);
     }
     private ParsedType(String name, Variant variant, ParsedType kt, ParsedType vt, TensorType tType) {
         this.name = name;
@@ -77,22 +84,28 @@ class ParsedType {
     }
 
     static ParsedType mapType(ParsedType kt, ParsedType vt) {
+        assert(kt != null);
+        assert(vt != null);
         String name = "map<" + kt.name() + "," + vt.name() + ">";
         return new ParsedType(name, Variant.MAP, kt, vt);
     }
     static ParsedType arrayOf(ParsedType vt) {
+        assert(vt != null);
         return new ParsedType("array<" + vt.name() + ">", Variant.ARRAY, vt);
     }
     static ParsedType wsetOf(ParsedType vt) {
+        assert(vt != null);
         return new ParsedType("weightedset<" + vt.name() + ">", Variant.WSET, vt);
     }
     static ParsedType documentRef(ParsedType docType) {
+        assert(docType != null);
         return new ParsedType("reference<" + docType.name + ">", Variant.DOC_REFERENCE, docType);
     }
     static ParsedType annotationRef(String name) {
         return new ParsedType("annotationreference<" + name + ">", Variant.ANN_REFERENCE);
     }
     static ParsedType tensorType(TensorType tType) {
+        assert(tType != null);
         return new ParsedType(tType.toString(), Variant.TENSOR, null, null, tType);
     }
     static ParsedType fromName(String name) {

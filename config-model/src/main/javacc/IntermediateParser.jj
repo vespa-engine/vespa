@@ -427,16 +427,11 @@ void rootSchemaItem(ParsedSchema schema) : { }
  */
 ParsedSchema rootDocument() :
 {
-    ParsedSchema schema = new ParsedSchema("<unnamed>");
+    ParsedSchema schema = null;
 }
 {
-    ( (rootDocumentItem(schema) (<NL>)*)*<EOF> )
+    ( (schema = rootDocumentItem(schema) (<NL>)*)*<EOF> )
     {
-        if (schema.hasDocument()) {
-            ParsedDocument doc = schema.getDocument();
-            schema = new ParsedSchema(doc.name());
-            schema.addDocument(doc);
-        }
         return schema;
     }
 }
@@ -446,9 +441,16 @@ ParsedSchema rootDocument() :
  *
  * @param schema the schema object to modify.
  */
-void rootDocumentItem(ParsedSchema schema) : { }
+ParsedSchema rootDocumentItem(ParsedSchema schema) :
 {
-    ( namedDocument(schema) )
+    ParsedDocument doc = null;
+}
+{
+    ( doc = namedDocument() {
+        if (schema == null) schema = new ParsedSchema(doc.name());
+        schema.addDocument(doc);
+        return schema;
+    } )
 }
 
 /**
@@ -483,10 +485,8 @@ void document(ParsedSchema schema) :
 
 /**
  * Consumes a document element, explicitly named
- *
- * @param schema the schema object to add content to
  */
-void namedDocument(ParsedSchema schema) :
+ParsedDocument namedDocument() :
 {
     String name;
     ParsedDocument document;
@@ -496,7 +496,7 @@ void namedDocument(ParsedSchema schema) :
       [ inheritsDocument(document) (<NL>)* ]
       <LBRACE> (<NL>)* (documentBody(document) (<NL>)*)* <RBRACE> )
     {
-        schema.addDocument(document);
+        return document;
     }
 }
 

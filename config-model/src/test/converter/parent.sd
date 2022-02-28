@@ -1,0 +1,29 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search parent {
+
+  struct ps {
+    field wil type weightedset<string> {}
+    field after type array<long> {}
+    field psi type item {}
+  }
+
+  document parent inherits grandparent {
+
+    field b type string {
+      indexing: index | summary
+    }
+
+    field bps type ps {
+      indexing: summary
+    }
+
+    field location type array<position> {
+      indexing: attribute
+    }
+  }
+
+  struct redef {
+    field x type int {}
+    field y type string {}
+  }
+}

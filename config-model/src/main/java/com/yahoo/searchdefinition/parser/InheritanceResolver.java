@@ -28,7 +28,7 @@ public class InheritanceResolver {
                                                String.join(" -> ", seen));
         }
         seen.add(name);
-        for (ParsedSchema parent : schema.getResolvedInherits()) {
+        for (ParsedSchema parent : schema.getAllResolvedInherits()) {
             inheritanceCycleCheck(parent, seen);
         }
         seen.remove(name);
@@ -57,11 +57,23 @@ public class InheritanceResolver {
         for (ParsedSchema schema : parsedSchemas.values()) {
             if (! schema.hasDocument()) {
                 // TODO: is schema without a document even valid?
-                continue;
+                // could make sense for schemas with just rank-profile functions
+                // it makes life easier to behave as if there was en empty
+                // document block here.
+                var doc = new ParsedDocument(schema.name());
+                for (String inherit : schema.getInherited()) {
+                    doc.inherit(inherit);
+                }
+                schema.addDocument(doc);
             }
             ParsedDocument doc = schema.getDocument();
             var old = parsedDocs.put(doc.name(), doc);
-            assert(old == null);
+            if (old != null) {
+                throw new IllegalArgumentException("duplicate document declaration for " + doc.name());
+            }
+            for (String docInherit : doc.getInherited()) {
+                schema.inheritByDocument(docInherit);
+            }
         }
         for (ParsedDocument doc : parsedDocs.values()) {
             for (String inherit : doc.getInherited()) {
@@ -70,6 +82,14 @@ public class InheritanceResolver {
                     throw new IllegalArgumentException("document " + doc.name() + " inherits from unavailable document " + inherit);
                 }
                 doc.resolveInherit(inherit, parentDoc);
+            }
+        }
+        for (ParsedSchema schema : parsedSchemas.values()) {
+            for (String inherit : schema.getInheritedByDocument()) {
+                var parent = parsedSchemas.get(inherit);
+                assert(parent.hasDocument());
+                assert(parent.getDocument().name().equals(inherit));
+                schema.resolveInheritByDocument(inherit, parent);
             }
         }
     }
@@ -98,8 +118,8 @@ public class InheritanceResolver {
     public void resolveInheritance() {
         resolveSchemaInheritance();
         resolveDocumentInheritance();
-        checkSchemaCycles();
         checkDocumentCycles();
+        checkSchemaCycles();
     }
 
 }

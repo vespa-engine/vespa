@@ -14,6 +14,7 @@ class ParsedAnnotation extends ParsedBlock {
 
     private ParsedStruct wrappedStruct = null;
     private final List<String> inherited = new ArrayList<>();
+    private String ownedBy = null;
 
     ParsedAnnotation(String name) {
         super(name, "annotation");
@@ -21,7 +22,12 @@ class ParsedAnnotation extends ParsedBlock {
 
     public List<String> getInherited() { return List.copyOf(inherited); }
     public Optional<ParsedStruct> getStruct() { return Optional.ofNullable(wrappedStruct); }
+    public String getOwner() { return ownedBy; }
 
     void setStruct(ParsedStruct struct) { this.wrappedStruct = struct; }
     void inherit(String other) { inherited.add(other); }
+    void tagOwner(String owner) {
+        verifyThat(ownedBy == null, "already owned by", ownedBy);
+        this.ownedBy = owner;
+    }
 }

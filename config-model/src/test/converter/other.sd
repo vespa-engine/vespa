@@ -1,0 +1,16 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search other {
+
+  document other {
+
+    field c type tensor(d[512]) {
+       indexing: attribute
+    }
+
+    field d type tensor<float>(cat{},x[13]) {
+       indexing: attribute
+    }
+
+  }
+
+}
