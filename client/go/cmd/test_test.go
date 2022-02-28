@@ -49,8 +49,17 @@ func TestIllegalFileReference(t *testing.T) {
 	client.NextStatus(200)
 	client.NextStatus(200)
 	_, errBytes := execute(command{args: []string{"test", "testdata/tests/production-test/illegal-reference.json"}}, t, client)
-	assertRequests([]*http.Request{createRequest("GET", "http://127.0.0.1:8080/search/", "{}")}, client, t)
+	assertRequests([]*http.Request{createRequest("GET", "https://domain.tld", "{}")}, client, t)
 	assert.Equal(t, "\nError: error in Step 2: path may not point outside src/test/application, but 'foo/../../../../this-is-not-ok.json' does\nHint: See https://docs.vespa.ai/en/reference/testing\n", errBytes)
+}
+
+func TestIllegalRequestUri(t *testing.T) {
+	client := &mockHttpClient{}
+	client.NextStatus(200)
+	client.NextStatus(200)
+	_, errBytes := execute(command{args: []string{"test", "testdata/tests/production-test/illegal-uri.json"}}, t, client)
+	assertRequests([]*http.Request{createRequest("GET", "https://domain.tld/my-api", "")}, client, t)
+	assert.Equal(t, "\nError: error in Step 2: production tests may not specify requests against Vespa endpoints\nHint: See https://docs.vespa.ai/en/reference/testing\n", errBytes)
 }
 
 func TestProductionTest(t *testing.T) {

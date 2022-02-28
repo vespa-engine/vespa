@@ -206,6 +206,9 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 		return "", "", err
 	}
 	externalEndpoint := requestUrl.IsAbs()
+	if !externalEndpoint && filepath.Base(context.testsPath) == "production-test" {
+		return "", "", fmt.Errorf("production tests may not specify requests against Vespa endpoints")
+	}
 	if !externalEndpoint && !context.dryRun {
 		target, err := context.target()
 		if err != nil {
