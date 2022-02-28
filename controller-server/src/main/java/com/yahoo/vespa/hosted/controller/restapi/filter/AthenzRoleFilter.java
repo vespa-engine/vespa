@@ -152,7 +152,8 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
             && application.isPresent()) {
             ZoneId z = zone.get();
             futures.add(executor.submit(() -> {
-                if (canDeployToManualZones(identity, ((AthenzTenant) tenant.get()).domain(), application.get(), z))
+                if (tenant.get().type() == Tenant.Type.athenz
+                    && canDeployToManualZones(identity, ((AthenzTenant) tenant.get()).domain(), application.get(), z))
                     roleMemberships.add(Role.hostedDeveloper(tenant.get().name()));
             }));
         }
