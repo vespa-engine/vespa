@@ -13,7 +13,7 @@ import java.util.Optional;
  */
 public interface ToStringContext<NAMETYPE extends Name> {
 
-    static <NAMETYPE extends Name> ToStringContext<NAMETYPE> empty() { return new EmptyStringContext<NAMETYPE>(); }
+    static <NAMETYPE extends Name> ToStringContext<NAMETYPE> empty() { return new EmptyStringContext<>(); }
 
     /** Returns the name an identifier is bound to, or null if not bound in this context */
     String getBinding(String name);
