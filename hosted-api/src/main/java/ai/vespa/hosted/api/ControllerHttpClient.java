@@ -117,7 +117,8 @@ public abstract class ControllerHttpClient {
                                       POST,
                                       new MultiPartStreamer().addJson("submitOptions", metaToJson(submission))
                                                              .addFile("applicationZip", submission.applicationZip())
-                                                             .addFile("applicationTestZip", submission.applicationTestZip()))));
+                                                             .addFile("applicationTestZip", submission.applicationTestZip())),
+                              1));
     }
 
     /** Sends the given deployment to the given application in the given zone, or throws if this fails. */
@@ -125,7 +126,8 @@ public abstract class ControllerHttpClient {
         return toDeploymentResult(send(request(HttpRequest.newBuilder(deploymentJobPath(id, zone))
                                                           .timeout(Duration.ofMinutes(20)),
                                                POST,
-                                               toDataStream(deployment))));
+                                               toDataStream(deployment)),
+                                       1));
     }
 
     /** Deactivates the deployment of the given application in the given zone. */
@@ -333,8 +335,16 @@ public abstract class ControllerHttpClient {
 
     /** Returns a response with a 2XX status code, with up to 10 attempts, or throws. */
     private HttpResponse<byte[]> send(HttpRequest request) {
+        return send(request, 10);
+    }
+
+    /** Returns a response with a 2XX status code, after the specified number of attempts, or throws. */
+    private HttpResponse<byte[]> send(HttpRequest request, int attempts) {
+        if (attempts < 1)
+            throw new IllegalStateException("Programming error, attempts must be at least 1");
+
         UncheckedIOException thrown = null;
-        for (int attempt = 1; attempt <= 10; attempt++) {
+        for (int attempt = 1; attempt <= attempts; attempt++) {
             try {
                 HttpResponse<byte[]> response = client.send(request, ofByteArray());
                 if (response.statusCode() / 100 == 2)
