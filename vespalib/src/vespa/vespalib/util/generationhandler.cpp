@@ -179,10 +179,15 @@ GenerationHandler::incGeneration()
 {
     generation_t ngen = getNextGeneration();
 
+    // Make pending writes visible to other threads before checking for readers
+    // present in last generation.
+    std::atomic_thread_fence(std::memory_order_seq_cst);
     auto last = _last.load(std::memory_order_relaxed);
     if (last->getRefCount() == 0) {
         // Last generation is unused, morph it to new generation.  This is
         // the typical case when no readers are present.
+        // Note: atomic thread fence above is needed to avoid stale data in
+        // reader
         _generation = ngen;
         last->_generation.store(ngen, std::memory_order_relaxed);
         updateFirstUsedGeneration();
