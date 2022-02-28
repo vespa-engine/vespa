@@ -59,8 +59,10 @@ public final class DocumentProcessing {
      * @return Progress.DONE or Progress.FAILED
      * @throws RuntimeException if one of the document processors in the chain throws, or if the calling thread is interrupted
      */
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public DocumentProcessor.Progress process(ComponentSpecification chain, com.yahoo.docproc.Processing processing) {
         DocprocExecutor executor = getExecutor(chain);
+        // TODO Vespa 8: Use TBD instead, this method will be removed
         processing.setDocprocServiceRegistry(handler.getDocprocServiceRegistry());
         return executor.processUntilDone(processing);
     }
@@ -78,12 +80,15 @@ public final class DocumentProcessing {
      * @return any Progress
      * @throws RuntimeException if one of the document processors in the chain throws
      */
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public DocumentProcessor.Progress processOnce(ComponentSpecification chain, com.yahoo.docproc.Processing processing) {
         DocprocExecutor executor = getExecutor(chain);
+        // TODO Vespa 8: Use TBD instead, this method will be removed
         processing.setDocprocServiceRegistry(handler.getDocprocServiceRegistry());
         return executor.process(processing);
     }
 
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private DocprocExecutor getExecutor(ComponentSpecification chain) {
         DocprocService service = handler.getDocprocServiceRegistry().getComponent(chain);
         if (service == null) {

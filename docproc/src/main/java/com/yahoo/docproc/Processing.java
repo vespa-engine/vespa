@@ -140,10 +140,10 @@ public class Processing {
     }
 
     /**
-     * @deprecated  Use GVL TBD instead
+     * @deprecated  Use TBD instead
      */
-    // TODO GVL: used to: processing.setDocprocServiceRegistry(this.documentProcessingHandler.getDocprocServiceRegistry());
-    //           from Processor and LoggingRequestHandler
+    // TODO: used to: processing.setDocprocServiceRegistry(this.documentProcessingHandler.getDocprocServiceRegistry());
+    //       from Processor and LoggingRequestHandler
     @Deprecated(forRemoval = true, since="7")
     @SuppressWarnings("removal") // TODO Vespa 8: remove
     public void setDocprocServiceRegistry(ComponentRegistry<DocprocService> docprocServiceRegistry) {
@@ -166,9 +166,9 @@ public class Processing {
      * if #getServiceName returns a name that is not registered in {@link com.yahoo.docproc.DocprocService}.
      *
      * @return the service processing this, or null if unknown.
-     * @deprecated  Use GVL TBD instead
+     * @deprecated  Use TBD instead
      */
-    // TODO GVL: used to getService().getDocumentTypeManager() in subclasses of DocumentProcessor
+    // TODO: used to getService().getDocumentTypeManager() in subclasses of DocumentProcessor
     @Deprecated(forRemoval = true, since="7")
     @SuppressWarnings("removal") // TODO Vespa 8: remove
     public DocprocService getService() {
