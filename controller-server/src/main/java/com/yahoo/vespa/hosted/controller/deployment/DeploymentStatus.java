@@ -304,37 +304,34 @@ public class DeploymentStatus {
     private Map<JobId, List<Job>> productionJobs(InstanceName instance, Change change, boolean assumeUpgradesSucceed) {
         Map<JobId, List<Job>> jobs = new LinkedHashMap<>();
         jobSteps.forEach((job, step) -> {
-            // When computing eager test jobs for outstanding changes, assume current upgrade completes successfully.
-            Optional<Deployment> deployment = deploymentFor(job)
-                    .map(existing -> assumeUpgradesSucceed ? withChange(existing, change.withoutApplication()) : existing);
+            // When computing eager test jobs for outstanding changes, assume current change completes successfully.
+            Optional<Deployment> deployment = deploymentFor(job);
+            Optional<Version> existingPlatform = deployment.map(Deployment::version);
+            Optional<ApplicationVersion> existingApplication = deployment.map(Deployment::applicationVersion);
+            if (assumeUpgradesSucceed) {
+                Change currentChange = application.require(instance).change();
+                Versions target = Versions.from(currentChange, application, deployment, systemVersion);
+                existingPlatform = Optional.of(target.targetPlatform());
+                existingApplication = Optional.of(target.targetApplication());
+            }
             if (job.application().instance().equals(instance) && job.type().isProduction()) {
-
                 List<Job> toRun = new ArrayList<>();
                 List<Change> changes = changes(job, step, change);
                 if (changes.isEmpty()) return;
                 for (Change partial : changes) {
-                    toRun.add(new Job(job.type(),
-                                      Versions.from(partial, application, deployment, systemVersion),
-                                      step.readyAt(partial, Optional.of(job)),
-                                      partial));
+                    Job jobToRun = new Job(job.type(),
+                                           Versions.from(partial, application, existingPlatform, existingApplication, systemVersion),
+                                           step.readyAt(partial, Optional.of(job)),
+                                           partial);
+                    toRun.add(jobToRun);
                     // Assume first partial change is applied before the second.
-                    deployment = deployment.map(existing -> withChange(existing, partial));
+                    existingPlatform = Optional.of(jobToRun.versions.targetPlatform());
+                    existingApplication = Optional.of(jobToRun.versions.targetApplication());
                 }
                 jobs.put(job, toRun);
             }
         });
         return jobs;
-    }
-
-    private static Deployment withChange(Deployment deployment, Change change) {
-        return new Deployment(deployment.zone(),
-                              change.application().orElse(deployment.applicationVersion()),
-                              change.platform().orElse(deployment.version()),
-                              deployment.at(),
-                              deployment.metrics(),
-                              deployment.activity(),
-                              deployment.quota(),
-                              deployment.cost());
     }
 
     /** Changes to deploy with the given job, possibly split in two steps. */
