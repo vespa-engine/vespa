@@ -26,7 +26,7 @@ func init() {
 	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(prepareCmd)
 	rootCmd.AddCommand(activateCmd)
-	deployCmd.PersistentFlags().StringVarP(&zoneArg, zoneFlag, "z", "dev.aws-us-east-1c", "The zone to use for deployment")
+	deployCmd.PersistentFlags().StringVarP(&zoneArg, zoneFlag, "z", "", "The zone to use for deployment. This defaults to a dev zone")
 	deployCmd.PersistentFlags().StringVarP(&logLevelArg, logLevelFlag, "l", "error", `Log level for Vespa logs. Must be "error", "warning", "info" or "debug"`)
 }
 
@@ -73,7 +73,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 			return err
 		}
 
-		fmt.Print("\n")
+		log.Println()
 		if opts.IsCloud() {
 			printSuccess("Triggered deployment of ", color.Cyan(pkg.Path), " with run ID ", color.Cyan(sessionOrRunID))
 		} else {
@@ -82,9 +82,9 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 		if opts.IsCloud() {
 			log.Printf("\nUse %s for deployment status, or follow this deployment at", color.Cyan("vespa status"))
 			log.Print(color.Cyan(fmt.Sprintf("%s/tenant/%s/application/%s/dev/instance/%s/job/%s-%s/run/%d",
-				getConsoleURL(),
-				opts.Deployment.Application.Tenant, opts.Deployment.Application.Application, opts.Deployment.Application.Instance,
-				opts.Deployment.Zone.Environment, opts.Deployment.Zone.Region,
+				opts.Target.Deployment().System.ConsoleURL,
+				opts.Target.Deployment().Application.Tenant, opts.Target.Deployment().Application.Application, opts.Target.Deployment().Application.Instance,
+				opts.Target.Deployment().Zone.Environment, opts.Target.Deployment().Zone.Region,
 				sessionOrRunID)))
 		}
 		return waitForQueryService(sessionOrRunID)

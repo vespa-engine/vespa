@@ -169,12 +169,23 @@ func createCloudTarget(t *testing.T, url string, logWriter io.Writer) Target {
 	apiKey, err := CreateAPIKey()
 	assert.Nil(t, err)
 
-	target := CloudTarget("https://example.com", Deployment{
-		Application: ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"},
-		Zone:        ZoneID{Environment: "dev", Region: "us-north-1"},
-	}, apiKey, TLSOptions{KeyPair: x509KeyPair}, LogOptions{Writer: logWriter}, "", "", nil)
+	target, err := CloudTarget(
+		APIOptions{APIKey: apiKey, System: PublicSystem},
+		CloudDeploymentOptions{
+			Deployment: Deployment{
+				Application: ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"},
+				Zone:        ZoneID{Environment: "dev", Region: "us-north-1"},
+			},
+			TLSOptions: TLSOptions{KeyPair: x509KeyPair},
+		},
+		LogOptions{Writer: logWriter},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if ct, ok := target.(*cloudTarget); ok {
-		ct.apiURL = url
+		ct.apiOptions.System.URL = url
+		ct.ztsClient = &mockZTSClient{token: "foo bar"}
 	} else {
 		t.Fatalf("Wrong target type %T", ct)
 	}
@@ -194,4 +205,12 @@ func assertServiceWait(t *testing.T, expectedStatus int, target Target, service 
 	status, err := s.Wait(0)
 	assert.Nil(t, err)
 	assert.Equal(t, expectedStatus, status)
+}
+
+type mockZTSClient struct {
+	token string
+}
+
+func (c *mockZTSClient) AccessToken(domain string, certificate tls.Certificate) (string, error) {
+	return c.token, nil
 }

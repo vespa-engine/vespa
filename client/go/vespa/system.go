@@ -20,18 +20,20 @@ var PublicCDSystem = System{
 
 // MainSystem represents the main hosted Vespa system.
 var MainSystem = System{
-	Name:        "main",
-	URL:         "https://api.vespa.ouryahoo.com:4443",
-	ConsoleURL:  "https://console.vespa.ouryahoo.com",
-	DefaultZone: ZoneID{Environment: "dev", Region: "us-east-1"},
+	Name:         "main",
+	URL:          "https://api.vespa.ouryahoo.com:4443",
+	ConsoleURL:   "https://console.vespa.ouryahoo.com",
+	DefaultZone:  ZoneID{Environment: "dev", Region: "us-east-1"},
+	AthenzDomain: "vespa.vespa",
 }
 
 // CDSystem represents the CD variant of the hosted Vespa system.
 var CDSystem = System{
-	Name:        "cd",
-	URL:         "https://api-cd.vespa.ouryahoo.com:4443",
-	ConsoleURL:  "https://console-cd.vespa.ouryahoo.com",
-	DefaultZone: ZoneID{Environment: "dev", Region: "cd-us-west-1"},
+	Name:         "cd",
+	URL:          "https://api-cd.vespa.ouryahoo.com:4443",
+	ConsoleURL:   "https://console-cd.vespa.ouryahoo.com",
+	DefaultZone:  ZoneID{Environment: "dev", Region: "cd-us-west-1"},
+	AthenzDomain: "vespa.vespa.cd",
 }
 
 // System represents a Vespa system.
@@ -40,8 +42,11 @@ type System struct {
 	// URL is the API URL for this system.
 	URL        string
 	ConsoleURL string
-	// DefaultZone declares the default zone for manual deployments to this system.
+	// DefaultZone is default zone to use in manual deployments to this system.
 	DefaultZone ZoneID
+	// AthenzDomain is the Athenz domain used by this system. This is empty for systems not using Athenz for tenant
+	// authentication.
+	AthenzDomain string
 }
 
 // GetSystem returns the system of given name.

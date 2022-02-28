@@ -79,11 +79,19 @@ func doApiKey(_ *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
+	targetType, err := getTargetType()
+	if err != nil {
+		return err
+	}
+	system, err := getSystem(targetType)
+	if err != nil {
+		return err
+	}
 	apiKeyFile := cfg.APIKeyPath(app.Tenant)
 	if util.PathExists(apiKeyFile) && !overwriteKey {
 		err := fmt.Errorf("refusing to overwrite %s", apiKeyFile)
 		printErrHint(err, "Use -f to overwrite it")
-		printPublicKey(apiKeyFile, app.Tenant)
+		printPublicKey(system, apiKeyFile, app.Tenant)
 		return ErrCLI{error: err, quiet: true}
 	}
 	apiKey, err := vespa.CreateAPIKey()
@@ -92,13 +100,13 @@ func doApiKey(_ *cobra.Command, _ []string) error {
 	}
 	if err := ioutil.WriteFile(apiKeyFile, apiKey, 0600); err == nil {
 		printSuccess("API private key written to ", apiKeyFile)
-		return printPublicKey(apiKeyFile, app.Tenant)
+		return printPublicKey(system, apiKeyFile, app.Tenant)
 	} else {
 		return fmt.Errorf("failed to write: %s: %w", apiKeyFile, err)
 	}
 }
 
-func printPublicKey(apiKeyFile, tenant string) error {
+func printPublicKey(system vespa.System, apiKeyFile, tenant string) error {
 	pemKeyData, err := ioutil.ReadFile(apiKeyFile)
 	if err != nil {
 		return fmt.Errorf("failed to read: %s: %w", apiKeyFile, err)
@@ -118,7 +126,7 @@ func printPublicKey(apiKeyFile, tenant string) error {
 	log.Printf("\nThis is your public key:\n%s", color.Green(pemPublicKey))
 	log.Printf("Its fingerprint is:\n%s\n", color.Cyan(fingerprint))
 	log.Print("\nTo use this key in Vespa Cloud click 'Add custom key' at")
-	log.Printf(color.Cyan("%s/tenant/%s/keys").String(), getConsoleURL(), tenant)
+	log.Printf(color.Cyan("%s/tenant/%s/keys").String(), system.ConsoleURL, tenant)
 	log.Print("and paste the entire public key including the BEGIN and END lines.")
 	return nil
 }

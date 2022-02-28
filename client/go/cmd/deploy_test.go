@@ -35,7 +35,7 @@ func TestDeployZipWithURLTargetArgument(t *testing.T) {
 
 	client := &mock.HTTPClient{}
 	assert.Equal(t,
-		"Success: Deployed "+applicationPackage+"\n",
+		"\nSuccess: Deployed "+applicationPackage+"\n",
 		executeCommand(t, client, arguments, []string{}))
 	assertDeployRequestMade("http://target:19071", client, t)
 }
@@ -107,7 +107,7 @@ func TestDeployError(t *testing.T) {
 func assertDeploy(applicationPackage string, arguments []string, t *testing.T) {
 	client := &mock.HTTPClient{}
 	assert.Equal(t,
-		"Success: Deployed "+applicationPackage+"\n",
+		"\nSuccess: Deployed "+applicationPackage+"\n",
 		executeCommand(t, client, arguments, []string{}))
 	assertDeployRequestMade("http://127.0.0.1:19071", client, t)
 }
@@ -174,6 +174,6 @@ func assertDeployServerError(t *testing.T, status int, errorMessage string) {
 	client.NextResponse(status, errorMessage)
 	_, outErr := execute(command{args: []string{"deploy", "testdata/applications/withTarget/target/application.zip"}}, t, client)
 	assert.Equal(t,
-		"Error: error from deploy service at 127.0.0.1:19071 (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
+		"Error: error from deploy api at 127.0.0.1:19071 (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
 		outErr)
 }

@@ -54,7 +54,6 @@ Vespa documentation: https://docs.vespa.ai`,
 	colorArg       string
 	quietArg       bool
 	apiKeyFileArg  string
-	apiKeyArg      string
 	stdin          io.ReadWriter = os.Stdin
 
 	color  = aurora.NewAurora(false)

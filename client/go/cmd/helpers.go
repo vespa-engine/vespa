@@ -5,6 +5,8 @@
 package cmd
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -27,6 +29,40 @@ func printErrHint(err error, hints ...string) {
 
 func printSuccess(msg ...interface{}) {
 	log.Print(color.Green("Success: "), fmt.Sprint(msg...))
+}
+
+func athenzPath(filename string) (string, error) {
+	userHome, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(userHome, ".athenz", filename), nil
+}
+
+func athenzKeyPair() (tls.Certificate, error) {
+	certFile, err := athenzPath("cert")
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+	keyFile, err := athenzPath("key")
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+	kp, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+	cert, err := x509.ParseCertificate(kp.Certificate[0])
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+	now := time.Now()
+	expiredAt := cert.NotAfter
+	if expiredAt.Before(now) {
+		delta := now.Sub(expiredAt).Truncate(time.Second)
+		return tls.Certificate{}, errHint(fmt.Errorf("certificate %s expired at %s (%s ago)", certFile, cert.NotAfter, delta), "Try renewing certificate with 'athenz-user-cert'")
+	}
+	return kp, nil
 }
 
 func vespaCliHome() (string, error) {
@@ -59,16 +95,20 @@ func vespaCliCacheDir() (string, error) {
 	return cacheDir, nil
 }
 
-func deploymentFromArgs() (vespa.Deployment, error) {
-	zone, err := vespa.ZoneFromString(zoneArg)
-	if err != nil {
-		return vespa.Deployment{}, err
+func deploymentFromArgs(system vespa.System) (vespa.Deployment, error) {
+	zone := system.DefaultZone
+	var err error
+	if zoneArg != "" {
+		zone, err = vespa.ZoneFromString(zoneArg)
+		if err != nil {
+			return vespa.Deployment{}, err
+		}
 	}
 	app, err := getApplication()
 	if err != nil {
 		return vespa.Deployment{}, err
 	}
-	return vespa.Deployment{Application: app, Zone: zone}, nil
+	return vespa.Deployment{System: system, Application: app, Zone: zone}, nil
 }
 
 func applicationSource(args []string) string {
@@ -124,28 +164,18 @@ func getService(service string, sessionOrRunID int64, cluster string) (*vespa.Se
 
 func getEndpointsOverride() string { return os.Getenv("VESPA_CLI_ENDPOINTS") }
 
-func getSystem() string { return os.Getenv("VESPA_CLI_CLOUD_SYSTEM") }
-
-func getSystemName() string {
-	if getSystem() == "publiccd" {
-		return "publiccd"
+func getSystem(targetType string) (vespa.System, error) {
+	name := os.Getenv("VESPA_CLI_CLOUD_SYSTEM")
+	if name != "" {
+		return vespa.GetSystem(name)
 	}
-	return "public"
-}
-
-func getConsoleURL() string {
-	if getSystem() == "publiccd" {
-		return "https://console-cd.vespa.oath.cloud"
+	switch targetType {
+	case vespa.TargetHosted:
+		return vespa.MainSystem, nil
+	case vespa.TargetCloud:
+		return vespa.PublicSystem, nil
 	}
-	return "https://console.vespa.oath.cloud"
-
-}
-
-func getApiURL() string {
-	if getSystem() == "publiccd" {
-		return "https://api.vespa-external-cd.aws.oath.cloud:4443"
-	}
-	return "https://api.vespa-external.aws.oath.cloud:4443"
+	return vespa.System{}, fmt.Errorf("no default system found for %s target", targetType)
 }
 
 func getTarget() (vespa.Target, error) {
@@ -172,53 +202,80 @@ func createTarget() (vespa.Target, error) {
 		return vespa.CustomTarget(targetType), nil
 	}
 	switch targetType {
-	case "local":
+	case vespa.TargetLocal:
 		return vespa.LocalTarget(), nil
-	case "cloud":
-		cfg, err := LoadConfig()
-		if err != nil {
-			return nil, err
-		}
-		deployment, err := deploymentFromArgs()
-		if err != nil {
-			return nil, err
-		}
-		endpoints, err := getEndpointsFromEnv()
-		if err != nil {
-			return nil, err
-		}
+	case vespa.TargetCloud, vespa.TargetHosted:
+		return createCloudTarget(targetType)
+	}
+	return nil, errHint(fmt.Errorf("invalid target: %s", targetType), "Valid targets are 'local', 'cloud', 'hosted' or an URL")
+}
 
-		var apiKey []byte = nil
-		if cfg.UseAPIKey(deployment.Application.Tenant) {
+func createCloudTarget(targetType string) (vespa.Target, error) {
+	cfg, err := LoadConfig()
+	if err != nil {
+		return nil, err
+	}
+	system, err := getSystem(targetType)
+	if err != nil {
+		return nil, err
+	}
+	deployment, err := deploymentFromArgs(system)
+	if err != nil {
+		return nil, err
+	}
+	endpoints, err := getEndpointsFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	var (
+		apiKey               []byte
+		authConfigPath       string
+		apiTLSOptions        vespa.TLSOptions
+		deploymentTLSOptions vespa.TLSOptions
+	)
+	if targetType == vespa.TargetCloud {
+		if cfg.UseAPIKey(system, deployment.Application.Tenant) {
 			apiKey, err = cfg.ReadAPIKey(deployment.Application.Tenant)
 			if err != nil {
 				return nil, err
 			}
 		}
+		authConfigPath = cfg.AuthConfigPath()
 		kp, err := cfg.X509KeyPair(deployment.Application)
 		if err != nil {
 			return nil, errHint(err, "Deployment to cloud requires a certificate. Try 'vespa auth cert'")
 		}
-
-		return vespa.CloudTarget(
-			getApiURL(),
-			deployment,
-			apiKey,
-			vespa.TLSOptions{
-				KeyPair:         kp.KeyPair,
-				CertificateFile: kp.CertificateFile,
-				PrivateKeyFile:  kp.PrivateKeyFile,
-			},
-			vespa.LogOptions{
-				Writer: stdout,
-				Level:  vespa.LogLevel(logLevelArg),
-			},
-			cfg.AuthConfigPath(),
-			getSystemName(),
-			endpoints,
-		), nil
+		deploymentTLSOptions = vespa.TLSOptions{
+			KeyPair:         kp.KeyPair,
+			CertificateFile: kp.CertificateFile,
+			PrivateKeyFile:  kp.PrivateKeyFile,
+		}
+	} else if targetType == vespa.TargetHosted {
+		kp, err := athenzKeyPair()
+		if err != nil {
+			return nil, err
+		}
+		apiTLSOptions = vespa.TLSOptions{KeyPair: kp}
+		deploymentTLSOptions = apiTLSOptions
+	} else {
+		return nil, fmt.Errorf("invalid cloud target: %s", targetType)
 	}
-	return nil, errHint(fmt.Errorf("invalid target: %s", targetType), "Valid targets are 'local', 'cloud' or an URL")
+	apiOptions := vespa.APIOptions{
+		System:         system,
+		TLSOptions:     apiTLSOptions,
+		APIKey:         apiKey,
+		AuthConfigPath: authConfigPath,
+	}
+	deploymentOptions := vespa.CloudDeploymentOptions{
+		Deployment:  deployment,
+		TLSOptions:  deploymentTLSOptions,
+		ClusterURLs: endpoints,
+	}
+	logOptions := vespa.LogOptions{
+		Writer: stdout,
+		Level:  vespa.LogLevel(logLevelArg),
+	}
+	return vespa.CloudTarget(apiOptions, deploymentOptions, logOptions)
 }
 
 func waitForService(service string, sessionOrRunID int64) error {
@@ -245,22 +302,12 @@ func waitForService(service string, sessionOrRunID int64) error {
 func getDeploymentOpts(cfg *Config, pkg vespa.ApplicationPackage, target vespa.Target) (vespa.DeploymentOptions, error) {
 	opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target}
 	if opts.IsCloud() {
-		deployment, err := deploymentFromArgs()
-		if err != nil {
-			return vespa.DeploymentOptions{}, err
-		}
-		if !opts.ApplicationPackage.HasCertificate() {
+		if target.Type() == vespa.TargetCloud && !opts.ApplicationPackage.HasCertificate() {
 			hint := "Try 'vespa auth cert'"
 			return vespa.DeploymentOptions{}, errHint(fmt.Errorf("missing certificate in application package"), "Applications in Vespa Cloud require a certificate", hint)
 		}
-		if cfg.UseAPIKey(deployment.Application.Tenant) {
-			opts.APIKey, err = cfg.ReadAPIKey(deployment.Application.Tenant)
-			if err != nil {
-				return vespa.DeploymentOptions{}, err
-			}
-		}
-		opts.Deployment = deployment
 	}
+	opts.Timeout = time.Duration(waitSecsArg) * time.Second
 	return opts, nil
 }
 

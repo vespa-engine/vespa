@@ -197,7 +197,7 @@ func (c *Config) ReadAPIKey(tenantName string) ([]byte, error) {
 }
 
 // UseAPIKey checks if api key should be used be checking if api-key or api-key-file has been set.
-func (c *Config) UseAPIKey(tenantName string) bool {
+func (c *Config) UseAPIKey(system vespa.System, tenantName string) bool {
 	if _, err := c.Get(apiKeyFlag); err == nil {
 		return true
 	}
@@ -207,15 +207,11 @@ func (c *Config) UseAPIKey(tenantName string) bool {
 
 	// If no Auth0 token is created, fall back to tenant api key, but warn that this functionality is deprecated
 	// TODO: Remove this when users have had time to migrate over to Auth0 device flow authentication
-	a, err := auth0.GetAuth0(c.AuthConfigPath(), getSystemName(), getApiURL())
+	a, err := auth0.GetAuth0(c.AuthConfigPath(), system.Name, system.URL)
 	if err != nil || !a.HasSystem() {
 		fmt.Fprintln(stderr, "Defaulting to tenant API key is deprecated. Use Auth0 device flow: 'vespa auth login' instead")
-		if !util.PathExists(c.APIKeyPath(tenantName)) {
-			return false
-		}
-		return true
+		return util.PathExists(c.APIKeyPath(tenantName))
 	}
-
 	return false
 }
 
@@ -283,7 +279,7 @@ func (c *Config) Set(option, value string) error {
 	switch option {
 	case targetFlag:
 		switch value {
-		case "local", "cloud":
+		case vespa.TargetLocal, vespa.TargetCloud, vespa.TargetHosted:
 			viper.Set(option, value)
 			return nil
 		}

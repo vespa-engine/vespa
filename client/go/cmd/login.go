@@ -18,7 +18,15 @@ var loginCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		a, err := auth0.GetAuth0(cfg.AuthConfigPath(), getSystemName(), getApiURL())
+		targetType, err := getTargetType()
+		if err != nil {
+			return err
+		}
+		system, err := getSystem(targetType)
+		if err != nil {
+			return err
+		}
+		a, err := auth0.GetAuth0(cfg.AuthConfigPath(), system.Name, system.URL)
 		if err != nil {
 			return err
 		}
