@@ -35,6 +35,7 @@ public class ProcessingUpdateTestCase {
     private DocumentTypeManager dtm;
 
     @Test
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public void testProcessingUpdates() {
         DocumentType articleType = new DocumentType("article");
         Field bodyField = new Field("body", DataType.STRING);

@@ -42,6 +42,7 @@ import java.util.Set;
  *
  * @author Vegard Havdal
  */
+@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class ProxyDocument extends Document implements DocumentOperationWrapper {
 
     private final Map<String, String> fieldMap;

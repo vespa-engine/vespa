@@ -20,6 +20,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author Einar M. R. Rosenvinge
  */
+@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class FailingPermanentlyDocumentProcessingTestCase {
 
     /**

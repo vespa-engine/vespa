@@ -29,8 +29,10 @@ import java.util.logging.Logger;
  * <p>This class is thread safe.</p>
  *
  * @author bratseth
+ * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
-//TODO: Vespa 8: This class and a lot of other in this package should not be part of PublicAPI
+@SuppressWarnings("removal") // TODO Vespa 8: remove
+@Deprecated(forRemoval = true, since = "7")
 public class DocprocService extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(DocprocService.class.getName());

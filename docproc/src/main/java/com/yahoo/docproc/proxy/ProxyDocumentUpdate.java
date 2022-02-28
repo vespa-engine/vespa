@@ -18,6 +18,7 @@ import java.util.Map;
  * 
  * @author vegardh
  */
+@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class ProxyDocumentUpdate extends DocumentUpdate implements DocumentOperationWrapper {
 
     private DocumentUpdate docU;

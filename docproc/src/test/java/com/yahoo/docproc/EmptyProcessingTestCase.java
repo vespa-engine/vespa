@@ -4,8 +4,9 @@ package com.yahoo.docproc;
 import org.junit.Test;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
+@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class EmptyProcessingTestCase {
 
     @Test

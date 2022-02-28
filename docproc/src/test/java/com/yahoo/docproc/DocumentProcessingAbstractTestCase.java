@@ -15,6 +15,7 @@ import static org.junit.Assert.assertEquals;
  *
  * @author bratseth
  */
+@SuppressWarnings("removal") // TODO Vespa 8: remove
 public abstract class DocumentProcessingAbstractTestCase {
 
     /**

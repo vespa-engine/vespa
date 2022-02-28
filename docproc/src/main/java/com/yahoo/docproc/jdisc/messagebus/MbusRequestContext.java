@@ -53,6 +53,7 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
     public final static String internalNoThrottledSource = "internalNoThrottledSource";
     private final static String internalNoThrottledSourcePath = "/" + internalNoThrottledSource;
 
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public MbusRequestContext(MbusRequest request, ResponseHandler responseHandler,
                               ComponentRegistry<DocprocService> docprocServiceComponentRegistry,
                               ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry,
@@ -111,6 +112,7 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
     }
 
     @Override
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public void processingFailed(Exception exception) {
         ErrorCode errorCode;
         if (exception instanceof TransientFailureException) {

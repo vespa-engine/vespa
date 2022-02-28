@@ -22,7 +22,9 @@ import static java.util.stream.Collectors.groupingBy;
  * An executor executed incoming processings on its CallStack
  *
  * @author Einar M R Rosenvinge
+ * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
+@Deprecated(forRemoval = true, since = "7")
 public class DocprocExecutor {
 
     private final static String METRIC_NAME_DOCUMENTS_PROCESSED = "documents_processed";

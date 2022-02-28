@@ -42,6 +42,7 @@ import java.util.logging.Logger;
  */
 public abstract class DocumentProcessor extends ChainedComponent {
 
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     static Logger log = Logger.getLogger(DocprocService.class.getName());
 
     /** Schema map for doctype-fieldnames */

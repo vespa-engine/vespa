@@ -6,7 +6,9 @@ package com.yahoo.docproc;
  * not stacktrace.
  *
  * @author Mathias Mølster Lidal
+ * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
+@Deprecated(forRemoval = true, since = "7")
 public class HandledProcessingException extends RuntimeException {
 
     public HandledProcessingException(String message) {
