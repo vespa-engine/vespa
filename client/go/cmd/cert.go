@@ -69,6 +69,7 @@ $ vespa auth cert -a my-tenant.my-app.my-instance path/to/application/package`,
 	RunE:              doCert,
 }
 
+// TODO: Remove this after 2022-06-01
 var deprecatedCertCmd = &cobra.Command{
 	Use:               "cert",
 	Short:             "Create a new private key and self-signed certificate for Vespa Cloud deployment",
