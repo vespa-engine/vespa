@@ -18,6 +18,7 @@ public class NodeResourcesSerializer {
     private static final String bandwidthKey = "bandwidth";
     private static final String diskSpeedKey = "diskSpeed";
     private static final String storageTypeKey = "storageType";
+    private static final String architectureKey = "architecture";
 
     static void toSlime(NodeResources resources, Cursor resourcesObject) {
         if (resources.isUnspecified()) return;
@@ -27,6 +28,7 @@ public class NodeResourcesSerializer {
         resourcesObject.setDouble(bandwidthKey, resources.bandwidthGbps());
         resourcesObject.setString(diskSpeedKey, diskSpeedToString(resources.diskSpeed()));
         resourcesObject.setString(storageTypeKey, storageTypeToString(resources.storageType()));
+        resourcesObject.setString(architectureKey, architectureToString(resources.architecture()));
     }
 
     static NodeResources resourcesFromSlime(Inspector resources) {
@@ -36,7 +38,8 @@ public class NodeResourcesSerializer {
                                  resources.field(diskKey).asDouble(),
                                  resources.field(bandwidthKey).asDouble(),
                                  diskSpeedFromSlime(resources.field(diskSpeedKey)),
-                                 storageTypeFromSlime(resources.field(storageTypeKey)));
+                                 storageTypeFromSlime(resources.field(storageTypeKey)),
+                                 architectureFromSlime(resources.field(architectureKey)));
     }
 
     static Optional<NodeResources> optionalResourcesFromSlime(Inspector resources) {
@@ -62,7 +65,6 @@ public class NodeResourcesSerializer {
     }
 
     private static NodeResources.StorageType storageTypeFromSlime(Inspector storageType) {
-        if ( ! storageType.valid()) return NodeResources.StorageType.getDefault(); // TODO: Remove this line after December 2019
         switch (storageType.asString()) {
             case "remote" : return NodeResources.StorageType.remote;
             case "local" : return NodeResources.StorageType.local;
@@ -77,6 +79,25 @@ public class NodeResourcesSerializer {
             case local : return "local";
             case any : return "any";
             default: throw new IllegalStateException("Illegal storage-type value '" + storageType + "'");
+        }
+    }
+
+    private static NodeResources.Architecture architectureFromSlime(Inspector architecture) {
+        if ( ! architecture.valid()) return NodeResources.Architecture.getDefault(); // TODO: Remove this line after March 2022
+        switch (architecture.asString()) {
+            case "arm64" : return NodeResources.Architecture.arm64;
+            case "x86_64" : return NodeResources.Architecture.x86_64;
+            case "any" : return NodeResources.Architecture.any;
+            default: throw new IllegalStateException("Illegal architecture value '" + architecture.asString() + "'");
+        }
+    }
+
+    private static String architectureToString(NodeResources.Architecture architecture) {
+        switch (architecture) {
+            case arm64 : return "arm64";
+            case x86_64 : return "x86_64";
+            case any : return "any";
+            default: throw new IllegalStateException("Illegal architecture value '" + architecture + "'");
         }
     }
 
