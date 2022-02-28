@@ -8,6 +8,7 @@
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/datastore/handle.h>
 #include <cassert>
+#include <type_traits>
 #include <utility>
 #include <cstddef>
 
@@ -205,7 +206,14 @@ protected:
 public:
     const KeyT & getKey(uint32_t idx) const { return _keys[idx]; }
     const KeyT & getLastKey() const { return _keys[validSlots() - 1]; }
-    void writeKey(uint32_t idx, const KeyT & key) { _keys[idx] = key; }
+    void writeKey(uint32_t idx, const KeyT & key) {
+        if constexpr (std::is_same_v<KeyT, vespalib::datastore::AtomicEntryRef>) {
+            _keys[idx].store_release(key.load_relaxed());
+        } else {
+            _keys[idx] = key;
+        }
+    }
+    void write_key_relaxed(uint32_t idx, const KeyT & key) { _keys[idx] = key; }
 
     template <typename CompareT>
     uint32_t lower_bound(uint32_t sidx, const KeyT & key, CompareT comp) const;
