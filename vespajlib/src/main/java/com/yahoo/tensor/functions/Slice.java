@@ -238,17 +238,21 @@ public class Slice<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
                 TensorType type = context.typeContext().isPresent() ? owner.argument.type(context.typeContext().get()) : null;
                 if (type == null || type.dimensions().size() != 1)
                     throw new IllegalArgumentException("The tensor dimension name being sliced by " + owner +
-                                                       " cannot be uniquely resolved. Use the full form " +
-                                                       "slice{myDimensionName: ...");
+                                                       " cannot be uniquely resolved. Use the full form: " +
+                                                       "'slice{myDimensionName:" + valueToString(context) + "}'");
                 else
                     dimensionName = Optional.of(type.dimensions().get(0).name());
             }
             dimensionName.ifPresent(d -> b.append(d).append(":"));
-            if (label != null)
-                b.append(label);
-            else
-                b.append(index.toString(context));
+            b.append(valueToString(context));
             return b.toString();
+        }
+
+        private String valueToString(ToStringContext<NAMETYPE> context) {
+            if (label != null)
+                return label;
+            else
+                return index.toString(context);
         }
 
     }

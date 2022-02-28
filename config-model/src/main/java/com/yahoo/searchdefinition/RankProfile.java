@@ -965,12 +965,13 @@ public class RankProfile implements Cloneable {
         Map<String, RankingExpressionFunction> compiledFunctions = new LinkedHashMap<>();
         Map.Entry<String, RankingExpressionFunction> entry;
         // Compile all functions. Why iterate in such a complicated way?
-        // Because some functions (imported models adding generated macros) may add other functions during compiling.
+        // Because some functions (imported models adding generated functions) may add other functions during compiling.
         // A straightforward iteration will either miss those functions, or may cause a ConcurrentModificationException
         while (null != (entry = findUncompiledFunction(functions.get(), compiledFunctions.keySet()))) {
             RankingExpressionFunction rankingExpressionFunction = entry.getValue();
             RankingExpressionFunction compiled = compile(rankingExpressionFunction, queryProfiles, featureTypes,
-                                                 importedModels, getConstants(), inlineFunctions, expressionTransforms);
+                                                         importedModels, getConstants(), inlineFunctions,
+                                                         expressionTransforms);
             compiledFunctions.put(entry.getKey(), compiled);
         }
         return compiledFunctions;
@@ -986,12 +987,12 @@ public class RankProfile implements Cloneable {
     }
 
     private RankingExpressionFunction compile(RankingExpressionFunction function,
-                                      QueryProfileRegistry queryProfiles,
-                                      Map<Reference, TensorType> featureTypes,
-                                      ImportedMlModels importedModels,
-                                      Map<String, Value> constants,
-                                      Map<String, RankingExpressionFunction> inlineFunctions,
-                                      ExpressionTransforms expressionTransforms) {
+                                              QueryProfileRegistry queryProfiles,
+                                              Map<Reference, TensorType> featureTypes,
+                                              ImportedMlModels importedModels,
+                                              Map<String, Value> constants,
+                                              Map<String, RankingExpressionFunction> inlineFunctions,
+                                              ExpressionTransforms expressionTransforms) {
         if (function == null) return null;
 
         RankProfileTransformContext context = new RankProfileTransformContext(this,

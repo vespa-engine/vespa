@@ -80,9 +80,8 @@ public abstract class ConfigModelBuilder<MODEL extends ConfigModel> extends Abst
 
     private static String getIdString(Element spec) {
         String idString = XmlHelper.getIdString(spec);
-        if (idString == null || idString.isEmpty()) {
+        if (idString.isEmpty())
             idString = spec.getTagName();
-        }
         return idString;
     }
 
