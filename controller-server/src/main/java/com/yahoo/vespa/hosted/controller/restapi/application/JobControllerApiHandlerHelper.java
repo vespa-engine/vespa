@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.ChangeBlocker;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
@@ -218,12 +219,12 @@ class JobControllerApiHandlerHelper {
     }
 
     /** Aborts any job of the given type. */
-    static HttpResponse abortJobResponse(JobController jobs, ApplicationId id, JobType type) {
+    static HttpResponse abortJobResponse(JobController jobs, HttpRequest request, ApplicationId id, JobType type) {
         Slime slime = new Slime();
         Cursor responseObject = slime.setObject();
         Optional<Run> run = jobs.last(id, type).flatMap(last -> jobs.active(last.id()));
         if (run.isPresent()) {
-            jobs.abort(run.get().id());
+            jobs.abort(run.get().id(), "aborted by " + request.getJDiscRequest().getUserPrincipal());
             responseObject.setString("message", "Aborting " + run.get().id());
         }
         else

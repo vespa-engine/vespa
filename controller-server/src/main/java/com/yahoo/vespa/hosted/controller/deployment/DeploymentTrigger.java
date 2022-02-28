@@ -247,7 +247,7 @@ public class DeploymentTrigger {
                         .collect(toList());
                 controller.curator().writeRetriggerEntries(newList);
             }
-            controller.jobController().abort(run.id());
+            controller.jobController().abort(run.id(), "force re-triggered");
             return Optional.empty();
         } else {
             return Optional.of(reTrigger(deployment.applicationId(), jobType));
@@ -363,7 +363,10 @@ public class DeploymentTrigger {
                   if (jobs.get(job).stream().noneMatch(versions ->    versions.versions().targetsMatch(last.versions())
                                                                    && versions.versions().sourcesMatchIfPresent(last.versions()))) {
                       log.log(Level.INFO, "Aborting outdated run " + last);
-                      controller.jobController().abort(last.id());
+                      controller.jobController().abort(last.id(), "run no longer scheduled, and is blocking scheduled runs: " +
+                                                                  jobs.get(job).stream()
+                                                                      .map(scheduled -> scheduled.versions().toString())
+                                                                      .collect(Collectors.joining(", ")));
                   }
               });
     }

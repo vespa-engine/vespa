@@ -174,7 +174,7 @@ public class JobRunnerTest {
         assertStepsWithStartTime(run.get(), deployTester, deployReal, installTester, installReal, startTests, endTests, copyVespaLogs, deactivateTester, deactivateReal);
 
         // Abortion does nothing, as the run has already failed.
-        jobs.abort(run.get().id());
+        jobs.abort(run.get().id(), "abort");
         runner.maintain();
         assertEquals(List.of(deactivateReal, deactivateTester), run.get().readySteps());
         assertStepsWithStartTime(run.get(), deployTester, deployReal, installTester, installReal, startTests, endTests, copyVespaLogs, deactivateTester, deactivateReal);
