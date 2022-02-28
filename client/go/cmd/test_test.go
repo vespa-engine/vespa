@@ -55,7 +55,7 @@ func TestIllegalFileReference(t *testing.T) {
 }
 
 func TestIllegalRequestUri(t *testing.T) {
-	client := &mockHttpClient{}
+	client := &mock.HTTPClient{}
 	client.NextStatus(200)
 	client.NextStatus(200)
 	_, errBytes := execute(command{args: []string{"test", "testdata/tests/production-test/illegal-uri.json"}}, t, client)
