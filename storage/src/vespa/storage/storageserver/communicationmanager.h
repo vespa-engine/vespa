@@ -164,6 +164,10 @@ public:
     void updateBucketSpacesConfig(const BucketspacesConfig&);
 
     const CommunicationManagerMetrics& metrics() const noexcept { return _metrics; }
+
+    // Intended primarily for unit tests that fire up multiple nodes and must wait until all
+    // nodes are cross-visible in Slobrok before progressing.
+    [[nodiscard]] bool address_visible_in_slobrok(const api::StorageMessageAddress& addr) const noexcept;
 };
 
 } // storage

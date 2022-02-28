@@ -394,6 +394,15 @@ bool StorageApiRpcService::target_supports_direct_rpc(
     return _direct_rpc_supported.load(std::memory_order_relaxed);
 }
 
+bool
+StorageApiRpcService::address_visible_in_slobrok_uncached(
+        const api::StorageMessageAddress& addr) const noexcept
+{
+    auto sb_id = CachingRpcTargetResolver::address_to_slobrok_id(addr);
+    auto specs = _rpc_resources.slobrok_mirror().lookup(sb_id);
+    return !specs.empty();
+}
+
 
 /*
  * Major TODOs:

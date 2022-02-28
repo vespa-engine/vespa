@@ -45,6 +45,24 @@ struct CommunicationManagerTest : Test {
     }
 };
 
+namespace {
+
+void
+wait_for_slobrok_visibility(const CommunicationManager& mgr,
+                            const api::StorageMessageAddress& addr)
+{
+    const auto deadline = vespalib::steady_clock::now() + 60s;
+    do {
+        if (mgr.address_visible_in_slobrok(addr)) {
+            return;
+        }
+        std::this_thread::sleep_for(10ms);
+    } while (vespalib::steady_clock::now() < deadline);
+    FAIL() << "Timed out waiting for address " << addr.toString() << " to be visible in Slobrok";
+}
+
+}
+
 TEST_F(CommunicationManagerTest, simple) {
     mbus::Slobrok slobrok;
     vdstestlib::DirConfig distConfig(getStandardConfig(false));
@@ -70,12 +88,19 @@ TEST_F(CommunicationManagerTest, simple) {
     distributor.open();
     storage.open();
 
-    std::this_thread::sleep_for(1s);
+    auto stor_addr  = api::StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 1);
+    auto distr_addr = api::StorageMessageAddress::create(&_Storage, lib::NodeType::DISTRIBUTOR, 1);
+    // It is undefined when the logical nodes will be visible in each others Slobrok
+    // mirrors, so explicitly wait until mutual visibility is ensured. Failure to do this
+    // might cause the below message to be immediately bounced due to failing to map the
+    // storage address to an actual RPC endpoint.
+    ASSERT_NO_FATAL_FAILURE(wait_for_slobrok_visibility(distributor, stor_addr));
+    ASSERT_NO_FATAL_FAILURE(wait_for_slobrok_visibility(storage, distr_addr));
 
     // Send a message through from distributor to storage
     auto cmd = std::make_shared<api::GetCommand>(
             makeDocumentBucket(document::BucketId(0)), document::DocumentId("id:ns:mytype::mydoc"), document::AllFields::NAME);
-    cmd->setAddress(api::StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 1));
+    cmd->setAddress(stor_addr);
     distributorLink->sendUp(cmd);
     storageLink->waitForMessages(1, MESSAGE_WAIT_TIME_SEC);
     ASSERT_GT(storageLink->getNumCommands(), 0);

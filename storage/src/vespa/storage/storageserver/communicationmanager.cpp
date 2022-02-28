@@ -6,6 +6,7 @@
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/network/rpcnetworkparams.h>
 #include <vespa/messagebus/rpcmessagebus.h>
+#include <vespa/slobrok/sbmirror.h>
 #include <vespa/storage/common/bucket_resolver.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/config/config-stor-server.h>
@@ -804,6 +805,13 @@ void CommunicationManager::updateMessagebusProtocol(const std::shared_ptr<const 
 
 void CommunicationManager::updateBucketSpacesConfig(const BucketspacesConfig& config) {
     _docApiConverter.setBucketResolver(ConfigurableBucketResolver::from_config(config));
+}
+
+bool
+CommunicationManager::address_visible_in_slobrok(const api::StorageMessageAddress& addr) const noexcept
+{
+    assert(_storage_api_rpc_service);
+    return _storage_api_rpc_service->address_visible_in_slobrok_uncached(addr);
 }
 
 } // storage
