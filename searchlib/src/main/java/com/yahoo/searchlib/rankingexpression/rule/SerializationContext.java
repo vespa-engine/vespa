@@ -32,17 +32,24 @@ public class SerializationContext extends FunctionReferenceContext {
         this(Collections.emptyList());
     }
 
-    /** Create a context for a single serialization task */
+    /** @deprecated Use {@link #SerializationContext(Collection, Optional) instead}*/
+    @Deprecated(forRemoval = true, since = "7")
     public SerializationContext(Collection<ExpressionFunction> functions) {
         this(functions, Collections.emptyMap(), Optional.empty(), new LinkedHashMap<>());
     }
 
-    /** Create a context for a single serialization task */
+    public SerializationContext(Collection<ExpressionFunction> functions, Optional<TypeContext<Reference>> typeContext) {
+        this(functions, Collections.emptyMap(), typeContext, new LinkedHashMap<>());
+    }
+
+    /** @deprecated Use {@link #SerializationContext(Map, Map, Optional, Map) instead}*/
+    @Deprecated(forRemoval = true, since = "7")
     public SerializationContext(Map<String, ExpressionFunction> functions) {
         this(functions.values());
     }
 
-    /** Create a context for a single serialization task */
+    /** @deprecated Use {@link #SerializationContext(Collection, Map, TypeContext) instead}*/
+    @Deprecated(forRemoval = true, since = "7")
     public SerializationContext(Collection<ExpressionFunction> functions, Map<String, String> bindings) {
         this(functions, bindings, Optional.empty(), new LinkedHashMap<>());
     }
@@ -63,9 +70,31 @@ public class SerializationContext extends FunctionReferenceContext {
      *        is <b>transferred</b> to this and will be modified in it
      */
     private SerializationContext(Collection<ExpressionFunction> functions, Map<String, String> bindings,
+                                 Optional<TypeContext<Reference>> typeContext,
+                                 Map<String, String> serializedFunctions) {
+        this(toMap(functions), bindings, typeContext, serializedFunctions);
+    }
+
+    /** @deprecated Use {@link #SerializationContext(Map, Map, Optional, Map) instead}*/
+    @Deprecated(forRemoval = true, since = "7")
+    public SerializationContext(Map<String, ExpressionFunction> functions, Map<String, String> bindings,
+                                Map<String, String> serializedFunctions) {
+        this(functions, bindings, Optional.empty(), serializedFunctions);
+    }
+
+    public SerializationContext(Map<String, ExpressionFunction> functions, Map<String, String> bindings,
                                 Optional<TypeContext<Reference>> typeContext,
                                 Map<String, String> serializedFunctions) {
-        this(toMap(functions), bindings, typeContext, serializedFunctions);
+        super(functions, bindings);
+        this.typeContext = typeContext;
+        this.serializedFunctions = serializedFunctions;
+    }
+
+    /** @deprecated Use {@link #SerializationContext(Map, Map, Optional, Map) instead}*/
+    @Deprecated(forRemoval = true, since = "7")
+    public SerializationContext(ImmutableMap<String,ExpressionFunction> functions, Map<String, String> bindings,
+                                Map<String, String> serializedFunctions) {
+        this((Map<String, ExpressionFunction>)functions, bindings, serializedFunctions);
     }
 
     /** Returns the type context of this, if it is able to resolve types. */
@@ -76,34 +105,6 @@ public class SerializationContext extends FunctionReferenceContext {
         for (ExpressionFunction function : list)
             mapBuilder.put(function.getName(), function);
         return Map.copyOf(mapBuilder);
-    }
-
-    /**
-     * Create a context for a single serialization task
-     *
-     * @param functions the functions of this
-     * @param bindings the arguments of this
-     * @param serializedFunctions a cache of serializedFunctions - the ownership of this map
-     *        is <b>transferred</b> to this and will be modified in it
-     */
-    public SerializationContext(Map<String, ExpressionFunction> functions, Map<String, String> bindings,
-                                Map<String, String> serializedFunctions) {
-        this(functions, bindings, Optional.empty(), serializedFunctions);
-    }
-
-    public SerializationContext(Map<String,ExpressionFunction> functions, Map<String, String> bindings,
-                                Optional<TypeContext<Reference>> typeContext,
-                                Map<String, String> serializedFunctions) {
-        super(functions, bindings);
-        this.typeContext = typeContext;
-        this.serializedFunctions = serializedFunctions;
-    }
-
-    /** @deprecated Use {@link #SerializationContext(Map, Map, Map) instead}*/
-    @Deprecated(forRemoval = true, since = "7")
-    public SerializationContext(ImmutableMap<String,ExpressionFunction> functions, Map<String, String> bindings,
-                                Map<String, String> serializedFunctions) {
-        this((Map<String, ExpressionFunction>)functions, bindings, serializedFunctions);
     }
 
     /** Adds the serialization of a function */
@@ -124,13 +125,13 @@ public class SerializationContext extends FunctionReferenceContext {
 
     @Override
     public SerializationContext withBindings(Map<String, String> bindings) {
-        return new SerializationContext(getFunctions(), bindings, this.serializedFunctions);
+        return new SerializationContext(getFunctions(), bindings, typeContext, this.serializedFunctions);
     }
 
     /** Returns a fresh context without bindings */
     @Override
     public SerializationContext withoutBindings() {
-        return new SerializationContext(getFunctions(), null, this.serializedFunctions);
+        return new SerializationContext(getFunctions(), null, typeContext, this.serializedFunctions);
     }
 
     public Map<String, String> serializedFunctions() { return serializedFunctions; }
