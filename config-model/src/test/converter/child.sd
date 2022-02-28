@@ -1,0 +1,23 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search child {
+
+  document child inherits parent {
+
+    field a type uri {
+       indexing: index | summary
+    }
+
+    field r type redef {
+      indexing: summary
+    }
+
+    field aaa type annotationreference<gpa> { }
+
+    field modelref type reference<other> { }
+
+  }
+  field outrarr type array<string> {
+      indexing: input a | to_array | summary
+  }
+
+}

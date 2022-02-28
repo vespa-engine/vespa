@@ -1,0 +1,32 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search grandparent {
+
+  struct item {
+    field f1i type int {}
+  }
+
+  struct gps {
+    field reftoa type annotationreference<gpa> {}
+    field someitems type array<item> {}
+  }
+
+  document grandparent {
+
+    field c type map<string, gps> {
+       indexing: index
+    }
+
+    #field inrgp type redef {
+    #}
+  }
+
+  annotation gpa {
+    field city type string {}
+    field zip type int {}
+  }
+
+  #struct redef {
+  #  field y type int {}
+  #  field z type string {}
+  #}
+}

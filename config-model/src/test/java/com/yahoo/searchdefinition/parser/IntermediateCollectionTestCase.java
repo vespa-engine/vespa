@@ -24,14 +24,14 @@ public class IntermediateCollectionTestCase {
     public void can_add_minimal_schema() throws Exception {
         String input = joinLines
             ("schema foo {",
-             "  document bar {",
+             "  document foo {",
              "  }",
              "}");
         var collection = new IntermediateCollection();
         ParsedSchema schema = collection.addSchemaFromString(input);
         assertEquals("foo", schema.name());
         assertTrue(schema.hasDocument());
-        assertEquals("bar", schema.getDocument().name());
+        assertEquals("foo", schema.getDocument().name());
     }
 
     @Test
@@ -153,9 +153,9 @@ public class IntermediateCollectionTestCase {
     @Test
     public void can_detect_schema_inheritance_cycles() throws Exception {
         var collection = new IntermediateCollection();
-        collection.addSchemaFromString("schema foo inherits bar {}");
-        collection.addSchemaFromString("schema bar inherits qux {}");
-        collection.addSchemaFromString("schema qux inherits foo {}");
+        collection.addSchemaFromString("schema foo inherits bar { document foo {} }");
+        collection.addSchemaFromString("schema bar inherits qux { document bar {} }");
+        collection.addSchemaFromString("schema qux inherits foo { document qux {} }");
         assertEquals(collection.getParsedSchemas().size(), 3);
         var ex = assertThrows(IllegalArgumentException.class, () ->
                               collection.resolveInternalConnections());
@@ -171,6 +171,7 @@ public class IntermediateCollectionTestCase {
         assertEquals(collection.getParsedSchemas().size(), 3);
         var ex = assertThrows(IllegalArgumentException.class, () ->
                               collection.resolveInternalConnections());
+        System.err.println("ex: "+ex.getMessage());
         assertTrue(ex.getMessage().startsWith("Inheritance cycle for documents: "));
     }
 

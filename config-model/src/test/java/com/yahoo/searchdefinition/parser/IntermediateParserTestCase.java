@@ -35,13 +35,13 @@ public class IntermediateParserTestCase {
     public void minimal_schema_can_be_parsed() throws Exception {
         String input = joinLines
             ("schema foo {",
-             "  document bar {",
+             "  document foo {",
              "  }",
              "}");
         ParsedSchema schema = parseString(input);
         assertEquals("foo", schema.name());
         assertTrue(schema.hasDocument());
-        assertEquals("bar", schema.getDocument().name());
+        assertEquals("foo", schema.getDocument().name());
     }
 
     @Test
@@ -59,13 +59,13 @@ public class IntermediateParserTestCase {
     public void multiple_documents_disallowed() throws Exception {
         String input = joinLines
             ("schema foo {",
-             "  document foo1 {",
+             "  document foo {",
              "  }",
              "  document foo2 {",
              "  }",
              "}");
         var e = assertThrows(IllegalArgumentException.class, () -> parseString(input));
-        assertEquals("schema 'foo' error: already has document foo1 so cannot add document foo2", e.getMessage());
+        assertEquals("schema 'foo' error: already has document foo so cannot add document foo2", e.getMessage());
     }
 
     void checkFileParses(String fileName) throws Exception {

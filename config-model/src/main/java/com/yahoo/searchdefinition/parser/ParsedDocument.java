@@ -31,6 +31,8 @@ public class ParsedDocument extends ParsedBlock {
     List<ParsedDocument> getResolvedInherits() { return List.copyOf(resolvedInherits.values()); }
     List<ParsedField> getFields() { return List.copyOf(docFields.values()); }
     List<ParsedStruct> getStructs() { return List.copyOf(docStructs.values()); }
+    ParsedStruct getStruct(String name) { return docStructs.get(name); }
+    ParsedAnnotation getAnnotation(String name) { return docAnnotations.get(name); }
 
     void inherit(String other) { inherited.add(other); }
 
@@ -44,12 +46,14 @@ public class ParsedDocument extends ParsedBlock {
         String sName = struct.name();
         verifyThat(! docStructs.containsKey(sName), "already has struct", sName);
         docStructs.put(sName, struct);
+        struct.tagOwner(name());
     }
 
     void addAnnotation(ParsedAnnotation annotation) {
         String annName = annotation.name();
         verifyThat(! docAnnotations.containsKey(annName), "already has annotation", annName);
         docAnnotations.put(annName, annotation);
+        annotation.tagOwner(name());
     }
 
     public String toString() { return "document " + name(); }
