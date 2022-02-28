@@ -183,6 +183,14 @@ public class DeploymentTriggerTest {
         app.runJob(systemTest).runJob(stagingTest).runJob(stagingTest); // outdated run is aborted when otherwise blocking a new run
         tester.triggerJobs();
         app.jobAborted(productionUsCentral1);
+        Versions outdated = tester.jobs().last(app.instanceId(), productionUsCentral1).get().versions();
+
+        // Flesh bag re-triggers job, and _that_ is not aborted
+        tester.deploymentTrigger().reTrigger(app.instanceId(), productionUsCentral1, "flesh bag");
+        tester.triggerJobs();
+        app.runJob(productionUsCentral1);
+        Versions reTriggered = tester.jobs().last(app.instanceId(), productionUsCentral1).get().versions();
+        assertEquals(outdated, reTriggered);
 
         app.runJob(productionUsCentral1).runJob(productionUsWest1).runJob(productionUsEast3);
         assertEquals(Change.empty(), app.instance().change());
