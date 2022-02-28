@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vespa-engine/vespa/client/go/mock"
 )
 
 func TestQuery(t *testing.T) {
@@ -19,7 +20,7 @@ func TestQuery(t *testing.T) {
 }
 
 func TestQueryVerbose(t *testing.T) {
-	client := &mockHttpClient{}
+	client := &mock.HTTPClient{}
 	client.NextResponse(200, "{\"query\":\"result\"}")
 	cmd := command{args: []string{"query", "-v", "select from sources * where title contains 'foo'"}}
 	out, errOut := execute(cmd, t, client)
@@ -54,7 +55,7 @@ func TestServerError(t *testing.T) {
 }
 
 func assertQuery(t *testing.T, expectedQuery string, query ...string) {
-	client := &mockHttpClient{}
+	client := &mock.HTTPClient{}
 	client.NextResponse(200, "{\"query\":\"result\"}")
 	assert.Equal(t,
 		"{\n    \"query\": \"result\"\n}\n",
@@ -62,11 +63,11 @@ func assertQuery(t *testing.T, expectedQuery string, query ...string) {
 		"query output")
 	queryURL, err := queryServiceURL(client)
 	require.Nil(t, err)
-	assert.Equal(t, queryURL+"/search/"+expectedQuery, client.lastRequest.URL.String())
+	assert.Equal(t, queryURL+"/search/"+expectedQuery, client.LastRequest.URL.String())
 }
 
 func assertQueryError(t *testing.T, status int, errorMessage string) {
-	client := &mockHttpClient{}
+	client := &mock.HTTPClient{}
 	client.NextResponse(status, errorMessage)
 	_, outErr := execute(command{args: []string{"query", "yql=select from sources * where title contains 'foo'"}}, t, client)
 	assert.Equal(t,
@@ -76,7 +77,7 @@ func assertQueryError(t *testing.T, status int, errorMessage string) {
 }
 
 func assertQueryServiceError(t *testing.T, status int, errorMessage string) {
-	client := &mockHttpClient{}
+	client := &mock.HTTPClient{}
 	client.NextResponse(status, errorMessage)
 	_, outErr := execute(command{args: []string{"query", "yql=select from sources * where title contains 'foo'"}}, t, client)
 	assert.Equal(t,
@@ -85,7 +86,7 @@ func assertQueryServiceError(t *testing.T, status int, errorMessage string) {
 		"error output")
 }
 
-func queryServiceURL(client *mockHttpClient) (string, error) {
+func queryServiceURL(client *mock.HTTPClient) (string, error) {
 	service, err := getService("query", 0, "")
 	if err != nil {
 		return "", err

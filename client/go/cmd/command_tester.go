@@ -6,19 +6,15 @@ package cmd
 
 import (
 	"bytes"
-	"crypto/tls"
 	"io"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"testing"
-	"time"
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
+	"github.com/vespa-engine/vespa/client/go/mock"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
@@ -66,7 +62,7 @@ func resetEnv(env map[string]string, original map[string]string) {
 	}
 }
 
-func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string) {
+func execute(cmd command, t *testing.T, client *mock.HTTPClient) (string, string) {
 	if client != nil {
 		util.ActiveHttpClient = client
 	}
@@ -122,52 +118,7 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string)
 	return capturedOut.String(), capturedErr.String()
 }
 
-func executeCommand(t *testing.T, client *mockHttpClient, args []string, moreArgs []string) string {
+func executeCommand(t *testing.T, client *mock.HTTPClient, args []string, moreArgs []string) string {
 	out, _ := execute(command{args: args, moreArgs: moreArgs}, t, client)
 	return out
 }
-
-type mockHttpClient struct {
-	// The responses to return for future requests. Once a response is consumed, it's removed from this array
-	nextResponses []mockResponse
-
-	// A recording of the last HTTP request made through this
-	lastRequest *http.Request
-
-	// All requests made through this
-	requests []*http.Request
-}
-
-type mockResponse struct {
-	status int
-	body   []byte
-}
-
-func (c *mockHttpClient) NextStatus(status int) { c.NextResponseBytes(status, nil) }
-
-func (c *mockHttpClient) NextResponse(status int, body string) {
-	c.NextResponseBytes(status, []byte(body))
-}
-
-func (c *mockHttpClient) NextResponseBytes(status int, body []byte) {
-	c.nextResponses = append(c.nextResponses, mockResponse{status: status, body: body})
-}
-
-func (c *mockHttpClient) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
-	response := mockResponse{status: 200}
-	if len(c.nextResponses) > 0 {
-		response = c.nextResponses[0]
-		c.nextResponses = c.nextResponses[1:]
-	}
-	c.lastRequest = request
-	c.requests = append(c.requests, request)
-	return &http.Response{
-			Status:     "Status " + strconv.Itoa(response.status),
-			StatusCode: response.status,
-			Body:       ioutil.NopCloser(bytes.NewBuffer(response.body)),
-			Header:     make(http.Header),
-		},
-		nil
-}
-
-func (c *mockHttpClient) UseCertificate(certificates []tls.Certificate) {}

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vespa-engine/vespa/client/go/mock"
 )
 
 func TestStatusDeployCommand(t *testing.T) {
@@ -43,40 +44,40 @@ func TestStatusErrorResponse(t *testing.T) {
 }
 
 func assertDeployStatus(target string, args []string, t *testing.T) {
-	client := &mockHttpClient{}
+	client := &mock.HTTPClient{}
 	assert.Equal(t,
 		"Deploy API at "+target+" is ready\n",
 		executeCommand(t, client, []string{"status", "deploy"}, args),
 		"vespa status config-server")
-	assert.Equal(t, target+"/status.html", client.lastRequest.URL.String())
+	assert.Equal(t, target+"/status.html", client.LastRequest.URL.String())
 }
 
 func assertQueryStatus(target string, args []string, t *testing.T) {
-	client := &mockHttpClient{}
+	client := &mock.HTTPClient{}
 	assert.Equal(t,
 		"Container (query API) at "+target+" is ready\n",
 		executeCommand(t, client, []string{"status", "query"}, args),
 		"vespa status container")
-	assert.Equal(t, target+"/ApplicationStatus", client.lastRequest.URL.String())
+	assert.Equal(t, target+"/ApplicationStatus", client.LastRequest.URL.String())
 
 	assert.Equal(t,
 		"Container (query API) at "+target+" is ready\n",
 		executeCommand(t, client, []string{"status"}, args),
 		"vespa status (the default)")
-	assert.Equal(t, target+"/ApplicationStatus", client.lastRequest.URL.String())
+	assert.Equal(t, target+"/ApplicationStatus", client.LastRequest.URL.String())
 }
 
 func assertDocumentStatus(target string, args []string, t *testing.T) {
-	client := &mockHttpClient{}
+	client := &mock.HTTPClient{}
 	assert.Equal(t,
 		"Container (document API) at "+target+" is ready\n",
 		executeCommand(t, client, []string{"status", "document"}, args),
 		"vespa status container")
-	assert.Equal(t, target+"/ApplicationStatus", client.lastRequest.URL.String())
+	assert.Equal(t, target+"/ApplicationStatus", client.LastRequest.URL.String())
 }
 
 func assertQueryStatusError(target string, args []string, t *testing.T) {
-	client := &mockHttpClient{}
+	client := &mock.HTTPClient{}
 	client.NextStatus(500)
 	cmd := []string{"status", "container"}
 	cmd = append(cmd, args...)

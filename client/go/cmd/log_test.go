@@ -7,12 +7,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/vespa-engine/vespa/client/go/build"
+	"github.com/vespa-engine/vespa/client/go/mock"
 )
 
 func TestLog(t *testing.T) {
 	homeDir := filepath.Join(t.TempDir(), ".vespa")
 	pkgDir := mockApplicationPackage(t, false)
-	httpClient := &mockHttpClient{}
+	httpClient := &mock.HTTPClient{}
 	httpClient.NextResponse(200, `1632738690.905535	host1a.dev.aws-us-east-1c	806/53	logserver-container	Container.com.yahoo.container.jdisc.ConfiguredApplication	info	Switching to the latest deployed set of configurations and components. Application config generation: 52532`)
 	execute(command{homeDir: homeDir, args: []string{"config", "set", "application", "t1.a1.i1"}}, t, httpClient)
 	execute(command{homeDir: homeDir, args: []string{"config", "set", "target", "cloud"}}, t, httpClient)
@@ -34,7 +35,7 @@ func TestLogOldClient(t *testing.T) {
 	build.Version = "7.0.0"
 	homeDir := filepath.Join(t.TempDir(), ".vespa")
 	pkgDir := mockApplicationPackage(t, false)
-	httpClient := &mockHttpClient{}
+	httpClient := &mock.HTTPClient{}
 	httpClient.NextResponse(200, `{"minVersion": "8.0.0"}`)
 	execute(command{homeDir: homeDir, args: []string{"config", "set", "application", "t1.a1.i1"}}, t, httpClient)
 	execute(command{homeDir: homeDir, args: []string{"config", "set", "target", "cloud"}}, t, httpClient)

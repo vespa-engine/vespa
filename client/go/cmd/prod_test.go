@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vespa-engine/vespa/client/go/mock"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
@@ -147,7 +148,7 @@ func TestProdSubmit(t *testing.T) {
 	pkgDir := filepath.Join(t.TempDir(), "app")
 	createApplication(t, pkgDir, false)
 
-	httpClient := &mockHttpClient{}
+	httpClient := &mock.HTTPClient{}
 	httpClient.NextResponse(200, `ok`)
 	execute(command{homeDir: homeDir, args: []string{"config", "set", "application", "t1.a1.i1"}}, t, httpClient)
 	execute(command{homeDir: homeDir, args: []string{"config", "set", "target", "cloud"}}, t, httpClient)
@@ -177,7 +178,7 @@ func TestProdSubmitWithJava(t *testing.T) {
 	pkgDir := filepath.Join(t.TempDir(), "app")
 	createApplication(t, pkgDir, true)
 
-	httpClient := &mockHttpClient{}
+	httpClient := &mock.HTTPClient{}
 	httpClient.NextResponse(200, `ok`)
 	execute(command{homeDir: homeDir, args: []string{"config", "set", "application", "t1.a1.i1"}}, t, httpClient)
 	execute(command{homeDir: homeDir, args: []string{"config", "set", "target", "cloud"}}, t, httpClient)

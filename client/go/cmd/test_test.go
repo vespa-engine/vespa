@@ -15,12 +15,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vespa-engine/vespa/client/go/mock"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 func TestSuite(t *testing.T) {
-	client := &mockHttpClient{}
+	client := &mock.HTTPClient{}
 	searchResponse, _ := ioutil.ReadFile("testdata/tests/response.json")
 	client.NextStatus(200)
 	client.NextStatus(200)
@@ -45,7 +46,7 @@ func TestSuite(t *testing.T) {
 }
 
 func TestIllegalFileReference(t *testing.T) {
-	client := &mockHttpClient{}
+	client := &mock.HTTPClient{}
 	client.NextStatus(200)
 	client.NextStatus(200)
 	_, errBytes := execute(command{args: []string{"test", "testdata/tests/production-test/illegal-reference.json"}}, t, client)
@@ -63,7 +64,7 @@ func TestIllegalRequestUri(t *testing.T) {
 }
 
 func TestProductionTest(t *testing.T) {
-	client := &mockHttpClient{}
+	client := &mock.HTTPClient{}
 	client.NextStatus(200)
 	outBytes, errBytes := execute(command{args: []string{"test", "testdata/tests/production-test/external.json"}}, t, client)
 	assert.Equal(t, "external.json: . OK\n\nSuccess: 1 test OK\n", outBytes)
@@ -72,19 +73,19 @@ func TestProductionTest(t *testing.T) {
 }
 
 func TestTestWithoutAssertions(t *testing.T) {
-	client := &mockHttpClient{}
+	client := &mock.HTTPClient{}
 	_, errBytes := execute(command{args: []string{"test", "testdata/tests/system-test/foo/query.json"}}, t, client)
 	assert.Equal(t, "\nError: a test must have at least one step, but none were found in testdata/tests/system-test/foo/query.json\nHint: See https://docs.vespa.ai/en/reference/testing\n", errBytes)
 }
 
 func TestSuiteWithoutTests(t *testing.T) {
-	client := &mockHttpClient{}
+	client := &mock.HTTPClient{}
 	_, errBytes := execute(command{args: []string{"test", "testdata/tests/staging-test"}}, t, client)
 	assert.Equal(t, "Error: failed to find any tests at testdata/tests/staging-test\nHint: See https://docs.vespa.ai/en/reference/testing\n", errBytes)
 }
 
 func TestSingleTest(t *testing.T) {
-	client := &mockHttpClient{}
+	client := &mock.HTTPClient{}
 	searchResponse, _ := ioutil.ReadFile("testdata/tests/response.json")
 	client.NextStatus(200)
 	client.NextStatus(200)
@@ -121,7 +122,7 @@ func TestSingleTestWithCloudAndEndpoints(t *testing.T) {
 	ioutil.WriteFile(keyFile, kp.PrivateKey, 0600)
 	ioutil.WriteFile(certFile, kp.Certificate, 0600)
 
-	client := &mockHttpClient{}
+	client := &mock.HTTPClient{}
 	searchResponse, _ := ioutil.ReadFile("testdata/tests/response.json")
 	client.NextStatus(200)
 	client.NextStatus(200)
@@ -158,10 +159,10 @@ func createRequest(method string, uri string, body string) *http.Request {
 	}
 }
 
-func assertRequests(requests []*http.Request, client *mockHttpClient, t *testing.T) {
-	if assert.Equal(t, len(requests), len(client.requests)) {
+func assertRequests(requests []*http.Request, client *mock.HTTPClient, t *testing.T) {
+	if assert.Equal(t, len(requests), len(client.Requests)) {
 		for i, e := range requests {
-			a := client.requests[i]
+			a := client.Requests[i]
 			assert.Equal(t, e.URL.String(), a.URL.String())
 			assert.Equal(t, e.Method, a.Method)
 			assert.Equal(t, util.ReaderToJSON(e.Body), util.ReaderToJSON(a.Body))
