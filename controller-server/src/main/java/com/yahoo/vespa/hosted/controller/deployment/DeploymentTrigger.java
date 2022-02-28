@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Responsible for scheduling deployment jobs in a build system and keeping
@@ -200,9 +201,14 @@ public class DeploymentTrigger {
         DeploymentStatus status = jobs.deploymentStatus(application);
         Versions versions = Versions.from(instance.change(), application, status.deploymentFor(job), controller.readSystemVersion());
         DeploymentStatus.Job toTrigger = new DeploymentStatus.Job(job.type(), versions, Optional.of(controller.clock().instant()), instance.change());
-        Map<JobId, List<DeploymentStatus.Job>> jobs = status.testJobs(Map.of(job, List.of(toTrigger)));
-        if (jobs.isEmpty() || ! requireTests)
-            jobs = Map.of(job, List.of(toTrigger));
+        Map<JobId, List<DeploymentStatus.Job>> testJobs = status.testJobs(Map.of(job, List.of(toTrigger)));
+
+        Map<JobId, List<DeploymentStatus.Job>> jobs = testJobs.isEmpty() || ! requireTests
+                                                      ? Map.of(job, List.of(toTrigger))
+                                                      : testJobs.entrySet().stream()
+                                                                .filter(entry -> controller.jobController().last(entry.getKey()).map(Run::hasEnded).orElse(true))
+                                                                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+
         jobs.forEach((jobId, versionsList) -> {
             trigger(deploymentJob(instance, versionsList.get(0).versions(), jobId.type(), status.jobs().get(jobId).get(), clock.instant()));
         });

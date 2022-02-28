@@ -1858,7 +1858,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     /** Trigger deployment of the given Vespa version if a valid one is given, e.g., "7.8.9". */
     private HttpResponse deployPlatform(String tenantName, String applicationName, String instanceName, boolean pin, HttpRequest request) {
-
         String versionString = readToString(request.getData());
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         StringBuilder response = new StringBuilder();
