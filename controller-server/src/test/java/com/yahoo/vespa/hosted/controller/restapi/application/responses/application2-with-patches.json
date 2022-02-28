@@ -3,13 +3,8 @@
   "application": "application2",
   "deployments": "http://localhost:8080/application/v4/tenant/tenant2/application/application2/job/",
   "latestVersion": {
-    "buildNumber": 1,
-    "hash": "1.0.1-commit1",
-    "source": {
-      "gitRepository": "repository1",
-      "gitBranch": "master",
-      "gitCommit": "commit1"
-    },
+    "build": 1,
+    "compileVersion": "6.1.0",
     "sourceUrl": "repository1/tree/commit1",
     "commit": "commit1"
   },
@@ -24,13 +19,8 @@
       "instance": "instance1",
       "deploying": {
         "revision": {
-          "buildNumber": 1,
-          "hash": "1.0.1-commit1",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          },
+          "build": 1,
+          "compileVersion": "6.1.0",
           "sourceUrl": "repository1/tree/commit1",
           "commit": "commit1"
         }

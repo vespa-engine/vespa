@@ -37,9 +37,6 @@
   "revision": "(ignore)",
   "deployTimeEpochMs": "(ignore)",
   "screwdriverId": "123",
-  "gitRepository": "repository1",
-  "gitBranch": "master",
-  "gitCommit": "commit1",
   "endpointStatus": [
     {
       "endpointId": "default",
@@ -50,13 +47,8 @@
     }
   ],
   "applicationVersion": {
-    "hash": "1.0.1-commit1",
     "build": 1,
-    "source": {
-      "gitRepository": "repository1",
-      "gitBranch": "master",
-      "gitCommit": "commit1"
-    },
+    "compileVersion": "6.1.0",
     "sourceUrl": "repository1/tree/commit1",
     "commit": "commit1"
   },

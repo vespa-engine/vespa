@@ -21,17 +21,9 @@
   "revision": "1.0.1-commit1",
   "deployTimeEpochMs": "(ignore)",
   "screwdriverId": "1000",
-  "gitRepository": "repository1",
-  "gitBranch": "master",
-  "gitCommit": "commit1",
   "applicationVersion": {
-    "hash": "1.0.1-commit1",
     "build": 1,
-    "source": {
-      "gitRepository": "repository1",
-      "gitBranch": "master",
-      "gitCommit": "commit1"
-    },
+    "compileVersion": "6.1.0",
     "sourceUrl": "repository1/tree/commit1",
     "commit": "commit1"
   },

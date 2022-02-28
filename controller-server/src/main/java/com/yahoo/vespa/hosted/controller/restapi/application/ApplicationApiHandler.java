@@ -1190,7 +1190,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                  request.getUri()).toString());
 
         DeploymentStatus status = controller.jobController().deploymentStatus(application);
-        application.latestVersion().ifPresent(version -> toSlime(version, object.setObject("latestVersion")));
+        application.latestVersion().ifPresent(version -> JobControllerApiHandlerHelper.toSlime(object.setObject("latestVersion"), version));
 
         application.projectId().ifPresent(id -> object.setLong("projectId", id));
 
@@ -1314,7 +1314,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                  request.getUri()).toString());
 
         application.latestVersion().ifPresent(version -> {
-            sourceRevisionToSlime(version.source(), object.setObject("source"));
             version.sourceUrl().ifPresent(url -> object.setString("sourceUrl", url));
             version.commit().ifPresent(commit -> object.setString("commit", commit));
         });
@@ -1451,7 +1450,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         change.platform().ifPresent(version -> object.setString("version", version.toString()));
         change.application()
               .filter(version -> !version.isUnknown())
-              .ifPresent(version -> toSlime(version, object.setObject("revision")));
+              .ifPresent(version -> JobControllerApiHandlerHelper.toSlime(object.setObject("revision"), version));
     }
 
     private void toSlime(Endpoint endpoint, Cursor object) {
@@ -1503,7 +1502,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                   .ifPresent(deploymentTimeToLive -> response.setLong("expiryTimeEpochMs", lastDeploymentStart.plus(deploymentTimeToLive).toEpochMilli()));
 
         application.projectId().ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
-        sourceRevisionToSlime(deployment.applicationVersion().source(), response);
 
         var instance = application.instances().get(deploymentId.applicationId().instance());
         if (instance != null) {
@@ -1516,7 +1514,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                         .map(type -> new JobId(instance.id(), type))
                         .map(status.jobSteps()::get)
                         .ifPresent(stepStatus -> {
-                            JobControllerApiHandlerHelper.applicationVersionToSlime(
+                            JobControllerApiHandlerHelper.toSlime(
                                     response.setObject("applicationVersion"), deployment.applicationVersion());
                             if (!status.jobsToRun().containsKey(stepStatus.job().get()))
                                 response.setString("status", "complete");
@@ -1562,23 +1560,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private Instant lastDeploymentStart(ApplicationId instanceId, Deployment deployment) {
         return controller.jobController().jobStarts(new JobId(instanceId, JobType.from(controller.system(), deployment.zone()).get()))
                          .stream().findFirst().orElse(deployment.at());
-    }
-
-    private void toSlime(ApplicationVersion applicationVersion, Cursor object) {
-        if ( ! applicationVersion.isUnknown()) {
-            object.setLong("buildNumber", applicationVersion.buildNumber().getAsLong());
-            object.setString("hash", applicationVersion.id());
-            sourceRevisionToSlime(applicationVersion.source(), object.setObject("source"));
-            applicationVersion.sourceUrl().ifPresent(url -> object.setString("sourceUrl", url));
-            applicationVersion.commit().ifPresent(commit -> object.setString("commit", commit));
-        }
-    }
-
-    private void sourceRevisionToSlime(Optional<SourceRevision> revision, Cursor object) {
-        if (revision.isEmpty()) return;
-        object.setString("gitRepository", revision.get().repository());
-        object.setString("gitBranch", revision.get().branch());
-        object.setString("gitCommit", revision.get().commit());
     }
 
     private void toSlime(RotationState state, Cursor object) {
@@ -2519,7 +2500,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         object.setLong("id", run.id().number());
         object.setString("version", run.versions().targetPlatform().toFullString());
         if ( ! run.versions().targetApplication().isUnknown())
-            toSlime(run.versions().targetApplication(), object.setObject("revision"));
+            JobControllerApiHandlerHelper.toSlime(object.setObject("revision"), run.versions().targetApplication());
         object.setString("reason", "unknown reason");
         object.setLong("at", run.end().orElse(run.start()).toEpochMilli());
     }
