@@ -191,6 +191,8 @@ public class NodeRepositoryNode {
         public String diskSpeed;
         @JsonProperty
         public String storageType;
+        @JsonProperty
+        public String architecture;
 
         @Override
         public String toString() {
@@ -201,6 +203,7 @@ public class NodeRepositoryNode {
                     ", bandwidthGbps=" + bandwidthGbps +
                     ", diskSpeed='" + diskSpeed + '\'' +
                     ", storageType='" + storageType + '\'' +
+                    ", architecture='" + architecture + '\'' +
                     '}';
         }
     }

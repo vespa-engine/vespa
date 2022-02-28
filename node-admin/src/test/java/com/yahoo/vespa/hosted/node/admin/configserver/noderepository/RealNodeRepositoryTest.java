@@ -178,6 +178,7 @@ public class RealNodeRepositoryTest {
         assertEquals("default", hostSpec.flavor());
         assertEquals(123, hostSpec.diskGb(), 0);
         assertEquals(NodeType.confighost, hostSpec.type());
+        assertEquals(NodeResources.Architecture.x86_64, hostSpec.resources().architecture());
 
         NodeSpec nodeSpec = nodeRepositoryApi.getOptionalNode("host123-1.domain.tld").orElseThrow();
         assertEquals(nodeResources, nodeSpec.resources());

@@ -44,6 +44,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.yahoo.config.provision.NodeResources.Architecture;
+import static com.yahoo.config.provision.NodeResources.DiskSpeed;
+import static com.yahoo.config.provision.NodeResources.StorageType;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -55,7 +58,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class NodeSerializerTest {
 
-    private final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default", "large", "ugccloud-container");
+    private final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default", "large", "ugccloud-container", "arm64");
     private final NodeSerializer nodeSerializer = new NodeSerializer(nodeFlavors, 1000);
     private final ManualClock clock = new ManualClock();
 
@@ -74,7 +77,8 @@ public class NodeSerializerTest {
     @Test
     public void reserved_node_serialization() {
         Node node = createNode();
-        NodeResources requestedResources = new NodeResources(1.2, 3.4, 5.6, 7.8, NodeResources.DiskSpeed.any);
+        NodeResources requestedResources = new NodeResources(1.2, 3.4, 5.6, 7.8,
+                                                             DiskSpeed.any, StorageType.any, Architecture.arm64);
 
         clock.advance(Duration.ofMinutes(3));
         assertEquals(0, node.history().events().size());
@@ -87,7 +91,7 @@ public class NodeSerializerTest {
         assertEquals(1, node.history().events().size());
         node = node.withRestart(new Generation(1, 2));
         node = node.withReboot(new Generation(3, 4));
-        node = node.with(FlavorConfigBuilder.createDummies("large").getFlavorOrThrow("large"), Agent.system, clock.instant());
+        node = node.with(FlavorConfigBuilder.createDummies("arm64").getFlavorOrThrow("arm64"), Agent.system, clock.instant());
         node = node.with(node.status().withVespaVersion(Version.fromString("1.2.3")));
         node = node.with(node.status().withIncreasedFailCount().withIncreasedFailCount());
         node = node.with(NodeType.tenant);
@@ -100,7 +104,8 @@ public class NodeSerializerTest {
         assertEquals(2, copy.allocation().get().restartGeneration().current());
         assertEquals(3, copy.status().reboot().wanted());
         assertEquals(4, copy.status().reboot().current());
-        assertEquals("large", copy.flavor().name());
+        assertEquals("arm64", copy.flavor().name());
+        assertEquals(Architecture.arm64.name(), copy.resources().architecture().name());
         assertEquals("1.2.3", copy.status().vespaVersion().get().toString());
         assertEquals(2, copy.status().failCount());
         assertEquals(node.allocation().get().owner(), copy.allocation().get().owner());

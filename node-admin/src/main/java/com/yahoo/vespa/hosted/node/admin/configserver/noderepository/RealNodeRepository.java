@@ -201,7 +201,8 @@ public class RealNodeRepository implements NodeRepository {
                 nodeResources.diskGb,
                 nodeResources.bandwidthGbps,
                 diskSpeedFromString(nodeResources.diskSpeed),
-                storageTypeFromString(nodeResources.storageType));
+                storageTypeFromString(nodeResources.storageType),
+                architectureFromString(nodeResources.architecture));
     }
 
     private static NodeResources.DiskSpeed diskSpeedFromString(String diskSpeed) {
@@ -224,6 +225,16 @@ public class RealNodeRepository implements NodeRepository {
         }
     }
 
+    private static NodeResources.Architecture architectureFromString(String architecture) {
+        if (architecture == null) return NodeResources.Architecture.getDefault();
+        switch (architecture) {
+            case "arm64": return NodeResources.Architecture.arm64;
+            case "x86_64": return NodeResources.Architecture.x86_64;
+            case "any": return NodeResources.Architecture.any;
+            default: throw new IllegalArgumentException("Unknown architecture '" + architecture + "'");
+        }
+    }
+
     private static String toString(NodeResources.DiskSpeed diskSpeed) {
         switch (diskSpeed) {
             case fast : return "fast";
@@ -239,6 +250,15 @@ public class RealNodeRepository implements NodeRepository {
             case local  : return "local";
             case any    : return "any";
             default: throw new IllegalArgumentException("Unknown storage type '" + storageType.name() + "'");
+        }
+    }
+
+    private static String toString(NodeResources.Architecture architecture) {
+        switch (architecture) {
+            case arm64 : return "arm64";
+            case x86_64 : return "x86_64";
+            case any    : return "any";
+            default: throw new IllegalArgumentException("Unknown architecture '" + architecture.name() + "'");
         }
     }
 
@@ -260,6 +280,7 @@ public class RealNodeRepository implements NodeRepository {
             node.resources.bandwidthGbps = resources.bandwidthGbps();
             node.resources.diskSpeed = toString(resources.diskSpeed());
             node.resources.storageType = toString(resources.storageType());
+            node.resources.architecture = toString(resources.architecture());
         });
         node.type = addNode.nodeType.name();
         node.ipAddresses = addNode.ipAddresses;
