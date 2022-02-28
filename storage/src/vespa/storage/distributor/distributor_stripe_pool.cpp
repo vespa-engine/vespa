@@ -15,7 +15,7 @@ DistributorStripePool::DistributorStripePool(bool test_mode, PrivateCtorTag)
       _mutex(),
       _parker_cond(),
       _parked_threads(0),
-      _bootstrap_tick_wait_duration(vespalib::from_s(1.0/vespalib::getVespaTimerHz())),
+      _bootstrap_tick_wait_duration(vespalib::adjustTimeoutByDetectedHz(1ms)),
       _bootstrap_ticks_before_wait(10),
       _single_threaded_test_mode(test_mode),
       _stopped(false)

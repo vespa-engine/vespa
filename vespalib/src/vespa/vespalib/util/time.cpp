@@ -30,6 +30,16 @@ getVespaTimerHz() {
     return 1000u;
 }
 
+duration
+adjustTimeoutByHz(duration timeout, long hz) {
+    return  (timeout * 1000) / hz;
+}
+
+duration
+adjustTimeoutByDetectedHz(duration timeout) {
+    return  adjustTimeoutByHz(timeout, getVespaTimerHz());
+}
+
 namespace {
 
 string

@@ -68,4 +68,19 @@ TEST(TimeTest, default_timer_frequency_is_1000_hz) {
     EXPECT_EQ(1000u, getVespaTimerHz());
 }
 
+TEST(TimeTest, timeout_is_relative_to_frequency) {
+    EXPECT_EQ(1000u, getVespaTimerHz());
+
+    EXPECT_EQ(1ms, adjustTimeoutByDetectedHz(1ms));
+    EXPECT_EQ(20ms, adjustTimeoutByDetectedHz(20ms));
+
+    EXPECT_EQ(1ms, adjustTimeoutByHz(1ms, 1000));
+    EXPECT_EQ(10ms, adjustTimeoutByHz(1ms, 100));
+    EXPECT_EQ(100ms, adjustTimeoutByHz(1ms, 10));
+
+    EXPECT_EQ(20ms, adjustTimeoutByHz(20ms, 1000));
+    EXPECT_EQ(200ms, adjustTimeoutByHz(20ms, 100));
+    EXPECT_EQ(2000ms, adjustTimeoutByHz(20ms, 10));
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

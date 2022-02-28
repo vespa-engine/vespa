@@ -11,7 +11,7 @@ DistributorStripeThread::DistributorStripeThread(TickableStripe& stripe,
                                                  DistributorStripePool& stripe_pool)
     : _stripe(stripe),
       _stripe_pool(stripe_pool),
-      _tick_wait_duration(vespalib::from_s(1.0/vespalib::getVespaTimerHz())),
+      _tick_wait_duration(vespalib::adjustTimeoutByDetectedHz(1ms)),
       _mutex(),
       _event_cond(),
       _park_cond(),
