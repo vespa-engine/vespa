@@ -1,0 +1,14 @@
+{
+    "steps": [
+        {
+            "request": {
+                "uri": "https://domain.tld/my-api"
+            }
+        },
+        {
+            "request": {
+                "uri": "/my-api"
+            }
+        }
+    ]
+}

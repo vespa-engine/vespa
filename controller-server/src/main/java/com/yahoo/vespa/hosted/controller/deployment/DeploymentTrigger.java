@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.text.Text;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -197,7 +199,7 @@ public class DeploymentTrigger {
 
         DeploymentStatus status = jobs.deploymentStatus(application);
         Versions versions = Versions.from(instance.change(), application, status.deploymentFor(job), controller.readSystemVersion());
-        DeploymentStatus.Job toTrigger = new DeploymentStatus.Job(versions, Optional.of(controller.clock().instant()), instance.change());
+        DeploymentStatus.Job toTrigger = new DeploymentStatus.Job(job.type(), versions, Optional.of(controller.clock().instant()), instance.change());
         Map<JobId, List<DeploymentStatus.Job>> jobs = status.testJobs(Map.of(job, List.of(toTrigger)));
         if (jobs.isEmpty() || ! requireTests)
             jobs = Map.of(job, List.of(toTrigger));
@@ -388,9 +390,13 @@ public class DeploymentTrigger {
     private boolean acceptNewApplicationVersion(DeploymentStatus status, InstanceName instance, ApplicationVersion version) {
         if (status.application().deploymentSpec().instance(instance).isEmpty()) return false; // Unknown instance.
         boolean isChangingRevision = status.application().require(instance).change().application().isPresent();
-        switch (status.application().deploymentSpec().requireInstance(instance).revisionChange()) {
+        DeploymentInstanceSpec spec = status.application().deploymentSpec().requireInstance(instance);
+        Predicate<ApplicationVersion> versionFilter = spec.revisionTarget() == DeploymentSpec.RevisionTarget.next
+                                                      ? failing -> status.application().require(instance).change().application().get().compareTo(failing) == 0
+                                                      : failing -> version.compareTo(failing) > 0;
+        switch (spec.revisionChange()) {
             case whenClear:   return ! isChangingRevision;
-            case whenFailing: return ! isChangingRevision || status.hasFailures(version);
+            case whenFailing: return ! isChangingRevision || status.hasFailures(versionFilter);
             case always:      return true;
             default:          throw new IllegalStateException("Unknown revision upgrade policy");
         }

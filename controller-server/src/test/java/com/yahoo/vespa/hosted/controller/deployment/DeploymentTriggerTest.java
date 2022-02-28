@@ -251,9 +251,6 @@ public class DeploymentTriggerTest {
                                                                        .build();
         DeploymentContext app = tester.newDeploymentContext()
                                       .submit(appPackage);
-        Optional<ApplicationVersion> revision0 = app.lastSubmission();
-
-        app.submit(appPackage);
         Optional<ApplicationVersion> revision1 = app.lastSubmission();
 
         app.submit(appPackage);
@@ -262,17 +259,47 @@ public class DeploymentTriggerTest {
         app.submit(appPackage);
         Optional<ApplicationVersion> revision3 = app.lastSubmission();
 
-        assertEquals(revision0, app.instance().change().application());
-        assertEquals(revision1, app.deploymentStatus().outstandingChange(InstanceName.defaultName()).application());
+        app.submit(appPackage);
+        Optional<ApplicationVersion> revision4 = app.lastSubmission();
 
-        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(revision1.get()));
+        app.submit(appPackage);
+        Optional<ApplicationVersion> revision5 = app.lastSubmission();
+
+        // 5 revisions submitted; the first is rolling out, and the others are queued.
+        tester.outstandingChangeDeployer().run();
         assertEquals(revision1, app.instance().change().application());
         assertEquals(revision2, app.deploymentStatus().outstandingChange(InstanceName.defaultName()).application());
 
-        app.deploy();
+        // The second revision is set as the target by user interaction.
+        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(revision2.get()));
         tester.outstandingChangeDeployer().run();
         assertEquals(revision2, app.instance().change().application());
         assertEquals(revision3, app.deploymentStatus().outstandingChange(InstanceName.defaultName()).application());
+
+        // The second revision deploys completely, and the third starts rolling out.
+        app.runJob(systemTest).runJob(stagingTest)
+           .runJob(productionUsEast3);
+        tester.outstandingChangeDeployer().run();
+        tester.outstandingChangeDeployer().run();
+        assertEquals(revision3, app.instance().change().application());
+        assertEquals(revision4, app.deploymentStatus().outstandingChange(InstanceName.defaultName()).application());
+
+        // The third revision fails, and the fourth is chosen to replace it.
+        app.triggerJobs().timeOutConvergence(systemTest);
+        tester.outstandingChangeDeployer().run();
+        tester.outstandingChangeDeployer().run();
+        assertEquals(revision4, app.instance().change().application());
+        assertEquals(revision5, app.deploymentStatus().outstandingChange(InstanceName.defaultName()).application());
+
+        // Tests for outstanding change are relevant when current revision completes.
+        app.runJob(systemTest).runJob(systemTest)
+           .jobAborted(stagingTest).runJob(stagingTest).runJob(stagingTest)
+           .runJob(productionUsEast3);
+        tester.outstandingChangeDeployer().run();
+        tester.outstandingChangeDeployer().run();
+        assertEquals(revision5, app.instance().change().application());
+        assertEquals(Change.empty(), app.deploymentStatus().outstandingChange(InstanceName.defaultName()));
+        app.runJob(productionUsEast3);
     }
 
     @Test
@@ -1810,7 +1837,8 @@ public class DeploymentTriggerTest {
         // System and staging tests both require unknown versions, and are broken.
         tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false);
         app.runJob(productionCdUsEast1)
-           .abortJob(systemTest)
+           .triggerJobs()
+           .jobAborted(systemTest)
            .jobAborted(stagingTest)
            .runJob(systemTest)  // Run test for aws zone again.
            .runJob(stagingTest) // Run test for aws zone again.

@@ -37,6 +37,11 @@ public class Versions {
         this.sourceApplication = requireNonNull(sourceApplication);
     }
 
+    /** A copy of this, without source versions. */
+    public Versions withoutSources() {
+        return new Versions(targetPlatform, targetApplication, Optional.empty(), Optional.empty());
+    }
+
     /** Target platform version for this */
     public Version targetPlatform() {
         return targetPlatform;
@@ -98,36 +103,36 @@ public class Versions {
     }
 
     /** Create versions using given change and application */
+    public static Versions from(Change change, Application application, Optional<Version> existingPlatform,
+                                Optional<ApplicationVersion> existingApplication, Version defaultPlatformVersion) {
+        return new Versions(targetPlatform(application, change, existingPlatform, defaultPlatformVersion),
+                            targetApplication(application, change, existingApplication),
+                            existingPlatform,
+                            existingApplication);
+    }
+
+    /** Create versions using given change and application */
     public static Versions from(Change change, Application application, Optional<Deployment> deployment,
                                 Version defaultPlatformVersion) {
-        return new Versions(targetPlatform(application, change, deployment, defaultPlatformVersion),
-                            targetApplication(application, change, deployment),
+        return new Versions(targetPlatform(application, change, deployment.map(Deployment::version), defaultPlatformVersion),
+                            targetApplication(application, change, deployment.map(Deployment::applicationVersion)),
                             deployment.map(Deployment::version),
                             deployment.map(Deployment::applicationVersion));
     }
 
-    public static Versions from(Change change, Deployment deployment) {
-        return new Versions(change.platform().filter(version -> change.isPinned() || deployment.version().isBefore(version))
-                                  .orElse(deployment.version()),
-                            change.application().filter(version -> deployment.applicationVersion().compareTo(version) < 0)
-                                  .orElse(deployment.applicationVersion()),
-                            Optional.of(deployment.version()),
-                            Optional.of(deployment.applicationVersion()));
-    }
-
-    private static Version targetPlatform(Application application, Change change, Optional<Deployment> deployment,
+    private static Version targetPlatform(Application application, Change change, Optional<Version> existing,
                                           Version defaultVersion) {
         if (change.isPinned() && change.platform().isPresent())
             return change.platform().get();
 
-        return max(change.platform(), deployment.map(Deployment::version))
+        return max(change.platform(), existing)
                 .orElseGet(() -> application.oldestDeployedPlatform().orElse(defaultVersion));
     }
 
     private static ApplicationVersion targetApplication(Application application, Change change,
-                                                        Optional<Deployment> deployment) {
+                                                        Optional<ApplicationVersion> existing) {
         return change.application()
-                     .or(() -> deployment.map(Deployment::applicationVersion))
+                     .or(() -> existing)
                      .orElseGet(() -> defaultApplicationVersion(application));
     }
 

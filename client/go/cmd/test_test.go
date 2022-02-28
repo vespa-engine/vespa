@@ -49,8 +49,17 @@ func TestIllegalFileReference(t *testing.T) {
 	client.NextStatus(200)
 	client.NextStatus(200)
 	_, errBytes := execute(command{args: []string{"test", "testdata/tests/production-test/illegal-reference.json"}}, t, client)
-	assertRequests([]*http.Request{createRequest("GET", "http://127.0.0.1:8080/search/", "{}")}, client, t)
-	assert.Equal(t, "\nError: error in Step 2: path may not point outside src/test/application, but 'foo/../../../../this-is-not-ok.json' does\nHint: See https://cloud.vespa.ai/en/reference/testing\n", errBytes)
+	assertRequests([]*http.Request{createRequest("GET", "https://domain.tld", "{}")}, client, t)
+	assert.Equal(t, "\nError: error in Step 2: path may not point outside src/test/application, but 'foo/../../../../this-is-not-ok.json' does\nHint: See https://docs.vespa.ai/en/reference/testing\n", errBytes)
+}
+
+func TestIllegalRequestUri(t *testing.T) {
+	client := &mockHttpClient{}
+	client.NextStatus(200)
+	client.NextStatus(200)
+	_, errBytes := execute(command{args: []string{"test", "testdata/tests/production-test/illegal-uri.json"}}, t, client)
+	assertRequests([]*http.Request{createRequest("GET", "https://domain.tld/my-api", "")}, client, t)
+	assert.Equal(t, "\nError: error in Step 2: production tests may not specify requests against Vespa endpoints\nHint: See https://docs.vespa.ai/en/reference/testing\n", errBytes)
 }
 
 func TestProductionTest(t *testing.T) {
@@ -65,13 +74,13 @@ func TestProductionTest(t *testing.T) {
 func TestTestWithoutAssertions(t *testing.T) {
 	client := &mockHttpClient{}
 	_, errBytes := execute(command{args: []string{"test", "testdata/tests/system-test/foo/query.json"}}, t, client)
-	assert.Equal(t, "\nError: a test must have at least one step, but none were found in testdata/tests/system-test/foo/query.json\nHint: See https://cloud.vespa.ai/en/reference/testing\n", errBytes)
+	assert.Equal(t, "\nError: a test must have at least one step, but none were found in testdata/tests/system-test/foo/query.json\nHint: See https://docs.vespa.ai/en/reference/testing\n", errBytes)
 }
 
 func TestSuiteWithoutTests(t *testing.T) {
 	client := &mockHttpClient{}
 	_, errBytes := execute(command{args: []string{"test", "testdata/tests/staging-test"}}, t, client)
-	assert.Equal(t, "Error: failed to find any tests at testdata/tests/staging-test\nHint: See https://cloud.vespa.ai/en/reference/testing\n", errBytes)
+	assert.Equal(t, "Error: failed to find any tests at testdata/tests/staging-test\nHint: See https://docs.vespa.ai/en/reference/testing\n", errBytes)
 }
 
 func TestSingleTest(t *testing.T) {

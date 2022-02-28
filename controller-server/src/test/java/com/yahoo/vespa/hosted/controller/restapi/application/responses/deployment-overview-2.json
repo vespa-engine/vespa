@@ -144,13 +144,6 @@
               "compileVersion": "6.1.0",
               "sourceUrl": "repository1/tree/commit1",
               "commit": "commit1"
-            },
-            "sourcePlatform": "6.1.0",
-            "sourceApplication": {
-              "build": 2,
-              "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1",
-              "commit": "commit1"
             }
           },
           "steps": [
@@ -206,13 +199,6 @@
             "targetPlatform": "6.1.0",
             "targetApplication": {
               "build": 2,
-              "compileVersion": "6.1.0",
-              "sourceUrl": "repository1/tree/commit1",
-              "commit": "commit1"
-            },
-            "sourcePlatform": "6.1.0",
-            "sourceApplication": {
-              "build": 1,
               "compileVersion": "6.1.0",
               "sourceUrl": "repository1/tree/commit1",
               "commit": "commit1"
