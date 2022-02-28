@@ -168,7 +168,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
 
         // Valid options, should not log anything
         verifyLoggingOfJvmGcOptions(true, "-XX:+ParallelGCThreads=8");
-        verifyLoggingOfJvmGcOptions(true, "-XX:MaxTenuringThreshold"); // No + or - after colon
+        verifyLoggingOfJvmGcOptions(true, "-XX:MaxTenuringThreshold=15"); // No + or - after colon
         verifyLoggingOfJvmGcOptions(false, "-XX:+UseConcMarkSweepGC");
     }
 
