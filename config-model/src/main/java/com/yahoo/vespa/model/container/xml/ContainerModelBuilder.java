@@ -824,6 +824,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                  .dockerImageRepository(deployState.getWantedDockerImageRepo())
                                                  .build();
             int nodeCount = deployState.zone().environment().isProduction() ? 2 : 1;
+            deployState.getDeployLogger().logApplicationPackage(Level.INFO, "Using " + nodeCount +
+                                                                            " nodes in " + cluster);
             Capacity capacity = Capacity.from(new ClusterResources(nodeCount, 1, NodeResources.unspecified()),
                                               false,
                                               !deployState.getProperties().isBootstrap());
