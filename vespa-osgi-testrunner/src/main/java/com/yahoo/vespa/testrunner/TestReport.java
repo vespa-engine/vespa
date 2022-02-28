@@ -39,7 +39,7 @@ public class TestReport {
     }
 
     public TestRunner.Status status() {
-        return failedCount > 0 ? FAILURE : inconclusiveCount > 0 ? INCONCLUSIVE : (successCount + abortedCount + ignoredCount) > 0 ? SUCCESS : NO_TESTS;
+        return failedCount > 0 ? FAILURE : inconclusiveCount > 0 ? INCONCLUSIVE : successCount > 0 ? SUCCESS : NO_TESTS;
     }
 
     public static Builder builder(){

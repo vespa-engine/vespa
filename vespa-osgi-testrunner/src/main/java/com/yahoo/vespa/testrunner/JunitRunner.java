@@ -105,7 +105,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
             logRecords.clear();
             Optional<Bundle> testBundle = findTestBundle();
             if (testBundle.isEmpty()) {
-                execution = CompletableFuture.completedFuture(TestReport.builder().build());
+                execution = CompletableFuture.completedFuture(null);
                 return execution;
             }
 
@@ -231,7 +231,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         if (execution == null) return TestRunner.Status.NOT_STARTED;
         if ( ! execution.isDone()) return TestRunner.Status.RUNNING;
         try {
-            return execution.get().status();
+            return execution.get() == null ? Status.NO_TESTS : execution.get().status();
         } catch (InterruptedException|ExecutionException e) {
             logger.log(Level.WARNING, "Error while getting test report", e);
             return TestRunner.Status.ERROR;

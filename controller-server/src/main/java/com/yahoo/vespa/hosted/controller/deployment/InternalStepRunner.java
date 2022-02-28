@@ -22,6 +22,9 @@ import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.text.Text;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -674,15 +677,12 @@ public class InternalStepRunner implements StepRunner {
                 controller.jobController().updateTestReport(id);
                 return Optional.of(error);
             case NO_TESTS:
-                if (isSetup) {
-                    return Optional.of(running);
-                }
                 TesterCloud.Suite suite = TesterCloud.Suite.of(id.type(), isSetup);
                 logger.log(INFO, "No tests were found in the test package, for test suite '" + suite + "'");
                 logger.log(INFO, "The test package must either contain basic HTTP tests under 'tests/<suite-name>/', " +
                                  "or a Java test bundle under 'components/' with at least one test with the annotation " +
                                  "for this suite. See docs.vespa.ai/en/testing.html for details.");
-                return Optional.of(running); // Let no tests pass until all apps meet this requirement.
+                return Optional.of(allowNoTests(id.application()) ? running : testFailure);
             case SUCCESS:
                 logger.log("Tests completed successfully.");
                 controller.jobController().updateTestReport(id);
@@ -690,6 +690,12 @@ public class InternalStepRunner implements StepRunner {
             default:
                 throw new IllegalStateException("Unknown status '" + testStatus + "'!");
         }
+    }
+
+    private boolean allowNoTests(ApplicationId appId) {
+        return Flags.ALLOW_NO_TESTS.bindTo(controller.flagSource())
+                                   .with(FetchVector.Dimension.TENANT_ID, appId.tenant().value())
+                                   .value();
     }
 
     private Optional<RunStatus> copyVespaLogs(RunId id, DualLogger logger) {
