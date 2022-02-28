@@ -56,6 +56,8 @@ public:
     ~StorageApiRpcService() override;
 
     [[nodiscard]] bool target_supports_direct_rpc(const api::StorageMessageAddress& addr) const noexcept;
+    // Bypasses resolver cache and returns whether local Slobrok mirror has at least 1 spec for the given address.
+    [[nodiscard]] bool address_visible_in_slobrok_uncached(const api::StorageMessageAddress& addr) const noexcept;
 
     void RPC_rpc_v1_send(FRT_RPCRequest* req);
     void encode_rpc_v1_response(FRT_RPCRequest& request, api::StorageReply& reply);
