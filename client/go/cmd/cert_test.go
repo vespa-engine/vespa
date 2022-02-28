@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
@@ -39,7 +41,7 @@ func testCert(t *testing.T, subcommand []string) {
 	assert.Equal(t, fmt.Sprintf("Success: Certificate written to %s\nSuccess: Certificate written to %s\nSuccess: Private key written to %s\n", pkgCertificate, certificate, privateKey), out)
 
 	args = append(subcommand, "-a", "t1.a1.i1", pkgDir)
-	_, outErr := execute(command{args: []string{"cert", "-a", "t1.a1.i1", pkgDir}, homeDir: homeDir}, t, nil)
+	_, outErr := execute(command{args: args, homeDir: homeDir}, t, nil)
 	assert.Contains(t, outErr, fmt.Sprintf("Error: application package %s already contains a certificate", appDir))
 }
 
@@ -72,6 +74,44 @@ func testCertCompressedPackage(t *testing.T, subcommand []string) {
 	out, _ := execute(command{args: args, homeDir: homeDir}, t, nil)
 	assert.Contains(t, out, "Success: Certificate written to")
 	assert.Contains(t, out, "Success: Private key written to")
+}
+
+func TestCertAdd(t *testing.T) {
+	homeDir := filepath.Join(t.TempDir(), ".vespa")
+	execute(command{args: []string{"auth", "cert", "-N", "-a", "t1.a1.i1"}, homeDir: homeDir}, t, nil)
+
+	pkgDir := mockApplicationPackage(t, false)
+	out, _ := execute(command{args: []string{"auth", "cert", "add", "-a", "t1.a1.i1", pkgDir}, homeDir: homeDir}, t, nil)
+	appDir := filepath.Join(pkgDir, "src", "main", "application")
+	pkgCertificate := filepath.Join(appDir, "security", "clients.pem")
+	assert.Equal(t, fmt.Sprintf("Success: Certificate written to %s\n", pkgCertificate), out)
+
+	out, outErr := execute(command{args: []string{"auth", "cert", "add", "-a", "t1.a1.i1", pkgDir}, homeDir: homeDir}, t, nil)
+	assert.Equal(t, "", out)
+	assert.Contains(t, outErr, fmt.Sprintf("Error: application package %s already contains a certificate", appDir))
+	out, _ = execute(command{args: []string{"auth", "cert", "add", "-f", "-a", "t1.a1.i1", pkgDir}, homeDir: homeDir}, t, nil)
+	assert.Equal(t, fmt.Sprintf("Success: Certificate written to %s\n", pkgCertificate), out)
+}
+
+func TestCertNoAdd(t *testing.T) {
+	homeDir := filepath.Join(t.TempDir(), ".vespa")
+	out, _ := execute(command{args: []string{"auth", "cert", "-N", "-a", "t1.a1.i1"}, homeDir: homeDir}, t, nil)
+
+	app, err := vespa.ApplicationFromString("t1.a1.i1")
+	assert.Nil(t, err)
+
+	certificate := filepath.Join(homeDir, app.String(), "data-plane-public-cert.pem")
+	privateKey := filepath.Join(homeDir, app.String(), "data-plane-private-key.pem")
+	assert.Equal(t, fmt.Sprintf("Success: Certificate written to %s\nSuccess: Private key written to %s\n", certificate, privateKey), out)
+
+	_, outErr := execute(command{args: []string{"auth", "cert", "-N", "-a", "t1.a1.i1"}, homeDir: homeDir}, t, nil)
+	assert.Contains(t, outErr, fmt.Sprintf("Error: private key %s already exists", privateKey))
+	require.Nil(t, os.Remove(privateKey))
+	_, outErr = execute(command{args: []string{"auth", "cert", "-N", "-a", "t1.a1.i1"}, homeDir: homeDir}, t, nil)
+	assert.Contains(t, outErr, fmt.Sprintf("Error: certificate %s already exists", certificate))
+
+	out, _ = execute(command{args: []string{"auth", "cert", "-N", "-f", "-a", "t1.a1.i1"}, homeDir: homeDir}, t, nil)
+	assert.Equal(t, fmt.Sprintf("Success: Certificate written to %s\nSuccess: Private key written to %s\n", certificate, privateKey), out)
 }
 
 func mockApplicationPackage(t *testing.T, java bool) string {
