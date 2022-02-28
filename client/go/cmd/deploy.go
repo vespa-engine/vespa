@@ -64,7 +64,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 		if err != nil {
 			return err
 		}
-		opts, err := getDeploymentOpts(cfg, pkg, target)
+		opts, err := getDeploymentOptions(cfg, pkg, target)
 		if err != nil {
 			return err
 		}

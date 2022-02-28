@@ -299,7 +299,7 @@ func waitForService(service string, sessionOrRunID int64) error {
 	return nil
 }
 
-func getDeploymentOpts(cfg *Config, pkg vespa.ApplicationPackage, target vespa.Target) (vespa.DeploymentOptions, error) {
+func getDeploymentOptions(cfg *Config, pkg vespa.ApplicationPackage, target vespa.Target) (vespa.DeploymentOptions, error) {
 	opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target}
 	if opts.IsCloud() {
 		if target.Type() == vespa.TargetCloud && !opts.ApplicationPackage.HasCertificate() {

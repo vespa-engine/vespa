@@ -161,7 +161,7 @@ $ vespa prod submit`,
 			fmt.Fprintln(stderr, color.Yellow("Warning:"), "We recommend doing this only from a CD job")
 			printErrHint(nil, "See https://cloud.vespa.ai/en/getting-to-production")
 		}
-		opts, err := getDeploymentOpts(cfg, pkg, target)
+		opts, err := getDeploymentOptions(cfg, pkg, target)
 		if err != nil {
 			return err
 		}
