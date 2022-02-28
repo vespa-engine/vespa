@@ -85,7 +85,7 @@ public class HostResources {
     public int containers() { return containers; }
 
     @JsonProperty("architecture")
-    public String architecture() { return architecture == null ? "x86_64" : architecture; }
+    public String architecture() { return architecture; }
 
     public boolean satisfiesClusterType(String clusterType) {
         return this.clusterType.map(clusterType::equalsIgnoreCase).orElse(true);
