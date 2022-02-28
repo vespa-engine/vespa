@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -139,10 +140,10 @@ public class DeploymentStatus {
         return dependents.contains(current);
     }
 
-    /** Whether any job is failing on anything older than version, with errors other than lack of capacity in a test zone.. */
-    public boolean hasFailures(ApplicationVersion version) {
+    /** Whether any job is failing on versions selected by the given filter, with errors other than lack of capacity in a test zone.. */
+    public boolean hasFailures(Predicate<ApplicationVersion> versionFilter) {
         return ! allJobs.failingHard()
-                        .matching(job -> job.lastTriggered().get().versions().targetApplication().compareTo(version) < 0)
+                        .matching(job -> versionFilter.test(job.lastTriggered().get().versions().targetApplication()))
                         .isEmpty();
     }
 
