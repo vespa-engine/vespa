@@ -32,10 +32,14 @@ public class SerializationContext extends FunctionReferenceContext {
         this(Collections.emptyList());
     }
 
-    /** @deprecated Use {@link #SerializationContext(Map, Map, Optional, Map) instead}*/
+    /** @deprecated Use {@link #SerializationContext(Collection, Optional) instead}*/
     @Deprecated(forRemoval = true, since = "7")
     public SerializationContext(Collection<ExpressionFunction> functions) {
         this(functions, Collections.emptyMap(), Optional.empty(), new LinkedHashMap<>());
+    }
+
+    public SerializationContext(Collection<ExpressionFunction> functions, Optional<TypeContext<Reference>> typeContext) {
+        this(functions, Collections.emptyMap(), typeContext, new LinkedHashMap<>());
     }
 
     /** @deprecated Use {@link #SerializationContext(Map, Map, Optional, Map) instead}*/
@@ -66,8 +70,8 @@ public class SerializationContext extends FunctionReferenceContext {
      *        is <b>transferred</b> to this and will be modified in it
      */
     private SerializationContext(Collection<ExpressionFunction> functions, Map<String, String> bindings,
-                                Optional<TypeContext<Reference>> typeContext,
-                                Map<String, String> serializedFunctions) {
+                                 Optional<TypeContext<Reference>> typeContext,
+                                 Map<String, String> serializedFunctions) {
         this(toMap(functions), bindings, typeContext, serializedFunctions);
     }
 

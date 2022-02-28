@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -97,7 +98,7 @@ public class RankingExpressionTestCase {
 
         RankingExpression exp = new RankingExpression("foo");
         try {
-            exp.getRankProperties(new SerializationContext(functions));
+            exp.getRankProperties(new SerializationContext(functions, Optional.empty()));
         } catch (RuntimeException e) {
             assertEquals("Cycle in ranking expression function: [foo[]]", e.getMessage());
         }
@@ -111,7 +112,7 @@ public class RankingExpressionTestCase {
 
         RankingExpression exp = new RankingExpression("foo");
         try {
-            exp.getRankProperties(new SerializationContext(functions));
+            exp.getRankProperties(new SerializationContext(functions, Optional.empty()));
         } catch (RuntimeException e) {
             assertEquals("Cycle in ranking expression function: [foo[], bar[]]", e.getMessage());
         }
@@ -391,14 +392,16 @@ public class RankingExpressionTestCase {
                                      List<ExpressionFunction> functions) {
         assertSerialization(expectedSerialization, expressionString, functions, false);
     }
-    private void assertSerialization(List<String> expectedSerialization, String expressionString, 
+
+    private void assertSerialization(List<String> expectedSerialization, String expressionString,
                                      List<ExpressionFunction> functions, boolean print) {
         try {
             if (print)
                 System.out.println("Parsing expression '" + expressionString + "':");
 
             RankingExpression expression = new RankingExpression(expressionString);
-            Map<String, String> rankProperties = expression.getRankProperties(new SerializationContext(functions));
+            Map<String, String> rankProperties = expression.getRankProperties(new SerializationContext(functions,
+                                                                                                       Optional.empty()));
             if (print) {
                 for (String key : rankProperties.keySet())
                     System.out.println(key + ": " + rankProperties.get(key));
