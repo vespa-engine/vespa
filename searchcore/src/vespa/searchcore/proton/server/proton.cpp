@@ -241,7 +241,7 @@ Proton::Proton(FastOS_ThreadPool & threadPool, FNET_Transport & transport, const
       _shared_service(),
       _compile_cache_executor_binding(),
       _queryLimiter(),
-      _clock(1.0/vespalib::getVespaTimerHz()),
+      _clock(),
       _distributionKey(-1),
       _isInitializing(true),
       _abortInit(false),
@@ -259,9 +259,6 @@ Proton::init()
 {
     assert( ! _initStarted && ! _initComplete );
     _initStarted = true;
-    if (_threadPool.NewThread(_clock.getRunnable(), nullptr) == nullptr) {
-        throw IllegalStateException("Failed starting thread for the cheap clock");
-    }
     _protonConfigFetcher.start(_threadPool);
     auto configSnapshot = _protonConfigurer.getPendingConfigSnapshot();
     assert(configSnapshot);
@@ -281,6 +278,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     setBucketCheckSumType(protonConfig);
     setFS4Compression(protonConfig);
     _shared_service = std::make_unique<SharedThreadingService>(SharedThreadingServiceConfig::make(protonConfig, hwInfo.cpu()), _transport);
+    _clock.start(_shared_service->invokeService());
     _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(_shared_service->transport(), protonConfig.basedir,
                                                                  diskMemUsageSamplerConfig(protonConfig, hwInfo));
 
@@ -475,8 +473,8 @@ Proton::~Proton()
     _persistenceEngine.reset();
     _tls.reset();
     _compile_cache_executor_binding.reset();
-    _shared_service.reset();
     _clock.stop();
+    _shared_service.reset();
     LOG(debug, "Explicit destructor done");
 }
 

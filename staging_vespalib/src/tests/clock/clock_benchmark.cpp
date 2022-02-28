@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/clock.h>
+#include <vespa/vespalib/util/invokeserviceimpl.h>
 #include <vespa/fastos/thread.h>
 #include <cassert>
 #include <vector>
@@ -137,11 +138,12 @@ main(int , char *argv[])
     NSValue nsValue;
     NSVolatile nsVolatile;
     NSAtomic nsAtomic;
-    Clock clock(1.0/frequency);
+    vespalib::InvokeServiceImpl invoker(vespalib::from_s(1.0/frequency));
+    Clock clock;
     TestClock nsClock(nsValue, 1.0/frequency);
     TestClock nsVolatileClock(nsVolatile, 1.0/frequency);
     TestClock nsAtomicClock(nsAtomic, 1.0/frequency);
-    assert(pool.NewThread(clock.getRunnable(), nullptr) != nullptr);
+    clock.start(invoker);
     assert(pool.NewThread(&nsClock, nullptr) != nullptr);
     assert(pool.NewThread(&nsVolatileClock, nullptr) != nullptr);
     assert(pool.NewThread(&nsAtomicClock, nullptr) != nullptr);
