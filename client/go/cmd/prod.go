@@ -154,7 +154,9 @@ $ vespa prod submit`,
 		}
 		// TODO: Always verify tests. Do it before packaging, when running Maven from this CLI.
 		if !pkg.IsZip() {
-			verifyTests(pkg.TestPath, target)
+			if err := verifyTests(pkg.TestPath, target); err != nil {
+				return err
+			}
 		}
 		isCI := os.Getenv("CI") != ""
 		if !isCI {
@@ -375,11 +377,20 @@ func prompt(r *bufio.Reader, question, defaultAnswer string, validator func(inpu
 	return input, nil
 }
 
-func verifyTests(testsParent string, target vespa.Target) {
-	verifyTest(testsParent, "system-test", target, true)
-	verifyTest(testsParent, "staging-setup", target, true)
-	verifyTest(testsParent, "staging-test", target, true)
-	verifyTest(testsParent, "production-test", target, false)
+func verifyTests(testsParent string, target vespa.Target) error {
+	suites := map[string]bool{
+		// suite name: required
+		"system-test":     true,
+		"staging-setup":   true,
+		"staging-test":    true,
+		"production-test": false,
+	}
+	for suite, required := range suites {
+		if err := verifyTest(testsParent, suite, target, required); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func verifyTest(testsParent string, suite string, target vespa.Target, required bool) error {
