@@ -97,11 +97,11 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         tester.assertResponse(postPartial, "{\"message\":\"Tenant info updated\"}", 200);
 
         // Read back the updated info
-        tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"invoiceEmail\":\"\",\"contactName\":\"newName\",\"contactEmail\":\"foo@example.com\",\"billingContact\":{\"name\":\"billingName\",\"email\":\"\",\"phone\":\"\"}}", 200);
+        tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"newName\",\"contactEmail\":\"foo@example.com\",\"billingContact\":{\"name\":\"billingName\",\"email\":\"\",\"phone\":\"\"}}", 200);
 
         String fullAddress = "{\"addressLines\":\"addressLines\",\"postalCodeOrZip\":\"postalCodeOrZip\",\"city\":\"city\",\"stateRegionProvince\":\"stateRegionProvince\",\"country\":\"country\"}";
         String fullBillingContact = "{\"name\":\"name\",\"email\":\"foo@example\",\"phone\":\"phone\",\"address\":" + fullAddress + "}";
-        String fullInfo = "{\"name\":\"name\",\"email\":\"foo@example\",\"website\":\"https://yahoo.com\",\"invoiceEmail\":\"invoiceEmail\",\"contactName\":\"contactName\",\"contactEmail\":\"contact@example.com\",\"address\":" + fullAddress + ",\"billingContact\":" + fullBillingContact + "}";
+        String fullInfo = "{\"name\":\"name\",\"email\":\"foo@example\",\"website\":\"https://yahoo.com\",\"contactName\":\"contactName\",\"contactEmail\":\"contact@example.com\",\"address\":" + fullAddress + ",\"billingContact\":" + fullBillingContact + "}";
 
         // Now set all fields
         var postFull =

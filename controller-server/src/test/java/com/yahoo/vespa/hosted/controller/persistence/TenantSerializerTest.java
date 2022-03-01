@@ -16,8 +16,9 @@ import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
+import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
+import com.yahoo.vespa.hosted.controller.tenant.TenantContact;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
-import com.yahoo.vespa.hosted.controller.tenant.TenantInfoAddress;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfoBillingContact;
 import org.junit.Test;
 
@@ -97,7 +98,7 @@ public class TenantSerializerTest {
                                              Optional.of(new SimplePrincipal("foobar-user")),
                                              ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
                                                                otherPublicKey, new SimplePrincipal("jane")),
-                                             TenantInfo.EMPTY,
+                                             TenantInfo.empty(),
                                              List.of(),
                                              Optional.empty()
         );
@@ -116,7 +117,7 @@ public class TenantSerializerTest {
                 Optional.of(new SimplePrincipal("foobar-user")),
                 ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
                         otherPublicKey, new SimplePrincipal("jane")),
-                TenantInfo.EMPTY.withName("Ofni Tnanet"),
+                TenantInfo.empty().withName("Ofni Tnanet"),
                 List.of(
                         new TenantSecretStore("ss1", "123", "role1"),
                         new TenantSecretStore("ss2", "124", "role2")
@@ -131,39 +132,35 @@ public class TenantSerializerTest {
 
     @Test
     public void cloud_tenant_with_tenant_info_partial() {
-        TenantInfo partialInfo = TenantInfo.EMPTY
-                .withAddress(TenantInfoAddress.EMPTY.withCity("Hønefoss"));
+        TenantInfo partialInfo = TenantInfo.empty()
+                .withAddress(TenantAddress.empty().withCity("Hønefoss"));
 
         Slime slime = new Slime();
         Cursor parentObject = slime.setObject();
         serializer.toSlime(partialInfo, parentObject);
-        assertEquals("{\"info\":{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"invoiceEmail\":\"\",\"contactName\":\"\",\"contactEmail\":\"\",\"address\":{\"addressLines\":\"\",\"postalCodeOrZip\":\"\",\"city\":\"Hønefoss\",\"stateRegionProvince\":\"\",\"country\":\"\"}}}", slime.toString());
+        assertEquals("{\"info\":{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"\",\"contactEmail\":\"\",\"address\":{\"addressLines\":\"\",\"postalCodeOrZip\":\"\",\"city\":\"Hønefoss\",\"stateRegionProvince\":\"\",\"country\":\"\"}}}", slime.toString());
     }
 
     @Test
     public void cloud_tenant_with_tenant_info_full() {
-        TenantInfo fullInfo = TenantInfo.EMPTY
+        TenantInfo fullInfo = TenantInfo.empty()
                 .withName("My Company")
                 .withEmail("email@mycomp.any")
                 .withWebsite("http://mycomp.any")
-                .withContactEmail("ceo@mycomp.any")
-                .withContactName("My Name")
-                .withInvoiceEmail("invoice@mycomp.any")
-                .withAddress(TenantInfoAddress.EMPTY
+                .withContact(TenantContact.from("My Name", "ceo@mycomp.any"))
+                .withAddress(TenantAddress.empty()
                         .withCity("Hønefoss")
-                        .withAddressLines("Riperbakken 2")
+                        .withAddress("Riperbakken 2")
                         .withCountry("Norway")
-                        .withPostalCodeOrZip("3510")
-                        .withStateRegionProvince("Viken"))
-                .withBillingContact(TenantInfoBillingContact.EMPTY
-                        .withEmail("thomas@sodor.com")
-                        .withName("Thomas The Tank Engine")
-                        .withPhone("NA")
-                        .withAddress(TenantInfoAddress.EMPTY
+                        .withCode("3510")
+                        .withRegion("Viken"))
+                .withBilling(TenantInfoBillingContact.empty()
+                        .withContact(TenantContact.from("Thomas The Tank Engine", "thomas@sodor.com", "NA"))
+                        .withAddress(TenantAddress.empty()
                                 .withCity("Suddery")
                                 .withCountry("Sodor")
-                                .withAddressLines("Central Station")
-                                .withStateRegionProvince("Irish Sea")));
+                                .withAddress("Central Station")
+                                .withRegion("Irish Sea")));
 
         Slime slime = new Slime();
         Cursor parentCursor = slime.setObject();

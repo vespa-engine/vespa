@@ -74,7 +74,7 @@ public class SignatureFilterTest {
                                                      LastLoginInfo.EMPTY,
                                                      Optional.empty(),
                                                      ImmutableBiMap.of(),
-                                                     TenantInfo.EMPTY,
+                                                     TenantInfo.empty(),
                                                      List.of(),
                                                      Optional.empty()));
         tester.curator().writeApplication(new Application(appId, tester.clock().instant()));
@@ -120,7 +120,7 @@ public class SignatureFilterTest {
                                                      LastLoginInfo.EMPTY,
                                                      Optional.empty(),
                                                      ImmutableBiMap.of(publicKey, () -> "user"),
-                                                     TenantInfo.EMPTY,
+                                                     TenantInfo.empty(),
                                                      List.of(),
                                                      Optional.empty()));
         verifySecurityContext(requestOf(signer.signed(request.copy(), Method.POST, () -> new ByteArrayInputStream(hiBytes)), hiBytes),

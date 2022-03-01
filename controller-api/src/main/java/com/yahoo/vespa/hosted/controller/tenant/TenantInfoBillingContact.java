@@ -8,56 +8,40 @@ import java.util.Objects;
  */
 public class TenantInfoBillingContact {
 
-    // All fields are editable in 'Billing - Edit billing contact'
-    // Only 'name' and 'email' are exposed outside the 'Edit billing contact' form.
-    // All these fields are required by the billing process.
-    private final String name;
-    private final String email;
-    private final String phone;
-    private final TenantInfoAddress address;
+    private final TenantContact contact;
+    private final TenantAddress address;
 
-    TenantInfoBillingContact(String name, String email, String phone, TenantInfoAddress address) {
-        this.name = Objects.requireNonNull(name);
-        this.email = Objects.requireNonNull(email);
-        this.phone = Objects.requireNonNull(phone);
+    TenantInfoBillingContact(String name, String email, String phone, TenantAddress address) {
+        this(TenantContact.from(name, email, phone), address);
+    }
+
+    TenantInfoBillingContact(TenantContact contact, TenantAddress address) {
+        this.contact = Objects.requireNonNull(contact);
         this.address = Objects.requireNonNull(address);
     }
 
-    public static final TenantInfoBillingContact EMPTY =
-                new TenantInfoBillingContact("","", "", TenantInfoAddress.EMPTY);
-
-    public String name() {
-        return name;
+    public static TenantInfoBillingContact empty() {
+        return new TenantInfoBillingContact("", "", "", TenantAddress.empty());
     }
 
-    public String email() { return email; }
-
-    public String phone() {
-        return phone;
+    public TenantContact contact() {
+        return contact;
     }
 
-    public TenantInfoAddress address() {
+    public TenantAddress address() {
         return address;
     }
 
-    public TenantInfoBillingContact withName(String newName) {
-        return new TenantInfoBillingContact(newName, email, phone, address);
+    public TenantInfoBillingContact withContact(TenantContact updatedContact) {
+        return new TenantInfoBillingContact(updatedContact, this.address);
     }
 
-    public TenantInfoBillingContact withEmail(String newEmail) {
-        return new TenantInfoBillingContact(name, newEmail, phone, address);
-    }
-
-    public TenantInfoBillingContact withPhone(String newPhone) {
-        return new TenantInfoBillingContact(name, email, newPhone, address);
-    }
-
-    public TenantInfoBillingContact withAddress(TenantInfoAddress newAddress) {
-        return new TenantInfoBillingContact(name, email, phone, newAddress);
+    public TenantInfoBillingContact withAddress(TenantAddress updatedAddress) {
+        return new TenantInfoBillingContact(this.contact, updatedAddress);
     }
 
     public boolean isEmpty() {
-        return this.equals(EMPTY);
+        return this.equals(empty());
     }
 
     @Override
@@ -65,14 +49,19 @@ public class TenantInfoBillingContact {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TenantInfoBillingContact that = (TenantInfoBillingContact) o;
-        return name.equals(that.name) &&
-                email.equals(that.email) &&
-                phone.equals(that.phone) &&
-                address.equals(that.address);
+        return Objects.equals(contact, that.contact) && Objects.equals(address, that.address);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, email, phone, address);
+        return Objects.hash(contact, address);
+    }
+
+    @Override
+    public String toString() {
+        return "TenantInfoBillingContact{" +
+                "contact=" + contact +
+                ", address=" + address +
+                '}';
     }
 }

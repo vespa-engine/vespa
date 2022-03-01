@@ -22,8 +22,9 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
+import com.yahoo.vespa.hosted.controller.tenant.TenantContact;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
-import com.yahoo.vespa.hosted.controller.tenant.TenantInfoAddress;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfoBillingContact;
 
 import java.net.URI;
@@ -193,33 +194,34 @@ public class TenantSerializer {
     }
 
     TenantInfo tenantInfoFromSlime(Inspector infoObject) {
-        if (!infoObject.valid()) return TenantInfo.EMPTY;
+        if (!infoObject.valid()) return TenantInfo.empty();
 
-        return TenantInfo.EMPTY
+        return TenantInfo.empty()
                 .withName(infoObject.field("name").asString())
                 .withEmail(infoObject.field("email").asString())
                 .withWebsite(infoObject.field("website").asString())
-                .withContactName(infoObject.field("contactName").asString())
-                .withContactEmail(infoObject.field("contactEmail").asString())
-                .withInvoiceEmail(infoObject.field("invoiceEmail").asString())
+                .withContact(TenantContact.from(
+                        infoObject.field("contactName").asString(),
+                        infoObject.field("contactEmail").asString()))
                 .withAddress(tenantInfoAddressFromSlime(infoObject.field("address")))
-                .withBillingContact(tenantInfoBillingContactFromSlime(infoObject.field("billingContact")));
+                .withBilling(tenantInfoBillingContactFromSlime(infoObject.field("billingContact")));
     }
 
-    private TenantInfoAddress tenantInfoAddressFromSlime(Inspector addressObject) {
-        return TenantInfoAddress.EMPTY
-                .withAddressLines(addressObject.field("addressLines").asString())
-                .withPostalCodeOrZip(addressObject.field("postalCodeOrZip").asString())
+    private TenantAddress tenantInfoAddressFromSlime(Inspector addressObject) {
+        return TenantAddress.empty()
+                .withAddress(addressObject.field("addressLines").asString())
+                .withCode(addressObject.field("postalCodeOrZip").asString())
                 .withCity(addressObject.field("city").asString())
-                .withStateRegionProvince(addressObject.field("stateRegionProvince").asString())
+                .withRegion(addressObject.field("stateRegionProvince").asString())
                 .withCountry(addressObject.field("country").asString());
     }
 
     private TenantInfoBillingContact tenantInfoBillingContactFromSlime(Inspector billingObject) {
-        return TenantInfoBillingContact.EMPTY
-                .withName(billingObject.field("name").asString())
-                .withEmail(billingObject.field("email").asString())
-                .withPhone(billingObject.field("phone").asString())
+        return TenantInfoBillingContact.empty()
+                .withContact(TenantContact.from(
+                        billingObject.field("name").asString(),
+                        billingObject.field("email").asString(),
+                        billingObject.field("phone").asString()))
                 .withAddress(tenantInfoAddressFromSlime(billingObject.field("address")));
     }
 
@@ -252,21 +254,20 @@ public class TenantSerializer {
         infoCursor.setString("name", info.name());
         infoCursor.setString("email", info.email());
         infoCursor.setString("website", info.website());
-        infoCursor.setString("invoiceEmail", info.invoiceEmail());
-        infoCursor.setString("contactName", info.contactName());
-        infoCursor.setString("contactEmail", info.contactEmail());
+        infoCursor.setString("contactName", info.contact().name());
+        infoCursor.setString("contactEmail", info.contact().email());
         toSlime(info.address(), infoCursor);
         toSlime(info.billingContact(), infoCursor);
     }
 
-    private void toSlime(TenantInfoAddress address, Cursor parentCursor) {
+    private void toSlime(TenantAddress address, Cursor parentCursor) {
         if (address.isEmpty()) return;
 
         Cursor addressCursor = parentCursor.setObject("address");
-        addressCursor.setString("addressLines", address.addressLines());
-        addressCursor.setString("postalCodeOrZip", address.postalCodeOrZip());
+        addressCursor.setString("addressLines", address.address());
+        addressCursor.setString("postalCodeOrZip", address.code());
         addressCursor.setString("city", address.city());
-        addressCursor.setString("stateRegionProvince", address.stateRegionProvince());
+        addressCursor.setString("stateRegionProvince", address.region());
         addressCursor.setString("country", address.country());
     }
 
@@ -274,9 +275,9 @@ public class TenantSerializer {
         if (billingContact.isEmpty()) return;
 
         Cursor addressCursor = parentCursor.setObject("billingContact");
-        addressCursor.setString("name", billingContact.name());
-        addressCursor.setString("email", billingContact.email());
-        addressCursor.setString("phone", billingContact.phone());
+        addressCursor.setString("name", billingContact.contact().name());
+        addressCursor.setString("email", billingContact.contact().email());
+        addressCursor.setString("phone", billingContact.contact().phone());
         toSlime(billingContact.address(), addressCursor);
     }
 
