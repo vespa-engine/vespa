@@ -114,7 +114,7 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContact;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
-import com.yahoo.vespa.hosted.controller.tenant.TenantInfoBillingContact;
+import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
@@ -524,7 +524,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         addressCursor.setString("country", address.country());
     }
 
-    private void toSlime(TenantInfoBillingContact billingContact, Cursor parentCursor) {
+    private void toSlime(TenantBilling billingContact, Cursor parentCursor) {
         if (billingContact.isEmpty()) return;
 
         Cursor addressCursor = parentCursor.setObject("billingContact");
@@ -630,10 +630,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 .withPhone(getString(insp.field("phone"), oldContact.phone()));
     }
 
-    private TenantInfoBillingContact updateTenantInfoBillingContact(Inspector insp, TenantInfoBillingContact oldContact) {
+    private TenantBilling updateTenantInfoBillingContact(Inspector insp, TenantBilling oldContact) {
         if (!insp.valid()) return oldContact;
 
-        return TenantInfoBillingContact.empty()
+        return TenantBilling.empty()
                 .withContact(updateTenantInfoContact(insp, oldContact.contact()))
                 .withAddress(updateTenantInfoAddress(insp.field("address"), oldContact.address()));
     }

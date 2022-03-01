@@ -20,14 +20,14 @@ public class TenantInfo {
 
     private final TenantContact contact;
     private final TenantAddress address;
-    private final TenantInfoBillingContact billingContact;
+    private final TenantBilling billingContact;
 
     TenantInfo(String name, String email, String website, String contactName, String contactEmail,
-               TenantAddress address, TenantInfoBillingContact billingContact) {
+               TenantAddress address, TenantBilling billingContact) {
         this(name, email, website, TenantContact.from(contactName, contactEmail), address, billingContact);
     }
 
-    TenantInfo(String name, String email, String website, TenantContact contact, TenantAddress address, TenantInfoBillingContact billing) {
+    TenantInfo(String name, String email, String website, TenantContact contact, TenantAddress address, TenantBilling billing) {
         this.name = Objects.requireNonNull(name);
         this.email = Objects.requireNonNull(email);
         this.website = Objects.requireNonNull(website);
@@ -37,7 +37,7 @@ public class TenantInfo {
     }
 
     public static TenantInfo empty() {
-        return new TenantInfo("", "", "", "", "", TenantAddress.empty(), TenantInfoBillingContact.empty());
+        return new TenantInfo("", "", "", "", "", TenantAddress.empty(), TenantBilling.empty());
     }
 
     public String name() {
@@ -56,7 +56,7 @@ public class TenantInfo {
 
     public TenantAddress address() { return address; }
 
-    public TenantInfoBillingContact billingContact() {
+    public TenantBilling billingContact() {
         return billingContact;
     }
 
@@ -84,7 +84,7 @@ public class TenantInfo {
         return new TenantInfo(name, email, website, contact, address, billingContact);
     }
 
-    public TenantInfo withBilling(TenantInfoBillingContact billingContact) {
+    public TenantInfo withBilling(TenantBilling billingContact) {
         return new TenantInfo(name, email, website, contact, address, billingContact);
     }
 

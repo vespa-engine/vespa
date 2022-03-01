@@ -19,7 +19,7 @@ import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContact;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
-import com.yahoo.vespa.hosted.controller.tenant.TenantInfoBillingContact;
+import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
 import org.junit.Test;
 
 import java.net.URI;
@@ -154,7 +154,7 @@ public class TenantSerializerTest {
                         .withCountry("Norway")
                         .withCode("3510")
                         .withRegion("Viken"))
-                .withBilling(TenantInfoBillingContact.empty()
+                .withBilling(TenantBilling.empty()
                         .withContact(TenantContact.from("Thomas The Tank Engine", "thomas@sodor.com", "NA"))
                         .withAddress(TenantAddress.empty()
                                 .withCity("Suddery")

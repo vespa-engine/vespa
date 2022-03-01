@@ -25,7 +25,7 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContact;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
-import com.yahoo.vespa.hosted.controller.tenant.TenantInfoBillingContact;
+import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
 
 import java.net.URI;
 import java.security.Principal;
@@ -216,8 +216,8 @@ public class TenantSerializer {
                 .withCountry(addressObject.field("country").asString());
     }
 
-    private TenantInfoBillingContact tenantInfoBillingContactFromSlime(Inspector billingObject) {
-        return TenantInfoBillingContact.empty()
+    private TenantBilling tenantInfoBillingContactFromSlime(Inspector billingObject) {
+        return TenantBilling.empty()
                 .withContact(TenantContact.from(
                         billingObject.field("name").asString(),
                         billingObject.field("email").asString(),
@@ -271,7 +271,7 @@ public class TenantSerializer {
         addressCursor.setString("country", address.country());
     }
 
-    private void toSlime(TenantInfoBillingContact billingContact, Cursor parentCursor) {
+    private void toSlime(TenantBilling billingContact, Cursor parentCursor) {
         if (billingContact.isEmpty()) return;
 
         Cursor addressCursor = parentCursor.setObject("billingContact");

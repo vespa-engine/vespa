@@ -6,22 +6,22 @@ import java.util.Objects;
 /**
  * @author smorgrav
  */
-public class TenantInfoBillingContact {
+public class TenantBilling {
 
     private final TenantContact contact;
     private final TenantAddress address;
 
-    TenantInfoBillingContact(String name, String email, String phone, TenantAddress address) {
+    TenantBilling(String name, String email, String phone, TenantAddress address) {
         this(TenantContact.from(name, email, phone), address);
     }
 
-    TenantInfoBillingContact(TenantContact contact, TenantAddress address) {
+    TenantBilling(TenantContact contact, TenantAddress address) {
         this.contact = Objects.requireNonNull(contact);
         this.address = Objects.requireNonNull(address);
     }
 
-    public static TenantInfoBillingContact empty() {
-        return new TenantInfoBillingContact("", "", "", TenantAddress.empty());
+    public static TenantBilling empty() {
+        return new TenantBilling("", "", "", TenantAddress.empty());
     }
 
     public TenantContact contact() {
@@ -32,12 +32,12 @@ public class TenantInfoBillingContact {
         return address;
     }
 
-    public TenantInfoBillingContact withContact(TenantContact updatedContact) {
-        return new TenantInfoBillingContact(updatedContact, this.address);
+    public TenantBilling withContact(TenantContact updatedContact) {
+        return new TenantBilling(updatedContact, this.address);
     }
 
-    public TenantInfoBillingContact withAddress(TenantAddress updatedAddress) {
-        return new TenantInfoBillingContact(this.contact, updatedAddress);
+    public TenantBilling withAddress(TenantAddress updatedAddress) {
+        return new TenantBilling(this.contact, updatedAddress);
     }
 
     public boolean isEmpty() {
@@ -48,7 +48,7 @@ public class TenantInfoBillingContact {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        TenantInfoBillingContact that = (TenantInfoBillingContact) o;
+        TenantBilling that = (TenantBilling) o;
         return Objects.equals(contact, that.contact) && Objects.equals(address, that.address);
     }
 
