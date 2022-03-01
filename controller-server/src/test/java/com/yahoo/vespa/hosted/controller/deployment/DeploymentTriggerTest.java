@@ -1434,6 +1434,21 @@ public class DeploymentTriggerTest {
                      tester.jobs().last(app.instanceId(), productionUsWest1).get().versions());
         app.runJob(productionUsWest1);
         assertEquals(Change.empty(), app.instance().change());
+
+        // New upgrade fails in staging-test, and revision to fix it is submitted.
+        var version2 = new Version("7.2");
+        tester.controllerTester().upgradeSystem(version2);
+        tester.upgrader().maintain();
+        app.runJob(systemTest).failDeployment(stagingTest);
+        tester.clock().advance(Duration.ofMinutes(30));
+        app.failDeployment(stagingTest);
+        app.submit(appPackage);
+
+        app.runJob(systemTest).runJob(stagingTest) // Tests run with combined upgrade.
+           .runJob(productionUsCentral1)           // Combined upgrade stays together.
+           .runJob(productionUsEast3).runJob(productionUsWest1);
+        assertEquals(Map.of(), app.deploymentStatus().jobsToRun());
+        assertEquals(Change.empty(), app.instance().change());
     }
 
     @Test
