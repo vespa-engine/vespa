@@ -124,7 +124,7 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
         SupportAccess supportAccess = controller.supportAccess().registerGrant(deployment, principal.getName(), certificate);
 
         // Trigger deployment to include operator cert
-        Optional<JobId> jobId = controller.applications().deploymentTrigger().reTriggerOrAddToQueue(deployment);
+        Optional<JobId> jobId = controller.applications().deploymentTrigger().reTriggerOrAddToQueue(deployment, "re-triggered to grant access, by " + request.getJDiscRequest().getUserPrincipal().getName());
         return new MessageResponse(
                 jobId.map(id -> Text.format("Operator %s granted access and job %s triggered", principal.getName(), id.type().jobName()))
                         .orElseGet(() -> Text.format("Operator %s granted access and job trigger queued", principal.getName())));

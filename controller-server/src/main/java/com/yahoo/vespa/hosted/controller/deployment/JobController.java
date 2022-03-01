@@ -61,6 +61,7 @@ import static com.yahoo.config.provision.Environment.prod;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endStagingSetup;
@@ -68,6 +69,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static java.util.Comparator.naturalOrder;
 import static java.util.function.Predicate.not;
+import static java.util.logging.Level.INFO;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
@@ -440,8 +442,13 @@ public class JobController {
     }
 
     /** Marks the given run as aborted; no further normal steps will run, but run-always steps will try to succeed. */
-    public void abort(RunId id) {
-        locked(id, run -> run.aborted());
+    public void abort(RunId id, String reason) {
+        locked(id, run -> {
+            run.stepStatuses().entrySet().stream()
+               .filter(entry -> entry.getValue() == unfinished)
+               .forEach(entry -> log(id, entry.getKey(), INFO, "Aborting run: " + reason));
+            return run.aborted();
+        });
     }
 
     /** Accepts and stores a new application package and test jar pair under a generated application version key. */
@@ -488,24 +495,19 @@ public class JobController {
     }
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
-    public void start(ApplicationId id, JobType type, Versions versions) {
-        start(id, type, versions, false);
+    public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment, Optional<String> reason) {
+        start(id, type, versions, isRedeployment, JobProfile.of(type), reason);
     }
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
-    public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment) {
-        start(id, type, versions, isRedeployment, JobProfile.of(type));
-    }
-
-    /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
-    public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment, JobProfile profile) {
+    public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment, JobProfile profile, Optional<String> reason) {
         locked(id, type, __ -> {
             Optional<Run> last = last(id, type);
             if (last.flatMap(run -> active(run.id())).isPresent())
                 throw new IllegalArgumentException("Cannot start " + type + " for " + id + "; it is already running!");
 
             RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
-            curator.writeLastRun(Run.initial(newId, versions, isRedeployment, controller.clock().instant(), profile));
+            curator.writeLastRun(Run.initial(newId, versions, isRedeployment, controller.clock().instant(), profile, reason));
             metric.jobStarted(newId.job());
         });
     }
@@ -550,7 +552,8 @@ public class JobController {
                                lastRun.map(run -> run.versions().targetPlatform()),
                                lastRun.map(run -> run.versions().targetApplication())),
                   false,
-                  dryRun ? JobProfile.developmentDryRun : JobProfile.development);
+                  dryRun ? JobProfile.developmentDryRun : JobProfile.development,
+                  Optional.empty());
         });
 
         locked(id, type, __ -> {
@@ -560,7 +563,7 @@ public class JobController {
 
     /** Aborts a run and waits for it complete. */
     private void abortAndWait(RunId id) {
-        abort(id);
+        abort(id, "replaced by new deployment");
         runner.get().accept(last(id.application(), id.type()).get());
 
         while ( ! last(id.application(), id.type()).get().hasEnded()) {

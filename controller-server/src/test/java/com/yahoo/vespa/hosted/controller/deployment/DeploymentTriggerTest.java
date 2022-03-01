@@ -183,6 +183,14 @@ public class DeploymentTriggerTest {
         app.runJob(systemTest).runJob(stagingTest).runJob(stagingTest); // outdated run is aborted when otherwise blocking a new run
         tester.triggerJobs();
         app.jobAborted(productionUsCentral1);
+        Versions outdated = tester.jobs().last(app.instanceId(), productionUsCentral1).get().versions();
+
+        // Flesh bag re-triggers job, and _that_ is not aborted
+        tester.deploymentTrigger().reTrigger(app.instanceId(), productionUsCentral1, "flesh bag");
+        tester.triggerJobs();
+        app.runJob(productionUsCentral1);
+        Versions reTriggered = tester.jobs().last(app.instanceId(), productionUsCentral1).get().versions();
+        assertEquals(outdated, reTriggered);
 
         app.runJob(productionUsCentral1).runJob(productionUsWest1).runJob(productionUsEast3);
         assertEquals(Change.empty(), app.instance().change());
@@ -552,9 +560,11 @@ public class DeploymentTriggerTest {
         // us-east-3 does not automatically trigger when paused, but does when forced.
         tester.triggerJobs();
         app.assertNotRunning(productionUsEast3);
-        tester.deploymentTrigger().forceTrigger(app.instanceId(), productionUsEast3, "mrTrigger", true);
+        tester.deploymentTrigger().forceTrigger(app.instanceId(), productionUsEast3, "mrTrigger", true, true, false);
         app.assertRunning(productionUsEast3);
         assertFalse(app.instance().jobPause(productionUsEast3).isPresent());
+        assertEquals(app.deployment(productionUsEast3.zone(tester.controller().system())).version(),
+                     tester.jobs().last(app.instanceId(), productionUsEast3).get().versions().targetPlatform());
     }
 
     @Test
@@ -1823,7 +1833,7 @@ public class DeploymentTriggerTest {
         app.submit(cdPackage);
         app.runJob(systemTest);
         // Staging test requires unknown initial version, and is broken.
-        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false);
+        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false, true, true);
         app.runJob(productionCdUsEast1)
            .abortJob(stagingTest) // Complete failing run.
            .runJob(stagingTest)   // Run staging-test for production zone with no prior deployment.
@@ -1835,7 +1845,7 @@ public class DeploymentTriggerTest {
         tester.controllerTester().upgradeSystem(version);
         tester.upgrader().maintain();
         // System and staging tests both require unknown versions, and are broken.
-        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false);
+        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false, true, true);
         app.runJob(productionCdUsEast1)
            .triggerJobs()
            .jobAborted(systemTest)
@@ -1849,7 +1859,7 @@ public class DeploymentTriggerTest {
         app.submit(cdPackage);
         app.runJob(systemTest);
         // Staging test requires unknown initial version, and is broken.
-        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false);
+        tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false, true, true);
         app.runJob(productionCdUsEast1)
            .jobAborted(stagingTest)
            .runJob(stagingTest)
@@ -1988,9 +1998,9 @@ public class DeploymentTriggerTest {
         app.submit();
         tester.triggerJobs();
 
-        tester.deploymentTrigger().reTrigger(app.instanceId(), productionUsEast3);
-        tester.deploymentTrigger().reTriggerOrAddToQueue(app.deploymentIdIn(ZoneId.from("prod", "us-east-3")));
-        tester.deploymentTrigger().reTriggerOrAddToQueue(app.deploymentIdIn(ZoneId.from("prod", "us-east-3")));
+        tester.deploymentTrigger().reTrigger(app.instanceId(), productionUsEast3, null);
+        tester.deploymentTrigger().reTriggerOrAddToQueue(app.deploymentIdIn(ZoneId.from("prod", "us-east-3")), null);
+        tester.deploymentTrigger().reTriggerOrAddToQueue(app.deploymentIdIn(ZoneId.from("prod", "us-east-3")), null);
 
         List<RetriggerEntry> retriggerEntries = tester.controller().curator().readRetriggerEntries();
         Assert.assertEquals(1, retriggerEntries.size());

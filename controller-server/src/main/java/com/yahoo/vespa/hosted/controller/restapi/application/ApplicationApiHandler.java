@@ -352,7 +352,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return deleteInstance(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), path.get("instance"), "all");
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("choice"));
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.abortJobResponse(controller.jobController(), appIdFromPath(path), jobTypeFromPath(path));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.abortJobResponse(controller.jobController(), request, appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/pause")) return resume(appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deactivate(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/reindexing")) return disableReindexing(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -1126,7 +1126,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         DeploymentId deployment = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
         Principal principal = requireUserPrincipal(request);
         SupportAccess disallowed = controller.supportAccess().disallow(deployment, principal.getName());
-        controller.applications().deploymentTrigger().reTriggerOrAddToQueue(deployment);
+        controller.applications().deploymentTrigger().reTriggerOrAddToQueue(deployment, "re-triggered to disallow support access, by " + request.getJDiscRequest().getUserPrincipal().getName());
         return new SlimeJsonResponse(SupportAccessSerializer.serializeCurrentState(disallowed, controller.clock().instant()));
     }
 
@@ -1159,14 +1159,21 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Inspector requestObject = toSlime(request.getData()).get();
         boolean requireTests = ! requestObject.field("skipTests").asBool();
         boolean reTrigger = requestObject.field("reTrigger").asBool();
+        boolean upgradeRevision = ! requestObject.field("skipRevision").asBool();
+        boolean upgradePlatform = ! requestObject.field("skipUpgrade").asBool();
         String triggered = reTrigger
                            ? controller.applications().deploymentTrigger()
-                                       .reTrigger(id, type).type().jobName()
+                                       .reTrigger(id, type, "re-triggered by " + request.getJDiscRequest().getUserPrincipal().getName()).type().jobName()
                            : controller.applications().deploymentTrigger()
-                                       .forceTrigger(id, type, request.getJDiscRequest().getUserPrincipal().getName(), requireTests)
+                                       .forceTrigger(id, type, "triggered by " + request.getJDiscRequest().getUserPrincipal().getName(), requireTests, upgradeRevision, upgradePlatform)
                                        .stream().map(job -> job.type().jobName()).collect(joining(", "));
+        String suppressedUpgrades = ( ! upgradeRevision || ! upgradePlatform ? ", without " : "") +
+                                    (upgradeRevision ? "" : "revision") +
+                                    ( ! upgradeRevision && ! upgradePlatform ? " and " : "") +
+                                    (upgradePlatform ? "" : "platform") +
+                                    ( ! upgradeRevision || ! upgradePlatform ? " upgrade" : "");
         return new MessageResponse(triggered.isEmpty() ? "Job " + type.jobName() + " for " + id + " not triggered"
-                                                       : "Triggered " + triggered + " for " + id);
+                                                       : "Triggered " + triggered + " for " + id + suppressedUpgrades);
     }
 
     private HttpResponse pause(ApplicationId id, JobType type) {
@@ -1839,7 +1846,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     /** Trigger deployment of the given Vespa version if a valid one is given, e.g., "7.8.9". */
     private HttpResponse deployPlatform(String tenantName, String applicationName, String instanceName, boolean pin, HttpRequest request) {
-
         String versionString = readToString(request.getData());
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         StringBuilder response = new StringBuilder();

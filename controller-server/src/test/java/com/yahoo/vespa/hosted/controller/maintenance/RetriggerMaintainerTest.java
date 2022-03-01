@@ -38,10 +38,10 @@ public class RetriggerMaintainerTest {
         devApp.completeRollout();
 
         // Trigger a run (to simulate a running job)
-        tester.deploymentTrigger().reTrigger(applicationId, JobType.devUsEast1);
+        tester.deploymentTrigger().reTrigger(applicationId, JobType.devUsEast1, null);
 
         // Add a job to the queue
-        tester.deploymentTrigger().reTriggerOrAddToQueue(devApp.deploymentIdIn(ZoneId.from("dev", "us-east-1")));
+        tester.deploymentTrigger().reTriggerOrAddToQueue(devApp.deploymentIdIn(ZoneId.from("dev", "us-east-1")), null);
 
         // Should be 1 entry in the queue:
         List<RetriggerEntry> retriggerEntries = tester.controller().curator().readRetriggerEntries();

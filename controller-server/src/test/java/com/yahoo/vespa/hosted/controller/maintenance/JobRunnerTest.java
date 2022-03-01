@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
@@ -95,13 +96,13 @@ public class JobRunnerTest {
         ApplicationId id = appId.defaultInstance();
         jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), 2, applicationPackage, new byte[0]);
 
-        jobs.start(id, systemTest, versions);
+        start(jobs, id, systemTest);
         try {
-            jobs.start(id, systemTest, versions);
+            start(jobs, id, systemTest);
             fail("Job is already running, so this should not be allowed!");
         }
         catch (IllegalArgumentException ignored) { }
-        jobs.start(id, stagingTest, versions);
+        start(jobs, id, stagingTest);
 
         assertTrue(jobs.last(id, systemTest).get().stepStatuses().values().stream().allMatch(unfinished::equals));
         assertFalse(jobs.last(id, systemTest).get().hasEnded());
@@ -127,7 +128,7 @@ public class JobRunnerTest {
         jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), 2, applicationPackage, new byte[0]);
         Supplier<Run> run = () -> jobs.last(id, systemTest).get();
 
-        jobs.start(id, systemTest, versions);
+        start(jobs, id, systemTest);
         RunId first = run.get().id();
 
         Map<Step, Status> steps = run.get().stepStatuses();
@@ -174,7 +175,7 @@ public class JobRunnerTest {
         assertStepsWithStartTime(run.get(), deployTester, deployReal, installTester, installReal, startTests, endTests, copyVespaLogs, deactivateTester, deactivateReal);
 
         // Abortion does nothing, as the run has already failed.
-        jobs.abort(run.get().id());
+        jobs.abort(run.get().id(), "abort");
         runner.maintain();
         assertEquals(List.of(deactivateReal, deactivateTester), run.get().readySteps());
         assertStepsWithStartTime(run.get(), deployTester, deployReal, installTester, installReal, startTests, endTests, copyVespaLogs, deactivateTester, deactivateReal);
@@ -188,7 +189,7 @@ public class JobRunnerTest {
         assertSame(aborted, run.get().status());
 
         // A new run is attempted.
-        jobs.start(id, systemTest, versions);
+        start(jobs, id, systemTest);
         assertEquals(first.number() + 1, run.get().id().number());
 
         // Run fails on tester deployment -- remaining run-always steps succeed, and the run finishes.
@@ -206,7 +207,7 @@ public class JobRunnerTest {
         assertEquals(2, jobs.runs(id, systemTest).size());
 
         // Start a third run, then unregister and wait for data to be deleted.
-        jobs.start(id, systemTest, versions);
+        start(jobs, id, systemTest);
         tester.applications().deleteInstance(id);
         runner.maintain();
         assertFalse(jobs.last(id, systemTest).isPresent());
@@ -234,7 +235,7 @@ public class JobRunnerTest {
         jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), 2, applicationPackage, new byte[0]);
 
         RunId runId = new RunId(id, systemTest, 1);
-        jobs.start(id, systemTest, versions);
+        start(jobs, id, systemTest);
         runner.maintain();
         barrier.await();
         try {
@@ -272,14 +273,14 @@ public class JobRunnerTest {
         assertFalse(jobs.lastSuccess(jobId).isPresent());
 
         for (int i = 0; i < jobs.historyLength(); i++) {
-            jobs.start(instanceId, systemTest, versions);
+            start(jobs, instanceId, systemTest);
             runner.run();
         }
 
         assertEquals(64, jobs.runs(jobId).size());
         assertTrue(jobs.details(new RunId(instanceId, systemTest, 1)).isPresent());
 
-        jobs.start(instanceId, systemTest, versions);
+        start(jobs, instanceId, systemTest);
         runner.run();
 
         assertEquals(64, jobs.runs(jobId).size());
@@ -291,7 +292,7 @@ public class JobRunnerTest {
 
         // Make all but the oldest of the 54 jobs a failure.
         for (int i = 0; i < jobs.historyLength() - 1; i++) {
-            jobs.start(instanceId, systemTest, versions);
+            start(jobs, instanceId, systemTest);
             failureRunner.run();
         }
         assertEquals(64, jobs.runs(jobId).size());
@@ -300,7 +301,7 @@ public class JobRunnerTest {
         assertEquals(66, jobs.firstFailing(jobId).get().id().number());
 
         // Oldest success is kept even though it would normally overflow.
-        jobs.start(instanceId, systemTest, versions);
+        start(jobs, instanceId, systemTest);
         failureRunner.run();
         assertEquals(65, jobs.runs(jobId).size());
         assertEquals(65, jobs.runs(jobId).keySet().iterator().next().number());
@@ -308,7 +309,7 @@ public class JobRunnerTest {
         assertEquals(66, jobs.firstFailing(jobId).get().id().number());
 
         // First failure after the last success is also kept.
-        jobs.start(instanceId, systemTest, versions);
+        start(jobs, instanceId, systemTest);
         failureRunner.run();
         assertEquals(66, jobs.runs(jobId).size());
         assertEquals(65, jobs.runs(jobId).keySet().iterator().next().number());
@@ -317,7 +318,7 @@ public class JobRunnerTest {
         assertEquals(66, jobs.firstFailing(jobId).get().id().number());
 
         // No other jobs are kept with repeated failures.
-        jobs.start(instanceId, systemTest, versions);
+        start(jobs, instanceId, systemTest);
         failureRunner.run();
         assertEquals(66, jobs.runs(jobId).size());
         assertEquals(65, jobs.runs(jobId).keySet().iterator().next().number());
@@ -327,7 +328,7 @@ public class JobRunnerTest {
         assertEquals(66, jobs.firstFailing(jobId).get().id().number());
 
         // history length returns to 256 when a new success is recorded.
-        jobs.start(instanceId, systemTest, versions);
+        start(jobs, instanceId, systemTest);
         runner.run();
         assertEquals(64, jobs.runs(jobId).size());
         assertEquals(69, jobs.runs(jobId).keySet().iterator().next().number());
@@ -365,7 +366,7 @@ public class JobRunnerTest {
         ApplicationId id = appId.defaultInstance();
         jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), 2, applicationPackage, new byte[0]);
 
-        jobs.start(id, systemTest, versions);
+        start(jobs, id, systemTest);
         tester.clock().advance(JobRunner.jobTimeout.plus(Duration.ofSeconds(1)));
         runner.run();
         assertSame(aborted, jobs.last(id, systemTest).get().status());
@@ -388,7 +389,7 @@ public class JobRunnerTest {
         for (RunStatus status : RunStatus.values()) {
             if (status == success || status == reset) continue; // Status not used for steps.
             outcomes.put(deployTester, status);
-            jobs.start(id, systemTest, versions);
+            start(jobs, id, systemTest);
             runner.run();
             jobs.finish(jobs.last(id, systemTest).get().id());
         }
@@ -408,6 +409,10 @@ public class JobRunnerTest {
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.nodeAllocationFailure).get().intValue());
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.endpointCertificateTimeout).get().intValue());
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.testFailure).get().intValue());
+    }
+
+    private void start(JobController jobs, ApplicationId id, JobType type) {
+        jobs.start(id, type, versions, false, Optional.empty());
     }
 
     public static ExecutorService inThreadExecutor() {
