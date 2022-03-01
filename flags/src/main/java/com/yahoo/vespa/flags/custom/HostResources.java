@@ -21,6 +21,7 @@ public class HostResources {
     private static final Set<String> validDiskSpeeds = Set.of("slow", "fast");
     private static final Set<String> validStorageTypes = Set.of("remote", "local");
     private static final Set<String> validClusterTypes = Set.of("container", "content", "combined", "admin");
+    private static final Set<String> validArchitectures = Set.of("arm64", "x86_64");
 
     private final double vcpu;
     private final double memoryGb;
@@ -33,6 +34,7 @@ public class HostResources {
     private final Optional<String> clusterType;
 
     private final int containers;
+    private final String architecture;
 
     @JsonCreator
     public HostResources(@JsonProperty("vcpu") Double vcpu,
@@ -42,7 +44,8 @@ public class HostResources {
                          @JsonProperty("diskSpeed") String diskSpeed,
                          @JsonProperty("storageType") String storageType,
                          @JsonProperty("clusterType") String clusterType,
-                         @JsonProperty("containers") Integer containers) {
+                         @JsonProperty("containers") Integer containers,
+                         @JsonProperty("architecture") String architecture) {
         this.vcpu = requirePositive("vcpu", vcpu);
         this.memoryGb = requirePositive("memoryGb", memoryGb);
         this.diskGb = requirePositive("diskGb", diskGb);
@@ -51,6 +54,7 @@ public class HostResources {
         this.storageType = validateEnum("storageType", validStorageTypes, storageType);
         this.clusterType = Optional.ofNullable(clusterType).map(cType -> validateEnum("clusterType", validClusterTypes, cType));
         this.containers = requirePositive("containers", containers);
+        this.architecture = validateEnum("architecture", validArchitectures, architecture);
     }
 
     @JsonProperty("vcpu")
@@ -79,6 +83,9 @@ public class HostResources {
 
     @JsonProperty("containers")
     public int containers() { return containers; }
+
+    @JsonProperty("architecture")
+    public String architecture() { return architecture; }
 
     public boolean satisfiesClusterType(String clusterType) {
         return this.clusterType.map(clusterType::equalsIgnoreCase).orElse(true);
@@ -121,6 +128,7 @@ public class HostResources {
                 ", storageType='" + storageType + '\'' +
                 ", clusterType='" + clusterType + '\'' +
                 ", containers=" + containers +
+                ", architecture=" + architecture +
                 '}';
     }
 
@@ -136,11 +144,12 @@ public class HostResources {
                 diskSpeed.equals(resources.diskSpeed) &&
                 storageType.equals(resources.storageType) &&
                 clusterType.equals(resources.clusterType) &&
-                containers == resources.containers;
+                containers == resources.containers &&
+                architecture.equals(resources.architecture);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, clusterType, containers);
+        return Objects.hash(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, clusterType, containers, architecture);
     }
 }
