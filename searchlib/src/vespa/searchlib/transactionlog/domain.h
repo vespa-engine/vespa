@@ -80,17 +80,17 @@ private:
     using SessionList = std::map<int, std::shared_ptr<Session>>;
     using DomainPartList = std::map<SerialNum, DomainPartSP>;
     using DurationSeconds = std::chrono::duration<double>;
+    using TaskUP = std::unique_ptr<vespalib::Executor::Task>;
 
     DomainConfig                 _config;
     std::unique_ptr<CommitChunk> _currentChunk;
     SerialNum                    _lastSerial;
-    std::unique_ptr<vespalib::SyncableThreadExecutor> _singleCommitter;
+    std::unique_ptr<vespalib::Executor> _singleCommitter;
     vespalib::Executor          &_executor;
     std::atomic<int>             _sessionId;
     std::mutex                   _syncMonitor;
-    std::condition_variable      _syncCond;
     bool                         _pendingSync;
-    std::vector<std::unique_ptr<vespalib::Executor::Task>> _done_sync_tasks;
+    std::vector<TaskUP>          _done_sync_tasks;
     vespalib::string             _name;
     DomainPartList               _parts;
     mutable std::mutex           _lock;

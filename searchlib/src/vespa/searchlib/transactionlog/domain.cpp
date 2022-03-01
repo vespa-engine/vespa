@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/retain_guard.h>
 #include <vespa/fastos/file.h>
@@ -115,7 +116,9 @@ Domain::~Domain() {
     std::unique_lock guard(_currentChunkMonitor);
     _currentChunkCond.notify_all();
     commitChunk(grabCurrentChunk(guard), guard);
-    _singleCommitter->shutdown().sync();
+    vespalib::Gate gate;
+    _singleCommitter->execute(makeLambdaTask([callback=std::make_unique<vespalib::GateCallback>(gate)]() { (void) callback;}));
+    gate.await();
 }
 
 DomainInfo
@@ -213,24 +216,18 @@ Domain::triggerSyncNow(std::unique_ptr<vespalib::Executor::Task> done_sync_task)
         std::unique_lock guard(_currentChunkMonitor);
         commitAndTransferResponses(guard);
     }
-    if (done_sync_task) {
-        // Need to protect against being called from the _singleCommitter as that will cause a deadlock
-        // That is done from Domain::commitChunk.lamdba->Domain::doCommit()->optionallyRotateFile->triggerSyncNow({})
-        _singleCommitter->sync();
-    }
     std::unique_lock guard(_syncMonitor);
     if (done_sync_task) {
         _done_sync_tasks.push_back(std::move(done_sync_task));
     }
     if (!_pendingSync) {
         _pendingSync = true;
-        _executor.execute(makeLambdaTask([this, domainPart= getActivePart()]() {
+        _singleCommitter->execute(makeLambdaTask([this, domainPart=getActivePart()]() {
             domainPart->sync();
             std::lock_guard monitorGuard(_syncMonitor);
             _pendingSync = false;
-            _syncCond.notify_all();
             for (auto &task : _done_sync_tasks) {
-                auto failed_task = _executor.execute(std::move(task));
+                auto failed_task = _singleCommitter->execute(std::move(task));
                 assert(!failed_task);
             }
             _done_sync_tasks.clear();
@@ -312,26 +309,10 @@ Domain::cleanSessions()
     }
 }
 
-namespace {
-
-void
-waitPendingSync(std::mutex &syncMonitor, std::condition_variable & syncCond, bool &pendingSync)
-{
-    std::unique_lock guard(syncMonitor);
-    while (pendingSync) {
-        syncCond.wait(guard);
-    }
-}
-
-}
-
 DomainPart::SP
 Domain::optionallyRotateFile(SerialNum serialNum) {
     DomainPart::SP dp = getActivePart();
     if (dp->byteSize() > _config.getPartSizeLimit()) {
-        waitPendingSync(_syncMonitor, _syncCond, _pendingSync);
-        triggerSyncNow({});
-        waitPendingSync(_syncMonitor, _syncCond, _pendingSync);
         dp->close();
         dp = std::make_shared<DomainPart>(_name, dir(), serialNum, _fileHeaderContext, false);
         {
