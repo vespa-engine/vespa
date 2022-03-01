@@ -132,6 +132,7 @@ func (ap *ApplicationPackage) zipReader(test bool) (io.ReadCloser, error) {
 		defer func() {
 			tempZip.Close()
 			os.Remove(tempZip.Name())
+			// TODO: Caller must remove temporary file
 		}()
 		if err := zipDir(zipFile, tempZip.Name()); err != nil {
 			return nil, err
@@ -153,25 +154,23 @@ func FindApplicationPackage(zipOrDir string, requirePackaging bool) (Application
 	if util.PathExists(filepath.Join(zipOrDir, "pom.xml")) {
 		zip := filepath.Join(zipOrDir, "target", "application.zip")
 		if util.PathExists(zip) {
-			testZip := filepath.Join(zipOrDir, "target", "application-test.zip")
-			if !util.PathExists(testZip) {
-				testZip = ""
+			if testZip := filepath.Join(zipOrDir, "target", "application-test.zip"); util.PathExists(testZip) {
+				return ApplicationPackage{Path: zip, TestPath: testZip}, nil
 			}
-			return ApplicationPackage{Path: zip, TestPath: testZip}, nil
+			return ApplicationPackage{Path: zip}, nil
 		}
 		if requirePackaging {
 			return ApplicationPackage{}, errors.New("pom.xml exists but no target/application.zip. Run mvn package first")
 		}
 	}
-	if util.PathExists(filepath.Join(zipOrDir, "src", "main", "application")) {
-		if util.PathExists(filepath.Join(zipOrDir, "src", "test", "application")) {
-			return ApplicationPackage{Path: filepath.Join(zipOrDir, "src", "main", "application"),
-				TestPath: filepath.Join(zipOrDir, "src", "test", "application")}, nil
+	if path := filepath.Join(zipOrDir, "src", "main", "application"); util.PathExists(path) {
+		if testPath := filepath.Join(zipOrDir, "src", "test", "application"); util.PathExists(testPath) {
+			return ApplicationPackage{Path: path, TestPath: testPath}, nil
 		}
-		return ApplicationPackage{Path: filepath.Join(zipOrDir, "src", "main", "application")}, nil
+		return ApplicationPackage{Path: path}, nil
 	}
 	if util.PathExists(filepath.Join(zipOrDir, "services.xml")) {
 		return ApplicationPackage{Path: zipOrDir}, nil
 	}
-	return ApplicationPackage{}, errors.New("Could not find an application package source in '" + zipOrDir + "'")
+	return ApplicationPackage{}, fmt.Errorf("could not find an application package source in '%s'", zipOrDir)
 }
