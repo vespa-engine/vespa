@@ -154,6 +154,9 @@ func FindApplicationPackage(zipOrDir string, requirePackaging bool) (Application
 		zip := filepath.Join(zipOrDir, "target", "application.zip")
 		if util.PathExists(zip) {
 			testZip := filepath.Join(zipOrDir, "target", "application-test.zip")
+			if !util.PathExists(testZip) {
+				testZip = ""
+			}
 			return ApplicationPackage{Path: zip, TestPath: testZip}, nil
 		}
 		if requirePackaging {
