@@ -26,11 +26,13 @@ public class AthenzAccessControlService implements AccessControlService {
     private final AthenzRole dataPlaneAccessRole;
     private final AthenzGroup vespaTeam;
     private final ZmsClient vespaZmsClient; //TODO: Merge ZMS clients
+    private final AthenzInstanceSynchronizer athenzInstanceSynchronizer;
 
 
-    public AthenzAccessControlService(ZmsClient zmsClient, AthenzDomain domain, ZmsClient vespaZmsClient) {
+    public AthenzAccessControlService(ZmsClient zmsClient, AthenzDomain domain, ZmsClient vespaZmsClient, AthenzInstanceSynchronizer athenzInstanceSynchronizer) {
         this.zmsClient = zmsClient;
         this.vespaZmsClient = vespaZmsClient;
+        this.athenzInstanceSynchronizer = athenzInstanceSynchronizer;
         this.dataPlaneAccessRole = new AthenzRole(domain, DATAPLANE_ACCESS_ROLENAME);
         this.vespaTeam = new AthenzGroup(domain, ALLOWED_OPERATOR_GROUPNAME);
     }
@@ -87,6 +89,7 @@ public class AthenzAccessControlService implements AccessControlService {
             vespaZmsClient.addRoleMember(role, vespaTeam, Optional.empty());
         }
         vespaZmsClient.approvePendingRoleMembership(role, vespaTeam, expiry, Optional.empty(), Optional.of(oAuthCredentials));
+        athenzInstanceSynchronizer.synchronizeInstances();
         return true;
     }
 

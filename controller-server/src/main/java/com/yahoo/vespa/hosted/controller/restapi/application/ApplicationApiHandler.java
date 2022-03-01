@@ -240,7 +240,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/notifications")) return notifications(request, Optional.ofNullable(request.getProperty("tenant")), true);
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/access/request/ssh")) return accessRequests(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/access/request/operator")) return accessRequests(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return tenantInfo(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/notifications")) return notifications(request, Optional.of(path.get("tenant")), false);
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}/validate")) return validateSecretStore(path.get("tenant"), path.get("name"), request);
@@ -292,8 +292,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse handlePUT(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return updateTenant(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/access/request/ssh")) return requestSshAccess(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/access/approve/ssh")) return approveAccessRequest(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/access/request/operator")) return requestSshAccess(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/access/approve/operator")) return approveAccessRequest(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return updateTenantInfo(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/archive-access")) return allowArchiveAccess(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}")) return addSecretStore(path.get("tenant"), path.get("name"), request);
