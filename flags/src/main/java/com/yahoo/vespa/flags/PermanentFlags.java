@@ -170,10 +170,10 @@ public class PermanentFlags {
     );
 
     public static final UnboundStringFlag ENDPOINT_CERTIFICATE_ALGORITHM = defineStringFlag(
-            "endpoint-certificate-algorithm", "",
-            // Acceptable values are: "rsa_2048", "rsa_4096", "ecdsa_p256"
-            "Selects algorithm used for an applications endpoint certificate, or use provider default if blank",
-            "Takes effect when a new endpoint certificate is requested (first deployment of new application/instance)",
+            "endpoint-certificate-algorithm", "ecdsa_p256",
+            // Acceptable values are: "rsa_4096", "ecdsa_p256"
+            "Selects algorithm used for an applications endpoint certificate",
+            "Takes effect when a new endpoint certificate is requested (on first deployment or deployment adding new endpoints)",
             APPLICATION_ID);
 
     public static final UnboundDoubleFlag RESOURCE_LIMIT_DISK = defineDoubleFlag(
