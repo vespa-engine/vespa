@@ -41,11 +41,15 @@ func (c mockHttpClient) UseCertificate(certificates []tls.Certificate) {}
 func TestHttpRequest(t *testing.T) {
 	ActiveHttpClient = mockHttpClient{}
 
-	response, err := HttpGet("http://host", "/okpath", "description")
+	req, err := http.NewRequest("GET", "http://host/okpath", nil)
+	assert.Nil(t, err)
+	response, err := HttpDo(req, time.Second*10, "description")
 	assert.Nil(t, err)
 	assert.Equal(t, 200, response.StatusCode)
 
-	response, err = HttpGet("http://host", "/otherpath", "description")
+	req, err = http.NewRequest("GET", "http://host/otherpath", nil)
+	assert.Nil(t, err)
+	response, err = HttpDo(req, time.Second*10, "description")
 	assert.Nil(t, err)
 	assert.Equal(t, 500, response.StatusCode)
 }
