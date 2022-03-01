@@ -103,10 +103,9 @@ public:
         }
     }
 
-    FastOS_UNIX_Process (const char *cmdLine, bool pipeStdin = false,
+    FastOS_UNIX_Process (const char *cmdLine,
                          FastOS_ProcessRedirectListener *stdoutListener = nullptr,
-                         FastOS_ProcessRedirectListener *stderrListener = nullptr,
-                         int bufferSize = 65535);
+                         FastOS_ProcessRedirectListener *stderrListener = nullptr);
     ~FastOS_UNIX_Process ();
     bool CreateInternal (bool useShell);
     bool Create () override { return CreateInternal(false); }
@@ -140,7 +139,7 @@ public:
         return _descriptor[type];
     }
 
-    bool GetKillFlag () {return _killed; }
+    bool GetKillFlag () { return _killed; }
 
     const char *GetRunDir() const { return _runDir.c_str(); }
     const char *GetStdoutRedirName() const { return _stdoutRedirName.c_str(); }
@@ -157,15 +156,7 @@ private:
 
 protected:
     FastOS_ApplicationInterface *_app;
-
-    FastOS_UNIX_RealProcess *_processList;
-
-    pid_t _pid;
-    bool _closedProxyProcessFiles;
     bool _hasDirectChildren;
-
-    void AddChildProcess (FastOS_UNIX_RealProcess *node);
-    void RemoveChildProcess (FastOS_UNIX_RealProcess *node);
 
     void PollReapDirectChildren();
 
@@ -173,12 +164,8 @@ public:
     FastOS_UNIX_ProcessStarter (FastOS_ApplicationInterface *app);
     ~FastOS_UNIX_ProcessStarter ();
 
-    void CloseProxiedChildDescs();
-    void CloseProxyDescs(int stdinPipedDes, int stdoutPipedDes, int stderrPipedDes,
-                         int handshakeDes0, int handshakeDes1);
-
     bool CreateProcess (FastOS_UNIX_Process *process, bool useShell,
-                        bool pipeStdin, bool pipeStdout, bool pipeStderr);
+                        bool pipeStdout, bool pipeStderr);
     bool Wait (FastOS_UNIX_Process *process, int timeOutSeconds, bool *pollStillRunning);
 };
 

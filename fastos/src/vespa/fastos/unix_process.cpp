@@ -7,7 +7,6 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <fcntl.h>
-#include <sys/socket.h>
 #include <sys/wait.h>
 #ifndef __linux__
 #include <signal.h>
@@ -63,7 +62,6 @@ public:
 
 private:
     pid_t _pid;
-    bool _died;
     bool _terse;        // Set if using direct fork (bypassing proxy process)
     int _streamMask;
 
@@ -84,10 +82,6 @@ private:
 public:
     void SetRunDir(const char * runDir) { _runDir = runDir; }
 
-    int GetStdinDescriptor() const { return _stdinDes[1]; }
-    int GetStdoutDescriptor() const { return _stdoutDes[0]; }
-    int GetStderrDescriptor() const { return _stderrDes[0]; }
-
     int HandoverStdinDescriptor() {
         int ret = _stdinDes[1];
         _stdinDes[1] = -1;
@@ -105,10 +99,6 @@ public:
         _stderrDes[0] = -1;
         return ret;
     }
-
-    void CloseStdinDescriptor();
-    void CloseStdoutDescriptor();
-    void CloseStderrDescriptor();
 
     FastOS_UNIX_RealProcess *_prev, *_next;
 
@@ -164,11 +154,9 @@ public:
     bool
     ForkAndExec(const char *command,
                 char **environmentVariables,
-                FastOS_UNIX_Process *process,
-                FastOS_UNIX_ProcessStarter *processStarter);
+                FastOS_UNIX_Process *process);
 
     bool Setup();
-    pid_t GetProcessId() const { return _pid; }
     void SetTerse() { _terse = true; }
     ssize_t HandshakeRead(void *buf, size_t len);
     void HandshakeWrite(int val);
@@ -206,30 +194,8 @@ FastOS_UNIX_RealProcess::CloseDescriptors()
 }
 
 
-void
-FastOS_UNIX_RealProcess::CloseStdinDescriptor()
-{
-    CloseAndResetDescriptor(&_stdinDes[1]);
-}
-
-
-void
-FastOS_UNIX_RealProcess::CloseStdoutDescriptor()
-{
-    CloseAndResetDescriptor(&_stdoutDes[0]);
-}
-
-
-void
-FastOS_UNIX_RealProcess::CloseStderrDescriptor()
-{
-    CloseAndResetDescriptor(&_stderrDes[0]);
-}
-
-
 FastOS_UNIX_RealProcess::FastOS_UNIX_RealProcess(int streamMask)
     : _pid(-1),
-      _died(false),
       _terse(false),
       _streamMask(streamMask),
       _runDir(),
@@ -426,8 +392,7 @@ bool
 FastOS_UNIX_RealProcess::
 ForkAndExec(const char *command,
             char **environmentVariables,
-            FastOS_UNIX_Process *process,
-            FastOS_UNIX_ProcessStarter *processStarter)
+            FastOS_UNIX_Process *process)
 {
     bool rc = false;
     int numArguments = 0;
@@ -441,8 +406,7 @@ ForkAndExec(const char *command,
 
             for(int i=0; ; i++) {
                 int length;
-                const char *arg = NextArgument(nextArg, &nextArg,
-                                               &length);
+                const char *arg = NextArgument(nextArg, &nextArg, &length);
 
                 if (arg == nullptr) {
                     // printf("ARG nullptr\n");
@@ -458,13 +422,7 @@ ForkAndExec(const char *command,
             PrepareExecVPE(execArgs[0]);
         }
     }
-    if (process == nullptr) {
-        processStarter->CloseProxyDescs(IsStdinPiped() ? _stdinDes[0] : -1,
-                                        IsStdoutPiped() ? _stdoutDes[1] : -1,
-                                        IsStderrPiped() ? _stderrDes[1] : -1,
-                                        _handshakeDes[0],
-                                        _handshakeDes[1]);
-    }
+
     _pid = safe_fork();
     if (_pid == static_cast<pid_t>(0)) {
         // Fork success, child side.
@@ -511,8 +469,6 @@ ForkAndExec(const char *command,
                 if (fd != _handshakeDes[1])
                     CloseDescriptor(fd);
             }
-        } else {
-            processStarter->CloseProxiedChildDescs();
         }
         if (fcntl(_handshakeDes[1], F_SETFD, FD_CLOEXEC) != 0) _exit(127);
 
@@ -728,12 +684,10 @@ FastOS_UNIX_RealProcess::Setup()
 
 
 FastOS_UNIX_Process::
-FastOS_UNIX_Process (const char *cmdLine, bool pipeStdin,
+FastOS_UNIX_Process (const char *cmdLine,
                      FastOS_ProcessRedirectListener *stdoutListener,
-                     FastOS_ProcessRedirectListener *stderrListener,
-                     int bufferSize) :
-    FastOS_ProcessInterface(cmdLine, pipeStdin, stdoutListener,
-                            stderrListener, bufferSize),
+                     FastOS_ProcessRedirectListener *stderrListener) :
+    FastOS_ProcessInterface(cmdLine, stdoutListener, stderrListener),
     _pid(0),
     _died(false),
     _returnCode(-1),
@@ -744,10 +698,11 @@ FastOS_UNIX_Process (const char *cmdLine, bool pipeStdin,
     _killed(false),
     _closing(nullptr)
 {
+    constexpr uint32_t RING_BUFFER_SIZE = 0x10000;
     if (stdoutListener != nullptr)
-        _descriptor[TYPE_STDOUT]._readBuffer.reset(new FastOS_RingBuffer(bufferSize));
+        _descriptor[TYPE_STDOUT]._readBuffer = std::make_unique<FastOS_RingBuffer>(RING_BUFFER_SIZE);
     if (stderrListener != nullptr)
-        _descriptor[TYPE_STDERR]._readBuffer.reset(new FastOS_RingBuffer(bufferSize));
+        _descriptor[TYPE_STDERR]._readBuffer = std::make_unique<FastOS_RingBuffer>(RING_BUFFER_SIZE);
 
     {
         auto guard = _app->getProcessGuard();
@@ -786,7 +741,6 @@ FastOS_UNIX_Process::~FastOS_UNIX_Process ()
 bool FastOS_UNIX_Process::CreateInternal (bool useShell)
 {
     return GetProcessStarter()->CreateProcess(this, useShell,
-                                              _pipeStdin,
                                               _stdoutListener != nullptr,
                                               _stderrListener != nullptr);
 }
@@ -866,9 +820,7 @@ bool FastOS_UNIX_Process::PollWait (int *returnCode, bool *stillRunning)
 
 int FastOS_UNIX_Process::BuildStreamMask (bool useShell)
 {
-    int streamMask = 0;
-
-    if (_pipeStdin)      streamMask |= FastOS_UNIX_RealProcess::STREAM_STDIN;
+    int streamMask = FastOS_UNIX_RealProcess::STREAM_STDIN;
     if (_stdoutListener) streamMask |= FastOS_UNIX_RealProcess::STREAM_STDOUT;
     if (_stderrListener) streamMask |= FastOS_UNIX_RealProcess::STREAM_STDERR;
     if (useShell)        streamMask |= FastOS_UNIX_RealProcess::EXEC_SHELL;
@@ -877,83 +829,17 @@ int FastOS_UNIX_Process::BuildStreamMask (bool useShell)
 }
 
 
-void FastOS_UNIX_ProcessStarter::
-AddChildProcess (FastOS_UNIX_RealProcess *node)
-{
-    node->_prev = nullptr;
-    node->_next = _processList;
-
-    if (_processList != nullptr)
-        _processList->_prev = node;
-    _processList = node;
-}
-
-void FastOS_UNIX_ProcessStarter::
-RemoveChildProcess (FastOS_UNIX_RealProcess *node)
-{
-    if (node->_prev)
-        node->_prev->_next = node->_next;
-    else
-        _processList = node->_next;
-
-    if (node->_next) {
-        node->_next->_prev = node->_prev;
-        node->_next = nullptr;
-    }
-
-    if (node->_prev != nullptr)
-        node->_prev = nullptr;
-}
-
-
 FastOS_UNIX_ProcessStarter::FastOS_UNIX_ProcessStarter (FastOS_ApplicationInterface *app)
     : _app(app),
-      _processList(nullptr),
-      _pid(-1),
-      _closedProxyProcessFiles(false),
       _hasDirectChildren(false)
 {
 }
 
-FastOS_UNIX_ProcessStarter::~FastOS_UNIX_ProcessStarter ()
-{
-}
-
-
-void
-FastOS_UNIX_ProcessStarter::CloseProxiedChildDescs()
-{
-}
-
-
-void
-FastOS_UNIX_ProcessStarter::CloseProxyDescs(int stdinPipedDes, int stdoutPipedDes, int stderrPipedDes,
-                                            int handshakeDes0, int handshakeDes1)
-{
-    return;
-    if (_closedProxyProcessFiles)
-        return;
-    int fdlimit = sysconf(_SC_OPEN_MAX);
-    for(int fd = STDERR_FILENO + 1; fd < fdlimit; fd++)
-    {
-        if (fd != stdinPipedDes &&
-            fd != stdoutPipedDes &&
-            fd != stderrPipedDes &&
-            fd != handshakeDes0 &&
-            fd != handshakeDes1)
-            close(fd);
-    }
-    _closedProxyProcessFiles = true;
-}
-
+FastOS_UNIX_ProcessStarter::~FastOS_UNIX_ProcessStarter () = default;
 
 bool
 FastOS_UNIX_ProcessStarter::
-CreateProcess (FastOS_UNIX_Process *process,
-               bool useShell,
-               bool pipeStdin,
-               bool pipeStdout,
-               bool pipeStderr)
+CreateProcess (FastOS_UNIX_Process *process, bool useShell, bool pipeStdout, bool pipeStderr)
 {
     bool rc = false;
 
@@ -977,14 +863,13 @@ CreateProcess (FastOS_UNIX_Process *process,
     }
     rprocess->SetTerse();
     rprocess->Setup();
-    if (pipeStdin)
-        process->SetDescriptor(FastOS_UNIX_Process::TYPE_STDIN, rprocess->HandoverStdinDescriptor());
+    process->SetDescriptor(FastOS_UNIX_Process::TYPE_STDIN, rprocess->HandoverStdinDescriptor());
     if (pipeStdout)
         process->SetDescriptor(FastOS_UNIX_Process::TYPE_STDOUT, rprocess->HandoverStdoutDescriptor());
     if (pipeStderr)
         process->SetDescriptor(FastOS_UNIX_Process::TYPE_STDERR, rprocess->HandoverStderrDescriptor());
     pid_t processId = -1;
-    if (rprocess->ForkAndExec(cmdLine, environ, process, this)) {
+    if (rprocess->ForkAndExec(cmdLine, environ, process)) {
         processId = rprocess->GetProcessID();
     }
     if (processId != -1) {
@@ -1093,8 +978,8 @@ FastOS_UNIX_Process::DescriptorHandle::CloseHandle()
         close(_fd);
         _fd = -1;
     }
-    if (_readBuffer.get() != nullptr)
+    if (_readBuffer)
         _readBuffer->Close();
-    if (_writeBuffer.get() != nullptr)
+    if (_writeBuffer)
         _writeBuffer->Close();
 }

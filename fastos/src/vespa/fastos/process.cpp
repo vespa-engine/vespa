@@ -3,15 +3,11 @@
 #include "process.h"
 
 FastOS_ProcessInterface::FastOS_ProcessInterface (const char *cmdLine,
-                         bool pipeStdin,
                          FastOS_ProcessRedirectListener *stdoutListener,
-                         FastOS_ProcessRedirectListener *stderrListener,
-                         int bufferSize) :
+                         FastOS_ProcessRedirectListener *stderrListener) :
     _cmdLine(cmdLine),
-    _pipeStdin(pipeStdin),
     _stdoutListener(stdoutListener),
     _stderrListener(stderrListener),
-    _bufferSize(bufferSize),
     _next(nullptr),
     _prev(nullptr)
 {

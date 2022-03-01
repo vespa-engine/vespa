@@ -47,19 +47,12 @@ class FastOS_ApplicationInterface;
  */
 class FastOS_ProcessInterface
 {
-private:
-    FastOS_ProcessInterface(const FastOS_ProcessInterface&);
-    FastOS_ProcessInterface &operator=(const FastOS_ProcessInterface &);
-
 protected:
 
     std::string  _cmdLine;
-    bool         _pipeStdin;
-
     FastOS_ProcessRedirectListener *_stdoutListener;
     FastOS_ProcessRedirectListener *_stderrListener;
 
-    int _bufferSize;
 public:
     FastOS_ProcessInterface *_next, *_prev;
     static FastOS_ApplicationInterface *_app;
@@ -74,17 +67,16 @@ public:
      * Constructor. Does not start the process, use @ref Create or
      * @ref CreateWithShell to actually start the process.
      * @param  cmdLine           Command line
-     * @param  pipeStdin         set to true in order to redirect stdin
      * @param  stdoutListener    non-nullptr to redirect stdout
      * @param  stderrListener    non-nullptr to redirect stderr
      * @param  bufferSize        Size of redirect buffers
      */
     FastOS_ProcessInterface (const char *cmdLine,
-                             bool pipeStdin = false,
                              FastOS_ProcessRedirectListener *stdoutListener = nullptr,
-                             FastOS_ProcessRedirectListener *stderrListener = nullptr,
-                             int bufferSize = 65535);
+                             FastOS_ProcessRedirectListener *stderrListener = nullptr);
 
+    FastOS_ProcessInterface(const FastOS_ProcessInterface&) = delete;
+    FastOS_ProcessInterface &operator=(const FastOS_ProcessInterface &) = delete;
     /**
      * Destructor.
      * If @ref Wait has not been called yet, it is called here.
