@@ -15,16 +15,22 @@ Clock::Clock() :
 
 Clock::~Clock() = default;
 
-void Clock::setTime() const
+void
+Clock::setTime() const
 {
-    _timeNS.store(count_ns(steady_clock::now().time_since_epoch()), std::memory_order_relaxed);
+    setTime(steady_clock::now());
+}
+void
+Clock::setTime(steady_time now) const
+{
+    _timeNS.store(count_ns(now.time_since_epoch()), std::memory_order_relaxed);
 }
 
 void
 Clock::start(InvokeService & invoker)
 {
     _running.store(true, std::memory_order_relaxed);
-    _invokeRegistration = invoker.registerInvoke([this]() { setTime(); });
+    _invokeRegistration = invoker.registerInvoke([this](steady_time now) { setTime(now); });
 }
 
 void

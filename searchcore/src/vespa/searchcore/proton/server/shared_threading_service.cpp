@@ -3,13 +3,11 @@
 #include "shared_threading_service.h"
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/cpu_usage.h>
-#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/fnet/transport.h>
-#include <vespa/fastos/thread.h>
 
 using vespalib::CpuUsage;
+using vespalib::steady_time;
 
 VESPA_THREAD_STACK_TAG(proton_field_writer_executor)
 VESPA_THREAD_STACK_TAG(proton_shared_executor)
@@ -39,7 +37,7 @@ SharedThreadingService::SharedThreadingService(const SharedThreadingServiceConfi
                                                                 fw_cfg.optimize(),
                                                                 fw_cfg.kindOfwatermark());
         if (fw_cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT) {
-            _invokeRegistrations.push_back(_invokeService.registerInvoke([executor = _field_writer.get()]() {
+            _invokeRegistrations.push_back(_invokeService.registerInvoke([executor = _field_writer.get()](steady_time) {
                 executor->wakeup();
             }));
         }

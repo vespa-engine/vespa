@@ -44,7 +44,7 @@ private:
 };
 
 std::unique_ptr<IDestructorCallback>
-InvokeServiceImpl::registerInvoke(VoidFunc func) {
+InvokeServiceImpl::registerInvoke(InvokeFunc func) {
     std::lock_guard guard(_lock);
     uint64_t id = _currId++;
     _toInvoke.emplace_back(id, std::move(func));
@@ -57,7 +57,7 @@ InvokeServiceImpl::registerInvoke(VoidFunc func) {
 void
 InvokeServiceImpl::unregister(uint64_t id) {
     std::lock_guard guard(_lock);
-    auto found = std::find_if(_toInvoke.begin(), _toInvoke.end(), [id](const std::pair<uint64_t, VoidFunc> & a) {
+    auto found = std::find_if(_toInvoke.begin(), _toInvoke.end(), [id](const IdAndFunc & a) {
         return id == a.first;
     });
     assert (found != _toInvoke.end());
@@ -68,15 +68,16 @@ void
 InvokeServiceImpl::runLoop() {
     bool done = false;
     while ( ! done ) {
+        steady_time now = steady_clock::now();
         {
             std::lock_guard guard(_lock);
             for (auto & func: _toInvoke) {
-                func.second();
+                func.second(now);
             }
             done = _closed;
         }
         if ( ! done) {
-            std::this_thread::sleep_for(_naptime);
+            std::this_thread::sleep_until(now + _naptime);
         }
     }
 

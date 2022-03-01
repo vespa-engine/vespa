@@ -13,6 +13,7 @@ using vespalib::CpuUsage;
 using vespalib::SequencedTaskExecutor;
 using vespalib::SingleExecutor;
 using vespalib::SyncableThreadExecutor;
+using vespalib::steady_time;
 using OptimizeFor = vespalib::Executor::OptimizeFor;
 using SharedFieldWriterExecutor = proton::ThreadingServiceConfig::SharedFieldWriterExecutor;
 
@@ -72,8 +73,8 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::Executor & sharedEx
       _invokeRegistrations()
 {
     if (cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT && invokerService) {
-        _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_indexExecutor.get()](){ executor->wakeup();}));
-        _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_summaryExecutor.get()](){ executor->wakeup();}));
+        _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_indexExecutor.get()](steady_time){ executor->wakeup();}));
+        _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_summaryExecutor.get()](steady_time){ executor->wakeup();}));
     }
     if (_shared_field_writer == SharedFieldWriterExecutor::INDEX) {
         _field_writer = SequencedTaskExecutor::create(CpuUsage::wrap(field_writer_executor, CpuUsage::Category::WRITE),
@@ -82,7 +83,7 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::Executor & sharedEx
                                                               cfg.indexingThreads(), cfg.defaultTaskLimit(),
                                                               cfg.is_task_limit_hard(), cfg.optimize(), cfg.kindOfwatermark());
         if (cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT && invokerService) {
-            _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_attributeFieldWriter.get()](){ executor->wakeup();}));
+            _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_attributeFieldWriter.get()](steady_time){ executor->wakeup();}));
         }
         _index_field_inverter_ptr = _field_writer.get();
         _index_field_writer_ptr = _field_writer.get();
@@ -93,7 +94,7 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::Executor & sharedEx
                                                       cfg.indexingThreads() * 3, cfg.defaultTaskLimit(),
                                                       cfg.is_task_limit_hard(), cfg.optimize(), cfg.kindOfwatermark());
         if (cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT && invokerService) {
-            _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_field_writer.get()](){ executor->wakeup();}));
+            _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_field_writer.get()](steady_time){ executor->wakeup();}));
         }
         _index_field_inverter_ptr = _field_writer.get();
         _index_field_writer_ptr = _field_writer.get();
@@ -112,7 +113,7 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::Executor & sharedEx
                                                               cfg.indexingThreads(), cfg.defaultTaskLimit(),
                                                               cfg.is_task_limit_hard(), cfg.optimize(), cfg.kindOfwatermark());
         if (cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT && invokerService) {
-            _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_attributeFieldWriter.get()](){ executor->wakeup();}));
+            _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_attributeFieldWriter.get()](steady_time){ executor->wakeup();}));
         }
         _index_field_inverter_ptr = _indexFieldInverter.get();
         _index_field_writer_ptr = _indexFieldWriter.get();

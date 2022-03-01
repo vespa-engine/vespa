@@ -24,6 +24,7 @@ private:
     std::unique_ptr<IDestructorCallback>      _invokeRegistration;
 
     void setTime() const;
+    VESPA_DLL_LOCAL void setTime(steady_time now) const;
 public:
     Clock();
     ~Clock();

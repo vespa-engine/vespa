@@ -20,7 +20,7 @@ TEST("require that wakeup is called") {
     InvokeCounter a;
     InvokeServiceImpl service(1ms);
     EXPECT_EQUAL(0u, a._count);
-    auto ra = service.registerInvoke([&a]() noexcept { a.inc(); });
+    auto ra = service.registerInvoke([&a](steady_time) noexcept { a.inc(); });
     EXPECT_TRUE(ra);
     a.wait_for_atleast(1);
     ra.reset();
@@ -29,22 +29,41 @@ TEST("require that wakeup is called") {
     EXPECT_EQUAL(countAtStop, a._count);
 }
 
+TEST("require that now is moving forward") {
+    InvokeCounter a;
+    InvokeServiceImpl service(1ms);
+    EXPECT_EQUAL(0u, a._count);
+    steady_time prev = steady_clock::now();
+    auto ra = service.registerInvoke([&prev, &a](steady_time now) noexcept {
+        EXPECT_GREATER(now, prev);
+        prev = now;
+        a.inc();
+    });
+    EXPECT_TRUE(ra);
+    a.wait_for_atleast(100);
+    ra.reset();
+    EXPECT_GREATER_EQUAL(a._count, 100u);
+    steady_time now = steady_clock::now();
+    EXPECT_GREATER(now, prev);
+    EXPECT_LESS(now - prev, 5s);
+}
+
 TEST("require that same wakeup can be registered multiple times.") {
     InvokeCounter a;
     InvokeCounter b;
     InvokeCounter c;
     InvokeServiceImpl service(1ms);
     EXPECT_EQUAL(0u, a._count);
-    auto ra1 = service.registerInvoke([&a]() noexcept { a.inc(); });
+    auto ra1 = service.registerInvoke([&a](steady_time) noexcept { a.inc(); });
     EXPECT_TRUE(ra1);
-    auto rb = service.registerInvoke([&b]() noexcept { b.inc(); });
+    auto rb = service.registerInvoke([&b](steady_time) noexcept { b.inc(); });
     EXPECT_TRUE(rb);
-    auto rc = service.registerInvoke([&c]() noexcept { c.inc(); });
+    auto rc = service.registerInvoke([&c](steady_time) noexcept { c.inc(); });
     EXPECT_TRUE(rc);
     a.wait_for_atleast(1);
     b.wait_for_atleast(1);
     c.wait_for_atleast(1);
-    auto ra2 = service.registerInvoke([&a]() noexcept { a.inc(); });
+    auto ra2 = service.registerInvoke([&a](steady_time) noexcept { a.inc(); });
     EXPECT_TRUE(ra2);
 
     rb.reset();
