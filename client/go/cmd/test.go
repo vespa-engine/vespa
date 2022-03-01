@@ -214,7 +214,7 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 		if err != nil {
 			return "", "", err
 		}
-		service, err = target.Service("query", 0, 0, cluster)
+		service, err = target.Service(vespa.QueryService, 0, 0, cluster)
 		if err != nil {
 			return "", "", err
 		}

@@ -62,7 +62,7 @@ func printCurl(url string, service *vespa.Service) error {
 }
 
 func query(cmd *cobra.Command, arguments []string) error {
-	service, err := getService("query", 0, "")
+	service, err := getService(vespa.QueryService, 0, "")
 	if err != nil {
 		return err
 	}
