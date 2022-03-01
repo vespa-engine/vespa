@@ -304,6 +304,12 @@ func (c *Config) Set(option, value string) error {
 			viper.Set(option, value)
 			return nil
 		}
+	case quietFlag:
+		switch value {
+		case "true", "false":
+			viper.Set(option, value)
+			return nil
+		}
 	case apiKeyFileFlag:
 		viper.Set(option, value)
 		return nil

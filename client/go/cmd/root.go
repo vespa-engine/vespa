@@ -82,16 +82,15 @@ func isTerminal() bool {
 }
 
 func configureOutput() error {
-	if quietArg {
-		stdout = ioutil.Discard
-	}
-	log.SetFlags(0) // No timestamps
-	log.SetOutput(stdout)
-
 	config, err := LoadConfig()
 	if err != nil {
 		return err
 	}
+	if quiet, _ := config.Get(quietFlag); quiet == "true" {
+		stdout = ioutil.Discard
+	}
+	log.SetFlags(0) // No timestamps
+	log.SetOutput(stdout)
 	colorValue, _ := config.Get(colorFlag)
 	colorize := false
 	switch colorValue {
