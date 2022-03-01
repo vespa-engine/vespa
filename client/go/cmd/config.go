@@ -208,7 +208,7 @@ func (c *Config) UseAPIKey(system vespa.System, tenantName string) bool {
 	// TODO: Remove this when users have had time to migrate over to Auth0 device flow authentication
 	a, err := auth0.GetAuth0(c.AuthConfigPath(), system.Name, system.URL)
 	if err != nil || !a.HasSystem() {
-		fmt.Fprintln(stderr, "Defaulting to tenant API key is deprecated. Use Auth0 device flow: 'vespa auth login' instead")
+		printWarning("Defaulting to tenant API key is deprecated.", "Use Auth0 device flow: 'vespa auth login' instead")
 		return util.PathExists(c.APIKeyPath(tenantName))
 	}
 	return false

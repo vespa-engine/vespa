@@ -31,6 +31,13 @@ func printSuccess(msg ...interface{}) {
 	log.Print(color.Green("Success: "), fmt.Sprint(msg...))
 }
 
+func printWarning(msg string, hints ...string) {
+	fmt.Fprintln(stderr, color.Yellow("Warning:"), msg)
+	for _, hint := range hints {
+		fmt.Fprintln(stderr, color.Cyan("Hint:"), hint)
+	}
+}
+
 func athenzPath(filename string) (string, error) {
 	userHome, err := os.UserHomeDir()
 	if err != nil {

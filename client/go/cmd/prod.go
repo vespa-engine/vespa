@@ -157,8 +157,7 @@ $ vespa prod submit`,
 		}
 		isCI := os.Getenv("CI") != ""
 		if !isCI {
-			fmt.Fprintln(stderr, color.Yellow("Warning:"), "We recommend doing this only from a CD job")
-			fmt.Fprintln(stderr, color.Cyan("Hint:"), "See https://cloud.vespa.ai/en/getting-to-production")
+			printWarning("We recommend doing this only from a CD job", "See https://cloud.vespa.ai/en/getting-to-production")
 		}
 		opts, err := getDeploymentOptions(cfg, pkg, target)
 		if err != nil {
