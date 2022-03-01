@@ -150,7 +150,7 @@ Matcher::create_match_tools_factory(const search::engine::Request &request, ISea
                         : _stats.softDoomFactor())
                     : 0.95;
     vespalib::duration safeLeft = std::chrono::duration_cast<vespalib::duration>(request.getTimeLeft() * factor);
-    vespalib::steady_time safeDoom(_clock.getTimeNSAssumeRunning() + safeLeft);
+    vespalib::steady_time safeDoom(_clock.getTimeNS() + safeLeft);
     if (softTimeoutEnabled) {
         LOG(debug, "Soft-timeout computed factor=%1.3f, used factor=%1.3f, userSupplied=%d, softTimeout=%" PRId64,
                    _stats.softDoomFactor(), factor, hasFactorOverride, vespalib::count_ns(safeLeft));

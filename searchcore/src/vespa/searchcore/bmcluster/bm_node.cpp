@@ -451,7 +451,6 @@ class MyBmNode : public BmNode
     int                                        _distributor_status_port;
     vespalib::string                           _tls_spec;
     proton::matching::QueryLimiter             _query_limiter;
-    vespalib::Clock                            _clock;
     proton::DummyWireService                   _metrics_wire_service;
     proton::MemoryConfigStores                 _config_stores;
     vespalib::ThreadStackExecutor              _summary_executor;
@@ -516,7 +515,6 @@ MyBmNode::MyBmNode(const vespalib::string& base_dir, int base_port, uint32_t nod
       _distributor_status_port(port_number(base_port, PortBias::DISTRIBUTOR_STATUS_PORT)),
       _tls_spec(vespalib::make_string("tcp/localhost:%d", _tls_listen_port)),
       _query_limiter(),
-      _clock(),
       _metrics_wire_service(),
       _config_stores(),
       _summary_executor(8, 128_Ki),
@@ -591,7 +589,7 @@ MyBmNode::create_document_db(const BmClusterParams& params)
                                                               tuneFileDocDB, HwInfo());
     mgr.forwardConfig(bootstrap_config);
     mgr.nextGeneration(_shared_service.transport(), 0ms);
-    _document_db = DocumentDB::create(_base_dir, mgr.getConfig(), _tls_spec, _query_limiter, _clock, _doc_type_name,
+    _document_db = DocumentDB::create(_base_dir, mgr.getConfig(), _tls_spec, _query_limiter, _doc_type_name,
                                       _bucket_space, *bootstrap_config->getProtonConfigSP(), _document_db_owner,
                                       _shared_service, *_persistence_engine, _tls,
                                       _metrics_wire_service, _file_header_context,

@@ -14,8 +14,8 @@ public:
     Doom(const Clock &clock, steady_time softDoom,
          steady_time hardDoom, bool explicitSoftDoom);
 
-    bool soft_doom() const { return (_clock.getTimeNSAssumeRunning() > _softDoom); }
-    bool hard_doom() const { return (_clock.getTimeNSAssumeRunning() > _hardDoom); }
+    bool soft_doom() const { return (_clock.getTimeNS() > _softDoom); }
+    bool hard_doom() const { return (_clock.getTimeNS() > _hardDoom); }
     duration soft_left() const { return _softDoom - _clock.getTimeNS(); }
     duration hard_left() const { return _hardDoom - _clock.getTimeNS(); }
     bool isExplicitSoftDoom() const { return _isExplicitSoftDoom; }

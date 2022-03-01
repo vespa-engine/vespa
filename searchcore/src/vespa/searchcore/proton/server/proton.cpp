@@ -241,7 +241,6 @@ Proton::Proton(FastOS_ThreadPool & threadPool, FNET_Transport & transport, const
       _shared_service(),
       _compile_cache_executor_binding(),
       _queryLimiter(),
-      _clock(),
       _distributionKey(-1),
       _isInitializing(true),
       _abortInit(false),
@@ -278,7 +277,6 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     setBucketCheckSumType(protonConfig);
     setFS4Compression(protonConfig);
     _shared_service = std::make_unique<SharedThreadingService>(SharedThreadingServiceConfig::make(protonConfig, hwInfo.cpu()), _transport);
-    _clock.start(_shared_service->invokeService());
     _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(_shared_service->transport(), protonConfig.basedir,
                                                                  diskMemUsageSamplerConfig(protonConfig, hwInfo));
 
@@ -473,7 +471,6 @@ Proton::~Proton()
     _persistenceEngine.reset();
     _tls.reset();
     _compile_cache_executor_binding.reset();
-    _clock.stop();
     _shared_service.reset();
     LOG(debug, "Explicit destructor done");
 }
@@ -610,7 +607,6 @@ Proton::addDocumentDB(const document::DocumentType &docType,
                                   documentDBConfig,
                                   config.tlsspec,
                                   _queryLimiter,
-                                  _clock,
                                   docTypeName,
                                   bucketSpace,
                                   config,

@@ -19,19 +19,11 @@ void waitForMovement(steady_time start, Clock & clock, vespalib::duration timeou
 
 TEST("Test that clock is ticking forward") {
     vespalib::InvokeServiceImpl invoker(50ms);
-    Clock clock;
-    clock.start(invoker);
+    Clock clock(invoker.nowPtr());
     steady_time start = clock.getTimeNS();
     waitForMovement(start, clock, 10s);
     steady_time stop = clock.getTimeNS();
     EXPECT_TRUE(stop > start);
-    std::this_thread::sleep_for(1s);
-    start = clock.getTimeNS();
-    waitForMovement(start, clock, 10s);
-    clock.stop();
-    steady_time stop2 = clock.getTimeNS();
-    EXPECT_TRUE(stop2 > stop);
-    EXPECT_TRUE(vespalib::count_ms(stop2 - stop) > 1000);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

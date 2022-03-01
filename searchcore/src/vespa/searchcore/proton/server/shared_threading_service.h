@@ -5,6 +5,7 @@
 #include "shared_threading_service_config.h"
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/syncable.h>
+#include <vespa/vespalib/util/clock.h>
 #include <vespa/vespalib/util/invokeserviceimpl.h>
 #include <memory>
 
@@ -22,7 +23,7 @@ private:
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _field_writer;
     vespalib::InvokeServiceImpl                       _invokeService;
     std::vector<Registration>                         _invokeRegistrations;
-
+    vespalib::Clock                                   _clock;
 public:
     SharedThreadingService(const SharedThreadingServiceConfig& cfg, FNET_Transport & transport);
     ~SharedThreadingService() override;
@@ -35,6 +36,7 @@ public:
     vespalib::ISequencedTaskExecutor* field_writer() override { return _field_writer.get(); }
     vespalib::InvokeService & invokeService() override { return _invokeService; }
     FNET_Transport & transport() override { return _transport; }
+    const vespalib::Clock & clock() const override { return _clock; }
 };
 
 }

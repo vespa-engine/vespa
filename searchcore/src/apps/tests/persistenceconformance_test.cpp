@@ -171,7 +171,6 @@ private:
     DummyFileHeaderContext    _fileHeaderContext;
     vespalib::string          _tlsSpec;
     matching::QueryLimiter    _queryLimiter;
-    vespalib::Clock           _clock;
     mutable DummyWireService      _metricsWireService;
     mutable MemoryConfigStores    _config_stores;
     vespalib::ThreadStackExecutor _summaryExecutor;
@@ -209,7 +208,7 @@ public:
                                                   tuneFileDocDB, HwInfo());
         mgr.forwardConfig(b);
         mgr.nextGeneration(_shared_service.transport(), 0ms);
-        return DocumentDB::create(_baseDir, mgr.getConfig(), _tlsSpec, _queryLimiter, _clock, docType, bucketSpace,
+        return DocumentDB::create(_baseDir, mgr.getConfig(), _tlsSpec, _queryLimiter, docType, bucketSpace,
                                   *b->getProtonConfigSP(), const_cast<DocumentDBFactory &>(*this),
                                   _shared_service, _bucketExecutor, _tls, _metricsWireService,
                                   _fileHeaderContext, _config_stores.getConfigStore(docType.toString()),
@@ -223,7 +222,6 @@ DocumentDBFactory::DocumentDBFactory(const vespalib::string &baseDir, int tlsLis
       _fileHeaderContext(),
       _tlsSpec(vespalib::make_string("tcp/localhost:%d", tlsListenPort)),
       _queryLimiter(),
-      _clock(),
       _metricsWireService(),
       _summaryExecutor(8, 128_Ki),
       _shared_service(_summaryExecutor, _summaryExecutor),

@@ -29,6 +29,25 @@ TEST("require that wakeup is called") {
     EXPECT_EQUAL(countAtStop, a._count);
 }
 
+TEST("require that now is moving forward") {
+    InvokeCounter a;
+    InvokeServiceImpl service(1ms);
+    EXPECT_EQUAL(0u, a._count);
+    steady_time prev = steady_clock::now();
+    auto ra = service.registerInvoke([&prev, &a, now=service.nowPtr() ]() noexcept {
+        EXPECT_GREATER(now->load(), prev);
+        prev = now->load();
+        a.inc();
+    });
+    EXPECT_TRUE(ra);
+    a.wait_for_atleast(100);
+    ra.reset();
+    EXPECT_GREATER_EQUAL(a._count, 100u);
+    steady_time now = steady_clock::now();
+    EXPECT_GREATER(now, prev);
+    EXPECT_LESS(now - prev, 5s);
+}
+
 TEST("require that same wakeup can be registered multiple times.") {
     InvokeCounter a;
     InvokeCounter b;

@@ -7,6 +7,7 @@
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
+#include <vespa/vespalib/util/testclock.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/log/log.h>
 LOG_SETUP("multilevelsort_test");
@@ -14,13 +15,9 @@ LOG_SETUP("multilevelsort_test");
 using namespace search;
 
 typedef FastS_SortSpec::VectorRef VectorRef;
-typedef IntegerAttributeTemplate<uint8_t>  Uint8;
 typedef IntegerAttributeTemplate<int8_t>   Int8;
-typedef IntegerAttributeTemplate<uint16_t> Uint16;
 typedef IntegerAttributeTemplate<int16_t>  Int16;
-typedef IntegerAttributeTemplate<uint32_t> Uint32;
 typedef IntegerAttributeTemplate<int32_t>  Int32;
-typedef IntegerAttributeTemplate<uint64_t> Uint64;
 typedef IntegerAttributeTemplate<int64_t>  Int64;
 typedef FloatingPointAttributeTemplate<float>  Float;
 typedef FloatingPointAttributeTemplate<double> Double;
@@ -239,8 +236,8 @@ MultilevelSortTest::sortAndCheck(const std::vector<Spec> &spec, uint32_t num,
         hits[i]._rankValue = getRandomValue<uint32_t>();
     }
 
-    vespalib::Clock clock;
-    vespalib::Doom doom(clock, vespalib::steady_time::max());
+    vespalib::TestClock clock;
+    vespalib::Doom doom(clock.clock(), vespalib::steady_time::max());
     search::uca::UcaConverterFactory ucaFactory;
     FastS_SortSpec sorter(7, doom, ucaFactory, _sortMethod);
     // init sorter with sort data
@@ -396,8 +393,8 @@ TEST("require that all sort methods behave the same")
 }
 
 TEST("test that [docid] translates to [lid][paritionid]") {
-    vespalib::Clock clock;
-    vespalib::Doom doom(clock, vespalib::steady_time::max());
+    vespalib::TestClock clock;
+    vespalib::Doom doom(clock.clock(), vespalib::steady_time::max());
     search::uca::UcaConverterFactory ucaFactory;
     FastS_SortSpec asc(7, doom, ucaFactory);
     RankedHit hits[2] = {RankedHit(91, 0.0), RankedHit(3, 2.0)};
