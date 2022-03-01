@@ -4,6 +4,7 @@ package com.yahoo.search.dispatch;
 import com.yahoo.document.GlobalId;
 import com.yahoo.document.idstring.IdString;
 import com.yahoo.prelude.fastsearch.FastHit;
+import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Group;
@@ -13,6 +14,11 @@ import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.Relevance;
+import com.yahoo.searchlib.aggregation.Grouping;
+import com.yahoo.searchlib.aggregation.MaxAggregationResult;
+import com.yahoo.searchlib.aggregation.MinAggregationResult;
+import com.yahoo.searchlib.expression.IntegerResultNode;
+import com.yahoo.searchlib.expression.StringResultNode;
 import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
@@ -318,6 +324,39 @@ public class InterleavedSearchInvokerTest {
         assertTrue(result.hits().get(3) instanceof MetaHit);
         assertEquals(0, result.getQuery().getOffset());
         assertEquals(3, result.getQuery().getHits());
+    }
+
+    @Test
+    public void requireThatGroupingsAreMerged() throws IOException {
+        SearchCluster cluster = new MockSearchCluster("!", 1, 2);
+        List<SearchInvoker> invokers = new ArrayList<>();
+
+        Grouping grouping1 = new Grouping(0);
+        grouping1.setRoot(new com.yahoo.searchlib.aggregation.Group()
+                .addChild(new com.yahoo.searchlib.aggregation.Group()
+                        .setId(new StringResultNode("uniqueA"))
+                        .addAggregationResult(new MaxAggregationResult().setMax(new IntegerResultNode(6)).setTag(4)))
+                .addChild(new com.yahoo.searchlib.aggregation.Group()
+                        .setId(new StringResultNode("common"))
+                        .addAggregationResult(new MaxAggregationResult().setMax(new IntegerResultNode(9)).setTag(4))));
+        invokers.add(new MockInvoker(0).setHits(List.of(new GroupingListHit(List.of(grouping1)))));
+
+        Grouping grouping2 = new Grouping(0);
+        grouping2.setRoot(new com.yahoo.searchlib.aggregation.Group()
+                .addChild(new com.yahoo.searchlib.aggregation.Group()
+                        .setId(new StringResultNode("uniqueB"))
+                        .addAggregationResult(new MaxAggregationResult().setMax(new IntegerResultNode(9)).setTag(4)))
+                .addChild(new com.yahoo.searchlib.aggregation.Group()
+                        .setId(new StringResultNode("common"))
+                        .addAggregationResult(new MinAggregationResult().setMin(new IntegerResultNode(6)).setTag(3))));
+        invokers.add(new MockInvoker(0).setHits(List.of(new GroupingListHit(List.of(grouping2)))));
+
+        InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(invokers, cluster, new Group(0, List.of()), Collections.emptySet());
+        invoker.responseAvailable(invokers.get(0));
+        invoker.responseAvailable(invokers.get(1));
+        Result result = invoker.search(query, null);
+        assertEquals(1, ((GroupingListHit) result.hits().get(0)).getGroupingList().size());
+
     }
 
     private static InterleavedSearchInvoker createInterLeavedTestInvoker(List<Double> a, List<Double> b, Group group) {

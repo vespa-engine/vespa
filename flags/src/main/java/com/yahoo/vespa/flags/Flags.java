@@ -390,6 +390,13 @@ public class Flags {
             "Takes effect immediately",
             TENANT_ID);
 
+    public static final UnboundBooleanFlag MERGE_GROUPING_RESULT_IN_SEARCH_INVOKER = defineFeatureFlag(
+            "merge-grouping-result-in-search-invoker", false,
+            List.of("bjorncs", "baldersheim"), "2022-02-23", "2022-08-01",
+            "Merge grouping results incrementally in interleaved search invoker",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
