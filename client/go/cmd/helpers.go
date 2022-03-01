@@ -39,30 +39,30 @@ func athenzPath(filename string) (string, error) {
 	return filepath.Join(userHome, ".athenz", filename), nil
 }
 
-func athenzKeyPair() (tls.Certificate, error) {
+func athenzKeyPair() (KeyPair, error) {
 	certFile, err := athenzPath("cert")
 	if err != nil {
-		return tls.Certificate{}, err
+		return KeyPair{}, err
 	}
 	keyFile, err := athenzPath("key")
 	if err != nil {
-		return tls.Certificate{}, err
+		return KeyPair{}, err
 	}
 	kp, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		return tls.Certificate{}, err
+		return KeyPair{}, err
 	}
 	cert, err := x509.ParseCertificate(kp.Certificate[0])
 	if err != nil {
-		return tls.Certificate{}, err
+		return KeyPair{}, err
 	}
 	now := time.Now()
 	expiredAt := cert.NotAfter
 	if expiredAt.Before(now) {
 		delta := now.Sub(expiredAt).Truncate(time.Second)
-		return tls.Certificate{}, errHint(fmt.Errorf("certificate %s expired at %s (%s ago)", certFile, cert.NotAfter, delta), "Try renewing certificate with 'athenz-user-cert'")
+		return KeyPair{}, errHint(fmt.Errorf("certificate %s expired at %s (%s ago)", certFile, cert.NotAfter, delta), "Try renewing certificate with 'athenz-user-cert'")
 	}
-	return kp, nil
+	return KeyPair{KeyPair: kp, CertificateFile: certFile, PrivateKeyFile: keyFile}, nil
 }
 
 func vespaCliHome() (string, error) {
@@ -255,7 +255,11 @@ func createCloudTarget(targetType string) (vespa.Target, error) {
 		if err != nil {
 			return nil, err
 		}
-		apiTLSOptions = vespa.TLSOptions{KeyPair: kp}
+		apiTLSOptions = vespa.TLSOptions{
+			KeyPair:         kp.KeyPair,
+			CertificateFile: kp.CertificateFile,
+			PrivateKeyFile:  kp.PrivateKeyFile,
+		}
 		deploymentTLSOptions = apiTLSOptions
 	} else {
 		return nil, fmt.Errorf("invalid cloud target: %s", targetType)
