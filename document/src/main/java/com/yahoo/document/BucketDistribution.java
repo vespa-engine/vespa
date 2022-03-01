@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-import com.yahoo.document.BucketId;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -14,7 +12,7 @@ import java.util.logging.Logger;
 public class BucketDistribution {
 
     // A logger object to enable proper logging.
-    private static Logger log = Logger.getLogger(BucketDistribution.class.getName());
+    private static final Logger log = Logger.getLogger(BucketDistribution.class.getName());
 
     // A map from bucket id to column index.
     private int[] bucketToColumn;

@@ -11,6 +11,7 @@ import com.yahoo.vespa.objects.Identifiable;
 import com.yahoo.vespa.objects.Serializer;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * The id of a document
@@ -18,11 +19,9 @@ import java.io.Serializable;
 public class DocumentId extends Identifiable implements Serializable {
 
     private IdString id;
-    private GlobalId globalId;
+    private GlobalId globalId = null;
 
-    /**
-     * Constructor used for deserialization.
-     */
+    /** Constructor used for deserialization. */
     public DocumentId(Deserializer buf) {
         deserialize(buf);
     }
@@ -33,21 +32,14 @@ public class DocumentId extends Identifiable implements Serializable {
      * The document id string can only contain text characters.
      */
     public DocumentId(String id) {
-        if (id == null) {
-            throw new IllegalArgumentException("Cannot create DocumentId from null id.");
-        }
-        if (id.length() > IdString.MAX_LENGTH) {
-            throw new IllegalArgumentException("The document id(" + id.length() + ") is too long(" + IdString.MAX_LENGTH + "). " +
-                    "However if you have already fed a document earlier on and want to remove it, you can do so by " +
-                    "calling new DocumentId(IdString.createIdStringLessStrict()) that will bypass this restriction.");
-        }
-        this.id = IdString.createIdString(id);
-        globalId = null;
+        this.id = IdString.createIdString(Objects.requireNonNull(id));
+        if (id.length() > IdString.MAX_LENGTH)
+            throw new IllegalArgumentException("Document id of length " + id.length() +
+                                               " is longer than the max " + IdString.MAX_LENGTH);
     }
 
     public DocumentId(IdString id) {
         this.id = id;
-        globalId = null;
     }
 
     /**
@@ -86,14 +78,17 @@ public class DocumentId extends Identifiable implements Serializable {
         return id.toString().compareTo(cmp.id.toString());
     }
 
+    @Override
     public boolean equals(Object o) {
         return o instanceof DocumentId && id.equals(((DocumentId)o).id);
     }
 
+    @Override
     public int hashCode() {
         return id.hashCode();
     }
 
+    @Override
     public String toString() {
         return id.toString();
     }
@@ -106,7 +101,6 @@ public class DocumentId extends Identifiable implements Serializable {
             target.put(null, id.toString());
         }
     }
-
 
     public void onDeserialize(Deserializer data) throws DeserializationException {
         if (data instanceof DocumentReader) {
@@ -123,4 +117,5 @@ public class DocumentId extends Identifiable implements Serializable {
     public String getDocType() {
         return id.getDocType();
     }
+
 }

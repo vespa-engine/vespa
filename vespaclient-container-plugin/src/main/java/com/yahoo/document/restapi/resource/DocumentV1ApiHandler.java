@@ -214,7 +214,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         this.operations = new ConcurrentLinkedDeque<>();
         long resendDelayMS = SystemTimer.adjustTimeoutByDetectedHz(Duration.ofMillis(executorConfig.resendDelayMillis())).toMillis();
 
-        //TODO Here it would be better do have dedicated threads with different wait depending on blocked or empty.
+        // TODO: Here it would be better do have dedicated threads with different wait depending on blocked or empty.
         this.dispatcher.scheduleWithFixedDelay(this::dispatchEnqueued, resendDelayMS, resendDelayMS, MILLISECONDS);
         this.visitDispatcher.scheduleWithFixedDelay(this::dispatchVisitEnqueued, resendDelayMS, resendDelayMS, MILLISECONDS);
     }
