@@ -17,6 +17,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.nodeAllocationFailure;
 
 /**
  * A list of deployment jobs that can be filtered in various ways.
@@ -100,6 +101,15 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
     /** Returns the subset of jobs of which are production jobs. */
     public JobList production() {
         return matching(job -> job.id().type().isProduction());
+    }
+
+    /** Returns the jobs with any runs failing with non-out-of-test-capacity on the given versions — targets only for system test, everything present otherwise. */
+    public JobList failingHardOn(Versions versions) {
+        return matching(job -> ! RunList.from(job)
+                                        .on(versions)
+                                        .matching(Run::hasFailed)
+                                        .not().matching(run -> run.status() == nodeAllocationFailure && run.id().type().environment().isTest())
+                                        .isEmpty());
     }
 
     /** Returns the jobs with any runs matching the given versions — targets only for system test, everything present otherwise. */

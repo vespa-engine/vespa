@@ -372,11 +372,11 @@ public class DeploymentTrigger {
               .ifPresent(last -> {
                   if (jobs.get(job).stream().noneMatch(versions ->    versions.versions().targetsMatch(last.versions())
                                                                    && versions.versions().sourcesMatchIfPresent(last.versions()))) {
-                      log.log(Level.INFO, "Aborting outdated run " + last);
-                      controller.jobController().abort(last.id(), "run no longer scheduled, and is blocking scheduled runs: " +
-                                                                  jobs.get(job).stream()
-                                                                      .map(scheduled -> scheduled.versions().toString())
-                                                                      .collect(Collectors.joining(", ")));
+                      String blocked = jobs.get(job).stream()
+                                           .map(scheduled -> scheduled.versions().toString())
+                                           .collect(Collectors.joining(", "));
+                      log.log(Level.INFO, "Aborting outdated run " + last + ", which is blocking runs: " + blocked);
+                      controller.jobController().abort(last.id(), "run no longer scheduled, and is blocking scheduled runs: " + blocked);
                   }
               });
     }
