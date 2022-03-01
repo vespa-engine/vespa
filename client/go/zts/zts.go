@@ -44,6 +44,9 @@ func (c *Client) AccessToken(domain string, certificate tls.Certificate) (string
 	}
 	defer response.Body.Close()
 
+	if response.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("got status %d from %s", response.StatusCode, c.tokenURL.String())
+	}
 	var ztsResponse struct {
 		AccessToken string `json:"access_token"`
 	}
