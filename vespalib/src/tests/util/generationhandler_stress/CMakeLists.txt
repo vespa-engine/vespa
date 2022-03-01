@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_generation_handler_stress_test_app
     generation_handler_stress_test.cpp
     DEPENDS
     vespalib
+    GTest::GTest
 )
-vespa_add_test(NAME vespalib_generation_handler_stress_test_app COMMAND vespalib_generation_handler_stress_test_app BENCHMARK)
+vespa_add_test(NAME vespalib_generation_handler_stress_test_app COMMAND vespalib_generation_handler_stress_test_app --smoke-test)
