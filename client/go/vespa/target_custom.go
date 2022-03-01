@@ -56,7 +56,7 @@ func (t *customTarget) Service(name string, timeout time.Duration, sessionOrRunI
 			if err != nil {
 				return nil, err
 			}
-			if status/100 != 2 {
+			if !isOK(status) {
 				return nil, fmt.Errorf("got status %d from deploy service at %s", status, service.BaseURL)
 			}
 		} else {
@@ -108,7 +108,7 @@ func (t *customTarget) waitForConvergence(timeout time.Duration) error {
 	}
 	converged := false
 	convergedFunc := func(status int, response []byte) (bool, error) {
-		if status/100 != 2 {
+		if !isOK(status) {
 			return false, nil
 		}
 		var resp serviceConvergeResponse

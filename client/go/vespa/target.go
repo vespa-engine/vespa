@@ -130,6 +130,8 @@ func (s *Service) Description() string {
 	return fmt.Sprintf("No description of service %s", s.Name)
 }
 
+func isOK(status int) bool { return status/100 == 2 }
+
 type responseFunc func(status int, response []byte) (bool, error)
 
 type requestFunc func() *http.Request
@@ -141,7 +143,7 @@ func waitForOK(url string, certificate *tls.Certificate, timeout time.Duration) 
 	if err != nil {
 		return 0, err
 	}
-	okFunc := func(status int, response []byte) (bool, error) { return status/100 == 2, nil }
+	okFunc := func(status int, response []byte) (bool, error) { return isOK(status), nil }
 	return wait(okFunc, func() *http.Request { return req }, certificate, timeout)
 }
 

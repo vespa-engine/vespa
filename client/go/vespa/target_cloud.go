@@ -123,7 +123,7 @@ func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, c
 			if err != nil {
 				return nil, err
 			}
-			if status/100 != 2 {
+			if !isOK(status) {
 				return nil, fmt.Errorf("got status %d from deploy service at %s", status, service.BaseURL)
 			}
 		}
@@ -229,7 +229,7 @@ func (t *cloudTarget) PrintLog(options LogOptions) error {
 		return req
 	}
 	logFunc := func(status int, response []byte) (bool, error) {
-		if ok, err := isOK(status); !ok {
+		if ok, err := isCloudOK(status); !ok {
 			return ok, err
 		}
 		logEntries, err := ReadLogEntries(bytes.NewReader(response))
@@ -287,7 +287,7 @@ func (t *cloudTarget) waitForRun(runID int64, timeout time.Duration) error {
 		return req
 	}
 	jobSuccessFunc := func(status int, response []byte) (bool, error) {
-		if ok, err := isOK(status); !ok {
+		if ok, err := isCloudOK(status); !ok {
 			return ok, err
 		}
 		var resp jobResponse
@@ -345,7 +345,7 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) error {
 	}
 	urlsByCluster := make(map[string]string)
 	endpointFunc := func(status int, response []byte) (bool, error) {
-		if ok, err := isOK(status); !ok {
+		if ok, err := isCloudOK(status); !ok {
 			return ok, err
 		}
 		var resp deploymentResponse
@@ -373,9 +373,10 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) error {
 	return nil
 }
 
-func isOK(status int) (bool, error) {
+func isCloudOK(status int) (bool, error) {
 	if status == 401 {
-		return false, fmt.Errorf("status %d: invalid api key", status)
+		// when retrying we should give up immediately if we're not authorized
+		return false, fmt.Errorf("status %d: invalid credentials", status)
 	}
-	return status/100 == 2, nil
+	return isOK(status), nil
 }
