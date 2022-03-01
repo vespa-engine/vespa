@@ -191,11 +191,11 @@ normalize()
         if (pnode->validSlots() > 0) {
             uint32_t s = pnode->validSlots() - 1;
             LeafNodeType *l = _allocator.mapLeafRef(pnode->get_child_relaxed(s));
-            pnode->writeKey(s, l->getLastKey());
+            pnode->write_key_relaxed(s, l->getLastKey());
             if (s > 0) {
                 --s;
                 l = _allocator.mapLeafRef(pnode->get_child_relaxed(s));
-                pnode->writeKey(s, l->getLastKey());
+                pnode->write_key_relaxed(s, l->getLastKey());
             }
         }
         if (!leftInodes.empty() && _allocator.isValidRef(leftInodes[0])) {
@@ -203,7 +203,7 @@ normalize()
                 _allocator.mapInternalRef(leftInodes[0]);
             uint32_t s = lpnode->validSlots() - 1;
             LeafNodeType *l = _allocator.mapLeafRef(lpnode->get_child_relaxed(s));
-            lpnode->writeKey(s, l->getLastKey());
+            lpnode->write_key_relaxed(s, l->getLastKey());
         }
     }
 
@@ -257,11 +257,11 @@ normalize()
             uint32_t s = pnode->validSlots() - 1;
             InternalNodeType *n =
                 _allocator.mapInternalRef(pnode->get_child_relaxed(s));
-            pnode->writeKey(s, n->getLastKey());
+            pnode->write_key_relaxed(s, n->getLastKey());
             if (s > 0) {
                 --s;
                 n = _allocator.mapInternalRef(pnode->get_child_relaxed(s));
-                pnode->writeKey(s, n->getLastKey());
+                pnode->write_key_relaxed(s, n->getLastKey());
             }
         }
         if (level + 1 < leftInodes.size() &&
@@ -271,7 +271,7 @@ normalize()
             uint32_t s = lpnode->validSlots() - 1;
             InternalNodeType *n =
                 _allocator.mapInternalRef(lpnode->get_child_relaxed(s));
-            lpnode->writeKey(s, n->getLastKey());
+            lpnode->write_key_relaxed(s, n->getLastKey());
         }
     }
     /* Check fanout on root node */
