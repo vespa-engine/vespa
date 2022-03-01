@@ -128,6 +128,7 @@ public:
         CLOSED
     };
 
+    FileStorHandler() : _getNextMessageTimout(100ms) { }
     virtual ~FileStorHandler() = default;
 
 
@@ -170,7 +171,12 @@ public:
      *
      * @param stripe The stripe to get messages for
      */
-    virtual LockedMessage getNextMessage(uint32_t stripeId) = 0;
+    virtual LockedMessage getNextMessage(uint32_t stripeId, vespalib::steady_time deadline) = 0;
+
+    /** Only used for testing, should be removed */
+    LockedMessage getNextMessage(uint32_t stripeId) {
+        return getNextMessage(stripeId, vespalib::steady_clock::now() + _getNextMessageTimout);
+    }
 
     /**
      * Lock a bucket. By default, each file stor thread has the locks of all
@@ -268,7 +274,7 @@ public:
     virtual uint32_t getQueueSize() const = 0;
 
     // Commands used by testing
-    virtual void setGetNextMessageTimeout(vespalib::duration timeout) = 0;
+    void setGetNextMessageTimeout(vespalib::duration timeout) { _getNextMessageTimout = timeout; }
 
     virtual std::string dumpQueue() const = 0;
 
@@ -281,6 +287,8 @@ public:
     virtual void use_dynamic_operation_throttling(bool use_dynamic) noexcept = 0;
 
     virtual void set_throttle_apply_bucket_diff_ops(bool throttle_apply_bucket_diff) noexcept = 0;
+private:
+    vespalib::duration _getNextMessageTimout;
 };
 
 } // storage

@@ -54,9 +54,9 @@ public:
     // Acquire a valid throttling token, uninterruptedly blocking until one can be obtained.
     [[nodiscard]] virtual Token blocking_acquire_one() noexcept = 0;
     // Attempt to acquire a valid throttling token, waiting up to `timeout` for one to be
-    // available. If the timeout is exceeded without any tokens becoming available, an
+    // available. If the deadline is reached without any tokens becoming available, an
     // invalid token will be returned.
-    [[nodiscard]] virtual Token blocking_acquire_one(vespalib::duration timeout) noexcept = 0;
+    [[nodiscard]] virtual Token blocking_acquire_one(vespalib::steady_time deadline) noexcept = 0;
     // Attempt to acquire a valid throttling token if one is immediately available.
     // An invalid token will be returned if none is available. Never blocks (other than
     // when contending for the internal throttler mutex).

@@ -4,6 +4,8 @@
 #include <vespa/vespalib/util/barrier.h>
 #include <thread>
 
+using vespalib::steady_clock;
+
 namespace vespalib {
 
 using ThrottleToken = SharedOperationThrottler::Token;
@@ -47,7 +49,7 @@ TEST_F("blocking acquire returns immediately if slot available", DynamicThrottle
     auto token = f1._throttler->blocking_acquire_one();
     EXPECT_TRUE(token.valid());
     token.reset();
-    token = f1._throttler->blocking_acquire_one(600s); // Should never block.
+    token = f1._throttler->blocking_acquire_one(steady_clock::now() + 600s); // Should never block.
     EXPECT_TRUE(token.valid());
 }
 
@@ -70,11 +72,11 @@ TEST_F("blocking call woken up if throttle slot available", DynamicThrottleFixtu
 
 TEST_F("time-bounded blocking acquire waits for timeout", DynamicThrottleFixture()) {
     auto window_filling_token = f1._throttler->try_acquire_one();
-    auto before = std::chrono::steady_clock::now();
+    auto before = steady_clock::now();
     // Will block for at least 1ms. Since no window slot will be available by that time,
     // an invalid token should be returned.
-    auto token = f1._throttler->blocking_acquire_one(1ms);
-    auto after = std::chrono::steady_clock::now();
+    auto token = f1._throttler->blocking_acquire_one(before + 1ms);
+    auto after = steady_clock::now();
     EXPECT_TRUE((after - before) >= 1ms);
     EXPECT_FALSE(token.valid());
 }
