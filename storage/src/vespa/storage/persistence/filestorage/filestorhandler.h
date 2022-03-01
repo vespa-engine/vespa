@@ -171,7 +171,7 @@ public:
      *
      * @param stripe The stripe to get messages for
      */
-    virtual LockedMessage getNextMessage(uint32_t stripeId, vespalib::steady_time timeout_end) = 0;
+    virtual LockedMessage getNextMessage(uint32_t stripeId, vespalib::steady_time deadline) = 0;
 
     /** Only used for testing, should be removed */
     LockedMessage getNextMessage(uint32_t stripeId) {

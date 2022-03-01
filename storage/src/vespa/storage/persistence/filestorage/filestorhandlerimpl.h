@@ -132,7 +132,7 @@ public:
         std::shared_ptr<FileStorHandler::BucketLockInterface> lock(const document::Bucket & bucket, api::LockingRequirements lockReq);
         void failOperations(const document::Bucket & bucket, const api::ReturnCode & code);
 
-        FileStorHandler::LockedMessage getNextMessage(vespalib::steady_time timeout_end);
+        FileStorHandler::LockedMessage getNextMessage(vespalib::steady_time deadline);
         void dumpQueue(std::ostream & os) const;
         void dumpActiveHtml(std::ostream & os) const;
         void dumpQueueHtml(std::ostream & os) const;
@@ -203,7 +203,7 @@ public:
     bool schedule(const std::shared_ptr<api::StorageMessage>&) override;
     ScheduleAsyncResult schedule_and_get_next_async_message(const std::shared_ptr<api::StorageMessage>& msg) override;
 
-    FileStorHandler::LockedMessage getNextMessage(uint32_t stripeId, vespalib::steady_time timeout_end) override;
+    FileStorHandler::LockedMessage getNextMessage(uint32_t stripeId, vespalib::steady_time deadline) override;
 
     void remapQueueAfterJoin(const RemapInfo& source, RemapInfo& target) override;
     void remapQueueAfterSplit(const RemapInfo& source, RemapInfo& target1, RemapInfo& target2) override;

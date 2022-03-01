@@ -375,13 +375,13 @@ FileStorHandlerImpl::makeQueueTimeoutReply(api::StorageMessage& msg)
 }
 
 FileStorHandler::LockedMessage
-FileStorHandlerImpl::getNextMessage(uint32_t stripeId, vespalib::steady_time timeout_end)
+FileStorHandlerImpl::getNextMessage(uint32_t stripeId, vespalib::steady_time deadline)
 {
     if (!tryHandlePause()) {
         return {}; // Still paused, return to allow tick.
     }
 
-    return _stripes[stripeId].getNextMessage(timeout_end);
+    return _stripes[stripeId].getNextMessage(deadline);
 }
 
 std::shared_ptr<FileStorHandler::BucketLockInterface>
@@ -917,7 +917,7 @@ FileStorHandlerImpl::Stripe::operation_type_should_be_throttled(api::MessageType
 }
 
 FileStorHandler::LockedMessage
-FileStorHandlerImpl::Stripe::getNextMessage(vespalib::steady_time timeout_end)
+FileStorHandlerImpl::Stripe::getNextMessage(vespalib::steady_time deadline)
 {
     std::unique_lock guard(*_lock);
     ThrottleToken throttle_token;
@@ -953,12 +953,12 @@ FileStorHandlerImpl::Stripe::getNextMessage(vespalib::steady_time timeout_end)
             // Depending on whether we were blocked due to no usable ops in queue or throttling,
             // wait for either the queue or throttler to (hopefully) have some fresh stuff for us.
             if (!was_throttled) {
-                _cond->wait_until(guard, timeout_end);
+                _cond->wait_until(guard, deadline);
             } else {
                 // Have to release lock before doing a blocking throttle token fetch, since it
                 // prevents RPC threads from pushing onto the queue.
                 guard.unlock();
-                throttle_token = _owner.operation_throttler().blocking_acquire_one(timeout_end);
+                throttle_token = _owner.operation_throttler().blocking_acquire_one(deadline);
                 guard.lock();
                 if (!throttle_token.valid()) {
                     _metrics->timeouts_waiting_for_throttle_token.inc();

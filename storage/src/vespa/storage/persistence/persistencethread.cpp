@@ -38,8 +38,8 @@ PersistenceThread::run(framework::ThreadHandle& thread)
         vespalib::steady_time now = vespalib::steady_clock::now();
         thread.registerTick(framework::UNKNOWN_CYCLE, now);
 
-        vespalib::steady_time doom = now + max_wait_time;
-        FileStorHandler::LockedMessage lock(_fileStorHandler.getNextMessage(_stripeId, doom));
+        vespalib::steady_time deadline = now + max_wait_time;
+        FileStorHandler::LockedMessage lock(_fileStorHandler.getNextMessage(_stripeId, deadline));
 
         if (lock.lock) {
             _persistenceHandler.processLockedMessage(std::move(lock));

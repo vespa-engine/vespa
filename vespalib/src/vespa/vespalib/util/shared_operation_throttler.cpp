@@ -267,7 +267,7 @@ public:
     ~DynamicOperationThrottler() override;
 
     Token blocking_acquire_one() noexcept override;
-    Token blocking_acquire_one(vespalib::steady_time timeout_end) noexcept override;
+    Token blocking_acquire_one(vespalib::steady_time deadline) noexcept override;
     Token try_acquire_one() noexcept override;
     uint32_t current_window_size() const noexcept override;
     uint32_t current_active_token_count() const noexcept override;
@@ -334,12 +334,12 @@ DynamicOperationThrottler::blocking_acquire_one() noexcept
 }
 
 DynamicOperationThrottler::Token
-DynamicOperationThrottler::blocking_acquire_one(vespalib::steady_time timeout_end) noexcept
+DynamicOperationThrottler::blocking_acquire_one(vespalib::steady_time deadline) noexcept
 {
     std::unique_lock lock(_mutex);
     if (!has_spare_capacity_in_active_window()) {
         ++_waiting_threads;
-        const bool accepted = _cond.wait_until(lock, timeout_end, [&] {
+        const bool accepted = _cond.wait_until(lock, deadline, [&] {
             return has_spare_capacity_in_active_window();
         });
         --_waiting_threads;
