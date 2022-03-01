@@ -115,12 +115,7 @@ func (s *Service) Wait(timeout time.Duration) (int, error) {
 	default:
 		return 0, fmt.Errorf("invalid service: %s", s.Name)
 	}
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return 0, err
-	}
-	okFunc := func(status int, response []byte) (bool, error) { return status/100 == 2, nil }
-	return wait(okFunc, func() *http.Request { return req }, &s.TLSOptions.KeyPair, timeout)
+	return waitForOK(url, &s.TLSOptions.KeyPair, timeout)
 }
 
 func (s *Service) Description() string {
@@ -138,6 +133,17 @@ func (s *Service) Description() string {
 type responseFunc func(status int, response []byte) (bool, error)
 
 type requestFunc func() *http.Request
+
+// waitForOK queries url and returns its status code. If the url returns a non-200 status code, it is repeatedly queried
+// until timeout elapses.
+func waitForOK(url string, certificate *tls.Certificate, timeout time.Duration) (int, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return 0, err
+	}
+	okFunc := func(status int, response []byte) (bool, error) { return status/100 == 2, nil }
+	return wait(okFunc, func() *http.Request { return req }, certificate, timeout)
+}
 
 func wait(fn responseFunc, reqFn requestFunc, certificate *tls.Certificate, timeout time.Duration) (int, error) {
 	if certificate != nil {

@@ -33,12 +33,7 @@ func (t *customTarget) Type() string { return t.targetType }
 
 func (t *customTarget) Deployment() Deployment { return Deployment{} }
 
-func (t *customTarget) Service(name string, timeout time.Duration, sessionOrRunID int64, cluster string) (*Service, error) {
-	if timeout > 0 && name != DeployService {
-		if err := t.waitForConvergence(timeout); err != nil {
-			return nil, err
-		}
-	}
+func (t *customTarget) createService(name string) (*Service, error) {
 	switch name {
 	case DeployService, QueryService, DocumentService:
 		url, err := t.urlWithPort(name)
@@ -48,6 +43,29 @@ func (t *customTarget) Service(name string, timeout time.Duration, sessionOrRunI
 		return &Service{BaseURL: url, Name: name}, nil
 	}
 	return nil, fmt.Errorf("unknown service: %s", name)
+}
+
+func (t *customTarget) Service(name string, timeout time.Duration, sessionOrRunID int64, cluster string) (*Service, error) {
+	service, err := t.createService(name)
+	if err != nil {
+		return nil, err
+	}
+	if timeout > 0 {
+		if name == DeployService {
+			status, err := service.Wait(timeout)
+			if err != nil {
+				return nil, err
+			}
+			if status/100 != 2 {
+				return nil, fmt.Errorf("got status %d from deploy service at %s", status, service.BaseURL)
+			}
+		} else {
+			if err := t.waitForConvergence(timeout); err != nil {
+				return nil, err
+			}
+		}
+	}
+	return service, nil
 }
 
 func (t *customTarget) PrintLog(options LogOptions) error {
@@ -79,11 +97,11 @@ func (t *customTarget) urlWithPort(serviceName string) (string, error) {
 }
 
 func (t *customTarget) waitForConvergence(timeout time.Duration) error {
-	deployer, err := t.Service(DeployService, 0, 0, "")
+	deployURL, err := t.urlWithPort(DeployService)
 	if err != nil {
 		return err
 	}
-	url := fmt.Sprintf("%s/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge", deployer.BaseURL)
+	url := fmt.Sprintf("%s/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge", deployURL)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err

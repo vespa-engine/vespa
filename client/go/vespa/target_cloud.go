@@ -115,15 +115,25 @@ func (t *cloudTarget) Type() string {
 func (t *cloudTarget) Deployment() Deployment { return t.deploymentOptions.Deployment }
 
 func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, cluster string) (*Service, error) {
-	if name != DeployService && t.deploymentOptions.ClusterURLs == nil {
-		if err := t.waitForEndpoints(timeout, runID); err != nil {
-			return nil, err
-		}
-	}
 	switch name {
 	case DeployService:
-		return &Service{Name: name, BaseURL: t.apiOptions.System.URL, TLSOptions: t.apiOptions.TLSOptions, ztsClient: t.ztsClient}, nil
+		service := &Service{Name: name, BaseURL: t.apiOptions.System.URL, TLSOptions: t.apiOptions.TLSOptions, ztsClient: t.ztsClient}
+		if timeout > 0 {
+			status, err := service.Wait(timeout)
+			if err != nil {
+				return nil, err
+			}
+			if status/100 != 2 {
+				return nil, fmt.Errorf("got status %d from deploy service at %s", status, service.BaseURL)
+			}
+		}
+		return service, nil
 	case QueryService, DocumentService:
+		if t.deploymentOptions.ClusterURLs == nil {
+			if err := t.waitForEndpoints(timeout, runID); err != nil {
+				return nil, err
+			}
+		}
 		url, err := t.resolveEndpoint(cluster)
 		if err != nil {
 			return nil, err
