@@ -1,157 +1,137 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <deque>
 
 namespace vespalib {
 
-typedef GenerationHandler::Guard GenGuard;
+using GenGuard = GenerationHandler::Guard;
 
-class Test : public vespalib::TestApp {
-private:
-    void requireThatGenerationCanBeIncreased();
-    void requireThatReadersCanTakeGuards();
-    void requireThatGuardsCanBeCopied();
-    void requireThatTheFirstUsedGenerationIsCorrect();
-    void requireThatGenerationCanGrowLarge();
-public:
-    int Main() override;
+class GenerationHandlerTest : public ::testing::Test {
+protected:
+    GenerationHandler gh;
+    GenerationHandlerTest();
+    ~GenerationHandlerTest() override;
 };
 
-void
-Test::requireThatGenerationCanBeIncreased()
+GenerationHandlerTest::GenerationHandlerTest()
+    : ::testing::Test(),
+      gh()
 {
-    GenerationHandler gh;
-    EXPECT_EQUAL(0u, gh.getCurrentGeneration());
-    EXPECT_EQUAL(0u, gh.getFirstUsedGeneration());
-    gh.incGeneration();
-    EXPECT_EQUAL(1u, gh.getCurrentGeneration());
-    EXPECT_EQUAL(1u, gh.getFirstUsedGeneration());
 }
 
-void
-Test::requireThatReadersCanTakeGuards()
+GenerationHandlerTest::~GenerationHandlerTest() = default;
+
+TEST_F(GenerationHandlerTest, require_that_generation_can_be_increased)
 {
-    GenerationHandler gh;
-    EXPECT_EQUAL(0u, gh.getGenerationRefCount(0));
+    EXPECT_EQ(0u, gh.getCurrentGeneration());
+    EXPECT_EQ(0u, gh.getFirstUsedGeneration());
+    gh.incGeneration();
+    EXPECT_EQ(1u, gh.getCurrentGeneration());
+    EXPECT_EQ(1u, gh.getFirstUsedGeneration());
+}
+
+TEST_F(GenerationHandlerTest, require_that_readers_can_take_guards)
+{
+    EXPECT_EQ(0u, gh.getGenerationRefCount(0));
     {
         GenGuard g1 = gh.takeGuard();
-        EXPECT_EQUAL(1u, gh.getGenerationRefCount(0));
+        EXPECT_EQ(1u, gh.getGenerationRefCount(0));
         {
             GenGuard g2 = gh.takeGuard();
-            EXPECT_EQUAL(2u, gh.getGenerationRefCount(0));
+            EXPECT_EQ(2u, gh.getGenerationRefCount(0));
             gh.incGeneration();
             {
                 GenGuard g3 = gh.takeGuard();
-                EXPECT_EQUAL(2u, gh.getGenerationRefCount(0));
-                EXPECT_EQUAL(1u, gh.getGenerationRefCount(1));
-                EXPECT_EQUAL(3u, gh.getGenerationRefCount());
+                EXPECT_EQ(2u, gh.getGenerationRefCount(0));
+                EXPECT_EQ(1u, gh.getGenerationRefCount(1));
+                EXPECT_EQ(3u, gh.getGenerationRefCount());
             }
-            EXPECT_EQUAL(2u, gh.getGenerationRefCount(0));
-            EXPECT_EQUAL(0u, gh.getGenerationRefCount(1));
+            EXPECT_EQ(2u, gh.getGenerationRefCount(0));
+            EXPECT_EQ(0u, gh.getGenerationRefCount(1));
             gh.incGeneration();
             {
                 GenGuard g3 = gh.takeGuard();
-                EXPECT_EQUAL(2u, gh.getGenerationRefCount(0));
-                EXPECT_EQUAL(0u, gh.getGenerationRefCount(1));
-                EXPECT_EQUAL(1u, gh.getGenerationRefCount(2));
+                EXPECT_EQ(2u, gh.getGenerationRefCount(0));
+                EXPECT_EQ(0u, gh.getGenerationRefCount(1));
+                EXPECT_EQ(1u, gh.getGenerationRefCount(2));
             }
-            EXPECT_EQUAL(2u, gh.getGenerationRefCount(0));
-            EXPECT_EQUAL(0u, gh.getGenerationRefCount(1));
-            EXPECT_EQUAL(0u, gh.getGenerationRefCount(2));
+            EXPECT_EQ(2u, gh.getGenerationRefCount(0));
+            EXPECT_EQ(0u, gh.getGenerationRefCount(1));
+            EXPECT_EQ(0u, gh.getGenerationRefCount(2));
         }
-        EXPECT_EQUAL(1u, gh.getGenerationRefCount(0));
-        EXPECT_EQUAL(0u, gh.getGenerationRefCount(1));
-        EXPECT_EQUAL(0u, gh.getGenerationRefCount(2));
+        EXPECT_EQ(1u, gh.getGenerationRefCount(0));
+        EXPECT_EQ(0u, gh.getGenerationRefCount(1));
+        EXPECT_EQ(0u, gh.getGenerationRefCount(2));
     }
-    EXPECT_EQUAL(0u, gh.getGenerationRefCount(0));
-    EXPECT_EQUAL(0u, gh.getGenerationRefCount(1));
-    EXPECT_EQUAL(0u, gh.getGenerationRefCount(2));
+    EXPECT_EQ(0u, gh.getGenerationRefCount(0));
+    EXPECT_EQ(0u, gh.getGenerationRefCount(1));
+    EXPECT_EQ(0u, gh.getGenerationRefCount(2));
 }
 
-void
-Test::requireThatGuardsCanBeCopied()
+TEST_F(GenerationHandlerTest, require_that_guards_can_be_copied)
 {
-    GenerationHandler gh;
     GenGuard g1 = gh.takeGuard();
-    EXPECT_EQUAL(1u, gh.getGenerationRefCount(0));
+    EXPECT_EQ(1u, gh.getGenerationRefCount(0));
     GenGuard g2(g1);
-    EXPECT_EQUAL(2u, gh.getGenerationRefCount(0));
+    EXPECT_EQ(2u, gh.getGenerationRefCount(0));
     gh.incGeneration();
     GenGuard g3 = gh.takeGuard();
-    EXPECT_EQUAL(2u, gh.getGenerationRefCount(0));
-    EXPECT_EQUAL(1u, gh.getGenerationRefCount(1));
+    EXPECT_EQ(2u, gh.getGenerationRefCount(0));
+    EXPECT_EQ(1u, gh.getGenerationRefCount(1));
     g3 = g2;
-    EXPECT_EQUAL(3u, gh.getGenerationRefCount(0));
-    EXPECT_EQUAL(0u, gh.getGenerationRefCount(1));
+    EXPECT_EQ(3u, gh.getGenerationRefCount(0));
+    EXPECT_EQ(0u, gh.getGenerationRefCount(1));
 }
 
-void
-Test::requireThatTheFirstUsedGenerationIsCorrect()
+TEST_F(GenerationHandlerTest, require_that_the_first_used_generation_is_correct)
 {
-    GenerationHandler gh;
-    EXPECT_EQUAL(0u, gh.getFirstUsedGeneration());
+    EXPECT_EQ(0u, gh.getFirstUsedGeneration());
     gh.incGeneration();
-    EXPECT_EQUAL(1u, gh.getFirstUsedGeneration());
+    EXPECT_EQ(1u, gh.getFirstUsedGeneration());
     {
         GenGuard g1 = gh.takeGuard();
         gh.incGeneration();
-        EXPECT_EQUAL(1u, gh.getGenerationRefCount());
-        EXPECT_EQUAL(1u, gh.getFirstUsedGeneration());
+        EXPECT_EQ(1u, gh.getGenerationRefCount());
+        EXPECT_EQ(1u, gh.getFirstUsedGeneration());
     }
-    EXPECT_EQUAL(1u, gh.getFirstUsedGeneration());
+    EXPECT_EQ(1u, gh.getFirstUsedGeneration());
     gh.updateFirstUsedGeneration();	// Only writer should call this
-    EXPECT_EQUAL(0u, gh.getGenerationRefCount());
-    EXPECT_EQUAL(2u, gh.getFirstUsedGeneration());
+    EXPECT_EQ(0u, gh.getGenerationRefCount());
+    EXPECT_EQ(2u, gh.getFirstUsedGeneration());
     {
         GenGuard g1 = gh.takeGuard();
         gh.incGeneration();
         gh.incGeneration();
-        EXPECT_EQUAL(1u, gh.getGenerationRefCount());
-        EXPECT_EQUAL(2u, gh.getFirstUsedGeneration());
+        EXPECT_EQ(1u, gh.getGenerationRefCount());
+        EXPECT_EQ(2u, gh.getFirstUsedGeneration());
         {
             GenGuard g2 = gh.takeGuard();
-            EXPECT_EQUAL(2u, gh.getFirstUsedGeneration());
+            EXPECT_EQ(2u, gh.getFirstUsedGeneration());
         }
     }
-    EXPECT_EQUAL(2u, gh.getFirstUsedGeneration());
+    EXPECT_EQ(2u, gh.getFirstUsedGeneration());
     gh.updateFirstUsedGeneration();	// Only writer should call this
-    EXPECT_EQUAL(0u, gh.getGenerationRefCount());
-    EXPECT_EQUAL(4u, gh.getFirstUsedGeneration());
+    EXPECT_EQ(0u, gh.getGenerationRefCount());
+    EXPECT_EQ(4u, gh.getFirstUsedGeneration());
 }
 
-void
-Test::requireThatGenerationCanGrowLarge()
+TEST_F(GenerationHandlerTest, require_that_generation_can_grow_large)
 {
-    GenerationHandler gh;
     std::deque<GenGuard> guards;
     for (size_t i = 0; i < 10000; ++i) {
-        EXPECT_EQUAL(i, gh.getCurrentGeneration());
+        EXPECT_EQ(i, gh.getCurrentGeneration());
         guards.push_back(gh.takeGuard()); // take guard on current generation
         if (i >= 128) {
-            EXPECT_EQUAL(i - 128, gh.getFirstUsedGeneration());
+            EXPECT_EQ(i - 128, gh.getFirstUsedGeneration());
             guards.pop_front();
-            EXPECT_EQUAL(128u, gh.getGenerationRefCount());
+            EXPECT_EQ(128u, gh.getGenerationRefCount());
         }
         gh.incGeneration();
     }
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("generationhandler_test");
-
-    TEST_DO(requireThatGenerationCanBeIncreased());
-    TEST_DO(requireThatReadersCanTakeGuards());
-    TEST_DO(requireThatGuardsCanBeCopied());
-    TEST_DO(requireThatTheFirstUsedGenerationIsCorrect());
-    TEST_DO(requireThatGenerationCanGrowLarge());
-
-    TEST_DONE();
 }
 
-}
-
-TEST_APPHOOK(vespalib::Test);
+GTEST_MAIN_RUN_ALL_TESTS()
