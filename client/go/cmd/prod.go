@@ -378,11 +378,13 @@ func prompt(r *bufio.Reader, question, defaultAnswer string, validator func(inpu
 }
 
 func verifyTests(testsParent string, target vespa.Target) error {
+	// TODO: system-test, staging-setup and staging-test should be required if the application
+	//       does not have any Java tests.
 	suites := map[string]bool{
 		// suite name: required
-		"system-test":     true,
-		"staging-setup":   true,
-		"staging-test":    true,
+		"system-test":     false,
+		"staging-setup":   false,
+		"staging-test":    false,
 		"production-test": false,
 	}
 	for suite, required := range suites {
