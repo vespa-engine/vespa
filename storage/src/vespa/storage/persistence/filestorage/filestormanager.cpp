@@ -164,20 +164,6 @@ dynamic_throttle_params_from_config(const StorFilestorConfig& config, uint32_t n
     return params;
 }
 
-std::unique_ptr<vespalib::SharedOperationThrottler>
-make_operation_throttler_from_config(const StorFilestorConfig& config, uint32_t num_threads)
-{
-    // TODO only use struct config field instead once config model is updated
-    const bool use_dynamic_throttling = ((config.asyncOperationThrottlerType  == StorFilestorConfig::AsyncOperationThrottlerType::DYNAMIC) ||
-                                         (config.asyncOperationThrottler.type == StorFilestorConfig::AsyncOperationThrottler::Type::DYNAMIC));
-    if (use_dynamic_throttling) {
-        auto dyn_params = dynamic_throttle_params_from_config(config, num_threads);
-        return vespalib::SharedOperationThrottler::make_dynamic_throttler(dyn_params);
-    } else {
-        return vespalib::SharedOperationThrottler::make_unlimited_throttler();
-    }
-}
-
 #ifdef __PIC__
 #define TLS_LINKAGE __attribute__((visibility("hidden"), tls_model("initial-exec")))
 #else
@@ -216,18 +202,17 @@ FileStorManager::getThreadLocalHandler() {
     }
     return *_G_threadLocalHandler;
 }
-/**
- * If live configuration, assuming storageserver makes sure no messages are
- * incoming during reconfiguration
- */
+
 void
 FileStorManager::configure(std::unique_ptr<StorFilestorConfig> config)
 {
     // If true, this is not the first configure.
-    bool liveUpdate = ! _threads.empty();
+    const bool liveUpdate = ! _threads.empty();
 
     _use_async_message_handling_on_schedule = config->useAsyncMessageHandlingOnSchedule;
     _host_info_reporter.set_noise_level(config->resourceUsageReporterNoiseLevel);
+    const bool use_dynamic_throttling = ((config->asyncOperationThrottlerType  == StorFilestorConfig::AsyncOperationThrottlerType::DYNAMIC) ||
+                                         (config->asyncOperationThrottler.type == StorFilestorConfig::AsyncOperationThrottler::Type::DYNAMIC));
     const bool throttle_merge_feed_ops = config->asyncOperationThrottler.throttleIndividualMergeFeedOps;
 
     if (!liveUpdate) {
@@ -235,10 +220,10 @@ FileStorManager::configure(std::unique_ptr<StorFilestorConfig> config)
         uint32_t numThreads = std::max(1, _config->numThreads);
         uint32_t numStripes = std::max(1u, numThreads / 2);
         _metrics->initDiskMetrics(numStripes, computeAllPossibleHandlerThreads(*_config));
-        auto operation_throttler = make_operation_throttler_from_config(*_config, numThreads);
+        auto dyn_params = dynamic_throttle_params_from_config(*_config, numThreads);
 
         _filestorHandler = std::make_unique<FileStorHandlerImpl>(numThreads, numStripes, *this, *_metrics,
-                                                                 _compReg, std::move(operation_throttler));
+                                                                 _compReg, dyn_params);
         uint32_t numResponseThreads = computeNumResponseThreads(_config->numResponseThreads);
         _sequencedExecutor = vespalib::SequencedTaskExecutor::create(CpuUsage::wrap(response_executor, CpuUsage::Category::WRITE),
                                                                      numResponseThreads, 10000,
@@ -253,10 +238,11 @@ FileStorManager::configure(std::unique_ptr<StorFilestorConfig> config)
     } else {
         assert(_filestorHandler);
         auto updated_dyn_throttle_params = dynamic_throttle_params_from_config(*config, _threads.size());
-        _filestorHandler->operation_throttler().reconfigure_dynamic_throttling(updated_dyn_throttle_params);
+        _filestorHandler->reconfigure_dynamic_throttler(updated_dyn_throttle_params);
     }
     // TODO remove once desired dynamic throttling behavior is set in stone
     {
+        _filestorHandler->use_dynamic_operation_throttling(use_dynamic_throttling);
         _filestorHandler->set_throttle_apply_bucket_diff_ops(!throttle_merge_feed_ops);
         std::lock_guard guard(_lock);
         for (auto& ph : _persistenceHandlers) {
