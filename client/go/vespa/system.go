@@ -5,16 +5,16 @@ import "fmt"
 // PublicSystem represents the main Vespa Cloud system.
 var PublicSystem = System{
 	Name:        "public",
-	URL:         "https://api.vespa-external.aws.oath.cloud:4443",
-	ConsoleURL:  "https://console.vespa.oath.cloud",
+	URL:         "https://api-ctl.vespa-cloud.com:4443",
+	ConsoleURL:  "https://console.vespa-cloud.com",
 	DefaultZone: ZoneID{Environment: "dev", Region: "aws-us-east-1c"},
 }
 
 // PublicCDSystem represents the CD variant of the Vespa Cloud system.
 var PublicCDSystem = System{
 	Name:        "publiccd",
-	URL:         "https://api.vespa-external-cd.aws.oath.cloud:4443",
-	ConsoleURL:  "https://console-cd.vespa.oath.cloud",
+	URL:         "https://api-ctl.cd.vespa-cloud.com:4443",
+	ConsoleURL:  "https://console.cd.vespa-cloud.com",
 	DefaultZone: ZoneID{Environment: "dev", Region: "aws-us-east-1c"},
 }
 

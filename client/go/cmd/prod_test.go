@@ -170,7 +170,7 @@ func TestProdSubmit(t *testing.T) {
 	out, outErr := execute(command{homeDir: homeDir, args: []string{"prod", "submit", "-k", filepath.Join(homeDir, "t1.api-key.pem")}}, t, httpClient)
 	assert.Equal(t, "", outErr)
 	assert.Contains(t, out, "Success: Submitted")
-	assert.Contains(t, out, "See https://console.vespa.oath.cloud/tenant/t1/application/a1/prod/deployment for deployment progress")
+	assert.Contains(t, out, "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
 
 func TestProdSubmitWithJava(t *testing.T) {
@@ -195,7 +195,7 @@ func TestProdSubmitWithJava(t *testing.T) {
 	out, outErr := execute(command{homeDir: homeDir, args: []string{"prod", "submit", "-k", filepath.Join(homeDir, "t1.api-key.pem"), pkgDir}}, t, httpClient)
 	assert.Equal(t, "", outErr)
 	assert.Contains(t, out, "Success: Submitted")
-	assert.Contains(t, out, "See https://console.vespa.oath.cloud/tenant/t1/application/a1/prod/deployment for deployment progress")
+	assert.Contains(t, out, "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
 
 func copyFile(t *testing.T, dstFilename, srcFilename string) {
