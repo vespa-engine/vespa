@@ -24,7 +24,6 @@
 
 namespace vespalib {
 class ISequencedTaskExecutor;
-class SharedOperationThrottler;
 }
 
 namespace storage {
@@ -96,7 +95,6 @@ private:
     const ClusterContext &_cluster_context;
     PersistenceUtil          &_env;
     spi::PersistenceProvider &_spi;
-    vespalib::SharedOperationThrottler& _operation_throttler;
     std::unique_ptr<vespalib::MonitoredRefCount> _monitored_ref_count;
     const uint32_t            _maxChunkSize;
     const uint32_t            _commonMergeChainOptimalizationMinimumSize;

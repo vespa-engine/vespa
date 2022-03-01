@@ -32,7 +32,6 @@ MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
       _cluster_context(cluster_context),
       _env(env),
       _spi(spi),
-      _operation_throttler(_env._fileStorHandler.operation_throttler()),
       _monitored_ref_count(std::make_unique<MonitoredRefCount>()),
       _maxChunkSize(maxChunkSize),
       _commonMergeChainOptimalizationMinimumSize(commonMergeChainOptimalizationMinimumSize),
@@ -515,7 +514,7 @@ MergeHandler::applyDiffEntry(std::shared_ptr<ApplyBucketDiffState> async_results
                              spi::Context& context,
                              const document::DocumentTypeRepo& repo) const
 {
-    auto throttle_token = throttle_merge_feed_ops() ? _operation_throttler.blocking_acquire_one()
+    auto throttle_token = throttle_merge_feed_ops() ? _env._fileStorHandler.operation_throttler().blocking_acquire_one()
                                                     : vespalib::SharedOperationThrottler::Token();
     spi::Timestamp timestamp(e._entry._timestamp);
     if (!(e._entry._flags & (DELETED | DELETED_IN_PLACE))) {
