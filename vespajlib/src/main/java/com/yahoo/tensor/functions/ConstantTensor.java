@@ -9,6 +9,7 @@ import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A function which returns a constant tensor.
@@ -48,5 +49,10 @@ public class ConstantTensor<NAMETYPE extends Name> extends PrimitiveTensorFuncti
 
     @Override
     public String toString(ToStringContext<NAMETYPE> context) { return constant.toString(); }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash("constant", constant.hashCode());
+    }
 
 }

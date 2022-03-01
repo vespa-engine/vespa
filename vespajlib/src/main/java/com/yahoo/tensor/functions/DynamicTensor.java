@@ -13,6 +13,7 @@ import com.yahoo.tensor.evaluation.TypeContext;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * A function which is a tensor whose values are computed by individual lambda functions on evaluation.
@@ -45,12 +46,12 @@ public abstract class DynamicTensor<NAMETYPE extends Name> extends PrimitiveTens
 
     TensorType type() { return type; }
 
+    abstract String contentToString(ToStringContext<NAMETYPE> context);
+
     @Override
     public String toString(ToStringContext<NAMETYPE> context) {
         return type().toString() + ":" + contentToString(context);
     }
-
-    abstract String contentToString(ToStringContext<NAMETYPE> context);
 
     /** Creates a dynamic tensor function. The cell addresses must match the type. */
     public static <NAMETYPE extends Name> DynamicTensor<NAMETYPE> from(TensorType type, Map<TensorAddress, ScalarFunction<NAMETYPE>> cells) {
@@ -98,6 +99,9 @@ public abstract class DynamicTensor<NAMETYPE extends Name> extends PrimitiveTens
             return b.toString();
         }
 
+        @Override
+        public int hashCode() { return Objects.hash("mappedDynamicTensor", type(), cells); }
+
     }
 
     private static class IndexedDynamicTensor<NAMETYPE extends Name> extends DynamicTensor<NAMETYPE> {
@@ -140,6 +144,9 @@ public abstract class DynamicTensor<NAMETYPE extends Name> extends PrimitiveTens
 
             return b.toString();
         }
+
+        @Override
+        public int hashCode() { return Objects.hash("indexedDynamicTensor", type(), cells); }
 
     }
 

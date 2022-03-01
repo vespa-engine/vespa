@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Invocation of a native function.
@@ -107,5 +108,8 @@ public final class FunctionNode extends CompositeNode {
         else // binary
             return new FunctionNode(function, children.get(0), children.get(1));
     }
+
+    @Override
+    public int hashCode() { return Objects.hash("functionNode", function, arguments); }
 
 }

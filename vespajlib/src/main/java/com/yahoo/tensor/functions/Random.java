@@ -6,6 +6,7 @@ import com.yahoo.tensor.evaluation.Name;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -41,6 +42,9 @@ public class Random<NAMETYPE extends Name> extends CompositeTensorFunction<NAMET
     public String toString(ToStringContext<NAMETYPE> context) {
         return "random(" + dimensionNames().collect(Collectors.joining(",")) + ")";
     }
+
+    @Override
+    public int hashCode() { return Objects.hash("random", type); }
 
     private Stream<String> dimensionNames() {
         return type.dimensions().stream().map(TensorType.Dimension::toString);

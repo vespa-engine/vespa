@@ -6,6 +6,7 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.Name;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author bratseth
@@ -48,5 +49,8 @@ public class Matmul<NAMETYPE extends Name> extends CompositeTensorFunction<NAMET
     public String toString(ToStringContext<NAMETYPE> context) {
         return "matmul(" + argument1.toString(context) + ", " + argument2.toString(context) + ", " + dimension + ")";
     }
+
+    @Override
+    public int hashCode() { return Objects.hash("matmul", argument1, argument2, dimension); }
 
 }

@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
@@ -162,6 +163,8 @@ public class LambdaFunctionNode extends CompositeNode {
         return Set.of();
     }
 
+    @Override
+    public int hashCode() { return Objects.hash("lambdaFunction", arguments, functionExpression); }
 
     private class DoubleUnaryLambda implements DoubleUnaryOperator {
 

@@ -127,12 +127,6 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         return TensorAddress.of(reorderedLabels);
     }
 
-    @Override
-    public String toString(ToStringContext<NAMETYPE> context) {
-        return "rename(" + argument.toString(context) + ", " +
-                       toVectorString(fromDimensions) + ", " + toVectorString(toDimensions) + ")";
-    }
-
     private String toVectorString(List<String> elements) {
         if (elements.size() == 1)
             return elements.get(0);
@@ -143,5 +137,14 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         b.append(")");
         return b.toString();
     }
+
+    @Override
+    public String toString(ToStringContext<NAMETYPE> context) {
+        return "rename(" + argument.toString(context) + ", " +
+                       toVectorString(fromDimensions) + ", " + toVectorString(toDimensions) + ")";
+    }
+
+    @Override
+    public int hashCode() { return Objects.hash("rename", argument, fromDimensions, toDimensions); }
 
 }

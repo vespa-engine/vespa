@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.tensor.evaluation.Name;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author bratseth
@@ -50,5 +51,8 @@ public class XwPlusB<NAMETYPE extends Name> extends CompositeTensorFunction<NAME
                b.toString(context) + ", " +
                dimension + ")";
     }
+
+    @Override
+    public int hashCode() { return Objects.hash("xwplusb", x, w, b, dimension); }
 
 }

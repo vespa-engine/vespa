@@ -9,6 +9,7 @@ import com.yahoo.tensor.functions.ToStringContext;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -61,6 +62,9 @@ public class VariableTensor<NAMETYPE extends Name> extends PrimitiveTensorFuncti
     public String toString(ToStringContext<NAMETYPE> context) {
         return name;
     }
+
+    @Override
+    public int hashCode() { return Objects.hash("variableTensor", name, requiredType); }
 
     private void verifyType(TensorType givenType) {
         if (requiredType.isPresent() && ! givenType.isAssignableTo(requiredType.get()))

@@ -126,6 +126,9 @@ public class Generate<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAM
             return boundGenerator.toString(new GenerateToStringContext(context));
     }
 
+    @Override
+    public int hashCode() { return Objects.hash("generate", type, freeGenerator, boundGenerator); }
+
     /**
      * A context for generating all the values of a tensor produced by evaluating Generate.
      * This returns all the current index values as variables and falls back to delivering from the given

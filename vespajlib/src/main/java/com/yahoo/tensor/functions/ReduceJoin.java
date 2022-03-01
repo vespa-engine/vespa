@@ -11,6 +11,7 @@ import com.yahoo.tensor.evaluation.Name;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.DoubleBinaryOperator;
 import java.util.stream.Collectors;
 
@@ -320,6 +321,11 @@ public class ReduceJoin<NAMETYPE extends Name> extends CompositeTensorFunction<N
                                 combinator + ", " +
                                 aggregator +
                                 Reduce.commaSeparated(dimensions) + ")";
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash("reduce_join", argumentA, argumentB, combinator, aggregator, dimensions);
     }
 
     private static class MultiDimensionIterator {

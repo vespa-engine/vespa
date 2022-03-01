@@ -11,7 +11,9 @@ import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 
+import java.util.Arrays;
 import java.util.Deque;
+import java.util.Objects;
 
 /**
  * An optimized version of a decision tree.
@@ -105,4 +107,8 @@ public final class GBDTNode extends ExpressionNode {
     public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
         return string.append("(optimized condition tree)");
     }
+
+    @Override
+    public int hashCode() { return Objects.hash("gbdtNode", Arrays.hashCode(values)); }
+
 }

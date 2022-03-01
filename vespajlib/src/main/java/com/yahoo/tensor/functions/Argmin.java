@@ -52,4 +52,7 @@ public class Argmin<NAMETYPE extends Name> extends CompositeTensorFunction<NAMET
         return "argmin(" + argument.toString(context) + Reduce.commaSeparated(dimensions) + ")";
     }
 
+    @Override
+    public int hashCode() { return Objects.hash("argmin", argument, dimensions); }
+
 }

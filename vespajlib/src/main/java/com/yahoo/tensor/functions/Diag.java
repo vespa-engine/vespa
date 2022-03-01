@@ -6,6 +6,7 @@ import com.yahoo.tensor.evaluation.Name;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -40,13 +41,16 @@ public class Diag<NAMETYPE extends Name> extends CompositeTensorFunction<NAMETYP
         return new Generate<>(type, diagFunction);
     }
 
+    private Stream<String> dimensionNames() {
+        return type.dimensions().stream().map(TensorType.Dimension::name);
+    }
+
     @Override
     public String toString(ToStringContext<NAMETYPE> context) {
         return "diag(" + dimensionNames().collect(Collectors.joining(",")) + ")" + diagFunction;
     }
 
-    private Stream<String> dimensionNames() {
-        return type.dimensions().stream().map(TensorType.Dimension::name);
-    }
+    @Override
+    public int hashCode() { return Objects.hash("diag", type, diagFunction); }
 
 }

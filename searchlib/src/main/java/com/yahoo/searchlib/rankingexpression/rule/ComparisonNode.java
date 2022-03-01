@@ -9,6 +9,7 @@ import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Deque;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A node which returns the outcome of a comparison.
@@ -61,5 +62,8 @@ public class ComparisonNode extends BooleanNode {
         if (children.size() != 2) throw new IllegalArgumentException("A comparison test must have 2 children");
         return new ComparisonNode(children.get(0), operator, children.get(1));
     }
+
+    @Override
+    public int hashCode() { return Objects.hash(operator, conditions); }
 
 }

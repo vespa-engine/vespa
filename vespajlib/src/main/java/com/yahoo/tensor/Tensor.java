@@ -355,6 +355,10 @@ public interface Tensor {
     @Override
     boolean equals(Object o);
 
+    /** Returns a hash computed deterministically from the content of this tensor */
+    @Override
+    int hashCode();
+
     /**
      * Implement here to make this work across implementations.
      * Implementations must override equals and call this because this is an interface and cannot override equals.

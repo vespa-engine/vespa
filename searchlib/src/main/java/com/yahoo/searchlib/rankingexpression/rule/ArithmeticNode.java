@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A binary mathematical operation
@@ -115,6 +116,16 @@ public final class ArithmeticNode extends CompositeNode {
         lhs.value = rhs.op.evaluate(lhs.value, rhs.value);
     }
 
+    @Override
+    public CompositeNode setChildren(List<ExpressionNode> newChildren) {
+        if (children.size() != newChildren.size())
+            throw new IllegalArgumentException("Expected " + children.size() + " children but got " + newChildren.size());
+        return new ArithmeticNode(newChildren, operators);
+    }
+
+    @Override
+    public int hashCode() { return Objects.hash(children, operators); }
+
     public static ArithmeticNode resolve(ExpressionNode left, ArithmeticOperator op, ExpressionNode right) {
         if ( ! (left instanceof ArithmeticNode)) return new ArithmeticNode(left, op, right);
 
@@ -138,13 +149,6 @@ public final class ArithmeticNode extends CompositeNode {
             this.op = op;
             this.value = value;
         }
-    }
-
-    @Override
-    public CompositeNode setChildren(List<ExpressionNode> newChildren) {
-        if (children.size() != newChildren.size())
-            throw new IllegalArgumentException("Expected " + children.size() + " children but got " + newChildren.size());
-        return new ArithmeticNode(newChildren, operators);
     }
 
 }
