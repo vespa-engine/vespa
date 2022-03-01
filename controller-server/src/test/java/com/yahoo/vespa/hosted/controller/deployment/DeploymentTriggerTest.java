@@ -698,7 +698,10 @@ public class DeploymentTriggerTest {
         ApplicationVersion revision1 = app1.lastSubmission().get();
         app1.submit(applicationPackage);
         ApplicationVersion revision2 = app1.lastSubmission().get();
-        app1.runJob(systemTest).runJob(stagingTest);
+        app1.runJob(systemTest)   // Tests for new revision on version2
+            .runJob(stagingTest)
+            .runJob(systemTest)   // Tests for new revision on version1
+            .runJob(stagingTest);
         assertEquals(Change.of(version1).with(revision2), app1.instance().change());
         tester.triggerJobs();
         app1.assertRunning(productionUsCentral1);
@@ -718,9 +721,7 @@ public class DeploymentTriggerTest {
         app1.assertNotRunning(productionUsCentral1);
 
         // Last job has a different deployment target, so tests need to run again.
-        app1.runJob(systemTest)
-            .runJob(stagingTest)            // Eager test of outstanding change, assuming upgrade in west succeeds.
-            .runJob(productionEuWest1)      // Upgrade completes, and revision is the only change.
+        app1.runJob(productionEuWest1)      // Upgrade completes, and revision is the only change.
             .runJob(productionUsCentral1)   // With only revision change, central should run to cover a previous failure.
             .runJob(productionEuWest1);     // Finally, west changes revision.
         assertEquals(Change.empty(), app1.instance().change());

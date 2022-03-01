@@ -176,10 +176,14 @@ public class DeploymentStatus {
         Map<JobId, List<Job>> jobs = jobsToRun(changes);
 
         // Add test jobs for any outstanding change.
-        for (InstanceName instance : application.deploymentSpec().instanceNames())
-            changes.put(instance, outstandingChange(instance).onTopOf(application.require(instance).change()));
-        var testJobs = jobsToRun(changes, true).entrySet().stream()
-                                               .filter(entry -> ! entry.getKey().type().isProduction());
+        Map<InstanceName, Change> outstandingChanges = new LinkedHashMap<>();
+        for (InstanceName instance : application.deploymentSpec().instanceNames()) {
+            Change outstanding = outstandingChange(instance);
+            if (outstanding.hasTargets())
+                outstandingChanges.put(instance, outstanding.onTopOf(application.require(instance).change()));
+        }
+        var testJobs = jobsToRun(outstandingChanges, true).entrySet().stream()
+                                                          .filter(entry -> ! entry.getKey().type().isProduction());
 
         return Stream.concat(jobs.entrySet().stream(), testJobs)
                      .collect(collectingAndThen(toMap(Map.Entry::getKey,
@@ -898,6 +902,11 @@ public class DeploymentStatus {
         @Override
         public int hashCode() {
             return Objects.hash(versions, readyAt, change);
+        }
+
+        @Override
+        public String toString() {
+            return change + " with versions " + versions + ", ready at " + readyAt;
         }
 
     }
