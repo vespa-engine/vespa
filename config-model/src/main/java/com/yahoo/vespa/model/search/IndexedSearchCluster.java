@@ -6,7 +6,6 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.searchdefinition.DocumentOnlySchema;
-import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.DispatchConfig;
@@ -34,6 +33,7 @@ public class IndexedSearchCluster extends SearchCluster
         IlscriptsConfig.Producer,
         DispatchConfig.Producer {
 
+    private final boolean mergeGroupingResultInSearchInvoker;
     private String indexingClusterName = null; // The name of the docproc cluster to run indexing, by config.
     private String indexingChainName = null;
 
@@ -63,10 +63,11 @@ public class IndexedSearchCluster extends SearchCluster
         return routingSelector;
     }
 
-    public IndexedSearchCluster(AbstractConfigProducer<SearchCluster> parent, String clusterName, int index) {
+    public IndexedSearchCluster(DeployState deployState, AbstractConfigProducer<SearchCluster> parent, String clusterName, int index) {
         super(parent, clusterName, index);
         unionCfg = new UnionConfiguration(this, documentDbs);
         rootDispatch =  new DispatchGroup(this);
+        mergeGroupingResultInSearchInvoker = deployState.featureFlags().mergeGroupingResultInSearchInvoker();
     }
 
     @Override
@@ -320,6 +321,7 @@ public class IndexedSearchCluster extends SearchCluster
                 builder.maxWaitAfterCoverageFactor(searchCoverage.getMaxWaitAfterCoverageFactor());
         }
         builder.warmuptime(5.0);
+        builder.mergeGroupingResultInSearchInvokerEnabled(mergeGroupingResultInSearchInvoker);
     }
 
     @Override

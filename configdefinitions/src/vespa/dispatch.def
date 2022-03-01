@@ -71,3 +71,6 @@ node[].host string
 
 # The rpc port of this search node
 node[].port int
+
+# Temporary feature flag
+mergeGroupingResultInSearchInvokerEnabled bool default=false

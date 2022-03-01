@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
+import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Group;
@@ -44,6 +45,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private final Group group;
     private final LinkedBlockingQueue<SearchInvoker> availableForProcessing;
     private final Set<Integer> alreadyFailedNodes;
+    private final boolean mergeGroupingResult;
     private Query query;
 
     private boolean adaptiveTimeoutCalculated = false;
@@ -71,6 +73,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         this.group = group;
         this.availableForProcessing = newQueue();
         this.alreadyFailedNodes = alreadyFailedNodes;
+        this.mergeGroupingResult = searchCluster.dispatchConfig().mergeGroupingResultInSearchInvokerEnabled();
     }
 
     /**
@@ -115,6 +118,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         long nextTimeout = query.getTimeLeft();
         boolean extraDebug = (query.getOffset() == 0) && (query.getHits() == 7) && log.isLoggable(java.util.logging.Level.FINE);
         List<InvokerResult> processed = new ArrayList<>();
+        var groupingResultAggregator = new GroupingResultAggregator();
         try {
             while (!invokers.isEmpty() && nextTimeout >= 0) {
                 SearchInvoker invoker = availableForProcessing.poll(nextTimeout, TimeUnit.MILLISECONDS);
@@ -126,7 +130,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                     if (extraDebug) {
                         processed.add(toMerge);
                     }
-                    merged = mergeResult(result.getResult(), toMerge, merged);
+                    merged = mergeResult(result.getResult(), toMerge, merged, groupingResultAggregator);
                     ejectInvoker(invoker);
                 }
                 nextTimeout = nextTimeout();
@@ -134,6 +138,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted while waiting for search results", e);
         }
+        groupingResultAggregator.toAggregatedHit().ifPresent(h -> result.getResult().hits().add(h));
 
         insertNetworkErrors(result.getResult());
         result.getResult().setCoverage(createCoverage());
@@ -238,14 +243,20 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         return nextAdaptive;
     }
 
-    private List<LeanHit> mergeResult(Result result, InvokerResult partialResult, List<LeanHit> current) {
+    private List<LeanHit> mergeResult(Result result, InvokerResult partialResult, List<LeanHit> current,
+                                      GroupingResultAggregator groupingResultAggregator) {
         collectCoverage(partialResult.getResult().getCoverage(true));
 
         result.mergeWith(partialResult.getResult());
         List<Hit> partialNonLean = partialResult.getResult().hits().asUnorderedHits();
         for(Hit hit : partialNonLean) {
             if (hit.isAuxiliary()) {
-                result.hits().add(hit);
+                if (hit instanceof GroupingListHit && mergeGroupingResult) {
+                    var groupingHit = (GroupingListHit) hit;
+                    groupingResultAggregator.mergeWith(groupingHit);
+                } else {
+                    result.hits().add(hit);
+                }
             }
         }
         if (current.isEmpty() ) {

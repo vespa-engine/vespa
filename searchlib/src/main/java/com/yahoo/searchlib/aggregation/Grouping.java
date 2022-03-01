@@ -46,6 +46,8 @@ public class Grouping extends Identifiable {
     // Actual root group, does not require level details.
     private Group root = new Group();
 
+    private boolean postMergeCompleted = false;
+
     /**
      * <p>Constructs an empty result node. <b>NOTE:</b> This instance is broken until non-optional member data is
      * set.</p>
@@ -78,7 +80,9 @@ public class Grouping extends Identifiable {
      * that might have changes due to the merge.</p>
      */
     public void postMerge() {
+        if (postMergeCompleted) return;
         root.postMerge(groupingLevels, firstLevel, 0);
+        postMergeCompleted = true;
     }
 
     /**
