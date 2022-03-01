@@ -266,8 +266,7 @@ public class DocumentIdTestCase {
             new DocumentId(sb.toString());
             fail("Expected an IllegalArgumentException to be thrown");
         } catch (IllegalArgumentException ex) {
-            assertTrue(ex.getMessage().contains("However if you have already fed a document earlier on and want to remove it, " +
-                    "you can do so by calling new DocumentId(IdString.createIdStringLessStrict()) that will bypass this restriction."));
+            assertEquals("Document id length 65548 is longer than max length of 65536", ex.getMessage());
         }
         assertEquals(65548, new DocumentId(IdString.createIdStringLessStrict(sb.toString())).toString().length());
     }
