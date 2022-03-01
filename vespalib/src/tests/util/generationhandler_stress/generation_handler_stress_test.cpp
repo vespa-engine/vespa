@@ -174,6 +174,8 @@ Fixture::stressTest(uint32_t writeCnt)
     for (uint32_t i = 0; i < readThreads; ++i) {
         _readers->execute(std::make_unique<ReadWorkTask>(*this, context));
     }
+    _writer.sync();
+    _readers->sync();
 }
 
 using GenerationHandlerStressTest = Fixture;
