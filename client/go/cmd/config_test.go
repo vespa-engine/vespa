@@ -38,6 +38,9 @@ func TestConfig(t *testing.T) {
 	assertConfigCommand(t, "", homeDir, "config", "set", "wait", "60")
 	assertConfigCommandErr(t, "Error: wait option must be an integer >= 0, got \"foo\"\n", homeDir, "config", "set", "wait", "foo")
 	assertConfigCommand(t, "wait = 60\n", homeDir, "config", "get", "wait")
+
+	assertConfigCommand(t, "", homeDir, "config", "set", "quiet", "true")
+	assertConfigCommand(t, "", homeDir, "config", "set", "quiet", "false")
 }
 
 func assertConfigCommand(t *testing.T, expected, homeDir string, args ...string) {
