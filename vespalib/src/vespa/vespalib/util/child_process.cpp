@@ -207,7 +207,7 @@ ChildProcess::checkProc()
 
 ChildProcess::ChildProcess(const char *cmd)
     : _reader(1),
-      _proc(cmd, true, &_reader),
+      _proc(cmd, &_reader),
       _running(false),
       _failed(false),
       _exitCode(-918273645)
@@ -218,7 +218,7 @@ ChildProcess::ChildProcess(const char *cmd)
 
 ChildProcess::ChildProcess(const char *cmd, capture_stderr_tag)
     : _reader(2),
-      _proc(cmd, true, &_reader, &_reader),
+      _proc(cmd, &_reader, &_reader),
       _running(false),
       _failed(false),
       _exitCode(-918273645)

@@ -11,6 +11,7 @@
 
 #include "types.h"
 #include "app.h"
+#include <memory>
 
 class FastOS_UNIX_ProcessStarter;
 class FastOS_UNIX_IPCHelper;
@@ -25,7 +26,7 @@ private:
     FastOS_UNIX_Application(const FastOS_UNIX_Application&);
     FastOS_UNIX_Application& operator=(const FastOS_UNIX_Application&);
 
-    FastOS_UNIX_ProcessStarter *_processStarter;
+    std::unique_ptr<FastOS_UNIX_ProcessStarter> _processStarter;
     FastOS_UNIX_IPCHelper     *_ipcHelper;
 
 protected:

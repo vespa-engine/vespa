@@ -17,7 +17,7 @@
 
 
 FastOS_UNIX_Application::FastOS_UNIX_Application ()
-    : _processStarter(nullptr),
+    : _processStarter(),
       _ipcHelper(nullptr)
 {
 }
@@ -31,8 +31,8 @@ extern char **environ;
 
 int
 FastOS_UNIX_Application::GetOpt (const char *optionsString,
-            const char* &optionArgument,
-            int &optionIndex)
+                                 const char* &optionArgument,
+                                 int &optionIndex)
 {
     int rc = getopt(_argc, _argv, optionsString);
     optionArgument = optarg;
@@ -74,7 +74,7 @@ bool FastOS_UNIX_Application::PreThreadInit ()
         sigaction(SIGPIPE, &act, nullptr);
 
         if (useProcessStarter()) {
-            _processStarter = new FastOS_UNIX_ProcessStarter(this);
+            _processStarter = std::make_unique<FastOS_UNIX_ProcessStarter>(this);
         }
     } else {
         rc = false;
@@ -107,15 +107,14 @@ void FastOS_UNIX_Application::Cleanup ()
     if(_ipcHelper != nullptr)
         _ipcHelper->Exit();
 
-    if (_processStarter != nullptr) {
+    if (_processStarter) {
         {
             std::unique_lock<std::mutex> guard;
             if (_processListMutex) {
                 guard = getProcessGuard();
             }
         }
-        delete _processStarter;
-        _processStarter = nullptr;
+        _processStarter.reset();
     }
 
     FastOS_ApplicationInterface::Cleanup();
@@ -124,7 +123,7 @@ void FastOS_UNIX_Application::Cleanup ()
 FastOS_UNIX_ProcessStarter *
 FastOS_UNIX_Application::GetProcessStarter ()
 {
-    return _processStarter;
+    return _processStarter.get();
 }
 
 void FastOS_UNIX_Application::

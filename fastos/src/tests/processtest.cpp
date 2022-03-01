@@ -88,7 +88,7 @@ public:
    {
       TestHeader("PollWait Test");
 
-      FastOS_Process *xproc = new FastOS_Process("sort", true);
+      FastOS_Process *xproc = new FastOS_Process("sort");
 
       if(xproc->Create())
       {
@@ -168,7 +168,7 @@ public:
          for(j=0; j<numEachTime; j++)
          {
             FastOS_ProcessInterface *xproc =
-               new FastOS_Process("sort", true,
+               new FastOS_Process("sort",
                                   new MyListener("STDOUT"),
                                   new MyListener("STDERR"));
 
