@@ -120,7 +120,7 @@ func fetchSampleAppsZip(destination string) error {
 		return fmt.Errorf("could not create temporary file: %w", err)
 	}
 	defer f.Close()
-	return util.Spinner(color.Yellow("Downloading sample apps ...").String(), func() error {
+	return util.Spinner(stderr, color.Yellow("Downloading sample apps ...").String(), func() error {
 		request, err := http.NewRequest("GET", "https://github.com/vespa-engine/sample-apps/archive/refs/heads/master.zip", nil)
 		if err != nil {
 			return fmt.Errorf("invalid url: %w", err)

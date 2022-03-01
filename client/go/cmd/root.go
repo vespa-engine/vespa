@@ -100,7 +100,8 @@ func configureOutput() error {
 	colorize := false
 	switch colorValue {
 	case "auto":
-		colorize = isTerminal()
+		_, nocolor := os.LookupEnv("NO_COLOR") // https://no-color.org
+		colorize = !nocolor && isTerminal()
 	case "always":
 		colorize = true
 	case "never":

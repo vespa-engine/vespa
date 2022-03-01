@@ -376,11 +376,7 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (int64, erro
 	if err := opts.Target.SignRequest(request, keyID); err != nil {
 		return 0, err
 	}
-	var response *http.Response
-	err = util.Spinner("Uploading application package ...", func() error {
-		response, err = service.Do(request, time.Minute*10)
-		return err
-	})
+	response, err := service.Do(request, time.Minute*10)
 	if err != nil {
 		return 0, err
 	}

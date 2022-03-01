@@ -3,64 +3,42 @@
 package util
 
 import (
+	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/briandowns/spinner"
-	"github.com/pkg/errors"
+	"github.com/mattn/go-isatty"
 )
 
-const (
-	spinnerTextDone   = "done"
-	spinnerTextFailed = "failed"
-	spinnerColor      = "blue"
-)
-
-var messages = os.Stderr
-
-func Spinner(text string, fn func() error) error {
-	initialMsg := text + " "
-	doneMsg := "\r" + initialMsg + spinnerTextDone + "\n"
-	failMsg := "\r" + initialMsg + spinnerTextFailed + "\n"
-	return loading(initialMsg, doneMsg, failMsg, fn)
-}
-
-func Waiting(fn func() error) error {
-	return loading("", "", "", fn)
-}
-
-func loading(initialMsg, doneMsg, failMsg string, fn func() error) error {
-	done := make(chan struct{})
-	errc := make(chan error)
-	go func() {
-		defer close(done)
-
-		s := spinner.New(spinner.CharSets[11], 100*time.Millisecond, spinner.WithWriter(messages))
-		s.Prefix = initialMsg
-		s.FinalMSG = doneMsg
-		s.HideCursor = true
-		s.Writer = messages
-
-		if err := s.Color(spinnerColor, "bold"); err != nil {
-			panic(Error(err, "failed setting spinner color"))
-		}
-
+// Spinner writes message to writer w and executes function fn. While fn is running a spinning animation will be
+// displayed after message.
+func Spinner(w io.Writer, message string, fn func() error) error {
+	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond, spinner.WithWriter(w))
+	if err := s.Color("blue", "bold"); err != nil {
+		return err
+	}
+	if !strings.HasSuffix(message, " ") {
+		message += " "
+	}
+	s.Prefix = message
+	s.FinalMSG = "\r" + message + "done\n"
+	isTerminal := isTerminal(w)
+	if isTerminal { // spinner package does this check too, but it's hardcoded to check os.Stdout :(
 		s.Start()
-		err := <-errc
-		if err != nil {
-			s.FinalMSG = failMsg
-		}
-
-		s.Stop()
-	}()
-
+	}
 	err := fn()
-	errc <- err
-	<-done
-
+	if isTerminal {
+		s.Stop()
+	}
+	if err != nil {
+		s.FinalMSG = "\r" + message + "failed\n"
+	}
 	return err
 }
 
-func Error(e error, message string) error {
-	return errors.Wrap(e, message)
+func isTerminal(w io.Writer) bool {
+	f, ok := w.(*os.File)
+	return ok && isatty.IsTerminal(f.Fd())
 }

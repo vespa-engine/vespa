@@ -22,7 +22,7 @@ var (
 
 func init() {
 	certCmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate and private key")
-	certCmd.Flags().BoolVarP(&noApplicationPackage, "no-add", "N", false, "Do not add certificate to an application package")
+	certCmd.Flags().BoolVarP(&noApplicationPackage, "no-add", "N", false, "Do not add certificate to the application package")
 	certCmd.MarkPersistentFlagRequired(applicationFlag)
 
 	deprecatedCertCmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate and private key")
@@ -33,36 +33,34 @@ func init() {
 	certAddCmd.MarkPersistentFlagRequired(applicationFlag)
 }
 
-var certCmd = &cobra.Command{
-	Use:   "cert",
-	Short: "Create a new private key and self-signed certificate for Vespa Cloud deployment",
-	Long: `Create a new private key and self-signed certificate for Vespa Cloud deployment.
+var longDoc = `Create a new private key and self-signed certificate for Vespa Cloud deployment.
 
 The private key and certificate will be stored in the Vespa CLI home directory
 (see 'vespa help config'). Other commands will then automatically load the
-certificate as necessary.
-
-The certificate will be added to your application package specified as an
-argument to this command (default '.'), unless the '--no-add' is set.
+certificate as necessary. The certificate will be added to your application
+package specified as an argument to this command (default '.').
 
 It's possible to override the private key and certificate used through
 environment variables. This can be useful in continuous integration systems.
 
-* VESPA_CLI_DATA_PLANE_CERT and VESPA_CLI_DATA_PLANE_KEY containing the
-  certificate and private key directly:
+Example of setting the certificate and key in-line:
 
-  export VESPA_CLI_DATA_PLANE_CERT="my cert"
-  export VESPA_CLI_DATA_PLANE_KEY="my private key"
+- export VESPA_CLI_DATA_PLANE_CERT="my cert"
+- export VESPA_CLI_DATA_PLANE_KEY="my private key"
 
-* VESPA_CLI_DATA_PLANE_CERT_FILE and VESPA_CLI_DATA_PLANE_KEY_FILE containing
-  paths to the certificate and private key:
+Example of loading certificate and key from custom paths:
 
-  export VESPA_CLI_DATA_PLANE_CERT_FILE=/path/to/cert
-  export VESPA_CLI_DATA_PLANE_KEY_FILE=/path/to/key
+- export VESPA_CLI_DATA_PLANE_CERT_FILE=/path/to/cert
+- export VESPA_CLI_DATA_PLANE_KEY_FILE=/path/to/key
 
 Note that when overriding key pair through environment variables, that key pair
 will always be used for all applications. It's not possible to specify an
-application-specific key.`,
+application-specific key.`
+
+var certCmd = &cobra.Command{
+	Use:   "cert",
+	Short: "Create a new private key and self-signed certificate for Vespa Cloud deployment",
+	Long:  longDoc,
 	Example: `$ vespa auth cert -a my-tenant.my-app.my-instance
 $ vespa auth cert -a my-tenant.my-app.my-instance path/to/application/package`,
 	DisableAutoGenTag: true,
@@ -71,36 +69,11 @@ $ vespa auth cert -a my-tenant.my-app.my-instance path/to/application/package`,
 	RunE:              doCert,
 }
 
+// TODO: Remove this after 2022-06-01
 var deprecatedCertCmd = &cobra.Command{
-	Use:   "cert",
-	Short: "Create a new private key and self-signed certificate for Vespa Cloud deployment",
-	Long: `Create a new private key and self-signed certificate for Vespa Cloud deployment.
-
-The private key and certificate will be stored in the Vespa CLI home directory
-(see 'vespa help config'). Other commands will then automatically load the
-certificate as necessary.
-
-The certificate will be added to your application package specified as an
-argument to this command (default '.').
-
-It's possible to override the private key and certificate used through
-environment variables. This can be useful in continuous integration systems.
-
-* VESPA_CLI_DATA_PLANE_CERT and VESPA_CLI_DATA_PLANE_KEY containing the
-  certificate and private key directly:
-
-  export VESPA_CLI_DATA_PLANE_CERT="my cert"
-  export VESPA_CLI_DATA_PLANE_KEY="my private key"
-
-* VESPA_CLI_DATA_PLANE_CERT_FILE and VESPA_CLI_DATA_PLANE_KEY_FILE containing
-  paths to the certificate and private key:
-
-  export VESPA_CLI_DATA_PLANE_CERT_FILE=/path/to/cert
-  export VESPA_CLI_DATA_PLANE_KEY_FILE=/path/to/key
-
-Note that when overriding key pair through environment variables, that key pair
-will always be used for all applications. It's not possible to specify an
-application-specific key.`,
+	Use:               "cert",
+	Short:             "Create a new private key and self-signed certificate for Vespa Cloud deployment",
+	Long:              longDoc,
 	Example:           "$ vespa cert -a my-tenant.my-app.my-instance",
 	DisableAutoGenTag: true,
 	SilenceUsage:      true,
@@ -115,7 +88,7 @@ var certAddCmd = &cobra.Command{
 	Short: "Add certificate to application package",
 	Long: `Add an existing self-signed certificate for Vespa Cloud deployment to your application package.
 
-The certificate will be looked for in the Vespa CLI home directory (see 'vespa
+The certificate will be loaded from the Vespa CLI home directory (see 'vespa
 help config') by default.
 
 The location of the application package can be specified as an argument to this

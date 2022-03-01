@@ -57,6 +57,7 @@ var apiKeyCmd = &cobra.Command{
 	RunE:              doApiKey,
 }
 
+// TODO: Remove this after 2022-06-01
 var deprecatedApiKeyCmd = &cobra.Command{
 	Use:               "api-key",
 	Short:             "Create a new user API key for authentication with Vespa Cloud",

@@ -9,6 +9,7 @@ import (
 	"log"
 
 	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
@@ -68,7 +69,12 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 		if err != nil {
 			return err
 		}
-		sessionOrRunID, err := vespa.Deploy(opts)
+
+		var sessionOrRunID int64
+		err = util.Spinner(stderr, "Uploading application package ...", func() error {
+			sessionOrRunID, err = vespa.Deploy(opts)
+			return err
+		})
 		if err != nil {
 			return err
 		}
@@ -110,9 +116,13 @@ var prepareCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		sessionID, err := vespa.Prepare(vespa.DeploymentOptions{
-			ApplicationPackage: pkg,
-			Target:             target,
+		var sessionID int64
+		err = util.Spinner(stderr, "Uploading application package ...", func() error {
+			sessionID, err = vespa.Prepare(vespa.DeploymentOptions{
+				ApplicationPackage: pkg,
+				Target:             target,
+			})
+			return err
 		})
 		if err != nil {
 			return err
