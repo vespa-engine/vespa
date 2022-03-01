@@ -11,6 +11,7 @@ import com.yahoo.tensor.evaluation.TypeContext;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A tensor generating function, whose arguments are determined by a tensor type
@@ -29,6 +30,11 @@ public class GeneratorLambdaFunctionNode extends CompositeNode {
         // TODO: Verify that the function only accesses the given arguments
         this.type = type;
         this.generator = generator;
+    }
+
+    /** Returns this as an operator which converts a list of integers into a double. */
+    public LongListToDoubleLambda asLongListToDoubleOperator() {
+        return new LongListToDoubleLambda();
     }
 
     @Override
@@ -57,12 +63,8 @@ public class GeneratorLambdaFunctionNode extends CompositeNode {
         return generator.evaluate(context);
     }
 
-    /**
-     * Returns this as an operator which converts a list of integers into a double
-     */
-    public LongListToDoubleLambda asLongListToDoubleOperator() {
-        return new LongListToDoubleLambda();
-    }
+    @Override
+    public int hashCode() { return Objects.hash("generator", type, generator); }
 
     private class LongListToDoubleLambda implements java.util.function.Function<List<Long>, Double> {
 

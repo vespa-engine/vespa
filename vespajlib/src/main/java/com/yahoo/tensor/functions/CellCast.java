@@ -111,4 +111,7 @@ public class CellCast<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAM
         return "cell_cast(" + argument.toString(context) + ", " + valueType + ")";
     }
 
+    @Override
+    public int hashCode() { return Objects.hash("cellcast", argument, valueType); }
+
 }

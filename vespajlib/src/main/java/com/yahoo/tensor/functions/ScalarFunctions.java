@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.DoubleBinaryOperator;
@@ -75,6 +76,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double left, double right) { return left + right; }
         @Override
         public String toString() { return "f(a,b)(a + b)"; }
+        @Override
+        public int hashCode() { return "add".hashCode(); }
     }
 
     public static class Equal implements DoubleBinaryOperator {
@@ -82,6 +85,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double left, double right) { return left == right ? 1 : 0; }
         @Override
         public String toString() { return "f(a,b)(a==b)"; }
+        @Override
+        public int hashCode() { return "equal".hashCode(); }
     }
 
     public static class Greater implements DoubleBinaryOperator {
@@ -89,6 +94,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double left, double right) { return left > right ? 1 : 0; }
         @Override
         public String toString() { return "f(a,b)(a > b)"; }
+        @Override
+        public int hashCode() { return "greater".hashCode(); }
     }
 
     public static class Less implements DoubleBinaryOperator {
@@ -96,6 +103,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double left, double right) { return left < right ? 1 : 0; }
         @Override
         public String toString() { return "f(a,b)(a < b)"; }
+        @Override
+        public int hashCode() { return "less".hashCode(); }
     }
 
     public static class Max implements DoubleBinaryOperator {
@@ -103,6 +112,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double left, double right) { return Math.max(left, right); }
         @Override
         public String toString() { return "f(a,b)(max(a, b))"; }
+        @Override
+        public int hashCode() { return "max".hashCode(); }
     }
 
     public static class Min implements DoubleBinaryOperator {
@@ -110,6 +121,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double left, double right) { return Math.min(left, right); }
         @Override
         public String toString() { return "f(a,b)(min(a, b))"; }
+        @Override
+        public int hashCode() { return "min".hashCode(); }
     }
 
     public static class Mean implements DoubleBinaryOperator {
@@ -117,6 +130,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double left, double right) { return (left + right) / 2; }
         @Override
         public String toString() { return "f(a,b)((a + b) / 2)"; }
+        @Override
+        public int hashCode() { return "mean".hashCode(); }
     }
 
     public static class Multiply implements DoubleBinaryOperator {
@@ -124,6 +139,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double left, double right) { return left * right; }
         @Override
         public String toString() { return "f(a,b)(a * b)"; }
+        @Override
+        public int hashCode() { return "multiply".hashCode(); }
     }
 
     public static class Pow implements DoubleBinaryOperator {
@@ -131,6 +148,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double left, double right) { return Math.pow(left, right); }
         @Override
         public String toString() { return "f(a,b)(pow(a, b))"; }
+        @Override
+        public int hashCode() { return "pow".hashCode(); }
     }
 
     public static class Divide implements DoubleBinaryOperator {
@@ -138,6 +157,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double left, double right) { return left / right; }
         @Override
         public String toString() { return "f(a,b)(a / b)"; }
+        @Override
+        public int hashCode() { return "divide".hashCode(); }
     }
 
     public static class SquaredDifference implements DoubleBinaryOperator {
@@ -145,6 +166,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double left, double right) { return (left - right) * (left - right); }
         @Override
         public String toString() { return "f(a,b)((a-b) * (a-b))"; }
+        @Override
+        public int hashCode() { return "squareddifference".hashCode(); }
     }
 
     public static class Subtract implements DoubleBinaryOperator {
@@ -152,6 +175,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double left, double right) { return left - right; }
         @Override
         public String toString() { return "f(a,b)(a - b)"; }
+        @Override
+        public int hashCode() { return "subtract".hashCode(); }
     }
 
     
@@ -172,6 +197,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double left, double right) { return hamming(left, right); }
         @Override
         public String toString() { return "f(a,b)(hamming(a,b))"; }
+        @Override
+        public int hashCode() { return "hamming".hashCode(); }
     }
 
 
@@ -182,6 +209,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return Math.abs(operand); }
         @Override
         public String toString() { return "f(a)(fabs(a))"; }
+        @Override
+        public int hashCode() { return "abs".hashCode(); }
     }
 
     public static class Acos implements DoubleUnaryOperator {
@@ -189,6 +218,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return Math.acos(operand); }
         @Override
         public String toString() { return "f(a)(acos(a))"; }
+        @Override
+        public int hashCode() { return "acos".hashCode(); }
     }
 
     public static class Asin implements DoubleUnaryOperator {
@@ -196,6 +227,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return Math.asin(operand); }
         @Override
         public String toString() { return "f(a)(asin(a))"; }
+        @Override
+        public int hashCode() { return "asin".hashCode(); }
     }
 
     public static class Atan implements DoubleUnaryOperator {
@@ -203,6 +236,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return Math.atan(operand); }
         @Override
         public String toString() { return "f(a)(atan(a))"; }
+        @Override
+        public int hashCode() { return "atan".hashCode(); }
     }
 
     public static class Ceil implements DoubleUnaryOperator {
@@ -210,6 +245,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return Math.ceil(operand); }
         @Override
         public String toString() { return "f(a)(ceil(a))"; }
+        @Override
+        public int hashCode() { return "ceil".hashCode(); }
     }
 
     public static class Cos implements DoubleUnaryOperator {
@@ -217,6 +254,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return Math.cos(operand); }
         @Override
         public String toString() { return "f(a)(cos(a))"; }
+        @Override
+        public int hashCode() { return "cos".hashCode(); }
     }
 
     public static class Elu implements DoubleUnaryOperator {
@@ -231,6 +270,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return operand < 0 ? alpha * (Math.exp(operand) - 1) : operand; }
         @Override
         public String toString() { return "f(a)(if(a < 0, " + alpha + " * (exp(a)-1), a))"; }
+        @Override
+        public int hashCode() { return Objects.hash("elu", alpha); }
     }
 
     public static class Exp implements DoubleUnaryOperator {
@@ -238,6 +279,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return Math.exp(operand); }
         @Override
         public String toString() { return "f(a)(exp(a))"; }
+        @Override
+        public int hashCode() { return "exp".hashCode(); }
     }
 
     public static class Floor implements DoubleUnaryOperator {
@@ -245,6 +288,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return Math.floor(operand); }
         @Override
         public String toString() { return "f(a)(floor(a))"; }
+        @Override
+        public int hashCode() { return "floor".hashCode(); }
     }
 
     public static class Log implements DoubleUnaryOperator {
@@ -252,6 +297,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return Math.log(operand); }
         @Override
         public String toString() { return "f(a)(log(a))"; }
+        @Override
+        public int hashCode() { return "log".hashCode(); }
     }
 
     public static class Neg implements DoubleUnaryOperator {
@@ -259,6 +306,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return -operand; }
         @Override
         public String toString() { return "f(a)(-a)"; }
+        @Override
+        public int hashCode() { return "neg".hashCode(); }
     }
 
     public static class Reciprocal implements DoubleUnaryOperator {
@@ -266,6 +315,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return 1.0 / operand; }
         @Override
         public String toString() { return "f(a)(1 / a)"; }
+        @Override
+        public int hashCode() { return "reciprocal".hashCode(); }
     }
 
     public static class Relu implements DoubleUnaryOperator {
@@ -273,6 +324,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return Math.max(operand, 0); }
         @Override
         public String toString() { return "f(a)(max(0, a))"; }
+        @Override
+        public int hashCode() { return "relu".hashCode(); }
     }
 
     public static class Selu implements DoubleUnaryOperator {
@@ -290,6 +343,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return scale * (operand >= 0.0 ? operand : alpha * (Math.exp(operand)-1)); }
         @Override
         public String toString() { return "f(a)(" + scale + " * if(a >= 0, a, " + alpha + " * (exp(a) - 1)))"; }
+        @Override
+        public int hashCode() { return Objects.hash("selu", scale, alpha); }
     }
 
     public static class LeakyRelu implements DoubleUnaryOperator {
@@ -304,6 +359,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return Math.max(alpha * operand, operand); }
         @Override
         public String toString() { return "f(a)(max(" + alpha + " * a, a))"; }
+        @Override
+        public int hashCode() { return Objects.hash("leakyrelu", alpha); }
     }
 
     public static class Sin implements DoubleUnaryOperator {
@@ -311,6 +368,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return Math.sin(operand); }
         @Override
         public String toString() { return "f(a)(sin(a))"; }
+        @Override
+        public int hashCode() { return "sin".hashCode(); }
     }
 
     public static class Rsqrt implements DoubleUnaryOperator {
@@ -318,6 +377,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return 1.0 / Math.sqrt(operand); }
         @Override
         public String toString() { return "f(a)(1.0 / sqrt(a))"; }
+        @Override
+        public int hashCode() { return "rsqrt".hashCode(); }
     }
 
     public static class Sigmoid implements DoubleUnaryOperator {
@@ -325,6 +386,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return 1.0 / (1.0 + Math.exp(-operand)); }
         @Override
         public String toString() { return "f(a)(1 / (1 + exp(-a)))"; }
+        @Override
+        public int hashCode() { return "sigmoid".hashCode(); }
     }
 
     public static class Sqrt implements DoubleUnaryOperator {
@@ -332,6 +395,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return Math.sqrt(operand); }
         @Override
         public String toString() { return "f(a)(sqrt(a))"; }
+        @Override
+        public int hashCode() { return "sqrt".hashCode(); }
     }
 
     public static class Square implements DoubleUnaryOperator {
@@ -339,6 +404,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return operand * operand; }
         @Override
         public String toString() { return "f(a)(a * a)"; }
+        @Override
+        public int hashCode() { return "square".hashCode(); }
     }
 
     public static class Tan implements DoubleUnaryOperator {
@@ -346,6 +413,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return Math.tan(operand); }
         @Override
         public String toString() { return "f(a)(tan(a))"; }
+        @Override
+        public int hashCode() { return "tan".hashCode(); }
     }
 
     public static class Tanh implements DoubleUnaryOperator {
@@ -353,6 +422,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return Math.tanh(operand); }
         @Override
         public String toString() { return "f(a)(tanh(a))"; }
+        @Override
+        public int hashCode() { return "tanh".hashCode(); }
     }
 
     public static class Erf implements DoubleUnaryOperator {
@@ -410,6 +481,8 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return erf(operand); }
         @Override
         public String toString() { return "f(a)(erf(a))"; }
+        @Override
+        public int hashCode() { return "erf".hashCode(); }
 
         static final double nearZeroMultiplier = 2.0 / Math.sqrt(Math.PI);
 
@@ -464,6 +537,8 @@ public class ScalarFunctions {
             }
             return b.toString();
         }
+        @Override
+        public int hashCode() { return Objects.hash("equal", argumentNames); }
     }
 
     public static class Random implements Function<List<Long>, Double> {
@@ -473,6 +548,8 @@ public class ScalarFunctions {
         }
         @Override
         public String toString() { return "random"; }
+        @Override
+        public int hashCode() { return "random".hashCode(); }
     }
 
     public static class SumElements implements Function<List<Long>, Double> {
@@ -492,6 +569,8 @@ public class ScalarFunctions {
         public String toString() {
             return argumentNames.stream().collect(Collectors.joining("+"));
         }
+        @Override
+        public int hashCode() { return Objects.hash("sum", argumentNames); }
     }
 
     public static class Constant implements Function<List<Long>, Double> {
@@ -506,6 +585,8 @@ public class ScalarFunctions {
         }
         @Override
         public String toString() { return Double.toString(value); }
+        @Override
+        public int hashCode() { return Objects.hash("constant", value); }
     }
 
 

@@ -68,4 +68,8 @@ public abstract class TensorFunction<NAMETYPE extends Name> {
     @Override
     public String toString() { return toString(ToStringContext.empty()); }
 
+    /** Returns a hashcode computed from the data in this */
+    @Override
+    public abstract int hashCode();
+
 }

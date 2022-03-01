@@ -52,4 +52,7 @@ public class Argmax<NAMETYPE extends Name> extends CompositeTensorFunction<NAMET
         return "argmax(" + argument.toString(context) + Reduce.commaSeparated(dimensions) + ")";
     }
 
+    @Override
+    public int hashCode() { return Objects.hash("argmax", argument, dimensions); }
+
 }

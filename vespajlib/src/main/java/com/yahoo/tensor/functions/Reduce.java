@@ -107,6 +107,11 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         return evaluate(this.argument.evaluate(context), dimensions, aggregator);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash("reduce", argument, dimensions, aggregator);
+    }
+
     static Tensor evaluate(Tensor argument, List<String> dimensions, Aggregator aggregator) {
         if ( ! dimensions.isEmpty() && ! argument.type().dimensionNames().containsAll(dimensions))
             throw new IllegalArgumentException("Cannot reduce " + argument + " over dimensions " +
@@ -191,6 +196,10 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         /** Resets the aggregator */
         public abstract void reset();
 
+        /** Returns a hash of this aggregator which only depends on its identity */
+        @Override
+        public abstract int hashCode();
+
     }
 
     private static class AvgAggregator extends ValueAggregator {
@@ -214,6 +223,10 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
             valueCount = 0;
             valueSum = 0.0;
         }
+
+        @Override
+        public int hashCode() { return "avgAggregator".hashCode(); }
+
     }
 
     private static class CountAggregator extends ValueAggregator {
@@ -234,6 +247,10 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         public void reset() {
             valueCount = 0;
         }
+
+        @Override
+        public int hashCode() { return "countAggregator".hashCode(); }
+
     }
 
     private static class MaxAggregator extends ValueAggregator {
@@ -255,6 +272,10 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         public void reset() {
             maxValue = Double.NEGATIVE_INFINITY;
         }
+
+        @Override
+        public int hashCode() { return "maxAggregator".hashCode(); }
+
     }
 
     private static class MedianAggregator extends ValueAggregator {
@@ -288,6 +309,9 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
             values = new ArrayList<>();
         }
 
+        @Override
+        public int hashCode() { return "medianAggregator".hashCode(); }
+
     }
 
     private static class MinAggregator extends ValueAggregator {
@@ -310,6 +334,9 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
             minValue = Double.POSITIVE_INFINITY;
         }
 
+        @Override
+        public int hashCode() { return "minAggregator".hashCode(); }
+
     }
 
     private static class ProdAggregator extends ValueAggregator {
@@ -330,6 +357,10 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         public void reset() {
             valueProd = 1.0;
         }
+
+        @Override
+        public int hashCode() { return "prodAggregator".hashCode(); }
+
     }
 
     private static class SumAggregator extends ValueAggregator {
@@ -350,6 +381,10 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         public void reset() {
             valueSum = 0.0;
         }
+
+        @Override
+        public int hashCode() { return "sumAggregator".hashCode(); }
+
     }
 
 }

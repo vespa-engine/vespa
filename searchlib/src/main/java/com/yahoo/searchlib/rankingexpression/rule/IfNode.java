@@ -9,6 +9,7 @@ import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Deque;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A conditional branch of a ranking expression.
@@ -17,8 +18,9 @@ import java.util.List;
  * @author bratseth
  */
 public final class IfNode extends CompositeNode {
-    /** [condition, trueExpression, falseExpression]*/
-    private final List<ExpressionNode> asList;
+
+    /** [condition, trueExpression, falseExpression] */
+    private final List<ExpressionNode> arguments;
     private final Double trueProbability;
 
     public IfNode(ExpressionNode condition, ExpressionNode trueExpression, ExpressionNode falseExpression) {
@@ -39,19 +41,19 @@ public final class IfNode extends CompositeNode {
         if (trueProbability != null && ( trueProbability < 0.0 || trueProbability > 1.0) )
             throw new IllegalArgumentException("trueProbability must be a between 0.0 and 1.0, not " + trueProbability);
         this.trueProbability = trueProbability;
-        this.asList = List.of(condition, trueExpression, falseExpression);
+        this.arguments = List.of(condition, trueExpression, falseExpression);
     }
 
     @Override
     public List<ExpressionNode> children() {
-        return asList;
+        return arguments;
     }
 
-    public ExpressionNode getCondition() { return asList.get(0); }
+    public ExpressionNode getCondition() { return arguments.get(0); }
 
-    public ExpressionNode getTrueExpression() { return asList.get(1); }
+    public ExpressionNode getTrueExpression() { return arguments.get(1); }
 
-    public ExpressionNode getFalseExpression() { return asList.get(2); }
+    public ExpressionNode getFalseExpression() { return arguments.get(2); }
 
     /** The average probability that the condition of this node will evaluate to true, or null if not known */
     public Double getTrueProbability() { return trueProbability; }
@@ -94,5 +96,8 @@ public final class IfNode extends CompositeNode {
         if (children.size() != 3) throw new IllegalArgumentException("Expected 3 children but got " + children.size());
         return new IfNode(children.get(0), children.get(1), children.get(2));
     }
+
+    @Override
+    public int hashCode() { return Objects.hash("if", arguments, trueProbability); }
 
 }

@@ -10,6 +10,7 @@ import com.yahoo.tensor.evaluation.TypeContext;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A node which flips the logical value produced from the nested expression.
@@ -54,6 +55,9 @@ public class NotNode extends BooleanNode {
         if (children.size() != 1) throw new IllegalArgumentException("Expected 1 children but got " + children.size());
         return new NotNode(children.get(0));
     }
+
+    @Override
+    public int hashCode() { return Objects.hash("not", value); }
 
 }
 

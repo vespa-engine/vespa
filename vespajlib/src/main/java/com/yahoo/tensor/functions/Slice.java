@@ -166,6 +166,9 @@ public class Slice<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
         return b.toString();
     }
 
+    @Override
+    public int hashCode() { return Objects.hash("slice", argument, subspaceAddress); }
+
     public static class DimensionValue<NAMETYPE extends Name>  {
 
         private final Optional<String> dimension;
@@ -255,6 +258,10 @@ public class Slice<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
                 return index.toString(context);
         }
 
+        @Override
+        public int hashCode() { return Objects.hash(dimension, label, index); }
+
+
     }
 
     private static class ConstantIntegerFunction<NAMETYPE extends Name> implements ScalarFunction<NAMETYPE> {
@@ -272,6 +279,9 @@ public class Slice<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
 
         @Override
         public String toString() { return String.valueOf(value); }
+
+        @Override
+        public int hashCode() { return Objects.hash("constantIntegerFunction", value); }
 
     }
 

@@ -10,6 +10,7 @@ import com.yahoo.tensor.evaluation.TypeContext;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * This class represents another expression enclosed in braces.
@@ -59,5 +60,8 @@ public final class EmbracedNode extends CompositeNode {
             throw new IllegalArgumentException("Expected 1 child but got " + newChildren.size());
         return new EmbracedNode(newChildren.get(0));
     }
+
+    @Override
+    public int hashCode() { return Objects.hash("embraced", value); }
 
 }

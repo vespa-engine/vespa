@@ -31,231 +31,7 @@ import java.util.stream.Collectors;
  */
 public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE> {
 
-    static class CellVector {
-        ArrayList<Double> values = new ArrayList<>();
-        void setValue(int ccDimIndex, double value) {
-            while (values.size() <= ccDimIndex) {
-                values.add(0.0);
-            }
-            values.set(ccDimIndex, value);
-        }
-    }
-
-    static class CellVectorMap {
-        Map<TensorAddress, CellVector> map = new HashMap<>();
-        CellVector lookupCreate(TensorAddress addr) {
-            return map.computeIfAbsent(addr, k -> new CellVector());
-        }
-    }
-
-    static class CellVectorMapMap {
-        Map<TensorAddress, CellVectorMap> map = new HashMap<>();
-
-        CellVectorMap lookupCreate(TensorAddress addr) {
-            return map.computeIfAbsent(addr, k -> new CellVectorMap());
-        }
-
-    }
-
     enum DimType { common, separate, concat }
-
-    static class SplitHow {
-        List<DimType> handleDims = new ArrayList<>();
-        long numCommon() { return handleDims.stream().filter(t -> (t == DimType.common)).count(); }
-        long numSeparate() { return handleDims.stream().filter(t -> (t == DimType.separate)).count(); }
-    }
-
-    static class ConcatPlan {
-
-        final TensorType resultType;
-        final String concatDimension;
-
-        SplitHow splitInfoA = new SplitHow();
-        SplitHow splitInfoB = new SplitHow();
-
-        enum CombineHow { left, right, both, concat }
-
-        List<CombineHow> combineHow = new ArrayList<>();
-        
-        void aOnly(String dimName) {
-            if (dimName.equals(concatDimension)) {
-                splitInfoA.handleDims.add(DimType.concat);
-                combineHow.add(CombineHow.concat);
-            } else {
-                splitInfoA.handleDims.add(DimType.separate);
-                combineHow.add(CombineHow.left);
-            }
-        }
-
-        void bOnly(String dimName) {
-            if (dimName.equals(concatDimension)) {
-                splitInfoB.handleDims.add(DimType.concat);
-                combineHow.add(CombineHow.concat);
-            } else {
-                splitInfoB.handleDims.add(DimType.separate);
-                combineHow.add(CombineHow.right);
-            }
-        }
-
-        void bothAandB(String dimName) {
-            if (dimName.equals(concatDimension)) {
-                splitInfoA.handleDims.add(DimType.concat);
-                splitInfoB.handleDims.add(DimType.concat);
-                combineHow.add(CombineHow.concat);
-            } else {
-                splitInfoA.handleDims.add(DimType.common);
-                splitInfoB.handleDims.add(DimType.common);
-                combineHow.add(CombineHow.both);
-            }
-        }
-
-        ConcatPlan(TensorType aType, TensorType bType, String concatDimension) {
-            this.resultType = TypeResolver.concat(aType, bType, concatDimension);
-            this.concatDimension = concatDimension;
-            var aDims = aType.dimensions();
-            var bDims = bType.dimensions();
-            int i = 0;
-            int j = 0;
-            while (i < aDims.size() && j < bDims.size()) {
-                String aName = aDims.get(i).name();
-                String bName = bDims.get(j).name();
-                int cmp = aName.compareTo(bName);
-                if (cmp == 0) {
-                    bothAandB(aName);
-                    ++i;
-                    ++j;
-                } else if (cmp < 0) {
-                    aOnly(aName);
-                    ++i;
-                } else {
-                    bOnly(bName);
-                    ++j;
-                }
-            }
-            while (i < aDims.size()) {
-                aOnly(aDims.get(i++).name());
-            }
-            while (j < bDims.size()) {
-                bOnly(bDims.get(j++).name());
-            }
-            if (combineHow.size() < resultType.rank()) {
-                var idx = resultType.indexOfDimension(concatDimension);
-                combineHow.add(idx.get(), CombineHow.concat);
-            }
-        }
-
-    }
-
-    static class Helper {
-        ConcatPlan plan;
-        Tensor result;
-
-        Helper(Tensor a, Tensor b, String dimension) {
-            this.plan = new ConcatPlan(a.type(), b.type(), dimension);
-            CellVectorMapMap aData = decompose(a, plan.splitInfoA);
-            CellVectorMapMap bData = decompose(b, plan.splitInfoB);
-            this.result = merge(aData, bData);
-        }
-
-        static int concatDimensionSize(CellVectorMapMap data) {
-            Set<Integer> sizes = new HashSet<>();
-            data.map.forEach((m, cvmap) ->
-                             cvmap.map.forEach((e, vector) ->
-                                               sizes.add(vector.values.size())));
-            if (sizes.isEmpty()) {
-                return 1;
-            }
-            if (sizes.size() == 1) {
-                return sizes.iterator().next();
-            }
-            throw new IllegalArgumentException("inconsistent size of concat dimension, had "+sizes.size()+" different values");
-        }
-
-        TensorAddress combine(TensorAddress match, TensorAddress leftOnly, TensorAddress rightOnly, int concatDimIdx) {
-            String[] labels = new String[plan.resultType.rank()];
-            int out = 0;
-            int m = 0;
-            int a = 0;
-            int b = 0;
-            for (var how : plan.combineHow) {
-                switch (how) {
-                    case left:
-                        labels[out++] = leftOnly.label(a++);
-                        break;
-                    case right:
-                        labels[out++] = rightOnly.label(b++);
-                        break;
-                    case both:
-                        labels[out++] = match.label(m++);
-                        break;
-                    case concat:
-                        labels[out++] = String.valueOf(concatDimIdx);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("cannot handle: "+how);
-                }
-            }
-            return TensorAddress.of(labels);
-        }
-
-        Tensor merge(CellVectorMapMap a, CellVectorMapMap b) {
-            var builder = Tensor.Builder.of(plan.resultType);
-            int aConcatSize = concatDimensionSize(a);
-            for (var entry : a.map.entrySet()) {
-                TensorAddress common = entry.getKey();
-                if (b.map.containsKey(common)) {
-                    var lhs = entry.getValue();
-                    var rhs = b.map.get(common);
-                    lhs.map.forEach((leftOnly, leftCells) -> {
-                            rhs.map.forEach((rightOnly, rightCells) -> {
-                                    for (int i = 0; i < leftCells.values.size(); i++) {
-                                        TensorAddress addr = combine(common, leftOnly, rightOnly, i);
-                                        builder.cell(addr, leftCells.values.get(i));
-                                    }
-                                    for (int i = 0; i < rightCells.values.size(); i++) {
-                                        TensorAddress addr = combine(common, leftOnly, rightOnly, i + aConcatSize);
-                                        builder.cell(addr, rightCells.values.get(i));
-                                    }
-                                });
-                        });
-                }
-            }
-            return builder.build();
-        }
-
-        CellVectorMapMap decompose(Tensor input, SplitHow how) {
-            var iter = input.cellIterator();
-            String[] commonLabels = new String[(int)how.numCommon()];
-            String[] separateLabels = new String[(int)how.numSeparate()];
-            CellVectorMapMap result = new CellVectorMapMap();
-            while (iter.hasNext()) {
-                var cell = iter.next();
-                var addr = cell.getKey();
-                long ccDimIndex = 0;
-                int commonIdx = 0;
-                int separateIdx = 0;
-                for (int i = 0; i < how.handleDims.size(); i++) {
-                    switch (how.handleDims.get(i)) {
-                        case common:
-                            commonLabels[commonIdx++] = addr.label(i);
-                            break;
-                        case separate:
-                            separateLabels[separateIdx++] = addr.label(i);  
-                            break;
-                        case concat:
-                            ccDimIndex = addr.numericLabel(i);
-                            break;
-                        default:
-                            throw new IllegalArgumentException("cannot handle: "+how.handleDims.get(i));
-                    }
-                }
-                TensorAddress commonAddr = TensorAddress.of(commonLabels);
-                TensorAddress separateAddr = TensorAddress.of(separateLabels);
-                result.lookupCreate(commonAddr).lookupCreate(separateAddr).setValue((int)ccDimIndex, cell.getValue());
-            }
-            return result;
-        }
-    }
 
     private final TensorFunction<NAMETYPE> argumentA, argumentB;
     private final String dimension;
@@ -288,6 +64,9 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
     public String toString(ToStringContext<NAMETYPE> context) {
         return "concat(" + argumentA.toString(context) + ", " + argumentB.toString(context) + ", " + dimension + ")";
     }
+
+    @Override
+    public int hashCode() { return Objects.hash("concat", argumentA, argumentB, dimension); }
 
     @Override
     public TensorType type(TypeContext<NAMETYPE> context) {
@@ -435,6 +214,230 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
             }
         }
         return true;
+    }
+
+    static class CellVector {
+        ArrayList<Double> values = new ArrayList<>();
+        void setValue(int ccDimIndex, double value) {
+            while (values.size() <= ccDimIndex) {
+                values.add(0.0);
+            }
+            values.set(ccDimIndex, value);
+        }
+    }
+
+    static class CellVectorMap {
+        Map<TensorAddress, CellVector> map = new HashMap<>();
+        CellVector lookupCreate(TensorAddress addr) {
+            return map.computeIfAbsent(addr, k -> new CellVector());
+        }
+    }
+
+    static class CellVectorMapMap {
+        Map<TensorAddress, CellVectorMap> map = new HashMap<>();
+
+        CellVectorMap lookupCreate(TensorAddress addr) {
+            return map.computeIfAbsent(addr, k -> new CellVectorMap());
+        }
+
+    }
+
+    static class SplitHow {
+        List<DimType> handleDims = new ArrayList<>();
+        long numCommon() { return handleDims.stream().filter(t -> (t == DimType.common)).count(); }
+        long numSeparate() { return handleDims.stream().filter(t -> (t == DimType.separate)).count(); }
+    }
+
+    static class ConcatPlan {
+
+        final TensorType resultType;
+        final String concatDimension;
+
+        SplitHow splitInfoA = new SplitHow();
+        SplitHow splitInfoB = new SplitHow();
+
+        enum CombineHow { left, right, both, concat }
+
+        List<CombineHow> combineHow = new ArrayList<>();
+
+        void aOnly(String dimName) {
+            if (dimName.equals(concatDimension)) {
+                splitInfoA.handleDims.add(DimType.concat);
+                combineHow.add(CombineHow.concat);
+            } else {
+                splitInfoA.handleDims.add(DimType.separate);
+                combineHow.add(CombineHow.left);
+            }
+        }
+
+        void bOnly(String dimName) {
+            if (dimName.equals(concatDimension)) {
+                splitInfoB.handleDims.add(DimType.concat);
+                combineHow.add(CombineHow.concat);
+            } else {
+                splitInfoB.handleDims.add(DimType.separate);
+                combineHow.add(CombineHow.right);
+            }
+        }
+
+        void bothAandB(String dimName) {
+            if (dimName.equals(concatDimension)) {
+                splitInfoA.handleDims.add(DimType.concat);
+                splitInfoB.handleDims.add(DimType.concat);
+                combineHow.add(CombineHow.concat);
+            } else {
+                splitInfoA.handleDims.add(DimType.common);
+                splitInfoB.handleDims.add(DimType.common);
+                combineHow.add(CombineHow.both);
+            }
+        }
+
+        ConcatPlan(TensorType aType, TensorType bType, String concatDimension) {
+            this.resultType = TypeResolver.concat(aType, bType, concatDimension);
+            this.concatDimension = concatDimension;
+            var aDims = aType.dimensions();
+            var bDims = bType.dimensions();
+            int i = 0;
+            int j = 0;
+            while (i < aDims.size() && j < bDims.size()) {
+                String aName = aDims.get(i).name();
+                String bName = bDims.get(j).name();
+                int cmp = aName.compareTo(bName);
+                if (cmp == 0) {
+                    bothAandB(aName);
+                    ++i;
+                    ++j;
+                } else if (cmp < 0) {
+                    aOnly(aName);
+                    ++i;
+                } else {
+                    bOnly(bName);
+                    ++j;
+                }
+            }
+            while (i < aDims.size()) {
+                aOnly(aDims.get(i++).name());
+            }
+            while (j < bDims.size()) {
+                bOnly(bDims.get(j++).name());
+            }
+            if (combineHow.size() < resultType.rank()) {
+                var idx = resultType.indexOfDimension(concatDimension);
+                combineHow.add(idx.get(), CombineHow.concat);
+            }
+        }
+
+    }
+
+    static class Helper {
+        ConcatPlan plan;
+        Tensor result;
+
+        Helper(Tensor a, Tensor b, String dimension) {
+            this.plan = new ConcatPlan(a.type(), b.type(), dimension);
+            CellVectorMapMap aData = decompose(a, plan.splitInfoA);
+            CellVectorMapMap bData = decompose(b, plan.splitInfoB);
+            this.result = merge(aData, bData);
+        }
+
+        static int concatDimensionSize(CellVectorMapMap data) {
+            Set<Integer> sizes = new HashSet<>();
+            data.map.forEach((m, cvmap) ->
+                                     cvmap.map.forEach((e, vector) ->
+                                                               sizes.add(vector.values.size())));
+            if (sizes.isEmpty()) {
+                return 1;
+            }
+            if (sizes.size() == 1) {
+                return sizes.iterator().next();
+            }
+            throw new IllegalArgumentException("inconsistent size of concat dimension, had "+sizes.size()+" different values");
+        }
+
+        TensorAddress combine(TensorAddress match, TensorAddress leftOnly, TensorAddress rightOnly, int concatDimIdx) {
+            String[] labels = new String[plan.resultType.rank()];
+            int out = 0;
+            int m = 0;
+            int a = 0;
+            int b = 0;
+            for (var how : plan.combineHow) {
+                switch (how) {
+                    case left:
+                        labels[out++] = leftOnly.label(a++);
+                        break;
+                    case right:
+                        labels[out++] = rightOnly.label(b++);
+                        break;
+                    case both:
+                        labels[out++] = match.label(m++);
+                        break;
+                    case concat:
+                        labels[out++] = String.valueOf(concatDimIdx);
+                        break;
+                    default:
+                        throw new IllegalArgumentException("cannot handle: "+how);
+                }
+            }
+            return TensorAddress.of(labels);
+        }
+
+        Tensor merge(CellVectorMapMap a, CellVectorMapMap b) {
+            var builder = Tensor.Builder.of(plan.resultType);
+            int aConcatSize = concatDimensionSize(a);
+            for (var entry : a.map.entrySet()) {
+                TensorAddress common = entry.getKey();
+                if (b.map.containsKey(common)) {
+                    var lhs = entry.getValue();
+                    var rhs = b.map.get(common);
+                    lhs.map.forEach((leftOnly, leftCells) -> {
+                        rhs.map.forEach((rightOnly, rightCells) -> {
+                            for (int i = 0; i < leftCells.values.size(); i++) {
+                                TensorAddress addr = combine(common, leftOnly, rightOnly, i);
+                                builder.cell(addr, leftCells.values.get(i));
+                            }
+                            for (int i = 0; i < rightCells.values.size(); i++) {
+                                TensorAddress addr = combine(common, leftOnly, rightOnly, i + aConcatSize);
+                                builder.cell(addr, rightCells.values.get(i));
+                            }
+                        });
+                    });
+                }
+            }
+            return builder.build();
+        }
+
+        CellVectorMapMap decompose(Tensor input, SplitHow how) {
+            var iter = input.cellIterator();
+            String[] commonLabels = new String[(int)how.numCommon()];
+            String[] separateLabels = new String[(int)how.numSeparate()];
+            CellVectorMapMap result = new CellVectorMapMap();
+            while (iter.hasNext()) {
+                var cell = iter.next();
+                var addr = cell.getKey();
+                long ccDimIndex = 0;
+                int commonIdx = 0;
+                int separateIdx = 0;
+                for (int i = 0; i < how.handleDims.size(); i++) {
+                    switch (how.handleDims.get(i)) {
+                        case common:
+                            commonLabels[commonIdx++] = addr.label(i);
+                            break;
+                        case separate:
+                            separateLabels[separateIdx++] = addr.label(i);
+                            break;
+                        case concat:
+                            ccDimIndex = addr.numericLabel(i);
+                            break;
+                        default:
+                            throw new IllegalArgumentException("cannot handle: "+how.handleDims.get(i));
+                    }
+                }
+                TensorAddress commonAddr = TensorAddress.of(commonLabels);
+                TensorAddress separateAddr = TensorAddress.of(separateLabels);
+                result.lookupCreate(commonAddr).lookupCreate(separateAddr).setValue((int)ccDimIndex, cell.getValue());
+            }
+            return result;
+        }
     }
 
 }

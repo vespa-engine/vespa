@@ -144,6 +144,9 @@ public class TensorFunctionNode extends CompositeNode {
         return new ExpressionScalarFunction(node);
     }
 
+    @Override
+    public int hashCode() { return function.hashCode(); }
+
     private static class ExpressionScalarFunction implements ScalarFunction<Reference> {
 
         private final ExpressionNode expression;
@@ -249,6 +252,9 @@ public class TensorFunctionNode extends CompositeNode {
         public String toString() {
             return toString(ExpressionToStringContext.empty);
         }
+
+        @Override
+        public int hashCode() { return expression.hashCode(); }
 
         @Override
         public String toString(ToStringContext<Reference> c) {

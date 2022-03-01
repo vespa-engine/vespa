@@ -8,6 +8,7 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Deque;
+import java.util.Objects;
 
 /**
  * An opaque name in a ranking expression. This is used to represent names passed to the context
@@ -40,5 +41,8 @@ public final class NameNode extends ExpressionNode {
     public Value evaluate(Context context) {
         throw new RuntimeException("Name nodes should never be evaluated");
     }
+
+    @Override
+    public int hashCode() { return Objects.hash("name", name); }
 
 }

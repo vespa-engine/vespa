@@ -97,6 +97,7 @@ public abstract class Value {
     @Override
     public abstract boolean equals(Object other);
 
+    /** Returns a hash which only depends on the content of this value. */
     @Override
     public abstract int hashCode();
 

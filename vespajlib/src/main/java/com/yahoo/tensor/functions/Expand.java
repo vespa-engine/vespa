@@ -6,6 +6,7 @@ import com.yahoo.tensor.evaluation.Name;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The <i>expand</i> tensor function returns a tensor with a new dimension of
@@ -44,5 +45,8 @@ public class Expand<NAMETYPE extends Name> extends CompositeTensorFunction<NAMET
     public String toString(ToStringContext<NAMETYPE> context) {
         return "expand(" + argument.toString(context) + ", " + dimensionName + ")";
     }
+
+    @Override
+    public int hashCode() { return Objects.hash("expand", argument, dimensionName); }
 
 }

@@ -11,7 +11,9 @@ import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 
+import java.util.Arrays;
 import java.util.Deque;
+import java.util.Objects;
 
 /**
  * An optimized version of a sum of consecutive decision trees.
@@ -42,8 +44,12 @@ public class GBDTForestNode extends ExpressionNode {
     }
 
     /** Returns (optimized sum of condition trees) */
+    @Override
     public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
         return string.append("(optimized sum of condition trees of size ").append(values.length*8).append(" bytes)");
     }
+
+    @Override
+    public int hashCode() { return Objects.hash("gbdtForest", Arrays.hashCode(values)); }
 
 }

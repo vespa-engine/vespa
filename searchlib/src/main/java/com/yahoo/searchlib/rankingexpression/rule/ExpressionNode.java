@@ -18,31 +18,13 @@ import java.util.Deque;
  */
 public abstract class ExpressionNode implements Serializable {
 
-    @Override
-    public int hashCode() {
-        return toString().hashCode();
-    }
-
-    @Override
-    public final boolean equals(Object obj) {
-        return obj instanceof ExpressionNode && toString().equals(obj.toString());
-    }
-
-    @Override
-    public final String toString() {
-        return toString(new SerializationContext()).toString();
-    }
-    public final StringBuilder toString(SerializationContext context) {
-        return toString(new StringBuilder(), context, null, null);
-    }
-
     /**
-     * Returns a script instance of this based on the supplied script functions.
+     * Returns this in serialized form.
      *
      * @param builder the StringBuilder that will be appended to
      * @param context the serialization context
      * @param path the call path to this, used for cycle detection, or null if this is a root
-     * @param parent the parent node of this, or null if it a root
+     * @param parent the parent node of this, or null if it is a root
      * @return the main script, referring to script instances.
      */
     public abstract StringBuilder toString(StringBuilder builder, SerializationContext context, Deque<String> path, CompositeNode parent);
@@ -62,5 +44,23 @@ public abstract class ExpressionNode implements Serializable {
      * @throws IllegalArgumentException if there are variables which are not bound in the given map
      */
     public abstract Value evaluate(Context context);
+
+    public final StringBuilder toString(SerializationContext context) {
+        return toString(new StringBuilder(), context, null, null);
+    }
+
+    @Override
+    public final boolean equals(Object obj) {
+        return obj instanceof ExpressionNode && toString().equals(obj.toString());
+    }
+
+    /** Returns a hashcode computed from the data in this */
+    @Override
+    public abstract int hashCode();
+
+    @Override
+    public final String toString() {
+        return toString(new SerializationContext()).toString();
+    }
 
 }

@@ -14,6 +14,7 @@ import com.yahoo.tensor.evaluation.TypeContext;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
@@ -99,5 +100,8 @@ public class SetMembershipNode extends BooleanNode {
         if (children.size()<1) throw new IllegalArgumentException("A set membership test must have at least 1 child");
         return new SetMembershipNode(children.get(0), children.subList(1, children.size()));
     }
+
+    @Override
+    public int hashCode() { return Objects.hash("setMembership", testValue, setValues); }
 
 }

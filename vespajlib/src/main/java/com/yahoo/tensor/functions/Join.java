@@ -80,6 +80,9 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
     }
 
     @Override
+    public int hashCode() { return Objects.hash("join", argumentA, argumentB, combinator); }
+
+    @Override
     public TensorType type(TypeContext<NAMETYPE> context) {
         return outputType(argumentA.type(context), argumentB.type(context));
     }
@@ -355,7 +358,6 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
 
         return builder.build();
     }
-
 
     /**
      * Returns the an array having one entry in order for each dimension of fromType

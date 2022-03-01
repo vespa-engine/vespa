@@ -75,4 +75,7 @@ public class Map<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE
         return "map(" + argument.toString(context) + ", " + mapper + ")";
     }
 
+    @Override
+    public int hashCode() { return Objects.hash("map", argument, mapper); }
+
 }
