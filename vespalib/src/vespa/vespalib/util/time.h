@@ -92,5 +92,7 @@ public:
  * The default frequency (1000hz) for vespa timer, with environment override VESPA_TIMER_HZ capped to [1..1000]
  */
 uint32_t getVespaTimerHz();
+duration adjustTimeoutByDetectedHz(duration timeout);
+duration adjustTimeoutByHz(duration timeout, long hz);
 
 }

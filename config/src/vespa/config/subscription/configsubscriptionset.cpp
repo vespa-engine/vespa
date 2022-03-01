@@ -17,7 +17,7 @@ using vespalib::steady_clock;
 namespace config {
 
 ConfigSubscriptionSet::ConfigSubscriptionSet(std::shared_ptr<IConfigContext> context)
-    : _maxNapTime(vespalib::from_s(10*1.0/vespalib::getVespaTimerHz())), //10x slower than default timer frequency.
+    : _maxNapTime(vespalib::adjustTimeoutByDetectedHz(10ms)),
       _context(std::move(context)),
       _mgr(_context->getManagerInstance()),
       _currentGeneration(-1),

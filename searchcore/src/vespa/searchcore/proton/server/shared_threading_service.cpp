@@ -26,7 +26,7 @@ SharedThreadingService::SharedThreadingService(const SharedThreadingServiceConfi
       _shared(std::make_shared<vespalib::BlockingThreadStackExecutor>(cfg.shared_threads(), 128_Ki,
                                                                       cfg.shared_task_limit(), proton_shared_executor)),
       _field_writer(),
-      _invokeService(std::max(vespalib::from_s(1.0/vespalib::getVespaTimerHz()),
+      _invokeService(std::max(vespalib::adjustTimeoutByDetectedHz(1ms),
                               cfg.field_writer_config().reactionTime())),
       _invokeRegistrations()
 {

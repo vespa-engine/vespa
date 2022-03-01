@@ -8,7 +8,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".fnet.scheduler");
 
-const vespalib::duration FNET_Scheduler::tick_ms = vespalib::from_s(10*1.0/vespalib::getVespaTimerHz());
+const vespalib::duration FNET_Scheduler::tick_ms = vespalib::adjustTimeoutByDetectedHz(10ms);
 
 FNET_Scheduler::FNET_Scheduler(vespalib::steady_time *sampler)
     : _cond(),
