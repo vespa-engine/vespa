@@ -146,6 +146,61 @@ func (ap *ApplicationPackage) zipReader(test bool) (io.ReadCloser, error) {
 	return f, nil
 }
 
+func (ap *ApplicationPackage) Unzip(test bool) (string, error) {
+	if !ap.IsZip() {
+		return "", fmt.Errorf("can't unzip a package that is a directory structure")
+	}
+	cleanTemp := true
+	tmp, err := os.MkdirTemp(os.TempDir(), "vespa-test-pkg")
+	if err != nil {
+		return "", err
+	}
+	defer func() {
+		if cleanTemp {
+			os.RemoveAll(tmp)
+		}
+	}()
+	path := ap.Path
+	if test {
+		path = ap.TestPath
+	}
+	f, err := zip.OpenReader(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	for _, f := range f.File {
+		dst := filepath.Join(tmp, f.Name)
+		if f.FileInfo().IsDir() {
+			if err := os.Mkdir(dst, f.FileInfo().Mode()); err != nil {
+				return "", err
+			}
+			continue
+		}
+		if err := copyFile(f, dst); err != nil {
+			return "", fmt.Errorf("copyFile: %w", err)
+		}
+
+	}
+	cleanTemp = false
+	return tmp, nil
+}
+
+func copyFile(src *zip.File, dst string) error {
+	from, err := src.Open()
+	if err != nil {
+		return err
+	}
+	defer from.Close()
+	to, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY, src.FileInfo().Mode())
+	if err != nil {
+		return err
+	}
+	defer to.Close()
+	_, err = io.Copy(to, from)
+	return err
+}
+
 // FindApplicationPackage finds the path to an application package from the zip file or directory zipOrDir.
 func FindApplicationPackage(zipOrDir string, requirePackaging bool) (ApplicationPackage, error) {
 	if isZip(zipOrDir) {
