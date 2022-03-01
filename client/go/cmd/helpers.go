@@ -123,8 +123,8 @@ func getApplication() (vespa.ApplicationID, error) {
 	if err != nil {
 		return vespa.ApplicationID{}, err
 	}
-	app, err := cfg.Get(applicationFlag)
-	if err != nil {
+	app, ok := cfg.Get(applicationFlag)
+	if !ok {
 		return vespa.ApplicationID{}, errHint(fmt.Errorf("no application specified: %w", err), "Try the --"+applicationFlag+" flag")
 	}
 	application, err := vespa.ApplicationFromString(app)
@@ -139,9 +139,9 @@ func getTargetType() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	target, err := cfg.Get(targetFlag)
-	if err != nil {
-		return "", fmt.Errorf("invalid target: %w", err)
+	target, ok := cfg.Get(targetFlag)
+	if !ok {
+		return "", fmt.Errorf("target is unset")
 	}
 	return target, nil
 }

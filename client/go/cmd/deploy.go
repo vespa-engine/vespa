@@ -173,7 +173,7 @@ var activateCmd = &cobra.Command{
 func waitForQueryService(sessionOrRunID int64) error {
 	if waitSecsArg > 0 {
 		log.Println()
-		return waitForService("query", sessionOrRunID)
+		return waitForService(vespa.QueryService, sessionOrRunID)
 	}
 	return nil
 }

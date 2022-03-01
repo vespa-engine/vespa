@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 func init() {
@@ -23,7 +24,7 @@ var statusCmd = &cobra.Command{
 	SilenceUsage:      true,
 	Args:              cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return waitForService("query", 0)
+		return waitForService(vespa.QueryService, 0)
 	},
 }
 
@@ -35,7 +36,7 @@ var statusQueryCmd = &cobra.Command{
 	SilenceUsage:      true,
 	Args:              cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return waitForService("query", 0)
+		return waitForService(vespa.QueryService, 0)
 	},
 }
 
@@ -47,7 +48,7 @@ var statusDocumentCmd = &cobra.Command{
 	SilenceUsage:      true,
 	Args:              cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return waitForService("document", 0)
+		return waitForService(vespa.DocumentService, 0)
 	},
 }
 
@@ -59,6 +60,6 @@ var statusDeployCmd = &cobra.Command{
 	SilenceUsage:      true,
 	Args:              cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return waitForService("deploy", 0)
+		return waitForService(vespa.DeployService, 0)
 	},
 }

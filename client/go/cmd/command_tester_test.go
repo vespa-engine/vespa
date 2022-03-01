@@ -53,7 +53,7 @@ func setEnv(env map[string]string) map[string]string {
 }
 
 func resetEnv(env map[string]string, original map[string]string) {
-	for k, _ := range env {
+	for k := range env {
 		if v, ok := original[k]; ok {
 			os.Setenv(k, v)
 		} else {

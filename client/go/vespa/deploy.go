@@ -76,7 +76,7 @@ func (d *DeploymentOptions) IsCloud() bool {
 }
 
 func (d *DeploymentOptions) url(path string) (*url.URL, error) {
-	service, err := d.Target.Service(deployService, 0, 0, "")
+	service, err := d.Target.Service(DeployService, 0, 0, "")
 	if err != nil {
 		return nil, err
 	}
@@ -367,7 +367,7 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (int64, erro
 		Header: header,
 		Body:   ioutil.NopCloser(zipReader),
 	}
-	service, err := opts.Target.Service(deployService, opts.Timeout, 0, "")
+	service, err := opts.Target.Service(DeployService, opts.Timeout, 0, "")
 	if err != nil {
 		return 0, err
 	}

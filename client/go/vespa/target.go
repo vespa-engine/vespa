@@ -35,9 +35,14 @@ const (
 	// A hosted Vespa target
 	TargetHosted = "hosted"
 
-	deployService   = "deploy"
-	queryService    = "query"
-	documentService = "document"
+	// A Vespa service that handles deployments, either a config server or a controller
+	DeployService = "deploy"
+
+	// A Vespa service that handles queries.
+	QueryService = "query"
+
+	// A Vespa service that handles feeding of document. This may point to the same service as QueryService.
+	DocumentService = "document"
 
 	retryInterval = 2 * time.Second
 )
@@ -131,9 +136,9 @@ func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Respon
 func (s *Service) Wait(timeout time.Duration) (int, error) {
 	url := s.BaseURL
 	switch s.Name {
-	case deployService:
+	case DeployService:
 		url += "/status.html" // because /ApplicationStatus is not publicly reachable in Vespa Cloud
-	case queryService, documentService:
+	case QueryService, DocumentService:
 		url += "/ApplicationStatus"
 	default:
 		return 0, fmt.Errorf("invalid service: %s", s.Name)
@@ -148,11 +153,11 @@ func (s *Service) Wait(timeout time.Duration) (int, error) {
 
 func (s *Service) Description() string {
 	switch s.Name {
-	case queryService:
+	case QueryService:
 		return "Container (query API)"
-	case documentService:
+	case DocumentService:
 		return "Container (document API)"
-	case deployService:
+	case DeployService:
 		return "Deploy API"
 	}
 	return fmt.Sprintf("No description of service %s", s.Name)
@@ -163,13 +168,13 @@ func (t *customTarget) Type() string { return t.targetType }
 func (t *customTarget) Deployment() Deployment { return Deployment{} }
 
 func (t *customTarget) Service(name string, timeout time.Duration, sessionOrRunID int64, cluster string) (*Service, error) {
-	if timeout > 0 && name != deployService {
+	if timeout > 0 && name != DeployService {
 		if err := t.waitForConvergence(timeout); err != nil {
 			return nil, err
 		}
 	}
 	switch name {
-	case deployService, queryService, documentService:
+	case DeployService, QueryService, DocumentService:
 		url, err := t.urlWithPort(name)
 		if err != nil {
 			return nil, err
@@ -195,9 +200,9 @@ func (t *customTarget) urlWithPort(serviceName string) (string, error) {
 	port := u.Port()
 	if port == "" {
 		switch serviceName {
-		case deployService:
+		case DeployService:
 			port = "19071"
-		case queryService, documentService:
+		case QueryService, DocumentService:
 			port = "8080"
 		default:
 			return "", fmt.Errorf("unknown service: %s", serviceName)
@@ -208,7 +213,7 @@ func (t *customTarget) urlWithPort(serviceName string) (string, error) {
 }
 
 func (t *customTarget) waitForConvergence(timeout time.Duration) error {
-	deployer, err := t.Service(deployService, 0, 0, "")
+	deployer, err := t.Service(DeployService, 0, 0, "")
 	if err != nil {
 		return err
 	}
@@ -284,15 +289,15 @@ func (t *cloudTarget) Type() string {
 func (t *cloudTarget) Deployment() Deployment { return t.deploymentOptions.Deployment }
 
 func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, cluster string) (*Service, error) {
-	if name != deployService && t.deploymentOptions.ClusterURLs == nil {
+	if name != DeployService && t.deploymentOptions.ClusterURLs == nil {
 		if err := t.waitForEndpoints(timeout, runID); err != nil {
 			return nil, err
 		}
 	}
 	switch name {
-	case deployService:
+	case DeployService:
 		return &Service{Name: name, BaseURL: t.apiOptions.System.URL, TLSOptions: t.apiOptions.TLSOptions, ztsClient: t.ztsClient}, nil
-	case queryService, documentService:
+	case QueryService, DocumentService:
 		url, err := t.resolveEndpoint(cluster)
 		if err != nil {
 			return nil, err

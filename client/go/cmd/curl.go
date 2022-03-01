@@ -57,7 +57,7 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 			return err
 		}
 		switch curlService {
-		case "deploy":
+		case vespa.DeployService:
 			t, err := getTarget()
 			if err != nil {
 				return err
@@ -67,7 +67,7 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 					return err
 				}
 			}
-		case "document", "query":
+		case vespa.DocumentService, vespa.QueryService:
 			privateKeyFile, err := cfg.PrivateKeyPath(app)
 			if err != nil {
 				return err

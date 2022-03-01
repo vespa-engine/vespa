@@ -8,7 +8,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/build"
@@ -43,15 +42,6 @@ func CreateClient(timeout time.Duration) HttpClient {
 	return &defaultHttpClient{
 		client: &http.Client{Timeout: timeout},
 	}
-}
-
-// Convenience function for doing a HTTP GET
-func HttpGet(host string, path string, description string) (*http.Response, error) {
-	url, err := url.Parse(host + path)
-	if err != nil {
-		return nil, fmt.Errorf("invalid target url: %s: %w", host+path, err)
-	}
-	return HttpDo(&http.Request{URL: url}, time.Second*10, description)
 }
 
 func HttpDo(request *http.Request, timeout time.Duration, description string) (*http.Response, error) {

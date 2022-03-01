@@ -183,14 +183,14 @@ func (c *Config) X509KeyPair(app vespa.ApplicationID) (KeyPair, error) {
 }
 
 func (c *Config) APIKeyPath(tenantName string) string {
-	if override, err := c.Get(apiKeyFileFlag); err == nil && override != "" {
+	if override, ok := c.Get(apiKeyFileFlag); ok {
 		return override
 	}
 	return filepath.Join(c.Home, tenantName+".api-key.pem")
 }
 
 func (c *Config) ReadAPIKey(tenantName string) ([]byte, error) {
-	if override, err := c.Get(apiKeyFlag); err == nil && override != "" {
+	if override, ok := c.Get(apiKeyFlag); ok {
 		return []byte(override), nil
 	}
 	return ioutil.ReadFile(c.APIKeyPath(tenantName))
@@ -198,13 +198,12 @@ func (c *Config) ReadAPIKey(tenantName string) ([]byte, error) {
 
 // UseAPIKey checks if api key should be used be checking if api-key or api-key-file has been set.
 func (c *Config) UseAPIKey(system vespa.System, tenantName string) bool {
-	if _, err := c.Get(apiKeyFlag); err == nil {
+	if _, ok := c.Get(apiKeyFlag); ok {
 		return true
 	}
-	if _, err := c.Get(apiKeyFileFlag); err == nil {
+	if _, ok := c.Get(apiKeyFileFlag); ok {
 		return true
 	}
-
 	// If no Auth0 token is created, fall back to tenant api key, but warn that this functionality is deprecated
 	// TODO: Remove this when users have had time to migrate over to Auth0 device flow authentication
 	a, err := auth0.GetAuth0(c.AuthConfigPath(), system.Name, system.URL)
@@ -267,12 +266,12 @@ func (c *Config) load() error {
 	return err
 }
 
-func (c *Config) Get(option string) (string, error) {
+func (c *Config) Get(option string) (string, bool) {
 	value := viper.GetString(option)
 	if value == "" {
-		return "", fmt.Errorf("no such option: %q", option)
+		return "", false
 	}
-	return value, nil
+	return value, true
 }
 
 func (c *Config) Set(option, value string) error {
@@ -313,8 +312,8 @@ func (c *Config) Set(option, value string) error {
 }
 
 func printOption(cfg *Config, option string) {
-	value, err := cfg.Get(option)
-	if err != nil {
+	value, ok := cfg.Get(option)
+	if !ok {
 		value = color.Faint("<unset>").String()
 	} else {
 		value = color.Cyan(value).String()

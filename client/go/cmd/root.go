@@ -92,11 +92,7 @@ func configureOutput() error {
 	if err != nil {
 		return err
 	}
-	colorValue, err := config.Get(colorFlag)
-	if err != nil {
-		return err
-	}
-
+	colorValue, _ := config.Get(colorFlag)
 	colorize := false
 	switch colorValue {
 	case "auto":

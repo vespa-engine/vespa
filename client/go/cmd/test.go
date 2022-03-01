@@ -29,7 +29,7 @@ func init() {
 }
 
 var testCmd = &cobra.Command{
-	Use:   "test <tests directory or test file>",
+	Use:   "test test-directory-or-file",
 	Short: "Run a test suite, or a single test",
 	Long: `Run a test suite, or a single test
 
@@ -214,7 +214,7 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 		if err != nil {
 			return "", "", err
 		}
-		service, err = target.Service("query", 0, 0, cluster)
+		service, err = target.Service(vespa.QueryService, 0, 0, cluster)
 		if err != nil {
 			return "", "", err
 		}

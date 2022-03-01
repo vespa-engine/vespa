@@ -143,7 +143,7 @@ var documentGetCmd = &cobra.Command{
 	},
 }
 
-func documentService() (*vespa.Service, error) { return getService("document", 0, "") }
+func documentService() (*vespa.Service, error) { return getService(vespa.DocumentService, 0, "") }
 
 func operationOptions() vespa.OperationOptions {
 	return vespa.OperationOptions{
