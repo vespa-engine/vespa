@@ -33,7 +33,7 @@ ConfigManager::subscribe(const ConfigKey & key, vespalib::duration timeout)
     source->reload(_generation);
 
     source->getConfig();
-    ConfigSubscription::SP subscription(new ConfigSubscription(id, key, holder, std::move(source)));
+    auto subscription = std::make_shared<ConfigSubscription>(id, key, holder, std::move(source));
 
     vespalib::steady_time endTime = vespalib::steady_clock::now() + timeout;
     while (vespalib::steady_clock::now() < endTime) {

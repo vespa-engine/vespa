@@ -49,7 +49,7 @@ public:
     /// Used by ConfigSubscriptionSet
     SubscriptionId getSubscriptionId() const { return _id; }
     const ConfigKey & getKey() const;
-    bool nextUpdate(int64_t generation, vespalib::duration timeout);
+    bool nextUpdate(int64_t generation, vespalib::steady_time deadline);
     int64_t getGeneration() const;
     bool hasChanged() const;
     bool hasGenerationChanged() const;

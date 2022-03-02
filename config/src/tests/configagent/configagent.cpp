@@ -89,9 +89,8 @@ public:
         return std::move(_update);
     }
 
-    bool wait(vespalib::duration timeout) override
+    bool wait_until(vespalib::steady_time) override
     {
-        (void) timeout;
         return true;
     }
 

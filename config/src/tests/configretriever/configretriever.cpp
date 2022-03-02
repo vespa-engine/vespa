@@ -123,7 +123,7 @@ struct SubscriptionFixture
           sub(std::make_shared<ConfigSubscription>(0, key, holder, std::make_unique<MySource>()))
     {
         holder->handle(std::make_unique<ConfigUpdate>(value, 3, 3));
-        ASSERT_TRUE(sub->nextUpdate(0, 0ms));
+        ASSERT_TRUE(sub->nextUpdate(0, steady_clock::now()));
         sub->flip();
     }
 };
