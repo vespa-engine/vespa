@@ -38,7 +38,16 @@
           },
           "at": 1000,
           "upgrade": false,
-          "available": [],
+          "available": [
+            {
+              "application": {
+                "build": 4,
+                "compileVersion": "6.1.0",
+                "sourceUrl": "repository1/tree/commit1",
+                "commit": "commit1"
+              }
+            }
+          ],
           "blockers": []
         }
       }

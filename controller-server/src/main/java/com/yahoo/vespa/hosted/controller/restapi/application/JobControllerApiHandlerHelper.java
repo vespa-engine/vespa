@@ -297,7 +297,7 @@ class JobControllerApiHandlerHelper {
                     for (VespaVersion available : availablePlatforms) {
                         if (   deployments.stream().anyMatch(deployment -> deployment.version().isAfter(available.versionNumber()))
                             || deployments.stream().noneMatch(deployment -> deployment.version().isBefore(available.versionNumber())) && ! deployments.isEmpty()
-                            || change.platform().map(available.versionNumber()::compareTo).orElse(1) <= 0)
+                            || change.platform().map(available.versionNumber()::compareTo).orElse(1) < 0)
                             break;
 
                         Cursor availableObject = availableArray.addObject();
@@ -319,7 +319,7 @@ class JobControllerApiHandlerHelper {
                     for (ApplicationVersion available : availableApplications) {
                         if (   deployments.stream().anyMatch(deployment -> deployment.applicationVersion().compareTo(available) > 0)
                             || deployments.stream().noneMatch(deployment -> deployment.applicationVersion().compareTo(available) < 0) && ! deployments.isEmpty()
-                            || change.application().map(available::compareTo).orElse(1) <= 0)
+                            || change.application().map(available::compareTo).orElse(1) < 0)
                             break;
 
                         Cursor availableObject = availableArray.addObject();
