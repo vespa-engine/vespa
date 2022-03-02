@@ -194,8 +194,10 @@ func getTarget() (vespa.Target, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := target.CheckVersion(clientVersion); err != nil {
-		printErrHint(err, "This is not a fatal error, but this version may not work as expected", "Try 'vespa version' to check for a new version")
+	if !isCloudCI() { // Vespa Cloud always runs an up-to-date version
+		if err := target.CheckVersion(clientVersion); err != nil {
+			printErrHint(err, "This is not a fatal error, but this version may not work as expected", "Try 'vespa version' to check for a new version")
+		}
 	}
 	return target, nil
 }
@@ -345,6 +347,12 @@ func getEndpointsFromEnv() (map[string]string, error) {
 // isCI returns true if running inside a continuous integration environment.
 func isCI() bool {
 	_, ok := os.LookupEnv("CI")
+	return ok
+}
+
+// isCloudCI returns true if running inside a Vespa Cloud deployment job.
+func isCloudCI() bool {
+	_, ok := os.LookupEnv("VESPA_CLI_CLOUD_CI")
 	return ok
 }
 
