@@ -22,7 +22,7 @@ class JvmDumper {
 
         @Override
         public List<Artifact> produceArtifacts(Context ctx) {
-            ContainerPath heapDumpFile = ctx.outputContainerPath().resolve("jvm-heap-dump.bin");
+            ContainerPath heapDumpFile = ctx.outputContainerPath().resolve("jvm-heap-dump.hprof");
             List<String> cmd = List.of(
                     "jmap", "-dump:live,format=b,file=" + heapDumpFile.pathInContainer(), Integer.toString(ctx.servicePid()));
             ctx.executeCommandInNode(cmd, true);
