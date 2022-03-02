@@ -4,6 +4,7 @@
 
 #include "feedtoken.h"
 #include <vespa/vespalib/util/shared_operation_throttler.h>
+#include <vespa/searchcore/proton/feedoperation/feedoperation.h>
 
 namespace proton::feedtoken {
 
@@ -13,10 +14,15 @@ namespace proton::feedtoken {
  * of the feed operation.
  */
 class ReplayState : public IState {
-    vespalib::SharedOperationThrottler::Token _throttler_token;
+    using SerialNum = search::SerialNum;
+    using ThrottlerToken = vespalib::SharedOperationThrottler::Token;
+
+    ThrottlerToken      _throttler_token;
+    FeedOperation::Type _type;
+    SerialNum           _serial_num;
 public:
     ~ReplayState() override;
-    ReplayState(vespalib::SharedOperationThrottler::Token throttler_token);
+    ReplayState(ThrottlerToken throttler_token, const FeedOperation& op);
     bool is_replay() const noexcept override;
     void fail() override;
     void setResult(ResultUP result, bool documentWasFound) override;
