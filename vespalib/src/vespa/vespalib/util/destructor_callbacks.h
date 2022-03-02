@@ -44,8 +44,15 @@ private:
 
 template<class FunctionType>
 std::shared_ptr<IDestructorCallback>
-makeLambdaCallback(FunctionType &&function) {
+makeSharedLambdaCallback(FunctionType &&function) {
     return std::make_shared<LambdaCallback<std::decay_t<FunctionType>>>
+            (std::forward<FunctionType>(function));
+}
+
+template<class FunctionType>
+std::unique_ptr<IDestructorCallback>
+makeUniqueLambdaCallback(FunctionType &&function) {
+    return std::make_unique<LambdaCallback<std::decay_t<FunctionType>>>
             (std::forward<FunctionType>(function));
 }
 
