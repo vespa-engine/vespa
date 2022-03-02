@@ -20,6 +20,18 @@ const vespalib::string smoke_test_option = "--smoke-test";
 
 }
 
+class ReadStopper {
+    std::atomic<bool> &_stop_read;
+public:
+    ReadStopper(std::atomic<bool>& stop_read)
+        : _stop_read(stop_read)
+    {
+    }
+    ~ReadStopper() {
+        _stop_read = true;
+    }
+};
+
 struct WorkContext
 {
     std::atomic<uint64_t> _generation;
@@ -141,12 +153,12 @@ Fixture::readWork(const WorkContext &context)
 void
 Fixture::writeWork(uint32_t cnt, WorkContext &context)
 {
+    ReadStopper read_stopper(_stopRead);
     for (uint32_t i = 0; i < cnt; ++i) {
         context._generation.store(_generationHandler.getNextGeneration(), std::memory_order_relaxed);
         _generationHandler.incGeneration();
     }
     _doneWriteWork += cnt;
-    _stopRead = true;
     LOG(info, "done %u write work", cnt);
 }
 
@@ -223,6 +235,7 @@ Fixture::read_indirect_work(const IndirectContext& context)
 void
 Fixture::write_indirect_work(uint64_t cnt, IndirectContext& context)
 {
+    ReadStopper read_stopper(_stopRead);
     uint32_t sleep_cnt = 0;
     ASSERT_EQ(0, _generationHandler.getCurrentGeneration());
     auto oldest_gen = _generationHandler.getFirstUsedGeneration();
@@ -231,7 +244,7 @@ Fixture::write_indirect_work(uint64_t cnt, IndirectContext& context)
         // Hold data for gen, write new data for next_gen
         auto next_gen = gen + 1;
         auto *v_ptr = context.calc_value_ptr(next_gen);
-        ASSERT_EQ(0u, *v_ptr) << (_stopRead = true, "");
+        ASSERT_EQ(0u, *v_ptr);
         *v_ptr = next_gen;
         context._value_ptr.store(v_ptr, std::memory_order_release);
         _generationHandler.incGeneration();
@@ -250,7 +263,6 @@ Fixture::write_indirect_work(uint64_t cnt, IndirectContext& context)
         }
     }
     _doneWriteWork += cnt;
-    _stopRead = true;
     LOG(info, "done %" PRIu64 " write work, %u sleeps", cnt, sleep_cnt);
 }
 
@@ -262,11 +274,9 @@ Fixture::stress_test_indirect(uint64_t write_cnt)
     LOG(info, "starting stress test indirect, 1 write thread, %u read threads, %" PRIu64 " writes", read_threads, write_cnt);
     auto context = std::make_shared<IndirectContext>();
     _writer.execute(makeLambdaTask([this, context, write_cnt]() { write_indirect_work(write_cnt, *context); }));
-#if 1
     for (uint32_t i = 0; i < read_threads; ++i) {
         _readers->execute(makeLambdaTask([this, context]() { read_indirect_work(*context); }));
     }
-#endif
     _writer.sync();
     _readers->sync();
 }
