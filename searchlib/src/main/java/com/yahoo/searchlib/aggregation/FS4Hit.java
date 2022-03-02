@@ -18,14 +18,12 @@ public class FS4Hit extends Hit {
     private GlobalId globalId = new GlobalId(new byte[GlobalId.LENGTH]);
     private int distributionKey = -1;
 
-    /**
-     * Constructs an empty result node.
-     */
+    /** Constructs an empty result node. */
     public FS4Hit() {
     }
 
     /**
-     * Create a hit with the given path and document id.
+     * Creates a hit with the given path and document id.
      *
      * @param path     The mangled search node path.
      * @param globalId The local document id.
@@ -36,7 +34,7 @@ public class FS4Hit extends Hit {
     }
 
     /**
-     * Create a hit with the given path and document id.
+     * Creates a hit with the given path and document id.
      *
      * @param path     The mangled search node path.
      * @param globalId The local document id.
@@ -50,29 +48,17 @@ public class FS4Hit extends Hit {
         this.distributionKey = distributionKey;
     }
 
-    /**
-     * Obtain the (mangled) network path back to the search node returning this hit.
-     *
-     * @return The mangled search node path.
-     */
+    /** Returns the (mangled) network path back to the search node returning this hit. */
     public int getPath() {
         return path;
     }
 
-    /**
-     * Obtain the global document id on the search node returning this hit.
-     *
-     * @return The global document id.
-     */
+    /** Returns the global document id on the search node returning this hit. */
     public GlobalId getGlobalId() {
         return globalId;
     }
 
-    /**
-     * Obtain the distribution key for the node producing this hit.
-     *
-     * @return distribution key
-     */
+    /** Returns the distribution key for the node producing this hit. */
     public int getDistributionKey() {
         return distributionKey;
     }

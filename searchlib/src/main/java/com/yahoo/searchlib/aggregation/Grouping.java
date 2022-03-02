@@ -23,10 +23,10 @@ public class Grouping extends Identifiable {
     // The client id for this grouping request.
     private int id = 0;
 
-    // Whether or not this grouping is valid.
+    // Whether this grouping is valid.
     private boolean valid = true;
 
-    // Whether or not to group all hits or only those with hits. Only applicable for streaming search.
+    // Whether to group all hits or only those with hits. Only applicable for streaming search.
     private boolean all = false;
 
     // How many hits to group per backend node.
@@ -48,18 +48,15 @@ public class Grouping extends Identifiable {
 
     private boolean postMergeCompleted = false;
 
-    /**
-     * <p>Constructs an empty result node. <b>NOTE:</b> This instance is broken until non-optional member data is
-     * set.</p>
-     */
+    /** Constructs an empty result node. <b>NOTE:</b> This instance is broken until non-optional member data is set. */
     public Grouping() {
         super();
     }
 
     /**
-     * <p>Constructs an instance of this class with given client id.</p>
+     * Constructs an instance of this class with given client id.
      *
-     * @param id The client id for this grouping request.
+     * @param id the client id for this grouping request
      */
     public Grouping(int id) {
         super();
@@ -67,17 +64,17 @@ public class Grouping extends Identifiable {
     }
 
     /**
-     * <p>Merges the content of the given grouping <b>into</b> this.</p>
+     * Merges the content of the given grouping <b>into</b> this.
      *
-     * @param rhs The grouping to merge with.
+     * @param rhs the grouping to merge with
      */
     public void merge(Grouping rhs) {
         root.merge(firstLevel, 0, rhs.root);
     }
 
     /**
-     * <p>This method is invoked after merging is done. It is intended used for resolving any dependencies or derivates
-     * that might have changes due to the merge.</p>
+     * Invoked after merging is done. It is intended used for resolving any dependencies or derivates
+     * that might have changes due to the merge.
      */
     public void postMerge() {
         if (postMergeCompleted) return;
@@ -85,82 +82,64 @@ public class Grouping extends Identifiable {
         postMergeCompleted = true;
     }
 
-    /**
-     * <p>Returns the client id of this grouping request.</p>
-     *
-     * @return The identifier.
-     */
+    /** Returns the client id of this grouping request. */
     public int getId() {
         return id;
     }
 
     /**
-     * <p>Sets the client id for this grouping request.</p>
+     * Sets the client id for this grouping request.
      *
-     * @param id The identifier to set.
-     * @return This, to allow chaining.
+     * @param id the identifier to set
+     * @return this, to allow chaining
      */
     public Grouping setId(int id) {
         this.id = id;
         return this;
     }
 
-    /**
-     * <p>Returns whether or not this grouping request is valid.</p>
-     *
-     * @return True if valid.
-     */
+    /** Returns whether this grouping request is valid. */
     public boolean valid() {
         return valid;
     }
 
     /**
-     * <p>Returns whether or not to perform grouping on the entire document corpus instead of only those matching the
-     * search criteria. Please see note on {@link #setAll(boolean)}.</p>
-     *
-     * @return True if grouping all documents.
+     * Returns whether to perform grouping on the entire document corpus instead of only those matching the
+     * search criteria. Please see note on {@link #setAll(boolean)}.
      */
     public boolean getAll() {
         return all;
     }
 
     /**
-     * <p>Sets whether or not to perform grouping on the entire document corpus instead of only those matching the
-     * search criteria. <b>NOTE:</b> This is only possible with streaming search.</p>
+     * Sets whether to perform grouping on the entire document corpus instead of only those matching the
+     * search criteria. <b>NOTE:</b> This is only possible with streaming search.
      *
-     * @param all True to group all documents.
-     * @return This, to allow chaining.
+     * @param all true to group all documents
+     * @return this, to allow chaining
      */
     public Grouping setAll(boolean all) {
         this.all = all;
         return this;
     }
 
-    /**
-     * <p>Returns the number of candidate documents to group.</p>
-     *
-     * @return The number.
-     */
+    /** Returns the number of candidate documents to group. */
     public long getTopN() {
         return topN;
     }
 
     /**
-     * <p>Sets the number of candidate documents to group.</p>
+     * Sets the number of candidate documents to group.
      *
-     * @param topN The number to set.
-     * @return This, to allow chaining.
+     * @param topN the number to set
+     * @return this, to allow chaining
      */
     public Grouping setTopN(long topN) {
         this.topN = topN;
         return this;
     }
 
-    /**
-     * <p>Returns the first level to start grouping work. See note on {@link #setFirstLevel(int)}.</p>
-     *
-     * @return The first level.
-     */
+    /** Returns the first level to start grouping work. See note on {@link #setFirstLevel(int)}. */
     public int getFirstLevel() {
         return firstLevel;
     }
@@ -195,20 +174,16 @@ public class Grouping extends Identifiable {
         return this;
     }
 
-    /**
-     * <p>Returns the list of grouping levels that make up this grouping request.</p>
-     *
-     * @return The list.
-     */
+    /** Returns the list of grouping levels that make up this grouping request. */
     public List<GroupingLevel> getLevels() {
         return groupingLevels;
     }
 
     /**
-     * <p>Appends the given grouping level specification to the list of levels.</p>
+     * Appends the given grouping level specification to the list of levels.
      *
-     * @param level The level to add.
-     * @return This, to allow chaining.
+     * @param level the level to add
+     * @return this, to allow chaining
      * @throws NullPointerException If <code>level</code> argument is null.
      */
     public Grouping addLevel(GroupingLevel level) {
@@ -217,21 +192,17 @@ public class Grouping extends Identifiable {
         return this;
     }
 
-    /**
-     * <p>Returns the root group.</p>
-     *
-     * @return The root.
-     */
+    /** Returns the root group. */
     public Group getRoot() {
         return root;
     }
 
     /**
-     * <p>Sets the root group.</p>
+     * Sets the root group.
      *
-     * @param root The group to set as root.
-     * @return This, to allow chaining.
-     * @throws NullPointerException If <code>root</code> argument is null.
+     * @param root the group to set as root
+     * @return this, to allow chaining
+     * @throws NullPointerException If <code>root</code> argument is null
      */
     public Grouping setRoot(Group root) {
         root.getClass(); // throws NullPointerException

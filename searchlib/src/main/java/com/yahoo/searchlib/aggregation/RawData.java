@@ -7,8 +7,8 @@ import com.yahoo.vespa.objects.Serializer;
 import java.util.Arrays;
 
 /**
- * <p>This class encapsulates a byte array into a cloneable and comparable object. It also implements a sane {@link
- * #hashCode()} and {@link #toString()}.</p>
+ * A byte array a a cloneable and comparable object. It also implements a sane {@link
+ * #hashCode()} and {@link #toString()}.
  *
  * @author Simon Thoresen Hult
  */
@@ -16,26 +16,24 @@ public class RawData implements Cloneable, Comparable<RawData> {
 
     private byte[] data;
 
-    /**
-     * <p>Constructs an empty data object.</p>
-     */
+    /** Constructs an empty data object. */
     public RawData() {
         data = new byte[0];
     }
 
     /**
-     * <p>Constructs a raw data object that holds the given byte array.</p>
+     * Constructs a raw data object that holds the given byte array.
      *
-     * @param data The rank to set.
+     * @param data the rank to set
      */
     public RawData(byte[] data) {
         setData(data);
     }
 
     /**
-     * <p>Serializes the content of this data into the given byte buffer.</p>
+     * Serializes the content of this data into the given byte buffer.
      *
-     * @param buf The buffer to serialize to.
+     * @param buf the buffer to serialize to
      */
     public void serialize(Serializer buf) {
         buf.putInt(null, data.length);
@@ -43,9 +41,9 @@ public class RawData implements Cloneable, Comparable<RawData> {
     }
 
     /**
-     * <p>Deserializes the content for this data from the given byte buffer.</p>
+     * Deserializes the content for this data from the given byte buffer.
      *
-     * @param buf The buffer to deserialize from.
+     * @param buf the buffer to deserialize from
      */
     public void deserialize(Deserializer buf) {
         int len = buf.getInt(null);
@@ -53,20 +51,20 @@ public class RawData implements Cloneable, Comparable<RawData> {
     }
 
     /**
-     * <p>Returns the byte array that constitutes this data.</p>
+     * Returns the byte array that constitutes this data.
      *
-     * @return The byte array.
+     * @return the byte array
      */
     public byte[] getData() {
         return data;
     }
 
     /**
-     * <p>Sets the byte array that constitutes this data. This does <b>not</b> copy the given array, it simply assigns
-     * it to this.</p>
+     * Sets the byte array that constitutes this data. This does <b>not</b> copy the given array, it simply assigns
+     * it to this.
      *
-     * @param data The data to set.
-     * @return This, to allow chaining.
+     * @param data the data to set
+     * @return this, to allow chaining
      */
     public RawData setData(byte[] data) {
         if (data == null) {
@@ -109,11 +107,11 @@ public class RawData implements Cloneable, Comparable<RawData> {
     }
 
     /**
-     * <p>Implements comparison of two byte arrays.</p>
+     * Implements comparison of two byte arrays.
      *
-     * @param lhs The left-hand-side of the comparison.
-     * @param rhs The right-hand-side of the comparison.
-     * @return The result of comparing the two byte arrays.
+     * @param lhs the left-hand-side of the comparison
+     * @param rhs the right-hand-side of the comparison
+     * @return the result of comparing the two byte arrays
      */
     public static int compare(byte[] lhs, byte[] rhs) {
         int cmp = 0;
@@ -127,4 +125,5 @@ public class RawData implements Cloneable, Comparable<RawData> {
         }
         return cmp;
     }
+
 }

@@ -15,7 +15,7 @@ public class GroupingLevel extends Identifiable {
     // The maximum number of groups allowed at this level.
     private long maxGroups = -1;
 
-    // The precsicion used for estimation. This is number of groups returned up when using orderby that need more info to get it correct.
+    // The precision used for estimation. This is number of groups returned up when using orderby that need more info to get it correct.
     private long precision = -1;
 
     // The classifier expression; the result of this is the group key.
@@ -24,30 +24,17 @@ public class GroupingLevel extends Identifiable {
     // The prototype of the groups to create for each class.
     private Group collect = new Group();
 
-    /**
-     * <p>Returns the presicion (i.e number of groups) returned up from this level.</p>
-     *
-     * @return The precision.
-     */
+    /** Returns the precision (i.e number of groups) returned up from this level. */
     public long getPrecision() {
         return precision;
     }
 
-    /**
-     * <p>Returns the maximum number of groups allowed at this level.</p>
-     *
-     * @return The maximum number.
-     */
+    /** Returns the maximum number of groups allowed at this level. */
     public long getMaxGroups() {
         return maxGroups;
     }
 
-    /**
-     * <p>Sets the maximum number of groups allowed at this level.</p>
-     *
-     * @param max The maximum number to set.
-     * @return This, to allow chaining.
-     */
+    /** Sets the maximum number of groups allowed at this level. */
     public GroupingLevel setMaxGroups(long max) {
         maxGroups = max;
         if (precision < maxGroups) {
@@ -57,31 +44,22 @@ public class GroupingLevel extends Identifiable {
     }
 
     /**
-     * <p>Sets the presicion (i.e number of groups) returned up from this level.</p>
+     * Sets the precision (i.e number of groups) returned up from this level.
      *
-     * @param precision The precision to set.
-     * @return This, to allow chaining.
+     * @param precision the precision to set
+     * @return this, to allow chaining
      */
     public GroupingLevel setPrecision(long precision) {
         this.precision = precision;
         return this;
     }
 
-    /**
-     * <p>Returns the expression used to classify hits into groups.</p>
-     *
-     * @return The classifier expression.
-     */
+    /** Returns the expression used to classify hits into groups. */
     public ExpressionNode getExpression() {
         return classify;
     }
 
-    /**
-     * <p>Sets the expression used to classify hits into groups.</p>
-     *
-     * @param exp The classifier expression to set.
-     * @return This, to allow chaining.
-     */
+    /** Sets the expression used to classify hits into groups. */
     public GroupingLevel setExpression(ExpressionNode exp) {
         classify = exp;
         return this;
