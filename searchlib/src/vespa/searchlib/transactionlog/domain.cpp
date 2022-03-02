@@ -298,6 +298,7 @@ DomainPart::SP
 Domain::optionallyRotateFile(SerialNum serialNum) {
     DomainPart::SP dp = getActivePart();
     if (dp->byteSize() > _config.getPartSizeLimit()) {
+        dp->sync();
         dp->close();
         dp = std::make_shared<DomainPart>(_name, dir(), serialNum, _fileHeaderContext, false);
         {
