@@ -60,6 +60,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
@@ -377,6 +378,8 @@ public class InternalStepRunnerTest {
         assertTestLogEntries(id, Step.endTests,
                              new LogEntry(lastId1 + 1, Instant.ofEpochMilli(123), info, "Not enough data!"),
                              new LogEntry(lastId1 + 2, instant1, info, "Tests were inconclusive, and will run again in 15 minutes."),
+                             new LogEntry(lastId1 + 15, instant1, info, "### Run will reset, and start over at " + instant1.plusSeconds(900).truncatedTo(SECONDS)),
+                             new LogEntry(lastId1 + 16, instant1, info, ""),
                              new LogEntry(lastId2 + 1, tester.clock().instant(), info, "Tests completed successfully."));
     }
 
@@ -531,7 +534,7 @@ public class InternalStepRunnerTest {
     }
 
     private void assertTestLogEntries(RunId id, Step step, LogEntry... entries) {
-        assertEquals(ImmutableList.copyOf(entries), tester.jobs().details(id).get().get(step));
+        assertEquals(List.of(entries), tester.jobs().details(id).get().get(step));
     }
 
     private static final String vespaLog = "-1554970337.084804\t17480180-v6-3.ostk.bm2.prod.ne1.yahoo.com\t5549/832\tcontainer\tContainer.com.yahoo.container.jdisc.ConfiguredApplication\tinfo\tSwitching to the latest deployed set of configurations and components. Application switch number: 2\n" +
