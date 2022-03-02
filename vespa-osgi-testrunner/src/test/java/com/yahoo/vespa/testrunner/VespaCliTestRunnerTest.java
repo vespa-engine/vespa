@@ -12,6 +12,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author jonmv
@@ -55,6 +56,8 @@ class VespaCliTestRunnerTest {
                              "--zone", "dev.aws-us-east-1c",
                              "--target", "cloud"),
                      builder.command());
+        assertTrue(builder.environment().containsKey("CI"));
+        assertTrue(builder.environment().containsKey("VESPA_CLI_CLOUD_CI"));
         assertEquals("{\"endpoints\":[{\"cluster\":\"default\",\"url\":\"https://dev.endpoint:443/\"}]}",
                      builder.environment().get("VESPA_CLI_ENDPOINTS"));
         assertEquals(artifacts.resolve("key").toAbsolutePath().toString(),
