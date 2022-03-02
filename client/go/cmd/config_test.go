@@ -101,10 +101,17 @@ func TestUseAPIKey(t *testing.T) {
 	}
 }`
 	withEnv("VESPA_CLI_CLOUD_SYSTEM", "public", func() {
+		ci, ok := os.LookupEnv("CI")
+		if ok {
+			os.Unsetenv("CI") // Test depends on unset variable
+		}
 		_, err := os.Create(filepath.Join(homeDir, "t2.api-key.pem"))
 		require.Nil(t, err)
 		assert.True(t, c.UseAPIKey(vespa.PublicSystem, "t2"))
 		require.Nil(t, ioutil.WriteFile(filepath.Join(homeDir, "auth.json"), []byte(authContent), 0600))
 		assert.False(t, c.UseAPIKey(vespa.PublicSystem, "t2"))
+		if ok {
+			os.Setenv("CI", ci)
+		}
 	})
 }

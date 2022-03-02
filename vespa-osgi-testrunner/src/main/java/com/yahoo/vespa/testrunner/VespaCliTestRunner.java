@@ -26,7 +26,6 @@ import java.util.stream.Stream;
 
 import static com.yahoo.vespa.testrunner.TestRunner.Status.ERROR;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.FAILURE;
-import static com.yahoo.vespa.testrunner.TestRunner.Status.INCONCLUSIVE;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.NO_TESTS;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.RUNNING;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.SUCCESS;
@@ -119,6 +118,9 @@ public class VespaCliTestRunner implements TestRunner {
                                                     "--zone", config.zone().value(),
                                                     "--target", "cloud");
         builder.redirectErrorStream(true);
+        // The CI environment variables tells Vespa CLI to omit certain warnings that do not apply to CI environments
+        builder.environment().put("CI", "true");
+        builder.environment().put("VESPA_CLI_CLOUD_CI", "true");
         builder.environment().put("VESPA_CLI_HOME", ensureHomeDirectoryForVespaCli().toString());
         builder.environment().put("VESPA_CLI_ENDPOINTS", toEndpointsConfig(config));
         builder.environment().put("VESPA_CLI_DATA_PLANE_KEY_FILE", artifactsPath.resolve("key").toAbsolutePath().toString());

@@ -155,8 +155,7 @@ $ vespa prod submit`,
 		if err := verifyTests(pkg, target); err != nil {
 			return err
 		}
-		isCI := os.Getenv("CI") != ""
-		if !isCI {
+		if !isCI() {
 			printWarning("We recommend doing this only from a CD job", "See https://cloud.vespa.ai/en/getting-to-production")
 		}
 		opts, err := getDeploymentOptions(cfg, pkg, target)
