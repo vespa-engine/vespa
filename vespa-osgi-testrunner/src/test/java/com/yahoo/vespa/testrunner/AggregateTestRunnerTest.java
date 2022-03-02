@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.testrunner;
 
+import com.yahoo.exception.ExceptionUtils;
+import com.yahoo.vespa.testrunner.TestReport.Failure;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -123,7 +125,7 @@ class AggregateTestRunnerTest {
         // Verify reports are merged.
         assertNull(runner.getReport());
 
-        TestReport.Failure failure = new TestReport.Failure("test", null);
+        Failure failure = new Failure("test", null);
         TestReport report = TestReport.builder()
                                       .withLogs(List.of(record1))
                                       .withFailures(List.of(failure))
@@ -154,6 +156,26 @@ class AggregateTestRunnerTest {
         assertEquals(NO_TESTS, TestReport.builder().withAbortedCount(1).build().status());
         assertEquals(NO_TESTS, TestReport.builder().withIgnoredCount(1).build().status());
         assertEquals(FAILURE, JunitRunner.createReportWithFailedInitialization(new RuntimeException("hello")).status());
+    }
+
+    @Test
+    void testStackTrimming() {
+        try {
+            try {
+                throw new RuntimeException("inner");
+            }
+            catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        catch (Exception e) {
+            TestReport.trimStackTraces(e, "org.junit.platform.launcher.core.SessionPerRequestLauncher");
+            assertEquals("java.lang.RuntimeException: java.lang.RuntimeException: inner\n" +
+                         "\tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:168)\n" +
+                         "Caused by: java.lang.RuntimeException: inner\n" +
+                         "\tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:165)\n",
+                         ExceptionUtils.getStackTraceAsString(e));
+        }
     }
 
     static class MockTestRunner implements TestRunner {
