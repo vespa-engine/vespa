@@ -34,12 +34,12 @@ TEST("Require that waiting is done")
 
     ConfigHolder holder;
     vespalib::Timer timer;
-    holder.wait(1000ms);
+    holder.wait_for(1000ms);
     EXPECT_GREATER_EQUAL(timer.elapsed(), ONE_SEC);
     EXPECT_LESS(timer.elapsed(), ONE_MINUTE);
 
     holder.handle(std::make_unique<ConfigUpdate>(value, true, 0));
-    ASSERT_TRUE(holder.wait(100ms));
+    ASSERT_TRUE(holder.wait_for(100ms));
 }
 
 TEST("Require that polling for elements work")
@@ -58,10 +58,10 @@ TEST("Require that negative time does not mean forever.") {
     ConfigHolder holder;
     vespalib::Timer timer;
     ASSERT_FALSE(holder.poll());
-    ASSERT_FALSE(holder.wait(10ms));
-    ASSERT_FALSE(holder.wait(0ms));
-    ASSERT_FALSE(holder.wait(-1ms));
-    ASSERT_FALSE(holder.wait(-7ms));
+    ASSERT_FALSE(holder.wait_for(10ms));
+    ASSERT_FALSE(holder.wait_for(0ms));
+    ASSERT_FALSE(holder.wait_for(-1ms));
+    ASSERT_FALSE(holder.wait_for(-7ms));
     EXPECT_LESS(timer.elapsed(), ONE_MINUTE);
 }
 
@@ -70,7 +70,7 @@ TEST_MT_F("Require that wait is interrupted", 2, ConfigHolder)
     if (thread_id == 0) {
         vespalib::Timer timer;
         TEST_BARRIER();
-        f.wait(1000ms);
+        f.wait_for(1000ms);
         EXPECT_LESS(timer.elapsed(), ONE_MINUTE);
         EXPECT_GREATER(timer.elapsed(), 400ms);
         TEST_BARRIER();

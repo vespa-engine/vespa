@@ -13,6 +13,7 @@ LOG_SETUP(".config.subscription.configsubscriptionset");
 
 using vespalib::duration;
 using vespalib::steady_clock;
+using vespalib::steady_time;
 
 namespace config {
 
@@ -39,13 +40,13 @@ ConfigSubscriptionSet::acquireSnapshot(duration timeout, bool ignoreChange)
         _state = FROZEN;
     }
 
-    steady_clock::time_point startTime = steady_clock::now();
-    duration timeLeft = timeout;
+    steady_time now = steady_clock::now();
+    const steady_time deadline = now + timeout;
     int64_t lastGeneration = _currentGeneration;
     bool inSync = false;
 
-    LOG(spam, "Going into nextConfig loop, time left is %f", vespalib::to_s(timeLeft));
-    while (!isClosed() && (timeLeft >= duration::zero()) && !inSync) {
+    LOG(spam, "Going into nextConfig loop, time left is %f", vespalib::to_s(deadline - now));
+    while (!isClosed() && (now <= deadline)) {
         size_t numChanged = 0;
         size_t numGenerationChanged = 0;
         bool generationsInSync = true;
@@ -54,7 +55,7 @@ ConfigSubscriptionSet::acquireSnapshot(duration timeout, bool ignoreChange)
         // Run nextUpdate on all subscribers to get them in sync.
         for (const auto & subscription : _subscriptionList) {
 
-            if (!subscription->nextUpdate(_currentGeneration, timeLeft) && !subscription->hasGenerationChanged()) {
+            if (!subscription->nextUpdate(_currentGeneration, deadline) && !subscription->hasGenerationChanged()) {
                 subscription->reset();
                 continue;
             }
@@ -76,14 +77,12 @@ ConfigSubscriptionSet::acquireSnapshot(duration timeout, bool ignoreChange)
             if (subscription->getGeneration() != generation) {
                 generationsInSync = false;
             }
-            // Adjust timeout
-            timeLeft = timeout - (steady_clock::now() - startTime);
         }
         inSync = generationsInSync && (_subscriptionList.size() == numGenerationChanged) && (ignoreChange || numChanged > 0);
         lastGeneration = generation;
-        timeLeft = timeout - (steady_clock::now() - startTime);
-        if (!inSync && (timeLeft > duration::zero())) {
-            std::this_thread::sleep_for(std::min(_maxNapTime, timeLeft));
+        now = steady_clock::now();
+        if (!inSync && (now < deadline)) {
+            std::this_thread::sleep_until(std::min(now + _maxNapTime, deadline));
         } else {
             break;
         }

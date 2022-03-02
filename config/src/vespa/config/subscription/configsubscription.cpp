@@ -29,7 +29,7 @@ ConfigSubscription::~ConfigSubscription()
 
 
 bool
-ConfigSubscription::nextUpdate(int64_t generation, vespalib::duration timeout)
+ConfigSubscription::nextUpdate(int64_t generation, vespalib::steady_time deadline)
 {
     if (_closed || !_holder->poll()) {
         return false;
@@ -42,7 +42,7 @@ ConfigSubscription::nextUpdate(int64_t generation, vespalib::duration timeout)
     if (isGenerationNewer(_next->getGeneration(), generation)) {
         return true;
     }
-    return (!_closed && _holder->wait(timeout));
+    return (!_closed && _holder->wait_until(deadline));
 }
 
 bool

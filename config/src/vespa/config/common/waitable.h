@@ -11,7 +11,10 @@ namespace config {
  */
 struct Waitable
 {
-    virtual bool wait(vespalib::duration timeout) = 0;
+    bool wait_for(vespalib::duration timeout) {
+        return wait_until(vespalib::steady_clock::now() + timeout);
+    }
+    virtual bool wait_until(vespalib::steady_time deadline) = 0;
     virtual ~Waitable() = default;
 };
 
