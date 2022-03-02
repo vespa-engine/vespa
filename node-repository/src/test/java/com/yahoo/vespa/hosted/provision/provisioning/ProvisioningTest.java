@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
@@ -13,15 +12,13 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.ParentHostUnavailableException;
-import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
@@ -36,7 +33,6 @@ import com.yahoo.vespa.service.duper.InfraApplication;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -1008,6 +1004,20 @@ public class ProvisioningTest {
 
         stateAsserter.accept(new Zone(Environment.prod, RegionName.from("us-east")), Node.State.inactive);
         stateAsserter.accept(new Zone(SystemName.cd, Environment.prod, RegionName.from("us-east")), Node.State.dirty);
+    }
+
+    @Test
+    public void arm64_architecture() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
+
+        NodeResources nodeResources = new NodeResources(1, 4, 10, 4, NodeResources.DiskSpeed.any, NodeResources.StorageType.any, NodeResources.Architecture.arm64);
+        tester.makeReadyHosts(4, nodeResources);
+        tester.prepareAndActivateInfraApplication(ProvisioningTester.applicationId(), NodeType.host);
+
+        ApplicationId application = ProvisioningTester.applicationId();
+        SystemState state = prepare(application, 1, 1, 1, 1, nodeResources, tester);
+        assertEquals(4, state.allHosts.size());
+        tester.activate(application, state.allHosts);
     }
 
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,

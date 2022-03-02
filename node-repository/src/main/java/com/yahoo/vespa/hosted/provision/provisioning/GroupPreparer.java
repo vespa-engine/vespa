@@ -104,7 +104,8 @@ public class GroupPreparer {
                                                                    .map(deficit -> hostProvisioner.get().provisionHosts(allocation.provisionIndices(deficit.count()),
                                                                                                                         hostType,
                                                                                                                         deficit.resources(),
-                                                                                                                        application, osVersion,
+                                                                                                                        application,
+                                                                                                                        osVersion,
                                                                                                                         sharing,
                                                                                                                         Optional.of(cluster.type())))
                                                                    .orElseGet(List::of);
