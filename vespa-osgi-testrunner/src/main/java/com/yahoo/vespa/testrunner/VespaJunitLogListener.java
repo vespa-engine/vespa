@@ -2,58 +2,88 @@
 
 package com.yahoo.vespa.testrunner;
 
-import org.junit.platform.commons.util.Preconditions;
 import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.engine.reporting.ReportEntry;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestIdentifier;
 
-import java.util.function.BiConsumer;
-import java.util.function.Supplier;
+import java.time.ZoneOffset;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.stream.Collectors;
 
-public class VespaJunitLogListener implements TestExecutionListener {
+import static java.util.Objects.requireNonNull;
+import static java.util.logging.Level.INFO;
+import static java.util.logging.Level.SEVERE;
+import static java.util.logging.Level.WARNING;
 
-    public static VespaJunitLogListener forBiConsumer(BiConsumer<Throwable, Supplier<String>> logger) {
-        return new VespaJunitLogListener(logger);
-    }
+class VespaJunitLogListener implements TestExecutionListener {
 
-    private final BiConsumer<Throwable, Supplier<String>> logger;
+    private final Consumer<LogRecord> logger;
 
-    private VespaJunitLogListener(BiConsumer<Throwable, Supplier<String>> logger) {
-        this.logger = Preconditions.notNull(logger, "logger must not be null");
+    VespaJunitLogListener(Consumer<LogRecord> logger) {
+        this.logger = requireNonNull(logger);
     }
 
     @Override
     public void dynamicTestRegistered(TestIdentifier testIdentifier) {
-        log("Registered dynamic test: %s - %s", testIdentifier.getDisplayName(), testIdentifier.getUniqueId());
+        if (testIdentifier.isContainer() && testIdentifier.getParentId().isPresent()) // Skip root engine level.
+            log(INFO, "Registered dynamic container: " + testIdentifier.getDisplayName());
+        if (testIdentifier.isTest())
+            log(INFO, "Registered dynamic test: " + testIdentifier.getDisplayName());
     }
 
     @Override
     public void executionStarted(TestIdentifier testIdentifier) {
-        log("Test started: %s - %s", testIdentifier.getDisplayName(), testIdentifier.getUniqueId());
+        if (testIdentifier.isContainer() && testIdentifier.getParentId().isPresent()) // Skip root engine level.
+            log(INFO, "Tests started in: " + testIdentifier.getDisplayName());
+        if (testIdentifier.isTest())
+            log(INFO, "Test started: " + testIdentifier.getDisplayName());
     }
 
     @Override
     public void executionSkipped(TestIdentifier testIdentifier, String reason) {
-        log("Test skipped: %s - %s - %s", testIdentifier.getDisplayName(), testIdentifier.getUniqueId(), reason);
+        log(WARNING, "Skipped: " +  testIdentifier.getDisplayName() + ": " +  reason);
     }
 
     @Override
     public void executionFinished(TestIdentifier testIdentifier, TestExecutionResult testExecutionResult) {
-        logWithThrowable("Test completed: %s - %s - %s", testExecutionResult.getThrowable().orElse(null),
-                         testIdentifier.getDisplayName(), testIdentifier.getUniqueId(), testExecutionResult);
+        Level level;
+        String message;
+        switch (testExecutionResult.getStatus()) {
+            case FAILED:     level = SEVERE;  message = "failed";    break;
+            case ABORTED:    level = WARNING; message = "skipped";   break;
+            case SUCCESSFUL: level = INFO;    message = "succeeded"; break;
+            default:         level = INFO;    message = "completed"; break;
+        }
+        if (testIdentifier.isContainer() && testIdentifier.getParentId().isPresent()) // Skip root engine level.
+            log(level, "Tests " + message + " in: " + testIdentifier.getDisplayName(), testExecutionResult.getThrowable().orElse(null));
+        if (testIdentifier.isTest())
+            log(level, "Test " + message + ": " + testIdentifier.getDisplayName(), testExecutionResult.getThrowable().orElse(null));
     }
 
     @Override
-    public void reportingEntryPublished(TestIdentifier testIdentifier, ReportEntry entry) {
-        log("[" + testIdentifier.getDisplayName() + "]: " + entry.toString());
+    public void reportingEntryPublished(TestIdentifier testIdentifier, ReportEntry report) {
+        String message = report.getKeyValuePairs().keySet().equals(Set.of("value"))
+                ? report.getKeyValuePairs().get("value")
+                : report.getKeyValuePairs().entrySet().stream()
+                        .map(entry -> entry.getKey() + ": " + entry.getValue())
+                        .collect(Collectors.joining("\n"));
+        LogRecord record = new LogRecord(INFO, message);
+        record.setInstant(report.getTimestamp().toInstant(ZoneOffset.UTC));
+        logger.accept(record);
     }
 
-    private void log(String message, Object... args) {
-        logWithThrowable(message, null, args);
+    private void log(Level level, String message) {
+        log(level, message, null);
     }
 
-    private void logWithThrowable(String message, Throwable t, Object... args) {
-        this.logger.accept(t, () -> String.format(message, args));
+    private void log(Level level, String message, Throwable thrown) {
+        LogRecord record = new LogRecord(level, message);
+        record.setThrown(thrown);
+        logger.accept(record);
     }
+
 }

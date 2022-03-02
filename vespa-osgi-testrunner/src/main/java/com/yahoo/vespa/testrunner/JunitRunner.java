@@ -43,6 +43,7 @@ import java.util.stream.Stream;
  * @author mortent
  */
 public class JunitRunner extends AbstractComponent implements TestRunner {
+
     private static final Logger logger = Logger.getLogger(JunitRunner.class.getName());
 
     private final SortedMap<Long, LogRecord> logRecords = new ConcurrentSkipListMap<>();
@@ -189,7 +190,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         Launcher launcher = LauncherFactory.create(launcherConfig);
 
         // Create log listener:
-        var logListener = VespaJunitLogListener.forBiConsumer((t, m) -> log(logRecords, m.get(), t));
+        var logListener = new VespaJunitLogListener(record -> logRecords.put(record.getSequenceNumber(), record));
         // Create a summary listener:
         var summaryListener = new SummaryGeneratingListener();
         launcher.registerTestExecutionListeners(logListener, summaryListener);
@@ -218,12 +219,6 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
                 .build();
     }
 
-    private void log(SortedMap<Long, LogRecord> logs, String message, Throwable t) {
-        LogRecord logRecord = new LogRecord(Level.INFO, message);
-        Optional.ofNullable(t).ifPresent(logRecord::setThrown);
-        logs.put(logRecord.getSequenceNumber(), logRecord);
-    }
-
     @Override
     public void deconstruct() {
         super.deconstruct();
@@ -235,7 +230,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         if ( ! execution.isDone()) return TestRunner.Status.RUNNING;
         try {
             return execution.get() == null ? Status.NO_TESTS : execution.get().status();
-        } catch (InterruptedException|ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             logger.log(Level.WARNING, "Error while getting test report", e);
             return TestRunner.Status.ERROR;
         }
