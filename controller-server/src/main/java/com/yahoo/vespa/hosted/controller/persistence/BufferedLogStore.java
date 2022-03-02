@@ -18,6 +18,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * Stores logs in bite-sized chunks using a {@link CuratorDb}, and flushes to a
  * {@link com.yahoo.vespa.hosted.controller.api.integration.RunDataStore} when the log is final.
@@ -126,12 +128,21 @@ public class BufferedLogStore {
                                       after);
     }
 
-    public Optional<String> readTestReport(RunId id) {
-        return store.getTestReport(id).map(String::new);
+    public Optional<String> readTestReports(RunId id) {
+        return store.getTestReport(id).map(bytes -> "[" + new String(bytes, UTF_8) + "]");
     }
 
     public void writeTestReport(RunId id, TestReport report) {
-        store.putTestReport(id, report.toJson().getBytes());
+        byte[] bytes = report.toJson().getBytes(UTF_8);
+        Optional<byte[]> existing = store.getTestReport(id);
+        if (existing.isPresent()) {
+            byte[] aggregate = new byte[existing.get().length + 1 + bytes.length];
+            System.arraycopy(existing.get(), 0, aggregate, 0, existing.get().length);
+            aggregate[existing.get().length] = ',';
+            System.arraycopy(bytes, 0, aggregate, existing.get().length + 1, bytes.length);
+            bytes = aggregate;
+        }
+        store.putTestReport(id, bytes);
     }
 
 }

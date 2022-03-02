@@ -8,6 +8,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
+import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
@@ -147,10 +148,16 @@ class JobControllerApiHandlerHelper {
         });
 
         // If a test report is available, include it in the response.
-        Optional<String> testReport = jobController.getTestReport(runId);
+        Optional<String> testReport = jobController.getTestReports(runId);
         testReport.map(SlimeUtils::jsonToSlime)
-                .map(Slime::get)
-                .ifPresent(reportCursor -> SlimeUtils.copyObject(reportCursor, detailsObject.setObject("testReport")));
+                  .map(Slime::get)
+                  .ifPresent(reportArrayCursor -> {
+                      reportArrayCursor.traverse((ArrayTraverser) (i, reportCursor) -> {
+                          if (i > 0) return;
+                          SlimeUtils.copyObject(reportCursor, detailsObject.setObject("testReport"));
+                      });
+                      SlimeUtils.copyArray(reportArrayCursor, detailsObject.setArray("testReports"));
+                  });
 
         return new SlimeJsonResponse(slime);
     }

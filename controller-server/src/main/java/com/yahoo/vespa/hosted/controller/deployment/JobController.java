@@ -3,11 +3,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
-import com.yahoo.config.application.api.DeploymentInstanceSpec;
-import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -28,15 +24,12 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageDiff;
-import com.yahoo.vespa.hosted.controller.application.pkg.ZipStreamReader;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
-import java.io.ByteArrayInputStream;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -52,13 +45,10 @@ import java.util.TreeMap;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.config.provision.Environment.prod;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
@@ -74,7 +64,6 @@ import static java.util.function.Predicate.not;
 import static java.util.logging.Level.INFO;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
@@ -219,8 +208,8 @@ public class JobController {
         });
     }
 
-    public Optional<String> getTestReport(RunId id) {
-        return logs.readTestReport(id);
+    public Optional<String> getTestReports(RunId id) {
+        return logs.readTestReports(id);
     }
 
     /** Stores the given certificate as the tester certificate for this run, or throws if it's already set. */
