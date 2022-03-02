@@ -42,11 +42,11 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 		if err != nil {
 			return err
 		}
-		app, err := getApplication()
+		target, err := getTarget()
 		if err != nil {
 			return err
 		}
-		service, err := getService(curlService, 0, "")
+		service, err := target.Service(curlService, 0, 0, "")
 		if err != nil {
 			return err
 		}
@@ -58,26 +58,14 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 		}
 		switch curlService {
 		case vespa.DeployService:
-			t, err := getTarget()
-			if err != nil {
-				return err
-			}
-			if t.Type() == vespa.TargetCloud {
-				if err := addCloudAuth0Authentication(t.Deployment().System, cfg, c); err != nil {
+			if target.Type() == vespa.TargetCloud {
+				if err := addCloudAuth0Authentication(target.Deployment().System, cfg, c); err != nil {
 					return err
 				}
 			}
 		case vespa.DocumentService, vespa.QueryService:
-			privateKeyFile, err := cfg.PrivateKeyPath(app)
-			if err != nil {
-				return err
-			}
-			certificateFile, err := cfg.CertificatePath(app)
-			if err != nil {
-				return err
-			}
-			c.PrivateKey = privateKeyFile
-			c.Certificate = certificateFile
+			c.PrivateKey = service.TLSOptions.PrivateKeyFile
+			c.Certificate = service.TLSOptions.CertificateFile
 		default:
 			return fmt.Errorf("service not found: %s", curlService)
 		}
