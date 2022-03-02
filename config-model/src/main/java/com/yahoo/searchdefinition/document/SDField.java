@@ -7,6 +7,7 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.StructDataType;
+import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
@@ -165,11 +166,11 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         populate(populate, repo, name, dataType, fieldMatching, recursion);
     }
 
-    public SDField(SDDocumentType repo,  String name, DataType dataType) {
-        this(repo, name,dataType, true);
+    public SDField(SDDocumentType repo, String name, DataType dataType) {
+        this(repo, name, dataType, true);
     }
     public SDField(String name, DataType dataType) {
-        this(null, name,dataType);
+        this(null, name, dataType);
     }
 
     private void populate(boolean populate, SDDocumentType repo, String name, DataType dataType) {
@@ -266,32 +267,41 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         }
     }
 
+    @SuppressWarnings("deprecation")
     public void populateWithStructFields(SDDocumentType sdoc, String name, DataType dataType, int recursion) {
         DataType dt = getFirstStructOrMapRecursive();
         if (dt == null) return;
 
+        java.util.function.BiConsumer<String, DataType> supplyStructField = (fieldName, fieldType) -> {
+            if (structFields.containsKey(fieldName)) return;
+            String subName = name.concat(".").concat(fieldName);
+            var subField = new SDField(sdoc, subName, fieldType,
+                                       ownerDocType, new Matching(),
+                                       true, recursion + 1);
+            structFields.put(fieldName, subField);
+        };
+
         if (dataType instanceof MapDataType) {
             MapDataType mdt = (MapDataType) dataType;
-            SDField keyField = new SDField(sdoc, name.concat(".key"), mdt.getKeyType(),
-                                           ownerDocType, new Matching(), true, recursion + 1);
-            structFields.put("key", keyField);
-            SDField valueField = new SDField(sdoc, name.concat(".value"), mdt.getValueType(),
-                                             ownerDocType, new Matching(), true, recursion + 1);
-            structFields.put("value", valueField);
+            supplyStructField.accept("key", mdt.getKeyType());
+            supplyStructField.accept("value", mdt.getValueType());
         } else {
             if (recursion >= 10) return;
             if (dataType instanceof CollectionDataType) {
                 dataType = ((CollectionDataType)dataType).getNestedType();
             }
-            if (dataType instanceof StructDataType) {
+            if (dataType instanceof TemporaryStructuredDataType) {
                 SDDocumentType subType = sdoc != null ? sdoc.getType(dataType.getName()) : null;
                 if (subType == null) {
                     throw new IllegalArgumentException("Could not find struct '" + dataType.getName() + "'.");
                 }
                 for (Field field : subType.fieldSet()) {
-                    SDField subField = new SDField(sdoc, name.concat(".").concat(field.getName()), field.getDataType(),
-                                                   ownerDocType, new Matching(), true, recursion + 1);
-                    structFields.putIfAbsent(field.getName(), subField);
+                    supplyStructField.accept(field.getName(), field.getDataType());
+                }
+            } else if (dataType instanceof StructDataType) {
+                var sdt = (StructDataType) dataType;
+                for (Field field : sdt.getFields()) {
+                    supplyStructField.accept(field.getName(), field.getDataType());
                 }
             }
         }
