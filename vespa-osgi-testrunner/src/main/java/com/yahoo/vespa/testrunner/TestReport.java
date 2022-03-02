@@ -10,6 +10,7 @@ import static com.yahoo.vespa.testrunner.TestRunner.Status.FAILURE;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.INCONCLUSIVE;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.NO_TESTS;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.SUCCESS;
+import static java.util.Arrays.copyOf;
 
 /**
  * @author mortent
@@ -117,6 +118,30 @@ public class TestReport {
             return exception;
         }
 
+    }
+
+    /**
+     * Recursively trims stack traces for the given throwable and its causes/suppressed.
+     * This is based on the assumption that the relevant stack is anything above the first native
+     * reflection invocation, above any frame in the given root class.
+     */
+    static void trimStackTraces(Throwable thrown, String testFrameworkRootClass) {
+        if (thrown == null)
+            return;
+
+        StackTraceElement[] stack = thrown.getStackTrace();
+        int i = stack.length;
+        boolean rootedInTestFramework = false;
+        while (--i > 0 && ! stack[i].isNativeMethod()) // Native method invokes the first user test frame.
+            rootedInTestFramework |= testFrameworkRootClass.equals(stack[i].getClassName());
+
+        if (rootedInTestFramework && i > 0)
+            thrown.setStackTrace(copyOf(stack, i));
+
+        for (Throwable suppressed : thrown.getSuppressed())
+            trimStackTraces(suppressed, testFrameworkRootClass);
+
+        trimStackTraces(thrown.getCause(), testFrameworkRootClass);
     }
 
 }

@@ -198,7 +198,10 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         launcher.execute(discoveryRequest);
         var report = summaryListener.getSummary();
         var failures = report.getFailures().stream()
-                .map(failure -> new TestReport.Failure(failure.getTestIdentifier().getUniqueId(), failure.getException()))
+                .map(failure -> {
+                    TestReport.trimStackTraces(failure.getException(), JunitRunner.class.getName());
+                    return new TestReport.Failure(failure.getTestIdentifier().getUniqueId(), failure.getException());
+                })
                 .collect(Collectors.toList());
         long inconclusive = isProductionTest ? failures.stream()
                                                        .filter(failure -> failure.exception() instanceof InconclusiveTestException)
