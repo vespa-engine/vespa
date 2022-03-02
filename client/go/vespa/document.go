@@ -104,7 +104,7 @@ func sendOperation(documentId string, jsonFile string, service *Service, operati
 		Body:   ioutil.NopCloser(bytes.NewReader(documentData)),
 	}
 	response, err := serviceDo(service, request, jsonFile, options)
-	if response == nil {
+	if err != nil {
 		return util.Failure("Request failed: " + err.Error())
 	}
 
@@ -179,7 +179,7 @@ func Get(documentId string, service *Service, options OperationOptions) util.Ope
 		Method: "GET",
 	}
 	response, err := serviceDo(service, request, "", options)
-	if response == nil {
+	if err != nil {
 		return util.Failure("Request failed: " + err.Error())
 	}
 
