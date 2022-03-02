@@ -342,6 +342,12 @@ func getEndpointsFromEnv() (map[string]string, error) {
 	return urlsByCluster, nil
 }
 
+// isCI returns true if running inside a continuous integration environment.
+func isCI() bool {
+	_, ok := os.LookupEnv("CI")
+	return ok
+}
+
 type endpoints struct {
 	Endpoints []endpoint `json:"endpoints"`
 }
