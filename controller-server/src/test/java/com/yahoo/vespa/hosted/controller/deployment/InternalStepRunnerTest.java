@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.AthenzDomain;
@@ -22,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -54,7 +54,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.app
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.instanceId;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
@@ -345,6 +344,7 @@ public class InternalStepRunnerTest {
         RunId id = app.startSystemTestTests();
         tester.cloud().add(new LogEntry(0, Instant.ofEpochMilli(123), info, "Not enough data!"));
         tester.cloud().set(TesterCloud.Status.INCONCLUSIVE);
+        tester.cloud().testReport(TestReport.fromJson("{\"foo\":1}"));
 
         long lastId1 = tester.jobs().details(id).get().lastId().getAsLong();
         Instant instant1 = tester.clock().instant();
@@ -371,6 +371,7 @@ public class InternalStepRunnerTest {
         assertTrue(tester.jobs().run(id).get().steps().get(Step.endTests).startTime().isPresent());
 
         tester.cloud().set(TesterCloud.Status.SUCCESS);
+        tester.cloud().testReport(TestReport.fromJson("{\"bar\":2}"));
         long lastId2 = tester.jobs().details(id).get().lastId().getAsLong();
         tester.runner().run();
         assertEquals(success, tester.jobs().run(id).get().status());
@@ -381,6 +382,8 @@ public class InternalStepRunnerTest {
                              new LogEntry(lastId1 + 15, instant1, info, "### Run will reset, and start over at " + instant1.plusSeconds(900).truncatedTo(SECONDS)),
                              new LogEntry(lastId1 + 16, instant1, info, ""),
                              new LogEntry(lastId2 + 1, tester.clock().instant(), info, "Tests completed successfully."));
+
+        assertEquals("[{\"foo\":1},{\"bar\":2}]", tester.jobs().getTestReports(id).get());
     }
 
     @Test

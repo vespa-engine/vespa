@@ -62,7 +62,10 @@ public class SlimeUtils {
         }
     }
 
-    private static void copyArray(Inspector from, Cursor to) {
+    public static void copyArray(Inspector from, Cursor to) {
+        if (from.type() != Type.ARRAY) {
+            throw new IllegalArgumentException("Cannot copy array: " + from);
+        }
         from.traverse((ArrayTraverser) (i, inspector) -> addValue(inspector, to));
     }
 

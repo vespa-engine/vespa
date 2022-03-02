@@ -397,5 +397,13 @@
       "success": 1,
       "failed": 0
     }
-  }
+  },
+  "testReports": [
+    {
+      "summary": {
+        "success": 1,
+        "failed": 0
+      }
+    }
+  ]
 }
