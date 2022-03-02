@@ -153,6 +153,8 @@ TOKEN :
     <MIN: "min"> |
     <PROD: "prod"> |
     <SUM: "sum"> |
+    <TRUE: "true"> |
+    <FALSE: "false"> |
 
     <IDENTIFIER: (["A"-"Z","a"-"z","0"-"9","_","@"](["A"-"Z","a"-"z","0"-"9","_","@","$"])*)>
 }
@@ -797,7 +799,9 @@ String identifier() :
     func = binaryFunctionName() { return func.toString(); } |
     <IF>                        { return token.image; }     |
     <IN>                        { return token.image; }     |
-    <IDENTIFIER>                { return token.image; }
+    <IDENTIFIER>                { return token.image; }     |
+    <TRUE>                      { return token.image; }     |
+    <FALSE>                     { return token.image; }
 }
 
 List<String> identifierList() :
@@ -854,23 +858,12 @@ ExpressionNode constantPrimitive(boolean negate) :
       ( <INTEGER> { value = token.image; } |
         <FLOAT> { value = token.image; }
       ) { node = new ConstantNode(Value.parse(negate ? ("-" + value) : value)); } |
-      <STRING> {
-        value = token.image;
-        node = new ConstantNode(Value.parse(value));
+      ( <STRING> | <TRUE> | <FALSE> ) {
+        node = new ConstantNode(Value.parse(token.image));
         if (negate) node = new NegativeNode(node);
       }
     )
     { return node; }
-}
-
-Value primitiveValue() :
-{
-    String sign = "";
-}
-{
-    ( <SUB> { sign = "-";} ) ?
-    ( <INTEGER> | <FLOAT> | <STRING> )
-    { return Value.parse(sign + token.image); }
 }
 
 TensorFunctionNode tensorValueBody(TensorType type, List dimensionOrder) :
