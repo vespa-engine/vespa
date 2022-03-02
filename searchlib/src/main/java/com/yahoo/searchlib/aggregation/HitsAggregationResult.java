@@ -23,7 +23,7 @@ public class HitsAggregationResult extends AggregationResult {
     public static final int classId = registerClass(0x4000 + 87, HitsAggregationResult.class);
     private String summaryClass = "default";
     private int maxHits = -1;
-    private List<Hit> hits = new ArrayList<Hit>();
+    private List<Hit> hits = new ArrayList<>();
 
     /**
      * Constructs an empty result node.

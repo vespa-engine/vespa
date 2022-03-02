@@ -6,7 +6,7 @@ import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.Relevance;
 
 /**
- * This class represents a single group in the grouping result model. A group may contain any number of results (stored
+ * A single group in the grouping result model. A group may contain any number of results (stored
  * as fields, use {@link #getField(String)} to access), {@link GroupList} and {@link HitList}. Use the {@link
  * com.yahoo.search.grouping.GroupingRequest#getResultGroup(com.yahoo.search.Result)} to retrieve an instance of this.
  *

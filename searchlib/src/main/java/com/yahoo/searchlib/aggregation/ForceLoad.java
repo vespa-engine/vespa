@@ -28,11 +28,11 @@ public class ForceLoad {
                 "hll.SparseSketch",
                 "hll.NormalSketch"
         };
-        com.yahoo.system.ForceLoad.forceLoad(pkg, classes,
-                                             ForceLoad.class.getClassLoader());
+        com.yahoo.system.ForceLoad.forceLoad(pkg, classes, ForceLoad.class.getClassLoader());
     }
 
     public static boolean forceLoad() {
         return true;
     }
+
 }

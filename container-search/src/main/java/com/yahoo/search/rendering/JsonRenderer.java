@@ -401,8 +401,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private void renderGroupingGroupSyntheticFields(Hit hit) throws IOException {
         renderGroupMetadata(((Group) hit).getGroupId());
         if (hit instanceof RootGroup) {
-            renderContinuations(Collections.singletonMap(
-                    Continuation.THIS_PAGE, ((RootGroup) hit).continuation()));
+            renderContinuations(Map.of(Continuation.THIS_PAGE, ((RootGroup) hit).continuation()));
         }
     }
 
@@ -732,23 +731,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             return object;
         }
 
-        private static Inspector wrapAsMap(Inspector data) {
-            if (data.type() != Type.ARRAY) return null;
-            if (data.entryCount() == 0) return null;
-            Value.ObjectValue map = new Value.ObjectValue();
-            for (int i = 0; i < data.entryCount(); i++) {
-                Inspector obj = data.entry(i);
-                if (obj.type() != Type.OBJECT) return null;
-                if (obj.fieldCount() != 2) return null;
-                Inspector key = obj.field("key");
-                Inspector value = obj.field("value");
-                if (key.type() != Type.STRING) return null;
-                if (! value.valid()) return null;
-                map.put(key.asString(), value);
-            }
-            return map;
-        }
-
         private Inspector deepMaybeConvert(Inspector data) {
             if (data.type() == Type.ARRAY) {
                 if (settings.jsonDeepMaps) {
@@ -786,7 +768,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             return data;
         }
 
-        private Inspector maybeConvertData(Inspector data) throws IOException {
+        private Inspector maybeConvertData(Inspector data) {
             if (data.type() == Type.ARRAY) {
                 return convertTopLevelArray(data);
             }
