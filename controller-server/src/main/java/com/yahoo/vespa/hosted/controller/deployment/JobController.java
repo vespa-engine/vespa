@@ -36,6 +36,7 @@ import java.io.ByteArrayInputStream;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -67,6 +68,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Comparator.naturalOrder;
 import static java.util.function.Predicate.not;
 import static java.util.logging.Level.INFO;
@@ -389,7 +391,11 @@ public class JobController {
 
             locked(id, run -> {
                 // If run should be reset, just return here.
-                if (run.status() == reset) return run.reset();
+                if (run.status() == reset) {
+                    for (Step step : run.steps().keySet())
+                        log(id, step, INFO, List.of("### Run will reset, and start over at " + run.sleepUntil().orElse(controller.clock().instant()).truncatedTo(SECONDS), ""));
+                    return run.reset();
+                }
                 if (run.status() == running && run.stepStatuses().values().stream().anyMatch(not(succeeded::equals))) return run;
 
                 // Store the modified run after it has been written to history, in case the latter fails.
