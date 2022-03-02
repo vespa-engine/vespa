@@ -133,6 +133,7 @@ public class ProvisioningTester {
         b.addFlavor("dockerLarge", 2., 10., 20, 1, Flavor.Type.DOCKER_CONTAINER).cost(3);
         b.addFlavor("v-4-8-100", 4., 80., 100, 10, Flavor.Type.VIRTUAL_MACHINE).cost(4);
         b.addFlavor("large", 4., 80., 100, 10, Flavor.Type.BARE_METAL).cost(10);
+        b.addFlavor("arm64", 4., 80., 100, 10, Flavor.Type.BARE_METAL, NodeResources.Architecture.arm64).cost(15);
         return b.build();
     }
 
