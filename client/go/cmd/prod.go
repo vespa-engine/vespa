@@ -152,14 +152,12 @@ $ vespa prod submit`,
 				"The application must be a Java maven project, or include basic HTTP tests under src/test/application/",
 				"See https://cloud.vespa.ai/en/getting-to-production")
 		}
-		// TODO: Always verify tests. Do it before packaging, when running Maven from this CLI.
-		if !pkg.IsZip() {
-			verifyTests(pkg.TestPath, target)
+		if err := verifyTests(pkg, target); err != nil {
+			return err
 		}
 		isCI := os.Getenv("CI") != ""
 		if !isCI {
-			fmt.Fprintln(stderr, color.Yellow("Warning:"), "We recommend doing this only from a CD job")
-			printErrHint(nil, "See https://cloud.vespa.ai/en/getting-to-production")
+			printWarning("We recommend doing this only from a CD job", "See https://cloud.vespa.ai/en/getting-to-production")
 		}
 		opts, err := getDeploymentOptions(cfg, pkg, target)
 		if err != nil {
@@ -375,11 +373,30 @@ func prompt(r *bufio.Reader, question, defaultAnswer string, validator func(inpu
 	return input, nil
 }
 
-func verifyTests(testsParent string, target vespa.Target) {
-	verifyTest(testsParent, "system-test", target, true)
-	verifyTest(testsParent, "staging-setup", target, true)
-	verifyTest(testsParent, "staging-test", target, true)
-	verifyTest(testsParent, "production-test", target, false)
+func verifyTests(app vespa.ApplicationPackage, target vespa.Target) error {
+	// TODO: system-test, staging-setup and staging-test should be required if the application
+	//       does not have any Java tests.
+	suites := map[string]bool{
+		"system-test":     false,
+		"staging-setup":   false,
+		"staging-test":    false,
+		"production-test": false,
+	}
+	testPath := app.TestPath
+	if app.IsZip() {
+		path, err := app.Unzip(true)
+		if err != nil {
+			return err
+		}
+		defer os.RemoveAll(path)
+		testPath = path
+	}
+	for suite, required := range suites {
+		if err := verifyTest(testPath, suite, target, required); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func verifyTest(testsParent string, suite string, target vespa.Target, required bool) error {
