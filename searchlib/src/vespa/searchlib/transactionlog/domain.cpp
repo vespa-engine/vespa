@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/retain_guard.h>
 #include <vespa/fastos/file.h>
@@ -43,14 +44,11 @@ Domain::Domain(const string &domainName, const string & baseDir, vespalib::Execu
       _singleCommitter(std::make_unique<vespalib::ThreadStackExecutor>(1, 128_Ki)),
       _executor(executor),
       _sessionId(1),
-      _syncMonitor(),
-      _pendingSync(false),
-      _done_sync_tasks(),
       _name(domainName),
       _parts(),
-      _lock(),
-      _currentChunkMonitor(),
-      _sessionLock(),
+      _partsMutex(),
+      _currentChunkMutex(),
+      _sessionMutex(),
       _sessions(),
       _maxSessionRunTime(),
       _baseDir(baseDir),
@@ -102,7 +100,7 @@ Domain::addPart(SerialNum partId, bool isLastPart) {
         dp->erase(dp->range().to() + 1);
     } else {
         {
-            std::lock_guard guard(_lock);
+            std::lock_guard guard(_partsMutex);
             _parts[partId] = dp;
         }
         if (! isLastPart) {
@@ -112,16 +110,19 @@ Domain::addPart(SerialNum partId, bool isLastPart) {
 }
 
 Domain::~Domain() {
-    std::unique_lock guard(_currentChunkMonitor);
-    _currentChunkCond.notify_all();
-    commitChunk(grabCurrentChunk(guard), guard);
-    _singleCommitter->shutdown().sync();
+    {
+        std::unique_lock guard(_currentChunkMutex);
+        commitChunk(grabCurrentChunk(guard), guard);
+    }
+    vespalib::Gate gate;
+    _singleCommitter->execute(makeLambdaTask([callback=std::make_unique<vespalib::GateCallback>(gate)]() { (void) callback;}));
+    gate.await();
 }
 
 DomainInfo
 Domain::getDomainInfo() const
 {
-    std::unique_lock guard(_lock);
+    std::unique_lock guard(_partsMutex);
     DomainInfo info(SerialNumRange(begin(guard), end(guard)), size(guard), byteSize(guard), _maxSessionRunTime);
     for (const auto &entry: _parts) {
         const DomainPart &part = *entry.second;
@@ -133,12 +134,12 @@ Domain::getDomainInfo() const
 SerialNum
 Domain::begin() const
 {
-    return begin(UniqueLock(_lock));
+    return begin(UniqueLock(_partsMutex));
 }
 
 void
 Domain::verifyLock(const UniqueLock & guard) const {
-    assert(guard.mutex() == &_lock);
+    assert(guard.mutex() == &_partsMutex);
     assert(guard.owns_lock());
 }
 SerialNum
@@ -155,7 +156,7 @@ Domain::begin(const UniqueLock & guard) const
 SerialNum
 Domain::end() const
 {
-    return end(UniqueLock(_lock));
+    return end(UniqueLock(_partsMutex));
 }
 
 SerialNum
@@ -172,7 +173,7 @@ Domain::end(const UniqueLock & guard) const
 size_t
 Domain::byteSize() const
 {
-    return byteSize(UniqueLock(_lock));
+    return byteSize(UniqueLock(_partsMutex));
 }
 
 size_t
@@ -191,7 +192,7 @@ SerialNum
 Domain::getSynced() const
 {
     SerialNum s(0);
-    UniqueLock guard(_lock);
+    UniqueLock guard(_partsMutex);
     if (_parts.empty()) {
         return s;
     }
@@ -207,41 +208,22 @@ Domain::getSynced() const
 
 
 void
-Domain::triggerSyncNow(std::unique_ptr<vespalib::Executor::Task> done_sync_task)
+Domain::triggerSyncNow(std::unique_ptr<vespalib::IDestructorCallback> after_sync)
 {
     {
-        std::unique_lock guard(_currentChunkMonitor);
+        std::unique_lock guard(_currentChunkMutex);
         commitAndTransferResponses(guard);
     }
-    if (done_sync_task) {
-        // Need to protect against being called from the _singleCommitter as that will cause a deadlock
-        // That is done from Domain::commitChunk.lamdba->Domain::doCommit()->optionallyRotateFile->triggerSyncNow({})
-        _singleCommitter->sync();
-    }
-    std::unique_lock guard(_syncMonitor);
-    if (done_sync_task) {
-        _done_sync_tasks.push_back(std::move(done_sync_task));
-    }
-    if (!_pendingSync) {
-        _pendingSync = true;
-        _executor.execute(makeLambdaTask([this, domainPart= getActivePart()]() {
-            domainPart->sync();
-            std::lock_guard monitorGuard(_syncMonitor);
-            _pendingSync = false;
-            _syncCond.notify_all();
-            for (auto &task : _done_sync_tasks) {
-                auto failed_task = _executor.execute(std::move(task));
-                assert(!failed_task);
-            }
-            _done_sync_tasks.clear();
-        }));
-    }
+    _singleCommitter->execute(makeLambdaTask([after_sync=std::move(after_sync), domainPart=getActivePart()]() {
+        (void) after_sync;
+        domainPart->sync();
+    }));
 }
 
 DomainPart::SP
 Domain::findPart(SerialNum s)
 {
-    std::lock_guard guard(_lock);
+    std::lock_guard guard(_partsMutex);
     DomainPartList::iterator it(_parts.upper_bound(s));
     if (!_parts.empty() && it != _parts.begin()) {
         DomainPartList::iterator prev(it);
@@ -258,14 +240,14 @@ Domain::findPart(SerialNum s)
 
 DomainPart::SP
 Domain::getActivePart() {
-    std::lock_guard guard(_lock);
+    std::lock_guard guard(_partsMutex);
     return _parts.rbegin()->second;
 }
 
 uint64_t
 Domain::size() const
 {
-    return size(UniqueLock(_lock));
+    return size(UniqueLock(_partsMutex));
 }
 
 uint64_t
@@ -283,7 +265,7 @@ SerialNum
 Domain::findOldestActiveVisit() const
 {
     SerialNum oldestActive(std::numeric_limits<SerialNum>::max());
-    std::lock_guard guard(_sessionLock);
+    std::lock_guard guard(_sessionMutex);
     for (const auto & pair : _sessions) {
         Session * session(pair.second.get());
         if (!session->inSync()) {
@@ -299,7 +281,7 @@ Domain::cleanSessions()
     if ( _sessions.empty()) {
         return;
     }
-    std::lock_guard guard(_sessionLock);
+    std::lock_guard guard(_sessionMutex);
     for (SessionList::iterator it(_sessions.begin()), mt(_sessions.end()); it != mt; ) {
         Session * session(it->second.get());
         if (session->inSync()) {
@@ -312,30 +294,14 @@ Domain::cleanSessions()
     }
 }
 
-namespace {
-
-void
-waitPendingSync(std::mutex &syncMonitor, std::condition_variable & syncCond, bool &pendingSync)
-{
-    std::unique_lock guard(syncMonitor);
-    while (pendingSync) {
-        syncCond.wait(guard);
-    }
-}
-
-}
-
 DomainPart::SP
 Domain::optionallyRotateFile(SerialNum serialNum) {
     DomainPart::SP dp = getActivePart();
     if (dp->byteSize() > _config.getPartSizeLimit()) {
-        waitPendingSync(_syncMonitor, _syncCond, _pendingSync);
-        triggerSyncNow({});
-        waitPendingSync(_syncMonitor, _syncCond, _pendingSync);
         dp->close();
         dp = std::make_shared<DomainPart>(_name, dir(), serialNum, _fileHeaderContext, false);
         {
-            std::lock_guard guard(_lock);
+            std::lock_guard guard(_partsMutex);
             _parts[serialNum] = dp;
             assert(_parts.rbegin()->first == serialNum);
         }
@@ -346,7 +312,7 @@ Domain::optionallyRotateFile(SerialNum serialNum) {
 
 void
 Domain::append(const Packet & packet, Writer::DoneCallback onDone) {
-    std::unique_lock guard(_currentChunkMonitor);
+    std::unique_lock guard(_currentChunkMutex);
     if (_lastSerial >= packet.range().from()) {
         throw runtime_error(fmt("Incoming serial number(%" PRIu64 ") must be bigger than the last one (%" PRIu64 ").",
                                 packet.range().from(), _lastSerial));
@@ -359,7 +325,7 @@ Domain::append(const Packet & packet, Writer::DoneCallback onDone) {
 
 Domain::CommitResult
 Domain::startCommit(DoneCallback onDone) {
-    std::unique_lock guard(_currentChunkMonitor);
+    std::unique_lock guard(_currentChunkMutex);
     if ( !_currentChunk->empty() ) {
         auto completed = grabCurrentChunk(guard);
         completed->setCommitDoneCallback(std::move(onDone));
@@ -386,7 +352,7 @@ Domain::commitAndTransferResponses(const UniqueLock &guard) {
 
 std::unique_ptr<CommitChunk>
 Domain::grabCurrentChunk(const UniqueLock & guard) {
-    assert(guard.mutex() == &_currentChunkMonitor && guard.owns_lock());
+    assert(guard.mutex() == &_currentChunkMutex && guard.owns_lock());
     auto chunk = std::move(_currentChunk);
     _currentChunk = createCommitChunk(_config);
     return chunk;
@@ -394,7 +360,7 @@ Domain::grabCurrentChunk(const UniqueLock & guard) {
 
 void
 Domain::commitChunk(std::unique_ptr<CommitChunk> chunk, const UniqueLock & chunkOrderGuard) {
-    assert(chunkOrderGuard.mutex() == &_currentChunkMonitor && chunkOrderGuard.owns_lock());
+    assert(chunkOrderGuard.mutex() == &_currentChunkMutex && chunkOrderGuard.owns_lock());
     if (chunk->getPacket().empty()) return;
     chunk->shrinkPayloadToFit();
     std::promise<SerializedChunk> promise;
@@ -429,7 +395,7 @@ Domain::erase(SerialNum to)
 {
     bool retval(true);
     /// Do not erase the last element
-    UniqueLock guard(_lock);
+    UniqueLock guard(_partsMutex);
     for (DomainPartList::iterator it(_parts.begin()); (_parts.size() > 1) && (it->second.get()->range().to() < to); it = _parts.begin()) {
         DomainPart::SP dp(it->second);
         _parts.erase(it);
@@ -452,7 +418,7 @@ Domain::visit(const Domain::SP & domain, SerialNum from, SerialNum to, std::uniq
     SerialNumRange range(from, to);
     auto session = std::make_shared<Session>(_sessionId++, range, domain, std::move(dest));
     int id = session->id();
-    std::lock_guard guard(_sessionLock);
+    std::lock_guard guard(_sessionMutex);
     _sessions[id] = std::move(session);
     return id;
 }
@@ -461,7 +427,7 @@ int
 Domain::startSession(int sessionId)
 {
     int retval(-1);
-    std::lock_guard guard(_sessionLock);
+    std::lock_guard guard(_sessionMutex);
     SessionList::iterator found = _sessions.find(sessionId);
     if (found != _sessions.end()) {
         found->second->setStartTime(vespalib::steady_clock::now());
@@ -480,7 +446,7 @@ Domain::closeSession(int sessionId)
     int retval(-1);
     DurationSeconds sessionRunTime(0);
     {
-        std::lock_guard guard(_sessionLock);
+        std::lock_guard guard(_sessionMutex);
         SessionList::iterator found = _sessions.find(sessionId);
         if (found != _sessions.end()) {
             sessionRunTime = (vespalib::steady_clock::now() - found->second->getStartTime());
@@ -489,7 +455,7 @@ Domain::closeSession(int sessionId)
     }
     while (retval == 1) {
         std::this_thread::sleep_for(10ms);
-        std::lock_guard guard(_sessionLock);
+        std::lock_guard guard(_sessionMutex);
         SessionList::iterator found = _sessions.find(sessionId);
         if (found != _sessions.end()) {
             if ( ! found->second->isVisitRunning()) {
@@ -501,7 +467,7 @@ Domain::closeSession(int sessionId)
         }
     }
     {
-        std::lock_guard guard(_lock);
+        std::lock_guard guard(_partsMutex);
         if (sessionRunTime > _maxSessionRunTime) {
             _maxSessionRunTime = sessionRunTime;
         }

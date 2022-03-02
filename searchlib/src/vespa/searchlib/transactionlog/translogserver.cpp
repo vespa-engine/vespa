@@ -9,7 +9,6 @@
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <fstream>
@@ -42,7 +41,7 @@ public:
     SyncHandler(std::atomic<bool>& closed, FRT_RPCRequest *req, Domain::SP domain, SerialNum syncTo) noexcept;
 
     ~SyncHandler();
-    void poll();
+    bool poll();
 };
 
 SyncHandler::SyncHandler(std::atomic<bool>& closed, FRT_RPCRequest *req, Domain::SP domain, SerialNum syncTo) noexcept
@@ -55,7 +54,7 @@ SyncHandler::SyncHandler(std::atomic<bool>& closed, FRT_RPCRequest *req, Domain:
 
 SyncHandler::~SyncHandler() = default;
 
-void
+bool
 SyncHandler::poll()
 {
     SerialNum synced(_domain->getSynced());
@@ -67,9 +66,13 @@ SyncHandler::poll()
         rvals.AddInt32(0);
         rvals.AddInt64(synced);
         _req.Return();
-    } else {
-        _domain->triggerSyncNow(vespalib::makeLambdaTask([self = shared_from_this()]() { self->poll(); }));
+        return true;
     }
+    _domain->triggerSyncNow(vespalib::makeUniqueLambdaCallback([self = shared_from_this()]() {
+        bool completed = self->poll();
+        assert(completed);
+    }));
+    return false;
 }
 
 VESPA_THREAD_STACK_TAG(tls_executor);

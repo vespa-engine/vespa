@@ -37,7 +37,7 @@ using search::queryeval::ISourceSelector;
 using search::queryeval::Source;
 using search::SerialNum;
 using vespalib::makeLambdaTask;
-using vespalib::makeLambdaCallback;
+using vespalib::makeSharedLambdaCallback;
 using std::ostringstream;
 using vespalib::string;
 using vespalib::Executor;
@@ -313,7 +313,7 @@ IndexMaintainer::loadDiskIndex(const string &indexDir)
     _disk_indexes->setActive(indexDir, stats.sizeOnDisk());
     auto retval = std::make_shared<DiskIndexWithDestructorCallback>(
             std::move(index),
-            makeLambdaCallback([this, indexDir]() { deactivateDiskIndexes(indexDir); }),
+            makeSharedLambdaCallback([this, indexDir]() { deactivateDiskIndexes(indexDir); }),
             _layout, *_disk_indexes);
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskIndexLoadComplete(indexDir, vespalib::count_ms(timer.elapsed()));
@@ -336,7 +336,7 @@ IndexMaintainer::reloadDiskIndex(const IDiskIndex &oldIndex)
     _disk_indexes->setActive(indexDir, stats.sizeOnDisk());
     auto retval = std::make_shared<DiskIndexWithDestructorCallback>(
             std::move(index),
-            makeLambdaCallback([this, indexDir]() { deactivateDiskIndexes(indexDir); }),
+            makeSharedLambdaCallback([this, indexDir]() { deactivateDiskIndexes(indexDir); }),
             _layout, *_disk_indexes);
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskIndexLoadComplete(indexDir, vespalib::count_ms(timer.elapsed()));

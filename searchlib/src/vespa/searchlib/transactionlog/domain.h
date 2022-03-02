@@ -35,7 +35,7 @@ public:
     SerialNum begin() const;
     SerialNum end() const;
     SerialNum getSynced() const;
-    void triggerSyncNow(std::unique_ptr<vespalib::Executor::Task> done_sync_task);
+    void triggerSyncNow(std::unique_ptr<vespalib::IDestructorCallback> after_sync);
     bool getMarkedDeleted() const { return _markedDeleted; }
     void markDeleted() { _markedDeleted = true; }
 
@@ -80,23 +80,19 @@ private:
     using SessionList = std::map<int, std::shared_ptr<Session>>;
     using DomainPartList = std::map<SerialNum, DomainPartSP>;
     using DurationSeconds = std::chrono::duration<double>;
+    using Executor = vespalib::Executor;
 
     DomainConfig                 _config;
     std::unique_ptr<CommitChunk> _currentChunk;
     SerialNum                    _lastSerial;
-    std::unique_ptr<vespalib::SyncableThreadExecutor> _singleCommitter;
-    vespalib::Executor          &_executor;
+    std::unique_ptr<Executor>    _singleCommitter;
+    Executor                    &_executor;
     std::atomic<int>             _sessionId;
-    std::mutex                   _syncMonitor;
-    std::condition_variable      _syncCond;
-    bool                         _pendingSync;
-    std::vector<std::unique_ptr<vespalib::Executor::Task>> _done_sync_tasks;
     vespalib::string             _name;
     DomainPartList               _parts;
-    mutable std::mutex           _lock;
-    std::mutex                   _currentChunkMonitor;
-    std::condition_variable      _currentChunkCond;
-    mutable std::mutex           _sessionLock;
+    mutable std::mutex           _partsMutex;
+    std::mutex                   _currentChunkMutex;
+    mutable std::mutex           _sessionMutex;
     SessionList                  _sessions;
     DurationSeconds              _maxSessionRunTime;
     vespalib::string             _baseDir;

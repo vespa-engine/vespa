@@ -6,7 +6,7 @@
 #include <vespa/vespalib/util/destructor_callbacks.h>
 
 using vespalib::makeLambdaTask;
-using vespalib::makeLambdaCallback;
+using vespalib::makeSharedLambdaCallback;
 
 namespace storage::spi::dummy {
 
@@ -32,7 +32,7 @@ DummyBucketExecutor::execute(const Bucket & bucket, std::unique_ptr<BucketTask> 
             }
             _inFlight.insert(bucket.getBucket());
         }
-        bucketTask->run(bucket, makeLambdaCallback([this, bucket]() {
+        bucketTask->run(bucket, makeSharedLambdaCallback([this, bucket]() {
             std::unique_lock guard(_lock);
             assert(_inFlight.contains(bucket.getBucket()));
             _inFlight.erase(bucket.getBucket());
