@@ -4,6 +4,7 @@ package com.yahoo.vespa.testrunner;
 
 import ai.vespa.hosted.cd.InconclusiveTestException;
 import org.junit.platform.engine.TestExecutionResult;
+import org.junit.platform.engine.UniqueId;
 import org.junit.platform.engine.reporting.ReportEntry;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestIdentifier;
@@ -30,7 +31,7 @@ import static java.util.stream.Collectors.joining;
 
 class VespaJunitLogListener implements TestExecutionListener {
 
-    private final Map<String, NavigableMap<Status, List<String>>> results = new ConcurrentSkipListMap<>();
+    private final Map<String, NavigableMap<Status, List<UniqueId>>> results = new ConcurrentSkipListMap<>();
     private final Consumer<LogRecord> logger;
 
     VespaJunitLogListener(Consumer<LogRecord> logger) {
@@ -60,7 +61,7 @@ class VespaJunitLogListener implements TestExecutionListener {
             testIdentifier.getParentId().ifPresent(parent -> {
                 results.computeIfAbsent(parent, __ -> new ConcurrentSkipListMap<>())
                        .computeIfAbsent(Status.skipped, __ -> new CopyOnWriteArrayList<>())
-                       .add(testIdentifier.getDisplayName());
+                       .add(testIdentifier.getUniqueIdObject());
             });
     }
 
@@ -68,7 +69,7 @@ class VespaJunitLogListener implements TestExecutionListener {
     public void executionFinished(TestIdentifier testIdentifier, TestExecutionResult testExecutionResult) {
         if (testIdentifier.isContainer()) {
             if (testIdentifier.getParentIdObject().isPresent()) {
-                NavigableMap<Status, List<String>> children = results.getOrDefault(testIdentifier.getUniqueId(), emptyNavigableMap());
+                NavigableMap<Status, List<UniqueId>> children = results.getOrDefault(testIdentifier.getUniqueId(), emptyNavigableMap());
                 Level level = children.containsKey(Status.failed) ? SEVERE : INFO;
                 log(level,
                     "Tests in " + testIdentifier.getDisplayName() + " done: " +
@@ -76,9 +77,9 @@ class VespaJunitLogListener implements TestExecutionListener {
             }
             else {
                 Map<Status, List<String>> testResults = new HashMap<>();
-                results.forEach((parent, results) -> results.forEach((status, tests) -> tests.forEach(test -> testResults.computeIfAbsent(status, __ -> new ArrayList<>())
-                                                                                                                         .add(parent + "." + test))));
-                log(INFO, "Done running " + testResults.values().stream().mapToInt(List::size).sum() + " tests:");
+                results.forEach((__, results) -> results.forEach((status, tests) -> tests.forEach(test -> testResults.computeIfAbsent(status, ___ -> new ArrayList<>())
+                                                                                                                         .add(toString(test)))));
+                log(INFO, "Done running " + testResults.values().stream().mapToInt(List::size).sum() + " tests.");
                 testResults.forEach((status, tests) -> {
                     if (status != Status.successful)
                         log(status == Status.failed ? SEVERE : status == Status.inconclusive ? INFO : WARNING,
@@ -104,10 +105,14 @@ class VespaJunitLogListener implements TestExecutionListener {
             testIdentifier.getParentId().ifPresent(parent -> {
                 results.computeIfAbsent(parent, __ -> new ConcurrentSkipListMap<>())
                        .computeIfAbsent(status, __ -> new CopyOnWriteArrayList<>())
-                       .add(testIdentifier.getDisplayName());
+                       .add(testIdentifier.getUniqueIdObject());
             });
             log(level, "Test " + status + ": " + testIdentifier.getDisplayName(), testExecutionResult.getThrowable().orElse(null));
         }
+    }
+
+    static String toString(UniqueId testId) {
+        return testId.getSegments().stream().skip(1).map(UniqueId.Segment::getValue).collect(joining("."));
     }
 
     @Override
