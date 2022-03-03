@@ -39,22 +39,22 @@ public:
      *
      * @return true if changed, false if not.
      */
-    bool isChanged() const { return _isChanged; }
+    bool isChanged() const noexcept { return _isChanged; }
 
     /**
      * Returns the last generation that actually changed the config.
      */
-    int64_t getLastGenerationChanged() const { return _lastGenerationChanged; }
+    int64_t getLastGenerationChanged() const noexcept { return _lastGenerationChanged; }
 
     /// Used by ConfigSubscriptionSet
-    SubscriptionId getSubscriptionId() const { return _id; }
-    const ConfigKey & getKey() const { return _key; }
+    SubscriptionId getSubscriptionId() const noexcept { return _id; }
+    const ConfigKey & getKey() const noexcept { return _key; }
     bool nextUpdate(int64_t generation, vespalib::steady_time deadline);
     int64_t getGeneration() const;
     bool hasChanged() const;
     bool hasGenerationChanged() const;
     void flip();
-    void reset() { _isChanged = false; }
+    void reset() noexcept { _isChanged = false; }
     void close();
 
     // Used by ConfigManager

@@ -38,7 +38,7 @@ public:
      *
      * @return generation number
      */
-    int64_t getGeneration() const {
+    int64_t getGeneration() const noexcept {
         return _currentGeneration;
     }
 
@@ -51,7 +51,7 @@ public:
     /**
      * Checks if this subscription set is closed.
      */
-    bool isClosed() const {
+    bool isClosed() const noexcept {
         return (_state.load(std::memory_order_relaxed) == CLOSED);
     }
 
