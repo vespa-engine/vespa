@@ -63,12 +63,6 @@ ConfigSubscription::getGeneration() const
     return _next->getGeneration();
 }
 
-const ConfigKey &
-ConfigSubscription::getKey() const
-{
-    return _key;
-}
-
 void
 ConfigSubscription::close()
 {
@@ -77,24 +71,6 @@ ConfigSubscription::close()
         _holder->interrupt();
         _source->close();
     }
-}
-
-void
-ConfigSubscription::reset()
-{
-    _isChanged = false;
-}
-
-bool
-ConfigSubscription::isChanged() const
-{
-    return _isChanged;
-}
-
-int64_t
-ConfigSubscription::getLastGenerationChanged() const
-{
-    return _lastGenerationChanged;
 }
 
 void

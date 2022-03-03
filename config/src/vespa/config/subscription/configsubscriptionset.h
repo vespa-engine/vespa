@@ -38,7 +38,9 @@ public:
      *
      * @return generation number
      */
-    int64_t getGeneration() const;
+    int64_t getGeneration() const {
+        return _currentGeneration;
+    }
 
     /**
      * Closes the set, which will interrupt acquireSnapshot and unsubscribe all
@@ -49,7 +51,9 @@ public:
     /**
      * Checks if this subscription set is closed.
      */
-    bool isClosed() const;
+    bool isClosed() const {
+        return (_state.load(std::memory_order_relaxed) == CLOSED);
+    }
 
     // Helpers for doing the subscription
     std::shared_ptr<ConfigSubscription> subscribe(const ConfigKey & key, vespalib::duration timeout);

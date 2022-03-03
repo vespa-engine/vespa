@@ -116,12 +116,6 @@ ConfigSubscriptionSet::close()
     }
 }
 
-bool
-ConfigSubscriptionSet::isClosed() const
-{
-    return (_state.load(std::memory_order_relaxed) == CLOSED);
-}
-
 std::shared_ptr<ConfigSubscription>
 ConfigSubscriptionSet::subscribe(const ConfigKey & key, duration timeout)
 {
@@ -133,12 +127,6 @@ ConfigSubscriptionSet::subscribe(const ConfigKey & key, duration timeout)
     std::shared_ptr<ConfigSubscription> s = _mgr.subscribe(key, timeout);
     _subscriptionList.push_back(s);
     return s;
-}
-
-int64_t
-ConfigSubscriptionSet::getGeneration() const
-{
-    return _currentGeneration;
 }
 
 } // namespace config
