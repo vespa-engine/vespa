@@ -15,7 +15,6 @@
 #include "modificationstatus.h"
 #include <vespa/document/util/xmlserializable.h>
 #include <vespa/document/base/fieldpath.h>
-#include <vespa/vespalib/objects/cloneable.h>
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/util/polymorphicarraybase.h>
 

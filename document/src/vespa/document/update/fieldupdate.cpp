@@ -70,7 +70,7 @@ FieldUpdate::applyTo(Document& doc) const
     const DataType& datatype = _field.getDataType();
     FieldValue::UP value = doc.getValue(_field);
 
-    for (const ValueUpdate::CP & update : _updates) {
+    for (const auto & update : _updates) {
         if ( ! value) {
             // Avoid passing a null pointer to a value update.
             value = datatype.createFieldValue();

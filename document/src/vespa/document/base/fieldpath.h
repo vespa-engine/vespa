@@ -2,7 +2,6 @@
 #pragma once
 
 #include "field.h"
-#include <vespa/vespalib/objects/cloneable.h>
 #include <vespa/document/util/identifiableid.h>
 #include <vector>
 

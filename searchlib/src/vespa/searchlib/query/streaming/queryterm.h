@@ -9,7 +9,6 @@
 #include <vespa/searchlib/query/weight.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/memory.h>
 
 namespace search::streaming {
 
@@ -87,7 +86,7 @@ public:
     void setIndex(const string & index_) override { _index = index_; }
     const string & getIndex() const override { return _index; }
 protected:
-    using QueryNodeResultBaseContainer = vespalib::CloneablePtr<QueryNodeResultBase>;
+    using QueryNodeResultBaseContainer = std::unique_ptr<QueryNodeResultBase>;
     string                       _index;
     EncodingBitMap               _encoding;
     QueryNodeResultBaseContainer _result;

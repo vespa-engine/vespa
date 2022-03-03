@@ -7,7 +7,6 @@
  */
 #pragma once
 
-#include <vespa/vespalib/objects/cloneable.h>
 #include <vespa/vespalib/objects/identifiable.h>
 
 #include <vespa/document/util/identifiableid.h>
@@ -23,8 +22,7 @@ class DocumentType;
 class WeightedSetDataType;
 class FieldPath;
 
-class DataType : public vespalib::Cloneable,
-                 public Printable,
+class DataType : public Printable,
                  public vespalib::Identifiable
 {
     int _dataTypeId;
@@ -47,9 +45,8 @@ protected:
 
 public:
     ~DataType() override;
-    typedef std::unique_ptr<DataType> UP;
-    typedef std::shared_ptr<DataType> SP;
-    typedef vespalib::CloneablePtr<DataType> CP;
+    using UP = std::unique_ptr<DataType>;
+    using SP = std::shared_ptr<DataType>;
 
     /**
      * Enumeration of primitive data type identifiers. (Complex types uses
@@ -110,7 +107,7 @@ public:
      * Create a field value using this datatype.
      */
     virtual std::unique_ptr<FieldValue> createFieldValue() const = 0;
-    DataType* clone() const override = 0;
+    virtual DataType* clone() const = 0;
 
     /**
      * Whether another datatype is a supertype of this one. Document types may
