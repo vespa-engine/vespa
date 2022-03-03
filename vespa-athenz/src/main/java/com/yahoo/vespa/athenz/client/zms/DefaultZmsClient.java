@@ -406,6 +406,17 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
         execute(request, response -> readEntity(response, Void.class));
     }
 
+    public boolean isSelfServeRole(AthenzRole role) {
+        URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s", role.domain().getName(), role.roleName()));
+        var request = RequestBuilder.get(uri).build();
+        var roleEntity = execute(request, response -> readEntity(response, RoleEntity.class));
+
+        if (roleEntity.selfServe() == null || roleEntity.reviewEnabled() == null)
+            return false;
+
+        return roleEntity.selfServe() && roleEntity.reviewEnabled();
+    }
+
     private static Header createCookieHeader(OAuthCredentials oAuthCredentials) {
         return new BasicHeader("Cookie", oAuthCredentials.asCookie());
     }

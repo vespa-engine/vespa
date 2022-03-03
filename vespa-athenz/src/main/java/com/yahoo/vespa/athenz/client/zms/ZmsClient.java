@@ -80,5 +80,7 @@ public interface ZmsClient extends AutoCloseable {
 
     void createSubdomain(AthenzDomain parent, String name);
 
+    boolean isSelfServeRole(AthenzRole role);
+
     void close();
 }

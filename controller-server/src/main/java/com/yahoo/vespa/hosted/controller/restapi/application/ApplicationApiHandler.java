@@ -294,6 +294,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}")) return updateTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/access/request/operator")) return requestSshAccess(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/access/approve/operator")) return approveAccessRequest(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/access/preapprove/operator")) return addPreapprovedAccess(path.get("tenant"));
         if (path.matches("/application/v4/tenant/{tenant}/info")) return updateTenantInfo(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/archive-access")) return allowArchiveAccess(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}")) return addSecretStore(path.get("tenant"), path.get("name"), request);
@@ -341,6 +342,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse handleDELETE(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return deleteTenant(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/access/preapprove/operator")) return removePreapprovedAccess(path.get("tenant"));
         if (path.matches("/application/v4/tenant/{tenant}/key")) return removeDeveloperKey(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/archive-access")) return removeArchiveAccess(path.get("tenant"));
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}")) return deleteSecretStore(path.get("tenant"), path.get("name"), request);
@@ -414,9 +416,12 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (controller.tenants().require(TenantName.from(tenantName)).type() != Tenant.Type.cloud)
             return ErrorResponse.badRequest("Can only see access requests for cloud tenants");
 
-        var pendingRequests = controller.serviceRegistry().accessControlService().hasPendingAccessRequests(TenantName.from(tenantName));
+        var accessControlService = controller.serviceRegistry().accessControlService();
+        var pendingRequests = accessControlService.hasPendingAccessRequests(TenantName.from(tenantName));
+        var preapprovedAccess = accessControlService.hasPreapprovedAccess(TenantName.from(tenantName));
         var slime = new Slime();
         slime.setObject().setBool("hasPendingRequests", pendingRequests);
+        slime.setObject().setBool("preapprovedAccess", preapprovedAccess);
         return new SlimeJsonResponse(slime);
     }
 
@@ -445,6 +450,24 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 Instant.now().plus(1, ChronoUnit.DAYS);
 
         controller.serviceRegistry().accessControlService().approveSshAccess(tenant, expiry, OAuthCredentials.fromAuth0RequestContext(request.getJDiscRequest().context()));
+        return new MessageResponse("OK");
+    }
+
+    private HttpResponse addPreapprovedAccess(String tenantName) {
+        return setPreapprovedAccess(tenantName, true);
+    }
+
+    private HttpResponse removePreapprovedAccess(String tenantName) {
+        return setPreapprovedAccess(tenantName, false);
+    }
+
+    private HttpResponse setPreapprovedAccess(String tenantName, boolean preapprovedAccess) {
+        var tenant = TenantName.from(tenantName);
+
+        if (controller.tenants().require(tenant).type() != Tenant.Type.cloud)
+            return ErrorResponse.badRequest("Can only set access privel for cloud tenants");
+
+        controller.serviceRegistry().accessControlService().setPreapprovedAccess(tenant, preapprovedAccess);
         return new MessageResponse("OK");
     }
 

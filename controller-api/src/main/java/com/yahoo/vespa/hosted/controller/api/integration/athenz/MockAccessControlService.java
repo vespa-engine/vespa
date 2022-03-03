@@ -45,6 +45,16 @@ public class MockAccessControlService implements AccessControlService {
         return false;
     }
 
+    @Override
+    public boolean hasPreapprovedAccess(TenantName tenantName) {
+        return false;
+    }
+
+    @Override
+    public void setPreapprovedAccess(TenantName tenantName, boolean preapproved) {
+
+    }
+
     public void addPendingMember(AthenzUser user) {
         pendingMembers.add(user);
     }

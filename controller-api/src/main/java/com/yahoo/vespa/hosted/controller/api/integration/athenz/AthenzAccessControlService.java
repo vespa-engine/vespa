@@ -110,6 +110,25 @@ public class AthenzAccessControlService implements AccessControlService {
         return true;
     }
 
+    public boolean hasPreapprovedAccess(TenantName tenantName) {
+        var role = sshRole(tenantName);
+
+        if (!vespaZmsClient.listRoles(role.domain()).contains(role))
+            return true; // true by default
+
+        return !vespaZmsClient.isSelfServeRole(role);
+    }
+
+    public void setPreapprovedAccess(TenantName tenantName, boolean preapprovedAccess) {
+        var role = sshRole(tenantName);
+
+        var attributes = Map.<String, Object>of(
+                "selfServe", !preapprovedAccess,
+                "reviewEnabled", !preapprovedAccess
+        );
+        vespaZmsClient.createRole(role, attributes);
+    }
+
     private AthenzRole sshRole(TenantName tenantName) {
         return new AthenzRole(getOrCreateTenantDomain(tenantName), "ssh_access");
     }

@@ -19,5 +19,7 @@ public interface AccessControlService {
     boolean approveSshAccess(TenantName tenantName, Instant expiry, OAuthCredentials oAuthCredentials);
     boolean requestSshAccess(TenantName tenantName);
     boolean hasPendingAccessRequests(TenantName tenantName);
+    boolean hasPreapprovedAccess(TenantName tenantName);
+    void setPreapprovedAccess(TenantName tenantName, boolean preapproved);
     Collection<AthenzUser> listMembers();
 }

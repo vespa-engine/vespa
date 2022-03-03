@@ -15,11 +15,18 @@ import java.util.List;
 public class RoleEntity {
     private final String roleName;
     private final List<Member> roleMembers;
+    private final Boolean selfServe;
+    private final Boolean reviewEnabled;
 
     @JsonCreator
-    public RoleEntity(@JsonProperty("roleName") String roleName, @JsonProperty("roleMembers") List<Member> roleMembers) {
+    public RoleEntity(@JsonProperty("roleName") String roleName,
+                      @JsonProperty("roleMembers") List<Member> roleMembers,
+                      @JsonProperty("selfServe") Boolean selfServe,
+                      @JsonProperty("reviewEnabled") Boolean reviewEnabled) {
         this.roleName = roleName;
         this.roleMembers = roleMembers;
+        this.selfServe = selfServe;
+        this.reviewEnabled = reviewEnabled;
     }
 
     public String roleName() {
@@ -28,6 +35,14 @@ public class RoleEntity {
 
     public List<Member> roleMembers() {
         return roleMembers;
+    }
+
+    public Boolean selfServe() {
+        return selfServe;
+    }
+
+    public Boolean reviewEnabled() {
+        return reviewEnabled;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

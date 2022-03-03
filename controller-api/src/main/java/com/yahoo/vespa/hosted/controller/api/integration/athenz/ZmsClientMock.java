@@ -256,6 +256,11 @@ public class ZmsClientMock implements ZmsClient {
     public void createSubdomain(AthenzDomain parent, String name) {}
 
     @Override
+    public boolean isSelfServeRole(AthenzRole role) {
+        return false;
+    }
+
+    @Override
     public void close() {}
 
     private static AthenzDomain getTenantDomain(AthenzResourceName resource) {
