@@ -350,9 +350,7 @@ MMapAllocator::salloc(size_t sz, void * wantedAddress)
                 }
             }
         } else {
-            if (load_relaxed(_G_hasHugePageFailureJustHappened)) {
-                store_relaxed(_G_hasHugePageFailureJustHappened, false);
-            }
+            store_relaxed(_G_hasHugePageFailureJustHappened, false);
         }
 #ifdef __linux__
         if (sz >= _G_MMapNoCoreLimit) {
