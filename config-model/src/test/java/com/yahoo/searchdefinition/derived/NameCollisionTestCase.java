@@ -5,7 +5,7 @@ package com.yahoo.searchdefinition.derived;
 import org.junit.Test;
 
 /**
- * Verifies that a struct in a document type is preferred over another dopcument type
+ * Verifies that a struct in a document type is preferred over another document type
  * of the same name.
  *
  * @author bratseth
