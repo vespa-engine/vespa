@@ -34,9 +34,9 @@ TEST("require that now is moving forward") {
     InvokeCounter a;
     InvokeServiceImpl service(1ms);
     EXPECT_EQUAL(0u, a._count);
-    auto ra = service.registerInvoke([&prev, &a, now= service.nowRef() ]() noexcept {
-        EXPECT_GREATER(now->load(), prev);
-        prev = now->load();
+    auto ra = service.registerInvoke([&prev, &a, &now= service.nowRef() ]() noexcept {
+        EXPECT_GREATER(now.load(), prev);
+        prev = now.load();
         a.inc();
     });
     EXPECT_TRUE(ra);
