@@ -4,10 +4,10 @@
 
 #include "i_field_index_remove_listener.h"
 #include <vespa/document/annotation/span.h>
-#include <vespa/document/datatype/datatypes.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/vespalib/stllike/allocator.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <limits>
 
 namespace search::index {

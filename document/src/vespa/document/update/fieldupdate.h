@@ -19,6 +19,7 @@
 namespace document {
 
 class Document;
+class DocumentType;
 
 class FieldUpdate : public vespalib::Identifiable,
                     public Printable,

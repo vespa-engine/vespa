@@ -8,6 +8,8 @@
 #include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/base/testdocman.h>
+#include <vespa/document/fieldvalue/bytefieldvalue.h>
+#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>

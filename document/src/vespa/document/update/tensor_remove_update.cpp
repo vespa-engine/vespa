@@ -55,7 +55,7 @@ TensorRemoveUpdate::TensorRemoveUpdate(const TensorRemoveUpdate &rhs)
 }
 
 TensorRemoveUpdate::TensorRemoveUpdate(std::unique_ptr<TensorFieldValue> tensor)
-    : _tensorType(Identifiable::cast<const TensorDataType &>(*tensor->getDataType()).clone()),
+    : _tensorType(dynamic_cast<const TensorDataType &>(*tensor->getDataType()).clone()),
       _tensor(Identifiable::cast<TensorFieldValue *>(_tensorType->createFieldValue().release()))
 {
     *_tensor = *tensor;
@@ -195,7 +195,7 @@ TensorRemoveUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &ty
     VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());
     auto tensor = deserializer.readTensor();
     verifyAddressTensorIsSparse(tensor.get());
-    auto compatible_type = convertToCompatibleType(Identifiable::cast<const TensorDataType &>(type));
+    auto compatible_type = convertToCompatibleType(dynamic_cast<const TensorDataType &>(type));
     verify_tensor_type_dimensions_are_subset_of(tensor->type(), compatible_type->getTensorType());
     _tensorType = std::make_unique<const TensorDataType>(tensor->type());
     _tensor = std::make_unique<TensorFieldValue>(*_tensorType);

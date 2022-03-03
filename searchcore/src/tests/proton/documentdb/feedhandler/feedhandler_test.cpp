@@ -2,6 +2,7 @@
 
 #include <vespa/persistence/spi/result.h>
 #include <vespa/document/datatype/tensor_data_type.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/documentupdate.h>

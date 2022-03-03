@@ -3,7 +3,6 @@
 #pragma once
 
 #include "doctypebuilder.h"
-#include <vespa/document/datatype/datatypes.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/annotation/annotation.h>
@@ -232,21 +231,12 @@ private:
         document::FixedTypeRepo _repo;
     public:
         DocumentHandle(document::Document &doc, const vespalib::string & docId);
+        ~DocumentHandle();
         const FieldHandle::SP & getFieldHandle() const { return _fieldHandle; }
-        void startIndexField(const Schema::Field & sfield) {
-            _fieldHandle.reset(new IndexFieldHandle(_repo, _type->getField(sfield.getName()), sfield));
-        }
-        void startAttributeField(const Schema::Field & sfield) {
-            _fieldHandle.reset(new AttributeFieldHandle(_type->getField(sfield.getName()), sfield));
-        }
-        void startSummaryField(const Schema::Field & sfield) {
-            _fieldHandle.reset(new SummaryFieldHandle(_type->getField(sfield.getName()), sfield));
-        }
-        void endField() {
-            _fieldHandle->onEndField();
-            _doc->setValue(_type->getField(_fieldHandle->getField().getName()), *_fieldHandle->getValue());
-            _fieldHandle.reset();
-        }
+        void startIndexField(const Schema::Field & sfield);
+        void startAttributeField(const Schema::Field & sfield);
+        void startSummaryField(const Schema::Field & sfield);
+        void endField();
         void endDocument(const document::Document::UP & doc) {
             (void) doc;
         }

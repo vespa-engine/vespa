@@ -28,6 +28,8 @@ public:
     PrimitiveDataType* clone() const override { return new PrimitiveDataType(*this); }
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
 
+    bool isPrimitive() const override { return true; }
+
     DECLARE_IDENTIFIABLE_ABSTRACT(PrimitiveDataType);
 };
 

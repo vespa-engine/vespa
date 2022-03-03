@@ -30,6 +30,8 @@ public:
     ArrayDataType &operator=(const ArrayDataType &rhs) = default;
     void onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const override;
 
+    bool isArray() const override { return true; }
+
     DECLARE_IDENTIFIABLE(ArrayDataType);
 };
 

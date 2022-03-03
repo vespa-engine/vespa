@@ -2,6 +2,8 @@
 
 #include <vespa/config-attributes.h>
 #include <vespa/document/datatype/tensor_data_type.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/predicate/predicate_slime_builder.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>

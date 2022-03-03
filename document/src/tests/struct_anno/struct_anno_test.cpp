@@ -4,7 +4,8 @@
 #include <vespa/document/annotation/alternatespanlist.h>
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/spantree.h>
-#include <vespa/document/document.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/serialization/annotationdeserializer.h>
 #include <vespa/document/serialization/annotationserializer.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>

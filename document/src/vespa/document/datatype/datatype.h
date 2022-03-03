@@ -16,11 +16,16 @@ namespace document {
 
 class FieldValue;
 class Field;
+class FieldPath;
+
 class NumericDataType;
 class PrimitiveDataType;
 class DocumentType;
 class WeightedSetDataType;
-class FieldPath;
+class CollectionDataType;
+class ArrayDataType;
+class MapDataType;
+class ReferenceDataType;
 
 class DataType : public Printable,
                  public vespalib::Identifiable
@@ -98,7 +103,6 @@ public:
     /** Used by type manager to fetch default types to register. */
     static std::vector<const DataType *> getDefaultDataTypes();
 
-
     const vespalib::string& getName() const { return _name; }
     int getId() const { return _dataTypeId; }
     bool isValueType(const FieldValue & fv) const;
@@ -108,6 +112,13 @@ public:
      */
     virtual std::unique_ptr<FieldValue> createFieldValue() const = 0;
     virtual DataType* clone() const = 0;
+
+    virtual bool isArray() const { return false; }
+    virtual bool isPrimitive() const { return false; }
+    virtual bool isNumeric() const { return false; }
+    virtual const CollectionDataType * cast_collection() const { return nullptr; }
+    virtual const MapDataType * cast_map() const { return nullptr; }
+    virtual const ReferenceDataType * cast_reference() const { return nullptr; }
 
     /**
      * Whether another datatype is a supertype of this one. Document types may

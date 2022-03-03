@@ -27,6 +27,7 @@ public:
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
     bool operator==(const DataType& other) const override;
     MapDataType* clone() const override { return new MapDataType(*this); }
+    const MapDataType * cast_map() const override { return this; }
 
     void onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const override;
     static void buildFieldPathImpl(FieldPath & path, const DataType& dataType,

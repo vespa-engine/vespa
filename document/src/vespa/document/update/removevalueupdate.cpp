@@ -39,9 +39,9 @@ RemoveValueUpdate::operator==(const ValueUpdate& other) const
 void
 RemoveValueUpdate::checkCompatibility(const Field& field) const
 {
-    if (field.getDataType().inherits(CollectionDataType::classId)) {
-        const CollectionDataType& type = static_cast<const CollectionDataType&>(field.getDataType());
-        if (!type.getNestedType().isValueType(*_key)) {
+    const CollectionDataType *type = field.getDataType().cast_collection();
+    if (type != nullptr) {
+        if (!type->getNestedType().isValueType(*_key)) {
             throw IllegalArgumentException(
                     "Cannot remove value of type "
                     + _key->getDataType()->toString() + " from field "

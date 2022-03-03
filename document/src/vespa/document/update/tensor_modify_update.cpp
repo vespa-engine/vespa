@@ -102,7 +102,7 @@ TensorModifyUpdate::TensorModifyUpdate(const TensorModifyUpdate &rhs)
 
 TensorModifyUpdate::TensorModifyUpdate(Operation operation, std::unique_ptr<TensorFieldValue> tensor)
     : _operation(operation),
-      _tensorType(Identifiable::cast<const TensorDataType &>(*tensor->getDataType()).clone()),
+      _tensorType(dynamic_cast<const TensorDataType &>(*tensor->getDataType()).clone()),
       _tensor(Identifiable::cast<TensorFieldValue *>(_tensorType->createFieldValue().release()))
 {
     *_tensor = *tensor;
@@ -240,7 +240,7 @@ TensorModifyUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &ty
         throw DeserializeException(msg.str(), VESPA_STRLOC);
     }
     _operation = static_cast<Operation>(op);
-    _tensorType = convertToCompatibleType(Identifiable::cast<const TensorDataType &>(type));
+    _tensorType = convertToCompatibleType(dynamic_cast<const TensorDataType &>(type));
     auto tensor = _tensorType->createFieldValue();
     if (tensor->inherits(TensorFieldValue::classId)) {
         _tensor.reset(static_cast<TensorFieldValue *>(tensor.release()));

@@ -2,7 +2,6 @@
 
 #include "valueupdate.h"
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <stdexcept>
 
 namespace document {

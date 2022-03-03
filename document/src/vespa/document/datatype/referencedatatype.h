@@ -25,6 +25,7 @@ public:
     ReferenceDataType* clone() const override;
     void onBuildFieldPath(FieldPath & path, vespalib::stringref remainingFieldName) const override;
 
+    const ReferenceDataType * cast_reference() const override { return this; }
     bool operator==(const DataType &type) const override;
     bool operator==(const ReferenceDataType& type) const { return operator==(static_cast<const DataType&>(type)); }
 };

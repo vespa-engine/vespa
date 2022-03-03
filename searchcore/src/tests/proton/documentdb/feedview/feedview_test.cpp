@@ -22,6 +22,7 @@
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/searchlib/index/docbuilder.h>
 

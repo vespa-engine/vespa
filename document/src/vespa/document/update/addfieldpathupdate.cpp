@@ -95,7 +95,7 @@ AddFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& ty
     FieldPath path;
     type.buildFieldPath(path, getOriginalFieldPath());
     const DataType& fieldType = getResultingDataType(path);
-    assert(fieldType.inherits(ArrayDataType::classId));
+    assert(fieldType.isArray());
     FieldValue::UP val = fieldType.createFieldValue();
     _values.reset(static_cast<ArrayFieldValue*>(val.release()));
     VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());

@@ -9,4 +9,3 @@
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/datatype/structdatatype.h>
 #include <vespa/document/datatype/documenttype.h>
-

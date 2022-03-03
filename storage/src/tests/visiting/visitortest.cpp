@@ -3,6 +3,7 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>

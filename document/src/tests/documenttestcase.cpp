@@ -1,8 +1,22 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/testdocman.h>
-#include <vespa/document/datatype/annotationreferencedatatype.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/mapdatatype.h>
+#include <vespa/document/datatype/weightedsetdatatype.h>
+#include <vespa/document/datatype/numericdatatype.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/bytefieldvalue.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/fieldvalue/longfieldvalue.h>
+#include <vespa/document/fieldvalue/floatfieldvalue.h>
+#include <vespa/document/fieldvalue/doublefieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/rawfieldvalue.h>
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/mapfieldvalue.h>
+#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
@@ -36,6 +50,8 @@ TEST(DocumentTest, testSizeOf)
     EXPECT_EQ(88ul, sizeof(IdString));
     EXPECT_EQ(104ul, sizeof(DocumentId));
     EXPECT_EQ(240ul, sizeof(Document));
+    EXPECT_EQ(88ul, sizeof(NumericDataType));
+    EXPECT_EQ(24ul, sizeof(LongFieldValue));
     EXPECT_EQ(96ul, sizeof(StructFieldValue));
     EXPECT_EQ(16ul, sizeof(StructuredFieldValue));
     EXPECT_EQ(56ul, sizeof(SerializableArray));

@@ -2,7 +2,6 @@
 
 #include "collectiondatatype.h"
 #include <vespa/document/util/stringutil.h>
-#include <vespa/vespalib/util/exceptions.h>
 
 namespace document {
 
@@ -37,17 +36,14 @@ CollectionDataType::CollectionDataType(vespalib::stringref name,
       _nestedType(&nestedType) {
 }
 
-CollectionDataType::~CollectionDataType()
-{
-}
+CollectionDataType::~CollectionDataType() = default;
 
 bool
 CollectionDataType::operator==(const DataType& other) const
 {
     if (!DataType::operator==(other)) return false;
-    const CollectionDataType* o(
-            Identifiable::cast<const CollectionDataType*>(&other));
-    return o != 0 && *_nestedType == *o->_nestedType;
+    const CollectionDataType * o = other.cast_collection();
+    return o && *_nestedType == *o->_nestedType;
 }
 
 } // document

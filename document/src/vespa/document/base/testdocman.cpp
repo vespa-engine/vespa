@@ -1,9 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "testdocman.h"
-#include "exceptions.h"
 #include <vespa/document/datatype/datatypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <boost/random.hpp>
 #include <sstream>
 

@@ -26,10 +26,11 @@ protected:
                        const DataType &nestedType, int32_t id);
 
 public:
-    ~CollectionDataType();
+    ~CollectionDataType() override;
 
     bool operator==(const DataType&) const override;
     const DataType &getNestedType() const { return *_nestedType; }
+    const CollectionDataType * cast_collection() const override { return this; }
 
     DECLARE_IDENTIFIABLE_ABSTRACT(CollectionDataType);
 };
