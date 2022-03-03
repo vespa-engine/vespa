@@ -101,7 +101,7 @@ private:
     int64_t              _generation;
     vespalib::duration   _subscribeTimeout;
     bool                 _bootstrapRequired;
-    bool                 _closed;
+    std::atomic<bool>    _closed;
 };
 
 } // namespace config
