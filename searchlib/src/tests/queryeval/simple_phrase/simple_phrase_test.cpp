@@ -9,6 +9,7 @@
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/weight.h>
+#include <vespa/vespalib/util/testclock.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
@@ -211,8 +212,8 @@ void Test::requireThatIteratorHonorsFutureDoom() {
     test.addTerm("foo", 0).addTerm("bar", 1);
 
     test.fetchPostings(false);
-    vespalib::Clock clock;
-    vespalib::Doom futureDoom(clock, vespalib::steady_time::max());
+    vespalib::TestClock clock;
+    vespalib::Doom futureDoom(clock.clock(), vespalib::steady_time::max());
     unique_ptr<SearchIterator> search(test.createSearch(false));
     static_cast<SimplePhraseSearch &>(*search).setDoom(&futureDoom);
     EXPECT_TRUE(!search->seek(1u));
@@ -225,8 +226,8 @@ void Test::requireThatIteratorHonorsDoom() {
     test.addTerm("foo", 0).addTerm("bar", 1);
 
     test.fetchPostings(false);
-    vespalib::Clock clock;
-    vespalib::Doom futureDoom(clock, vespalib::steady_time());
+    vespalib::TestClock clock;
+    vespalib::Doom futureDoom(clock.clock(), vespalib::steady_time());
     unique_ptr<SearchIterator> search(test.createSearch(false));
     static_cast<SimplePhraseSearch &>(*search).setDoom(&futureDoom);
     EXPECT_TRUE(!search->seek(1u));

@@ -28,6 +28,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/testclock.h>
 
 using namespace config;
 using namespace document;
@@ -146,7 +147,7 @@ struct MyDocumentDBReferenceResolver : public IDocumentDBReferenceResolver {
 
 struct Fixture
 {
-    vespalib::Clock _clock;
+    vespalib::TestClock _clock;
     matching::QueryLimiter _queryLimiter;
     EmptyConstantValueFactory _constantValueFactory;
     ConstantValueRepo _constantValueRepo;
@@ -175,7 +176,7 @@ Fixture::Fixture()
     vespalib::mkdir(BASE_DIR);
     initViewSet(_views);
     _configurer = std::make_unique<Configurer>(_views._summaryMgr, _views.searchView, _views.feedView, _queryLimiter,
-                                               _constantValueRepo, _clock, "test", 0);
+                                               _constantValueRepo, _clock.clock(), "test", 0);
 }
 Fixture::~Fixture() = default;
 
@@ -184,7 +185,7 @@ Fixture::initViewSet(ViewSet &views)
 {
     using IndexManager = proton::index::IndexManager;
     using IndexConfig = proton::index::IndexConfig;
-    auto matchers = std::make_shared<Matchers>(_clock, _queryLimiter, _constantValueRepo);
+    auto matchers = std::make_shared<Matchers>(_clock.clock(), _queryLimiter, _constantValueRepo);
     auto indexMgr = make_shared<IndexManager>(BASE_DIR, IndexConfig(searchcorespi::index::WarmupConfig(), 2, 0), Schema(), 1,
                                               views._reconfigurer, views._service.write(), _summaryExecutor,
                                               TuneFileIndexManager(), TuneFileAttributes(), views._fileHeaderContext);

@@ -8,7 +8,6 @@
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
 #include <vespa/searchcore/proton/matching/i_constant_value_repo.h>
-#include <vespa/searchcore/proton/matching/isearchcontext.h>
 #include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/searchcore/proton/matching/querynodes.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
@@ -37,6 +36,7 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/testclock.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("matching_test");
@@ -120,7 +120,7 @@ struct MyWorld {
     SessionManager::SP      sessionManager;
     DocumentMetaStore       metaStore;
     MatchingStats           matchingStats;
-    vespalib::Clock         clock;
+    vespalib::TestClock     clock;
     QueryLimiter            queryLimiter;
     EmptyConstantValueRepo  constantValueRepo;
 
@@ -344,7 +344,7 @@ struct MyWorld {
     }
 
     Matcher::SP createMatcher() {
-        return std::make_shared<Matcher>(schema, config, clock, queryLimiter, constantValueRepo, RankingExpressions(), OnnxModels(), 0);
+        return std::make_shared<Matcher>(schema, config, clock.clock(), queryLimiter, constantValueRepo, RankingExpressions(), OnnxModels(), 0);
     }
 
     struct MySearchHandler : ISearchHandler {

@@ -11,6 +11,7 @@
 #include <map>
 #include <vector>
 
+namespace vespalib { class TestClock; }
 namespace proton::matching {
 
 using searchcorespi::FakeIndexSearchable;
@@ -23,7 +24,7 @@ public:
     typedef search::queryeval::FakeSearchable FakeSearchable;
 
 private:
-    vespalib::Clock                        _clock;
+    std::unique_ptr<vespalib::TestClock>   _clock;
     vespalib::Doom                         _doom;
     search::queryeval::ISourceSelector::SP _selector;
     IndexCollection::SP                    _indexes;

@@ -127,7 +127,6 @@ struct Fixture : public FixtureBase {
     DummyFileHeaderContext _fileHeaderContext;
     TransLogServer _tls;
     matching::QueryLimiter _queryLimiter;
-    vespalib::Clock _clock;
 
     std::unique_ptr<ConfigStore> make_config_store();
     Fixture();
@@ -151,8 +150,7 @@ Fixture::Fixture(bool file_config)
       _db(),
       _fileHeaderContext(),
       _tls(_shared_service.transport(), "tmp", 9014, ".", _fileHeaderContext),
-      _queryLimiter(),
-      _clock()
+      _queryLimiter()
 {
     auto documenttypesConfig = std::make_shared<DocumenttypesConfig>();
     DocumentType docType("typea", 0);
@@ -167,7 +165,7 @@ Fixture::Fixture(bool file_config)
                               tuneFileDocumentDB, HwInfo());
     mgr.forwardConfig(b);
     mgr.nextGeneration(_shared_service.transport(), 0ms);
-    _db = DocumentDB::create(".", mgr.getConfig(), "tcp/localhost:9014", _queryLimiter, _clock, DocTypeName("typea"),
+    _db = DocumentDB::create(".", mgr.getConfig(), "tcp/localhost:9014", _queryLimiter, DocTypeName("typea"),
                              makeBucketSpace(),
                              *b->getProtonConfigSP(), _myDBOwner, _shared_service, _bucketExecutor, _tls, _dummy,
                              _fileHeaderContext, make_config_store(),

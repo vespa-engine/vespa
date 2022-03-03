@@ -23,6 +23,7 @@ vespa_add_library(staging_vespalib_vespalib_util OBJECT
     shutdownguard.cpp
     scheduledexecutor.cpp
     singleexecutor.cpp
+    testclock.cpp
     xmlserializable.cpp
     xmlstream.cpp
     DEPENDS

@@ -111,7 +111,6 @@ private:
     std::unique_ptr<SharedThreadingService> _shared_service;
     vespalib::eval::CompileCache::ExecutorBinding::UP _compile_cache_executor_binding;
     matching::QueryLimiter          _queryLimiter;
-    vespalib::Clock                 _clock;
     uint32_t                        _distributionKey;
     bool                            _isInitializing;
     bool                            _abortInit;

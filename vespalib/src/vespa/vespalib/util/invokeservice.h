@@ -3,6 +3,7 @@
 #pragma once
 
 #include "idestructorcallback.h"
+#include "time.h"
 #include <functional>
 
 namespace vespalib {
@@ -13,8 +14,9 @@ namespace vespalib {
  **/
 class InvokeService {
 public:
+    using InvokeFunc = std::function<void()>;
     virtual ~InvokeService() = default;
-    virtual std::unique_ptr<IDestructorCallback> registerInvoke(std::function<void()> func) = 0;
+    virtual std::unique_ptr<IDestructorCallback> registerInvoke(InvokeFunc func) = 0;
 };
 
 }

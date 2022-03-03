@@ -183,7 +183,6 @@ public:
     storage::spi::dummy::DummyBucketExecutor _bucketExecutor;
     bool _mkdirOk;
     matching::QueryLimiter _queryLimiter;
-    vespalib::Clock _clock;
     DummyWireService _dummy;
     ::config::DirSpec _spec;
     DocumentDBConfigHelper _configMgr;
@@ -204,7 +203,6 @@ public:
           _bucketExecutor(2),
           _mkdirOk(FastOS_File::MakeDirectory("tmpdb")),
           _queryLimiter(),
-          _clock(),
           _dummy(),
           _spec(TEST_PATH("")),
           _configMgr(_spec, getDocTypeName()),
@@ -227,7 +225,7 @@ public:
         if (! FastOS_File::MakeDirectory((std::string("tmpdb/") + docTypeName).c_str())) {
             LOG_ABORT("should not be reached");
         }
-        _ddb = DocumentDB::create("tmpdb", _configMgr.getConfig(), "tcp/localhost:9013", _queryLimiter, _clock,
+        _ddb = DocumentDB::create("tmpdb", _configMgr.getConfig(), "tcp/localhost:9013", _queryLimiter,
                                   DocTypeName(docTypeName), makeBucketSpace(), *b->getProtonConfigSP(), *this,
                                   _shared_service, _bucketExecutor, _tls, _dummy, _fileHeaderContext,
                                   std::make_unique<MemoryConfigStore>(),

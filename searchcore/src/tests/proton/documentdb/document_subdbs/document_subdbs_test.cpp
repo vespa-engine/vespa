@@ -35,6 +35,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
+#include <vespa/vespalib/util/testclock.h>
 #include <vespa/config/subscription/sourcespec.h>
 
 using namespace cloud::config::filedistribution;
@@ -215,9 +216,9 @@ struct MySearchableConfig
 struct MySearchableContext
 {
     MyFastAccessContext _fastUpdCtx;
-    QueryLimiter _queryLimiter;
-    vespalib::Clock _clock;
-    SearchableContext _ctx;
+    QueryLimiter        _queryLimiter;
+    vespalib::TestClock _clock;
+    SearchableContext   _ctx;
     MySearchableContext(IThreadingService &writeService,
                         std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
                         IBucketDBHandlerInitializer & bucketDBHandlerInitializer);
@@ -236,7 +237,7 @@ MySearchableContext::MySearchableContext(IThreadingService &writeService,
                                          IBucketDBHandlerInitializer & bucketDBHandlerInitializer)
     : _fastUpdCtx(writeService, bucketDB, bucketDBHandlerInitializer),
       _queryLimiter(), _clock(),
-      _ctx(_fastUpdCtx._ctx, _queryLimiter, _clock, writeService.shared())
+      _ctx(_fastUpdCtx._ctx, _queryLimiter, _clock.clock(), writeService.shared())
 {}
 MySearchableContext::~MySearchableContext() = default;
 

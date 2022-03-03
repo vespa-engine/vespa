@@ -7,6 +7,7 @@ namespace vespalib {
 class ISequencedTaskExecutor;
 class ThreadExecutor;
 class InvokeService;
+class Clock;
 }
 
 namespace proton {
@@ -51,6 +52,11 @@ public:
      * Returns a shared transport object that can be utilized by multiple services.
      */
     virtual FNET_Transport & transport() = 0;
+
+    /**
+     * Return a very cheap clock.
+     */
+    virtual const vespalib::Clock & clock() const = 0;
 };
 
 }

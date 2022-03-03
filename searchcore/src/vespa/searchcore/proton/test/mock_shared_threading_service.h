@@ -4,6 +4,7 @@
 #include "transport_helper.h"
 #include <vespa/searchcore/proton/server/i_shared_threading_service.h>
 #include <vespa/vespalib/util/invokeserviceimpl.h>
+#include <vespa/vespalib/util/clock.h>
 
 namespace proton {
 
@@ -14,7 +15,7 @@ private:
     ThreadExecutor              & _shared;
     vespalib::InvokeServiceImpl   _invokeService;
     Transport                     _transport;
-
+    vespalib::Clock               _clock;
 public:
     MockSharedThreadingService(ThreadExecutor& warmup_in,
                                ThreadExecutor& shared_in);
@@ -24,6 +25,7 @@ public:
     vespalib::ISequencedTaskExecutor* field_writer() override { return nullptr; }
     vespalib::InvokeService & invokeService() override { return _invokeService; }
     FNET_Transport & transport() override { return _transport.transport(); }
+    const vespalib::Clock & clock() const override { return _clock; }
 };
 
 }

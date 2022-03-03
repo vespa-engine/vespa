@@ -13,6 +13,7 @@
 #include <vespa/vespalib/util/doom.h>
 #include <limits>
 
+namespace vespalib { class TestClock; }
 namespace search::queryeval {
 
 class FakeRequestContext : public IRequestContext
@@ -47,7 +48,7 @@ public:
     const search::attribute::AttributeBlueprintParams& get_attribute_blueprint_params() const override;
 
 private:
-    vespalib::Clock _clock;
+    std::unique_ptr<vespalib::TestClock> _clock;
     const vespalib::Doom _doom;
     attribute::IAttributeContext *_attributeContext;
     vespalib::string _query_tensor_name;

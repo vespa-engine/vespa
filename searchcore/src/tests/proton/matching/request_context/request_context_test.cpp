@@ -6,6 +6,7 @@
 #include <vespa/searchcore/proton/matching/requestcontext.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_params.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/util/testclock.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
@@ -29,7 +30,7 @@ public:
 
 class RequestContextTest : public ::testing::Test {
 private:
-    vespalib::Clock        _clock;
+    vespalib::TestClock    _clock;
     vespalib::Doom         _doom;
     MyAttributeContext     _attr_ctx;
     Properties             _props;
@@ -45,7 +46,7 @@ private:
 public:
     RequestContextTest()
         : _clock(),
-          _doom(_clock, vespalib::steady_time(), vespalib::steady_time(), false),
+          _doom(_clock.clock(), vespalib::steady_time(), vespalib::steady_time(), false),
           _attr_ctx(),
           _props(),
           _request_ctx(_doom, _attr_ctx, _props, AttributeBlueprintParams()),

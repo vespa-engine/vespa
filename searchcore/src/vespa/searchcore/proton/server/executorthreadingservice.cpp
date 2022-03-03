@@ -13,6 +13,7 @@ using vespalib::CpuUsage;
 using vespalib::SequencedTaskExecutor;
 using vespalib::SingleExecutor;
 using vespalib::SyncableThreadExecutor;
+using vespalib::steady_time;
 using OptimizeFor = vespalib::Executor::OptimizeFor;
 using SharedFieldWriterExecutor = proton::ThreadingServiceConfig::SharedFieldWriterExecutor;
 
