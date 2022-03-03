@@ -6,7 +6,6 @@ import com.yahoo.searchdefinition.RankProfile.MutateOperation;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -26,9 +25,9 @@ class ParsedRankProfile extends ParsedBlock {
     private boolean ignoreDefaultRankFeatures = false;
     private Double rankScoreDropLimit = null;
     private Double termwiseLimit = null;
-    private List<ReferenceNode> matchFeatures = new ArrayList<>();
-    private List<ReferenceNode> rankFeatures = new ArrayList<>();
-    private List<ReferenceNode> summaryFeatures = new ArrayList<>();
+    private List<FeatureList> matchFeatures = new ArrayList<>();
+    private List<FeatureList> rankFeatures = new ArrayList<>();
+    private List<FeatureList> summaryFeatures = new ArrayList<>();
     private Integer keepRankCount = null;
     private Integer minHitsPerThread = null;
     private Integer numSearchPartitions = null;
@@ -56,9 +55,9 @@ class ParsedRankProfile extends ParsedBlock {
     boolean getIgnoreDefaultRankFeatures() { return this.ignoreDefaultRankFeatures; }
     Optional<Double> getRankScoreDropLimit() { return Optional.ofNullable(this.rankScoreDropLimit); }
     Optional<Double> getTermwiseLimit() { return Optional.ofNullable(this.termwiseLimit); }
-    List<ReferenceNode> getMatchFeatures() { return List.copyOf(this.matchFeatures); }
-    List<ReferenceNode> getRankFeatures() { return List.copyOf(this.rankFeatures); }
-    List<ReferenceNode> getSummaryFeatures() { return List.copyOf(this.summaryFeatures); }
+    List<FeatureList> getMatchFeatures() { return List.copyOf(this.matchFeatures); }
+    List<FeatureList> getRankFeatures() { return List.copyOf(this.rankFeatures); }
+    List<FeatureList> getSummaryFeatures() { return List.copyOf(this.summaryFeatures); }
     Optional<Integer> getKeepRankCount() { return Optional.ofNullable(this.keepRankCount); }
     Optional<Integer> getMinHitsPerThread() { return Optional.ofNullable(this.minHitsPerThread); }
     Optional<Integer> getNumSearchPartitions() { return Optional.ofNullable(this.numSearchPartitions); }
@@ -79,23 +78,9 @@ class ParsedRankProfile extends ParsedBlock {
     Optional<String> getSecondPhaseExpression() { return Optional.ofNullable(this.secondPhaseExpression); }
     Optional<Boolean> isStrict() { return Optional.ofNullable(this.strict); }
 
-    void addSummaryFeatures(FeatureList features) {
-        for (var feature : features) {
-            this.summaryFeatures.add(feature);
-        }
-    }
-
-    void addMatchFeatures(FeatureList features) {
-        for (var feature : features) {
-            this.matchFeatures.add(feature);
-        }
-    }
-
-    void addRankFeatures(FeatureList features) {
-        for (var feature : features) {
-            this.rankFeatures.add(feature);
-        }
-    }
+    void addSummaryFeatures(FeatureList features) { this.summaryFeatures.add(features); }
+    void addMatchFeatures(FeatureList features) { this.matchFeatures.add(features); }
+    void addRankFeatures(FeatureList features) { this.rankFeatures.add(features); }
 
     void inherit(String other) { inherited.add(other); }
 
