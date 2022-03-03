@@ -45,6 +45,18 @@ type DeploymentOptions struct {
 	Timeout            time.Duration
 }
 
+type LogLinePrepareResponse struct {
+	Time    int64
+	Level   string
+	Message string
+}
+
+type PrepareResult struct {
+	// Session or Run ID
+	ID       int64
+	LogLines []LogLinePrepareResponse
+}
+
 func (a ApplicationID) String() string {
 	return fmt.Sprintf("%s.%s.%s", a.Tenant, a.Application, a.Instance)
 }
@@ -91,36 +103,36 @@ func ZoneFromString(s string) (ZoneID, error) {
 }
 
 // Prepare deployment and return the session ID
-func Prepare(deployment DeploymentOptions) (int64, error) {
+func Prepare(deployment DeploymentOptions) (PrepareResult, error) {
 	if deployment.IsCloud() {
-		return 0, fmt.Errorf("prepare is not supported with %s target", deployment.Target.Type())
+		return PrepareResult{}, fmt.Errorf("prepare is not supported with %s target", deployment.Target.Type())
 	}
 	sessionURL, err := deployment.url("/application/v2/tenant/default/session")
 	if err != nil {
-		return 0, err
+		return PrepareResult{}, err
 	}
-	sessionID, err := uploadApplicationPackage(sessionURL, deployment)
+	result, err := uploadApplicationPackage(sessionURL, deployment)
 	if err != nil {
-		return 0, err
+		return PrepareResult{}, err
 	}
-	prepareURL, err := deployment.url(fmt.Sprintf("/application/v2/tenant/default/session/%d/prepared", sessionID))
+	prepareURL, err := deployment.url(fmt.Sprintf("/application/v2/tenant/default/session/%d/prepared", result.ID))
 	if err != nil {
-		return 0, err
+		return PrepareResult{}, err
 	}
 	req, err := http.NewRequest("PUT", prepareURL.String(), nil)
 	if err != nil {
-		return 0, err
+		return PrepareResult{}, err
 	}
 	serviceDescription := "Deploy service"
 	response, err := util.HttpDo(req, time.Second*30, serviceDescription)
 	if err != nil {
-		return 0, err
+		return PrepareResult{}, err
 	}
 	defer response.Body.Close()
 	if err := checkResponse(req, response, serviceDescription); err != nil {
-		return 0, err
+		return PrepareResult{}, err
 	}
-	return sessionID, nil
+	return result, nil
 }
 
 // Activate deployment with sessionID from a past prepare
@@ -145,14 +157,14 @@ func Activate(sessionID int64, deployment DeploymentOptions) error {
 	return checkResponse(req, response, serviceDescription)
 }
 
-func Deploy(opts DeploymentOptions) (int64, error) {
+func Deploy(opts DeploymentOptions) (PrepareResult, error) {
 	path := "/application/v2/tenant/default/prepareandactivate"
 	if opts.IsCloud() {
 		if err := checkDeploymentOpts(opts); err != nil {
-			return 0, err
+			return PrepareResult{}, err
 		}
 		if opts.Target.Deployment().Zone.Environment == "" || opts.Target.Deployment().Zone.Region == "" {
-			return 0, fmt.Errorf("%s: missing zone", opts)
+			return PrepareResult{}, fmt.Errorf("%s: missing zone", opts)
 		}
 		path = fmt.Sprintf("/application/v4/tenant/%s/application/%s/instance/%s/deploy/%s-%s",
 			opts.Target.Deployment().Application.Tenant,
@@ -163,7 +175,7 @@ func Deploy(opts DeploymentOptions) (int64, error) {
 	}
 	u, err := opts.url(path)
 	if err != nil {
-		return 0, err
+		return PrepareResult{}, err
 	}
 	return uploadApplicationPackage(u, opts)
 }
@@ -246,10 +258,10 @@ func checkDeploymentOpts(opts DeploymentOptions) error {
 	return nil
 }
 
-func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (int64, error) {
+func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (PrepareResult, error) {
 	zipReader, err := opts.ApplicationPackage.zipReader(false)
 	if err != nil {
-		return 0, err
+		return PrepareResult{}, err
 	}
 	header := http.Header{}
 	header.Add("Content-Type", "application/zip")
@@ -261,33 +273,42 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (int64, erro
 	}
 	service, err := opts.Target.Service(DeployService, opts.Timeout, 0, "")
 	if err != nil {
-		return 0, err
+		return PrepareResult{}, err
 	}
 
 	keyID := opts.Target.Deployment().Application.SerializedForm()
 	if err := opts.Target.SignRequest(request, keyID); err != nil {
-		return 0, err
+		return PrepareResult{}, err
 	}
 	response, err := service.Do(request, time.Minute*10)
 	if err != nil {
-		return 0, err
+		return PrepareResult{}, err
 	}
 	defer response.Body.Close()
 
 	var jsonResponse struct {
 		SessionID string `json:"session-id"` // Config server
 		RunID     int64  `json:"run"`        // Controller
+
+		Log []LogLinePrepareResponse `json:"log"`
 	}
 	jsonResponse.SessionID = "0" // Set a default session ID for responses that don't contain int (e.g. cloud deployment)
 	if err := checkResponse(request, response, service.Description()); err != nil {
-		return 0, err
+		return PrepareResult{}, err
 	}
 	jsonDec := json.NewDecoder(response.Body)
 	jsonDec.Decode(&jsonResponse) // Ignore error in case this is a non-JSON response
-	if jsonResponse.RunID > 0 {
-		return jsonResponse.RunID, nil
+	id := jsonResponse.RunID
+	if id == 0 {
+		id, err = strconv.ParseInt(jsonResponse.SessionID, 10, 64)
+		if err != nil {
+			return PrepareResult{}, err
+		}
 	}
-	return strconv.ParseInt(jsonResponse.SessionID, 10, 64)
+	return PrepareResult{
+		ID:       id,
+		LogLines: jsonResponse.Log,
+	}, err
 }
 
 func checkResponse(req *http.Request, response *http.Response, serviceDescription string) error {
