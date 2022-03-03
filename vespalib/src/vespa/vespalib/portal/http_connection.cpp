@@ -158,7 +158,7 @@ HttpConnection::do_dispatch()
 void
 HttpConnection::do_wait()
 {
-    if (_reply_ready) {
+    if (_reply_ready.load(std::memory_order_acquire)) {
         set_state(State::WRITE_REPLY, false, true);
     }
 }
@@ -248,8 +248,8 @@ HttpConnection::respond_with_content(const vespalib::string &content_type,
         dst.printf("\r\n");
         dst.write(content.data(), content.size());
     }
-    _reply_ready = true;
     _token->update(false, true);
+    _reply_ready.store(true, std::memory_order_release);
 }
 
 void
@@ -261,8 +261,8 @@ HttpConnection::respond_with_error(int code, const vespalib::string &msg)
         dst.printf("Connection: close\r\n");
         dst.printf("\r\n");
     }
-    _reply_ready = true;
     _token->update(false, true);
+    _reply_ready.store(true, std::memory_order_release);
 }
 
 } // namespace vespalib::portal
