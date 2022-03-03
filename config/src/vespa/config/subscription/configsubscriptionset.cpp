@@ -18,7 +18,7 @@ using vespalib::steady_time;
 namespace config {
 
 ConfigSubscriptionSet::ConfigSubscriptionSet(std::shared_ptr<IConfigContext> context)
-    : _maxNapTime(vespalib::adjustTimeoutByDetectedHz(10ms)),
+    : _maxNapTime(vespalib::adjustTimeoutByDetectedHz(20ms)),
       _context(std::move(context)),
       _mgr(_context->getManagerInstance()),
       _currentGeneration(-1),
@@ -82,7 +82,7 @@ ConfigSubscriptionSet::acquireSnapshot(duration timeout, bool ignoreChange)
         lastGeneration = generation;
         now = steady_clock::now();
         if (!inSync && (now < deadline)) {
-            std::this_thread::sleep_until(std::min(now + _maxNapTime, deadline));
+            std::this_thread::sleep_for(std::min(_maxNapTime, deadline - now));
         } else {
             break;
         }
