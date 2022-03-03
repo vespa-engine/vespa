@@ -22,7 +22,7 @@ class ParsedAttribute extends ParsedBlock {
     private boolean enableMutable = false;
     private boolean enablePaged = false;
     private final Map<String, String> aliases = new HashMap<>();
-    private ParsedSorting sortInfo = null;
+    private ParsedSorting sortSettings = null;
     private String distanceMetric = null;
 
     ParsedAttribute(String name) {
@@ -39,7 +39,7 @@ class ParsedAttribute extends ParsedBlock {
     boolean getHuge() { return this.enableHuge; }
     boolean getMutable() { return this.enableMutable; }
     boolean getPaged() { return this.enablePaged; }
-    Optional<ParsedSorting> getSorting() { return Optional.ofNullable(sortInfo); }
+    Optional<ParsedSorting> getSorting() { return Optional.ofNullable(sortSettings); }
 
     void addAlias(String from, String to) {
         verifyThat(! aliases.containsKey(to), "already has alias", to);
@@ -56,8 +56,8 @@ class ParsedAttribute extends ParsedBlock {
     void setHuge(boolean value) { this.enableHuge = true; }
     void setMutable(boolean value) { this.enableMutable = true; }
     void setPaged(boolean value) { this.enablePaged = true; }
-    void setSorting(ParsedSorting sorting) {
-        verifyThat(this.sortInfo == null, "already has sorting");
-        this.sortInfo = sorting;
+    ParsedSorting sortInfo() {
+        if (sortSettings == null) sortSettings = new ParsedSorting(name(), "attribute.sorting");
+        return this.sortSettings;
     }
 }

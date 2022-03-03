@@ -1055,34 +1055,22 @@ void attribute(ParsedField field) :
 }
 
 /* pick up sorting in field block */
-void fieldSorting(ParsedField field) :
+void fieldSorting(ParsedField field) : { }
 {
-    ParsedSorting sortInfo;
-}
-{
-    sortInfo = sorting(field.name(), "field") { field.setSorting(sortInfo); }
+    sorting(field.sortInfo())
 }
 
 /* pick up sorting in field block */
-void attributeSorting(ParsedAttribute attribute) :
+void attributeSorting(ParsedAttribute attribute) : { }
 {
-    ParsedSorting sortInfo;
-}
-{
-    sortInfo = sorting(attribute.name(), "attribute") { attribute.setSorting(sortInfo); }
+    sorting(attribute.sortInfo())
 }
 
-ParsedSorting sorting(String blockName, String blockType) :
-{
-    ParsedSorting sort = new ParsedSorting(blockName, blockType);
-}
+void sorting(ParsedSorting sort) : { }
 {
     <SORTING>
          ( (<COLON> sortingSetting(sort))
            | (lbrace() (sortingSetting(sort) (<NL>)*)* <RBRACE>) )
-    {
-        return sort;
-    }
 }
 
 void sortingSetting(ParsedSorting sorting) :
