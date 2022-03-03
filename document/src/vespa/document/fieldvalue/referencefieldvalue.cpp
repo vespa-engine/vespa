@@ -75,6 +75,8 @@ void ReferenceFieldValue::setDeserializedDocumentId(const DocumentId& id) {
     assert(_dataType != nullptr);
     requireIdOfMatchingType(id, _dataType->getTargetType());
     _documentId = id;
+    // Pre-cache GID to ensure it's not attempted lazily initialized later in a racing manner.
+    (void) _documentId.getGlobalId();
     _altered = false;
 }
 

@@ -59,8 +59,9 @@ DocumentId::calculateGlobalId() const
     IdString::LocationType location(_id.getLocation());
     memcpy(key, &location, 4);
 
-    _globalId.first = true;
+    // FIXME this lazy init mechanic does not satisfy const thread safety
     _globalId.second.set(key);
+    _globalId.first = true;
 }
 
 std::ostream &
