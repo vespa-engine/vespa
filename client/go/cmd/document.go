@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
@@ -166,13 +167,13 @@ func printResult(result util.OperationResult, payloadOnlyOnSuccess bool) error {
 	}
 
 	if !result.Success {
-		fmt.Fprintln(out, color.Red("Error:"), result.Message)
+		fmt.Fprintln(out, color.RedString("Error:"), result.Message)
 	} else if !(payloadOnlyOnSuccess && result.Payload != "") {
-		fmt.Fprintln(out, color.Green("Success:"), result.Message)
+		fmt.Fprintln(out, color.GreenString("Success:"), result.Message)
 	}
 
 	if result.Detail != "" {
-		fmt.Fprintln(out, color.Yellow(result.Detail))
+		fmt.Fprintln(out, color.YellowString(result.Detail))
 	}
 
 	if result.Payload != "" {

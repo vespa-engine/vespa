@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/build"
 	"github.com/vespa-engine/vespa/client/go/util"
@@ -73,10 +74,10 @@ func checkVersion() error {
 	if usingHomebrew && latest.isRecent() {
 		return nil // Allow some time for new release to appear in Homebrew repo
 	}
-	log.Printf("\nNew release available: %s", color.Green(latest.Version))
+	log.Printf("\nNew release available: %s", color.GreenString(latest.Version.String()))
 	log.Printf("https://github.com/vespa-engine/vespa/releases/tag/v%s", latest.Version)
 	if usingHomebrew {
-		log.Printf("\nUpgrade by running:\n%s", color.Cyan("brew update && brew upgrade vespa-cli"))
+		log.Printf("\nUpgrade by running:\n%s", color.CyanString("brew update && brew upgrade vespa-cli"))
 	}
 	return nil
 }

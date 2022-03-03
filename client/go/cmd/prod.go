@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
@@ -78,11 +79,11 @@ https://cloud.vespa.ai/en/reference/deployment`,
 			return err
 		}
 
-		fmt.Fprint(stdout, "This will modify any existing ", color.Yellow("deployment.xml"), " and ", color.Yellow("services.xml"),
+		fmt.Fprint(stdout, "This will modify any existing ", color.YellowString("deployment.xml"), " and ", color.YellowString("services.xml"),
 			"!\nBefore modification a backup of the original file will be created.\n\n")
 		fmt.Fprint(stdout, "A default value is suggested (shown inside brackets) based on\nthe files' existing contents. Press enter to use it.\n\n")
 		fmt.Fprint(stdout, "Abort the configuration at any time by pressing Ctrl-C. The\nfiles will remain untouched.\n\n")
-		fmt.Fprint(stdout, "See this guide for sizing a Vespa deployment:\n", color.Green("https://docs.vespa.ai/en/performance/sizing-search.html\n\n"))
+		fmt.Fprint(stdout, "See this guide for sizing a Vespa deployment:\n", color.GreenString("https://docs.vespa.ai/en/performance/sizing-search.html\n\n"))
 		r := bufio.NewReader(stdin)
 		deploymentXML, err = updateRegions(r, deploymentXML, target.Deployment().System)
 		if err != nil {
@@ -165,8 +166,8 @@ $ vespa prod submit`,
 		if err := vespa.Submit(opts); err != nil {
 			return fmt.Errorf("could not submit application for deployment: %w", err)
 		} else {
-			printSuccess("Submitted ", color.Cyan(pkg.Path), " for deployment")
-			log.Printf("See %s for deployment progress\n", color.Cyan(fmt.Sprintf("%s/tenant/%s/application/%s/prod/deployment",
+			printSuccess("Submitted ", color.CyanString(pkg.Path), " for deployment")
+			log.Printf("See %s for deployment progress\n", color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/prod/deployment",
 				opts.Target.Deployment().System.ConsoleURL, opts.Target.Deployment().Application.Tenant, opts.Target.Deployment().Application.Application)))
 		}
 		return nil
@@ -181,14 +182,14 @@ func writeWithBackup(pkg vespa.ApplicationPackage, filename, contents string) er
 			return err
 		}
 		if bytes.Equal(data, []byte(contents)) {
-			fmt.Fprintf(stdout, "Not writing %s: File is unchanged\n", color.Yellow(filename))
+			fmt.Fprintf(stdout, "Not writing %s: File is unchanged\n", color.YellowString(filename))
 			return nil
 		}
 		renamed := false
 		for i := 1; i <= 1000; i++ {
 			bak := fmt.Sprintf("%s.%d.bak", dst, i)
 			if !util.PathExists(bak) {
-				fmt.Fprintf(stdout, "Backing up existing %s to %s\n", color.Yellow(filename), color.Yellow(bak))
+				fmt.Fprintf(stdout, "Backing up existing %s to %s\n", color.YellowString(filename), color.YellowString(bak))
 				if err := os.Rename(dst, bak); err != nil {
 					return err
 				}
@@ -200,7 +201,7 @@ func writeWithBackup(pkg vespa.ApplicationPackage, filename, contents string) er
 			return fmt.Errorf("could not find an unused backup name for %s", dst)
 		}
 	}
-	fmt.Fprintf(stdout, "Writing %s\n", color.Green(dst))
+	fmt.Fprintf(stdout, "Writing %s\n", color.GreenString(dst))
 	return ioutil.WriteFile(dst, []byte(contents), 0644)
 }
 
@@ -225,9 +226,9 @@ func updateRegions(r *bufio.Reader, deploymentXML xml.Deployment, system vespa.S
 }
 
 func promptRegions(r *bufio.Reader, deploymentXML xml.Deployment, system vespa.System) (string, error) {
-	fmt.Fprintln(stdout, color.Cyan("> Deployment regions"))
-	fmt.Fprintf(stdout, "Documentation: %s\n", color.Green("https://cloud.vespa.ai/en/reference/zones"))
-	fmt.Fprintf(stdout, "Example: %s\n\n", color.Yellow("aws-us-east-1c,aws-us-west-2a"))
+	fmt.Fprintln(stdout, color.CyanString("> Deployment regions"))
+	fmt.Fprintf(stdout, "Documentation: %s\n", color.GreenString("https://cloud.vespa.ai/en/reference/zones"))
+	fmt.Fprintf(stdout, "Example: %s\n\n", color.YellowString("aws-us-east-1c,aws-us-west-2a"))
 	var currentRegions []string
 	for _, r := range deploymentXML.Prod.Regions {
 		currentRegions = append(currentRegions, r.Name)
@@ -299,20 +300,20 @@ func promptNodes(r *bufio.Reader, clusterID string, defaultValue xml.Nodes) (xml
 }
 
 func promptNodeCount(r *bufio.Reader, clusterID string, nodeCount string) (string, error) {
-	fmt.Fprintln(stdout, color.Cyan("\n> Node count: "+clusterID+" cluster"))
-	fmt.Fprintf(stdout, "Documentation: %s\n", color.Green("https://cloud.vespa.ai/en/reference/services"))
-	fmt.Fprintf(stdout, "Example: %s\nExample: %s\n\n", color.Yellow("4"), color.Yellow("[2,8]"))
+	fmt.Fprintln(stdout, color.CyanString("\n> Node count: "+clusterID+" cluster"))
+	fmt.Fprintf(stdout, "Documentation: %s\n", color.GreenString("https://cloud.vespa.ai/en/reference/services"))
+	fmt.Fprintf(stdout, "Example: %s\nExample: %s\n\n", color.YellowString("4"), color.YellowString("[2,8]"))
 	validator := func(input string) error {
 		_, _, err := xml.ParseNodeCount(input)
 		return err
 	}
-	return prompt(r, fmt.Sprintf("How many nodes should the %s cluster have?", color.Cyan(clusterID)), nodeCount, validator)
+	return prompt(r, fmt.Sprintf("How many nodes should the %s cluster have?", color.CyanString(clusterID)), nodeCount, validator)
 }
 
 func promptResources(r *bufio.Reader, clusterID string, resources string) (string, error) {
-	fmt.Fprintln(stdout, color.Cyan("\n> Node resources: "+clusterID+" cluster"))
-	fmt.Fprintf(stdout, "Documentation: %s\n", color.Green("https://cloud.vespa.ai/en/reference/services"))
-	fmt.Fprintf(stdout, "Example: %s\nExample: %s\n\n", color.Yellow("auto"), color.Yellow("vcpu=4,memory=8Gb,disk=100Gb"))
+	fmt.Fprintln(stdout, color.CyanString("\n> Node resources: "+clusterID+" cluster"))
+	fmt.Fprintf(stdout, "Documentation: %s\n", color.GreenString("https://cloud.vespa.ai/en/reference/services"))
+	fmt.Fprintf(stdout, "Example: %s\nExample: %s\n\n", color.YellowString("auto"), color.YellowString("vcpu=4,memory=8Gb,disk=100Gb"))
 	validator := func(input string) error {
 		if input == "auto" {
 			return nil
@@ -320,7 +321,7 @@ func promptResources(r *bufio.Reader, clusterID string, resources string) (strin
 		_, err := xml.ParseResources(input)
 		return err
 	}
-	return prompt(r, fmt.Sprintf("Which resources should each node in the %s cluster have?", color.Cyan(clusterID)), resources, validator)
+	return prompt(r, fmt.Sprintf("Which resources should each node in the %s cluster have?", color.CyanString(clusterID)), resources, validator)
 }
 
 func readDeploymentXML(pkg vespa.ApplicationPackage) (xml.Deployment, error) {
@@ -349,7 +350,7 @@ func prompt(r *bufio.Reader, question, defaultAnswer string, validator func(inpu
 	for input == "" {
 		fmt.Fprint(stdout, question)
 		if defaultAnswer != "" {
-			fmt.Fprint(stdout, " [", color.Yellow(defaultAnswer), "]")
+			fmt.Fprint(stdout, " [", color.YellowString(defaultAnswer), "]")
 		}
 		fmt.Fprint(stdout, " ")
 

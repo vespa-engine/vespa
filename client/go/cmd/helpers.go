@@ -12,29 +12,31 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/vespa-engine/vespa/client/go/build"
 	"github.com/vespa-engine/vespa/client/go/version"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 func printErrHint(err error, hints ...string) {
-	fmt.Fprintln(stderr, color.Red("Error:"), err)
+	fmt.Fprintln(stderr, color.RedString("Error:"), err)
 	for _, hint := range hints {
-		fmt.Fprintln(stderr, color.Cyan("Hint:"), hint)
+		fmt.Fprintln(stderr, color.CyanString("Hint:"), hint)
 	}
 }
 
 func printSuccess(msg ...interface{}) {
-	log.Print(color.Green("Success: "), fmt.Sprint(msg...))
+	log.Print(color.GreenString("Success: "), fmt.Sprint(msg...))
 }
 
 func printWarning(msg string, hints ...string) {
-	fmt.Fprintln(stderr, color.Yellow("Warning:"), msg)
+	fmt.Fprintln(stderr, color.YellowString("Warning:"), msg)
 	for _, hint := range hints {
-		fmt.Fprintln(stderr, color.Cyan("Hint:"), hint)
+		fmt.Fprintln(stderr, color.CyanString("Hint:"), hint)
 	}
 }
 
@@ -160,7 +162,7 @@ func getService(service string, sessionOrRunID int64, cluster string) (*vespa.Se
 	}
 	timeout := time.Duration(waitSecsArg) * time.Second
 	if timeout > 0 {
-		log.Printf("Waiting up to %d %s for %s service to become available ...", color.Cyan(waitSecsArg), color.Cyan("seconds"), color.Cyan(service))
+		log.Printf("Waiting up to %s %s for %s service to become available ...", color.CyanString(strconv.Itoa(waitSecsArg)), color.CyanString("seconds"), color.CyanString(service))
 	}
 	s, err := t.Service(service, timeout, sessionOrRunID, cluster)
 	if err != nil {
@@ -298,16 +300,16 @@ func waitForService(service string, sessionOrRunID int64) error {
 	}
 	timeout := time.Duration(waitSecsArg) * time.Second
 	if timeout > 0 {
-		log.Printf("Waiting up to %d %s for service to become ready ...", color.Cyan(waitSecsArg), color.Cyan("seconds"))
+		log.Printf("Waiting up to %s %s for service to become ready ...", color.CyanString(strconv.Itoa(waitSecsArg)), color.CyanString("seconds"))
 	}
 	status, err := s.Wait(timeout)
 	if status/100 == 2 {
-		log.Print(s.Description(), " at ", color.Cyan(s.BaseURL), " is ", color.Green("ready"))
+		log.Print(s.Description(), " at ", color.CyanString(s.BaseURL), " is ", color.GreenString("ready"))
 	} else {
 		if err == nil {
 			err = fmt.Errorf("status %d", status)
 		}
-		return fmt.Errorf("%s at %s is %s: %w", s.Description(), color.Cyan(s.BaseURL), color.Red("not ready"), err)
+		return fmt.Errorf("%s at %s is %s: %w", s.Description(), color.CyanString(s.BaseURL), color.RedString("not ready"), err)
 	}
 	return nil
 }

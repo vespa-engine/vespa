@@ -4,10 +4,9 @@ go 1.15
 
 require (
 	github.com/briandowns/spinner v1.16.0
-	github.com/fatih/color v1.10.0 // indirect
+	github.com/fatih/color v1.10.0
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/lestrrat-go/jwx v1.2.9
-	github.com/logrusorgru/aurora/v3 v3.0.0
 	github.com/mattn/go-colorable v0.1.8
 	github.com/mattn/go-isatty v0.0.13
 	github.com/pkg/browser v0.0.0-20210706143420-7d21f8c997e2

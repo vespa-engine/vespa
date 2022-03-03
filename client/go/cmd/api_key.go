@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
@@ -124,10 +125,10 @@ func printPublicKey(system vespa.System, apiKeyFile, tenant string) error {
 	if err != nil {
 		return fmt.Errorf("failed to extract fingerprint: %w", err)
 	}
-	log.Printf("\nThis is your public key:\n%s", color.Green(pemPublicKey))
-	log.Printf("Its fingerprint is:\n%s\n", color.Cyan(fingerprint))
+	log.Printf("\nThis is your public key:\n%s", color.GreenString(string(pemPublicKey)))
+	log.Printf("Its fingerprint is:\n%s\n", color.CyanString(fingerprint))
 	log.Print("\nTo use this key in Vespa Cloud click 'Add custom key' at")
-	log.Printf(color.Cyan("%s/tenant/%s/keys").String(), system.ConsoleURL, tenant)
+	log.Printf(color.CyanString("%s/tenant/%s/keys"), system.ConsoleURL, tenant)
 	log.Print("and paste the entire public key including the BEGIN and END lines.")
 	return nil
 }

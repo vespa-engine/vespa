@@ -7,7 +7,9 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"strconv"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
@@ -81,14 +83,14 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 
 		log.Println()
 		if opts.IsCloud() {
-			printSuccess("Triggered deployment of ", color.Cyan(pkg.Path), " with run ID ", color.Cyan(result.ID))
+			printSuccess("Triggered deployment of ", color.CyanString(pkg.Path), " with run ID ", color.CyanString(strconv.FormatInt(result.ID, 10)))
 		} else {
-			printSuccess("Deployed ", color.Cyan(pkg.Path))
+			printSuccess("Deployed ", color.CyanString(pkg.Path))
 			printPrepareLog(result)
 		}
 		if opts.IsCloud() {
-			log.Printf("\nUse %s for deployment status, or follow this deployment at", color.Cyan("vespa status"))
-			log.Print(color.Cyan(fmt.Sprintf("%s/tenant/%s/application/%s/dev/instance/%s/job/%s-%s/run/%d",
+			log.Printf("\nUse %s for deployment status, or follow this deployment at", color.CyanString("vespa status"))
+			log.Print(color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/dev/instance/%s/job/%s-%s/run/%d",
 				opts.Target.Deployment().System.ConsoleURL,
 				opts.Target.Deployment().Application.Tenant, opts.Target.Deployment().Application.Application, opts.Target.Deployment().Application.Instance,
 				opts.Target.Deployment().Zone.Environment, opts.Target.Deployment().Zone.Region,
@@ -131,8 +133,7 @@ var prepareCmd = &cobra.Command{
 		if err := cfg.WriteSessionID(vespa.DefaultApplication, result.ID); err != nil {
 			return fmt.Errorf("could not write session id: %w", err)
 		}
-		printSuccess("Prepared ", color.Cyan(pkg.Path), " with session ", result.ID)
-		printPrepareLog(result)
+		printSuccess("Prepared ", color.CyanString(pkg.Path), " with session ", result.ID)
 		return nil
 	},
 }
@@ -167,7 +168,7 @@ var activateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		printSuccess("Activated ", color.Cyan(pkg.Path), " with session ", sessionID)
+		printSuccess("Activated ", color.CyanString(pkg.Path), " with session ", sessionID)
 		return waitForQueryService(sessionID)
 	},
 }
@@ -182,14 +183,13 @@ func waitForQueryService(sessionOrRunID int64) error {
 
 func printPrepareLog(result vespa.PrepareResult) {
 	for _, entry := range result.LogLines {
-		switch l := entry.Level; l {
+		level := entry.Level
+		switch level {
 		case "ERROR":
-			fmt.Fprint(stderr, color.Red(l))
+			level = color.RedString(level)
 		case "WARNING":
-			fmt.Fprint(stderr, color.Yellow(l))
-		default:
-			fmt.Fprint(stderr, color.Reset(l))
+			level = color.YellowString(level)
 		}
-		fmt.Fprintf(stderr, " %s", entry.Message)
+		fmt.Fprintf(stderr, "%s %s", level, entry.Message)
 	}
 }
