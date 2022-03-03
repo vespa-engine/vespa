@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.document;
 
+import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
@@ -21,6 +22,17 @@ public final class BooleanIndexDefinition {
     private final OptionalLong lowerBound;
     private final OptionalLong upperBound;
     private final OptionalDouble densePostingListThreshold;
+
+    public BooleanIndexDefinition(Optional<Integer> arity,
+                                  Optional<Long> lowerBound,
+                                  Optional<Long> upperBound,
+                                  Optional<Double> densePLT)
+    {
+        this.arity                     = arity.isPresent() ? OptionalInt.of(arity.get()) : OptionalInt.empty();
+        this.lowerBound                = lowerBound.isPresent() ? OptionalLong.of(lowerBound.get()) : OptionalLong.empty();
+        this.upperBound                = upperBound.isPresent() ? OptionalLong.of(upperBound.get()) : OptionalLong.empty();
+        this.densePostingListThreshold = densePLT.isPresent() ? OptionalDouble.of(densePLT.get()) : OptionalDouble.empty();
+    }
 
     public BooleanIndexDefinition(OptionalInt arity, OptionalLong lowerBound,
                                   OptionalLong upperBound, OptionalDouble densePostingListThreshold) {
