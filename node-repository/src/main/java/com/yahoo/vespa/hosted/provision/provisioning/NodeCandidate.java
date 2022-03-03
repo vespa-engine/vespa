@@ -102,7 +102,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
     public abstract boolean isValid();
 
     /** Returns whether this can be replaced by any of the reserved candidates */
-    public boolean replacableBy(List<NodeCandidate> candidates) {
+    public boolean replaceableBy(List<NodeCandidate> candidates) {
         return candidates.stream()
                          .filter(candidate -> candidate.state() == Node.State.reserved)
                          .anyMatch(candidate -> {
@@ -428,7 +428,8 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
                                      allocation.get().hostname(),
                                      parentHostname().get(),
                                      resources.with(parent.get().resources().diskSpeed())
-                                                       .with(parent.get().resources().storageType()),
+                                              .with(parent.get().resources().storageType())
+                                              .with(parent.get().resources().architecture()),
                                      NodeType.tenant).build();
             return new ConcreteNodeCandidate(node, freeParentCapacity, parent, violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizable);
 

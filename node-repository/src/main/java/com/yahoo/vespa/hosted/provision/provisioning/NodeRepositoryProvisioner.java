@@ -283,6 +283,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                                            .map(flavor -> nodeRepository.resourcesCalculator().advertisedResourcesOf(flavor))
                                                            .filter(resources -> resources.diskSpeed().compatibleWith(requestedResources.diskSpeed()))
                                                            .filter(resources -> resources.storageType().compatibleWith(requestedResources.storageType()))
+                                                           .filter(resources -> resources.architecture().compatibleWith(requestedResources.architecture()))
                                                            .min(Comparator.comparingDouble(resources -> resources.distanceTo(requestedResources)))
                                                            .orElseThrow()
                                                            .withBandwidthGbps(requestedResources.bandwidthGbps());
