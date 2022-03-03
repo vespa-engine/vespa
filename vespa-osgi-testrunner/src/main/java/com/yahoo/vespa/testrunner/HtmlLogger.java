@@ -23,7 +23,7 @@ public class HtmlLogger {
 
     public LogRecord toLog(String line) {
         if (line.length() > 1 << 13)
-            line = line.substring(0, 1 << 13) + " ... (" + (line.length() - (1 << 13)) + " bytes truncated due to size)";
+            line = line.substring(0, 1 << 13) + " ... (" + (line.length() - (1 << 13)) + " more bytes truncated)";
 
         buffer.reset();
         try (PrintStream formatter = new PrintStream(new HtmlAnsiOutputStream(buffer))) {

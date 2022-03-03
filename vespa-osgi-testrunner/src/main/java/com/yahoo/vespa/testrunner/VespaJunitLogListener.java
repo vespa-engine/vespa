@@ -2,25 +2,35 @@
 
 package com.yahoo.vespa.testrunner;
 
+import ai.vespa.hosted.cd.InconclusiveTestException;
 import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.engine.reporting.ReportEntry;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestIdentifier;
 
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyNavigableMap;
 import static java.util.Objects.requireNonNull;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
+import static java.util.stream.Collectors.joining;
 
 class VespaJunitLogListener implements TestExecutionListener {
 
+    private final Map<String, NavigableMap<Status, List<String>>> results = new ConcurrentSkipListMap<>();
     private final Consumer<LogRecord> logger;
 
     VespaJunitLogListener(Consumer<LogRecord> logger) {
@@ -38,30 +48,66 @@ class VespaJunitLogListener implements TestExecutionListener {
     @Override
     public void executionStarted(TestIdentifier testIdentifier) {
         if (testIdentifier.isContainer() && testIdentifier.getParentId().isPresent()) // Skip root engine level.
-            log(INFO, "Tests started in: " + testIdentifier.getDisplayName());
+            log(INFO, "Running all tests in: " + testIdentifier.getDisplayName());
         if (testIdentifier.isTest())
-            log(INFO, "Test started: " + testIdentifier.getDisplayName());
+            log(INFO, "Running test: " + testIdentifier.getDisplayName());
     }
 
     @Override
     public void executionSkipped(TestIdentifier testIdentifier, String reason) {
         log(WARNING, "Skipped: " +  testIdentifier.getDisplayName() + ": " +  reason);
+        if (testIdentifier.isTest())
+            testIdentifier.getParentId().ifPresent(parent -> {
+                results.computeIfAbsent(parent, __ -> new ConcurrentSkipListMap<>())
+                       .computeIfAbsent(Status.skipped, __ -> new CopyOnWriteArrayList<>())
+                       .add(testIdentifier.getDisplayName());
+            });
     }
 
     @Override
     public void executionFinished(TestIdentifier testIdentifier, TestExecutionResult testExecutionResult) {
-        Level level;
-        String message;
-        switch (testExecutionResult.getStatus()) {
-            case FAILED:     level = SEVERE;  message = "failed";    break;
-            case ABORTED:    level = WARNING; message = "skipped";   break;
-            case SUCCESSFUL: level = INFO;    message = "succeeded"; break;
-            default:         level = INFO;    message = "completed"; break;
+        if (testIdentifier.isContainer()) {
+            if (testIdentifier.getParentIdObject().isPresent()) {
+                NavigableMap<Status, List<String>> children = results.getOrDefault(testIdentifier.getUniqueId(), emptyNavigableMap());
+                Level level = children.containsKey(Status.failed) ? SEVERE : INFO;
+                log(level,
+                    "Tests in " + testIdentifier.getDisplayName() + " done: " +
+                    children.entrySet().stream().map(entry -> entry.getValue().size() + " " + entry.getKey()).collect(joining(", ")));
+            }
+            else {
+                Map<Status, List<String>> testResults = new HashMap<>();
+                results.forEach((parent, results) -> results.forEach((status, tests) -> tests.forEach(test -> testResults.computeIfAbsent(status, __ -> new ArrayList<>())
+                                                                                                                         .add(parent + "." + test))));
+                log(INFO, "Done running " + testResults.values().stream().mapToInt(List::size).sum() + " tests:");
+                testResults.forEach((status, tests) -> {
+                    if (status != Status.successful)
+                        log(status == Status.failed ? SEVERE : status == Status.inconclusive ? INFO : WARNING,
+                            status.name().substring(0, 1).toUpperCase() + status.name().substring(1) + " tests:\n" + String.join("\n", tests));
+                });
+            }
         }
-        if (testIdentifier.isContainer() && testIdentifier.getParentId().isPresent()) // Skip root engine level.
-            log(level, "Tests " + message + " in: " + testIdentifier.getDisplayName(), testExecutionResult.getThrowable().orElse(null));
-        if (testIdentifier.isTest())
-            log(level, "Test " + message + ": " + testIdentifier.getDisplayName(), testExecutionResult.getThrowable().orElse(null));
+        if (testIdentifier.isTest()) {
+            Level level;
+            Status status;
+            if (testExecutionResult.getThrowable().map(InconclusiveTestException.class::isInstance).orElse(false)) {
+                level = INFO;
+                 status = Status.inconclusive;
+            }
+            else {
+                switch (testExecutionResult.getStatus()) {
+                    case SUCCESSFUL: level = INFO;    status = Status.successful; break;
+                    case ABORTED:    level = WARNING; status = Status.aborted;    break;
+                    case FAILED:
+                    default:         level = SEVERE;  status = Status.failed;     break;
+                }
+            }
+            testIdentifier.getParentId().ifPresent(parent -> {
+                results.computeIfAbsent(parent, __ -> new ConcurrentSkipListMap<>())
+                       .computeIfAbsent(status, __ -> new CopyOnWriteArrayList<>())
+                       .add(testIdentifier.getDisplayName());
+            });
+            log(level, "Test " + status + ": " + testIdentifier.getDisplayName(), testExecutionResult.getThrowable().orElse(null));
+        }
     }
 
     @Override
@@ -70,7 +116,7 @@ class VespaJunitLogListener implements TestExecutionListener {
                 ? report.getKeyValuePairs().get("value")
                 : report.getKeyValuePairs().entrySet().stream()
                         .map(entry -> entry.getKey() + ": " + entry.getValue())
-                        .collect(Collectors.joining("\n"));
+                        .collect(joining("\n"));
         LogRecord record = new LogRecord(INFO, message);
         record.setInstant(report.getTimestamp().toInstant(ZoneOffset.UTC));
         logger.accept(record);
@@ -84,6 +130,16 @@ class VespaJunitLogListener implements TestExecutionListener {
         LogRecord record = new LogRecord(level, message);
         record.setThrown(thrown);
         logger.accept(record);
+    }
+
+    private enum Status {
+
+        successful,
+        inconclusive,
+        failed,
+        aborted,
+        skipped;
+
     }
 
 }

@@ -9,4 +9,8 @@ package ai.vespa.hosted.cd;
  */
 public class InconclusiveTestException extends RuntimeException {
 
+    public InconclusiveTestException() { super(); }
+
+    public InconclusiveTestException(String message) { super(message); }
+
 }

@@ -17,6 +17,8 @@ import com.yahoo.yolean.Exceptions;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -31,6 +33,8 @@ import static com.yahoo.jdisc.Response.Status;
  * @author mortent
  */
 public class TestRunnerHandler extends ThreadedHttpRequestHandler {
+
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
 
     private final TestRunner testRunner;
 
@@ -146,11 +150,13 @@ public class TestRunnerHandler extends ThreadedHttpRequestHandler {
         summary.setLong("failed", testReport.failedCount);
         summary.setLong("ignored", testReport.ignoredCount);
         summary.setLong("aborted", testReport.abortedCount);
+        summary.setLong("inconclusive", testReport.inconclusiveCount);
         var failureRoot = summary.setArray("failures");
         testReport.failures.forEach(failure -> serializeFailure(failure, failureRoot.addObject()));
 
         var output = root.setArray("output");
-        testReport.logLines.forEach(lr -> output.addString(lr.getMessage()));
+        for (LogRecord record : testReport.logLines)
+            output.addString(formatter.format(record.getInstant().atOffset(ZoneOffset.UTC)) + " " + record.getMessage());
 
         return slime;
     }
