@@ -13,6 +13,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.vespa.defaults.Defaults;
 import org.junit.jupiter.engine.JupiterTestEngine;
+import org.junit.platform.engine.UniqueId;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.launcher.Launcher;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
@@ -201,7 +202,9 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         var failures = report.getFailures().stream()
                 .map(failure -> {
                     TestReport.trimStackTraces(failure.getException(), JunitRunner.class.getName());
-                    return new TestReport.Failure(failure.getTestIdentifier().getUniqueId(), failure.getException());
+                    return new TestReport.Failure(failure.getTestIdentifier().getParentId().map(id -> id + ".").orElse("") +
+                                                  failure.getTestIdentifier().getDisplayName(),
+                                                  failure.getException());
                 })
                 .collect(Collectors.toList());
         long inconclusive = isProductionTest ? failures.stream()
@@ -212,7 +215,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
                 .withSuccessCount(report.getTestsSucceededCount())
                 .withAbortedCount(report.getTestsAbortedCount())
                 .withIgnoredCount(report.getTestsSkippedCount())
-                .withFailedCount(report.getTotalFailureCount() - inconclusive)
+                .withFailedCount(report.getTestsFailedCount() - inconclusive)
                 .withInconclusiveCount(inconclusive)
                 .withFailures(failures)
                 .withLogs(logRecords.values())
