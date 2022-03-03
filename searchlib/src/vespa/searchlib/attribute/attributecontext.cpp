@@ -12,21 +12,24 @@ namespace search {
 const IAttributeVector *
 AttributeContext::getAttribute(AttributeMap & map, const string & name, bool stableEnum) const
 {
+    std::unique_lock guard(_cacheLock);
     AttributeMap::const_iterator itr = map.find(name);
+    std::shared_future<std::unique_ptr<attribute::AttributeReadGuard>> future_read_guard;
     if (itr != map.end()) {
-        if (itr->second) {
-            return itr->second->attribute();
-        } else {
-            return nullptr;
-        }
+        future_read_guard = itr->second;
+        guard.unlock();
     } else {
-        auto readGuard = _manager.getAttributeReadGuard(name, stableEnum);
-        const IAttributeVector *attribute = nullptr;
-        if (readGuard) {
-            attribute = readGuard->attribute();
-        }
-        map[name] = std::move(readGuard);
-        return attribute;
+        std::promise<std::unique_ptr<attribute::AttributeReadGuard>> promise;
+        future_read_guard = promise.get_future().share();
+        map[name] = future_read_guard;
+        guard.unlock();
+        promise.set_value(_manager.getAttributeReadGuard(name, stableEnum));
+    }
+    auto& read_guard = future_read_guard.get();
+    if (read_guard) {
+        return read_guard->attribute();
+    } else {
+        return nullptr;
     }
 }
 
@@ -42,14 +45,12 @@ AttributeContext::~AttributeContext() = default;
 const IAttributeVector *
 AttributeContext::getAttribute(const string & name) const
 {
-    std::lock_guard<std::mutex> guard(_cacheLock);
     return getAttribute(_attributes, name, false);
 }
 
 const IAttributeVector *
 AttributeContext::getAttributeStableEnum(const string & name) const
 {
-    std::lock_guard<std::mutex> guard(_cacheLock);
     return getAttribute(_enumAttributes, name, true);
 }
 

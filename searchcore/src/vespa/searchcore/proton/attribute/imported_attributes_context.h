@@ -4,6 +4,7 @@
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/vespalib/stllike/hash_fun.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <future>
 #include <mutex>
 #include <unordered_map>
 
@@ -31,8 +32,7 @@ private:
     using ImportedAttributeVector = search::attribute::ImportedAttributeVector;
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
 
-    using AttributeCache = std::unordered_map<vespalib::string, std::unique_ptr<AttributeReadGuard>, vespalib::hash<vespalib::string>>;
-    using LockGuard = std::lock_guard<std::mutex>;
+    using AttributeCache = std::unordered_map<vespalib::string, std::shared_future<std::unique_ptr<AttributeReadGuard>>, vespalib::hash<vespalib::string>>;
 
     const ImportedAttributesRepo &_repo;
     mutable AttributeCache _guardedAttributes;
@@ -40,7 +40,7 @@ private:
     mutable std::mutex _cacheMutex;
 
     const IAttributeVector *getOrCacheAttribute(const vespalib::string &name, AttributeCache &attributes,
-                                                bool stableEnumGuard, const LockGuard &) const;
+                                                bool stableEnumGuard) const;
 
 public:
     ImportedAttributesContext(const ImportedAttributesRepo &repo);
