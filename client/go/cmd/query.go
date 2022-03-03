@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/curl"
 	"github.com/vespa-engine/vespa/client/go/util"
@@ -97,7 +98,7 @@ func query(cmd *cobra.Command, arguments []string) error {
 	} else if response.StatusCode/100 == 4 {
 		return fmt.Errorf("invalid query: %s\n%s", response.Status, util.ReaderToJSON(response.Body))
 	} else {
-		return fmt.Errorf("%s from container at %s\n%s", response.Status, color.Cyan(url.Host), util.ReaderToJSON(response.Body))
+		return fmt.Errorf("%s from container at %s\n%s", response.Status, color.CyanString(url.Host), util.ReaderToJSON(response.Body))
 	}
 	return nil
 }

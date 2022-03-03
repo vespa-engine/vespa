@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/vespa-engine/vespa/client/go/auth0"
@@ -322,9 +323,10 @@ func (c *Config) Set(option, value string) error {
 func printOption(cfg *Config, option string) {
 	value, ok := cfg.Get(option)
 	if !ok {
-		value = color.Faint("<unset>").String()
+		faintColor := color.New(color.FgWhite, color.Faint)
+		value = faintColor.Sprint("<unset>")
 	} else {
-		value = color.Cyan(value).String()
+		value = color.CyanString(value)
 	}
 	log.Printf("%s = %s", option, value)
 }

@@ -11,7 +11,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/logrusorgru/aurora/v3"
+	"github.com/fatih/color"
 	"github.com/mattn/go-colorable"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
@@ -56,7 +56,6 @@ Vespa documentation: https://docs.vespa.ai`,
 	apiKeyFileArg  string
 	stdin          io.ReadWriter = os.Stdin
 
-	color  = aurora.NewAurora(false)
 	stdout = colorable.NewColorableStdout()
 	stderr = colorable.NewColorableStderr()
 )
@@ -103,7 +102,7 @@ func configureOutput() error {
 	default:
 		return errHint(fmt.Errorf("invalid value for %s option", colorFlag), "Must be \"auto\", \"never\" or \"always\"")
 	}
-	color = aurora.NewAurora(colorize)
+	color.NoColor = !colorize
 	return nil
 }
 

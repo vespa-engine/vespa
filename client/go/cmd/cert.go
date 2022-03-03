@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
@@ -134,10 +135,10 @@ func doCert(_ *cobra.Command, args []string) error {
 			}
 		}
 		if util.PathExists(privateKeyFile) {
-			return errHint(fmt.Errorf("private key %s already exists", color.Cyan(privateKeyFile)), hint)
+			return errHint(fmt.Errorf("private key %s already exists", color.CyanString(privateKeyFile)), hint)
 		}
 		if util.PathExists(certificateFile) {
-			return errHint(fmt.Errorf("certificate %s already exists", color.Cyan(certificateFile)), hint)
+			return errHint(fmt.Errorf("certificate %s already exists", color.CyanString(certificateFile)), hint)
 		}
 	}
 	if !noApplicationPackage {
@@ -168,10 +169,10 @@ func doCert(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("could not write private key: %w", err)
 	}
 	if !noApplicationPackage {
-		printSuccess("Certificate written to ", color.Cyan(pkgCertificateFile))
+		printSuccess("Certificate written to ", color.CyanString(pkgCertificateFile))
 	}
-	printSuccess("Certificate written to ", color.Cyan(certificateFile))
-	printSuccess("Private key written to ", color.Cyan(privateKeyFile))
+	printSuccess("Certificate written to ", color.CyanString(certificateFile))
+	printSuccess("Private key written to ", color.CyanString(privateKeyFile))
 	return nil
 }
 
@@ -225,6 +226,6 @@ func doCertAdd(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("could not copy certificate file to application: %w", err)
 	}
 
-	printSuccess("Certificate written to ", color.Cyan(pkgCertificateFile))
+	printSuccess("Certificate written to ", color.CyanString(pkgCertificateFile))
 	return nil
 }

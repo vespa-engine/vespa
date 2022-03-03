@@ -15,9 +15,11 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
@@ -51,7 +53,7 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 			if count == 1 {
 				plural = ""
 			}
-			fmt.Fprintf(stdout, "\n%s %d of %d test%s failed:\n", color.Red("Failure:"), len(failed), count, plural)
+			fmt.Fprintf(stdout, "\n%s %d of %d test%s failed:\n", color.RedString("Failure:"), len(failed), count, plural)
 			for _, test := range failed {
 				fmt.Fprintln(stdout, test)
 			}
@@ -61,7 +63,7 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 			if count == 1 {
 				plural = ""
 			}
-			fmt.Fprintf(stdout, "\n%s %d test%s OK\n", color.Green("Success:"), count, plural)
+			fmt.Fprintf(stdout, "\n%s %d test%s OK\n", color.GreenString("Success:"), count, plural)
 			return nil
 		}
 	},
@@ -154,7 +156,7 @@ func runTest(testPath string, context testContext) (string, error) {
 		}
 		if !context.dryRun {
 			if failure != "" {
-				fmt.Fprintf(stdout, " %s\n%s:\n%s\n", color.Red("failed"), stepName, longFailure)
+				fmt.Fprintf(stdout, " %s\n%s:\n%s\n", color.RedString("failed"), stepName, longFailure)
 				return fmt.Sprintf("%s: %s: %s", testName, stepName, failure), nil
 			}
 			if i == 0 {
@@ -164,7 +166,7 @@ func runTest(testPath string, context testContext) (string, error) {
 		}
 	}
 	if !context.dryRun {
-		fmt.Fprintln(stdout, color.Green(" OK"))
+		fmt.Fprintln(stdout, color.GreenString(" OK"))
 	}
 	return "", nil
 }
@@ -274,12 +276,12 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 	defer response.Body.Close()
 
 	if statusCode != response.StatusCode {
-		return fmt.Sprintf("Unexpected status code: %d", color.Red(response.StatusCode)),
-			fmt.Sprintf("Unexpected status code\nExpected: %d\nActual:   %d\nRequested: %s at %s\nResponse:\n%s",
-				color.Cyan(statusCode),
-				color.Red(response.StatusCode),
-				color.Cyan(method),
-				color.Cyan(requestUrl),
+		return fmt.Sprintf("Unexpected status code: %s", color.RedString(strconv.Itoa(response.StatusCode))),
+			fmt.Sprintf("Unexpected status code\nExpected: %s\nActual:   %s\nRequested: %s at %s\nResponse:\n%s",
+				color.CyanString(strconv.Itoa(statusCode)),
+				color.RedString(strconv.Itoa(response.StatusCode)),
+				color.CyanString(method),
+				color.CyanString(requestUrl.String()),
 				util.ReaderToJSON(response.Body)), nil
 	}
 
@@ -308,7 +310,7 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 			failure += ": " + actual
 			longFailure += "\nActual:   " + actual
 		}
-		longFailure += fmt.Sprintf("\nRequested: %s at %s\nResponse:\n%s", color.Cyan(method), color.Cyan(requestUrl), string(responsePretty))
+		longFailure += fmt.Sprintf("\nRequested: %s at %s\nResponse:\n%s", color.CyanString(method), color.CyanString(requestUrl.String()), string(responsePretty))
 		return failure, longFailure, err
 	}
 	return "", "", err
@@ -345,9 +347,9 @@ func compare(expected interface{}, actual interface{}, path string) (string, str
 				}
 				valueMatch = true
 			} else {
-				return fmt.Sprintf("Unexpected number of elements at %s", color.Cyan(path)),
-					fmt.Sprintf("%d", color.Cyan(len(u))),
-					fmt.Sprintf("%d", color.Red(len(v))),
+				return fmt.Sprintf("Unexpected number of elements at %s", color.CyanString(path)),
+					color.CyanString(strconv.Itoa(len(u))),
+					color.RedString(strconv.Itoa(len(v))),
 					nil
 			}
 		}
@@ -359,7 +361,7 @@ func compare(expected interface{}, actual interface{}, path string) (string, str
 				childPath := fmt.Sprintf("%s/%s", path, strings.ReplaceAll(strings.ReplaceAll(n, "~", "~0"), "/", "~1"))
 				f, ok := v[n]
 				if !ok {
-					return fmt.Sprintf("Missing expected field at %s", color.Red(childPath)), "", "", nil
+					return fmt.Sprintf("Missing expected field at %s", color.RedString(childPath)), "", "", nil
 				}
 				if failure, expected, actual, err := compare(e, f, childPath); failure != "" || err != nil {
 					return failure, expected, actual, err
@@ -381,9 +383,9 @@ func compare(expected interface{}, actual interface{}, path string) (string, str
 		}
 		expectedJson, _ := json.Marshal(expected)
 		actualJson, _ := json.Marshal(actual)
-		return fmt.Sprintf("Unexpected %s at %s", mismatched, color.Cyan(path)),
-			fmt.Sprintf("%s", color.Cyan(expectedJson)),
-			fmt.Sprintf("%s", color.Red(actualJson)),
+		return fmt.Sprintf("Unexpected %s at %s", mismatched, color.CyanString(path)),
+			fmt.Sprintf("%s", color.CyanString(string(expectedJson))),
+			fmt.Sprintf("%s", color.RedString(string(actualJson))),
 			nil
 	}
 	return "", "", "", nil

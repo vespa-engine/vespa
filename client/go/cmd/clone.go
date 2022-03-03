@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
@@ -77,7 +78,7 @@ func cloneApplication(applicationName string, applicationDir string) error {
 
 	r, err := zip.OpenReader(zipFile.Name())
 	if err != nil {
-		return fmt.Errorf("could not open sample apps zip '%s': %w", color.Cyan(zipFile.Name()), err)
+		return fmt.Errorf("could not open sample apps zip '%s': %w", color.CyanString(zipFile.Name()), err)
 	}
 	defer r.Close()
 
@@ -88,20 +89,20 @@ func cloneApplication(applicationName string, applicationDir string) error {
 			if !found { // Create destination directory lazily when source is found
 				createErr := os.Mkdir(applicationDir, 0755)
 				if createErr != nil {
-					return fmt.Errorf("could not create directory '%s': %w", color.Cyan(applicationDir), createErr)
+					return fmt.Errorf("could not create directory '%s': %w", color.CyanString(applicationDir), createErr)
 				}
 			}
 			found = true
 
 			if err := copy(f, applicationDir, dirPrefix); err != nil {
-				return fmt.Errorf("could not copy zip entry '%s': %w", color.Cyan(f.Name), err)
+				return fmt.Errorf("could not copy zip entry '%s': %w", color.CyanString(f.Name), err)
 			}
 		}
 	}
 	if !found {
-		return errHint(fmt.Errorf("could not find source application '%s'", color.Cyan(applicationName)), "Use -f to ignore the cache")
+		return errHint(fmt.Errorf("could not find source application '%s'", color.CyanString(applicationName)), "Use -f to ignore the cache")
 	} else {
-		log.Print("Created ", color.Cyan(applicationDir))
+		log.Print("Created ", color.CyanString(applicationDir))
 	}
 	return nil
 }
@@ -120,7 +121,7 @@ func fetchSampleAppsZip(destination string) error {
 		return fmt.Errorf("could not create temporary file: %w", err)
 	}
 	defer f.Close()
-	return util.Spinner(stderr, color.Yellow("Downloading sample apps ...").String(), func() error {
+	return util.Spinner(stderr, color.YellowString("Downloading sample apps ..."), func() error {
 		request, err := http.NewRequest("GET", "https://github.com/vespa-engine/sample-apps/archive/refs/heads/master.zip", nil)
 		if err != nil {
 			return fmt.Errorf("invalid url: %w", err)
@@ -163,7 +164,7 @@ func openSampleAppsZip() (*os.File, error) {
 			return nil, errHint(fmt.Errorf("could not determine cache status: %w", err), "Try ignoring the cache with the -f flag")
 		}
 		if useCache {
-			log.Print(color.Yellow("Using cached sample apps ..."))
+			log.Print(color.YellowString("Using cached sample apps ..."))
 			return os.Open(path)
 		}
 	}
