@@ -42,7 +42,7 @@ ConfigRetriever::getBootstrapConfigs(vespalib::duration timeout)
 ConfigSnapshot
 ConfigRetriever::getConfigs(const ConfigKeySet & keySet, vespalib::duration timeout)
 {
-    if (_closed)
+    if (isClosed())
         return ConfigSnapshot();
     if (_bootstrapRequired) {
         throw ConfigRuntimeException("Cannot change keySet until bootstrap getBootstrapConfigs() has been called");
@@ -52,7 +52,7 @@ ConfigRetriever::getConfigs(const ConfigKeySet & keySet, vespalib::duration time
         _lastKeySet = keySet;
         {
             std::lock_guard guard(_lock);
-            if (_closed)
+            if (isClosed())
                 return ConfigSnapshot();
             _configSubscriber = std::make_unique<GenericConfigSubscriber>(_context);
         }
@@ -83,7 +83,7 @@ void
 ConfigRetriever::close()
 {
     std::lock_guard guard(_lock);
-    _closed = true;
+    _closed.store(true, std::memory_order_relaxed);
     _bootstrapSubscriber.close();
     if (_configSubscriber)
         _configSubscriber->close();
@@ -92,7 +92,7 @@ ConfigRetriever::close()
 bool
 ConfigRetriever::isClosed() const
 {
-    return (_closed);
+    return _closed.load(std::memory_order_relaxed);
 }
 
 }
