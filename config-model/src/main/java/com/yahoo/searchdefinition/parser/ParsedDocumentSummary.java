@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.parser;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,7 +17,7 @@ class ParsedDocumentSummary extends ParsedBlock {
     private boolean omitSummaryFeatures;
     private boolean fromDisk;
     private final List<String> inherited = new ArrayList<>();
-    private final Map<String, ParsedSummaryField> fields = new HashMap<>();
+    private final Map<String, ParsedSummaryField> fields = new LinkedHashMap<>();
 
     ParsedDocumentSummary(String name) {
         super(name, "document-summary");

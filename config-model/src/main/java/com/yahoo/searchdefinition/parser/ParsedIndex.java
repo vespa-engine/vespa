@@ -6,6 +6,7 @@ import com.yahoo.searchdefinition.document.Stemming;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * This class holds the extracted information after parsing an "index"
@@ -15,30 +16,30 @@ import java.util.List;
  **/
 class ParsedIndex extends ParsedBlock {
 
-    private boolean enableBm25 = false;
-    private boolean isPrefix = false;
-    private HnswIndexParams hnswParams;
+    private Boolean enableBm25 = null;
+    private Boolean isPrefix = null;
+    private HnswIndexParams hnswParams = null;
     private final List<String> aliases = new ArrayList<>();
     private Stemming stemming = null;
-    private Integer arity;
-    private Long lowerBound;
-    private Long upperBound;
-    private Double densePLT;
+    private Integer arity = null;
+    private Long lowerBound = null;
+    private Long upperBound = null;
+    private Double densePLT = null;
     
     ParsedIndex(String name) {
         super(name, "index");
     }
 
-    boolean getEnableBm25() { return this.enableBm25; }
-    boolean getPrefix() { return this.isPrefix; }
-    HnswIndexParams getHnswIndexParams() { return this.hnswParams; }
+    Optional<Boolean> getEnableBm25() { return Optional.ofNullable(this.enableBm25); }
+    Optional<Boolean> getPrefix() { return Optional.ofNullable(this.isPrefix); }
+    Optional<HnswIndexParams> getHnswIndexParams() { return Optional.ofNullable(this.hnswParams); }
     List<String> getAliases() { return List.copyOf(aliases); }
     boolean hasStemming() { return stemming != null; }
-    Stemming getStemming() { return stemming; }
-    Integer getArity() { return this.arity; }
-    Long getLowerBound() { return this.lowerBound; }
-    Long getUpperBound() { return this.upperBound; }
-    Double getDensePostingListThreshold() { return this.densePLT; }
+    Optional<Stemming> getStemming() { return Optional.ofNullable(stemming); }
+    Optional<Integer> getArity() { return Optional.ofNullable(this.arity); }
+    Optional<Long> getLowerBound() { return Optional.ofNullable(this.lowerBound); }
+    Optional<Long> getUpperBound() { return Optional.ofNullable(this.upperBound); }
+    Optional<Double> getDensePostingListThreshold() { return Optional.ofNullable(this.densePLT); }
 
     void addAlias(String alias) {
         aliases.add(alias);

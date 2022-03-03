@@ -24,7 +24,7 @@ class ParsedField extends ParsedBlock {
     private boolean isLiteral = false;
     private boolean isNormal = false;
     private Integer weight;
-    private String normalizing;
+    private String normalizing = null;
     private final ParsedMatchSettings matchInfo = new ParsedMatchSettings();
     private Stemming stemming = null;
     private ParsedIndexingOp indexingOp = null;
@@ -59,6 +59,7 @@ class ParsedField extends ParsedBlock {
     String lookupAliasedFrom(String alias) { return aliases.get(alias); }
     ParsedMatchSettings matchSettings() { return this.matchInfo; }
     Optional<Stemming> getStemming() { return Optional.ofNullable(stemming); }
+    Optional<String> getNormalizing() { return Optional.ofNullable(normalizing); }
     Optional<ParsedIndexingOp> getIndexing() { return Optional.ofNullable(indexingOp); }
     Optional<ParsedSorting> getSorting() { return Optional.ofNullable(sortSettings); }
     Map<String, String> getRankTypes() { return Map.copyOf(rankTypes); }
@@ -149,6 +150,9 @@ class ParsedField extends ParsedBlock {
     void addSummaryField(ParsedSummaryField summaryField) {
         String fieldName = summaryField.name();
         verifyThat(! summaryFields.containsKey(fieldName), "already has summary field", fieldName);
+        if (summaryField.getType() == null) {
+            summaryField.setType(getType());
+        }
         summaryFields.put(fieldName, summaryField);
     }
 }

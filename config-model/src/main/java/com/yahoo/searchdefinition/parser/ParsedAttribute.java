@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.parser;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,7 +21,7 @@ class ParsedAttribute extends ParsedBlock {
     private boolean enableHuge = false;
     private boolean enableMutable = false;
     private boolean enablePaged = false;
-    private final Map<String, String> aliases = new HashMap<>();
+    private final Map<String, String> aliases = new LinkedHashMap<>();
     private ParsedSorting sortSettings = null;
     private String distanceMetric = null;
 
@@ -45,10 +45,17 @@ class ParsedAttribute extends ParsedBlock {
         verifyThat(! aliases.containsKey(to), "already has alias", to);
         aliases.put(to, from);
     }
+
     void setDistanceMetric(String value) {
         verifyThat(distanceMetric == null, "already has distance-metric", distanceMetric);
         this.distanceMetric = value;
     }
+
+    ParsedSorting sortInfo() {
+        if (sortSettings == null) sortSettings = new ParsedSorting(name(), "attribute.sorting");
+        return this.sortSettings;
+    }
+
     void setEnableBitVectors(boolean value) { this.enableBitVectors = value; }
     void setEnableOnlyBitVector(boolean value) { this.enableOnlyBitVector = value; }
     void setFastAccess(boolean value) { this.enableFastAccess = true; }
@@ -56,8 +63,4 @@ class ParsedAttribute extends ParsedBlock {
     void setHuge(boolean value) { this.enableHuge = true; }
     void setMutable(boolean value) { this.enableMutable = true; }
     void setPaged(boolean value) { this.enablePaged = true; }
-    ParsedSorting sortInfo() {
-        if (sortSettings == null) sortSettings = new ParsedSorting(name(), "attribute.sorting");
-        return this.sortSettings;
-    }
 }

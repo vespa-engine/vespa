@@ -34,6 +34,7 @@ import com.yahoo.searchdefinition.document.Case;
 import com.yahoo.searchdefinition.document.MatchType;
 import com.yahoo.searchdefinition.document.MatchAlgorithm;
 import com.yahoo.searchdefinition.document.HnswIndexParams;
+import com.yahoo.searchdefinition.document.Sorting;
 import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.fieldoperation.IndexingOperation;
@@ -452,6 +453,7 @@ ParsedSchema rootDocumentItem(ParsedSchema schema) :
     ( doc = namedDocument() {
         if (schema == null) schema = new ParsedSchema(doc.name());
         schema.addDocument(doc);
+        schema.setDocumentWithoutSchema();
         return schema;
     } )
 }
@@ -1027,7 +1029,7 @@ void weightedsetBody(ParsedType type) : { }
 void rankType(ParsedField field) :
 {
     String typeName;
-    String indexName = field.name();
+    String indexName = "";
 }
 {
     <RANKTYPE> [indexName = identifier()] <COLON> typeName = identifier()
@@ -1085,16 +1087,16 @@ void sortingSetting(ParsedSorting sorting) :
         <ASCENDING> { sorting.setAscending(); }
       | <DESCENDING> { sorting.setDescending(); }
       | <FUNCTION> <COLON> (
-                               <UCA>       { sorting.setFunction(ParsedSorting.Function.UCA); }
-                             | <RAW>       { sorting.setFunction(ParsedSorting.Function.RAW); }
-                             | <LOWERCASE> { sorting.setFunction(ParsedSorting.Function.LOWERCASE); }
+                               <UCA>       { sorting.setFunction(Sorting.Function.UCA); }
+                             | <RAW>       { sorting.setFunction(Sorting.Function.RAW); }
+                             | <LOWERCASE> { sorting.setFunction(Sorting.Function.LOWERCASE); }
                            )
       | <STRENGTH> <COLON> (
-                               <PRIMARY>    { sorting.setStrength(ParsedSorting.Strength.PRIMARY); }
-                             | <SECONDARY>  { sorting.setStrength(ParsedSorting.Strength.SECONDARY); }
-                             | <TERTIARY>   { sorting.setStrength(ParsedSorting.Strength.TERTIARY); }
-                             | <QUATERNARY> { sorting.setStrength(ParsedSorting.Strength.QUATERNARY); }
-                             | <IDENTICAL>  { sorting.setStrength(ParsedSorting.Strength.IDENTICAL); }
+                               <PRIMARY>    { sorting.setStrength(Sorting.Strength.PRIMARY); }
+                             | <SECONDARY>  { sorting.setStrength(Sorting.Strength.SECONDARY); }
+                             | <TERTIARY>   { sorting.setStrength(Sorting.Strength.TERTIARY); }
+                             | <QUATERNARY> { sorting.setStrength(Sorting.Strength.QUATERNARY); }
+                             | <IDENTICAL>  { sorting.setStrength(Sorting.Strength.IDENTICAL); }
                            )
       | <LOCALE> <COLON> locale = identifierWithDash() { sorting.setLocale(locale); }
     )
@@ -1798,12 +1800,10 @@ void rankProfile(ParsedSchema schema) :
     ParsedRankProfile profile;
 }
 {
-    ( ( <MODEL> | <RANKPROFILE> ) name = identifierWithDash()
-        {
-            profile = new ParsedRankProfile(name);
-        }
-      [inheritsRankProfile(profile)]
-      lbrace() (rankProfileItem(profile) (<NL>)*)* <RBRACE> )
+    ( <MODEL> | <RANKPROFILE> ) name = identifierWithDash()
+    { profile = new ParsedRankProfile(name); }
+    [inheritsRankProfile(profile)]
+    lbrace() (rankProfileItem(profile) (<NL>)*)* <RBRACE>
     {
         schema.addRankProfile(profile);
     }
