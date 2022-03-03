@@ -7,6 +7,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Matching;
+import com.yahoo.searchdefinition.document.MatchType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.vespa.indexinglanguage.ExpressionSearcher;
@@ -39,8 +40,8 @@ public class ExactMatch extends Processor {
     }
 
     private void processField(SDField field, Schema schema) {
-        Matching.Type matching = field.getMatching().getType();
-        if (matching.equals(Matching.Type.EXACT) || matching.equals(Matching.Type.WORD)) {
+        MatchType matching = field.getMatching().getType();
+        if (matching.equals(MatchType.EXACT) || matching.equals(MatchType.WORD)) {
             implementExactMatch(field, schema);
         } else if (field.getMatching().getExactMatchTerminator() != null) {
             warn(schema, field, "exact-terminator requires 'exact' matching to have any effect.");
@@ -54,7 +55,7 @@ public class ExactMatch extends Processor {
         field.setStemming(Stemming.NONE);
         field.getNormalizing().inferLowercase();
 
-        if (field.getMatching().getType().equals(Matching.Type.WORD)) {
+        if (field.getMatching().getType().equals(MatchType.WORD)) {
             field.addQueryCommand("word");
         } else { // exact
             String exactTerminator = DEFAULT_EXACT_TERMINATOR;

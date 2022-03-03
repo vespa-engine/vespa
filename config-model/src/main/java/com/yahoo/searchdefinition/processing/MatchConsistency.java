@@ -5,7 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Matching;
-import com.yahoo.searchdefinition.document.Matching.Type;
+import com.yahoo.searchdefinition.document.MatchType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
@@ -33,14 +33,14 @@ public class MatchConsistency extends Processor {
     public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
-        Map<String, Matching.Type> types = new HashMap<>();
+        Map<String, MatchType> types = new HashMap<>();
         for (SDField field : schema.allConcreteFields()) {
             new MyVisitor(schema, field, types).visit(field.getIndexingScript());
         }
     }
 
-    private void checkMatching(Schema schema, SDField field, Map<String, Type> types, String indexTo) {
-        Type prevType = types.get(indexTo);
+    private void checkMatching(Schema schema, SDField field, Map<String, MatchType> types, String indexTo) {
+        MatchType prevType = types.get(indexTo);
         if (prevType == null) {
             types.put(indexTo, field.getMatching().getType());
         } else if ( ! field.getMatching().getType().equals(prevType)) {
@@ -54,9 +54,9 @@ public class MatchConsistency extends Processor {
 
         final Schema schema;
         final SDField field;
-        final Map<String, Type> types;
+        final Map<String, MatchType> types;
 
-        MyVisitor(Schema schema, SDField field, Map<String, Type> types) {
+        MyVisitor(Schema schema, SDField field, Map<String, MatchType> types) {
             this.schema = schema;
             this.field = field;
             this.types = types;

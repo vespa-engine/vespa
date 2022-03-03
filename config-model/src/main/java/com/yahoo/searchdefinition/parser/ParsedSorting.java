@@ -1,6 +1,9 @@
 
 package com.yahoo.searchdefinition.parser;
 
+import com.yahoo.searchdefinition.document.Sorting.Function;
+import com.yahoo.searchdefinition.document.Sorting.Strength;
+
 import java.util.Optional;
 
 /**
@@ -10,10 +13,6 @@ import java.util.Optional;
  * @author arnej27959
  **/
 class ParsedSorting extends ParsedBlock {
-
-    enum Function { RAW, LOWERCASE, UCA }
-
-    enum Strength { PRIMARY, SECONDARY, TERTIARY, QUATERNARY, IDENTICAL }
 
     private boolean ascending = true;
     private Function sortFunction = null;

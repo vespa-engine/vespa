@@ -39,7 +39,7 @@ public class InheritanceResolver {
             for (String inherit : schema.getInherited()) {
                 var parent = parsedSchemas.get(inherit);
                 if (parent == null) {
-                    throw new IllegalArgumentException("schema " + schema.name() + " inherits from unavailable schema " + inherit);
+                    throw new IllegalArgumentException("schema '" + schema.name() + "' inherits '" + inherit + "', but this schema does not exist");
                 }
                 schema.resolveInherit(inherit, parent);
             }
@@ -56,15 +56,8 @@ public class InheritanceResolver {
     private void resolveDocumentInheritance() {
         for (ParsedSchema schema : parsedSchemas.values()) {
             if (! schema.hasDocument()) {
-                // TODO: is schema without a document even valid?
-                // could make sense for schemas with just rank-profile functions
-                // it makes life easier to behave as if there was en empty
-                // document block here.
-                var doc = new ParsedDocument(schema.name());
-                for (String inherit : schema.getInherited()) {
-                    doc.inherit(inherit);
-                }
-                schema.addDocument(doc);
+                throw new IllegalArgumentException("For schema '" + schema.name() +
+                                                   "': A search specification must have an equally named document inside of it.");
             }
             ParsedDocument doc = schema.getDocument();
             var old = parsedDocs.put(doc.name(), doc);

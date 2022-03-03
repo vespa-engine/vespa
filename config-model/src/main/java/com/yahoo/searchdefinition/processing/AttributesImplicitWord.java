@@ -7,6 +7,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Matching;
+import com.yahoo.searchdefinition.document.MatchType;
 import com.yahoo.document.NumericDataType;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
@@ -38,7 +39,7 @@ public class AttributesImplicitWord extends Processor {
 
     private void processField(ImmutableSDField field) {
         if (fieldImplicitlyWordMatch(field)) {
-            field.getMatching().setType(Matching.Type.WORD);
+            field.getMatching().setType(MatchType.WORD);
         }
     }
 

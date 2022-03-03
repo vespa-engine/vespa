@@ -1584,16 +1584,16 @@ void matchType(FieldOperationContainer container) :
     MatchOperation matchOp = new MatchOperation();
 }
 {
-    (   <MTOKEN>    { matchOp.setMatchingType(Matching.Type.TEXT); } // Deprecated synonym to TEXT
-      | <TEXT>      { matchOp.setMatchingType(Matching.Type.TEXT); }
-      | <WORD>      { matchOp.setMatchingType(Matching.Type.WORD); }
-      | <EXACT>     { matchOp.setMatchingType(Matching.Type.EXACT); }
-      | <GRAM>      { matchOp.setMatchingType(Matching.Type.GRAM); }
+    (   <MTOKEN>    { matchOp.setMatchingType(MatchType.TEXT); } // Deprecated synonym to TEXT
+      | <TEXT>      { matchOp.setMatchingType(MatchType.TEXT); }
+      | <WORD>      { matchOp.setMatchingType(MatchType.WORD); }
+      | <EXACT>     { matchOp.setMatchingType(MatchType.EXACT); }
+      | <GRAM>      { matchOp.setMatchingType(MatchType.GRAM); }
       | <CASED>     { matchOp.setCase(Case.CASED); }
       | <UNCASED>   { matchOp.setCase(Case.UNCASED); }
-      | <PREFIX>    { matchOp.setMatchingAlgorithm(Matching.Algorithm.PREFIX); }
-      | <SUBSTRING> { matchOp.setMatchingAlgorithm(Matching.Algorithm.SUBSTRING); }
-      | <SUFFIX>    { matchOp.setMatchingAlgorithm(Matching.Algorithm.SUFFIX); } )
+      | <PREFIX>    { matchOp.setMatchingAlgorithm(MatchAlgorithm.PREFIX); }
+      | <SUBSTRING> { matchOp.setMatchingAlgorithm(MatchAlgorithm.SUBSTRING); }
+      | <SUFFIX>    { matchOp.setMatchingAlgorithm(MatchAlgorithm.SUFFIX); } )
     {
         container.addOperation(matchOp);
     }

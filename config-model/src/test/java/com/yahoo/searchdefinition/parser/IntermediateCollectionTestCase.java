@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.util.List;
 
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -79,6 +80,13 @@ public class IntermediateCollectionTestCase {
         assertEquals(schema.name(), "grandparent");
     }
 
+    ParsedRankProfile get(List<ParsedRankProfile> all, String name) {
+        for (var rp : all) {
+            if (rp.name().equals(name)) return rp;
+        }
+        return null;
+    }
+
     @Test
     public void can_add_extra_rank_profiles() throws Exception {
         var collection = new IntermediateCollection();
@@ -92,13 +100,13 @@ public class IntermediateCollectionTestCase {
         assertEquals(schema.name(), "test");
         var rankProfiles = schema.getRankProfiles();
         assertEquals(rankProfiles.size(), 7);
-        var outside = rankProfiles.get("outside_schema1");
+        var outside = get(rankProfiles, "outside_schema1");
         assertTrue(outside != null);
         assertEquals(outside.name(), "outside_schema1");
         var functions = outside.getFunctions();
         assertEquals(functions.size(), 1);
         assertEquals(functions.get(0).name(), "fo1");
-        outside = rankProfiles.get("outside_schema2");
+        outside = get(rankProfiles, "outside_schema2");
         assertTrue(outside != null);
         assertEquals(outside.name(), "outside_schema2");
         functions = outside.getFunctions();
@@ -118,17 +126,17 @@ public class IntermediateCollectionTestCase {
     @Test
     public void bad_parse_throws() throws Exception {
         var collection = new IntermediateCollection();
-        var ex = assertThrows(IllegalArgumentException.class, () ->
+        var ex = assertThrows(ParseException.class, () ->
                               collection.addSchemaFromFile("src/test/examples/structoutsideofdocument.sd"));
-        assertTrue(ex.getMessage().startsWith("Failed parsing schema file src/test/examples/structoutsideofdocument.sd: "));
-        ex = assertThrows(IllegalArgumentException.class, () ->
+        assertTrue(ex.getMessage().startsWith("Failed parsing schema from src/test/examples/structoutsideofdocument.sd: Encountered"));
+        ex = assertThrows(ParseException.class, () ->
                           collection.addSchemaFromReader(readerOf("src/test/examples/structoutsideofdocument.sd")));
-        assertTrue(ex.getMessage().startsWith("Failed parsing schema from src/test/examples/structoutsideofdocument.sd: "));
+        assertTrue(ex.getMessage().startsWith("Failed parsing schema from src/test/examples/structoutsideofdocument.sd: Encountered"));
         collection.addSchemaFromFile("src/test/derived/rankprofilemodularity/test.sd");
         collection.addRankProfileFile("test", "src/test/derived/rankprofilemodularity/test/outside_schema1.profile");
-        ex = assertThrows(IllegalArgumentException.class, () ->
+        ex = assertThrows(ParseException.class, () ->
                           collection.addRankProfileFile("test", "src/test/examples/structoutsideofdocument.sd"));
-        assertTrue(ex.getMessage().startsWith("Failed parsing rank-profile from src/test/examples/structoutsideofdocument.sd: "));
+        assertTrue(ex.getMessage().startsWith("Failed parsing rank-profile from src/test/examples/structoutsideofdocument.sd: Encountered"));
     }
 
     @Test

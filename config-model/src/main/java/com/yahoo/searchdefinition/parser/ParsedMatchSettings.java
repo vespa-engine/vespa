@@ -1,5 +1,9 @@
 package com.yahoo.searchdefinition.parser;
 
+import com.yahoo.searchdefinition.document.Case;
+import com.yahoo.searchdefinition.document.MatchType;
+import com.yahoo.searchdefinition.document.MatchAlgorithm;
+
 import java.util.Optional;
 
 /**
@@ -11,14 +15,14 @@ import java.util.Optional;
 public class ParsedMatchSettings {
 
     private MatchType matchType = null;
-    private MatchCase matchCase = null;
+    private Case matchCase = null;
     private MatchAlgorithm matchAlgorithm = null;
     private String exactTerminator = null;
     private Integer gramSize = null;
     private Integer maxLength = null;
 
     Optional<MatchType> getMatchType() { return Optional.ofNullable(matchType); }
-    Optional<MatchCase> getMatchCase() { return Optional.ofNullable(matchCase); }
+    Optional<Case> getMatchCase() { return Optional.ofNullable(matchCase); }
     Optional<MatchAlgorithm> getMatchAlgorithm() { return Optional.ofNullable(matchAlgorithm); }
     Optional<String> getExactTerminator() { return Optional.ofNullable(exactTerminator); }
     Optional<Integer> getGramSize() { return Optional.ofNullable(gramSize); }
@@ -26,7 +30,7 @@ public class ParsedMatchSettings {
 
     // TODO - consider allowing each set only once:
     void setType(MatchType value) { this.matchType = value; }
-    void setCase(MatchCase value) { this.matchCase = value; }
+    void setCase(Case value) { this.matchCase = value; }
     void setAlgorithm(MatchAlgorithm value) { this.matchAlgorithm = value; }
     void setExactTerminator(String value) { this.exactTerminator = value; }
     void setGramSize(int value) { this.gramSize = value; }

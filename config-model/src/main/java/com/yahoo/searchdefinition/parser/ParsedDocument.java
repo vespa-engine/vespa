@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.parser;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -17,10 +17,10 @@ import java.util.Optional;
  **/
 public class ParsedDocument extends ParsedBlock {
     private final List<String> inherited = new ArrayList<>();
-    private final Map<String, ParsedDocument> resolvedInherits = new HashMap();
-    private final Map<String, ParsedField> docFields = new HashMap<>();
-    private final Map<String, ParsedStruct> docStructs = new HashMap<>();
-    private final Map<String, ParsedAnnotation> docAnnotations = new HashMap<>();
+    private final Map<String, ParsedDocument> resolvedInherits = new LinkedHashMap();
+    private final Map<String, ParsedField> docFields = new LinkedHashMap<>();
+    private final Map<String, ParsedStruct> docStructs = new LinkedHashMap<>();
+    private final Map<String, ParsedAnnotation> docAnnotations = new LinkedHashMap<>();
 
     public ParsedDocument(String name) {
         super(name, "document");

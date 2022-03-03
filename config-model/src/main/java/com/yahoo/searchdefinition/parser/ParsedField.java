@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.parser;
 import com.yahoo.searchdefinition.document.Stemming;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,17 +24,17 @@ class ParsedField extends ParsedBlock {
     private boolean isLiteral = false;
     private boolean isNormal = false;
     private Integer weight;
-    private String normalizing;
+    private String normalizing = null;
     private final ParsedMatchSettings matchInfo = new ParsedMatchSettings();
     private Stemming stemming = null;
     private ParsedIndexingOp indexingOp = null;
     private ParsedSorting sortSettings = null;
-    private final Map<String, ParsedAttribute> attributes = new HashMap<>();
-    private final Map<String, ParsedIndex> fieldIndexes = new HashMap<>();
-    private final Map<String, String> aliases = new HashMap<>();
-    private final Map<String, String> rankTypes = new HashMap<>();
-    private final Map<String, ParsedField> structFields = new HashMap<>();
-    private final Map<String, ParsedSummaryField> summaryFields = new HashMap<>();
+    private final Map<String, ParsedAttribute> attributes = new LinkedHashMap<>();
+    private final Map<String, ParsedIndex> fieldIndexes = new LinkedHashMap<>();
+    private final Map<String, String> aliases = new LinkedHashMap<>();
+    private final Map<String, String> rankTypes = new LinkedHashMap<>();
+    private final Map<String, ParsedField> structFields = new LinkedHashMap<>();
+    private final Map<String, ParsedSummaryField> summaryFields = new LinkedHashMap<>();
     private final List<DictionaryOption> dictionaryOptions = new ArrayList<>();
     private final List<String> queryCommands = new ArrayList<>();
 
@@ -46,6 +46,7 @@ class ParsedField extends ParsedBlock {
     ParsedType getType() { return this.type; }
     boolean getBolding() { return this.hasBolding; }
     boolean getFilter() { return this.isFilter; }
+    boolean getLiteral() { return this.isLiteral; }
     boolean hasIdOverride() { return overrideId != 0; }
     int idOverride() { return overrideId; }
     List<DictionaryOption> getDictionaryOptions() { return List.copyOf(dictionaryOptions); }
@@ -58,6 +59,7 @@ class ParsedField extends ParsedBlock {
     String lookupAliasedFrom(String alias) { return aliases.get(alias); }
     ParsedMatchSettings matchSettings() { return this.matchInfo; }
     Optional<Stemming> getStemming() { return Optional.ofNullable(stemming); }
+    Optional<String> getNormalizing() { return Optional.ofNullable(normalizing); }
     Optional<ParsedIndexingOp> getIndexing() { return Optional.ofNullable(indexingOp); }
     Optional<ParsedSorting> getSorting() { return Optional.ofNullable(sortSettings); }
     Map<String, String> getRankTypes() { return Map.copyOf(rankTypes); }
@@ -130,9 +132,9 @@ class ParsedField extends ParsedBlock {
         indexingOp = idxOp;
     }
 
-    void setSorting(ParsedSorting sorting) {
-        verifyThat(sortSettings == null, "already has sorting");
-        this.sortSettings = sorting;
+    ParsedSorting sortInfo() {
+        if (sortSettings == null) sortSettings = new ParsedSorting(name(), "field.sorting");
+        return this.sortSettings;
     }
 
     void addQueryCommand(String command) {
@@ -148,6 +150,9 @@ class ParsedField extends ParsedBlock {
     void addSummaryField(ParsedSummaryField summaryField) {
         String fieldName = summaryField.name();
         verifyThat(! summaryFields.containsKey(fieldName), "already has summary field", fieldName);
+        if (summaryField.getType() == null) {
+            summaryField.setType(getType());
+        }
         summaryFields.put(fieldName, summaryField);
     }
 }

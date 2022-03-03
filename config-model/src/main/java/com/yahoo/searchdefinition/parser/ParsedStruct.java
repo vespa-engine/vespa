@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.parser;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -14,7 +14,7 @@ import java.util.Map;
  **/
 public class ParsedStruct extends ParsedBlock {
     private final List<String> inherited = new ArrayList<>();
-    private final Map<String, ParsedField> fields = new HashMap<>();
+    private final Map<String, ParsedField> fields = new LinkedHashMap<>();
     private String ownedBy = null;
 
     public ParsedStruct(String name) {

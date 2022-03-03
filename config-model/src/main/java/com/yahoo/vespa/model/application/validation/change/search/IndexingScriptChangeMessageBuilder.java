@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation.change.search;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Matching;
+import com.yahoo.searchdefinition.document.MatchType;
 import com.yahoo.searchdefinition.document.NormalizeLevel;
 import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -85,9 +86,9 @@ public class IndexingScriptChangeMessageBuilder {
     }
 
     private static String toString(Matching matching) {
-        Matching.Type type = matching.getType();
+        MatchType type = matching.getType();
         String retval = type.getName();
-        if (type == Matching.Type.GRAM) {
+        if (type == MatchType.GRAM) {
             retval += " (size " + matching.getGramSize() + ")";
         }
         return retval;

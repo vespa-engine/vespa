@@ -6,7 +6,7 @@ import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.document.Stemming;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,6 +29,7 @@ public class ParsedSchema extends ParsedBlock {
         }
     }
 
+    private boolean documentWithoutSchema = false;
     private boolean rawAsBase64 = false; // TODO Vespa 8 flip default
     private ParsedDocument myDocument = null;
     private Stemming defaultStemming = null;
@@ -37,20 +38,21 @@ public class ParsedSchema extends ParsedBlock {
     private final List<RankingConstant> rankingConstants = new ArrayList<>();
     private final List<String> inherited = new ArrayList<>();
     private final List<String> inheritedByDocument = new ArrayList<>();
-    private final Map<String, ParsedSchema> resolvedInherits = new HashMap();
-    private final Map<String, ParsedSchema> allResolvedInherits = new HashMap();
-    private final Map<String, ParsedAnnotation> extraAnnotations = new HashMap<>();
-    private final Map<String, ParsedDocumentSummary> docSums = new HashMap<>();
-    private final Map<String, ParsedField> extraFields = new HashMap<>();
-    private final Map<String, ParsedFieldSet> fieldSets = new HashMap<>();
-    private final Map<String, ParsedIndex> extraIndexes = new HashMap<>();
-    private final Map<String, ParsedRankProfile> rankProfiles = new HashMap<>();
-    private final Map<String, ParsedStruct> extraStructs = new HashMap<>();
+    private final Map<String, ParsedSchema> resolvedInherits = new LinkedHashMap();
+    private final Map<String, ParsedSchema> allResolvedInherits = new LinkedHashMap();
+    private final Map<String, ParsedAnnotation> extraAnnotations = new LinkedHashMap<>();
+    private final Map<String, ParsedDocumentSummary> docSums = new LinkedHashMap<>();
+    private final Map<String, ParsedField> extraFields = new LinkedHashMap<>();
+    private final Map<String, ParsedFieldSet> fieldSets = new LinkedHashMap<>();
+    private final Map<String, ParsedIndex> extraIndexes = new LinkedHashMap<>();
+    private final Map<String, ParsedRankProfile> rankProfiles = new LinkedHashMap<>();
+    private final Map<String, ParsedStruct> extraStructs = new LinkedHashMap<>();
 
     public ParsedSchema(String name) {
         super(name, "schema");
     }
 
+    boolean getDocumentWithoutSchema() { return documentWithoutSchema; }
     boolean getRawAsBase64() { return rawAsBase64; }
     boolean hasDocument() { return myDocument != null; }
     ParsedDocument getDocument() { return myDocument; }
@@ -67,7 +69,7 @@ public class ParsedSchema extends ParsedBlock {
     List<RankingConstant> getRankingConstants() { return List.copyOf(rankingConstants); }
     List<String> getInherited() { return List.copyOf(inherited); }
     List<String> getInheritedByDocument() { return List.copyOf(inheritedByDocument); }
-    Map<String, ParsedRankProfile> getRankProfiles() { return Map.copyOf(rankProfiles); }
+    List<ParsedRankProfile> getRankProfiles() { return List.copyOf(rankProfiles.values()); }
     List<ParsedSchema> getResolvedInherits() { return List.copyOf(resolvedInherits.values()); }
     List<ParsedSchema> getAllResolvedInherits() { return List.copyOf(allResolvedInherits.values()); }
 
@@ -84,6 +86,8 @@ public class ParsedSchema extends ParsedBlock {
                    "schema " + name() + "can only contain document named " + name() + ", was: "+ document.name());
         this.myDocument = document;
     }
+
+    void setDocumentWithoutSchema() { this.documentWithoutSchema = true; }
 
     void addDocumentSummary(ParsedDocumentSummary docsum) {
         String dsName = docsum.name();

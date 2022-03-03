@@ -9,6 +9,7 @@ import com.yahoo.document.ReferenceDataType;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Matching;
+import com.yahoo.searchdefinition.document.MatchType;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.SearchCluster;
@@ -39,7 +40,7 @@ public class StreamingValidator extends Validator {
     private static void warnStreamingGramMatching(SearchCluster sc, DeployLogger logger) {
         if (sc.getSdConfig() != null) {
             for (ImmutableSDField sd : sc.getSdConfig().getSearch().allConcreteFields()) {
-                if (sd.getMatching().getType().equals(Matching.Type.GRAM)) {
+                if (sd.getMatching().getType().equals(MatchType.GRAM)) {
                     logger.logApplicationPackage(Level.WARNING, "For streaming search cluster '" + sc.getClusterName() +
                             "', SD field '" + sd.getName() + "': n-gram matching is not supported for streaming search.");
                 }
