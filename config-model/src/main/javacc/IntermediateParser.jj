@@ -30,6 +30,9 @@ import com.yahoo.searchdefinition.RankProfile.MatchPhaseSettings;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.Schema;
+import com.yahoo.searchdefinition.document.Case;
+import com.yahoo.searchdefinition.document.MatchType;
+import com.yahoo.searchdefinition.document.MatchAlgorithm;
 import com.yahoo.searchdefinition.document.HnswIndexParams;
 import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.searchdefinition.document.SDField;
@@ -1444,8 +1447,8 @@ void matchType(ParsedMatchSettings matchInfo) : { }
       | <WORD>      { matchInfo.setType(MatchType.WORD); }
       | <EXACT>     { matchInfo.setType(MatchType.EXACT); }
       | <GRAM>      { matchInfo.setType(MatchType.GRAM); }
-      | <CASED>     { matchInfo.setCase(MatchCase.CASED); }
-      | <UNCASED>   { matchInfo.setCase(MatchCase.UNCASED); }
+      | <CASED>     { matchInfo.setCase(Case.CASED); }
+      | <UNCASED>   { matchInfo.setCase(Case.UNCASED); }
       | <PREFIX>    { matchInfo.setAlgorithm(MatchAlgorithm.PREFIX); }
       | <SUBSTRING> { matchInfo.setAlgorithm(MatchAlgorithm.SUBSTRING); }
       | <SUFFIX>    { matchInfo.setAlgorithm(MatchAlgorithm.SUFFIX); } )

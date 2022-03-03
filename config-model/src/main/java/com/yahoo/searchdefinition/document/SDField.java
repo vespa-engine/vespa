@@ -536,7 +536,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      */
     // TODO: When this is not the same as getMatching().setthis we have a potential for inconsistency. Find the right
     //       Matching object for struct fields at lookup time instead.
-    public void setMatchingType(Matching.Type type) {
+    public void setMatchingType(MatchType type) {
         this.getMatching().setType(type);
         for (SDField structField : getStructFields()) {
             structField.setMatchingType(type);
@@ -559,7 +559,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      */
     // TODO: When this is not the same as getMatching().setthis we have a potential for inconsistency. Find the right
     //       Matching object for struct fields at lookup time instead.
-    public void setMatchingAlgorithm(Matching.Algorithm algorithm) {
+    public void setMatchingAlgorithm(MatchAlgorithm algorithm) {
         this.getMatching().setAlgorithm(algorithm);
         for (SDField structField : getStructFields()) {
             structField.getMatching().setAlgorithm(algorithm);

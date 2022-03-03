@@ -6,6 +6,7 @@ import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.document.*;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Matching;
+import com.yahoo.searchdefinition.document.MatchType;
 import com.yahoo.searchdefinition.document.RankType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -38,7 +39,7 @@ public class TagType extends Processor {
         if (!field.doesIndexing() && !field.doesAttributing()) return;
         Matching m = field.getMatching();
         if ( ! m.isTypeUserSet())
-            m.setType(Matching.Type.WORD);
+            m.setType(MatchType.WORD);
         if (field.getRankType() == null || field.getRankType() == RankType.DEFAULT)
             field.setRankType((RankType.TAGS));
     }

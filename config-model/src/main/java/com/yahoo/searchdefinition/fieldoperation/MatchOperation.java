@@ -2,7 +2,9 @@
 package com.yahoo.searchdefinition.fieldoperation;
 
 import com.yahoo.searchdefinition.document.Case;
+import com.yahoo.searchdefinition.document.MatchAlgorithm;
 import com.yahoo.searchdefinition.document.Matching;
+import com.yahoo.searchdefinition.document.MatchType;
 import com.yahoo.searchdefinition.document.SDField;
 
 /**
@@ -10,14 +12,14 @@ import com.yahoo.searchdefinition.document.SDField;
  */
 public class MatchOperation implements FieldOperation {
 
-    private Matching.Type matchingType;
+    private MatchType matchingType;
     private Case casing;
     private Integer gramSize;
     private Integer maxLength;
-    private Matching.Algorithm matchingAlgorithm;
+    private MatchAlgorithm matchingAlgorithm;
     private String exactMatchTerminator;
 
-    public void setMatchingType(Matching.Type matchingType) {
+    public void setMatchingType(MatchType matchingType) {
         this.matchingType = matchingType;
     }
 
@@ -28,7 +30,7 @@ public class MatchOperation implements FieldOperation {
         this.maxLength = maxLength;
     }
 
-    public void setMatchingAlgorithm(Matching.Algorithm matchingAlgorithm) {
+    public void setMatchingAlgorithm(MatchAlgorithm matchingAlgorithm) {
         this.matchingAlgorithm = matchingAlgorithm;
     }
 

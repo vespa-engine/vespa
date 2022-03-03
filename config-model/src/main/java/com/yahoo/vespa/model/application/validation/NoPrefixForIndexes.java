@@ -5,6 +5,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Matching;
+import com.yahoo.searchdefinition.document.MatchAlgorithm;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.vespa.model.VespaModel;
@@ -32,7 +33,7 @@ public class NoPrefixForIndexes extends Validator {
                     for (ImmutableSDField field : schema.allConcreteFields()) {
                         if (field.doesIndexing()) {
                             //if (!field.getIndexTo().isEmpty() && !field.getIndexTo().contains(field.getName())) continue;
-                            if (field.getMatching().getAlgorithm().equals(Matching.Algorithm.PREFIX)) {
+                            if (field.getMatching().getAlgorithm().equals(MatchAlgorithm.PREFIX)) {
                                 failField(schema, field);
                             }
                             for (Map.Entry<String, Index> e : field.getIndices().entrySet()) {

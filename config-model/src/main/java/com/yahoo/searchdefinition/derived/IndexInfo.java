@@ -17,6 +17,7 @@ import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.searchdefinition.document.GeoPos;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Matching;
+import com.yahoo.searchdefinition.document.MatchType;
 import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.searchdefinition.processing.ExactMatch;
 import com.yahoo.searchdefinition.processing.NGramMatch;
@@ -153,7 +154,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             if (normalizeAccents(field)) {
                 addIndexCommand(field, CMD_NORMALIZE);
             }
-            if (field.getMatching() == null || field.getMatching().getType().equals(Matching.Type.TEXT)) {
+            if (field.getMatching() == null || field.getMatching().getType().equals(MatchType.TEXT)) {
                 addIndexCommand(field, CMD_PLAIN_TOKENS);
             }
         }
@@ -383,7 +384,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
                         .indexname(fieldSet.getName())
                         .command(CMD_INDEX));
             if ( ! isExactMatch(fieldSetMatching)) {
-                if (fieldSetMatching == null || fieldSetMatching.getType().equals(Matching.Type.TEXT)) {
+                if (fieldSetMatching == null || fieldSetMatching.getType().equals(MatchType.TEXT)) {
                     iiB.command(
                             new IndexInfoConfig.Indexinfo.Command.Builder()
                                     .indexname(fieldSet.getName())
@@ -420,24 +421,24 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         }
         if (fieldSetMatching != null) {
             // Explicit matching set on fieldset
-            if (fieldSetMatching.getType().equals(Matching.Type.EXACT)) {
+            if (fieldSetMatching.getType().equals(MatchType.EXACT)) {
                 String term = fieldSetMatching.getExactMatchTerminator();
                 if (term==null) term=ExactMatch.DEFAULT_EXACT_TERMINATOR;
                 iiB.command(
                         new IndexInfoConfig.Indexinfo.Command.Builder()
                             .indexname(fieldSet.getName())
                             .command("exact "+term));
-            } else if (fieldSetMatching.getType().equals(Matching.Type.WORD)) {
+            } else if (fieldSetMatching.getType().equals(MatchType.WORD)) {
                 iiB.command(
                         new IndexInfoConfig.Indexinfo.Command.Builder()
                             .indexname(fieldSet.getName())
                             .command(CMD_WORD));
-            } else if (fieldSetMatching.getType().equals(Matching.Type.GRAM)) {
+            } else if (fieldSetMatching.getType().equals(MatchType.GRAM)) {
                 iiB.command(
                         new IndexInfoConfig.Indexinfo.Command.Builder()
                             .indexname(fieldSet.getName())
                             .command("ngram "+(fieldSetMatching.getGramSize()>0 ? fieldSetMatching.getGramSize() : NGramMatch.DEFAULT_GRAM_SIZE)));
-            } else if (fieldSetMatching.getType().equals(Matching.Type.TEXT)) {
+            } else if (fieldSetMatching.getType().equals(MatchType.TEXT)) {
                 
             }
         }
@@ -477,8 +478,8 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
 
     private boolean isExactMatch(Matching m) {
         if (m == null) return false;
-        if (m.getType().equals(Matching.Type.EXACT)) return true;
-        if (m.getType().equals(Matching.Type.WORD)) return true;
+        if (m.getType().equals(MatchType.EXACT)) return true;
+        if (m.getType().equals(MatchType.WORD)) return true;
         return false;
     }
 

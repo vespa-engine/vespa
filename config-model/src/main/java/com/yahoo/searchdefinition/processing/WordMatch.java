@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.document.Matching;
+import com.yahoo.searchdefinition.document.MatchType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.searchdefinition.Schema;
@@ -39,7 +40,7 @@ public class WordMatch extends Processor {
     }
 
     private void processField(SDField field) {
-        if (!field.getMatching().getType().equals(Matching.Type.WORD)) {
+        if (!field.getMatching().getType().equals(MatchType.WORD)) {
             return;
         }
         field.setStemming(Stemming.NONE);

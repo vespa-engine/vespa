@@ -5,6 +5,7 @@ import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.document.Matching;
+import com.yahoo.searchdefinition.document.MatchType;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -21,19 +22,19 @@ public class AttributesExactMatchTestCase extends AbstractSchemaTestCase {
     @Test
     public void testAttributesExactMatch() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/attributesexactmatch.sd");
-        assertEquals(schema.getConcreteField("color").getMatching().getType(), Matching.Type.EXACT);
-        assertEquals(schema.getConcreteField("artist").getMatching().getType(), Matching.Type.WORD);
-        assertEquals(schema.getConcreteField("drummer").getMatching().getType(), Matching.Type.WORD);
-        assertEquals(schema.getConcreteField("guitarist").getMatching().getType(), Matching.Type.TEXT);
-        assertEquals(schema.getConcreteField("saxophonist_arr").getMatching().getType(), Matching.Type.WORD);
-        assertEquals(schema.getConcreteField("flutist").getMatching().getType(), Matching.Type.TEXT);
+        assertEquals(schema.getConcreteField("color").getMatching().getType(), MatchType.EXACT);
+        assertEquals(schema.getConcreteField("artist").getMatching().getType(), MatchType.WORD);
+        assertEquals(schema.getConcreteField("drummer").getMatching().getType(), MatchType.WORD);
+        assertEquals(schema.getConcreteField("guitarist").getMatching().getType(), MatchType.TEXT);
+        assertEquals(schema.getConcreteField("saxophonist_arr").getMatching().getType(), MatchType.WORD);
+        assertEquals(schema.getConcreteField("flutist").getMatching().getType(), MatchType.TEXT);
 
-        assertFalse(schema.getConcreteField("genre").getMatching().getType().equals(Matching.Type.EXACT));
-        assertFalse(schema.getConcreteField("title").getMatching().getType().equals(Matching.Type.EXACT));
-        assertFalse(schema.getConcreteField("trumpetist").getMatching().getType().equals(Matching.Type.EXACT));
-        assertFalse(schema.getConcreteField("genre").getMatching().getType().equals(Matching.Type.WORD));
-        assertFalse(schema.getConcreteField("title").getMatching().getType().equals(Matching.Type.WORD));
-        assertFalse(schema.getConcreteField("trumpetist").getMatching().getType().equals(Matching.Type.WORD));
+        assertFalse(schema.getConcreteField("genre").getMatching().getType().equals(MatchType.EXACT));
+        assertFalse(schema.getConcreteField("title").getMatching().getType().equals(MatchType.EXACT));
+        assertFalse(schema.getConcreteField("trumpetist").getMatching().getType().equals(MatchType.EXACT));
+        assertFalse(schema.getConcreteField("genre").getMatching().getType().equals(MatchType.WORD));
+        assertFalse(schema.getConcreteField("title").getMatching().getType().equals(MatchType.WORD));
+        assertFalse(schema.getConcreteField("trumpetist").getMatching().getType().equals(MatchType.WORD));
 
     }
 
