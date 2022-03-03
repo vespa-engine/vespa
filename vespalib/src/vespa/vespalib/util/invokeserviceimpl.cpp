@@ -64,8 +64,7 @@ void
 InvokeServiceImpl::runLoop() {
     bool done = false;
     while ( ! done ) {
-        const steady_time now = steady_clock::now();
-        _now.store(now, std::memory_order_relaxed);
+        _now.store(steady_clock::now(), std::memory_order_relaxed);
         {
             std::lock_guard guard(_lock);
             for (auto & func: _toInvoke) {
@@ -74,7 +73,7 @@ InvokeServiceImpl::runLoop() {
             done = _closed;
         }
         if ( ! done) {
-            std::this_thread::sleep_until(now + _naptime);
+            std::this_thread::sleep_for(_naptime);
         }
     }
 
