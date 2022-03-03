@@ -17,7 +17,7 @@ search exactmatch {
       indexing: index | summary | attribute
       match {
         exact
-        exact-terminator: "*!!!*"
+        exact-terminator: "*!A!!*"
       }
     }
 
@@ -27,7 +27,7 @@ search exactmatch {
         indexing: attribute
         match {
           exact
-          exact-terminator: "*!!!*"
+          exact-terminator: "*!B!!*"
         }
       }
     }
@@ -47,6 +47,16 @@ search exactmatch {
         match: exact
       }
     }
-  }
 
+    field another_map type map<string, elem> {
+      struct-field value.name {
+        indexing: attribute
+        match {
+          exact
+          exact-terminator: "*!C!!*"
+        }
+      }
+    }
+
+  }
 }
