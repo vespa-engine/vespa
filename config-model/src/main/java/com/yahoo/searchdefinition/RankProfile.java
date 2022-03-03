@@ -783,11 +783,14 @@ public class RankProfile implements Cloneable {
     }
     private final List<MutateOperation> mutateOperations = new ArrayList<>();
 
+    public void addMutateOperation(MutateOperation op) {
+        mutateOperations.add(op);
+        String prefix = "vespa.mutate." + op.phase.toString();
+        addRankProperty(prefix + ".attribute", op.attribute);
+        addRankProperty(prefix + ".operation", op.operation);
+    }
     public void addMutateOperation(MutateOperation.Phase phase, String attribute, String operation) {
-        mutateOperations.add(new MutateOperation(phase, attribute, operation));
-        String prefix = "vespa.mutate." + phase.toString();
-        addRankProperty(prefix + ".attribute", attribute);
-        addRankProperty(prefix + ".operation", operation);
+        addMutateOperation(new MutateOperation(phase, attribute, operation));
     }
     public List<MutateOperation> getMutateOperations() { return mutateOperations; }
 
