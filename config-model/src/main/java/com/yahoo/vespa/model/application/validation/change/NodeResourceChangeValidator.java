@@ -46,7 +46,7 @@ public class NodeResourceChangeValidator implements ChangeValidator {
         return model.allocatedHosts().getHosts().stream().filter(host -> host.membership().isPresent())
                                                          .filter(host -> host.membership().get().cluster().id().equals(clusterId))
                                                          .findFirst()
-                                                         .map(host -> host.realResources());
+                                                         .map(host -> host.advertisedResources());
     }
 
     private List<ConfigChangeAction> createRestartActionsFor(ClusterSpec.Id clusterId, VespaModel model) {
