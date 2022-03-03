@@ -1,15 +1,22 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.parser;
 
+import com.yahoo.document.DataType;
+import com.yahoo.document.DataTypeName;
+import com.yahoo.searchdefinition.parser.ConvertParsedTypes.TypeResolver;
 import com.yahoo.searchdefinition.Index;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.BooleanIndexDefinition;
 import com.yahoo.searchdefinition.document.Case;
 import com.yahoo.searchdefinition.document.Dictionary;
 import com.yahoo.searchdefinition.document.NormalizeLevel;
 import com.yahoo.searchdefinition.document.RankType;
+import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Sorting;
 import com.yahoo.vespa.documentmodel.SummaryField;
+import com.yahoo.vespa.documentmodel.SummaryTransform;
 
 import java.util.Locale;
 
@@ -20,7 +27,13 @@ import java.util.Locale;
  **/
 public class ConvertParsedFields {
 
-    void convertMatchSettings(SDField field, ParsedMatchSettings parsed) {
+    private final TypeResolver context;
+    
+    ConvertParsedFields(TypeResolver context) {
+        this.context = context;
+    }
+
+    static void convertMatchSettings(SDField field, ParsedMatchSettings parsed) {
         parsed.getMatchType().ifPresent(matchingType -> field.setMatchingType(matchingType));
         parsed.getMatchCase().ifPresent(casing -> field.setMatchingCase(casing));
         parsed.getGramSize().ifPresent(gramSize -> field.getMatching().setGramSize(gramSize));
@@ -130,7 +143,14 @@ public class ConvertParsedFields {
         for (var attribute : parsed.getAttributes()) {
             convertAttribute(field, attribute);
         }
-        // MISSING: parsed.getSummaryFields()
+        for (var summaryField : parsed.getSummaryFields()) {
+            var dataType = field.getDataType();
+            var otherType = summaryField.getType();
+            if (otherType != null) {
+                dataType = context.resolveType(otherType);
+            }
+            convertSummaryField(field, summaryField, dataType);
+        }
         for (String command : parsed.getQueryCommands()) {
             field.addQueryCommand(command);
         }
@@ -159,7 +179,9 @@ public class ConvertParsedFields {
             case UNCASED: dictionary.updateMatch(Case.UNCASED); break;
             }
         }
-        // MISSING: parsed.getIndexes()
+        for (var index : parsed.getIndexes()) {
+            convertIndex(field, index);
+        }
         for (var alias : parsed.getAliases()) {
             field.getAliasToName().put(alias, parsed.lookupAliasedFrom(alias));
         }
@@ -178,6 +200,110 @@ public class ConvertParsedFields {
         if (parsed.getFilter()) {
             field.getRanking().setFilter(true);
         }
+    }
+
+    static void convertSummaryFieldSettings(SummaryField summary, ParsedSummaryField parsed) {
+        var transform = SummaryTransform.NONE;
+        if (parsed.getMatchedElementsOnly()) {
+            transform = SummaryTransform.MATCHED_ELEMENTS_FILTER;
+        } else if (parsed.getDynamic()) {
+            transform = SummaryTransform.DYNAMICTEASER;
+        }
+        if (parsed.getBolded()) {
+            transform = transform.bold();
+        }
+        summary.setTransform(transform);
+        for (String source : parsed.getSources()) {
+            summary.addSource(source);
+        }
+        for (String destination : parsed.getDestinations()) {
+            summary.addDestination(destination);
+        }
+        summary.setImplicit(false);
+    }
+
+    private void convertSummaryField(SDField field, ParsedSummaryField parsed, DataType type) {
+        var summary = new SummaryField(parsed.name(), type);
+        convertSummaryFieldSettings(summary, parsed);
+        summary.addDestination("default");
+        if (parsed.getSources().isEmpty()) {
+            summary.addSource(field.getName());
+        }
+        field.addSummaryField(summary);
+    }
+
+    private void convertIndex(SDField field, ParsedIndex parsed) {
+        String indexName = parsed.name();
+        Index index = field.getIndex(indexName);
+        if (index == null) {
+            index = new Index(indexName);
+            field.addIndex(index);
+        }
+        convertIndexSettings(index, parsed);
+    }
+
+    private void convertIndexSettings(Index index, ParsedIndex parsed) {
+        parsed.getPrefix().ifPresent(prefix -> index.setPrefix(prefix));
+        for (String alias : parsed.getAliases()) {
+            index.addAlias(alias);
+        }
+        parsed.getStemming().ifPresent(stemming -> index.setStemming(stemming));
+        var arity = parsed.getArity();
+        var lowerBound = parsed.getLowerBound();
+        var upperBound = parsed.getUpperBound();
+        var densePostingListThreshold = parsed.getDensePostingListThreshold();
+        if (arity.isPresent() || 
+            lowerBound.isPresent() ||
+            upperBound.isPresent() ||
+            densePostingListThreshold.isPresent())
+        {
+            var bid = new BooleanIndexDefinition(arity, lowerBound, upperBound, densePostingListThreshold);
+            index.setBooleanIndexDefiniton(bid);
+        }
+        parsed.getEnableBm25().ifPresent(enableBm25 -> index.setInterleavedFeatures(enableBm25));
+        parsed.getHnswIndexParams().ifPresent
+            (hnswIndexParams -> index.setHnswIndexParams(hnswIndexParams));
+    }
+
+    SDField convertDocumentField(Schema schema, SDDocumentType document, ParsedField parsed) {
+        String name = parsed.name();
+        DataType dataType = context.resolveType(parsed.getType());
+        var field = new SDField(document, name, dataType);
+        convertCommonFieldSettings(field, parsed);
+        convertExtraFieldSettings(field, parsed);
+        document.addField(field);
+        return field;
+    }
+
+    void convertExtraField(Schema schema, ParsedField parsed) {
+        String name = parsed.name();
+        DataType dataType = context.resolveType(parsed.getType());
+        var field = new SDField(schema.getDocument(), name, dataType);
+        convertCommonFieldSettings(field, parsed);
+        convertExtraFieldSettings(field, parsed);
+        schema.addExtraField(field);
+    }
+
+    void convertExtraIndex(Schema schema, ParsedIndex parsed) {
+        Index index = new Index(parsed.name());
+        convertIndexSettings(index, parsed);
+        schema.addIndex(index);
+    }
+
+    void convertStructDeclaration(Schema schema, SDDocumentType document, ParsedStruct parsed) {
+        // TODO - can we cleanup this mess
+        var structProxy = new SDDocumentType(parsed.name(), schema);
+        structProxy.setStruct(context.resolveStruct(parsed));
+        for (var structField : parsed.getFields()) {
+            var fieldType = context.resolveType(structField.getType());
+            var field = new SDField(structProxy, structField.name(), fieldType);
+            convertCommonFieldSettings(field, structField);
+            structProxy.addField(field);
+        }
+        for (String inherit : parsed.getInherited()) {
+            structProxy.inherit(new DataTypeName(inherit));                
+        }
+        document.addType(structProxy);
     }
 
 }
