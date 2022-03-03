@@ -202,8 +202,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         var failures = report.getFailures().stream()
                 .map(failure -> {
                     TestReport.trimStackTraces(failure.getException(), JunitRunner.class.getName());
-                    return new TestReport.Failure(failure.getTestIdentifier().getParentId().map(id -> id + ".").orElse("") +
-                                                  failure.getTestIdentifier().getDisplayName(),
+                    return new TestReport.Failure(VespaJunitLogListener.toString(failure.getTestIdentifier().getUniqueIdObject()),
                                                   failure.getException());
                 })
                 .collect(Collectors.toList());
