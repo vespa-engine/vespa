@@ -25,7 +25,7 @@ public class NodeResources {
     @JsonProperty
     private String storageType;
     @JsonProperty
-    private String architecture = "x86_64";   // TODO: Remove default value for architecture
+    private String architecture;
 
     public Double getVcpu() {
         return vcpu;
