@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "alloc.h"
+#include "atomic.h"
 #include "memory_allocator.h"
 #include "round_up_to_page_size.h"
 #include <sys/mman.h>
@@ -17,11 +18,13 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.alloc");
 
+using namespace vespalib::atomic;
+
 namespace vespalib {
 
 namespace {
 
-volatile bool _G_hasHugePageFailureJustHappened(false);
+std::atomic<bool> _G_hasHugePageFailureJustHappened(false);
 bool _G_SilenceCoreOnOOM(false);
 int  _G_HugeFlags = 0;
 size_t _G_MMapLogLimit = std::numeric_limits<size_t>::max();
@@ -328,8 +331,8 @@ MMapAllocator::salloc(size_t sz, void * wantedAddress)
         }
         buf = mmap(wantedAddress, sz, prot, flags | _G_HugeFlags, -1, 0);
         if (buf == MAP_FAILED) {
-            if ( ! _G_hasHugePageFailureJustHappened ) {
-                _G_hasHugePageFailureJustHappened = true;
+            if ( ! load_relaxed(_G_hasHugePageFailureJustHappened)) {
+                store_relaxed(_G_hasHugePageFailureJustHappened, true);
                 LOG(debug, "Failed allocating %ld bytes with hugepages due too '%s'."
                           " Will resort to ordinary mmap until it works again.",
                            sz, FastOS_FileInterface::getLastErrorString().c_str());
@@ -347,9 +350,7 @@ MMapAllocator::salloc(size_t sz, void * wantedAddress)
                 }
             }
         } else {
-            if (_G_hasHugePageFailureJustHappened) {
-                _G_hasHugePageFailureJustHappened = false;
-            }
+            store_relaxed(_G_hasHugePageFailureJustHappened, false);
         }
 #ifdef __linux__
         if (sz >= _G_MMapNoCoreLimit) {
