@@ -7,6 +7,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Matching;
+import com.yahoo.searchdefinition.document.MatchType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
@@ -29,7 +30,7 @@ public class NGramMatch extends Processor {
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         for (SDField field : schema.allConcreteFields()) {
-            if (field.getMatching().getType().equals(Matching.Type.GRAM))
+            if (field.getMatching().getType().equals(MatchType.GRAM))
                 implementGramMatch(schema, field, validate);
             else if (validate && field.getMatching().getGramSize() >= 0)
                 throw new IllegalArgumentException("gram-size can only be set when the matching mode is 'gram'");

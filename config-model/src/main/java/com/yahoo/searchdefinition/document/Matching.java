@@ -11,34 +11,13 @@ import java.io.Serializable;
  */
 public class Matching implements Cloneable, Serializable {
 
-    public static final Type defaultType = Type.TEXT;
+    public static final MatchType defaultType = MatchType.TEXT;
 
-    public enum Type {
-        TEXT("text"),
-        WORD("word"),
-        EXACT("exact"),
-        GRAM("gram");
-        private String name;
-        Type(String name) { this.name = name; }
-        public String getName() { return name; }
-    }
-
-    /** Which match algorithm is used by this matching setup */
-    public enum Algorithm {
-        NORMAL("normal"),
-        PREFIX("prefix"),
-        SUBSTRING("substring"),
-        SUFFIX("suffix");
-        private String name;
-        Algorithm(String name) { this.name = name; }
-        public String getName() { return name; }
-    }
-
-    private Type type = Type.TEXT;
+    private MatchType type = MatchType.TEXT;
     private Case casing = Case.UNCASED;
 
     /** The basic match algorithm */
-    private Algorithm algorithm = Algorithm.NORMAL;
+    private MatchAlgorithm algorithm = MatchAlgorithm.NORMAL;
 
     private boolean typeUserSet = false;
 
@@ -55,14 +34,14 @@ public class Matching implements Cloneable, Serializable {
     /** Creates a matching of type "text" */
     public Matching() {}
 
-    public Matching(Type type) {
+    public Matching(MatchType type) {
         this.type = type;
     }
 
-    public Type getType() { return type; }
+    public MatchType getType() { return type; }
     public Case getCase() { return casing; }
 
-    public void setType(Type type) {
+    public void setType(MatchType type) {
         this.type = type;
         typeUserSet = true;
     }
@@ -73,20 +52,20 @@ public class Matching implements Cloneable, Serializable {
     public Matching maxLength(int maxLength) { this.maxLength = maxLength; return this; }
     public boolean isTypeUserSet() { return typeUserSet; }
 
-    public Algorithm getAlgorithm() { return algorithm; }
+    public MatchAlgorithm getAlgorithm() { return algorithm; }
 
-    public void setAlgorithm(Algorithm algorithm) {
+    public void setAlgorithm(MatchAlgorithm algorithm) {
         this.algorithm = algorithm;
         algorithmUserSet = true;
     }
 
     public boolean isAlgorithmUserSet() { return algorithmUserSet; }
 
-    public boolean isPrefix() { return algorithm == Algorithm.PREFIX; }
+    public boolean isPrefix() { return algorithm == MatchAlgorithm.PREFIX; }
 
-    public boolean isSubstring() { return algorithm == Algorithm.SUBSTRING; }
+    public boolean isSubstring() { return algorithm == MatchAlgorithm.SUBSTRING; }
 
-    public boolean isSuffix() { return algorithm == Algorithm.SUFFIX; }
+    public boolean isSuffix() { return algorithm == MatchAlgorithm.SUFFIX; }
 
     /** Returns the gram size, or -1 if not set. Should only be set with gram matching. */
     public int getGramSize() { return gramSize; }
@@ -102,7 +81,7 @@ public class Matching implements Cloneable, Serializable {
         }
         if (m.isTypeUserSet()) {
             this.setType(m.getType());
-            if (m.getType() == Type.GRAM)
+            if (m.getType() == MatchType.GRAM)
               gramSize = m.gramSize;
         }
         if (m.getExactMatchTerminator() != null) {
@@ -127,7 +106,7 @@ public class Matching implements Cloneable, Serializable {
 
     @Override
     public String toString() {
-        return type + " matching [" + (type==Type.GRAM ? "gram size " + gramSize : "supports " + algorithm) +
+        return type + " matching [" + (type==MatchType.GRAM ? "gram size " + gramSize : "supports " + algorithm) +
                "], [exact-terminator "+exactMatchTerminator+"]";
     }
 

@@ -7,6 +7,7 @@ import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Matching;
+import com.yahoo.searchdefinition.document.MatchType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
@@ -36,7 +37,7 @@ public class TextMatch extends Processor {
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         for (SDField field : schema.allConcreteFields()) {
-            if (field.getMatching().getType() != Matching.Type.TEXT) continue;
+            if (field.getMatching().getType() != MatchType.TEXT) continue;
 
             ScriptExpression script = field.getIndexingScript();
             if (script == null) continue;

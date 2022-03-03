@@ -16,6 +16,7 @@ import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.searchdefinition.document.GeoPos;
 import com.yahoo.searchdefinition.document.Matching;
+import com.yahoo.searchdefinition.document.MatchType;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.config.search.vsm.VsmfieldsConfig;
@@ -226,9 +227,9 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
         public VsmfieldsConfig.Fieldspec.Builder getFieldSpecConfig() {
             VsmfieldsConfig.Fieldspec.Builder fB = new VsmfieldsConfig.Fieldspec.Builder();
             String matchingName = matching.getType().getName();
-            if (matching.getType().equals(Matching.Type.TEXT))
+            if (matching.getType().equals(MatchType.TEXT))
                 matchingName = "";
-            if (matching.getType() != Matching.Type.EXACT) {
+            if (matching.getType() != MatchType.EXACT) {
                 if (matching.isPrefix()) {
                     matchingName = "prefix";
                 } else if (matching.isSubstring()) {

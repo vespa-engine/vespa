@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
+import com.yahoo.searchdefinition.document.MatchType;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Stemming;
@@ -29,15 +30,15 @@ public class NGramTestCase extends AbstractSchemaTestCase {
         assertNotNull(schema);
 
         SDField gram1 = schema.getConcreteField("gram_1");
-        assertEquals(Matching.Type.GRAM, gram1.getMatching().getType());
+        assertEquals(MatchType.GRAM, gram1.getMatching().getType());
         assertEquals(1, gram1.getMatching().getGramSize());
 
         SDField gram2 = schema.getConcreteField("gram_2");
-        assertEquals(Matching.Type.GRAM, gram2.getMatching().getType());
+        assertEquals(MatchType.GRAM, gram2.getMatching().getType());
         assertEquals(-1, gram2.getMatching().getGramSize()); // Not set explicitly
 
         SDField gram3= schema.getConcreteField("gram_3");
-        assertEquals(Matching.Type.GRAM,gram3.getMatching().getType());
+        assertEquals(MatchType.GRAM,gram3.getMatching().getType());
         assertEquals(3, gram3.getMatching().getGramSize());
 
         assertEquals("input gram_1 | ngram 1 | index gram_1 | summary gram_1", gram1.getIndexingScript().iterator().next().toString());
