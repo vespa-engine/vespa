@@ -65,7 +65,6 @@ public:
     ~StorageApp() override;
 
     void handleSignal(int signal) {
-        LOG(info, "Got signal %d", signal);
         _lastSignal = signal;
         _signalCond.notify_one();
     }
