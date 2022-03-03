@@ -47,6 +47,7 @@ class TestRunnerHandlerTest {
                 .withFailedCount(2)
                 .withIgnoredCount(3)
                 .withAbortedCount(4)
+                .withInconclusiveCount(5)
                 .withFailures(List.of(new TestReport.Failure("Foo.bar()", exception)))
                 .withLogs(logRecords).build();
 
@@ -59,7 +60,7 @@ class TestRunnerHandlerTest {
         HttpResponse response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/report", GET));
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         response.render(out);
-        JsonTestHelper.assertJsonEquals(out.toString(UTF_8), "{\"summary\":{\"success\":1,\"failed\":2,\"ignored\":3,\"aborted\":4,\"failures\":[{\"testName\":\"Foo.bar()\",\"testError\":\"org.junit.ComparisonFailure: expected:<foo> but was:<bar>\",\"exception\":\"java.lang.RuntimeException: org.junit.ComparisonFailure: expected:<foo> but was:<bar>\\n\\tat Foo.bar(Foo.java:1123)\\n\"}]},\"output\":[\"Tests started\"]}");
+        JsonTestHelper.assertJsonEquals(out.toString(UTF_8), "{\"summary\":{\"success\":1,\"failed\":2,\"ignored\":3,\"aborted\":4,\"inconclusive\":5,\"failures\":[{\"testName\":\"Foo.bar()\",\"testError\":\"org.junit.ComparisonFailure: expected:<foo> but was:<bar>\",\"exception\":\"java.lang.RuntimeException: org.junit.ComparisonFailure: expected:<foo> but was:<bar>\\n\\tat Foo.bar(Foo.java:1123)\\n\"}]},\"output\":[\"Tests started\"]}");
     }
 
     @Test

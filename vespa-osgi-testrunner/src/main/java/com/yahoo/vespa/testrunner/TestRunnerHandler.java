@@ -146,6 +146,7 @@ public class TestRunnerHandler extends ThreadedHttpRequestHandler {
         summary.setLong("failed", testReport.failedCount);
         summary.setLong("ignored", testReport.ignoredCount);
         summary.setLong("aborted", testReport.abortedCount);
+        summary.setLong("inconclusive", testReport.inconclusiveCount);
         var failureRoot = summary.setArray("failures");
         testReport.failures.forEach(failure -> serializeFailure(failure, failureRoot.addObject()));
 
