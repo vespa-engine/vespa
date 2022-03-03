@@ -9,7 +9,6 @@ import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.PortAllocBridge;
-import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -48,7 +47,7 @@ public class StartupCommandChangeValidatorTest {
     private static List<ConfigChangeAction> getStartupCommandChanges(
             AbstractConfigProducerRoot currentModel, AbstractConfigProducerRoot nextModel) {
         StartupCommandChangeValidator validator = new StartupCommandChangeValidator();
-        return validator.findServicesWithChangedStartupCommmand(currentModel, nextModel).collect(Collectors.toList());
+        return validator.findServicesWithChangedStartupCommand(currentModel, nextModel).collect(Collectors.toList());
     }
 
     private static MockRoot createRootWithChildren(AbstractConfigProducer<?>... children) {
