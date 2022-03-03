@@ -30,10 +30,10 @@ TEST("require that wakeup is called") {
 }
 
 TEST("require that now is moving forward") {
+    steady_time prev = steady_clock::now();
     InvokeCounter a;
     InvokeServiceImpl service(1ms);
     EXPECT_EQUAL(0u, a._count);
-    steady_time prev = steady_clock::now();
     auto ra = service.registerInvoke([&prev, &a, now=service.nowPtr() ]() noexcept {
         EXPECT_GREATER(now->load(), prev);
         prev = now->load();

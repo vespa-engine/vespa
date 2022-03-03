@@ -8,9 +8,7 @@ namespace vespalib {
 class InvokeServiceImpl;
 
 /**
- * Clock is a clock that updates the time at defined intervals.
- * It is intended used where you want to check the time with low cost, but where
- * resolution is not that important.
+ * Self contained clock useable for testing that provides a backing for the vespalib::Clock interface.
  */
 
 class TestClock
