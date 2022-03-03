@@ -108,8 +108,8 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     }
 
     @Test
-    public void testRankingExpression() throws IOException, ParseException {
-        assertCorrectDeriving("rankingexpression");
+    public void testRankExpression() throws IOException, ParseException {
+        assertCorrectDeriving("rankexpression");
     }
 
     @Test

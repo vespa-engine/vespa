@@ -69,8 +69,7 @@ search rankexpression {
       rank-features: attribute(foo1).out attribute(bar1)
       rank-features { attribute(foo2).out attribute(bar2).out }
       rank-features {
-        attribute(foo3).out attribute(bar3).out
-      }
+        attribute(foo3).out attribute(bar3).out }
       rank-features {
         attribute(foo4).out
         attribute(bar4).out 
@@ -102,8 +101,7 @@ search rankexpression {
       summary-features: attribute(foo1).out attribute(bar1)
       summary-features { attribute(foo2).out attribute(bar2).out }
       summary-features {
-        attribute(foo3).out attribute(bar3).out
-      }
+        attribute(foo3).out attribute(bar3).out }
       summary-features {
         attribute(foo4).out
         attribute(bar4).out
@@ -164,10 +162,10 @@ search rankexpression {
     second-phase {
       expression: fourtimessum(match,rankBoost)
     }
-    function fourtimessum(var1, var2) {
+    macro fourtimessum(var1, var2) {
       expression: 4*(var1+var2)
     }
-    function myfeature() {
+    macro myfeature() {
        expression {
          70 * fieldMatch(title).completeness * pow(0 - fieldMatch(title).earliness, 2) +
          30 * pow(0 - fieldMatch(description).earliness, 2)
@@ -189,21 +187,21 @@ search rankexpression {
     second-phase {
       expression: fourtimessum(match,match) + mysummaryfeature + myfeature
     }
-    function fourtimessum(var1, var2) {
+    macro fourtimessum(var1, var2) {
       expression: 4*(var1+var2)
     }
-    function myfeature() {
+    macro myfeature() {
        expression {
          70 * fieldMatch(title).completeness * pow(0 - fieldMatch(title).earliness, 2) +
          30 * pow(0 - fieldMatch(description).earliness, 2)
        }
     }
-    function mysummaryfeature() {
+    macro mysummaryfeature() {
        expression {
          70 * fieldMatch(title).completeness
        }
     }
-    function mysummaryfeature2() {
+    macro mysummaryfeature2() {
        expression {
          71 * fieldMatch(title).completeness
        }
@@ -215,7 +213,7 @@ search rankexpression {
   }
 
   rank-profile macros3 {
-    function onlyusedinsummaryfeature() {
+    macro onlyusedinsummaryfeature() {
       expression: 5
     }
     summary-features {
@@ -231,7 +229,7 @@ search rankexpression {
   }
 
   rank-profile macros-inherited inherits macros2 {
-    function mysummaryfeature() {
+    macro mysummaryfeature() {
        expression {
          80 * fieldMatch(title).completeness
        }
@@ -252,7 +250,7 @@ search rankexpression {
   }
 
  rank-profile macros-inherited3 inherits macros-inherited2 {
-    function myfeature() {
+    macro myfeature() {
        expression {
          700 * fieldMatch(title).completeness
        }
@@ -265,17 +263,17 @@ search rankexpression {
   }
 
   rank-profile macros-refering-macros {
-    function m2() {
+    macro m2() {
       expression: m1 * 67
     }    
 
-    function m1() {
+    macro m1() {
       expression {
          700 * fieldMatch(title).completeness
        }
     }
 
-    function m4() {
+    macro m4() {
       expression: file:macro.expression
     }
     
@@ -288,7 +286,7 @@ search rankexpression {
   }
 
   rank-profile macros-refering-macros-inherited inherits macros-refering-macros {
-    function m3() {
+    macro m3() {
       expression {
         if(isNan(attribute(nrtgmp))==1,
           0.0,
@@ -312,7 +310,7 @@ search rankexpression {
   }
 
   rank-profile macros-refering-macros-inherited-two-levels inherits macros-refering-macros-inherited {
-    function m5() {
+    macro m5() {
       expression {
         if(isNan(attribute(glmpfw))==1,
           m1,
@@ -338,26 +336,13 @@ search rankexpression {
       match-features: attribute(foo1).out attribute(bar1)
       match-features { attribute(foo2).out attribute(bar2).out }
       match-features {
-        attribute(foo3).out attribute(bar3).out
-      }
+        attribute(foo3).out attribute(bar3).out }
       match-features {
         attribute(foo4)
         myplus
         mymul
         firstPhase
         secondPhase
-      }
-  }
-
-  rank-profile withboolean {
-      function mytrue() {
-        expression: true
-      }
-      function myfalse() {
-        expression: false
-      }
-      function mybooleanexpression() {
-        expression: true + if(false, 3.0, 4.0)
       }
   }
 
