@@ -76,6 +76,7 @@ public class Matching implements Cloneable, Serializable {
      * Merge data from another matching object
      */
     public void merge(Matching m) {
+        if (m == null) return;
         if (m.isAlgorithmUserSet()) {
             this.setAlgorithm(m.getAlgorithm());
         }
