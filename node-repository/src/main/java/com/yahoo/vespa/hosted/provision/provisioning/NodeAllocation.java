@@ -162,7 +162,7 @@ class NodeAllocation {
         if (violatesParentHostPolicy(candidate)) return Retirement.violatesParentHostPolicy;
         if ( ! hasCompatibleFlavor(candidate)) return Retirement.incompatibleFlavor;
         if (candidate.wantToRetire()) return Retirement.hardRequest;
-        if (candidate.preferToRetire() && candidate.replacableBy(candidates)) return Retirement.softRequest;
+        if (candidate.preferToRetire() && candidate.replaceableBy(candidates)) return Retirement.softRequest;
         if (violatesExclusivity(candidate)) return Retirement.violatesExclusivity;
         return Retirement.none;
     }
@@ -277,7 +277,8 @@ class NodeAllocation {
         NodeResources hostResources = allNodesAndHosts.parentOf(node).get().flavor().resources();
         return node.with(new Flavor(requestedNodes.resources().get()
                                                   .with(hostResources.diskSpeed())
-                                                  .with(hostResources.storageType())),
+                                                  .with(hostResources.storageType())
+                                                  .with(hostResources.architecture())),
                 Agent.application, nodeRepository.clock().instant());
     }
 

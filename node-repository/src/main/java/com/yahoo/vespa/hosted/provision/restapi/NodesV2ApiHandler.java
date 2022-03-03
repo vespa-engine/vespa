@@ -289,7 +289,8 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
                     requiredField(resourcesInspector, "diskGb", Inspector::asDouble),
                     requiredField(resourcesInspector, "bandwidthGbps", Inspector::asDouble),
                     optionalString(resourcesInspector.field("diskSpeed")).map(NodeResourcesSerializer::diskSpeedFrom).orElse(NodeResources.DiskSpeed.getDefault()),
-                    optionalString(resourcesInspector.field("storageType")).map(NodeResourcesSerializer::storageTypeFrom).orElse(NodeResources.StorageType.getDefault())));
+                    optionalString(resourcesInspector.field("storageType")).map(NodeResourcesSerializer::storageTypeFrom).orElse(NodeResources.StorageType.getDefault()),
+                    optionalString(resourcesInspector.field("architecture")).map(NodeResourcesSerializer::architectureFrom).orElse(NodeResources.Architecture.getDefault())));
         }
 
         Flavor flavor = nodeFlavors.getFlavorOrThrow(flavorInspector.asString());
@@ -306,6 +307,8 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
                 flavor = flavor.with(flavor.resources().with(NodeResourcesSerializer.diskSpeedFrom(resourcesInspector.field("diskSpeed").asString())));
             if (resourcesInspector.field("storageType").valid())
                 flavor = flavor.with(flavor.resources().with(NodeResourcesSerializer.storageTypeFrom(resourcesInspector.field("storageType").asString())));
+            if (resourcesInspector.field("architecture").valid())
+                flavor = flavor.with(flavor.resources().with(NodeResourcesSerializer.architectureFrom(resourcesInspector.field("architecture").asString())));
         }
         return flavor;
     }

@@ -199,6 +199,12 @@ public class NodeResources {
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
     }
 
+    public NodeResources with(Architecture architecture) {
+        ensureSpecified();
+        if (architecture == this.architecture) return this;
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
+    }
+
     /** Returns this with disk speed and storage type set to any */
     public NodeResources justNumbers() {
         if (isUnspecified()) return unspecified();

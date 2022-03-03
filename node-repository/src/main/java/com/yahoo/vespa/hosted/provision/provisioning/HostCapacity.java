@@ -131,7 +131,8 @@ public class HostCapacity {
                        .map(node -> node.flavor().resources().justNumbers())
                        .reduce(hostResources.justNumbers(), NodeResources::subtract)
                        .with(host.flavor().resources().diskSpeed())
-                       .with(host.flavor().resources().storageType());
+                       .with(host.flavor().resources().storageType())
+                       .with(host.flavor().resources().architecture());
     }
 
     private static boolean inactiveOrRetired(Node node) {
