@@ -70,9 +70,9 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 			return err
 		}
 
-		var sessionOrRunID int64
+		var result vespa.PrepareResult
 		err = util.Spinner(stderr, "Uploading application package ...", func() error {
-			sessionOrRunID, err = vespa.Deploy(opts)
+			result, err = vespa.Deploy(opts)
 			return err
 		})
 		if err != nil {
@@ -81,9 +81,10 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 
 		log.Println()
 		if opts.IsCloud() {
-			printSuccess("Triggered deployment of ", color.Cyan(pkg.Path), " with run ID ", color.Cyan(sessionOrRunID))
+			printSuccess("Triggered deployment of ", color.Cyan(pkg.Path), " with run ID ", color.Cyan(result.ID))
 		} else {
 			printSuccess("Deployed ", color.Cyan(pkg.Path))
+			printPrepareLog(result)
 		}
 		if opts.IsCloud() {
 			log.Printf("\nUse %s for deployment status, or follow this deployment at", color.Cyan("vespa status"))
@@ -91,9 +92,9 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 				opts.Target.Deployment().System.ConsoleURL,
 				opts.Target.Deployment().Application.Tenant, opts.Target.Deployment().Application.Application, opts.Target.Deployment().Application.Instance,
 				opts.Target.Deployment().Zone.Environment, opts.Target.Deployment().Zone.Region,
-				sessionOrRunID)))
+				result.ID)))
 		}
-		return waitForQueryService(sessionOrRunID)
+		return waitForQueryService(result.ID)
 	},
 }
 
@@ -116,9 +117,9 @@ var prepareCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		var sessionID int64
+		var result vespa.PrepareResult
 		err = util.Spinner(stderr, "Uploading application package ...", func() error {
-			sessionID, err = vespa.Prepare(vespa.DeploymentOptions{
+			result, err = vespa.Prepare(vespa.DeploymentOptions{
 				ApplicationPackage: pkg,
 				Target:             target,
 			})
@@ -127,10 +128,11 @@ var prepareCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		if err := cfg.WriteSessionID(vespa.DefaultApplication, sessionID); err != nil {
+		if err := cfg.WriteSessionID(vespa.DefaultApplication, result.ID); err != nil {
 			return fmt.Errorf("could not write session id: %w", err)
 		}
-		printSuccess("Prepared ", color.Cyan(pkg.Path), " with session ", sessionID)
+		printSuccess("Prepared ", color.Cyan(pkg.Path), " with session ", result.ID)
+		printPrepareLog(result)
 		return nil
 	},
 }
@@ -176,4 +178,18 @@ func waitForQueryService(sessionOrRunID int64) error {
 		return waitForService(vespa.QueryService, sessionOrRunID)
 	}
 	return nil
+}
+
+func printPrepareLog(result vespa.PrepareResult) {
+	for _, entry := range result.LogLines {
+		switch l := entry.Level; l {
+		case "ERROR":
+			fmt.Fprint(stderr, color.Red(l))
+		case "WARNING":
+			fmt.Fprint(stderr, color.Yellow(l))
+		default:
+			fmt.Fprint(stderr, color.Reset(l))
+		}
+		fmt.Fprintf(stderr, " %s", entry.Message)
+	}
 }
