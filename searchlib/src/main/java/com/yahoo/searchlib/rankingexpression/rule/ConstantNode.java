@@ -2,7 +2,6 @@
 package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.yahoo.searchlib.rankingexpression.Reference;
-import com.yahoo.searchlib.rankingexpression.evaluation.BooleanValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
@@ -40,8 +39,6 @@ public final class ConstantNode extends ExpressionNode {
 
     @Override
     public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
-        if (value instanceof BooleanValue) // Convert booleans to floats
-            return string.append(value.asBoolean() ? "1.0" : "0.0");
         return string.append(value.toString());
     }
 
