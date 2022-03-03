@@ -81,7 +81,7 @@ public:
           _inc_serial_num(inc_serial_num),
           _commitTimeTracker(5ms),
         _throttler(make_throttler(replay_throttling_policy)),
-        _replay_feed_token_factory(std::make_unique<feedtoken::ReplayFeedTokenFactory>(false))
+        _replay_feed_token_factory(std::make_unique<feedtoken::ReplayFeedTokenFactory>(true))
     { }
 
     ~TransactionLogReplayPacketHandler() override = default;
