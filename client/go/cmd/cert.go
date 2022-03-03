@@ -98,7 +98,7 @@ command (default '.').`,
 $ vespa auth cert add -a my-tenant.my-app.my-instance path/to/application/package`,
 	DisableAutoGenTag: true,
 	SilenceUsage:      true,
-	Args:              cobra.MinimumNArgs(1),
+	Args:              cobra.MaximumNArgs(1),
 	RunE:              doCertAdd,
 }
 
