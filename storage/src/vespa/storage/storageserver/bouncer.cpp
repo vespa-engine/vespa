@@ -264,12 +264,14 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     int maxClockSkewInSeconds;
     bool isInAvailableState;
     bool abortLoadWhenClusterDown;
+    bool cluster_is_up;
     int feedPriorityLowerBound;
     {
         std::lock_guard lock(_lock);
         state                    = &getDerivedNodeState(msg->getBucket().getBucketSpace()).getState();
         maxClockSkewInSeconds    = _config->maxClockSkewSeconds;
         abortLoadWhenClusterDown = _config->stopExternalLoadWhenClusterDown;
+        cluster_is_up            = clusterIsUp();
         isInAvailableState       = state->oneOf(_config->stopAllLoadWhenNodestateNotIn.c_str());
         feedPriorityLowerBound   = _config->feedRejectionPriorityThreshold;
     }
@@ -317,7 +319,7 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     }
 
     // If cluster state is not up, fail external load
-    if (abortLoadWhenClusterDown && !clusterIsUp()) {
+    if (abortLoadWhenClusterDown && !cluster_is_up) {
         abortCommandDueToClusterDown(*msg);
         return true;
     }
