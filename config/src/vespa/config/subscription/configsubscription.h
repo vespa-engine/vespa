@@ -39,22 +39,22 @@ public:
      *
      * @return true if changed, false if not.
      */
-    bool isChanged() const;
+    bool isChanged() const noexcept { return _isChanged; }
 
     /**
      * Returns the last generation that actually changed the config.
      */
-    int64_t getLastGenerationChanged() const;
+    int64_t getLastGenerationChanged() const noexcept { return _lastGenerationChanged; }
 
     /// Used by ConfigSubscriptionSet
-    SubscriptionId getSubscriptionId() const { return _id; }
-    const ConfigKey & getKey() const;
+    SubscriptionId getSubscriptionId() const noexcept { return _id; }
+    const ConfigKey & getKey() const noexcept { return _key; }
     bool nextUpdate(int64_t generation, vespalib::steady_time deadline);
     int64_t getGeneration() const;
     bool hasChanged() const;
     bool hasGenerationChanged() const;
     void flip();
-    void reset();
+    void reset() noexcept { _isChanged = false; }
     void close();
 
     // Used by ConfigManager
@@ -65,11 +65,11 @@ private:
     const ConfigKey                _key;
     std::unique_ptr<Source>        _source;
     std::shared_ptr<IConfigHolder> _holder;
-    std::unique_ptr<ConfigUpdate> _next;
-    std::unique_ptr<ConfigUpdate> _current;
-    bool                          _isChanged;
-    int64_t                       _lastGenerationChanged;
-    std::atomic<bool>             _closed;
+    std::unique_ptr<ConfigUpdate>  _next;
+    std::unique_ptr<ConfigUpdate>  _current;
+    bool                           _isChanged;
+    int64_t                        _lastGenerationChanged;
+    std::atomic<bool>              _closed;
 };
 
 typedef std::vector<ConfigSubscription::SP> SubscriptionList;
