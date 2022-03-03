@@ -36,7 +36,8 @@
       "public"
     ],
     "methods": [
-      "public void <init>()"
+      "public void <init>()",
+      "public void <init>(java.lang.String)"
     ],
     "fields": []
   },
