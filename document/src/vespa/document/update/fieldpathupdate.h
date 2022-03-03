@@ -17,8 +17,7 @@ class DataType;
 namespace select { class Node; }
 namespace fieldvalue { class IteratorHandler; }
 
-class FieldPathUpdate : public vespalib::Cloneable,
-                        public Printable,
+class FieldPathUpdate : public Printable,
                         public vespalib::Identifiable
 {
 protected:
@@ -44,7 +43,7 @@ public:
 
     void applyTo(Document& doc) const;
 
-    FieldPathUpdate* clone() const override = 0;
+    virtual FieldPathUpdate* clone() const = 0;
 
     virtual bool operator==(const FieldPathUpdate& other) const;
     bool operator!=(const FieldPathUpdate& other) const {

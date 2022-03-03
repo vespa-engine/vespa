@@ -2,7 +2,6 @@
 
 #include "queryterm.h"
 #include <vespa/vespalib/objects/visit.h>
-#include <vespa/vespalib/text/utf8.h>
 #include <cmath>
 
 namespace {

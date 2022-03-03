@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/objects/cloneable.h>
 #include <memory>
 
 namespace search::streaming {
@@ -11,14 +10,16 @@ namespace search::streaming {
   The intention is to put stuff here that are search specific. Fx to differentiate
   between streamed and indexed variants.
 */
-class QueryNodeResultBase : public vespalib::Cloneable
+class QueryNodeResultBase
 {
 public:
+    virtual ~QueryNodeResultBase() = default;
+    virtual QueryNodeResultBase * clone() const = 0;
 };
 
 class QueryNodeResultFactory {
 public:
-    virtual ~QueryNodeResultFactory() { }
+    virtual ~QueryNodeResultFactory() = default;
     virtual bool getRewriteFloatTerms() const { return false; }
     virtual std::unique_ptr<QueryNodeResultBase> create() const { return std::unique_ptr<QueryNodeResultBase>(); }
 };
