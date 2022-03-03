@@ -9,7 +9,7 @@
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
-#include <vespa/searchcore/proton/common/replay_feedtoken_state.h>
+#include <vespa/searchcore/proton/common/replay_feed_token_factory.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/shared_operation_throttler.h>
@@ -57,6 +57,7 @@ class TransactionLogReplayPacketHandler : public IReplayPacketHandler {
     IIncSerialNum   &_inc_serial_num;
     CommitTimeTracker _commitTimeTracker;
     std::unique_ptr<SharedOperationThrottler> _throttler;
+    std::unique_ptr<feedtoken::ReplayFeedTokenFactory> _replay_feed_token_factory;
 
     static std::unique_ptr<SharedOperationThrottler> make_throttler(const ReplayThrottlingPolicy& replay_throttling_policy) {
         auto& params = replay_throttling_policy.get_params();
@@ -79,24 +80,25 @@ public:
           _config_store(config_store),
           _inc_serial_num(inc_serial_num),
           _commitTimeTracker(5ms),
-          _throttler(make_throttler(replay_throttling_policy))
+        _throttler(make_throttler(replay_throttling_policy)),
+        _replay_feed_token_factory(std::make_unique<feedtoken::ReplayFeedTokenFactory>(false))
     { }
 
     ~TransactionLogReplayPacketHandler() override = default;
 
-    FeedToken make_replay_feed_token() {
+    FeedToken make_replay_feed_token(const FeedOperation& op) {
         SharedOperationThrottler::Token throttler_token = _throttler->blocking_acquire_one();
-        return std::make_shared<feedtoken::ReplayState>(std::move(throttler_token));
+        return _replay_feed_token_factory->make_replay_feed_token(std::move(throttler_token), op);
     }
 
     void replay(const PutOperation &op) override {
-        _feed_view_ptr->handlePut(make_replay_feed_token(), op);
+        _feed_view_ptr->handlePut(make_replay_feed_token(op), op);
     }
     void replay(const RemoveOperation &op) override {
-        _feed_view_ptr->handleRemove(make_replay_feed_token(), op);
+        _feed_view_ptr->handleRemove(make_replay_feed_token(op), op);
     }
     void replay(const UpdateOperation &op) override {
-        _feed_view_ptr->handleUpdate(make_replay_feed_token(), op);
+        _feed_view_ptr->handleUpdate(make_replay_feed_token(op), op);
     }
     void replay(const NoopOperation &) override {} // ignored
     void replay(const NewConfigOperation &op) override {
@@ -104,7 +106,7 @@ public:
     }
 
     void replay(const DeleteBucketOperation &op) override {
-        _feed_view_ptr->handleDeleteBucket(op, make_replay_feed_token());
+        _feed_view_ptr->handleDeleteBucket(op, make_replay_feed_token(op));
     }
     void replay(const SplitBucketOperation &op) override {
         _bucketDBHandler.handleSplit(op.getSerialNum(), op.getSource(),
@@ -115,15 +117,15 @@ public:
                                     op.getSource2(), op.getTarget());
     }
     void replay(const PruneRemovedDocumentsOperation &op) override {
-        _feed_view_ptr->handlePruneRemovedDocuments(op, make_replay_feed_token());
+        _feed_view_ptr->handlePruneRemovedDocuments(op, make_replay_feed_token(op));
     }
     void replay(const MoveOperation &op) override {
-        _feed_view_ptr->handleMove(op, make_replay_feed_token());
+        _feed_view_ptr->handleMove(op, make_replay_feed_token(op));
     }
     void replay(const CreateBucketOperation &) override {
     }
     void replay(const CompactLidSpaceOperation &op) override {
-        _feed_view_ptr->handleCompactLidSpace(op, make_replay_feed_token());
+        _feed_view_ptr->handleCompactLidSpace(op, make_replay_feed_token(op));
     }
     NewConfigOperation::IStreamHandler &getNewConfigStreamHandler() override {
         return _config_store;

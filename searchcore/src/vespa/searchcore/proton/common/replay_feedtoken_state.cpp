@@ -4,9 +4,11 @@
 
 namespace proton::feedtoken {
 
-ReplayState::ReplayState(vespalib::SharedOperationThrottler::Token throttler_token)
+ReplayState::ReplayState(vespalib::SharedOperationThrottler::Token throttler_token, const FeedOperation& op)
     : IState(),
-      _throttler_token(std::move(throttler_token))
+      _throttler_token(std::move(throttler_token)),
+      _type(op.getType()),
+      _serial_num(op.getSerialNum())
 {
 }
 
