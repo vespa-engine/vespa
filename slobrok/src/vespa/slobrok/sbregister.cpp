@@ -67,8 +67,8 @@ RegisterAPI::RegisterAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config
       _names(),
       _pending(),
       _unreg(),
-      _target(0),
-      _req(0)
+      _target(nullptr),
+      _req(nullptr)
 {
     _configurator->poll();
     if ( ! _slobrokSpecs.ok()) {
@@ -82,12 +82,12 @@ RegisterAPI::RegisterAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config
 RegisterAPI::~RegisterAPI()
 {
     Kill();
-    _configurator.reset(0);
-    if (_req != 0) {
+    _configurator.reset();
+    if (_req != nullptr) {
         _req->Abort();
         _req->SubRef();
     }
-    if (_target != 0) {
+    if (_target != nullptr) {
         _target->SubRef();
     }
 }
@@ -96,15 +96,15 @@ RegisterAPI::~RegisterAPI()
 void
 RegisterAPI::registerName(vespalib::stringref name)
 {
-    std::lock_guard<std::mutex> guard(_lock);
-    for (uint32_t i = 0; i < _names.size(); ++i) {
-        if (_names[i] == name) {
+    std::lock_guard guard(_lock);
+    for (const auto& existing_name : _names) {
+        if (existing_name == name) {
             return;
         }
     }
     _busy.store(true, std::memory_order_relaxed);
-    _names.push_back(name);
-    _pending.push_back(name);
+    _names.emplace_back(name);
+    _pending.emplace_back(name);
     discard(_unreg, name);
     ScheduleNow();
 }
@@ -113,11 +113,11 @@ RegisterAPI::registerName(vespalib::stringref name)
 void
 RegisterAPI::unregisterName(vespalib::stringref name)
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     _busy.store(true, std::memory_order_relaxed);
     discard(_names, name);
     discard(_pending, name);
-    _unreg.push_back(name);
+    _unreg.emplace_back(name);
     ScheduleNow();
 }
 
@@ -125,6 +125,7 @@ RegisterAPI::unregisterName(vespalib::stringref name)
 void
 RegisterAPI::handleReqDone()
 {
+    std::lock_guard guard(_lock);
     if (_reqDone) {
         _reqDone = false;
         if (_req->IsError()) {
@@ -133,10 +134,10 @@ RegisterAPI::handleReqDone()
                     _req->GetErrorMessage(), _req->GetErrorCode());
                 // unexpected error; close our connection to this
                 // slobrok server and try again with a fresh slate
-                if (_target != 0) {
+                if (_target != nullptr) {
                     _target->SubRef();
                 }
-                _target = 0;
+                _target = nullptr;
                 _busy.store(true, std::memory_order_relaxed);
             } else {
                 LOG(warning, "%s(%s -> %s) failed: %s",
@@ -146,7 +147,7 @@ RegisterAPI::handleReqDone()
                     _req->GetErrorMessage());
             }
         } else {
-            if (_logOnSuccess && (_pending.size() == 0) && (_names.size() > 0)) {
+            if (_logOnSuccess && _pending.empty() && !_names.empty()) {
                 LOG(info, "[RPC @ %s] registering %s with location broker %s completed successfully",
                     createSpec(_orb).c_str(), _names[0].c_str(), _currSlobrok.c_str());
                 _logOnSuccess = false;
@@ -155,7 +156,7 @@ RegisterAPI::handleReqDone()
             _backOff.reset();
         }
         _req->SubRef();
-        _req = 0;
+        _req = nullptr;
     }
 }
 
@@ -163,29 +164,29 @@ RegisterAPI::handleReqDone()
 void
 RegisterAPI::handleReconnect()
 {
-    if (_configurator->poll() && _target != 0) {
+    if (_configurator->poll() && _target != nullptr) {
         if (! _slobrokSpecs.contains(_currSlobrok)) {
             vespalib::string cps = _slobrokSpecs.logString();
             LOG(warning, "[RPC @ %s] location broker %s removed, will disconnect and use one of: %s",
                 createSpec(_orb).c_str(), _currSlobrok.c_str(), cps.c_str());
             _target->SubRef();
-            _target = 0;
+            _target = nullptr;
         }
     }
-    if (_target == 0) {
+    if (_target == nullptr) {
         _logOnSuccess = true;
         _currSlobrok = _slobrokSpecs.nextSlobrokSpec();
-        if (_currSlobrok.size() > 0) {
+        if (!_currSlobrok.empty()) {
             // try next possible server.
             _target = _orb.GetTarget(_currSlobrok.c_str());
         }
         {
-            std::lock_guard<std::mutex> guard(_lock);
+            std::lock_guard guard(_lock);
             // now that we have a new connection, we need to
             // immediately re-register everything.
             _pending = _names;
         }
-        if (_target == 0) {
+        if (_target == nullptr) {
             // we have tried all possible servers.
             // start from the top after a delay,
             // possibly with a warning.
@@ -211,13 +212,13 @@ RegisterAPI::handlePending()
     bool reg   = false;
     vespalib::string name;
     {
-        std::lock_guard<std::mutex> guard(_lock);
+        std::lock_guard guard(_lock);
         // pop off the todo stack, unregister has priority
-        if (_unreg.size() > 0) {
+        if (!_unreg.empty()) {
             name = _unreg.back();
             _unreg.pop_back();
             unreg = true;
-        } else if (_pending.size() > 0) {
+        } else if (!_pending.empty()) {
             name = _pending.back();
             _pending.pop_back();
             reg = true;
@@ -244,7 +245,7 @@ RegisterAPI::handlePending()
     } else {
         // nothing more to do right now; schedule to re-register all
         // names after a long delay.
-        std::lock_guard<std::mutex> guard(_lock);
+        std::lock_guard guard(_lock);
         _pending = _names;
         LOG(debug, "done, reschedule in 30s");
         _busy.store(false, std::memory_order_relaxed);
@@ -256,23 +257,25 @@ void
 RegisterAPI::PerformTask()
 {
     handleReqDone();
-    if (_req != 0) {
+    if (_req != nullptr) {
         LOG(debug, "req in progress");
         return; // current request still in progress, don't start anything new
     }
     handleReconnect();
     // still no connection?
-    if (_target == 0) return;
+    if (_target == nullptr) return;
     handlePending();
 }
 
 
 void
-RegisterAPI::RequestDone(FRT_RPCRequest *req)
+RegisterAPI::RequestDone([[maybe_unused]] FRT_RPCRequest *req)
 {
-    LOG_ASSERT(req == _req && !_reqDone);
-    (void) req;
-    _reqDone = true;
+    {
+        std::lock_guard guard(_lock);
+        LOG_ASSERT(req == _req && !_reqDone);
+        _reqDone = true;
+    }
     ScheduleNow();
 }
 
@@ -296,16 +299,13 @@ RegisterAPI::RPCHooks::RPCHooks(RegisterAPI &owner)
 }
 
 
-RegisterAPI::RPCHooks::~RPCHooks()
-{
-}
-
+RegisterAPI::RPCHooks::~RPCHooks() = default;
 
 void
 RegisterAPI::RPCHooks::rpc_listNamesServed(FRT_RPCRequest *req)
 {
     FRT_Values &dst = *req->GetReturn();
-    std::lock_guard<std::mutex> guard(_owner._lock);
+    std::lock_guard guard(_owner._lock);
     FRT_StringValue *names = dst.AddStringArray(_owner._names.size());
     for (uint32_t i = 0; i < _owner._names.size(); ++i) {
         dst.SetString(&names[i], _owner._names[i].c_str());
