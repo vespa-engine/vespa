@@ -24,7 +24,7 @@ public:
     void sort() override;
     size_t count(const EntryComparator& comp) const override;
     size_t count_in_range(const EntryComparator& low, const EntryComparator& high) const override;
-    void foreach_key(std::function<void(EntryRef)> callback) const override;
+    void foreach_key(std::function<void(const AtomicEntryRef&)> callback) const override;
 };
 
 }

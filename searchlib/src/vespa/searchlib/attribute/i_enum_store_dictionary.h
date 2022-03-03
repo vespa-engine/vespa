@@ -13,12 +13,12 @@ class BufferWriter;
 
 using EnumTreeTraits = vespalib::btree::BTreeTraits<16, 16, 10, true>;
 
-using EnumTree = vespalib::btree::BTree<IEnumStore::Index, vespalib::btree::BTreeNoLeafData,
+using EnumTree = vespalib::btree::BTree<vespalib::datastore::AtomicEntryRef, vespalib::btree::BTreeNoLeafData,
                               vespalib::btree::NoAggregated,
                               const vespalib::datastore::EntryComparatorWrapper,
                               EnumTreeTraits>;
 
-using EnumPostingTree = vespalib::btree::BTree<IEnumStore::Index, uint32_t,
+using EnumPostingTree = vespalib::btree::BTree<vespalib::datastore::AtomicEntryRef, uint32_t,
                                      vespalib::btree::NoAggregated,
                                      const vespalib::datastore::EntryComparatorWrapper,
                                      EnumTreeTraits>;
@@ -28,6 +28,7 @@ using EnumPostingTree = vespalib::btree::BTree<IEnumStore::Index, uint32_t,
  */
 class IEnumStoreDictionary : public vespalib::datastore::IUniqueStoreDictionary {
 public:
+    using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = vespalib::datastore::EntryRef;
     using EntryComparator = vespalib::datastore::EntryComparator;
     using EntryRefFilter = vespalib::datastore::EntryRefFilter;

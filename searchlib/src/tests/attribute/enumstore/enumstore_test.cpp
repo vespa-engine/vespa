@@ -8,6 +8,7 @@
 LOG_SETUP("enumstore_test");
 
 using Type = search::DictionaryConfig::Type;
+using vespalib::datastore::AtomicEntryRef;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 using vespalib::datastore::EntryRefFilter;
@@ -222,7 +223,7 @@ testUniques(const StringEnumStore& ses, const std::vector<std::string>& unique)
     read_snapshot->fill();
     read_snapshot->sort();
     std::vector<EnumIndex> saved_indexes;
-    read_snapshot->foreach_key([&saved_indexes](EntryRef idx) { saved_indexes.push_back(idx); });
+    read_snapshot->foreach_key([&saved_indexes](const AtomicEntryRef& idx) { saved_indexes.push_back(idx.load_acquire()); });
     uint32_t i = 0;
     for (auto idx : saved_indexes) {
         EXPECT_TRUE(strcmp(unique[i].c_str(), ses.get_value(idx)) == 0);
@@ -936,7 +937,7 @@ TYPED_TEST(EnumStoreDictionaryTest, compact_worst_works)
     auto& mystore = this->store;
     read_snapshot->fill();
     read_snapshot->sort();
-    read_snapshot->foreach_key([&values, &mystore](EntryRef idx) { values.push_back(mystore.get_value(idx)); });
+    read_snapshot->foreach_key([&values, &mystore](const AtomicEntryRef& idx) { values.push_back(mystore.get_value(idx.load_acquire())); });
     EXPECT_EQ(exp_values, values);
 }
 

@@ -8,6 +8,7 @@
 
 using vespalib::GenerationHandler;
 using document::GlobalId;
+using vespalib::datastore::AtomicEntryRef;
 using vespalib::datastore::EntryRef;
 
 namespace search {
@@ -43,8 +44,8 @@ public:
           _writer(writer)
     {
     }
-    void operator()(EntryRef ref) {
-        const GlobalId &gid = _store.get(ref).gid();
+    void operator()(const AtomicEntryRef& ref) {
+        const GlobalId &gid = _store.get(ref.load_acquire()).gid();
         _writer.write(&gid, sizeof(GlobalId));;
     }
 };

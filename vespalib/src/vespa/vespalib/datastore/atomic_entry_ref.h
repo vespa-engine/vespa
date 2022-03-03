@@ -45,4 +45,6 @@ public:
     }
 };
 
+vespalib::asciistream& operator<<(vespalib::asciistream& os, const AtomicEntryRef& ref);
+
 }

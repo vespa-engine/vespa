@@ -3,6 +3,7 @@ vespa_add_library(vespalib_vespalib_datastore OBJECT
     SOURCES
     array_store.cpp
     array_store_config.cpp
+    atomic_entry_ref.cpp
     buffer_type.cpp
     bufferstate.cpp
     compaction_strategy.cpp

@@ -26,6 +26,7 @@ namespace search::attribute {
 class ReferenceAttribute : public NotImplementedAttribute
 {
 public:
+    using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using CompactionStrategy = vespalib::datastore::CompactionStrategy;
     using EntryRef = vespalib::datastore::EntryRef;
     using GlobalId = document::GlobalId;

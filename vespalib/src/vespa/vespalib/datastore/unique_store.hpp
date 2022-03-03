@@ -18,7 +18,7 @@ namespace vespalib::datastore {
 namespace uniquestore {
 
 using DefaultDictionaryTraits = btree::BTreeTraits<32, 32, 7, true>;
-using DefaultDictionary = btree::BTree<EntryRef, btree::BTreeNoLeafData,
+using DefaultDictionary = btree::BTree<AtomicEntryRef, btree::BTreeNoLeafData,
                                        btree::NoAggregated,
                                        EntryComparatorWrapper,
                                        DefaultDictionaryTraits>;

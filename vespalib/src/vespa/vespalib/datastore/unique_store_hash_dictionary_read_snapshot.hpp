@@ -45,10 +45,10 @@ UniqueStoreHashDictionaryReadSnapshot<HashDictionaryT>::count_in_range(const Ent
 
 template <typename HashDictionaryT>
 void
-UniqueStoreHashDictionaryReadSnapshot<HashDictionaryT>::foreach_key(std::function<void(EntryRef)> callback) const
+UniqueStoreHashDictionaryReadSnapshot<HashDictionaryT>::foreach_key(std::function<void(const AtomicEntryRef&)> callback) const
 {
     for (auto ref : _refs) {
-        callback(ref);
+        callback(AtomicEntryRef(ref));
     }
 }
 

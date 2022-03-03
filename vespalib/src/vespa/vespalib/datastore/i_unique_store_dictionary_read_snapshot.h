@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "entryref.h"
+#include "atomic_entry_ref.h"
 #include <functional>
 
 namespace vespalib::datastore {
@@ -21,7 +21,7 @@ public:
     virtual void sort() = 0;
     virtual size_t count(const EntryComparator& comp) const = 0;
     virtual size_t count_in_range(const EntryComparator& low, const EntryComparator& high) const = 0;
-    virtual void foreach_key(std::function<void(EntryRef)> callback) const = 0;
+    virtual void foreach_key(std::function<void(const AtomicEntryRef&)> callback) const = 0;
 };
 
 }

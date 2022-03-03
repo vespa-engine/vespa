@@ -4,7 +4,7 @@
 
 #include "enum_store_loaders.h"
 #include "enum_store_types.h"
-#include <vespa/vespalib/datastore/entryref.h>
+#include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/datastore/unique_store_enumerator.h>
 
 namespace vespalib {
