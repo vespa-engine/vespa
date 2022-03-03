@@ -20,7 +20,7 @@ public:
     void handle(std::unique_ptr<ConfigUpdate> update) override;
     bool wait_until(vespalib::steady_time deadline) override;
     bool poll() override;
-    void interrupt() override;
+    void close() override;
 public:
     std::mutex                    _lock;
     std::condition_variable       _cond;

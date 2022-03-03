@@ -103,7 +103,7 @@ public:
     }
 
     bool poll() override { return true; }
-    void interrupt() override { }
+    void close() override { }
 private:
     std::unique_ptr<ConfigUpdate> _update;
 };
