@@ -7,7 +7,7 @@ namespace vespalib {
 
 TestClock::TestClock()
     : _ticker(std::make_unique<InvokeServiceImpl>(10ms)),
-      _clock(_ticker->nowPtr())
+      _clock(_ticker->nowRef())
 {
 }
 

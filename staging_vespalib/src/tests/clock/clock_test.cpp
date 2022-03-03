@@ -19,7 +19,7 @@ void waitForMovement(steady_time start, Clock & clock, vespalib::duration timeou
 
 TEST("Test that clock is ticking forward") {
     vespalib::InvokeServiceImpl invoker(50ms);
-    Clock clock(invoker.nowPtr());
+    Clock clock(invoker.nowRef());
     steady_time start = clock.getTimeNS();
     waitForMovement(start, clock, 10s);
     steady_time stop = clock.getTimeNS();

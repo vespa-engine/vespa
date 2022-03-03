@@ -4,10 +4,9 @@
 #include <cassert>
 namespace vespalib {
 
-Clock::Clock(const std::atomic<steady_time> * source) noexcept
+Clock::Clock(const std::atomic<steady_time> & source) noexcept
     : _timeNS(source)
 {
-    assert(_timeNS != nullptr);
     static_assert(std::atomic<steady_time>::is_always_lock_free);
 }
 

@@ -27,7 +27,7 @@ SharedThreadingService::SharedThreadingService(const SharedThreadingServiceConfi
       _invokeService(std::max(vespalib::adjustTimeoutByDetectedHz(1ms),
                               cfg.field_writer_config().reactionTime())),
       _invokeRegistrations(),
-      _clock(_invokeService.nowPtr())
+      _clock(_invokeService.nowRef())
 {
     const auto& fw_cfg = cfg.field_writer_config();
     if (fw_cfg.shared_field_writer() == SharedFieldWriterExecutor::DOCUMENT_DB) {

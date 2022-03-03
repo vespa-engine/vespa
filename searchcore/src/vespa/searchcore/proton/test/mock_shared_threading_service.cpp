@@ -9,7 +9,7 @@ MockSharedThreadingService::MockSharedThreadingService(ThreadExecutor& warmup_in
       _shared(shared_in),
       _invokeService(10ms),
       _transport(),
-      _clock(_invokeService.nowPtr())
+      _clock(_invokeService.nowRef())
 {
 }
 

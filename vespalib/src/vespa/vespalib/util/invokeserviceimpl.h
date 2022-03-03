@@ -20,7 +20,7 @@ public:
     InvokeServiceImpl & operator=(const InvokeServiceImpl &) = delete;
     ~InvokeServiceImpl() override;
     std::unique_ptr<IDestructorCallback> registerInvoke(InvokeFunc func) override;
-    const std::atomic<steady_time> * nowPtr() const { return &_now; }
+    const std::atomic<steady_time> & nowRef() const { return _now; }
 private:
     using IdAndFunc = std::pair<uint64_t, InvokeFunc>;
     class Registration;

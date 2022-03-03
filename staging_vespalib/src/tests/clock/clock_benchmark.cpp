@@ -139,7 +139,7 @@ main(int , char *argv[])
     NSVolatile nsVolatile;
     NSAtomic nsAtomic;
     vespalib::InvokeServiceImpl invoker(vespalib::from_s(1.0/frequency));
-    Clock clock(invoker.nowPtr());
+    Clock clock(invoker.nowRef());
     TestClock nsClock(nsValue, 1.0/frequency);
     TestClock nsVolatileClock(nsVolatile, 1.0/frequency);
     TestClock nsAtomicClock(nsAtomic, 1.0/frequency);
