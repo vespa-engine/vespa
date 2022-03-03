@@ -65,7 +65,7 @@ TEST("Require that negative time does not mean forever.") {
     EXPECT_LESS(timer.elapsed(), ONE_MINUTE);
 }
 
-TEST_MT_F("Require that wait is interrupted", 2, ConfigHolder)
+TEST_MT_F("Require that wait is interrupted on close", 2, ConfigHolder)
 {
     if (thread_id == 0) {
         vespalib::Timer timer;
@@ -77,7 +77,7 @@ TEST_MT_F("Require that wait is interrupted", 2, ConfigHolder)
     } else {
         TEST_BARRIER();
         std::this_thread::sleep_for(500ms);
-        f.interrupt();
+        f.close();
         TEST_BARRIER();
     }
 }

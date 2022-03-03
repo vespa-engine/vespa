@@ -46,8 +46,10 @@ ConfigHolder::poll()
 }
 
 void
-ConfigHolder::interrupt()
+ConfigHolder::close()
 {
+    std::lock_guard guard(_lock);
+    _current.reset();
     _cond.notify_all();
 }
 
