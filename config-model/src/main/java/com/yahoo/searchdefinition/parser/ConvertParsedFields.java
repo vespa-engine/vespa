@@ -290,7 +290,7 @@ public class ConvertParsedFields {
         schema.addIndex(index);
     }
 
-    void convertStructDeclaration(Schema schema, SDDocumentType document, ParsedStruct parsed) {
+    SDDocumentType convertStructDeclaration(Schema schema, ParsedStruct parsed) {
         // TODO - can we cleanup this mess
         var structProxy = new SDDocumentType(parsed.name(), schema);
         structProxy.setStruct(context.resolveStruct(parsed));
@@ -303,7 +303,7 @@ public class ConvertParsedFields {
         for (String inherit : parsed.getInherited()) {
             structProxy.inherit(new DataTypeName(inherit));                
         }
-        document.addType(structProxy);
+        return structProxy;
     }
 
 }

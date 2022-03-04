@@ -37,10 +37,12 @@ public class ConvertParsedTypes {
         this.docMan = docMan;
     }
 
-    public void convert() {
+    public void convert(boolean andRegister) {
         startDataTypes();
         fillDataTypes();
-        registerDataTypes();
+        if (andRegister) {
+            registerDataTypes();
+        }
     }
 
     private Map<String, DocumentType> documentsFromSchemas = new HashMap<>();
@@ -55,8 +57,10 @@ public class ConvertParsedTypes {
         for (var schema : orderedInput) {
             var doc = schema.getDocument();
             for (var struct : doc.getStructs()) {
-                var dt = new StructDataType(struct.name());
                 String structId = doc.name() + "->" + struct.name();
+                // int id = new StructDataType(structId).getId();
+                // var dt = new StructDataType(id, struct.name());
+                var dt = new StructDataType(struct.name());
                 structsFromSchemas.put(structId, dt);
             }
             for (var annotation : doc.getAnnotations()) {
