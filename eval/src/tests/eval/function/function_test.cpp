@@ -109,6 +109,11 @@ TEST("require that scientific numbers can be parsed") {
     EXPECT_EQUAL(3e-7,    as_number(*Function::parse(params, "3E-7")));
 }
 
+TEST("require that true/false can be parsed") {
+    EXPECT_EQUAL(1.0, as_number(*Function::parse(params, "true")));
+    EXPECT_EQUAL(0.0, as_number(*Function::parse(params, "false")));
+}
+
 TEST("require that number parsing does not eat +/- operators") {
     EXPECT_EQUAL("(((1+2)+3)+4)", Function::parse(params, "1+2+3+4")->dump());
     EXPECT_EQUAL("(((1-2)-3)-4)", Function::parse(params, "1-2-3-4")->dump());
