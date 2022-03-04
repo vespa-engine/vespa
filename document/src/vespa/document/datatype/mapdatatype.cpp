@@ -7,8 +7,6 @@
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE(MapDataType, DataType);
-
 namespace {
 vespalib::string createName(const DataType& keyType, const DataType& valueType)
 {
@@ -18,20 +16,22 @@ vespalib::string createName(const DataType& keyType, const DataType& valueType)
 }
 }  // namespace
 
-MapDataType::MapDataType(const DataType &key, const DataType &value)
+MapDataType::MapDataType(const DataType &key, const DataType &value) noexcept
     : DataType(createName(key, value)),
       _keyType(&key),
       _valueType(&value) {
 }
 
-MapDataType::MapDataType(const DataType &key, const DataType &value, int id)
+MapDataType::MapDataType(const DataType &key, const DataType &value, int id) noexcept
     : DataType(createName(key, value), id),
       _keyType(&key),
       _valueType(&value) {
 }
 
+MapDataType::~MapDataType() = default;
+
 FieldValue::UP MapDataType::createFieldValue() const {
-    return FieldValue::UP(new MapFieldValue(*this));
+    return std::make_unique<MapFieldValue>(*this);
 }
 
 void
@@ -46,12 +46,12 @@ MapDataType::print(std::ostream& out, bool verbose,
 }
 
 bool
-MapDataType::operator==(const DataType& other) const
+MapDataType::equals(const DataType& other) const noexcept
 {
     if (this == &other) return true;
-    if (!DataType::operator==(other)) return false;
+    if (!DataType::equals(other)) return false;
     const MapDataType * w = other.cast_map();
-    return w && (*_keyType == *w->_keyType) && (*_valueType == *w->_valueType);
+    return w && _keyType->equals(*w->_keyType) && _valueType->equals(*w->_valueType);
 }
 
 void

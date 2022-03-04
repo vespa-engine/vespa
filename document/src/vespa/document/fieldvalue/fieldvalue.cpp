@@ -11,7 +11,6 @@
 #include "bytefieldvalue.h"
 #include "predicatefieldvalue.h"
 #include "iteratorhandler.h"
-#include <vespa/document/util/bytebuffer.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -55,13 +54,7 @@ FieldValue::isA(const FieldValue& other) const {
 }
 int
 FieldValue::compare(const FieldValue& other) const {
-    const DataType & a = *getDataType();
-    const DataType & b = *other.getDataType();
-    return (a < b)
-           ? -1
-           : (b < a)
-             ? 1
-             : 0;
+    return getDataType()->cmpId(*other.getDataType());
 }
 
 int

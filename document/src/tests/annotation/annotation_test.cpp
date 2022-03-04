@@ -139,11 +139,11 @@ TEST("requireThatSpanTreeCanHaveMultipleLevels") {
 
 TEST("requireThatAnnotationsCanHaveValues") {
     PrimitiveDataType double_type(DataType::T_DOUBLE);
-    StructDataType city_data_type;
+    StructDataType city_data_type("city");
     city_data_type.addField(Field("latitude", 0, double_type));
     city_data_type.addField(Field("longitude", 1, double_type));
 
-    StructFieldValue::UP position(new StructFieldValue(city_data_type));
+    auto position = std::make_unique<StructFieldValue>(city_data_type);
     position->setValue("latitude", DoubleFieldValue(37.774929));
     position->setValue("longitude", DoubleFieldValue(-122.419415));
     StructFieldValue original(*position);
@@ -164,7 +164,7 @@ TEST("requireThatAnnotationsCanReferenceAnnotations") {
     StructDataType city_data_type("name", 42);
     city_data_type.addField(Field("references", 0, array_type));
 
-    StructFieldValue::UP city_data(new StructFieldValue(city_data_type));
+    auto city_data = std::make_unique<StructFieldValue>(city_data_type);
     ArrayFieldValue ref_list(array_type);
     ref_list.add(AnnotationReferenceFieldValue(annotation_ref_type, san_index));
     ref_list.add(AnnotationReferenceFieldValue(annotation_ref_type, fran_index));

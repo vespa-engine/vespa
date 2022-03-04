@@ -11,30 +11,29 @@
 
 namespace document {
 
-class MapDataType : public DataType {
+class MapDataType final : public DataType {
     const DataType *_keyType;
     const DataType *_valueType;
 
 public:
-    MapDataType() : _keyType(0), _valueType(0) {}
-    MapDataType(const DataType &keyType, const DataType &valueType);
-    MapDataType(const DataType &keyType, const DataType &valueType, int id);
+    MapDataType(const DataType &keyType, const DataType &valueType) noexcept;
+    MapDataType(const DataType &keyType, const DataType &valueType, int id) noexcept;
+    MapDataType(const MapDataType &) = delete;
+    MapDataType & operator=(const MapDataType &) = delete;
+    ~MapDataType() override;
 
-    const DataType& getKeyType() const { return *_keyType; }
-    const DataType& getValueType() const { return *_valueType; }
+    const DataType& getKeyType() const noexcept { return *_keyType; }
+    const DataType& getValueType() const noexcept { return *_valueType; }
 
     std::unique_ptr<FieldValue> createFieldValue() const override;
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
-    bool operator==(const DataType& other) const override;
-    MapDataType* clone() const override { return new MapDataType(*this); }
-    const MapDataType * cast_map() const override { return this; }
+    bool equals(const DataType& other) const noexcept override;
+    const MapDataType * cast_map() const noexcept override { return this; }
 
     void onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const override;
     static void buildFieldPathImpl(FieldPath & path, const DataType& dataType,
                                    vespalib::stringref remainFieldName,
                                    const DataType &keyType, const DataType &valueType);
-
-    DECLARE_IDENTIFIABLE(MapDataType);
 };
 
 } // document

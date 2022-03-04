@@ -8,54 +8,54 @@
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE(WeightedSetDataType, CollectionDataType);
-
 namespace {
-    vespalib::string createName(const DataType& nestedType, bool create, bool remove)
-    {
-        if (nestedType.getId() == DataType::T_STRING && create && remove) {
-            return "Tag";
-        }
-        vespalib::asciistream ost;
-        ost << "WeightedSet<" << nestedType.getName() << ">";
-        if (create) {
-            ost << ";Add";
-        }
-        if (remove) {
-            ost << ";Remove";
-        }
-        return ost.str();
+
+vespalib::string
+createName(const DataType& nestedType, bool create, bool remove)
+{
+    if (nestedType.getId() == DataType::T_STRING && create && remove) {
+        return "Tag";
     }
+    vespalib::asciistream ost;
+    ost << "WeightedSet<" << nestedType.getName() << ">";
+    if (create) {
+        ost << ";Add";
+    }
+    if (remove) {
+        ost << ";Remove";
+    }
+    return ost.str();
 }
 
-WeightedSetDataType::WeightedSetDataType(
-        const DataType& nested, bool createIfNon, bool remove)
+}
+
+WeightedSetDataType::WeightedSetDataType(const DataType& nested, bool createIfNon, bool remove)
     : CollectionDataType(createName(nested, createIfNon, remove), nested),
       _createIfNonExistent(createIfNon),
       _removeIfZero(remove)
 {
 }
 
-WeightedSetDataType::WeightedSetDataType(
-        const DataType& nested, bool createIfNon, bool remove, int id)
+WeightedSetDataType::WeightedSetDataType(const DataType& nested, bool createIfNon, bool remove, int id)
     : CollectionDataType(createName(nested, createIfNon, remove), nested, id),
       _createIfNonExistent(createIfNon),
       _removeIfZero(remove)
 {
 }
 
+WeightedSetDataType::~WeightedSetDataType() = default;
+
 FieldValue::UP
 WeightedSetDataType::createFieldValue() const
 {
-    return FieldValue::UP(new WeightedSetFieldValue(*this));
+    return std::make_unique<WeightedSetFieldValue>(*this);
 
 }
 
 void
-WeightedSetDataType::print(std::ostream& out, bool verbose,
-                           const std::string& indent) const
+WeightedSetDataType::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
-    if (getNestedType() == *DataType::STRING &&
+    if (getNestedType().equals(*DataType::STRING) &&
         _createIfNonExistent && _removeIfZero)
     {
         out << "Tag()";
@@ -73,13 +73,12 @@ WeightedSetDataType::print(std::ostream& out, bool verbose,
 }
 
 bool
-WeightedSetDataType::operator==(const DataType& other) const
+WeightedSetDataType::equals(const DataType& other) const noexcept
 {
     if (this == &other) return true;
-    if (!CollectionDataType::operator==(other)) return false;
-    const WeightedSetDataType* w(dynamic_cast<const WeightedSetDataType*>(&other));
-    return (w != 0 && _createIfNonExistent == w->_createIfNonExistent
-                   && _removeIfZero == w->_removeIfZero);
+    if ( ! CollectionDataType::equals(other) || !other.isWeightedSet()) return false;
+    const WeightedSetDataType & w(static_cast<const WeightedSetDataType &>(other));
+    return (_createIfNonExistent == w._createIfNonExistent) && (_removeIfZero == w._removeIfZero);
 }
 
 void

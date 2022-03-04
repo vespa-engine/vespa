@@ -50,7 +50,7 @@ TEST(DocumentTest, testSizeOf)
     EXPECT_EQ(88ul, sizeof(IdString));
     EXPECT_EQ(104ul, sizeof(DocumentId));
     EXPECT_EQ(240ul, sizeof(Document));
-    EXPECT_EQ(88ul, sizeof(NumericDataType));
+    EXPECT_EQ(80ul, sizeof(NumericDataType));
     EXPECT_EQ(24ul, sizeof(LongFieldValue));
     EXPECT_EQ(96ul, sizeof(StructFieldValue));
     EXPECT_EQ(16ul, sizeof(StructuredFieldValue));

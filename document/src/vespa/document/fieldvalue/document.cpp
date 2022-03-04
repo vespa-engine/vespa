@@ -45,7 +45,7 @@ const DataType &
 Document::verifyDocumentType(const DataType *type) {
     if (!type) {
         documentTypeError("null");
-    } else if ( ! type->getClass().inherits(DocumentType::classId)) {
+    } else if ( ! type->isDocument()) {
         documentTypeError(type->toString());
     }
     return *type;

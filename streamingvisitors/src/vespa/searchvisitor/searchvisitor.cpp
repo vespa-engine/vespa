@@ -67,8 +67,9 @@ AttributeVector::SP
 createMultiValueAttribute(const vespalib::string & name, const document::FieldValue & fv, bool arrayType)
 {
     const DataType * ndt = fv.getDataType();
-    if (ndt->inherits(document::CollectionDataType::classId)) {
-        ndt = &(static_cast<const document::CollectionDataType *>(ndt))->getNestedType();
+    const document::CollectionDataType * cdt = ndt->cast_collection();
+    if (cdt != nullptr) {
+        ndt = &cdt->getNestedType();
     }
     LOG(debug, "Create %s attribute '%s' with data type '%s' (%s)",
         arrayType ? "array" : "weighted set", name.c_str(), ndt->getName().c_str(), fv.getClass().name());
@@ -739,12 +740,12 @@ void SearchVisitor::setupAttributeVector(const FieldPath &fieldPath) {
     enum FieldDataType { OTHER = 0, ARRAY, WSET };
     FieldDataType typeSeen = OTHER;
     for (const auto & entry : fieldPath) {
-        int dataTypeId(entry->getDataType().getClass().id());
-        if (dataTypeId == document::ArrayDataType::classId) {
+        const document::DataType & dt = entry->getDataType();
+        if (dt.isArray()) {
             typeSeen = ARRAY;
-        } else if (dataTypeId == document::MapDataType::classId) {
+        } else if (dt.isMap()) {
             typeSeen = ARRAY;
-        } else if (dataTypeId == document::WeightedSetDataType::classId) {
+        } else if (dt.isWeightedSet()) {
             typeSeen = WSET;
         }
     }

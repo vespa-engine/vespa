@@ -7,10 +7,10 @@
  */
 #pragma once
 
-#include <vespa/vespalib/objects/identifiable.h>
-
-#include <vespa/document/util/identifiableid.h>
 #include <vespa/document/util/printable.h>
+#include <vespa/vespalib/stllike/string.h>
+#include <memory>
+#include <vector>
 
 namespace document {
 
@@ -27,26 +27,24 @@ class ArrayDataType;
 class MapDataType;
 class ReferenceDataType;
 
-class DataType : public Printable,
-                 public vespalib::Identifiable
+class DataType : public Printable
 {
     int _dataTypeId;
     vespalib::string _name;
 
 protected:
-    DataType();
     /**
      * Creates a datatype. Note that datatypes must be configured to work with
      * the entire system, you can't just create them on the fly and expect
      * everyone to be able to use them. Only tests and the type manager reading
      * config should need to create datatypes.
      */
-    DataType(vespalib::stringref name, int dataTypeId);
+    DataType(vespalib::stringref name, int dataTypeId) noexcept;
 
     /**
      * Creates a datatype using the hash of name as the id.
      */
-    explicit DataType(vespalib::stringref name);
+    explicit DataType(vespalib::stringref name) noexcept;
 
 public:
     ~DataType() override;
@@ -103,33 +101,48 @@ public:
     /** Used by type manager to fetch default types to register. */
     static std::vector<const DataType *> getDefaultDataTypes();
 
-    const vespalib::string& getName() const { return _name; }
-    int getId() const { return _dataTypeId; }
+    const vespalib::string& getName() const noexcept { return _name; }
+    int getId() const noexcept { return _dataTypeId; }
     bool isValueType(const FieldValue & fv) const;
 
     /**
      * Create a field value using this datatype.
      */
     virtual std::unique_ptr<FieldValue> createFieldValue() const = 0;
-    virtual DataType* clone() const = 0;
 
-    virtual bool isArray() const { return false; }
-    virtual bool isPrimitive() const { return false; }
-    virtual bool isNumeric() const { return false; }
-    virtual const CollectionDataType * cast_collection() const { return nullptr; }
-    virtual const MapDataType * cast_map() const { return nullptr; }
-    virtual const ReferenceDataType * cast_reference() const { return nullptr; }
+    virtual bool isWeightedSet() const noexcept { return false; }
+    virtual bool isArray() const noexcept { return false; }
+    virtual bool isDocument() const noexcept { return false; }
+    virtual bool isTensor() const noexcept { return false; }
+    virtual bool isPrimitive() const noexcept { return false; }
+    virtual bool isNumeric() const noexcept { return false; }
+    virtual bool isStructured() const noexcept { return false; }
+    virtual const CollectionDataType * cast_collection() const noexcept { return nullptr; }
+    virtual const MapDataType * cast_map() const noexcept { return nullptr; }
+    virtual const ReferenceDataType * cast_reference() const noexcept { return nullptr; }
+    bool isMap() const { return cast_map() != nullptr; }
 
     /**
      * Whether another datatype is a supertype of this one. Document types may
      * be due to inheritance. For other types, they must be identical for this
      * to match.
      */
-    virtual bool isA(const DataType& other) const { return (*this == other); }
+    virtual bool isA(const DataType& other) const { return equals(other); }
 
-    virtual bool operator==(const DataType&) const;
-    virtual bool operator<(const DataType&) const;
-    bool operator != (const DataType & rhs) const { return !(*this == rhs); }
+    virtual bool equals(const DataType & other) const noexcept {
+        return _dataTypeId == other._dataTypeId;
+    }
+
+    bool operator == (const DataType & other) const noexcept {
+        return equals(other);
+    }
+    int cmpId(const DataType& b) const {
+        return (_dataTypeId < b._dataTypeId)
+               ? -1
+               : (b._dataTypeId < _dataTypeId)
+                 ? 1
+                 : 0;
+    }
 
     /**
      * This takes a . separated fieldname and gives you back the path of
@@ -142,8 +155,6 @@ public:
 
     /** @throws FieldNotFoundException if field does not exist. */
     virtual const Field& getField(int fieldId) const;
-
-    DECLARE_IDENTIFIABLE_ABSTRACT(DataType);
 private:
     virtual void onBuildFieldPath(FieldPath & fieldPath, vespalib::stringref remainFieldName) const = 0;
 };

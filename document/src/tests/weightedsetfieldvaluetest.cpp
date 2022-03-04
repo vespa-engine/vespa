@@ -1,10 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/longfieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/document/util/bytebuffer.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>

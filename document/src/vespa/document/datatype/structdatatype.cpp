@@ -6,7 +6,6 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <iomanip>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -16,14 +15,6 @@ namespace document {
 
 using vespalib::make_string;
 using vespalib::IllegalArgumentException;
-
-IMPLEMENT_IDENTIFIABLE(StructDataType, StructuredDataType);
-
-StructDataType::StructDataType() :
-    StructuredDataType(),
-    _nameFieldMap(),
-    _idFieldMap()
-{ }
 
 StructDataType::StructDataType(vespalib::stringref name)
     : StructuredDataType(name),
@@ -37,12 +28,8 @@ StructDataType::StructDataType(vespalib::stringref name, int32_t dataTypeId)
       _idFieldMap()
 { }
 
+StructDataType::StructDataType(const StructDataType & rhs) = default;
 StructDataType::~StructDataType() = default;
-
-StructDataType*
-StructDataType::clone() const {
-    return new StructDataType(*this);
-}
 
 void
 StructDataType::print(std::ostream& out, bool verbose,
@@ -145,11 +132,13 @@ StructDataType::getField(int32_t fieldId) const
     return *it->second;
 }
 
-bool StructDataType::hasField(vespalib::stringref name) const {
+bool
+StructDataType::hasField(vespalib::stringref name) const noexcept {
     return _nameFieldMap.find(name) != _nameFieldMap.end();
 }
 
-bool StructDataType::hasField(int32_t fieldId) const {
+bool
+StructDataType::hasField(int32_t fieldId) const noexcept {
     return _idFieldMap.find(fieldId) != _idFieldMap.end();
 }
 

@@ -2,7 +2,6 @@
 #include "removevalueupdate.h"
 #include <vespa/document/base/field.h>
 #include <vespa/document/datatype/arraydatatype.h>
-#include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -87,18 +86,14 @@ RemoveValueUpdate::print(std::ostream& out, bool, const std::string&) const
 void
 RemoveValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream)
 {
-    switch(type.getClass().id()) {
-        case ArrayDataType::classId:
-        case WeightedSetDataType::classId:
-        {
-            const CollectionDataType& c(static_cast<const CollectionDataType&>(type));
-            _key.reset(c.getNestedType().createFieldValue().release());
-            VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());
-            deserializer.read(*_key);
-            break;
-        }
-        default:
-            throw DeserializeException("Can not perform remove operation on type " + type.toString() + ".", VESPA_STRLOC);
+    const CollectionDataType * ct = type.cast_collection();
+    if (ct != nullptr) {
+        const CollectionDataType& c(static_cast<const CollectionDataType&>(type));
+        _key.reset(c.getNestedType().createFieldValue().release());
+        VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());
+        deserializer.read(*_key);
+    } else {
+        throw DeserializeException("Can not perform remove operation on type " + type.toString() + ".", VESPA_STRLOC);
     }
 }
 

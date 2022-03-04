@@ -59,7 +59,7 @@ DocumentUpdate::DocumentUpdate(const DocumentTypeRepo & repo, const DataType &ty
       _createIfNonExistent(false),
       _needHardReserialize(false)
 {
-    if (!type.getClass().inherits(DocumentType::classId)) {
+    if (!type.isDocument()) {
         throw IllegalArgumentException("Cannot generate a document with non-document type " + type.toString() + ".", VESPA_STRLOC);
     }
     serializeHeader();

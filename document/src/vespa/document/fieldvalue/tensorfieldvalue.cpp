@@ -9,7 +9,6 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/value.h>
 #include <ostream>
-#include <cassert>
 
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
@@ -20,7 +19,7 @@ namespace document {
 
 namespace {
 
-TensorDataType emptyTensorDataType;
+TensorDataType emptyTensorDataType(ValueType::error_type());
 
 vespalib::string makeWrongTensorTypeMsg(const ValueType &fieldTensorType, const ValueType &tensorType)
 {

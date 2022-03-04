@@ -11,11 +11,9 @@
 
 #pragma once
 
+#include "structdatatype.h"
 #include <vespa/document/fieldset/fieldsets.h>
-#include <vespa/document/datatype/structdatatype.h>
 #include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
 #include <map>
 #include <set>
 
@@ -24,7 +22,7 @@ namespace document {
 class Field;
 class DocumentType;
 
-class DocumentType : public StructuredDataType {
+class DocumentType final : public StructuredDataType {
 public:
     class FieldSet {
     public:
@@ -45,6 +43,7 @@ public:
         Fields           _fields;
         FieldCollection  _field_collection;
     };
+private:
     using FieldSetMap = std::map<vespalib::string, FieldSet>;
     using ImportedFieldNames = vespalib::hash_set<vespalib::string>;
 
@@ -58,12 +57,13 @@ public:
     using UP = std::unique_ptr<DocumentType>;
     using SP = std::shared_ptr<DocumentType>;
 
-    DocumentType();
     DocumentType(vespalib::stringref name, int32_t id);
     DocumentType(vespalib::stringref name, int32_t id, const StructDataType& fields);
 
     explicit DocumentType(vespalib::stringref name);
     DocumentType(vespalib::stringref name, const StructDataType& fields);
+    DocumentType(const DocumentType &);   // TODO remove usage
+    DocumentType & operator = (const DocumentType &);  // TODO remove usage
 
     ~DocumentType() override;
 
@@ -79,23 +79,26 @@ public:
     void inherit(const DocumentType &docType);
 
     bool isA(const DataType& other) const override;
+    virtual bool isDocument() const noexcept override { return true; }
 
     const std::vector<const DocumentType *> & getInheritedTypes() const { return _inheritedTypes; };
 
     // Implementation of StructuredDataType
     std::unique_ptr<FieldValue> createFieldValue() const override;
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
-    bool operator==(const DataType& type) const override;
-    bool operator==(const DocumentType& type) const { return operator==(static_cast<const DataType&>(type)); }
-    uint32_t getFieldCount() const override {
+    bool equals(const DataType& type) const noexcept override;
+    uint32_t getFieldCount() const noexcept override {
         return _fields->getFieldCount();
     }
     const Field & getField(vespalib::stringref name) const override;
     const Field & getField(int fieldId) const override;
-    bool hasField(vespalib::stringref name) const override;
-    bool hasField(int fieldId) const override;
+    bool hasField(vespalib::stringref name) const noexcept override {
+        return _fields->hasField(name);
+    }
+    bool hasField(int fieldId) const noexcept override {
+        return _fields->hasField(fieldId);
+    }
     Field::Set getFieldSet() const override;
-    DocumentType* clone() const override;
 
     DocumentType & addFieldSet(const vespalib::string & name, FieldSet::Fields fields);
     const FieldSet * getFieldSet(const vespalib::string & name) const;
@@ -107,8 +110,6 @@ public:
     bool has_imported_field_name(const vespalib::string& name) const noexcept;
     // Ideally the type would be immutable, but this is how it's built today.
     void add_imported_field_name(const vespalib::string& name);
-
-    DECLARE_IDENTIFIABLE(DocumentType);
 };
 
 } // document

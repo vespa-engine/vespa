@@ -5,8 +5,6 @@
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(NumericDataType, PrimitiveDataType);
-
 NumericDataType::NumericDataType(Type type)
     : PrimitiveDataType(type)
 {

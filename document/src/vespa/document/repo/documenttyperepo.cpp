@@ -26,7 +26,6 @@ using std::fstream;
 using std::make_pair;
 using std::pair;
 using std::vector;
-using vespalib::Identifiable;
 using vespalib::IllegalArgumentException;
 using vespalib::hash_map;
 using vespalib::make_string;
@@ -94,7 +93,7 @@ void Repo::inherit(const Repo &parent) {
 bool Repo::addDataType(const DataType &type) {
     const DataType *& data_type = _types[type.getId()];
     if (data_type) {
-        if ((*data_type == type) && (data_type->getName() == type.getName())) {
+        if (data_type->equals(type) && (data_type->getName() == type.getName())) {
             return false;  // Redefinition of identical type is ok.
         }
         throw IllegalArgumentException(
@@ -202,7 +201,7 @@ void AnnotationTypeRepo::setAnnotationDataType(int32_t id, const DataType &d) {
     assert(annotation_type);
     if (!annotation_type->getDataType()) {
         annotation_type->setDataType(d);
-    } else if (*(annotation_type->getDataType()) != d) {
+    } else if ( ! annotation_type->getDataType()->equals(d)) {
         throw IllegalArgumentException(
             make_string("Redefinition of annotation type %d, \"%s\" = '%s'. Previously defined as '%s'.",
                         annotation_type->getId(), annotation_type->getName().c_str(),
@@ -418,11 +417,12 @@ void inheritDocumentTypes(const vector<DocumenttypesConfig::Documenttype::Inheri
     }
 }
 
-DataTypeRepo::UP makeDataTypeRepo(const DocumentType &doc_type, const DocumentTypeMap &type_map) {
+DataTypeRepo::UP
+makeDataTypeRepo(const DocumentType &doc_type, const DocumentTypeMap &type_map) {
     auto data_types = std::make_unique<DataTypeRepo>();
     data_types->repo.inherit(lookupRepo(DataType::T_DOCUMENT, type_map).repo);
     data_types->annotations.inherit(lookupRepo(DataType::T_DOCUMENT, type_map).annotations);
-    data_types->doc_type = doc_type.clone();
+    data_types->doc_type = new DocumentType(doc_type);
     return data_types;
 }
 

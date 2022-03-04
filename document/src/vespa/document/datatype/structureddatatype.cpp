@@ -9,10 +9,6 @@ using vespalib::make_string;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(StructuredDataType, DataType);
-
-StructuredDataType::StructuredDataType() = default;
-
 StructuredDataType::StructuredDataType(vespalib::stringref name)
     : DataType(name, createId(name))
 {
@@ -23,10 +19,8 @@ StructuredDataType::StructuredDataType(vespalib::stringref name, int dataTypeId)
 {
 }
 
-bool StructuredDataType::operator==(const DataType& type) const
-{
-    if (!DataType::operator==(type)) return false;
-    return (dynamic_cast<const StructuredDataType*>(&type) != 0);
+bool StructuredDataType::equals(const DataType &other) const noexcept {
+    return DataType::equals(other) && other.isStructured();
 }
 
 namespace {

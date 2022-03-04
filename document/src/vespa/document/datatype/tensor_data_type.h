@@ -9,20 +9,18 @@ namespace document {
 /*
  * This class describes a tensor type.
  */
-class TensorDataType : public PrimitiveDataType {
+class TensorDataType final : public PrimitiveDataType {
     vespalib::eval::ValueType _tensorType;
 public:
-    TensorDataType();
     TensorDataType(vespalib::eval::ValueType tensorType);
+    TensorDataType(const TensorDataType &);  //TODO try to avoid
+    TensorDataType & operator=(const TensorDataType &) = delete;
     ~TensorDataType();
 
+    bool isTensor() const noexcept override { return true; }
     std::unique_ptr<FieldValue> createFieldValue() const override;
-    TensorDataType* clone() const override;
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
     static std::unique_ptr<const TensorDataType> fromSpec(const vespalib::string &spec);
-    
-    DECLARE_IDENTIFIABLE_ABSTRACT(TensorDataType);
-
     const vespalib::eval::ValueType &getTensorType() const { return _tensorType; }
     bool isAssignableType(const vespalib::eval::ValueType &tensorType) const;
     static bool isAssignableType(const vespalib::eval::ValueType &fieldTensorType, const vespalib::eval::ValueType &tensorType);

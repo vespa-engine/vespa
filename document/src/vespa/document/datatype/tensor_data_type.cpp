@@ -9,31 +9,19 @@ using vespalib::eval::ValueType;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(TensorDataType, DataType);
-
-TensorDataType::TensorDataType()
-    : TensorDataType(ValueType::error_type())
-{
-}
-
 TensorDataType::TensorDataType(ValueType tensorType)
     : PrimitiveDataType(DataType::T_TENSOR),
       _tensorType(std::move(tensorType))
 {
 }
 
+TensorDataType::TensorDataType(const TensorDataType &) = default;
 TensorDataType::~TensorDataType() = default;
 
 FieldValue::UP
 TensorDataType::createFieldValue() const
 {
     return std::make_unique<TensorFieldValue>(*this);
-}
-
-TensorDataType*
-TensorDataType::clone() const
-{
-    return new TensorDataType(*this);
 }
 
 void
