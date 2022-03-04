@@ -23,11 +23,11 @@ public class DocprocChains extends Chains<DocprocChain> {
         addComponent(docprocHandler);
     }
 
-    private void addComponent(Component component) {
-        if (!(getParent() instanceof ContainerCluster)) {
+    private void addComponent(Component<?, ?> component) {
+        if (!(getParent() instanceof ContainerCluster<?>)) {
             return;
         }
-        ((ContainerCluster) getParent()).addComponent(component);
+        ((ContainerCluster<?>) getParent()).addComponent(component);
     }
 
 
