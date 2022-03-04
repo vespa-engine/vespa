@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vespa-engine/vespa/client/go/mock"
+	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/version"
 )
 
@@ -64,17 +66,17 @@ func (v *mockVespaApi) mockVespaHandler(w http.ResponseWriter, req *http.Request
 }
 
 func TestCustomTarget(t *testing.T) {
-	lt := LocalTarget()
+	lt := LocalTarget(&mock.HTTPClient{})
 	assertServiceURL(t, "http://127.0.0.1:19071", lt, "deploy")
 	assertServiceURL(t, "http://127.0.0.1:8080", lt, "query")
 	assertServiceURL(t, "http://127.0.0.1:8080", lt, "document")
 
-	ct := CustomTarget("http://192.0.2.42")
+	ct := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42")
 	assertServiceURL(t, "http://192.0.2.42:19071", ct, "deploy")
 	assertServiceURL(t, "http://192.0.2.42:8080", ct, "query")
 	assertServiceURL(t, "http://192.0.2.42:8080", ct, "document")
 
-	ct2 := CustomTarget("http://192.0.2.42:60000")
+	ct2 := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42:60000")
 	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "deploy")
 	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "query")
 	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "document")
@@ -84,7 +86,7 @@ func TestCustomTargetWait(t *testing.T) {
 	vc := mockVespaApi{}
 	srv := httptest.NewServer(http.HandlerFunc(vc.mockVespaHandler))
 	defer srv.Close()
-	target := CustomTarget(srv.URL)
+	target := CustomTarget(util.CreateClient(time.Second*10), srv.URL)
 
 	_, err := target.Service("query", time.Millisecond, 42, "")
 	assert.NotNil(t, err)
@@ -147,17 +149,9 @@ func TestCheckVersion(t *testing.T) {
 	defer srv.Close()
 
 	target := createCloudTarget(t, srv.URL, ioutil.Discard)
-	assert.Nil(t, target.CheckVersion(mustVersion("8.0.0")))
-	assert.Nil(t, target.CheckVersion(mustVersion("8.1.0")))
-	assert.NotNil(t, target.CheckVersion(mustVersion("7.0.0")))
-}
-
-func mustVersion(s string) version.Version {
-	v, err := version.Parse(s)
-	if err != nil {
-		panic(err)
-	}
-	return v
+	assert.Nil(t, target.CheckVersion(version.MustParse("8.0.0")))
+	assert.Nil(t, target.CheckVersion(version.MustParse("8.1.0")))
+	assert.NotNil(t, target.CheckVersion(version.MustParse("7.0.0")))
 }
 
 func createCloudTarget(t *testing.T, url string, logWriter io.Writer) Target {
@@ -170,6 +164,7 @@ func createCloudTarget(t *testing.T, url string, logWriter io.Writer) Target {
 	assert.Nil(t, err)
 
 	target, err := CloudTarget(
+		util.CreateClient(time.Second*10),
 		APIOptions{APIKey: apiKey, System: PublicSystem},
 		CloudDeploymentOptions{
 			Deployment: Deployment{

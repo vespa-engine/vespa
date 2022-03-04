@@ -43,6 +43,7 @@ type DeploymentOptions struct {
 	Target             Target
 	ApplicationPackage ApplicationPackage
 	Timeout            time.Duration
+	HTTPClient         util.HTTPClient
 }
 
 type LogLinePrepareResponse struct {
@@ -124,7 +125,7 @@ func Prepare(deployment DeploymentOptions) (PrepareResult, error) {
 		return PrepareResult{}, err
 	}
 	serviceDescription := "Deploy service"
-	response, err := util.HttpDo(req, time.Second*30, serviceDescription)
+	response, err := deployment.HTTPClient.Do(req, time.Second*30)
 	if err != nil {
 		return PrepareResult{}, err
 	}
@@ -149,7 +150,7 @@ func Activate(sessionID int64, deployment DeploymentOptions) error {
 		return err
 	}
 	serviceDescription := "Deploy service"
-	response, err := util.HttpDo(req, time.Second*30, serviceDescription)
+	response, err := deployment.HTTPClient.Do(req, time.Second*30)
 	if err != nil {
 		return err
 	}
@@ -243,7 +244,7 @@ func Submit(opts DeploymentOptions) error {
 	if err := opts.Target.SignRequest(request, sigKeyId); err != nil {
 		return err
 	}
-	response, err := util.HttpDo(request, time.Minute*10, sigKeyId)
+	response, err := opts.HTTPClient.Do(request, time.Minute*10)
 	if err != nil {
 		return err
 	}

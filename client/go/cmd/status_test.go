@@ -45,33 +45,47 @@ func TestStatusErrorResponse(t *testing.T) {
 
 func assertDeployStatus(target string, args []string, t *testing.T) {
 	client := &mock.HTTPClient{}
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+	statusArgs := []string{"status", "deploy"}
+	assert.Nil(t, cli.Run(append(statusArgs, args...)...))
 	assert.Equal(t,
 		"Deploy API at "+target+" is ready\n",
-		executeCommand(t, client, []string{"status", "deploy"}, args),
+		stdout.String(),
 		"vespa status config-server")
 	assert.Equal(t, target+"/status.html", client.LastRequest.URL.String())
 }
 
 func assertQueryStatus(target string, args []string, t *testing.T) {
 	client := &mock.HTTPClient{}
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+	statusArgs := []string{"status", "query"}
+	assert.Nil(t, cli.Run(append(statusArgs, args...)...))
 	assert.Equal(t,
 		"Container (query API) at "+target+" is ready\n",
-		executeCommand(t, client, []string{"status", "query"}, args),
+		stdout.String(),
 		"vespa status container")
 	assert.Equal(t, target+"/ApplicationStatus", client.LastRequest.URL.String())
 
+	statusArgs = []string{"status"}
+	stdout.Reset()
+	assert.Nil(t, cli.Run(append(statusArgs, args...)...))
 	assert.Equal(t,
 		"Container (query API) at "+target+" is ready\n",
-		executeCommand(t, client, []string{"status"}, args),
+		stdout.String(),
 		"vespa status (the default)")
 	assert.Equal(t, target+"/ApplicationStatus", client.LastRequest.URL.String())
 }
 
 func assertDocumentStatus(target string, args []string, t *testing.T) {
 	client := &mock.HTTPClient{}
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+	assert.Nil(t, cli.Run("status", "document"))
 	assert.Equal(t,
 		"Container (document API) at "+target+" is ready\n",
-		executeCommand(t, client, []string{"status", "document"}, args),
+		stdout.String(),
 		"vespa status container")
 	assert.Equal(t, target+"/ApplicationStatus", client.LastRequest.URL.String())
 }
@@ -79,11 +93,11 @@ func assertDocumentStatus(target string, args []string, t *testing.T) {
 func assertQueryStatusError(target string, args []string, t *testing.T) {
 	client := &mock.HTTPClient{}
 	client.NextStatus(500)
-	cmd := []string{"status", "container"}
-	cmd = append(cmd, args...)
-	_, outErr := execute(command{args: cmd}, t, client)
+	cli, _, stderr := newTestCLI(t)
+	cli.httpClient = client
+	assert.NotNil(t, cli.Run("status", "container"))
 	assert.Equal(t,
 		"Error: Container (query API) at "+target+" is not ready: status 500\n",
-		outErr,
+		stderr.String(),
 		"vespa status container")
 }

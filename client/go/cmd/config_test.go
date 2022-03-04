@@ -13,75 +13,64 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	homeDir := filepath.Join(t.TempDir(), ".vespa")
-	assertConfigCommandErr(t, "Error: invalid option or value: \"foo\": \"bar\"\n", homeDir, "config", "set", "foo", "bar")
-	assertConfigCommand(t, "foo = <unset>\n", homeDir, "config", "get", "foo")
-	assertConfigCommand(t, "target = local\n", homeDir, "config", "get", "target")
-	assertConfigCommand(t, "", homeDir, "config", "set", "target", "hosted")
-	assertConfigCommand(t, "target = hosted\n", homeDir, "config", "get", "target")
-	assertConfigCommand(t, "", homeDir, "config", "set", "target", "cloud")
-	assertConfigCommand(t, "target = cloud\n", homeDir, "config", "get", "target")
-	assertConfigCommand(t, "", homeDir, "config", "set", "target", "http://127.0.0.1:8080")
-	assertConfigCommand(t, "", homeDir, "config", "set", "target", "https://127.0.0.1")
-	assertConfigCommand(t, "target = https://127.0.0.1\n", homeDir, "config", "get", "target")
-	assertEnvConfigCommand(t, "api-key-file = /tmp/private.key\n", homeDir, map[string]string{"VESPA_CLI_API_KEY_FILE": "/tmp/private.key"}, "config", "get", "api-key-file")
-	assertConfigCommand(t, "", homeDir, "config", "set", "api-key-file", "/tmp/private.key")
-	assertConfigCommand(t, "api-key-file = /tmp/private.key\n", homeDir, "config", "get", "api-key-file")
+	assertConfigCommandErr(t, "Error: invalid option or value: \"foo\": \"bar\"\n", "config", "set", "foo", "bar")
+	assertConfigCommand(t, "foo = <unset>\n", "config", "get", "foo")
+	assertConfigCommand(t, "target = local\n", "config", "get", "target")
+	assertConfigCommand(t, "", "config", "set", "target", "hosted")
+	assertConfigCommand(t, "target = hosted\n", "config", "get", "target")
+	assertConfigCommand(t, "", "config", "set", "target", "cloud")
+	assertConfigCommand(t, "target = cloud\n", "config", "get", "target")
+	assertConfigCommand(t, "", "config", "set", "target", "http://127.0.0.1:8080")
+	assertConfigCommand(t, "", "config", "set", "target", "https://127.0.0.1")
+	assertConfigCommand(t, "target = https://127.0.0.1\n", "config", "get", "target")
+	assertEnvConfigCommand(t, "api-key-file = /tmp/private.key\n", []string{"VESPA_CLI_API_KEY_FILE=/tmp/private.key"}, "config", "get", "api-key-file")
+	assertConfigCommand(t, "", "config", "set", "api-key-file", "/tmp/private.key")
+	assertConfigCommand(t, "api-key-file = /tmp/private.key\n", "config", "get", "api-key-file")
 
-	assertConfigCommandErr(t, "Error: invalid application: \"foo\"\n", homeDir, "config", "set", "application", "foo")
-	assertConfigCommand(t, "application = <unset>\n", homeDir, "config", "get", "application")
-	assertConfigCommand(t, "", homeDir, "config", "set", "application", "t1.a1.i1")
-	assertConfigCommand(t, "application = t1.a1.i1\n", homeDir, "config", "get", "application")
+	assertConfigCommandErr(t, "Error: invalid application: \"foo\"\n", "config", "set", "application", "foo")
+	assertConfigCommand(t, "application = <unset>\n", "config", "get", "application")
+	assertConfigCommand(t, "", "config", "set", "application", "t1.a1.i1")
+	assertConfigCommand(t, "application = t1.a1.i1\n", "config", "get", "application")
 
-	assertConfigCommand(t, "api-key-file = /tmp/private.key\napplication = t1.a1.i1\ncolor = auto\nquiet = false\ntarget = https://127.0.0.1\nwait = 0\n", homeDir, "config", "get")
+	assertConfigCommand(t, "api-key-file = /tmp/private.key\napplication = t1.a1.i1\ncolor = auto\nquiet = false\ntarget = https://127.0.0.1\nwait = 0\n", "config", "get")
 
-	assertConfigCommand(t, "", homeDir, "config", "set", "wait", "60")
-	assertConfigCommandErr(t, "Error: wait option must be an integer >= 0, got \"foo\"\n", homeDir, "config", "set", "wait", "foo")
-	assertConfigCommand(t, "wait = 60\n", homeDir, "config", "get", "wait")
+	assertConfigCommand(t, "", "config", "set", "wait", "60")
+	assertConfigCommandErr(t, "Error: wait option must be an integer >= 0, got \"foo\"\n", "config", "set", "wait", "foo")
+	assertConfigCommand(t, "wait = 60\n", "config", "get", "wait")
 
-	assertConfigCommand(t, "", homeDir, "config", "set", "quiet", "true")
-	assertConfigCommand(t, "", homeDir, "config", "set", "quiet", "false")
+	assertConfigCommand(t, "", "config", "set", "quiet", "true")
+	assertConfigCommand(t, "", "config", "set", "quiet", "false")
 }
 
-func assertConfigCommand(t *testing.T, expected, homeDir string, args ...string) {
-	assertEnvConfigCommand(t, expected, homeDir, nil, args...)
+func assertConfigCommand(t *testing.T, expected string, args ...string) {
+	assertEnvConfigCommand(t, expected, nil, args...)
 }
 
-func assertEnvConfigCommand(t *testing.T, expected, homeDir string, env map[string]string, args ...string) {
-	out, _ := execute(command{homeDir: homeDir, env: env, args: args}, t, nil)
-	assert.Equal(t, expected, out)
+func assertEnvConfigCommand(t *testing.T, expected string, env []string, args ...string) {
+	cli, stdout, _ := newTestCLI(t, env...)
+	err := cli.Run(args...)
+	assert.Nil(t, err)
+	assert.Equal(t, expected, stdout.String())
 }
 
-func assertConfigCommandErr(t *testing.T, expected, homeDir string, args ...string) {
-	_, outErr := execute(command{homeDir: homeDir, args: args}, t, nil)
-	assert.Equal(t, expected, outErr)
-}
-
-func withEnv(key, value string, fn func()) {
-	orig, ok := os.LookupEnv(key)
-	os.Setenv(key, value)
-	fn()
-	if ok {
-		os.Setenv(key, orig)
-	} else {
-		os.Unsetenv(key)
-	}
+func assertConfigCommandErr(t *testing.T, expected string, args ...string) {
+	cli, _, stderr := newTestCLI(t)
+	err := cli.Run(args...)
+	assert.NotNil(t, err)
+	assert.Equal(t, expected, stderr.String())
 }
 
 func TestUseAPIKey(t *testing.T) {
-	homeDir := t.TempDir()
-	c := Config{Home: homeDir}
+	cli, _, _ := newTestCLI(t)
 
-	assert.False(t, c.UseAPIKey(vespa.PublicSystem, "t1"))
+	assert.False(t, cli.config.useAPIKey(cli, vespa.PublicSystem, "t1"))
 
-	c.Set(apiKeyFileFlag, "/tmp/foo")
-	assert.True(t, c.UseAPIKey(vespa.PublicSystem, "t1"))
-	c.Set(apiKeyFileFlag, "")
+	cli.config.set(apiKeyFileFlag, "/tmp/foo")
+	assert.True(t, cli.config.useAPIKey(cli, vespa.PublicSystem, "t1"))
+	cli.config.set(apiKeyFileFlag, "")
 
-	withEnv("VESPA_CLI_API_KEY", "...", func() {
-		require.Nil(t, c.load())
-		assert.True(t, c.UseAPIKey(vespa.PublicSystem, "t1"))
-	})
+	cli, _, _ = newTestCLI(t, "VESPA_CLI_API_KEY=foo")
+	assert.True(t, cli.config.useAPIKey(cli, vespa.PublicSystem, "t1"))
 
 	// Test deprecated functionality
 	authContent := `
@@ -100,18 +89,10 @@ func TestUseAPIKey(t *testing.T) {
 		}
 	}
 }`
-	withEnv("VESPA_CLI_CLOUD_SYSTEM", "public", func() {
-		ci, ok := os.LookupEnv("CI")
-		if ok {
-			os.Unsetenv("CI") // Test depends on unset variable
-		}
-		_, err := os.Create(filepath.Join(homeDir, "t2.api-key.pem"))
-		require.Nil(t, err)
-		assert.True(t, c.UseAPIKey(vespa.PublicSystem, "t2"))
-		require.Nil(t, ioutil.WriteFile(filepath.Join(homeDir, "auth.json"), []byte(authContent), 0600))
-		assert.False(t, c.UseAPIKey(vespa.PublicSystem, "t2"))
-		if ok {
-			os.Setenv("CI", ci)
-		}
-	})
+	cli, _, _ = newTestCLI(t, "VESPA_CLI_CLOUD_SYSTEM=public")
+	_, err := os.Create(filepath.Join(cli.config.homeDir, "t2.api-key.pem"))
+	require.Nil(t, err)
+	assert.True(t, cli.config.useAPIKey(cli, vespa.PublicSystem, "t2"))
+	require.Nil(t, ioutil.WriteFile(filepath.Join(cli.config.homeDir, "auth.json"), []byte(authContent), 0600))
+	assert.False(t, cli.config.useAPIKey(cli, vespa.PublicSystem, "t2"))
 }

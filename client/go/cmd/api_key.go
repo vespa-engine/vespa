@@ -14,9 +14,12 @@ import (
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
-var overwriteKey bool
-
-const apiKeyLongDoc = `Create a new user API key for authentication with Vespa Cloud.
+func newAPIKeyCmd(cli *CLI, deprecated bool) *cobra.Command {
+	var overwriteKey bool
+	cmd := &cobra.Command{
+		Use:   "api-key",
+		Short: "Create a new user API key for authentication with Vespa Cloud",
+		Long: `Create a new user API key for authentication with Vespa Cloud.
 
 The API key will be stored in the Vespa CLI home directory
 (see 'vespa help config'). Other commands will then automatically load the API
@@ -34,65 +37,40 @@ can be useful in continuous integration systems.
   export VESPA_CLI_API_KEY_FILE=/path/to/api-key
 
 Note that when overriding API key through environment variables, that key will
-always be used. It's not possible to specify a tenant-specific key.`
-
-func init() {
-	apiKeyCmd.Flags().BoolVarP(&overwriteKey, "force", "f", false, "Force overwrite of existing API key")
-	apiKeyCmd.MarkPersistentFlagRequired(applicationFlag)
-	deprecatedApiKeyCmd.Flags().BoolVarP(&overwriteKey, "force", "f", false, "Force overwrite of existing API key")
-	deprecatedApiKeyCmd.MarkPersistentFlagRequired(applicationFlag)
-}
-
-func apiKeyExample() string {
-	return "$ vespa auth api-key -a my-tenant.my-app.my-instance"
-}
-
-var apiKeyCmd = &cobra.Command{
-	Use:               "api-key",
-	Short:             "Create a new user API key for authentication with Vespa Cloud",
-	Long:              apiKeyLongDoc,
-	Example:           apiKeyExample(),
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	Args:              cobra.ExactArgs(0),
-	RunE:              doApiKey,
-}
-
-// TODO: Remove this after 2022-06-01
-var deprecatedApiKeyCmd = &cobra.Command{
-	Use:               "api-key",
-	Short:             "Create a new user API key for authentication with Vespa Cloud",
-	Long:              apiKeyLongDoc,
-	Example:           apiKeyExample(),
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	Args:              cobra.ExactArgs(0),
-	Hidden:            true,
-	Deprecated:        "use 'vespa auth api-key' instead",
-	RunE:              doApiKey,
-}
-
-func doApiKey(_ *cobra.Command, _ []string) error {
-	cfg, err := LoadConfig()
-	if err != nil {
-		return fmt.Errorf("could not load config: %w", err)
+always be used. It's not possible to specify a tenant-specific key.`,
+		Example:           "$ vespa auth api-key -a my-tenant.my-app.my-instance",
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		Args:              cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return doApiKey(cli, overwriteKey, args)
+		},
 	}
-	app, err := getApplication()
+	if deprecated {
+		cmd.Deprecated = "use 'vespa auth api-key' instead"
+	}
+	cmd.Flags().BoolVarP(&overwriteKey, "force", "f", false, "Force overwrite of existing API key")
+	cmd.MarkPersistentFlagRequired(applicationFlag)
+	return cmd
+}
+
+func doApiKey(cli *CLI, overwriteKey bool, args []string) error {
+	app, err := cli.config.application()
 	if err != nil {
 		return err
 	}
-	targetType, err := getTargetType()
+	targetType, err := cli.config.targetType()
 	if err != nil {
 		return err
 	}
-	system, err := getSystem(targetType)
+	system, err := cli.system(targetType)
 	if err != nil {
 		return err
 	}
-	apiKeyFile := cfg.APIKeyPath(app.Tenant)
+	apiKeyFile := cli.config.apiKeyPath(app.Tenant)
 	if util.PathExists(apiKeyFile) && !overwriteKey {
 		err := fmt.Errorf("refusing to overwrite %s", apiKeyFile)
-		printErrHint(err, "Use -f to overwrite it")
+		cli.printErrHint(err, "Use -f to overwrite it")
 		printPublicKey(system, apiKeyFile, app.Tenant)
 		return ErrCLI{error: err, quiet: true}
 	}
@@ -101,7 +79,7 @@ func doApiKey(_ *cobra.Command, _ []string) error {
 		return fmt.Errorf("could not create api key: %w", err)
 	}
 	if err := ioutil.WriteFile(apiKeyFile, apiKey, 0600); err == nil {
-		printSuccess("API private key written to ", apiKeyFile)
+		cli.printSuccess("API private key written to ", apiKeyFile)
 		return printPublicKey(system, apiKeyFile, app.Tenant)
 	} else {
 		return fmt.Errorf("failed to write: %s: %w", apiKeyFile, err)

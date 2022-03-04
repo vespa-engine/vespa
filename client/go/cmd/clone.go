@@ -22,24 +22,15 @@ import (
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
-const (
-	sampleAppsCacheTTL = time.Hour * 168 // 1 week
-	sampleAppsFilename = "sample-apps-master.zip"
-)
-
-var listApps bool
-var forceClone bool
-
-func init() {
-	rootCmd.AddCommand(cloneCmd)
-	cloneCmd.Flags().BoolVarP(&listApps, "list", "l", false, "List available sample applications")
-	cloneCmd.Flags().BoolVarP(&forceClone, "force", "f", false, "Ignore cache and force downloading the latest sample application from GitHub")
-}
-
-var cloneCmd = &cobra.Command{
-	Use:   "clone sample-application-path target-directory",
-	Short: "Create files and directory structure for a new Vespa application from a sample application",
-	Long: `Create files and directory structure for a new Vespa application
+func newCloneCmd(cli *CLI) *cobra.Command {
+	var (
+		listApps   bool
+		forceClone bool
+	)
+	cmd := &cobra.Command{
+		Use:   "clone sample-application-path target-directory",
+		Short: "Create files and directory structure for a new Vespa application from a sample application",
+		Long: `Create files and directory structure for a new Vespa application
 from a sample application.
 
 Sample applications are downloaded from
@@ -48,29 +39,33 @@ https://github.com/vespa-engine/sample-apps.
 By default sample applications are cached in the user's cache directory. This
 directory can be overriden by setting the VESPA_CLI_CACHE_DIR environment
 variable.`,
-	Example:           "$ vespa clone vespa-cloud/album-recommendation my-app",
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if listApps {
-			apps, err := listSampleApps()
-			if err != nil {
-				return fmt.Errorf("could not list sample applications: %w", err)
+		Example:           "$ vespa clone vespa-cloud/album-recommendation my-app",
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if listApps {
+				apps, err := listSampleApps(cli.httpClient)
+				if err != nil {
+					return fmt.Errorf("could not list sample applications: %w", err)
+				}
+				for _, app := range apps {
+					log.Print(app)
+				}
+				return nil
 			}
-			for _, app := range apps {
-				log.Print(app)
+			if len(args) != 2 {
+				return fmt.Errorf("expected exactly 2 arguments, got %d", len(args))
 			}
-			return nil
-		}
-		if len(args) != 2 {
-			return fmt.Errorf("expected exactly 2 arguments, got %d", len(args))
-		}
-		return cloneApplication(args[0], args[1])
-	},
+			return cloneApplication(cli, args[0], args[1], forceClone)
+		},
+	}
+	cmd.Flags().BoolVarP(&listApps, "list", "l", false, "List available sample applications")
+	cmd.Flags().BoolVarP(&forceClone, "force", "f", false, "Ignore cache and force downloading the latest sample application from GitHub")
+	return cmd
 }
 
-func cloneApplication(applicationName string, applicationDir string) error {
-	zipFile, err := openSampleAppsZip()
+func cloneApplication(cli *CLI, applicationName string, applicationDir string, force bool) error {
+	zipFile, err := openSampleAppsZip(force, cli)
 	if err != nil {
 		return err
 	}
@@ -107,26 +102,26 @@ func cloneApplication(applicationName string, applicationDir string) error {
 	return nil
 }
 
-func useCache(stat os.FileInfo) (bool, error) {
-	if forceClone {
+func useCache(force bool, stat os.FileInfo) (bool, error) {
+	if force {
 		return false, nil
 	}
-	expiry := stat.ModTime().Add(sampleAppsCacheTTL)
+	expiry := stat.ModTime().Add(time.Hour * 168) // 1 week
 	return stat.Size() > 0 && time.Now().Before(expiry), nil
 }
 
-func fetchSampleAppsZip(destination string) error {
+func fetchSampleAppsZip(destination string, cli *CLI) error {
 	f, err := ioutil.TempFile(filepath.Dir(destination), "sample-apps")
 	if err != nil {
 		return fmt.Errorf("could not create temporary file: %w", err)
 	}
 	defer f.Close()
-	return util.Spinner(stderr, color.YellowString("Downloading sample apps ..."), func() error {
+	return util.Spinner(cli.Stderr, color.YellowString("Downloading sample apps ..."), func() error {
 		request, err := http.NewRequest("GET", "https://github.com/vespa-engine/sample-apps/archive/refs/heads/master.zip", nil)
 		if err != nil {
 			return fmt.Errorf("invalid url: %w", err)
 		}
-		response, err := util.HttpDo(request, time.Minute*60, "GitHub")
+		response, err := cli.httpClient.Do(request, time.Minute*60)
 		if err != nil {
 			return fmt.Errorf("could not download sample apps: %w", err)
 		}
@@ -145,12 +140,12 @@ func fetchSampleAppsZip(destination string) error {
 	})
 }
 
-func openSampleAppsZip() (*os.File, error) {
-	cacheDir, err := vespaCliCacheDir()
+func openSampleAppsZip(forceClone bool, cli *CLI) (*os.File, error) {
+	cacheDir, err := vespaCliCacheDir(cli.Environment)
 	if err != nil {
 		return nil, err
 	}
-	path := filepath.Join(cacheDir, sampleAppsFilename)
+	path := filepath.Join(cacheDir, "sample-apps-master.zip")
 	cacheExists := true
 	stat, err := os.Stat(path)
 	if errors.Is(err, os.ErrNotExist) {
@@ -159,7 +154,7 @@ func openSampleAppsZip() (*os.File, error) {
 		return nil, fmt.Errorf("could not stat existing cache file: %w", err)
 	}
 	if cacheExists {
-		useCache, err := useCache(stat)
+		useCache, err := useCache(forceClone, stat)
 		if err != nil {
 			return nil, errHint(fmt.Errorf("could not determine cache status: %w", err), "Try ignoring the cache with the -f flag")
 		}
@@ -168,7 +163,7 @@ func openSampleAppsZip() (*os.File, error) {
 			return os.Open(path)
 		}
 	}
-	if err := fetchSampleAppsZip(path); err != nil {
+	if err := fetchSampleAppsZip(path, cli); err != nil {
 		return nil, fmt.Errorf("could not fetch sample apps: %w", err)
 	}
 	return os.Open(path)

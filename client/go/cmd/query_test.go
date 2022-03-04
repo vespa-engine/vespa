@@ -22,10 +22,13 @@ func TestQuery(t *testing.T) {
 func TestQueryVerbose(t *testing.T) {
 	client := &mock.HTTPClient{}
 	client.NextResponse(200, "{\"query\":\"result\"}")
-	cmd := command{args: []string{"query", "-v", "select from sources * where title contains 'foo'"}}
-	out, errOut := execute(cmd, t, client)
-	assert.Equal(t, "curl http://127.0.0.1:8080/search/\\?timeout=10s\\&yql=select+from+sources+%2A+where+title+contains+%27foo%27\n", errOut)
-	assert.Equal(t, "{\n    \"query\": \"result\"\n}\n", out)
+
+	cli, stdout, stderr := newTestCLI(t)
+	cli.httpClient = client
+
+	assert.Nil(t, cli.Run("query", "-v", "select from sources * where title contains 'foo'"))
+	assert.Equal(t, "curl http://127.0.0.1:8080/search/\\?timeout=10s\\&yql=select+from+sources+%2A+where+title+contains+%27foo%27\n", stderr.String())
+	assert.Equal(t, "{\n    \"query\": \"result\"\n}\n", stdout.String())
 }
 
 func TestQueryNonJsonResult(t *testing.T) {
@@ -57,9 +60,14 @@ func TestServerError(t *testing.T) {
 func assertQuery(t *testing.T, expectedQuery string, query ...string) {
 	client := &mock.HTTPClient{}
 	client.NextResponse(200, "{\"query\":\"result\"}")
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+
+	args := []string{"query"}
+	assert.Nil(t, cli.Run(append(args, query...)...))
 	assert.Equal(t,
 		"{\n    \"query\": \"result\"\n}\n",
-		executeCommand(t, client, []string{"query"}, query),
+		stdout.String(),
 		"query output")
 	queryURL, err := queryServiceURL(client)
 	require.Nil(t, err)
@@ -69,27 +77,27 @@ func assertQuery(t *testing.T, expectedQuery string, query ...string) {
 func assertQueryError(t *testing.T, status int, errorMessage string) {
 	client := &mock.HTTPClient{}
 	client.NextResponse(status, errorMessage)
-	_, outErr := execute(command{args: []string{"query", "yql=select from sources * where title contains 'foo'"}}, t, client)
+	cli, _, stderr := newTestCLI(t)
+	cli.httpClient = client
+	assert.NotNil(t, cli.Run("query", "yql=select from sources * where title contains 'foo'"))
 	assert.Equal(t,
 		"Error: invalid query: Status "+strconv.Itoa(status)+"\n"+errorMessage+"\n",
-		outErr,
+		stderr.String(),
 		"error output")
 }
 
 func assertQueryServiceError(t *testing.T, status int, errorMessage string) {
 	client := &mock.HTTPClient{}
 	client.NextResponse(status, errorMessage)
-	_, outErr := execute(command{args: []string{"query", "yql=select from sources * where title contains 'foo'"}}, t, client)
+	cli, _, stderr := newTestCLI(t)
+	cli.httpClient = client
+	assert.NotNil(t, cli.Run("query", "yql=select from sources * where title contains 'foo'"))
 	assert.Equal(t,
 		"Error: Status "+strconv.Itoa(status)+" from container at 127.0.0.1:8080\n"+errorMessage+"\n",
-		outErr,
+		stderr.String(),
 		"error output")
 }
 
 func queryServiceURL(client *mock.HTTPClient) (string, error) {
-	service, err := getService("query", 0, "")
-	if err != nil {
-		return "", err
-	}
-	return service.BaseURL, nil
+	return "http://127.0.0.1:8080", nil
 }

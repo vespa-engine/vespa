@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -19,32 +20,29 @@ import (
 	"github.com/vespa-engine/vespa/client/go/vespa/xml"
 )
 
-func init() {
-	rootCmd.AddCommand(prodCmd)
-	prodCmd.AddCommand(prodInitCmd)
-	prodCmd.AddCommand(prodSubmitCmd)
-}
-
-var prodCmd = &cobra.Command{
-	Use:   "prod",
-	Short: "Deploy an application package to production in Vespa Cloud",
-	Long: `Deploy an application package to production in Vespa Cloud.
+func newProdCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "prod",
+		Short: "Deploy an application package to production in Vespa Cloud",
+		Long: `Deploy an application package to production in Vespa Cloud.
 
 Configure and deploy your application package to production in Vespa Cloud.`,
-	Example: `$ vespa prod init
+		Example: `$ vespa prod init
 $ vespa prod submit`,
-	DisableAutoGenTag: true,
-	SilenceUsage:      false,
-	Args:              cobra.MinimumNArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return fmt.Errorf("invalid command: %s", args[0])
-	},
+		DisableAutoGenTag: true,
+		SilenceUsage:      false,
+		Args:              cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fmt.Errorf("invalid command: %s", args[0])
+		},
+	}
 }
 
-var prodInitCmd = &cobra.Command{
-	Use:   "init",
-	Short: "Modify service.xml and deployment.xml for production deployment",
-	Long: `Modify service.xml and deployment.xml for production deployment.
+func newProdInitCmd(cli *CLI) *cobra.Command {
+	return &cobra.Command{
+		Use:   "init",
+		Short: "Modify service.xml and deployment.xml for production deployment",
+		Long: `Modify service.xml and deployment.xml for production deployment.
 
 Only basic deployment configuration is available through this command. For
 advanced configuration see the relevant Vespa Cloud documentation and make
@@ -53,62 +51,64 @@ changes to deployment.xml and services.xml directly.
 Reference:
 https://cloud.vespa.ai/en/reference/services
 https://cloud.vespa.ai/en/reference/deployment`,
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		appSource := applicationSource(args)
-		pkg, err := vespa.FindApplicationPackage(appSource, false)
-		if err != nil {
-			return err
-		}
-		if pkg.IsZip() {
-			return errHint(fmt.Errorf("cannot modify compressed application package %s", pkg.Path),
-				"Try running 'mvn clean' and run this command again")
-		}
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			appSource := applicationSource(args)
+			pkg, err := vespa.FindApplicationPackage(appSource, false)
+			if err != nil {
+				return err
+			}
+			if pkg.IsZip() {
+				return errHint(fmt.Errorf("cannot modify compressed application package %s", pkg.Path),
+					"Try running 'mvn clean' and run this command again")
+			}
 
-		deploymentXML, err := readDeploymentXML(pkg)
-		if err != nil {
-			return fmt.Errorf("could not read deployment.xml: %w", err)
-		}
-		servicesXML, err := readServicesXML(pkg)
-		if err != nil {
-			return fmt.Errorf("a services.xml declaring your cluster(s) must exist: %w", err)
-		}
-		target, err := getTarget()
-		if err != nil {
-			return err
-		}
+			deploymentXML, err := readDeploymentXML(pkg)
+			if err != nil {
+				return fmt.Errorf("could not read deployment.xml: %w", err)
+			}
+			servicesXML, err := readServicesXML(pkg)
+			if err != nil {
+				return fmt.Errorf("a services.xml declaring your cluster(s) must exist: %w", err)
+			}
+			target, err := cli.target("", "")
+			if err != nil {
+				return err
+			}
 
-		fmt.Fprint(stdout, "This will modify any existing ", color.YellowString("deployment.xml"), " and ", color.YellowString("services.xml"),
-			"!\nBefore modification a backup of the original file will be created.\n\n")
-		fmt.Fprint(stdout, "A default value is suggested (shown inside brackets) based on\nthe files' existing contents. Press enter to use it.\n\n")
-		fmt.Fprint(stdout, "Abort the configuration at any time by pressing Ctrl-C. The\nfiles will remain untouched.\n\n")
-		fmt.Fprint(stdout, "See this guide for sizing a Vespa deployment:\n", color.GreenString("https://docs.vespa.ai/en/performance/sizing-search.html\n\n"))
-		r := bufio.NewReader(stdin)
-		deploymentXML, err = updateRegions(r, deploymentXML, target.Deployment().System)
-		if err != nil {
-			return err
-		}
-		servicesXML, err = updateNodes(r, servicesXML)
-		if err != nil {
-			return err
-		}
+			fmt.Fprint(cli.Stdout, "This will modify any existing ", color.YellowString("deployment.xml"), " and ", color.YellowString("services.xml"),
+				"!\nBefore modification a backup of the original file will be created.\n\n")
+			fmt.Fprint(cli.Stdout, "A default value is suggested (shown inside brackets) based on\nthe files' existing contents. Press enter to use it.\n\n")
+			fmt.Fprint(cli.Stdout, "Abort the configuration at any time by pressing Ctrl-C. The\nfiles will remain untouched.\n\n")
+			fmt.Fprint(cli.Stdout, "See this guide for sizing a Vespa deployment:\n", color.GreenString("https://docs.vespa.ai/en/performance/sizing-search.html\n\n"))
+			r := bufio.NewReader(cli.Stdin)
+			deploymentXML, err = updateRegions(cli, r, deploymentXML, target.Deployment().System)
+			if err != nil {
+				return err
+			}
+			servicesXML, err = updateNodes(cli, r, servicesXML)
+			if err != nil {
+				return err
+			}
 
-		fmt.Fprintln(stdout)
-		if err := writeWithBackup(pkg, "deployment.xml", deploymentXML.String()); err != nil {
-			return err
-		}
-		if err := writeWithBackup(pkg, "services.xml", servicesXML.String()); err != nil {
-			return err
-		}
-		return nil
-	},
+			fmt.Fprintln(cli.Stdout)
+			if err := writeWithBackup(cli.Stdout, pkg, "deployment.xml", deploymentXML.String()); err != nil {
+				return err
+			}
+			if err := writeWithBackup(cli.Stdout, pkg, "services.xml", servicesXML.String()); err != nil {
+				return err
+			}
+			return nil
+		},
+	}
 }
 
-var prodSubmitCmd = &cobra.Command{
-	Use:   "submit",
-	Short: "Submit your application for production deployment",
-	Long: `Submit your application for production deployment.
+func newProdSubmitCmd(cli *CLI) *cobra.Command {
+	return &cobra.Command{
+		Use:   "submit",
+		Short: "Submit your application for production deployment",
+		Long: `Submit your application for production deployment.
 
 This commands uploads your application package to Vespa Cloud and deploys it to
 the production zones specified in deployment.xml.
@@ -123,58 +123,55 @@ by a continuous build system.
 For more information about production deployments in Vespa Cloud see:
 https://cloud.vespa.ai/en/getting-to-production
 https://cloud.vespa.ai/en/automated-deployments`,
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	Example: `$ mvn package # when adding custom Java components
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		Example: `$ mvn package # when adding custom Java components
 $ vespa prod submit`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		target, err := getTarget()
-		if err != nil {
-			return err
-		}
-		if target.Type() != vespa.TargetCloud {
-			// TODO: Add support for hosted
-			return fmt.Errorf("prod submit does not support %s target", target.Type())
-		}
-		appSource := applicationSource(args)
-		pkg, err := vespa.FindApplicationPackage(appSource, true)
-		if err != nil {
-			return err
-		}
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-		if !pkg.HasDeployment() {
-			return errHint(fmt.Errorf("no deployment.xml found"), "Try creating one with vespa prod init")
-		}
-		if pkg.TestPath == "" {
-			return errHint(fmt.Errorf("no tests found"),
-				"The application must be a Java maven project, or include basic HTTP tests under src/test/application/",
-				"See https://cloud.vespa.ai/en/getting-to-production")
-		}
-		if err := verifyTests(pkg, target); err != nil {
-			return err
-		}
-		if !isCI() {
-			printWarning("We recommend doing this only from a CD job", "See https://cloud.vespa.ai/en/getting-to-production")
-		}
-		opts, err := getDeploymentOptions(cfg, pkg, target)
-		if err != nil {
-			return err
-		}
-		if err := vespa.Submit(opts); err != nil {
-			return fmt.Errorf("could not submit application for deployment: %w", err)
-		} else {
-			printSuccess("Submitted ", color.CyanString(pkg.Path), " for deployment")
-			log.Printf("See %s for deployment progress\n", color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/prod/deployment",
-				opts.Target.Deployment().System.ConsoleURL, opts.Target.Deployment().Application.Tenant, opts.Target.Deployment().Application.Application)))
-		}
-		return nil
-	},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			target, err := cli.target("", "")
+			if err != nil {
+				return err
+			}
+			if target.Type() != vespa.TargetCloud {
+				// TODO: Add support for hosted
+				return fmt.Errorf("prod submit does not support %s target", target.Type())
+			}
+			appSource := applicationSource(args)
+			pkg, err := vespa.FindApplicationPackage(appSource, true)
+			if err != nil {
+				return err
+			}
+			if !pkg.HasDeployment() {
+				return errHint(fmt.Errorf("no deployment.xml found"), "Try creating one with vespa prod init")
+			}
+			if pkg.TestPath == "" {
+				return errHint(fmt.Errorf("no tests found"),
+					"The application must be a Java maven project, or include basic HTTP tests under src/test/application/",
+					"See https://cloud.vespa.ai/en/getting-to-production")
+			}
+			if err := verifyTests(cli, pkg); err != nil {
+				return err
+			}
+			if !cli.isCI() {
+				cli.printWarning("We recommend doing this only from a CD job", "See https://cloud.vespa.ai/en/getting-to-production")
+			}
+			opts, err := cli.createDeploymentOptions(pkg, target)
+			if err != nil {
+				return err
+			}
+			if err := vespa.Submit(opts); err != nil {
+				return fmt.Errorf("could not submit application for deployment: %w", err)
+			} else {
+				cli.printSuccess("Submitted ", color.CyanString(pkg.Path), " for deployment")
+				log.Printf("See %s for deployment progress\n", color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/prod/deployment",
+					opts.Target.Deployment().System.ConsoleURL, opts.Target.Deployment().Application.Tenant, opts.Target.Deployment().Application.Application)))
+			}
+			return nil
+		},
+	}
 }
 
-func writeWithBackup(pkg vespa.ApplicationPackage, filename, contents string) error {
+func writeWithBackup(stdout io.Writer, pkg vespa.ApplicationPackage, filename, contents string) error {
 	dst := filepath.Join(pkg.Path, filename)
 	if util.PathExists(dst) {
 		data, err := ioutil.ReadFile(dst)
@@ -205,8 +202,8 @@ func writeWithBackup(pkg vespa.ApplicationPackage, filename, contents string) er
 	return ioutil.WriteFile(dst, []byte(contents), 0644)
 }
 
-func updateRegions(r *bufio.Reader, deploymentXML xml.Deployment, system vespa.System) (xml.Deployment, error) {
-	regions, err := promptRegions(r, deploymentXML, system)
+func updateRegions(cli *CLI, stdin *bufio.Reader, deploymentXML xml.Deployment, system vespa.System) (xml.Deployment, error) {
+	regions, err := promptRegions(cli, stdin, deploymentXML, system)
 	if err != nil {
 		return xml.Deployment{}, err
 	}
@@ -225,10 +222,10 @@ func updateRegions(r *bufio.Reader, deploymentXML xml.Deployment, system vespa.S
 	return deploymentXML, nil
 }
 
-func promptRegions(r *bufio.Reader, deploymentXML xml.Deployment, system vespa.System) (string, error) {
-	fmt.Fprintln(stdout, color.CyanString("> Deployment regions"))
-	fmt.Fprintf(stdout, "Documentation: %s\n", color.GreenString("https://cloud.vespa.ai/en/reference/zones"))
-	fmt.Fprintf(stdout, "Example: %s\n\n", color.YellowString("aws-us-east-1c,aws-us-west-2a"))
+func promptRegions(cli *CLI, stdin *bufio.Reader, deploymentXML xml.Deployment, system vespa.System) (string, error) {
+	fmt.Fprintln(cli.Stdout, color.CyanString("> Deployment regions"))
+	fmt.Fprintf(cli.Stdout, "Documentation: %s\n", color.GreenString("https://cloud.vespa.ai/en/reference/zones"))
+	fmt.Fprintf(cli.Stdout, "Example: %s\n\n", color.YellowString("aws-us-east-1c,aws-us-west-2a"))
 	var currentRegions []string
 	for _, r := range deploymentXML.Prod.Regions {
 		currentRegions = append(currentRegions, r.Name)
@@ -247,12 +244,12 @@ func promptRegions(r *bufio.Reader, deploymentXML xml.Deployment, system vespa.S
 		}
 		return nil
 	}
-	return prompt(r, "Which regions do you wish to deploy in?", strings.Join(currentRegions, ","), validator)
+	return prompt(cli, stdin, "Which regions do you wish to deploy in?", strings.Join(currentRegions, ","), validator)
 }
 
-func updateNodes(r *bufio.Reader, servicesXML xml.Services) (xml.Services, error) {
+func updateNodes(cli *CLI, r *bufio.Reader, servicesXML xml.Services) (xml.Services, error) {
 	for _, c := range servicesXML.Container {
-		nodes, err := promptNodes(r, c.ID, c.Nodes)
+		nodes, err := promptNodes(cli, r, c.ID, c.Nodes)
 		if err != nil {
 			return xml.Services{}, err
 		}
@@ -261,7 +258,7 @@ func updateNodes(r *bufio.Reader, servicesXML xml.Services) (xml.Services, error
 		}
 	}
 	for _, c := range servicesXML.Content {
-		nodes, err := promptNodes(r, c.ID, c.Nodes)
+		nodes, err := promptNodes(cli, r, c.ID, c.Nodes)
 		if err != nil {
 			return xml.Services{}, err
 		}
@@ -272,8 +269,8 @@ func updateNodes(r *bufio.Reader, servicesXML xml.Services) (xml.Services, error
 	return servicesXML, nil
 }
 
-func promptNodes(r *bufio.Reader, clusterID string, defaultValue xml.Nodes) (xml.Nodes, error) {
-	count, err := promptNodeCount(r, clusterID, defaultValue.Count)
+func promptNodes(cli *CLI, r *bufio.Reader, clusterID string, defaultValue xml.Nodes) (xml.Nodes, error) {
+	count, err := promptNodeCount(cli, r, clusterID, defaultValue.Count)
 	if err != nil {
 		return xml.Nodes{}, err
 	}
@@ -283,7 +280,7 @@ func promptNodes(r *bufio.Reader, clusterID string, defaultValue xml.Nodes) (xml
 	if resources != nil {
 		defaultSpec = defaultValue.Resources.String()
 	}
-	spec, err := promptResources(r, clusterID, defaultSpec)
+	spec, err := promptResources(cli, r, clusterID, defaultSpec)
 	if err != nil {
 		return xml.Nodes{}, err
 	}
@@ -299,21 +296,21 @@ func promptNodes(r *bufio.Reader, clusterID string, defaultValue xml.Nodes) (xml
 	return xml.Nodes{Count: count, Resources: resources}, nil
 }
 
-func promptNodeCount(r *bufio.Reader, clusterID string, nodeCount string) (string, error) {
-	fmt.Fprintln(stdout, color.CyanString("\n> Node count: "+clusterID+" cluster"))
-	fmt.Fprintf(stdout, "Documentation: %s\n", color.GreenString("https://cloud.vespa.ai/en/reference/services"))
-	fmt.Fprintf(stdout, "Example: %s\nExample: %s\n\n", color.YellowString("4"), color.YellowString("[2,8]"))
+func promptNodeCount(cli *CLI, stdin *bufio.Reader, clusterID string, nodeCount string) (string, error) {
+	fmt.Fprintln(cli.Stdout, color.CyanString("\n> Node count: "+clusterID+" cluster"))
+	fmt.Fprintf(cli.Stdout, "Documentation: %s\n", color.GreenString("https://cloud.vespa.ai/en/reference/services"))
+	fmt.Fprintf(cli.Stdout, "Example: %s\nExample: %s\n\n", color.YellowString("4"), color.YellowString("[2,8]"))
 	validator := func(input string) error {
 		_, _, err := xml.ParseNodeCount(input)
 		return err
 	}
-	return prompt(r, fmt.Sprintf("How many nodes should the %s cluster have?", color.CyanString(clusterID)), nodeCount, validator)
+	return prompt(cli, stdin, fmt.Sprintf("How many nodes should the %s cluster have?", color.CyanString(clusterID)), nodeCount, validator)
 }
 
-func promptResources(r *bufio.Reader, clusterID string, resources string) (string, error) {
-	fmt.Fprintln(stdout, color.CyanString("\n> Node resources: "+clusterID+" cluster"))
-	fmt.Fprintf(stdout, "Documentation: %s\n", color.GreenString("https://cloud.vespa.ai/en/reference/services"))
-	fmt.Fprintf(stdout, "Example: %s\nExample: %s\n\n", color.YellowString("auto"), color.YellowString("vcpu=4,memory=8Gb,disk=100Gb"))
+func promptResources(cli *CLI, stdin *bufio.Reader, clusterID string, resources string) (string, error) {
+	fmt.Fprintln(cli.Stdout, color.CyanString("\n> Node resources: "+clusterID+" cluster"))
+	fmt.Fprintf(cli.Stdout, "Documentation: %s\n", color.GreenString("https://cloud.vespa.ai/en/reference/services"))
+	fmt.Fprintf(cli.Stdout, "Example: %s\nExample: %s\n\n", color.YellowString("auto"), color.YellowString("vcpu=4,memory=8Gb,disk=100Gb"))
 	validator := func(input string) error {
 		if input == "auto" {
 			return nil
@@ -321,7 +318,7 @@ func promptResources(r *bufio.Reader, clusterID string, resources string) (strin
 		_, err := xml.ParseResources(input)
 		return err
 	}
-	return prompt(r, fmt.Sprintf("Which resources should each node in the %s cluster have?", color.CyanString(clusterID)), resources, validator)
+	return prompt(cli, stdin, fmt.Sprintf("Which resources should each node in the %s cluster have?", color.CyanString(clusterID)), resources, validator)
 }
 
 func readDeploymentXML(pkg vespa.ApplicationPackage) (xml.Deployment, error) {
@@ -345,17 +342,17 @@ func readServicesXML(pkg vespa.ApplicationPackage) (xml.Services, error) {
 	return xml.ReadServices(f)
 }
 
-func prompt(r *bufio.Reader, question, defaultAnswer string, validator func(input string) error) (string, error) {
+func prompt(cli *CLI, stdin *bufio.Reader, question, defaultAnswer string, validator func(input string) error) (string, error) {
 	var input string
 	for input == "" {
-		fmt.Fprint(stdout, question)
+		fmt.Fprint(cli.Stdout, question)
 		if defaultAnswer != "" {
-			fmt.Fprint(stdout, " [", color.YellowString(defaultAnswer), "]")
+			fmt.Fprint(cli.Stdout, " [", color.YellowString(defaultAnswer), "]")
 		}
-		fmt.Fprint(stdout, " ")
+		fmt.Fprint(cli.Stdout, " ")
 
 		var err error
-		input, err = r.ReadString('\n')
+		input, err = stdin.ReadString('\n')
 		if err != nil {
 			return "", err
 		}
@@ -365,15 +362,15 @@ func prompt(r *bufio.Reader, question, defaultAnswer string, validator func(inpu
 		}
 
 		if err := validator(input); err != nil {
-			printErrHint(err)
-			fmt.Fprintln(stderr)
+			cli.printErrHint(err)
+			fmt.Fprintln(cli.Stderr)
 			input = ""
 		}
 	}
 	return input, nil
 }
 
-func verifyTests(app vespa.ApplicationPackage, target vespa.Target) error {
+func verifyTests(cli *CLI, app vespa.ApplicationPackage) error {
 	// TODO: system-test, staging-setup and staging-test should be required if the application
 	//       does not have any Java tests.
 	suites := map[string]bool{
@@ -392,14 +389,14 @@ func verifyTests(app vespa.ApplicationPackage, target vespa.Target) error {
 		testPath = path
 	}
 	for suite, required := range suites {
-		if err := verifyTest(testPath, suite, target, required); err != nil {
+		if err := verifyTest(cli, testPath, suite, required); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func verifyTest(testsParent string, suite string, target vespa.Target, required bool) error {
+func verifyTest(cli *CLI, testsParent string, suite string, required bool) error {
 	testDirectory := filepath.Join(testsParent, "tests", suite)
 	_, err := os.Stat(testDirectory)
 	if err != nil {
@@ -413,6 +410,6 @@ func verifyTest(testsParent string, suite string, target vespa.Target, required 
 		}
 		return nil
 	}
-	_, _, err = runTests(testDirectory, true)
+	_, _, err = runTests(cli, "", testDirectory, true)
 	return err
 }

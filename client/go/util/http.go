@@ -1,22 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// A HTTP wrapper which handles some errors and provides a way to replace the HTTP client by a mock.
-// Author: bratseth
-
 package util
 
 import (
 	"crypto/tls"
-	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/vespa-engine/vespa/client/go/build"
 )
 
-// Set this to a mock HttpClient instead to unit test HTTP requests
-var ActiveHttpClient = CreateClient(time.Second * 10)
-
-type HttpClient interface {
+type HTTPClient interface {
 	Do(request *http.Request, timeout time.Duration) (response *http.Response, error error)
 	UseCertificate(certificate []tls.Certificate)
 }
@@ -38,20 +29,6 @@ func (c *defaultHttpClient) UseCertificate(certificates []tls.Certificate) {
 	}}
 }
 
-func CreateClient(timeout time.Duration) HttpClient {
-	return &defaultHttpClient{
-		client: &http.Client{Timeout: timeout},
-	}
-}
-
-func HttpDo(request *http.Request, timeout time.Duration, description string) (*http.Response, error) {
-	if request.Header == nil {
-		request.Header = make(http.Header)
-	}
-	request.Header.Set("User-Agent", fmt.Sprintf("Vespa CLI/%s", build.Version))
-	response, err := ActiveHttpClient.Do(request, timeout)
-	if err != nil {
-		return nil, err
-	}
-	return response, nil
+func CreateClient(timeout time.Duration) HTTPClient {
+	return &defaultHttpClient{client: &http.Client{Timeout: timeout}}
 }

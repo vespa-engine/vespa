@@ -36,6 +36,7 @@ type cloudTarget struct {
 	apiOptions        APIOptions
 	deploymentOptions CloudDeploymentOptions
 	logOptions        LogOptions
+	httpClient        util.HTTPClient
 	ztsClient         ztsClient
 }
 
@@ -67,12 +68,13 @@ type ztsClient interface {
 }
 
 // CloudTarget creates a Target for the Vespa Cloud or hosted Vespa platform.
-func CloudTarget(apiOptions APIOptions, deploymentOptions CloudDeploymentOptions, logOptions LogOptions) (Target, error) {
-	ztsClient, err := zts.NewClient(zts.DefaultURL, util.ActiveHttpClient)
+func CloudTarget(httpClient util.HTTPClient, apiOptions APIOptions, deploymentOptions CloudDeploymentOptions, logOptions LogOptions) (Target, error) {
+	ztsClient, err := zts.NewClient(zts.DefaultURL, httpClient)
 	if err != nil {
 		return nil, err
 	}
 	return &cloudTarget{
+		httpClient:        httpClient,
 		apiOptions:        apiOptions,
 		deploymentOptions: deploymentOptions,
 		logOptions:        logOptions,
@@ -117,7 +119,13 @@ func (t *cloudTarget) Deployment() Deployment { return t.deploymentOptions.Deplo
 func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, cluster string) (*Service, error) {
 	switch name {
 	case DeployService:
-		service := &Service{Name: name, BaseURL: t.apiOptions.System.URL, TLSOptions: t.apiOptions.TLSOptions, ztsClient: t.ztsClient}
+		service := &Service{
+			Name:       name,
+			BaseURL:    t.apiOptions.System.URL,
+			TLSOptions: t.apiOptions.TLSOptions,
+			ztsClient:  t.ztsClient,
+			httpClient: t.httpClient,
+		}
 		if timeout > 0 {
 			status, err := service.Wait(timeout)
 			if err != nil {
@@ -139,7 +147,13 @@ func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, c
 			return nil, err
 		}
 		t.deploymentOptions.TLSOptions.AthenzDomain = t.apiOptions.System.AthenzDomain
-		return &Service{Name: name, BaseURL: url, TLSOptions: t.deploymentOptions.TLSOptions, ztsClient: t.ztsClient}, nil
+		return &Service{
+			Name:       name,
+			BaseURL:    url,
+			TLSOptions: t.deploymentOptions.TLSOptions,
+			ztsClient:  t.ztsClient,
+			httpClient: t.httpClient,
+		}, nil
 	}
 	return nil, fmt.Errorf("unknown service: %s", name)
 }
@@ -168,7 +182,7 @@ func (t *cloudTarget) CheckVersion(clientVersion version.Version) error {
 	if err != nil {
 		return err
 	}
-	response, err := util.HttpDo(req, 10*time.Second, "")
+	response, err := t.httpClient.Do(req, 10*time.Second)
 	if err != nil {
 		return err
 	}
@@ -254,7 +268,7 @@ func (t *cloudTarget) PrintLog(options LogOptions) error {
 	if options.Follow {
 		timeout = math.MaxInt64 // No timeout
 	}
-	_, err = wait(logFunc, requestFunc, &t.apiOptions.TLSOptions.KeyPair, timeout)
+	_, err = wait(t.httpClient, logFunc, requestFunc, &t.apiOptions.TLSOptions.KeyPair, timeout)
 	return err
 }
 
@@ -305,7 +319,7 @@ func (t *cloudTarget) waitForRun(runID int64, timeout time.Duration) error {
 		}
 		return true, nil
 	}
-	_, err = wait(jobSuccessFunc, requestFunc, &t.apiOptions.TLSOptions.KeyPair, timeout)
+	_, err = wait(t.httpClient, jobSuccessFunc, requestFunc, &t.apiOptions.TLSOptions.KeyPair, timeout)
 	return err
 }
 
@@ -363,7 +377,7 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) error {
 		}
 		return true, nil
 	}
-	if _, err = wait(endpointFunc, func() *http.Request { return req }, &t.apiOptions.TLSOptions.KeyPair, timeout); err != nil {
+	if _, err = wait(t.httpClient, endpointFunc, func() *http.Request { return req }, &t.apiOptions.TLSOptions.KeyPair, timeout); err != nil {
 		return err
 	}
 	if len(urlsByCluster) == 0 {

@@ -5,7 +5,6 @@
 package cmd
 
 import (
-	"path/filepath"
 	"strconv"
 	"testing"
 
@@ -34,9 +33,12 @@ func TestDeployZipWithURLTargetArgument(t *testing.T) {
 	arguments := []string{"deploy", "testdata/applications/withTarget/target/application.zip", "-t", "http://target:19071"}
 
 	client := &mock.HTTPClient{}
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+	assert.Nil(t, cli.Run(arguments...))
 	assert.Equal(t,
 		"\nSuccess: Deployed "+applicationPackage+"\n",
-		executeCommand(t, client, arguments, []string{}))
+		stdout.String())
 	assertDeployRequestMade("http://target:19071", client, t)
 }
 
@@ -61,11 +63,11 @@ func TestDeployApplicationDirectoryWithPomAndTarget(t *testing.T) {
 }
 
 func TestDeployApplicationDirectoryWithPomAndEmptyTarget(t *testing.T) {
-	client := &mock.HTTPClient{}
-	_, outErr := execute(command{args: []string{"deploy", "testdata/applications/withEmptyTarget"}}, t, client)
+	cli, _, stderr := newTestCLI(t)
+	assert.NotNil(t, cli.Run("deploy", "testdata/applications/withEmptyTarget"))
 	assert.Equal(t,
 		"Error: pom.xml exists but no target/application.zip. Run mvn package first\n",
-		outErr)
+		stderr.String())
 }
 
 func TestDeployApplicationPackageErrorWithUnexpectedNonJson(t *testing.T) {
@@ -105,19 +107,25 @@ func TestDeployError(t *testing.T) {
 }
 
 func assertDeploy(applicationPackage string, arguments []string, t *testing.T) {
+	cli, stdout, _ := newTestCLI(t)
 	client := &mock.HTTPClient{}
+	cli.httpClient = client
+	assert.Nil(t, cli.Run(arguments...))
 	assert.Equal(t,
 		"\nSuccess: Deployed "+applicationPackage+"\n",
-		executeCommand(t, client, arguments, []string{}))
+		stdout.String())
 	assertDeployRequestMade("http://127.0.0.1:19071", client, t)
 }
 
 func assertPrepare(applicationPackage string, arguments []string, t *testing.T) {
 	client := &mock.HTTPClient{}
 	client.NextResponse(200, `{"session-id":"42"}`)
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+	assert.Nil(t, cli.Run(arguments...))
 	assert.Equal(t,
 		"Success: Prepared "+applicationPackage+" with session 42\n",
-		executeCommand(t, client, arguments, []string{}))
+		stdout.String())
 
 	assertPackageUpload(0, "http://127.0.0.1:19071/application/v2/tenant/default/session", client, t)
 	sessionURL := "http://127.0.0.1:19071/application/v2/tenant/default/session/42/prepared"
@@ -127,15 +135,15 @@ func assertPrepare(applicationPackage string, arguments []string, t *testing.T) 
 
 func assertActivate(applicationPackage string, arguments []string, t *testing.T) {
 	client := &mock.HTTPClient{}
-	homeDir := t.TempDir()
-	cfg := Config{Home: filepath.Join(homeDir, ".vespa"), createDirs: true}
-	if err := cfg.WriteSessionID(vespa.DefaultApplication, 42); err != nil {
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+	if err := cli.config.writeSessionID(vespa.DefaultApplication, 42); err != nil {
 		t.Fatal(err)
 	}
-	out, _ := execute(command{args: arguments, homeDir: cfg.Home}, t, client)
+	assert.Nil(t, cli.Run(arguments...))
 	assert.Equal(t,
 		"Success: Activated "+applicationPackage+" with session 42\n",
-		out)
+		stdout.String())
 	url := "http://127.0.0.1:19071/application/v2/tenant/default/session/42/active"
 	assert.Equal(t, url, client.LastRequest.URL.String())
 	assert.Equal(t, "PUT", client.LastRequest.Method)
@@ -163,17 +171,21 @@ func assertDeployRequestMade(target string, client *mock.HTTPClient, t *testing.
 func assertApplicationPackageError(t *testing.T, cmd string, status int, expectedMessage string, returnBody string) {
 	client := &mock.HTTPClient{}
 	client.NextResponse(status, returnBody)
-	_, outErr := execute(command{args: []string{cmd, "testdata/applications/withTarget/target/application.zip"}}, t, client)
+	cli, _, stderr := newTestCLI(t)
+	cli.httpClient = client
+	assert.NotNil(t, cli.Run(cmd, "testdata/applications/withTarget/target/application.zip"))
 	assert.Equal(t,
 		"Error: invalid application package (Status "+strconv.Itoa(status)+")\n"+expectedMessage+"\n",
-		outErr)
+		stderr.String())
 }
 
 func assertDeployServerError(t *testing.T, status int, errorMessage string) {
 	client := &mock.HTTPClient{}
 	client.NextResponse(status, errorMessage)
-	_, outErr := execute(command{args: []string{"deploy", "testdata/applications/withTarget/target/application.zip"}}, t, client)
+	cli, _, stderr := newTestCLI(t)
+	cli.httpClient = client
+	assert.NotNil(t, cli.Run("deploy", "testdata/applications/withTarget/target/application.zip"))
 	assert.Equal(t,
 		"Error: error from deploy api at 127.0.0.1:19071 (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
-		outErr)
+		stderr.String())
 }

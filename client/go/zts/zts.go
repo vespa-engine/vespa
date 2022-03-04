@@ -16,12 +16,12 @@ const DefaultURL = "https://zts.athenz.ouroath.com:4443"
 
 // Client is a client for Athenz ZTS, an authentication token service.
 type Client struct {
-	client   util.HttpClient
+	client   util.HTTPClient
 	tokenURL *url.URL
 }
 
 // NewClient creates a new client for an Athenz ZTS service located at serviceURL.
-func NewClient(serviceURL string, client util.HttpClient) (*Client, error) {
+func NewClient(serviceURL string, client util.HTTPClient) (*Client, error) {
 	tokenURL, err := url.Parse(serviceURL)
 	if err != nil {
 		return nil, err
