@@ -417,11 +417,26 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             return ErrorResponse.badRequest("Can only see access requests for cloud tenants");
 
         var accessControlService = controller.serviceRegistry().accessControlService();
-        var pendingRequests = accessControlService.hasPendingAccessRequests(TenantName.from(tenantName));
-        var preapprovedAccess = accessControlService.hasPreapprovedAccess(TenantName.from(tenantName));
+        var accessRoleInformation = accessControlService.getAccessRoleInformation(TenantName.from(tenantName));
+        var preapprovedAccess = !accessRoleInformation.isSelfServe() && !accessRoleInformation.isReviewEnabled();
         var slime = new Slime();
-        slime.setObject().setBool("hasPendingRequests", pendingRequests);
-        slime.setObject().setBool("preapprovedAccess", preapprovedAccess);
+        var cursor = slime.setObject();
+        cursor.setBool("preapprovedAccess", preapprovedAccess);
+        accessRoleInformation.getPendingRequest()
+                .ifPresent(membershipRequest -> {
+                    var requestCursor = cursor.setObject("pendingRequest");
+                    requestCursor.setString("requestTime", membershipRequest.getCreationTime());
+                    requestCursor.setString("reason", membershipRequest.getReason());
+                });
+        var auditLogCursor = cursor.setArray("auditLog");
+        accessRoleInformation.getAuditLog()
+                .forEach(auditLogEntry -> {
+                    var entryCursor = auditLogCursor.addObject();
+                    entryCursor.setString("created", auditLogEntry.getCreationTime());
+                    entryCursor.setString("approver", auditLogEntry.getApprover());
+                    entryCursor.setString("reason", auditLogEntry.getReason());
+                    entryCursor.setString("status", auditLogEntry.getAction());
+                });
         return new SlimeJsonResponse(slime);
     }
 
@@ -448,8 +463,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var expiry = inspector.field("expiry").valid() ?
                 Instant.ofEpochMilli(inspector.field("expiry").asLong()) :
                 Instant.now().plus(1, ChronoUnit.DAYS);
+        var approve = inspector.field("approve").asBool();
 
-        controller.serviceRegistry().accessControlService().approveSshAccess(tenant, expiry, OAuthCredentials.fromAuth0RequestContext(request.getJDiscRequest().context()));
+        controller.serviceRegistry().accessControlService().decideSshAccess(tenant, expiry, OAuthCredentials.fromAuth0RequestContext(request.getJDiscRequest().context()), approve);
         return new MessageResponse("OK");
     }
 
