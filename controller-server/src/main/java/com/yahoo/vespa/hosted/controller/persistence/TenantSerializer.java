@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContact;
+import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
 
@@ -204,7 +205,8 @@ public class TenantSerializer {
                         infoObject.field("contactName").asString(),
                         infoObject.field("contactEmail").asString()))
                 .withAddress(tenantInfoAddressFromSlime(infoObject.field("address")))
-                .withBilling(tenantInfoBillingContactFromSlime(infoObject.field("billingContact")));
+                .withBilling(tenantInfoBillingContactFromSlime(infoObject.field("billingContact")))
+                .withContacts(tenantContactsFrom(infoObject.field("contacts")));
     }
 
     private TenantAddress tenantInfoAddressFromSlime(Inspector addressObject) {
@@ -258,6 +260,7 @@ public class TenantSerializer {
         infoCursor.setString("contactEmail", info.contact().email());
         toSlime(info.address(), infoCursor);
         toSlime(info.billingContact(), infoCursor);
+        toSlime(info.contacts(), infoCursor);
     }
 
     private void toSlime(TenantAddress address, Cursor parentCursor) {
@@ -291,7 +294,29 @@ public class TenantSerializer {
             secretStoreCursor.setString(awsIdField, tenantSecretStore.getAwsId());
             secretStoreCursor.setString(roleField, tenantSecretStore.getRole());
         });
+    }
 
+    private void toSlime(TenantContacts contacts, Cursor parent) {
+        if (contacts.isEmpty()) return;
+        var cursor = parent.setObject("contacts");
+        contacts.all().forEach(contact -> {
+            writeContact(contact, cursor.setObject(contact.name()));
+        });
+    }
+
+    private TenantContacts tenantContactsFrom(Inspector object) {
+        var contacts = new ArrayList<TenantContacts.Contact<?>>();
+
+        object.traverse((String name, Inspector inspector) -> {
+            var c = readContact(inspector);
+            contacts.add(c);
+        });
+
+        if (contacts.isEmpty()) {
+            return TenantContacts.empty();
+        } else {
+            return TenantContacts.from(contacts);
+        }
     }
 
     private Optional<Contact> contactFrom(Inspector object) {
@@ -335,6 +360,37 @@ public class TenantSerializer {
             personLists.add(persons);
         });
         return personLists;
+    }
+
+    private void writeContact(TenantContacts.Contact<?> contact, Cursor cursor) {
+        cursor.setString("name", contact.name());
+        cursor.setString("type", contact.type().value());
+        cursor.setString("audience", contact.audience().value());
+        var data = cursor.setObject("data");
+        switch (contact.type()) {
+            case EMAIL:
+                var email = (TenantContacts.EmailContact) contact.data();
+                data.setString("email", email.email());
+                return;
+            default:
+                throw new IllegalArgumentException("Serialization for contact type not implemented: " + contact.type());
+        }
+    }
+
+    private TenantContacts.Contact<?> readContact(Inspector inspector) {
+        var name = inspector.field("name").asString();
+        var type = TenantContacts.Type.from(inspector.field("type").asString())
+                .orElseThrow(() -> new RuntimeException("Unknown type: " + inspector.field("type").asString()));
+        var audience = TenantContacts.Audience.from(inspector.field("audience").asString())
+                .orElseThrow(() -> new RuntimeException("Unknown audience: " + inspector.field("audience").asString()));
+        switch (type) {
+            case EMAIL:
+                var email = new TenantContacts.EmailContact(inspector.field("data").field("email").asString());
+                return new TenantContacts.Contact<>(name, type, audience, email);
+            default:
+                throw new IllegalArgumentException("Serialization for contact type not implemented: " + type);
+        }
+
     }
 
     private static Tenant.Type typeOf(String value) {
