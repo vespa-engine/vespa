@@ -133,6 +133,10 @@ public class EvaluationTestCase {
     public void testBooleanEvaluation() {
         EvaluationTester tester = new EvaluationTester();
 
+        // literals
+        tester.assertEvaluates(false, "false");
+        tester.assertEvaluates(true, "true");
+
         // and
         tester.assertEvaluates(false, "0 && 0");
         tester.assertEvaluates(false, "0 && 1");
