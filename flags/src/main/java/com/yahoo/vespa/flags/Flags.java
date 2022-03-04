@@ -397,6 +397,13 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag EXPERIMENTAL_SD_PARSING = defineFeatureFlag(
+            "experimental-sd-parsing", false,
+            List.of("arnej"), "2022-03-04", "2022-12-31",
+            "Parsed schema files via intermediate format",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
