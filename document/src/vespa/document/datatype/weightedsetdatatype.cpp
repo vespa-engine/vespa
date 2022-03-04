@@ -36,13 +36,14 @@ WeightedSetDataType::WeightedSetDataType(const DataType& nested, bool createIfNo
 {
 }
 
-WeightedSetDataType::WeightedSetDataType(
-        const DataType& nested, bool createIfNon, bool remove, int id)
+WeightedSetDataType::WeightedSetDataType(const DataType& nested, bool createIfNon, bool remove, int id)
     : CollectionDataType(createName(nested, createIfNon, remove), nested, id),
       _createIfNonExistent(createIfNon),
       _removeIfZero(remove)
 {
 }
+
+WeightedSetDataType::~WeightedSetDataType() = default;
 
 FieldValue::UP
 WeightedSetDataType::createFieldValue() const

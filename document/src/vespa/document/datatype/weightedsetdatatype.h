@@ -22,6 +22,9 @@ class WeightedSetDataType final : public CollectionDataType {
 public:
     WeightedSetDataType(const DataType& nestedType, bool createIfNonExistent, bool removeIfZero);
     WeightedSetDataType(const DataType& nestedType, bool createIfNonExistent, bool removeIfZero, int id);
+    WeightedSetDataType(const WeightedSetDataType &) = delete;
+    WeightedSetDataType & operator=(const WeightedSetDataType &) = delete;
+    ~WeightedSetDataType() override;
 
     /**
      * @return Whether values of this datatype will autogenerate entries if
@@ -40,7 +43,6 @@ public:
     std::unique_ptr<FieldValue> createFieldValue() const override;
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
     bool equals(const DataType& other) const noexcept override;
-    WeightedSetDataType* clone() const override { return new WeightedSetDataType(*this); }
     void onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const override;
 };
 

@@ -12,21 +12,16 @@
 namespace document {
 
 class ArrayDataType final : public CollectionDataType {
-protected:
-    // Protected to help you avoid calling the copy constructor when
-    // you think you're calling the regular constructor with a nested
-    // ArrayDataType.
-    ArrayDataType(const ArrayDataType &o) : CollectionDataType(o) {}
-
 public:
     explicit ArrayDataType(const DataType &nestedType);
+    ArrayDataType(const ArrayDataType &o) = delete;
+    ArrayDataType &operator=(const ArrayDataType &rhs) = delete;
+
     ArrayDataType(const DataType &nestedType, int32_t id);
 
     std::unique_ptr<FieldValue> createFieldValue() const override;
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
     bool equals(const DataType& other) const noexcept override;
-    ArrayDataType* clone() const override { return new ArrayDataType(*this); }
-    ArrayDataType &operator=(const ArrayDataType &rhs) = default;
     void onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const override;
 
     bool isArray() const noexcept override { return true; }

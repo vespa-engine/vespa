@@ -12,7 +12,6 @@
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/fast_value.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/xmlstream.h>
@@ -94,7 +93,7 @@ TensorModifyUpdate::TensorModifyUpdate()
 
 TensorModifyUpdate::TensorModifyUpdate(const TensorModifyUpdate &rhs)
     : _operation(rhs._operation),
-      _tensorType(rhs._tensorType->clone()),
+      _tensorType(std::make_unique<TensorDataType>(*rhs._tensorType)),
       _tensor(Identifiable::cast<TensorFieldValue *>(_tensorType->createFieldValue().release()))
 {
     *_tensor = *rhs._tensor;
@@ -102,7 +101,7 @@ TensorModifyUpdate::TensorModifyUpdate(const TensorModifyUpdate &rhs)
 
 TensorModifyUpdate::TensorModifyUpdate(Operation operation, std::unique_ptr<TensorFieldValue> tensor)
     : _operation(operation),
-      _tensorType(dynamic_cast<const TensorDataType &>(*tensor->getDataType()).clone()),
+      _tensorType(std::make_unique<TensorDataType>(dynamic_cast<const TensorDataType &>(*tensor->getDataType()))),
       _tensor(Identifiable::cast<TensorFieldValue *>(_tensorType->createFieldValue().release()))
 {
     *_tensor = *tensor;
@@ -116,7 +115,7 @@ TensorModifyUpdate::operator=(const TensorModifyUpdate &rhs)
     if (&rhs != this) {
         _operation = rhs._operation;
         _tensor.reset();
-        _tensorType.reset(rhs._tensorType->clone());
+        _tensorType = std::make_unique<TensorDataType>(*rhs._tensorType);
         _tensor.reset(Identifiable::cast<TensorFieldValue *>(_tensorType->createFieldValue().release()));
         *_tensor = *rhs._tensor;
     }

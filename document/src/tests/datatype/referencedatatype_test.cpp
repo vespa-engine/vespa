@@ -43,12 +43,6 @@ TEST_F("operator== checks document type and type ID", Fixture) {
     EXPECT_NOT_EQUAL(f.refType, refWithSameTypeDifferentId);
 }
 
-TEST_F("clone() creates new type instance equal to old instance", Fixture) {
-    std::unique_ptr<ReferenceDataType> cloned(f.refType.clone());
-    ASSERT_TRUE(cloned.get() != nullptr);
-    EXPECT_EQUAL(f.refType, *cloned);
-}
-
 TEST_F("print() emits type name and id", Fixture) {
     std::ostringstream ss;
     f.refType.print(ss, true, "");

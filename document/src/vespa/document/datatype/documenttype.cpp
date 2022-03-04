@@ -86,6 +86,8 @@ DocumentType::DocumentType(stringref name, const StructDataType& fields)
     }
 }
 
+DocumentType & DocumentType::operator=(const DocumentType &) = default;
+DocumentType::DocumentType(const DocumentType &) = default;
 DocumentType::~DocumentType() = default;
 
 DocumentType &
@@ -147,7 +149,7 @@ DocumentType::inherit(const DocumentType &docType) {
     Field::Set fs = docType._fields->getFieldSet();
     for (const auto* field : fs) {
         if (!_ownedFields.get()) {
-            _ownedFields.reset(_fields->clone());
+            _ownedFields = std::make_shared<StructDataType>(*_fields);
             _fields = _ownedFields.get();
         }
         _ownedFields->addInheritedField(*field);
@@ -237,17 +239,14 @@ DocumentType::getFieldSet() const
     return _fields->getFieldSet();
 }
 
-bool DocumentType::has_imported_field_name(const vespalib::string& name) const noexcept {
+bool
+DocumentType::has_imported_field_name(const vespalib::string& name) const noexcept {
     return (_imported_field_names.find(name) != _imported_field_names.end());
 }
 
-void DocumentType::add_imported_field_name(const vespalib::string& name) {
+void
+DocumentType::add_imported_field_name(const vespalib::string& name) {
     _imported_field_names.insert(name);
-}
-
-DocumentType *
-DocumentType::clone() const {
-    return new DocumentType(*this);
 }
 
 } // document

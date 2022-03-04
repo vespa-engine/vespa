@@ -109,7 +109,6 @@ public:
      * Create a field value using this datatype.
      */
     virtual std::unique_ptr<FieldValue> createFieldValue() const = 0;
-    virtual DataType* clone() const = 0;
 
     virtual bool isWeightedSet() const noexcept { return false; }
     virtual bool isArray() const noexcept { return false; }
@@ -121,6 +120,7 @@ public:
     virtual const CollectionDataType * cast_collection() const noexcept { return nullptr; }
     virtual const MapDataType * cast_map() const noexcept { return nullptr; }
     virtual const ReferenceDataType * cast_reference() const noexcept { return nullptr; }
+    bool isMap() const { return cast_map() != nullptr; }
 
     /**
      * Whether another datatype is a supertype of this one. Document types may

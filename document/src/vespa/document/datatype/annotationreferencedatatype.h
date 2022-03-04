@@ -14,10 +14,10 @@ public:
     typedef std::shared_ptr<AnnotationReferenceDataType> SP;
 
     AnnotationReferenceDataType(const AnnotationType &type, int id);
-
+    AnnotationReferenceDataType(const AnnotationReferenceDataType &) = delete;
+    AnnotationReferenceDataType & operator=(const AnnotationReferenceDataType &) = delete;
     const AnnotationType &getAnnotationType() const;
     void print(std::ostream &out, bool verbose, const std::string &indent) const override;
-    AnnotationReferenceDataType *clone() const override;
     std::unique_ptr<FieldValue> createFieldValue() const override;
     void onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const override;
 };

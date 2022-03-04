@@ -17,12 +17,12 @@ class CollectionDataType : public DataType {
     const DataType *_nestedType;
 
 protected:
-    CollectionDataType(const CollectionDataType&) noexcept;
-    CollectionDataType& operator=(const CollectionDataType&);
     CollectionDataType(vespalib::stringref name, const DataType &nestedType) noexcept;
     CollectionDataType(vespalib::stringref name, const DataType &nestedType, int32_t id) noexcept;
 
 public:
+    CollectionDataType(const CollectionDataType&) = delete;
+    CollectionDataType& operator=(const CollectionDataType&) = delete;
     ~CollectionDataType() override;
 
     bool equals(const DataType&) const noexcept override;

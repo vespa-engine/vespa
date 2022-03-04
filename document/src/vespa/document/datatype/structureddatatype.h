@@ -17,7 +17,6 @@ namespace document {
 
 class StructuredDataType : public DataType {
     void onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const override;
-
 protected:
     StructuredDataType(vespalib::stringref name);
     StructuredDataType(vespalib::stringref name, int32_t dataTypeId);
@@ -32,8 +31,6 @@ public:
     virtual bool hasField(int32_t fieldId) const noexcept = 0;
 
     virtual Field::Set getFieldSet() const = 0;
-
-    virtual StructuredDataType* clone() const override = 0;
     bool isStructured() const noexcept override { return true; }
     bool equals(const DataType& type) const noexcept override;
 

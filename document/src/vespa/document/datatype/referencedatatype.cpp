@@ -18,21 +18,20 @@ ReferenceDataType::ReferenceDataType(const DocumentType& targetDocType, int id)
 
 ReferenceDataType::~ReferenceDataType() = default;
 
-std::unique_ptr<FieldValue> ReferenceDataType::createFieldValue() const {
+std::unique_ptr<FieldValue>
+ReferenceDataType::createFieldValue() const {
     return std::make_unique<ReferenceFieldValue>(*this);
 }
 
-void ReferenceDataType::print(std::ostream& os, bool verbose, const std::string& indent) const {
+void
+ReferenceDataType::print(std::ostream& os, bool verbose, const std::string& indent) const {
     (void) verbose;
     (void) indent;
     os << "ReferenceDataType(" << _targetDocType.getName() << ", id " << getId() << ')';
 }
 
-ReferenceDataType* ReferenceDataType::clone() const {
-    return new ReferenceDataType(_targetDocType, getId());
-}
-
-void ReferenceDataType::onBuildFieldPath(FieldPath &, vespalib::stringref remainingFieldName) const {
+void
+ReferenceDataType::onBuildFieldPath(FieldPath &, vespalib::stringref remainingFieldName) const {
     if ( ! remainingFieldName.empty() ) {
         throw IllegalArgumentException(make_string("Reference data type does not support further field recursion: '%s'",
                                                    vespalib::string(remainingFieldName).c_str()), VESPA_STRLOC);
@@ -40,7 +39,8 @@ void ReferenceDataType::onBuildFieldPath(FieldPath &, vespalib::stringref remain
 
 }
 
-bool ReferenceDataType::equals(const DataType &rhs) const noexcept {
+bool
+ReferenceDataType::equals(const DataType &rhs) const noexcept {
     const ReferenceDataType *rt = rhs.cast_reference();
     return rt && DataType::equals(rhs) && _targetDocType.equals(rt->_targetDocType);
 }

@@ -28,12 +28,8 @@ StructDataType::StructDataType(vespalib::stringref name, int32_t dataTypeId)
       _idFieldMap()
 { }
 
+StructDataType::StructDataType(const StructDataType & rhs) = default;
 StructDataType::~StructDataType() = default;
-
-StructDataType*
-StructDataType::clone() const {
-    return new StructDataType(*this);
-}
 
 void
 StructDataType::print(std::ostream& out, bool verbose,

@@ -21,6 +21,8 @@ public:
 
     StructDataType(vespalib::stringref name);
     StructDataType(vespalib::stringref name, int32_t id);
+    StructDataType(const StructDataType & rhs); // TODO avoid using this
+    StructDataType & operator=(const StructDataType & rhs) = delete;
     ~StructDataType();
 
     /**
@@ -59,7 +61,6 @@ public:
     }
 
     Field::Set getFieldSet() const override;
-    StructDataType* clone() const override;
 private:
     using StringFieldMap = vespalib::hash_map<vespalib::string, Field::SP>;
     using IntFieldMap = vespalib::hash_map<int32_t, Field::SP>;

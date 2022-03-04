@@ -28,6 +28,8 @@ MapDataType::MapDataType(const DataType &key, const DataType &value, int id) noe
       _valueType(&value) {
 }
 
+MapDataType::~MapDataType() = default;
+
 FieldValue::UP MapDataType::createFieldValue() const {
     return std::make_unique<MapFieldValue>(*this);
 }

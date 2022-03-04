@@ -4,21 +4,6 @@
 
 namespace document {
 
-CollectionDataType::CollectionDataType(const CollectionDataType& other) noexcept
-    : DataType(other),
-      _nestedType(other._nestedType)
-{ }
-
-CollectionDataType&
-CollectionDataType::operator=(const CollectionDataType& other)
-{
-    if (this != &other) {
-        DataType::operator=(other);
-        _nestedType = other._nestedType;
-    }
-    return *this;
-}
-
 CollectionDataType::CollectionDataType(vespalib::stringref name,
                                        const DataType& nestedType) noexcept
     : DataType(name),

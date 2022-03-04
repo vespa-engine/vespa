@@ -417,11 +417,12 @@ void inheritDocumentTypes(const vector<DocumenttypesConfig::Documenttype::Inheri
     }
 }
 
-DataTypeRepo::UP makeDataTypeRepo(const DocumentType &doc_type, const DocumentTypeMap &type_map) {
+DataTypeRepo::UP
+makeDataTypeRepo(const DocumentType &doc_type, const DocumentTypeMap &type_map) {
     auto data_types = std::make_unique<DataTypeRepo>();
     data_types->repo.inherit(lookupRepo(DataType::T_DOCUMENT, type_map).repo);
     data_types->annotations.inherit(lookupRepo(DataType::T_DOCUMENT, type_map).annotations);
-    data_types->doc_type = doc_type.clone();
+    data_types->doc_type = new DocumentType(doc_type);
     return data_types;
 }
 

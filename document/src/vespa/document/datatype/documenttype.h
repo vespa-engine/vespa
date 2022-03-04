@@ -62,6 +62,8 @@ public:
 
     explicit DocumentType(vespalib::stringref name);
     DocumentType(vespalib::stringref name, const StructDataType& fields);
+    DocumentType(const DocumentType &);   // TODO remove usage
+    DocumentType & operator = (const DocumentType &);  // TODO remove usage
 
     ~DocumentType() override;
 
@@ -97,7 +99,6 @@ public:
         return _fields->hasField(fieldId);
     }
     Field::Set getFieldSet() const override;
-    DocumentType* clone() const override;
 
     DocumentType & addFieldSet(const vespalib::string & name, FieldSet::Fields fields);
     const FieldSet * getFieldSet(const vespalib::string & name) const;

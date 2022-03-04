@@ -743,7 +743,7 @@ void SearchVisitor::setupAttributeVector(const FieldPath &fieldPath) {
         const document::DataType & dt = entry->getDataType();
         if (dt.isArray()) {
             typeSeen = ARRAY;
-        } else if (dt.cast_map() != nullptr) {
+        } else if (dt.isMap()) {
             typeSeen = ARRAY;
         } else if (dt.isWeightedSet()) {
             typeSeen = WSET;

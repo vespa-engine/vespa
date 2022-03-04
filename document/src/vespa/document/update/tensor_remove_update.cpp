@@ -9,10 +9,8 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <ostream>
-#include <cassert>
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
@@ -49,13 +47,13 @@ TensorRemoveUpdate::TensorRemoveUpdate()
 }
 
 TensorRemoveUpdate::TensorRemoveUpdate(const TensorRemoveUpdate &rhs)
-    : _tensorType(rhs._tensorType->clone()),
+    : _tensorType(std::make_unique<TensorDataType>(*rhs._tensorType)),
       _tensor(rhs._tensor->clone())
 {
 }
 
 TensorRemoveUpdate::TensorRemoveUpdate(std::unique_ptr<TensorFieldValue> tensor)
-    : _tensorType(dynamic_cast<const TensorDataType &>(*tensor->getDataType()).clone()),
+    : _tensorType(std::make_unique<TensorDataType>(dynamic_cast<const TensorDataType &>(*tensor->getDataType()))),
       _tensor(Identifiable::cast<TensorFieldValue *>(_tensorType->createFieldValue().release()))
 {
     *_tensor = *tensor;
@@ -68,7 +66,7 @@ TensorRemoveUpdate::operator=(const TensorRemoveUpdate &rhs)
 {
     if (&rhs != this) {
         _tensor.reset();
-        _tensorType.reset(rhs._tensorType->clone());
+        _tensorType = std::make_unique<TensorDataType>(*rhs._tensorType);
         _tensor.reset(Identifiable::cast<TensorFieldValue *>(_tensorType->createFieldValue().release()));
         *_tensor = *rhs._tensor;
     }

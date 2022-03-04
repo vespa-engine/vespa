@@ -18,6 +18,9 @@ class MapDataType final : public DataType {
 public:
     MapDataType(const DataType &keyType, const DataType &valueType) noexcept;
     MapDataType(const DataType &keyType, const DataType &valueType, int id) noexcept;
+    MapDataType(const MapDataType &) = delete;
+    MapDataType & operator=(const MapDataType &) = delete;
+    ~MapDataType() override;
 
     const DataType& getKeyType() const noexcept { return *_keyType; }
     const DataType& getValueType() const noexcept { return *_valueType; }
@@ -25,7 +28,6 @@ public:
     std::unique_ptr<FieldValue> createFieldValue() const override;
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
     bool equals(const DataType& other) const noexcept override;
-    MapDataType* clone() const override { return new MapDataType(*this); }
     const MapDataType * cast_map() const noexcept override { return this; }
 
     void onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const override;
