@@ -15,12 +15,11 @@
 
 namespace document {
 
-class WeightedSetDataType : public CollectionDataType {
+class WeightedSetDataType final : public CollectionDataType {
     bool _createIfNonExistent;
     bool _removeIfZero;
 
 public:
-    WeightedSetDataType() {}
     WeightedSetDataType(const DataType& nestedType, bool createIfNonExistent, bool removeIfZero);
     WeightedSetDataType(const DataType& nestedType, bool createIfNonExistent, bool removeIfZero, int id);
 
@@ -36,13 +35,13 @@ public:
      */
     bool removeIfZero() const { return _removeIfZero; };
 
+    bool isWeightedSet() const noexcept override { return true; }
+
     std::unique_ptr<FieldValue> createFieldValue() const override;
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
-    bool operator==(const DataType& other) const override;
+    bool equals(const DataType& other) const noexcept override;
     WeightedSetDataType* clone() const override { return new WeightedSetDataType(*this); }
     void onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const override;
-
-    DECLARE_IDENTIFIABLE(WeightedSetDataType);
 };
 
 } // document

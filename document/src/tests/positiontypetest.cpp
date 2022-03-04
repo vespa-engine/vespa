@@ -22,8 +22,7 @@ TEST(PositionTypeTest, requireThatExpectedFieldsAreThere)
 
 TEST(PositionTypeTest, requireThatZCurveFieldMatchesJava)
 {
-    EXPECT_EQ(vespalib::string("foo_zcurve"),
-                         PositionDataType::getZCurveFieldName("foo"));
+    EXPECT_EQ(vespalib::string("foo_zcurve"), PositionDataType::getZCurveFieldName("foo"));
     EXPECT_TRUE( ! PositionDataType::isZCurveFieldName("foo"));
     EXPECT_TRUE( ! PositionDataType::isZCurveFieldName("_zcurve"));
     EXPECT_TRUE( PositionDataType::isZCurveFieldName("x_zcurve"));

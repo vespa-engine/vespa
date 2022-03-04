@@ -11,8 +11,6 @@ LOG_SETUP(".document.datatype.primitivedatatype");
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(PrimitiveDataType, DataType);
-
 namespace {
     const char *Int = "Int";
     const char *Short = "Short";

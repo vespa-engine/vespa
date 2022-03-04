@@ -10,8 +10,6 @@ using std::ostream;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE(AnnotationReferenceDataType, DataType);
-
 AnnotationReferenceDataType::AnnotationReferenceDataType(
         const AnnotationType &type, int id)
     : DataType("annotationreference<" + type.getName() + ">", id),

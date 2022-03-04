@@ -17,22 +17,17 @@ class CollectionDataType : public DataType {
     const DataType *_nestedType;
 
 protected:
-    CollectionDataType() : _nestedType(0) {}
-    CollectionDataType(const CollectionDataType&);
+    CollectionDataType(const CollectionDataType&) noexcept;
     CollectionDataType& operator=(const CollectionDataType&);
-    CollectionDataType(vespalib::stringref name,
-                       const DataType &nestedType);
-    CollectionDataType(vespalib::stringref name,
-                       const DataType &nestedType, int32_t id);
+    CollectionDataType(vespalib::stringref name, const DataType &nestedType) noexcept;
+    CollectionDataType(vespalib::stringref name, const DataType &nestedType, int32_t id) noexcept;
 
 public:
     ~CollectionDataType() override;
 
-    bool operator==(const DataType&) const override;
-    const DataType &getNestedType() const { return *_nestedType; }
-    const CollectionDataType * cast_collection() const override { return this; }
-
-    DECLARE_IDENTIFIABLE_ABSTRACT(CollectionDataType);
+    bool equals(const DataType&) const noexcept override;
+    const DataType &getNestedType() const noexcept { return *_nestedType; }
+    const CollectionDataType * cast_collection() const noexcept override { return this; }
 };
 
 } // document

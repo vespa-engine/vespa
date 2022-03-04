@@ -1,17 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "collectiondatatype.h"
-#include <vespa/document/util/stringutil.h>
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(CollectionDataType, DataType);
-
-CollectionDataType::CollectionDataType(const CollectionDataType& other)
+CollectionDataType::CollectionDataType(const CollectionDataType& other) noexcept
     : DataType(other),
       _nestedType(other._nestedType)
-{
-}
+{ }
 
 CollectionDataType&
 CollectionDataType::operator=(const CollectionDataType& other)
@@ -24,26 +20,26 @@ CollectionDataType::operator=(const CollectionDataType& other)
 }
 
 CollectionDataType::CollectionDataType(vespalib::stringref name,
-                                       const DataType& nestedType)
+                                       const DataType& nestedType) noexcept
     : DataType(name),
-      _nestedType(&nestedType) {
-}
+      _nestedType(&nestedType)
+{ }
 
 CollectionDataType::CollectionDataType(vespalib::stringref name,
                                        const DataType& nestedType,
-                                       int32_t id)
+                                       int32_t id) noexcept
     : DataType(name, id),
-      _nestedType(&nestedType) {
-}
+      _nestedType(&nestedType)
+{ }
 
 CollectionDataType::~CollectionDataType() = default;
 
 bool
-CollectionDataType::operator==(const DataType& other) const
+CollectionDataType::equals(const DataType& other) const noexcept
 {
-    if (!DataType::operator==(other)) return false;
+    if (!DataType::equals(other)) return false;
     const CollectionDataType * o = other.cast_collection();
-    return o && *_nestedType == *o->_nestedType;
+    return o && _nestedType->equals(*o->_nestedType);
 }
 
 } // document

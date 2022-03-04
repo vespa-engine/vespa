@@ -147,8 +147,7 @@ TEST("requireThatAnnotationReferencesCanBeConfigured") {
         .annotationType(annotation_type_id, "foo", -1);
     DocumentTypeRepo repo(builder.config());
 
-    const AnnotationReferenceDataType &ar =
-        getFieldDataType<AnnotationReferenceDataType>(repo);
+    const AnnotationReferenceDataType &ar = getFieldDataType<AnnotationReferenceDataType>(repo);
     EXPECT_EQUAL(annotation_type_id, ar.getAnnotationType().getId());
 }
 

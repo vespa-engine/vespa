@@ -152,7 +152,7 @@ TensorModifyUpdate::operator==(const ValueUpdate &other) const
 void
 TensorModifyUpdate::checkCompatibility(const Field& field) const
 {
-    if (field.getDataType().getClass().id() != TensorDataType::classId) {
+    if ( ! field.getDataType().isTensor()) {
         throw IllegalArgumentException(make_string("Cannot perform tensor modify update on non-tensor field '%s'",
                                                    field.getName().data()), VESPA_STRLOC);
     }

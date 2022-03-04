@@ -132,7 +132,7 @@ void DocumentFieldNode::onPrepare(bool preserveAccurateTypes)
                 _handler.reset(new SingleHandler(*_value));
             }
         } else {
-            if (endOfPath.getDataType().getClass().inherits(document::StructuredDataType::classId)) {
+            if (endOfPath.getDataType().isStructured()) {
                 throw std::runtime_error(make_string("I am not able to access structured field '%s'", _fieldName.c_str()));
             } else {
                 throw std::runtime_error(make_string("I am not able to access field '%s' for reasons I do not know", _fieldName.c_str()));

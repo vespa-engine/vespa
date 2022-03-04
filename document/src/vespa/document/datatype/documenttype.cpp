@@ -1,12 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/datatype/documenttype.h>
+#include "documenttype.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <iomanip>
 #include <vespa/log/log.h>
-#include <vespa/document/base/exceptions.h>
 
 LOG_SETUP(".document.datatype.document");
 
@@ -37,10 +35,6 @@ DocumentType::FieldSet::FieldSet(const vespalib::string & name, Fields fields,
       _fields(fields),
       _field_collection(build_field_collection(fields, doc_type))
 {}
-
-IMPLEMENT_IDENTIFIABLE(DocumentType, StructuredDataType);
-
-DocumentType::DocumentType() = default;
 
 DocumentType::DocumentType(stringref name, int32_t id)
     : StructuredDataType(name, id),
@@ -137,7 +131,7 @@ DocumentType::inherit(const DocumentType &docType) {
     if (isA(docType)) {
         // If we already directly inherits it, complain
         for (const auto* inherited : _inheritedTypes) {
-            if (*inherited == docType) {
+            if (inherited->equals(docType)) {
                 throw IllegalArgumentException(
                         "DocumentType " + getName() + " already inherits "
                         "document type " + docType.getName(), VESPA_STRLOC);
@@ -160,7 +154,7 @@ DocumentType::inherit(const DocumentType &docType) {
     }
     // If we inherit default document type Document.0, remove that if adding
     // another parent, as that has to also inherit Document
-    if ((_inheritedTypes.size() == 1) && (*_inheritedTypes[0] == *DataType::DOCUMENT)) {
+    if ((_inheritedTypes.size() == 1) && _inheritedTypes[0]->equals(*DataType::DOCUMENT)) {
         _inheritedTypes.clear();
     }
     _inheritedTypes.push_back(&docType);
@@ -172,7 +166,7 @@ DocumentType::isA(const DataType& other) const
     for (const DocumentType * docType : _inheritedTypes) {
         if (docType->isA(other)) return true;
     }
-    return (*this == other);
+    return equals(other);
 }
 
 FieldValue::UP
@@ -206,18 +200,18 @@ DocumentType::print(std::ostream& out, bool verbose, const std::string& indent) 
 }
 
 bool
-DocumentType::operator==(const DataType& other) const
+DocumentType::equals(const DataType& other) const noexcept
 {
     if (&other == this) return true;
-    if (!DataType::operator==(other)) return false;
+    if ( ! DataType::equals(other)) return false;
     const auto* o(dynamic_cast<const DocumentType*>(&other));
     if (o == nullptr) return false;
-    if (*_fields != *o->_fields) return false;
+    if ( ! _fields->equals(*o->_fields)) return false;
     if (_inheritedTypes.size() != o->_inheritedTypes.size()) return false;
     auto it1 = _inheritedTypes.begin();
     auto it2 = o->_inheritedTypes.begin();
     while (it1 != _inheritedTypes.end()) {
-        if (**it1 != **it2) return false;
+        if ( ! (*it1)->equals( **it2)) return false;
         ++it1;
         ++it2;
     }
@@ -235,14 +229,6 @@ const Field&
 DocumentType::getField(int fieldId) const
 {
     return _fields->getField(fieldId);
-}
-
-bool DocumentType::hasField(stringref name) const {
-    return _fields->hasField(name);
-}
-
-bool DocumentType::hasField(int fieldId) const {
-    return _fields->hasField(fieldId);
 }
 
 Field::Set

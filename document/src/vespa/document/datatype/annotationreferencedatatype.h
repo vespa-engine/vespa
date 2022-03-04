@@ -7,13 +7,12 @@
 
 namespace document {
 
-class AnnotationReferenceDataType : public DataType {
+class AnnotationReferenceDataType final : public DataType {
     const AnnotationType *_type;
 
 public:
     typedef std::shared_ptr<AnnotationReferenceDataType> SP;
 
-    AnnotationReferenceDataType() {}
     AnnotationReferenceDataType(const AnnotationType &type, int id);
 
     const AnnotationType &getAnnotationType() const;
@@ -21,8 +20,6 @@ public:
     AnnotationReferenceDataType *clone() const override;
     std::unique_ptr<FieldValue> createFieldValue() const override;
     void onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const override;
-
-    DECLARE_IDENTIFIABLE(AnnotationReferenceDataType);
 };
 
 }  // namespace document

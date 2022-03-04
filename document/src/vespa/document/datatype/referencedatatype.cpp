@@ -11,7 +11,7 @@ using vespalib::IllegalArgumentException;
 namespace document {
 
 ReferenceDataType::ReferenceDataType(const DocumentType& targetDocType, int id)
-    : DataType(vespalib::make_string("Reference<%s>", targetDocType.getName().c_str()), id),
+    : DataType(make_string("Reference<%s>", targetDocType.getName().c_str()), id),
       _targetDocType(targetDocType)
 {
 }
@@ -40,10 +40,9 @@ void ReferenceDataType::onBuildFieldPath(FieldPath &, vespalib::stringref remain
 
 }
 
-bool ReferenceDataType::operator==(const DataType &rhs) const {
+bool ReferenceDataType::equals(const DataType &rhs) const noexcept {
     const ReferenceDataType *rt = rhs.cast_reference();
-    return rt && DataType::operator==(rhs)
-           && (_targetDocType == rt->_targetDocType);
+    return rt && DataType::equals(rhs) && _targetDocType.equals(rt->_targetDocType);
 }
 
 } // document

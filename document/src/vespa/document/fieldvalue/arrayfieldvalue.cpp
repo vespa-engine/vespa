@@ -119,7 +119,7 @@ ArrayFieldValue::removeValue(const FieldValue& value)
 FieldValue&
 ArrayFieldValue::assign(const FieldValue& value)
 {
-    if (*value.getDataType() == *getDataType()) {
+    if (value.getDataType()->equals(*getDataType())) {
         const ArrayFieldValue& val(static_cast<const ArrayFieldValue&>(value));
         operator=(val);
         return *this;

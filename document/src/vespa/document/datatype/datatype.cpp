@@ -1,18 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/datatype/datatype.h>
-#include <vespa/document/datatype/numericdatatype.h>
-#include <vespa/document/datatype/primitivedatatype.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/datatype/weightedsetdatatype.h>
+#include "datatype.h"
+#include "numericdatatype.h"
+#include "primitivedatatype.h"
+#include "documenttype.h"
+#include "weightedsetdatatype.h"
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/text/lowercase.h>
-#include <stdexcept>
 
 namespace document {
-
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(DataType, vespalib::Identifiable);
 
 namespace {
 NumericDataType BYTE_OBJ(DataType::T_BYTE);
@@ -122,7 +119,8 @@ namespace {
 // ASCII characters. Probably screwed up otherwise, but generated ids
 // should only be used in testing anyways. In production this will be
 // set from the document manager config.
-uint32_t crappyJavaStringHash(vespalib::stringref value) {
+uint32_t
+crappyJavaStringHash(vespalib::stringref value) {
     uint32_t h = 0;
     for (uint32_t i = 0; i < value.size(); ++i) {
         h = 31 * h + value[i];
@@ -140,38 +138,18 @@ int32_t createId(vespalib::stringref name)
 
 } // anon namespace
 
-DataType::DataType()
-    : _dataTypeId(-1),
-      _name("invalid")
-{
-}
-
-DataType::DataType(vespalib::stringref name, int dataTypeId)
+DataType::DataType(vespalib::stringref name, int dataTypeId) noexcept
     : _dataTypeId(dataTypeId),
       _name(name)
 {
 }
 
-DataType::DataType(vespalib::stringref name)
-    : _dataTypeId(createId(name)),
-      _name(name)
+DataType::DataType(vespalib::stringref name) noexcept
+    : DataType(name, createId(name))
 {
 }
 
 DataType::~DataType() = default;
-
-bool
-DataType::operator==(const DataType& other) const
-{
-    return _dataTypeId == other._dataTypeId;
-}
-
-bool
-DataType::operator<(const DataType& other) const
-{
-    if (this == &other) return false;
-    return (_dataTypeId < other._dataTypeId);
-}
 
 void
 DataType::buildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const

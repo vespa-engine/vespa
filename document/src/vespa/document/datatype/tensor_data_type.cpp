@@ -9,8 +9,6 @@ using vespalib::eval::ValueType;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(TensorDataType, DataType);
-
 TensorDataType::TensorDataType()
     : TensorDataType(ValueType::error_type())
 {
