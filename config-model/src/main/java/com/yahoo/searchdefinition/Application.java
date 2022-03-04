@@ -84,6 +84,7 @@ public class Application {
 
         List<Schema> schemasSomewhatOrdered = new ArrayList<>(schemas);
         for (Schema schema : new SearchOrderer().order(schemasSomewhatOrdered)) {
+            new FieldOperationApplierForStructs().processSchemaFields(schema);
             new FieldOperationApplierForSearch().process(schema); // TODO: Why is this not in the regular list?
             new Processing(properties).process(schema,
                                                logger,
