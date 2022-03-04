@@ -11,8 +11,6 @@ class Test : public TestApp
 public:
     ~Test();
     int Main() override;
-private:
-    bool useIPCHelper() const override { return true; }
 };
 
 Test::~Test()

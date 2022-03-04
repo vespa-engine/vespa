@@ -104,6 +104,23 @@ Process::commit(size_t bytes)
     return *this;
 }
 
+vespalib::string
+Process::read_line() {
+    vespalib::string line;
+    for (auto mem = obtain(); (mem.size > 0); mem = obtain()) {
+        for (size_t i = 0; i < mem.size; ++i) {
+            if (mem.data[i] == '\n') {
+                evict(i + 1);
+                return line;
+            } else {
+                line.push_back(mem.data[i]);
+            }
+        }
+        evict(mem.size);
+    }
+    return line;
+}
+
 int
 Process::join()
 {

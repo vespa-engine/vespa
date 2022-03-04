@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vbench/test/all.h>
-#include <vespa/vespalib/util/child_process.h>
+#include <vespa/vespalib/process/process.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 #include <vespa/vespalib/test/make_tls_options_for_testing.h>
@@ -11,7 +11,7 @@
 #include <fcntl.h>
 
 using namespace vbench;
-using vespalib::ChildProcess;
+using vespalib::Process;
 
 using InputReader = vespalib::InputReader;
 using OutputWriter = vespalib::OutputWriter;
@@ -31,8 +31,8 @@ void write_file(const vespalib::string &file_name, const vespalib::string &conte
 }
 
 TEST("vbench usage") {
-    std::string out;
-    EXPECT_FALSE(ChildProcess::run("../../apps/vbench/vbench_app", out));
+    vespalib::string out;
+    EXPECT_FALSE(Process::run("../../apps/vbench/vbench_app", out));
     fprintf(stderr, "%s\n", out.c_str());
 }
 
@@ -68,18 +68,18 @@ struct Servers {
 
 TEST_MT_F("run vbench", 2, Servers()) {
     if (thread_id == 0) {
-        std::string out;
-        EXPECT_TRUE(ChildProcess::run(strfmt("sed 's/_LOCAL_PORT_/%d/' vbench.cfg.template > vbench.cfg", f1.portal->listen_port()).c_str()));
-        EXPECT_TRUE(ChildProcess::run("../../apps/vbench/vbench_app run vbench.cfg 2> vbench.out", out));
+        vespalib::string out;
+        EXPECT_TRUE(Process::run(strfmt("sed 's/_LOCAL_PORT_/%d/' vbench.cfg.template > vbench.cfg", f1.portal->listen_port()).c_str()));
+        EXPECT_TRUE(Process::run("../../apps/vbench/vbench_app run vbench.cfg 2> vbench.out", out));
         fprintf(stderr, "null crypto: %s\n", out.c_str());
         EXPECT_GREATER(f1.my_get.cnt, 10u);
     } else {
-        std::string tls_out;
-        EXPECT_TRUE(ChildProcess::run(strfmt("sed 's/_LOCAL_PORT_/%d/' vbench.tls.cfg.template > vbench.tls.cfg", f1.tls_portal->listen_port()).c_str()));
-        EXPECT_TRUE(ChildProcess::run("../../apps/vbench/vbench_app run vbench.tls.cfg 2> vbench.tls.out", tls_out));
+        vespalib::string tls_out;
+        EXPECT_TRUE(Process::run(strfmt("sed 's/_LOCAL_PORT_/%d/' vbench.tls.cfg.template > vbench.tls.cfg", f1.tls_portal->listen_port()).c_str()));
+        EXPECT_TRUE(Process::run("../../apps/vbench/vbench_app run vbench.tls.cfg 2> vbench.tls.out", tls_out));
         fprintf(stderr, "tls crypto: %s\n", tls_out.c_str());
         EXPECT_GREATER(f1.my_tls_get.cnt, 10u);
     }
 }
 
-TEST_MAIN_WITH_PROCESS_PROXY() { TEST_RUN_ALL(); }
+TEST_MAIN() { TEST_RUN_ALL(); }

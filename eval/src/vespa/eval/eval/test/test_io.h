@@ -9,7 +9,7 @@
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/util/child_process.h>
+#include <vespa/vespalib/process/process.h>
 #include <functional>
 
 namespace vespalib::eval::test {
@@ -40,38 +40,12 @@ public:
 };
 
 /**
- * Output adapter used to write to stdin of a child process.
- **/
-class ChildIn : public Output {
-    ChildProcess &_child;
-    SimpleBuffer _output;
-public:
-    ChildIn(ChildProcess &child);
-    WritableMemory reserve(size_t bytes) override;
-    Output &commit(size_t bytes) override;
-};
-
-/**
- * Input adapter used to read from stdout of a child process.
- **/
-class ChildOut : public Input {
-    ChildProcess &_child;
-    SimpleBuffer _input;
-public:
-    ChildOut(ChildProcess &child);
-    Memory obtain() override;
-    Input &evict(size_t bytes) override;
-};
-
-/**
  * A command run as a child process that acts as a server reading json
  * from stdin and writing json to stdout.
  **/
 class ServerCmd {
 private:
-    ChildProcess _child;
-    ChildIn _child_stdin;
-    ChildOut _child_stdout;
+    Process _child;
     vespalib::string _basename;
     bool _closed;
     bool _exited;

@@ -12,7 +12,7 @@
 #include <vespa/vespalib/net/simple_metrics_producer.h>
 #include <vespa/vespalib/net/simple_component_config_producer.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/child_process.h>
+#include <vespa/vespalib/process/process.h>
 #include <vespa/vespalib/net/state_explorer.h>
 #include <vespa/vespalib/net/slime_explorer.h>
 #include <vespa/vespalib/net/generic_state_handler.h>
@@ -39,8 +39,8 @@ std::map<vespalib::string,vespalib::string> empty_params;
 //-----------------------------------------------------------------------------
 
 vespalib::string run_cmd(const vespalib::string &cmd) {
-    std::string out;
-    ASSERT_TRUE(ChildProcess::run(cmd.c_str(), out));
+    vespalib::string out;
+    ASSERT_TRUE(Process::run(cmd.c_str(), out));
     return out;
 }
 
@@ -511,7 +511,7 @@ TEST("require that generic state can be explored") {
     check_json(json_list_two, state_handler.get(host_tag, root_path + "list/two", empty_params));
 }
 
-TEST_MAIN_WITH_PROCESS_PROXY() {
+TEST_MAIN() {
     mkdir("var", S_IRWXU);
     mkdir("var/run", S_IRWXU);
     TEST_RUN_ALL();

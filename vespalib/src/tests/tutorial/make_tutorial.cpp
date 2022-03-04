@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/util/child_process.h>
+#include <vespa/vespalib/process/process.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -10,48 +10,48 @@
 
 using namespace vespalib;
 
-std::string readFile(const std::string &filename) {
+vespalib::string readFile(const vespalib::string &filename) {
     TEST_STATE(filename.c_str());
     MappedFileInput file(filename);
     ASSERT_TRUE(file.valid());
     Memory data = file.get();
-    return std::string(data.data, data.size);
+    return vespalib::string(data.data, data.size);
 }
 
-std::string runCommand(const std::string &cmd) {
-    std::string out;
-    ASSERT_TRUE(ChildProcess::run(cmd.c_str(), out));
+vespalib::string runCommand(const vespalib::string &cmd) {
+    vespalib::string out;
+    ASSERT_TRUE(Process::run(cmd, out));
     return out;
 }
 
-void insertExample(const std::string &name, const std::string &src_dir) {
-    std::string str = runCommand(make_string("%s/make_example.sh %s", src_dir.c_str(),
+void insertExample(const vespalib::string &name, const vespalib::string &src_dir) {
+    vespalib::string str = runCommand(make_string("%s/make_example.sh %s", src_dir.c_str(),
                                              name.c_str()));
     fprintf(stdout, "%s", str.c_str());
 }
 
-void insertSource(const std::string &name, const std::string &src_dir) {
-    std::string str = runCommand(make_string("%s/make_source.sh %s", src_dir.c_str(),
+void insertSource(const vespalib::string &name, const vespalib::string &src_dir) {
+    vespalib::string str = runCommand(make_string("%s/make_source.sh %s", src_dir.c_str(),
                                              name.c_str()));
     fprintf(stdout, "%s", str.c_str());
 }
 
-void insertFile(const std::string &name, const std::string &src_dir) {
-    std::string str = readFile(src_dir + "/" + name);
+void insertFile(const vespalib::string &name, const vespalib::string &src_dir) {
+    vespalib::string str = readFile(src_dir + "/" + name);
     fprintf(stdout, "%s", str.c_str());
 }
 
-TEST_MAIN_WITH_PROCESS_PROXY() {
-    std::string pre("[insert:");
-    std::string example("example:");
-    std::string source("source:");
-    std::string file("file:");
-    std::string post("]\n");
+TEST_MAIN() {
+    vespalib::string pre("[insert:");
+    vespalib::string example("example:");
+    vespalib::string source("source:");
+    vespalib::string file("file:");
+    vespalib::string post("]\n");
 
     size_t pos = 0;
     size_t end = 0;
     size_t cursor = 0;
-    std::string input = readFile(TEST_PATH("tutorial_source.html"));
+    vespalib::string input = readFile(TEST_PATH("tutorial_source.html"));
     while ((pos = input.find(pre, cursor)) < input.size() &&
            (end = input.find(post, pos)) < input.size())
     {
@@ -59,15 +59,15 @@ TEST_MAIN_WITH_PROCESS_PROXY() {
         pos += pre.size();
         if (input.find(example, pos) == pos) {
             pos += example.size();
-            insertExample(std::string((input.data() + pos), (end - pos)), TEST_PATH(""));
+            insertExample(vespalib::string((input.data() + pos), (end - pos)), TEST_PATH(""));
         } else if (input.find(source, pos) == pos) {
             pos += source.size();
-            insertSource(std::string((input.data() + pos), (end - pos)), TEST_PATH(""));
+            insertSource(vespalib::string((input.data() + pos), (end - pos)), TEST_PATH(""));
         } else if (input.find(file, pos) == pos) {
             pos += file.size();
-            insertFile(std::string((input.data() + pos), (end - pos)), TEST_PATH(""));
+            insertFile(vespalib::string((input.data() + pos), (end - pos)), TEST_PATH(""));
         } else {
-            std::string str((input.data() + pos), (end - pos));
+            vespalib::string str((input.data() + pos), (end - pos));
             TEST_FATAL(make_string("invalid directive >%s<", str.c_str()).c_str());
         }
         cursor = end + post.size();

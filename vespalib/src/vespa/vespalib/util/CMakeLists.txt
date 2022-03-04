@@ -14,7 +14,6 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     binary_hamming_distance.cpp
     blockingthreadstackexecutor.cpp
     box.cpp
-    child_process.cpp
     classname.cpp
     compress.cpp
     compressor.cpp

@@ -12,7 +12,6 @@
 
 #include <vespa/fastos/types.h>
 
-class FastOS_ProcessInterface;
 class FastOS_ThreadPool;
 
 #include <mutex>
@@ -132,18 +131,7 @@ private:
     FastOS_ApplicationInterface& operator=(const FastOS_ApplicationInterface&);
 
 protected:
-    /**
-     *
-     * Indicate if a process starter is going to be used.
-     * Only override this one if you are going to start other processes.
-     * @return true if you are going to use a process starter.
-     */
-    virtual bool useProcessStarter() const;
-    virtual bool useIPCHelper() const;
-
     FastOS_ThreadPool       *_threadPool;
-    FastOS_ProcessInterface *_processList;
-    std::mutex              *_processListMutex;
 
     virtual bool PreThreadInit () { return true; }
 
@@ -194,11 +182,6 @@ public:
      * of @ref Init() and @ref Main().
      */
     virtual void Cleanup ();
-
-    void AddChildProcess (FastOS_ProcessInterface *node);
-    void RemoveChildProcess (FastOS_ProcessInterface *node);
-    std::unique_lock<std::mutex> getProcessGuard() { return std::unique_lock<std::mutex>(*_processListMutex); }
-    FastOS_ProcessInterface *GetProcessList () { return _processList; }
 
     FastOS_ThreadPool *GetThreadPool ();
 };

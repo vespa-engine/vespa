@@ -4,7 +4,6 @@
 #include <vespa/vespalib/testkit/time_bomb.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/util/child_process.h>
 #include <vespa/vespalib/data/input.h>
 #include <vespa/vespalib/data/output.h>
 #include <vespa/vespalib/data/simple_buffer.h>
@@ -168,4 +167,4 @@ TEST_F("require that type issues produces error", Server()) {
 
 //-----------------------------------------------------------------------------
 
-TEST_MAIN_WITH_PROCESS_PROXY() { TEST_RUN_ALL(); }
+TEST_MAIN() { TEST_RUN_ALL(); }

@@ -43,6 +43,8 @@ public:
     Input &evict(size_t bytes) override;           // Input (stdout)
     WritableMemory reserve(size_t bytes) override; // Output (stdin)
     Output &commit(size_t bytes) override;         // Output (stdin)
+    vespalib::string read_line();
+    bool eof() const { return _eof; }
     int join();
     ~Process();
 
