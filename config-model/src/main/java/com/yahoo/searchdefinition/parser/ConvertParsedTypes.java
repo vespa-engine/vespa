@@ -286,9 +286,20 @@ public class ConvertParsedTypes {
         public DataType resolveType(ParsedType parsed) {
             return resolveFromContext(parsed, context);
         }
-        public TypeResolver(ParsedDocument context) {
+        public DataType resolveStruct(ParsedStruct parsed) {
+            String structId = context.name() + "->" + parsed.name();
+            var r = structsFromSchemas.get(structId);
+            if (r == null) {
+                throw new IllegalArgumentException("no datatype found for struct: " + structId);
+            }
+            return r;
+        }
+        TypeResolver(ParsedDocument context) {
             this.context = context;
         }
     }
 
+    public TypeResolver makeContext(ParsedDocument doc) {
+        return new TypeResolver(doc);
+    }
 }
