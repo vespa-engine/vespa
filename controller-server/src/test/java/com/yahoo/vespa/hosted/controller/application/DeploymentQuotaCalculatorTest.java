@@ -6,6 +6,8 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -25,6 +27,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.TreeSet;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -53,6 +56,32 @@ public class DeploymentQuotaCalculatorTest {
                                 "  </instance>\n" +
                                 "</deployment>"));
         assertEquals(10d / 3, calculated.budget().orElseThrow().doubleValue(), 1e-5);
+    }
+
+    @Test
+    public void quota_is_divided_among_prod_and_manual_instances() {
+
+        var existing_dev_deployment = new Application(TenantAndApplicationId.from(ApplicationId.defaultId()), Instant.EPOCH, DeploymentSpec.empty, ValidationOverrides.empty,
+                Optional.empty(), Optional.empty(), Optional.empty(), OptionalInt.empty(), new ApplicationMetrics(1, 1), Set.of(), OptionalLong.empty(),
+                Optional.empty(), new TreeSet<>(), List.of(new Instance(ApplicationId.defaultId()).withNewDeployment(
+                ZoneId.from(Environment.dev, RegionName.defaultName()), ApplicationVersion.unknown, Version.emptyVersion, Instant.EPOCH, Map.of(),
+                QuotaUsage.create(0.53d))));
+
+        Quota calculated = DeploymentQuotaCalculator.calculate(Quota.unlimited().withBudget(2), List.of(existing_dev_deployment), ApplicationId.defaultId(), ZoneId.defaultId(),
+                DeploymentSpec.fromXml(
+                        "<deployment version='1.0'>\n" +
+                                "  <instance id='default'> \n" +
+                                "    <test />\n" +
+                                "    <staging />\n" +
+                                "    <prod>\n" +
+                                "      <region active=\"true\">us-east-1</region>\n" +
+                                "      <region active=\"false\">us-west-1</region>\n" +
+                                "      <region active=\"true\">us-north-1</region>\n" +
+                                "      <region active=\"true\">us-south-1</region>\n" +
+                                "    </prod>\n" +
+                                "  </instance>\n" +
+                                "</deployment>"));
+        assertEquals((2d - 0.53d) / 4d, calculated.budget().orElseThrow().doubleValue(), 1e-5);
     }
 
     @Test

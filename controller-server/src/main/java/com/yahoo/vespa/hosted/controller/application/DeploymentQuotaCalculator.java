@@ -69,11 +69,15 @@ public class DeploymentQuotaCalculator {
     private static Quota probablyEnoughForAll(Quota tenantQuota, List<Application> tenantApps,
                                               ApplicationId application, DeploymentSpec deploymentSpec) {
 
-        TenantAndApplicationId deployingApp = TenantAndApplicationId.from(application);
+        TenantAndApplicationId deployingAppId = TenantAndApplicationId.from(application);
 
         var usageOutsideApplication = tenantApps.stream()
-                .filter(app -> !app.id().equals(deployingApp))
+                .filter(app -> !app.id().equals(deployingAppId))
                 .map(Application::quotaUsage).reduce(QuotaUsage::add).orElse(QuotaUsage.none);
+
+        QuotaUsage manualQuotaUsage = tenantApps.stream()
+                .filter(app -> app.id().equals(deployingAppId)).findFirst()
+                .map(Application::manualQuotaUsage).orElse(QuotaUsage.none);
 
         long productionDeployments = Math.max(1, deploymentSpec.instances().stream()
                 .flatMap(instance -> instance.zones().stream())
@@ -81,7 +85,7 @@ public class DeploymentQuotaCalculator {
                 .count());
 
         return tenantQuota.withBudget(
-                tenantQuota.subtractUsage(usageOutsideApplication.rate())
+                tenantQuota.subtractUsage(usageOutsideApplication.rate() + manualQuotaUsage.rate())
                         .budget().get().divide(BigDecimal.valueOf(productionDeployments),
                         5, RoundingMode.HALF_UP)); // 1/1000th of a cent should be accurate enough
     }
