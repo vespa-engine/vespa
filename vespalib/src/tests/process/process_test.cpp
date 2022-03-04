@@ -27,13 +27,13 @@ TEST(ProcessTest, simple_run_ignore_output_failure) {
 
 TEST(ProcessTest, simple_run) {
     vespalib::string out;
-    EXPECT_TRUE(Process::run("echo -n foo", out));
+    EXPECT_TRUE(Process::run("/bin/echo -n foo", out));
     EXPECT_EQ(out, "foo");
 }
 
 TEST(ProcessTest, simple_run_failure) {
     vespalib::string out;
-    EXPECT_FALSE(Process::run("echo -n foo; false", out));
+    EXPECT_FALSE(Process::run("/bin/echo -n foo; false", out));
     EXPECT_EQ(out, "foo");
 }
 
