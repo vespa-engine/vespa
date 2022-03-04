@@ -9,6 +9,7 @@ import static org.junit.Assert.fail;
 /**
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class NotAcceptingNewProcessingsTestCase {
 
     @Test

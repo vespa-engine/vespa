@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class SimpleDocumentProcessorTestCase {
 
     private static DocprocService setupDocprocService(SimpleDocumentProcessor processor, Metric metric) {

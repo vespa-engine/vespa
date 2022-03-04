@@ -132,6 +132,7 @@ public class Call implements Cloneable {
     }
 
 
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private void unwrapSchemaMapping(Processing processing) {
         final List<DocumentOperation> documentOperations = processing.getDocumentOperations();
 

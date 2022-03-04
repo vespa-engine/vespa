@@ -27,11 +27,13 @@ import com.yahoo.messagebus.Message;
 class ProcessingFactory {
 
     private final static Logger log = Logger.getLogger(ProcessingFactory.class.getName());
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private final ComponentRegistry<DocprocService> docprocServiceComponentRegistry;
     private final ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry;
     private final ContainerDocumentConfig containerDocConfig;
     private final String serviceName;
 
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public ProcessingFactory(ComponentRegistry<DocprocService> docprocServiceComponentRegistry,
                              ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry,
                              ContainerDocumentConfig containerDocConfig,
@@ -98,10 +100,12 @@ class ProcessingFactory {
         return null;
     }
 
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private Processing createProcessing(DocumentOperation documentOperation, Message message) {
         Processing processing = new Processing();
         processing.addDocumentOperation(documentOperation);
         processing.setServiceName(serviceName);
+        // TODO Vespa 8: Use TBD instead, this method will be removed
         processing.setDocprocServiceRegistry(docprocServiceComponentRegistry);
         processing.setVariable("route", message.getRoute());
         processing.setVariable("timeout", message.getTimeRemaining());

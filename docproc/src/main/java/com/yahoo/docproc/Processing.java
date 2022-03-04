@@ -40,9 +40,11 @@ public class Processing {
     private Map<String, Object> context = null;
 
     /** The endpoint of this processing. */
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private ProcessingEndpoint endpoint = null;
 
     /** The registry of docproc services. */
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private ComponentRegistry<DocprocService> docprocServiceRegistry = null;
 
     private boolean operationsGotten = false;
@@ -77,6 +79,7 @@ public class Processing {
      * @param callStack         the document processors to call in this processing.
      * @param endp              the endpoint of this processing
      */
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     Processing(String service, DocumentOperation documentOperation, CallStack callStack, ProcessingEndpoint endp) {
         this.service = service;
         this.documentOperations = new ArrayList<>(1);
@@ -99,7 +102,8 @@ public class Processing {
         this(service, documentOperation, callStack, null);
     }
 
-    @SuppressWarnings("unused")
+    // TODO Vespa 8: remove "removal"
+    @SuppressWarnings({"unused", "removal"})
     private Processing(String service, List<DocumentOperation> documentOpsAndUpdates, CallStack callStack, ProcessingEndpoint endp, boolean unused) {
         this.service = service;
         this.documentOperations = new ArrayList<>(documentOpsAndUpdates.size());
@@ -108,6 +112,7 @@ public class Processing {
         this.endpoint = endp;
     }
 
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     static Processing createProcessingFromDocumentOperations(String service, List<DocumentOperation> documentOpsAndUpdates, CallStack callStack, ProcessingEndpoint endp) {
         return new Processing(service, documentOpsAndUpdates, callStack, endp, false);
     }
@@ -128,10 +133,19 @@ public class Processing {
         return new Processing(service, documentsAndUpdates, callStack, null, false);
     }
 
+    @Deprecated(forRemoval = true, since="7")
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public ComponentRegistry<DocprocService> getDocprocServiceRegistry() {
         return docprocServiceRegistry;
     }
 
+    /**
+     * @deprecated  Use TBD instead
+     */
+    // TODO: used to: processing.setDocprocServiceRegistry(this.documentProcessingHandler.getDocprocServiceRegistry());
+    //       from Processor and LoggingRequestHandler
+    @Deprecated(forRemoval = true, since="7")
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public void setDocprocServiceRegistry(ComponentRegistry<DocprocService> docprocServiceRegistry) {
         this.docprocServiceRegistry = docprocServiceRegistry;
     }
@@ -152,7 +166,11 @@ public class Processing {
      * if #getServiceName returns a name that is not registered in {@link com.yahoo.docproc.DocprocService}.
      *
      * @return the service processing this, or null if unknown.
+     * @deprecated  Use TBD instead
      */
+    // TODO: used to getService().getDocumentTypeManager() in subclasses of DocumentProcessor
+    @Deprecated(forRemoval = true, since="7")
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public DocprocService getService() {
         if (docprocServiceRegistry != null) {
             return docprocServiceRegistry.getComponent(getServiceName());
@@ -203,6 +221,7 @@ public class Processing {
      *
      * @return the ProcessingEndpoint, or null
      */
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     ProcessingEndpoint getEndpoint() {
         return endpoint;
     }
@@ -212,6 +231,7 @@ public class Processing {
      *
      * @param endpoint the ProcessingEndpoint to use
      */
+    @SuppressWarnings("removal") // TODO Vespa 8: remove
     void setEndpoint(ProcessingEndpoint endpoint) {
         this.endpoint = endpoint;
     }

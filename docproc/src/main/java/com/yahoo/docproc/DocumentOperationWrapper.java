@@ -5,7 +5,9 @@ import com.yahoo.document.DocumentOperation;
 
 /**
  * @author Einar M R Rosenvinge
+ * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
+@Deprecated(forRemoval = true, since = "7")
 public interface DocumentOperationWrapper {
 
     DocumentOperation getWrappedDocumentOperation();
