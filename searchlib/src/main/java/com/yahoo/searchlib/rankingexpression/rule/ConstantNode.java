@@ -40,8 +40,6 @@ public final class ConstantNode extends ExpressionNode {
 
     @Override
     public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
-        if (value instanceof BooleanValue) // Convert booleans to floats
-            return string.append(value.asBoolean() ? "1.0" : "0.0");
         return string.append(value.toString());
     }
 

@@ -174,7 +174,7 @@ public class IntermediateParserTestCase {
         checkFileParses("src/test/derived/position_summary/position_summary.sd");
         checkFileParses("src/test/derived/predicate_attribute/predicate_attribute.sd");
         checkFileParses("src/test/derived/prefixexactattribute/prefixexactattribute.sd");
-        checkFileParses("src/test/derived/rankexpression/rankexpression.sd");
+        checkFileParses("src/test/derived/rankingexpression/rankexpression.sd");
         checkFileParses("src/test/derived/rankprofileinheritance/child.sd");
         checkFileParses("src/test/derived/rankprofileinheritance/parent1.sd");
         checkFileParses("src/test/derived/rankprofileinheritance/parent2.sd");
