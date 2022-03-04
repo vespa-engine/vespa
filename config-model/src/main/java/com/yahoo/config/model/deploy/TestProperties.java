@@ -79,6 +79,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useV8GeoPositions = false;
     private List<String> environmentVariables = List.of();
     private boolean avoidRenamingSummaryFeatures = false;
+    private boolean experimentalSdParsing = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -138,7 +139,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
     @Override public boolean avoidRenamingSummaryFeatures() { return this.avoidRenamingSummaryFeatures; }
-    @Override public boolean experimentalSdParsing() { return false; }
+    @Override public boolean experimentalSdParsing() { return this.experimentalSdParsing; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -373,6 +374,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setAvoidRenamingSummaryFeatures(boolean value) {
         this.avoidRenamingSummaryFeatures = value;
+        return this;
+    }
+
+    public TestProperties setExperimentalSdParsing(boolean value) {
+        this.experimentalSdParsing = value;
         return this;
     }
 
