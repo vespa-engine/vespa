@@ -15,7 +15,7 @@ public class BooleanValue extends DoubleCompatibleValue {
      * Create a boolean value which is frozen at the outset.
      */
     public static BooleanValue frozen(boolean value) {
-        BooleanValue booleanValue=new BooleanValue(value);
+        BooleanValue booleanValue = new BooleanValue(value);
         booleanValue.freeze();
         return booleanValue;
     }

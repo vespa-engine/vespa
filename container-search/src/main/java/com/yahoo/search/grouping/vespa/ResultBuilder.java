@@ -274,7 +274,6 @@ class ResultBuilder {
             return count;
         }
 
-
         HitList newHitList(int listIdx, int tag, HitsAggregationResult execResult) {
             HitList hitList = new HitList(transform.getLabel(tag));
             List<Hit> hits = execResult.getHits();
