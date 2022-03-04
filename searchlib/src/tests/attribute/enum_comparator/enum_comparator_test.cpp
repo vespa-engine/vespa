@@ -11,6 +11,8 @@ LOG_SETUP("enum_comparator_test");
 
 using namespace vespalib::btree;
 
+using vespalib::datastore::AtomicEntryRef;
+
 namespace search {
 
 using NumericEnumStore = EnumStoreT<int32_t>;
@@ -19,7 +21,7 @@ using StringEnumStore = EnumStoreT<const char*>;
 
 using EnumIndex = IEnumStore::Index;
 
-using TreeType = BTreeRoot<EnumIndex, BTreeNoLeafData,
+using TreeType = BTreeRoot<AtomicEntryRef, BTreeNoLeafData,
                            vespalib::btree::NoAggregated,
                            const vespalib::datastore::EntryComparatorWrapper>;
 using NodeAllocator = TreeType::NodeAllocatorType;
@@ -133,14 +135,14 @@ TEST("requireThatComparatorWithTreeIsWorking")
     NodeAllocator m;
     for (int32_t v = 100; v > 0; --v) {
         auto cmp = es.make_comparator(v);
-        EXPECT_FALSE(t.find(EnumIndex(), m, cmp).valid());
+        EXPECT_FALSE(t.find(AtomicEntryRef(), m, cmp).valid());
         EnumIndex idx = es.insert(v);
-        t.insert(idx, BTreeNoLeafData(), m, cmp);
+        t.insert(AtomicEntryRef(idx), BTreeNoLeafData(), m, cmp);
     }
     EXPECT_EQUAL(100u, t.size(m));
     int32_t exp = 1;
     for (TreeType::Iterator itr = t.begin(m); itr.valid(); ++itr) {
-        EXPECT_EQUAL(exp++, es.get_value(itr.getKey()));
+        EXPECT_EQUAL(exp++, es.get_value(itr.getKey().load_relaxed()));
     }
     EXPECT_EQUAL(101, exp);
     t.clear(m);

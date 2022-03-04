@@ -24,8 +24,8 @@ EnumAttributeSaver::writeUdat(IAttributeSaveTarget &saveTarget)
 {
     if (saveTarget.getEnumerated()) {
         auto udatWriter = saveTarget.udatWriter().allocBufferWriter();
-        _enumerator->foreach_key([&](vespalib::datastore::EntryRef idx){
-            _enumStore.write_value(*udatWriter, idx);
+        _enumerator->foreach_key([&](const vespalib::datastore::AtomicEntryRef& idx){
+            _enumStore.write_value(*udatWriter, idx.load_acquire());
         });
         udatWriter->flush();
     }

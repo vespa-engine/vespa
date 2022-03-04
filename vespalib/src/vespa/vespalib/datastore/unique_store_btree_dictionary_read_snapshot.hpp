@@ -28,8 +28,8 @@ template <typename BTreeDictionaryT>
 size_t
 UniqueStoreBTreeDictionaryReadSnapshot<BTreeDictionaryT>::count(const EntryComparator& comp) const
 {
-    auto itr = _frozen_view.lowerBound(EntryRef(), comp);
-    if (itr.valid() && !comp.less(EntryRef(), itr.getKey())) {
+    auto itr = _frozen_view.lowerBound(AtomicEntryRef(), comp);
+    if (itr.valid() && !comp.less(EntryRef(), itr.getKey().load_acquire())) {
         return 1u;
     }
     return 0u;
@@ -39,17 +39,17 @@ template <typename BTreeDictionaryT>
 size_t
 UniqueStoreBTreeDictionaryReadSnapshot<BTreeDictionaryT>::count_in_range(const EntryComparator& low, const EntryComparator& high) const
 {
-    auto low_itr = _frozen_view.lowerBound(EntryRef(), low);
+    auto low_itr = _frozen_view.lowerBound(AtomicEntryRef(), low);
     auto high_itr = low_itr;
-    if (high_itr.valid() && !high.less(EntryRef(), high_itr.getKey())) {
-        high_itr.seekPast(EntryRef(), high);
+    if (high_itr.valid() && !high.less(EntryRef(), high_itr.getKey().load_acquire())) {
+        high_itr.seekPast(AtomicEntryRef(), high);
     }
     return high_itr - low_itr;
 }
 
 template <typename BTreeDictionaryT>
 void
-UniqueStoreBTreeDictionaryReadSnapshot<BTreeDictionaryT>::foreach_key(std::function<void(EntryRef)> callback) const
+UniqueStoreBTreeDictionaryReadSnapshot<BTreeDictionaryT>::foreach_key(std::function<void(const AtomicEntryRef&)> callback) const
 {
     _frozen_view.foreach_key(callback);
 }

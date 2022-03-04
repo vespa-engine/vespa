@@ -24,6 +24,7 @@ class ISearchContext;
 class PostingListSearchContext : public IPostingListSearchContext
 {
 protected:
+    using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using Dictionary = EnumPostingTree;
     using DictionaryConstIterator = Dictionary::ConstIterator;
     using FrozenDictionary = Dictionary::FrozenView;
@@ -101,6 +102,7 @@ protected:
     using Traits = PostingListTraits<DataType>;
     using PostingList = typename Traits::PostingList;
     using Posting = typename Traits::Posting;
+    using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = vespalib::datastore::EntryRef;
     using FrozenView = typename PostingList::BTreeType::FrozenView;
 
@@ -295,10 +297,10 @@ bool
 StringPostingSearchContext<BaseSC, AttrT, DataT>::useThis(const PostingListSearchContext::DictionaryConstIterator & it) const {
     if ( this->isRegex() ) {
         return this->getRegex().valid()
-            ? this->getRegex().partial_match(_enumStore.get_value(it.getKey()))
+            ? this->getRegex().partial_match(_enumStore.get_value(it.getKey().load_acquire()))
             : false;
     } else if ( this->isCased() ) {
-        return this->isMatch(_enumStore.get_value(it.getKey()));
+        return this->isMatch(_enumStore.get_value(it.getKey().load_acquire()));
     }
     return true;
 }
@@ -354,10 +356,10 @@ getIterators(bool shouldApplyRangeLimit)
     }
 
     if (this->_lowerDictItr != this->_upperDictItr) {
-        _low = _enumStore.get_value(this->_lowerDictItr.getKey());
+        _low = _enumStore.get_value(this->_lowerDictItr.getKey().load_acquire());
         auto last = this->_upperDictItr;
         --last;
-        _high = _enumStore.get_value(last.getKey());
+        _high = _enumStore.get_value(last.getKey().load_acquire());
     }
 }
 

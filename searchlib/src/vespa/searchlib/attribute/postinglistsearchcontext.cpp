@@ -61,10 +61,10 @@ PostingListSearchContext::lookupRange(const vespalib::datastore::EntryComparator
         _uniqueValues = 2; // Avoid zero and single value optimizations, use filtering
         return;
     }
-    _lowerDictItr.lower_bound(_frozenDictionary.getRoot(), EnumIndex(), low);
+    _lowerDictItr.lower_bound(_frozenDictionary.getRoot(), AtomicEntryRef(), low);
     _upperDictItr = _lowerDictItr;
-    if (_upperDictItr.valid() && !high.less(EnumIndex(), _upperDictItr.getKey())) {
-        _upperDictItr.seekPast(EnumIndex(), high);
+    if (_upperDictItr.valid() && !high.less(EnumIndex(), _upperDictItr.getKey().load_acquire())) {
+        _upperDictItr.seekPast(AtomicEntryRef(), high);
     }
     _uniqueValues = _upperDictItr - _lowerDictItr;
 }

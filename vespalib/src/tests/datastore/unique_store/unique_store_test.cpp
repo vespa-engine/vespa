@@ -416,7 +416,7 @@ TYPED_TEST(TestBase, store_can_be_enumerated)
 
     auto enumerator = this->getEnumerator(true);
     std::vector<uint32_t> refs;
-    enumerator.foreach_key([&](EntryRef ref) { refs.push_back(ref.ref()); });
+    enumerator.foreach_key([&](const AtomicEntryRef& ref) { refs.push_back(ref.load_relaxed().ref()); });
     std::vector<uint32_t> expRefs;
     expRefs.push_back(val0Ref.ref());
     expRefs.push_back(val1Ref.ref());

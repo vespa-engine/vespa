@@ -113,7 +113,7 @@ TYPED_TEST(UniqueStoreDictionaryTest, can_iterate_all_keys)
     using EntryRefVector = std::vector<EntryRef>;
     this->add(3).add(5).add(7).take_snapshot();
     EntryRefVector refs;
-    this->snapshot->foreach_key([&](EntryRef ref){ refs.emplace_back(ref); });
+    this->snapshot->foreach_key([&](AtomicEntryRef ref){ refs.emplace_back(ref.load_relaxed()); });
     EXPECT_EQ(EntryRefVector({EntryRef(3), EntryRef(5), EntryRef(7)}), refs);
 }
 
@@ -161,7 +161,7 @@ TYPED_TEST(UniqueStoreDictionaryTest, compaction_works)
     }
     this->take_snapshot();
     std::vector<EntryRef> refs;
-    this->snapshot->foreach_key([&](EntryRef ref){ refs.emplace_back(ref); });
+    this->snapshot->foreach_key([&](const AtomicEntryRef& ref){ refs.emplace_back(ref.load_relaxed()); });
     EXPECT_EQ(exp_refs, refs);
 }
 

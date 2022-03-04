@@ -7,7 +7,7 @@ namespace vespalib::datastore {
 
 using namespace btree;
 
-VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_INTERNALNODE(EntryRef, NoAggregated, uniquestore::DefaultDictionaryTraits::INTERNAL_SLOTS);
-VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(EntryRef, BTreeNoLeafData, NoAggregated, uniquestore::DefaultDictionaryTraits::LEAF_SLOTS);
+VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_INTERNALNODE(AtomicEntryRef, NoAggregated, uniquestore::DefaultDictionaryTraits::INTERNAL_SLOTS);
+VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(AtomicEntryRef, BTreeNoLeafData, NoAggregated, uniquestore::DefaultDictionaryTraits::LEAF_SLOTS);
 
 }
