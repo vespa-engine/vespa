@@ -5,7 +5,6 @@
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include "iattributemanager.h"
-#include <future>
 #include <mutex>
 
 namespace search {
@@ -17,7 +16,7 @@ namespace search {
 class AttributeContext : public attribute::IAttributeContext
 {
 private:
-    using AttributeMap = vespalib::hash_map<string, std::shared_future<std::unique_ptr<attribute::AttributeReadGuard>>>;
+    using AttributeMap = vespalib::hash_map<string, std::unique_ptr<attribute::AttributeReadGuard>>;
     using IAttributeVector = attribute::IAttributeVector;
     using IAttributeFunctor = attribute::IAttributeFunctor;
 
