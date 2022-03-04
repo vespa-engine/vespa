@@ -1,8 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/datatype/datatype.h>
-#include <vespa/document/datatype/structdatatype.h>
-#include <vespa/document/document.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/arraydatatype.h>
+#include <vespa/document/datatype/mapdatatype.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/fieldvalue/rawfieldvalue.h>
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/mapfieldvalue.h>
+#include <vespa/document/fieldvalue//document.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>

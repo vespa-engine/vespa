@@ -4,6 +4,7 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/datatype/datatype.h>
 #include <vespa/fastos/app.h>
 #include <vespa/searchcore/bmcluster/avg_sampler.h>
 #include <vespa/searchcore/bmcluster/bm_cluster.h>
@@ -21,7 +22,6 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>

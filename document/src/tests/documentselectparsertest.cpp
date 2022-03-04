@@ -4,6 +4,14 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldvalue/bytefieldvalue.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/fieldvalue/longfieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/floatfieldvalue.h>
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/visitor.h>

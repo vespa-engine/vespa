@@ -3,6 +3,9 @@
 #include <tests/common/testhelper.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>

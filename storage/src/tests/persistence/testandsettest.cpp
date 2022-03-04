@@ -7,6 +7,7 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/persistence/spi/persistenceprovider.h>

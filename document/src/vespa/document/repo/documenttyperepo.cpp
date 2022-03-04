@@ -293,7 +293,7 @@ void addStruct(int32_t id, const Datatype::Sstruct &s, Repo &repo) {
     const DataType *existing = repo.lookup(name);
     if (useUglyStructHack && existing) {
         LOG(spam, "Type %s already existed", name.c_str());
-        const StructDataType& cdt = Identifiable::cast<const StructDataType&>(*existing);
+        const StructDataType& cdt = dynamic_cast<const StructDataType&>(*existing);
         struct_type = const_cast<StructDataType*>(&cdt);
     } else {
         const DataType *existing_retry = repo.lookup(id);

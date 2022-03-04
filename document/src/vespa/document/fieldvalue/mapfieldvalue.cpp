@@ -29,7 +29,7 @@ IMPLEMENT_IDENTIFIABLE_ABSTRACT(MapFieldValue, FieldValue);
 
 namespace {
 const MapDataType *verifyMapType(const DataType& type) {
-    const MapDataType *ptr(Identifiable::cast<const MapDataType *>(&type));
+    const MapDataType *ptr(dynamic_cast<const MapDataType *>(&type));
     if (!ptr) {
         throw vespalib::IllegalArgumentException("Datatype given is not a map type", VESPA_STRLOC);
     }

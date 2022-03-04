@@ -11,6 +11,10 @@
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/fastos/file.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/persistence/spi/test.h>

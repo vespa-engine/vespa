@@ -19,14 +19,17 @@
 #pragma once
 
 #include "updatevisitor.h"
-#include <vespa/document/datatype/datatype.h>
+#include <vespa/document/util/printable.h>
 #include <vespa/document/util/xmlserializable.h>
+#include <vespa/document/util/identifiableid.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 namespace document {
 
 class DocumentTypeRepo;
 class Field;
 class FieldValue;
+class DataType;
 
 class ValueUpdate : public vespalib::Identifiable,
                     public Printable,

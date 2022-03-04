@@ -11,6 +11,7 @@
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/datatype/datatype.h>
 
 using namespace document;
 using namespace proton;

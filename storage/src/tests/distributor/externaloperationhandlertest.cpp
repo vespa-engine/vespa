@@ -6,6 +6,8 @@
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>

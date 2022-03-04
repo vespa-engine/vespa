@@ -2,6 +2,7 @@
 
 #include "docbuilder.h"
 #include <vespa/document/datatype/urldatatype.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/vespalib/geo/zcurve.h>
@@ -605,14 +606,34 @@ DocBuilder::SummaryFieldHandle::addRaw(const void *buf, size_t len)
     }
 }
 
-DocBuilder::DocumentHandle::DocumentHandle(document::Document &doc,
-        const vespalib::string & docId)
+DocBuilder::DocumentHandle::DocumentHandle(document::Document &doc, const vespalib::string & docId)
     : _type(&doc.getType()),
       _doc(&doc),
       _fieldHandle(),
       _repo(*_doc->getRepo(), *_type)
 {
     (void) docId;
+}
+
+DocBuilder::DocumentHandle::~DocumentHandle() = default;
+
+void
+DocBuilder::DocumentHandle::startIndexField(const Schema::Field & sfield) {
+    _fieldHandle.reset(new IndexFieldHandle(_repo, _type->getField(sfield.getName()), sfield));
+}
+void
+DocBuilder::DocumentHandle::startAttributeField(const Schema::Field & sfield) {
+    _fieldHandle.reset(new AttributeFieldHandle(_type->getField(sfield.getName()), sfield));
+}
+void
+DocBuilder::DocumentHandle::startSummaryField(const Schema::Field & sfield) {
+    _fieldHandle.reset(new SummaryFieldHandle(_type->getField(sfield.getName()), sfield));
+}
+void
+DocBuilder::DocumentHandle::endField() {
+    _fieldHandle->onEndField();
+    _doc->setValue(_type->getField(_fieldHandle->getField().getName()), *_fieldHandle->getValue());
+    _fieldHandle.reset();
 }
 
 DocBuilder::DocBuilder(const Schema &schema)

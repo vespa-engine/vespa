@@ -4,6 +4,7 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/datatype/datatype.h>
 #include <vespa/fastos/app.h>
 #include <vespa/searchcore/bmcluster/avg_sampler.h>
 #include <vespa/searchcore/bmcluster/bm_cluster.h>

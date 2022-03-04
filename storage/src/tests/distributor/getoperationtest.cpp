@@ -7,6 +7,7 @@
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/distributor/top_level_distributor.h>

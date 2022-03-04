@@ -4,7 +4,6 @@
 
 #include "schema_index_fields.h"
 #include <vespa/document/config/config-documenttypes.h>
-#include <vespa/document/datatype/datatypes.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/stringfmt.h>

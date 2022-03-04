@@ -22,7 +22,7 @@ IMPLEMENT_IDENTIFIABLE_ABSTRACT(WeightedSetFieldValue, CollectionFieldValue);
 
 namespace {
 const DataType &getKeyType(const DataType &type) {
-    const WeightedSetDataType *wtype = Identifiable::cast<const WeightedSetDataType *>(&type);
+    const WeightedSetDataType *wtype = dynamic_cast<const WeightedSetDataType *>(&type);
     if (!wtype) {
         throw IllegalArgumentException("Cannot generate a weighted set value with non-weighted set "
                                        "type " + type.toString() + ".", VESPA_STRLOC);
@@ -33,14 +33,14 @@ const DataType &getKeyType(const DataType &type) {
 
 WeightedSetFieldValue::WeightedSetFieldValue(const DataType &type)
     : CollectionFieldValue(type),
-      _map_type(new MapDataType(getKeyType(type), *DataType::INT)),
+      _map_type(std::make_shared<MapDataType>(getKeyType(type), *DataType::INT)),
       _map(*_map_type),
       _altered(true)
 { }
 
 WeightedSetFieldValue::WeightedSetFieldValue(const WeightedSetFieldValue &) = default;
 WeightedSetFieldValue & WeightedSetFieldValue::operator = (const WeightedSetFieldValue &) = default;
-WeightedSetFieldValue::~WeightedSetFieldValue() { }
+WeightedSetFieldValue::~WeightedSetFieldValue() = default;
 
 void WeightedSetFieldValue::verifyKey(const FieldValue & v)
 {

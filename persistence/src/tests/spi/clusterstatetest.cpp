@@ -6,6 +6,7 @@
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/document/base/testdocman.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <gtest/gtest.h>
 
 using storage::spi::test::makeSpiBucket;

@@ -3,7 +3,9 @@
 #include "doctypebuilder.h"
 #include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/datatype/tensor_data_type.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/configbuilder.h>
+#include <set>
 
 using namespace document;
 

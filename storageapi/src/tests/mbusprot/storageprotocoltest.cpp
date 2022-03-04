@@ -12,8 +12,10 @@
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/document/base/testdocman.h>
-#include <vespa/document/document.h>
+#include <vespa/document/update/documentupdate.h>
+#include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/fieldpathupdates.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>

@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
 #include <vespa/config-attributes.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/fastos/thread.h>
 #include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>

@@ -3,8 +3,6 @@
 #include "fieldpath.h"
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/mapdatatype.h>
-#include <vespa/document/datatype/weightedsetdatatype.h>
-#include <vespa/document/datatype/primitivedatatype.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/vespalib/objects/visit.hpp>
@@ -72,15 +70,19 @@ FieldPathEntry::setFillValue(const DataType & dataType)
     const DataType * dt = & dataType;
 
     while (true) {
-        if (dt->inherits(CollectionDataType::classId)) {
-            dt = &static_cast<const CollectionDataType *>(dt)->getNestedType();
-        } else if (dt->inherits(MapDataType::classId)) {
-            dt = &static_cast<const MapDataType *>(dt)->getValueType();
+        const CollectionDataType *ct = dt->cast_collection();
+        if (ct != nullptr) {
+            dt = &ct->getNestedType();
         } else {
-            break;
+            const MapDataType * mt = dt->cast_map();
+            if (mt != nullptr) {
+                dt = &mt->getValueType();
+            } else {
+                break;
+            }
         }
     }
-    if (dt->inherits(PrimitiveDataType::classId)) {
+    if (dt->isPrimitive()) {
         _fillInVal.reset(dt->createFieldValue().release());
     }
 }
@@ -130,7 +132,6 @@ FieldPathEntry::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     visit(visitor, "type", _type);
     visit(visitor, "name", _name);
-    visit(visitor, "dataType", _dataType);
     visit(visitor, "lookupIndex", _lookupIndex);
     visit(visitor, "lookupKey", _lookupKey);
     visit(visitor, "variableName", _variableName);

@@ -2,10 +2,10 @@
 
 /* $Id$*/
 
-#include <iostream>
-#include <set>
-#include <sstream>
 #include <vespa/document/base/testdocman.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+
 #include <gtest/gtest.h>
 
 namespace document {

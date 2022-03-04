@@ -8,7 +8,7 @@
 #pragma once
 
 #include "numericfieldvalue.h"
-#include <vespa/document/datatype/numericdatatype.h>
+#include <vespa/document/datatype/datatype.h>
 
 namespace document {
 

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mapdatatype.h"
-#include "primitivedatatype.h"
 #include <vespa/document/fieldvalue/mapfieldvalue.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <ostream>
@@ -51,8 +50,8 @@ MapDataType::operator==(const DataType& other) const
 {
     if (this == &other) return true;
     if (!DataType::operator==(other)) return false;
-    const MapDataType* w(Identifiable::cast<const MapDataType*>(&other));
-    return (*_keyType == *w->_keyType) && (*_valueType == *w->_valueType);
+    const MapDataType * w = other.cast_map();
+    return w && (*_keyType == *w->_keyType) && (*_valueType == *w->_valueType);
 }
 
 void

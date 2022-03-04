@@ -3,9 +3,9 @@
 #include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/config/helper/configgetter.h>
 #include <vespa/document/base/testdocrepo.h>
-#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/storage/distributor/top_level_distributor.h>

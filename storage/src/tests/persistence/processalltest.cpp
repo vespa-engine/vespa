@@ -7,6 +7,7 @@
 #include <tests/persistence/persistencetestutils.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
 
 using document::test::makeDocumentBucket;
 using namespace ::testing;

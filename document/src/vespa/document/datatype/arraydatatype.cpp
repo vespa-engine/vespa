@@ -22,7 +22,7 @@ ArrayDataType::ArrayDataType(const DataType& nestedType)
 FieldValue::UP
 ArrayDataType::createFieldValue() const
 {
-    return FieldValue::UP(new ArrayFieldValue(*this));
+    return std::make_unique<ArrayFieldValue>(*this);
 }
 
 void
@@ -39,7 +39,7 @@ ArrayDataType::operator==(const DataType& other) const
 {
     if (this == &other) return true;
     if (!CollectionDataType::operator==(other)) return false;
-    return other.inherits(ArrayDataType::classId);
+    return other.isArray();
 }
 
 void

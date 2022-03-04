@@ -40,9 +40,9 @@ AddValueUpdate::operator==(const ValueUpdate& other) const
 void
 AddValueUpdate::checkCompatibility(const Field& field) const
 {
-    if (field.getDataType().inherits(CollectionDataType::classId)) {
-        const CollectionDataType& type(static_cast<const CollectionDataType&>(field.getDataType()));
-        if (!type.getNestedType().isValueType(*_value)) {
+    const CollectionDataType *ct = field.getDataType().cast_collection();
+    if (ct != nullptr) {
+        if (!ct->getNestedType().isValueType(*_value)) {
             throw IllegalArgumentException("Cannot add value of type " + _value->getDataType()->toString() +
                                            " to field " + field.getName() + " of container type " +
                                            field.getDataType().toString(), VESPA_STRLOC);
@@ -88,7 +88,7 @@ AddValueUpdate::printXml(XmlOutputStream& xos) const
 void
 AddValueUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& stream)
 {
-    const CollectionDataType* ctype = Identifiable::cast<const CollectionDataType*>(&type);
+    const CollectionDataType *ctype = type.cast_collection();
     if (ctype == nullptr) {
         throw DeserializeException("Can not perform add operation on non-collection type.");
     }
