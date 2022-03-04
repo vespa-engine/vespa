@@ -26,7 +26,6 @@ public class ConvertIntermediateTestCase {
         var collection = new IntermediateCollection();
         ParsedSchema schema = collection.addSchemaFromString(input);
         assertEquals("foo", schema.getDocument().name());
-        collection.resolveInternalConnections();
         var docMan = new DocumentTypeManager();
         var converter = new ConvertSchemaCollection(collection, docMan);
         converter.convertTypes();
@@ -41,7 +40,6 @@ public class ConvertIntermediateTestCase {
         collection.addSchemaFromFile("src/test/derived/deriver/grandparent.sd");
         collection.addSchemaFromFile("src/test/derived/deriver/parent.sd");
         assertEquals(collection.getParsedSchemas().size(), 3);
-        collection.resolveInternalConnections();
         var docMan = new DocumentTypeManager();
         var converter = new ConvertSchemaCollection(collection, docMan);
         converter.convertTypes();
@@ -60,7 +58,6 @@ public class ConvertIntermediateTestCase {
         collection.addSchemaFromFile("src/test/converter/other.sd");
         collection.addSchemaFromFile("src/test/converter/parent.sd");
         collection.addSchemaFromFile("src/test/converter/grandparent.sd");
-        collection.resolveInternalConnections();
         var docMan = new DocumentTypeManager();
         var converter = new ConvertSchemaCollection(collection, docMan);
         converter.convertTypes();
