@@ -31,11 +31,11 @@ ConfigSubscription::~ConfigSubscription()
 bool
 ConfigSubscription::nextUpdate(int64_t generation, vespalib::steady_time deadline)
 {
-    if (_closed || !_holder->wait_until(deadline)) { return false; }
-    if (_closed) { return false; }  // The above wait_until can be interrupted
+    if (_closed || !_holder->poll()) {
+        return false;
+    }
     auto old = std::move(_next);
     _next = _holder->provide();
-    if ( ! _next) { return false; }
     if (old) {
         _next->merge(*old);
     }
