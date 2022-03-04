@@ -74,7 +74,7 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
                                    &postings._removals[0],
                                    &postings._removals[0] +
                                    postings._removals.size());
-                posting_indexes[posting_enum] = newIndex.ref();
+                posting_indexes[posting_enum] = newIndex;
                 postings.clear();
                 posting_enum = elem.getEnum();
             }
@@ -94,7 +94,7 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
                        &postings._additions[0] + postings._additions.size(),
                        &postings._removals[0],
                        &postings._removals[0] + postings._removals.size());
-    posting_indexes[posting_enum] = newIndex.ref();
+    posting_indexes[posting_enum] = newIndex;
     loader.build_dictionary();
     loader.free_unused_values();
 }

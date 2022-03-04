@@ -115,10 +115,10 @@ EnumeratedPostingsLoader::set_ref_count(Index idx, uint32_t ref_count)
     _store.set_ref_count(idx, ref_count);
 }
 
-vespalib::ArrayRef<uint32_t>
+vespalib::ArrayRef<vespalib::datastore::EntryRef>
 EnumeratedPostingsLoader::initialize_empty_posting_indexes()
 {
-    vespalib::Array<uint32_t>(_indexes.size(), 0).swap(_posting_indexes);
+    vespalib::Array<EntryRef>(_indexes.size(), EntryRef()).swap(_posting_indexes);
     return _posting_indexes;
 }
 
@@ -128,7 +128,7 @@ EnumeratedPostingsLoader::build_dictionary()
     attribute::LoadedEnumAttributeVector().swap(_loaded_enums);
     _store.get_dictionary().build_with_payload(_indexes, _posting_indexes);
     release_enum_indexes();
-    vespalib::Array<uint32_t>().swap(_posting_indexes);
+    vespalib::Array<EntryRef>().swap(_posting_indexes);
 }
 
 }

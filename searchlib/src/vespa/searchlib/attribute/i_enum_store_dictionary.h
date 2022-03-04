@@ -18,7 +18,7 @@ using EnumTree = vespalib::btree::BTree<vespalib::datastore::AtomicEntryRef, ves
                               const vespalib::datastore::EntryComparatorWrapper,
                               EnumTreeTraits>;
 
-using EnumPostingTree = vespalib::btree::BTree<vespalib::datastore::AtomicEntryRef, uint32_t,
+using EnumPostingTree = vespalib::btree::BTree<vespalib::datastore::AtomicEntryRef, vespalib::datastore::AtomicEntryRef,
                                      vespalib::btree::NoAggregated,
                                      const vespalib::datastore::EntryComparatorWrapper,
                                      EnumTreeTraits>;

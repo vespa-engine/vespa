@@ -119,7 +119,7 @@ public:
         AllocatorType& _allocator;
         vespalib::datastore::IUniqueStoreDictionary& _dict;
         std::vector<EntryRef, vespalib::allocator_large<EntryRef>> _refs;
-        std::vector<uint32_t, vespalib::allocator_large<uint32_t>> _payloads;
+        std::vector<EntryRef, vespalib::allocator_large<EntryRef>> _payloads;
 
     public:
         NonEnumeratedLoader(AllocatorType& allocator, vespalib::datastore::IUniqueStoreDictionary& dict)

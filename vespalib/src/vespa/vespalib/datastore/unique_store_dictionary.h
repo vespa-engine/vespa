@@ -84,7 +84,7 @@ public:
     vespalib::MemoryUsage get_memory_usage() const override;
     void build(vespalib::ConstArrayRef<EntryRef>, vespalib::ConstArrayRef<uint32_t> ref_counts, std::function<void(EntryRef)> hold) override;
     void build(vespalib::ConstArrayRef<EntryRef> refs) override;
-    void build_with_payload(vespalib::ConstArrayRef<EntryRef>, vespalib::ConstArrayRef<uint32_t> payloads) override;
+    void build_with_payload(vespalib::ConstArrayRef<EntryRef>, vespalib::ConstArrayRef<EntryRef> payloads) override;
     std::unique_ptr<IUniqueStoreDictionaryReadSnapshot> get_read_snapshot() const override;
     bool get_has_btree_dictionary() const override;
     bool get_has_hash_dictionary() const override;

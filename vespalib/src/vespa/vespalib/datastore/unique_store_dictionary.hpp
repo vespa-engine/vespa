@@ -247,15 +247,15 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build(vespali
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
 UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build_with_payload(vespalib::ConstArrayRef<EntryRef> refs,
-                                                                vespalib::ConstArrayRef<uint32_t> payloads)
+                                                                vespalib::ConstArrayRef<EntryRef> payloads)
 {
     assert(refs.size() == payloads.size());
     if constexpr (has_btree_dictionary) {
         using DataType = typename BTreeDictionaryType::DataType;
         typename BTreeDictionaryType::Builder builder(this->_btree_dict.getAllocator());
         for (size_t i = 0; i < refs.size(); ++i) {
-            if constexpr (std::is_same_v<DataType, uint32_t>) {
-                builder.insert(AtomicEntryRef(refs[i]), payloads[i]);
+            if constexpr (std::is_same_v<DataType, AtomicEntryRef>) {
+                builder.insert(AtomicEntryRef(refs[i]), AtomicEntryRef(payloads[i]));
             } else {
                 builder.insert(AtomicEntryRef(refs[i]), DataType());
             }
@@ -268,7 +268,7 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build_with_pa
             std::function<EntryRef(void)> insert_hash_entry([ref]() noexcept -> EntryRef { return ref; });
             auto& add_result = this->_hash_dict.add(this->_hash_dict.get_default_comparator(), ref, insert_hash_entry);
             assert(add_result.first.load_relaxed() == refs[i]);
-            add_result.second.store_relaxed(EntryRef(payloads[i]));
+            add_result.second.store_relaxed(payloads[i]);
         }
     }
 }
