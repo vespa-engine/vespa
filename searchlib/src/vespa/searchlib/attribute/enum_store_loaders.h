@@ -4,6 +4,7 @@
 
 #include "enum_store_types.h"
 #include "loadedenumvalue.h"
+#include <vespa/vespalib/datastore/entryref.h>
 
 namespace search { class IEnumStore; }
 
@@ -52,8 +53,9 @@ public:
  */
 class EnumeratedPostingsLoader : public EnumeratedLoaderBase {
 private:
+    using EntryRef = vespalib::datastore::EntryRef;
     attribute::LoadedEnumAttributeVector _loaded_enums;
-    vespalib::Array<uint32_t>            _posting_indexes;
+    vespalib::Array<EntryRef>            _posting_indexes;
     bool                                 _has_btree_dictionary;
 
 public:
@@ -68,7 +70,7 @@ public:
     }
     bool is_folded_change(Index lhs, Index rhs) const;
     void set_ref_count(Index idx, uint32_t ref_count);
-    vespalib::ArrayRef<uint32_t> initialize_empty_posting_indexes();
+    vespalib::ArrayRef<EntryRef> initialize_empty_posting_indexes();
     void build_dictionary();
 };
 

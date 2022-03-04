@@ -77,7 +77,7 @@ PostingListSearchContextT<DataT>::countHits() const
     size_t sum(0);
     for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
         if (useThis(it)) {
-            sum += _postingList.frozenSize(EntryRef(it.getData()));
+            sum += _postingList.frozenSize(it.getData().load_acquire());
         }
     }
     return sum;
@@ -91,7 +91,7 @@ PostingListSearchContextT<DataT>::fillArray()
     for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
         if (useThis(it)) {
             _merger.addToArray(PostingListTraverser<PostingList>(_postingList,
-                                                                 vespalib::datastore::EntryRef(it.getData())));
+                                                                 it.getData().load_acquire()));
         }
     }
     _merger.merge();
@@ -105,7 +105,7 @@ PostingListSearchContextT<DataT>::fillBitVector()
     for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
         if (useThis(it)) {
             _merger.addToBitVector(PostingListTraverser<PostingList>(_postingList,
-                                                                     vespalib::datastore::EntryRef(it.getData())));
+                                                                     it.getData().load_acquire()));
         }
     }
 }
@@ -268,7 +268,7 @@ PostingListSearchContextT<DataT>::applyRangeLimit(int rangeLimit)
     if (rangeLimit > 0) {
         DictionaryConstIterator middle = _lowerDictItr;
         for (int n(0); (n < rangeLimit) && (middle != _upperDictItr); ++middle) {
-            n += _postingList.frozenSize(EntryRef(middle.getData()));
+            n += _postingList.frozenSize(middle.getData().load_acquire());
         }
         _upperDictItr = middle;
         _uniqueValues = _upperDictItr - _lowerDictItr;
@@ -277,7 +277,7 @@ PostingListSearchContextT<DataT>::applyRangeLimit(int rangeLimit)
         DictionaryConstIterator middle = _upperDictItr;
         for (int n(0); (n < rangeLimit) && (middle != _lowerDictItr); ) {
             --middle;
-            n += _postingList.frozenSize(EntryRef(middle.getData()));
+            n += _postingList.frozenSize(middle.getData().load_acquire());
         }
         _lowerDictItr = middle;
         _uniqueValues = _upperDictItr - _lowerDictItr;

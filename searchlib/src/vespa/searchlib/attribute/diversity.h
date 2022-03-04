@@ -100,7 +100,7 @@ void diversify_2(const DictRange &range_in, const PostingStore &posting, Diversi
     using KeyDataType = typename PostingStore::KeyDataType;
     while (range.has_next() && (result.size() < filter.getMaxTotal())) {
         typename DictRange::Next dict_entry(range);
-        posting.foreach_frozen(vespalib::datastore::EntryRef(dict_entry.get().getData()),
+        posting.foreach_frozen(dict_entry.get().getData().load_acquire(),
                                [&](uint32_t key, const DataType &data)
                                { recorder.push_back(KeyDataType(key, data)); });
         if (fragments.back() < result.size()) {

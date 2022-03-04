@@ -92,7 +92,7 @@ extern template
 class BTreeNodeT<datastore::AtomicEntryRef, search::EnumTreeTraits::INTERNAL_SLOTS>;
 
 extern template
-class BTreeNodeTT<datastore::AtomicEntryRef, uint32_t, NoAggregated, search::EnumTreeTraits::INTERNAL_SLOTS>;
+class BTreeNodeTT<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated, search::EnumTreeTraits::INTERNAL_SLOTS>;
 
 extern template
 class BTreeNodeTT<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated, search::EnumTreeTraits::LEAF_SLOTS>;
@@ -104,20 +104,20 @@ extern template
 class BTreeLeafNode<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated, search::EnumTreeTraits::LEAF_SLOTS>;
 
 extern template
-class BTreeLeafNode<datastore::AtomicEntryRef, uint32_t, NoAggregated, search::EnumTreeTraits::LEAF_SLOTS>;
+class BTreeLeafNode<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated, search::EnumTreeTraits::LEAF_SLOTS>;
 
 extern template
 class BTreeLeafNodeTemp<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated, search::EnumTreeTraits::LEAF_SLOTS>;
 
 extern template
-class BTreeLeafNodeTemp<datastore::AtomicEntryRef, uint32_t, NoAggregated, search::EnumTreeTraits::LEAF_SLOTS>;
+class BTreeLeafNodeTemp<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated, search::EnumTreeTraits::LEAF_SLOTS>;
 
 extern template
 class BTreeNodeStore<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated,
                      search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
 
 extern template
-class BTreeNodeStore<datastore::AtomicEntryRef, uint32_t, NoAggregated,
+class BTreeNodeStore<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated,
                      search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
 
 extern template
@@ -125,7 +125,7 @@ class BTreeRoot<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated,
                 const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 extern template
-class BTreeRoot<datastore::AtomicEntryRef, uint32_t, NoAggregated,
+class BTreeRoot<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated,
                 const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 extern template
@@ -133,7 +133,7 @@ class BTreeRootT<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated,
                  const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 extern template
-class BTreeRootT<datastore::AtomicEntryRef, uint32_t, NoAggregated,
+class BTreeRootT<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated,
                  const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 extern template
@@ -141,7 +141,7 @@ class BTreeRootBase<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated,
                     search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
 
 extern template
-class BTreeRootBase<datastore::AtomicEntryRef, uint32_t, NoAggregated,
+class BTreeRootBase<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated,
                     search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
 
 extern template
@@ -149,7 +149,7 @@ class BTreeNodeAllocator<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregate
                          search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
 
 extern template
-class BTreeNodeAllocator<datastore::AtomicEntryRef, uint32_t, NoAggregated,
+class BTreeNodeAllocator<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated,
                          search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS>;
 
 
@@ -157,27 +157,27 @@ extern template
 class BTreeIteratorBase<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated,
                         search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS, search::EnumTreeTraits::PATH_SIZE>;
 extern template
-class BTreeIteratorBase<datastore::AtomicEntryRef, uint32_t, NoAggregated,
+class BTreeIteratorBase<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated,
                         search::EnumTreeTraits::INTERNAL_SLOTS, search::EnumTreeTraits::LEAF_SLOTS, search::EnumTreeTraits::PATH_SIZE>;
 
 extern template class BTreeConstIterator<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated,
                                          const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
-extern template class BTreeConstIterator<datastore::AtomicEntryRef, uint32_t, NoAggregated,
+extern template class BTreeConstIterator<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated,
                                          const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 extern template
 class BTreeIterator<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated,
                     const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 extern template
-class BTreeIterator<datastore::AtomicEntryRef, uint32_t, NoAggregated,
+class BTreeIterator<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated,
                     const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 extern template
 class BTree<datastore::AtomicEntryRef, BTreeNoLeafData, NoAggregated,
             const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 extern template
-class BTree<datastore::AtomicEntryRef, uint32_t, NoAggregated,
+class BTree<datastore::AtomicEntryRef, datastore::AtomicEntryRef, NoAggregated,
             const datastore::EntryComparatorWrapper, search::EnumTreeTraits>;
 
 }

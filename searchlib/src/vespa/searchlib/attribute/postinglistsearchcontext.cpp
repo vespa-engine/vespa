@@ -74,7 +74,7 @@ void
 PostingListSearchContext::lookupSingle()
 {
     if (_lowerDictItr.valid()) {
-        _pidx = vespalib::datastore::EntryRef(_lowerDictItr.getData());
+        _pidx = _lowerDictItr.getData().load_acquire();
     }
 }
 
