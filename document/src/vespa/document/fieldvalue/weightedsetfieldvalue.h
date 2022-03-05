@@ -64,8 +64,7 @@ public:
     bool addIgnoreZeroWeight(const FieldValue&, int32_t weight = 1);
     void push_back(FieldValue::UP, int32_t weight);
     void increment(const FieldValue& fval, int val = 1);
-    void decrement(const FieldValue& fval, int val = 1)
-        { increment(fval, -1*val); }
+    void decrement(const FieldValue& fval, int val = 1) { increment(fval, -1*val); }
     int32_t get(const FieldValue&, int32_t defaultValue = 0) const;
 
     bool isEmpty() const override { return _map.isEmpty(); }
@@ -76,13 +75,12 @@ public:
 
     FieldValue& assign(const FieldValue&) override;
     WeightedSetFieldValue* clone() const override { return new WeightedSetFieldValue(*this); }
-    virtual int compare(const FieldValue&) const override;
-    virtual void printXml(XmlOutputStream& out) const override;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const override;
-    virtual bool hasChanged() const override;
+    int compare(const FieldValue&) const override;
+    void printXml(XmlOutputStream& out) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    bool hasChanged() const override;
 
-        // Implements iterating through internal content.
+    // Implements iterating through internal content.
     typedef WeightedFieldValueMap::const_iterator const_iterator;
     typedef WeightedFieldValueMap::iterator iterator;
 
@@ -95,54 +93,7 @@ public:
     const_iterator find(const FieldValue& fv) const;
     iterator find(const FieldValue& fv);
 
-        // Utility functions for easy use of weighted sets of primitives
-
-    bool add(vespalib::stringref val, int32_t weight = 1)
-        { return add(*createNested() = val, weight); }
-    bool add(int32_t val, int32_t weight = 1)
-        { return add(*createNested() = val, weight); }
-    bool add(int64_t val, int32_t weight = 1)
-        { return add(*createNested() = val, weight); }
-    bool add(float val, int32_t weight = 1)
-        { return add(*createNested() = val, weight); }
-    bool add(double val, int32_t weight = 1)
-        { return add(*createNested() = val, weight); }
-
-    int32_t get(vespalib::stringref val) const
-        { return get(*createNested() = val); }
-    int32_t get(int32_t val) const
-        { return get(*createNested() = val); }
-    int32_t get(int64_t val) const
-        { return get(*createNested() = val); }
-    int32_t get(float val) const
-        { return get(*createNested() = val); }
-    int32_t get(double val) const
-        { return get(*createNested() = val); }
-
-    void increment(vespalib::stringref val, int32_t weight = 1)
-        { increment(*createNested() = val, weight); }
-    void increment(int32_t val, int32_t weight = 1)
-        { increment(*createNested() = val, weight); }
-    void increment(int64_t val, int32_t weight = 1)
-        { increment(*createNested() = val, weight); }
-    void increment(float val, int32_t weight = 1)
-        { increment(*createNested() = val, weight); }
-    void increment(double val, int32_t weight = 1)
-        { increment(*createNested() = val, weight); }
-
-    void decrement(vespalib::stringref val, int32_t weight = 1)
-        { decrement(*createNested() = val, weight); }
-    void decrement(int32_t val, int32_t weight = 1)
-        { decrement(*createNested() = val, weight); }
-    void decrement(int64_t val, int32_t weight = 1)
-        { decrement(*createNested() = val, weight); }
-    void decrement(float val, int32_t weight = 1)
-        { decrement(*createNested() = val, weight); }
-    void decrement(double val, int32_t weight = 1)
-        { decrement(*createNested() = val, weight); }
-
     DECLARE_IDENTIFIABLE_ABSTRACT(WeightedSetFieldValue);
-
 };
 
 } // document

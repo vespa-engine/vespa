@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/test/fieldvalue_helpers.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/mapdatatype.h>
@@ -349,11 +350,12 @@ TEST(DocumentTest, testModifyDocument)
     structmap1.put(StringFieldValue("test"), l2s1);
     l1s1.setValue(structmapF, structmap1);
 
-    WeightedSetFieldValue wset1(wset);
+    WeightedSetFieldValue wwset1(wset);
+    WSetHelper wset1(wwset1);
     wset1.add("foo");
     wset1.add("bar");
     wset1.add("zoo");
-    l1s1.setValue(wsetF, wset1);
+    l1s1.setValue(wsetF, wwset1);
 
     WeightedSetFieldValue wset2(structwset);
     wset2.add(l2s1);
@@ -716,8 +718,8 @@ TEST(DocumentTest,testReadSerializedAllVersions)
         docInDoc.set("stringindocfield", "Elvis is dead");
         doc.setValue("docfield", docInDoc);
         ArrayFieldValue floatArray(*arrayOfFloatDataType);
-        floatArray.add(1.0);
-        floatArray.add(2.0);
+        CollectionHelper(floatArray).add(1.0);
+        CollectionHelper(floatArray).add(2.0);
         doc.setValue("arrayoffloatfield", floatArray);
         WeightedSetFieldValue weightedSet(*weightedSetDataType);
         weightedSet.add(StringFieldValue("Weighted 0"), 50);

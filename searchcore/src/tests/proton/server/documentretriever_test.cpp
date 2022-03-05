@@ -20,6 +20,7 @@
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/test/fieldvalue_helpers.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
@@ -66,6 +67,7 @@ using document::StructFieldValue;
 using document::TensorDataType;
 using document::TensorFieldValue;
 using document::WeightedSetFieldValue;
+using document::WSetHelper;
 using search::AttributeFactory;
 using search::AttributeGuard;
 using search::AttributeVector;
@@ -430,10 +432,11 @@ template <typename T>
 void checkWset(FieldValue::UP wset, T v) {
     ASSERT_TRUE(wset);
     auto *wset_val = dynamic_cast<WeightedSetFieldValue *>(wset.get());
+    WSetHelper val(*wset_val);
     ASSERT_TRUE(wset_val);
     ASSERT_EQUAL(2u, wset_val->size());
-    EXPECT_EQUAL(dyn_weight, wset_val->get(v));
-    EXPECT_EQUAL(dyn_weight, wset_val->get(v + 1));
+    EXPECT_EQUAL(dyn_weight, val.get(v));
+    EXPECT_EQUAL(dyn_weight, val.get(v + 1));
 }
 
 TEST_F("require that attributes are patched into stored document", Fixture) {
