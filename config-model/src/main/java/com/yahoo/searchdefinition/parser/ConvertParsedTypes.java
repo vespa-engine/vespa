@@ -84,10 +84,20 @@ public class ConvertParsedTypes {
             for (var struct : doc.getStructs()) {
                 String structId = doc.name() + "->" + struct.name();
                 var toFill = structsFromSchemas.get(structId);
+                // evil ugliness
                 for (ParsedField field : struct.getFields()) {
-                    var t = resolveFromContext(field.getType(), doc);
-                    var f = new com.yahoo.document.Field(field.name(), t);
-                    toFill.addField(f);
+                    if (! field.hasIdOverride()) {
+                        var t = resolveFromContext(field.getType(), doc);
+                        var f = new com.yahoo.document.Field(field.name(), t);
+                        toFill.addField(f);
+                    }
+                }
+                for (ParsedField field : struct.getFields()) {
+                    if (field.hasIdOverride()) {
+                        var t = resolveFromContext(field.getType(), doc);
+                        var f = new com.yahoo.document.Field(field.name(), field.idOverride(), t);
+                        toFill.addField(f);
+                    }
                 }
                 for (String inherit : struct.getInherited()) {
                     var parent = findStructFromSchemas(inherit, doc);
@@ -104,7 +114,9 @@ public class ConvertParsedTypes {
                     var toFill = structsFromSchemas.get(structId);
                     for (ParsedField field : struct.getFields()) {
                         var t = resolveFromContext(field.getType(), doc);
-                        var f = new com.yahoo.document.Field(field.name(), t);
+                        var f = field.hasIdOverride()
+                            ? new com.yahoo.document.Field(field.name(), field.idOverride(), t)
+                            : new com.yahoo.document.Field(field.name(), t);
                         toFill.addField(f);
                     }
                     at.setDataType(toFill);
@@ -120,8 +132,11 @@ public class ConvertParsedTypes {
             for (var docField : doc.getFields()) {
                 String name = docField.name();
                 var t = resolveFromContext(docField.getType(), doc);
-                var f = new com.yahoo.document.Field(name, t);
+                var f = new com.yahoo.document.Field(docField.name(), t);
                 docToFill.addField(f);
+                if (docField.hasIdOverride()) {
+                    f.setId(docField.idOverride(), docToFill);
+                }
                 inDocFields.add(name);
             }
             fieldSets.put("[document]", inDocFields);

@@ -294,11 +294,14 @@ public class ConvertParsedFields {
         // TODO - can we cleanup this mess
         var structProxy = new SDDocumentType(parsed.name(), schema);
         structProxy.setStruct(context.resolveStruct(parsed));
-        for (var structField : parsed.getFields()) {
-            var fieldType = context.resolveType(structField.getType());
-            var field = new SDField(structProxy, structField.name(), fieldType);
-            convertCommonFieldSettings(field, structField);
+        for (var parsedField : parsed.getFields()) {
+            var fieldType = context.resolveType(parsedField.getType());
+            var field = new SDField(structProxy, parsedField.name(), fieldType);
+            convertCommonFieldSettings(field, parsedField);
             structProxy.addField(field);
+            if (parsedField.hasIdOverride()) {
+                structProxy.setFieldId(field, parsedField.idOverride());
+            }
         }
         for (String inherit : parsed.getInherited()) {
             structProxy.inherit(new DataTypeName(inherit));                
