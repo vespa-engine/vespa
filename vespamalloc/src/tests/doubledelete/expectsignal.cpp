@@ -23,7 +23,7 @@ int Test::Main()
     fprintf(stderr, "argc=%d : Running '%s' expecting signal %d\n", _argc, _argv[2], retval);
 
     Process cmd(_argv[2]);
-    for (vespalib::string line = cmd.read_line(); !line.empty(); line = cmd.read_line()) {
+    for (vespalib::string line = cmd.read_line(); !(line.empty() && cmd.eof()); line = cmd.read_line()) {
         fprintf(stdout, "%s\n", line.c_str());
     }
     int exitCode = cmd.join();
