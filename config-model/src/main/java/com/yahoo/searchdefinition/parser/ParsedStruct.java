@@ -15,10 +15,13 @@ import java.util.Map;
 public class ParsedStruct extends ParsedBlock {
     private final List<String> inherited = new ArrayList<>();
     private final Map<String, ParsedField> fields = new LinkedHashMap<>();
+    private final ParsedType asParsedType;
     private String ownedBy = null;
 
     public ParsedStruct(String name) {
         super(name, "struct");
+        this.asParsedType = ParsedType.fromName(name);
+        asParsedType.setVariant(ParsedType.Variant.STRUCT);
     }
 
     List<ParsedField> getFields() { return List.copyOf(fields.values()); }

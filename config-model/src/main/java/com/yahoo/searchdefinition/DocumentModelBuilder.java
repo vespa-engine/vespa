@@ -252,9 +252,13 @@ public class DocumentModelBuilder {
         } else if (type instanceof StructDataType) {
             StructDataType dt = (StructDataType) type;
             for (com.yahoo.document.Field field : dt.getFields()) {
-                if (field.getDataType() != type) {
-                    // XXX deprecated:
-                    field.setDataType(resolveTemporariesRecurse(field.getDataType(), repo, docs, replacements));
+                var ft = field.getDataType();
+                if (ft != type) {
+                    var newft = resolveTemporariesRecurse(ft, repo, docs, replacements);
+                    if (ft != newft) {
+                        // XXX deprecated:
+                        field.setDataType(newft);
+                    }
                 }
             }
         }

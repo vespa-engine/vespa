@@ -210,7 +210,6 @@ public class IntermediateParserTestCase {
         checkFileParses("src/test/examples/arraysweightedsets.sd");
         checkFileParses("src/test/examples/attributesettings.sd");
         checkFileParses("src/test/examples/attributesexactmatch.sd");
-        checkFileParses("src/test/examples/badstruct.sd");
         checkFileParses("src/test/examples/casing.sd");
         checkFileParses("src/test/examples/comment.sd");
         checkFileParses("src/test/examples/documentidinsummary.sd");
