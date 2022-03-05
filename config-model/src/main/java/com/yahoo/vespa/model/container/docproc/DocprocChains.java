@@ -7,6 +7,7 @@ import com.yahoo.container.jdisc.config.SessionConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
+import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.Chains;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
@@ -21,13 +22,14 @@ public class DocprocChains extends Chains<DocprocChain> {
         super(parent, subId);
         docprocHandler = new ProcessingHandler<>(this, "com.yahoo.docproc.jdisc.DocumentProcessingHandler");
         addComponent(docprocHandler);
+        addComponent(new SimpleComponent("com.yahoo.document.DocumentTypeManager"));
     }
 
-    private void addComponent(Component component) {
-        if (!(getParent() instanceof ContainerCluster)) {
+    private void addComponent(Component<?, ?> component) {
+        if (!(getParent() instanceof ContainerCluster<?>)) {
             return;
         }
-        ((ContainerCluster) getParent()).addComponent(component);
+        ((ContainerCluster<?>) getParent()).addComponent(component);
     }
 
 

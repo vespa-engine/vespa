@@ -102,7 +102,7 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
                                      ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry,
                                      ChainsConfig chainsConfig,
                                      SchemamappingConfig mappingConfig,
-                                     DocumentmanagerConfig docManConfig,
+                                     DocumentTypeManager documentTypeManager,
                                      DocprocConfig docprocConfig,
                                      ContainerDocumentConfig containerDocConfig,
                                      Metric metric) {
@@ -110,7 +110,7 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
              documentProcessorComponentRegistry, docFactoryRegistry,
                 new DocumentProcessingHandlerParameters()
                      .setMaxNumThreads(docprocConfig.numthreads())
-                     .setDocumentTypeManager(new DocumentTypeManager(docManConfig))
+                     .setDocumentTypeManager(documentTypeManager)
                      .setChainsModel(buildFromConfig(chainsConfig)).setSchemaMap(configureMapping(mappingConfig))
                      .setMetric(metric)
                      .setContainerDocumentConfig(containerDocConfig));
