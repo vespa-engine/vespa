@@ -27,6 +27,7 @@ import com.yahoo.searchdefinition.UnrankedRankProfile;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.TemporaryImportedField;
+import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
 import com.yahoo.searchdefinition.parser.ConvertParsedTypes.TypeResolver;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -117,14 +118,13 @@ public class ConvertSchemaCollection {
     private ConvertParsedTypes typeConverter;
 
     public void convertTypes() {
-        if (typeConverter == null) {
-            typeConverter = new ConvertParsedTypes(orderedInput, docMan);
-            typeConverter.convert();
-        }
+        typeConverter = new ConvertParsedTypes(orderedInput, docMan);
+        typeConverter.convert(true);
     }
 
     public List<Schema> convertToSchemas() {
-        convertTypes();
+        typeConverter = new ConvertParsedTypes(orderedInput, docMan);
+        typeConverter.convert(false);
         var resultList = new ArrayList<Schema>();
         for (var parsed : orderedInput) {
             Optional<String> inherited;
@@ -145,6 +145,21 @@ public class ConvertSchemaCollection {
         return resultList;
     }
 
+    private void convertAnnotation(Schema schema, SDDocumentType document, ParsedAnnotation parsed, ConvertParsedFields fieldConverter) {
+        var type = new SDAnnotationType(parsed.name());
+        for (String inherit : parsed.getInherited()) {
+            type.inherit(inherit);
+        }
+        var payload = parsed.getStruct();
+        if (payload.isPresent()) {
+            var struct = fieldConverter.convertStructDeclaration(schema, payload.get());
+            type = new SDAnnotationType(parsed.name(), struct, type.getInherits());
+            // WTF?
+            struct.setStruct(null);
+        }
+        document.addAnnotation(type);
+    }
+
     private void convertDocument(Schema schema, ParsedDocument parsed,
                                  ConvertParsedFields fieldConverter)
     {
@@ -153,7 +168,11 @@ public class ConvertSchemaCollection {
             document.inherit(new DataTypeName(inherit));
         }
         for (var struct : parsed.getStructs()) {
-            fieldConverter.convertStructDeclaration(schema, document, struct);
+            var structProxy = fieldConverter.convertStructDeclaration(schema, struct);
+            document.addType(structProxy);
+        }
+        for (var annotation : parsed.getAnnotations()) {
+            convertAnnotation(schema, document, annotation, fieldConverter);
         }
         for (var field : parsed.getFields()) {
             var sdf = fieldConverter.convertDocumentField(schema, document, field);
