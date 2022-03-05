@@ -70,8 +70,18 @@ public class AnnotationsTestCase extends AbstractExportingTestCase {
      * An annotation declared before document {} won't work, no doc type to add it to.
      */
     @Test(expected = IllegalArgumentException.class)    
-    public void testAnnotationOutsideOfDocumment() throws IOException, ParseException {
-        assertCorrectDeriving("annotationsoutsideofdocument");
+    public void testAnnotationOutsideOfDocumentOld() throws IOException, ParseException {
+        assertCorrectDeriving("annotationsoutsideofdocument",
+                              new TestProperties().setExperimentalSdParsing(false));
+    }
+
+    /**
+     * An annotation declared before document {} should work.
+     */
+    @Test
+    public void testAnnotationOutsideOfDocumentNew() throws IOException, ParseException {
+        assertCorrectDeriving("annotationsoutsideofdocument",
+                              new TestProperties().setExperimentalSdParsing(true));
     }
     
 }
