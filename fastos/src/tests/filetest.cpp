@@ -40,8 +40,6 @@ bool createFile(const char* fileName,
 
 class FileTest : public BaseTest
 {
-private:
-    virtual bool useProcessStarter() const override { return true; }
 public:
     const std::string srcDir = getenv("SOURCE_DIRECTORY") ? getenv("SOURCE_DIRECTORY") : ".";
     const std::string roFilename = srcDir + "/hello.txt";

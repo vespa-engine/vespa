@@ -6,13 +6,10 @@ vespa_add_library(fastos_objects OBJECT
     file.cpp
     file_rw_ops.cpp
     linux_file.cpp
-    process.cpp
     thread.cpp
     unix_app.cpp
     unix_dynamiclibrary.cpp
     unix_file.cpp
-    unix_ipc.cpp
-    unix_process.cpp
     unix_thread.cpp
 )
   

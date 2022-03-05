@@ -18,27 +18,23 @@
 #define TEST_TRACE() TEST_MASTER.trace(__FILE__, __LINE__)
 #define TEST_THREAD(name) TEST_MASTER.setThreadName(name)
 #define TEST_BARRIER() TEST_MASTER.awaitThreadBarrier(__FILE__, __LINE__)
-#define TEST_MAIN_IMPL(useProxy)                                  \
-  void test_kit_main();                                           \
-  struct TestKitApp : FastOS_Application                          \
-  {                                                               \
-      bool useProcessStarter() const override { return useProxy; } \
-      int Main() override;                                         \
-  };                                                              \
-  int main(int argc, char **argv)                                 \
-  {                                                               \
-      TestKitApp app;                                             \
-      return app.Entry(argc, argv);                               \
-  }                                                               \
-  int TestKitApp::Main() {                                        \
-    TEST_MASTER.init(__FILE__);                                   \
-    test_kit_main();                                              \
-    return (TEST_MASTER.fini() ? 0 : 1);                          \
-  }                                                               \
+#define TEST_MAIN()                       \
+  void test_kit_main();                   \
+  struct TestKitApp : FastOS_Application  \
+  {                                       \
+      int Main() override;                \
+  };                                      \
+  int main(int argc, char **argv)         \
+  {                                       \
+      TestKitApp app;                     \
+      return app.Entry(argc, argv);       \
+  }                                       \
+  int TestKitApp::Main() {                \
+    TEST_MASTER.init(__FILE__);           \
+    test_kit_main();                      \
+    return (TEST_MASTER.fini() ? 0 : 1);  \
+  }                                       \
   void test_kit_main()
-
-#define TEST_MAIN() TEST_MAIN_IMPL(false)
-#define TEST_MAIN_WITH_PROCESS_PROXY() TEST_MAIN_IMPL(true)
 
 //-----------------------------------------------------------------------------
 #include "generated_fixture_macros.h"

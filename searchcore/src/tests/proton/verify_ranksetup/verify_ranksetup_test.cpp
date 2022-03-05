@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/util/child_process.h>
+#include <vespa/vespalib/process/process.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/fef/indexproperties.h>
@@ -220,7 +220,7 @@ struct Setup {
     }
     bool verify() {
         generate();
-        return vespalib::ChildProcess::run(fmt("%s dir:%s", prog, gen_dir.c_str()).c_str());
+        return vespalib::Process::run(fmt("%s dir:%s", prog, gen_dir.c_str()));
     }
     void verify_valid(std::initializer_list<std::string> features) {
         for (const std::string &f: features) {
@@ -288,12 +288,12 @@ struct ShadowSetup : Setup {
 };
 
 TEST_F("print usage", Setup()) {
-    EXPECT_TRUE(!vespalib::ChildProcess::run(fmt("%s", prog).c_str()));
+    EXPECT_TRUE(!vespalib::Process::run(fmt("%s", prog)));
 }
 
 TEST_F("setup output directory", Setup()) {
-    ASSERT_TRUE(vespalib::ChildProcess::run(fmt("rm -rf %s", gen_dir.c_str()).c_str()));
-    ASSERT_TRUE(vespalib::ChildProcess::run(fmt("mkdir %s", gen_dir.c_str()).c_str()));
+    ASSERT_TRUE(vespalib::Process::run(fmt("rm -rf %s", gen_dir.c_str())));
+    ASSERT_TRUE(vespalib::Process::run(fmt("mkdir %s", gen_dir.c_str())));
 }
 
 //-----------------------------------------------------------------------------
@@ -458,7 +458,7 @@ TEST_F("require that broken fragile model without dry-run passes verification", 
 //-----------------------------------------------------------------------------
 
 TEST_F("cleanup files", Setup()) {
-    ASSERT_TRUE(vespalib::ChildProcess::run(fmt("rm -rf %s", gen_dir.c_str()).c_str()));
+    ASSERT_TRUE(vespalib::Process::run(fmt("rm -rf %s", gen_dir.c_str())));
 }
 
-TEST_MAIN_WITH_PROCESS_PROXY() { TEST_RUN_ALL(); }
+TEST_MAIN() { TEST_RUN_ALL(); }

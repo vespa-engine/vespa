@@ -97,4 +97,4 @@ TEST_F("test error: symbolic size mismatch", ServerCmd(probe_cmd, ServerCmd::cap
 
 //-----------------------------------------------------------------------------
 
-TEST_MAIN_WITH_PROCESS_PROXY() { TEST_RUN_ALL(); }
+TEST_MAIN() { TEST_RUN_ALL(); }

@@ -66,6 +66,46 @@ TEST(ProcessTest, proc_kill) {
 
 //-----------------------------------------------------------------------------
 
+vespalib::string line1 = "this is a line";
+vespalib::string line2 = "this is also a line";
+vespalib::string line3 = "this is last line";
+
+TEST(ProcessTest, read_line) {
+    Process proc("cat");
+    for (const vespalib::string &line: {std::cref(line1), std::cref(line2), std::cref(line3)}) {
+        auto mem = proc.reserve(line.size() + 1);
+        memcpy(mem.data, line.data(), line.size());
+        mem.data[line.size()] = '\n';
+        proc.commit(line.size() + 1);
+        fprintf(stderr, "write: %s\n", line.c_str());
+        auto res = proc.read_line();
+        fprintf(stderr, "read: %s\n", line.c_str());
+        EXPECT_EQ(res, line);
+        EXPECT_FALSE(proc.eof());
+    }
+    proc.close();
+    EXPECT_EQ(proc.read_line(), "");
+    EXPECT_TRUE(proc.eof());
+    EXPECT_EQ(proc.join(), 0);
+}
+
+TEST(ProcessTest, read_line_without_newline) {
+    Process proc("cat");
+    const auto &line = line3;
+    auto mem = proc.reserve(line.size());
+    memcpy(mem.data, line.data(), line.size());
+    proc.commit(line.size());
+    fprintf(stderr, "write: %s\n", line.c_str());
+    proc.close(); // need eof to flush line
+    auto res = proc.read_line();
+    fprintf(stderr, "read: %s\n", line.c_str());
+    EXPECT_EQ(res, line);
+    EXPECT_TRUE(proc.eof());
+    EXPECT_EQ(proc.join(), 0);
+}
+
+//-----------------------------------------------------------------------------
+
 void write_slime(const Slime &slime, Output &out) {
     JsonFormat::encode(slime, out, true);
     out.reserve(1).data[0] = '\n';

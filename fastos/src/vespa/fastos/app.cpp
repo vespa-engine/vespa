@@ -8,12 +8,9 @@
 
 #include "app.h"
 #include "file.h"
-#include "process.h"
 #include "thread.h"
 #include <cstring>
 #include <fcntl.h>
-
-FastOS_ApplicationInterface *FastOS_ProcessInterface::_app = nullptr;
 
 FastOS_ThreadPool *FastOS_ApplicationInterface::GetThreadPool ()
 {
@@ -22,12 +19,9 @@ FastOS_ThreadPool *FastOS_ApplicationInterface::GetThreadPool ()
 
 FastOS_ApplicationInterface::FastOS_ApplicationInterface() :
     _threadPool(nullptr),
-    _processList(nullptr),
-    _processListMutex(nullptr),
     _argc(0),
     _argv(nullptr)
 {
-    FastOS_ProcessInterface::_app = this;
 #ifdef __linux__
     char * fadvise = getenv("VESPA_FADVISE_OPTIONS");
     if (fadvise != nullptr) {
@@ -51,7 +45,6 @@ bool FastOS_ApplicationInterface::Init ()
     if (PreThreadInit()) {
         if (FastOS_Thread::InitializeClass()) {
             if (FastOS_File::InitializeClass()) {
-                _processListMutex = new std::mutex;
                 _threadPool = new FastOS_ThreadPool(128 * 1024);
                 rc = true;
             } else
@@ -72,12 +65,6 @@ void FastOS_ApplicationInterface::Cleanup ()
         delete _threadPool;
         _threadPool = nullptr;
     }
-
-    if(_processListMutex != nullptr) {
-        delete _processListMutex;
-        _processListMutex = nullptr;
-    }
-
     FastOS_File::CleanupClass();
     FastOS_Thread::CleanupClass();
 }
@@ -96,45 +83,4 @@ int FastOS_ApplicationInterface::Entry (int argc, char **argv)
     Cleanup();
 
     return rc;
-}
-
-void
-FastOS_ApplicationInterface::AddChildProcess (FastOS_ProcessInterface *node)
-{
-    node->_prev = nullptr;
-    node->_next = _processList;
-
-    if(_processList != nullptr)
-        _processList->_prev = node;
-
-    _processList = node;
-}
-
-void
-FastOS_ApplicationInterface::RemoveChildProcess (FastOS_ProcessInterface *node)
-{
-    if(node->_prev)
-        node->_prev->_next = node->_next;
-    else
-        _processList = node->_next;
-
-    if(node->_next)
-    {
-        node->_next->_prev = node->_prev;
-        node->_next = nullptr;
-    }
-
-    if(node->_prev != nullptr)
-        node->_prev = nullptr;
-}
-
-bool
-FastOS_ApplicationInterface::useProcessStarter() const
-{
-    return false;
-}
-bool
-FastOS_ApplicationInterface::useIPCHelper() const
-{
-    return useProcessStarter();
 }

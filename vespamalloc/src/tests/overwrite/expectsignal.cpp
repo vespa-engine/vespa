@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/child_process.h>
+#include <vespa/vespalib/process/process.h>
 #include <sys/wait.h>
 
 using namespace vespalib;
@@ -9,8 +9,6 @@ class Test : public TestApp
 {
 public:
     int Main() override;
-private:
-    virtual bool useProcessStarter() const override { return true; }
 };
 
 int Test::Main()
@@ -24,14 +22,11 @@ int Test::Main()
 
     fprintf(stderr, "argc=%d : Running '%s' expecting signal %d\n", _argc, _argv[2], retval);
 
-    ChildProcess cmd(_argv[2]);
-    for(std::string line; cmd.readLine(line, 60000);) {
+    Process cmd(_argv[2]);
+    for (vespalib::string line = cmd.read_line(); !(line.empty() && cmd.eof()); line = cmd.read_line()) {
         fprintf(stdout, "%s\n", line.c_str());
     }
-
-    ASSERT_TRUE(cmd.wait(60000));
-
-    int exitCode = cmd.getExitCode();
+    int exitCode = cmd.join();
 
     if (exitCode == 65535) {
         fprintf(stderr, "[ERROR] child killed (timeout)\n");

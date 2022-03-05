@@ -22,14 +22,6 @@
     public: int Main() override; \
   }; \
   TEST_APPHOOK(test)
-#define TEST_SETUP_WITHPROCESSPROXY(test) \
-  class test : public vespalib::TestApp \
-  { \
-    public: \
-        int Main(); \
-        virtual bool useProcessStarter() const { return true; } \
-  }; \
-  TEST_APPHOOK(test)
 
 namespace vespalib {
 
