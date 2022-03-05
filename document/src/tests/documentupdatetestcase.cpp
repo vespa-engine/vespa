@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/test/fieldvalue_helpers.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
@@ -1287,9 +1288,9 @@ TEST(DocumentUpdateTest, array_element_update_applies_to_specified_element)
     ArrayUpdateFixture f;
 
     ArrayFieldValue array_value(f.array_field.getDataType());
-    array_value.add("foo");
-    array_value.add("baz");
-    array_value.add("blarg");
+    CollectionHelper(array_value).add("foo");
+    CollectionHelper(array_value).add("baz");
+    CollectionHelper(array_value).add("blarg");
     f.doc->setValue(f.array_field, array_value);
 
     f.update->applyTo(*f.doc);
@@ -1306,7 +1307,7 @@ TEST(DocumentUpdateTest, array_element_update_for_invalid_index_is_ignored)
     ArrayUpdateFixture f;
 
     ArrayFieldValue array_value(f.array_field.getDataType());
-    array_value.add("jerry");
+    CollectionHelper(array_value).add("jerry");
     f.doc->setValue(f.array_field, array_value);
 
     f.update->applyTo(*f.doc); // MapValueUpdate for index 1, which does not exist

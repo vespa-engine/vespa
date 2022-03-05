@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for vespadocumentserializer.
 
+#include <vespa/document/test/fieldvalue_helpers.h>
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/annotation/spantree.h>
@@ -345,7 +346,7 @@ void checkArrayFieldValue(SizeType value_count) {
     ArrayDataType array_type(*DataType::INT);
     ArrayFieldValue value(array_type);
     for (uint32_t i = 0; i < value_count; ++i) {
-        value.add(static_cast<int32_t>(i));
+        CollectionHelper(value).add(static_cast<int32_t>(i));
     }
 
     nbostream stream;

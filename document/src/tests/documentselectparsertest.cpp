@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/test/fieldvalue_helpers.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/assignvalueupdate.h>
@@ -193,17 +194,15 @@ DocumentSelectParserTest::createDocs()
         amval.put(StringFieldValue("bar"), abval);
         _doc.back()->setValue("structarrmap", amval);
 
-        WeightedSetFieldValue wsval(
-                _doc.back()->getField("stringweightedset").getDataType());
-        wsval.add("foo");
-        wsval.add("val1");
-        wsval.add("val2");
-        wsval.add("val3");
-        wsval.add("val4");
+        WeightedSetFieldValue wsval(_doc.back()->getField("stringweightedset").getDataType());
+        WSetHelper(wsval).add("foo");
+        WSetHelper(wsval).add("val1");
+        WSetHelper(wsval).add("val2");
+        WSetHelper(wsval).add("val3");
+        WSetHelper(wsval).add("val4");
         _doc.back()->setValue("stringweightedset", wsval);
 
-        WeightedSetFieldValue wsbytes(
-                _doc.back()->getField("byteweightedset").getDataType());
+        WeightedSetFieldValue wsbytes(_doc.back()->getField("byteweightedset").getDataType());
         wsbytes.add(ByteFieldValue(5));
         wsbytes.add(ByteFieldValue(75));
         wsbytes.add(ByteFieldValue(static_cast<int8_t>(255)));
@@ -211,14 +210,12 @@ DocumentSelectParserTest::createDocs()
         _doc.back()->setValue("byteweightedset", wsbytes);
     }
 
-    _doc.push_back(createDoc(
-                           "testdoctype1", "id:myspace:testdoctype1:n=1234:footype1", 15, 1.0, "some", "some", 0));  // DOC 2
+    _doc.push_back(createDoc("testdoctype1", "id:myspace:testdoctype1:n=1234:footype1", 15, 1.0, "some", "some", 0));  // DOC 2
         // Add empty struct and array
     {
         StructFieldValue sval(_doc.back()->getField("mystruct").getDataType());
         _doc.back()->setValue("mystruct", sval);
-        ArrayFieldValue aval(
-                _doc.back()->getField("structarray").getDataType());
+        ArrayFieldValue aval(_doc.back()->getField("structarray").getDataType());
         _doc.back()->setValue("structarray", aval);
     }
     _doc.push_back(createDoc("testdoctype1", "id:myspace:testdoctype1:g=yahoo:bar", 14, 2.4, "Yet", "\xE4\xB8\xBA\xE4\xBB\x80", 0)); // DOC 3

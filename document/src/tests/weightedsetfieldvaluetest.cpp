@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/test/fieldvalue_helpers.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/longfieldvalue.h>
@@ -255,7 +256,8 @@ TEST(WeightedSetFieldValueTest, testWeightedSet)
         WeightedSetDataType mytype2(*DataType::STRING, true, true);
         EXPECT_EQ(*DataType::TAG, static_cast<DataType &>(mytype2));
 
-        WeightedSetFieldValue val1(mytype1);
+        WeightedSetFieldValue wsval1(mytype1);
+        WSetHelper val1(wsval1);
         val1.add("foo", 4);
         try{
             val1.increment("bar", 2);
@@ -272,25 +274,26 @@ TEST(WeightedSetFieldValueTest, testWeightedSet)
         val1.decrement("foo", 3);
         EXPECT_EQ(7, val1.get("foo"));
         val1.decrement("foo", 7);
-        EXPECT_TRUE(val1.contains("foo"));
+        EXPECT_TRUE(CollectionHelper(wsval1).contains("foo"));
 
-        WeightedSetFieldValue val2(mytype2);
+        WeightedSetFieldValue wsval2(mytype2);
+        WSetHelper val2(wsval2);
         val2.add("foo", 4);
         val2.increment("bar", 2);
         EXPECT_EQ(2, val2.get("bar"));
         val2.decrement("bar", 4);
         EXPECT_EQ(-2, val2.get("bar"));
         val2.increment("bar", 2);
-        EXPECT_TRUE(!val2.contains("bar"));
+        EXPECT_TRUE(!CollectionHelper(wsval2).contains("bar"));
 
         val2.decrement("foo", 4);
-        EXPECT_TRUE(!val2.contains("foo"));
+        EXPECT_TRUE(!CollectionHelper(wsval2).contains("foo"));
 
         val2.decrement("foo", 4);
         EXPECT_EQ(-4, val2.get("foo"));
 
         val2.add("foo", 0);
-        EXPECT_TRUE(!val2.contains("foo"));
+        EXPECT_TRUE(!CollectionHelper(wsval2).contains("foo"));
     }
 }
 
@@ -301,12 +304,12 @@ TEST(WeightedSetFieldValueTest, testAddIgnoreZeroWeight)
     WeightedSetFieldValue ws(wsetType);
 
     ws.addIgnoreZeroWeight(StringFieldValue("yarn"), 0);
-    EXPECT_TRUE(ws.contains("yarn"));
-    EXPECT_EQ(0, ws.get("yarn"));
+    EXPECT_TRUE(CollectionHelper(ws).contains("yarn"));
+    EXPECT_EQ(0, WSetHelper(ws).get("yarn"));
 
     ws.addIgnoreZeroWeight(StringFieldValue("flarn"), 1);
-    EXPECT_TRUE(ws.contains("flarn"));
-    EXPECT_EQ(1, ws.get("flarn"));
+    EXPECT_TRUE(CollectionHelper(ws).contains("flarn"));
+    EXPECT_EQ(1, WSetHelper(ws).get("flarn"));
 }
 
 } // document

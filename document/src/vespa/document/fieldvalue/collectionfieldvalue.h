@@ -62,41 +62,6 @@ public:
     virtual size_t size() const = 0;
     virtual void clear() = 0;
 
-    // Convenience functions for using primitives directly
-
-    bool add(vespalib::stringref val)
-        { return addValue(*createNested() = val); }
-    bool add(int32_t val)
-        { return addValue(*createNested() = val); }
-    bool add(int64_t val)
-        { return addValue(*createNested() = val); }
-    bool add(float val)
-        { return addValue(*createNested() = val); }
-    bool add(double val)
-        { return addValue(*createNested() = val); }
-
-    bool contains(vespalib::stringref val)
-        { return containsValue(*createNested() = val); }
-    bool contains(int32_t val)
-        { return containsValue(*createNested() = val); }
-    bool contains(int64_t val)
-        { return containsValue(*createNested() = val); }
-    bool contains(float val)
-        { return containsValue(*createNested() = val); }
-    bool contains(double val)
-        { return containsValue(*createNested() = val); }
-
-    bool remove(vespalib::stringref val)
-        { return removeValue(*createNested() = val); }
-    bool remove(int32_t val)
-        { return removeValue(*createNested() = val); }
-    bool remove(int64_t val)
-        { return removeValue(*createNested() = val); }
-    bool remove(float val)
-        { return removeValue(*createNested() = val); }
-    bool remove(double val)
-        { return removeValue(*createNested() = val); }
-
     DECLARE_IDENTIFIABLE_ABSTRACT(CollectionFieldValue);
 };
 
