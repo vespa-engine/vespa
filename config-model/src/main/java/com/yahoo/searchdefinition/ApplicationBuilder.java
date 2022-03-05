@@ -102,10 +102,17 @@ public class ApplicationBuilder {
         this(rankProfileRegistry, queryProfileRegistry, new TestProperties());
     }
 
+    /** For testing only */
+    public ApplicationBuilder(ModelContext.Properties properties) {
+        this(new RankProfileRegistry(), new QueryProfileRegistry(), properties);
+    }
+
+    /** For testing only */
     public ApplicationBuilder(RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfileRegistry, ModelContext.Properties properties) {
         this(MockApplicationPackage.createEmpty(), new MockFileRegistry(), new BaseDeployLogger(), properties, rankProfileRegistry, queryProfileRegistry);
     }
 
+    /** normal constructor */
     public ApplicationBuilder(ApplicationPackage app,
                               FileRegistry fileRegistry,
                               DeployLogger deployLogger,
