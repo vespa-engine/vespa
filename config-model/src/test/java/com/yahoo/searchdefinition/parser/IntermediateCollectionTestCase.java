@@ -127,16 +127,16 @@ public class IntermediateCollectionTestCase {
     public void bad_parse_throws() throws Exception {
         var collection = new IntermediateCollection();
         var ex = assertThrows(ParseException.class, () ->
-                              collection.addSchemaFromFile("src/test/examples/structoutsideofdocument.sd"));
-        assertTrue(ex.getMessage().startsWith("Failed parsing schema from src/test/examples/structoutsideofdocument.sd: Encountered"));
+                              collection.addSchemaFromFile("src/test/examples/badparse.sd"));
+        assertTrue(ex.getMessage().startsWith("Failed parsing schema from src/test/examples/badparse.sd: Encountered"));
         ex = assertThrows(ParseException.class, () ->
-                          collection.addSchemaFromReader(readerOf("src/test/examples/structoutsideofdocument.sd")));
-        assertTrue(ex.getMessage().startsWith("Failed parsing schema from src/test/examples/structoutsideofdocument.sd: Encountered"));
+                          collection.addSchemaFromReader(readerOf("src/test/examples/badparse.sd")));
+        assertTrue(ex.getMessage().startsWith("Failed parsing schema from src/test/examples/badparse.sd: Encountered"));
         collection.addSchemaFromFile("src/test/derived/rankprofilemodularity/test.sd");
         collection.addRankProfileFile("test", "src/test/derived/rankprofilemodularity/test/outside_schema1.profile");
         ex = assertThrows(ParseException.class, () ->
-                          collection.addRankProfileFile("test", "src/test/examples/structoutsideofdocument.sd"));
-        assertTrue(ex.getMessage().startsWith("Failed parsing rank-profile from src/test/examples/structoutsideofdocument.sd: Encountered"));
+                          collection.addRankProfileFile("test", "src/test/examples/badparse.sd"));
+        assertTrue(ex.getMessage().startsWith("Failed parsing rank-profile from src/test/examples/badparse.sd: Encountered"));
     }
 
     @Test
