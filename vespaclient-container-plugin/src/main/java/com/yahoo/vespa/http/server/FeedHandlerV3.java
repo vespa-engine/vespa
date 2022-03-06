@@ -7,7 +7,6 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.ReferencedResource;
@@ -45,11 +44,11 @@ public class FeedHandlerV3 extends ThreadedHttpRequestHandler {
 
     public FeedHandlerV3(Executor executor,
                          Metric metric,
-                         DocumentmanagerConfig documentManagerConfig,
+                         DocumentTypeManager documentTypeManager,
                          SessionCache sessionCache,
                          DocumentApiMetrics metricsHelper) {
         super(executor, metric);
-        docTypeManager = new DocumentTypeManager(documentManagerConfig);
+        docTypeManager = documentTypeManager;
         this.sessionCache = sessionCache;
         feedReplyHandler = new FeedReplyReader(metric, metricsHelper);
         cron = new ScheduledThreadPoolExecutor(1, ThreadFactoryFactory.getThreadFactory("feed-handler-v3-janitor"));

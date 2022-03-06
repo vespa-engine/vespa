@@ -2,6 +2,7 @@
 package com.yahoo.vespa.http.server;
 import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
+import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.jdisc.handler.OverloadException;
 import com.yahoo.metrics.simple.MetricReceiver;
@@ -24,7 +25,7 @@ public class FeedHandlerTest {
         FeedHandler handler = new FeedHandler(
                 new RejectingContainerThreadpool(),
                 new CollectingMetric(),
-                new DocumentmanagerConfig(new DocumentmanagerConfig.Builder().enablecompression(true)),
+                new DocumentTypeManager(new DocumentmanagerConfig.Builder().enablecompression(true).build()),
                 null /* session cache */,
                 MetricReceiver.nullImplementation);
         var responseHandler = new RequestHandlerTestDriver.MockResponseHandler();
