@@ -7,6 +7,7 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentType;
+import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.document.datatypes.StringFieldValue;
@@ -124,7 +125,7 @@ public class IndexingProcessorTestCase {
     }
 
     private static IndexingProcessor newProcessor(String configId) {
-        return new IndexingProcessor(ConfigGetter.getConfig(DocumentmanagerConfig.class, configId),
+        return new IndexingProcessor(new DocumentTypeManager(ConfigGetter.getConfig(DocumentmanagerConfig.class, configId)),
                                      ConfigGetter.getConfig(IlscriptsConfig.class, configId),
                                      new SimpleLinguistics(),
                                      Embedder.throwsOnUse);
