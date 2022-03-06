@@ -3,8 +3,11 @@ package util
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/vespa-engine/vespa/client/go/build"
 )
 
 type HTTPClient interface {
@@ -12,23 +15,27 @@ type HTTPClient interface {
 	UseCertificate(certificate []tls.Certificate)
 }
 
-type defaultHttpClient struct {
+type defaultHTTPClient struct {
 	client *http.Client
 }
 
-func (c *defaultHttpClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, error error) {
+func (c *defaultHTTPClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, error error) {
 	if c.client.Timeout != timeout { // Set wanted timeout
 		c.client.Timeout = timeout
 	}
+	if request.Header == nil {
+		request.Header = make(http.Header)
+	}
+	request.Header.Set("User-Agent", fmt.Sprintf("Vespa CLI/%s", build.Version))
 	return c.client.Do(request)
 }
 
-func (c *defaultHttpClient) UseCertificate(certificates []tls.Certificate) {
+func (c *defaultHTTPClient) UseCertificate(certificates []tls.Certificate) {
 	c.client.Transport = &http.Transport{TLSClientConfig: &tls.Config{
 		Certificates: certificates,
 	}}
 }
 
 func CreateClient(timeout time.Duration) HTTPClient {
-	return &defaultHttpClient{client: &http.Client{Timeout: timeout}}
+	return &defaultHTTPClient{client: &http.Client{Timeout: timeout}}
 }
