@@ -160,11 +160,15 @@ func ECPrivateKeyFrom(pemPrivateKey []byte) (*ecdsa.PrivateKey, error) {
 		return nil, fmt.Errorf("invalid pem private key")
 	}
 	if privateKeyBlock.Type == "EC PRIVATE KEY" {
-		return x509.ParseECPrivateKey(privateKeyBlock.Bytes) // Raw EC private key
+		privateKey, err := x509.ParseECPrivateKey(privateKeyBlock.Bytes) // Raw EC private key
+		if err != nil {
+			return nil, fmt.Errorf("invalid raw ec private key: %w", err)
+		}
+		return privateKey, nil
 	}
 	privateKey, err := x509.ParsePKCS8PrivateKey(privateKeyBlock.Bytes) // Try PKCS8 format
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid pkcs8 private key: %w", err)
 	}
 	ecKey, ok := privateKey.(*ecdsa.PrivateKey)
 	if !ok {
