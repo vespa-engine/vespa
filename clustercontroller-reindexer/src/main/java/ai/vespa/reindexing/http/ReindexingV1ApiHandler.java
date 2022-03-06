@@ -40,13 +40,14 @@ public class ReindexingV1ApiHandler extends ThreadedHttpRequestHandler {
 
     @Inject
     public ReindexingV1ApiHandler(Executor executor, Metric metric,
-                                  @SuppressWarnings("unused") VespaZooKeeperServer ensureZkHasStarted, ZookeepersConfig zookeepersConfig,
-                                  ReindexingConfig reindexingConfig, DocumentmanagerConfig documentmanagerConfig) {
+                                  @SuppressWarnings("unused") VespaZooKeeperServer ensureZkHasStarted,
+                                  ZookeepersConfig zookeepersConfig,
+                                  ReindexingConfig reindexingConfig,
+                                  DocumentTypeManager documentTypeManager) {
         this(executor,
              metric,
              reindexingConfig.clusters().keySet(),
-             new ReindexingCurator(Curator.create(zookeepersConfig.zookeeperserverlist()),
-                                   new DocumentTypeManager(documentmanagerConfig)));
+             new ReindexingCurator(Curator.create(zookeepersConfig.zookeeperserverlist()), documentTypeManager));
     }
 
     ReindexingV1ApiHandler(Executor executor, Metric metric, Collection<String> clusterNames, ReindexingCurator database) {

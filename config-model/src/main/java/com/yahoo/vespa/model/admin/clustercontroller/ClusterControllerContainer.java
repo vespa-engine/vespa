@@ -28,6 +28,8 @@ import com.yahoo.vespa.model.container.PlatformBundles;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static com.yahoo.vespa.model.container.docproc.DocprocChains.DOCUMENT_TYPE_MANAGER_CLASS;
+
 /**
  * Container implementation for cluster-controllers
  */
@@ -148,6 +150,8 @@ public class ClusterControllerContainer extends Container implements
         addComponent("reindexing-maintainer",
                      "ai.vespa.reindexing.ReindexingMaintainer",
                      REINDEXING_CONTROLLER_BUNDLE);
+
+        addComponent(new SimpleComponent(DOCUMENT_TYPE_MANAGER_CLASS));
         addHandler("reindexing-status",
                    "ai.vespa.reindexing.http.ReindexingV1ApiHandler",
                    "/reindexing/v1/*",
