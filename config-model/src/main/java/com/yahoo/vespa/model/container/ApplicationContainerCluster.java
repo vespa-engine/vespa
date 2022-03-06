@@ -36,6 +36,7 @@ import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
+import com.yahoo.vespa.model.container.docproc.DocprocChains;
 import com.yahoo.vespa.model.utils.FileSender;
 
 import java.util.ArrayList;
@@ -48,6 +49,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.RoutingMethod.sharedLayer4;
+import static com.yahoo.vespa.model.container.docproc.DocprocChains.DOCUMENT_TYPE_MANAGER_CLASS;
 
 /**
  * A container cluster that is typically set up from the user application.
@@ -110,6 +112,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         addSimpleComponent("com.yahoo.container.jdisc.CertificateStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.AthenzIdentityProviderProvider");
         addSimpleComponent(com.yahoo.container.core.documentapi.DocumentAccessProvider.class.getName());
+        addSimpleComponent(DOCUMENT_TYPE_MANAGER_CLASS);
 
         addMetricsHandlers();
         addTestrunnerComponentsIfTester(deployState);

@@ -21,11 +21,15 @@ public class DocprocChains extends Chains<DocprocChain> {
 
     private final ProcessingHandler<DocprocChains> docprocHandler;
 
-    public DocprocChains(AbstractConfigProducer parent, String subId) {
+    public DocprocChains(AbstractConfigProducer<?> parent, String subId) {
         super(parent, subId);
         docprocHandler = new ProcessingHandler<>(this, "com.yahoo.docproc.jdisc.DocumentProcessingHandler");
         addComponent(docprocHandler);
-        addComponent(new SimpleComponent(DOCUMENT_TYPE_MANAGER_CLASS));
+
+        if (! (getParent() instanceof ApplicationContainerCluster)) {
+            // All application containers have a DocumentTypeManager, but this could also be e.g. a cluster controller
+            addComponent(new SimpleComponent(DOCUMENT_TYPE_MANAGER_CLASS));
+        }
     }
 
     private void addComponent(Component<?, ?> component) {
