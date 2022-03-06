@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/auth0"
+	"github.com/vespa-engine/vespa/client/go/auth/auth0"
 	"github.com/vespa-engine/vespa/client/go/curl"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )

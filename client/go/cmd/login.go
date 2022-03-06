@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/auth0"
+	"github.com/vespa-engine/vespa/client/go/auth/auth0"
 )
 
 func newLoginCmd(cli *CLI) *cobra.Command {

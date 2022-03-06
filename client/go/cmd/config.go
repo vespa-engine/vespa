@@ -18,7 +18,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/vespa-engine/vespa/client/go/auth0"
+	"github.com/vespa-engine/vespa/client/go/auth/auth0"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )

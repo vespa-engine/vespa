@@ -11,10 +11,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/vespa-engine/vespa/client/go/auth0"
+	"github.com/vespa-engine/vespa/client/go/auth/auth0"
+	"github.com/vespa-engine/vespa/client/go/auth/zts"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/version"
-	"github.com/vespa-engine/vespa/client/go/zts"
 )
 
 // CloudOptions configures URL and authentication for a cloud target.
