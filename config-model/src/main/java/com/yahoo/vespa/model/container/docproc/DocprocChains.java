@@ -27,7 +27,8 @@ public class DocprocChains extends Chains<DocprocChain> {
         addComponent(docprocHandler);
 
         if (! (getParent() instanceof ApplicationContainerCluster)) {
-            // All application containers have a DocumentTypeManager, but this could also be e.g. a cluster controller
+            // All application containers already have a DocumentTypeManager,
+            // but this could also belong to e.g. a cluster controller.
             addComponent(new SimpleComponent(DOCUMENT_TYPE_MANAGER_CLASS));
         }
     }
