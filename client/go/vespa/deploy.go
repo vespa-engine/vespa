@@ -241,7 +241,7 @@ func Submit(opts DeploymentOptions) error {
 	serviceDescription := "Submit service"
 	sigKeyId := opts.Target.Deployment().Application.SerializedForm()
 	if err := opts.Target.SignRequest(request, sigKeyId); err != nil {
-		return err
+		return fmt.Errorf("failed to sign api request: %w", err)
 	}
 	response, err := util.HttpDo(request, time.Minute*10, sigKeyId)
 	if err != nil {
