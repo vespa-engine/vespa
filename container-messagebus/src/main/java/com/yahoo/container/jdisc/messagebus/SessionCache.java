@@ -2,12 +2,10 @@
 package com.yahoo.container.jdisc.messagebus;
 
 import com.google.inject.Inject;
-import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUtil;
-import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
