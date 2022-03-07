@@ -54,10 +54,12 @@ void
 loadFromEnumeratedSingleValue(Vector &vector,
                               vespalib::GenerationHolder &genHolder,
                               ReaderBase &attrReader,
-                              vespalib::ConstArrayRef<typename Vector::ValueType> enumValueToValueMap,
+                              vespalib::ConstArrayRef<load_utils::NonAtomicValue_t<typename Vector::ValueType>> enumValueToValueMap,
                               vespalib::ConstArrayRef<uint32_t> enum_value_remapping,
                               Saver saver)
 {
+    using ValueType = typename Vector::ValueType;
+    using NonAtomicValueType = load_utils::NonAtomicValue_t<ValueType>;
     uint32_t numDocs = attrReader.getEnumCount();
     genHolder.clearHoldLists();
     vector.reset();
@@ -68,7 +70,11 @@ loadFromEnumeratedSingleValue(Vector &vector,
         if (!enum_value_remapping.empty()) {
             enumValue = enum_value_remapping[enumValue];
         }
-        vector.push_back(enumValueToValueMap[enumValue]);
+        if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
+            vector.push_back(enumValueToValueMap[enumValue]);
+        } else {
+            vector.push_back(ValueType(enumValueToValueMap[enumValue]));
+        }
         saver.save(enumValue, doc, 1);
     }
 }

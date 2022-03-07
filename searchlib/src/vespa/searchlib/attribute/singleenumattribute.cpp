@@ -32,7 +32,7 @@ AttributeVector::DocId
 SingleValueEnumAttributeBase::addDoc(bool &incGeneration)
 {
     incGeneration = _enumIndices.isFull();
-    _enumIndices.push_back(IEnumStore::Index());
+    _enumIndices.push_back(AtomicEntryRef());
     return _enumIndices.size() - 1;
 }
 
@@ -41,7 +41,12 @@ SingleValueEnumAttributeBase::EnumIndexCopyVector
 SingleValueEnumAttributeBase::getIndicesCopy(uint32_t size) const
 {
     assert(size <= _enumIndices.size());
-    return EnumIndexCopyVector(&_enumIndices[0], &_enumIndices[0] + size);
+    EnumIndexCopyVector result;
+    result.reserve(size);
+    for (uint32_t lid = 0; lid < size; ++lid) {
+        result.push_back(_enumIndices[lid].load_relaxed());
+    }
+    return result;
 }
 
 void
@@ -54,11 +59,11 @@ SingleValueEnumAttributeBase::remap_enum_store_refs(const EnumIndexRemapper& rem
     v.logEnumStoreEvent("reenumerate", "start");
     auto& filter = remapper.get_entry_ref_filter();
     for (uint32_t i = 0; i < _enumIndices.size(); ++i) {
-        EnumIndex ref = _enumIndices[i];
+        EnumIndex ref = _enumIndices[i].load_relaxed();
         if (ref.valid() && filter.has(ref)) {
             ref = remapper.remap(ref);
         }
-        new_indexes.push_back_fast(ref);
+        new_indexes.push_back_fast(AtomicEntryRef(ref));
     }
     v.logEnumStoreEvent("compactfixup", "drain");
     {
