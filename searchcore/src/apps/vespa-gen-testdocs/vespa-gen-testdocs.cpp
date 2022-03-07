@@ -13,6 +13,7 @@
 #include <cassert>
 #include <getopt.h>
 #include <vector>
+#include <limits>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-gen-testdocs");
