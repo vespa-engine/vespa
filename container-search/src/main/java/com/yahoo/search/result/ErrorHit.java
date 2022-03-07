@@ -6,7 +6,7 @@ import java.util.Set;
 
 /**
  * A hit which holds information on error conditions in a result.
- * En error hit maintains a main error - the main error of the result.
+ * An error hit maintains a main error - the main error of the result.
  *
  * @author bratseth
  */
