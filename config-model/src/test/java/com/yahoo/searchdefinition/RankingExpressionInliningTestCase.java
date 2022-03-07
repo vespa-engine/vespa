@@ -192,14 +192,19 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testFunctionInliningWithReplacement() throws ParseException {
+        checkFunctionReplacement(false);
+        checkFunctionReplacement(true);
+    }
+
+    public void checkFunctionReplacement(boolean useXPP) throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         MockDeployLogger deployLogger = new MockDeployLogger();
         ApplicationBuilder builder = new ApplicationBuilder(MockApplicationPackage.createEmpty(),
-                                                              new MockFileRegistry(),
-                                                              deployLogger,
-                                                              new TestProperties(),
-                                                              rankProfileRegistry,
-                                                              new QueryProfileRegistry());
+                                                            new MockFileRegistry(),
+                                                            deployLogger,
+                                                            new TestProperties().setExperimentalSdParsing(useXPP),
+                                                            rankProfileRegistry,
+                                                            new QueryProfileRegistry());
         builder.addSchema(
                         "search test {\n" +
                         "    document test { }\n" +
@@ -219,8 +224,8 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
         Schema s = builder.getSchema();
         RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
         assertEquals("foo(2)", test.getFirstPhaseRanking().getRoot().toString());
-        assertTrue("Does not contain expected warning", deployLogger.contains("Function 'foo' replaces " +
-                "a previous function with the same name in rank profile 'test'"));
+        assertTrue("Does not contain expected warning",
+                   deployLogger.contains("Function 'foo' is defined twice in rank profile 'test'"));
     }
 
     /**

@@ -113,9 +113,10 @@ class ParsedRankProfile extends ParsedBlock {
         fieldsRankWeight.put(field, weight);
     }
 
-    void addFunction(ParsedRankFunction func) {
-        verifyThat(! functions.containsKey(func.name()), "already has function", func.name());
-        functions.put(func.name(), func);
+    ParsedRankFunction addOrReplaceFunction(ParsedRankFunction func) {
+        // allowed with warning
+        // verifyThat(! functions.containsKey(func.name()), "already has function", func.name());
+        return functions.put(func.name(), func);
     }
 
     void addMutateOperation(MutateOperation.Phase phase, String attrName, String operation) {

@@ -33,12 +33,17 @@ search attributesettings {
       indexing: attribute
       weightedset: remove-if-zero
       weightedset: create-if-nonexistent
+      attribute: fast-search
+      attribute: fast-access
+      attribute: paged
     }
 
     field f6 type weightedset<string> {
       weightedset: remove-if-zero
       indexing: attribute
       weightedset: create-if-nonexistent
+      attribute: enable-bit-vectors
+      attribute: enable-only-bit-vector
     }
 
     field f7 type weightedset<string> {
