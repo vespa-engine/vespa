@@ -87,7 +87,7 @@ if [ -f "$pid_file" ]; then
   parent_pid=$(cat "$pid_file")
   pid=$(pgrep --parent $parent_pid)
 else
-  status=$(vespa-sentinel-cmd list 2>/dev/null | grep --perl-regexp "($service state=|id=\"$service\")")
+  status=$(vespa-sentinel-cmd list 2>/dev/null | grep --perl-regexp "(^$service state=|id=\"$service\")")
   if [ -z "${status}" ]; then
     echo "No service with name or config id '${service}'" >&2
     exit 1
