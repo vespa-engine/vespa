@@ -28,7 +28,7 @@ public:
 
     using NumericFieldValue<Number>::operator=;
     DECLARE_IDENTIFIABLE(ShortFieldValue);
-    static std::unique_ptr<ShortFieldValue> make(int32_t value = 0) { return std::make_unique<ShortFieldValue>(value); }
+    static std::unique_ptr<ShortFieldValue> make(int16_t value = 0) { return std::make_unique<ShortFieldValue>(value); }
 };
 
 } // document
