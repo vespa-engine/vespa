@@ -83,7 +83,7 @@ public class ParsedSchema extends ParsedBlock {
         verifyThat(myDocument == null,
                    "already has", myDocument, "so cannot add", document);
         verifyThat(name().equals(document.name()),
-                   "schema " + name() + "can only contain document named " + name() + ", was: "+ document.name());
+                   "schema " + name() + " can only contain document named " + name() + ", was: "+ document.name());
         this.myDocument = document;
     }
 
