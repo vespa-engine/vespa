@@ -200,6 +200,13 @@ public class Instance {
                 .map(Deployment::quota).reduce(QuotaUsage::add).orElse(QuotaUsage.none);
     }
 
+    /** Returns the total quota usage for manual deployments for this instance **/
+    public QuotaUsage manualQuotaUsage() {
+        return deployments.values().stream()
+                .filter(d -> d.zone().environment().isManuallyDeployed())
+                .map(Deployment::quota).reduce(QuotaUsage::add).orElse(QuotaUsage.none);
+    }
+
     /** Returns the total quota usage for this instance, excluding one specific deployment (and temporary deployments) */
     public QuotaUsage quotaUsageExcluding(ApplicationId application, ZoneId zone) {
         return deployments.values().stream()

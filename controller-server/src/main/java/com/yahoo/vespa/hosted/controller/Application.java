@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import java.security.PublicKey;
 import java.time.Instant;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -223,6 +222,12 @@ public class Application {
     public QuotaUsage quotaUsage() {
         return instances().values().stream()
                           .map(Instance::quotaUsage).reduce(QuotaUsage::add).orElse(QuotaUsage.none);
+    }
+
+    /** Returns the total quota usage for manual deployments for this application */
+    public QuotaUsage manualQuotaUsage() {
+        return instances().values().stream()
+                .map(Instance::manualQuotaUsage).reduce(QuotaUsage::add).orElse(QuotaUsage.none);
     }
 
     /** Returns the total quota usage for this application, excluding one specific deployment (and temporary deployments) */
