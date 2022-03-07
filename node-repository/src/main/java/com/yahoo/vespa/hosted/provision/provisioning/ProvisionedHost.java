@@ -73,27 +73,17 @@ public class ProvisionedHost {
         return Node.reserve(Set.of(), nodeHostname(), hostHostname, nodeResources, hostType.childNodeType()).build();
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public String hostHostname() {
-        return hostHostname;
-    }
-
-    public Flavor hostFlavor() {
-        return hostFlavor;
-    }
-
-    public String nodeHostname() {
-        return nodeAddresses.get(0).hostname();
-    }
-
-    public List<Address> nodeAddresses() {
-        return nodeAddresses;
-    }
-
+    public String getId() { return id; }
+    public String hostHostname() { return hostHostname; }
+    public Flavor hostFlavor() { return hostFlavor; }
+    public NodeType hostType() { return hostType; }
+    public Optional<ApplicationId> exclusiveToApplicationId() { return exclusiveToApplicationId; }
+    public Optional<ClusterSpec.Type> exclusiveToClusterType() { return exclusiveToClusterType; }
+    public List<Address> nodeAddresses() { return nodeAddresses; }
     public NodeResources nodeResources() { return nodeResources; }
+    public Version osVersion() { return osVersion; }
+
+    public String nodeHostname() { return nodeAddresses.get(0).hostname(); }
 
     @Override
     public boolean equals(Object o) {
