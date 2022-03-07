@@ -13,19 +13,17 @@
  */
 #pragma once
 
-#include "types.h"
 #include "merge_bucket_info_syncer.h"
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storage/common/cluster_context.h>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/vespalib/util/monitored_refcount.h>
+#include <vespa/storageframework/generic/clock/time.h>
 #include <atomic>
 
-namespace vespalib {
-class ISequencedTaskExecutor;
-}
-
+namespace vespalib { class ISequencedTaskExecutor; }
+namespace document { class Document; }
 namespace storage {
 
 namespace spi {
@@ -36,10 +34,12 @@ namespace spi {
 class PersistenceUtil;
 class ApplyBucketDiffState;
 class MergeStatus;
+class MessageTracker;
 
-class MergeHandler : public Types,
-                     public MergeBucketInfoSyncer {
-
+class MergeHandler : public MergeBucketInfoSyncer {
+private:
+    using MessageTrackerUP = std::unique_ptr<MessageTracker>;
+    using Timestamp = framework::MicroSecTime;
 public:
     enum StateFlag {
         IN_USE                     = 0x01,
@@ -92,7 +92,7 @@ public:
 private:
     using DocEntryList = std::vector<std::unique_ptr<spi::DocEntry>>;
     const framework::Clock   &_clock;
-    const ClusterContext &_cluster_context;
+    const ClusterContext     &_cluster_context;
     PersistenceUtil          &_env;
     spi::PersistenceProvider &_spi;
     std::unique_ptr<vespalib::MonitoredRefCount> _monitored_ref_count;
@@ -129,9 +129,8 @@ private:
                           DocEntryList & entries,
                           spi::Context& context) const;
 
-    Document::UP deserializeDiffDocument(
-            const api::ApplyBucketDiffCommand::Entry& e,
-            const document::DocumentTypeRepo& repo) const;
+    std::unique_ptr<document::Document>
+    deserializeDiffDocument(const api::ApplyBucketDiffCommand::Entry& e, const document::DocumentTypeRepo& repo) const;
 };
 
 } // storage

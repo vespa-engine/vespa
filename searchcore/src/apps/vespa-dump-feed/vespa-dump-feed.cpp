@@ -3,6 +3,7 @@
 #include <vespa/config/print/fileconfigwriter.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/messagebus/destinationsession.h>
 #include <vespa/messagebus/rpcmessagebus.h>
@@ -15,8 +16,6 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/fastos/app.h>
-
-#include <iostream>
 
 typedef vespalib::SignalHandler SIG;
 

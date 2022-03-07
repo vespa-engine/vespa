@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/growablebytebuffer.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <climits>
 
 using document::FixedBucketSpaces;

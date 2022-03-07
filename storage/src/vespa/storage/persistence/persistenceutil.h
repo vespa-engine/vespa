@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "types.h"
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/persistence/filestorage/filestorhandler.h>
 #include <vespa/storage/persistence/filestorage/filestormetrics.h>
+#include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/persistence/spi/result.h>
@@ -15,6 +15,7 @@
 namespace storage::api {
     class StorageMessage;
     class StorageReply;
+    class BucketInfo;
 }
 
 namespace storage::spi {
@@ -25,7 +26,7 @@ namespace storage {
 
 class PersistenceUtil;
 
-class MessageTracker : protected Types {
+class MessageTracker {
 public:
     using UP = std::unique_ptr<MessageTracker>;
 
@@ -48,7 +49,7 @@ public:
     }
 
     /** Utility function to be able to write a bit less in client. */
-    void fail(uint32_t result, const String& message = "") {
+    void fail(uint32_t result, const vespalib::string & message = "") {
         fail(api::ReturnCode((api::ReturnCode::Result)result, message));
     }
     /** Set the request to fail with the given failure. */

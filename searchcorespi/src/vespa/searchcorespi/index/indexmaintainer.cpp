@@ -9,6 +9,7 @@
 #include "indexreadutilities.h"
 #include "indexwriteutilities.h"
 #include "index_disk_dir.h"
+#include <vespa/document/fieldvalue//document.h>
 #include <vespa/searchcorespi/flush/lambdaflushtask.h>
 #include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/schemautil.h>

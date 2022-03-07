@@ -8,6 +8,7 @@
 #include "selection.h"
 #include "clusterstate.h"
 #include "operationcomplete.h"
+#include <vespa/document/base/documentid.h>
 
 namespace document { class FieldSet; }
 namespace vespalib { class IDestructorCallback; }

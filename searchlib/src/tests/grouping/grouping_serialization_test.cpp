@@ -7,6 +7,7 @@
 #include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
 #include <vespa/searchlib/expression/getymumchecksumfunctionnode.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
+#include <vespa/document/base/documentid.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <fstream>
 #include <vespa/log/log.h>

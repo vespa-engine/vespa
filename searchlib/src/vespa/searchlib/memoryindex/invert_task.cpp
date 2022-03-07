@@ -5,6 +5,7 @@
 #include "field_inverter.h"
 #include "invert_context.h"
 #include "url_field_inverter.h"
+#include <vespa/document/fieldvalue/document.h>
 
 namespace search::memoryindex {
 

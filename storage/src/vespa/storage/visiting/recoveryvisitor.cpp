@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
 #include "recoveryvisitor.h"
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 

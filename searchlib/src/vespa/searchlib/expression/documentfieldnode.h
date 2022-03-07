@@ -5,6 +5,7 @@
 #include "resultnode.h"
 #include "resultvector.h"
 #include <vespa/document/fieldvalue/iteratorhandler.h>
+#include <vespa/document/base/fieldpath.h>
 
 namespace search::expression {
 

@@ -10,6 +10,7 @@
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/document/fieldvalue/document.h>
 
 using document::DataType;
 using document::DocumentTypeRepo;

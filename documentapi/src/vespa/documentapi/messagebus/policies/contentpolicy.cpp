@@ -3,6 +3,7 @@
 #include "contentpolicy.h"
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/error.h>
 #include <vespa/documentapi/documentapi.h>

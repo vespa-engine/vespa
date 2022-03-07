@@ -18,11 +18,11 @@
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/document/base/testdocrepo.h>
-#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/fieldvalue/longfieldvalue.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <thread>

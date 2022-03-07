@@ -3,6 +3,7 @@
 #include "persistenceutil.h"
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/storageapi/messageapi/bucketinforeply.h>
+#include <vespa/document/base/documentid.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/bufferedlogger.h>

@@ -2,12 +2,14 @@
 #pragma once
 
 #include "expressionnode.h"
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/vespalib/objects/objectpredicate.h>
 
-namespace search {
-namespace expression {
+namespace document {
+    class DocumentType;
+    class Document;
+}
+namespace search::expression {
 
 class DocumentAccessorNode : public ExpressionNode
 {
@@ -33,5 +35,3 @@ private:
 };
 
 }
-}
-
