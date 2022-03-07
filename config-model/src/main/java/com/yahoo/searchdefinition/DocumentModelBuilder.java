@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -155,9 +156,9 @@ public class DocumentModelBuilder {
 
     private static void addSearchField(SDField field, SearchDef searchDef) {
         SearchField searchField =
-                new SearchField(field,
-                                field.getIndices().containsKey(field.getName()) && field.getIndices().get(field.getName()).getType().equals(Index.Type.VESPA), 
-                                field.getAttributes().containsKey(field.getName()));
+            new SearchField(field,
+                            field.getIndices().containsKey(field.getName()) && field.getIndices().get(field.getName()).getType().equals(Index.Type.VESPA), 
+                            field.getAttributes().containsKey(field.getName()));
         searchDef.add(searchField);
 
         // Add field to views
@@ -302,89 +303,6 @@ public class DocumentModelBuilder {
         return null;
     }
 
-    @SuppressWarnings("deprecation")
-    private static void specialHandleAnnotationReference(NewDocumentType docType, Field field) {
-        DataType fieldType = specialHandleAnnotationReferenceRecurse(docType, field.getName(), field.getDataType());
-        if (fieldType == null) {
-            return;
-        }
-        field.setDataType(fieldType); // XXX deprecated
-    }
-
-    private static DataType specialHandleAnnotationReferenceRecurse(NewDocumentType docType, String fieldName,
-                                                                    DataType dataType) {
-        if (dataType instanceof TemporaryAnnotationReferenceDataType) {
-            TemporaryAnnotationReferenceDataType refType = (TemporaryAnnotationReferenceDataType)dataType;
-            if (refType.getId() != 0) {
-                return null;
-            }
-            AnnotationType target = docType.getAnnotationType(refType.getTarget());
-            if (target == null) {
-                throw new RetryLaterException("Annotation '" + refType.getTarget() + "' in reference '" + fieldName +
-                                              "' does not exist.");
-            }
-            dataType = new AnnotationReferenceDataType(target);
-            addType(docType, dataType);
-            return dataType;
-        }
-        else if (dataType instanceof MapDataType) {
-            MapDataType t = (MapDataType)dataType;
-            DataType valueType = specialHandleAnnotationReferenceRecurse(docType, fieldName, t.getValueType());
-            if (valueType == null) {
-                return null;
-            }
-            var mapType = new MapDataType(t.getKeyType(), valueType, t.getId());
-            addType(docType, mapType);
-            return mapType;
-        }
-        else if (dataType instanceof ArrayDataType) {
-            ArrayDataType t = (ArrayDataType) dataType;
-            DataType nestedType = specialHandleAnnotationReferenceRecurse(docType, fieldName, t.getNestedType());
-            if (nestedType == null) {
-                return null;
-            }
-            var lstType = new ArrayDataType(nestedType, t.getId());
-            addType(docType, lstType);
-            return lstType;
-        }
-        else if (dataType instanceof WeightedSetDataType) {
-            WeightedSetDataType t = (WeightedSetDataType) dataType;
-            DataType nestedType = specialHandleAnnotationReferenceRecurse(docType, fieldName, t.getNestedType());
-            if (nestedType == null) {
-                return null;
-            }
-            boolean c = t.createIfNonExistent();
-            boolean r = t.removeIfZero();
-            var lstType = new WeightedSetDataType(nestedType, c, r, t.getId());
-            addType(docType, lstType);
-            return lstType;
-        }
-        return null;
-    }
-
-    private static StructDataType handleStruct(NewDocumentType dt, SDDocumentType type) {
-        StructDataType s = new StructDataType(type.getName());
-        for (Field f : type.getDocumentType().contentStruct().getFieldsThisTypeOnly()) {
-            specialHandleAnnotationReference(dt, f);
-            s.addField(f);
-        }
-        for (StructDataType inherited : type.getDocumentType().contentStruct().getInheritedTypes()) {
-            s.inherit(inherited);
-        }
-        extractNestedTypes(dt, s);
-        addType(dt, s);
-        return s;
-    }
-
-    private static StructDataType handleStruct(NewDocumentType dt, StructDataType s) {
-        for (Field f : s.getFieldsThisTypeOnly()) {
-            specialHandleAnnotationReference(dt, f);
-        }
-        extractNestedTypes(dt, s);
-        addType(dt, s);
-        return s;
-    }
-
     private static boolean anyParentsHavePayLoad(SDAnnotationType sa, SDDocumentType sdoc) {
         if (sa.getInherits() != null) {
             AnnotationType tmp = sdoc.findAnnotation(sa.getInherits());
@@ -395,8 +313,6 @@ public class DocumentModelBuilder {
     }
 
     private NewDocumentType convert(SDDocumentType sdoc) {
-        Map<AnnotationType, String> annotationInheritance = new HashMap<>();
-        Map<StructDataType, String> structInheritance = new HashMap<>();
         NewDocumentType dt = new NewDocumentType(new NewDocumentType.Name(sdoc.getName()),
                                                  sdoc.getDocumentType().contentStruct(),
                                                  sdoc.getFieldSets(),
@@ -404,63 +320,219 @@ public class DocumentModelBuilder {
                                                  convertTemporaryImportedFieldsToNames(sdoc.getTemporaryImportedFields()));
         for (SDDocumentType n : sdoc.getInheritedTypes()) {
             NewDocumentType.Name name = new NewDocumentType.Name(n.getName());
-                NewDocumentType inherited =  model.getDocumentManager().getDocumentType(name);
-                if (inherited != null) {
-                    dt.inherit(inherited);
+            NewDocumentType inherited = model.getDocumentManager().getDocumentType(name);
+            if (inherited != null) {
+                dt.inherit(inherited);
+            }
+        }
+        var extractor = new TypeExtractor(dt);
+        extractor.extract(sdoc);
+        return dt;
+    }
+
+    static class TypeExtractor {
+        private final NewDocumentType dt;
+        Map<AnnotationType, String> annotationInheritance = new HashMap<>();
+        Map<StructDataType, String> structInheritance = new HashMap<>();
+        private final Map<Object, Integer> inProgress = new IdentityHashMap<>();
+        TypeExtractor(NewDocumentType target) {
+            this.dt = target;
+        }
+
+        void extract(SDDocumentType sdoc) {
+            for (SDDocumentType type : sdoc.getTypes()) {
+                if (type.isStruct()) {
+                    handleStruct(dt, type);
+                } else {
+                    throw new IllegalArgumentException("Data type '" + type.getName() + "' is not a struct => tostring='" + type.toString() + "'.");
                 }
-        }
-        for (SDDocumentType type : sdoc.getTypes()) {
-            if (type.isStruct()) {
-                handleStruct(dt, type);
-            } else {
-                throw new IllegalArgumentException("Data type '" + sdoc.getName() + "' is not a struct => tostring='" + sdoc.toString() + "'.");
             }
-        }
-        for (SDDocumentType type : sdoc.getTypes()) {
-            for (SDDocumentType proxy : type.getInheritedTypes()) {
-                var inherited = dt.getDataTypeRecursive(proxy.getName());
-                var converted = (StructDataType) dt.getDataType(type.getName());
-                converted.inherit((StructDataType) inherited);
+            for (SDDocumentType type : sdoc.getTypes()) {
+                for (SDDocumentType proxy : type.getInheritedTypes()) {
+                    var inherited = dt.getDataTypeRecursive(proxy.getName());
+                    var converted = (StructDataType) dt.getDataType(type.getName());
+                    converted.inherit((StructDataType) inherited);
+                }
             }
-        }
-        for (AnnotationType annotation : sdoc.getAnnotations().values()) {
-            dt.add(annotation);
-        }
-        for (AnnotationType annotation : sdoc.getAnnotations().values()) {
-            SDAnnotationType sa = (SDAnnotationType) annotation;
-            if (annotation.getInheritedTypes().isEmpty() && (sa.getInherits() != null) ) {
-                annotationInheritance.put(annotation, sa.getInherits());
+            for (AnnotationType annotation : sdoc.getAnnotations().values()) {
+                dt.add(annotation);
             }
-            if (annotation.getDataType() == null) {
-                if (sa.getSdDocType() != null) {
-                    StructDataType s = handleStruct(dt, sa.getSdDocType());
-                    annotation.setDataType(s);
-                    if ((sa.getInherits() != null)) {
+            for (AnnotationType annotation : sdoc.getAnnotations().values()) {
+                SDAnnotationType sa = (SDAnnotationType) annotation;
+                if (annotation.getInheritedTypes().isEmpty() && (sa.getInherits() != null) ) {
+                    annotationInheritance.put(annotation, sa.getInherits());
+                }
+                if (annotation.getDataType() == null) {
+                    if (sa.getSdDocType() != null) {
+                        StructDataType s = handleStruct(dt, sa.getSdDocType());
+                        annotation.setDataType(s);
+                        if ((sa.getInherits() != null)) {
+                            structInheritance.put(s, "annotation."+sa.getInherits());
+                        }
+                    } else if (sa.getInherits() != null) {
+                        StructDataType s = new StructDataType("annotation."+annotation.getName());
+                        if (anyParentsHavePayLoad(sa, sdoc)) {
+                            annotation.setDataType(s);
+                            addType(dt, s);
+                        }
                         structInheritance.put(s, "annotation."+sa.getInherits());
                     }
-                } else if (sa.getInherits() != null) {
-                    StructDataType s = new StructDataType("annotation."+annotation.getName());
-                    if (anyParentsHavePayLoad(sa, sdoc)) {
-                        annotation.setDataType(s);
-                        addType(dt, s);
-                    }
-                    structInheritance.put(s, "annotation."+sa.getInherits());
+                }
+            }
+            for (Map.Entry<AnnotationType, String> e : annotationInheritance.entrySet()) {
+                e.getKey().inherit(dt.getAnnotationType(e.getValue()));
+            }
+            for (Map.Entry<StructDataType, String> e : structInheritance.entrySet()) {
+                StructDataType s = (StructDataType)dt.getDataType(e.getValue());
+                if (s != null) {
+                    e.getKey().inherit(s);
+                }
+            }
+            handleStruct(dt, sdoc.getDocumentType().contentStruct());
+
+            extractDataTypesFromFields(dt, sdoc.fieldSet());
+        }
+
+        private static void extractDataTypesFromFields(NewDocumentType dt, Collection<Field> fields) {
+            for (Field f : fields) {
+                DataType type = f.getDataType();
+                if (testAddType(dt, type)) {
+                    extractNestedTypes(dt, type);
+                    addType(dt, type);
                 }
             }
         }
-        for (Map.Entry<AnnotationType, String> e : annotationInheritance.entrySet()) {
-            e.getKey().inherit(dt.getAnnotationType(e.getValue()));
-        }
-        for (Map.Entry<StructDataType, String> e : structInheritance.entrySet()) {
-            StructDataType s = (StructDataType)dt.getDataType(e.getValue());
-            if (s != null) {
-                e.getKey().inherit(s);
+
+        private static void extractNestedTypes(NewDocumentType dt, DataType type) {
+            if (type instanceof StructDataType) {
+                StructDataType tmp = (StructDataType) type;
+                extractDataTypesFromFields(dt, tmp.getFieldsThisTypeOnly());
+            } else if (type instanceof DocumentType) {
+                throw new IllegalArgumentException("Can not handle nested document definitions. In document type '" + dt.getName().toString() +
+                                                   "', we can not define document type '" + type.toString());
+            } else if (type instanceof CollectionDataType) {
+                CollectionDataType tmp = (CollectionDataType) type;
+                extractNestedTypes(dt, tmp.getNestedType());
+                addType(dt, tmp.getNestedType());
+            } else if (type instanceof MapDataType) {
+                MapDataType tmp = (MapDataType) type;
+                extractNestedTypes(dt, tmp.getKeyType());
+                extractNestedTypes(dt, tmp.getValueType());
+                addType(dt, tmp.getKeyType());
+                addType(dt, tmp.getValueType());
+            } else if (type instanceof TemporaryAnnotationReferenceDataType) {
+                throw new IllegalArgumentException(type.toString());
             }
         }
-        handleStruct(dt, sdoc.getDocumentType().contentStruct());
 
-        extractDataTypesFromFields(dt, sdoc.fieldSet());
-        return dt;
+        private static boolean testAddType(NewDocumentType dt, DataType type) { return internalAddType(dt, type, true); }
+
+        private static boolean addType(NewDocumentType dt, DataType type) { return internalAddType(dt, type, false); }
+
+        private static boolean internalAddType(NewDocumentType dt, DataType type, boolean dryRun) {
+            DataType oldType = dt.getDataTypeRecursive(type.getId());
+            if (oldType == null) {
+                if ( ! dryRun) {
+                    dt.add(type);
+                }
+                return true;
+            } else if ((type instanceof StructDataType) && (oldType instanceof StructDataType)) {
+                StructDataType s = (StructDataType) type;
+                StructDataType os = (StructDataType) oldType;
+                if ((os.getFieldCount() == 0) && (s.getFieldCount() > os.getFieldCount())) {
+                    if ( ! dryRun) {
+                        dt.replace(type);
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+
+
+        @SuppressWarnings("deprecation")
+        private static void specialHandleAnnotationReference(NewDocumentType docType, Field field) {
+            DataType fieldType = specialHandleAnnotationReferenceRecurse(docType, field.getName(), field.getDataType());
+            if (fieldType == null) {
+                return;
+            }
+            field.setDataType(fieldType); // XXX deprecated
+        }
+
+        private static DataType specialHandleAnnotationReferenceRecurse(NewDocumentType docType, String fieldName,
+                                                                        DataType dataType) {
+            if (dataType instanceof TemporaryAnnotationReferenceDataType) {
+                TemporaryAnnotationReferenceDataType refType = (TemporaryAnnotationReferenceDataType)dataType;
+                if (refType.getId() != 0) {
+                    return null;
+                }
+                AnnotationType target = docType.getAnnotationType(refType.getTarget());
+                if (target == null) {
+                    throw new RetryLaterException("Annotation '" + refType.getTarget() + "' in reference '" + fieldName +
+                                                  "' does not exist.");
+                }
+                dataType = new AnnotationReferenceDataType(target);
+                addType(docType, dataType);
+                return dataType;
+            }
+            else if (dataType instanceof MapDataType) {
+                MapDataType t = (MapDataType)dataType;
+                DataType valueType = specialHandleAnnotationReferenceRecurse(docType, fieldName, t.getValueType());
+                if (valueType == null) {
+                    return null;
+                }
+                var mapType = new MapDataType(t.getKeyType(), valueType, t.getId());
+                addType(docType, mapType);
+                return mapType;
+            }
+            else if (dataType instanceof ArrayDataType) {
+                ArrayDataType t = (ArrayDataType) dataType;
+                DataType nestedType = specialHandleAnnotationReferenceRecurse(docType, fieldName, t.getNestedType());
+                if (nestedType == null) {
+                    return null;
+                }
+                var lstType = new ArrayDataType(nestedType, t.getId());
+                addType(docType, lstType);
+                return lstType;
+            }
+            else if (dataType instanceof WeightedSetDataType) {
+                WeightedSetDataType t = (WeightedSetDataType) dataType;
+                DataType nestedType = specialHandleAnnotationReferenceRecurse(docType, fieldName, t.getNestedType());
+                if (nestedType == null) {
+                    return null;
+                }
+                boolean c = t.createIfNonExistent();
+                boolean r = t.removeIfZero();
+                var lstType = new WeightedSetDataType(nestedType, c, r, t.getId());
+                addType(docType, lstType);
+                return lstType;
+            }
+            return null;
+        }
+
+        private static StructDataType handleStruct(NewDocumentType dt, SDDocumentType type) {
+            StructDataType s = new StructDataType(type.getName());
+            for (Field f : type.getDocumentType().contentStruct().getFieldsThisTypeOnly()) {
+                specialHandleAnnotationReference(dt, f);
+                s.addField(f);
+            }
+            for (StructDataType inherited : type.getDocumentType().contentStruct().getInheritedTypes()) {
+                s.inherit(inherited);
+            }
+            extractNestedTypes(dt, s);
+            addType(dt, s);
+            return s;
+        }
+
+        private static StructDataType handleStruct(NewDocumentType dt, StructDataType s) {
+            for (Field f : s.getFieldsThisTypeOnly()) {
+                specialHandleAnnotationReference(dt, f);
+            }
+            extractNestedTypes(dt, s);
+            addType(dt, s);
+            return s;
+        }
+        
     }
 
     private static Set<NewDocumentType.Name> convertDocumentReferencesToNames(Optional<DocumentReferences> documentReferences) {
@@ -468,9 +540,9 @@ public class DocumentModelBuilder {
             return Set.of();
         }
         return documentReferences.get().referenceMap().values().stream()
-                .map(documentReference -> documentReference.targetSearch().getDocument())
-                .map(documentType -> new NewDocumentType.Name(documentType.getName()))
-                .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
+            .map(documentReference -> documentReference.targetSearch().getDocument())
+            .map(documentType -> new NewDocumentType.Name(documentType.getName()))
+            .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
     }
 
     private static Set<String> convertTemporaryImportedFieldsToNames(TemporaryImportedFields importedFields) {
@@ -478,62 +550,6 @@ public class DocumentModelBuilder {
             return Set.of();
         }
         return Collections.unmodifiableSet(importedFields.fields().keySet());
-    }
-
-    private static void extractDataTypesFromFields(NewDocumentType dt, Collection<Field> fields) {
-        for (Field f : fields) {
-            DataType type = f.getDataType();
-            if (testAddType(dt, type)) {
-                extractNestedTypes(dt, type);
-                addType(dt, type);
-            }
-        }
-    }
-
-    private static void extractNestedTypes(NewDocumentType dt, DataType type) {
-        if (type instanceof StructDataType) {
-            StructDataType tmp = (StructDataType) type;
-            extractDataTypesFromFields(dt, tmp.getFieldsThisTypeOnly());
-        } else if (type instanceof DocumentType) {
-            throw new IllegalArgumentException("Can not handle nested document definitions. In document type '" + dt.getName().toString() +
-                                               "', we can not define document type '" + type.toString());
-        } else if (type instanceof CollectionDataType) {
-            CollectionDataType tmp = (CollectionDataType) type;
-            extractNestedTypes(dt, tmp.getNestedType());
-            addType(dt, tmp.getNestedType());
-        } else if (type instanceof MapDataType) {
-            MapDataType tmp = (MapDataType) type;
-            extractNestedTypes(dt, tmp.getKeyType());
-            extractNestedTypes(dt, tmp.getValueType());
-            addType(dt, tmp.getKeyType());
-            addType(dt, tmp.getValueType());
-        } else if (type instanceof TemporaryAnnotationReferenceDataType) {
-            throw new IllegalArgumentException(type.toString());
-        }
-    }
-
-    private static boolean testAddType(NewDocumentType dt, DataType type) { return internalAddType(dt, type, true); }
-
-    private static boolean addType(NewDocumentType dt, DataType type) { return internalAddType(dt, type, false); }
-
-    private static boolean internalAddType(NewDocumentType dt, DataType type, boolean dryRun) {
-        DataType oldType = dt.getDataTypeRecursive(type.getId());
-        if (oldType == null) {
-            if ( ! dryRun) {
-                dt.add(type);
-            }
-            return true;
-        } else if ((type instanceof StructDataType) && (oldType instanceof StructDataType)) {
-            StructDataType s = (StructDataType) type;
-            StructDataType os = (StructDataType) oldType;
-            if ((os.getFieldCount() == 0) && (s.getFieldCount() > os.getFieldCount())) {
-                if ( ! dryRun) {
-                    dt.replace(type);
-                }
-                return true;
-            }
-        }
-        return false;
     }
 
     public static class RetryLaterException extends IllegalArgumentException {
