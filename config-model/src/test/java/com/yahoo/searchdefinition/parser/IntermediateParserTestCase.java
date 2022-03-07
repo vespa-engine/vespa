@@ -256,7 +256,6 @@ public class IntermediateParserTestCase {
         checkFileParses("src/test/examples/stemmingdefault.sd");
         checkFileParses("src/test/examples/stemmingsetting.sd");
         checkFileParses("src/test/examples/strange.sd");
-        checkFileParses("src/test/examples/structanddocumentwithsamenames.sd");
         checkFileParses("src/test/examples/struct.sd");
         checkFileParses("src/test/examples/summaryfieldcollision.sd");
         checkFileParses("src/test/examples/weightedset-summaryto.sd");
