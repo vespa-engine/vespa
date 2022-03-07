@@ -3,7 +3,6 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/document/util/bytebuffer.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
@@ -103,21 +102,14 @@ TEST(ArrayFieldValueTest, testArray)
     ArrayFieldValue::UP valuePtr(value2.clone());
     EXPECT_EQ(value, *valuePtr);
 
-        // Iterating
+    // Iterating
     const ArrayFieldValue& constVal(value);
-    for(ArrayFieldValue::const_iterator it = constVal.begin();
-        it != constVal.end(); ++it)
-    {
-        const FieldValue& fval1(*it);
-        (void) fval1;
-        EXPECT_EQ((uint32_t) IntFieldValue::classId,
-                             it->getClass().id());
+    for(const FieldValue & fval1 : constVal) {
+        EXPECT_EQ((uint32_t) IntFieldValue::classId, fval1.getClass().id());
     }
     value2 = value;
-    for(ArrayFieldValue::iterator it = value2.begin(); it != value2.end(); ++it)
-    {
-        (*it).assign(IntFieldValue(7));
-        it->assign(IntFieldValue(7));
+    for(size_t i(0); i < value2.size(); i++) {
+        value2[i].assign(IntFieldValue(7));
     }
     EXPECT_TRUE(value != value2);
     EXPECT_TRUE(value2.contains(IntFieldValue(7)));

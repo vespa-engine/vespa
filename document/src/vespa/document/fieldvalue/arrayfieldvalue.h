@@ -74,11 +74,11 @@ public:
         // Iterator functionality
     const_iterator begin() const { return array().begin(); }
     const_iterator end() const { return array().end(); }
-    iterator begin() { return array().begin(); }
-    iterator end() { return array().end(); }
 
     DECLARE_IDENTIFIABLE_ABSTRACT(ArrayFieldValue);
 private:
+    iterator begin() { return array().begin(); }
+    iterator end() { return array().end(); }
     const IArray & array() const { return *_array; }
     IArray & array() { return *_array; }
 };
