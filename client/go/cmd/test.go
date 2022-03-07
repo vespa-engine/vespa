@@ -479,7 +479,7 @@ type testContext struct {
 
 func (t *testContext) target() (vespa.Target, error) {
 	if t.lazyTarget == nil {
-		target, err := t.cli.target(t.zone, "")
+		target, err := t.cli.target(targetOptions{zone: t.zone})
 		if err != nil {
 			return nil, err
 		}

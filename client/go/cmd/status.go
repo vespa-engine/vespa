@@ -72,7 +72,7 @@ func newStatusDeployCmd(cli *CLI) *cobra.Command {
 }
 
 func printServiceStatus(cli *CLI, name string) error {
-	t, err := cli.target("", "")
+	t, err := cli.target(targetOptions{})
 	if err != nil {
 		return err
 	}
