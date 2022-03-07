@@ -249,9 +249,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
         return hit;
     }
 
-    /**
-     * Adds a list of hits to this group, the same
-     */
+    /** Adds a list of hits to this group, the same as calling add for each item in the list. */
     public void addAll(List<Hit> hits) {
         for (Hit hit : hits)
             add(hit);

@@ -13,9 +13,8 @@ import com.yahoo.search.searchchain.Execution;
 import java.util.*;
 
 /**
- * <p> Groups hits according to sddocname. </p>
- *
- * <p> For each group, the desired number of hits can be specified. </p>
+ * Groups hits according to document type.
+ * For each group, the desired number of hits can be specified.
  *
  * @author Tony Vaagenes
  */
@@ -48,7 +47,7 @@ public class MultipleResultsSearcher extends Searcher {
         }
     }
 
-    private class HitsRetriever {
+    private static class HitsRetriever {
 
         PartitionedResult partitionedResult;
 
@@ -58,12 +57,12 @@ public class MultipleResultsSearcher extends Searcher {
         private final Parameters parameters;
         private final int hits;
         private final int offset;
-        private Execution execution;
-        private Result initialResult;
+        private final Execution execution;
+        private final Result initialResult;
 
         HitsRetriever(Query query, Execution execution, Parameters parameters) throws ParameterException {
-            this.offset=query.getOffset();
-            this.hits=query.getHits();
+            this.offset = query.getOffset();
+            this.hits = query.getHits();
             this.nextOffset = query.getOffset() + query.getHits();
             this.query = query;
             this.parameters = parameters;
@@ -362,13 +361,14 @@ public class MultipleResultsSearcher extends Searcher {
         }
     }
 
-    @SuppressWarnings("serial")
     private static class ParameterException extends Exception {
+
         String msg;
 
         ParameterException(String msg) {
             this.msg = msg;
         }
+
     }
 
 }
