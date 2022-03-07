@@ -106,6 +106,9 @@ install-all: all manpages
 #
 
 install:
+ifdef CI
+	go env
+endif
 	env GOBIN=$(BIN) $(GOPROXY_OVERRIDE) go install $(GO_FLAGS) ./...
 
 manpages: install
