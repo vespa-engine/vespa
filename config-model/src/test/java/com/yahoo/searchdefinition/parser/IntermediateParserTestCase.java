@@ -22,8 +22,12 @@ public class IntermediateParserTestCase {
         var deployLogger = new BaseDeployLogger();
         var modelProperties = new TestProperties();
         var stream = new SimpleCharStream(input);
-        var parser = new IntermediateParser(stream, deployLogger, modelProperties);
-        return parser.schema();
+        try {
+            var parser = new IntermediateParser(stream, deployLogger, modelProperties);
+            return parser.schema();
+        } catch (ParseException pe) {
+            throw new ParseException(stream.formatException(pe.getMessage()));
+        }
     }
 
     ParsedSchema parseFile(String fileName) throws Exception {
@@ -208,6 +212,7 @@ public class IntermediateParserTestCase {
         checkFileParses("src/test/derived/uri_wset/uri_wset.sd");
         checkFileParses("src/test/examples/arrays.sd");
         checkFileParses("src/test/examples/arraysweightedsets.sd");
+        checkFileParses("src/test/examples/attributeposition.sd");
         checkFileParses("src/test/examples/attributesettings.sd");
         checkFileParses("src/test/examples/attributesexactmatch.sd");
         checkFileParses("src/test/examples/casing.sd");

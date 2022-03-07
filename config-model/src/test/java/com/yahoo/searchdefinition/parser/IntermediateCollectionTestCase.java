@@ -36,6 +36,20 @@ public class IntermediateCollectionTestCase {
     }
 
     @Test
+    public void names_may_differ() throws Exception {
+        String input = joinLines
+            ("schema foo_search {",
+             "  document foo {",
+             "  }",
+             "}");
+        var collection = new IntermediateCollection();
+        ParsedSchema schema = collection.addSchemaFromString(input);
+        assertEquals("foo_search", schema.name());
+        assertTrue(schema.hasDocument());
+        assertEquals("foo", schema.getDocument().name());
+    }
+
+    @Test
     public void can_add_schema_files() throws Exception {
         var collection = new IntermediateCollection();
         collection.addSchemaFromFile("src/test/derived/deriver/child.sd");
@@ -167,7 +181,7 @@ public class IntermediateCollectionTestCase {
         assertEquals(collection.getParsedSchemas().size(), 3);
         var ex = assertThrows(IllegalArgumentException.class, () ->
                               collection.resolveInternalConnections());
-        assertTrue(ex.getMessage().startsWith("Inheritance cycle for schemas: "));
+        assertTrue(ex.getMessage().startsWith("Inheritance/reference cycle for schemas: "));
     }
 
     @Test
@@ -180,7 +194,7 @@ public class IntermediateCollectionTestCase {
         var ex = assertThrows(IllegalArgumentException.class, () ->
                               collection.resolveInternalConnections());
         System.err.println("ex: "+ex.getMessage());
-        assertTrue(ex.getMessage().startsWith("Inheritance cycle for documents: "));
+        assertTrue(ex.getMessage().startsWith("Inheritance/reference cycle for documents: "));
     }
 
     @Test
@@ -193,5 +207,31 @@ public class IntermediateCollectionTestCase {
                               collection.resolveInternalConnections());
         assertEquals("document foo inherits from unavailable document bar", ex.getMessage());
     }
+
+    @Test
+    public void can_detect_document_reference_cycle() throws Exception {
+        var collection = new IntermediateCollection();
+        collection.addSchemaFromString("schema foo { document foo { field oneref type reference<bar> {} } }");
+        collection.addSchemaFromString("schema bar { document bar { field tworef type reference<foo> {} } }");
+        assertEquals(collection.getParsedSchemas().size(), 2);
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                              collection.resolveInternalConnections());
+        System.err.println("ex: "+ex.getMessage());
+        assertTrue(ex.getMessage().startsWith("Inheritance/reference cycle for documents: "));
+    }
+
+    @Test
+    public void can_detect_cycles_with_reference() throws Exception {
+        var collection = new IntermediateCollection();
+        collection.addSchemaFromString("schema foo { document foodoc inherits bardoc {} }");
+        collection.addSchemaFromString("schema bar { document bardoc { field myref type reference<qux> { } } }");
+        collection.addSchemaFromString("schema qux inherits foo { document qux inherits foodoc {} }");
+        assertEquals(collection.getParsedSchemas().size(), 3);
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                              collection.resolveInternalConnections());
+        System.err.println("ex: "+ex.getMessage());
+        assertTrue(ex.getMessage().startsWith("Inheritance/reference cycle for documents: "));
+    }
+
 
 }
