@@ -299,10 +299,10 @@ int main(int argc, char **argv) {
     try {
         return my_main(argc, argv);
     } catch (const MyError &err) {
-        fprintf(stderr, "error: %s\n", err.msg.c_str());
+        fprintf(stdout, "error: %s\n", err.msg.c_str());
         return 3;
     } catch (const std::exception &ex) {
-        fprintf(stderr, "got exception: %s\n", ex.what());
+        fprintf(stdout, "got exception: %s\n", ex.what());
         return 2;
     }
 }
