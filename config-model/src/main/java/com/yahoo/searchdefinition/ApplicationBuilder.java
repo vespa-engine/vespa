@@ -426,7 +426,7 @@ public class ApplicationBuilder {
     }
 
     /**
-     * Convenience factory methdd to create a SearchBuilder from multiple SD files. Only for testing.
+     * Convenience factory methods to create a SearchBuilder from multiple SD files. Only for testing.
      */
     public static ApplicationBuilder createFromFiles(Collection<String> fileNames) throws IOException, ParseException {
         return createFromFiles(fileNames, new BaseDeployLogger());
