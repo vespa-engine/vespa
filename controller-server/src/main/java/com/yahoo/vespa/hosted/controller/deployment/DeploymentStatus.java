@@ -201,7 +201,7 @@ public class DeploymentStatus {
         jobs.putAll(productionJobs);
         // Add runs for idle, declared test jobs if they have no successes on their instance's change's versions.
         jobSteps.forEach((job, step) -> {
-            if ( ! step.isDeclared() || step.type() != StepType.test || jobs.containsKey(job))
+            if ( ! step.isDeclared() || job.type().isProduction() || jobs.containsKey(job))
                 return;
 
             Change change = changes.get(job.application().instance());
