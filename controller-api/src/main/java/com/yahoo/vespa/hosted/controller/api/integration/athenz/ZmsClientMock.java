@@ -8,6 +8,7 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPolicy;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
+import com.yahoo.vespa.athenz.api.AthenzRoleInformation;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.OAuthCredentials;
 import com.yahoo.vespa.athenz.client.zms.RoleAction;
@@ -201,7 +202,7 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public void approvePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry, Optional<String> reason, Optional<OAuthCredentials> oAuthCredentials) {
+    public void decidePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry, Optional<String> reason, Optional<OAuthCredentials> oAuthCredentials, boolean approve) {
     }
 
     @Override
@@ -254,6 +255,11 @@ public class ZmsClientMock implements ZmsClient {
 
     @Override
     public void createSubdomain(AthenzDomain parent, String name) {}
+
+    @Override
+    public AthenzRoleInformation getFullRoleInformation(AthenzRole role) {
+        return new AthenzRoleInformation(role.domain(), role.roleName(), true, true, Optional.empty(), List.of());
+    }
 
     @Override
     public void close() {}

@@ -7,6 +7,7 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPolicy;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
+import com.yahoo.vespa.athenz.api.AthenzRoleInformation;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.OAuthCredentials;
 
@@ -59,8 +60,8 @@ public interface ZmsClient extends AutoCloseable {
 
     Map<AthenzIdentity, String> listPendingRoleApprovals(AthenzRole athenzRole);
 
-    void approvePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry,
-                                      Optional<String> reason, Optional<OAuthCredentials> oAuthCredentials);
+    void decidePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry,
+                                      Optional<String> reason, Optional<OAuthCredentials> oAuthCredentials, boolean approve);
 
     List<AthenzIdentity> listMembers(AthenzRole athenzRole);
 
@@ -79,6 +80,8 @@ public interface ZmsClient extends AutoCloseable {
     void deleteRole(AthenzRole athenzRole);
 
     void createSubdomain(AthenzDomain parent, String name);
+
+    AthenzRoleInformation getFullRoleInformation(AthenzRole role);
 
     void close();
 }

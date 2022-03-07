@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -15,11 +16,21 @@ import java.util.List;
 public class RoleEntity {
     private final String roleName;
     private final List<Member> roleMembers;
+    private final Boolean selfServe;
+    private final Boolean reviewEnabled;
+    private final List<AuditLogEntry> auditLog;
 
     @JsonCreator
-    public RoleEntity(@JsonProperty("roleName") String roleName, @JsonProperty("roleMembers") List<Member> roleMembers) {
+    public RoleEntity(@JsonProperty("roleName") String roleName,
+                      @JsonProperty("roleMembers") List<Member> roleMembers,
+                      @JsonProperty("selfServe") Boolean selfServe,
+                      @JsonProperty("reviewEnabled") Boolean reviewEnabled,
+                      @JsonProperty("auditLog") List<AuditLogEntry> auditLog) {
         this.roleName = roleName;
         this.roleMembers = roleMembers;
+        this.selfServe = selfServe;
+        this.reviewEnabled = reviewEnabled;
+        this.auditLog = auditLog == null ? new ArrayList<>() : auditLog;
     }
 
     public String roleName() {
@@ -30,19 +41,37 @@ public class RoleEntity {
         return roleMembers;
     }
 
+    public Boolean selfServe() {
+        return selfServe;
+    }
+
+    public Boolean reviewEnabled() {
+        return reviewEnabled;
+    }
+
+    public List<AuditLogEntry> auditLog() {
+        return auditLog;
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static final class Member {
         private final String memberName;
         private final boolean active;
         private final boolean approved;
         private final String auditRef;
+        private final String requestTime;
 
         @JsonCreator
-        public Member(@JsonProperty("memberName") String memberName, @JsonProperty("active") boolean active, @JsonProperty("approved") boolean approved, @JsonProperty("auditRef") String auditRef) {
+        public Member(@JsonProperty("memberName") String memberName,
+                      @JsonProperty("active") boolean active,
+                      @JsonProperty("approved") boolean approved,
+                      @JsonProperty("auditRef") String auditRef,
+                      @JsonProperty("requestTime") String requestTime) {
             this.memberName = memberName;
             this.active = active;
             this.approved = approved;
             this.auditRef = auditRef;
+            this.requestTime = requestTime;
         }
 
         public String memberName() {
@@ -55,6 +84,56 @@ public class RoleEntity {
 
         public String auditRef() {
             return auditRef;
+        }
+
+        public String requestTime() {
+            return requestTime;
+        }
+
+        public boolean active() {
+            return active;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static final class AuditLogEntry {
+        private final String member;
+        private final String admin;
+        private final String action;
+        private final String auditRef;
+        private final String created;
+
+        @JsonCreator
+        public AuditLogEntry(@JsonProperty("member") String member,
+                             @JsonProperty("admin") String admin,
+                             @JsonProperty("created") String created,
+                             @JsonProperty("action") String action,
+                             @JsonProperty("auditRef") String auditRef) {
+            this.member = member;
+            this.admin = admin;
+            this.created = created;
+            this.action = action;
+            this.auditRef = auditRef;
+        }
+
+        public String getMember() {
+            return member;
+        }
+
+        public String getAdmin() {
+            return admin;
+        }
+
+        public String getAction() {
+            return action;
+        }
+
+        public String getAuditRef() {
+            return auditRef;
+        }
+
+        public String getCreated() {
+            return created;
         }
     }
 }

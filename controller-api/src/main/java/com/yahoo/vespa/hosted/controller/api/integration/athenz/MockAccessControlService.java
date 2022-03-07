@@ -3,12 +3,16 @@
 package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzRoleInformation;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OAuthCredentials;
 
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public class MockAccessControlService implements AccessControlService {
@@ -31,7 +35,7 @@ public class MockAccessControlService implements AccessControlService {
     }
 
     @Override
-    public boolean approveSshAccess(TenantName tenantName, Instant expiry, OAuthCredentials oAuthCredentials) {
+    public boolean decideSshAccess(TenantName tenantName, Instant expiry, OAuthCredentials oAuthCredentials, boolean approve) {
         return false;
     }
 
@@ -41,8 +45,13 @@ public class MockAccessControlService implements AccessControlService {
     }
 
     @Override
-    public boolean hasPendingAccessRequests(TenantName tenantName) {
-        return false;
+    public AthenzRoleInformation getAccessRoleInformation(TenantName tenantName) {
+        return new AthenzRoleInformation(new AthenzDomain("test-domain"), "tenant-role", false, false, Optional.empty(), List.of());
+    }
+
+    @Override
+    public void setPreapprovedAccess(TenantName tenantName, boolean preapproved) {
+
     }
 
     public void addPendingMember(AthenzUser user) {

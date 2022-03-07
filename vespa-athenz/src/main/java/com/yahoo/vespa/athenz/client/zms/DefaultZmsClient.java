@@ -8,6 +8,7 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPolicy;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
+import com.yahoo.vespa.athenz.api.AthenzRoleInformation;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.OAuthCredentials;
 import com.yahoo.vespa.athenz.client.ErrorHandler;
@@ -301,10 +302,10 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
-    public void approvePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry,
-                                             Optional<String> reason, Optional<OAuthCredentials> oAuthCredentials) {
+    public void decidePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry,
+                                             Optional<String> reason, Optional<OAuthCredentials> oAuthCredentials, boolean approve) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s/member/%s/decision", athenzRole.domain().getName(), athenzRole.roleName(), athenzIdentity.getFullName()));
-        MembershipEntity membership = new MembershipEntity.RoleMembershipEntity(athenzIdentity.getFullName(), true, athenzRole.roleName(), Long.toString(expiry.getEpochSecond()));
+        MembershipEntity membership = new MembershipEntity.RoleMembershipEntity(athenzIdentity.getFullName(), approve, athenzRole.roleName(), Long.toString(expiry.getEpochSecond()));
 
         var requestBuilder = RequestBuilder.put()
                 .setUri(uri)
@@ -404,6 +405,13 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .setEntity(entity)
                 .build();
         execute(request, response -> readEntity(response, Void.class));
+    }
+
+    public AthenzRoleInformation getFullRoleInformation(AthenzRole role) {
+        var uri = zmsUrl.resolve(String.format("domain/%s/role/%s?pending=true&auditLog=true", role.domain().getName(), role.roleName()));
+        var request = RequestBuilder.get(uri).build();
+        var roleEntity = execute(request, response -> readEntity(response, RoleEntity.class));
+        return AthenzRoleInformation.fromRoleEntity(roleEntity);
     }
 
     private static Header createCookieHeader(OAuthCredentials oAuthCredentials) {

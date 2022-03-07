@@ -3,6 +3,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.athenz.api.AthenzRoleInformation;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OAuthCredentials;
 
@@ -16,8 +17,9 @@ import java.util.Collection;
  */
 public interface AccessControlService {
     boolean approveDataPlaneAccess(AthenzUser user, Instant expiry);
-    boolean approveSshAccess(TenantName tenantName, Instant expiry, OAuthCredentials oAuthCredentials);
+    boolean decideSshAccess(TenantName tenantName, Instant expiry, OAuthCredentials oAuthCredentials, boolean approve);
     boolean requestSshAccess(TenantName tenantName);
-    boolean hasPendingAccessRequests(TenantName tenantName);
+    AthenzRoleInformation getAccessRoleInformation(TenantName tenantName);
+    void setPreapprovedAccess(TenantName tenantName, boolean preapproved);
     Collection<AthenzUser> listMembers();
 }
