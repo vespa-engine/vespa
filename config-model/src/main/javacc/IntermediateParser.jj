@@ -1161,7 +1161,12 @@ void summaryInDocument(ParsedDocumentSummary docsum) :
     }
     lbrace() (summaryItem(psf) (<NL>)*)* <RBRACE>
     {
-        docsum.addField(psf);
+        var old = docsum.addField(psf);
+        if (old != null) {
+            deployLogger.logApplicationPackage(Level.WARNING, "Summary field '" + psf.name()
+                                               + "' is defined twice in document-summary '"
+                                               + docsum.name() + "'");
+        }
     }
 }
 

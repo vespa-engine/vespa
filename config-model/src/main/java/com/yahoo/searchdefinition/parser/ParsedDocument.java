@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.parser;
 
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -34,6 +33,19 @@ public class ParsedDocument extends ParsedBlock {
     ParsedStruct getStruct(String name) { return docStructs.get(name); }
     ParsedAnnotation getAnnotation(String name) { return docAnnotations.get(name); }
 
+    List<String> getReferencedDocuments() {
+        var result = new ArrayList<String>();
+        for (var field : docFields.values()) {
+            var type = field.getType();
+            if (type.getVariant() == ParsedType.Variant.DOC_REFERENCE) {
+                var docType = type.getReferencedDocumentType();
+                assert(docType.getVariant() == ParsedType.Variant.DOCUMENT);
+                result.add(docType.name());
+            }
+        }
+        return result;
+    }
+
     void inherit(String other) { inherited.add(other); }
 
     void addField(ParsedField field) {
@@ -54,6 +66,7 @@ public class ParsedDocument extends ParsedBlock {
         verifyThat(! docAnnotations.containsKey(annName), "already has annotation", annName);
         docAnnotations.put(annName, annotation);
         annotation.tagOwner(name());
+        annotation.getStruct().ifPresent(s -> s.tagOwner(name()));
     }
 
     public String toString() { return "document " + name(); }
@@ -64,5 +77,12 @@ public class ParsedDocument extends ParsedBlock {
         verifyThat(! resolvedInherits.containsKey(name), "double resolveInherit for", name);
         resolvedInherits.put(name, parsed);
     }
+
+    void resolveReferenced(ParsedDocument parsed) {
+        // TODO - not really inheritance:
+        var old = resolvedInherits.put(parsed.name(), parsed);
+        assert(old == null || old == parsed);
+    }
+
 }
 

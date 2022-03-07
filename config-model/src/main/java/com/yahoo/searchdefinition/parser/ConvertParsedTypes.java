@@ -58,8 +58,6 @@ public class ConvertParsedTypes {
             var doc = schema.getDocument();
             for (var struct : doc.getStructs()) {
                 String structId = doc.name() + "->" + struct.name();
-                // int id = new StructDataType(structId).getId();
-                // var dt = new StructDataType(id, struct.name());
                 var dt = new StructDataType(struct.name());
                 structsFromSchemas.put(structId, dt);
             }
@@ -188,18 +186,6 @@ public class ConvertParsedTypes {
                 found = fromParent;
             } else {
                 throw new IllegalArgumentException("conflicting values for struct " + name + " in " +doc);
-            }
-        }
-        if (found == null) {
-            // TODO: be more restrictive here, but we need something
-            // for imported fields. For now, fall back to looking for
-            // struct in any schema.
-            for (var schema : orderedInput) {
-                for (var struct : schema.getDocument().getStructs()) {
-                    if (struct.name().equals(name)) {
-                        return struct;
-                    }
-                }
             }
         }
         return found;

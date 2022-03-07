@@ -15,6 +15,7 @@ public class InheritanceResolver {
 
     private final Map<String, ParsedSchema> parsedSchemas;
     private final Map<String, ParsedDocument> parsedDocs = new HashMap<>();
+    private final Map<String, ParsedSchema> schemaForDocs = new HashMap<>();
 
     public InheritanceResolver(Map<String, ParsedSchema> parsedSchemas) {
         this.parsedSchemas = parsedSchemas;
@@ -24,7 +25,7 @@ public class InheritanceResolver {
         String name = schema.name();
         if (seen.contains(name)) {
             seen.add(name);
-            throw new IllegalArgumentException("Inheritance cycle for schemas: " +
+            throw new IllegalArgumentException("Inheritance/reference cycle for schemas: " +
                                                String.join(" -> ", seen));
         }
         seen.add(name);
@@ -64,8 +65,12 @@ public class InheritanceResolver {
             if (old != null) {
                 throw new IllegalArgumentException("duplicate document declaration for " + doc.name());
             }
+            schemaForDocs.put(doc.name(), schema);
             for (String docInherit : doc.getInherited()) {
                 schema.inheritByDocument(docInherit);
+            }
+            for (String docReferenced : doc.getReferencedDocuments()) {
+                schema.inheritByDocument(docReferenced);
             }
         }
         for (ParsedDocument doc : parsedDocs.values()) {
@@ -76,13 +81,20 @@ public class InheritanceResolver {
                 }
                 doc.resolveInherit(inherit, parentDoc);
             }
+            for (String docRefName : doc.getReferencedDocuments()) {
+                var refDoc = parsedDocs.get(docRefName);
+                if (refDoc == null) {
+                    throw new IllegalArgumentException("document " + doc.name() + " references unavailable document " + docRefName);
+                }
+                doc.resolveReferenced(refDoc);
+            }
         }
         for (ParsedSchema schema : parsedSchemas.values()) {
-            for (String inherit : schema.getInheritedByDocument()) {
-                var parent = parsedSchemas.get(inherit);
+            for (String docName : schema.getInheritedByDocument()) {
+                var parent = schemaForDocs.get(docName);
                 assert(parent.hasDocument());
-                assert(parent.getDocument().name().equals(inherit));
-                schema.resolveInheritByDocument(inherit, parent);
+                assert(parent.getDocument().name().equals(docName));
+                schema.resolveInheritByDocument(docName, parent);
             }
         }
     }
@@ -91,7 +103,7 @@ public class InheritanceResolver {
         String name = document.name();
         if (seen.contains(name)) {
             seen.add(name);
-            throw new IllegalArgumentException("Inheritance cycle for documents: " +
+            throw new IllegalArgumentException("Inheritance/reference cycle for documents: " +
                                                String.join(" -> ", seen));
         }
         seen.add(name);

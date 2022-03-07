@@ -28,10 +28,11 @@ class ParsedDocumentSummary extends ParsedBlock {
     List<ParsedSummaryField> getSummaryFields() { return List.copyOf(fields.values()); }
     List<String> getInherited() { return List.copyOf(inherited); }
 
-    void addField(ParsedSummaryField field) {
+    ParsedSummaryField addField(ParsedSummaryField field) {
         String fieldName = field.name();
-        verifyThat(! fields.containsKey(fieldName), "already has field", fieldName);
-        fields.put(fieldName, field);
+        // TODO disallow this on Vespa 8
+        // verifyThat(! fields.containsKey(fieldName), "already has field", fieldName);
+        return fields.put(fieldName, field);
     }
 
     void setFromDisk(boolean value) {

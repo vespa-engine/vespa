@@ -100,6 +100,7 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
                                                          DeployLogger logger) throws IOException, ParseException {
         return assertCorrectDeriving(dirName, searchDefinitionName, new TestProperties(), logger);
     }
+
     protected DerivedConfiguration assertCorrectDeriving(String dirName,
                                                          TestProperties properties) throws IOException, ParseException
     {
