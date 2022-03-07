@@ -3,7 +3,7 @@
 
 #include <memory>
 #include <cstdint>
-#include <vespa/fastos/dynamiclibrary.h>
+#include <vespa/fastos/types.h>
 
 /**
  * Interface for posting lists used by PredicateSearch.

@@ -5,8 +5,7 @@
 #include "blueprint.h"
 #include <vespa/searchlib/fef/matchdatalayout.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 class EquivBlueprint : public ComplexLeafBlueprint
 {
@@ -32,5 +31,4 @@ public:
     bool isEquiv() const override { return true; }
 };
 
-} // namespace queryeval
-} // namespace search
+}

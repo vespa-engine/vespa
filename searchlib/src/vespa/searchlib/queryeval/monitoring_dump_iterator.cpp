@@ -3,8 +3,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".queryeval.monitoring_dump_iterator");
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 MonitoringDumpIterator::MonitoringDumpIterator(MonitoringSearchIterator::UP iterator)
     : _search(std::move(iterator))
@@ -31,6 +30,4 @@ MonitoringDumpIterator::doUnpack(uint32_t docId)
     _search->unpack(docId);
 }
 
-}  // namespace queryeval
-}  // namespace search
-
+}

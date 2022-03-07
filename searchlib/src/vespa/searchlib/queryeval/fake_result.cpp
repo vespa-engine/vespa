@@ -3,8 +3,7 @@
 #include "fake_result.h"
 #include <ostream>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 FakeResult::FakeResult()
     : _documents(),
@@ -46,5 +45,4 @@ std::ostream &operator << (std::ostream &out, const FakeResult &result) {
     return out;
 }
 
-} // namespace queryeval
-} // namespace search
+}

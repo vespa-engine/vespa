@@ -4,8 +4,7 @@
 
 #include "andsearch.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * A simple implementation of the And search operation.
@@ -56,6 +55,4 @@ private:
     Unpack _unpacker;
 };
 
-} // namespace queryeval
-} // namespace search
-
+}
