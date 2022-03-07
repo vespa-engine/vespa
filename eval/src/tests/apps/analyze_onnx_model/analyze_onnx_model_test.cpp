@@ -39,13 +39,13 @@ TEST_F("require that output types can be probed", ServerCmd(probe_cmd)) {
 
 //-----------------------------------------------------------------------------
 
-TEST_F("test error: invalid json", ServerCmd(probe_cmd, ServerCmd::capture_stderr_tag())) {
+TEST_F("test error: invalid json", ServerCmd(probe_cmd)) {
     auto out = f1.write_then_read_all("this is not valid json...\n");
     EXPECT_TRUE(out.find("invalid json") < out.size());
     EXPECT_EQUAL(f1.shutdown(), 3);
 }
 
-TEST_F("test error: missing input type", ServerCmd(probe_cmd, ServerCmd::capture_stderr_tag())) {
+TEST_F("test error: missing input type", ServerCmd(probe_cmd)) {
     Slime params;
     params.setObject();
     params.get().setString("model", simple_model);
@@ -55,7 +55,7 @@ TEST_F("test error: missing input type", ServerCmd(probe_cmd, ServerCmd::capture
     EXPECT_EQUAL(f1.shutdown(), 3);
 }
 
-TEST_F("test error: invalid input type", ServerCmd(probe_cmd, ServerCmd::capture_stderr_tag())) {
+TEST_F("test error: invalid input type", ServerCmd(probe_cmd)) {
     Slime params;
     params.setObject();
     params.get().setString("model", simple_model);
@@ -68,7 +68,7 @@ TEST_F("test error: invalid input type", ServerCmd(probe_cmd, ServerCmd::capture
     EXPECT_EQUAL(f1.shutdown(), 3);
 }
 
-TEST_F("test error: incompatible input type", ServerCmd(probe_cmd, ServerCmd::capture_stderr_tag())) {
+TEST_F("test error: incompatible input type", ServerCmd(probe_cmd)) {
     Slime params;
     params.setObject();
     params.get().setString("model", simple_model);
@@ -81,7 +81,7 @@ TEST_F("test error: incompatible input type", ServerCmd(probe_cmd, ServerCmd::ca
     EXPECT_EQUAL(f1.shutdown(), 3);
 }
 
-TEST_F("test error: symbolic size mismatch", ServerCmd(probe_cmd, ServerCmd::capture_stderr_tag())) {
+TEST_F("test error: symbolic size mismatch", ServerCmd(probe_cmd)) {
     Slime params;
     params.setObject();
     params.get().setString("model", dynamic_model);
