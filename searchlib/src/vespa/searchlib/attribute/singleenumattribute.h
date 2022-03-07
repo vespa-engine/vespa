@@ -17,24 +17,25 @@ class ReaderBase;
  */
 class SingleValueEnumAttributeBase {
 protected:
+    using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
+    using AtomicEntryRefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
     using DocId = AttributeVector::DocId;
     using EnumHandle = AttributeVector::EnumHandle;
     using EnumIndex = IEnumStore::Index;
-    using EnumIndexVector = vespalib::RcuVectorBase<EnumIndex>;
     using EnumIndexRemapper = IEnumStore::EnumIndexRemapper;
     using GenerationHolder = vespalib::GenerationHolder;
 
 public:
     using EnumIndexCopyVector = vespalib::Array<EnumIndex>;
 
-    IEnumStore::Index getEnumIndex(DocId docId) const { return _enumIndices[docId]; }
-    EnumHandle getE(DocId doc) const { return _enumIndices[doc].ref(); }
+    IEnumStore::Index getEnumIndex(DocId docId) const { return _enumIndices[docId].load_acquire(); }
+    EnumHandle getE(DocId doc) const { return _enumIndices[doc].load_acquire().ref(); }
 protected:
     SingleValueEnumAttributeBase(const attribute::Config & c, GenerationHolder &genHolder, const vespalib::alloc::Alloc& initial_alloc);
     ~SingleValueEnumAttributeBase();
     AttributeVector::DocId addDoc(bool & incGeneration);
 
-    EnumIndexVector _enumIndices;
+    AtomicEntryRefVector _enumIndices;
 
     EnumIndexCopyVector getIndicesCopy(uint32_t size) const;
     void remap_enum_store_refs(const EnumIndexRemapper& remapper, AttributeVector& v);

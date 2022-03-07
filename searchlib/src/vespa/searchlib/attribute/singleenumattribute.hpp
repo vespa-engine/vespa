@@ -53,9 +53,9 @@ SingleValueEnumAttribute<B>::addDoc(DocId & doc)
     if (doc > 0u) {
         // Make sure that a valid value(magic default) is referenced,
         // even between addDoc and commit().
-        if (_enumIndices[0].valid()) {
+        if (_enumIndices[0].load_relaxed().valid()) {
             _enumIndices[doc] = _enumIndices[0];
-            this->_enumStore.inc_ref_count(_enumIndices[0]);
+            this->_enumStore.inc_ref_count(_enumIndices[0].load_relaxed());
         }
     }
     this->incNumDocs();
@@ -166,7 +166,7 @@ template <typename B>
 void
 SingleValueEnumAttribute<B>::applyUpdateValueChange(const Change& c, EnumStoreBatchUpdater& updater)
 {
-    EnumIndex oldIdx = _enumIndices[c._doc];
+    EnumIndex oldIdx = _enumIndices[c._doc].load_relaxed();
     EnumIndex newIdx;
     if (c.has_entry_ref()) {
         newIdx = EnumIndex(vespalib::datastore::EntryRef(c.get_entry_ref()));
@@ -204,7 +204,7 @@ SingleValueEnumAttribute<B>::updateEnumRefCounts(const Change& c, EnumIndex newI
                                                  EnumStoreBatchUpdater& updater)
 {
     updater.inc_ref_count(newIdx);
-    _enumIndices[c._doc] = newIdx;
+    _enumIndices[c._doc].store_release(newIdx);
     if (oldIdx.valid()) {
         updater.dec_ref_count(oldIdx);
     }
@@ -220,7 +220,7 @@ SingleValueEnumAttribute<B>::fillValues(LoadedVector & loaded)
         _enumIndices.reset();
         _enumIndices.unsafe_reserve(numDocs);
         for (DocId doc = 0; doc < numDocs; ++doc, loaded.next()) {
-            _enumIndices.push_back(loaded.read().getEidx());
+            _enumIndices.push_back(AtomicEntryRef(loaded.read().getEidx()));
         }
     }
 }
@@ -296,7 +296,7 @@ SingleValueEnumAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit)
     assert(lidLow <= lidLimit);
     assert(lidLimit <= this->getNumDocs());
     for (DocId lid = lidLow; lid < lidLimit; ++lid) {
-        if (_enumIndices[lid] != vespalib::datastore::EntryRef(e)) {
+        if (_enumIndices[lid].load_relaxed() != vespalib::datastore::EntryRef(e)) {
             this->clearDoc(lid);
         }
     }

@@ -64,7 +64,7 @@ makePostingChange(const vespalib::datastore::EntryComparator &cmpa,
 {
     for (const auto& elem : currEnumIndices) {
         uint32_t docId = elem.first;
-        EnumIndex oldIdx = this->_enumIndices[docId];
+        EnumIndex oldIdx = this->_enumIndices[docId].load_relaxed();
         EnumIndex newIdx = elem.second;
 
         // add new posting
@@ -97,7 +97,7 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& 
         if (enumIter != currEnumIndices.end()) {
             oldIdx = enumIter->second;
         } else {
-            oldIdx = this->_enumIndices[change._doc];
+            oldIdx = this->_enumIndices[change._doc].load_relaxed();
         }
 
         if (change._type == ChangeBase::UPDATE) {

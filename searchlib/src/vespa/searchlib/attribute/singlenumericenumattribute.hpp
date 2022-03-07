@@ -50,7 +50,7 @@ template <typename B>
 void
 SingleValueNumericEnumAttribute<B>::applyArithmeticValueChange(const Change& c, EnumStoreBatchUpdater& updater)
 {
-    EnumIndex oldIdx = this->_enumIndices[c._doc];
+    EnumIndex oldIdx = this->_enumIndices[c._doc].load_relaxed();
     EnumIndex newIdx;
     T newValue = this->template applyArithmetic<T, typename Change::DataType>(get(c._doc), c._data.getArithOperand(), c._type);
     this->_enumStore.find_index(newValue, newIdx);

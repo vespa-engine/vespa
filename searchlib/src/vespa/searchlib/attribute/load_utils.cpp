@@ -12,6 +12,7 @@
 
 using search::multivalue::Value;
 using search::multivalue::WeightedValue;
+using vespalib::datastore::AtomicEntryRef;
 
 namespace search::attribute {
 
@@ -84,15 +85,15 @@ template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<Value<ValueType
 #define INSTANTIATE_WSET(ValueType, Saver) \
 template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<WeightedValue<ValueType>> &, ReaderBase &, vespalib::ConstArrayRef<ValueType>, vespalib::ConstArrayRef<uint32_t>, Saver)
 #define INSTANTIATE_SINGLE(ValueType, Saver) \
-template void loadFromEnumeratedSingleValue(vespalib::RcuVectorBase<ValueType> &, vespalib::GenerationHolder &, ReaderBase &, vespalib::ConstArrayRef<ValueType>, vespalib::ConstArrayRef<uint32_t>, Saver)
+template void loadFromEnumeratedSingleValue(vespalib::RcuVectorBase<ValueType> &, vespalib::GenerationHolder &, ReaderBase &, vespalib::ConstArrayRef<load_utils::NonAtomicValue_t<ValueType>>, vespalib::ConstArrayRef<uint32_t>, Saver)
 
 #define INSTANTIATE_SINGLE_ARRAY_WSET(ValueType, Saver) \
 INSTANTIATE_SINGLE(ValueType, Saver); \
-INSTANTIATE_ARRAY(ValueType, Saver); \
-INSTANTIATE_WSET(ValueType, Saver)
+INSTANTIATE_ARRAY(load_utils::NonAtomicValue_t<ValueType>, Saver); \
+INSTANTIATE_WSET(load_utils::NonAtomicValue_t<ValueType>, Saver)
 
 #define INSTANTIATE_ENUM(Saver) \
-INSTANTIATE_SINGLE_ARRAY_WSET(IEnumStore::Index, Saver)
+INSTANTIATE_SINGLE_ARRAY_WSET(AtomicEntryRef, Saver)
 
 #define INSTANTIATE_VALUE(ValueType) \
 INSTANTIATE_SINGLE_ARRAY_WSET(ValueType, NoSaveLoadedEnum)

@@ -45,7 +45,7 @@ public:
     //-------------------------------------------------------------------------
     bool isUndefined(DocId doc) const override { return get(doc)[0] == '\0'; }
     const char * get(DocId doc) const override {
-        return this->_enumStore.get_value(this->_enumIndices[doc]);
+        return this->_enumStore.get_value(this->_enumIndices[doc].load_acquire());
     }
     std::vector<EnumHandle> findFoldedEnums(const char *value) const override {
         return this->_enumStore.find_folded_enums(value);
@@ -95,7 +95,7 @@ public:
         int32_t onFind(DocId doc, int32_t elemId) const override {
             if ( elemId != 0) return -1;
             const SingleValueStringAttributeT<B> & attr(static_cast<const SingleValueStringAttributeT<B> &>(attribute()));
-            return isMatch(attr._enumStore.get_value(attr._enumIndices[doc])) ? 0 : -1;
+            return isMatch(attr._enumStore.get_value(attr._enumIndices[doc].load_acquire())) ? 0 : -1;
         }
 
     };
