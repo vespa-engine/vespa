@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/vespa-engine/vespa/client/go/mock"
-	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 func TestListSampleApps(t *testing.T) {
@@ -17,9 +16,8 @@ func TestListSampleApps(t *testing.T) {
 	c.NextResponse(200, readTestData(t, "sample-apps-news.json"))
 	c.NextResponse(200, readTestData(t, "sample-apps-operations.json"))
 	c.NextResponse(200, readTestData(t, "sample-apps-vespa-cloud.json"))
-	util.ActiveHttpClient = c
 
-	apps, err := listSampleApps()
+	apps, err := listSampleApps(c)
 	assert.Nil(t, err)
 	expected := []string{
 		"album-recommendation-monitoring",

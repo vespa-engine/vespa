@@ -7,7 +7,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -21,49 +20,45 @@ import (
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
-var (
-	queryPrintCurl   bool
-	queryTimeoutSecs int
-)
-
-func init() {
-	rootCmd.AddCommand(queryCmd)
-	queryCmd.PersistentFlags().BoolVarP(&queryPrintCurl, "verbose", "v", false, "Print the equivalent curl command for the query")
-	queryCmd.Flags().IntVarP(&queryTimeoutSecs, "timeout", "T", 10, "Timeout for the query in seconds")
-}
-
-var queryCmd = &cobra.Command{
-	Use:     "query query-parameters",
-	Short:   "Issue a query to Vespa",
-	Example: `$ vespa query "yql=select * from music where album contains 'head';" hits=5`,
-	Long: `Issue a query to Vespa.
+func newQueryCmd(cli *CLI) *cobra.Command {
+	var (
+		printCurl        bool
+		queryTimeoutSecs int
+	)
+	cmd := &cobra.Command{
+		Use:     "query query-parameters",
+		Short:   "Issue a query to Vespa",
+		Example: `$ vespa query "yql=select * from music where album contains 'head';" hits=5`,
+		Long: `Issue a query to Vespa.
 
 Any parameter from https://docs.vespa.ai/en/reference/query-api-reference.html
 can be set by the syntax [parameter-name]=[value].`,
-	// TODO: Support referencing a query json file
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	Args:              cobra.MinimumNArgs(1),
-	RunE:              query,
+		// TODO: Support referencing a query json file
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		Args:              cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return query(cli, args, queryTimeoutSecs, printCurl)
+		},
+	}
+	cmd.PersistentFlags().BoolVarP(&printCurl, "verbose", "v", false, "Print the equivalent curl command for the query")
+	cmd.Flags().IntVarP(&queryTimeoutSecs, "timeout", "T", 10, "Timeout for the query in seconds")
+	return cmd
 }
 
-func printCurl(url string, service *vespa.Service) error {
-	out := ioutil.Discard
-	if queryPrintCurl {
-		out = stderr
-	}
+func printCurl(stderr io.Writer, url string, service *vespa.Service) error {
 	cmd, err := curl.RawArgs(url)
 	if err != nil {
 		return err
 	}
 	cmd.Certificate = service.TLSOptions.CertificateFile
 	cmd.PrivateKey = service.TLSOptions.PrivateKeyFile
-	_, err = io.WriteString(out, cmd.String()+"\n")
+	_, err = io.WriteString(stderr, cmd.String()+"\n")
 	return err
 }
 
-func query(cmd *cobra.Command, arguments []string) error {
-	service, err := getService(vespa.QueryService, 0, "")
+func query(cli *CLI, arguments []string, timeoutSecs int, curl bool) error {
+	service, err := cli.service(vespa.QueryService, 0, "")
 	if err != nil {
 		return err
 	}
@@ -76,7 +71,7 @@ func query(cmd *cobra.Command, arguments []string) error {
 	queryTimeout := urlQuery.Get("timeout")
 	if queryTimeout == "" {
 		// No timeout set by user, use the timeout option
-		queryTimeout = fmt.Sprintf("%ds", queryTimeoutSecs)
+		queryTimeout = fmt.Sprintf("%ds", timeoutSecs)
 		urlQuery.Set("timeout", queryTimeout)
 	}
 	url.RawQuery = urlQuery.Encode()
@@ -84,8 +79,10 @@ func query(cmd *cobra.Command, arguments []string) error {
 	if err != nil {
 		return fmt.Errorf("invalid query timeout: %w", err)
 	}
-	if err := printCurl(url.String(), service); err != nil {
-		return err
+	if curl {
+		if err := printCurl(cli.Stderr, url.String(), service); err != nil {
+			return err
+		}
 	}
 	response, err := service.Do(&http.Request{URL: url}, deadline+time.Second) // Slightly longer than query timeout
 	if err != nil {

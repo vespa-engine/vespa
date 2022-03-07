@@ -15,7 +15,6 @@ import (
 )
 
 func TestProdInit(t *testing.T) {
-	homeDir := filepath.Join(t.TempDir(), ".vespa")
 	pkgDir := filepath.Join(t.TempDir(), "app")
 	createApplication(t, pkgDir, false)
 
@@ -42,7 +41,10 @@ func TestProdInit(t *testing.T) {
 	}
 	var buf bytes.Buffer
 	buf.WriteString(strings.Join(answers, "\n") + "\n")
-	execute(command{stdin: &buf, homeDir: homeDir, args: []string{"prod", "init", pkgDir}}, t, nil)
+
+	cli, _, _ := newTestCLI(t)
+	cli.Stdin = &buf
+	assert.Nil(t, cli.Run("prod", "init", pkgDir))
 
 	// Verify contents
 	deploymentPath := filepath.Join(pkgDir, "src", "main", "application", "deployment.xml")
@@ -144,18 +146,20 @@ func writeTest(path string, content []byte, t *testing.T) {
 }
 
 func TestProdSubmit(t *testing.T) {
-	homeDir := filepath.Join(t.TempDir(), ".vespa")
 	pkgDir := filepath.Join(t.TempDir(), "app")
 	createApplication(t, pkgDir, false)
 
 	httpClient := &mock.HTTPClient{}
 	httpClient.NextResponse(200, `ok`)
-	execute(command{homeDir: homeDir, args: []string{"config", "set", "application", "t1.a1.i1"}}, t, httpClient)
-	execute(command{homeDir: homeDir, args: []string{"config", "set", "target", "cloud"}}, t, httpClient)
-	execute(command{homeDir: homeDir, args: []string{"auth", "api-key"}}, t, httpClient)
-	execute(command{homeDir: homeDir, args: []string{"auth", "cert", pkgDir}}, t, httpClient)
 
-	// Zipping requires relative paths, so much let command run from pkgDir, then reset cwd for subsequent tests.
+	cli, stdout, _ := newTestCLI(t, "CI=true")
+	cli.httpClient = httpClient
+	assert.Nil(t, cli.Run("config", "set", "application", "t1.a1.i1"))
+	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
+	assert.Nil(t, cli.Run("auth", "api-key"))
+	assert.Nil(t, cli.Run("auth", "cert", pkgDir))
+
+	// Zipping requires relative paths, so must let command run from pkgDir, then reset cwd for subsequent tests.
 	if cwd, err := os.Getwd(); err != nil {
 		t.Fatal(err)
 	} else {
@@ -164,26 +168,25 @@ func TestProdSubmit(t *testing.T) {
 	if err := os.Chdir(pkgDir); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Setenv("CI", "true"); err != nil {
-		t.Fatal(err)
-	}
-	out, outErr := execute(command{homeDir: homeDir, args: []string{"prod", "submit", "-k", filepath.Join(homeDir, "t1.api-key.pem")}}, t, httpClient)
-	assert.Equal(t, "", outErr)
-	assert.Contains(t, out, "Success: Submitted")
-	assert.Contains(t, out, "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
+
+	stdout.Reset()
+	assert.Nil(t, cli.Run("prod", "submit", "-k", filepath.Join(cli.config.homeDir, "t1.api-key.pem")))
+	assert.Contains(t, stdout.String(), "Success: Submitted")
+	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
 
 func TestProdSubmitWithJava(t *testing.T) {
-	homeDir := filepath.Join(t.TempDir(), ".vespa")
 	pkgDir := filepath.Join(t.TempDir(), "app")
 	createApplication(t, pkgDir, true)
 
 	httpClient := &mock.HTTPClient{}
 	httpClient.NextResponse(200, `ok`)
-	execute(command{homeDir: homeDir, args: []string{"config", "set", "application", "t1.a1.i1"}}, t, httpClient)
-	execute(command{homeDir: homeDir, args: []string{"config", "set", "target", "cloud"}}, t, httpClient)
-	execute(command{homeDir: homeDir, args: []string{"auth", "api-key"}}, t, httpClient)
-	execute(command{homeDir: homeDir, args: []string{"auth", "cert", pkgDir}}, t, httpClient)
+	cli, stdout, _ := newTestCLI(t, "CI=true")
+	cli.httpClient = httpClient
+	assert.Nil(t, cli.Run("config", "set", "application", "t1.a1.i1"))
+	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
+	assert.Nil(t, cli.Run("auth", "api-key"))
+	assert.Nil(t, cli.Run("auth", "cert", pkgDir))
 
 	// Copy an application package pre-assembled with mvn package
 	testAppDir := filepath.Join("testdata", "applications", "withDeployment", "target")
@@ -192,10 +195,10 @@ func TestProdSubmitWithJava(t *testing.T) {
 	testZipFile := filepath.Join(testAppDir, "application-test.zip")
 	copyFile(t, filepath.Join(pkgDir, "target", "application-test.zip"), testZipFile)
 
-	out, outErr := execute(command{homeDir: homeDir, args: []string{"prod", "submit", "-k", filepath.Join(homeDir, "t1.api-key.pem"), pkgDir}}, t, httpClient)
-	assert.Equal(t, "", outErr)
-	assert.Contains(t, out, "Success: Submitted")
-	assert.Contains(t, out, "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
+	stdout.Reset()
+	assert.Nil(t, cli.Run("prod", "submit", "-k", filepath.Join(cli.config.homeDir, "t1.api-key.pem"), pkgDir))
+	assert.Contains(t, stdout.String(), "Success: Submitted")
+	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
 
 func copyFile(t *testing.T, dstFilename, srcFilename string) {

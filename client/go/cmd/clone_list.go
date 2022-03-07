@@ -10,12 +10,12 @@ import (
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
-func listSampleApps() ([]string, error) {
-	return listSampleAppsAt("https://api.github.com/repos/vespa-engine/sample-apps/contents/")
+func listSampleApps(client util.HTTPClient) ([]string, error) {
+	return listSampleAppsAt("https://api.github.com/repos/vespa-engine/sample-apps/contents/", client)
 }
 
-func listSampleAppsAt(url string) ([]string, error) {
-	rfs, err := getRepositoryFiles(url)
+func listSampleAppsAt(url string, client util.HTTPClient) ([]string, error) {
+	rfs, err := getRepositoryFiles(url, client)
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +25,7 @@ func listSampleAppsAt(url string) ([]string, error) {
 		if isApp {
 			apps = append(apps, rf.Path)
 		} else if follow {
-			apps2, err := listSampleAppsAt(rf.URL)
+			apps2, err := listSampleAppsAt(rf.URL, client)
 			if err != nil {
 				return nil, err
 			}
@@ -36,12 +36,12 @@ func listSampleAppsAt(url string) ([]string, error) {
 	return apps, nil
 }
 
-func getRepositoryFiles(url string) ([]repositoryFile, error) {
+func getRepositoryFiles(url string, client util.HTTPClient) ([]repositoryFile, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
-	response, err := util.HttpDo(req, time.Minute, "GitHub")
+	response, err := client.Do(req, time.Minute)
 	if err != nil {
 		return nil, err
 	}

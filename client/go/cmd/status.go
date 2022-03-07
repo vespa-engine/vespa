@@ -5,61 +5,93 @@
 package cmd
 
 import (
+	"fmt"
+	"log"
+	"strconv"
+	"time"
+
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
-func init() {
-	rootCmd.AddCommand(statusCmd)
-	statusCmd.AddCommand(statusQueryCmd)
-	statusCmd.AddCommand(statusDocumentCmd)
-	statusCmd.AddCommand(statusDeployCmd)
+func newStatusCmd(cli *CLI) *cobra.Command {
+	return &cobra.Command{
+		Use:               "status",
+		Short:             "Verify that a service is ready to use (query by default)",
+		Example:           `$ vespa status query`,
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		Args:              cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return printServiceStatus(cli, vespa.QueryService)
+		},
+	}
 }
 
-var statusCmd = &cobra.Command{
-	Use:               "status",
-	Short:             "Verify that a service is ready to use (query by default)",
-	Example:           `$ vespa status query`,
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	Args:              cobra.MaximumNArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return waitForService(vespa.QueryService, 0)
-	},
+func newStatusQueryCmd(cli *CLI) *cobra.Command {
+	return &cobra.Command{
+		Use:               "query",
+		Short:             "Verify that the query service is ready to use (default)",
+		Example:           `$ vespa status query`,
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		Args:              cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return printServiceStatus(cli, vespa.QueryService)
+		},
+	}
 }
 
-var statusQueryCmd = &cobra.Command{
-	Use:               "query",
-	Short:             "Verify that the query service is ready to use (default)",
-	Example:           `$ vespa status query`,
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	Args:              cobra.ExactArgs(0),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return waitForService(vespa.QueryService, 0)
-	},
+func newStatusDocumentCmd(cli *CLI) *cobra.Command {
+	return &cobra.Command{
+		Use:               "document",
+		Short:             "Verify that the document service is ready to use",
+		Example:           `$ vespa status document`,
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		Args:              cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return printServiceStatus(cli, vespa.DocumentService)
+		},
+	}
 }
 
-var statusDocumentCmd = &cobra.Command{
-	Use:               "document",
-	Short:             "Verify that the document service is ready to use",
-	Example:           `$ vespa status document`,
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	Args:              cobra.ExactArgs(0),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return waitForService(vespa.DocumentService, 0)
-	},
+func newStatusDeployCmd(cli *CLI) *cobra.Command {
+	return &cobra.Command{
+		Use:               "deploy",
+		Short:             "Verify that the deploy service is ready to use",
+		Example:           `$ vespa status deploy`,
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		Args:              cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return printServiceStatus(cli, vespa.DeployService)
+		},
+	}
 }
 
-var statusDeployCmd = &cobra.Command{
-	Use:               "deploy",
-	Short:             "Verify that the deploy service is ready to use",
-	Example:           `$ vespa status deploy`,
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	Args:              cobra.ExactArgs(0),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return waitForService(vespa.DeployService, 0)
-	},
+func printServiceStatus(cli *CLI, name string) error {
+	t, err := cli.target("", "")
+	if err != nil {
+		return err
+	}
+	timeout := time.Duration(cli.flags.waitSecs) * time.Second
+	if timeout > 0 {
+		log.Printf("Waiting up to %s %s for service to become ready ...", color.CyanString(strconv.Itoa(cli.flags.waitSecs)), color.CyanString("seconds"))
+	}
+	s, err := t.Service(name, timeout, 0, "")
+	if err != nil {
+		return err
+	}
+	status, err := s.Wait(timeout)
+	if status/100 == 2 {
+		log.Print(s.Description(), " at ", color.CyanString(s.BaseURL), " is ", color.GreenString("ready"))
+	} else {
+		if err == nil {
+			err = fmt.Errorf("status %d", status)
+		}
+		return fmt.Errorf("%s at %s is %s: %w", s.Description(), color.CyanString(s.BaseURL), color.RedString("not ready"), err)
+	}
+	return nil
 }

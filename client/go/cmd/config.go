@@ -18,7 +18,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/vespa-engine/vespa/client/go/auth0"
+	"github.com/vespa-engine/vespa/client/go/auth/auth0"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
@@ -28,87 +28,81 @@ const (
 	configType = "yaml"
 )
 
-var (
-	flagToConfigBindings map[string]*cobra.Command = make(map[string]*cobra.Command)
-	envToConfigBindings  map[string]string         = make(map[string]string)
-)
+func newConfigCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "config",
+		Short: "Configure persistent values for global flags",
+		Long: `Configure persistent values for global flags.
 
-func init() {
-	rootCmd.AddCommand(configCmd)
-	configCmd.AddCommand(setConfigCmd)
-	configCmd.AddCommand(getConfigCmd)
-}
-
-var configCmd = &cobra.Command{
-	Use:   "config",
-	Short: "Configure persistent values for flags",
-	Long: `Configure persistent values for flags.
-
-This command allows setting a persistent value for a given flag. On future
-invocations the flag can then be omitted as it is read from the config file
-instead.
+This command allows setting a persistent value for a given global flag. On
+future invocations the flag can then be omitted as it is read from the config
+file instead.
 
 Configuration is written to $HOME/.vespa by default. This path can be
 overridden by setting the VESPA_CLI_HOME environment variable.`,
-	DisableAutoGenTag: true,
-	SilenceUsage:      false,
-	Args:              cobra.MinimumNArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return fmt.Errorf("invalid command: %s", args[0])
-	},
+		DisableAutoGenTag: true,
+		SilenceUsage:      false,
+		Args:              cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fmt.Errorf("invalid command: %s", args[0])
+		},
+	}
 }
 
-var setConfigCmd = &cobra.Command{
-	Use:               "set option-name value",
-	Short:             "Set a configuration option.",
-	Example:           "$ vespa config set target cloud",
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	Args:              cobra.ExactArgs(2),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-		if err := cfg.Set(args[0], args[1]); err != nil {
-			return err
-		}
-		return cfg.Write()
-	},
+func newConfigSetCmd(cli *CLI) *cobra.Command {
+	return &cobra.Command{
+		Use:               "set option-name value",
+		Short:             "Set a configuration option.",
+		Example:           "$ vespa config set target cloud",
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		Args:              cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := cli.config.set(args[0], args[1]); err != nil {
+				return err
+			}
+			return cli.config.write()
+		},
+	}
 }
 
-var getConfigCmd = &cobra.Command{
-	Use:   "get [option-name]",
-	Short: "Show given configuration option, or all configuration options",
-	Example: `$ vespa config get
+func newConfigGetCmd(cli *CLI) *cobra.Command {
+	return &cobra.Command{
+		Use:   "get [option-name]",
+		Short: "Show given configuration option, or all configuration options",
+		Example: `$ vespa config get
 $ vespa config get target`,
-	Args:              cobra.MaximumNArgs(1),
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-		if len(args) == 0 { // Print all values
-			var flags []string
-			for flag := range flagToConfigBindings {
-				flags = append(flags, flag)
+		Args:              cobra.MaximumNArgs(1),
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 { // Print all values
+				var flags []string
+				for flag := range cli.config.bindings.flag {
+					flags = append(flags, flag)
+				}
+				sort.Strings(flags)
+				for _, flag := range flags {
+					cli.config.printOption(flag)
+				}
+			} else {
+				cli.config.printOption(args[0])
 			}
-			sort.Strings(flags)
-			for _, flag := range flags {
-				printOption(cfg, flag)
-			}
-		} else {
-			printOption(cfg, args[0])
-		}
-		return nil
-	},
+			return nil
+		},
+	}
 }
 
 type Config struct {
-	Home       string
-	createDirs bool
+	homeDir     string
+	environment map[string]string
+	bindings    ConfigBindings
+	createDirs  bool
+}
+
+type ConfigBindings struct {
+	flag        map[string]*cobra.Command
+	environment map[string]string
 }
 
 type KeyPair struct {
@@ -117,23 +111,43 @@ type KeyPair struct {
 	PrivateKeyFile  string
 }
 
-func LoadConfig() (*Config, error) {
-	home, err := vespaCliHome()
+func NewConfigBindings() ConfigBindings {
+	return ConfigBindings{
+		flag:        make(map[string]*cobra.Command),
+		environment: make(map[string]string),
+	}
+}
+
+func (b *ConfigBindings) bindFlag(name string, command *cobra.Command) {
+	b.flag[name] = command
+}
+
+func (b *ConfigBindings) bindEnvironment(flagName string, variable string) {
+	b.environment[flagName] = variable
+}
+
+func loadConfig(environment map[string]string, bindings ConfigBindings) (*Config, error) {
+	home, err := vespaCliHome(environment)
 	if err != nil {
 		return nil, fmt.Errorf("could not detect config directory: %w", err)
 	}
-	c := &Config{Home: home, createDirs: true}
+	c := &Config{
+		homeDir:     home,
+		environment: environment,
+		bindings:    bindings,
+		createDirs:  true,
+	}
 	if err := c.load(); err != nil {
 		return nil, fmt.Errorf("could not load config: %w", err)
 	}
 	return c, nil
 }
 
-func (c *Config) Write() error {
-	if err := os.MkdirAll(c.Home, 0700); err != nil {
+func (c *Config) write() error {
+	if err := os.MkdirAll(c.homeDir, 0700); err != nil {
 		return err
 	}
-	configFile := filepath.Join(c.Home, configName+"."+configType)
+	configFile := filepath.Join(c.homeDir, configName+"."+configType)
 	if !util.PathExists(configFile) {
 		if _, err := os.Create(configFile); err != nil {
 			return err
@@ -142,33 +156,69 @@ func (c *Config) Write() error {
 	return viper.WriteConfig()
 }
 
-func (c *Config) CertificatePath(app vespa.ApplicationID) (string, error) {
-	if override, ok := os.LookupEnv("VESPA_CLI_DATA_PLANE_CERT_FILE"); ok {
+func (c *Config) targetType() (string, error) {
+	targetType, ok := c.get(targetFlag)
+	if !ok {
+		return "", fmt.Errorf("target is unset")
+	}
+	return targetType, nil
+}
+
+func (c *Config) application() (vespa.ApplicationID, error) {
+	app, ok := c.get(applicationFlag)
+	if !ok {
+		return vespa.ApplicationID{}, errHint(fmt.Errorf("no application specified"), "Try the --"+applicationFlag+" flag")
+	}
+	application, err := vespa.ApplicationFromString(app)
+	if err != nil {
+		return vespa.ApplicationID{}, errHint(err, "application format is <tenant>.<app>.<instance>")
+	}
+	return application, nil
+}
+
+func (c *Config) deploymentIn(zoneName string, system vespa.System) (vespa.Deployment, error) {
+	zone := system.DefaultZone
+	var err error
+	if zoneName != "" {
+		zone, err = vespa.ZoneFromString(zoneName)
+		if err != nil {
+			return vespa.Deployment{}, err
+		}
+	}
+	app, err := c.application()
+	if err != nil {
+		return vespa.Deployment{}, err
+	}
+	return vespa.Deployment{System: system, Application: app, Zone: zone}, nil
+}
+
+func (c *Config) certificatePath(app vespa.ApplicationID) (string, error) {
+	if override, ok := c.environment["VESPA_CLI_DATA_PLANE_CERT_FILE"]; ok {
 		return override, nil
 	}
 	return c.applicationFilePath(app, "data-plane-public-cert.pem")
 }
 
-func (c *Config) PrivateKeyPath(app vespa.ApplicationID) (string, error) {
-	if override, ok := os.LookupEnv("VESPA_CLI_DATA_PLANE_KEY_FILE"); ok {
+func (c *Config) privateKeyPath(app vespa.ApplicationID) (string, error) {
+	if override, ok := c.environment["VESPA_CLI_DATA_PLANE_KEY_FILE"]; ok {
 		return override, nil
 	}
 	return c.applicationFilePath(app, "data-plane-private-key.pem")
 }
 
-func (c *Config) X509KeyPair(app vespa.ApplicationID) (KeyPair, error) {
-	cert, certOk := os.LookupEnv("VESPA_CLI_DATA_PLANE_CERT")
-	key, keyOk := os.LookupEnv("VESPA_CLI_DATA_PLANE_KEY")
+func (c *Config) x509KeyPair(app vespa.ApplicationID) (KeyPair, error) {
+	cert, certOk := c.environment["VESPA_CLI_DATA_PLANE_CERT"]
+	key, keyOk := c.environment["VESPA_CLI_DATA_PLANE_KEY"]
 	if certOk && keyOk {
 		// Use key pair from environment
 		kp, err := tls.X509KeyPair([]byte(cert), []byte(key))
 		return KeyPair{KeyPair: kp}, err
 	}
-	privateKeyFile, err := c.PrivateKeyPath(app)
+	privateKeyFile, err := c.privateKeyPath(app)
 	if err != nil {
 		return KeyPair{}, err
 	}
-	certificateFile, err := c.CertificatePath(app)
+	certificateFile, err := c.certificatePath(app)
 	if err != nil {
 		return KeyPair{}, err
 	}
@@ -183,45 +233,45 @@ func (c *Config) X509KeyPair(app vespa.ApplicationID) (KeyPair, error) {
 	}, nil
 }
 
-func (c *Config) APIKeyPath(tenantName string) string {
-	if override, ok := c.Get(apiKeyFileFlag); ok {
+func (c *Config) apiKeyPath(tenantName string) string {
+	if override, ok := c.get(apiKeyFileFlag); ok {
 		return override
 	}
-	return filepath.Join(c.Home, tenantName+".api-key.pem")
+	return filepath.Join(c.homeDir, tenantName+".api-key.pem")
 }
 
-func (c *Config) ReadAPIKey(tenantName string) ([]byte, error) {
-	if override, ok := c.Get(apiKeyFlag); ok {
+func (c *Config) authConfigPath() string {
+	return filepath.Join(c.homeDir, "auth.json")
+}
+
+func (c *Config) readAPIKey(tenantName string) ([]byte, error) {
+	if override, ok := c.get(apiKeyFlag); ok {
 		return []byte(override), nil
 	}
-	return ioutil.ReadFile(c.APIKeyPath(tenantName))
+	return ioutil.ReadFile(c.apiKeyPath(tenantName))
 }
 
-// UseAPIKey checks if api key should be used be checking if api-key or api-key-file has been set.
-func (c *Config) UseAPIKey(system vespa.System, tenantName string) bool {
-	if _, ok := c.Get(apiKeyFlag); ok {
+// useAPIKey returns true if an API key should be used when authenticating with system.
+func (c *Config) useAPIKey(cli *CLI, system vespa.System, tenantName string) bool {
+	if _, ok := c.get(apiKeyFlag); ok {
 		return true
 	}
-	if _, ok := c.Get(apiKeyFileFlag); ok {
+	if _, ok := c.get(apiKeyFileFlag); ok {
 		return true
 	}
 	// If no Auth0 token is created, fall back to tenant api key, but warn that this functionality is deprecated
 	// TODO: Remove this when users have had time to migrate over to Auth0 device flow authentication
-	if !isCI() {
-		a, err := auth0.GetAuth0(c.AuthConfigPath(), system.Name, system.URL)
+	if !cli.isCI() {
+		a, err := auth0.GetAuth0(c.authConfigPath(), system.Name, system.URL)
 		if err != nil || !a.HasSystem() {
-			printWarning("Use of API key is deprecated", "Authenticate with Auth0 instead: 'vespa auth login'")
-			return util.PathExists(c.APIKeyPath(tenantName))
+			cli.printWarning("Use of API key is deprecated", "Authenticate with Auth0 instead: 'vespa auth login'")
+			return util.PathExists(c.apiKeyPath(tenantName))
 		}
 	}
 	return false
 }
 
-func (c *Config) AuthConfigPath() string {
-	return filepath.Join(c.Home, "auth.json")
-}
-
-func (c *Config) ReadSessionID(app vespa.ApplicationID) (int64, error) {
+func (c *Config) readSessionID(app vespa.ApplicationID) (int64, error) {
 	sessionPath, err := c.applicationFilePath(app, "session_id")
 	if err != nil {
 		return 0, err
@@ -233,7 +283,7 @@ func (c *Config) ReadSessionID(app vespa.ApplicationID) (int64, error) {
 	return strconv.ParseInt(strings.TrimSpace(string(b)), 10, 64)
 }
 
-func (c *Config) WriteSessionID(app vespa.ApplicationID, sessionID int64) error {
+func (c *Config) writeSessionID(app vespa.ApplicationID, sessionID int64) error {
 	sessionPath, err := c.applicationFilePath(app, "session_id")
 	if err != nil {
 		return err
@@ -242,7 +292,7 @@ func (c *Config) WriteSessionID(app vespa.ApplicationID, sessionID int64) error 
 }
 
 func (c *Config) applicationFilePath(app vespa.ApplicationID, name string) (string, error) {
-	appDir := filepath.Join(c.Home, app.String())
+	appDir := filepath.Join(c.homeDir, app.String())
 	if c.createDirs {
 		if err := os.MkdirAll(appDir, 0700); err != nil {
 			return "", err
@@ -254,13 +304,9 @@ func (c *Config) applicationFilePath(app vespa.ApplicationID, name string) (stri
 func (c *Config) load() error {
 	viper.SetConfigName(configName)
 	viper.SetConfigType(configType)
-	viper.AddConfigPath(c.Home)
-	viper.AutomaticEnv()
-	for option, command := range flagToConfigBindings {
+	viper.AddConfigPath(c.homeDir)
+	for option, command := range c.bindings.flag {
 		viper.BindPFlag(option, command.PersistentFlags().Lookup(option))
-	}
-	for option, env := range envToConfigBindings {
-		viper.BindEnv(option, env)
 	}
 	err := viper.ReadInConfig()
 	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
@@ -269,7 +315,12 @@ func (c *Config) load() error {
 	return err
 }
 
-func (c *Config) Get(option string) (string, bool) {
+func (c *Config) get(option string) (string, bool) {
+	if envVar, ok := c.bindings.environment[option]; ok {
+		if value, ok := c.environment[envVar]; ok {
+			return value, true
+		}
+	}
 	value := viper.GetString(option)
 	if value == "" {
 		return "", false
@@ -277,7 +328,7 @@ func (c *Config) Get(option string) (string, bool) {
 	return value, true
 }
 
-func (c *Config) Set(option, value string) error {
+func (c *Config) set(option, value string) error {
 	switch option {
 	case targetFlag:
 		switch value {
@@ -296,7 +347,7 @@ func (c *Config) Set(option, value string) error {
 		viper.Set(option, value)
 		return nil
 	case waitFlag:
-		if _, err := strconv.ParseUint(value, 10, 32); err != nil {
+		if n, err := strconv.Atoi(value); err != nil || n < 0 {
 			return fmt.Errorf("%s option must be an integer >= 0, got %q", option, value)
 		}
 		viper.Set(option, value)
@@ -320,8 +371,8 @@ func (c *Config) Set(option, value string) error {
 	return fmt.Errorf("invalid option or value: %q: %q", option, value)
 }
 
-func printOption(cfg *Config, option string) {
-	value, ok := cfg.Get(option)
+func (c *Config) printOption(option string) {
+	value, ok := c.get(option)
 	if !ok {
 		faintColor := color.New(color.FgWhite, color.Faint)
 		value = faintColor.Sprint("<unset>")
@@ -331,10 +382,32 @@ func printOption(cfg *Config, option string) {
 	log.Printf("%s = %s", option, value)
 }
 
-func bindFlagToConfig(option string, command *cobra.Command) {
-	flagToConfigBindings[option] = command
+func vespaCliHome(env map[string]string) (string, error) {
+	home := env["VESPA_CLI_HOME"]
+	if home == "" {
+		userHome, err := os.UserHomeDir()
+		if err != nil {
+			return "", err
+		}
+		home = filepath.Join(userHome, ".vespa")
+	}
+	if err := os.MkdirAll(home, 0700); err != nil {
+		return "", err
+	}
+	return home, nil
 }
 
-func bindEnvToConfig(option string, env string) {
-	envToConfigBindings[option] = env
+func vespaCliCacheDir(env map[string]string) (string, error) {
+	cacheDir := env["VESPA_CLI_CACHE_DIR"]
+	if cacheDir == "" {
+		userCacheDir, err := os.UserCacheDir()
+		if err != nil {
+			return "", err
+		}
+		cacheDir = filepath.Join(userCacheDir, "vespa")
+	}
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		return "", err
+	}
+	return cacheDir, nil
 }

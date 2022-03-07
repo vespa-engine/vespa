@@ -7,12 +7,14 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/version"
 )
 
 type customTarget struct {
 	targetType string
 	baseURL    string
+	httpClient util.HTTPClient
 }
 
 type serviceConvergeResponse struct {
@@ -20,13 +22,13 @@ type serviceConvergeResponse struct {
 }
 
 // LocalTarget creates a target for a Vespa platform running locally.
-func LocalTarget() Target {
-	return &customTarget{targetType: TargetLocal, baseURL: "http://127.0.0.1"}
+func LocalTarget(httpClient util.HTTPClient) Target {
+	return &customTarget{targetType: TargetLocal, baseURL: "http://127.0.0.1", httpClient: httpClient}
 }
 
 // CustomTarget creates a Target for a Vespa platform running at baseURL.
-func CustomTarget(baseURL string) Target {
-	return &customTarget{targetType: TargetCustom, baseURL: baseURL}
+func CustomTarget(httpClient util.HTTPClient, baseURL string) Target {
+	return &customTarget{targetType: TargetCustom, baseURL: baseURL, httpClient: httpClient}
 }
 
 func (t *customTarget) Type() string { return t.targetType }
@@ -40,7 +42,7 @@ func (t *customTarget) createService(name string) (*Service, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &Service{BaseURL: url, Name: name}, nil
+		return &Service{BaseURL: url, Name: name, httpClient: t.httpClient}, nil
 	}
 	return nil, fmt.Errorf("unknown service: %s", name)
 }
@@ -118,7 +120,7 @@ func (t *customTarget) waitForConvergence(timeout time.Duration) error {
 		converged = resp.Converged
 		return converged, nil
 	}
-	if _, err := wait(convergedFunc, func() *http.Request { return req }, nil, timeout); err != nil {
+	if _, err := wait(t.httpClient, convergedFunc, func() *http.Request { return req }, nil, timeout); err != nil {
 		return err
 	}
 	if !converged {

@@ -17,25 +17,20 @@ import (
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
-var (
-	docPrintCurl   bool
-	docTimeoutSecs int
-)
-
-func init() {
-	rootCmd.AddCommand(documentCmd)
-	documentCmd.AddCommand(documentPutCmd)
-	documentCmd.AddCommand(documentUpdateCmd)
-	documentCmd.AddCommand(documentRemoveCmd)
-	documentCmd.AddCommand(documentGetCmd)
-	documentCmd.PersistentFlags().BoolVarP(&docPrintCurl, "verbose", "v", false, "Print the equivalent curl command for the document operation")
-	documentCmd.PersistentFlags().IntVarP(&docTimeoutSecs, "timeout", "T", 60, "Timeout for the document request in seconds")
+func addDocumentFlags(cmd *cobra.Command, printCurl *bool, timeoutSecs *int) {
+	cmd.PersistentFlags().BoolVarP(printCurl, "verbose", "v", false, "Print the equivalent curl command for the document operation")
+	cmd.PersistentFlags().IntVarP(timeoutSecs, "timeout", "T", 60, "Timeout for the document request in seconds")
 }
 
-var documentCmd = &cobra.Command{
-	Use:   "document json-file",
-	Short: "Issue a document operation to Vespa",
-	Long: `Issue a document operation to Vespa.
+func newDocumentCmd(cli *CLI) *cobra.Command {
+	var (
+		printCurl   bool
+		timeoutSecs int
+	)
+	cmd := &cobra.Command{
+		Use:   "document json-file",
+		Short: "Issue a document operation to Vespa",
+		Long: `Issue a document operation to Vespa.
 
 The operation must be on the format documented in
 https://docs.vespa.ai/en/reference/document-json-format.html#document-operations
@@ -45,125 +40,159 @@ subsequent get or query operation.
 
 To feed with high throughput, https://docs.vespa.ai/en/vespa-feed-client.html
 should be used instead of this.`,
-	Example:           `$ vespa document src/test/resources/A-Head-Full-of-Dreams.json`,
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	Args:              cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		service, err := documentService()
-		if err != nil {
-			return err
-		}
-		return printResult(vespa.Send(args[0], service, operationOptions()), false)
-	},
+		Example:           `$ vespa document src/test/resources/A-Head-Full-of-Dreams.json`,
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		Args:              cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			service, err := documentService(cli)
+			if err != nil {
+				return err
+			}
+			return printResult(cli, vespa.Send(args[0], service, operationOptions(cli.Stderr, printCurl, timeoutSecs)), false)
+		},
+	}
+	addDocumentFlags(cmd, &printCurl, &timeoutSecs)
+	return cmd
 }
 
-var documentPutCmd = &cobra.Command{
-	Use:   "put [id] json-file",
-	Short: "Writes a document to Vespa",
-	Long: `Writes the document in the given file to Vespa.
+func newDocumentPutCmd(cli *CLI) *cobra.Command {
+	var (
+		printCurl   bool
+		timeoutSecs int
+	)
+	cmd := &cobra.Command{
+		Use:   "put [id] json-file",
+		Short: "Writes a document to Vespa",
+		Long: `Writes the document in the given file to Vespa.
 If the document already exists, all its values will be replaced by this document.
 If the document id is specified both as an argument and in the file the argument takes precedence.`,
-	Args: cobra.RangeArgs(1, 2),
-	Example: `$ vespa document put src/test/resources/A-Head-Full-of-Dreams.json
+		Args: cobra.RangeArgs(1, 2),
+		Example: `$ vespa document put src/test/resources/A-Head-Full-of-Dreams.json
 $ vespa document put id:mynamespace:music::a-head-full-of-dreams src/test/resources/A-Head-Full-of-Dreams.json`,
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		service, err := documentService()
-		if err != nil {
-			return err
-		}
-		if len(args) == 1 {
-			return printResult(vespa.Put("", args[0], service, operationOptions()), false)
-		} else {
-			return printResult(vespa.Put(args[0], args[1], service, operationOptions()), false)
-		}
-	},
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			service, err := documentService(cli)
+			if err != nil {
+				return err
+			}
+			if len(args) == 1 {
+				return printResult(cli, vespa.Put("", args[0], service, operationOptions(cli.Stderr, printCurl, timeoutSecs)), false)
+			} else {
+				return printResult(cli, vespa.Put(args[0], args[1], service, operationOptions(cli.Stderr, printCurl, timeoutSecs)), false)
+			}
+		},
+	}
+	addDocumentFlags(cmd, &printCurl, &timeoutSecs)
+	return cmd
 }
 
-var documentUpdateCmd = &cobra.Command{
-	Use:   "update [id] json-file",
-	Short: "Modifies some fields of an existing document",
-	Long: `Updates the values of the fields given in a json file as specified in the file.
+func newDocumentUpdateCmd(cli *CLI) *cobra.Command {
+	var (
+		printCurl   bool
+		timeoutSecs int
+	)
+	cmd := &cobra.Command{
+		Use:   "update [id] json-file",
+		Short: "Modifies some fields of an existing document",
+		Long: `Updates the values of the fields given in a json file as specified in the file.
 If the document id is specified both as an argument and in the file the argument takes precedence.`,
-	Args: cobra.RangeArgs(1, 2),
-	Example: `$ vespa document update src/test/resources/A-Head-Full-of-Dreams-Update.json
+		Args: cobra.RangeArgs(1, 2),
+		Example: `$ vespa document update src/test/resources/A-Head-Full-of-Dreams-Update.json
 $ vespa document update id:mynamespace:music::a-head-full-of-dreams src/test/resources/A-Head-Full-of-Dreams.json`,
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		service, err := documentService()
-		if err != nil {
-			return err
-		}
-		if len(args) == 1 {
-			return printResult(vespa.Update("", args[0], service, operationOptions()), false)
-		} else {
-			return printResult(vespa.Update(args[0], args[1], service, operationOptions()), false)
-		}
-	},
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			service, err := documentService(cli)
+			if err != nil {
+				return err
+			}
+			if len(args) == 1 {
+				return printResult(cli, vespa.Update("", args[0], service, operationOptions(cli.Stderr, printCurl, timeoutSecs)), false)
+			} else {
+				return printResult(cli, vespa.Update(args[0], args[1], service, operationOptions(cli.Stderr, printCurl, timeoutSecs)), false)
+			}
+		},
+	}
+	addDocumentFlags(cmd, &printCurl, &timeoutSecs)
+	return cmd
 }
 
-var documentRemoveCmd = &cobra.Command{
-	Use:   "remove id | json-file",
-	Short: "Removes a document from Vespa",
-	Long: `Removes the document specified either as a document id or given in the json file.
+func newDocumentRemoveCmd(cli *CLI) *cobra.Command {
+	var (
+		printCurl   bool
+		timeoutSecs int
+	)
+	cmd := &cobra.Command{
+		Use:   "remove id | json-file",
+		Short: "Removes a document from Vespa",
+		Long: `Removes the document specified either as a document id or given in the json file.
 If the document id is specified both as an argument and in the file the argument takes precedence.`,
-	Args: cobra.ExactArgs(1),
-	Example: `$ vespa document remove src/test/resources/A-Head-Full-of-Dreams-Remove.json
+		Args: cobra.ExactArgs(1),
+		Example: `$ vespa document remove src/test/resources/A-Head-Full-of-Dreams-Remove.json
 $ vespa document remove id:mynamespace:music::a-head-full-of-dreams`,
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		service, err := documentService()
-		if err != nil {
-			return err
-		}
-		if strings.HasPrefix(args[0], "id:") {
-			return printResult(vespa.RemoveId(args[0], service, operationOptions()), false)
-		} else {
-			return printResult(vespa.RemoveOperation(args[0], service, operationOptions()), false)
-		}
-	},
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			service, err := documentService(cli)
+			if err != nil {
+				return err
+			}
+			if strings.HasPrefix(args[0], "id:") {
+				return printResult(cli, vespa.RemoveId(args[0], service, operationOptions(cli.Stderr, printCurl, timeoutSecs)), false)
+			} else {
+				return printResult(cli, vespa.RemoveOperation(args[0], service, operationOptions(cli.Stderr, printCurl, timeoutSecs)), false)
+			}
+		},
+	}
+	addDocumentFlags(cmd, &printCurl, &timeoutSecs)
+	return cmd
 }
 
-var documentGetCmd = &cobra.Command{
-	Use:               "get id",
-	Short:             "Gets a document",
-	Args:              cobra.ExactArgs(1),
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	Example:           `$ vespa document get id:mynamespace:music::a-head-full-of-dreams`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		service, err := documentService()
-		if err != nil {
-			return err
-		}
-		return printResult(vespa.Get(args[0], service, operationOptions()), true)
-	},
+func newDocumentGetCmd(cli *CLI) *cobra.Command {
+	var (
+		printCurl   bool
+		timeoutSecs int
+	)
+	cmd := &cobra.Command{
+		Use:               "get id",
+		Short:             "Gets a document",
+		Args:              cobra.ExactArgs(1),
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		Example:           `$ vespa document get id:mynamespace:music::a-head-full-of-dreams`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			service, err := documentService(cli)
+			if err != nil {
+				return err
+			}
+			return printResult(cli, vespa.Get(args[0], service, operationOptions(cli.Stderr, printCurl, timeoutSecs)), true)
+		},
+	}
+	addDocumentFlags(cmd, &printCurl, &timeoutSecs)
+	return cmd
 }
 
-func documentService() (*vespa.Service, error) { return getService(vespa.DocumentService, 0, "") }
+func documentService(cli *CLI) (*vespa.Service, error) {
+	return cli.service(vespa.DocumentService, 0, "")
+}
 
-func operationOptions() vespa.OperationOptions {
+func operationOptions(stderr io.Writer, printCurl bool, timeoutSecs int) vespa.OperationOptions {
+	curlOutput := ioutil.Discard
+	if printCurl {
+		curlOutput = stderr
+	}
 	return vespa.OperationOptions{
-		CurlOutput: curlOutput(),
-		Timeout:    time.Second * time.Duration(docTimeoutSecs),
+		CurlOutput: curlOutput,
+		Timeout:    time.Second * time.Duration(timeoutSecs),
 	}
 }
 
-func curlOutput() io.Writer {
-	if docPrintCurl {
-		return stderr
-	}
-	return ioutil.Discard
-}
-
-func printResult(result util.OperationResult, payloadOnlyOnSuccess bool) error {
-	out := stdout
+func printResult(cli *CLI, result util.OperationResult, payloadOnlyOnSuccess bool) error {
+	out := cli.Stdout
 	if !result.Success {
-		out = stderr
+		out = cli.Stderr
 	}
 
 	if !result.Success {

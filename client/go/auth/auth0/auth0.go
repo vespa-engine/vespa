@@ -166,13 +166,7 @@ func (a *Auth0) PrepareSystem(ctx context.Context) (*System, error) {
 
 		res, err := tr.Refresh(ctx, a.system)
 		if err != nil {
-			// ask and guide the user through the login process:
-			fmt.Println(fmt.Errorf("failed to renew access token, %s", err))
-			fmt.Print("\n")
-			s, err = RunLogin(ctx, a, true)
-			if err != nil {
-				return nil, err
-			}
+			return nil, fmt.Errorf("failed to renew access token: %w: %s", err, "re-authenticate with 'vespa auth login'")
 		} else {
 			// persist the updated system with renewed access token
 			s.AccessToken = res.AccessToken

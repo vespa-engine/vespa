@@ -16,25 +16,15 @@ import (
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
-var (
-	noApplicationPackage bool
-	overwriteCertificate bool
-)
-
-func init() {
-	certCmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate and private key")
-	certCmd.Flags().BoolVarP(&noApplicationPackage, "no-add", "N", false, "Do not add certificate to the application package")
-	certCmd.MarkPersistentFlagRequired(applicationFlag)
-
-	deprecatedCertCmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate and private key")
-	deprecatedCertCmd.MarkPersistentFlagRequired(applicationFlag)
-
-	certCmd.AddCommand(certAddCmd)
-	certAddCmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate")
-	certAddCmd.MarkPersistentFlagRequired(applicationFlag)
-}
-
-var longDoc = `Create a new private key and self-signed certificate for Vespa Cloud deployment.
+func newCertCmd(cli *CLI, deprecated bool) *cobra.Command {
+	var (
+		noApplicationPackage bool
+		overwriteCertificate bool
+	)
+	cmd := &cobra.Command{
+		Use:   "cert",
+		Short: "Create a new private key and self-signed certificate for Vespa Cloud deployment",
+		Long: `Create a new private key and self-signed certificate for Vespa Cloud deployment.
 
 The private key and certificate will be stored in the Vespa CLI home directory
 (see 'vespa help config'). Other commands will then automatically load the
@@ -56,54 +46,55 @@ Example of loading certificate and key from custom paths:
 
 Note that when overriding key pair through environment variables, that key pair
 will always be used for all applications. It's not possible to specify an
-application-specific key.`
-
-var certCmd = &cobra.Command{
-	Use:   "cert",
-	Short: "Create a new private key and self-signed certificate for Vespa Cloud deployment",
-	Long:  longDoc,
-	Example: `$ vespa auth cert -a my-tenant.my-app.my-instance
+application-specific key.`,
+		Example: `$ vespa auth cert -a my-tenant.my-app.my-instance
 $ vespa auth cert -a my-tenant.my-app.my-instance path/to/application/package`,
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	Args:              cobra.MaximumNArgs(1),
-	RunE:              doCert,
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		Args:              cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return doCert(cli, overwriteCertificate, noApplicationPackage, args)
+		},
+	}
+	cmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate and private key")
+	if deprecated {
+		// TODO: Remove this after 2022-06-01
+		cmd.Deprecated = "use 'vespa auth cert' instead"
+	} else {
+		cmd.Flags().BoolVarP(&noApplicationPackage, "no-add", "N", false, "Do not add certificate to the application package")
+	}
+	cmd.MarkPersistentFlagRequired(applicationFlag)
+	return cmd
 }
 
-// TODO: Remove this after 2022-06-01
-var deprecatedCertCmd = &cobra.Command{
-	Use:               "cert",
-	Short:             "Create a new private key and self-signed certificate for Vespa Cloud deployment",
-	Long:              longDoc,
-	Example:           "$ vespa cert -a my-tenant.my-app.my-instance",
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	Args:              cobra.MaximumNArgs(1),
-	Deprecated:        "use 'vespa auth cert' instead",
-	Hidden:            true,
-	RunE:              doCert,
-}
-
-var certAddCmd = &cobra.Command{
-	Use:   "add",
-	Short: "Add certificate to application package",
-	Long: `Add an existing self-signed certificate for Vespa Cloud deployment to your application package.
+func newCertAddCmd(cli *CLI) *cobra.Command {
+	var overwriteCertificate bool
+	cmd := &cobra.Command{
+		Use:   "add",
+		Short: "Add certificate to application package",
+		Long: `Add an existing self-signed certificate for Vespa Cloud deployment to your application package.
 
 The certificate will be loaded from the Vespa CLI home directory (see 'vespa
 help config') by default.
 
 The location of the application package can be specified as an argument to this
 command (default '.').`,
-	Example: `$ vespa auth cert add -a my-tenant.my-app.my-instance
+		Example: `$ vespa auth cert add -a my-tenant.my-app.my-instance
 $ vespa auth cert add -a my-tenant.my-app.my-instance path/to/application/package`,
-	DisableAutoGenTag: true,
-	SilenceUsage:      true,
-	Args:              cobra.MaximumNArgs(1),
-	RunE:              doCertAdd,
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		Args:              cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return doCertAdd(cli, overwriteCertificate, args)
+		},
+	}
+	cmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate")
+	cmd.MarkPersistentFlagRequired(applicationFlag)
+	return cmd
 }
 
-func doCert(_ *cobra.Command, args []string) error {
-	app, err := getApplication()
+func doCert(cli *CLI, overwriteCertificate, noApplicationPackage bool, args []string) error {
+	app, err := cli.config.application()
 	if err != nil {
 		return err
 	}
@@ -114,15 +105,11 @@ func doCert(_ *cobra.Command, args []string) error {
 			return err
 		}
 	}
-	cfg, err := LoadConfig()
+	privateKeyFile, err := cli.config.privateKeyPath(app)
 	if err != nil {
 		return err
 	}
-	privateKeyFile, err := cfg.PrivateKeyPath(app)
-	if err != nil {
-		return err
-	}
-	certificateFile, err := cfg.CertificatePath(app)
+	certificateFile, err := cli.config.certificatePath(app)
 	if err != nil {
 		return err
 	}
@@ -169,15 +156,15 @@ func doCert(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("could not write private key: %w", err)
 	}
 	if !noApplicationPackage {
-		printSuccess("Certificate written to ", color.CyanString(pkgCertificateFile))
+		cli.printSuccess("Certificate written to ", color.CyanString(pkgCertificateFile))
 	}
-	printSuccess("Certificate written to ", color.CyanString(certificateFile))
-	printSuccess("Private key written to ", color.CyanString(privateKeyFile))
+	cli.printSuccess("Certificate written to ", color.CyanString(certificateFile))
+	cli.printSuccess("Private key written to ", color.CyanString(privateKeyFile))
 	return nil
 }
 
-func doCertAdd(_ *cobra.Command, args []string) error {
-	app, err := getApplication()
+func doCertAdd(cli *CLI, overwriteCertificate bool, args []string) error {
+	app, err := cli.config.application()
 	if err != nil {
 		return err
 	}
@@ -185,11 +172,7 @@ func doCertAdd(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	cfg, err := LoadConfig()
-	if err != nil {
-		return err
-	}
-	certificateFile, err := cfg.CertificatePath(app)
+	certificateFile, err := cli.config.certificatePath(app)
 	if err != nil {
 		return err
 	}
@@ -226,6 +209,6 @@ func doCertAdd(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("could not copy certificate file to application: %w", err)
 	}
 
-	printSuccess("Certificate written to ", color.CyanString(pkgCertificateFile))
+	cli.printSuccess("Certificate written to ", color.CyanString(pkgCertificateFile))
 	return nil
 }

@@ -1,7 +1,4 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// A HTTP wrapper which handles some errors and provides a way to replace the HTTP client by a mock.
-// Author: bratseth
-
 package util
 
 import (
@@ -13,45 +10,32 @@ import (
 	"github.com/vespa-engine/vespa/client/go/build"
 )
 
-// Set this to a mock HttpClient instead to unit test HTTP requests
-var ActiveHttpClient = CreateClient(time.Second * 10)
-
-type HttpClient interface {
+type HTTPClient interface {
 	Do(request *http.Request, timeout time.Duration) (response *http.Response, error error)
 	UseCertificate(certificate []tls.Certificate)
 }
 
-type defaultHttpClient struct {
+type defaultHTTPClient struct {
 	client *http.Client
 }
 
-func (c *defaultHttpClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, error error) {
+func (c *defaultHTTPClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, error error) {
 	if c.client.Timeout != timeout { // Set wanted timeout
 		c.client.Timeout = timeout
 	}
+	if request.Header == nil {
+		request.Header = make(http.Header)
+	}
+	request.Header.Set("User-Agent", fmt.Sprintf("Vespa CLI/%s", build.Version))
 	return c.client.Do(request)
 }
 
-func (c *defaultHttpClient) UseCertificate(certificates []tls.Certificate) {
+func (c *defaultHTTPClient) UseCertificate(certificates []tls.Certificate) {
 	c.client.Transport = &http.Transport{TLSClientConfig: &tls.Config{
 		Certificates: certificates,
 	}}
 }
 
-func CreateClient(timeout time.Duration) HttpClient {
-	return &defaultHttpClient{
-		client: &http.Client{Timeout: timeout},
-	}
-}
-
-func HttpDo(request *http.Request, timeout time.Duration, description string) (*http.Response, error) {
-	if request.Header == nil {
-		request.Header = make(http.Header)
-	}
-	request.Header.Set("User-Agent", fmt.Sprintf("Vespa CLI/%s", build.Version))
-	response, err := ActiveHttpClient.Do(request, timeout)
-	if err != nil {
-		return nil, err
-	}
-	return response, nil
+func CreateClient(timeout time.Duration) HTTPClient {
+	return &defaultHTTPClient{client: &http.Client{Timeout: timeout}}
 }

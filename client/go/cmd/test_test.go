@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -30,7 +29,9 @@ func TestSuite(t *testing.T) {
 	}
 
 	expectedBytes, _ := ioutil.ReadFile("testdata/tests/expected-suite.out")
-	outBytes, errBytes := execute(command{args: []string{"test", "testdata/tests/system-test"}}, t, client)
+	cli, stdout, stderr := newTestCLI(t)
+	cli.httpClient = client
+	assert.NotNil(t, cli.Run("test", "testdata/tests/system-test"))
 
 	baseUrl := "http://127.0.0.1:8080"
 	urlWithQuery := baseUrl + "/search/?presentation.timing=true&query=artist%3A+foo&timeout=3.4s"
@@ -41,47 +42,53 @@ func TestSuite(t *testing.T) {
 		requests = append(requests, createSearchRequest(baseUrl+"/search/"))
 	}
 	assertRequests(requests, client, t)
-	assert.Equal(t, string(expectedBytes), outBytes)
-	assert.Equal(t, "", errBytes)
+	assert.Equal(t, string(expectedBytes), stdout.String())
+	assert.Equal(t, "", stderr.String())
 }
 
 func TestIllegalFileReference(t *testing.T) {
 	client := &mock.HTTPClient{}
 	client.NextStatus(200)
 	client.NextStatus(200)
-	_, errBytes := execute(command{args: []string{"test", "testdata/tests/production-test/illegal-reference.json"}}, t, client)
+	cli, _, stderr := newTestCLI(t)
+	cli.httpClient = client
+	assert.NotNil(t, cli.Run("test", "testdata/tests/production-test/illegal-reference.json"))
 	assertRequests([]*http.Request{createRequest("GET", "https://domain.tld", "{}")}, client, t)
-	assert.Equal(t, "\nError: error in Step 2: path may not point outside src/test/application, but 'foo/../../../../this-is-not-ok.json' does\nHint: See https://docs.vespa.ai/en/reference/testing\n", errBytes)
+	assert.Equal(t, "\nError: error in Step 2: path may not point outside src/test/application, but 'foo/../../../../this-is-not-ok.json' does\nHint: See https://docs.vespa.ai/en/reference/testing\n", stderr.String())
 }
 
 func TestIllegalRequestUri(t *testing.T) {
 	client := &mock.HTTPClient{}
 	client.NextStatus(200)
 	client.NextStatus(200)
-	_, errBytes := execute(command{args: []string{"test", "testdata/tests/production-test/illegal-uri.json"}}, t, client)
+	cli, _, stderr := newTestCLI(t)
+	cli.httpClient = client
+	assert.NotNil(t, cli.Run("test", "testdata/tests/production-test/illegal-uri.json"))
 	assertRequests([]*http.Request{createRequest("GET", "https://domain.tld/my-api", "")}, client, t)
-	assert.Equal(t, "\nError: error in Step 2: production tests may not specify requests against Vespa endpoints\nHint: See https://docs.vespa.ai/en/reference/testing\n", errBytes)
+	assert.Equal(t, "\nError: error in Step 2: production tests may not specify requests against Vespa endpoints\nHint: See https://docs.vespa.ai/en/reference/testing\n", stderr.String())
 }
 
 func TestProductionTest(t *testing.T) {
 	client := &mock.HTTPClient{}
 	client.NextStatus(200)
-	outBytes, errBytes := execute(command{args: []string{"test", "testdata/tests/production-test/external.json"}}, t, client)
-	assert.Equal(t, "external.json: . OK\n\nSuccess: 1 test OK\n", outBytes)
-	assert.Equal(t, "", errBytes)
+	cli, stdout, stderr := newTestCLI(t)
+	cli.httpClient = client
+	assert.Nil(t, cli.Run("test", "testdata/tests/production-test/external.json"))
+	assert.Equal(t, "external.json: . OK\n\nSuccess: 1 test OK\n", stdout.String())
+	assert.Equal(t, "", stderr.String())
 	assertRequests([]*http.Request{createRequest("GET", "https://my.service:123/path?query=wohoo", "")}, client, t)
 }
 
 func TestTestWithoutAssertions(t *testing.T) {
-	client := &mock.HTTPClient{}
-	_, errBytes := execute(command{args: []string{"test", "testdata/tests/system-test/foo/query.json"}}, t, client)
-	assert.Equal(t, "\nError: a test must have at least one step, but none were found in testdata/tests/system-test/foo/query.json\nHint: See https://docs.vespa.ai/en/reference/testing\n", errBytes)
+	cli, _, stderr := newTestCLI(t)
+	assert.NotNil(t, cli.Run("test", "testdata/tests/system-test/foo/query.json"))
+	assert.Equal(t, "\nError: a test must have at least one step, but none were found in testdata/tests/system-test/foo/query.json\nHint: See https://docs.vespa.ai/en/reference/testing\n", stderr.String())
 }
 
 func TestSuiteWithoutTests(t *testing.T) {
-	client := &mock.HTTPClient{}
-	_, errBytes := execute(command{args: []string{"test", "testdata/tests/staging-test"}}, t, client)
-	assert.Equal(t, "Error: failed to find any tests at testdata/tests/staging-test\nHint: See https://docs.vespa.ai/en/reference/testing\n", errBytes)
+	cli, _, stderr := newTestCLI(t)
+	assert.NotNil(t, cli.Run("test", "testdata/tests/staging-test"))
+	assert.Equal(t, "Error: failed to find any tests at testdata/tests/staging-test\nHint: See https://docs.vespa.ai/en/reference/testing\n", stderr.String())
 }
 
 func TestSingleTest(t *testing.T) {
@@ -91,11 +98,13 @@ func TestSingleTest(t *testing.T) {
 	client.NextStatus(200)
 	client.NextResponse(200, string(searchResponse))
 	client.NextResponse(200, string(searchResponse))
+	cli, stdout, stderr := newTestCLI(t)
+	cli.httpClient = client
 
 	expectedBytes, _ := ioutil.ReadFile("testdata/tests/expected.out")
-	outBytes, errBytes := execute(command{args: []string{"test", "testdata/tests/system-test/test.json"}}, t, client)
-	assert.Equal(t, string(expectedBytes), outBytes)
-	assert.Equal(t, "", errBytes)
+	assert.Nil(t, cli.Run("test", "testdata/tests/system-test/test.json"))
+	assert.Equal(t, string(expectedBytes), stdout.String())
+	assert.Equal(t, "", stderr.String())
 
 	baseUrl := "http://127.0.0.1:8080"
 	rawUrl := baseUrl + "/search/?presentation.timing=true&query=artist%3A+foo&timeout=3.4s"
@@ -105,34 +114,36 @@ func TestSingleTest(t *testing.T) {
 func TestSingleTestWithCloudAndEndpoints(t *testing.T) {
 	apiKey, err := vespa.CreateAPIKey()
 	require.Nil(t, err)
-	cmd := command{
-		args: []string{"test", "testdata/tests/system-test/test.json", "-t", "cloud", "-a", "t.a.i"},
-		env:  map[string]string{"VESPA_CLI_API_KEY": string(apiKey)},
-	}
-	cmd.homeDir = filepath.Join(t.TempDir(), ".vespa")
-	os.MkdirAll(cmd.homeDir, 0700)
-	keyFile := filepath.Join(cmd.homeDir, "key")
-	certFile := filepath.Join(cmd.homeDir, "cert")
-
-	os.Setenv("VESPA_CLI_DATA_PLANE_KEY_FILE", keyFile)
-	os.Setenv("VESPA_CLI_DATA_PLANE_CERT_FILE", certFile)
-	os.Setenv("VESPA_CLI_ENDPOINTS", "{\"endpoints\":[{\"cluster\":\"container\",\"url\":\"https://url\"}]}")
-
-	kp, _ := vespa.CreateKeyPair()
-	ioutil.WriteFile(keyFile, kp.PrivateKey, 0600)
-	ioutil.WriteFile(certFile, kp.Certificate, 0600)
+	certDir := filepath.Join(t.TempDir())
+	keyFile := filepath.Join(certDir, "key")
+	certFile := filepath.Join(certDir, "cert")
+	kp, err := vespa.CreateKeyPair()
+	require.Nil(t, err)
+	require.Nil(t, ioutil.WriteFile(keyFile, kp.PrivateKey, 0600))
+	require.Nil(t, ioutil.WriteFile(certFile, kp.Certificate, 0600))
 
 	client := &mock.HTTPClient{}
-	searchResponse, _ := ioutil.ReadFile("testdata/tests/response.json")
+	cli, stdout, stderr := newTestCLI(
+		t,
+		"VESPA_CLI_API_KEY="+string(apiKey),
+		"VESPA_CLI_DATA_PLANE_KEY_FILE="+keyFile,
+		"VESPA_CLI_DATA_PLANE_CERT_FILE="+certFile,
+		"VESPA_CLI_ENDPOINTS={\"endpoints\":[{\"cluster\":\"container\",\"url\":\"https://url\"}]}",
+	)
+	cli.httpClient = client
+
+	searchResponse, err := ioutil.ReadFile("testdata/tests/response.json")
+	require.Nil(t, err)
 	client.NextStatus(200)
 	client.NextStatus(200)
 	client.NextResponse(200, string(searchResponse))
 	client.NextResponse(200, string(searchResponse))
 
-	expectedBytes, _ := ioutil.ReadFile("testdata/tests/expected.out")
-	outBytes, errBytes := execute(cmd, t, client)
-	assert.Equal(t, string(expectedBytes), outBytes)
-	assert.Equal(t, "", errBytes)
+	assert.Nil(t, cli.Run("test", "testdata/tests/system-test/test.json", "-t", "cloud", "-a", "t.a.i"))
+	expectedBytes, err := ioutil.ReadFile("testdata/tests/expected.out")
+	require.Nil(t, err)
+	assert.Equal(t, "", stderr.String())
+	assert.Equal(t, string(expectedBytes), stdout.String())
 
 	baseUrl := "https://url"
 	rawUrl := baseUrl + "/search/?presentation.timing=true&query=artist%3A+foo&timeout=3.4s"

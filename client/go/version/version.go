@@ -68,6 +68,15 @@ func (v1 Version) Compare(v2 Version) int {
 // Less returns true if v1 is lower than v2.
 func (v1 Version) Less(v2 Version) bool { return v1.Compare(v2) < 0 }
 
+// MustParse is like Parse, but panics if s cannot be parsed.
+func MustParse(s string) Version {
+	v, err := Parse(s)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
 // Parse parses a semantic version number from string s.
 func Parse(s string) (Version, error) {
 	if len(s) > 0 && s[0] == 'v' {

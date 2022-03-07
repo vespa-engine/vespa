@@ -12,7 +12,8 @@ import (
 
 func TestMan(t *testing.T) {
 	tmpDir := t.TempDir()
-	out, _ := execute(command{args: []string{"man", tmpDir}}, t, nil)
-	assert.Equal(t, fmt.Sprintf("Success: Man pages written to %s\n", tmpDir), out)
+	cli, stdout, _ := newTestCLI(t)
+	assert.Nil(t, cli.Run("man", tmpDir))
+	assert.Equal(t, fmt.Sprintf("Success: Man pages written to %s\n", tmpDir), stdout.String())
 	assert.True(t, util.PathExists(filepath.Join(tmpDir, "vespa.1")))
 }
