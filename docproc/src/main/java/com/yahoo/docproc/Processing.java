@@ -140,10 +140,8 @@ public class Processing {
     }
 
     /**
-     * @deprecated  Use TBD instead
+     * @deprecated  This method will be removed without replacement in Vespa 8.
      */
-    // TODO: used to: processing.setDocprocServiceRegistry(this.documentProcessingHandler.getDocprocServiceRegistry());
-    //       from Processor and LoggingRequestHandler
     @Deprecated(forRemoval = true, since="7")
     @SuppressWarnings("removal") // TODO Vespa 8: remove
     public void setDocprocServiceRegistry(ComponentRegistry<DocprocService> docprocServiceRegistry) {
