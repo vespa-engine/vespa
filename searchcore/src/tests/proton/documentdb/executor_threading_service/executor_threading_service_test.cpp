@@ -33,6 +33,7 @@ public:
     void setup(uint32_t indexing_threads, SharedFieldWriterExecutor shared_field_writer) {
         service = std::make_unique<ExecutorThreadingService>(_transport.shared(),
                                                              _transport.transport(),
+                                                             _transport.clock(),
                                                              field_writer_executor.get(),
                                                              nullptr,
                                                              ThreadingServiceConfig::make(indexing_threads, shared_field_writer));
