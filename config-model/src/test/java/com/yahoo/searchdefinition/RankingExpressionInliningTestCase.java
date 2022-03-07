@@ -192,14 +192,19 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testFunctionInliningWithReplacement() throws ParseException {
+        checkFunctionReplacement(false);
+        checkFunctionReplacement(true);
+    }
+
+    public void checkFunctionReplacement(boolean useXPP) throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         MockDeployLogger deployLogger = new MockDeployLogger();
         ApplicationBuilder builder = new ApplicationBuilder(MockApplicationPackage.createEmpty(),
-                                                              new MockFileRegistry(),
-                                                              deployLogger,
-                                                              new TestProperties(),
-                                                              rankProfileRegistry,
-                                                              new QueryProfileRegistry());
+                                                            new MockFileRegistry(),
+                                                            deployLogger,
+                                                            new TestProperties().setExperimentalSdParsing(useXPP),
+                                                            rankProfileRegistry,
+                                                            new QueryProfileRegistry());
         builder.addSchema(
                         "search test {\n" +
                         "    document test { }\n" +

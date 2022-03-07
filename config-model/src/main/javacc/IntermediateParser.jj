@@ -1050,13 +1050,10 @@ void attribute(ParsedField field) :
 {
     <ATTRIBUTE> [name = identifier()]
     {
-        ParsedAttribute attr = new ParsedAttribute(name);
+        ParsedAttribute attr = field.attributeFor(name);
     }
          ( (<COLON> attributeSetting(attr))
            | (lbrace() (attributeSetting(attr) (<NL>)*)* <RBRACE>) )
-    {
-        field.addAttribute(attr);
-    }
 }
 
 /* pick up sorting in field block */
@@ -1910,7 +1907,12 @@ void function(ParsedRankProfile profile) :
     {
         func.setExpression(expression);
         func.setInline(inline);
-        profile.addFunction(func);
+        var old = profile.addOrReplaceFunction(func);
+        if (old != null) {
+            deployLogger.logApplicationPackage(Level.WARNING, "Function '" + func.name()
+                                               + "' replaces a previous function with the same name in rank profile '"
+                                               + profile.name() + "'");
+        }
     }
 }
 

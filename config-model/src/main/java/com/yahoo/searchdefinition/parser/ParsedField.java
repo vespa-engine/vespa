@@ -121,10 +121,8 @@ class ParsedField extends ParsedBlock {
     void setStemming(Stemming stemming) { this.stemming = stemming; }
     void setWeight(int weight) { this.weight = weight; }
 
-    void addAttribute(ParsedAttribute attribute) {
-        String attrName = attribute.name();
-        verifyThat(! attributes.containsKey(attrName), "already has attribute", attrName);
-        attributes.put(attrName, attribute);
+    ParsedAttribute attributeFor(String attrName) {
+        return attributes.computeIfAbsent(attrName, n -> new ParsedAttribute(n));
     }
 
     void setIndexingOperation(ParsedIndexingOp idxOp) {
