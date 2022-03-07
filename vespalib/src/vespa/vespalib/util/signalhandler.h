@@ -3,6 +3,7 @@
 
 #include <csignal>
 #include <vector>
+#include <atomic>
 
 namespace vespalib {
 
@@ -35,7 +36,7 @@ private:
      * State indicating if the signal handled by this signal handler
      * has been caught.
      **/
-    volatile sig_atomic_t _gotSignal;
+    std::atomic<int> _gotSignal;
 
     /**
      * Common signal handler for all caught signals. This method will

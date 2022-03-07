@@ -59,7 +59,7 @@ SignalHandler::handleSignal(int signal)
 void
 SignalHandler::gotSignal()
 {
-    _gotSignal = 1;
+    _gotSignal.store(1, std::memory_order_relaxed);
 }
 
 SignalHandler::SignalHandler(int signal)
@@ -97,13 +97,13 @@ SignalHandler::ignore()
 bool
 SignalHandler::check() const
 {
-    return (_gotSignal != 0);
+    return (_gotSignal.load(std::memory_order_relaxed) != 0);
 }
 
 void
 SignalHandler::clear()
 {
-    _gotSignal = 0;
+    _gotSignal.store(0, std::memory_order_relaxed);
 }
 
 void
