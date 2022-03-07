@@ -74,6 +74,14 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         assertWeightedSet(schema, "f8", true, false);
         assertWeightedSet(schema, "f9", false, true);
         assertWeightedSet(schema, "f10", false, true);
+
+        assertAttrSettings(schema, "f4", false, false, false);
+        assertAttrSettings(schema, "f5", true, true, true);
+        assertAttrSettings(schema, "f6", false, false, false);
+        assertAttrSettings(schema, "f7", false, false, false);
+        assertAttrSettings(schema, "f8", false, false, false);
+        assertAttrSettings(schema, "f9", false, false, false);
+        assertAttrSettings(schema, "f10", false, false, false);
     }
 
     private void assertWeightedSet(Schema schema, String name, boolean createIfNonExistent, boolean removeIfZero) {
@@ -82,11 +90,19 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         Attribute a4 = f4.getAttributes().get(f4.getName());
         assertEquals(Attribute.Type.STRING, a4.getType());
         assertEquals(Attribute.CollectionType.WEIGHTEDSET, a4.getCollectionType());
-        assertFalse(a4.isHuge());
-        assertFalse(a4.isFastSearch());
-        assertFalse(a4.isFastAccess());
         assertEquals(a4.isRemoveIfZero(), removeIfZero);
         assertEquals(a4.isCreateIfNonExistent(), createIfNonExistent);
+    }
+
+    private void assertAttrSettings(Schema schema, String name, boolean fastAccess, boolean fastSearch, boolean paged) {
+        SDField f4 = (SDField) schema.getDocument().getField(name);
+        assertEquals(1, f4.getAttributes().size());
+        Attribute a4 = f4.getAttributes().get(f4.getName());
+        assertEquals(Attribute.Type.STRING, a4.getType());
+        assertEquals(Attribute.CollectionType.WEIGHTEDSET, a4.getCollectionType());
+        assertEquals(a4.isFastSearch(), fastSearch);
+        assertEquals(a4.isFastAccess(), fastAccess);
+        assertEquals(a4.isPaged(), paged);
     }
 
     @Test
