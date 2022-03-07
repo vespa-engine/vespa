@@ -41,10 +41,6 @@ public:
     int fastCompare(const FieldValue& other) const override final;
 
     FieldValue& operator=(vespalib::stringref) override;
-    FieldValue& operator=(int32_t) override;
-    FieldValue& operator=(int64_t) override;
-    FieldValue& operator=(float) override;
-    FieldValue& operator=(double) override;
     size_t hash() const override final { return vespalib::hash<Number>()(_value); }
 
     char getAsByte() const override;

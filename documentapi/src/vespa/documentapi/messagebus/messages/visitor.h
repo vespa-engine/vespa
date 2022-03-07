@@ -9,9 +9,8 @@
 #include <vespa/vdslib/container/visitorstatistics.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/document/fieldvalue/document.h>
 
-
+namespace document { class Document; }
 namespace documentapi {
 
 typedef uint64_t Timestamp;
@@ -237,25 +236,25 @@ public:
  */
 class DocumentListMessage : public VisitorMessage {
 public:
-    typedef std::unique_ptr<DocumentListMessage> UP;
+    using UP = std::unique_ptr<DocumentListMessage>;
+    using DocumentSP = std::shared_ptr<document::Document>;
 
     class Entry {
     public:
         Entry();
-        Entry(int64_t timestamp, document::Document::SP doc, bool removeEntry);
+        Entry(int64_t timestamp, DocumentSP doc, bool removeEntry);
         Entry(const Entry& other);
         Entry(const document::DocumentTypeRepo &repo, document::ByteBuffer& buf);
 
         int64_t getTimestamp() { return _timestamp; }
-        const document::Document::SP& getDocument() { return _document; }
+        const DocumentSP & getDocument() { return _document; }
         bool isRemoveEntry() { return _removeEntry; }
 
         void serialize(vespalib::GrowableByteBuffer& buf) const;
-        uint32_t getSerializedSize() const;
     private:
-        int64_t _timestamp;
-        document::Document::SP _document;
-        bool _removeEntry;
+        int64_t    _timestamp;
+        DocumentSP _document;
+        bool       _removeEntry;
     };
 
 private:

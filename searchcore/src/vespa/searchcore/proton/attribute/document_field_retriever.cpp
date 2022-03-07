@@ -1,9 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_field_retriever.h"
-#include <vespa/document/fieldvalue/arrayfieldvalue.h>
-#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-#include <vespa/document/fieldvalue/tensorfieldvalue.h>
+#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/eval/eval/value.h>
@@ -31,12 +29,13 @@ namespace proton {
 
 namespace {
 
-template <typename T>
+template <typename T, typename FT>
 void
-setValue(DocumentIdT lid,
-         Document &doc,
-         const document::Field & field,
-         const IAttributeVector &attr)
+setValue(DocumentIdT lid, Document &doc, const document::Field & field, const IAttributeVector &attr);
+
+template <typename T, typename FT>
+void
+setValue(DocumentIdT lid, Document &doc, const document::Field & field, const IAttributeVector &attr)
 {
     switch (attr.getCollectionType()) {
     case CollectionType::SINGLE:
@@ -44,7 +43,7 @@ setValue(DocumentIdT lid,
         if ( ! attr.isUndefined(lid) ) {
             AttributeContent<T> content;
             content.fill(attr, lid);
-            doc.set(field, content[0]);
+            doc.setFieldValue(field, std::make_unique<FT>(content[0]));
         } else {
             doc.remove(field);
         }
@@ -65,7 +64,7 @@ setValue(DocumentIdT lid,
         ArrayFieldValue &array = static_cast<ArrayFieldValue &>(*fv.get());
         array.resize(content.size());
         for (uint32_t j(0); j < content.size(); ++j) {
-            array[j] = content[j];
+            static_cast<FT &>(array[j]).setValue(content[j]);
         }
         doc.setValue(field, *fv);
         break;
@@ -86,8 +85,8 @@ setValue(DocumentIdT lid,
         wset.resize(content.size());
         auto it(wset.begin());
         for (uint32_t j(0); j < content.size(); ++j, ++it) {
-            *it->first = content[j].getValue();
-            *it->second = content[j].getWeight();
+            static_cast<FT &>(*it->first).setValue(content[j].getValue());
+            static_cast<document::IntFieldValue &>(*it->second).setValue(content[j].getWeight());
         }
         doc.setValue(field, *fv);
         break;
@@ -124,27 +123,28 @@ DocumentFieldRetriever::populate(DocumentIdT lid,
 {
     switch (attr.getBasicType()) {
     case BasicType::BOOL:
+        return setValue<IAttributeVector::largeint_t, document::BoolFieldValue>(lid, doc, field, attr);
     case BasicType::UINT2:
     case BasicType::UINT4:
     case BasicType::INT8:
+        return setValue<IAttributeVector::largeint_t, document::ByteFieldValue>(lid, doc, field, attr);
     case BasicType::INT16:
+        return setValue<IAttributeVector::largeint_t, document::ShortFieldValue>(lid, doc, field, attr);
     case BasicType::INT32:
+        return setValue<IAttributeVector::largeint_t, document::IntFieldValue>(lid, doc, field, attr);
     case BasicType::INT64:
-        setValue<IAttributeVector::largeint_t>(lid, doc, field, attr);
-        break;
+        return setValue<IAttributeVector::largeint_t, document::LongFieldValue>(lid, doc, field, attr);
     case BasicType::FLOAT:
+        return setValue<double, document::FloatFieldValue>(lid, doc, field, attr);
     case BasicType::DOUBLE:
-        setValue<double>(lid, doc, field, attr);
-        break;
+        return setValue<double, document::DoubleFieldValue>(lid, doc, field, attr);
     case BasicType::STRING:
-        setValue<const char *>(lid, doc, field, attr);
-        break;
+        return setValue<const char *, document::StringFieldValue>(lid, doc, field, attr);
     case BasicType::PREDICATE:
         // Predicate attribute doesn't store documents, it only indexes them.
         break;
     case BasicType::TENSOR:
-        setTensorValue(lid, doc, field, attr);
-        break;
+        return setTensorValue(lid, doc, field, attr);
     case BasicType::REFERENCE:
         // Reference attribute doesn't store full document id.
         break;

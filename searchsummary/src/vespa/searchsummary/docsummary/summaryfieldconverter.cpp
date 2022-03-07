@@ -322,7 +322,7 @@ public:
         if (_field_value.get()) {
             return std::move(_field_value);
         }
-        return std::make_unique<StringFieldValue>(_str.str());
+        return StringFieldValue::make(_str.str());
     }
 };
 

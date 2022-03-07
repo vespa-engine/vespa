@@ -14,7 +14,6 @@ namespace document {
 
 class LongFieldValue : public NumericFieldValue<int64_t> {
 public:
-    typedef std::unique_ptr<LongFieldValue> UP;
     typedef int64_t Number;
 
     LongFieldValue(Number value = 0) : NumericFieldValue<Number>(value) {}
@@ -26,8 +25,8 @@ public:
     LongFieldValue* clone() const override { return new LongFieldValue(*this); }
 
     using NumericFieldValue<Number>::operator=;
-
     DECLARE_IDENTIFIABLE(LongFieldValue);
+    static std::unique_ptr<LongFieldValue> make(Number value=0) { return std::make_unique<LongFieldValue>(value); }
 
 };
 

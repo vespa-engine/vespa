@@ -707,15 +707,15 @@ TEST(DocumentTest,testReadSerializedAllVersions)
         // Create a memory instance of document
     {
         Document doc(*docType, DocumentId("id:ns:serializetest::http://test.doc.id/"));
-        doc.set("intfield", 5);
-        doc.set("floatfield", -9.23);
-        doc.set("stringfield", "This is a string.");
-        doc.set("longfield", static_cast<int64_t>(398420092938472983LL));
-        doc.set("doublefield", 98374532.398820);
-        doc.set("bytefield", -2);
-        doc.setValue("rawfield", RawFieldValue("RAW DATA", 8));
+        doc.setValue("intfield", IntFieldValue::make(5));
+        doc.setValue("floatfield", FloatFieldValue::make(-9.23));
+        doc.setValue("stringfield", StringFieldValue::make("This is a string."));
+        doc.setValue("longfield", LongFieldValue::make(static_cast<int64_t>(398420092938472983LL)));
+        doc.setValue("doublefield", DoubleFieldValue::make(98374532.398820));
+        doc.setValue("bytefield", ByteFieldValue::make(-2));
+        doc.setValue("rawfield", std::make_unique<RawFieldValue>("RAW DATA", 8));
         Document docInDoc(*docInDocType, DocumentId("id:ns:docindoc::http://doc.in.doc/"));
-        docInDoc.set("stringindocfield", "Elvis is dead");
+        docInDoc.setValue("stringindocfield", StringFieldValue::make("Elvis is dead"));
         doc.setValue("docfield", docInDoc);
         ArrayFieldValue floatArray(*arrayOfFloatDataType);
         CollectionHelper(floatArray).add(1.0);
@@ -830,14 +830,14 @@ TEST(DocumentTest, testGenerateSerializedFile)
     DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
     Document doc(*repo.getDocumentType("serializetest"), DocumentId("id:ns:serializetest::http://test.doc.id/"));
 
-    doc.set("intfield", 5);
-    doc.set("floatfield", -9.23);
-    doc.set("stringfield", "This is a string.");
-    doc.set("longfield", (int64_t) 398420092938472983ll);
-    doc.set("doublefield", 98374532.398820);
-    doc.set("urifield", "http://this.is.a.test/");
-    doc.set("bytefield", -2);
-    doc.set("rawfield", "RAW DATA");
+    doc.setValue("intfield", IntFieldValue::make(5));
+    doc.setValue("floatfield", FloatFieldValue::make(-9.23));
+    doc.setValue("stringfield", StringFieldValue::make("This is a string."));
+    doc.setValue("longfield", LongFieldValue::make((int64_t) 398420092938472983ll));
+    doc.setValue("doublefield", DoubleFieldValue::make(98374532.398820));
+    doc.setValue("urifield", StringFieldValue::make("http://this.is.a.test/"));
+    doc.setValue("bytefield", ByteFieldValue::make(-2));
+    doc.setValue("rawfield", std::make_unique<RawFieldValue>("RAW DATA"));
 
     const DocumentType *docindoc_type = repo.getDocumentType("docindoc");
     EXPECT_TRUE(docindoc_type);
@@ -951,7 +951,7 @@ TEST(DocumentTest, testHasChanged)
         Document doc2(test_repo.getTypeRepo(), buf);
         EXPECT_TRUE(!doc2.hasChanged());
 
-        doc2.set("headerval", 13);
+        doc2.setValue("headerval", IntFieldValue::make(13));
         EXPECT_TRUE(doc2.hasChanged());
     }
         // Overwriting a value in doc tags us changed.
@@ -959,7 +959,7 @@ TEST(DocumentTest, testHasChanged)
         buf.rp(0);
         Document doc2(test_repo.getTypeRepo(), buf);
 
-        doc2.set("hstringval", "bla bla bla bla bla");
+        doc2.setValue("hstringval", StringFieldValue::make("bla bla bla bla bla"));
         EXPECT_TRUE(doc2.hasChanged());
     }
         // Clearing value tags us changed.

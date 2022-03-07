@@ -14,7 +14,6 @@ namespace document {
 
 class DoubleFieldValue : public NumericFieldValue<double> {
 public:
-    typedef std::unique_ptr<DoubleFieldValue> UP;
     typedef double Number;
 
     DoubleFieldValue(Number value = 0) : NumericFieldValue<Number>(value) {}
@@ -26,9 +25,8 @@ public:
     DoubleFieldValue* clone() const override { return new DoubleFieldValue(*this); }
 
     using NumericFieldValue<Number>::operator=;
-
     DECLARE_IDENTIFIABLE(DoubleFieldValue);
-
+    static std::unique_ptr<DoubleFieldValue> make(Number value=0) { return std::make_unique<DoubleFieldValue>(value); }
 };
 
 } // document

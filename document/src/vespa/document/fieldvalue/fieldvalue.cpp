@@ -95,30 +95,6 @@ FieldValue::operator=(vespalib::stringref)
     throw IllegalArgumentException("Cannot assign string to datatype " + getDataType()->toString(), VESPA_STRLOC);
 }
 
-FieldValue&
-FieldValue::operator=(int32_t)
-{
-    throw IllegalArgumentException("Cannot assign int to datatype " + getDataType()->toString(), VESPA_STRLOC);
-}
-
-FieldValue&
-FieldValue::operator=(int64_t)
-{
-    throw IllegalArgumentException("Cannot assign long to datatype " + getDataType()->toString(), VESPA_STRLOC);
-}
-
-FieldValue&
-FieldValue::operator=(float)
-{
-    throw IllegalArgumentException("Cannot assign float to datatype " + getDataType()->toString(), VESPA_STRLOC);
-}
-
-FieldValue&
-FieldValue::operator=(double)
-{
-    throw IllegalArgumentException("Cannot assign double to datatype " + getDataType()->toString(), VESPA_STRLOC);
-}
-
 char
 FieldValue::getAsByte() const
 {

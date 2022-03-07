@@ -8,6 +8,7 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/error.h>

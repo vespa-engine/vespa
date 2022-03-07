@@ -6,6 +6,7 @@
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/vespalib/objects/nbostream.h>
 

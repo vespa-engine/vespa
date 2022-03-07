@@ -14,7 +14,6 @@ namespace document {
 
 class ByteFieldValue : public NumericFieldValue<int8_t> {
 public:
-    typedef std::unique_ptr<ByteFieldValue> UP;
     typedef int8_t Number;
 
     ByteFieldValue(Number value = 0)
@@ -24,10 +23,10 @@ public:
     void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
     const DataType *getDataType() const override { return DataType::BYTE; }
     ByteFieldValue* clone() const override { return new ByteFieldValue(*this); }
+
     using NumericFieldValue<Number>::operator=;
-
     DECLARE_IDENTIFIABLE(ByteFieldValue);
-
+    static std::unique_ptr<ByteFieldValue> make(Number value=0) { return std::make_unique<ByteFieldValue>(value); }
 };
 
 } // document

@@ -8,6 +8,7 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -26,6 +27,7 @@ using document::Document;
 using document::DocumentId;
 using document::DocumentType;
 using document::DocumentTypeRepo;
+using document::StringFieldValue;
 using vespalib::compression::CompressionConfig;
 using vespalib::asciistream;
 using index::DummyFileHeaderContext;
@@ -66,9 +68,9 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool before)
         mainstr << (j + i * 1000) << " ";
     }
     mainstr << " and end field";
-    doc->set("main", mainstr.c_str());
+    doc->setValue("main", StringFieldValue::make(mainstr.str()));
     if (!before) {
-        doc->set("extra", "foo");
+        doc->setValue("extra", StringFieldValue::make("foo"));
     }
     
     return doc;
@@ -160,7 +162,7 @@ MyRewriteVisitor::visit(uint32_t lid, const std::shared_ptr<Document> &doc)
     Document::UP expDoc(makeDoc(_repo, lid, _before));
     EXPECT_TRUE(*expDoc == *doc);
     _valid->setBitAndMaintainCount(lid);
-    doc->set("extra", "foo");
+    doc->setValue("extra", StringFieldValue::make("foo"));
 }
 
 

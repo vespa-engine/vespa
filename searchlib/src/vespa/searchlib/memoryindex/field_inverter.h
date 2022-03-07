@@ -4,7 +4,6 @@
 
 #include "i_field_index_remove_listener.h"
 #include <vespa/document/annotation/span.h>
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/vespalib/stllike/allocator.h>
 #include <vespa/vespalib/stllike/hash_map.h>
@@ -15,6 +14,12 @@ namespace search::index {
     class Schema;
 }
 
+namespace document {
+    class FieldValue;
+    class StringFieldValue;
+    class ArrayFieldValue;
+    class WeightedSetFieldValue;
+}
 namespace search::memoryindex {
 
 class IOrderedFieldIndexInserter;
@@ -299,7 +304,7 @@ public:
     /**
      * Invert a normal text field, based on annotations.
      */
-    void invertField(uint32_t docId, const document::FieldValue::UP &val);
+    void invertField(uint32_t docId, const std::unique_ptr<document::FieldValue> &val);
 
     /**
      * Setup remove of word in old version of document.

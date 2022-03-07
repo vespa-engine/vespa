@@ -1,10 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "literalfieldvalue.h"
 #include "literalfieldvalue.hpp"
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/util/xmlstream.h>
-#include <sstream>
 
 using namespace vespalib::xml;
 
@@ -21,7 +19,7 @@ LiteralFieldValueB::LiteralFieldValueB() :
     _value = _backing;
 }
 
-LiteralFieldValueB::~LiteralFieldValueB() { }
+LiteralFieldValueB::~LiteralFieldValueB() = default;
 
 LiteralFieldValueB::LiteralFieldValueB(const LiteralFieldValueB& other)
     : FieldValue(other),
@@ -32,7 +30,7 @@ LiteralFieldValueB::LiteralFieldValueB(const LiteralFieldValueB& other)
     _value = _backing;
 }
 
-LiteralFieldValueB::LiteralFieldValueB(const string& value)
+LiteralFieldValueB::LiteralFieldValueB(const stringref & value)
     : FieldValue(),
       _value(),
       _backing(value),
@@ -115,44 +113,6 @@ LiteralFieldValueB::syncBacking() const
 {
     _backing = _value;
     _value = _backing;
-}
-
-
-namespace {
-template <typename T>
-std::string valueToString(T value) {
-    std::ostringstream ost;
-    ost << value;
-    return ost.str();
-}
-}  // namespace
-
-FieldValue&
-LiteralFieldValueB::operator=(int32_t value)
-{
-    setValue(valueToString(value));
-    return *this;
-}
-
-FieldValue&
-LiteralFieldValueB::operator=(int64_t value)
-{
-    setValue(valueToString(value));
-    return *this;
-}
-
-FieldValue&
-LiteralFieldValueB::operator=(float value)
-{
-    setValue(valueToString(value));
-    return *this;
-}
-
-FieldValue&
-LiteralFieldValueB::operator=(double value)
-{
-    setValue(valueToString(value));
-    return *this;
 }
 
 template class LiteralFieldValue<RawFieldValue, DataType::T_RAW, false>;

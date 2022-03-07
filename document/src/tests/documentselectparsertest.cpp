@@ -153,18 +153,18 @@ DocumentSelectParserTest::createDocs()
         // Add some arrays and structs to doc 1
     {
         StructFieldValue sval(_doc.back()->getField("mystruct").getDataType());
-        sval.set("key", 14);
-        sval.set("value", "structval");
+        sval.setValue("key", IntFieldValue::make(14));
+        sval.setValue("value", StringFieldValue::make("structval"));
         _doc.back()->setValue("mystruct", sval);
         ArrayFieldValue
             aval(_doc.back()->getField("structarray").getDataType());
         {
             StructFieldValue sval1(aval.getNestedType());
-            sval1.set("key", 15);
-            sval1.set("value", "structval1");
+            sval1.setValue("key", IntFieldValue::make(15));
+            sval1.setValue("value", StringFieldValue::make("structval1"));
             StructFieldValue sval2(aval.getNestedType());
-            sval2.set("key", 16);
-            sval2.set("value", "structval2");
+            sval2.setValue("key", IntFieldValue::make(16));
+            sval2.setValue("value", StringFieldValue::make("structval2"));
             aval.add(sval1);
             aval.add(sval2);
         }
@@ -182,11 +182,11 @@ DocumentSelectParserTest::createDocs()
         ArrayFieldValue abval(_doc.back()->getField("structarray").getDataType());
         {
             StructFieldValue sval1(aval.getNestedType());
-            sval1.set("key", 17);
-            sval1.set("value", "structval3");
+            sval1.setValue("key", IntFieldValue::make(17));
+            sval1.setValue("value", StringFieldValue::make("structval3"));
             StructFieldValue sval2(aval.getNestedType());
-            sval2.set("key", 18);
-            sval2.set("value", "structval4");
+            sval2.setValue("key", IntFieldValue::make(18));
+            sval2.setValue("value", StringFieldValue::make("structval4"));
             abval.add(sval1);
             abval.add(sval2);
         }

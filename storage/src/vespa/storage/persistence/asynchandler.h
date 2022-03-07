@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "types.h"
 #include "messages.h"
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
@@ -16,12 +15,14 @@ namespace spi {
 }
 class PersistenceUtil;
 class BucketOwnershipNotifier;
+class MessageTracker;
 
 /**
  * Handle async operations that uses a sequenced executor.
  * It is stateless and thread safe.
  */
-class AsyncHandler : public Types {
+class AsyncHandler {
+    using MessageTrackerUP = std::unique_ptr<MessageTracker>;
 public:
     AsyncHandler(const PersistenceUtil&, spi::PersistenceProvider&, BucketOwnershipNotifier  &,
                  vespalib::ISequencedTaskExecutor & executor, const document::BucketIdFactory & bucketIdFactory);

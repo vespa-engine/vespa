@@ -27,9 +27,8 @@ public:
     ShortFieldValue* clone() const override { return new ShortFieldValue(*this); }
 
     using NumericFieldValue<Number>::operator=;
-
     DECLARE_IDENTIFIABLE(ShortFieldValue);
-
+    static std::unique_ptr<ShortFieldValue> make(int16_t value = 0) { return std::make_unique<ShortFieldValue>(value); }
 };
 
 } // document

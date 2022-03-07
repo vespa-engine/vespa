@@ -79,14 +79,16 @@ bool StructFieldValue::serializeField(int field_id, uint16_t version, FieldValue
     }
 }
 
-void StructFieldValue::getRawFieldIds(vector<int> &raw_ids) const {
-    raw_ids.clear();
+vector<int>
+StructFieldValue::getRawFieldIds() const {
+    vector<int> raw_ids;
     raw_ids.reserve(_fields.getEntries().size());
     for (const SerializableArray::Entry & entry : _fields.getEntries()) {
         raw_ids.emplace_back(entry.id());
     }
     sort(raw_ids.begin(), raw_ids.end());
     raw_ids.erase(unique(raw_ids.begin(), raw_ids.end()), raw_ids.end());
+    return raw_ids;
 }
 
 void
@@ -242,10 +244,8 @@ StructFieldValue::compare(const FieldValue& otherOrg) const
     }
     const auto & other = static_cast<const StructFieldValue&>(otherOrg);
 
-    std::vector<int> a;
-    getRawFieldIds(a);
-    std::vector<int> b;
-    other.getRawFieldIds(b);
+    std::vector<int> a = getRawFieldIds();
+    std::vector<int> b = other.getRawFieldIds();
 
     for (size_t i(0); i < std::min(a.size(), b.size()); i++) {
         if (a[i] != b[i]) {
@@ -337,12 +337,9 @@ struct StructFieldValue::FieldIterator : public StructuredIterator {
 
     explicit FieldIterator(const StructFieldValue& s)
         : _struct(s),
-          _ids(),
+          _ids(s.getRawFieldIds()),
           _cur(_ids.begin())
-    {
-        s.getRawFieldIds(_ids);
-        _cur = _ids.begin();
-    }
+    { }
 
     void skipTo(int fieldId) {
         while (_cur != _ids.end() && fieldId != *_cur) {

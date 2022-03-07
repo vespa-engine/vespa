@@ -59,7 +59,7 @@ WeightedSetFieldValue::add(const FieldValue& key, int weight)
         _map.erase(key);
         return false;
     }
-    return _map.insert(FieldValue::UP(key.clone()), std::make_unique<IntFieldValue>(weight));
+    return _map.insert(FieldValue::UP(key.clone()), IntFieldValue::make(weight));
 }
 
 bool
@@ -67,14 +67,14 @@ WeightedSetFieldValue::addIgnoreZeroWeight(const FieldValue& key, int32_t weight
 {
     verifyKey(key);
     _altered = true;
-    return _map.insert(FieldValue::UP(key.clone()), std::make_unique<IntFieldValue>(weight));
+    return _map.insert(FieldValue::UP(key.clone()), IntFieldValue::make(weight));
 }
 
 void
 WeightedSetFieldValue::push_back(FieldValue::UP key, int weight)
 {
     _altered = true;
-    _map.push_back(std::move(key), std::make_unique<IntFieldValue>(weight));
+    _map.push_back(std::move(key), IntFieldValue::make(weight));
 }
 
 void

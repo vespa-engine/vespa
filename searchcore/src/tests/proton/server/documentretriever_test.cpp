@@ -162,12 +162,12 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
         const DocumentType *doc_type = r.getDocumentType(doc_type_name);
         auto doc = std::make_unique<Document>(*doc_type, doc_id);
         ASSERT_TRUE(doc);
-        doc->set(static_field, static_value);
-        doc->set(dyn_field_i, static_value);
-        doc->set(dyn_field_s, static_value_s);
-        doc->set(dyn_field_nai, static_value);
-        doc->set(dyn_field_nas, static_value_s);
-        doc->set(zcurve_field, static_zcurve_value);
+        doc->setValue(static_field, IntFieldValue::make(static_value));
+        doc->setValue(dyn_field_i, IntFieldValue::make(static_value));
+        doc->setValue(dyn_field_s, StringFieldValue::make(static_value_s));
+        doc->setValue(dyn_field_nai, IntFieldValue::make(static_value));
+        doc->setValue(dyn_field_nas, StringFieldValue::make(static_value_s));
+        doc->setValue(zcurve_field, LongFieldValue::make(static_zcurve_value));
         doc->setValue(dyn_field_p, static_value_p);
         TensorFieldValue tensorFieldValue(tensorDataType);
         tensorFieldValue = SimpleValue::from_value(*static_tensor);
@@ -175,8 +175,8 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
         if (_set_position_struct_field) {
             FieldValue::UP fv = PositionDataType::getInstance().createFieldValue();
             auto &pos = dynamic_cast<StructFieldValue &>(*fv);
-            pos.set(PositionDataType::FIELD_X, 42);
-            pos.set(PositionDataType::FIELD_Y, 21);
+            pos.setValue(PositionDataType::FIELD_X, IntFieldValue::make(42));
+            pos.setValue(PositionDataType::FIELD_Y, IntFieldValue::make(21));
             doc->setValue(doc->getField(position_field), *fv);
         }
 

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/searchlib/common/serialnum.h>
@@ -9,7 +8,7 @@
 #include <vespa/vespalib/util/memoryusage.h>
 
 namespace vespalib { class IDestructorCallback; }
-
+namespace document { class Document; }
 namespace searchcorespi::index {
 
 /**

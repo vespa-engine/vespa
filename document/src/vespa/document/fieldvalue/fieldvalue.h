@@ -24,7 +24,6 @@ namespace document {
 
 namespace fieldvalue { class IteratorHandler; }
 
-class ByteBuffer;
 class DataType;
 
 class FieldValue : public vespalib::Identifiable
@@ -108,13 +107,6 @@ public:
     /** Override toXml from XmlSerializable to add start/stop tags. */
     virtual std::string toXml(const std::string& indent = "") const;
 
-    // Utility functions to set commonly used value types.
-    virtual FieldValue& operator=(vespalib::stringref);
-    virtual FieldValue& operator=(int32_t);
-    virtual FieldValue& operator=(int64_t);
-    virtual FieldValue& operator=(float);
-    virtual FieldValue& operator=(double);
-
     // Utility functions to unwrap field values if you know the type.
 
     /**
@@ -187,6 +179,8 @@ public:
     std::string toString(bool verbose=false, const std::string& indent="") const;
     virtual void printXml(XmlOutputStream& out) const = 0;
 
+    // Utility functions to set commonly used value types.
+    virtual FieldValue& operator=(vespalib::stringref);
 private:
     fieldvalue::ModificationStatus
     iterateNested(FieldPath::const_iterator start, FieldPath::const_iterator end, fieldvalue::IteratorHandler & handler) const {

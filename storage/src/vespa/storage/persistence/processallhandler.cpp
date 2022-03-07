@@ -4,6 +4,7 @@
 #include "bucketprocessor.h"
 #include "persistenceutil.h"
 #include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/vespalib/util/stringfmt.h>

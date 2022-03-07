@@ -5,6 +5,7 @@
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/documentapi/documentapi.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/storage/common/bucket_resolver.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/documentsummary.h>

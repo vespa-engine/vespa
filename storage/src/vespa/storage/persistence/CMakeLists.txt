@@ -18,6 +18,5 @@ vespa_add_library(storage_spersistence OBJECT
     splitbitdetector.cpp
     splitjoinhandler.cpp
     testandsethelper.cpp
-    types.cpp
     DEPENDS
 )

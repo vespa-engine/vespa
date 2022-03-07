@@ -14,7 +14,6 @@ namespace document {
 
 class IntFieldValue : public NumericFieldValue<int32_t> {
 public:
-    typedef std::unique_ptr<IntFieldValue> UP;
     typedef int32_t Number;
 
     IntFieldValue(Number value = 0) : NumericFieldValue<Number>(value) {}
@@ -27,7 +26,7 @@ public:
 
     using NumericFieldValue<Number>::operator=;
     DECLARE_IDENTIFIABLE(IntFieldValue);
-
+    static std::unique_ptr<IntFieldValue> make(Number value=0) { return std::make_unique<IntFieldValue>(value); }
 };
 
 } // document

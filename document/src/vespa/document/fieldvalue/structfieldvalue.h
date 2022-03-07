@@ -54,7 +54,7 @@ public:
     uint16_t getVersion() const { return _version; }
 
     // raw_ids may contain ids for elements not in the struct's datatype.
-    void getRawFieldIds(std::vector<int> &raw_ids) const;
+    std::vector<int> getRawFieldIds() const;
     void getRawFieldIds(std::vector<int> &raw_ids, const FieldSet& fieldSet) const;
 
     void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
@@ -98,7 +98,6 @@ private:
     VESPA_DLL_LOCAL const StructDataType & getStructType() const;
 
     struct FieldIterator;
-    friend struct FieldIterator;
 
     StructuredIterator::UP getIterator(const Field* toFind) const override;
 

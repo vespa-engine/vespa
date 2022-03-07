@@ -10,6 +10,7 @@
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
@@ -239,7 +240,7 @@ MergeHandler::buildBucketInfoList(
 
     for (const auto& entry : entries) {
         api::GetBucketDiffCommand::Entry diff;
-        diff._gid = GlobalId();
+        diff._gid = document::GlobalId();
         // We do not know doc sizes at this point, so just set to 0
         diff._headerSize = 0;
         diff._bodySize = 0;
@@ -449,7 +450,7 @@ MergeHandler::fetchLocalData(
         api::ApplyBucketDiffCommand::Entry& e(*iter);
 
         if (!docEntry.isRemove()) {
-            const Document* doc = docEntry.getDocument();
+            const document::Document* doc = docEntry.getDocument();
             assert(doc != nullptr);
             assertContainedInBucket(doc->getId(), bucket, idFactory);
             e._docName = doc->getId().toString();
@@ -459,7 +460,7 @@ MergeHandler::fetchLocalData(
             memcpy(&e._headerBlob[0], stream.peek(), stream.size());
             e._bodyBlob.clear();
         } else {
-            const DocumentId* docId = docEntry.getDocumentId();
+            const document::DocumentId* docId = docEntry.getDocumentId();
             assert(docId != nullptr);
             assertContainedInBucket(*docId, bucket, idFactory);
             if (e._entry._flags & DELETED) {
@@ -495,7 +496,7 @@ MergeHandler::deserializeDiffDocument(
         const api::ApplyBucketDiffCommand::Entry& e,
         const document::DocumentTypeRepo& repo) const
 {
-    auto doc = std::make_unique<Document>();
+    auto doc = std::make_unique<document::Document>();
     vespalib::nbostream hbuf(&e._headerBlob[0], e._headerBlob.size());
     if (e._bodyBlob.size() > 0) {
         // TODO Remove this branch and add warning on error.
@@ -519,8 +520,8 @@ MergeHandler::applyDiffEntry(std::shared_ptr<ApplyBucketDiffState> async_results
     spi::Timestamp timestamp(e._entry._timestamp);
     if (!(e._entry._flags & (DELETED | DELETED_IN_PLACE))) {
         // Regular put entry
-        Document::SP doc(deserializeDiffDocument(e, repo));
-        DocumentId docId = doc->getId();
+        std::shared_ptr<document::Document> doc(deserializeDiffDocument(e, repo));
+        document::DocumentId docId = doc->getId();
         auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(async_results), std::move(docId),
                                                                        std::move(throttle_token), "put",
                                                                        _clock, _env._metrics.merge_handler_metrics.put_latency);
@@ -557,7 +558,7 @@ MergeHandler::applyDiffLocally(
 
     async_results->mark_stale_bucket_info();
     DocEntryList entries;
-    populateMetaData(bucket, MAX_TIMESTAMP, entries, context);
+    populateMetaData(bucket, Timestamp::max(), entries, context);
 
     const document::DocumentTypeRepo & repo = _env.getDocumentTypeRepo();
 
