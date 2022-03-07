@@ -31,6 +31,10 @@ all: test checkfmt install
 
 # Bump the version of the vespa-cli formula and create a pull request to Homebrew repository.
 #
+# Homebrew's automated BrewTestBot must do the merge for the bottles to be published. When
+# the PR has been merged check that the merge was done by their bot, and that installing
+# the new version works by running: `brew update && brew install vespa-cli`.
+#
 # Example:
 #
 # $ git checkout vX.Y.Z
