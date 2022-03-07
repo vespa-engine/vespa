@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -18,7 +19,16 @@ public class ImportedFieldsTestCase extends AbstractExportingTestCase {
 
     @Test
     public void configs_for_imported_struct_fields_are_derived() throws IOException, ParseException {
-        assertCorrectDeriving("imported_struct_fields", "child", new TestableDeployLogger());
+        assertCorrectDeriving("imported_struct_fields", "child",
+                              new TestProperties().setExperimentalSdParsing(false),
+                              new TestableDeployLogger());
+    }
+
+    @Test
+    public void configs_for_imported_struct_fields_are_derived_new() throws IOException, ParseException {
+        assertCorrectDeriving("imported_struct_fields", "child",
+                              new TestProperties().setExperimentalSdParsing(true),
+                              new TestableDeployLogger());
     }
 
     @Test
