@@ -34,7 +34,7 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 		SilenceUsage:      true,
 		Args:              cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			target, err := cli.target("", "")
+			target, err := cli.target(targetOptions{})
 			if err != nil {
 				return err
 			}

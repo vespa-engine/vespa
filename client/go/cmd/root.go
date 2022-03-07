@@ -73,6 +73,15 @@ type ErrCLI struct {
 	error
 }
 
+type targetOptions struct {
+	// zone declares the zone use when using this target. If empty, a default zone for the system is chosen.
+	zone string
+	// logLevel sets the log level to use for this target. If empty, it defaults to "info".
+	logLevel string
+	// noCertificate declares that no client certificate should be required when using this target.
+	noCertificate bool
+}
+
 // errHint creates a new CLI error, with optional hints that will be printed after the error
 func errHint(err error, hints ...string) ErrCLI { return ErrCLI{Status: 1, hints: hints, error: err} }
 
@@ -255,10 +264,9 @@ func (c *CLI) printWarning(msg string, hints ...string) {
 	}
 }
 
-// target creates a target according the configuration of this CLI. If zone is empty, the default zone for the system is
-// used. If logLevel is empty, it defaults to "info".
-func (c *CLI) target(zone, logLevel string) (vespa.Target, error) {
-	target, err := c.createTarget(zone, logLevel)
+// target creates a target according the configuration of this CLI and given opts.
+func (c *CLI) target(opts targetOptions) (vespa.Target, error) {
+	target, err := c.createTarget(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +278,7 @@ func (c *CLI) target(zone, logLevel string) (vespa.Target, error) {
 	return target, nil
 }
 
-func (c *CLI) createTarget(zone, logLevel string) (vespa.Target, error) {
+func (c *CLI) createTarget(opts targetOptions) (vespa.Target, error) {
 	targetType, err := c.config.targetType()
 	if err != nil {
 		return nil, err
@@ -282,17 +290,17 @@ func (c *CLI) createTarget(zone, logLevel string) (vespa.Target, error) {
 	case vespa.TargetLocal:
 		return vespa.LocalTarget(c.httpClient), nil
 	case vespa.TargetCloud, vespa.TargetHosted:
-		return c.createCloudTarget(targetType, zone, logLevel)
+		return c.createCloudTarget(targetType, opts)
 	}
 	return nil, errHint(fmt.Errorf("invalid target: %s", targetType), "Valid targets are 'local', 'cloud', 'hosted' or an URL")
 }
 
-func (c *CLI) createCloudTarget(targetType, zone, logLevel string) (vespa.Target, error) {
+func (c *CLI) createCloudTarget(targetType string, opts targetOptions) (vespa.Target, error) {
 	system, err := c.system(targetType)
 	if err != nil {
 		return nil, err
 	}
-	deployment, err := c.config.deploymentIn(zone, system)
+	deployment, err := c.config.deploymentIn(opts.zone, system)
 	if err != nil {
 		return nil, err
 	}
@@ -315,14 +323,17 @@ func (c *CLI) createCloudTarget(targetType, zone, logLevel string) (vespa.Target
 			}
 		}
 		authConfigPath = c.config.authConfigPath()
-		kp, err := c.config.x509KeyPair(deployment.Application)
-		if err != nil {
-			return nil, errHint(err, "Deployment to cloud requires a certificate. Try 'vespa auth cert'")
-		}
-		deploymentTLSOptions = vespa.TLSOptions{
-			KeyPair:         kp.KeyPair,
-			CertificateFile: kp.CertificateFile,
-			PrivateKeyFile:  kp.PrivateKeyFile,
+		deploymentTLSOptions = vespa.TLSOptions{}
+		if !opts.noCertificate {
+			kp, err := c.config.x509KeyPair(deployment.Application)
+			if err != nil {
+				return nil, errHint(err, "Deployment to cloud requires a certificate. Try 'vespa auth cert'")
+			}
+			deploymentTLSOptions = vespa.TLSOptions{
+				KeyPair:         kp.KeyPair,
+				CertificateFile: kp.CertificateFile,
+				PrivateKeyFile:  kp.PrivateKeyFile,
+			}
 		}
 	case vespa.TargetHosted:
 		kp, err := athenzKeyPair()
@@ -349,6 +360,7 @@ func (c *CLI) createCloudTarget(targetType, zone, logLevel string) (vespa.Target
 		TLSOptions:  deploymentTLSOptions,
 		ClusterURLs: endpoints,
 	}
+	logLevel := opts.logLevel
 	if logLevel == "" {
 		logLevel = "info"
 	}
@@ -378,7 +390,7 @@ func (c *CLI) system(targetType string) (vespa.System, error) {
 // wait period configured in this CLI. The parameter sessionOrRunID specifies either the session ID (local target) or
 // run ID (cloud target) to wait for.
 func (c *CLI) service(name string, sessionOrRunID int64, cluster string) (*vespa.Service, error) {
-	t, err := c.target("", "")
+	t, err := c.target(targetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -393,17 +405,13 @@ func (c *CLI) service(name string, sessionOrRunID int64, cluster string) (*vespa
 	return s, nil
 }
 
-func (c *CLI) createDeploymentOptions(pkg vespa.ApplicationPackage, target vespa.Target) (vespa.DeploymentOptions, error) {
-	opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target}
-	if opts.IsCloud() {
-		if target.Type() == vespa.TargetCloud && !opts.ApplicationPackage.HasCertificate() {
-			hint := "Try 'vespa auth cert'"
-			return vespa.DeploymentOptions{}, errHint(fmt.Errorf("missing certificate in application package"), "Applications in Vespa Cloud require a certificate", hint)
-		}
+func (c *CLI) createDeploymentOptions(pkg vespa.ApplicationPackage, target vespa.Target) vespa.DeploymentOptions {
+	return vespa.DeploymentOptions{
+		ApplicationPackage: pkg,
+		Target:             target,
+		Timeout:            time.Duration(c.flags.waitSecs) * time.Second,
+		HTTPClient:         c.httpClient,
 	}
-	opts.Timeout = time.Duration(c.flags.waitSecs) * time.Second
-	opts.HTTPClient = c.httpClient
-	return opts, nil
 }
 
 // isCI returns true if running inside a continuous integration environment.

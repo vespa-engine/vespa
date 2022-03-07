@@ -47,14 +47,11 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 			if err != nil {
 				return err
 			}
-			target, err := cli.target(zoneArg, logLevelArg)
+			target, err := cli.target(targetOptions{zone: zoneArg, logLevel: logLevelArg})
 			if err != nil {
 				return err
 			}
-			opts, err := cli.createDeploymentOptions(pkg, target)
-			if err != nil {
-				return err
-			}
+			opts := cli.createDeploymentOptions(pkg, target)
 
 			var result vespa.PrepareResult
 			err = util.Spinner(cli.Stderr, "Uploading application package ...", func() error {
@@ -100,14 +97,11 @@ func newPrepareCmd(cli *CLI) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("could not find application package: %w", err)
 			}
-			target, err := cli.target("", "")
+			target, err := cli.target(targetOptions{})
 			if err != nil {
 				return err
 			}
-			opts, err := cli.createDeploymentOptions(pkg, target)
-			if err != nil {
-				return err
-			}
+			opts := cli.createDeploymentOptions(pkg, target)
 			var result vespa.PrepareResult
 			err = util.Spinner(cli.Stderr, "Uploading application package ...", func() error {
 				result, err = vespa.Prepare(opts)
@@ -141,14 +135,11 @@ func newActivateCmd(cli *CLI) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("could not read session id: %w", err)
 			}
-			target, err := cli.target("", "")
+			target, err := cli.target(targetOptions{})
 			if err != nil {
 				return err
 			}
-			opts, err := cli.createDeploymentOptions(pkg, target)
-			if err != nil {
-				return err
-			}
+			opts := cli.createDeploymentOptions(pkg, target)
 			err = vespa.Activate(sessionID, opts)
 			if err != nil {
 				return err

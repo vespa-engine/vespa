@@ -72,7 +72,7 @@ https://cloud.vespa.ai/en/reference/deployment`,
 			if err != nil {
 				return fmt.Errorf("a services.xml declaring your cluster(s) must exist: %w", err)
 			}
-			target, err := cli.target("", "")
+			target, err := cli.target(targetOptions{noCertificate: true})
 			if err != nil {
 				return err
 			}
@@ -128,7 +128,7 @@ https://cloud.vespa.ai/en/automated-deployments`,
 		Example: `$ mvn package # when adding custom Java components
 $ vespa prod submit`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			target, err := cli.target("", "")
+			target, err := cli.target(targetOptions{noCertificate: true})
 			if err != nil {
 				return err
 			}
@@ -155,10 +155,7 @@ $ vespa prod submit`,
 			if !cli.isCI() {
 				cli.printWarning("We recommend doing this only from a CD job", "See https://cloud.vespa.ai/en/getting-to-production")
 			}
-			opts, err := cli.createDeploymentOptions(pkg, target)
-			if err != nil {
-				return err
-			}
+			opts := cli.createDeploymentOptions(pkg, target)
 			if err := vespa.Submit(opts); err != nil {
 				return fmt.Errorf("could not submit application for deployment: %w", err)
 			} else {
