@@ -212,9 +212,8 @@ public class DeploymentStatus {
                                                                        .filter(jobId -> jobId.type().isProduction() && jobId.type().isDeployment())
                                                                        .filter(jobId -> deploymentFor(jobId).isPresent())
                                                                        .findFirst();
-
             Versions versions = Versions.from(change, application, firstProductionJobWithDeployment.flatMap(this::deploymentFor), systemVersion);
-            if (step.completedAt(change, firstProductionJobWithDeployment).isEmpty())
+            if (step.completedAt(change, Optional.empty()).isEmpty())
                 jobs.merge(job, List.of(new Job(job.type(), versions, step.readyAt(change), change)), DeploymentStatus::union);
         });
         return Collections.unmodifiableMap(jobs);
@@ -857,10 +856,13 @@ public class DeploymentStatus {
                 @Override
                 Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
                     return RunList.from(job)
-                                  .matching(run -> run.versions().targetsMatch(Versions.from(change,
-                                                                                             status.application,
-                                                                                             dependent.flatMap(status::deploymentFor),
-                                                                                             status.systemVersion)))
+                                  .matching(run -> dependent.flatMap(status::deploymentFor)
+                                                            .map(deployment -> run.versions().targetsMatch(Versions.from(change,
+                                                                                                                         status.application,
+                                                                                                                         Optional.of(deployment),
+                                                                                                                         status.systemVersion)))
+                                                            .orElseGet(() ->    (change.platform().isEmpty()    || change.platform().get().equals(run.versions().targetPlatform()))
+                                                                             && (change.application().isEmpty() || change.application().get().equals(run.versions().targetApplication()))))
                                   .status(RunStatus.success)
                                   .asList().stream()
                                   .map(run -> run.end().get())
