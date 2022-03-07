@@ -8,9 +8,8 @@
 
 #pragma once
 
-
-#include "types.h"
 #include "app.h"
+#include "types.h"
 #include <memory>
 
 /**
@@ -18,14 +17,12 @@
  */
 class FastOS_UNIX_Application : public FastOS_ApplicationInterface
 {
-private:
-    FastOS_UNIX_Application(const FastOS_UNIX_Application&);
-    FastOS_UNIX_Application& operator=(const FastOS_UNIX_Application&);
-
 protected:
     bool PreThreadInit () override;
 public:
     FastOS_UNIX_Application ();
+    FastOS_UNIX_Application(const FastOS_UNIX_Application&) = delete;
+    FastOS_UNIX_Application& operator=(const FastOS_UNIX_Application&) = delete;
     virtual ~FastOS_UNIX_Application();
 
     /**
