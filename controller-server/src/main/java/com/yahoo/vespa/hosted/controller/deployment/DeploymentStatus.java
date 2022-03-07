@@ -43,7 +43,6 @@ import static com.yahoo.config.provision.Environment.staging;
 import static com.yahoo.config.provision.Environment.test;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
-import static java.util.Collections.reverseOrder;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
@@ -265,16 +264,18 @@ public class DeploymentStatus {
      * For the "exclusive" revision upgrade policy it is the oldest such revision; otherwise, it is the latest.
      */
     public Change outstandingChange(InstanceName instance) {
-        return Optional.ofNullable(instanceSteps().get(instance))
-                       .flatMap(instanceStatus -> application.deployableVersions(application.deploymentSpec().requireInstance(instance).revisionTarget() == next).stream()
-                                                             .filter(version -> instanceStatus.dependenciesCompletedAt(Change.of(version), Optional.empty()).map(at -> ! at.isAfter(now)).orElse(false))
-                                                             .filter(version -> application.productionDeployments().getOrDefault(instance, List.of()).stream()
-                                                                                           .noneMatch(deployment -> deployment.applicationVersion().compareTo(version) > 0))
-                                                             .map(Change::of)
-                                                             .filter(change -> application.require(instance).change().application().map(change::upgrades).orElse(true))
-                                                             .filter(change -> ! hasCompleted(instance, change))
-                                                             .findFirst())
-                       .orElse(Change.empty());
+        StepStatus status = instanceSteps().get(instance);
+        if (status == null) return Change.empty();
+        for (ApplicationVersion version : application.deployableVersions(application.deploymentSpec().requireInstance(instance).revisionTarget() == next)) {
+            if (status.dependenciesCompletedAt(Change.of(version), Optional.empty()).map(now::isBefore).orElse(true)) continue;
+            Change change = Change.of(version);
+            if (application.productionDeployments().getOrDefault(instance, List.of()).stream()
+                           .anyMatch(deployment -> change.downgrades(deployment.applicationVersion()))) continue;
+            if ( ! application.require(instance).change().application().map(change::upgrades).orElse(true)) continue;
+            if (hasCompleted(instance, change)) continue;
+            return change;
+        }
+        return Change.empty();
     }
 
     /** Earliest instant when job was triggered with given versions, or both system and staging tests were successful. */
