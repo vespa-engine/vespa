@@ -224,8 +224,8 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
         Schema s = builder.getSchema();
         RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
         assertEquals("foo(2)", test.getFirstPhaseRanking().getRoot().toString());
-        assertTrue("Does not contain expected warning", deployLogger.contains("Function 'foo' replaces " +
-                "a previous function with the same name in rank profile 'test'"));
+        assertTrue("Does not contain expected warning",
+                   deployLogger.contains("Function 'foo' is defined twice in rank profile 'test'"));
     }
 
     /**

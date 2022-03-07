@@ -1909,8 +1909,9 @@ void function(ParsedRankProfile profile) :
         func.setInline(inline);
         var old = profile.addOrReplaceFunction(func);
         if (old != null) {
+            /* TODO disallow this for Vespa 8 */
             deployLogger.logApplicationPackage(Level.WARNING, "Function '" + func.name()
-                                               + "' replaces a previous function with the same name in rank profile '"
+                                               + "' is defined twice in rank profile '"
                                                + profile.name() + "'");
         }
     }
