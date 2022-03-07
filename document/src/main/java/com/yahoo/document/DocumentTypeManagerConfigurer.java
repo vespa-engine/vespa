@@ -61,8 +61,13 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
 
     public ConfigSubscriber configure(String configId) {
         ConfigSubscriber subscriber = new ConfigSubscriber();
-        subscriber.subscribe(this, DocumentmanagerConfig.class, configId);
-        return subscriber;
+        try {
+            subscriber.subscribe(this, DocumentmanagerConfig.class, configId);
+            return subscriber;
+        } catch (RuntimeException e) {
+            subscriber.close();
+            throw e;
+        }
     }
 
     /** One-shot configuration; should be called on a newly constructed manager */
@@ -264,7 +269,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                 var old = configMap.put(id, dataTypeConfig);
                 if (old != null) {
                     throw new IllegalArgumentException
-                        ("Multiple configs for id "+id+" first: "+old+" second: "+dataTypeConfig);
+                        ("Multiple configs for id "+id+" first:\n"+old+"\nsecond:\n"+dataTypeConfig);
                 }
             }
         }

@@ -6,6 +6,7 @@ import com.yahoo.document.config.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.searchdefinition.derived.Deriver;
 import com.yahoo.searchdefinition.parser.ParseException;
+import org.junit.Ignore;
 import org.junit.Test;
 import java.io.IOException;
 import static org.junit.Assert.fail;
@@ -35,9 +36,12 @@ public class StructTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
+    @Ignore
     public void testStructAndDocumentWithSameNames() {
         try {
             DocumenttypesConfig.Builder dt = Deriver.getDocumentTypesConfig("src/test/examples/structanddocumentwithsamenames.sd");
+            // while the above line may work, the config generated will fail.
+            // See also NameCollisionTestCase.
         } catch (Exception e) {
             fail("Should not have thrown exception " + e);
         }
