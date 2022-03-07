@@ -16,13 +16,21 @@ import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
  * @author Einar M R Rosenvinge
  */
 public class DocprocChains extends Chains<DocprocChain> {
+
+    public static final String DOCUMENT_TYPE_MANAGER_CLASS = "com.yahoo.document.DocumentTypeManager";
+
     private final ProcessingHandler<DocprocChains> docprocHandler;
 
-    public DocprocChains(AbstractConfigProducer parent, String subId) {
+    public DocprocChains(AbstractConfigProducer<?> parent, String subId) {
         super(parent, subId);
         docprocHandler = new ProcessingHandler<>(this, "com.yahoo.docproc.jdisc.DocumentProcessingHandler");
         addComponent(docprocHandler);
-        addComponent(new SimpleComponent("com.yahoo.document.DocumentTypeManager"));
+
+        if (! (getParent() instanceof ApplicationContainerCluster)) {
+            // All application containers already have a DocumentTypeManager,
+            // but this could also belong to e.g. a cluster controller.
+            addComponent(new SimpleComponent(DOCUMENT_TYPE_MANAGER_CLASS));
+        }
     }
 
     private void addComponent(Component<?, ?> component) {

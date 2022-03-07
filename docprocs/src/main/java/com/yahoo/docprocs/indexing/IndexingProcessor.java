@@ -52,11 +52,11 @@ public class IndexingProcessor extends DocumentProcessor {
     }
 
     @Inject
-    public IndexingProcessor(DocumentmanagerConfig documentmanagerConfig,
+    public IndexingProcessor(DocumentTypeManager documentTypeManager,
                              IlscriptsConfig ilscriptsConfig,
                              Linguistics linguistics,
                              Embedder embedder) {
-        docTypeMgr = DocumentTypeManagerConfigurer.configureNewManager(documentmanagerConfig);
+        docTypeMgr = documentTypeManager;
         scriptMgr = new ScriptManager(docTypeMgr, ilscriptsConfig, linguistics, embedder);
         adapterFactory = new SimpleAdapterFactory(new ExpressionSelector());
     }

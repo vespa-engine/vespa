@@ -3,6 +3,7 @@ package com.yahoo.container.jdisc.messagebus;
 
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.config.SessionConfig;
+import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.MessagebusConfig;
@@ -38,7 +39,7 @@ public class MbusClientProviderTest {
     private void testClient(SessionConfig config) {
         SessionCache cache = new SessionCache(() -> NetworkMultiplexer.dedicated(new NullNetwork()),
                                               new ContainerMbusConfig.Builder().build(),
-                                              new DocumentmanagerConfig.Builder().build(),
+                                              new DocumentTypeManager(new DocumentmanagerConfig.Builder().build()),
                                               new LoadTypeConfig.Builder().build(),
                                               new MessagebusConfig.Builder().build(),
                                               new DocumentProtocolPoliciesConfig.Builder().build(),

@@ -7,7 +7,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
-import com.yahoo.document.config.DocumentmanagerConfig;
+import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
@@ -45,12 +45,12 @@ public class FeedHandler extends ThreadedHttpRequestHandler {
     @Inject
     public FeedHandler(ContainerThreadPool threadpool,
                        Metric metric,
-                       DocumentmanagerConfig documentManagerConfig,
+                       DocumentTypeManager documentTypeManager,
                        SessionCache sessionCache,
                        MetricReceiver metricReceiver) {
         super(threadpool.executor(), metric);
         metricsHelper = new DocumentApiMetrics(metricReceiver, "vespa.http.server");
-        feedHandlerV3 = new FeedHandlerV3(threadpool.executor(), metric, documentManagerConfig, sessionCache, metricsHelper);
+        feedHandlerV3 = new FeedHandlerV3(threadpool.executor(), metric, documentTypeManager, sessionCache, metricsHelper);
         feedReplyHandler = new FeedReplyReader(metric, metricsHelper);
     }
 

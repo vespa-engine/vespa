@@ -4,20 +4,17 @@ package ai.vespa.reindexing.http;
 import ai.vespa.reindexing.Reindexing;
 import ai.vespa.reindexing.ReindexingCurator;
 import com.google.inject.Inject;
-import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.reindexing.ReindexingConfig;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
@@ -40,13 +37,14 @@ public class ReindexingV1ApiHandler extends ThreadedHttpRequestHandler {
 
     @Inject
     public ReindexingV1ApiHandler(Executor executor, Metric metric,
-                                  @SuppressWarnings("unused") VespaZooKeeperServer ensureZkHasStarted, ZookeepersConfig zookeepersConfig,
-                                  ReindexingConfig reindexingConfig, DocumentmanagerConfig documentmanagerConfig) {
+                                  @SuppressWarnings("unused") VespaZooKeeperServer ensureZkHasStarted,
+                                  ZookeepersConfig zookeepersConfig,
+                                  ReindexingConfig reindexingConfig,
+                                  DocumentTypeManager documentTypeManager) {
         this(executor,
              metric,
              reindexingConfig.clusters().keySet(),
-             new ReindexingCurator(Curator.create(zookeepersConfig.zookeeperserverlist()),
-                                   new DocumentTypeManager(documentmanagerConfig)));
+             new ReindexingCurator(Curator.create(zookeepersConfig.zookeeperserverlist()), documentTypeManager));
     }
 
     ReindexingV1ApiHandler(Executor executor, Metric metric, Collection<String> clusterNames, ReindexingCurator database) {

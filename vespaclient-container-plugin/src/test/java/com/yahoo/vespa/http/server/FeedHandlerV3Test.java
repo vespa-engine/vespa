@@ -112,7 +112,7 @@ public class FeedHandlerV3Test {
     }
 
     private FeedHandlerV3 setupFeederHandler(Executor threadPool) {
-        DocumentmanagerConfig docMan = new DocumentmanagerConfig(new DocumentmanagerConfig.Builder().enablecompression(true));
+        DocumentTypeManager docMan = new DocumentTypeManager(new DocumentmanagerConfig.Builder().enablecompression(true).build());
         FeedHandlerV3 feedHandlerV3 = new FeedHandlerV3(
                 threadPool,
                 metric,
