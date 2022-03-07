@@ -65,7 +65,7 @@ BmFeed::make_document(uint32_t n, uint32_t i) const
     auto id = make_document_id(n, i);
     auto document = std::make_unique<Document>(*_document_type, id);
     document->setRepo(*_repo);
-    document->setFieldValue(_field, std::make_unique<IntFieldValue>(i));
+    document->setFieldValue(_field, IntFieldValue::make(i));
     return document;
 }
 

@@ -137,7 +137,7 @@ setFieldValue(Document &doc, const vespalib::string &fieldName,
               const vespalib::string &fieldString)
 {
     std::unique_ptr<StringFieldValue> fieldValue =
-        std::make_unique<StringFieldValue>(fieldString);
+        StringFieldValue::make(fieldString);
     document::FixedTypeRepo repo(*doc.getRepo(), doc.getType());
     tokenizeStringFieldValue(repo, *fieldValue);
     doc.setFieldValue(doc.getField(fieldName), std::move(fieldValue));

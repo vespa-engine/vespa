@@ -25,9 +25,8 @@ public:
     FloatFieldValue* clone() const override { return new FloatFieldValue(*this); }
 
     using NumericFieldValue<Number>::operator=;
-
     DECLARE_IDENTIFIABLE(FloatFieldValue);
-
+    static std::unique_ptr<FloatFieldValue> make(Number value = 0) { return std::make_unique<FloatFieldValue>(value); }
 };
 
 } // document

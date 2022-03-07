@@ -42,8 +42,8 @@ public:
     vespalib::string getAsString() const override;
 
     BoolFieldValue& operator=(vespalib::stringref) override;
-
     DECLARE_IDENTIFIABLE(BoolFieldValue);
+    static std::unique_ptr<BoolFieldValue> make(bool value=false) { return std::make_unique<BoolFieldValue>(value); }
 };
 
 }

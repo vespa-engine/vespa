@@ -56,16 +56,16 @@ FieldValue::UP
 PrimitiveDataType::createFieldValue() const
 {
     switch (getId()) {
-        case T_INT: return std::make_unique<IntFieldValue>();
-        case T_SHORT: return std::make_unique<ShortFieldValue>();
-        case T_FLOAT: return std::make_unique<FloatFieldValue>();
-        case T_URI: return std::make_unique<StringFieldValue>();
-        case T_STRING: return std::make_unique<StringFieldValue>();
+        case T_INT: return IntFieldValue::make();
+        case T_SHORT: return ShortFieldValue::make();
+        case T_FLOAT: return FloatFieldValue::make();
+        case T_URI: return StringFieldValue::make();
+        case T_STRING: return StringFieldValue::make();
         case T_RAW: return std::make_unique<RawFieldValue>();
-        case T_LONG: return std::make_unique<LongFieldValue>();
-        case T_DOUBLE: return std::make_unique<DoubleFieldValue>();
-        case T_BOOL: return std::make_unique<BoolFieldValue>();
-        case T_BYTE: return std::make_unique<ByteFieldValue>();
+        case T_LONG: return LongFieldValue::make();
+        case T_DOUBLE: return DoubleFieldValue::make();
+        case T_BOOL: return BoolFieldValue::make();
+        case T_BYTE: return ByteFieldValue::make();
         case T_PREDICATE: return std::make_unique<PredicateFieldValue>();
     }
     LOG_ABORT("getId() returned value out of range");

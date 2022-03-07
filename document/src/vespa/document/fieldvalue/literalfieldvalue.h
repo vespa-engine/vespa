@@ -32,7 +32,7 @@ public:
     ~LiteralFieldValueB();
 
     LiteralFieldValueB(const LiteralFieldValueB &);
-    LiteralFieldValueB(const string& value);
+    LiteralFieldValueB(const stringref & value);
 
     const value_type & getValue() const { sync(); return _backing; }
     /**
@@ -91,7 +91,7 @@ public:
     typedef std::unique_ptr<SubClass> UP;
 
     LiteralFieldValue() : LiteralFieldValueB() { }
-    LiteralFieldValue(const string& value) : LiteralFieldValueB(value) { }
+    LiteralFieldValue(const stringref& value) : LiteralFieldValueB(value) { }
     const DataType *getDataType() const override;
 };
 

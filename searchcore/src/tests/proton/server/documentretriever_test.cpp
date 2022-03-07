@@ -162,12 +162,12 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
         const DocumentType *doc_type = r.getDocumentType(doc_type_name);
         auto doc = std::make_unique<Document>(*doc_type, doc_id);
         ASSERT_TRUE(doc);
-        doc->setValue(static_field, std::make_unique<IntFieldValue>(static_value));
-        doc->setValue(dyn_field_i, std::make_unique<IntFieldValue>(static_value));
-        doc->setValue(dyn_field_s, std::make_unique<StringFieldValue>(static_value_s));
-        doc->setValue(dyn_field_nai, std::make_unique<IntFieldValue>(static_value));
-        doc->setValue(dyn_field_nas, std::make_unique<StringFieldValue>(static_value_s));
-        doc->setValue(zcurve_field, std::make_unique<LongFieldValue>(static_zcurve_value));
+        doc->setValue(static_field, IntFieldValue::make(static_value));
+        doc->setValue(dyn_field_i, IntFieldValue::make(static_value));
+        doc->setValue(dyn_field_s, StringFieldValue::make(static_value_s));
+        doc->setValue(dyn_field_nai, IntFieldValue::make(static_value));
+        doc->setValue(dyn_field_nas, StringFieldValue::make(static_value_s));
+        doc->setValue(zcurve_field, LongFieldValue::make(static_zcurve_value));
         doc->setValue(dyn_field_p, static_value_p);
         TensorFieldValue tensorFieldValue(tensorDataType);
         tensorFieldValue = SimpleValue::from_value(*static_tensor);
@@ -175,8 +175,8 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
         if (_set_position_struct_field) {
             FieldValue::UP fv = PositionDataType::getInstance().createFieldValue();
             auto &pos = dynamic_cast<StructFieldValue &>(*fv);
-            pos.setValue(PositionDataType::FIELD_X, std::make_unique<IntFieldValue>(42));
-            pos.setValue(PositionDataType::FIELD_Y, std::make_unique<IntFieldValue>(21));
+            pos.setValue(PositionDataType::FIELD_X, IntFieldValue::make(42));
+            pos.setValue(PositionDataType::FIELD_Y, IntFieldValue::make(21));
             doc->setValue(doc->getField(position_field), *fv);
         }
 

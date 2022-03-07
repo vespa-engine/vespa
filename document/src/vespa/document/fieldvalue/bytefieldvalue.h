@@ -23,10 +23,10 @@ public:
     void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
     const DataType *getDataType() const override { return DataType::BYTE; }
     ByteFieldValue* clone() const override { return new ByteFieldValue(*this); }
+
     using NumericFieldValue<Number>::operator=;
-
     DECLARE_IDENTIFIABLE(ByteFieldValue);
-
+    static std::unique_ptr<ByteFieldValue> make(Number value=0) { return std::make_unique<ByteFieldValue>(value); }
 };
 
 } // document

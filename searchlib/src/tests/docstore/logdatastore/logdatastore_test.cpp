@@ -431,9 +431,9 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool extra_field, size_t numRe
         mainstr << (j + i * 1000) << " ";
     }
     mainstr << " and end field";
-    doc->setValue("main", std::make_unique<StringFieldValue>(mainstr.str()));
+    doc->setValue("main", StringFieldValue::make(mainstr.str()));
     if (extra_field) {
-        doc->setValue("extra", std::make_unique<StringFieldValue>("foo"));
+        doc->setValue("extra", StringFieldValue::make("foo"));
     }
     return doc;
 }

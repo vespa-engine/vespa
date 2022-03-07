@@ -30,7 +30,7 @@ LiteralFieldValueB::LiteralFieldValueB(const LiteralFieldValueB& other)
     _value = _backing;
 }
 
-LiteralFieldValueB::LiteralFieldValueB(const string& value)
+LiteralFieldValueB::LiteralFieldValueB(const stringref & value)
     : FieldValue(),
       _value(),
       _backing(value),

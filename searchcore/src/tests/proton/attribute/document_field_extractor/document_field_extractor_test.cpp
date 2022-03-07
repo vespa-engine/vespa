@@ -50,7 +50,7 @@ makeIntArray(const std::vector<int32_t> &array)
 {
     auto result = std::make_unique<ArrayFieldValue>(arrayTypeInt);
     for (const auto &elem : array) {
-        result->append(std::make_unique<IntFieldValue>(elem));
+        result->append(IntFieldValue::make(elem));
     }
     return result;
 }
@@ -60,7 +60,7 @@ makeStringArray(const std::vector<vespalib::string> &array)
 {
     auto result = std::make_unique<ArrayFieldValue>(arrayTypeString);
     for (const auto &elem : array) {
-        result->append(std::make_unique<StringFieldValue>(elem));
+        result->append(StringFieldValue::make(elem));
     }
     return result;
 }
@@ -160,8 +160,8 @@ TEST_F("require that simple fields give simple values", SimpleFixture)
     auto doc = f.makeDoc();
     doc->setValue(f.weightField, IntFieldValue(200));
     doc->setValue(f.nameField, StringFieldValue("name200b"));
-    TEST_DO(f.assertExtracted("weight", std::make_unique<IntFieldValue>(200)));
-    TEST_DO(f.assertExtracted("name", std::make_unique<StringFieldValue>("name200b")));
+    TEST_DO(f.assertExtracted("weight", IntFieldValue::make(200)));
+    TEST_DO(f.assertExtracted("name", StringFieldValue::make("name200b")));
 }
 
 struct ArrayFixture : public FixtureBase

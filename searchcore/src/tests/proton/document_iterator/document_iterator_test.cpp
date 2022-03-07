@@ -338,8 +338,8 @@ const DocumentType &getAttrDocType() {
 
 IDocumentRetriever::SP doc_with_fields(const std::string &id, Timestamp t, Bucket b) {
     auto d = std::make_unique<Document>(getDocType(), DocumentId(id));
-    d->setValue("header", std::make_unique<StringFieldValue>("foo"));
-    d->setValue("body", std::make_unique<StringFieldValue>("bar"));
+    d->setValue("header", StringFieldValue::make("foo"));
+    d->setValue("body", StringFieldValue::make("bar"));
     return std::make_shared<UnitDR>(getDocType(), std::move(d), t, b, false);
 }
 
@@ -355,12 +355,12 @@ IDocumentRetriever::SP doc_with_attr_fields(const vespalib::string &id,
                                             const vespalib::string &attr_ss)
 {
     auto d = std::make_unique<Document>(getAttrDocType(), DocumentId(id));
-    d->setValue("header", std::make_unique<StringFieldValue>("foo"));
-    d->setValue("body", std::make_unique<StringFieldValue>("bar"));
-    d->setValue("aa", std::make_unique<IntFieldValue>(aa));
-    d->setValue("ab", std::make_unique<IntFieldValue>(ab));
-    d->setValue("dd", std::make_unique<DoubleFieldValue>(dd));
-    d->setValue("ss", std::make_unique<StringFieldValue>(ss));
+    d->setValue("header", StringFieldValue::make("foo"));
+    d->setValue("body", StringFieldValue::make("bar"));
+    d->setValue("aa", IntFieldValue::make(aa));
+    d->setValue("ab", IntFieldValue::make(ab));
+    d->setValue("dd", DoubleFieldValue::make(dd));
+    d->setValue("ss", StringFieldValue::make(ss));
     return std::make_shared<AttrUnitDR>(std::move(d), t, b, false, attr_aa, attr_dd, attr_ss);
 }
 
@@ -782,7 +782,7 @@ TEST("require that fieldset limits fields returned") {
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(1u, res.getEntries().size());
     Document expected(getDocType(), DocumentId("id:ns:foo::xxx1"));
-    expected.setValue("header", std::make_unique<StringFieldValue>("foo"));
+    expected.setValue("header", StringFieldValue::make("foo"));
     TEST_DO(checkEntry(res, 0, expected, Timestamp(1)));
 }
 
@@ -838,19 +838,19 @@ TEST("require that attributes are used")
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(2u, res.getEntries().size());
     Document expected1(getAttrDocType(), DocumentId("id:ns:foo::xx2"));
-    expected1.setValue("header", std::make_unique<StringFieldValue>("foo"));
-    expected1.setValue("body", std::make_unique<StringFieldValue>("bar"));
-    expected1.setValue("aa", std::make_unique<IntFieldValue>(27));
-    expected1.setValue("ab", std::make_unique<IntFieldValue>(28));
-    expected1.setValue("dd", std::make_unique<DoubleFieldValue>(2.7));
-    expected1.setValue("ss", std::make_unique<StringFieldValue>("x27"));
+    expected1.setValue("header", StringFieldValue::make("foo"));
+    expected1.setValue("body", StringFieldValue::make("bar"));
+    expected1.setValue("aa", IntFieldValue::make(27));
+    expected1.setValue("ab", IntFieldValue::make(28));
+    expected1.setValue("dd", DoubleFieldValue::make(2.7));
+    expected1.setValue("ss", StringFieldValue::make("x27"));
     Document expected2(getAttrDocType(), DocumentId("id:ns:foo::xx4"));
-    expected2.setValue("header", std::make_unique<StringFieldValue>("foo"));
-    expected2.setValue("body", std::make_unique<StringFieldValue>("bar"));
-    expected2.setValue("aa", std::make_unique<IntFieldValue>(45));
-    expected2.setValue("ab", std::make_unique<IntFieldValue>(46));
-    expected2.setValue("dd", std::make_unique<DoubleFieldValue>(4.5));
-    expected2.setValue("ss", std::make_unique<StringFieldValue>("x45"));
+    expected2.setValue("header", StringFieldValue::make("foo"));
+    expected2.setValue("body", StringFieldValue::make("bar"));
+    expected2.setValue("aa", IntFieldValue::make(45));
+    expected2.setValue("ab", IntFieldValue::make(46));
+    expected2.setValue("dd", DoubleFieldValue::make(4.5));
+    expected2.setValue("ss", StringFieldValue::make("x45"));
     TEST_DO(checkEntry(res, 0, expected1, Timestamp(2)));
     TEST_DO(checkEntry(res, 1, expected2, Timestamp(4)));
 
@@ -868,19 +868,19 @@ TEST("require that attributes are used")
     EXPECT_TRUE(res2.isCompleted());
     EXPECT_EQUAL(2u, res2.getEntries().size());
     Document expected3(getAttrDocType(), DocumentId("id:ns:foo::xx6"));
-    expected3.setValue("header", std::make_unique<StringFieldValue>("foo"));
-    expected3.setValue("body", std::make_unique<StringFieldValue>("bar"));
-    expected3.setValue("aa", std::make_unique<IntFieldValue>(27));
-    expected3.setValue("ab", std::make_unique<IntFieldValue>(28));
-    expected3.setValue("dd", std::make_unique<DoubleFieldValue>(2.7));
-    expected3.setValue("ss", std::make_unique<StringFieldValue>("x27"));
+    expected3.setValue("header", StringFieldValue::make("foo"));
+    expected3.setValue("body", StringFieldValue::make("bar"));
+    expected3.setValue("aa", IntFieldValue::make(27));
+    expected3.setValue("ab", IntFieldValue::make(28));
+    expected3.setValue("dd", DoubleFieldValue::make(2.7));
+    expected3.setValue("ss", StringFieldValue::make("x27"));
     Document expected4(getAttrDocType(), DocumentId("id:ns:foo::xx8"));
-    expected4.setValue("header", std::make_unique<StringFieldValue>("foo"));
-    expected4.setValue("body", std::make_unique<StringFieldValue>("bar"));
-    expected4.setValue("aa", std::make_unique<IntFieldValue>(45));
-    expected4.setValue("ab", std::make_unique<IntFieldValue>(46));
-    expected4.setValue("dd", std::make_unique<DoubleFieldValue>(4.5));
-    expected4.setValue("ss", std::make_unique<StringFieldValue>("x45"));
+    expected4.setValue("header", StringFieldValue::make("foo"));
+    expected4.setValue("body", StringFieldValue::make("bar"));
+    expected4.setValue("aa", IntFieldValue::make(45));
+    expected4.setValue("ab", IntFieldValue::make(46));
+    expected4.setValue("dd", DoubleFieldValue::make(4.5));
+    expected4.setValue("ss", StringFieldValue::make("x45"));
     TEST_DO(checkEntry(res2, 0, expected3, Timestamp(6)));
     TEST_DO(checkEntry(res2, 1, expected4, Timestamp(8)));
 
@@ -898,19 +898,19 @@ TEST("require that attributes are used")
     EXPECT_TRUE(res3.isCompleted());
     EXPECT_EQUAL(2u, res3.getEntries().size());
     Document expected5(getAttrDocType(), DocumentId("id:ns:foo::xx10"));
-    expected5.setValue("header", std::make_unique<StringFieldValue>("foo"));
-    expected5.setValue("body", std::make_unique<StringFieldValue>("bar"));
-    expected5.setValue("aa", std::make_unique<IntFieldValue>(27));
-    expected5.setValue("ab", std::make_unique<IntFieldValue>(28));
-    expected5.setValue("dd", std::make_unique<DoubleFieldValue>(2.7));
-    expected5.setValue("ss", std::make_unique<StringFieldValue>("x27"));
+    expected5.setValue("header", StringFieldValue::make("foo"));
+    expected5.setValue("body", StringFieldValue::make("bar"));
+    expected5.setValue("aa", IntFieldValue::make(27));
+    expected5.setValue("ab", IntFieldValue::make(28));
+    expected5.setValue("dd", DoubleFieldValue::make(2.7));
+    expected5.setValue("ss", StringFieldValue::make("x27"));
     Document expected6(getAttrDocType(), DocumentId("id:ns:foo::xx12"));
-    expected6.setValue("header", std::make_unique<StringFieldValue>("foo"));
-    expected6.setValue("body", std::make_unique<StringFieldValue>("bar"));
-    expected6.setValue("aa", std::make_unique<IntFieldValue>(45));
-    expected6.setValue("ab", std::make_unique<IntFieldValue>(46));
-    expected6.setValue("dd", std::make_unique<DoubleFieldValue>(4.5));
-    expected6.setValue("ss", std::make_unique<StringFieldValue>("x45"));
+    expected6.setValue("header", StringFieldValue::make("foo"));
+    expected6.setValue("body", StringFieldValue::make("bar"));
+    expected6.setValue("aa", IntFieldValue::make(45));
+    expected6.setValue("ab", IntFieldValue::make(46));
+    expected6.setValue("dd", DoubleFieldValue::make(4.5));
+    expected6.setValue("ss", StringFieldValue::make("x45"));
     TEST_DO(checkEntry(res3, 0, expected5, Timestamp(10)));
     TEST_DO(checkEntry(res3, 1, expected6, Timestamp(12)));
 } 

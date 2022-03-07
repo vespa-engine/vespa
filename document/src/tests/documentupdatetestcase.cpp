@@ -139,8 +139,8 @@ TEST(DocumentUpdateTest, testSimpleUsage)
 
         // Create a test document
     Document doc(*docType, DocumentId("id:ns:test::1"));
-    doc.setValue("bytef", std::make_unique<ByteFieldValue>(0));
-    doc.setValue("intf", std::make_unique<IntFieldValue>(5));
+    doc.setValue("bytef", ByteFieldValue::make(0));
+    doc.setValue("intf", IntFieldValue::make(5));
     ArrayFieldValue array(*arrayType);
     array.add(IntFieldValue(3));
     array.add(IntFieldValue(7));
