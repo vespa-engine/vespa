@@ -18,6 +18,7 @@
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <set>
 
 using document::Document;

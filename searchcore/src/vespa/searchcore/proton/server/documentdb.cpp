@@ -186,7 +186,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _baseDir(baseDir + "/" + _docTypeName.toString()),
       // Only one thread per executor, or performDropFeedView() will fail.
       _writeServiceConfig(configSnapshot->get_threading_service_config()),
-      _writeService(shared_service.shared(), shared_service.transport(), shared_service.field_writer(),
+      _writeService(shared_service.shared(), shared_service.transport(), shared_service.clock(), shared_service.field_writer(),
                     &shared_service.invokeService(), _writeServiceConfig, indexing_thread_stack_size),
       _initializeThreads(std::move(initializeThreads)),
       _initConfigSnapshot(),

@@ -4,10 +4,11 @@
 
 #include "isearchableindexcollection.h"
 #include "warmupconfig.h"
-#include <vespa/vespalib/util/threadexecutor.h>
+#include <vespa/searchlib/attribute/attribute_blueprint_params.h>
+#include <vespa/vespalib/util/doom.h>
+#include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/monitored_refcount.h>
 #include <vespa/vespalib/util/retain_guard.h>
-#include <vespa/searchlib/queryeval/fake_requestcontext.h>
 
 namespace searchcorespi {
 
@@ -34,6 +35,7 @@ public:
                           ISearchableIndexCollection::SP next,
                           IndexSearchable & warmup,
                           vespalib::Executor & executor,
+                          const vespalib::Clock & clock,
                           IWarmupDone & warmupDone);
     ~WarmupIndexCollection() override;
     // Implements IIndexCollection
@@ -70,8 +72,22 @@ public:
     void drainPending();
 private:
     typedef search::fef::MatchData MatchData;
-    typedef search::queryeval::FakeRequestContext FakeRequestContext;
     typedef vespalib::Executor::Task Task;
+    class WarmupRequestContext : public IRequestContext {
+        using IAttributeVector = search::attribute::IAttributeVector;
+        using AttributeBlueprintParams = search::attribute::AttributeBlueprintParams;
+    public:
+        WarmupRequestContext(const vespalib::Clock & clock);
+        ~WarmupRequestContext() override;
+        const vespalib::Doom & getDoom() const override { return _doom; }
+        const IAttributeVector *getAttribute(const vespalib::string &) const override { return nullptr; }
+        const IAttributeVector *getAttributeStableEnum(const vespalib::string &) const override { return nullptr; }
+        std::unique_ptr<vespalib::eval::Value> get_query_tensor(const vespalib::string&) const override;
+        const AttributeBlueprintParams& get_attribute_blueprint_params() const override { return _params; }
+    private:
+        const vespalib::Doom _doom;
+        const AttributeBlueprintParams _params;
+    };
     class WarmupTask : public Task {
     public:
         WarmupTask(std::unique_ptr<MatchData> md, std::shared_ptr<WarmupIndexCollection> warmup);
@@ -90,7 +106,7 @@ private:
         vespalib::RetainGuard                   _retainGuard;
         std::unique_ptr<MatchData>              _matchData;
         Blueprint::UP                           _bluePrint;
-        FakeRequestContext                      _requestContext;
+        WarmupRequestContext                    _requestContext;
     };
 
     void fireWarmup(Task::UP task);
@@ -101,6 +117,7 @@ private:
     ISearchableIndexCollection::SP     _next;
     IndexSearchable                  & _warmup;
     vespalib::Executor               & _executor;
+    const vespalib::Clock            & _clock;
     IWarmupDone                      & _warmupDone;
     vespalib::steady_time              _warmupEndTime;
     std::mutex                         _lock;

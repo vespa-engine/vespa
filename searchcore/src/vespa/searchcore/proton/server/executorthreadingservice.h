@@ -22,6 +22,7 @@ private:
     using Registration = std::unique_ptr<vespalib::IDestructorCallback>;
     vespalib::Executor                                 & _sharedExecutor;
     FNET_Transport                                     & _transport;
+    const vespalib::Clock                              & _clock;
     vespalib::ThreadStackExecutor                        _masterExecutor;
     ThreadingServiceConfig::SharedFieldWriterExecutor    _shared_field_writer;
     std::atomic<uint32_t>                                _master_task_limit;
@@ -43,10 +44,12 @@ public:
     /**
      * Convenience constructor used in unit tests.
      */
-    ExecutorThreadingService(vespalib::Executor& sharedExecutor, FNET_Transport & transport, uint32_t num_treads = 1);
+    ExecutorThreadingService(vespalib::Executor& sharedExecutor, FNET_Transport & transport,
+                             const vespalib::Clock & clock, uint32_t num_treads = 1);
 
     ExecutorThreadingService(vespalib::Executor& sharedExecutor,
                              FNET_Transport & transport,
+                             const vespalib::Clock & clock,
                              vespalib::ISequencedTaskExecutor* field_writer,
                              vespalib::InvokeService * invokeService,
                              const ThreadingServiceConfig& cfg,
@@ -82,6 +85,7 @@ public:
     vespalib::ISequencedTaskExecutor &indexFieldWriter() override;
     vespalib::ISequencedTaskExecutor &attributeFieldWriter() override;
     FNET_Transport &transport() override { return _transport; }
+    const vespalib::Clock &clock() const override { return _clock; }
     ExecutorThreadingServiceStats getStats();
 };
 

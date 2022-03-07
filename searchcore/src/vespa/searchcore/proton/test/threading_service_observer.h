@@ -50,6 +50,7 @@ public:
         return _shared;
     }
     FNET_Transport & transport() override { return _service.transport(); }
+    const vespalib::Clock & clock() const override { return _service.clock(); }
     vespalib::ISequencedTaskExecutor &indexFieldInverter() override {
         return _indexFieldInverter;
     }

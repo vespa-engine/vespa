@@ -5,7 +5,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-
+#include <vespa/vespalib/util/testclock.h>
 #include <vespa/log/log.h>
 LOG_SETUP("indexcollection_test");
 
@@ -43,6 +43,7 @@ public:
     std::shared_ptr<IndexSearchable> _source2;
     std::shared_ptr<IndexSearchable> _fusion_source;
     vespalib::ThreadStackExecutor    _executor;
+    vespalib::TestClock              _clock;
     std::shared_ptr<IndexSearchable> _warmup;
 
     void expect_searchable_can_be_appended(IndexCollection::UP collection) {
@@ -76,7 +77,7 @@ public:
     }
 
     IndexCollection::UP create_warmup(const IndexCollection::SP& prev, const IndexCollection::SP& next) {
-        return std::make_unique<WarmupIndexCollection>(WarmupConfig(1s, false), prev, next, *_warmup, _executor, *this);
+        return std::make_unique<WarmupIndexCollection>(WarmupConfig(1s, false), prev, next, *_warmup, _executor, _clock.clock(), *this);
     }
 
     void warmupDone(std::shared_ptr<WarmupIndexCollection> current) override {

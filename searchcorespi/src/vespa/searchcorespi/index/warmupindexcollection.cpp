@@ -1,10 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "warmupindexcollection.h"
 #include "idiskindex.h"
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/eval/eval/value.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -31,12 +34,14 @@ WarmupIndexCollection::WarmupIndexCollection(const WarmupConfig & warmupConfig,
                                              ISearchableIndexCollection::SP next,
                                              IndexSearchable & warmup,
                                              vespalib::Executor & executor,
+                                             const vespalib::Clock & clock,
                                              IWarmupDone & warmupDone) :
     _warmupConfig(warmupConfig),
     _prev(std::move(prev)),
     _next(std::move(next)),
     _warmup(warmup),
     _executor(executor),
+    _clock(clock),
     _warmupDone(warmupDone),
     _warmupEndTime(vespalib::steady_clock::now() + warmupConfig.getDuration()),
     _handledTerms(std::make_unique<FieldTermMap>()),
@@ -223,12 +228,21 @@ WarmupIndexCollection::drainPending() {
     _pendingTasks.waitForZeroRefCount();
 }
 
+WarmupIndexCollection::WarmupRequestContext::WarmupRequestContext(const vespalib::Clock & clock)
+    : _doom(clock, vespalib::steady_time::max(), vespalib::steady_time::max(), false)
+{}
+WarmupIndexCollection::WarmupRequestContext::~WarmupRequestContext() = default;
+
+std::unique_ptr<vespalib::eval::Value>
+WarmupIndexCollection::WarmupRequestContext::get_query_tensor(const vespalib::string&) const {
+    return {};
+}
 WarmupIndexCollection::WarmupTask::WarmupTask(std::unique_ptr<MatchData> md, std::shared_ptr<WarmupIndexCollection> warmup)
     : _warmup(std::move(warmup)),
       _retainGuard(_warmup->_pendingTasks),
       _matchData(std::move(md)),
       _bluePrint(),
-      _requestContext()
+      _requestContext(warmup->_clock)
 {
 }
 
