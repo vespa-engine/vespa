@@ -805,7 +805,7 @@ public class DeploymentStatus {
                                           .orElse(false))
                         return job.lastCompleted().flatMap(Run::end);
 
-                    return (dependent.equals(job()) ? job.lastSuccess().stream()
+                    return (dependent.equals(job()) ? job.lastTriggered().filter(run -> run.status() == RunStatus.success).stream()
                                                     : RunList.from(job).status(RunStatus.success).asList().stream())
                             .filter(run ->    change.platform().map(run.versions().targetPlatform()::equals).orElse(true)
                                            && change.application().map(run.versions().targetApplication()::equals).orElse(true))
