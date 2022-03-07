@@ -98,7 +98,6 @@ private:
     VESPA_DLL_LOCAL const StructDataType & getStructType() const;
 
     struct FieldIterator;
-    friend struct FieldIterator;
 
     StructuredIterator::UP getIterator(const Field* toFind) const override;
 

@@ -123,42 +123,6 @@ NumericFieldValue<Number>::operator=(vespalib::stringref value)
 }
 
 template<typename Number>
-FieldValue&
-NumericFieldValue<Number>::operator=(int32_t value)
-{
-    _value = static_cast<Number>(value);
-    _altered = true;
-    return *this;
-}
-
-template<typename Number>
-FieldValue&
-NumericFieldValue<Number>::operator=(int64_t value)
-{
-    _value = static_cast<Number>(value);
-    _altered = true;
-    return *this;
-}
-
-template<typename Number>
-FieldValue&
-NumericFieldValue<Number>::operator=(float value)
-{
-    _value = static_cast<Number>(value);
-    _altered = true;
-    return *this;
-}
-
-template<typename Number>
-FieldValue&
-NumericFieldValue<Number>::operator=(double value)
-{
-    _value = static_cast<Number>(value);
-    _altered = true;
-    return *this;
-}
-
-template<typename Number>
 char
 NumericFieldValue<Number>::getAsByte() const
 {

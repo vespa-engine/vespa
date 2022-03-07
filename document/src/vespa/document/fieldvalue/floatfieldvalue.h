@@ -14,7 +14,6 @@ namespace document {
 
 class FloatFieldValue : public NumericFieldValue<float> {
 public:
-    typedef std::unique_ptr<FloatFieldValue> UP;
     typedef float Number;
 
     FloatFieldValue(Number value = 0) : NumericFieldValue<Number>(value) {}

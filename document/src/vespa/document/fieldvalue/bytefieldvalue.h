@@ -14,7 +14,6 @@ namespace document {
 
 class ByteFieldValue : public NumericFieldValue<int8_t> {
 public:
-    typedef std::unique_ptr<ByteFieldValue> UP;
     typedef int8_t Number;
 
     ByteFieldValue(Number value = 0)

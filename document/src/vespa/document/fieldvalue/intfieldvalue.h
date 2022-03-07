@@ -14,7 +14,6 @@ namespace document {
 
 class IntFieldValue : public NumericFieldValue<int32_t> {
 public:
-    typedef std::unique_ptr<IntFieldValue> UP;
     typedef int32_t Number;
 
     IntFieldValue(Number value = 0) : NumericFieldValue<Number>(value) {}

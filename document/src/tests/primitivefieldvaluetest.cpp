@@ -3,7 +3,6 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/document/util/bytebuffer.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <limits>
 #include <gtest/gtest.h>
@@ -32,7 +31,7 @@ void deserialize(nbostream & stream, T &value) {
                const Type& medium2, const Type& largest)
     {
         try{
-                // Less
+            // Less
             EXPECT_TRUE(!(smallest < smallest));
             EXPECT_TRUE(smallest < medium1);
             EXPECT_TRUE(smallest < medium2);
@@ -203,31 +202,6 @@ TEST(PrimitiveFieldValueTest, testRaw)
                            value.getValueRef().size()) == 0);
 }
 
-#define ASSERT_FAILED_CONV(getter, totype, floating) \
-{ \
-    totype toType; \
-    FieldValue::UP copy(value.clone()); \
-    try{ \
-        getter; \
-        std::ostringstream ost; \
-        ost << "Conversion unexpectedly worked from max value of " \
-            << *value.getDataType() << " to " << *toType.getDataType(); \
-        FAIL() << ost.str();                       \
-    } catch (std::exception& e) { \
-        EXPECT_EQ( \
-                std::string("bad numeric conversion: positive overflow"), \
-                std::string(e.what())); \
-    } \
-        /* Verify that we can convert to smaller type if value is within \
-           range. Only tests integer to integer. No floating point. */ \
-    if (!floating) { \
-        totype::Number maxV = std::numeric_limits<totype::Number>::max(); \
-        value.setValue((Number) maxV); \
-        getter; \
-    } \
-    value.assign(*copy); \
-}
-
 namespace {
 
     template<typename Numeric>
@@ -258,25 +232,21 @@ namespace {
             // representation can keep the value.
         if (floatingPoint || sizeof(Number) > sizeof(unsigned char)) {
             // No longer throws. This is guarded on the perimeter by java code.
-            // ASSERT_FAILED_CONV(value.getAsByte(), ByteFieldValue, floatingPoint);
         } else {
             EXPECT_EQ((char) maxValue, value.getAsByte());
         }
         if (floatingPoint || sizeof(Number) > sizeof(int32_t)) {
             // No longer throws. This is guarded on the perimeter by java code.
-            // ASSERT_FAILED_CONV(value.getAsInt(), IntFieldValue, floatingPoint);
         } else {
             EXPECT_EQ((int32_t) maxValue, value.getAsInt());
         }
         if (floatingPoint || sizeof(Number) > sizeof(int64_t)) {
             // No longer throws. This is guarded on the perimeter by java code.
-            // ASSERT_FAILED_CONV(value.getAsLong(), LongFieldValue, floatingPoint);
         } else {
             EXPECT_EQ((int64_t) maxValue, value.getAsLong());
         }
         if (floatingPoint && sizeof(Number) > sizeof(float)) {
             // No longer throws. This is guarded on the perimeter by java code.
-            // ASSERT_FAILED_CONV(value.getAsFloat(), FloatFieldValue, true);
         } else {
             EXPECT_EQ((float) maxValue, value.getAsFloat());
         }
@@ -303,30 +273,15 @@ TEST(PrimitiveFieldValueTest, testBool)
     v = BoolFieldValue(true);
     EXPECT_TRUE(v.getValue());
 
-    v = 0;
-    EXPECT_TRUE( ! v.getValue());
-    v = 1;
-    EXPECT_TRUE(v.getValue());
-
-    v = INT64_C(0);
-    EXPECT_TRUE( ! v.getValue());
-    v = INT64_C(1);
-    EXPECT_TRUE(v.getValue());
-
-    v = 0.0f;
-    EXPECT_TRUE( ! v.getValue());
-    v = 1.0f;
-    EXPECT_TRUE(v.getValue());
-
-    v = 0.0;
-    EXPECT_TRUE( ! v.getValue());
-    v = 1.0;
+    v.setValue(false);
+    EXPECT_FALSE(v.getValue());
+    v.setValue(true);
     EXPECT_TRUE(v.getValue());
 
     v = vespalib::stringref("true");
     EXPECT_TRUE(v.getValue());
     v = vespalib::stringref("something not true");
-    EXPECT_TRUE( ! v.getValue());
+    EXPECT_FALSE(v.getValue());
 }
 
 TEST(PrimitiveFieldValueTest, testNumerics)

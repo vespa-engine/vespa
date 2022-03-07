@@ -14,7 +14,6 @@ namespace document {
 
 class DoubleFieldValue : public NumericFieldValue<double> {
 public:
-    typedef std::unique_ptr<DoubleFieldValue> UP;
     typedef double Number;
 
     DoubleFieldValue(Number value = 0) : NumericFieldValue<Number>(value) {}

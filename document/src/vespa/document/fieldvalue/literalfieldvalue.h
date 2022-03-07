@@ -69,10 +69,6 @@ public:
     bool hasChanged() const  override{ return _altered; }
 
     FieldValue& operator=(vespalib::stringref) override;
-    FieldValue& operator=(int32_t) override;
-    FieldValue& operator=(int64_t) override;
-    FieldValue& operator=(float) override;
-    FieldValue& operator=(double) override;
 protected:
     void syncBacking() const __attribute__((noinline));
     void sync() const {

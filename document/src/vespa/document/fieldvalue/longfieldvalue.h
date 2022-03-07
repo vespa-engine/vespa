@@ -14,7 +14,6 @@ namespace document {
 
 class LongFieldValue : public NumericFieldValue<int64_t> {
 public:
-    typedef std::unique_ptr<LongFieldValue> UP;
     typedef int64_t Number;
 
     LongFieldValue(Number value = 0) : NumericFieldValue<Number>(value) {}

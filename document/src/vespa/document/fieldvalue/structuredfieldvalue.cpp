@@ -172,20 +172,6 @@ StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handle
     }
 }
 
-using ConstCharP = const char *;
-template void StructuredFieldValue::set(const Field& field, int32_t value);
-template void StructuredFieldValue::set(const Field& field, int64_t value);
-template void StructuredFieldValue::set(const Field& field, double value);
-template void StructuredFieldValue::set(const Field& field, ConstCharP value);
-template void StructuredFieldValue::set(const Field& field, vespalib::stringref value);
-template void StructuredFieldValue::set(const Field& field, vespalib::string value);
-template void StructuredFieldValue::set(vespalib::stringref field, int32_t value);
-template void StructuredFieldValue::set(vespalib::stringref field, int64_t value);
-template void StructuredFieldValue::set(vespalib::stringref field, double value);
-template void StructuredFieldValue::set(vespalib::stringref field, ConstCharP value);
-template void StructuredFieldValue::set(vespalib::stringref field, vespalib::stringref value);
-template void StructuredFieldValue::set(vespalib::stringref field, vespalib::string value);
-
 template std::unique_ptr<MapFieldValue> StructuredFieldValue::getAs<MapFieldValue>(const Field &field) const;
 template std::unique_ptr<ArrayFieldValue> StructuredFieldValue::getAs<ArrayFieldValue>(const Field &field) const;
 template std::unique_ptr<WeightedSetFieldValue> StructuredFieldValue::getAs<WeightedSetFieldValue>(const Field &field) const;
