@@ -196,9 +196,11 @@ protected:
     using MyTree = typename Params::MyTree;
     using MyTreeIterator = typename MyTree::Iterator;
     using MyTreeConstIterator = typename MyTree::ConstIterator;
+    using KeyStore = IntStore;
+    using ValueStore = IntStore;
     GenerationHandler _generationHandler;
-    IntStore _keys;
-    IntStore _values;
+    KeyStore _keys;
+    ValueStore _values;
     MyTree _tree;
     MyTreeIterator _writeItr;
     vespalib::ThreadStackExecutor _writer; // 1 write thread
@@ -344,7 +346,7 @@ template <typename Params>
 void
 Fixture<Params>::compact_keys()
 {
-    if constexpr (_keys.is_indirect) {
+    if constexpr (KeyStore::is_indirect) {
         auto to_hold = _keys.start_compact();
         EntryRefFilter filter(_keys.get_num_buffers(), _keys.get_offset_bits());
         filter.add_buffers(to_hold);
@@ -366,7 +368,7 @@ template <typename Params>
 void
 Fixture<Params>::compact_values()
 {
-    if constexpr (_values.is_indirect) {
+    if constexpr (ValueStore::is_indirect) {
         auto to_hold = _values.start_compact();
         EntryRefFilter filter(_values.get_num_buffers(), _values.get_offset_bits());
         filter.add_buffers(to_hold);
@@ -391,12 +393,12 @@ Fixture<Params>::consider_compact(uint32_t idx)
     if (_compact_tree.consider(idx) && !_tree.getAllocator().getNodeStore().has_held_buffers()) {
         compact_tree();
     }
-    if constexpr (_keys.is_indirect) {
+    if constexpr (KeyStore::is_indirect) {
         if (_compact_keys.consider(idx) && !_keys.has_held_buffers()) {
             compact_keys();
         }
     }
-    if constexpr (_values.is_indirect) {
+    if constexpr (ValueStore::is_indirect) {
         if (_compact_values.consider(idx) && !_values.has_held_buffers()) {
             compact_values();
         }
