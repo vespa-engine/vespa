@@ -266,10 +266,12 @@ class JobControllerApiHandlerHelper {
             stepObject.setBool("declared", stepStatus.isDeclared());
             stepObject.setString("instance", stepStatus.instance().value());
 
-            stepStatus.readyAt(change).ifPresent(ready -> stepObject.setLong("readyAt", ready.toEpochMilli()));
-            stepStatus.readyAt(change)
-                      .filter(controller.clock().instant()::isBefore)
-                      .ifPresent(until -> stepObject.setLong("delayedUntil", until.toEpochMilli()));
+            // TODO: recursively search dependents for what is the relevant partial change when this is a delay step ...
+            Optional<Instant> readyAt = stepStatus.job().map(jobsToRun::get).map(jobs -> jobs.get(0).readyAt())
+                                                  .orElse(stepStatus.readyAt(change));
+            readyAt.ifPresent(ready -> stepObject.setLong("readyAt", ready.toEpochMilli()));
+            readyAt.filter(controller.clock().instant()::isBefore)
+                   .ifPresent(until -> stepObject.setLong("delayedUntil", until.toEpochMilli()));
             stepStatus.pausedUntil().ifPresent(until -> stepObject.setLong("pausedUntil", until.toEpochMilli()));
             stepStatus.coolingDownUntil(change).ifPresent(until -> stepObject.setLong("coolingDownUntil", until.toEpochMilli()));
             stepStatus.blockedUntil(Change.of(controller.systemVersion(versionStatus))) // Dummy version — just anything with a platform.
@@ -304,17 +306,17 @@ class JobControllerApiHandlerHelper {
                     for (VespaVersion available : availablePlatforms) {
                         if (   deployments.stream().anyMatch(deployment -> deployment.version().isAfter(available.versionNumber()))
                             || deployments.stream().noneMatch(deployment -> deployment.version().isBefore(available.versionNumber())) && ! deployments.isEmpty()
-                            || change.platform().map(available.versionNumber()::compareTo).orElse(1) < 0)
+                            || status.hasCompleted(stepStatus.instance(), Change.of(available.versionNumber()))
+                            || change.platform().map(available.versionNumber()::compareTo).orElse(1) <= 0)
                             break;
 
-                        Cursor availableObject = availableArray.addObject();
-                        availableObject.setString("platform", available.versionNumber().toFullString());
+                        availableArray.addObject().setString("platform", available.versionNumber().toFullString());
                     }
+                    change.platform().ifPresent(version -> availableArray.addObject().setString("platform", version.toFullString()));
                     toSlime(latestPlatformObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksVersions));
                 }
-                List<ApplicationVersion> availableApplications = new ArrayList<>(application.versions());
+                List<ApplicationVersion> availableApplications = new ArrayList<>(application.deployableVersions(false));
                 if ( ! availableApplications.isEmpty()) {
-                    Collections.reverse(availableApplications);
                     var latestApplication = availableApplications.get(0);
                     Cursor latestApplicationObject = latestVersionsObject.setObject("application");
                     toSlime(latestApplicationObject.setObject("application"), latestApplication);
@@ -326,12 +328,13 @@ class JobControllerApiHandlerHelper {
                     for (ApplicationVersion available : availableApplications) {
                         if (   deployments.stream().anyMatch(deployment -> deployment.applicationVersion().compareTo(available) > 0)
                             || deployments.stream().noneMatch(deployment -> deployment.applicationVersion().compareTo(available) < 0) && ! deployments.isEmpty()
-                            || change.application().map(available::compareTo).orElse(1) < 0)
+                            || status.hasCompleted(stepStatus.instance(), Change.of(available))
+                            || change.application().map(available::compareTo).orElse(1) <= 0)
                             break;
 
-                        Cursor availableObject = availableArray.addObject();
-                        toSlime(availableObject.setObject("application"), available);
+                        toSlime(availableArray.addObject().setObject("application"), available);
                     }
+                    change.application().ifPresent(version -> toSlime(availableArray.addObject().setObject("application"), version));
                     toSlime(latestApplicationObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksRevisions));
                 }
             }
