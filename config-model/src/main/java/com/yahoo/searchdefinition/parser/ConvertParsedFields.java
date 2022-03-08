@@ -138,6 +138,7 @@ public class ConvertParsedFields {
         if (indexing.isPresent()) {
             field.setIndexingScript(indexing.get().script());
         }
+        parsed.getWeight().ifPresent(value -> field.setWeight(value));
         parsed.getStemming().ifPresent(value -> field.setStemming(value));
         parsed.getNormalizing().ifPresent(value -> convertNormalizing(field, value));
         for (var attribute : parsed.getAttributes()) {

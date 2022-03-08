@@ -58,6 +58,7 @@ class ParsedField extends ParsedBlock {
     List<String> getQueryCommands() { return List.copyOf(queryCommands); }
     String lookupAliasedFrom(String alias) { return aliases.get(alias); }
     ParsedMatchSettings matchSettings() { return this.matchInfo; }
+    Optional<Integer> getWeight() { return Optional.ofNullable(weight); }
     Optional<Stemming> getStemming() { return Optional.ofNullable(stemming); }
     Optional<String> getNormalizing() { return Optional.ofNullable(normalizing); }
     Optional<ParsedIndexingOp> getIndexing() { return Optional.ofNullable(indexingOp); }
