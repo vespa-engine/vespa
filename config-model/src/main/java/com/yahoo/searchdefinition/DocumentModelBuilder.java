@@ -334,7 +334,7 @@ public class DocumentModelBuilder {
         private final NewDocumentType targetDt;
         Map<AnnotationType, String> annotationInheritance = new HashMap<>();
         Map<StructDataType, String> structInheritance = new HashMap<>();
-        private final Map<Object, Integer> inProgress = new IdentityHashMap<>();
+        private final Map<Object, Object> inProgress = new IdentityHashMap<>();
         TypeExtractor(NewDocumentType target) {
             this.targetDt = target;
         }
@@ -404,6 +404,10 @@ public class DocumentModelBuilder {
         }
 
         private void extractNestedTypes(DataType type) {
+            if (inProgress.containsKey(type)) {
+                return;
+            }
+            inProgress.put(type, this);
             if (type instanceof StructDataType) {
                 StructDataType tmp = (StructDataType) type;
                 extractDataTypesFromFields(tmp.getFieldsThisTypeOnly());
