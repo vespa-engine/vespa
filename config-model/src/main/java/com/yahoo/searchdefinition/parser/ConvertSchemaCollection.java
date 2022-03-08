@@ -239,7 +239,7 @@ public class ConvertSchemaCollection {
         if (parsed.hasStemming()) {
             schema.setStemming(parsed.getStemming());
         }
-        schema.enableRawAsBase64(parsed.getRawAsBase64());
+        parsed.getRawAsBase64().ifPresent(value -> schema.enableRawAsBase64(value));
         var typeContext = typeConverter.makeContext(parsed.getDocument());
         var fieldConverter = new ConvertParsedFields(typeContext);
         convertDocument(schema, parsed.getDocument(), fieldConverter);

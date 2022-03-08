@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * This class holds the extracted information after parsing
@@ -30,7 +31,7 @@ public class ParsedSchema extends ParsedBlock {
     }
 
     private boolean documentWithoutSchema = false;
-    private boolean rawAsBase64 = false; // TODO Vespa 8 flip default
+    private Boolean rawAsBase64 = null;
     private ParsedDocument myDocument = null;
     private Stemming defaultStemming = null;
     private final List<ImportedField> importedFields = new ArrayList<>();
@@ -53,7 +54,7 @@ public class ParsedSchema extends ParsedBlock {
     }
 
     boolean getDocumentWithoutSchema() { return documentWithoutSchema; }
-    boolean getRawAsBase64() { return rawAsBase64; }
+    Optional<Boolean> getRawAsBase64() { return Optional.ofNullable(rawAsBase64); }
     boolean hasDocument() { return myDocument != null; }
     ParsedDocument getDocument() { return myDocument; }
     boolean hasStemming() { return defaultStemming != null; }
