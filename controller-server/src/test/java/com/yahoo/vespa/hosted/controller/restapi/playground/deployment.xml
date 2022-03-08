@@ -8,6 +8,7 @@
         <upgrade rollout="simultaneous" revision-change="when-clear" revision-target="latest" />
         <prod>
             <region>us-east-3</region>
+            <delay minutes="5" />
             <test>us-east-3</test>
         </prod>
     </instance>
@@ -24,7 +25,7 @@
                     <test>us-central-1</test>
                 </steps>
                 <steps>
-                <region>us-west-1</region>
+                    <region>us-west-1</region>
                     <test>us-west-1</test>
                 </steps>
             </parallel>

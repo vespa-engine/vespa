@@ -8,11 +8,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
-import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance;
-import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 
@@ -28,19 +25,18 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
-public class DeploymentPlaygroundTest extends ControllerContainerTest {
+public class DeploymentPlayground extends ControllerContainerTest {
 
     private final Object monitor = new Object();
-    private ContainerTester tester;
     private DeploymentTester deploymentTester;
 
     @Override
     protected Networking networking() { return Networking.enable; }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        DeploymentPlaygroundTest test = null;
+        DeploymentPlayground test = null;
         try {
-            test = new DeploymentPlaygroundTest();
+            test = new DeploymentPlayground();
             test.startContainer();
             test.run();
         }
@@ -57,7 +53,7 @@ public class DeploymentPlaygroundTest extends ControllerContainerTest {
     }
 
     public void run() throws IOException {
-        tester = new ContainerTester(container, "");
+        ContainerTester tester = new ContainerTester(container, "");
         deploymentTester = new DeploymentTester(new ControllerTester(tester));
         deploymentTester.controllerTester().computeVersionStatus();
 
@@ -76,7 +72,8 @@ public class DeploymentPlaygroundTest extends ControllerContainerTest {
     }
 
     static String readDeploymentXml() throws IOException {
-        return Files.readString(Paths.get(System.getProperty("user.home") + "/git/vespa/controller-server/src/test/java/com/yahoo/vespa/hosted/controller/restapi/playground/deployment.xml"));
+        return Files.readString(Paths.get(System.getProperty("user.home") + "/git/" +
+                                          "vespa/controller-server/src/test/java/com/yahoo/vespa/hosted/controller/restapi/playground/deployment.xml"));
     }
 
     void repl(Map<String, DeploymentContext> instances) throws IOException {
@@ -155,7 +152,8 @@ public class DeploymentPlaygroundTest extends ControllerContainerTest {
                     deploymentTester.triggerJobs();
                     deploymentTester.runner().run();
                     for (Run run : deploymentTester.jobs().active())
-                        instances.get(run.id().application().instance().value()).runJob(run.id().type());
+                        if (run.versions().sourcePlatform().map(run.versions().targetPlatform()::equals).orElse(true) || Math.random() < 0.4)
+                            instances.get(run.id().application().instance().value()).runJob(run.id().type());
                 }
             }
             catch (InterruptedException e) {
