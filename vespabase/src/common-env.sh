@@ -121,7 +121,7 @@ optionally_reduce_base_frequency() {
     os_release=`uname -r`
     if [[ "$os_release" == *linuxkit* ]]; then
         export VESPA_TIMER_HZ=100
-        echo "Running docker on macos. Reducing base frequency from 1000hz to 100hz due to high cost of sampling time. This will reduce timeout accuracy. VESPA_TIMER_HZ=$VESPA_TIMER_HZ"
+        : "Running docker on macos. Reducing base frequency from 1000hz to 100hz due to high cost of sampling time. This will reduce timeout accuracy. VESPA_TIMER_HZ=$VESPA_TIMER_HZ"
     fi
 }
 
