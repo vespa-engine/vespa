@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -99,7 +100,7 @@ public abstract class AbstractFilteringList<Type, ListType extends AbstractFilte
     /** Returns the items grouped by the given classifier. */
     public final <OtherType> Map<OtherType, ListType> groupingBy(Function<Type, OtherType> classifier) {
         return items.stream().collect(Collectors.groupingBy(classifier,
-                                                            HashMap::new,
+                                                            LinkedHashMap::new,
                                                             Collectors.collectingAndThen(toUnmodifiableList(),
                                                                                          (list) -> constructor.apply(list, false))));
     }

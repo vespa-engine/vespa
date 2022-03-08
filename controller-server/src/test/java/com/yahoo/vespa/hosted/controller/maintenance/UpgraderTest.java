@@ -945,9 +945,9 @@ public class UpgraderTest {
 
         // Application downgrades to pinned version.
         tester.abortAll();
-        context.runJob(stagingTest).runJob(productionUsCentral1);
+        context.runJob(stagingTest).runJob(productionUsCentral1).runJob(productionUsWest1);
         assertTrue(context.instance().change().hasTargets());
-        context.runJob(productionUsWest1); // us-east-3 never upgraded, so no downgrade is needed.
+        context.runJob(productionUsEast3);
         assertFalse(context.instance().change().hasTargets());
     }
 
@@ -1011,7 +1011,7 @@ public class UpgraderTest {
         tester.controllerTester().upgradeSystem(v2);
         tester.upgrader().maintain();
         assertEquals(Change.of(v2), application.instance().change());
-        application.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1);
+        application.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1).timeOutConvergence(productionUsWest1);
         tester.triggerJobs();
 
         // While second deployment completes upgrade, version confidence becomes broken and upgrade is cancelled

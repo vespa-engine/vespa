@@ -215,6 +215,7 @@ public class Application {
     public Optional<ApplicationVersion> oldestDeployedApplication() {
         return productionDeployments().values().stream().flatMap(List::stream)
                                       .map(Deployment::applicationVersion)
+                                      .filter(version -> ! version.isUnknown() && ! version.isDeployedDirectly())
                                       .min(Comparator.naturalOrder());
     }
 
