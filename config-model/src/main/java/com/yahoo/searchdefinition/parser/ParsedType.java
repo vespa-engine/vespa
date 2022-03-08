@@ -46,6 +46,7 @@ class ParsedType {
         case "raw":       return Variant.BUILTIN;
         case "tag":       return Variant.BUILTIN;
         case "position":  return Variant.POSITION;
+        case "float16":   return Variant.BUILTIN;
         }
         return Variant.UNKNOWN;
     }
