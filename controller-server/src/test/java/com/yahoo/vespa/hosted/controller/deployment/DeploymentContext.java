@@ -236,8 +236,13 @@ public class DeploymentContext {
     /** Flush count pending DNS updates */
     public DeploymentContext flushDnsUpdates(int count) {
         var dispatcher = new NameServiceDispatcher(tester.controller(), Duration.ofSeconds(count));
-        dispatcher.run();
-        return this;
+        try {
+            dispatcher.run();
+            return this;
+        }
+        finally {
+            dispatcher.shutdown();
+        }
     }
 
     /** Add a routing policy for this in given zone, with status set to inactive */
