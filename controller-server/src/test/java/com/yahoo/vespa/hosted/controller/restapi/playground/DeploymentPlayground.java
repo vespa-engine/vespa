@@ -61,7 +61,6 @@ public class DeploymentPlayground extends ControllerContainerTest {
         domainMock.markAsVespaTenant();
         domainMock.admin(AllowingFilter.user.getIdentity());
 
-
         Map<String, DeploymentContext> instances = new LinkedHashMap<>();
         for (String name : List.of("alpha", "beta", "prod5", "prod25", "prod100"))
               instances.put(name, deploymentTester.newDeploymentContext("gemini", "core", name));
