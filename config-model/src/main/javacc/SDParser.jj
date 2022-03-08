@@ -639,7 +639,7 @@ void field(SDDocumentType document, Schema schema) :
         if (name != null && Schema.isReservedName(name.toLowerCase())) {
             throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
         }
-        field = new TemporarySDField(document, name, type, document);
+        field = new TemporarySDField(document == null ? schema.getDocument() : document, name, type, document);
     }
     lbrace() (fieldBody(field, schema, document) (<NL>)*)* <RBRACE>
     {
@@ -668,7 +668,7 @@ void fieldSet(Schema schema) :
     |
       ( <QUERYCOMMAND> <COLON> (queryCommand = identifierWithDash() | queryCommand = quotedString())) { queryCommands.add(queryCommand); }
     |
-      ( matchSetting = match(new SDField(setName, DataType.STRING)) ) { matchSettings.add(matchSetting); }
+      ( matchSetting = match(new SDField(null, setName, DataType.STRING)) ) { matchSettings.add(matchSetting); }
     )(<NL>)*)+
   <RBRACE>
   {
@@ -811,7 +811,11 @@ SDDocumentType structDefinition(Schema schema, SDDocumentType repo) :
     SDDocumentType struct;
 }
 {
-    ( <STRUCT> name = identifier() (<NL>)* { struct = new SDDocumentType(name, schema); }
+    ( <STRUCT> name = identifier() (<NL>)* {
+        if (repo == null)
+            throw new IllegalArgumentException("Can't add struct '"+name+"' to a document type, define a document type first or declare the struct inside of one.");
+        struct = new SDDocumentType(name, schema);
+    }
     [ inheritsDocument(struct) (<NL>)* ]
     lbrace() (structFieldDefinition(repo, struct) (<NL>)*)* <RBRACE> )
     {
@@ -821,7 +825,6 @@ SDDocumentType structDefinition(Schema schema, SDDocumentType repo) :
         } catch (IllegalArgumentException e) {
             // empty
         }
-        if (repo==null) throw new IllegalArgumentException("Can't add struct '"+name+"' to a document type, define a document type first or declare the struct inside of one.");
         SDDocumentType sdtype = repo.getOwnedType(struct.getDocumentName());
         DataType stype = sdtype != null
                          ? sdtype.getStruct()
@@ -830,7 +833,7 @@ SDDocumentType structDefinition(Schema schema, SDDocumentType repo) :
         return struct;
     }
 }
-
+        
 /**
  * This rule consumes a data type block from within a field element.
  *

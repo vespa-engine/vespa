@@ -25,11 +25,11 @@ public class EmptyRankProfileTestCase extends AbstractSchemaTestCase {
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
         SDDocumentType doc = new SDDocumentType("test");
         schema.addDocument(doc);
-        doc.addField(new SDField("a", DataType.STRING));
-        SDField field = new SDField("b", DataType.STRING);
+        doc.addField(new SDField(doc, "a", DataType.STRING));
+        SDField field = new SDField(doc, "b", DataType.STRING);
         field.setLiteralBoost(500);
         doc.addField(field);
-        doc.addField(new SDField("c", DataType.STRING));
+        doc.addField(new SDField(doc, "c", DataType.STRING));
 
         schema = ApplicationBuilder.buildFromRawSchema(schema, rankProfileRegistry, new QueryProfileRegistry());
         new DerivedConfiguration(schema, rankProfileRegistry);

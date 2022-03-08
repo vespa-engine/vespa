@@ -22,16 +22,18 @@ public class ImportedFieldsEnumeratorTest {
         String PARENT = "parent";
         Schema parentSchema = new Schema(PARENT, MockApplicationPackage.createEmpty());
         SDDocumentType parentDocument = new SDDocumentType(PARENT, parentSchema);
-        var parentField = new SDField("their_field", DataType.INT);
+        var parentField = new SDField(parentDocument, "their_field", DataType.INT);
         AttributeUtils.addAttributeAspect(parentField);
         parentDocument.addField(parentField);
         parentSchema.addDocument(parentDocument);
 
         String FOO = "foo";
         Schema fooSchema = new Schema(FOO, MockApplicationPackage.createEmpty());
+        /*
         SDField fooRefToParent = new SDField(
                 "foo_ref", ReferenceDataType.createWithInferredId(parentDocument.getDocumentType()));
         AttributeUtils.addAttributeAspect(fooRefToParent);
+        */
         var fooImports = fooSchema.temporaryImportedFields().get();
         fooImports.add(new TemporaryImportedField("my_first_import", "foo_ref", "their_field"));
         fooImports.add(new TemporaryImportedField("my_second_import", "foo_ref", "their_field"));
@@ -40,9 +42,11 @@ public class ImportedFieldsEnumeratorTest {
 
         String BAR = "bar";
         Schema barSchema = new Schema(BAR, MockApplicationPackage.createEmpty());
+        /*
         SDField barRefToParent = new SDField(
                 "bar_ref", ReferenceDataType.createWithInferredId(parentDocument.getDocumentType()));
         AttributeUtils.addAttributeAspect(barRefToParent);
+        */
         var barImports = barSchema.temporaryImportedFields().get();
         barImports.add(new TemporaryImportedField("my_cool_import", "my_ref", "their_field"));
         SDDocumentType barDocument = new SDDocumentType(BAR, barSchema);

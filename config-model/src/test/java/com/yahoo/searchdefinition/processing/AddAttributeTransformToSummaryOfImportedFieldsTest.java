@@ -59,8 +59,9 @@ public class AddAttributeTransformToSummaryOfImportedFieldsTest {
     }
 
     private static ImportedFields createSingleImportedField(String fieldName) {
-        Schema targetSchema = createSearch("target_doc");
-        SDField targetField = new SDField("target_field", DataType.INT);
+        Schema targetSchema = createSearchWithDocument("target_doc");
+        var doc = targetSchema.getDocument();
+        SDField targetField = new SDField(doc, "target_field", DataType.INT);
         DocumentReference documentReference = new DocumentReference(new Field("reference_field"), targetSchema);
         ImportedField importedField = new ImportedSimpleField(fieldName, documentReference, targetField);
         return new ImportedFields(Collections.singletonMap(fieldName, importedField));
