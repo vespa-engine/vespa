@@ -177,14 +177,14 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req)
 }
 
 bool MatchEngine::isOnline() const {
-    return _nodeUp;
+    return _nodeUp.load(std::memory_order_relaxed);
 }
 
 
 void
 MatchEngine::setNodeUp(bool nodeUp)
 {
-    _nodeUp = nodeUp;
+    _nodeUp.store(nodeUp, std::memory_order_relaxed);
 }
 
 void
@@ -192,7 +192,7 @@ MatchEngine::setNodeMaintenance(bool nodeMaintenance)
 {
     _nodeMaintenance = nodeMaintenance;
     if (nodeMaintenance) {
-        _nodeUp = false;
+        _nodeUp.store(false, std::memory_order_relaxed);
     }
 }
 
