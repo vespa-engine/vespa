@@ -110,13 +110,14 @@ public class ImportedFieldsResolverTestCase {
         public SearchModel() {
             super();
             grandParentSchema = createSearch("grandparent");
-            grandParentSchema.getDocument().addField(createField("ancient_field", DataType.INT, "{ attribute }"));
-
-            parentSchema.getDocument().addField(createField("attribute_field", DataType.INT, "{ attribute }"));
-            parentSchema.getDocument().addField(createField("attribute_and_index", DataType.INT, "{ attribute | index }"));
-            parentSchema.getDocument().addField(new TemporarySDField("not_attribute", DataType.INT));
-            parentSchema.getDocument().addField(createField("tensor_field", new TensorDataType(TensorType.fromSpec("tensor(x[5])")), "{ attribute }"));
-            parentSchema.getDocument().addField(createField("predicate_field", DataType.PREDICATE, "{ attribute }"));
+            var grandParentDoc = grandParentSchema.getDocument();
+            grandParentDoc.addField(createField(grandParentDoc, "ancient_field", DataType.INT, "{ attribute }"));
+            var parentDoc = parentSchema.getDocument();
+            parentDoc.addField(createField(parentDoc, "attribute_field", DataType.INT, "{ attribute }"));
+            parentDoc.addField(createField(parentDoc, "attribute_and_index", DataType.INT, "{ attribute | index }"));
+            parentDoc.addField(new TemporarySDField(parentDoc, "not_attribute", DataType.INT));
+            parentDoc.addField(createField(parentDoc, "tensor_field", new TensorDataType(TensorType.fromSpec("tensor(x[5])")), "{ attribute }"));
+            parentDoc.addField(createField(parentDoc, "predicate_field", DataType.PREDICATE, "{ attribute }"));
             addRefField(parentSchema, grandParentSchema, "ref");
             addImportedField(parentSchema, "ancient_field", "ref", "ancient_field");
 

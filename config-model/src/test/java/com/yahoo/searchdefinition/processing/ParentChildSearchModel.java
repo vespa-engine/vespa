@@ -37,19 +37,19 @@ public class ParentChildSearchModel {
         return result;
     }
 
-    protected static TemporarySDField createField(String name, DataType dataType, String indexingScript) {
-        TemporarySDField result = new TemporarySDField(name, dataType);
+    protected static TemporarySDField createField(SDDocumentType repo, String name, DataType dataType, String indexingScript) {
+        TemporarySDField result = new TemporarySDField(repo, name, dataType);
         result.parseIndexingScript(indexingScript);
         return result;
     }
 
     @SuppressWarnings("deprecation")
-    protected static SDField createRefField(String parentType, String fieldName) {
-        return new TemporarySDField(fieldName, ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create(parentType)));
+    protected static SDField createRefField(SDDocumentType repo, String parentType, String fieldName) {
+        return new TemporarySDField(repo, fieldName, ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create(parentType)));
     }
 
     protected static void addRefField(Schema child, Schema parent, String fieldName) {
-        SDField refField = createRefField(parent.getName(), fieldName);
+        SDField refField = createRefField(child.getDocument(), parent.getName(), fieldName);
         child.getDocument().addField(refField);
         child.getDocument().setDocumentReferences(new DocumentReferences(ImmutableMap.of(refField.getName(),
                 new DocumentReference(refField, parent))));

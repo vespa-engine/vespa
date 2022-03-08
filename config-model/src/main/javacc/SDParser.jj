@@ -639,7 +639,7 @@ void field(SDDocumentType document, Schema schema) :
         if (name != null && Schema.isReservedName(name.toLowerCase())) {
             throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
         }
-        field = new TemporarySDField(name, type, document);
+        field = new TemporarySDField(document, name, type, document);
     }
     lbrace() (fieldBody(field, schema, document) (<NL>)*)* <RBRACE>
     {
@@ -698,11 +698,13 @@ void annotationOutside(Schema schema) :
     <ANNOTATION> name = identifier()
     {
         type = new SDAnnotationType(name.trim());
+        if (schema.getDocument() == null) {
+            throw new IllegalArgumentException("Can't add annotation '"+name+"' to a document type, define a document type first or declare the annotation inside of one.");
+        }
     }
     [ inheritsAnnotation(type) (<NL>)* ]
-    lbrace() (type = annotationBody(schema, type)) <RBRACE>
+    lbrace() (type = annotationBody(schema, schema.getDocument(), type)) <RBRACE>
     {
-        if (schema.getDocument()==null) throw new IllegalArgumentException("Can't add annotation '"+name+"' to a document type, define a document type first or declare the annotation inside of one.");
         schema.addAnnotation(type);
     }
 }
@@ -723,7 +725,7 @@ void annotation(Schema schema, SDDocumentType document) :
         type = new SDAnnotationType(name.trim());
     }
     [ inheritsAnnotation(type) (<NL>)* ]
-    lbrace() (type = annotationBody(schema, type)) <RBRACE>
+    lbrace() (type = annotationBody(schema, document, type)) <RBRACE>
     {
         document.addAnnotation(type);
     }
@@ -737,12 +739,12 @@ void annotation(Schema schema, SDDocumentType document) :
  * @param type     the type being built
  * @return a modified or new AnnotationType instance
  */
-SDAnnotationType annotationBody(Schema schema, SDAnnotationType type) :
+SDAnnotationType annotationBody(Schema schema, SDDocumentType repo, SDAnnotationType type) :
 {
     SDDocumentType struct = new SDDocumentType("annotation." + type.getName(), schema);
 }
 {
-    (structFieldDefinition(struct) (<NL>)*)*
+    (structFieldDefinition(repo, struct) (<NL>)*)*
     {
         if (struct.getFieldCount() > 0) { // Must account for the temporary TemporarySDField.
             type = new SDAnnotationType(type.getName(), struct, type.getInherits());
@@ -811,7 +813,7 @@ SDDocumentType structDefinition(Schema schema, SDDocumentType repo) :
 {
     ( <STRUCT> name = identifier() (<NL>)* { struct = new SDDocumentType(name, schema); }
     [ inheritsDocument(struct) (<NL>)* ]
-    lbrace() (structFieldDefinition(struct) (<NL>)*)* <RBRACE> )
+    lbrace() (structFieldDefinition(repo, struct) (<NL>)*)* <RBRACE> )
     {
         try {
             docMan.getDataType(name);
@@ -921,7 +923,7 @@ DataType wildCardType() :
  *
  * @param struct The struct to modify.
  */
-void structFieldDefinition(SDDocumentType struct) :
+void structFieldDefinition(SDDocumentType document, SDDocumentType struct) :
 {
     String name;
     SDField field;
@@ -932,7 +934,7 @@ void structFieldDefinition(SDDocumentType struct) :
         if (name != null && Schema.isReservedName(name.toLowerCase())) {
             throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
         }
-        field = new TemporarySDField(name, type, struct);
+        field = new TemporarySDField(document, name, type, struct);
         struct.addField(field);
     }
     lbrace() (id(field,struct) (<NL>)*)? (match(field) (<NL>)*)* <RBRACE> {

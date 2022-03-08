@@ -221,7 +221,7 @@ public class ConvertSchemaCollection {
         }
         if (parsed.getMatchSettings().isPresent()) {
             // same ugliness as SDParser.jj used to have:
-            var tmp = new SDField(null, setName, DataType.STRING);
+            var tmp = new SDField(setName, DataType.STRING);
             ConvertParsedFields.convertMatchSettings(tmp, parsed.matchSettings());
             schema.fieldSets().userFieldSets().get(setName).setMatching(tmp.getMatching());
         }
