@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.provision.autoscale.NodeTimeseries;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -122,6 +123,10 @@ public class NodeRepoStats {
 
     public static class ApplicationStats implements Comparable<ApplicationStats> {
 
+        private static final Comparator<ApplicationStats> comparator = Comparator.comparingDouble(ApplicationStats::unutilizedCost).reversed()
+                                                                                 .thenComparingDouble(ApplicationStats::cost)
+                                                                                 .thenComparing(ApplicationStats::id);
+
         private final ApplicationId id;
         private final Load load;
         private final double cost;
@@ -148,7 +153,7 @@ public class NodeRepoStats {
 
         @Override
         public int compareTo(NodeRepoStats.ApplicationStats other) {
-            return -Double.compare(this.unutilizedCost(), other.unutilizedCost());
+            return comparator.compare(this, other);
         }
 
     }
