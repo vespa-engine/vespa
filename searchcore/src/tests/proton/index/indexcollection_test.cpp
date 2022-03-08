@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
+#include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchcorespi/index/warmupindexcollection.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -15,6 +17,9 @@ using search::FixedSourceSelector;
 using search::index::FieldLengthInfo;
 using search::queryeval::FakeSearchable;
 using search::queryeval::ISourceSelector;
+using search::queryeval::FakeRequestContext;
+using search::queryeval::FieldSpecList;
+using search::queryeval::FieldSpec;
 using searchcorespi::index::WarmupConfig;
 
 class MockIndexSearchable : public FakeIndexSearchable {
@@ -46,38 +51,41 @@ public:
     vespalib::TestClock              _clock;
     std::shared_ptr<IndexSearchable> _warmup;
 
-    void expect_searchable_can_be_appended(IndexCollection::UP collection) {
+    void expect_searchable_can_be_appended(ISearchableIndexCollection & collection) {
         const uint32_t id = 42;
 
-        collection->append(id, _source1);
-        EXPECT_EQ(1u, collection->getSourceCount());
-        EXPECT_EQ(id, collection->getSourceId(0));
+        collection.append(id, _source1);
+        EXPECT_EQ(1u, collection.getSourceCount());
+        EXPECT_EQ(id, collection.getSourceId(0));
     }
 
-    void expect_searchable_can_be_replaced(IndexCollection::UP collection) {
+    void expect_searchable_can_be_replaced(ISearchableIndexCollection & collection) {
         const uint32_t id = 42;
 
-        collection->append(id, _source1);
-        EXPECT_EQ(1u, collection->getSourceCount());
-        EXPECT_EQ(id, collection->getSourceId(0));
-        EXPECT_EQ(_source1.get(), &collection->getSearchable(0));
+        collection.append(id, _source1);
+        EXPECT_EQ(1u, collection.getSourceCount());
+        EXPECT_EQ(id, collection.getSourceId(0));
+        EXPECT_EQ(_source1.get(), &collection.getSearchable(0));
 
-        collection->replace(id, _source2);
-        EXPECT_EQ(1u, collection->getSourceCount());
-        EXPECT_EQ(id, collection->getSourceId(0));
-        EXPECT_EQ(_source2.get(), &collection->getSearchable(0));
+        collection.replace(id, _source2);
+        EXPECT_EQ(1u, collection.getSourceCount());
+        EXPECT_EQ(id, collection.getSourceId(0));
+        EXPECT_EQ(_source2.get(), &collection.getSearchable(0));
     }
 
-    IndexCollection::UP make_unique_collection() const {
+    std::unique_ptr<IndexCollection>
+    make_unique_collection() const {
         return std::make_unique<IndexCollection>(_selector);
     }
 
-    IndexCollection::SP make_shared_collection() const {
+    std::shared_ptr<IndexCollection>
+    make_shared_collection() const {
         return std::make_shared<IndexCollection>(_selector);
     }
 
-    IndexCollection::UP create_warmup(const IndexCollection::SP& prev, const IndexCollection::SP& next) {
-        return std::make_unique<WarmupIndexCollection>(WarmupConfig(1s, false), prev, next, *_warmup, _executor, _clock.clock(), *this);
+    std::shared_ptr<WarmupIndexCollection>
+    create_warmup(const IndexCollection::SP& prev, const IndexCollection::SP& next) {
+        return std::make_shared<WarmupIndexCollection>(WarmupConfig(1s, false), prev, next, *_warmup, _executor, _clock.clock(), *this);
     }
 
     void warmupDone(std::shared_ptr<WarmupIndexCollection> current) override {
@@ -98,19 +106,19 @@ public:
 
 TEST_F(IndexCollectionTest, searchable_can_be_appended_to_normal_collection)
 {
-    expect_searchable_can_be_appended(make_unique_collection());
+    expect_searchable_can_be_appended(*make_unique_collection());
 }
 
 TEST_F(IndexCollectionTest, searchable_can_be_replaced_in_normal_collection)
 {
-    expect_searchable_can_be_replaced(make_unique_collection());
+    expect_searchable_can_be_replaced(*make_unique_collection());
 }
 
 TEST_F(IndexCollectionTest, searchable_can_be_appended_to_warmup_collection)
 {
     auto prev = make_shared_collection();
     auto next = make_shared_collection();
-    expect_searchable_can_be_appended(create_warmup(prev, next));
+    expect_searchable_can_be_appended(*create_warmup(prev, next));
     EXPECT_EQ(0u, prev->getSourceCount());
     EXPECT_EQ(1u, next->getSourceCount());
 }
@@ -119,7 +127,7 @@ TEST_F(IndexCollectionTest, searchable_can_be_replaced_in_warmup_collection)
 {
     auto prev = make_shared_collection();
     auto next = make_shared_collection();
-    expect_searchable_can_be_replaced(create_warmup(prev, next));
+    expect_searchable_can_be_replaced(*create_warmup(prev, next));
     EXPECT_EQ(0u, prev->getSourceCount());
     EXPECT_EQ(1u, next->getSourceCount());
 }
@@ -160,6 +168,22 @@ TEST_F(IndexCollectionTest, returns_empty_field_length_info_when_no_searchables_
 
     EXPECT_DOUBLE_EQ(0, collection->get_field_length_info("foo").get_average_field_length());
     EXPECT_EQ(0, collection->get_field_length_info("foo").get_num_samples());
+}
+
+TEST_F(IndexCollectionTest, warmup_can_create_blueprint)
+{
+    auto prev = make_shared_collection();
+    auto next = make_shared_collection();
+    auto indexcollection = create_warmup(prev, next);
+    const uint32_t id = 42;
+    indexcollection->append(id, _source1);
+
+    FakeRequestContext requestContext;
+    FieldSpecList fields;
+    fields.add(FieldSpec("dummy", 1, search::fef::IllegalHandle));
+    search::query::SimpleStringTerm term("what", "dummy", 1, search::query::Weight(100));
+    auto blueprint = indexcollection->createBlueprint(requestContext, fields, term);
+    EXPECT_TRUE(blueprint);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
