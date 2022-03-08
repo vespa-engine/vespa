@@ -413,13 +413,6 @@ FastOS_Linux_File::Open(unsigned int openFlags, const char *filename)
     return rc;
 }
 
-
-bool
-FastOS_Linux_File::InitializeClass()
-{
-    return FastOS_UNIX_File::InitializeClass();
-}
-
 int
 FastOS_Linux_File::count_open_files()
 {

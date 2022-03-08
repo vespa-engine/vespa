@@ -5,8 +5,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/objects/visit.hpp>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 void
 BooleanMatchIteratorWrapper::doSeek(uint32_t docid)
@@ -41,5 +40,4 @@ BooleanMatchIteratorWrapper::visitMembers(vespalib::ObjectVisitor &visitor) cons
     // _match not visited
 }
 
-} // namespace queryeval
-} // namespace search
+}

@@ -4,7 +4,6 @@
 #include "condensedbitvectors.h"
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/fastos/dynamiclibrary.h>
 #include <mutex>
 
 namespace search {

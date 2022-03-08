@@ -6,7 +6,7 @@
 #include <memory>
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/generationholder.h>
-#include <vespa/fastos/dynamiclibrary.h>
+#include <vespa/fastos/types.h>
 
 namespace vespalib {
     class nbostream;

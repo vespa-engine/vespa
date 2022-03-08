@@ -8,8 +8,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".nearsearch");
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 namespace {
 
@@ -307,5 +306,4 @@ ONearSearch::match(uint32_t docId)
     return false;
 }
 
-} // queryeval
-} // search
+}

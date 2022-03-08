@@ -40,7 +40,6 @@ public:
     [[nodiscard]] ssize_t Write2(const void *buffer, size_t len) override;
     bool Open(unsigned int openFlags, const char *filename) override;
 
-    static bool InitializeClass();
     static size_t getMaxDirectIOMemAlign();
     static int count_open_files();
 private:

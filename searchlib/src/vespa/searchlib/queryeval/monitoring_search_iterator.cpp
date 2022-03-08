@@ -8,8 +8,7 @@ LOG_SETUP(".queryeval.monitoring_search_iterator");
 
 using vespalib::make_string;
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 MonitoringSearchIterator::Stats::Stats()
     : _numSeeks(0),
@@ -237,5 +236,4 @@ MonitoringSearchIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
     _search->visitMembers(visitor);
 }
 
-}  // namespace queryeval
-}  // namespace search
+}
