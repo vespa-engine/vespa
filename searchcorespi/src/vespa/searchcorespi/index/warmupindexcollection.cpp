@@ -242,7 +242,7 @@ WarmupIndexCollection::WarmupTask::WarmupTask(std::unique_ptr<MatchData> md, std
       _retainGuard(_warmup->_pendingTasks),
       _matchData(std::move(md)),
       _bluePrint(),
-      _requestContext(warmup->_clock)
+      _requestContext(_warmup->_clock)
 {
 }
 
