@@ -8,7 +8,6 @@
         <upgrade rollout="simultaneous" revision-change="when-clear" revision-target="latest" />
         <prod>
             <region>us-east-3</region>
-            <delay minutes="5" />
             <test>us-east-3</test>
         </prod>
     </instance>
