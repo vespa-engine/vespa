@@ -9,6 +9,7 @@ import com.yahoo.document.MapDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.document.TensorDataType;
+import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
@@ -185,6 +186,10 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
                 throw new IllegalArgumentException("Illegal type in field " + name + " type " + type +
                                                    ": Dense tensor dimensions must have a size");
             addQueryCommand("type " + type);
+        }
+        else if (dataType instanceof WeightedSetDataType) {
+            var nested = ((WeightedSetDataType) dataType).getNestedType().getName();
+            addQueryCommand("type WeightedSet<" + nested + ">");
         }
         else {
             addQueryCommand("type " + dataType.getName());
