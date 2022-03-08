@@ -151,7 +151,6 @@ public class HitRendererTestCase {
         return new Group(id, new Relevance(1));
     }
 
-    @SuppressWarnings("deprecation")
     private static void assertRender(HitGroup hit, String expectedXml) {
         StringWriter str = new StringWriter();
         XMLWriter out = new XMLWriter(str, 0, -1);

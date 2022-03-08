@@ -948,7 +948,7 @@ public class JsonRendererTestCase {
             }
         });
         Group g = new Group(new StringId("Jones"), new Relevance(1.0));
-        g.setField("count()", Integer.valueOf(7));
+        g.setField("count()", 7);
         gl.add(g);
         rg.add(gl);
         r.hits().add(rg);
@@ -1443,8 +1443,7 @@ public class JsonRendererTestCase {
         ByteArrayOutputStream bs = new ByteArrayOutputStream();
         ListenableFuture<Boolean> f = renderer.render(bs, r, execution, null);
         assertTrue(f.get());
-        String summary = Utf8.toString(bs.toByteArray());
-        return summary;
+        return Utf8.toString(bs.toByteArray());
     }
 
     @SuppressWarnings("unchecked")

@@ -116,8 +116,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         InvokerResult result = new InvokerResult(query, query.getHits());
         List<LeanHit> merged = Collections.emptyList();
         long nextTimeout = query.getTimeLeft();
-        boolean extraDebug = (query.getOffset() == 0) && (query.getHits() == 7) && log.isLoggable(java.util.logging.Level.FINE);
-        List<InvokerResult> processed = new ArrayList<>();
         var groupingResultAggregator = new GroupingResultAggregator();
         try {
             while (!invokers.isEmpty() && nextTimeout >= 0) {
@@ -127,9 +125,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                     break;
                 } else {
                     InvokerResult toMerge = invoker.getSearchResult(execution);
-                    if (extraDebug) {
-                        processed.add(toMerge);
-                    }
                     merged = mergeResult(result.getResult(), toMerge, merged, groupingResultAggregator);
                     ejectInvoker(invoker);
                 }
@@ -143,32 +138,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         insertNetworkErrors(result.getResult());
         result.getResult().setCoverage(createCoverage());
 
-        if (extraDebug && merged.size() > 0) {
-            int firstPartId = merged.get(0).getPartId();
-            for (int index = 1; index < merged.size(); index++) {
-                if (merged.get(index).getPartId() != firstPartId) {
-                    extraDebug = false;
-                    log.fine("merged["+index+"/"+merged.size()+"] from partId "+merged.get(index).getPartId()+", first "+firstPartId);
-                    break;
-                }
-            }
-        }
-        if (extraDebug) {
-            log.fine("Interleaved "+processed.size()+" results");
-            for (int pIdx = 0; pIdx < processed.size(); ++pIdx) {
-                var p = processed.get(pIdx);
-                log.fine("InvokerResult "+pIdx+" total hits "+p.getResult().getTotalHitCount());
-                var lean = p.getLeanHits();
-                for (int idx = 0; idx < lean.size(); ++idx) {
-                    var hit = lean.get(idx);
-                    log.fine("lean hit "+idx+" relevance "+hit.getRelevance()+" partid "+hit.getPartId());
-                }
-            }
-            for (int mIdx = 0; mIdx < merged.size(); ++mIdx) {
-                var hit = merged.get(mIdx);
-                log.fine("merged hit "+mIdx+" relevance "+hit.getRelevance()+" partid "+hit.getPartId());                
-            }
-        }
         int needed = query.getOffset() + query.getHits();
         for (int index = query.getOffset(); (index < merged.size()) && (index < needed); index++) {
             result.getLeanHits().add(merged.get(index));

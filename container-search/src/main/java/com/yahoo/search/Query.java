@@ -726,8 +726,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * if the trace level of the query is sufficiently high.
      *
      * @param message      the message to add
-     * @param includeQuery true to append the query root stringValue
-     *        at the end of the message
+     * @param includeQuery true to append the query root stringValue at the end of the message
      * @param traceLevel   the context level of the message, this method will do nothing
      *                     if the traceLevel of the query is lower than this value
      */
