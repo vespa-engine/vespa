@@ -20,6 +20,7 @@
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/searchlib/transactionlog/client_session.h>
+#include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <cassert>
@@ -42,6 +43,7 @@ using vespalib::make_string;
 using std::make_unique;
 using std::make_shared;
 using search::CommitParam;
+using namespace vespalib::atomic;
 
 namespace proton {
 
@@ -305,13 +307,13 @@ void
 FeedHandler::performEof()
 {
     assert(_writeService.master().isCurrentThread());
-    _activeFeedView->forceCommitAndWait(CommitParam(_serialNum));
+    _activeFeedView->forceCommitAndWait(CommitParam(load_relaxed(_serialNum)));
     LOG(debug, "Visiting done for transaction log domain '%s', eof received", _tlsMgr.getDomainName().c_str());
     // Replay must be complete
-    if (_replay_end_serial_num != _serialNum) {
+    if (_replay_end_serial_num != load_relaxed(_serialNum)) {
         LOG(warning, "Expected replay end serial number %" PRIu64 ", got serial number %" PRIu64,
-            _replay_end_serial_num, _serialNum);
-        assert(_replay_end_serial_num == _serialNum);
+            _replay_end_serial_num, load_relaxed(_serialNum));
+        assert(_replay_end_serial_num == load_relaxed(_serialNum));
     }
     _owner.onTransactionLogReplayDone();
     _tlsMgr.replayDone();
@@ -444,7 +446,7 @@ void
 FeedHandler::init(SerialNum oldestConfigSerial)
 {
     _tlsMgr.init(oldestConfigSerial, _prunedSerialNum, _replay_end_serial_num);
-    _serialNum = _prunedSerialNum;
+    store_relaxed(_serialNum, _prunedSerialNum);
     if (_tlsWriter == nullptr) {
         _tlsMgrWriter = std::make_unique<TlsMgrWriter>(_tlsMgr, _tlsWriterfactory);
         _tlsWriter = _tlsMgrWriter.get();
@@ -458,7 +460,7 @@ void
 FeedHandler::close()
 {
     if (_allowSync) {
-        syncTls(_serialNum);
+        syncTls(load_relaxed(_serialNum));
     }
     _allowSync = false;
     _tlsMgr.close();
@@ -484,8 +486,8 @@ FeedHandler::replayTransactionLog(SerialNum flushedIndexMgrSerial, SerialNum flu
     TransactionLogManager::prepareReplay(_tlsMgr.getClient(), _docTypeName.getName(),
                                          flushedIndexMgrSerial, flushedSummaryMgrSerial, config_store);
 
-    _tlsReplayProgress = _tlsMgr.make_replay_progress(_serialNum, _replay_end_serial_num);
-    _tlsMgr.startReplay(_serialNum, _replay_end_serial_num, *this);
+    _tlsReplayProgress = _tlsMgr.make_replay_progress(load_relaxed(_serialNum), _replay_end_serial_num);
+    _tlsMgr.startReplay(load_relaxed(_serialNum), _replay_end_serial_num, *this);
 }
 
 void
@@ -549,7 +551,7 @@ FeedHandler::initiateCommit(vespalib::steady_time start_time) {
     if (_activeFeedView) {
         using KeepAlivePair = vespalib::KeepAlive<std::pair<CommitResult, DoneCallback>>;
         auto pair = std::make_pair(std::move(commitResult), std::move(onCommitDoneContext));
-        _activeFeedView->forceCommit(CommitParam(_serialNum, CommitParam::UpdateStats::SKIP), std::make_shared<KeepAlivePair>(std::move(pair)));
+        _activeFeedView->forceCommit(CommitParam(load_relaxed(_serialNum), CommitParam::UpdateStats::SKIP), std::make_shared<KeepAlivePair>(std::move(pair)));
     }
 }
 
@@ -773,7 +775,7 @@ FeedHandler::heartBeat()
 {
     assert(_writeService.master().isCurrentThread());
     _heart_beat_time.store(vespalib::steady_clock::now());
-    _activeFeedView->heartBeat(_serialNum, vespalib::IDestructorCallback::SP());
+    _activeFeedView->heartBeat(load_relaxed(_serialNum), vespalib::IDestructorCallback::SP());
 }
 
 FeedHandler::RPC::Result
