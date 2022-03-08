@@ -18,6 +18,7 @@ public:
     using MultiValueType = EntryT;
     using RefType = RefT;
 private:
+    using ArrayRef = vespalib::ArrayRef<EntryT>;
     using ArrayStore = vespalib::datastore::ArrayStore<EntryT, RefT>;
     using generation_t = vespalib::GenerationHandler::generation_t;
     using ConstArrayRef = vespalib::ConstArrayRef<EntryT>;
@@ -36,7 +37,7 @@ public:
 
     // replace is generally unsafe and should only be used when
     // compacting enum store (replacing old enum index with updated enum index)
-    void replace(uint32_t docId, ConstArrayRef values);
+    ArrayRef get_writable(uint32_t docId) { return _store.get_writable(_indices[docId]); }
 
     // Pass on hold list management to underlying store
     void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }

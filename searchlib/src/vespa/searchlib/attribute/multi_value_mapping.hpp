@@ -41,19 +41,6 @@ MultiValueMapping<EntryT,RefT>::set(uint32_t docId, ConstArrayRef values)
 
 template <typename EntryT, typename RefT>
 void
-MultiValueMapping<EntryT,RefT>::replace(uint32_t docId, ConstArrayRef values)
-{
-    auto oldValues = _store.get_writable(_indices[docId]);
-    assert(oldValues.size() == values.size());
-    EntryT *dst = &oldValues[0];
-    for (auto &src : values) {
-        *dst = src;
-        ++dst;
-    }
-}
-
-template <typename EntryT, typename RefT>
-void
 MultiValueMapping<EntryT,RefT>::compactWorst(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
     vespalib::datastore::ICompactionContext::UP compactionContext(_store.compactWorst(compaction_spec, compaction_strategy));

@@ -17,15 +17,13 @@ namespace search::multienumattribute {
 
 using EnumIndex = IEnumStore::Index;
 using EnumIndexRemapper = IEnumStore::EnumIndexRemapper;
-using Value = multivalue::Value<EnumIndex>;
-using WeightedValue = multivalue::WeightedValue<EnumIndex>;
+using Value = multivalue::Value<vespalib::datastore::AtomicEntryRef>;
+using WeightedValue = multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>;
 
 template <typename WeightedIndex>
 void
 remap_enum_store_refs(const EnumIndexRemapper& remapper, AttributeVector& v, attribute::MultiValueMapping<WeightedIndex>& multi_value_mapping)
 {
-    using WeightedIndexVector = std::vector<WeightedIndex>;
-
     // update multi_value_mapping with new EnumIndex values after enum store has been compacted.
     v.logEnumStoreEvent("compactfixup", "drain");
     {
@@ -33,17 +31,14 @@ remap_enum_store_refs(const EnumIndexRemapper& remapper, AttributeVector& v, att
         auto& filter = remapper.get_entry_ref_filter();
         v.logEnumStoreEvent("compactfixup", "start");
         for (uint32_t doc = 0; doc < v.getNumDocs(); ++doc) {
-            vespalib::ConstArrayRef<WeightedIndex> indicesRef(multi_value_mapping.get(doc));
-            WeightedIndexVector indices(indicesRef.cbegin(), indicesRef.cend());
-            for (uint32_t i = 0; i < indices.size(); ++i) {
-                EnumIndex ref = indices[i].value();
+            vespalib::ArrayRef<WeightedIndex> indices(multi_value_mapping.get_writable(doc));
+            for (auto& entry : indices) {
+                EnumIndex ref = entry.value_ref().load_relaxed();
                 if (ref.valid() && filter.has(ref)) {
                     ref = remapper.remap(ref);
+                    entry.value_ref().store_release(ref);
                 }
-                indices[i] = WeightedIndex(ref, indices[i].weight());
             }
-            std::atomic_thread_fence(std::memory_order_release);
-            multi_value_mapping.replace(doc, indices);
         }
     }
     v.logEnumStoreEvent("compactfixup", "complete");

@@ -95,7 +95,7 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues& docV
         }
         MultiValueArrayRef old_values(_mvMapping.get(doc));
         ValueVector new_values(old_values.cbegin(), old_values.cend());
-        vespalib::hash_map<ValueType, size_t, typename HashFn<ValueType>::type> tombstones;
+        vespalib::hash_map<NonAtomicValueType, size_t, typename HashFn<NonAtomicValueType>::type> tombstones;
 
         // iterate through all changes for this document
         for (; (current != end) && (current->_doc == doc); ++current) {
@@ -104,13 +104,17 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues& docV
                 tombstones.clear();
                 continue;
             }
-            ValueType data;
+            NonAtomicValueType data;
             bool hasData = extractChangeData(*current, data);
             if (!hasData) {
                 continue;
             }
             if (current->_type == ChangeBase::APPEND) {
-                new_values.emplace_back(data, current->_weight);
+                if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
+                    new_values.emplace_back(data, current->_weight);
+                } else {
+                    new_values.emplace_back(ValueType(data), current->_weight);
+                }
             } else if (current->_type == ChangeBase::REMOVE) {
                 // Defer all removals to the very end by tracking when, during value vector build time,
                 // a removal was encountered for a particular value. All values < this index will be ignored.
@@ -121,10 +125,19 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues& docV
         if (!tombstones.empty()) {
             ValueVector culled;
             culled.reserve(new_values.size());
-            for (size_t i = 0; i < new_values.size(); ++i) {
-                auto iter = tombstones.find(new_values[i].value());
-                if (iter == tombstones.end() || (iter->second <= i)) {
-                    culled.emplace_back(new_values[i]);
+            if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
+                for (size_t i = 0; i < new_values.size(); ++i) {
+                    auto iter = tombstones.find(new_values[i].value());
+                    if (iter == tombstones.end() || (iter->second <= i)) {
+                        culled.emplace_back(new_values[i]);
+                    }
+                }
+            } else {
+                for (size_t i = 0; i < new_values.size(); ++i) {
+                    auto iter = tombstones.find(new_values[i].value_ref().load_relaxed());
+                    if (iter == tombstones.end() || (iter->second <= i)) {
+                        culled.emplace_back(new_values[i]);
+                    }
                 }
             }
             culled.swap(new_values);
@@ -156,10 +169,14 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_wset(DocumentValues& docVa
             current = last_clear_doc;
         }
         MultiValueArrayRef old_values(_mvMapping.get(doc));
-        vespalib::hash_map<ValueType, int32_t, typename HashFn<ValueType>::type> wset_inserted;
+        vespalib::hash_map<NonAtomicValueType, int32_t, typename HashFn<NonAtomicValueType>::type> wset_inserted;
         wset_inserted.resize((old_values.size() + max_elems_inserted) * 2);
         for (const auto& e : old_values) {
-            wset_inserted[e.value()] = e.weight();
+            if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
+                wset_inserted[e.value()] = e.weight();
+            } else {
+                wset_inserted[e.value_ref().load_relaxed()] = e.weight();
+            }
         }
         // iterate through all changes for this document
         for (; (current != end) && (current->_doc == doc); ++current) {
@@ -167,7 +184,7 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_wset(DocumentValues& docVa
                 wset_inserted.clear();
                 continue;
             }
-            ValueType data;
+            NonAtomicValueType data;
             bool hasData = extractChangeData(*current, data);
             if (!hasData) {
                 continue;
@@ -193,7 +210,11 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_wset(DocumentValues& docVa
         }
         std::vector<MultiValueType> new_values;
         new_values.reserve(wset_inserted.size());
-        wset_inserted.for_each([&new_values](const auto& e){ new_values.emplace_back(e.first, e.second); });
+        if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
+            wset_inserted.for_each([&new_values](const auto& e){ new_values.emplace_back(e.first, e.second); });
+        } else {
+            wset_inserted.for_each([&new_values](const auto& e){ new_values.emplace_back(ValueType(e.first), e.second); });
+        }
 
         this->checkSetMaxValueCount(new_values.size());
         docValues.emplace_back(doc, std::move(new_values));
