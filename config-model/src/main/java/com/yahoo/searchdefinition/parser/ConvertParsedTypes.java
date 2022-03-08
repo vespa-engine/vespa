@@ -140,6 +140,7 @@ public class ConvertParsedTypes {
             fieldSets.put("[document]", inDocFields);
             for (var extraField : schema.getFields()) {
                 String name = extraField.name();
+                if (docToFill.hasField(name)) continue;
                 var t = resolveFromContext(extraField.getType(), doc);
                 var f = new com.yahoo.document.Field(name, t);
                 docToFill.addField(f);
