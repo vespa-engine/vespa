@@ -4121,6 +4121,19 @@
     ],
     "fields": []
   },
+  "com.yahoo.search.grouping.result.FlatteningSearcher": {
+    "superClass": "com.yahoo.search.Searcher",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)",
+      "public void flatten(com.yahoo.search.result.HitGroup, com.yahoo.search.Result)"
+    ],
+    "fields": []
+  },
   "com.yahoo.search.grouping.result.Group": {
     "superClass": "com.yahoo.search.result.HitGroup",
     "interfaces": [],
