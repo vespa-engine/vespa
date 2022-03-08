@@ -1,0 +1,71 @@
+<deployment>
+    <instance id='alpha'>
+        <upgrade rollout="simultaneous" revision-change="when-failing" revision-target="next" />
+        <test />
+        <staging />
+    </instance>
+    <instance id='beta'>
+        <upgrade rollout="simultaneous" revision-change="when-clear" revision-target="latest" />
+        <prod>
+            <region>us-east-3</region>
+            <test>us-east-3</test>
+        </prod>
+    </instance>
+    <instance id='prod5'>
+        <upgrade rollout="simultaneous" revision-change="when-clear" revision-target="next" />
+        <prod>
+            <parallel>
+                <steps>
+                    <region>us-east-3</region>
+                    <test>us-east-3</test>
+                </steps>
+                <steps>
+                    <region>us-central-1</region>
+                    <test>us-central-1</test>
+                </steps>
+                <steps>
+                <region>us-west-1</region>
+                    <test>us-west-1</test>
+                </steps>
+            </parallel>
+        </prod>
+    </instance>
+    <instance id='prod25'>
+        <upgrade rollout="simultaneous" revision-change="when-failing" revision-target="next" />
+        <prod>
+            <parallel>
+                <steps>
+                    <region>us-east-3</region>
+                    <test>us-east-3</test>
+                </steps>
+                <steps>
+                    <region>us-central-1</region>
+                    <test>us-central-1</test>
+                </steps>
+                <steps>
+                    <region>us-west-1</region>
+                    <test>us-west-1</test>
+                </steps>
+            </parallel>
+        </prod>
+    </instance>
+    <instance id='prod100'>
+        <upgrade rollout="simultaneous" revision-change="when-clear" revision-target="next" />
+        <prod>
+            <parallel>
+                <steps>
+                    <region>us-east-3</region>
+                    <test>us-east-3</test>
+                </steps>
+                <steps>
+                    <region>us-central-1</region>
+                    <test>us-central-1</test>
+                </steps>
+                <steps>
+                    <region>us-west-1</region>
+                    <test>us-west-1</test>
+                </steps>
+            </parallel>
+        </prod>
+    </instance>
+</deployment>

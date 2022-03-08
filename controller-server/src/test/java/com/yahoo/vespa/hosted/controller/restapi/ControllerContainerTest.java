@@ -35,9 +35,11 @@ public class ControllerContainerTest {
 
     @Before
     public void startContainer() {
-        container = JDisc.fromServicesXml(controllerServicesXml(), Networking.disable);
+        container = JDisc.fromServicesXml(controllerServicesXml(), networking());
         addUserToHostedOperatorRole(hostedOperator);
     }
+
+    protected Networking networking() { return Networking.disable; }
 
     @After
     public void stopContainer() { container.close(); }
