@@ -62,8 +62,10 @@ public final class DocumentProcessing {
     @SuppressWarnings("removal") // TODO Vespa 8: remove
     public DocumentProcessor.Progress process(ComponentSpecification chain, com.yahoo.docproc.Processing processing) {
         DocprocExecutor executor = getExecutor(chain);
-        // TODO Vespa 8: Use TBD instead, this method will be removed
+
+        // TODO Vespa 8: Remove statement (registry will be removed from Processing)
         processing.setDocprocServiceRegistry(handler.getDocprocServiceRegistry());
+
         return executor.processUntilDone(processing);
     }
 
@@ -83,8 +85,10 @@ public final class DocumentProcessing {
     @SuppressWarnings("removal") // TODO Vespa 8: remove
     public DocumentProcessor.Progress processOnce(ComponentSpecification chain, com.yahoo.docproc.Processing processing) {
         DocprocExecutor executor = getExecutor(chain);
-        // TODO Vespa 8: Use TBD instead, this method will be removed
+
+        // TODO Vespa 8: Remove statement (registry will be removed from Processing)
         processing.setDocprocServiceRegistry(handler.getDocprocServiceRegistry());
+
         return executor.process(processing);
     }
 

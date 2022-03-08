@@ -105,8 +105,10 @@ class ProcessingFactory {
         Processing processing = new Processing();
         processing.addDocumentOperation(documentOperation);
         processing.setServiceName(serviceName);
-        // TODO Vespa 8: Use TBD instead, this method will be removed
+
+        // TODO Vespa 8: Remove statement (registry will be removed from Processing)
         processing.setDocprocServiceRegistry(docprocServiceComponentRegistry);
+
         processing.setVariable("route", message.getRoute());
         processing.setVariable("timeout", message.getTimeRemaining());
         return processing;
