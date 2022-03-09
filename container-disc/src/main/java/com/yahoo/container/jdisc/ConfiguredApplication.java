@@ -439,6 +439,7 @@ public final class ConfiguredApplication implements Application {
         long start = System.currentTimeMillis();
         shutdownReconfiguration = true;
         configurer.shutdownConfigRetriever();
+        reconfigurerThread.interrupt();
         try {
             reconfigurerThread.join();
             log.info(String.format(
