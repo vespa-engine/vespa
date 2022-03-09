@@ -35,7 +35,7 @@ public:
     ConstArrayRef getDataForIdx(EntryRef idx) const { return _store.get(idx); }
     void set(uint32_t docId, ConstArrayRef values);
 
-    // replace is generally unsafe and should only be used when
+    // get_writable is generally unsafe and should only be used when
     // compacting enum store (replacing old enum index with updated enum index)
     ArrayRef get_writable(uint32_t docId) { return _store.get_writable(_indices[docId]); }
 
