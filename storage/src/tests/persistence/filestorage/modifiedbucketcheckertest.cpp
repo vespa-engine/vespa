@@ -69,7 +69,7 @@ ModifiedBucketCheckerTest::modifyBuckets(uint32_t count, uint32_t firstBucket)
     for (uint32_t i = firstBucket; i < firstBucket + count; ++i) {
         buckets.push_back(document::BucketId(16, i));
     }
-    getDummyPersistence().setModifiedBuckets(buckets);
+    getDummyPersistence().setModifiedBuckets(std::move(buckets));
 }
 
 void

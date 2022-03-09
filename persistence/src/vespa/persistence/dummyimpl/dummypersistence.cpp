@@ -318,14 +318,14 @@ DummyPersistence::listBuckets(BucketSpace bucketSpace) const
             list.push_back(entry.first);
         }
     }
-    return BucketIdListResult(list);
+    return BucketIdListResult(std::move(list));
 }
 
 void
-DummyPersistence::setModifiedBuckets(const BucketIdListResult::List& buckets)
+DummyPersistence::setModifiedBuckets(BucketIdListResult::List buckets)
 {
     std::lock_guard lock(_monitor);
-    _modifiedBuckets = buckets;
+    _modifiedBuckets = std::move(buckets);
 }
 
 void DummyPersistence::set_fake_bucket_set(const std::vector<std::pair<Bucket, BucketInfo>>& fake_info) {
@@ -348,10 +348,10 @@ DummyPersistence::getModifiedBuckets(BucketSpace bucketSpace) const
 {
     std::lock_guard lock(_monitor);
     if (bucketSpace == FixedBucketSpaces::default_space()) {
-        return BucketIdListResult(_modifiedBuckets);
+        return BucketIdListResult(std::move(_modifiedBuckets));
     } else {
         BucketIdListResult::List emptyList;
-        return BucketIdListResult(emptyList);
+        return BucketIdListResult(BucketIdListResult::List());
     }
 }
 

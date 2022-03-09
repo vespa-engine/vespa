@@ -63,8 +63,8 @@ public:
     void setBucketState(const BucketId &bucketId, bool active);
     void createBucket(const BucketId &bucketId);
     void deleteEmptyBucket(const BucketId &bucketId);
-    void getActiveBuckets(BucketId::List &buckets) const;
-    void populateActiveBuckets(const BucketId::List &buckets, BucketId::List &fixupBuckets);
+    BucketId::List getActiveBuckets() const;
+    BucketId::List populateActiveBuckets(BucketId::List buckets);
 
     ConstMapIterator begin() const { return _map.begin(); }
     ConstMapIterator end() const { return _map.end(); }

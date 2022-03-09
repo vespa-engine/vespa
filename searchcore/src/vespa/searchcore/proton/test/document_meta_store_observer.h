@@ -115,8 +115,8 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     void setBucketState(const BucketId &bucketId, bool active) override {
         _store.setBucketState(bucketId, active);
     }
-    void populateActiveBuckets(const document::BucketId::List &buckets) override {
-        _store.populateActiveBuckets(buckets);
+    void populateActiveBuckets(document::BucketId::List buckets) override {
+        _store.populateActiveBuckets(std::move(buckets));
     }
 
 

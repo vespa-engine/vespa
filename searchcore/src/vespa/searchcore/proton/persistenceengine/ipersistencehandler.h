@@ -70,7 +70,7 @@ public:
 
     virtual void handleListActiveBuckets(IBucketIdListResultHandler &resultHandler) = 0;
 
-    virtual void handlePopulateActiveBuckets(document::BucketId::List &buckets, IGenericResultHandler &resultHandler) = 0;
+    virtual void handlePopulateActiveBuckets(document::BucketId::List buckets, IGenericResultHandler &resultHandler) = 0;
 };
 
 } // namespace proton

@@ -11,6 +11,7 @@ vespa_add_library(searchcore_test STATIC
     mock_index_manager.cpp
     mock_shared_threading_service.cpp
     userdocumentsbuilder.cpp
+    resulthandler.cpp
     threading_service_observer.cpp
     transport_helper.cpp
     DEPENDS

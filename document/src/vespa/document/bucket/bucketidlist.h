@@ -3,17 +3,18 @@
 #pragma once
 
 #include "bucketid.h"
-#include <vespa/vespalib/util/array.h>
+#include <vespa/vespalib/stllike/allocator.h>
+#include <vector>
 
 namespace document::bucket {
 
-using BucketIdListT = vespalib::Array<BucketId>;
+using BucketIdListT = std::vector<BucketId, vespalib::allocator_large<BucketId>>;
 
 class BucketIdList : public BucketIdListT {
 public:
-    BucketIdList();
-    BucketIdList(BucketIdList && rhs) = default;
-    BucketIdList & operator = (BucketIdList &&) = default;
+    using BucketIdListT::BucketIdListT;
+    BucketIdList(BucketIdList && rhs) noexcept = default;
+    BucketIdList & operator = (BucketIdList &&) noexcept = default;
     BucketIdList(const BucketIdList & rhs);
     BucketIdList & operator = (const BucketIdList &);
     ~BucketIdList();

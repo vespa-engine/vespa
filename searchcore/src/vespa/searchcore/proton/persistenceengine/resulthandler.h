@@ -9,12 +9,12 @@ template <typename ResultType>
 class IResultHandler {
 public:
     virtual ~IResultHandler() = default;
-    virtual void handle(const ResultType &result) = 0;
+    virtual void handle(ResultType result) = 0;
 };
 
 using IBucketIdListResultHandler = IResultHandler<storage::spi::BucketIdListResult>;
-using IBucketInfoResultHandler = IResultHandler<storage::spi::BucketInfoResult>;
-using IGenericResultHandler = IResultHandler<storage::spi::Result>;
+using IBucketInfoResultHandler = IResultHandler<const storage::spi::BucketInfoResult &>;
+using IGenericResultHandler = IResultHandler<const storage::spi::Result &>;
 
 } // namespace proton
 
