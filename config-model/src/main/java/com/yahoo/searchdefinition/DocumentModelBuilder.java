@@ -32,9 +32,9 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -348,8 +348,8 @@ public class DocumentModelBuilder {
 
     static class TypeExtractor {
         private final NewDocumentType targetDt;
-        Map<AnnotationType, String> annotationInheritance = new HashMap<>();
-        Map<StructDataType, String> structInheritance = new HashMap<>();
+        Map<AnnotationType, String> annotationInheritance = new LinkedHashMap<>();
+        Map<StructDataType, String> structInheritance = new LinkedHashMap<>();
         private final Map<Object, Object> inProgress = new IdentityHashMap<>();
         TypeExtractor(NewDocumentType target) {
             this.targetDt = target;
