@@ -31,13 +31,13 @@ public:
                       const vespalib::GrowStrategy &gs,
                       std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator);
     ~MultiValueMapping() override;
-    ConstArrayRef get(uint32_t docId) const { return _store.get(_indices[docId]); }
+    ConstArrayRef get(uint32_t docId) const { return _store.get(_indices[docId].load_acquire()); }
     ConstArrayRef getDataForIdx(EntryRef idx) const { return _store.get(idx); }
     void set(uint32_t docId, ConstArrayRef values);
 
     // get_writable is generally unsafe and should only be used when
     // compacting enum store (replacing old enum index with updated enum index)
-    ArrayRef get_writable(uint32_t docId) { return _store.get_writable(_indices[docId]); }
+    ArrayRef get_writable(uint32_t docId) { return _store.get_writable(_indices[docId].load_relaxed()); }
 
     // Pass on hold list management to underlying store
     void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }
