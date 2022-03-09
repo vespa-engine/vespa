@@ -105,7 +105,7 @@ public:
     hash_node() noexcept
         : _next(invalid)
     {}
-    hash_node(const V & node, next_t next=npos) noexcept
+    hash_node(const V & node, next_t next=npos) noexcept(std::is_nothrow_copy_constructible_v<V>)
         : _next(next)
     {
         new (_node) V(node);
@@ -132,14 +132,14 @@ public:
         }
         return *this;
     }
-    hash_node(const hash_node & rhs) noexcept
+    hash_node(const hash_node & rhs) noexcept(std::is_nothrow_copy_constructible_v<V>)
         : _next(rhs._next)
     {
         if (rhs.valid()) {
             new (_node) V(rhs.getValue());
         }
     }
-    hash_node &operator=(const hash_node & rhs) noexcept {
+    hash_node &operator=(const hash_node & rhs) noexcept (std::is_nothrow_copy_constructible_v<V>) {
         destruct();
         if (rhs.valid()) {
             new (_node) V(rhs.getValue());
