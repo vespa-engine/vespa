@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch.searchcluster;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.math.Quantiles;
 import com.yahoo.container.handler.VipStatus;
@@ -68,7 +67,7 @@ public class SearchCluster implements NodeManager<Node> {
         this.groups = groupsBuilder.build();
         LinkedHashMap<Integer, Group> groupIntroductionOrder = new LinkedHashMap<>();
         nodes.forEach(node -> groupIntroductionOrder.put(node.group(), groups.get(node.group())));
-        this.orderedGroups = ImmutableList.<Group>builder().addAll(groupIntroductionOrder.values()).build();
+        this.orderedGroups = List.copyOf(groupIntroductionOrder.values());
 
         hitEstimator = new TopKEstimator(30.0, dispatchConfig.topKProbability(), SKEW_FACTOR);
         this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(), nodes, groups);
@@ -106,11 +105,10 @@ public class SearchCluster implements NodeManager<Node> {
         return Optional.of(localSearchNode);
     }
 
-    private static ImmutableList<Node> toNodes(DispatchConfig dispatchConfig) {
-        ImmutableList.Builder<Node> nodesBuilder = new ImmutableList.Builder<>();
-        for (DispatchConfig.Node node : dispatchConfig.node())
-            nodesBuilder.add(new Node(node.key(), node.host(), node.group()));
-        return nodesBuilder.build();
+    private static List<Node> toNodes(DispatchConfig dispatchConfig) {
+        return dispatchConfig.node().stream()
+                             .map(n -> new Node(n.key(), n.host(), n.group()))
+                             .collect(Collectors.toUnmodifiableList());
     }
 
     public DispatchConfig dispatchConfig() {
