@@ -85,6 +85,7 @@ public class LoadBalancer {
     }
 
     static class GroupStatus {
+
         private final Group group;
         private int allocations = 0;
         private long queries = 0;
@@ -233,11 +234,8 @@ public class LoadBalancer {
         public Optional<GroupStatus> takeNextGroup(Set<Integer> rejectedGroups) {
             double needle = random.nextDouble();
             Optional<GroupStatus> gs = selectGroup(needle, true, rejectedGroups);
-            if (gs.isPresent()) {
-                return gs;
-            }
-            // fallback - any coverage better than none
-            return selectGroup(needle, false, rejectedGroups);
+            if (gs.isPresent()) return gs;
+            return selectGroup(needle, false, rejectedGroups); // any coverage better than none
         }
     }
 
