@@ -50,7 +50,7 @@ private:
     bool _closeCalledFlag;
 
     // Always lock in this order
-    std::mutex _freeMutex;
+    mutable std::mutex _freeMutex;
     std::mutex _liveMutex;
     std::condition_variable _liveCond;
     /**
@@ -191,7 +191,10 @@ public:
      * @ref GetNumActiveThreads() and @ref GetNumInactiveThreads().
      * @return   Number of currently active threads
      */
-    int GetNumActiveThreads () const { return _numActive; }
+    int GetNumActiveThreads () const {
+        std::lock_guard<std::mutex> guard(_freeMutex);
+        return _numActive;
+    }
 
     /**
      * Get the number of currently inactive threads.
@@ -199,7 +202,10 @@ public:
      * @ref GetNumActiveThreads() and @ref GetNumInactiveThreads().
      * @return   Number of currently inactive threads
      */
-    int GetNumInactiveThreads () const { return _numFree; }
+    int GetNumInactiveThreads () const {
+        std::lock_guard<std::mutex> guard(_freeMutex);
+        return _numFree;
+    }
 
     /**
      * Get the number of started threads since instantiation of the thread pool.

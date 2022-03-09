@@ -28,7 +28,7 @@ public:
    std::mutex *mutex;
    std::condition_variable *condition;
    FastOS_ThreadInterface *otherThread, *ownThread;
-   int result;
+   std::atomic<int> result;
    FastOS_ThreadId _threadId;
 
    Job()
