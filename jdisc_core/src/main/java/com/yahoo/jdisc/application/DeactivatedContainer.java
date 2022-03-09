@@ -29,7 +29,7 @@ public interface DeactivatedContainer {
      * DeactivatedContainer is considered to have terminated once there are no more {@link Request}s, {@link Response}s
      * or corresponding {@link ContentChannel}s being processed by components that belong to it.</p>
      *
-     * <p>If termination has already occured, this method immediately runs the given Runnable in the current thread.</p>
+     * <p>If termination has already occurred, this method immediately runs the given Runnable in the current thread.</p>
      *
      * @param task The task to run once this DeactivatedContainer has terminated.
      */
