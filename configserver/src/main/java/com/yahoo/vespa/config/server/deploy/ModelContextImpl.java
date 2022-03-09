@@ -212,54 +212,54 @@ public class ModelContextImpl implements ModelContext {
         private final boolean mergeGroupingResultInSearchInvoker;
         private final boolean experimentalSdParsing;
 
-        public FeatureFlags(FlagSource source, ApplicationId appId) {
-            this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
-            this.useThreePhaseUpdates = flagValue(source, appId, Flags.USE_THREE_PHASE_UPDATES);
-            this.feedSequencer = flagValue(source, appId, Flags.FEED_SEQUENCER_TYPE);
-            this.feedTaskLimit = flagValue(source, appId, Flags.FEED_TASK_LIMIT);
-            this.feedMasterTaskLimit = flagValue(source, appId, Flags.FEED_MASTER_TASK_LIMIT);
-            this.sharedFieldWriterExecutor = flagValue(source, appId, Flags.SHARED_FIELD_WRITER_EXECUTOR);
-            this.responseSequencer = flagValue(source, appId, Flags.RESPONSE_SEQUENCER_TYPE);
-            this.numResponseThreads = flagValue(source, appId, Flags.RESPONSE_NUM_THREADS);
-            this.skipCommunicationManagerThread = flagValue(source, appId, Flags.SKIP_COMMUNICATIONMANAGER_THREAD);
-            this.skipMbusRequestThread = flagValue(source, appId, Flags.SKIP_MBUS_REQUEST_THREAD);
-            this.skipMbusReplyThread = flagValue(source, appId, Flags.SKIP_MBUS_REPLY_THREAD);
-            this.useAsyncMessageHandlingOnSchedule = flagValue(source, appId, Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE);
-            this.feedConcurrency = flagValue(source, appId, Flags.FEED_CONCURRENCY);
-            this.allowedAthenzProxyIdentities = flagValue(source, appId, Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES);
-            this.maxActivationInhibitedOutOfSyncGroups = flagValue(source, appId, Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS);
-            this.jvmOmitStackTraceInFastThrow = type -> flagValueAsInt(source, appId, type, PermanentFlags.JVM_OMIT_STACK_TRACE_IN_FAST_THROW);
-            this.maxConcurrentMergesPerContentNode = flagValue(source, appId, Flags.MAX_CONCURRENT_MERGES_PER_NODE);
-            this.maxMergeQueueSize = flagValue(source, appId, Flags.MAX_MERGE_QUEUE_SIZE);
-            this.resourceLimitDisk = flagValue(source, appId, PermanentFlags.RESOURCE_LIMIT_DISK);
-            this.resourceLimitMemory = flagValue(source, appId, PermanentFlags.RESOURCE_LIMIT_MEMORY);
-            this.minNodeRatioPerGroup = flagValue(source, appId, Flags.MIN_NODE_RATIO_PER_GROUP);
-            this.metricsproxyNumThreads = flagValue(source, appId, Flags.METRICSPROXY_NUM_THREADS);
-            this.availableProcessors = flagValue(source, appId, Flags.AVAILABLE_PROCESSORS);
-            this.containerDumpHeapOnShutdownTimeout = flagValue(source, appId, Flags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT);
-            this.containerShutdownTimeout = flagValue(source, appId,Flags.CONTAINER_SHUTDOWN_TIMEOUT);
-            this.maxUnCommittedMemory = flagValue(source, appId, Flags.MAX_UNCOMMITTED_MEMORY);
-            this.forwardIssuesAsErrors = flagValue(source, appId, PermanentFlags.FORWARD_ISSUES_AS_ERRORS);
-            this.ignoreThreadStackSizes = flagValue(source, appId, Flags.IGNORE_THREAD_STACK_SIZES);
-            this.unorderedMergeChaining = flagValue(source, appId, Flags.UNORDERED_MERGE_CHAINING);
-            this.useV8GeoPositions = flagValue(source, appId, Flags.USE_V8_GEO_POSITIONS);
-            this.useV8DocManagerCfg = flagValue(source, appId, Flags.USE_V8_DOC_MANAGER_CFG);
-            this.maxCompactBuffers = flagValue(source, appId, Flags.MAX_COMPACT_BUFFERS);
-            this.failDeploymentWithInvalidJvmOptions = flagValue(source, appId, Flags.FAIL_DEPLOYMENT_WITH_INVALID_JVM_OPTIONS);
-            this.ignoredHttpUserAgents = flagValue(source, appId, PermanentFlags.IGNORED_HTTP_USER_AGENTS);
-            this.enableServerOcspStapling = flagValue(source, appId, Flags.ENABLE_SERVER_OCSP_STAPLING);
-            this.persistenceAsyncThrottling = flagValue(source, appId, Flags.PERSISTENCE_ASYNC_THROTTLING);
-            this.mergeThrottlingPolicy = flagValue(source, appId, Flags.MERGE_THROTTLING_POLICY);
-            this.persistenceThrottlingWsDecrementFactor = flagValue(source, appId, Flags.PERSISTENCE_THROTTLING_WS_DECREMENT_FACTOR);
-            this.persistenceThrottlingWsBackoff = flagValue(source, appId, Flags.PERSISTENCE_THROTTLING_WS_BACKOFF);
-            this.persistenceThrottlingWindowSize = flagValue(source, appId, Flags.PERSISTENCE_THROTTLING_WINDOW_SIZE);
-            this.persistenceThrottlingWsResizeRate = flagValue(source, appId, Flags.PERSISTENCE_THROTTLING_WS_RESIZE_RATE);
-            this.persistenceThrottlingOfMergeFeedOps = flagValue(source, appId, Flags.PERSISTENCE_THROTTLING_OF_MERGE_FEED_OPS);
-            this.inhibitDefaultMergesWhenGlobalMergesPending = flagValue(source, appId, Flags.INHIBIT_DEFAULT_MERGES_WHEN_GLOBAL_MERGES_PENDING);
-            this.useQrserverServiceName = flagValue(source, appId, Flags.USE_QRSERVER_SERVICE_NAME);
-            this.avoidRenamingSummaryFeatures = flagValue(source, appId, Flags.AVOID_RENAMING_SUMMARY_FEATURES);
-            this.mergeGroupingResultInSearchInvoker = flagValue(source, appId, Flags.MERGE_GROUPING_RESULT_IN_SEARCH_INVOKER);
-            this.experimentalSdParsing = flagValue(source, appId, Flags.EXPERIMENTAL_SD_PARSING);
+        public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
+            this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
+            this.useThreePhaseUpdates = flagValue(source, appId, version, Flags.USE_THREE_PHASE_UPDATES);
+            this.feedSequencer = flagValue(source, appId, version, Flags.FEED_SEQUENCER_TYPE);
+            this.feedTaskLimit = flagValue(source, appId, version, Flags.FEED_TASK_LIMIT);
+            this.feedMasterTaskLimit = flagValue(source, appId, version, Flags.FEED_MASTER_TASK_LIMIT);
+            this.sharedFieldWriterExecutor = flagValue(source, appId, version, Flags.SHARED_FIELD_WRITER_EXECUTOR);
+            this.responseSequencer = flagValue(source, appId, version, Flags.RESPONSE_SEQUENCER_TYPE);
+            this.numResponseThreads = flagValue(source, appId, version, Flags.RESPONSE_NUM_THREADS);
+            this.skipCommunicationManagerThread = flagValue(source, appId, version, Flags.SKIP_COMMUNICATIONMANAGER_THREAD);
+            this.skipMbusRequestThread = flagValue(source, appId, version, Flags.SKIP_MBUS_REQUEST_THREAD);
+            this.skipMbusReplyThread = flagValue(source, appId, version, Flags.SKIP_MBUS_REPLY_THREAD);
+            this.useAsyncMessageHandlingOnSchedule = flagValue(source, appId, version, Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE);
+            this.feedConcurrency = flagValue(source, appId, version, Flags.FEED_CONCURRENCY);
+            this.allowedAthenzProxyIdentities = flagValue(source, appId, version, Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES);
+            this.maxActivationInhibitedOutOfSyncGroups = flagValue(source, appId, version, Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS);
+            this.jvmOmitStackTraceInFastThrow = type -> flagValueAsInt(source, appId, version, type, PermanentFlags.JVM_OMIT_STACK_TRACE_IN_FAST_THROW);
+            this.maxConcurrentMergesPerContentNode = flagValue(source, appId, version, Flags.MAX_CONCURRENT_MERGES_PER_NODE);
+            this.maxMergeQueueSize = flagValue(source, appId, version, Flags.MAX_MERGE_QUEUE_SIZE);
+            this.resourceLimitDisk = flagValue(source, appId, version, PermanentFlags.RESOURCE_LIMIT_DISK);
+            this.resourceLimitMemory = flagValue(source, appId, version, PermanentFlags.RESOURCE_LIMIT_MEMORY);
+            this.minNodeRatioPerGroup = flagValue(source, appId, version, Flags.MIN_NODE_RATIO_PER_GROUP);
+            this.metricsproxyNumThreads = flagValue(source, appId, version, Flags.METRICSPROXY_NUM_THREADS);
+            this.availableProcessors = flagValue(source, appId, version, Flags.AVAILABLE_PROCESSORS);
+            this.containerDumpHeapOnShutdownTimeout = flagValue(source, appId, version, Flags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT);
+            this.containerShutdownTimeout = flagValue(source, appId, version, Flags.CONTAINER_SHUTDOWN_TIMEOUT);
+            this.maxUnCommittedMemory = flagValue(source, appId, version, Flags.MAX_UNCOMMITTED_MEMORY);
+            this.forwardIssuesAsErrors = flagValue(source, appId, version, PermanentFlags.FORWARD_ISSUES_AS_ERRORS);
+            this.ignoreThreadStackSizes = flagValue(source, appId, version, Flags.IGNORE_THREAD_STACK_SIZES);
+            this.unorderedMergeChaining = flagValue(source, appId, version, Flags.UNORDERED_MERGE_CHAINING);
+            this.useV8GeoPositions = flagValue(source, appId, version, Flags.USE_V8_GEO_POSITIONS);
+            this.useV8DocManagerCfg = flagValue(source, appId, version, Flags.USE_V8_DOC_MANAGER_CFG);
+            this.maxCompactBuffers = flagValue(source, appId, version, Flags.MAX_COMPACT_BUFFERS);
+            this.failDeploymentWithInvalidJvmOptions = flagValue(source, appId, version, Flags.FAIL_DEPLOYMENT_WITH_INVALID_JVM_OPTIONS);
+            this.ignoredHttpUserAgents = flagValue(source, appId, version, PermanentFlags.IGNORED_HTTP_USER_AGENTS);
+            this.enableServerOcspStapling = flagValue(source, appId, version, Flags.ENABLE_SERVER_OCSP_STAPLING);
+            this.persistenceAsyncThrottling = flagValue(source, appId, version, Flags.PERSISTENCE_ASYNC_THROTTLING);
+            this.mergeThrottlingPolicy = flagValue(source, appId, version, Flags.MERGE_THROTTLING_POLICY);
+            this.persistenceThrottlingWsDecrementFactor = flagValue(source, appId, version, Flags.PERSISTENCE_THROTTLING_WS_DECREMENT_FACTOR);
+            this.persistenceThrottlingWsBackoff = flagValue(source, appId, version, Flags.PERSISTENCE_THROTTLING_WS_BACKOFF);
+            this.persistenceThrottlingWindowSize = flagValue(source, appId, version, Flags.PERSISTENCE_THROTTLING_WINDOW_SIZE);
+            this.persistenceThrottlingWsResizeRate = flagValue(source, appId, version, Flags.PERSISTENCE_THROTTLING_WS_RESIZE_RATE);
+            this.persistenceThrottlingOfMergeFeedOps = flagValue(source, appId, version, Flags.PERSISTENCE_THROTTLING_OF_MERGE_FEED_OPS);
+            this.inhibitDefaultMergesWhenGlobalMergesPending = flagValue(source, appId, version, Flags.INHIBIT_DEFAULT_MERGES_WHEN_GLOBAL_MERGES_PENDING);
+            this.useQrserverServiceName = flagValue(source, appId, version, Flags.USE_QRSERVER_SERVICE_NAME);
+            this.avoidRenamingSummaryFeatures = flagValue(source, appId, version, Flags.AVOID_RENAMING_SUMMARY_FEATURES);
+            this.mergeGroupingResultInSearchInvoker = flagValue(source, appId, version, Flags.MERGE_GROUPING_RESULT_IN_SEARCH_INVOKER);
+            this.experimentalSdParsing = flagValue(source, appId, version, Flags.EXPERIMENTAL_SD_PARSING);
         }
 
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -312,33 +312,38 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean mergeGroupingResultInSearchInvoker() { return mergeGroupingResultInSearchInvoker; }
         @Override public boolean experimentalSdParsing() { return experimentalSdParsing; }
 
-        private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
+        private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
                     .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
+                    .with(FetchVector.Dimension.VESPA_VERSION, vespaVersion.toFullString())
                     .boxedValue();
         }
 
-        private static <V> V flagValue(FlagSource source, TenantName tenant, UnboundFlag<? extends V, ?, ?> flag) {
+        private static <V> V flagValue(FlagSource source, TenantName tenant, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
                     .with(FetchVector.Dimension.TENANT_ID, tenant.value())
+                    .with(FetchVector.Dimension.VESPA_VERSION, vespaVersion.toFullString())
                     .boxedValue();
         }
 
         private static <V> V flagValue(FlagSource source,
                                        ApplicationId appId,
+                                       Version vespaVersion,
                                        ClusterSpec.Type clusterType,
                                        UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
                        .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
                        .with(FetchVector.Dimension.CLUSTER_TYPE, clusterType.name())
+                       .with(FetchVector.Dimension.VESPA_VERSION, vespaVersion.toFullString())
                        .boxedValue();
         }
 
         static int flagValueAsInt(FlagSource source,
                                   ApplicationId appId,
+                                  Version version,
                                   ClusterSpec.Type clusterType,
                                   UnboundFlag<? extends Boolean, ?, ?> flag) {
-            return flagValue(source, appId, clusterType, flag) ? 1 : 0;
+            return flagValue(source, appId, version, clusterType, flag) ? 1 : 0;
         }
 
         private String translateJvmOmitStackTraceInFastThrowIntToString(ToIntFunction<ClusterSpec.Type> function,
@@ -375,6 +380,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<String> environmentVariables;
 
         public Properties(ApplicationId applicationId,
+                          Version nodeVespaVersion,
                           ConfigserverConfig configserverConfig,
                           Zone zone,
                           Set<ContainerEndpoint> endpoints,
@@ -387,7 +393,7 @@ public class ModelContextImpl implements ModelContext {
                           List<TenantSecretStore> tenantSecretStores,
                           SecretStore secretStore,
                           List<X509Certificate> operatorCertificates) {
-            this.featureFlags = new FeatureFlags(flagSource, applicationId);
+            this.featureFlags = new FeatureFlags(flagSource, applicationId, nodeVespaVersion);
             this.applicationId = applicationId;
             this.multitenant = configserverConfig.multitenant() || configserverConfig.hostedVespa() || Boolean.getBoolean("multitenant");
             this.configServerSpecs = fromConfig(configserverConfig);

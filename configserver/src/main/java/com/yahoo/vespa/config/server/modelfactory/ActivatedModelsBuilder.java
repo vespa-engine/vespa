@@ -102,7 +102,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     ) {
         log.log(Level.FINE, () -> String.format("Loading model version %s for session %s application %s",
                                                 modelFactory.version(), applicationGeneration, applicationId));
-        ModelContext.Properties modelContextProperties = createModelContextProperties(applicationId, applicationPackage);
+        ModelContext.Properties modelContextProperties = createModelContextProperties(applicationId, wantedNodeVespaVersion, applicationPackage);
         Provisioned provisioned = new Provisioned();
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
@@ -146,8 +146,9 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         return Optional.of(value);
     }
 
-    private ModelContext.Properties createModelContextProperties(ApplicationId applicationId, ApplicationPackage applicationPackage) {
+    private ModelContext.Properties createModelContextProperties(ApplicationId applicationId, Version wantedNodeVespaVersion, ApplicationPackage applicationPackage) {
         return new ModelContextImpl.Properties(applicationId,
+                                               wantedNodeVespaVersion,
                                                configserverConfig,
                                                zone(),
                                                ImmutableSet.copyOf(new ContainerEndpointsCache(TenantRepository.getTenantPath(tenant), curator).read(applicationId)),
