@@ -110,7 +110,7 @@ BuildRequires: vespa-gtest = 1.11.0
 BuildRequires: vespa-icu-devel >= 65.1.0-1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.7.1
-BuildRequires: vespa-openssl-devel >= 1.1.1l-1
+BuildRequires: vespa-openssl-devel >= 1.1.1n-1
 %define _use_vespa_openssl 1
 BuildRequires: vespa-protobuf-devel = 3.19.1
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
@@ -132,7 +132,7 @@ BuildRequires: (llvm-devel >= 12.0.0 and llvm-devel < 13)
 BuildRequires: (llvm-devel >= 12.0.1 and llvm-devel < 13)
 %endif
 BuildRequires: vespa-boost-devel >= 1.76.0-1
-BuildRequires: vespa-openssl-devel >= 1.1.1l-1
+BuildRequires: vespa-openssl-devel >= 1.1.1n-1
 %define _use_vespa_openssl 1
 BuildRequires: vespa-gtest = 1.11.0
 %define _use_vespa_gtest 1
@@ -378,7 +378,7 @@ Requires: vespa-xxhash = 0.8.0
 Requires: xxhash-libs >= 0.8.0
 %endif
 %if 0%{?el7} || 0%{?el8}
-Requires: vespa-openssl >= 1.1.1l-1
+Requires: vespa-openssl >= 1.1.1n-1
 %else
 Requires: openssl-libs
 %endif
@@ -415,7 +415,7 @@ Requires: vespa-protobuf = 3.19.1
 Requires: libicu
 %endif
 %if 0%{?el7} || 0%{?el8}
-Requires: vespa-openssl >= 1.1.1l-1
+Requires: vespa-openssl >= 1.1.1n-1
 %else
 Requires: openssl-libs
 %endif
