@@ -32,9 +32,9 @@ void
 MultiValueMapping<EntryT,RefT>::set(uint32_t docId, ConstArrayRef values)
 {
     _indices.ensure_size(docId + 1);
-    EntryRef oldRef(_indices[docId]);
+    EntryRef oldRef(_indices[docId].load_relaxed());
     ConstArrayRef oldValues = _store.get(oldRef);
-    _indices[docId] = _store.add(values);
+    _indices[docId].store_release(_store.add(values));
     updateValueCount(oldValues.size(), values.size());
     _store.remove(oldRef);
 }
@@ -45,7 +45,7 @@ MultiValueMapping<EntryT,RefT>::compactWorst(CompactionSpec compaction_spec, con
 {
     vespalib::datastore::ICompactionContext::UP compactionContext(_store.compactWorst(compaction_spec, compaction_strategy));
     if (compactionContext) {
-        compactionContext->compact(vespalib::ArrayRef<EntryRef>(&_indices[0], _indices.size()));
+        compactionContext->compact(vespalib::ArrayRef<AtomicEntryRef>(&_indices[0], _indices.size()));
     }
 }
 

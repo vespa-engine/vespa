@@ -128,21 +128,11 @@ public:
     ~CompactionContext() override {
         _dataStore.finishCompact(_bufferIdsToCompact);
     }
-    void compact(vespalib::ArrayRef<EntryRef> refs) override {
-        for (auto &ref : refs) {
-            if (ref.valid() && _filter.has(ref)) {
-                EntryRef newRef = _store.add(_store.get(ref));
-                std::atomic_thread_fence(std::memory_order_release);
-                ref = newRef;
-            }
-        }
-    }
     void compact(vespalib::ArrayRef<AtomicEntryRef> refs) override {
         for (auto &atomic_entry_ref : refs) {
             auto ref = atomic_entry_ref.load_relaxed();
             if (ref.valid() && _filter.has(ref)) {
                 EntryRef newRef = _store.add(_store.get(ref));
-                std::atomic_thread_fence(std::memory_order_release);
                 atomic_entry_ref.store_release(newRef);
             }
         }
