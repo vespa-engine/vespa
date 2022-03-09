@@ -529,7 +529,17 @@ public class DocumentModelBuilder {
             return null;
         }
 
+        @SuppressWarnings("deprecation")
         private StructDataType handleStruct(SDDocumentType type) {
+            if (type.isStruct()) {
+                var st = type.getStruct();
+                if (st.getName().equals(type.getName()) &&
+                    (st instanceof StructDataType) &&
+                    ! (st instanceof TemporaryStructuredDataType))
+                    {
+                        return handleStruct((StructDataType) st);
+                    }
+            }
             StructDataType s = new StructDataType(type.getName());
             for (Field f : type.getDocumentType().contentStruct().getFieldsThisTypeOnly()) {
                 specialHandleAnnotationReference(f);
