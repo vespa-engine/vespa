@@ -1,0 +1,34 @@
+
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+search test {
+  document test {
+
+    field mse4 type map<string,elem> {
+      indexing: summary
+      struct-field key {
+        indexing: index
+        match {
+          exact
+          exact-terminator: "@mse4_key@"
+        }
+      }
+      struct-field value.sf1s {
+        indexing: index
+        match {
+          exact
+          exact-terminator: "@mse4_value_sf1s@"
+        }
+      }
+      struct-field value.sf2i {
+        indexing: attribute
+      }
+    }
+
+    struct elem {
+      field sf1s type string {}
+      field sf2i type int {}
+    }
+
+  }
+}
