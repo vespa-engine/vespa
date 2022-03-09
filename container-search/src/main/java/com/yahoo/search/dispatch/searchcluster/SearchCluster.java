@@ -153,13 +153,7 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     public int groupsWithSufficientCoverage() {
-        int covered = 0;
-        for (Group g : orderedGroups()) {
-            if (g.hasSufficientCoverage()) {
-                covered++;
-            }
-        }
-        return covered;
+        return (int)groups.values().stream().filter(g -> g.hasSufficientCoverage()).count();
     }
 
     /**
