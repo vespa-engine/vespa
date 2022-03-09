@@ -703,7 +703,7 @@ public class DeploymentStatus {
             return    (   (change.platform().isEmpty() || change.platform().equals(instance.change().platform()))
                        && (change.application().isEmpty() || change.application().equals(instance.change().application()))
                    || step().steps().stream().noneMatch(step -> step.concerns(prod)))
-                      ? dependenciesCompletedAt(change, dependent)
+                      ? dependenciesCompletedAt(change, dependent).or(() -> Optional.of(Instant.EPOCH).filter(__ -> change.hasTargets()))
                       : Optional.empty();
         }
 
