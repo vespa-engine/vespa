@@ -18,6 +18,7 @@
 #include <vespa/searchcorespi/flush/flushstats.h>
 #include <vespa/searchlib/attribute/fixedsourceselector.h>
 #include <vespa/searchlib/common/serialnum.h>
+#include <atomic>
 
 namespace document { class Document; }
 
@@ -87,14 +88,14 @@ class IndexMaintainer : public IIndexManager,
     // _selector is protected by SL + IUL
     ISourceSelector::SP             _selector;
     ISearchableIndexCollection::SP  _source_list; // Protected by SL + NSL, only set by master thread
-    uint32_t             _last_fusion_id;   // Protected by SL + IUL
-    uint32_t             _next_id;          // Protected by SL + IUL
-    uint32_t             _current_index_id; // Protected by SL + IUL
-    IMemoryIndex::SP     _current_index;    // Protected by SL + IUL
-    bool                 _flush_empty_current_index;
-    SerialNum            _current_serial_num;// Protected by IUL
-    SerialNum            _flush_serial_num;  // Protected by SL
-    vespalib::system_time _lastFlushTime; // Protected by SL
+    uint32_t               _last_fusion_id;   // Protected by SL + IUL
+    uint32_t               _next_id;          // Protected by SL + IUL
+    uint32_t               _current_index_id; // Protected by SL + IUL
+    IMemoryIndex::SP       _current_index;    // Protected by SL + IUL
+    bool                   _flush_empty_current_index;
+    std::atomic<SerialNum> _current_serial_num;// Protected by IUL
+    SerialNum              _flush_serial_num;  // Protected by SL
+    vespalib::system_time  _lastFlushTime; // Protected by SL
     // Extra frozen memory indexes.  This list is empty unless new
     // memory index has been added by force (due to config change or
     // data structure limitations).
@@ -263,6 +264,12 @@ class IndexMaintainer : public IIndexManager,
     void commit_and_wait();
     void commit(vespalib::Gate& gate);
     void pruneRemovedFields(const Schema &schema, SerialNum serialNum);
+    [[nodiscard]] SerialNum current_serial_num() const noexcept {
+        return _current_serial_num.load(std::memory_order_relaxed);
+    }
+    void set_current_serial_num(SerialNum new_serial_num) noexcept {
+        _current_serial_num.store(new_serial_num, std::memory_order_relaxed);
+    }
 
 public:
     IndexMaintainer(const IndexMaintainer &) = delete;
@@ -270,7 +277,7 @@ public:
     IndexMaintainer(const IndexMaintainerConfig &config,
                     const IndexMaintainerContext &context,
                     IIndexMaintainerOperations &operations);
-    ~IndexMaintainer();
+    ~IndexMaintainer() override;
 
     /**
      * Starts a new MemoryIndex, and dumps the previous one to disk.
@@ -333,7 +340,7 @@ public:
     void compactLidSpace(uint32_t lidLimit, SerialNum serialNum) override;
 
     SerialNum getCurrentSerialNum() const override {
-        return _current_serial_num;
+        return _current_serial_num.load(std::memory_order_relaxed);
     }
 
     SerialNum getFlushedSerialNum() const override {
