@@ -1,10 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch.searchcluster;
 
-import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
 import com.google.common.math.Quantiles;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.net.HostName;
@@ -32,11 +30,10 @@ public class SearchCluster implements NodeManager<Node> {
     private static final Logger log = Logger.getLogger(SearchCluster.class.getName());
 
     private final DispatchConfig dispatchConfig;
-    private final int size;
     private final String clusterId;
-    private final ImmutableMap<Integer, Group> groups;
-    private final ImmutableMultimap<String, Node> nodesByHost;
-    private final ImmutableList<Group> orderedGroups;
+    private final Map<Integer, Group> groups;
+    private final List<Group> orderedGroups;
+    private final List<Node> nodes;
     private final VipStatus vipStatus;
     private final PingFactory pingFactory;
     private final TopKEstimator hitEstimator;
@@ -60,8 +57,7 @@ public class SearchCluster implements NodeManager<Node> {
         this.vipStatus = vipStatus;
         this.pingFactory = pingFactory;
 
-        List<Node> nodes = toNodes(dispatchConfig);
-        this.size = nodes.size();
+        this.nodes = toNodes(dispatchConfig);
 
         // Create groups
         ImmutableMap.Builder<Integer, Group> groupsBuilder = new ImmutableMap.Builder<>();
@@ -74,14 +70,8 @@ public class SearchCluster implements NodeManager<Node> {
         nodes.forEach(node -> groupIntroductionOrder.put(node.group(), groups.get(node.group())));
         this.orderedGroups = ImmutableList.<Group>builder().addAll(groupIntroductionOrder.values()).build();
 
-        // Index nodes by host
-        ImmutableMultimap.Builder<String, Node> nodesByHostBuilder = new ImmutableMultimap.Builder<>();
-        for (Node node : nodes)
-            nodesByHostBuilder.put(node.hostname(), node);
-        this.nodesByHost = nodesByHostBuilder.build();
         hitEstimator = new TopKEstimator(30.0, dispatchConfig.topKProbability(), SKEW_FACTOR);
-
-        this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(), nodesByHost, groups);
+        this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(), nodes, groups);
     }
 
     @Override
@@ -95,13 +85,15 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     private static Optional<Node> findLocalCorpusDispatchTarget(String selfHostname,
-                                                                ImmutableMultimap<String, Node> nodesByHost,
-                                                                ImmutableMap<Integer, Group> groups) {
+                                                                List<Node> nodes,
+                                                                Map<Integer, Group> groups) {
         // A search node in the search cluster in question is configured on the same host as the currently running container.
         // It has all the data <==> No other nodes in the search cluster have the same group id as this node.
         //         That local search node responds.
         // The search cluster to be searched has at least as many nodes as the container cluster we're running in.
-        ImmutableCollection<Node> localSearchNodes = nodesByHost.get(selfHostname);
+        List<Node> localSearchNodes = nodes.stream()
+                                           .filter(node -> node.hostname().equals(selfHostname))
+                                           .collect(Collectors.toList());
         // Only use direct dispatch if we have exactly 1 search node on the same machine:
         if (localSearchNodes.size() != 1) return Optional.empty();
 
@@ -125,14 +117,14 @@ public class SearchCluster implements NodeManager<Node> {
         return dispatchConfig;
     }
 
-    /** Returns the number of nodes in this cluster (across all groups) */
-    public int size() { return size; }
+    /** Returns an immutable list of all nodes in this. */
+    public List<Node> nodes() { return nodes; }
 
     /** Returns the groups of this cluster as an immutable map indexed by group id */
-    public ImmutableMap<Integer, Group> groups() { return groups; }
+    public Map<Integer, Group> groups() { return groups; }
 
     /** Returns the groups of this cluster as an immutable list in introduction order */
-    public ImmutableList<Group> orderedGroups() { return orderedGroups; }
+    public List<Group> orderedGroups() { return orderedGroups; }
 
     /** Returns the n'th (zero-indexed) group in the cluster if possible */
     public Optional<Group> group(int n) {
@@ -144,7 +136,7 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     public boolean allGroupsHaveSize1() {
-        return size() == groups().size();
+        return nodes.size() == groups.size();
     }
 
     public int groupsWithSufficientCoverage() {
@@ -199,8 +191,8 @@ public class SearchCluster implements NodeManager<Node> {
         }
         else if (usesLocalCorpusIn(node)) { // follow the status of this node
             // Do not take this out of rotation if we're a combined cluster of size 1,
-            // as that can't be helpful, and leads to a deadlock where this node is never taken back in servic e
-            if (nodeIsWorking || size() > 1)
+            // as that can't be helpful, and leads to a deadlock where this node is never set back in service
+            if (nodeIsWorking || nodes.size() > 1)
                 setInRotationOnlyIf(nodeIsWorking);
         }
     }
@@ -229,11 +221,11 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     public boolean hasInformationAboutAllNodes() {
-        return nodesByHost.values().stream().allMatch(node -> node.isWorking() != null);
+        return nodes.stream().allMatch(node -> node.isWorking() != null);
     }
 
     private boolean hasWorkingNodes() {
-        return nodesByHost.values().stream().anyMatch(node -> node.isWorking() != Boolean.FALSE );
+        return nodes.stream().anyMatch(node -> node.isWorking() != Boolean.FALSE );
     }
 
     private boolean usesLocalCorpusIn(Node node) {

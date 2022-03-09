@@ -23,6 +23,7 @@ public class MockSearchCluster extends SearchCluster {
     private final int numNodesPerGroup;
     private final ImmutableList<Group> orderedGroups;
     private final ImmutableMap<Integer, Group> groups;
+    private final List<Node> nodes;
 
     public MockSearchCluster(String clusterId, int groups, int nodesPerGroup) {
         this(clusterId, createDispatchConfig(), groups, nodesPerGroup);
@@ -35,15 +36,17 @@ public class MockSearchCluster extends SearchCluster {
         ImmutableMap.Builder<Integer, Group> groupBuilder = ImmutableMap.builder();
         ImmutableMultimap.Builder<String, Node> hostBuilder = ImmutableMultimap.builder();
         int distributionKey = 0;
+        this.nodes = new ArrayList<>();
         for (int group = 0; group < groups; group++) {
-            List<Node> nodes = new ArrayList<>();
-            for (int node = 0; node < nodesPerGroup; node++) {
-                Node n = new Node(distributionKey, "host" + distributionKey, group);
-                nodes.add(n);
-                hostBuilder.put(n.hostname(), n);
+            List<Node> groupNodes = new ArrayList<>();
+            for (int i = 0; i < nodesPerGroup; i++) {
+                Node node = new Node(distributionKey, "host" + distributionKey, group);
+                nodes.add(node);
+                groupNodes.add(node);
+                hostBuilder.put(node.hostname(), node);
                 distributionKey++;
             }
-            Group g = new Group(group, nodes);
+            Group g = new Group(group, groupNodes);
             groupBuilder.put(group, g);
             orderedGroupBuilder.add(g);
         }
@@ -59,9 +62,7 @@ public class MockSearchCluster extends SearchCluster {
     }
 
     @Override
-    public int size() {
-        return numGroups * numNodesPerGroup;
-    }
+    public List<Node> nodes() { return nodes; }
 
     @Override
     public ImmutableMap<Integer, Group> groups() {
