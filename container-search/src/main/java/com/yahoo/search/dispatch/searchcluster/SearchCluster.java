@@ -293,19 +293,15 @@ public class SearchCluster implements NodeManager<Node> {
         // With just one group sufficient coverage may not be the same as full coverage, as the
         // group will always be marked sufficient for use.
         updateSufficientCoverage(group, true);
-        boolean sufficientCoverage = isGroupCoverageSufficient(group.activeDocuments(),
-                                                               group.activeDocuments());
+        boolean sufficientCoverage = isGroupCoverageSufficient(group.activeDocuments(), group.activeDocuments());
         trackGroupCoverageChanges(group, sufficientCoverage, group.activeDocuments());
     }
 
     private void pingIterationCompletedMultipleGroups() {
         orderedGroups().forEach(Group::aggregateNodeValues);
         long medianDocuments = medianDocumentsPerGroup();
-        boolean anyGroupsSufficientCoverage = false;
         for (Group group : orderedGroups()) {
-            boolean sufficientCoverage = isGroupCoverageSufficient(group.activeDocuments(),
-                                                                   medianDocuments);
-            anyGroupsSufficientCoverage = anyGroupsSufficientCoverage || sufficientCoverage;
+            boolean sufficientCoverage = isGroupCoverageSufficient(group.activeDocuments(), medianDocuments);
             updateSufficientCoverage(group, sufficientCoverage);
             trackGroupCoverageChanges(group, sufficientCoverage, medianDocuments);
         }
