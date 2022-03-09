@@ -339,6 +339,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
                         subFieldMatching.merge(field.getMatching());
                         SDField subField = structFields.get(field.getName());
                         if (subField != null) {
+                            subFieldMatching.merge(subField.getMatching());
                             subField.populateWithStructMatching(sdoc, field.getDataType(), subFieldMatching);
                             subField.setMatching(subFieldMatching);
                         }

@@ -16,46 +16,69 @@ public class MatchSettingsResolvingTestCase extends AbstractExportingTestCase {
     public void testSimpleDefaults() throws IOException, ParseException {
         assertCorrectDeriving("matchsettings_simple_def",
                               new TestProperties().setExperimentalSdParsing(false));
+        assertCorrectDeriving("matchsettings_simple_def",
+                              new TestProperties().setExperimentalSdParsing(true));
     }
 
     @Test
     public void testSimpleWithStructSettings() throws IOException, ParseException {
         assertCorrectDeriving("matchsettings_simple_wss",
                               new TestProperties().setExperimentalSdParsing(false));
+        assertCorrectDeriving("matchsettings_simple_wss",
+                              new TestProperties().setExperimentalSdParsing(true));
     }
 
     @Test
     public void testSimpleWithFieldSettings() throws IOException, ParseException {
         assertCorrectDeriving("matchsettings_simple_wfs",
                               new TestProperties().setExperimentalSdParsing(false));
+        assertCorrectDeriving("matchsettings_simple_wfs",
+                              new TestProperties().setExperimentalSdParsing(true));
     }
 
     @Test
     public void testSimpleStructAndFieldSettings() throws IOException, ParseException {
         assertCorrectDeriving("matchsettings_simple_wss_wfs",
                               new TestProperties().setExperimentalSdParsing(false));
+        assertCorrectDeriving("matchsettings_simple_wss_wfs",
+                              new TestProperties().setExperimentalSdParsing(true));
     }
 
     @Test
     public void testMapDefaults() throws IOException, ParseException {
         assertCorrectDeriving("matchsettings_map_def",
                               new TestProperties().setExperimentalSdParsing(false));
+        assertCorrectDeriving("matchsettings_map_def",
+                              new TestProperties().setExperimentalSdParsing(true));
     }
 
     @Test
     public void testMapWithStructSettings() throws IOException, ParseException {
+        /*
+         * does not work
+         * does not pick up settings from struct declaration
         assertCorrectDeriving("matchsettings_map_wss",
                               new TestProperties().setExperimentalSdParsing(false));
+        */
+        assertCorrectDeriving("matchsettings_map_wss",
+                              new TestProperties().setExperimentalSdParsing(true));
     }
 
     @Test
     public void testMapWithFieldSettings() throws IOException, ParseException {
         assertCorrectDeriving("matchsettings_map_wfs",
                               new TestProperties().setExperimentalSdParsing(false));
+        assertCorrectDeriving("matchsettings_map_wfs",
+                              new TestProperties().setExperimentalSdParsing(true));
     }
 
     @Test
     public void testMapAfter() throws IOException, ParseException {
+        /* fails with:
+        java.lang.IllegalArgumentException: Could not find struct 'elem'.
+        assertCorrectDeriving("matchsettings_map_after",
+                              new TestProperties().setExperimentalSdParsing(false));
+        */
         assertCorrectDeriving("matchsettings_map_after",
                               new TestProperties().setExperimentalSdParsing(true));
     }
