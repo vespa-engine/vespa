@@ -1,0 +1,36 @@
+
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+search test {
+  document test {
+
+    struct elem {
+      field elem_field_1_string type string {
+        match {
+          exact
+          exact-terminator: "@ef1@"
+        }
+      }
+      field elem_field_2_int type int {}
+    }
+
+    field field_1_string type string {
+      indexing: index
+      match {
+        exact
+        exact-terminator: "@f1s@"
+      }
+    }
+
+    field field_2_struct type elem {
+      indexing: summary
+      struct-field elem_field_1_string {
+        indexing: index
+      }
+      struct-field elem_field_2_int {
+        indexing: attribute
+      }
+    }
+
+  }
+}
