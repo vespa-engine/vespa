@@ -12,13 +12,14 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * LoadBalancer determines which group of content nodes should be accessed next for each search query when the internal java dispatcher is
- * used.
+ * LoadBalancer determines which group of content nodes should be accessed next for each search query when the
+ * internal java dispatcher is used.
+ *
+ * The implementation here is a simplistic least queries in flight + round-robin load balancer
  *
  * @author ollivir
  */
 public class LoadBalancer {
-    // The implementation here is a simplistic least queries in flight + round-robin load balancer
 
     private static final Logger log = Logger.getLogger(LoadBalancer.class.getName());
 
@@ -84,6 +85,7 @@ public class LoadBalancer {
     }
 
     static class GroupStatus {
+
         private final Group group;
         private int allocations = 0;
         private long queries = 0;
@@ -174,24 +176,10 @@ public class LoadBalancer {
          * @return the better of the two
          */
         private static GroupStatus betterGroup(GroupStatus first, GroupStatus second) {
-            if (second == null) {
-                return first;
-            }
-            if (first == null) {
-                return second;
-            }
-
-            // different coverage
-            if (first.group.hasSufficientCoverage() != second.group.hasSufficientCoverage()) {
-                if (!first.group.hasSufficientCoverage()) {
-                    // first doesn't have coverage, second does
-                    return second;
-                } else {
-                    // second doesn't have coverage, first does
-                    return first;
-                }
-            }
-
+            if (second == null) return first;
+            if (first == null) return second;
+            if (first.group.hasSufficientCoverage() != second.group.hasSufficientCoverage())
+                return first.group.hasSufficientCoverage() ? first : second;
             return first;
         }
 
@@ -246,11 +234,8 @@ public class LoadBalancer {
         public Optional<GroupStatus> takeNextGroup(Set<Integer> rejectedGroups) {
             double needle = random.nextDouble();
             Optional<GroupStatus> gs = selectGroup(needle, true, rejectedGroups);
-            if (gs.isPresent()) {
-                return gs;
-            }
-            // fallback - any coverage better than none
-            return selectGroup(needle, false, rejectedGroups);
+            if (gs.isPresent()) return gs;
+            return selectGroup(needle, false, rejectedGroups); // any coverage better than none
         }
     }
 
