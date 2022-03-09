@@ -21,7 +21,7 @@ public class RoleEntity {
     private final List<AuditLogEntry> auditLog;
 
     @JsonCreator
-    public RoleEntity(@JsonProperty("roleName") String roleName,
+    public RoleEntity(@JsonProperty("name") String roleName,
                       @JsonProperty("roleMembers") List<Member> roleMembers,
                       @JsonProperty("selfServe") Boolean selfServe,
                       @JsonProperty("reviewEnabled") Boolean reviewEnabled,
