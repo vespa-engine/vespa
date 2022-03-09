@@ -99,6 +99,19 @@ public class ConvertParsedTypes {
                 }
                 for (String inherit : struct.getInherited()) {
                     var parent = findStructFromSchemas(inherit, doc);
+                    // ensure a nice, compatible exception message
+                    for (var field : toFill.getFields()) {
+                        if (parent.hasField(field)) {
+                            for (var base : parent.getInheritedTypes()) {
+                                if (base.hasField(field)) {
+                                    parent = base;
+                                }
+                            }
+                            throw new IllegalArgumentException
+                                ("In document " + doc.name() + ": struct " + struct.name() +
+                                 " cannot inherit from " + parent.getName() + " and redeclare field " + field.getName());
+                        }
+                    }
                     toFill.inherit(parent);
                 }
             }

@@ -54,7 +54,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         try {
             assertCorrectDeriving("inheritfromnull");
         } catch (IllegalArgumentException e) {
-            assertEquals("Document type 'foo' not found", e.getMessage());
+            assertEquals("document inheritfromnull inherits from unavailable document foo", e.getMessage());
         }
     }
 

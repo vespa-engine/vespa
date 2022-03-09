@@ -81,7 +81,10 @@ public class SDDocumentTypeOrderer {
             }
             else {
                 inherited = createdSDTypes.get(name);
-                if (inherited == null) throw new IllegalArgumentException("Document type '" + name + "' not found");
+                if (inherited == null) {
+                    throw new IllegalArgumentException("document " + type.getName() +
+                                                       " inherits from unavailable document " + name);
+                }
                 process(inherited, inherited);
             }
             type.inherit(inherited);
