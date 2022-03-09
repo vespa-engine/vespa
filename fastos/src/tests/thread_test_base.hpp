@@ -97,11 +97,11 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
              guard = std::unique_lock<std::mutex>(*job->mutex);
          }
 
-         result = static_cast<int>(number);
+         result = static_cast<int>(number.load(std::memory_order_relaxed));
 
          int sleepOn = (INCREASE_NUMBER_AMOUNT/2) * 321/10000;
          for (int i=0; i<(INCREASE_NUMBER_AMOUNT/2); i++) {
-            number += 2;
+            number.fetch_add(2, std::memory_order_relaxed);
 
             if (i == sleepOn)
                 std::this_thread::sleep_for(1ms);
