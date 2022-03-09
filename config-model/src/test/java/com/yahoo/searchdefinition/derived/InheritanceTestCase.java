@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.document.config.DocumentmanagerConfig;
@@ -64,7 +65,8 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         List<String> files = Arrays.asList("grandparent.sd", "mother.sd", "father.sd", "child.sd");
         File outDir = tmpDir.newFolder("out");
         for (int startIdx = 0; startIdx < files.size(); ++startIdx) {
-            ApplicationBuilder builder = new ApplicationBuilder();
+            var builder = new ApplicationBuilder
+                (new TestProperties().setExperimentalSdParsing(false));
             for (int fileIdx = startIdx; fileIdx < startIdx + files.size(); ++fileIdx) {
                 String fileName = files.get(fileIdx % files.size());
                 builder.addSchemaFile(dir + fileName);
@@ -82,11 +84,11 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
             assertEquals(childHeader.field(3).name(), "cox");
             DocumentmanagerConfig.Datatype.Documenttype child = documentType("child", dc);
             assertEquals(child.inherits(0).name(), "document");
-            assertEquals(child.inherits(1).name(), "father");
-            assertEquals(child.inherits(2).name(), "mother");
+            assertEquals(child.inherits(1).name(), "mother");
+            assertEquals(child.inherits(2).name(), "father");
             DocumentmanagerConfig.Datatype.Documenttype mother = documentType("mother", dc);
-            assertEquals(mother.inherits(0).name(), "grandparent");
-            assertEquals(mother.inherits(1).name(), "document");
+            assertEquals(mother.inherits(0).name(), "document");
+            assertEquals(mother.inherits(1).name(), "grandparent");
         }
     }
 
