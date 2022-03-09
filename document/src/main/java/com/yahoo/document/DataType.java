@@ -59,7 +59,9 @@ public abstract class DataType extends Identifiable implements Serializable, Com
 
     // Tags are converted to weightedset<string> when reading the search definition TODO: Remove it
     public final static WeightedSetDataType TAG = new WeightedSetDataType(DataType.STRING, true, true);
-
+    static {
+        TAG.setTag(true);
+    }
     public static int lastPredefinedDataTypeId() {
         return 21;
     }
