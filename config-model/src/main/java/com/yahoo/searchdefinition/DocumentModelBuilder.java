@@ -245,7 +245,15 @@ public class DocumentModelBuilder {
             if (other != null) {
                 type = other;
             }
-        } else if (type instanceof DocumentType || type instanceof NewDocumentType) {
+        } else if (type instanceof DocumentType) {
+            DataType other = getDocumentType(docs, type.getId());
+            if (other != null) {
+                type = other;
+            } else if (! type.getName().equals("document")) {
+                throw new IllegalArgumentException
+                    ("Can not handle nested document definitions. Undefined document type: " + type.toString());
+            }
+        } else if (type instanceof NewDocumentType) {
             DataType other = getDocumentType(docs, type.getId());
             if (other != null) {
                 type = other;
@@ -413,9 +421,6 @@ public class DocumentModelBuilder {
             if (type instanceof StructDataType) {
                 StructDataType tmp = (StructDataType) type;
                 extractDataTypesFromFields(tmp.getFieldsThisTypeOnly());
-            } else if (type instanceof DocumentType) {
-                throw new IllegalArgumentException("Can not handle nested document definitions. In document type '" + targetDt.getName().toString() +
-                                                   "', we can not define document type '" + type.toString());
             } else if (type instanceof CollectionDataType) {
                 CollectionDataType tmp = (CollectionDataType) type;
                 extractNestedTypes(tmp.getNestedType());
