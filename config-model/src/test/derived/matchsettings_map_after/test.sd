@@ -4,11 +4,6 @@
 search test {
   document test {
 
-    struct elem {
-      field sf1s type string {}
-      field sf2i type int {}
-    }
-
     field mse4 type map<string,elem> {
       indexing: summary
       struct-field key {
@@ -28,6 +23,11 @@ search test {
       struct-field value.sf2i {
         indexing: attribute
       }
+    }
+
+    struct elem {
+      field sf1s type string {}
+      field sf2i type int {}
     }
 
   }

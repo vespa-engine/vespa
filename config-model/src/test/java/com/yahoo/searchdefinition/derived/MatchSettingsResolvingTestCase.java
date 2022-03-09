@@ -57,7 +57,7 @@ public class MatchSettingsResolvingTestCase extends AbstractExportingTestCase {
     @Test
     public void testMapAfter() throws IOException, ParseException {
         assertCorrectDeriving("matchsettings_map_after",
-                              new TestProperties().setExperimentalSdParsing(false));
+                              new TestProperties().setExperimentalSdParsing(true));
     }
 
     
