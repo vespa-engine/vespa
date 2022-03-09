@@ -143,13 +143,8 @@ public class SearchCluster implements NodeManager<Node> {
         }
     }
 
-    /**
-     * Returns the wanted number of nodes per group - size()/groups.size().
-     * The actual node count for a given group may differ due to node retirements.
-     */
-    public int wantedGroupSize() {
-        if (groups().size() == 0) return size();
-        return size() / groups().size();
+    public boolean allGroupsHaveSize1() {
+        return size() == groups().size();
     }
 
     public int groupsWithSufficientCoverage() {

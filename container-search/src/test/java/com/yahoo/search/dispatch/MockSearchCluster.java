@@ -71,9 +71,7 @@ public class MockSearchCluster extends SearchCluster {
     }
 
     @Override
-    public int wantedGroupSize() {
-        return numNodesPerGroup;
-    }
+    public boolean allGroupsHaveSize1() { return numNodesPerGroup == 1;}
 
     @Override
     public int groupsWithSufficientCoverage() {
