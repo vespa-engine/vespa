@@ -14,6 +14,8 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.yolean.Exceptions;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -29,7 +31,7 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
  *
  * @author jonmv
  */
-public class ReindexingCurator {
+public class ReindexingCurator implements Closeable {
 
     private static final Logger log = Logger.getLogger(ReindexingCurator.class.getName());
 
@@ -93,6 +95,11 @@ public class ReindexingCurator {
     private Path rootPath(String clusterName) { return Path.fromString("/reindexing/v1/" + clusterName); }
     private Path statusPath(String clusterName) { return rootPath(clusterName).append("status"); }
     private Path lockPath(String clusterName) { return rootPath(clusterName).append("lock"); }
+
+    @Override
+    public void close() {
+        curator.close();
+    }
 
 
     private static class ReindexingSerializer {

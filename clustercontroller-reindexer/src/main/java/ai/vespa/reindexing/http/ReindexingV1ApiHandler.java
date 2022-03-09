@@ -65,6 +65,11 @@ public class ReindexingV1ApiHandler extends ThreadedHttpRequestHandler {
         return ErrorResponse.notFoundError("Nothing at " + request.getUri().getRawPath());
     }
 
+    @Override
+    public void destroy() {
+        database.close();
+    }
+
     HttpResponse getRoot() {
         Slime slime = new Slime();
         slime.setObject().setArray("resources").addObject().setString("url", "/reindexing/v1/status");
@@ -87,7 +92,6 @@ public class ReindexingV1ApiHandler extends ThreadedHttpRequestHandler {
         }
         return new SlimeJsonResponse(slime);
     }
-
 
     private static String toString(Reindexing.State state) {
         switch (state) {

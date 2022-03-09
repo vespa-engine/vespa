@@ -103,9 +103,9 @@ public class ReindexingMaintainer extends AbstractComponent {
 
             executor.awaitTermination(5, TimeUnit.SECONDS); // Give it 5s to complete gracefully.
 
-            curator.close(); // Close the underlying curator independently to force shutdown
+            curator.close(); // Close the underlying curator independently to force shutdown.
 
-            if ( !executor.isShutdown() && ! executor.awaitTermination(5, TimeUnit.SECONDS))
+            if ( ! executor.isShutdown() && ! executor.awaitTermination(5, TimeUnit.SECONDS))
                 log.log(WARNING, "Failed to shut down reindexing within timeout");
         }
         catch (InterruptedException e) {
