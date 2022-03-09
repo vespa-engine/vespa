@@ -23,7 +23,6 @@ public class MockSearchCluster extends SearchCluster {
     private final int numNodesPerGroup;
     private final ImmutableList<Group> orderedGroups;
     private final ImmutableMap<Integer, Group> groups;
-    private final ImmutableMultimap<String, Node> nodesByHost;
 
     public MockSearchCluster(String clusterId, int groups, int nodesPerGroup) {
         this(clusterId, createDispatchConfig(), groups, nodesPerGroup);
@@ -50,7 +49,6 @@ public class MockSearchCluster extends SearchCluster {
         }
         this.orderedGroups = orderedGroupBuilder.build();
         this.groups = groupBuilder.build();
-        this.nodesByHost = hostBuilder.build();
         this.numGroups = groups;
         this.numNodesPerGroup = nodesPerGroup;
     }
