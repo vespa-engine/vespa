@@ -42,15 +42,13 @@ void wait_tick() {
     }
 }
 
-struct SimpleHandler : Reactor::EventHandler {
+struct HandlerBase : Reactor::EventHandler {
     SocketPair          sockets;
     std::atomic<size_t> read_cnt;
     std::atomic<size_t> write_cnt;
-    Reactor::Token::UP  token;
-    SimpleHandler(Reactor &reactor, bool read, bool write)
-        : sockets(), read_cnt(0), write_cnt(0), token()
+    HandlerBase()
+        : sockets(), read_cnt(0), write_cnt(0)
     {
-        token = reactor.attach(*this, sockets.main.get(), read, write);
     }
     void handle_event(bool read, bool write) override {
         if (read) {
@@ -68,16 +66,33 @@ struct SimpleHandler : Reactor::EventHandler {
         EXPECT_EQUAL((read_sample != read_cnt), read);
         EXPECT_EQUAL((write_sample != write_cnt), write);
     }
+    ~HandlerBase();
+};
+HandlerBase::~HandlerBase() = default;
+
+struct SimpleHandler : HandlerBase {
+    Reactor::Token::UP token;
+    SimpleHandler(Reactor &reactor, bool read, bool write)
+      : HandlerBase(), token()
+    {
+        token = reactor.attach(*this, sockets.main.get(), read, write);
+    }
     ~SimpleHandler();
 };
 SimpleHandler::~SimpleHandler() = default;
 
-struct DeletingHandler : SimpleHandler {
+struct DeletingHandler : HandlerBase {
+    Gate allow_delete;
     Gate token_deleted;
-    DeletingHandler(Reactor &reactor) : SimpleHandler(reactor, true, true),
-                                        token_deleted() {}
+    Reactor::Token::UP token;
+    DeletingHandler(Reactor &reactor)
+      : HandlerBase(), allow_delete(), token_deleted(), token()
+    {
+        token = reactor.attach(*this, sockets.main.get(), true, true);
+    }
     void handle_event(bool read, bool write) override {
-        SimpleHandler::handle_event(read, write);
+        HandlerBase::handle_event(read, write);
+        allow_delete.await();
         token.reset();
         token_deleted.countDown();
     }
@@ -85,14 +100,18 @@ struct DeletingHandler : SimpleHandler {
 };
 DeletingHandler::~DeletingHandler() = default;
 
-struct WaitingHandler : SimpleHandler {
+struct WaitingHandler : HandlerBase {
     Gate enter_callback;
     Gate exit_callback;
-    WaitingHandler(Reactor &reactor) : SimpleHandler(reactor, true, true),
-                                       enter_callback(), exit_callback() {}
+    Reactor::Token::UP token;
+    WaitingHandler(Reactor &reactor)
+      : HandlerBase(), enter_callback(), exit_callback(), token()
+    {
+        token = reactor.attach(*this, sockets.main.get(), true, true);
+    }
     void handle_event(bool read, bool write) override {
         enter_callback.countDown();
-        SimpleHandler::handle_event(read, write);
+        HandlerBase::handle_event(read, write);
         exit_callback.await();
     }
     ~WaitingHandler();
@@ -135,6 +154,7 @@ TEST_FF("require that deleting reactor token disables io events", Reactor(tick),
 
 TEST_FF("require that reactor token can be destroyed during io event handling", Reactor(tick), TimeBomb(60)) {
     DeletingHandler handler(f1);
+    handler.allow_delete.countDown();
     handler.token_deleted.await();
     TEST_DO(handler.verify(false, false));
     EXPECT_EQUAL(handler.read_cnt, 1u);
