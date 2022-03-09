@@ -5,7 +5,7 @@
 #include <chrono>
 #include <thread>
 
-static volatile int64_t number;
+static std::atomic<int64_t> number;
 #define INCREASE_NUMBER_AMOUNT 10000
 
 using namespace std::chrono_literals;
@@ -101,7 +101,7 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
 
          int sleepOn = (INCREASE_NUMBER_AMOUNT/2) * 321/10000;
          for (int i=0; i<(INCREASE_NUMBER_AMOUNT/2); i++) {
-            number = number + 2;
+            number += 2;
 
             if (i == sleepOn)
                 std::this_thread::sleep_for(1ms);
