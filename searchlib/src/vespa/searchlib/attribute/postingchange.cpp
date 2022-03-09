@@ -8,9 +8,19 @@
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
+using vespalib::datastore::AtomicEntryRef;
+
 namespace search {
 
 namespace {
+
+template <typename WeightedIndex>
+struct CompareValue {
+    bool operator()(const WeightedIndex& lhs, const WeightedIndex& rhs) const
+    {
+        return lhs.value_ref().load_relaxed() < rhs.value_ref().load_relaxed();
+    };
+};
 
 void
 removeDupAdditions(PostingChange<AttributePosting>::A &additions)
@@ -133,7 +143,7 @@ template <typename WeightedIndex>
 class ActualChangeComputer {
 public:
     using EnumIndex = IEnumStore::Index;
-    using AlwaysWeightedIndexVector = std::vector<multivalue::WeightedValue<EnumIndex>>;
+    using AlwaysWeightedIndexVector = std::vector<multivalue::WeightedValue<AtomicEntryRef>>;
     using WeightedIndexVector = std::vector<WeightedIndex>;
     void compute(const WeightedIndex * entriesNew, size_t szNew,
                  const WeightedIndex * entriesOld, size_t szOld,
@@ -168,7 +178,7 @@ private:
     {
         const WeightedIndex *srce = src + sz;
         for (const WeightedIndex *i = src; i < srce; ++i) {
-            dst.emplace_back(mapEnumIndex(i->value()), i->weight());
+            dst.emplace_back(AtomicEntryRef(mapEnumIndex(i->value_ref().load_relaxed())), i->weight());
         }
     }
 
@@ -181,7 +191,7 @@ private:
         } else {
             copyFast(dst, src, sz);
         }
-        std::sort(dst.begin(), dst.end());
+        std::sort(dst.begin(), dst.end(), CompareValue<WeightedIndex>());
     }
 };
 
@@ -189,21 +199,21 @@ template <typename WeightedIndex>
 class MergeDupIterator {
     using InnerIter = typename std::vector<WeightedIndex>::const_iterator;
     using EnumIndex = IEnumStore::Index;
-    using Entry = multivalue::WeightedValue<EnumIndex>;
+    using Entry = multivalue::WeightedValue<AtomicEntryRef>;
     InnerIter _cur;
     InnerIter _end;
     Entry _entry;
     bool _valid;
     void merge() {
-        EnumIndex idx = _cur->value();
+        EnumIndex idx = _cur->value_ref().load_relaxed();
         int32_t weight = _cur->weight();
         ++_cur;
-        while (_cur != _end && _cur->value() == idx) {
+        while (_cur != _end && _cur->value_ref().load_relaxed() == idx) {
             // sum weights together. Overflow is not handled.
             weight += _cur->weight();
             ++_cur;
         }
-        _entry = Entry(idx, weight);
+        _entry = Entry(AtomicEntryRef(idx), weight);
     }
 public:
     MergeDupIterator(const std::vector<WeightedIndex> &vec)
@@ -219,7 +229,7 @@ public:
 
     bool valid() const { return _valid; }
     const Entry &entry() const { return _entry; }
-    EnumIndex value() const { return _entry.value(); }
+    EnumIndex value() const { return _entry.value_ref().load_relaxed(); }
     int32_t weight() const { return _entry.weight(); }
     void next() {
         if (_cur != _end) {
@@ -301,13 +311,13 @@ compute(const MultivalueMapping & mvm, const DocIndices & docIndices,
         actualChange.compute(&docIndex.second[0], docIndex.second.size(), &oldIndices[0], oldIndices.size(),
                              added, changed, removed);
         for (const auto & wi : added) {
-            changePost[EnumPostingPair(wi.value(), &compare)].add(docIndex.first, wi.weight());
+            changePost[EnumPostingPair(wi.value_ref().load_relaxed(), &compare)].add(docIndex.first, wi.weight());
         }
         for (const auto & wi : removed) {
-            changePost[EnumPostingPair(wi.value(), &compare)].remove(docIndex.first);
+            changePost[EnumPostingPair(wi.value_ref().load_relaxed(), &compare)].remove(docIndex.first);
         }
         for (const auto & wi : changed) {
-            changePost[EnumPostingPair(wi.value(), &compare)].remove(docIndex.first).add(docIndex.first, wi.weight());
+            changePost[EnumPostingPair(wi.value_ref().load_relaxed(), &compare)].remove(docIndex.first).add(docIndex.first, wi.weight());
         }
     }
     return changePost;
@@ -319,9 +329,8 @@ template class PostingChange<AttributeWeightPosting>;
 
 typedef PostingChange<vespalib::btree::BTreeKeyData<unsigned int, int> > WeightedPostingChange;
 typedef std::map<EnumPostingPair, WeightedPostingChange> WeightedPostingChangeMap;
-typedef IEnumStore::Index EnumIndex;
-typedef multivalue::WeightedValue<EnumIndex> WeightedIndex; 
-typedef multivalue::Value<EnumIndex> ValueIndex; 
+typedef multivalue::WeightedValue<AtomicEntryRef> WeightedIndex;
+typedef multivalue::Value<AtomicEntryRef> ValueIndex;
 
 using WeightedMultiValueMapping = attribute::MultiValueMapping<WeightedIndex>;
 using ValueMultiValueMapping = attribute::MultiValueMapping<ValueIndex>;

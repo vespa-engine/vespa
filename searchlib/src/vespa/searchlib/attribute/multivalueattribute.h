@@ -4,6 +4,7 @@
 
 #include "multi_value_mapping.h"
 #include "attributevector.h"
+#include "atomic_utils.h"
 
 namespace search {
 
@@ -28,6 +29,7 @@ protected:
     using MultiValueArrayRef = vespalib::ConstArrayRef<MultiValueType>;
     typedef typename ValueVector::iterator                ValueVectorIterator;
     typedef std::vector<std::pair<DocId, ValueVector> >   DocumentValues;
+    using NonAtomicValueType = attribute::atomic_utils::NonAtomicValue_t<ValueType>;
 
     MultiValueMapping _mvMapping;
 
@@ -39,7 +41,7 @@ protected:
      */
     void applyAttributeChanges(DocumentValues & docValues);
 
-    virtual bool extractChangeData(const Change & c, ValueType & data) = 0;
+    virtual bool extractChangeData(const Change & c, NonAtomicValueType & data) = 0;
 
     /**
      * Called when a new document has been added.

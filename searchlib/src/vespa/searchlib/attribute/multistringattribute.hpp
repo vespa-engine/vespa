@@ -97,7 +97,7 @@ MultiValueStringAttributeT<B, M>::StringImplSearchContext::onFind(DocId doc, int
     const auto& attr = static_cast<const MultiValueStringAttributeT<B, M>&>(attribute());
     WeightedIndexArrayRef indices(attr._mvMapping.get(doc));
     for (uint32_t i(elemId); i < indices.size(); i++) {
-        if (isMatch(attr._enumStore.get_value(indices[i].value()))) {
+        if (isMatch(attr._enumStore.get_value(indices[i].value_ref().load_acquire()))) {
             return i;
         }
     }
