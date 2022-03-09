@@ -255,31 +255,6 @@ public class SearchCluster implements NodeManager<Node> {
         return localCorpusDispatchTarget.isPresent() && localCorpusDispatchTarget.get().group() == group.id();
     }
 
-    private static class PongCallback implements PongHandler {
-
-        private final ClusterMonitor<Node> clusterMonitor;
-        private final Node node;
-
-        PongCallback(Node node, ClusterMonitor<Node> clusterMonitor) {
-            this.node = node;
-            this.clusterMonitor = clusterMonitor;
-        }
-
-        @Override
-        public void handle(Pong pong) {
-            if (pong.badResponse()) {
-                clusterMonitor.failed(node, pong.error().get());
-            } else {
-                if (pong.activeDocuments().isPresent()) {
-                    node.setActiveDocuments(pong.activeDocuments().get());
-                    node.setBlockingWrites(pong.isBlockingWrites());
-                }
-                clusterMonitor.responded(node);
-            }
-        }
-
-    }
-
     /** Used by the cluster monitor to manage node status */
     @Override
     public void ping(ClusterMonitor clusterMonitor, Node node, Executor executor) {
@@ -366,6 +341,31 @@ public class SearchCluster implements NodeManager<Node> {
                             ", unresponsive nodes: " + (unresponsive.toString().isEmpty() ? " none" : unresponsive));
             }
         }
+    }
+
+    private static class PongCallback implements PongHandler {
+
+        private final ClusterMonitor<Node> clusterMonitor;
+        private final Node node;
+
+        PongCallback(Node node, ClusterMonitor<Node> clusterMonitor) {
+            this.node = node;
+            this.clusterMonitor = clusterMonitor;
+        }
+
+        @Override
+        public void handle(Pong pong) {
+            if (pong.badResponse()) {
+                clusterMonitor.failed(node, pong.error().get());
+            } else {
+                if (pong.activeDocuments().isPresent()) {
+                    node.setActiveDocuments(pong.activeDocuments().get());
+                    node.setBlockingWrites(pong.isBlockingWrites());
+                }
+                clusterMonitor.responded(node);
+            }
+        }
+
     }
 
 }
