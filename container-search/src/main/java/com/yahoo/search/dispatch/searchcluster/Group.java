@@ -17,7 +17,9 @@ import java.util.logging.Logger;
 public class Group {
 
     private static final Logger log = Logger.getLogger(Group.class.getName());
-    private final static double maxContentSkew = 0.10; // If documents on a node is more than 10% off from the average the group is unbalanced
+
+    // If documents on a node is more than 10% off from the average the group is unbalanced
+    private final static double maxContentSkew = 0.10;
     private final static int minDocsPerNodeToRequireLowSkew = 100;
 
     private final int id;
@@ -41,8 +43,7 @@ public class Group {
 
     /**
      * Returns the unique identity of this group.
-     * NOTE: This is a contiguous index from 0, NOT necessarily the group id assigned
-     * by the user or node repo.
+     * NOTE: This is a contiguous index from 0, NOT necessarily the group id assigned by the user or node repo.
      */
     public int id() { return id; }
 
