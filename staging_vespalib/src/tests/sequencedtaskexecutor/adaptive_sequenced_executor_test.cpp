@@ -51,8 +51,8 @@ public:
                 ++_fail;
             }
             ++_done;
+            _cv.notify_all();
         }
-        _cv.notify_all();
     }
 
     void
