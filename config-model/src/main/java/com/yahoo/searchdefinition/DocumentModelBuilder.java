@@ -349,9 +349,11 @@ public class DocumentModelBuilder {
             }
             for (SDDocumentType type : sdoc.getTypes()) {
                 for (SDDocumentType proxy : type.getInheritedTypes()) {
-                    var inherited = targetDt.getDataTypeRecursive(proxy.getName());
+                    var inherited = (StructDataType) targetDt.getDataTypeRecursive(proxy.getName());
                     var converted = (StructDataType) targetDt.getDataType(type.getName());
-                    converted.inherit((StructDataType) inherited);
+                    if (! converted.inherits(inherited)) {
+                        converted.inherit(inherited);
+                    }
                 }
             }
             for (AnnotationType annotation : sdoc.getAnnotations().values()) {
