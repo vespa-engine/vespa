@@ -63,6 +63,7 @@ public class ModelContextImplTest {
                 new Provisioned(),
                 new ModelContextImpl.Properties(
                         ApplicationId.defaultId(),
+                        Version.emptyVersion,
                         configserverConfig,
                         Zone.defaultZone(),
                         endpoints,
