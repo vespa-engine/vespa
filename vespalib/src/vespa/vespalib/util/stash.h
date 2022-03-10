@@ -48,9 +48,9 @@ struct Chunk {
     Chunk  *next;
     size_t  used;
     Chunk(const Chunk &) = delete;
-    explicit Chunk(Chunk *next_in) : next(next_in), used(sizeof(Chunk)) {}
-    void clear() { used = sizeof(Chunk); }
-    char *alloc(size_t size, size_t chunk_size) {
+    explicit Chunk(Chunk *next_in) noexcept : next(next_in), used(sizeof(Chunk)) {}
+    void clear() noexcept { used = sizeof(Chunk); }
+    char *alloc(size_t size, size_t chunk_size) noexcept {
         size_t aligned_size = ((size + (sizeof(char *) - 1))
                               & ~(sizeof(char *) - 1));
         if (used + aligned_size > chunk_size) {
@@ -84,7 +84,7 @@ private:
     size_t          _chunk_size;
 
     char *do_alloc(size_t size);
-    bool is_small(size_t size) const { return (size < (_chunk_size / 4)); }
+    bool is_small(size_t size) const noexcept { return (size < (_chunk_size / 4)); }
 
     template <typename T, typename ... Args>
     T *init_array(char *mem, size_t size, Args && ... args) {
@@ -119,10 +119,10 @@ public:
         stash::Cleanup *_cleanup;
         stash::Chunk   *_chunk;
         size_t          _used;
-        Mark(stash::Cleanup *cleanup, stash::Chunk *chunk)
+        Mark(stash::Cleanup *cleanup, stash::Chunk *chunk) noexcept
             : _cleanup(cleanup), _chunk(chunk), _used(chunk ? chunk->used : 0u) {}
     public:
-        Mark() : Mark(nullptr, nullptr) {}
+        Mark() noexcept : Mark(nullptr, nullptr) {}
     };
 
     typedef std::unique_ptr<Stash> UP;
@@ -137,7 +137,7 @@ public:
 
     void clear();
 
-    Mark mark() const { return Mark(_cleanup, _chunks); }
+    Mark mark() const noexcept { return Mark(_cleanup, _chunks); }
     void revert(const Mark &mark);
 
     size_t count_used() const;

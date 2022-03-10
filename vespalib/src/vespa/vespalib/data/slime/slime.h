@@ -63,7 +63,7 @@ public:
         size_t                        _chunkSize;
     public:
         Params();
-        explicit Params(std::unique_ptr<SymbolTable> symbols);
+        explicit Params(std::unique_ptr<SymbolTable> symbols) noexcept;
         Params(Params &&) noexcept;
         ~Params();
         Params & setChunkSize(size_t chunkSize) {
@@ -81,14 +81,14 @@ public:
     ~Slime();
 
     Slime(Slime &&rhs) noexcept;
-    Slime &operator=(Slime &&rhs);
+    Slime &operator=(Slime &&rhs) noexcept;
 
     Slime(const Slime & rhs) = delete;
     Slime& operator = (const Slime & rhs) = delete;
 
     static std::unique_ptr<SymbolTable> reclaimSymbols(Slime &&rhs);
 
-    size_t symbols() const;
+    size_t symbols() const noexcept;
 
     Memory inspect(Symbol symbol) const;
 
@@ -96,9 +96,9 @@ public:
 
     Symbol lookup(Memory name) const;
 
-    Cursor &get() { return _root.get(); }
+    Cursor &get() noexcept { return _root.get(); }
 
-    Inspector &get() const { return _root.get(); }
+    Inspector &get() const noexcept { return _root.get(); }
 
     template <typename ID>
     Inspector &operator[](ID id) const { return get()[id]; }
@@ -150,7 +150,7 @@ public:
     vespalib::string toString() const { return get().toString(); }
 };
 
-bool operator == (const Slime & a, const Slime & b);
+bool operator == (const Slime & a, const Slime & b) noexcept;
 std::ostream & operator << (std::ostream & os, const Slime & slime);
 
 } // namespace vespalib
