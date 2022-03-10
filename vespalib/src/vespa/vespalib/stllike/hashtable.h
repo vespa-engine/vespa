@@ -1,8 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/util/array.h>
+#include "allocator.h"
 #include <vespa/vespalib/util/traits.h>
+#include <vespa/vespalib/util/alloc.h>
 #include <algorithm>
 #include <iterator>
 
@@ -184,7 +185,7 @@ class hashtable : public hashtable_base
 private:
     using Node=hash_node<Value>;
 protected:
-    using NodeStore = vespalib::Array<Node>;
+    using NodeStore = std::vector<Node, allocator_large<Node>>;
     virtual void move(NodeStore && oldStore);
 public:
     class const_iterator;

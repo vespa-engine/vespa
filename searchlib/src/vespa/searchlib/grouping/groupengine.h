@@ -123,15 +123,15 @@ private:
     size_t getIdBase(GroupRef g) const { return _idByteSize*g; }
 
     using IdList = std::unique_ptr<expression::ResultNodeVector>;
-    typedef vespalib::Array<Children *> GroupBacking;
-    typedef std::vector<double> RankV;
-    typedef vespalib::Array<uint8_t> IdBacking;
+    using GroupBacking = std::vector<Children *>;
+    using RankV = std::vector<double>;
+    using IdBacking = std::vector<uint8_t>;
 
     const aggregation::GroupingLevel   * _request;
     GroupEngine     * _nextEngine;     // This is the engine for the next level.
     size_t            _idByteSize;     // Correct fixed size of memory needed for one id.
     IdBacking         _ids;            // These are all the group ids at this level.
-    expression::ResultNode::UP    _idScratch;  // Used for typing the ids.
+    expression::ResultNode::UP _idScratch;  // Used for typing the ids.
     RankV             _rank;           // This is the rank of the group. TODO handle with ordinary aggregator.
     GroupBacking      _groupBacking;   // These are all the children at this level. Vector<HashTable<GroupRef()>>
     size_t            _level;          // This is my level
