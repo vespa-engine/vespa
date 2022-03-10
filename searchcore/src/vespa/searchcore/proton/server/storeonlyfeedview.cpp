@@ -455,7 +455,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
                                            promisedDoc = std::move(promisedDoc),
                                            promisedStream = std::move(promisedStream), this]() mutable
         {
-            makeUpdatedDocument(useDocStore, lid, *upd, onWriteDone,
+            makeUpdatedDocument(useDocStore, lid, *upd, std::move(onWriteDone),
                                 std::move(promisedDoc), std::move(promisedStream));
         });
         _writeService.shared().execute(CpuUsage::wrap(std::move(task), CpuUsage::Category::WRITE));
@@ -465,7 +465,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
 
 void
 StoreOnlyFeedView::makeUpdatedDocument(bool useDocStore, Lid lid, const DocumentUpdate & update,
-                                       OnOperationDoneType onWriteDone, PromisedDoc promisedDoc,
+                                       std::decay_t<OnOperationDoneType> onWriteDone, PromisedDoc promisedDoc,
                                        PromisedStream promisedStream)
 {
     Document::UP prevDoc = _summaryAdapter->get(lid, *_repo);
@@ -494,6 +494,7 @@ StoreOnlyFeedView::makeUpdatedDocument(bool useDocStore, Lid lid, const Document
             assert(onWriteDone->is_replay() && !useDocStore);
         }
     }
+    onWriteDone.reset();
     promisedDoc.set_value(std::move(newDoc));
     promisedStream.set_value(std::move(newStream));
 }

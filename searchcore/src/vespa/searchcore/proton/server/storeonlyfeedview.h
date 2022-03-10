@@ -184,7 +184,7 @@ private:
 
     IPendingLidTracker::Token get_pending_lid_token(const DocumentOperation &op);
 
-    void makeUpdatedDocument(bool useDocStore, Lid lid, const DocumentUpdate & update, OnOperationDoneType onWriteDone,
+    void makeUpdatedDocument(bool useDocStore, Lid lid, const DocumentUpdate & update, std::decay_t<OnOperationDoneType> onWriteDone,
                              PromisedDoc promisedDoc, PromisedStream promisedStream);
 
 protected:
