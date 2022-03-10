@@ -484,7 +484,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             return ErrorResponse.badRequest("Can only set access privel for cloud tenants");
 
         controller.serviceRegistry().accessControlService().setPreapprovedAccess(tenant, preapprovedAccess);
-        return new MessageResponse("OK");
+        var slime = new Slime();
+        slime.setObject().setBool("preapprovedAccess", preapprovedAccess);
+        return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse tenantInfo(String tenantName, HttpRequest request) {
