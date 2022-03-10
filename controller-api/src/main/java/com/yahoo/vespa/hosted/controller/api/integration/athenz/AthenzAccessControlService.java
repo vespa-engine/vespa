@@ -116,11 +116,14 @@ public class AthenzAccessControlService implements AccessControlService {
     public void setPreapprovedAccess(TenantName tenantName, boolean preapprovedAccess) {
         var role = sshRole(tenantName);
 
-        var attributes = Map.<String, Object>of(
-                "selfServe", !preapprovedAccess,
-                "reviewEnabled", !preapprovedAccess
-        );
-        vespaZmsClient.createRole(role, attributes);
+        var policyName = "lambda-synchronizer";
+        var action = "update_members";
+        var approverRole = new AthenzRole(role.domain(), "lambda_role_approver");
+        if (preapprovedAccess) {
+            vespaZmsClient.addPolicyRule(role.domain(), policyName, action, role.toResourceName(), approverRole);
+        } else {
+            vespaZmsClient.deletePolicyRule(role.domain(), policyName, action, role.toResourceName(), approverRole);
+        }
     }
 
     private AthenzRole sshRole(TenantName tenantName) {
