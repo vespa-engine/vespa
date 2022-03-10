@@ -66,14 +66,16 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         File outDir = tmpDir.newFolder("out");
         for (int startIdx = 0; startIdx < files.size(); ++startIdx) {
             var builder = new ApplicationBuilder
-                (new TestProperties().setUseV8DocManagerCfg(false).setExperimentalSdParsing(false));
+                (new TestProperties().setExperimentalSdParsing(true));
             for (int fileIdx = startIdx; fileIdx < startIdx + files.size(); ++fileIdx) {
                 String fileName = files.get(fileIdx % files.size());
                 builder.addSchemaFile(dir + fileName);
             }
             builder.build(true);
             DocumentmanagerConfig.Builder b = new DocumentmanagerConfig.Builder();
-            DerivedConfiguration.exportDocuments(new DocumentManager().produce(builder.getModel(), b), outDir.getPath());
+            DerivedConfiguration.exportDocuments(new DocumentManager().
+                                                 useV8DocManagerCfg(false).
+                                                 produce(builder.getModel(), b), outDir.getPath());
             DocumentmanagerConfig dc = b.build();
             assertEquals(13, dc.datatype().size());
             assertNull(structType("child.body", dc));

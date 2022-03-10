@@ -77,7 +77,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean persistenceThrottlingOfMergeFeedOps = true;
     private boolean inhibitDefaultMergesWhenGlobalMergesPending = false;
     private boolean useV8GeoPositions = false;
-    private boolean useV8DocManagerCfg = false;
+    private boolean useV8DocManagerCfg = true;
     private List<String> environmentVariables = List.of();
     private boolean avoidRenamingSummaryFeatures = false;
     private boolean experimentalSdParsing = false;

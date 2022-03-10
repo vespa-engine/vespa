@@ -30,7 +30,7 @@ import java.util.Set;
 public class DocumentManager {
 
     private boolean useV8GeoPositions = false;
-    private boolean useV8DocManagerCfg = false;
+    private boolean useV8DocManagerCfg = true;
 
     public DocumentManager useV8GeoPositions(boolean value) {
         this.useV8GeoPositions = value;
