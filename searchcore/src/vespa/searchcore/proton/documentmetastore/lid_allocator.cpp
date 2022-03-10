@@ -75,7 +75,7 @@ LidAllocator::unregisterLid(DocId lid)
     _usedLids.clearBit(lid);
     if (_activeLids.testBit(lid)) {
         _activeLids.clearBit(lid);
-        _numActiveLids = _activeLids.count();
+        _numActiveLids.store(_activeLids.count(), std::memory_order_relaxed);
     }
 }
 
@@ -90,7 +90,7 @@ LidAllocator::unregister_lids(const std::vector<DocId>& lids)
     _usedLids.clear_bits(lids);
     assert(high < _activeLids.size());
     _activeLids.consider_clear_bits(lids);
-    _numActiveLids = _activeLids.count();
+    _numActiveLids.store(_activeLids.count(), std::memory_order_relaxed);
 }
 
 void
@@ -237,7 +237,7 @@ LidAllocator::updateActiveLids(DocId lid, bool active)
         } else {
             _activeLids.clearBit(lid);
         }
-        _numActiveLids = _activeLids.count();
+        _numActiveLids.store(_activeLids.count(), std::memory_order_relaxed);
     }
 }
 
