@@ -16,42 +16,56 @@ public class AnnotationsTestCase extends AbstractExportingTestCase {
     public void requireThatStructRegistersIfOnlyUsedByAnnotation() throws IOException, ParseException {
         assertCorrectDeriving("annotationsstruct",
                               new TestProperties().setExperimentalSdParsing(true));
+        assertCorrectDeriving("annotationsstruct",
+                              new TestProperties().setExperimentalSdParsing(false));
     }
 
     @Test
     public void requireThatStructRegistersIfOnlyUsedAsArrayByAnnotation() throws IOException, ParseException {
         assertCorrectDeriving("annotationsstructarray",
                               new TestProperties().setExperimentalSdParsing(true));
+        assertCorrectDeriving("annotationsstructarray",
+                              new TestProperties().setExperimentalSdParsing(false));
     }
 
     @Test
     public void testSimpleAnnotationDeriving() throws IOException, ParseException {
         assertCorrectDeriving("annotationssimple",
                               new TestProperties().setExperimentalSdParsing(true));
+        assertCorrectDeriving("annotationssimple",
+                              new TestProperties().setExperimentalSdParsing(false));
     }
 
     @Test
     public void testAnnotationDerivingWithImplicitStruct() throws IOException, ParseException {
         assertCorrectDeriving("annotationsimplicitstruct",
                               new TestProperties().setExperimentalSdParsing(true));
+        assertCorrectDeriving("annotationsimplicitstruct",
+                              new TestProperties().setExperimentalSdParsing(false));
     }
 
     @Test
     public void testAnnotationDerivingInheritance() throws IOException, ParseException {
         assertCorrectDeriving("annotationsinheritance",
                               new TestProperties().setExperimentalSdParsing(true));
+        assertCorrectDeriving("annotationsinheritance",
+                              new TestProperties().setExperimentalSdParsing(false));
     }
 
     @Test
     public void testAnnotationDerivingInheritance2() throws IOException, ParseException {
         assertCorrectDeriving("annotationsinheritance2",
                               new TestProperties().setExperimentalSdParsing(true));
+        assertCorrectDeriving("annotationsinheritance2",
+                              new TestProperties().setExperimentalSdParsing(false));
     }
 
     @Test
     public void testSimpleReference() throws IOException, ParseException {
         assertCorrectDeriving("annotationsreference",
                               new TestProperties().setExperimentalSdParsing(true));
+        assertCorrectDeriving("annotationsreference",
+                              new TestProperties().setExperimentalSdParsing(false));
     }
 
     @Test
@@ -64,8 +78,10 @@ public class AnnotationsTestCase extends AbstractExportingTestCase {
     public void testAnnotationsPolymorphy() throws IOException, ParseException {
         assertCorrectDeriving("annotationspolymorphy",
                               new TestProperties().setExperimentalSdParsing(true));
+        assertCorrectDeriving("annotationspolymorphy",
+                              new TestProperties().setExperimentalSdParsing(false));
     }
-    
+
     /**
      * An annotation declared before document {} won't work, no doc type to add it to.
      */
@@ -83,5 +99,4 @@ public class AnnotationsTestCase extends AbstractExportingTestCase {
         assertCorrectDeriving("annotationsoutsideofdocument",
                               new TestProperties().setExperimentalSdParsing(true));
     }
-    
 }
