@@ -33,9 +33,7 @@ public class RebootTest {
             ContainerName host1 = new ContainerName("host1");
             tester.inOrder(tester.containerOperations).createContainer(containerMatcher(host1), any(), any());
 
-            try {
-                tester.setWantedState(NodeAdminStateUpdater.State.SUSPENDED);
-            } catch (RuntimeException ignored) { }
+            tester.setWantedState(NodeAdminStateUpdater.State.SUSPENDED);
 
             tester.inOrder(tester.orchestrator).suspend(
                     eq(HOST_HOSTNAME.value()), eq(List.of(hostname, HOST_HOSTNAME.value())));

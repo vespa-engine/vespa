@@ -142,8 +142,7 @@ public class NodeAgentImpl implements NodeAgent {
         loopThread = new Thread(() -> {
             while (!terminated.get()) {
                 try {
-                    NodeAgentContext context = contextSupplier.nextContext();
-                    converge(context);
+                    converge(contextSupplier.nextContext());
                 } catch (InterruptedException ignored) { }
             }
         });
@@ -271,7 +270,7 @@ public class NodeAgentImpl implements NodeAgent {
                 }
 
                 String output = containerOperations.restartVespa(context);
-                if (!output.isBlank()) {
+                if ( ! output.isBlank()) {
                     context.log(logger, "Restart services output: " + output);
                 }
                 currentRestartGeneration = context.node().wantedRestartGeneration();
@@ -282,7 +281,7 @@ public class NodeAgentImpl implements NodeAgent {
         return existingContainer;
     }
 
-    private Optional<String> shouldRestartServices( NodeAgentContext context, Container existingContainer) {
+    private Optional<String> shouldRestartServices(NodeAgentContext context, Container existingContainer) {
         NodeSpec node = context.node();
         if (!existingContainer.state().isRunning() || node.state() != NodeState.active) return Optional.empty();
 
@@ -578,18 +577,6 @@ public class NodeAgentImpl implements NodeAgent {
         return temp;
     }
 
-    // TODO: Also skip orchestration if we're downgrading in test/staging
-    // How to implement:
-    //  - test/staging: We need to figure out whether we're in test/staging, zone is available in Environment
-    //  - downgrading: Impossible to know unless we look at the hosted version, which is
-    //    not available in the docker image (nor its name). Not sure how to solve this. Should
-    //    the node repo return the hosted version or a downgrade bit in addition to
-    //    wanted docker image etc?
-    // Should the tenant pipeline instead use BCP tool to upgrade faster!?
-    //
-    // More generally, the node repo response should contain sufficient info on what the docker image is,
-    // to allow the node admin to make decisions that depend on the docker image. Or, each docker image
-    // needs to contain routines for drain and suspend. For many images, these can just be dummy routines.
     private void orchestratorSuspendNode(NodeAgentContext context) {
         if (context.node().state() != NodeState.active) return;
 
