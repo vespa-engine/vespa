@@ -2,28 +2,28 @@
 
 #pragma once
 
-#include "enum_store_loaders.h"
 #include "enum_store_types.h"
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
-#include <vespa/vespalib/datastore/unique_store_enumerator.h>
+#include <memory>
 
 namespace vespalib {
-
-class AddressSpace;
-class MemoryUsage;
-
+    class AddressSpace;
+    class MemoryUsage;
 }
 
 namespace vespalib::datastore {
-
-class CompactionSpec;
-class CompactionStrategy;
-class DataStoreBase;
-
-template <typename> class UniqueStoreRemapper;
-
+    class CompactionSpec;
+    class CompactionStrategy;
+    class DataStoreBase;
+    class EntryComparator;
+    template <typename> class UniqueStoreRemapper;
+    template <typename> class UniqueStoreEnumerator;
 }
 
+namespace search::enumstore {
+    class EnumeratedLoader;
+    class EnumeratedPostingsLoader;
+}
 namespace search {
 
 class BufferWriter;
@@ -42,7 +42,7 @@ public:
     using EnumHandle = enumstore::EnumHandle;
     using EnumVector = enumstore::EnumVector;
     using EnumIndexRemapper = vespalib::datastore::UniqueStoreRemapper<InternalIndex>;
-    using Enumerator = vespalib::datastore::UniqueStoreEnumerator<IEnumStore::InternalIndex>;
+    using Enumerator = vespalib::datastore::UniqueStoreEnumerator<InternalIndex>;
 
     using IndexList = std::vector<Index>;
 
@@ -68,13 +68,8 @@ public:
     // Should only be used by unit tests.
     virtual void inc_compaction_count() = 0;
 
-    enumstore::EnumeratedLoader make_enumerated_loader() {
-        return enumstore::EnumeratedLoader(*this);
-    }
-
-    enumstore::EnumeratedPostingsLoader make_enumerated_postings_loader() {
-        return enumstore::EnumeratedPostingsLoader(*this);
-    }
+    enumstore::EnumeratedLoader make_enumerated_loader();
+    enumstore::EnumeratedPostingsLoader make_enumerated_postings_loader();
 
     virtual std::unique_ptr<Enumerator> make_enumerator() const = 0;
     virtual std::unique_ptr<vespalib::datastore::EntryComparator> allocate_comparator() const = 0;

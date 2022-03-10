@@ -7,6 +7,7 @@
 #include "ipostinglistattributebase.h"
 #include "singleenumattributesaver.h"
 #include "load_utils.h"
+#include "enum_store_loaders.h"
 #include <vespa/vespalib/datastore/unique_store_remapper.h>
 
 namespace search {

@@ -2,14 +2,14 @@
 
 #pragma once
 
-#include "i_enum_store_dictionary.h"
 #include "ipostinglistsearchcontext.h"
-#include <vespa/searchlib/queryeval/searchiterator.h>
 
 namespace vespalib::datastore {
-class EntryComparator;
-class IUniqueStoreDictionaryReadSnapshot;
+    class EntryComparator;
+    class IUniqueStoreDictionaryReadSnapshot;
 }
+
+namespace search { class IEnumStoreDictionary; }
 
 namespace search::attribute {
 
@@ -34,7 +34,7 @@ protected:
     void lookupTerm(const vespalib::datastore::EntryComparator &comp);
     void lookupRange(const vespalib::datastore::EntryComparator &low, const vespalib::datastore::EntryComparator &high);
 
-    queryeval::SearchIterator::UP
+    std::unique_ptr<queryeval::SearchIterator>
     createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) override;
 
     void fetchPostings(const queryeval::ExecuteInfo & execInfo) override;
