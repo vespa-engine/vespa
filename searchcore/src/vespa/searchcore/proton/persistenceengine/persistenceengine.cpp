@@ -107,19 +107,21 @@ public:
         : _bucketSet()
     { }
     ~BucketIdListResultHandler() override;
-    void handle(const BucketIdListResult &result) override {
+    void
+    handle(BucketIdListResult result) override {
         const BucketIdListResult::List &buckets = result.getList();
         for (size_t i = 0; i < buckets.size(); ++i) {
             _bucketSet.insert(buckets[i]);
         }
     }
-    std::unique_ptr<BucketIdListResult> getResult() const {
+    std::unique_ptr<BucketIdListResult>
+    getResult() const {
         BucketIdListResult::List buckets;
         buckets.reserve(_bucketSet.size());
         for (document::BucketId bucketId : _bucketSet) {
             buckets.push_back(bucketId);
         }
-        return std::make_unique<BucketIdListResult>(buckets);
+        return std::make_unique<BucketIdListResult>(std::move(buckets));
     }
 };
 
@@ -139,10 +141,10 @@ public:
         }
     }
     ~SynchronizedBucketIdListResultHandler() override;
-    void handle(const BucketIdListResult &result) override {
+    void handle(BucketIdListResult result) override {
         {
             std::lock_guard<std::mutex> guard(_lock);
-            BucketIdListResultHandler::handle(result);
+            BucketIdListResultHandler::handle(std::move(result));
         }
         countDown();
     }
@@ -283,7 +285,7 @@ PersistenceEngine::listBuckets(BucketSpace bucketSpace) const
         IPersistenceHandler *handler = snap.handlers().get();
         handler->handleListBuckets(resultHandler);
     }
-    return *resultHandler.getResult();
+    return std::move(*resultHandler.getResult());
 }
 
 
@@ -641,10 +643,10 @@ PersistenceEngine::getModifiedBuckets(BucketSpace bucketSpace) const
         IPersistenceHandler *handler = snap.handlers().get();
         handler->handleGetModifiedBuckets(resultHandler);
     }
-    for (const auto & item : extraModifiedBuckets) {
-        resultHandler.handle(*item);
+    for (auto & item : extraModifiedBuckets) {
+        resultHandler.handle(std::move(*item));
     }
-    return dynamic_cast<BucketIdListResult &>(*futureResult.get());
+    return std::move(dynamic_cast<BucketIdListResult &>(*futureResult.get()));
 }
 
 
@@ -763,7 +765,7 @@ private:
 public:
     ActiveBucketIdListResultHandler() : _bucketMap() { }
 
-    void handle(const BucketIdListResult &result) override {
+    void handle(BucketIdListResult result) override {
         const BucketIdListResult::List &buckets = result.getList();
         for (size_t i = 0; i < buckets.size(); ++i) {
             IR ir(_bucketMap.insert(std::make_pair(buckets[i], 1u)));
@@ -805,7 +807,7 @@ PersistenceEngine::populateInitialBucketDB(const WriteGuard & guard, BucketSpace
     auto catchResult = std::make_unique<storage::spi::CatchResult>();
     auto futureResult = catchResult->future_result();
     GenericResultHandler trHandler(1, std::move(catchResult));
-    targetHandler.handlePopulateActiveBuckets(buckets, trHandler);
+    targetHandler.handlePopulateActiveBuckets(std::move(buckets), trHandler);
     futureResult.get();
 }
 

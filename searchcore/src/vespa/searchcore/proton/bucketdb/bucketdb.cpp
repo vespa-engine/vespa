@@ -225,25 +225,26 @@ BucketDB::deleteEmptyBucket(const BucketId &bucketId)
     }
 }
 
-void
-BucketDB::getActiveBuckets(BucketId::List &buckets) const
+document::BucketId::List
+BucketDB::getActiveBuckets() const
 {
+    BucketId::List buckets;
     for (const auto & entry : _map) {
         if (entry.second.isActive()) {
             buckets.push_back(entry.first);
         }
     }
+    return buckets;
 }
 
-void
-BucketDB::populateActiveBuckets(const BucketId::List &buckets, BucketId::List &fixupBuckets)
+document::BucketId::List
+BucketDB::populateActiveBuckets(BucketId::List buckets)
 {
-    typedef BucketId::List BIV;
-    BIV sorted(buckets);
-    BIV toAdd;
-    std::sort(sorted.begin(), sorted.end());
-    auto si = sorted.begin();
-    auto se = sorted.end();
+    BucketId::List toAdd;
+    BucketId::List fixupBuckets;
+    std::sort(buckets.begin(), buckets.end());
+    auto si = buckets.begin();
+    auto se = buckets.end();
     for (const auto & entry : _map) {
         for (; si != se && !(entry.first < *si); ++si) {
             if (*si < entry.first) {
@@ -263,6 +264,7 @@ BucketDB::populateActiveBuckets(const BucketId::List &buckets, BucketId::List &f
         InsertResult ins(_map.emplace(bucketId, activeState));
         assert(ins.second);
     }
+    return fixupBuckets;
 }
 
 }

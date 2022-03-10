@@ -46,15 +46,14 @@ void
 BucketHandler::performPopulateActiveBuckets(document::BucketId::List buckets,
                                             IGenericResultHandler *resultHandler)
 {
-    _ready->populateActiveBuckets(buckets);
+    _ready->populateActiveBuckets(std::move(buckets));
     resultHandler->handle(Result());
 }
 
 void
 BucketHandler::deactivateAllActiveBuckets()
 {
-    BucketId::List buckets;
-    _ready->getBucketDB().takeGuard()->getActiveBuckets(buckets);
+    BucketId::List buckets = _ready->getBucketDB().takeGuard()->getActiveBuckets();
     for (auto bucketId : buckets) {
         _ready->setBucketState(bucketId, storage::spi::BucketInfo::NOT_ACTIVE);
         // Don't notify bucket state changed, node is marked down so
@@ -93,7 +92,7 @@ BucketHandler::handleListBuckets(IBucketIdListResultHandler &resultHandler)
     // master write thread in document database.
     BucketIdListResult::List buckets;
     _ready->getBucketDB().takeGuard()->getBuckets(buckets);
-    resultHandler.handle(BucketIdListResult(buckets));
+    resultHandler.handle(BucketIdListResult(std::move(buckets)));
 }
 
 void
@@ -130,17 +129,16 @@ BucketHandler::handleListActiveBuckets(IBucketIdListResultHandler &resultHandler
     // Called by SPI thread.
     // BucketDBOwner ensures synchronization between SPI thread and
     // master write thread in document database.
-    BucketIdListResult::List buckets;
-    _ready->getBucketDB().takeGuard()->getActiveBuckets(buckets);
-    resultHandler.handle(BucketIdListResult(buckets));
+
+    resultHandler.handle(BucketIdListResult(_ready->getBucketDB().takeGuard()->getActiveBuckets()));
 }
 
 void
-BucketHandler::handlePopulateActiveBuckets(document::BucketId::List &buckets,
+BucketHandler::handlePopulateActiveBuckets(document::BucketId::List buckets,
                                            IGenericResultHandler &resultHandler)
 {
-    _executor.execute(makeLambdaTask([this, buckets, &resultHandler]() {
-        performPopulateActiveBuckets(std::move(buckets), &resultHandler);
+    _executor.execute(makeLambdaTask([this, moved_buckets=std::move(buckets), &resultHandler]() mutable {
+        performPopulateActiveBuckets(std::move(moved_buckets), &resultHandler);
     }));
 }
 

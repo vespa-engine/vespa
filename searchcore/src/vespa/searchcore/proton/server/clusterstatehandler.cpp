@@ -75,10 +75,7 @@ ClusterStateHandler::performSetClusterState(const ClusterState *calc, IGenericRe
 void
 ClusterStateHandler::performGetModifiedBuckets(IBucketIdListResultHandler *resultHandler)
 {
-    storage::spi::BucketIdListResult::List modifiedBuckets;
-    modifiedBuckets.resize(_modifiedBuckets.size());
-    std::copy(_modifiedBuckets.begin(), _modifiedBuckets.end(),
-              modifiedBuckets.begin());
+    storage::spi::BucketIdListResult::List modifiedBuckets(_modifiedBuckets.begin(), _modifiedBuckets.end());
 
     if (LOG_WOULD_LOG(debug) && !modifiedBuckets.empty()) {
         std::ostringstream oss;
@@ -91,7 +88,7 @@ ClusterStateHandler::performGetModifiedBuckets(IBucketIdListResultHandler *resul
         LOG(debug, "performGetModifiedBuckets(): modifiedBuckets(%zu): %s",
             modifiedBuckets.size(), oss.str().c_str());
     }
-    resultHandler->handle(BucketIdListResult(modifiedBuckets));
+    resultHandler->handle(BucketIdListResult(std::move(modifiedBuckets)));
     _modifiedBuckets.clear();
 }
 

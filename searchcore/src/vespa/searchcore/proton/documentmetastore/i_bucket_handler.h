@@ -52,7 +52,7 @@ struct IBucketHandler
      * Sets the bucket state to active, used when adding document db as
      * part of live reconfig.
      **/
-    virtual void populateActiveBuckets(const BucketId::List &buckets) = 0;
+    virtual void populateActiveBuckets(BucketId::List buckets) = 0;
 
 };
 

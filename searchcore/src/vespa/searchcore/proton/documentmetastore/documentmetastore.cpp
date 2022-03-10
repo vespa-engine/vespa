@@ -982,12 +982,9 @@ DocumentMetaStore::updateActiveLids(const BucketId &bucketId, bool active)
 }
 
 void
-DocumentMetaStore::populateActiveBuckets(const BucketId::List &buckets)
+DocumentMetaStore::populateActiveBuckets(BucketId::List buckets)
 {
-    typedef BucketId::List BIV;
-    BIV fixupBuckets;
-
-    _bucketDB->takeGuard()->populateActiveBuckets(buckets, fixupBuckets);
+    BucketId::List fixupBuckets = _bucketDB->takeGuard()->populateActiveBuckets(std::move(buckets));
 
     for (const auto &bucketId : fixupBuckets) {
         updateActiveLids(bucketId, true);

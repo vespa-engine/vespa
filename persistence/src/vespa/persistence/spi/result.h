@@ -71,7 +71,7 @@ std::ostream & operator << (std::ostream & os, const Result & r);
 
 std::ostream & operator << (std::ostream & os, const Result::ErrorType &errorCode);
 
-class BucketInfoResult : public Result {
+class BucketInfoResult final : public Result {
 public:
     /**
      * Constructor to use for a result where an error has been detected.
@@ -95,7 +95,7 @@ private:
     BucketInfo _info;
 };
 
-class UpdateResult : public Result
+class UpdateResult final : public Result
 {
 public:
     /**
@@ -151,7 +151,7 @@ private:
     uint32_t _numRemoved;
 };
 
-class GetResult : public Result {
+class GetResult final : public Result {
 public:
     /**
      * Constructor to use when there was an error retrieving the document.
@@ -173,6 +173,8 @@ public:
           _is_tombstone(false)
     {
     }
+    GetResult(GetResult &&) noexcept = default;
+    GetResult & operator=(GetResult &&) noexcept = default;
 
     /**
      * Constructor to use when we found the document asked for.
@@ -225,7 +227,7 @@ private:
     bool       _is_tombstone;
 };
 
-class BucketIdListResult : public Result {
+class BucketIdListResult final : public Result {
 public:
     using List = document::bucket::BucketIdList;
 
@@ -241,12 +243,16 @@ public:
      * @param list The list of bucket ids this partition has. Is swapped with
      * the list internal to this object.
      */
-    BucketIdListResult(List& list)
-        : Result()
-    {
-        _info.swap(list);
-    }
-
+    BucketIdListResult(List list)
+        : Result(),
+          _info(std::move(list))
+    { }
+    BucketIdListResult()
+        : Result(),
+          _info()
+    { }
+    BucketIdListResult(BucketIdListResult &&) noexcept = default;
+    BucketIdListResult & operator =(BucketIdListResult &&) noexcept = default;
     ~BucketIdListResult();
 
     const List& getList() const { return _info; }
@@ -278,7 +284,7 @@ private:
     IteratorId _iterator;
 };
 
-class IterateResult : public Result {
+class IterateResult final : public Result {
 public:
     using List = std::vector<std::unique_ptr<DocEntry>>;
 

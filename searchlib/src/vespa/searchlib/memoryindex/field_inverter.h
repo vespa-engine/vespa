@@ -98,7 +98,7 @@ private:
     FieldInverter &operator=(const FieldInverter &) = delete;
     FieldInverter &operator=(const FieldInverter &&) = delete;
 
-    using WordBuffer = vespalib::Array<char>;
+    using WordBuffer = std::vector<char, vespalib::allocator_large<char>>;
 
     class ElemInfo {
     public:

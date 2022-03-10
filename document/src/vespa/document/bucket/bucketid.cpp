@@ -151,5 +151,4 @@ operator>>(nbostream &is, BucketId &bucketId)
 
 } // document
 
-template class vespalib::Array<document::BucketId>;
 VESPALIB_HASH_SET_INSTANTIATE_H(document::BucketId, document::BucketId::hash);
