@@ -3,38 +3,103 @@ search sorting {
 
   document sorting {
 
-    field syntaxcheck type string {
+    field syntaxcheck1a type string {
       indexing: attribute
       attribute {
         sorting: ascending
-        sorting: descending
         sorting: function: uca
-        sorting: function: raw
-        sorting: function: lowercase
         sorting: strength: primary
-        sorting: strength: secondary
-        sorting: strength: tertiary
-        sorting: strength: quaternary
-        sorting: strength: identical
         sorting: locale: en_US
       }
     }
+    field syntaxcheck2a type string {
+      indexing: attribute
+      attribute {
+        sorting: descending
+        sorting: function: raw
+        sorting: strength: secondary
+      }
+    }
+    field syntaxcheck3a type string {
+      indexing: attribute
+      attribute {
+        sorting: ascending
+        sorting: function: lowercase
+        sorting: strength: tertiary
+      }
+    }
+    field syntaxcheck4a type string {
+      indexing: attribute
+      attribute {
+        sorting: descending
+        sorting: function: uca
+        sorting: strength: quaternary
+        sorting: locale: en_US
+      }
+    }
+    field syntaxcheck5a type string {
+      indexing: attribute
+      attribute {
+        sorting: ascending
+        sorting: function: raw
+        sorting: strength: identical
+      }
+    }
 
-    field syntaxcheck2 type string {
+    field syntaxcheck1b type string {
       indexing: attribute
       attribute {
         sorting {
           ascending
+          function: uca
+          strength: primary
+          locale: en_US
+        }
+      }
+    }
+
+
+    field syntaxcheck2b type string {
+      indexing: attribute
+      attribute {
+        sorting {
+          descending
+          function: raw
+          strength: secondary
+        }
+      }
+    }
+
+    field syntaxcheck3b type string {
+      indexing: attribute
+      attribute {
+        sorting {
+          ascending
+          function: lowercase
+          strength: tertiary
+        }
+      }
+    }
+
+    field syntaxcheck4b type string {
+      indexing: attribute
+      attribute {
+        sorting {
           descending
           function: uca
-          function: raw
-          function: lowercase
-          strength: primary
-          strength: secondary
-          strength: tertiary
           strength: quaternary
-          strength: identical
           locale: en_US
+        }
+      }
+    }
+
+    field syntaxcheck5b type string {
+      indexing: attribute
+      attribute {
+        sorting {
+          ascending
+          function: raw
+          strength: identical
         }
       }
     }
