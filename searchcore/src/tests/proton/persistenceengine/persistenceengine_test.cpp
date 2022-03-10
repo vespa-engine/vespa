@@ -261,9 +261,9 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
     }
 
     RetrieversSP getDocumentRetrievers(storage::spi::ReadConsistency) override {
-        RetrieversSP ret(new std::vector<IDocumentRetriever::SP>);
-        ret->push_back(std::make_unique<MyDocumentRetriever>(nullptr, Timestamp(), lastDocId));
-        ret->push_back(std::make_unique<MyDocumentRetriever>(document, existingTimestamp, lastDocId));
+        auto ret = std::make_shared<std::vector<IDocumentRetriever::SP>>();
+        ret->push_back(std::make_shared<MyDocumentRetriever>(nullptr, Timestamp(), lastDocId));
+        ret->push_back(std::make_shared<MyDocumentRetriever>(document, existingTimestamp, lastDocId));
         return ret;
     }
 
