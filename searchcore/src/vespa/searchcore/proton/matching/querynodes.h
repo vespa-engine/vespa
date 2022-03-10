@@ -137,6 +137,7 @@ typedef ProtonTerm<search::query::WandTerm>        ProtonWandTerm;
 typedef ProtonTerm<search::query::PredicateQuery>  ProtonPredicateQuery;
 typedef ProtonTerm<search::query::RegExpTerm>      ProtonRegExpTerm;
 typedef ProtonTerm<search::query::NearestNeighborTerm> ProtonNearestNeighborTerm;
+typedef ProtonTerm<search::query::FuzzyTerm>       ProtonFuzzyTerm;
 
 struct ProtonNodeTypes {
     typedef ProtonAnd             And;
@@ -164,6 +165,7 @@ struct ProtonNodeTypes {
     typedef ProtonNearestNeighborTerm NearestNeighborTerm;
     typedef ProtonTrue            TrueQueryNode;
     typedef ProtonFalse           FalseQueryNode;
+    typedef ProtonFuzzyTerm       FuzzyTerm;
 };
 
 }

@@ -69,6 +69,7 @@ public:
     void visit(ProtonNearestNeighborTerm &) override {}
     void visit(ProtonTrue &) override {}
     void visit(ProtonFalse &) override {}
+    void visit(ProtonFuzzyTerm &n) override { visitTerm(n); }
 };
 
 } // namespace proton::matching::<unnamed>

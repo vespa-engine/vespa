@@ -6,6 +6,7 @@
 #include "create_blueprint_visitor_helper.h"
 #include <vespa/vespalib/objects/visit.h>
 
+using search::query::FuzzyTerm;
 using search::query::LocationTerm;
 using search::query::NearestNeighborTerm;
 using search::query::Node;
@@ -66,6 +67,7 @@ public:
     void visit(PredicateQuery &n) override { visitTerm(n); }
     void visit(RegExpTerm &n) override { visitTerm(n); }
     void visit(NearestNeighborTerm &n) override { visitTerm(n); }
+    void visit(FuzzyTerm &n) override { visitTerm(n); }
 };
 
 template <class Map>

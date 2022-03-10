@@ -170,6 +170,7 @@ bool SimpleQueryStackDumpIterator::readNext() {
     case ParseItem::ITEM_EXACTSTRINGTERM:
     case ParseItem::ITEM_SUFFIXTERM:
     case ParseItem::ITEM_REGEXP:
+    case ParseItem::ITEM_FUZZY:
         _curr_index_name = read_stringref(p);
         _curr_term = read_stringref(p);
         _currArity = 0;

@@ -2,6 +2,7 @@
 package com.yahoo.search.query;
 
 import com.google.common.base.Preconditions;
+import com.yahoo.prelude.query.*;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.collections.LazyMap;
 import com.yahoo.geo.DistanceParser;
@@ -10,38 +11,6 @@ import com.yahoo.language.Language;
 import com.yahoo.language.process.Normalizer;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.Location;
-import com.yahoo.prelude.query.AndItem;
-import com.yahoo.prelude.query.BoolItem;
-import com.yahoo.prelude.query.CompositeItem;
-import com.yahoo.prelude.query.DotProductItem;
-import com.yahoo.prelude.query.EquivItem;
-import com.yahoo.prelude.query.ExactStringItem;
-import com.yahoo.prelude.query.IntItem;
-import com.yahoo.prelude.query.Item;
-import com.yahoo.prelude.query.Limit;
-import com.yahoo.prelude.query.GeoLocationItem;
-import com.yahoo.prelude.query.NearItem;
-import com.yahoo.prelude.query.NearestNeighborItem;
-import com.yahoo.prelude.query.NotItem;
-import com.yahoo.prelude.query.ONearItem;
-import com.yahoo.prelude.query.OrItem;
-import com.yahoo.prelude.query.PhraseItem;
-import com.yahoo.prelude.query.PredicateQueryItem;
-import com.yahoo.prelude.query.PrefixItem;
-import com.yahoo.prelude.query.RangeItem;
-import com.yahoo.prelude.query.RankItem;
-import com.yahoo.prelude.query.RegExpItem;
-import com.yahoo.prelude.query.SameElementItem;
-import com.yahoo.prelude.query.SegmentingRule;
-import com.yahoo.prelude.query.Substring;
-import com.yahoo.prelude.query.SubstringItem;
-import com.yahoo.prelude.query.SuffixItem;
-import com.yahoo.prelude.query.TaggableItem;
-import com.yahoo.prelude.query.WandItem;
-import com.yahoo.prelude.query.WeakAndItem;
-import com.yahoo.prelude.query.WeightedSetItem;
-import com.yahoo.prelude.query.WordAlternativesItem;
-import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.Parser;
@@ -60,64 +29,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.yahoo.search.yql.YqlParser.*;
 import static com.yahoo.slime.Type.ARRAY;
 import static com.yahoo.slime.Type.DOUBLE;
 import static com.yahoo.slime.Type.LONG;
 import static com.yahoo.slime.Type.OBJECT;
 import static com.yahoo.slime.Type.STRING;
-
-import static com.yahoo.search.yql.YqlParser.ACCENT_DROP;
-import static com.yahoo.search.yql.YqlParser.ALTERNATIVES;
-import static com.yahoo.search.yql.YqlParser.AND_SEGMENTING;
-import static com.yahoo.search.yql.YqlParser.ANNOTATIONS;
-import static com.yahoo.search.yql.YqlParser.APPROXIMATE;
-import static com.yahoo.search.yql.YqlParser.ASCENDING_HITS_ORDER;
-import static com.yahoo.search.yql.YqlParser.CONNECTION_ID;
-import static com.yahoo.search.yql.YqlParser.CONNECTION_WEIGHT;
-import static com.yahoo.search.yql.YqlParser.CONNECTIVITY;
-import static com.yahoo.search.yql.YqlParser.DEFAULT_TARGET_NUM_HITS;
-import static com.yahoo.search.yql.YqlParser.DESCENDING_HITS_ORDER;
-import static com.yahoo.search.yql.YqlParser.DISTANCE;
-import static com.yahoo.search.yql.YqlParser.DISTANCE_THRESHOLD;
-import static com.yahoo.search.yql.YqlParser.DOT_PRODUCT;
-import static com.yahoo.search.yql.YqlParser.EQUIV;
-import static com.yahoo.search.yql.YqlParser.FILTER;
-import static com.yahoo.search.yql.YqlParser.GEO_LOCATION;
-import static com.yahoo.search.yql.YqlParser.HIT_LIMIT;
-import static com.yahoo.search.yql.YqlParser.HNSW_EXPLORE_ADDITIONAL_HITS;
-import static com.yahoo.search.yql.YqlParser.IMPLICIT_TRANSFORMS;
-import static com.yahoo.search.yql.YqlParser.LABEL;
-import static com.yahoo.search.yql.YqlParser.NEAR;
-import static com.yahoo.search.yql.YqlParser.NEAREST_NEIGHBOR;
-import static com.yahoo.search.yql.YqlParser.NFKC;
-import static com.yahoo.search.yql.YqlParser.NORMALIZE_CASE;
-import static com.yahoo.search.yql.YqlParser.ONEAR;
-import static com.yahoo.search.yql.YqlParser.ORIGIN;
-import static com.yahoo.search.yql.YqlParser.ORIGIN_LENGTH;
-import static com.yahoo.search.yql.YqlParser.ORIGIN_OFFSET;
-import static com.yahoo.search.yql.YqlParser.ORIGIN_ORIGINAL;
-import static com.yahoo.search.yql.YqlParser.PHRASE;
-import static com.yahoo.search.yql.YqlParser.PREDICATE;
-import static com.yahoo.search.yql.YqlParser.PREFIX;
-import static com.yahoo.search.yql.YqlParser.RANGE;
-import static com.yahoo.search.yql.YqlParser.RANK;
-import static com.yahoo.search.yql.YqlParser.RANKED;
-import static com.yahoo.search.yql.YqlParser.SAME_ELEMENT;
-import static com.yahoo.search.yql.YqlParser.SCORE_THRESHOLD;
-import static com.yahoo.search.yql.YqlParser.SIGNIFICANCE;
-import static com.yahoo.search.yql.YqlParser.STEM;
-import static com.yahoo.search.yql.YqlParser.SUBSTRING;
-import static com.yahoo.search.yql.YqlParser.SUFFIX;
-import static com.yahoo.search.yql.YqlParser.TARGET_HITS;
-import static com.yahoo.search.yql.YqlParser.TARGET_NUM_HITS;
-import static com.yahoo.search.yql.YqlParser.THRESHOLD_BOOST_FACTOR;
-import static com.yahoo.search.yql.YqlParser.UNIQUE_ID;
-import static com.yahoo.search.yql.YqlParser.USE_POSITION_DATA;
-import static com.yahoo.search.yql.YqlParser.USER_INPUT_LANGUAGE;
-import static com.yahoo.search.yql.YqlParser.WAND;
-import static com.yahoo.search.yql.YqlParser.WEAK_AND;
-import static com.yahoo.search.yql.YqlParser.WEIGHT;
-import static com.yahoo.search.yql.YqlParser.WEIGHTED_SET;
 
 /**
  * The Select query language.
@@ -926,6 +843,8 @@ public class SelectParser implements Parser {
                 return instantiateONearItem(field, key, value);
             case EQUIV:
                 return instantiateEquivItem(field, key, value);
+            case FUZZY:
+                return instantiateFuzzyItem(field, key, value);
             case ALTERNATIVES:
                 return instantiateWordAlternativesItem(field, key, value);
             default:
@@ -1153,6 +1072,15 @@ public class SelectParser implements Parser {
         }
 
         return leafStyleSettings(getAnnotations(value), equiv);
+    }
+
+    private Item instantiateFuzzyItem(String field, String key, Inspector value) {
+        HashMap<Integer, Inspector> children = childMap(value);
+        Preconditions.checkArgument(children.size() == 1, "Expected 1 argument, got %s.", children.size());
+        String wordData = children.get(0).asString();
+        FuzzyItem fuzzy = new FuzzyItem(field, true, wordData);
+
+        return leafStyleSettings(getAnnotations(value), fuzzy);
     }
 
     private Item instantiateWordAlternativesItem(String field, String key, Inspector value) {

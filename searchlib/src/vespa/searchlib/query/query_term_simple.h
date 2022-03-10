@@ -22,7 +22,8 @@ public:
         EXACTSTRINGTERM = 3,
         SUFFIXTERM = 4,
         REGEXP = 5,
-        GEO_LOCATION = 6
+        GEO_LOCATION = 6,
+        FUZZYTERM = 7
     };
 
     template <typename N>
@@ -61,6 +62,7 @@ public:
     bool isWord()          const { return (_type == Type::WORD); }
     bool isRegex()         const { return (_type == Type::REGEXP); }
     bool isGeoLoc()        const { return (_type == Type::GEO_LOCATION); }
+    bool isFuzzy()         const { return (_type == Type::FUZZYTERM); }
     bool empty()           const { return _term.empty(); }
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
     vespalib::string getClassName() const;

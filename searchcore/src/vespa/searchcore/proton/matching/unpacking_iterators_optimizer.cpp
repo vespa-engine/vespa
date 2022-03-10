@@ -59,6 +59,7 @@ struct TermExpander : QueryVisitor {
     void visit(NearestNeighborTerm &) override {}
     void visit(TrueQueryNode &) override {}
     void visit(FalseQueryNode &) override {}
+    void visit(FuzzyTerm &) override {}
 
     void flush(Intermediate &parent) {
         for (Node::UP &term: terms) {

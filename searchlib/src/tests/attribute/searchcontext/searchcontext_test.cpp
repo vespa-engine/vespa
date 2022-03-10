@@ -242,6 +242,12 @@ private:
     void testPrefixSearch(const AttributePtr & ptr);
     void testPrefixSearch();
 
+    // test fuzzy search
+    void performFuzzySearch(const StringAttribute & vec, const vespalib::string & term,
+                             const DocSet & expected, TermType termType);
+    void testFuzzySearch(const AttributePtr & ptr);
+    void testFuzzySearch();
+
     // test that search is working after clear doc
     template <typename VectorType, typename ValueType>
     void requireThatSearchIsWorkingAfterClearDoc(const vespalib::string & name, const Config & cfg,
@@ -402,6 +408,7 @@ SearchContextTest::buildTermQuery(std::vector<char> & buffer, const vespalib::st
     switch (termType) {
       case TermType::PREFIXTERM: buffer[p++] = ParseItem::ITEM_PREFIXTERM; break;
       case TermType::REGEXP: buffer[p++] = ParseItem::ITEM_REGEXP; break;
+      case TermType::FUZZYTERM: buffer[p++] = ParseItem::ITEM_FUZZY; break;
       default:
          buffer[p++] = ParseItem::ITEM_TERM;
          break;
@@ -1498,6 +1505,70 @@ SearchContextTest::testPrefixSearch()
     }
 }
 
+//-----------------------------------------------------------------------------
+// Test fuzzy search
+//-----------------------------------------------------------------------------
+
+void
+SearchContextTest::performFuzzySearch(const StringAttribute & vec, const vespalib::string & term,
+                                       const DocSet & expected, TermType termType)
+{
+    performSearch(vec, term, expected, termType);
+}
+
+void
+SearchContextTest::testFuzzySearch(const AttributePtr & ptr)
+{
+    LOG(info, "testFuzzySearch: vector '%s'", ptr->getName().c_str());
+
+    auto & vec = dynamic_cast<StringAttribute &>(*ptr.get());
+
+    uint32_t numDocs = 2;
+    addDocs(*ptr.get(), numDocs);
+
+    const char * strings [] = {"fuzzysearch", "FUZZYSEARCH"};
+    const char * terms[][2] = {
+        {"fuzzysearch", "FUZZYSEARCH"},
+        {"fuzzysearck", "FUZZYSEARCK"},
+        {"fuzzysekkkk", "FUZZYSEKKKK"}
+    };
+
+    for (uint32_t doc = 1; doc < numDocs + 1; ++doc) {
+        ASSERT_TRUE(doc < vec.getNumDocs());
+        EXPECT_TRUE(vec.update(doc, strings[doc - 1]));
+    }
+
+    ptr->commit(true);
+
+    std::vector<DocSet> expected;
+    DocSet empty;
+    {
+        uint32_t docs[] = {1, 2};
+        expected.emplace_back(docs, docs + 2); // normal search
+    }
+    {
+        uint32_t docs[] = {1, 2};
+        expected.emplace_back(docs, docs + 2); // fuzzy search
+    }
+
+    expected.emplace_back(); // results
+
+    for (uint32_t i = 0; i < 3; ++i) {
+        for (uint32_t j = 0; j < 2; ++j) {
+            performFuzzySearch(vec, terms[i][j], expected[i], TermType::FUZZYTERM);
+        }
+    }
+}
+
+void
+SearchContextTest::testFuzzySearch()
+{
+    for (const auto & cfg : _stringCfg) {
+        testFuzzySearch(AttributeFactory::createAttribute(cfg.first, cfg.second));
+    }
+}
+
+
 template <typename VectorType, typename ValueType>
 void
 SearchContextTest::requireThatSearchIsWorkingAfterClearDoc(const vespalib::string & name,
@@ -2028,6 +2099,7 @@ SearchContextTest::Main()
     testPrefixSearch();
     testSearchIteratorConformance();
     testSearchIteratorUnpacking();
+    testFuzzySearch();
     TEST_DO(requireThatSearchIsWorkingAfterClearDoc());
     TEST_DO(requireThatSearchIsWorkingAfterLoadAndClearDoc());
     TEST_DO(requireThatSearchIsWorkingAfterUpdates());

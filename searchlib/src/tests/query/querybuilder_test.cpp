@@ -47,7 +47,7 @@ PredicateQueryTerm::UP getPredicateQueryTerm() {
 template <class NodeTypes>
 Node::UP createQueryTree() {
     QueryBuilder<NodeTypes> builder;
-    builder.addAnd(12);
+    builder.addAnd(13);
     {
         builder.addRank(2);
         {
@@ -115,6 +115,7 @@ Node::UP createQueryTree() {
             builder.add_true_node();
             builder.add_false_node();
         }
+        builder.addFuzzyTerm(str[5], view[5], id[5], weight[5]);
     }
     Node::UP node = builder.build();
     ASSERT_TRUE(node.get());
@@ -179,10 +180,11 @@ void checkQueryTreeTypes(Node *node) {
     typedef typename NodeTypes::RegExpTerm RegExpTerm;
     typedef typename NodeTypes::TrueQueryNode TrueNode;
     typedef typename NodeTypes::FalseQueryNode FalseNode;
+    typedef typename NodeTypes::FuzzyTerm FuzzyTerm;
 
     ASSERT_TRUE(node);
     auto* and_node = as_node<And>(node);
-    EXPECT_EQUAL(12u, and_node->getChildren().size());
+    EXPECT_EQUAL(13u, and_node->getChildren().size());
 
     auto* rank = as_node<Rank>(and_node->getChildren()[0]);
     EXPECT_EQUAL(2u, rank->getChildren().size());
@@ -306,6 +308,9 @@ void checkQueryTreeTypes(Node *node) {
     auto* false_node = as_node<FalseNode>(and_not->getChildren()[1]);
     EXPECT_TRUE(true_node);
     EXPECT_TRUE(false_node);
+
+    auto* fuzzy_term = as_node<FuzzyTerm>(and_node->getChildren()[12]);
+    EXPECT_TRUE(checkTerm(fuzzy_term, str[5], view[5], id[5], weight[5]));
 }
 
 struct AbstractTypes {
@@ -332,6 +337,7 @@ struct AbstractTypes {
     typedef search::query::RegExpTerm RegExpTerm;
     typedef search::query::TrueQueryNode TrueQueryNode;
     typedef search::query::FalseQueryNode FalseQueryNode;
+    typedef search::query::FuzzyTerm FuzzyTerm;
 };
 
 // Builds a tree with simplequery and checks that the results have the
@@ -427,6 +433,11 @@ struct MyNearestNeighborTerm : NearestNeighborTerm {
 };
 struct MyTrue : TrueQueryNode {};
 struct MyFalse : FalseQueryNode {};
+struct MyFuzzyTerm : FuzzyTerm {
+    MyFuzzyTerm(const Type &t, const string &f, int32_t i, Weight w)
+            : FuzzyTerm(t, f, i, w) {
+    }
+};
 
 struct MyQueryNodeTypes {
     typedef MyAnd And;
@@ -454,6 +465,7 @@ struct MyQueryNodeTypes {
     typedef MyNearestNeighborTerm NearestNeighborTerm;
     typedef MyTrue TrueQueryNode;
     typedef MyFalse FalseQueryNode;
+    typedef MyFuzzyTerm FuzzyTerm;
 };
 
 TEST("require that Custom Query Trees Can Be Built") {

@@ -115,6 +115,18 @@ public:
     virtual ~RegExpTerm() = 0;
 };
 
+//-----------------------------------------------------------------------------
+
+class FuzzyTerm : public QueryNodeMixin<FuzzyTerm, StringBase>
+{
+public:
+    FuzzyTerm(const Type &term, vespalib::stringref view,
+               int32_t id, Weight weight)
+            : QueryNodeMixinType(term, view, id, weight)
+    {}
+    virtual ~FuzzyTerm() = 0;
+};
+
 /**
  * Term matching the K nearest neighbors in a multi-dimensional vector space.
  *

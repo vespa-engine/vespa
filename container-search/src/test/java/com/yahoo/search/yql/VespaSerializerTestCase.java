@@ -443,4 +443,10 @@ public class VespaSerializerTestCase {
                 + "alternatives({\"trees\": 1.0, \"tree\": 0.7}))"
                 + ")");
     }
+
+    @Test
+    public void testFuzzy() {
+        parseAndConfirm("foo contains fuzzy(\"a\")");
+    }
+
 }

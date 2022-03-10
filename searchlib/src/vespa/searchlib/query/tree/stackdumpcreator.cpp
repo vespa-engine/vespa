@@ -278,6 +278,10 @@ class QueryNodeConverter : public QueryVisitor {
         createTerm(node, ParseItem::ITEM_REGEXP);
     }
 
+    void visit(FuzzyTerm &node) override {
+        createTerm(node, ParseItem::ITEM_FUZZY);
+    }
+
     void visit(NearestNeighborTerm &node) override {
         createTermNode(node, ParseItem::ITEM_NEAREST_NEIGHBOR);
         appendString(node.get_query_tensor_name());

@@ -32,6 +32,7 @@ class TemplateTermVisitor : public CustomTypeTermVisitor<NodeTypes> {
     void visit(typename NodeTypes::PredicateQuery &n) override { myVisit(n); }
     void visit(typename NodeTypes::RegExpTerm &n) override { myVisit(n); }
     void visit(typename NodeTypes::NearestNeighborTerm &n) override { myVisit(n); }
+    void visit(typename NodeTypes::FuzzyTerm &n) override { myVisit(n); }
 
     // Phrases are terms with children. This visitor will not visit
     // the phrase's children, unless this member function is

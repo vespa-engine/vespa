@@ -674,6 +674,12 @@ public class SelectTestCase {
         checkWordAlternativesContent(alternatives);
     }
 
+    @Test
+    public void testFuzzy() {
+        assertParse("{ \"contains\": [\"description\", { \"fuzzy\": [\"a\"] }] }",
+                "FUZZY description:a");
+    }
+
     //------------------------------------------------------------------- grouping tests
 
     @Test

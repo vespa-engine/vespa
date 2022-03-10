@@ -1,55 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.yql;
 
-import static com.yahoo.search.yql.YqlParser.ACCENT_DROP;
-import static com.yahoo.search.yql.YqlParser.ALTERNATIVES;
-import static com.yahoo.search.yql.YqlParser.AND_SEGMENTING;
-import static com.yahoo.search.yql.YqlParser.BOUNDS;
-import static com.yahoo.search.yql.YqlParser.BOUNDS_LEFT_OPEN;
-import static com.yahoo.search.yql.YqlParser.BOUNDS_OPEN;
-import static com.yahoo.search.yql.YqlParser.BOUNDS_RIGHT_OPEN;
-import static com.yahoo.search.yql.YqlParser.CONNECTION_ID;
-import static com.yahoo.search.yql.YqlParser.CONNECTION_WEIGHT;
-import static com.yahoo.search.yql.YqlParser.CONNECTIVITY;
-import static com.yahoo.search.yql.YqlParser.DISTANCE;
-import static com.yahoo.search.yql.YqlParser.DOT_PRODUCT;
-import static com.yahoo.search.yql.YqlParser.END_ANCHOR;
-import static com.yahoo.search.yql.YqlParser.EQUIV;
-import static com.yahoo.search.yql.YqlParser.FILTER;
-import static com.yahoo.search.yql.YqlParser.GEO_LOCATION;
-import static com.yahoo.search.yql.YqlParser.HIT_LIMIT;
-import static com.yahoo.search.yql.YqlParser.IMPLICIT_TRANSFORMS;
-import static com.yahoo.search.yql.YqlParser.LABEL;
-import static com.yahoo.search.yql.YqlParser.NEAR;
-import static com.yahoo.search.yql.YqlParser.NEAREST_NEIGHBOR;
-import static com.yahoo.search.yql.YqlParser.NORMALIZE_CASE;
-import static com.yahoo.search.yql.YqlParser.ONEAR;
-import static com.yahoo.search.yql.YqlParser.ORIGIN;
-import static com.yahoo.search.yql.YqlParser.ORIGIN_LENGTH;
-import static com.yahoo.search.yql.YqlParser.ORIGIN_OFFSET;
-import static com.yahoo.search.yql.YqlParser.ORIGIN_ORIGINAL;
-import static com.yahoo.search.yql.YqlParser.PHRASE;
-import static com.yahoo.search.yql.YqlParser.PREFIX;
-import static com.yahoo.search.yql.YqlParser.RANGE;
-import static com.yahoo.search.yql.YqlParser.RANK;
-import static com.yahoo.search.yql.YqlParser.RANKED;
-import static com.yahoo.search.yql.YqlParser.SAME_ELEMENT;
-import static com.yahoo.search.yql.YqlParser.SCORE_THRESHOLD;
-import static com.yahoo.search.yql.YqlParser.SIGNIFICANCE;
-import static com.yahoo.search.yql.YqlParser.START_ANCHOR;
-import static com.yahoo.search.yql.YqlParser.STEM;
-import static com.yahoo.search.yql.YqlParser.SUBSTRING;
-import static com.yahoo.search.yql.YqlParser.SUFFIX;
-import static com.yahoo.search.yql.YqlParser.TARGET_NUM_HITS;
-import static com.yahoo.search.yql.YqlParser.THRESHOLD_BOOST_FACTOR;
-import static com.yahoo.search.yql.YqlParser.UNIQUE_ID;
-import static com.yahoo.search.yql.YqlParser.URI;
-import static com.yahoo.search.yql.YqlParser.USE_POSITION_DATA;
-import static com.yahoo.search.yql.YqlParser.WAND;
-import static com.yahoo.search.yql.YqlParser.WEAK_AND;
-import static com.yahoo.search.yql.YqlParser.WEIGHT;
-import static com.yahoo.search.yql.YqlParser.WEIGHTED_SET;
-
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -64,50 +15,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.prelude.query.AndItem;
-import com.yahoo.prelude.query.AndSegmentItem;
-import com.yahoo.prelude.query.BoolItem;
-import com.yahoo.prelude.query.DotProductItem;
-import com.yahoo.prelude.query.EquivItem;
-import com.yahoo.prelude.query.FalseItem;
-import com.yahoo.prelude.query.ExactStringItem;
-import com.yahoo.prelude.query.IndexedItem;
-import com.yahoo.prelude.query.IntItem;
-import com.yahoo.prelude.query.Item;
-import com.yahoo.prelude.query.GeoLocationItem;
-import com.yahoo.prelude.query.MarkerWordItem;
-import com.yahoo.prelude.query.NearItem;
-import com.yahoo.prelude.query.NearestNeighborItem;
-import com.yahoo.prelude.query.NotItem;
-import com.yahoo.prelude.query.NullItem;
-import com.yahoo.prelude.query.ONearItem;
-import com.yahoo.prelude.query.OrItem;
-import com.yahoo.prelude.query.PhraseItem;
-import com.yahoo.prelude.query.PhraseSegmentItem;
-import com.yahoo.prelude.query.PredicateQueryItem;
-import com.yahoo.prelude.query.PrefixItem;
-import com.yahoo.prelude.query.RangeItem;
-import com.yahoo.prelude.query.RankItem;
-import com.yahoo.prelude.query.RegExpItem;
-import com.yahoo.prelude.query.SameElementItem;
-import com.yahoo.prelude.query.SegmentingRule;
-import com.yahoo.prelude.query.Substring;
-import com.yahoo.prelude.query.SubstringItem;
-import com.yahoo.prelude.query.SuffixItem;
-import com.yahoo.prelude.query.TaggableItem;
-import com.yahoo.prelude.query.ToolBox;
+import com.yahoo.prelude.query.*;
 import com.yahoo.prelude.query.ToolBox.QueryVisitor;
-import com.yahoo.prelude.query.TrueItem;
-import com.yahoo.prelude.query.UriItem;
-import com.yahoo.prelude.query.WandItem;
-import com.yahoo.prelude.query.WeakAndItem;
-import com.yahoo.prelude.query.WeightedSetItem;
-import com.yahoo.prelude.query.WordAlternativesItem;
-import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.grouping.Continuation;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.query.QueryTree;
+
+import static com.yahoo.search.yql.YqlParser.*;
 
 /**
  * Serialize Vespa query trees to YQL+ strings.
@@ -513,6 +428,32 @@ public class VespaSerializer {
             String annotations = leafAnnotations(regexp);
             destination.append(normalizeIndexName(regexp.getIndexName())).append(" matches ");
             annotatedTerm(destination, regexp, annotations);
+            return false;
+        }
+    }
+
+    private static class FuzzySerializer extends Serializer<FuzzyItem> {
+
+        @Override
+        void onExit(StringBuilder destination, FuzzyItem item) { }
+
+        @Override
+        boolean serialize(StringBuilder destination, FuzzyItem fuzzy) {
+            String annotations = leafAnnotations(fuzzy);
+            destination.append(normalizeIndexName(fuzzy.getIndexName())).append(" contains ");
+
+            if (annotations.length() > 0) {
+                destination.append('(').append(annotations);
+            }
+
+            destination.append(FUZZY).append('(');
+            destination.append('"');
+            escape(fuzzy.getIndexedString(), destination).append('"');
+            destination.append(')');
+
+            if (annotations.length() > 0) {
+                destination.append(')');
+            }
             return false;
         }
     }
@@ -1239,6 +1180,7 @@ public class VespaSerializer {
         dispatchBuilder.put(WordItem.class, new WordSerializer());
         dispatchBuilder.put(RegExpItem.class, new RegExpSerializer());
         dispatchBuilder.put(UriItem.class, new UriSerializer());
+        dispatchBuilder.put(FuzzyItem.class, new FuzzySerializer());
         dispatch = ImmutableMap.copyOf(dispatchBuilder);
     }
 

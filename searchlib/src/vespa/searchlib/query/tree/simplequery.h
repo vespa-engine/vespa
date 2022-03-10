@@ -152,7 +152,13 @@ struct SimpleNearestNeighborTerm : NearestNeighborTerm {
     {}
     ~SimpleNearestNeighborTerm() override;
 };
-
+struct SimpleFuzzyTerm : FuzzyTerm {
+    SimpleFuzzyTerm(const Type &term, vespalib::stringref view,
+                     int32_t id, Weight weight)
+            : FuzzyTerm(term, view, id, weight) {
+    }
+    ~SimpleFuzzyTerm() override;
+};
 
 struct SimpleQueryNodeTypes {
     using And = SimpleAnd;
@@ -180,6 +186,7 @@ struct SimpleQueryNodeTypes {
     using PredicateQuery = SimplePredicateQuery;
     using RegExpTerm = SimpleRegExpTerm;
     using NearestNeighborTerm = SimpleNearestNeighborTerm;
+    using FuzzyTerm = SimpleFuzzyTerm;
 };
 
 }

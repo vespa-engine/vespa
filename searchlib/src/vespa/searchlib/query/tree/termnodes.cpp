@@ -24,6 +24,7 @@ RegExpTerm::~RegExpTerm() = default;
 WeightedSetTerm::~WeightedSetTerm() = default;
 DotProduct::~DotProduct() = default;
 WandTerm::~WandTerm() = default;
+FuzzyTerm::~FuzzyTerm() = default;
 
 namespace {
 

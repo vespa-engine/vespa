@@ -28,6 +28,7 @@ using index::IFieldLengthInspector;
 using index::IndexBuilder;
 using index::Schema;
 using index::SchemaUtil;
+using query::FuzzyTerm;
 using query::LocationTerm;
 using query::NearestNeighborTerm;
 using query::Node;
@@ -168,6 +169,7 @@ public:
     void visit(SubstringTerm &n) override { visitTerm(n); }
     void visit(SuffixTerm &n)    override { visitTerm(n); }
     void visit(RegExpTerm &n)    override { visitTerm(n); }
+    void visit(FuzzyTerm &n)    override { visitTerm(n); }
     void visit(PredicateQuery &n) override { not_supported(n); }
     void visit(NearestNeighborTerm &n) override { not_supported(n); }
 

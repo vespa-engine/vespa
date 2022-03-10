@@ -36,6 +36,7 @@ struct MyRangeTerm : InitTerm<RangeTerm> {};
 struct MyStringTerm : InitTerm<StringTerm>  {};
 struct MySubstrTerm : InitTerm<SubstringTerm>  {};
 struct MySuffixTerm : InitTerm<SuffixTerm>  {};
+struct MyFuzzyTerm : InitTerm<FuzzyTerm> {};
 struct MyWeakAnd : WeakAnd { MyWeakAnd() : WeakAnd(1234, "view") {} };
 struct MyWeightedSetTerm : WeightedSetTerm { MyWeightedSetTerm() : WeightedSetTerm(0, "view", 0, Weight(42)) {} };
 struct MyDotProduct : DotProduct { MyDotProduct() : DotProduct(0, "view", 0, Weight(42)) {} };
@@ -65,6 +66,7 @@ struct MyQueryNodeTypes {
     typedef MyStringTerm StringTerm;
     typedef MySubstrTerm SubstringTerm;
     typedef MySuffixTerm SuffixTerm;
+    typedef MyFuzzyTerm FuzzyTerm;
     typedef MyWeakAnd WeakAnd;
     typedef MyWeightedSetTerm WeightedSetTerm;
     typedef MyDotProduct DotProduct;
@@ -112,6 +114,7 @@ public:
     void visit(MyNearestNeighborTerm &) override { setVisited<MyNearestNeighborTerm>(); }
     void visit(MyTrue &) override { setVisited<MyTrue>(); }
     void visit(MyFalse &) override { setVisited<MyFalse>(); }
+    void visit(MyFuzzyTerm &) override { setVisited<MyFuzzyTerm>(); }
 };
 
 template <class T>
@@ -148,6 +151,7 @@ TEST("customtypevisitor_test") {
     requireThatNodeIsVisited<MyNearestNeighborTerm>();
     requireThatNodeIsVisited<MyTrue>();
     requireThatNodeIsVisited<MyFalse>();
+    requireThatNodeIsVisited<MyFuzzyTerm>();
 }
 }  // namespace
 
