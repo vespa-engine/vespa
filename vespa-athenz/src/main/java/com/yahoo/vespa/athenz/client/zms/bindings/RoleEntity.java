@@ -27,9 +27,9 @@ public class RoleEntity {
                       @JsonProperty("reviewEnabled") Boolean reviewEnabled,
                       @JsonProperty("auditLog") List<AuditLogEntry> auditLog) {
         this.roleName = roleName;
-        this.roleMembers = roleMembers;
-        this.selfServe = selfServe;
-        this.reviewEnabled = reviewEnabled;
+        this.roleMembers = roleMembers == null ? new ArrayList<>() : roleMembers;
+        this.selfServe = selfServe == null ? false : selfServe;
+        this.reviewEnabled = reviewEnabled == null ? false : reviewEnabled;
         this.auditLog = auditLog == null ? new ArrayList<>() : auditLog;
     }
 
