@@ -36,13 +36,13 @@ environment variables. This can be useful in continuous integration systems.
 
 Example of setting the certificate and key in-line:
 
-- export VESPA_CLI_DATA_PLANE_CERT="my cert"
-- export VESPA_CLI_DATA_PLANE_KEY="my private key"
+    export VESPA_CLI_DATA_PLANE_CERT="my cert"
+    export VESPA_CLI_DATA_PLANE_KEY="my private key"
 
 Example of loading certificate and key from custom paths:
 
-- export VESPA_CLI_DATA_PLANE_CERT_FILE=/path/to/cert
-- export VESPA_CLI_DATA_PLANE_KEY_FILE=/path/to/key
+    export VESPA_CLI_DATA_PLANE_CERT_FILE=/path/to/cert
+    export VESPA_CLI_DATA_PLANE_KEY_FILE=/path/to/key
 
 Note that when overriding key pair through environment variables, that key pair
 will always be used for all applications. It's not possible to specify an

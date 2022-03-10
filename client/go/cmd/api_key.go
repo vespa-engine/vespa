@@ -28,13 +28,13 @@ key as necessary.
 It's possible to override the API key used through environment variables. This
 can be useful in continuous integration systems.
 
-* VESPA_CLI_API_KEY containing the key directly:
+Example of setting the key in-line:
 
-  export VESPA_CLI_API_KEY="my api key"
+    export VESPA_CLI_API_KEY="my api key"
 
-* VESPA_CLI_API_KEY_FILE containing path to the key:
+Example of loading the key from a custom path:
 
-  export VESPA_CLI_API_KEY_FILE=/path/to/api-key
+    export VESPA_CLI_API_KEY_FILE=/path/to/api-key
 
 Note that when overriding API key through environment variables, that key will
 always be used. It's not possible to specify a tenant-specific key.`,
