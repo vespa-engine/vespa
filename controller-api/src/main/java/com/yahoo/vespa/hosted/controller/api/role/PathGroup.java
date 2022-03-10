@@ -241,7 +241,8 @@ enum PathGroup {
     accessRequests(Matcher.tenant, "/application/v4/tenant/{tenant}/access/request/{*}"),
 
     /** Paths used to approve requests to access tenant resources */
-    accessRequestApproval(Matcher.tenant, "/application/v4/tenant/{tenant}/access/approve/{*}");
+    accessRequestApproval(Matcher.tenant, "/application/v4/tenant/{tenant}/access/approve/{*}",
+            "/application/v4/tenant/{tenant}/access/preapprove/{*}");
 
     final List<String> pathSpecs;
     final List<Matcher> matchers;
