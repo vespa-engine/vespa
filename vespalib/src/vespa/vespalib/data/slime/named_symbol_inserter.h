@@ -3,9 +3,12 @@
 #pragma once
 
 #include "symbol_inserter.h"
-#include "symbol_table.h"
+
+namespace vespalib { class Memory; }
 
 namespace vespalib::slime {
+
+class SymbolTable;
 
 /**
  * Class used to insert the name of a field into a symbol table.
@@ -19,9 +22,7 @@ private:
 public:
     NamedSymbolInserter(SymbolTable &table, const Memory &name) noexcept
         : _table(table), _name(name) {}
-    Symbol insert() override {
-        return _table.insert(_name);
-    }
+    Symbol insert() override;
 };
 
 } // namespace vespalib::slime

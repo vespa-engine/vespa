@@ -6,6 +6,7 @@
 #include "resolved_symbol.h"
 #include "named_symbol_lookup.h"
 #include "named_symbol_inserter.h"
+#include "symbol_table.h"
 
 namespace vespalib::slime {
 

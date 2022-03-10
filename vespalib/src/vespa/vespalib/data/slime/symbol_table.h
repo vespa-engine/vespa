@@ -29,7 +29,7 @@ public:
     typedef std::unique_ptr<SymbolTable> UP;
     SymbolTable(size_t expectedNumSymbols=16);
     ~SymbolTable();
-    size_t symbols() const { return _names.size(); }
+    size_t symbols() const noexcept { return _names.size(); }
     Memory inspect(const Symbol &symbol) const {
         if (symbol.getValue() > _names.size()) {
             return Memory();

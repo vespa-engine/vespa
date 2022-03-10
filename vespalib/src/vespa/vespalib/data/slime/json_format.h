@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/data/output.h>
 #include "type.h"
+#include <vespa/vespalib/data/output.h>
 #include <vespa/vespalib/data/input_reader.h>
 #include <vespa/vespalib/data/output_writer.h>
 
