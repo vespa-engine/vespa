@@ -7,7 +7,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * This class should be used by exactly 2 thread, 1 for each interface it implements.
+ * This class should be used by exactly 2 threads, 1 for each interface it implements.
  *
  * @author freva
  */
