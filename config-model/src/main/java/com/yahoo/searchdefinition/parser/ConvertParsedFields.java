@@ -310,4 +310,13 @@ public class ConvertParsedFields {
         return structProxy;
     }
 
+    void convertAnnotation(Schema schema, SDDocumentType document, ParsedAnnotation parsed) {
+        var annType = context.resolveAnnotation(parsed.name());
+        var payload = parsed.getStruct();
+        if (payload.isPresent()) {
+            var structProxy = convertStructDeclaration(schema, payload.get());
+            document.addType(structProxy);
+        }
+        document.addAnnotation(annType);
+    }
 }

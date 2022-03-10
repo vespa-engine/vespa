@@ -145,21 +145,6 @@ public class ConvertSchemaCollection {
         return resultList;
     }
 
-    private void convertAnnotation(Schema schema, SDDocumentType document, ParsedAnnotation parsed, ConvertParsedFields fieldConverter) {
-        var type = new SDAnnotationType(parsed.name());
-        for (String inherit : parsed.getInherited()) {
-            type.inherit(inherit);
-        }
-        var payload = parsed.getStruct();
-        if (payload.isPresent()) {
-            var struct = fieldConverter.convertStructDeclaration(schema, payload.get());
-            type = new SDAnnotationType(parsed.name(), struct, type.getInherits());
-            // WTF?
-            struct.setStruct(null);
-        }
-        document.addAnnotation(type);
-    }
-
     private void convertDocument(Schema schema, ParsedDocument parsed,
                                  ConvertParsedFields fieldConverter)
     {
@@ -172,7 +157,7 @@ public class ConvertSchemaCollection {
             document.addType(structProxy);
         }
         for (var annotation : parsed.getAnnotations()) {
-            convertAnnotation(schema, document, annotation, fieldConverter);
+            fieldConverter.convertAnnotation(schema, document, annotation);
         }
         for (var field : parsed.getFields()) {
             var sdf = fieldConverter.convertDocumentField(schema, document, field);
