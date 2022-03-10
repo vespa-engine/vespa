@@ -3,9 +3,12 @@
 #pragma once
 
 #include "symbol_lookup.h"
-#include "symbol_table.h"
+
+namespace vespalib { class Memory; }
 
 namespace vespalib::slime {
+
+class SymbolTable;
 
 /**
  * Class used to look up the name of a field in a symbol table.
@@ -19,9 +22,7 @@ private:
 public:
     NamedSymbolLookup(const SymbolTable &table, const Memory &name)
         : _table(table), _name(name) {}
-    Symbol lookup() const override {
-        return _table.lookup(_name);
-    }
+    Symbol lookup() const override;
 };
 
 } // namespace vespalib::slime

@@ -6,6 +6,8 @@
 #include <vespa/vespalib/data/slime/array_value.h>
 #include <vespa/vespalib/data/slime/strfmt.h>
 #include <vespa/vespalib/data/simple_buffer.h>
+#include <vespa/vespalib/data/slime/symbol_table.h>
+#include <vespa/vespalib/data/slime/basic_value.h>
 #include <type_traits>
 
 #include <vespa/log/log.h>
