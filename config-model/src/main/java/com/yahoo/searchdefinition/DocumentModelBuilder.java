@@ -407,7 +407,6 @@ public class DocumentModelBuilder {
                 }
             }
             handleStruct(sdoc.getDocumentType().contentStruct());
-
             extractDataTypesFromFields(sdoc.fieldSet());
         }
 
