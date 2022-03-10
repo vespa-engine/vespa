@@ -40,6 +40,8 @@ public final class JsonFormat implements SlimeFormat {
     }
 
     @Override
+    @Deprecated(since = "7", forRemoval = true)
+    @SuppressWarnings("removal")
     public void decode(InputStream is, Slime slime) {
         throw new UnsupportedOperationException("Not implemented");
     }

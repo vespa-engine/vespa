@@ -25,7 +25,7 @@ public interface SlimeFormat {
      * @param slime The slime object to decode into.
      * @deprecated use e.g. {@link JsonDecoder} instead
      */
-    @Deprecated(forRemoval = true, since = "7")
+    @Deprecated(since = "7", forRemoval = true)
     void decode(InputStream is, Slime slime) throws IOException;
 
 }
