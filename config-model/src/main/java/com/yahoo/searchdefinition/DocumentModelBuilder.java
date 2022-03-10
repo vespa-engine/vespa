@@ -32,9 +32,9 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -245,7 +245,15 @@ public class DocumentModelBuilder {
             if (other != null) {
                 type = other;
             }
-        } else if (type instanceof DocumentType || type instanceof NewDocumentType) {
+        } else if (type instanceof DocumentType) {
+            DataType other = getDocumentType(docs, type.getId());
+            if (other != null) {
+                type = other;
+            } else if (! type.getName().equals("document")) {
+                throw new IllegalArgumentException
+                    ("Can not handle nested document definitions. Undefined document type: " + type.toString());
+            }
+        } else if (type instanceof NewDocumentType) {
             DataType other = getDocumentType(docs, type.getId());
             if (other != null) {
                 type = other;
@@ -283,9 +291,17 @@ public class DocumentModelBuilder {
         }
         else if (type instanceof ReferenceDataType) {
             ReferenceDataType t = (ReferenceDataType) type;
-            if (t.getTargetType() instanceof TemporaryStructuredDataType) {
-                DataType targetType = resolveTemporariesRecurse(t.getTargetType(), repo, docs, replacements);
+            var tt = t.getTargetType();
+            if (tt instanceof TemporaryStructuredDataType) {
+                DataType targetType = resolveTemporariesRecurse(tt, repo, docs, replacements);
                 t.setTargetType((StructuredDataType) targetType);
+            } else if (tt instanceof DocumentType) {
+                DataType targetType = resolveTemporariesRecurse(tt, repo, docs, replacements);
+                // super ugly, the APIs for this are horribly inconsistent
+                var tmptmp = TemporaryStructuredDataType.create(tt.getName());
+                var tmp = new ReferenceDataType(tmptmp, t.getId());
+                tmp.setTargetType((StructuredDataType) targetType);
+                type = tmp;
             }
         }
         if (type != original) {
@@ -332,8 +348,8 @@ public class DocumentModelBuilder {
 
     static class TypeExtractor {
         private final NewDocumentType targetDt;
-        Map<AnnotationType, String> annotationInheritance = new HashMap<>();
-        Map<StructDataType, String> structInheritance = new HashMap<>();
+        Map<AnnotationType, String> annotationInheritance = new LinkedHashMap<>();
+        Map<StructDataType, String> structInheritance = new LinkedHashMap<>();
         private final Map<Object, Object> inProgress = new IdentityHashMap<>();
         TypeExtractor(NewDocumentType target) {
             this.targetDt = target;
@@ -349,9 +365,11 @@ public class DocumentModelBuilder {
             }
             for (SDDocumentType type : sdoc.getTypes()) {
                 for (SDDocumentType proxy : type.getInheritedTypes()) {
-                    var inherited = targetDt.getDataTypeRecursive(proxy.getName());
+                    var inherited = (StructDataType) targetDt.getDataTypeRecursive(proxy.getName());
                     var converted = (StructDataType) targetDt.getDataType(type.getName());
-                    converted.inherit((StructDataType) inherited);
+                    if (! converted.inherits(inherited)) {
+                        converted.inherit(inherited);
+                    }
                 }
             }
             for (AnnotationType annotation : sdoc.getAnnotations().values()) {
@@ -411,9 +429,6 @@ public class DocumentModelBuilder {
             if (type instanceof StructDataType) {
                 StructDataType tmp = (StructDataType) type;
                 extractDataTypesFromFields(tmp.getFieldsThisTypeOnly());
-            } else if (type instanceof DocumentType) {
-                throw new IllegalArgumentException("Can not handle nested document definitions. In document type '" + targetDt.getName().toString() +
-                                                   "', we can not define document type '" + type.toString());
             } else if (type instanceof CollectionDataType) {
                 CollectionDataType tmp = (CollectionDataType) type;
                 extractNestedTypes(tmp.getNestedType());
@@ -514,7 +529,17 @@ public class DocumentModelBuilder {
             return null;
         }
 
+        @SuppressWarnings("deprecation")
         private StructDataType handleStruct(SDDocumentType type) {
+            if (type.isStruct()) {
+                var st = type.getStruct();
+                if (st.getName().equals(type.getName()) &&
+                    (st instanceof StructDataType) &&
+                    ! (st instanceof TemporaryStructuredDataType))
+                    {
+                        return handleStruct((StructDataType) st);
+                    }
+            }
             StructDataType s = new StructDataType(type.getName());
             for (Field f : type.getDocumentType().contentStruct().getFieldsThisTypeOnly()) {
                 specialHandleAnnotationReference(f);

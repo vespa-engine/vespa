@@ -11,9 +11,11 @@ import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.VespaDocumentType;
 import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.vespa.documentmodel.DocumentModel;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -262,6 +264,13 @@ public class DocumentManager {
         }
     }
 
+    static private <T> List<T> sortedList(Collection<T> unsorted, Comparator<T> cmp) {
+        var list = new ArrayList<T>();
+        list.addAll(unsorted);
+        list.sort(cmp);
+        return list;
+    }
+
     private void docTypeBuild(NewDocumentType documentType, DocumentmanagerConfig.Builder builder, IdxMap indexMap) {
         DocumentmanagerConfig.Doctype.Builder db = new DocumentmanagerConfig.Doctype.Builder();
         db.
@@ -274,11 +283,14 @@ public class DocumentManager {
             db.inherits(b -> b.idx(indexMap.idxOf(inherited)));
         }
         docTypeBuildAnyType(documentType.getHeader(), db, indexMap);
-        for (DataType dt : documentType.getAllTypes().getTypes()) {
+
+        for (DataType dt : sortedList(documentType.getAllTypes().getTypes(),
+                                      (a,b) -> a.getName().compareTo(b.getName()))) {
             docTypeBuildAnyType(dt, db, indexMap);
         }
-        for (AnnotationType annotation : documentType.getAnnotations()) {
-            docTypeBuildAnnotationType(annotation, db, indexMap);
+        for (AnnotationType ann : sortedList(documentType.getAnnotations(),
+                                             (a,b) -> a.getName().compareTo(b.getName()))) {
+            docTypeBuildAnnotationType(ann, db, indexMap);
         }
         builder.doctype(db);
         indexMap.setDone(documentType);
