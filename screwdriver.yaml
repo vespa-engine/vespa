@@ -91,7 +91,7 @@ jobs:
       screwdriver.cd/timeout: 90
       screwdriver.cd/dockerEnabled: true
       screwdriver.cd/dockerCpu: TURBO
-      screwdriver.cd/dockerRam: TURBO
+      screwdriver.cd/dockerRam: HIGH
     environment:
       LOCAL_MVN_REPO: "/tmp/vespa/mvnrepo"
       VESPA_MAVEN_EXTRA_OPTS: "--show-version --batch-mode --no-snapshot-updates -Dmaven.repo.local=/tmp/vespa/mvnrepo"
@@ -190,7 +190,7 @@ jobs:
       screwdriver.cd/timeout: 300
       screwdriver.cd/dockerEnabled: true
       screwdriver.cd/dockerCpu: TURBO
-      screwdriver.cd/dockerRam: TURBO
+      screwdriver.cd/dockerRam: HIGH
 
     secrets:
       - COPR_WEBHOOK
