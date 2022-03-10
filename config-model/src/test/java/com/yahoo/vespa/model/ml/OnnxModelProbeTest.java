@@ -29,11 +29,14 @@ public class OnnxModelProbeTest {
                     "input2", TensorType.fromSpec("tensor<float>(d0[1],d1[2])"));
             TensorType expected = TensorType.fromSpec("tensor<float>(d0[1],d1[2],d2[2])");
 
-            // Can't test model probing directly as 'vespa-analyze-onnx-model' is not available
             TensorType outputType = OnnxModelProbe.probeModel(app, modelPath, output, inputTypes);
-            assertEquals(outputType, TensorType.empty);
-            
-            OnnxModelProbe.writeProbedOutputType(app, modelPath, output, inputTypes, expected);
+
+            // if 'vespa-analyze-onnx-model' was unavailable, specifically cache expected type
+            if (outputType.equals(TensorType.empty)) {
+                OnnxModelProbe.writeProbedOutputType(app, modelPath, output, inputTypes, expected);
+            } else {
+                assertEquals(outputType, expected);
+            }
 
             // Test loading from generated info
             storedAppDir.toFile().mkdirs();

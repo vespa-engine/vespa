@@ -48,7 +48,7 @@ public class OnnxModelProbe {
                 }
             }
 
-        } catch (IOException | InterruptedException e) {
+        } catch (IllegalArgumentException | IOException | InterruptedException e) {
             e.printStackTrace(System.err);
         }
 
@@ -127,7 +127,6 @@ public class OnnxModelProbe {
 
     private static String callVespaAnalyzeOnnxModel(String jsonInput) throws IOException, InterruptedException {
         ProcessBuilder processBuilder = new ProcessBuilder(binary, "--probe-types");
-        processBuilder.redirectErrorStream(true);
         StringBuilder output = new StringBuilder();
         Process process = processBuilder.start();
 
@@ -136,7 +135,7 @@ public class OnnxModelProbe {
         os.write(jsonInput.getBytes(StandardCharsets.UTF_8));
         os.close();
 
-        // Read output from stdout/stderr
+        // Read output from stdout
         InputStream inputStream = process.getInputStream();
         while (true) {
             int b = inputStream.read();
