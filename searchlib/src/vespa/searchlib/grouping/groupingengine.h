@@ -4,8 +4,7 @@
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/grouping/groupengine.h>
 
-namespace search {
-namespace grouping {
+namespace search::grouping {
 
 class GroupingEngine
 {
@@ -31,5 +30,4 @@ private:
     aggregation::GroupingLevel     _rootRequestLevel;
 };
 
-}
 }

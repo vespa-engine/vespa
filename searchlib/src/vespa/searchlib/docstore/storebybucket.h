@@ -66,7 +66,7 @@ private:
         uint32_t _chunkId;
         uint32_t _lid;
     };
-    using IndexVector = vespalib::Array<Index>;
+    using IndexVector = std::vector<Index, vespalib::allocator_large<Index>>;
     uint64_t                                     _chunkSerial;
     Chunk::UP                                    _current;
     std::map<uint64_t, IndexVector>              _where;

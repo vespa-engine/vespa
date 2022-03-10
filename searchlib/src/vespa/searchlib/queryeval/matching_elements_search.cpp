@@ -115,7 +115,6 @@ namespace vespalib {
 
 template class hash_set<const char *>;
 template class hashtable<const char *, const char *, hash<const char *>, search::queryeval::EqualCStringValue, Identity, hashtable_base::and_modulator>;
-template class Array<vespalib::hash_node<const char *>>;
 
 }
 
