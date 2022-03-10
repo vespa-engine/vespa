@@ -66,7 +66,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         File outDir = tmpDir.newFolder("out");
         for (int startIdx = 0; startIdx < files.size(); ++startIdx) {
             var builder = new ApplicationBuilder
-                (new TestProperties().setExperimentalSdParsing(false));
+                (new TestProperties().setUseV8DocManagerCfg(false).setExperimentalSdParsing(false));
             for (int fileIdx = startIdx; fileIdx < startIdx + files.size(); ++fileIdx) {
                 String fileName = files.get(fileIdx % files.size());
                 builder.addSchemaFile(dir + fileName);
