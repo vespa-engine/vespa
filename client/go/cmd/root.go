@@ -136,7 +136,7 @@ Vespa documentation: https://docs.vespa.ai`,
 		httpClient: util.CreateClient(time.Second * 10),
 		exec:       &execSubprocess{},
 	}
-	cli.isTerminal = func() bool { return isTerminal(cli.Stdout) || isTerminal(cli.Stderr) }
+	cli.isTerminal = func() bool { return isTerminal(cli.Stdout) && isTerminal(cli.Stderr) }
 	cli.configureFlags()
 	if err := cli.loadConfig(); err != nil {
 		return nil, err
