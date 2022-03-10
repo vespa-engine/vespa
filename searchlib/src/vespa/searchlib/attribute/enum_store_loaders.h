@@ -4,8 +4,6 @@
 
 #include "enum_store_types.h"
 #include "loadedenumvalue.h"
-#include <vespa/vespalib/datastore/entryref.h>
-#include <vespa/vespalib/stllike/allocator.h>
 
 namespace search { class IEnumStore; }
 

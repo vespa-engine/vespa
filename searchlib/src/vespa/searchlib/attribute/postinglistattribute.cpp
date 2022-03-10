@@ -3,6 +3,7 @@
 #include "postinglistattribute.h"
 #include "loadednumericvalue.h"
 #include "enumcomparator.h"
+#include "enum_store_loaders.h"
 #include <vespa/vespalib/util/array.hpp>
 
 namespace search {

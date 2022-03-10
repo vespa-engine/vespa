@@ -50,6 +50,7 @@ vespa_add_library(searchlib_attribute OBJECT
     flagattribute.cpp
     floatbase.cpp
     i_document_weight_attribute.cpp
+    i_enum_store.cpp
     iattributemanager.cpp
     iattributesavetarget.cpp
     imported_attribute_vector.cpp

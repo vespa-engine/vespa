@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/stringbase.h>
-#include <vespa/searchlib/attribute/enumattribute.h>
-#include <vespa/searchlib/attribute/enumstore.h>
-#include <vespa/searchlib/attribute/multienumattribute.h>
-#include <vespa/searchlib/attribute/multi_value_mapping.h>
+#include "stringbase.h"
+#include "enumattribute.h"
+#include "enumstore.h"
+#include "multienumattribute.h"
+#include "multi_value_mapping.h"
 #include "enumhintsearchcontext.h"
 #include "multivalue.h"
 

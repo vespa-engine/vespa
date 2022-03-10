@@ -3,7 +3,6 @@
 #pragma once
 
 #include "enum_store_types.h"
-#include <vespa/vespalib/stllike/allocator.h>
 #include <vespa/vespalib/util/arrayref.h>
 #include <cassert>
 #include <limits>
