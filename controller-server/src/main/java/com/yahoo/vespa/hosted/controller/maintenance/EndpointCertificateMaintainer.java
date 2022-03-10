@@ -7,8 +7,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateDetails;
@@ -49,7 +47,6 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     private final CuratorDb curator;
     private final SecretStore secretStore;
     private final EndpointCertificateProvider endpointCertificateProvider;
-    private final BooleanFlag deleteUnmaintainedCertificates = Flags.DELETE_UNMAINTAINED_CERTIFICATES.bindTo(controller().flagSource());
 
     @Inject
     public EndpointCertificateMaintainer(Controller controller, Duration interval) {
@@ -174,33 +171,22 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                         matchFound = true;
                         try (Lock lock = lock(storedApp)) {
                             if (Optional.of(storedAppMetadata).equals(curator.readEndpointCertificateMetadata(storedApp))) {
-                                if (deleteUnmaintainedCertificates.value()) {
-                                    log.log(Level.INFO, "Cert for app " + storedApp.serializedForm()
-                                            + " has a new leafRequestId " + unknownCertDetails.request_id() + ", updating in ZK");
-                                    curator.writeEndpointCertificateMetadata(storedApp, storedAppMetadata.withLeafRequestId(Optional.of(unknownCertDetails.request_id())));
-                                } else {
-                                    log.log(Level.INFO, "Cert for app " + storedApp.serializedForm()
-                                            + " has a new leafRequestId " + unknownCertDetails.request_id());
-                                }
+                                log.log(Level.INFO, "Cert for app " + storedApp.serializedForm()
+                                        + " has a new leafRequestId " + unknownCertDetails.request_id() + ", updating in ZK");
+                                curator.writeEndpointCertificateMetadata(storedApp, storedAppMetadata.withLeafRequestId(Optional.of(unknownCertDetails.request_id())));
                             }
                             break;
                         }
                     }
                 }
                 if (!matchFound) {
-                    if (deleteUnmaintainedCertificates.value()) {
-                        // The certificate is not known - however it could be in the process of being requested by us or another controller.
-                        // So we only delete if it was requested more than 7 days ago.
-                        if (Instant.parse(providerCertificateMetadata.createTime()).isBefore(Instant.now().minus(7, ChronoUnit.DAYS))) {
-                            log.log(Level.INFO, String.format("Deleting unmaintained certificate with request_id %s and SANs %s",
-                                    providerCertificateMetadata.requestId(),
-                                    providerCertificateMetadata.dnsNames().stream().map(d -> d.dnsName).collect(Collectors.joining(", "))));
-                            endpointCertificateProvider.deleteCertificate(ApplicationId.fromSerializedForm("applicationid:is:unknown"), providerCertificateMetadata.requestId());
-                        }
-                    } else {
-                        log.log(Level.INFO, () -> String.format("Found unmaintained certificate with request_id %s and SANs %s",
+                    // The certificate is not known - however it could be in the process of being requested by us or another controller.
+                    // So we only delete if it was requested more than 7 days ago.
+                    if (Instant.parse(providerCertificateMetadata.createTime()).isBefore(Instant.now().minus(7, ChronoUnit.DAYS))) {
+                        log.log(Level.INFO, String.format("Deleting unmaintained certificate with request_id %s and SANs %s",
                                 providerCertificateMetadata.requestId(),
                                 providerCertificateMetadata.dnsNames().stream().map(d -> d.dnsName).collect(Collectors.joining(", "))));
+                        endpointCertificateProvider.deleteCertificate(ApplicationId.fromSerializedForm("applicationid:is:unknown"), providerCertificateMetadata.requestId());
                     }
                 }
             }
