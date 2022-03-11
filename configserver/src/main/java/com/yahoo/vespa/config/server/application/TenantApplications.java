@@ -390,10 +390,10 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     @Override
     public boolean compatibleWith(Optional<Version> vespaVersion, ApplicationId application) {
         if (vespaVersion.isEmpty()) return true;
-        Version latestDeployed = applicationMapper.getForVersion(application, Optional.empty(), clock.instant())
-                                                  .getVespaVersion();
-        boolean compatibleMajor = !incompatibleMajorVersions.value().contains(latestDeployed.getMajor());
-        return compatibleMajor || vespaVersion.get().getMajor() == latestDeployed.getMajor();
+        Version wantedVersion = applicationMapper.getForVersion(application, Optional.empty(), clock.instant())
+                                                 .getModel().wantedNodeVersion();
+        boolean compatibleMajor = ! incompatibleMajorVersions.value().contains(wantedVersion.getMajor());
+        return compatibleMajor || vespaVersion.get().getMajor() == wantedVersion.getMajor();
     }
 
     @Override

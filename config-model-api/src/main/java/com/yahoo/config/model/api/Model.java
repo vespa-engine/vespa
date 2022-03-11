@@ -70,6 +70,9 @@ public interface Model {
     /** Returns the version of this model. */
     default Version version() { return Version.emptyVersion; }
 
+    /** Returns the wanted node version of this model. */
+    default Version wantedNodeVersion() { return Version.emptyVersion; }
+
     /** Returns the provisioned hosts of this. */
     default Provisioned provisioned() { return new Provisioned(); }
 
