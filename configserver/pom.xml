@@ -186,7 +186,6 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>serviceview</artifactId>
       <version>${project.version}</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -217,7 +216,6 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>http-utils</artifactId>
       <version>${project.version}</version>
-      <scope>compile</scope>
     </dependency>
 
     <!-- Jersey, needed by serviceview  -->
