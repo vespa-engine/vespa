@@ -252,7 +252,7 @@ func (a *Auth0) AddSystem(s *System) error {
 	return nil
 }
 
-func (a *Auth0) removeSystem(s string) error {
+func (a *Auth0) RemoveSystem(s string) error {
 	_ = a.init()
 
 	// If we're dealing with an empty file, we'll need to initialize this map.
@@ -343,22 +343,5 @@ func (a *Auth0) initContext() (err error) {
 		return err
 	}
 	a.config = *cfg
-	return nil
-}
-
-func RunLogout(a *Auth0) error {
-	s, err := a.getSystem()
-	if err != nil {
-		return err
-	}
-
-	if err := a.removeSystem(s.Name); err != nil {
-		return err
-	}
-
-	fmt.Print("\n")
-	fmt.Println("Successfully logged out.")
-	fmt.Print("\n")
-
 	return nil
 }
