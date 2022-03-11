@@ -135,6 +135,19 @@ public class AthenzDbMock {
         public boolean matches(AthenzIdentity principal, String action, String resource) {
             return assertions.stream().anyMatch(a -> a.matches(principal, action, resource));
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Policy policy = (Policy) o;
+            return Objects.equals(name, policy.name) && Objects.equals(assertions, policy.assertions);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, assertions);
+        }
     }
 
     public static class Assertion {
@@ -191,6 +204,19 @@ public class AthenzDbMock {
 
         public String name() {
             return name;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Role role = (Role) o;
+            return Objects.equals(name, role.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name);
         }
     }
 }
