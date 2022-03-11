@@ -9,11 +9,11 @@ import com.yahoo.document.DataType;
 public class TemporarySDField extends SDField {
 
     public TemporarySDField(SDDocumentType repo, String name, DataType dataType, SDDocumentType owner) {
-        super(repo, name, dataType, owner, false);
+        super(repo, name, dataType, owner);
     }
 
     public TemporarySDField(SDDocumentType repo, String name, DataType dataType) {
-        super(repo, name, dataType, false);
+        super(repo, name, dataType);
     }
 
 }

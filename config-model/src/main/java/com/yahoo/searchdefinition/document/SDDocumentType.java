@@ -268,8 +268,8 @@ public class SDDocumentType implements Cloneable, Serializable {
         return field;
     }
 
-    public Field addField(String string, DataType dataType, boolean header, int code) {
-        SDField field = new SDField(this, string, code, dataType, header);
+    public Field addField(String fName, DataType dataType, boolean header, int code) {
+        SDField field = new SDField(this, fName, code, dataType);
         addField(field);
         return field;
     }

@@ -130,28 +130,24 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * @param name the name of the field
      * @param dataType the datatype of the field
     */
-    protected SDField(SDDocumentType repo, String name, int id, DataType dataType, boolean populate) {
+    public SDField(SDDocumentType repo, String name, int id, DataType dataType) {
         super(name, id, dataType);
         this.repoDocType = repo;
-        populate(populate, repo, name, dataType, null, 0);
+        populate(name, dataType);
     }
 
-    public SDField(SDDocumentType repo, String name, int id, DataType dataType) {
-        this(repo, name, id, dataType, true);
-    }
-
-    /** Creates a new field */
-    public SDField(SDDocumentType repo, String name, DataType dataType, boolean populate) {
-        super(name, dataType);
-        this.repoDocType = repo;
-        populate(populate, repo, name, dataType, null, 0);
+    public SDField(String name, DataType dataType) {
+        this(null, name, dataType);
     }
 
     /** Creates a new field */
-    protected SDField(SDDocumentType repo, String name, DataType dataType, SDDocumentType owner, boolean populate) {
-        super(name, dataType, owner == null ? null : owner.getDocumentType());
-        this.repoDocType = repo;
-        populate(populate, repo, name, dataType, null, 0);
+    public SDField(SDDocumentType repo, String name, DataType dataType) {
+        this(repo, name, dataType, null);
+    }
+
+    /** Creates a new field */
+    protected SDField(SDDocumentType repo, String name, DataType dataType, SDDocumentType owner) {
+        this(repo, name, dataType, owner, null, 0);
     }
 
     /**
@@ -162,36 +158,24 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * @param owner the owning document (used to check for id collisions)
      * @param fieldMatching the matching object to set for the field
      */
-    protected SDField(SDDocumentType repo, String name, DataType dataType, SDDocumentType owner,
-                      Matching fieldMatching, boolean populate, int recursion) {
+    protected SDField(SDDocumentType repo,
+                      String name,
+                      DataType dataType,
+                      SDDocumentType owner,
+                      Matching fieldMatching,
+                      int recursion)
+    {
         super(name, dataType, owner == null ? null : owner.getDocumentType());
         this.repoDocType = repo;
         this.structFieldDepth = recursion;
         if (fieldMatching != null)
             this.setMatching(fieldMatching);
-        populate(populate, repo, name, dataType, fieldMatching, recursion);
+        populate(name, dataType);
     }
-
-    public SDField(SDDocumentType repo, String name, DataType dataType) {
-        this(repo, name, dataType, true);
-    }
-
-    /*
-    public SDField(String name, DataType dataType) {
-        this(null, name, dataType);
-    }
-
-    private void populate(boolean populate, SDDocumentType repo, String name, DataType dataType) {
-        populate(populate, repo, name, dataType, null, 0);
-    }
-    */
 
     private int structFieldDepth = 0;
 
-    private void populate(boolean populate, SDDocumentType repo, String name, DataType dataType, Matching fieldMatching, int recursion) {
-        if (recursion > structFieldDepth) {
-            structFieldDepth = recursion;
-        }
+    private void populate(String name, DataType dataType) {
         if (dataType instanceof TensorDataType) {
             TensorType type = ((TensorDataType)dataType).getTensorType();
             if (type.dimensions().stream().anyMatch(d -> d.isIndexed() && d.size().isEmpty()))
@@ -292,20 +276,22 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         }
         var sdoc = repoDocType;
         var dataType = getDataType();
+
         java.util.function.BiConsumer<String, DataType> supplyStructField = (fieldName, fieldType) -> {
             if (structFields.containsKey(fieldName)) return;
             String subName = getName().concat(".").concat(fieldName);
-            var subField = new SDField(sdoc, subName, fieldType, sdoc,
-                                       null, true, structFieldDepth + 1);
+            var subField = new SDField(sdoc, subName, fieldType, null,
+                                       null, structFieldDepth + 1);
             structFields.put(fieldName, subField);
         };
+
         if (dataType instanceof MapDataType) {
             MapDataType mdt = (MapDataType) dataType;
             supplyStructField.accept("key", mdt.getKeyType());
             supplyStructField.accept("value", mdt.getValueType());
         } else {
             if (structFieldDepth >= 10) {
-                // too risky
+                // too risky, infinite recursion
                 doneStructFields = true;
                 return;
             }
@@ -323,7 +309,6 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
                     supplyStructField.accept(field.getName(), field.getDataType());
                 }
             }
-            // if ((subType == null) && (structFields.size() > 0)) {
             if ((subType == null) && (structFields.size() > 0)) {
                 throw new IllegalArgumentException("Cannot find matching (repo=" + sdoc + ") for subfields in "
                                                    + this + " [" + getDataType() + getDataType().getClass() +
