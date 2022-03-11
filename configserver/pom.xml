@@ -224,7 +224,7 @@
     <dependency>
       <groupId>javax.ws.rs</groupId>
       <artifactId>javax.ws.rs-api</artifactId>
-      <scope>compile</scope>
+      <scope>provided</scope>  <!-- TODO: Vespa 8: Set to compile if we get rid of the javax.ws.rs-api bundle -->
     </dependency>
     <dependency>
       <groupId>org.glassfish.jersey.core</groupId>
