@@ -823,16 +823,16 @@ public class InternalStepRunner implements StepRunner {
                 controller.notificationsDb().removeNotification(source, Notification.Type.deployment);
                 return;
             case nodeAllocationFailure:
-                if ( ! run.id().type().environment().isTest()) updater.accept("could not allocate the requested capacity to your tenant. Contact Vespa Cloud support.");
+                if ( ! run.id().type().environment().isTest()) updater.accept("could not allocate the requested capacity to your tenant. Please contact Vespa Cloud support.");
                 return;
             case deploymentFailed:
-                updater.accept("invalid application configuration, or timeout of other deployments of the same application");
+                updater.accept("invalid application configuration. Please review warnings and errors in the deployment job log.");
                 return;
             case installationFailed:
-                updater.accept("nodes were not able to upgrade to the new configuration");
+                updater.accept("nodes were not able to deploy to the new configuration. Please check the Vespa log for errors, and contact Vespa Cloud support if unable to resolve these.");
                 return;
             case testFailure:
-                updater.accept("one or more verification tests against the deployment failed");
+                updater.accept("one or more verification tests against the deployment failed. Please review test output in the deployment job log.");
                 return;
             case error:
             case endpointCertificateTimeout:
@@ -840,8 +840,8 @@ public class InternalStepRunner implements StepRunner {
             default:
                 logger.log(WARNING, "Don't know what to set console notification to for run status '" + run.status() + "'");
         }
-        updater.accept("something in the framework went wrong. Such errors are " +
-                "usually transient. Please contact the Vespa team if the problem persists!");
+        updater.accept("something in the deployment framework went wrong. Such errors are " +
+                       "usually transient. Please contact Vespa Cloud support if the problem persists.");
     }
 
     private Optional<Mail> mailOf(Run run, List<String> recipients) {
