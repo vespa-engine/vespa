@@ -227,6 +227,7 @@ public class JsonFormatTestCase {
     }
 
     @Test(expected = UnsupportedOperationException.class)
+    @SuppressWarnings("removal")
     public void testThatDecodeIsNotImplemented()  {
         new JsonFormat(true).decode(null, null);
     }

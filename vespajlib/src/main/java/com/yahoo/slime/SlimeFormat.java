@@ -19,11 +19,13 @@ public interface SlimeFormat {
     void encode(OutputStream os, Slime slime) throws IOException;
 
     /**
-     * Encode a slime object into the provided output stream
+     * Decode an input stream into the provided slime object
      *
      * @param is The input stream to read from.
      * @param slime The slime object to decode into.
+     * @deprecated use e.g. {@link JsonDecoder} instead
      */
+    @Deprecated(since = "7", forRemoval = true)
     void decode(InputStream is, Slime slime) throws IOException;
 
 }
