@@ -1,0 +1,21 @@
+create_dynamic_model_2.py:Ö
+-
+input1
+input2concat"Concat*
+axis 
+
+concat
+shapeout"Reshapesimple_scoring*:BshapeZ
+input1
+
+batch
+Z
+input2
+
+batch
+b&
+out
+
+batch
+dim1
+dim2B
