@@ -12,7 +12,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +27,7 @@ public class IntermediateCollection {
     private final DeployLogger deployLogger;
     private final ModelContext.Properties modelProperties;
 
-    private Map<String, ParsedSchema> parsedSchemas = new HashMap<>();
+    private Map<String, ParsedSchema> parsedSchemas = new LinkedHashMap<>();
 
     IntermediateCollection() {
         this.deployLogger = new BaseDeployLogger();
