@@ -73,7 +73,15 @@ public class ValidationTester {
                                                              String services,
                                                              Environment environment,
                                                              String validationOverrides) {
-        Instant now = LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
+        return deploy(previousModel, services, environment, validationOverrides, new DeployState.Builder());
+    }
+
+    public Pair<VespaModel, List<ConfigChangeAction>> deploy(VespaModel previousModel,
+                                                             String services,
+                                                             Environment environment,
+                                                             String validationOverrides,
+                                                             DeployState.Builder stateBuilder) {
+            Instant now = LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
         Provisioned provisioned = hostProvisioner.startProvisionedRecording();
         ApplicationPackage newApp = new MockApplicationPackage.Builder()
                 .withServices(services)
@@ -81,8 +89,7 @@ public class ValidationTester {
                 .withValidationOverrides(validationOverrides)
                 .build();
         VespaModelCreatorWithMockPkg newModelCreator = new VespaModelCreatorWithMockPkg(newApp);
-        DeployState.Builder deployStateBuilder = new DeployState.Builder()
-                                                             .zone(new Zone(SystemName.defaultSystem(),
+        DeployState.Builder deployStateBuilder = stateBuilder.zone(new Zone(SystemName.defaultSystem(),
                                                                             environment,
                                                                             RegionName.defaultName()))
                                                              .applicationPackage(newApp)

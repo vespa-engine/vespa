@@ -102,6 +102,7 @@ import static org.junit.Assert.fail;
  * @author gjoranv
  */
 public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
+
     @Rule
     public TemporaryFolder applicationFolder = new TemporaryFolder();
 

@@ -32,7 +32,7 @@ public class NodeResourceChangeValidator implements ChangeValidator {
             Optional<NodeResources> currentResources = resourcesOf(clusterId, current);
             Optional<NodeResources> nextResources = resourcesOf(clusterId, next);
             if (currentResources.isEmpty() || nextResources.isEmpty()) continue; // new or removed cluster
-            if ( changeRequiresRestart(currentResources.get(), nextResources.get()))
+            if (changeRequiresRestart(currentResources.get(), nextResources.get()))
                 restartActions.addAll(createRestartActionsFor(clusterId, current));
         }
         return restartActions;

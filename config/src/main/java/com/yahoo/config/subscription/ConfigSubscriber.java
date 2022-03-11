@@ -48,7 +48,7 @@ public class ConfigSubscriber implements AutoCloseable {
     /**
      * Whether the last generation should only be applied on restart, not immediately.
      * Once this is set it will not be unset, as no future generation should be applied
-     * once there is a generation which require restart.
+     * once there is a generation which requires restart.
      */
     private boolean applyOnRestart = false;
 

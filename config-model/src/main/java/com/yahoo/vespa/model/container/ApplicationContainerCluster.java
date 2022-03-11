@@ -36,7 +36,6 @@ import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
-import com.yahoo.vespa.model.container.docproc.DocprocChains;
 import com.yahoo.vespa.model.utils.FileSender;
 
 import java.util.ArrayList;
@@ -94,10 +93,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private Integer memoryPercentage = null;
 
     private List<ApplicationClusterEndpoint> endpointList = List.of();
+    private final boolean switchingMajor;
 
     public ApplicationContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
         super(parent, configSubId, clusterId, deployState, true, 10);
         this.tlsClientAuthority = deployState.tlsClientAuthority();
+        this.switchingMajor = ! deployState.getVespaVersion().equals(deployState.getWantedNodeVespaVersion());
         previousHosts = Collections.unmodifiableSet(deployState.getPreviousModel().stream()
                                                                .map(Model::allocatedHosts)
                                                                .map(AllocatedHosts::getHosts)

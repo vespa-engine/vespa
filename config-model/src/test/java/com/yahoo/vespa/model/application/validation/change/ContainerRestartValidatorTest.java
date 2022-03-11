@@ -1,8 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.container.QrConfig;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.config.application.api.ValidationOverrides;
@@ -21,6 +22,26 @@ import static org.junit.Assert.assertTrue;
  * @author bjorncs
  */
 public class ContainerRestartValidatorTest {
+
+    @Test
+    public void validator_returns_action_for_containers_with_different_major_for_model_and_node_versions() {
+        // Without restartOnDeploy
+        {
+            VespaModel current = createModel(false, false);
+            VespaModel next = createModel(false, true);
+            List<ConfigChangeAction> result = validateModel(current, next);
+            System.err.println(result);
+            assertEquals(3, result.size());
+        }
+        // With restartOnDeploy
+        {
+            VespaModel current = createModel(true, true);
+            VespaModel next = createModel(true, true);
+            List<ConfigChangeAction> result = validateModel(current, next);
+            System.err.println(result);
+            assertEquals(3, result.size());
+        }
+    }
 
     @Test
     public void validator_returns_action_for_containers_with_restart_on_deploy_enabled() {
@@ -65,6 +86,10 @@ public class ContainerRestartValidatorTest {
     }
 
     private static VespaModel createModel(boolean restartOnDeploy) {
+        return createModel(restartOnDeploy, false);
+    }
+
+    private static VespaModel createModel(boolean restartOnDeploy, boolean versionMismatch) {
         return new VespaModelCreatorWithMockPkg(
                 null,
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -91,7 +116,9 @@ public class ContainerRestartValidatorTest {
                 "       </http>\n" +
                 "   </container>\n" +
                 "</services>"
-        ).create();
+        ).create(new DeployState.Builder().vespaVersion(new Version("1.2.3"))
+                                          .wantedNodeVespaVersion(versionMismatch ? new Version("3.2.1")
+                                                                                  : new Version("1.3.2")));
     }
 
 }
