@@ -19,7 +19,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 func newCloneCmd(cli *CLI) *cobra.Command {
@@ -116,7 +115,7 @@ func fetchSampleAppsZip(destination string, cli *CLI) error {
 		return fmt.Errorf("could not create temporary file: %w", err)
 	}
 	defer f.Close()
-	return util.Spinner(cli.Stderr, color.YellowString("Downloading sample apps ..."), func() error {
+	return cli.spinner(cli.Stderr, color.YellowString("Downloading sample apps ..."), func() error {
 		request, err := http.NewRequest("GET", "https://github.com/vespa-engine/sample-apps/archive/refs/heads/master.zip", nil)
 		if err != nil {
 			return fmt.Errorf("invalid url: %w", err)

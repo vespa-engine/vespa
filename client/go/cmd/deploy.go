@@ -12,7 +12,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
@@ -54,7 +53,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 			opts := cli.createDeploymentOptions(pkg, target)
 
 			var result vespa.PrepareResult
-			err = util.Spinner(cli.Stderr, "Uploading application package ...", func() error {
+			err = cli.spinner(cli.Stderr, "Uploading application package ...", func() error {
 				result, err = vespa.Deploy(opts)
 				return err
 			})
@@ -103,7 +102,7 @@ func newPrepareCmd(cli *CLI) *cobra.Command {
 			}
 			opts := cli.createDeploymentOptions(pkg, target)
 			var result vespa.PrepareResult
-			err = util.Spinner(cli.Stderr, "Uploading application package ...", func() error {
+			err = cli.spinner(cli.Stderr, "Uploading application package ...", func() error {
 				result, err = vespa.Prepare(opts)
 				return err
 			})
