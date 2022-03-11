@@ -2,6 +2,7 @@
 package com.yahoo.vespa.clustercontroller.apps.clustercontroller;
 
 import com.google.inject.Inject;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.NodeType;
@@ -19,9 +20,10 @@ import java.util.Map;
  * When the cluster controller is reconfigured, a new instance of this is created, which will propagate configured
  * options to receivers such as the fleet controller.
  */
-public class ClusterControllerClusterConfigurer {
+public class ClusterControllerClusterConfigurer extends AbstractComponent {
 
     private final FleetControllerOptions options;
+    private final ClusterController controller;
 
     /**
      * The {@link VespaZooKeeperServer} argument is required by the injected {@link ClusterController},
@@ -37,9 +39,13 @@ public class ClusterControllerClusterConfigurer {
                                               Metric metricImpl,
                                               VespaZooKeeperServer started) throws Exception {
         this.options = configure(distributionConfig, fleetcontrollerConfig, slobroksConfig, zookeepersConfig);
-        if (controller != null) {
-            controller.setOptions(options, metricImpl);
-        }
+        this.controller = controller;
+        if (controller != null) controller.setOptions(options, metricImpl);
+    }
+
+    @Override
+    public void deconstruct() {
+        if (controller != null) controller.countdown();
     }
 
     FleetControllerOptions getOptions() { return options; }

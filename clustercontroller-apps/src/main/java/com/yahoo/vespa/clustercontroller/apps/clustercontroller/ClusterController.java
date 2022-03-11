@@ -17,6 +17,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
@@ -30,6 +32,8 @@ public class ClusterController extends AbstractComponent
     private final JDiscMetricWrapper metricWrapper;
     private final Map<String, FleetController> controllers = new TreeMap<>();
     private final Map<String, StatusHandler.ContainerStatusPageServer> status = new TreeMap<>();
+    private final AtomicInteger referents = new AtomicInteger();
+    private final AtomicBoolean shutdown = new AtomicBoolean();
 
     /**
      * Dependency injection constructor for controller. A {@link VespaZooKeeperServer} argument is required
@@ -43,6 +47,7 @@ public class ClusterController extends AbstractComponent
     }
 
     public void setOptions(FleetControllerOptions options, Metric metricImpl) throws Exception {
+        referents.incrementAndGet();
         metricWrapper.updateMetricImplementation(metricImpl);
         verifyThatZooKeeperWorks(options);
         synchronized (controllers) {
@@ -60,16 +65,32 @@ public class ClusterController extends AbstractComponent
 
     @Override
     public void deconstruct() {
-        synchronized (controllers) {
-            for (FleetController controller : controllers.values()) {
-                try{
-                    shutdownController(controller);
-                } catch (Exception e) {
-                    log.warning("Failed to shut down fleet controller: " + e.getMessage());
+        shutdown();
+    }
+
+    /**
+     * Since we hack around injecting a running ZK here by providing one through the configurer instead,
+     * we must also let the last configurer shut down this controller, to ensure this is shut down
+     * before the ZK server it had injected from the configurers.
+     */
+    void countdown() {
+        if (referents.decrementAndGet() == 0)
+            shutdown();
+    }
+
+    void shutdown() {
+        if (shutdown.compareAndSet(false, true)) {
+            synchronized (controllers) {
+                for (FleetController controller : controllers.values()) {
+                    try {
+                        shutdownController(controller);
+                    }
+                    catch (Exception e) {
+                        log.warning("Failed to shut down fleet controller: " + e.getMessage());
+                    }
                 }
             }
         }
-        super.deconstruct();
     }
 
     @Override
@@ -78,6 +99,8 @@ public class ClusterController extends AbstractComponent
             return new LinkedHashMap<>(controllers);
         }
     }
+
+    FleetController getController(String name) { return controllers.get(name); }
 
     @Override
     public StatusHandler.ContainerStatusPageServer get(String cluster) {
