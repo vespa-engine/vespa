@@ -54,12 +54,8 @@ public class MatchSettingsResolvingTestCase extends AbstractExportingTestCase {
 
     @Test
     public void testMapWithStructSettings() throws IOException, ParseException {
-        /*
-         * does not work
-         * does not pick up settings from struct declaration
         assertCorrectDeriving("matchsettings_map_wss",
                               new TestProperties().setExperimentalSdParsing(false));
-        */
         assertCorrectDeriving("matchsettings_map_wss",
                               new TestProperties().setExperimentalSdParsing(true));
     }
@@ -74,11 +70,8 @@ public class MatchSettingsResolvingTestCase extends AbstractExportingTestCase {
 
     @Test
     public void testMapAfter() throws IOException, ParseException {
-        /* fails with:
-        java.lang.IllegalArgumentException: Could not find struct 'elem'.
         assertCorrectDeriving("matchsettings_map_after",
                               new TestProperties().setExperimentalSdParsing(false));
-        */
         assertCorrectDeriving("matchsettings_map_after",
                               new TestProperties().setExperimentalSdParsing(true));
     }
