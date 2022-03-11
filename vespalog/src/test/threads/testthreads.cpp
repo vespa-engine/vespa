@@ -6,6 +6,7 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <atomic>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -19,29 +20,29 @@ LOG_SETUP(".threadtest");
 
 class FileThread : public FastOS_Runnable
 {
-    bool _done;
+    std::atomic<bool> _done;
     string _file;
 public:
     FileThread(string file) : _done(false), _file(file) {}
     void Run(FastOS_ThreadInterface *thread, void *arg) override;
-    void stop() {_done = true; }
+    void stop() { _done.store(true, std::memory_order_relaxed); }
 };
 
 class LoggerThread : public FastOS_Runnable
 {
-    bool _done;
+    std::atomic<bool> _done;
 public:
-    bool _useLogBuffer;
+    std::atomic<bool> _useLogBuffer;
     LoggerThread() : _done(false), _useLogBuffer(false) {}
     void Run(FastOS_ThreadInterface *thread, void *arg) override;
-    void stop() {_done = true; }
+    void stop() { _done.store(true, std::memory_order_relaxed); }
 };
 
 void
 FileThread::Run(FastOS_ThreadInterface *, void *)
 {
     unlink(_file.c_str());
-    while (!_done) {
+    while (!_done.load(std::memory_order_relaxed)) {
         int fd = open(_file.c_str(), O_RDWR | O_CREAT | O_APPEND, 0644);
         if (fd == -1) {
             fprintf(stderr, "open failed: %s\n", strerror(errno));
@@ -66,8 +67,8 @@ void
 LoggerThread::Run(FastOS_ThreadInterface *, void *)
 {
     int counter = 0;
-    while (!_done) {
-        if (_useLogBuffer) {
+    while (!_done.load(std::memory_order_relaxed)) {
+        if (_useLogBuffer.load(std::memory_order_relaxed)) {
             LOGBM(info, "bla bla bla %u", ++counter);
         } else {
             LOG(info, "bla bla bla");
@@ -114,7 +115,7 @@ ThreadTester::Main()
     }
         // Then set to use logbuffer and continue
     for (int i = 0; i < numLoggers; i++) {
-        loggers[i]->_useLogBuffer = true;
+        loggers[i]->_useLogBuffer.store(true, std::memory_order_relaxed);
     }
     start = steady_clock::now();
     while ((steady_clock::now() - start) < 2.5s) {
