@@ -451,11 +451,11 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
         } else {
             putSummaryNoop(std::move(futureStream), onWriteDone);
         }
-        auto task = makeLambdaTask([upd = updOp.getUpdate(), useDocStore, lid, onWriteDone,
+        auto task = makeLambdaTask([upd = updOp.getUpdate(), useDocStore, lid, is_replay = onWriteDone->is_replay(),
                                            promisedDoc = std::move(promisedDoc),
                                            promisedStream = std::move(promisedStream), this]() mutable
         {
-            makeUpdatedDocument(useDocStore, lid, *upd, std::move(onWriteDone),
+            makeUpdatedDocument(useDocStore, lid, *upd, is_replay,
                                 std::move(promisedDoc), std::move(promisedStream));
         });
         _writeService.shared().execute(CpuUsage::wrap(std::move(task), CpuUsage::Category::WRITE));
@@ -465,19 +465,19 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
 
 void
 StoreOnlyFeedView::makeUpdatedDocument(bool useDocStore, Lid lid, const DocumentUpdate & update,
-                                       std::decay_t<OnOperationDoneType> onWriteDone, PromisedDoc promisedDoc,
+                                       bool is_replay, PromisedDoc promisedDoc,
                                        PromisedStream promisedStream)
 {
     Document::UP prevDoc = _summaryAdapter->get(lid, *_repo);
     Document::UP newDoc;
     vespalib::nbostream newStream(12345);
-    assert(onWriteDone->is_replay() || useDocStore);
+    assert(is_replay || useDocStore);
     if (useDocStore) {
         assert(prevDoc);
     }
     if (!prevDoc) {
         // Replaying, document removed later before summary was flushed.
-        assert(onWriteDone->is_replay());
+        assert(is_replay);
         // If we've passed serial number for flushed index then we could
         // also check that this operation is marked for ignore by index
         // proxy.
@@ -491,16 +491,9 @@ StoreOnlyFeedView::makeUpdatedDocument(bool useDocStore, Lid lid, const Document
         } else {
             // Replaying, document removed and lid reused before summary
             // was flushed.
-            assert(onWriteDone->is_replay() && !useDocStore);
+            assert(is_replay && !useDocStore);
         }
     }
-    /*
-     * forceCommitAndWait() does not wait for this task to complete but it waits for the
-     * summary executor task using the future stream (cf. lambdas in putSummary() and
-     * putSummaryNoop()).  Reset reference to operation done context here to avoid keeping it
-     * from being destroyed before forceCommitAndWait() returns.
-     */
-    onWriteDone.reset();
     promisedDoc.set_value(std::move(newDoc));
     promisedStream.set_value(std::move(newStream));
 }
