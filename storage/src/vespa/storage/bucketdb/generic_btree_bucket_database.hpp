@@ -77,16 +77,14 @@ GenericBTreeBucketDatabase<DataStoreTraitsT>::entry_from_iterator(const BTreeCon
     if (!iter.valid()) {
         return DataStoreTraitsT::make_invalid_value();
     }
-    const auto value = iter.getData();
-    std::atomic_thread_fence(std::memory_order_acquire);
+    const auto value = iter.getData().load_acquire();
     return DataStoreTraitsT::unwrap_from_key_value(_store, iter.getKey(), value);
 }
 
 template <typename DataStoreTraitsT>
 typename GenericBTreeBucketDatabase<DataStoreTraitsT>::ConstValueRef
 GenericBTreeBucketDatabase<DataStoreTraitsT>::const_value_ref_from_valid_iterator(const BTreeConstIterator& iter) const {
-    const auto value = iter.getData();
-    std::atomic_thread_fence(std::memory_order_acquire);
+    const auto value = iter.getData().load_acquire();
     return DataStoreTraitsT::unwrap_const_ref_from_key_value(_store, iter.getKey(), value);
 }
 
@@ -304,7 +302,7 @@ bool GenericBTreeBucketDatabase<DataStoreTraitsT>::remove_by_raw_key(uint64_t ke
     if (!iter.valid()) {
         return false;
     }
-    const auto value = iter.getData();
+    const auto value = iter.getData().load_relaxed(); // Called from writer only
     DataStoreTraitsT::remove_by_wrapped_value(_store, value);
     _tree.remove(iter);
     commit_tree_changes();
@@ -324,12 +322,11 @@ bool GenericBTreeBucketDatabase<DataStoreTraitsT>::update_by_raw_key(uint64_t bu
     auto iter = _tree.lowerBound(bucket_key);
     const bool pre_existed = (iter.valid() && (iter.getKey() == bucket_key));
     if (pre_existed) {
-        DataStoreTraitsT::remove_by_wrapped_value(_store, iter.getData());
+        DataStoreTraitsT::remove_by_wrapped_value(_store, iter.getData().load_relaxed());
         // In-place update of value; does not require tree structure modification
-        std::atomic_thread_fence(std::memory_order_release); // Must ensure visibility when new array ref is observed
-        iter.writeData(new_value);
+        iter.getWData().store_release(new_value); // Must ensure visibility when new array ref is observed
     } else {
-        _tree.insert(iter, bucket_key, new_value);
+        _tree.insert(iter, bucket_key, AtomicValueWrapper(new_value));
     }
     commit_tree_changes(); // TODO does publishing a new root imply an implicit memory fence?
     return pre_existed;
@@ -359,18 +356,17 @@ GenericBTreeBucketDatabase<DataStoreTraitsT>::process_update(const BucketId& buc
     ValueType entry(found ? entry_from_iterator(iter) : processor.create_entry(bucket));
     bool keep = processor.process_entry(entry);
     if (found) {
-        DataStoreTraitsT::remove_by_wrapped_value(_store, iter.getData());
+        DataStoreTraitsT::remove_by_wrapped_value(_store, iter.getData().load_relaxed()); // Called from writer only
         if (keep) {
             const auto new_value = DataStoreTraitsT::wrap_and_store_value(_store, entry);
-            std::atomic_thread_fence(std::memory_order_release);
-            iter.writeData(new_value);
+            iter.getWData().store_release(new_value);
         } else {
             _tree.remove(iter);
         }
     } else {
         if (keep) {
             const auto new_value = DataStoreTraitsT::wrap_and_store_value(_store, entry);
-            _tree.insert(iter, bucket_key, new_value);
+            _tree.insert(iter, bucket_key, AtomicValueWrapper(new_value));
         }
     }
     commit_tree_changes();
@@ -491,7 +487,7 @@ struct BTreeBuilderMerger final : Merger<typename DataStoreTraitsT::ValueType> {
         const uint64_t bucket_key = bucket_id.toKey();
         assert(bucket_key < _current_key);
         const auto new_value = DataStoreTraitsT::wrap_and_store_value(_db.store(), e);
-        _builder.insert(bucket_key, new_value);
+        _builder.insert(bucket_key, vespalib::datastore::AtomicValueWrapper<uint64_t>(new_value));
     }
 
     void update_iteration_state(uint64_t key, uint64_t value) {
@@ -520,7 +516,7 @@ struct BTreeTrailingInserter final : TrailingInserter<typename DataStoreTraitsT:
     void insert_at_end(const BucketId& bucket_id, const ValueType& e) override {
         const uint64_t bucket_key = bucket_id.toKey();
         const auto new_value = DataStoreTraitsT::wrap_and_store_value(_db.store(), e);
-        _builder.insert(bucket_key, new_value);
+        _builder.insert(bucket_key, vespalib::datastore::AtomicValueWrapper<uint64_t>(new_value));
     }
 };
 
@@ -533,19 +529,19 @@ void GenericBTreeBucketDatabase<DataStoreTraitsT>::merge(MergingProcessor<ValueT
     // TODO for_each instead?
     for (auto iter = _tree.begin(); iter.valid(); ++iter) {
         const uint64_t key = iter.getKey();
-        const uint64_t value = iter.getData();
+        const uint64_t value = iter.getData().load_relaxed(); // Only called from writer
         merger.update_iteration_state(key, value);
 
         auto result = proc.merge(merger);
 
         if (result == MergingProcessor<ValueType>::Result::KeepUnchanged) {
-            builder.insert(key, value); // Reuse array store ref with no changes
+            builder.insert(key, AtomicValueWrapper(value)); // Reuse array store ref with no changes
         } else if (result == MergingProcessor<ValueType>::Result::Update) {
             assert(merger._valid_cached_value); // Must actually have been touched
             assert(merger._cached_value.valid());
             DataStoreTraitsT::remove_by_wrapped_value(_store, value);
             const auto new_value = DataStoreTraitsT::wrap_and_store_value(_store, merger._cached_value);
-            builder.insert(key, new_value);
+            builder.insert(key, AtomicValueWrapper(new_value));
         } else if (result == MergingProcessor<ValueType>::Result::Skip) {
             DataStoreTraitsT::remove_by_wrapped_value(_store, value);
         } else {

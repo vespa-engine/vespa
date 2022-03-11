@@ -4,6 +4,7 @@
 #include "btreerootbase.h"
 #include "btreeroot.h"
 #include "btreenodeallocator.h"
+#include <vespa/vespalib/datastore/atomic_value_wrapper.h>
 #include <vespa/vespalib/datastore/datastore.h>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 
@@ -43,6 +44,7 @@ VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(uint32_t, uint32_t, NoAggrega
 VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(uint32_t, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS);
 VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(uint32_t, int32_t , MinMaxAggregated, BTreeDefaultTraits::LEAF_SLOTS);
 VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(uint64_t, uint64_t , MinMaxAggregated, BTreeDefaultTraits::LEAF_SLOTS);
+VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(uint64_t, AtomicValueWrapper<uint64_t>, MinMaxAggregated, BTreeDefaultTraits::LEAF_SLOTS);
 VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(AtomicEntryRef, AtomicEntryRef, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS);
 VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(AtomicEntryRef, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS);
 VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(EntryRef, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS);

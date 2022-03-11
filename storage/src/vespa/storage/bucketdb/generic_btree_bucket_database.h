@@ -7,6 +7,7 @@
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/minmaxaggregated.h>
 #include <vespa/vespalib/btree/minmaxaggrcalc.h>
+#include <vespa/vespalib/datastore/atomic_value_wrapper.h>
 
 namespace storage::bucketdb {
 
@@ -38,10 +39,11 @@ namespace storage::bucketdb {
 template <typename DataStoreTraitsT>
 class GenericBTreeBucketDatabase {
 public:
-    using DataStoreType     = typename DataStoreTraitsT::DataStoreType;
-    using ValueType         = typename DataStoreTraitsT::ValueType;
-    using ConstValueRef     = typename DataStoreTraitsT::ConstValueRef;
-    using GenerationHandler = vespalib::GenerationHandler;
+    using DataStoreType      = typename DataStoreTraitsT::DataStoreType;
+    using ValueType          = typename DataStoreTraitsT::ValueType;
+    using ConstValueRef      = typename DataStoreTraitsT::ConstValueRef;
+    using GenerationHandler  = vespalib::GenerationHandler;
+    using AtomicValueWrapper = vespalib::datastore::AtomicValueWrapper<uint64_t>;
 
     struct KeyUsedBitsMinMaxAggrCalc : vespalib::btree::MinMaxAggrCalc {
         constexpr static bool aggregate_over_values() { return false; }
@@ -51,7 +53,8 @@ public:
         }
     };
 
-    using BTree = vespalib::btree::BTree<uint64_t, uint64_t,
+    using BTree = vespalib::btree::BTree<uint64_t,
+                                         vespalib::datastore::AtomicValueWrapper<uint64_t>,
                                          vespalib::btree::MinMaxAggregated,
                                          std::less<>,
                                          vespalib::btree::BTreeDefaultTraits,
