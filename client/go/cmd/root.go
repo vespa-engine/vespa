@@ -52,6 +52,7 @@ type CLI struct {
 	httpClient util.HTTPClient
 	exec       executor
 	isTerminal func() bool
+	spinner    func(w io.Writer, message string, fn func() error) error
 }
 
 // Flags holds the global Flags of Vespa CLI.
@@ -141,6 +142,7 @@ Vespa documentation: https://docs.vespa.ai`,
 	if err := cli.loadConfig(); err != nil {
 		return nil, err
 	}
+	cli.configureSpinner()
 	cli.configureCommands()
 	cmd.PersistentPreRunE = cli.configureOutput
 	return &cli, nil
@@ -201,6 +203,19 @@ func (c *CLI) configureFlags() {
 	c.cmd.PersistentFlags().BoolVarP(&flags.quiet, quietFlag, "q", false, "Quiet mode. Only errors will be printed")
 	c.cmd.PersistentFlags().StringVarP(&flags.apiKeyFile, apiKeyFileFlag, "k", "", "Path to API key used for cloud authentication")
 	c.flags = &flags
+}
+
+func (c *CLI) configureSpinner() {
+	// Explicitly disable spinner for Screwdriver. It emulates a tty but
+	// \r result in a newline, and output gets truncated.
+	_, screwdriver := c.Environment["SCREWDRIVER"]
+	if c.flags.quiet || !c.isTerminal() || screwdriver {
+		c.spinner = func(w io.Writer, message string, fn func() error) error {
+			return fn()
+		}
+	} else {
+		c.spinner = util.Spinner
+	}
 }
 
 func (c *CLI) configureCommands() {

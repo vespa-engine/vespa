@@ -18,9 +18,7 @@ import (
 	"time"
 
 	"github.com/lestrrat-go/jwx/jwt"
-	"github.com/pkg/browser"
 	"github.com/vespa-engine/vespa/client/go/auth"
-	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 const accessTokenExpThreshold = 5 * time.Minute
@@ -138,9 +136,7 @@ func (a *Auth0) IsLoggedIn() bool {
 }
 
 // PrepareSystem loads the System, refreshing its token if necessary.
-// The System access token needs a refresh if:
-// 1. the System scopes are different from the currently required scopes - (auth0 changes).
-// 2. the access token is expired.
+// The System access token needs a refresh if the access token has expired.
 func (a *Auth0) PrepareSystem(ctx context.Context) (*System, error) {
 	if err := a.init(); err != nil {
 		return nil, err
@@ -150,11 +146,10 @@ func (a *Auth0) PrepareSystem(ctx context.Context) (*System, error) {
 		return nil, err
 	}
 
-	if s.AccessToken == "" || scopesChanged(s) {
-		s, err = RunLogin(ctx, a, true)
-		if err != nil {
-			return nil, err
-		}
+	if s.AccessToken == "" {
+		return nil, fmt.Errorf("access token missing: re-authenticate with 'vespa auth login'")
+	} else if scopesChanged(s) {
+		return nil, fmt.Errorf("authentication scopes cahnges: re-authenticate with 'vespa auth login'")
 	} else if isExpired(s.ExpiresAt, accessTokenExpThreshold) {
 		// check if the stored access token is expired:
 		// use the refresh token to get a new access token:
@@ -349,70 +344,6 @@ func (a *Auth0) initContext() (err error) {
 	}
 	a.config = *cfg
 	return nil
-}
-
-// RunLogin runs the login flow guiding the user through the process
-// by showing the login instructions, opening the browser.
-// Use `expired` to run the login from other commands setup:
-// this will only affect the messages.
-func RunLogin(ctx context.Context, a *Auth0, expired bool) (*System, error) {
-	if expired {
-		fmt.Println("Please sign in to re-authorize the CLI.")
-	}
-
-	state, err := a.Authenticator.Start(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("could not start the authentication process: %w", err)
-	}
-
-	fmt.Printf("Your Device Confirmation code is: %s\n\n", state.UserCode)
-
-	fmt.Println("If you prefer, you can open the URL directly for verification")
-	fmt.Printf("Your Verification URL: %s\n\n", state.VerificationURI)
-
-	fmt.Println("Press Enter to open the browser to log in or ^C to quit...")
-	fmt.Scanln()
-
-	err = browser.OpenURL(state.VerificationURI)
-
-	if err != nil {
-		fmt.Printf("Couldn't open the URL, please do it manually: %s.", state.VerificationURI)
-	}
-
-	var res auth.Result
-	err = util.Spinner(os.Stderr, "Waiting for login to complete in browser ...", func() error {
-		res, err = a.Authenticator.Wait(ctx, state)
-		return err
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("login error: %w", err)
-	}
-
-	fmt.Print("\n")
-	fmt.Println("Successfully logged in.")
-	fmt.Print("\n")
-
-	// store the refresh token
-	secretsStore := &auth.Keyring{}
-	err = secretsStore.Set(auth.SecretsNamespace, a.system, res.RefreshToken)
-	if err != nil {
-		// log the error but move on
-		fmt.Println("Could not store the refresh token locally, please expect to login again once your access token expired.")
-	}
-
-	s := System{
-		Name:        a.system,
-		AccessToken: res.AccessToken,
-		ExpiresAt:   time.Now().Add(time.Duration(res.ExpiresIn) * time.Second),
-		Scopes:      auth.RequiredScopes(),
-	}
-	err = a.AddSystem(&s)
-	if err != nil {
-		return nil, fmt.Errorf("could not add system to config: %w", err)
-	}
-
-	return &s, nil
 }
 
 func RunLogout(a *Auth0) error {
