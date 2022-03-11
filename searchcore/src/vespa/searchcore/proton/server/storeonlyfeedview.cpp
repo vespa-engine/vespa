@@ -494,6 +494,12 @@ StoreOnlyFeedView::makeUpdatedDocument(bool useDocStore, Lid lid, const Document
             assert(onWriteDone->is_replay() && !useDocStore);
         }
     }
+    /*
+     * forceCommitAndWait() does not wait for this task to complete but it waits for the
+     * summary executor task using the future stream (cf. lambdas in putSummary() and
+     * putSummaryNoop()).  Reset reference to operation done context here to avoid keeping it
+     * from being destroyed before forceCommitAndWait() returns.
+     */
     onWriteDone.reset();
     promisedDoc.set_value(std::move(newDoc));
     promisedStream.set_value(std::move(newStream));
