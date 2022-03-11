@@ -11,6 +11,7 @@ import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTaskSchedul
 import com.yahoo.vespa.clustercontroller.core.restapiv2.ClusterControllerStateRestAPI;
 import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.zookeeper.Reconfigurer;
 import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
 
 import java.util.LinkedHashMap;
@@ -31,14 +32,19 @@ public class ClusterController extends AbstractComponent
     private final Map<String, FleetController> controllers = new TreeMap<>();
     private final Map<String, StatusHandler.ContainerStatusPageServer> status = new TreeMap<>();
 
+    ClusterController() {
+        this(null);
+    }
+
     /**
      * Dependency injection constructor for controller. A {@link VespaZooKeeperServer} argument is required
      * for all its users, to ensure that zookeeper has started before we start polling it, but
      * should not be injected here, as that causes recreation of the cluster controller, and old and new
      * will run master election, etc., concurrently, which breaks everything.
+     * Instead, a {@link Reconfigurer} is injected to ensure this is shutdown before the ZK server owned by that.
      */
     @Inject
-    public ClusterController() {
+    public ClusterController(Reconfigurer unused) {
         metricWrapper = new JDiscMetricWrapper(null);
     }
 
