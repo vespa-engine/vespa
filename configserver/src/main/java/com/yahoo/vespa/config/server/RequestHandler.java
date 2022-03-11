@@ -92,4 +92,8 @@ public interface RequestHandler {
      * @return set of file references that is owned by the application
      */
     Set<FileReference> listFileReferences(ApplicationId applicationId);
+
+    /** Returns whether the latest deployed version of application is compatible with given vespaVersion */
+    boolean compatibleWith(Optional<Version> vespaVersion, ApplicationId application);
+
 }

@@ -26,6 +26,9 @@ import com.yahoo.vespa.curator.CompletionTimeoutException;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.ListFlag;
+import com.yahoo.vespa.flags.PermanentFlags;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 
@@ -71,11 +74,12 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     private final Clock clock;
     private final TenantFileSystemDirs tenantFileSystemDirs;
     private final ConfigserverConfig configserverConfig;
+    private final ListFlag<Integer> incompatibleMajorVersions;
 
     public TenantApplications(TenantName tenant, Curator curator, StripedExecutor<TenantName> zkWatcherExecutor,
                               ExecutorService zkCacheExecutor, Metrics metrics, ReloadListener reloadListener,
                               ConfigserverConfig configserverConfig, HostRegistry hostRegistry,
-                              TenantFileSystemDirs tenantFileSystemDirs, Clock clock) {
+                              TenantFileSystemDirs tenantFileSystemDirs, Clock clock, FlagSource flagSource) {
         this.curator = curator;
         this.database = new ApplicationCuratorDatabase(tenant, curator);
         this.tenant = tenant;
@@ -91,6 +95,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         this.tenantFileSystemDirs = tenantFileSystemDirs;
         this.clock = clock;
         this.configserverConfig = configserverConfig;
+        this.incompatibleMajorVersions = PermanentFlags.INCOMPATIBLE_MAJOR_VERSIONS.bindTo(flagSource);
     }
 
     /** The curator backed ZK storage of this. */
@@ -380,6 +385,15 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         return applicationMapper.listApplications(applicationId).stream()
                 .flatMap(app -> app.getModel().fileReferences().stream())
                 .collect(toSet());
+    }
+
+    @Override
+    public boolean compatibleWith(Optional<Version> vespaVersion, ApplicationId application) {
+        if (vespaVersion.isEmpty()) return true;
+        Version latestDeployed = applicationMapper.getForVersion(application, Optional.empty(), clock.instant())
+                                                  .getVespaVersion();
+        boolean compatibleMajor = !incompatibleMajorVersions.value().contains(latestDeployed.getMajor());
+        return compatibleMajor || vespaVersion.get().getMajor() == latestDeployed.getMajor();
     }
 
     @Override
