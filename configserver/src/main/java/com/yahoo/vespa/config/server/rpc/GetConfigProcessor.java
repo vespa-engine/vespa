@@ -100,11 +100,16 @@ class GetConfigProcessor implements Runnable {
                 request.getVespaVersion().map(VespaVersion::toString).map(Version::fromString) :
                 Optional.empty();
         if (logDebug(trace)) {
-            debugLog(trace, "Using version " + getPrintableVespaVersion(vespaVersion));
+            debugLog(trace, "Using version " + printableVespaVersion(vespaVersion));
         }
 
         if ( ! context.requestHandler().hasApplication(context.applicationId(), vespaVersion)) {
-            handleError(request, ErrorCode.UNKNOWN_VESPA_VERSION, "Unknown Vespa version in request: " + getPrintableVespaVersion(vespaVersion));
+            handleError(request, ErrorCode.UNKNOWN_VESPA_VERSION, "Unknown Vespa version in request: " + printableVespaVersion(vespaVersion));
+            return null;
+        }
+
+        if ( ! context.requestHandler().compatibleWith(vespaVersion, context.applicationId())) {
+            handleError(request, ErrorCode.INCOMPATIBLE_VESPA_VERSION, "Version " + printableVespaVersion(vespaVersion) + " is binary incompatible with the latest deployed version");
             return null;
         }
 
@@ -161,7 +166,7 @@ class GetConfigProcessor implements Runnable {
                request.getConfigKey().getNamespace().equals(SentinelConfig.getDefNamespace());
     }
 
-    private static String getPrintableVespaVersion(Optional<Version> vespaVersion) {
+    private static String printableVespaVersion(Optional<Version> vespaVersion) {
         return (vespaVersion.isPresent() ? vespaVersion.get().toFullString() : "LATEST");
     }
 

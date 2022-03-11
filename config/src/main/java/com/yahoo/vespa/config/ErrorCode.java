@@ -38,31 +38,34 @@ public final class ErrorCode {
 
     public static final int INCONSISTENT_CONFIG_MD5 = UNKNOWN_CONFIG + 400;
 
+    public static final int INCOMPATIBLE_VESPA_VERSION = UNKNOWN_CONFIG + 500;
+
     private ErrorCode() {
     }
 
     public static String getName(int error) {
         switch(error) {
-            case UNKNOWN_CONFIG:            return "UNKNOWN_CONFIG";
-            case UNKNOWN_DEFINITION:        return "UNKNOWN_DEFINITION";
-            case UNKNOWN_DEF_MD5:           return "UNKNOWN_DEF_MD5";
-            case ILLEGAL_NAME:              return "ILLEGAL_NAME";
-            case ILLEGAL_VERSION:           return "ILLEGAL_VERSION";
-            case ILLEGAL_CONFIGID:          return "ILLEGAL_CONFIGID";
-            case ILLEGAL_DEF_MD5:           return "ILLEGAL_DEF_MD5";
-            case ILLEGAL_CONFIG_MD5:        return "ILLEGAL_CONFIG_MD5";
-            case ILLEGAL_TIMEOUT:           return "ILLEGAL_TIMEOUT";
-            case ILLEGAL_GENERATION:        return "ILLEGAL_GENERATION";
-            case ILLEGAL_SUB_FLAG:          return "ILLEGAL_SUBSCRIBE_FLAG";
-            case ILLEGAL_NAME_SPACE:        return "ILLEGAL_NAME_SPACE";
-            case ILLEGAL_CLIENT_HOSTNAME:   return "ILLEGAL_CLIENT_HOSTNAME";
-            case OUTDATED_CONFIG:           return "OUTDATED_CONFIG";
-            case INTERNAL_ERROR:            return "INTERNAL_ERROR";
-            case APPLICATION_NOT_LOADED:    return "APPLICATION_NOT_LOADED";
-            case ILLEGAL_PROTOCOL_VERSION:  return "ILLEGAL_PROTOCOL_VERSION";
-            case INCONSISTENT_CONFIG_MD5:   return "INCONSISTENT_CONFIG_MD5";
-            case UNKNOWN_VESPA_VERSION:     return "UNKNOWN_VESPA_VERSION";
-            default:                        return "Unknown error";
+            case UNKNOWN_CONFIG:             return "UNKNOWN_CONFIG";
+            case UNKNOWN_DEFINITION:         return "UNKNOWN_DEFINITION";
+            case UNKNOWN_DEF_MD5:            return "UNKNOWN_DEF_MD5";
+            case ILLEGAL_NAME:               return "ILLEGAL_NAME";
+            case ILLEGAL_VERSION:            return "ILLEGAL_VERSION";
+            case ILLEGAL_CONFIGID:           return "ILLEGAL_CONFIGID";
+            case ILLEGAL_DEF_MD5:            return "ILLEGAL_DEF_MD5";
+            case ILLEGAL_CONFIG_MD5:         return "ILLEGAL_CONFIG_MD5";
+            case ILLEGAL_TIMEOUT:            return "ILLEGAL_TIMEOUT";
+            case ILLEGAL_GENERATION:         return "ILLEGAL_GENERATION";
+            case ILLEGAL_SUB_FLAG:           return "ILLEGAL_SUBSCRIBE_FLAG";
+            case ILLEGAL_NAME_SPACE:         return "ILLEGAL_NAME_SPACE";
+            case ILLEGAL_CLIENT_HOSTNAME:    return "ILLEGAL_CLIENT_HOSTNAME";
+            case OUTDATED_CONFIG:            return "OUTDATED_CONFIG";
+            case INTERNAL_ERROR:             return "INTERNAL_ERROR";
+            case APPLICATION_NOT_LOADED:     return "APPLICATION_NOT_LOADED";
+            case ILLEGAL_PROTOCOL_VERSION:   return "ILLEGAL_PROTOCOL_VERSION";
+            case INCONSISTENT_CONFIG_MD5:    return "INCONSISTENT_CONFIG_MD5";
+            case UNKNOWN_VESPA_VERSION:      return "UNKNOWN_VESPA_VERSION";
+            case INCOMPATIBLE_VESPA_VERSION: return "INCOMPATIBLE_VESPA_VERSION";
+            default:                         return "Unknown error";
         }
     }
 

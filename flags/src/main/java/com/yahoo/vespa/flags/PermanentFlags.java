@@ -240,6 +240,13 @@ public class PermanentFlags {
             "Takes effect immediately.",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundListFlag<Integer> INCOMPATIBLE_MAJOR_VERSIONS = defineListFlag(
+            "incompatible-major-versions", List.of(8), Integer.class,
+            "A list of major versions which are binary-incompatible and requires an application package to " +
+            "be built specifically for that Vespa version. When an application upgrades to an incompatible major " +
+            "version, the config server will refuse to serve config to nodes still running on older major versions",
+            "Takes effect immediately");
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(

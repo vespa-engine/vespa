@@ -108,6 +108,11 @@ public class SuperModelRequestHandler implements RequestHandler {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public boolean compatibleWith(Optional<Version> vespaVersion, ApplicationId application) {
+        return true;
+    }
+
     public void enable() {
         enabled = true;
         superModelManager.markAsComplete();
