@@ -11,8 +11,11 @@ import org.junit.Test;
 import java.util.Map;
 import java.util.Set;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Doesn't really test cluster controller, but runs some lines of code.
@@ -41,17 +44,16 @@ public class ClusterControllerTest {
 
     @Test
     public void testSimple() throws Exception {
-        // Cluster controller object keeps state and should never be remade, so should
-        // inject nothing
         ClusterController cc = new ClusterController();
         cc.setOptions(options, metric);
         cc.setOptions(options, metric);
-        cc.getFleetControllers();
-        cc.getAll();
-
+        assertEquals(1, cc.getFleetControllers().size());
         assertNotNull(cc.get("storage"));
         assertNull(cc.get("music"));
-        cc.deconstruct();
+        cc.countdown();
+        assertTrue(cc.getController("storage").isRunning());
+        cc.countdown();
+        assertFalse(cc.getController("storage").isRunning());
     }
 
     @Test
@@ -62,7 +64,7 @@ public class ClusterControllerTest {
             }
         };
         cc.setOptions(options, metric);
-        cc.deconstruct();
+        cc.countdown();
     }
 
 }

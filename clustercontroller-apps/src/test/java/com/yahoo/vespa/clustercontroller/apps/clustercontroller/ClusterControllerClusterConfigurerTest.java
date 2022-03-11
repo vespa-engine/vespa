@@ -11,6 +11,7 @@ import org.junit.Test;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -50,7 +51,7 @@ public class ClusterControllerClusterConfigurerTest {
             @Override
             public Context createContext(Map<String, ?> stringMap) { return null; }
         };
-            // Used in standalone modus to get config without a cluster controller instance
+            // Used in standalone mode to get config without a cluster controller instance
         ClusterControllerClusterConfigurer configurer = new ClusterControllerClusterConfigurer(
                 null,
                 new StorDistributionConfig(distributionConfig),
@@ -60,7 +61,7 @@ public class ClusterControllerClusterConfigurerTest {
                 metric,
                 null
         );
-        assertTrue(configurer.getOptions() != null);
+        assertNotNull(configurer.getOptions());
         assertEquals(0.123, configurer.getOptions().minNodeRatioPerGroup, 0.01);
         assertTrue(configurer.getOptions().clusterFeedBlockEnabled);
         assertEquals(0.5, configurer.getOptions().clusterFeedBlockLimit.get("foo"), 0.01);
