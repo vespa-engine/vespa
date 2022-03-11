@@ -24,18 +24,30 @@ func Spinner(w io.Writer, message string, fn func() error) error {
 	}
 	s.Prefix = message
 	s.FinalMSG = "\r" + message + "done\n"
-	isTerminal := isTerminal(w)
-	if isTerminal { // spinner package does this check too, but it's hardcoded to check os.Stdout :(
+	useSpinner := useSpinner(w)
+	if useSpinner { // spinner package does this check too, but it's hardcoded to check os.Stdout :(
 		s.Start()
 	}
 	err := fn()
 	if err != nil {
 		s.FinalMSG = "\r" + message + "failed\n"
 	}
-	if isTerminal {
+	if useSpinner {
 		s.Stop()
 	}
 	return err
+}
+
+func useSpinner(w io.Writer) bool {
+	if !isTerminal(w) {
+		return false
+	}
+	// Explicitly disable spinner for Screwdriver. It emulates a tty but
+	// \r result in a newline, and output gets truncated.
+	if _, screwdriver := os.LookupEnv("SCREWDRIVER"); screwdriver {
+		return false
+	}
+	return true
 }
 
 func isTerminal(w io.Writer) bool {
