@@ -55,7 +55,8 @@ variable.`,
 			if len(args) != 2 {
 				return fmt.Errorf("expected exactly 2 arguments, got %d", len(args))
 			}
-			return cloneApplication(cli, args[0], args[1], forceClone)
+			cloner := &cloner{cli: cli, discardCache: forceClone}
+			return cloner.Clone(args[0], args[1])
 		},
 	}
 	cmd.Flags().BoolVarP(&listApps, "list", "l", false, "List available sample applications")
@@ -63,16 +64,22 @@ variable.`,
 	return cmd
 }
 
-func cloneApplication(cli *CLI, applicationName string, applicationDir string, force bool) error {
-	zipFile, err := openSampleAppsZip(force, cli)
+type cloner struct {
+	cli          *CLI
+	discardCache bool
+}
+
+// Clone copies the application identified by applicationName into given path. If the cached copy of sample applications
+// has expired, it will be downloaded from GitHub automatically.
+func (c *cloner) Clone(applicationName, path string) error {
+	zipName, err := c.zipName()
 	if err != nil {
 		return err
 	}
-	defer zipFile.Close()
 
-	r, err := zip.OpenReader(zipFile.Name())
+	r, err := zip.OpenReader(zipName)
 	if err != nil {
-		return fmt.Errorf("could not open sample apps zip '%s': %w", color.CyanString(zipFile.Name()), err)
+		return fmt.Errorf("could not open sample apps zip '%s': %w", color.CyanString(zipName), err)
 	}
 	defer r.Close()
 
@@ -81,14 +88,14 @@ func cloneApplication(cli *CLI, applicationName string, applicationDir string, f
 		dirPrefix := "sample-apps-master/" + applicationName + "/"
 		if strings.HasPrefix(f.Name, dirPrefix) {
 			if !found { // Create destination directory lazily when source is found
-				createErr := os.Mkdir(applicationDir, 0755)
+				createErr := os.Mkdir(path, 0755)
 				if createErr != nil {
-					return fmt.Errorf("could not create directory '%s': %w", color.CyanString(applicationDir), createErr)
+					return fmt.Errorf("could not create directory '%s': %w", color.CyanString(path), createErr)
 				}
 			}
 			found = true
 
-			if err := copy(f, applicationDir, dirPrefix); err != nil {
+			if err := copy(f, path, dirPrefix); err != nil {
 				return fmt.Errorf("could not copy zip entry '%s': %w", color.CyanString(f.Name), err)
 			}
 		}
@@ -96,31 +103,31 @@ func cloneApplication(cli *CLI, applicationName string, applicationDir string, f
 	if !found {
 		return errHint(fmt.Errorf("could not find source application '%s'", color.CyanString(applicationName)), "Use -f to ignore the cache")
 	} else {
-		log.Print("Created ", color.CyanString(applicationDir))
+		log.Print("Created ", color.CyanString(path))
 	}
 	return nil
 }
 
-func useCache(force bool, stat os.FileInfo) (bool, error) {
-	if force {
+func (c *cloner) useCache(stat os.FileInfo) (bool, error) {
+	if c.discardCache {
 		return false, nil
 	}
 	expiry := stat.ModTime().Add(time.Hour * 168) // 1 week
 	return stat.Size() > 0 && time.Now().Before(expiry), nil
 }
 
-func fetchSampleAppsZip(destination string, cli *CLI) error {
-	f, err := ioutil.TempFile(filepath.Dir(destination), "sample-apps")
+func (c *cloner) downloadZip(dst string) error {
+	f, err := ioutil.TempFile(filepath.Dir(dst), "sample-apps")
 	if err != nil {
 		return fmt.Errorf("could not create temporary file: %w", err)
 	}
 	defer f.Close()
-	return cli.spinner(cli.Stderr, color.YellowString("Downloading sample apps ..."), func() error {
+	return c.cli.spinner(c.cli.Stderr, color.YellowString("Downloading sample apps ..."), func() error {
 		request, err := http.NewRequest("GET", "https://github.com/vespa-engine/sample-apps/archive/refs/heads/master.zip", nil)
 		if err != nil {
 			return fmt.Errorf("invalid url: %w", err)
 		}
-		response, err := cli.httpClient.Do(request, time.Minute*60)
+		response, err := c.cli.httpClient.Do(request, time.Minute*60)
 		if err != nil {
 			return fmt.Errorf("could not download sample apps: %w", err)
 		}
@@ -132,40 +139,40 @@ func fetchSampleAppsZip(destination string, cli *CLI) error {
 			return fmt.Errorf("could not write sample apps to file: %s: %w", f.Name(), err)
 		}
 		f.Close()
-		if err := os.Rename(f.Name(), destination); err != nil {
+		if err := os.Rename(f.Name(), dst); err != nil {
 			return fmt.Errorf("could not move sample apps to cache path")
 		}
 		return nil
 	})
 }
 
-func openSampleAppsZip(forceClone bool, cli *CLI) (*os.File, error) {
-	cacheDir, err := vespaCliCacheDir(cli.Environment)
+func (c *cloner) zipName() (string, error) {
+	cacheDir, err := vespaCliCacheDir(c.cli.Environment)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	path := filepath.Join(cacheDir, "sample-apps-master.zip")
+	dst := filepath.Join(cacheDir, "sample-apps-master.zip")
 	cacheExists := true
-	stat, err := os.Stat(path)
+	stat, err := os.Stat(dst)
 	if errors.Is(err, os.ErrNotExist) {
 		cacheExists = false
 	} else if err != nil {
-		return nil, fmt.Errorf("could not stat existing cache file: %w", err)
+		return "", fmt.Errorf("could not stat existing cache file: %w", err)
 	}
 	if cacheExists {
-		useCache, err := useCache(forceClone, stat)
+		useCache, err := c.useCache(stat)
 		if err != nil {
-			return nil, errHint(fmt.Errorf("could not determine cache status: %w", err), "Try ignoring the cache with the -f flag")
+			return "", errHint(fmt.Errorf("could not determine cache status: %w", err), "Try ignoring the cache with the -f flag")
 		}
 		if useCache {
 			log.Print(color.YellowString("Using cached sample apps ..."))
-			return os.Open(path)
+			return dst, nil
 		}
 	}
-	if err := fetchSampleAppsZip(path, cli); err != nil {
-		return nil, fmt.Errorf("could not fetch sample apps: %w", err)
+	if err := c.downloadZip(dst); err != nil {
+		return "", fmt.Errorf("could not fetch sample apps: %w", err)
 	}
-	return os.Open(path)
+	return dst, nil
 }
 
 func copy(f *zip.File, destinationDir string, zipEntryPrefix string) error {
