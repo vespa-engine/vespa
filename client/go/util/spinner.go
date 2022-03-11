@@ -29,11 +29,11 @@ func Spinner(w io.Writer, message string, fn func() error) error {
 		s.Start()
 	}
 	err := fn()
-	if isTerminal {
-		s.Stop()
-	}
 	if err != nil {
 		s.FinalMSG = "\r" + message + "failed\n"
+	}
+	if isTerminal {
+		s.Stop()
 	}
 	return err
 }
