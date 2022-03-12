@@ -250,6 +250,9 @@ public class ConvertSchemaCollection {
         for (var fieldSet : parsed.getFieldSets()) {
             convertFieldSet(schema, fieldSet);
         }
+        if (documentsOnly) {
+            return; // skip ranking-only content, not used for document type generation
+        }
         for (var rankingConstant : parsed.getRankingConstants()) {
             schema.rankingConstants().add(rankingConstant);
         }
