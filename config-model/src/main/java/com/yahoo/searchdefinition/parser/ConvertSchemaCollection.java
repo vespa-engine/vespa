@@ -33,7 +33,9 @@ import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -122,6 +124,8 @@ public class ConvertSchemaCollection {
         typeConverter.convert(true);
     }
 
+    private Map<String, SDDocumentType> convertedDocuments = new LinkedHashMap();
+
     public List<Schema> convertToSchemas() {
         typeConverter = new ConvertParsedTypes(orderedInput, docMan);
         typeConverter.convert(false);
@@ -150,10 +154,12 @@ public class ConvertSchemaCollection {
     {
         SDDocumentType document = new SDDocumentType(parsed.name());
         for (String inherit : parsed.getInherited()) {
-            document.inherit(new DataTypeName(inherit));
+            var parent = convertedDocuments.get(inherit);
+            assert(parent != null);
+            document.inherit(parent);
         }
         for (var struct : parsed.getStructs()) {
-            var structProxy = fieldConverter.convertStructDeclaration(schema, struct);
+            var structProxy = fieldConverter.convertStructDeclaration(schema, document, struct);
             document.addType(structProxy);
         }
         for (var annotation : parsed.getAnnotations()) {
@@ -165,6 +171,7 @@ public class ConvertSchemaCollection {
                 document.setFieldId(sdf, field.idOverride());
             }
         }
+        convertedDocuments.put(parsed.name(), document);
         schema.addDocument(document);
     }
 

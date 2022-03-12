@@ -24,6 +24,8 @@ public class IndexingOperation implements FieldOperation {
         this.script = script;
     }
 
+    public ScriptExpression getScript() { return script; }
+
     public void apply(SDField field) {
         field.setIndexingScript(script);
     }

@@ -62,6 +62,7 @@ public abstract class DataType extends Identifiable implements Serializable, Com
     static {
         TAG.setTag(true);
     }
+
     public static int lastPredefinedDataTypeId() {
         return 21;
     }

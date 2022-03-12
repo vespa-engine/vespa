@@ -37,22 +37,22 @@ public class SDDocumentTypeOrdererTestCase {
         g.inherit(new TemporarySDDocumentType(new DataTypeName("e")));
         g.inherit(new TemporarySDDocumentType(new DataTypeName("c")));
 
-        SDField aFieldTypeB = new TemporarySDField("atypeb", DataType.STRING);
+        SDField aFieldTypeB = new TemporarySDField(a, "atypeb", DataType.STRING);
         a.addField(aFieldTypeB);
 
-        SDField bFieldTypeC = new TemporarySDField("btypec", DataType.STRING);
+        SDField bFieldTypeC = new TemporarySDField(b, "btypec", DataType.STRING);
         b.addField(bFieldTypeC);
 
-        SDField cFieldTypeG = new TemporarySDField("ctypeg", DataType.STRING);
+        SDField cFieldTypeG = new TemporarySDField(c, "ctypeg", DataType.STRING);
         c.addField(cFieldTypeG);
 
-        SDField gFieldTypeF = new TemporarySDField("gtypef", DataType.STRING);
+        SDField gFieldTypeF = new TemporarySDField(g, "gtypef", DataType.STRING);
         g.addField(gFieldTypeF);
 
-        SDField fFieldTypeC = new TemporarySDField("ftypec", DataType.STRING);
+        SDField fFieldTypeC = new TemporarySDField(f, "ftypec", DataType.STRING);
         f.addField(fFieldTypeC);
 
-        SDField dFieldTypeE = new TemporarySDField("dtypee", DataType.STRING);
+        SDField dFieldTypeE = new TemporarySDField(d, "dtypee", DataType.STRING);
         d.addField(dFieldTypeE);
 
         types.add(a);

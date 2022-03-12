@@ -30,7 +30,7 @@ public class TypeConversionTestCase extends AbstractSchemaTestCase {
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
         SDDocumentType document = new SDDocumentType("test");
         schema.addDocument(document);
-        SDField a = new SDField("a", DataType.STRING);
+        SDField a = new SDField(document, "a", DataType.STRING);
         a.parseIndexingScript("{ index }");
         document.addField(a);
 

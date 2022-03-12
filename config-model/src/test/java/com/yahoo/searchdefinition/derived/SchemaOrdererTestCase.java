@@ -91,8 +91,8 @@ public class SchemaOrdererTestCase extends AbstractSchemaTestCase {
 
     @SuppressWarnings("deprecation")
     private static void createDocumentReference(Schema from, Schema to, String refFieldName) {
-        SDField refField = new TemporarySDField(refFieldName, ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create(to.getName())));
         SDDocumentType fromDocument = from.getDocument();
+        SDField refField = new TemporarySDField(fromDocument, refFieldName, ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create(to.getName())));
         fromDocument.addField(refField);
         Map<String, DocumentReference> originalMap = fromDocument.getDocumentReferences().get().referenceMap();
         HashMap<String, DocumentReference> modifiedMap = new HashMap<>(originalMap);

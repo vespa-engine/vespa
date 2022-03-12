@@ -291,13 +291,12 @@ public class ConvertParsedFields {
         schema.addIndex(index);
     }
 
-    SDDocumentType convertStructDeclaration(Schema schema, ParsedStruct parsed) {
+    SDDocumentType convertStructDeclaration(Schema schema, SDDocumentType document, ParsedStruct parsed) {
         // TODO - can we cleanup this mess
         var structProxy = new SDDocumentType(parsed.name(), schema);
-        structProxy.setStruct(context.resolveStruct(parsed));
         for (var parsedField : parsed.getFields()) {
             var fieldType = context.resolveType(parsedField.getType());
-            var field = new SDField(structProxy, parsedField.name(), fieldType);
+            var field = new SDField(document, parsedField.name(), fieldType);
             convertCommonFieldSettings(field, parsedField);
             structProxy.addField(field);
             if (parsedField.hasIdOverride()) {
@@ -307,6 +306,7 @@ public class ConvertParsedFields {
         for (String inherit : parsed.getInherited()) {
             structProxy.inherit(new DataTypeName(inherit));                
         }
+        structProxy.setStruct(context.resolveStruct(parsed));
         return structProxy;
     }
 
@@ -314,7 +314,7 @@ public class ConvertParsedFields {
         var annType = context.resolveAnnotation(parsed.name());
         var payload = parsed.getStruct();
         if (payload.isPresent()) {
-            var structProxy = convertStructDeclaration(schema, payload.get());
+            var structProxy = convertStructDeclaration(schema, document, payload.get());
             document.addType(structProxy);
         }
         document.addAnnotation(annType);

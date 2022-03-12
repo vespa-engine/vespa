@@ -111,8 +111,8 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     /** Struct fields defined in this field */
     private final Map<String,SDField> structFields = new java.util.LinkedHashMap<>(0);
 
-    /** The document that this field was declared in, or null*/
-    private SDDocumentType ownerDocType = null;
+    /** The document that this field was declared in, or null */
+    private SDDocumentType repoDocType = null;
 
     /** The aliases declared for this field. May pertain to indexes or attributes */
     private final Map<String, String> aliasToName = new HashMap<>();
@@ -130,25 +130,24 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * @param name the name of the field
      * @param dataType the datatype of the field
     */
-    protected SDField(SDDocumentType repo, String name, int id, DataType dataType, boolean populate) {
-        super(name, id, dataType);
-        populate(populate, repo, name, dataType);
-    }
-
     public SDField(SDDocumentType repo, String name, int id, DataType dataType) {
-        this(repo, name, id, dataType, true);
+        super(name, id, dataType);
+        this.repoDocType = repo;
+        populate(name, dataType);
+    }
+
+    public SDField(String name, DataType dataType) {
+        this(null, name, dataType);
     }
 
     /** Creates a new field */
-    public SDField(SDDocumentType repo, String name, DataType dataType, boolean populate) {
-        super(name, dataType);
-        populate(populate, repo, name, dataType);
+    public SDField(SDDocumentType repo, String name, DataType dataType) {
+        this(repo, name, dataType, null);
     }
 
     /** Creates a new field */
-    protected SDField(SDDocumentType repo, String name, DataType dataType, SDDocumentType owner, boolean populate) {
-        super(name, dataType, owner == null ? null : owner.getDocumentType());
-        populate(populate, repo, name, dataType);
+    protected SDField(SDDocumentType repo, String name, DataType dataType, SDDocumentType owner) {
+        this(repo, name, dataType, owner, null, 0);
     }
 
     /**
@@ -159,27 +158,24 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * @param owner the owning document (used to check for id collisions)
      * @param fieldMatching the matching object to set for the field
      */
-    protected SDField(SDDocumentType repo, String name, DataType dataType, SDDocumentType owner,
-                      Matching fieldMatching, boolean populate, int recursion) {
+    protected SDField(SDDocumentType repo,
+                      String name,
+                      DataType dataType,
+                      SDDocumentType owner,
+                      Matching fieldMatching,
+                      int recursion)
+    {
         super(name, dataType, owner == null ? null : owner.getDocumentType());
+        this.repoDocType = repo;
+        this.structFieldDepth = recursion;
         if (fieldMatching != null)
             this.setMatching(fieldMatching);
-        populate(populate, repo, name, dataType, fieldMatching, recursion);
+        populate(name, dataType);
     }
 
-    public SDField(SDDocumentType repo, String name, DataType dataType) {
-        this(repo, name, dataType, true);
-    }
+    private int structFieldDepth = 0;
 
-    public SDField(String name, DataType dataType) {
-        this(null, name, dataType);
-    }
-
-    private void populate(boolean populate, SDDocumentType repo, String name, DataType dataType) {
-        populate(populate, repo, name, dataType, null, 0);
-    }
-
-    private void populate(boolean populate, SDDocumentType repo, String name, DataType dataType, Matching fieldMatching,  int recursion) {
+    private void populate(String name, DataType dataType) {
         if (dataType instanceof TensorDataType) {
             TensorType type = ((TensorDataType)dataType).getTensorType();
             if (type.dimensions().stream().anyMatch(d -> d.isIndexed() && d.size().isEmpty()))
@@ -193,10 +189,6 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         }
         else {
             addQueryCommand("type " + dataType.getName());
-        }
-        if (populate || (dataType instanceof MapDataType)) {
-            populateWithStructFields(repo, name, dataType, recursion);
-            populateWithStructMatching(repo, dataType, fieldMatching);
         }
     }
 
@@ -273,17 +265,23 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         }
     }
 
+    private boolean doneStructFields = false;
+
     @SuppressWarnings("deprecation")
-    public void populateWithStructFields(SDDocumentType sdoc, String name, DataType dataType, int recursion) {
-        DataType dt = getFirstStructOrMapRecursive();
-        if (dt == null) return;
+    private void actuallyMakeStructFields() {
+        if (doneStructFields) return;
+        if (getFirstStructOrMapRecursive() == null) {
+            doneStructFields = true;
+            return;
+        }
+        var sdoc = repoDocType;
+        var dataType = getDataType();
 
         java.util.function.BiConsumer<String, DataType> supplyStructField = (fieldName, fieldType) -> {
             if (structFields.containsKey(fieldName)) return;
-            String subName = name.concat(".").concat(fieldName);
-            var subField = new SDField(sdoc, subName, fieldType,
-                                       ownerDocType, new Matching(),
-                                       true, recursion + 1);
+            String subName = getName().concat(".").concat(fieldName);
+            var subField = new SDField(sdoc, subName, fieldType, null,
+                                       null, structFieldDepth + 1);
             structFields.put(fieldName, subField);
         };
 
@@ -292,15 +290,16 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
             supplyStructField.accept("key", mdt.getKeyType());
             supplyStructField.accept("value", mdt.getValueType());
         } else {
-            if (recursion >= 10) return;
+            if (structFieldDepth >= 10) {
+                // too risky, infinite recursion
+                doneStructFields = true;
+                return;
+            }
             if (dataType instanceof CollectionDataType) {
                 dataType = ((CollectionDataType)dataType).getNestedType();
             }
-            if (dataType instanceof TemporaryStructuredDataType) {
-                SDDocumentType subType = sdoc != null ? sdoc.getType(dataType.getName()) : null;
-                if (subType == null) {
-                    throw new IllegalArgumentException("Could not find struct '" + dataType.getName() + "'.");
-                }
+            SDDocumentType subType = sdoc != null ? sdoc.getType(dataType.getName()) : null;
+            if (dataType instanceof TemporaryStructuredDataType && subType != null) {
                 for (Field field : subType.fieldSet()) {
                     supplyStructField.accept(field.getName(), field.getDataType());
                 }
@@ -310,37 +309,23 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
                     supplyStructField.accept(field.getName(), field.getDataType());
                 }
             }
-        }
-    }
-
-    public void populateWithStructMatching(SDDocumentType sdoc, DataType dataType, Matching superFieldMatching) {
-        if (sdoc == null) return;
-        if (superFieldMatching == null) return;
-        DataType dt = getFirstStructOrMapRecursive();
-        if (dt == null) return;
-
-        if (dataType instanceof MapDataType) {
-            // old code here would never do anything useful, should we do something here?
-            return;
-        } else {
-            if (dataType instanceof CollectionDataType) {
-                dataType = ((CollectionDataType)dataType).getNestedType();
+            if ((subType == null) && (structFields.size() > 0)) {
+                throw new IllegalArgumentException("Cannot find matching (repo=" + sdoc + ") for subfields in "
+                                                   + this + " [" + getDataType() + getDataType().getClass() +
+                                                   "] with " + structFields.size() + " struct fields");
             }
-            if (dataType instanceof StructDataType) {
-                SDDocumentType subType = sdoc.getType(dataType.getName());
-                if (subType == null) {
-                    throw new IllegalArgumentException("Could not find struct " + dataType.getName());
-                }
+            // populate struct fields with matching
+            if (subType != null) {
                 for (Field f : subType.fieldSet()) {
                     if (f instanceof SDField) {
                         SDField field = (SDField) f;
                         Matching subFieldMatching = new Matching();
-                        subFieldMatching.merge(superFieldMatching);
+                        subFieldMatching.merge(this.matching);
                         subFieldMatching.merge(field.getMatching());
                         SDField subField = structFields.get(field.getName());
                         if (subField != null) {
-                            subFieldMatching.merge(subField.getMatching());
-                            subField.populateWithStructMatching(sdoc, field.getDataType(), subFieldMatching);
+                            // we just made this with no matching, so nop:
+                            // subFieldMatching.merge(subField.getMatching());
                             subField.setMatching(subFieldMatching);
                         }
                     } else {
@@ -349,7 +334,10 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
                 }
             }
         }
+        doneStructFields = true;
     }
+
+    private Matching matchingForStructFields = null;
 
     public void addOperation(FieldOperation op) {
         pendingOperations.add(op);
@@ -723,7 +711,10 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
 
     /** Returns list of static struct fields */
     @Override
-    public Collection<SDField> getStructFields() { return structFields.values(); }
+    public Collection<SDField> getStructFields() {
+        actuallyMakeStructFields();
+        return structFields.values();
+    }
 
     /**
      * Returns a struct field defined in this field,
@@ -732,6 +723,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      */
     @Override
     public SDField getStructField(String name) {
+        actuallyMakeStructFields();
         if (name.contains(".")) {
             String superFieldName = name.substring(0,name.indexOf("."));
             String subFieldName = name.substring(name.indexOf(".")+1);

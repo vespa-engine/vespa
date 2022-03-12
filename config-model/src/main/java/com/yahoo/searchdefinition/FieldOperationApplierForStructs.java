@@ -20,47 +20,8 @@ public class FieldOperationApplierForStructs extends FieldOperationApplier {
         for (SDDocumentType type : sdoc.getAllTypes()) {
             if (type.isStruct()) {
                 apply(type);
-                copyFields(type, sdoc);
             }
         }
     }
 
-    @SuppressWarnings("deprecation")
-    private void copyFields(SDDocumentType structType, SDDocumentType sdoc) {
-        //find all fields in OTHER types that have this type:
-        List<SDDocumentType> list = new ArrayList<>();
-        list.add(sdoc);
-        list.addAll(sdoc.getTypes());
-        for (SDDocumentType anyType : list) {
-            Iterator<Field> fields = anyType.fieldIterator();
-            while (fields.hasNext()) {
-                SDField field = (SDField) fields.next();
-                maybePopulateField(sdoc, field, structType);
-            }
-        }
-    }
-
-    private void maybePopulateField(SDDocumentType sdoc, SDField field, SDDocumentType structType) {
-        DataType structUsedByField = field.getFirstStructRecursive();
-        if (structUsedByField == null) {
-            return;
-        }
-        if (structUsedByField.getName().equals(structType.getName())) {
-            //this field is using this type!!
-            field.populateWithStructFields(sdoc, field.getName(), field.getDataType(), 0);
-            field.populateWithStructMatching(sdoc, field.getDataType(), field.getMatching());
-        }
-    }
-
-    public void processSchemaFields(Schema schema) {
-        var sdoc = schema.getDocument();
-        if (sdoc == null) return;
-        for (SDDocumentType type : sdoc.getAllTypes()) {
-            if (type.isStruct()) {
-                for (SDField field : schema.allExtraFields()) {
-                    maybePopulateField(sdoc, field, type);
-                }
-            }
-        }
-    }
 }
