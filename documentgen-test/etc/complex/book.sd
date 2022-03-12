@@ -50,7 +50,7 @@ search book {
             indexing: summary | index
         }
         field year type int {
-            indexing: summary | index
+            indexing: summary | attribute
         }
         field description type string {
             indexing: summary | index
@@ -71,10 +71,6 @@ search book {
     import field ref.dummy as my_dummy {}
     import field ref.foo as my_foo {}
 
-    field sw1 type float {
-    }
-    field didinteger type array<int> {
-    }
     rank-profile default {
         first-phase {
             expression: nativeRank
@@ -87,7 +83,7 @@ search book {
 
     }
     field sw1 type float {
-        indexing: input weight * 6 + input w1 + input w2 | summary
+        indexing: input weight_src * 67 + input w1_src + input w2_src | summary
     }
     field didinteger type array<int> {
         indexing: input did | split " " | for_each { to_int } | attribute

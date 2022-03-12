@@ -31,10 +31,6 @@ search music2 {
      field instrument type int { }
    }
 
-   annotation date {
-     field exacttime type long { }
-   }
-
    annotation place {
      field lat type long { }
      field lon type long { }
