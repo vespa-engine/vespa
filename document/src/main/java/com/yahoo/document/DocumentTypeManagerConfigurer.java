@@ -542,6 +542,9 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                         DataType fieldType = getOrCreateType(fieldCfg.type());
                         type.addField(new Field(fieldCfg.name(), fieldCfg.internalid(), fieldType));
                     }
+                    if (docType != DataType.DOCUMENT) {
+                        docType.addDeclaredStructType(structCfg.name(), type);
+                    }
                 }
             }
             void fillDocument() {
