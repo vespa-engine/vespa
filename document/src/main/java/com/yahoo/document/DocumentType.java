@@ -41,6 +41,7 @@ public class DocumentType extends StructuredDataType {
     private List<DocumentType> inherits = new ArrayList<>(1);
     private Map<String, Set<Field>> fieldSets = new HashMap<>();
     private final Set<String> importedFieldNames;
+    private Map<String, StructDataType> declaredStructTypes = new HashMap<>();
 
     /**
      * Creates a new document type and registers it with the document type manager.
@@ -136,6 +137,39 @@ public class DocumentType extends StructuredDataType {
      */
     public StructDataType contentStruct() {
         return headerType;
+    }
+
+    /**
+     * Get a struct declared in this document (or any inherited
+     * document). Returns null if no such struct was found.
+     *
+     * @param name the name of the struct
+     * @return reference to a struct data type, or null
+     **/
+    public StructDataType getDeclaredStructType(String name) {
+        var mine = declaredStructTypes.get(name);
+        if (mine != null) {
+            return mine;
+        }
+        for (DocumentType inheritedType : inherits) {
+            var fromParent = inheritedType.getDeclaredStructType(name);
+            if (fromParent == null) {
+                continue;
+            } else if (mine == null) {
+                mine = fromParent;
+            } else if (mine != fromParent) {
+                throw new IllegalArgumentException("Found multiple conflicting struct types for "+name);
+            }
+        }
+        return mine;
+    }
+
+    /** only used during configuration */
+    void addDeclaredStructType(String name, StructDataType struct) {
+        var old = declaredStructTypes.put(name, struct);
+        if (old != null) {
+            throw new IllegalArgumentException("Already had declared struct for "+name);
+        }
     }
 
     /** @deprecated use contentStruct instead */

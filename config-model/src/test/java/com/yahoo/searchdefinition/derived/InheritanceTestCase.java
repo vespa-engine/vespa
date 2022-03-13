@@ -167,4 +167,18 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         assertEquals(new Index("prefixed", true), childSchema.getIndex("prefixed"));
     }
 
+    @Test
+    public void testInheritStructDiamondNew() throws IOException, ParseException {
+        String dir = "src/test/derived/declstruct/";
+        List<String> files = Arrays.asList("common.sd", "foo.sd", "bar.sd", "foobar.sd");
+        var builder = new ApplicationBuilder
+            (new TestProperties().setExperimentalSdParsing(true));
+        for (String fileName : files) {
+            builder.addSchemaFile(dir + fileName);
+        }
+        builder.build(true);
+        derive("declstruct", builder, builder.getSchema("foobar"));
+        assertCorrectConfigFiles("declstruct");
+    }
+
 }

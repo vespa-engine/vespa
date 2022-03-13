@@ -599,10 +599,50 @@ search annotationsimplicitstruct {
         assertTrue(array.getNestedType() instanceof StructDataType);
     }
 
+    @Test
+    public void declared_struct_types_available() {
+        var manager = DocumentTypeManager.fromFile("src/test/document/documentmanager.declstruct.cfg");
+        var docType = manager.getDocumentType("foo");
+        var struct = docType.getDeclaredStructType("mystructinfoo");
+        assertNotNull(struct);
+        assertNotNull(struct.getField("f1"));
+        struct = docType.getDeclaredStructType("mystructinbar");
+        assertNull(struct);
+        struct = docType.getDeclaredStructType("mystructinfoobar");
+        assertNull(struct);
+        struct = docType.getDeclaredStructType("mystruct");
+        assertNotNull(struct);
+        assertNotNull(struct.getField("f0"));
+
+        docType = manager.getDocumentType("bar");
+        struct = docType.getDeclaredStructType("mystructinfoo");
+        assertNull(struct);
+        struct = docType.getDeclaredStructType("mystructinbar");
+        assertNotNull(struct);
+        assertNotNull(struct.getField("f2"));
+        struct = docType.getDeclaredStructType("mystructinfoobar");
+        assertNull(struct);
+        struct = docType.getDeclaredStructType("mystruct");
+        assertNotNull(struct);
+        assertNotNull(struct.getField("f0"));
+
+        docType = manager.getDocumentType("foobar");
+        struct = docType.getDeclaredStructType("mystructinfoo");
+        assertNotNull(struct);
+        assertNotNull(struct.getField("f1"));
+        struct = docType.getDeclaredStructType("mystructinbar");
+        assertNotNull(struct);
+        assertNotNull(struct.getField("f2"));
+        struct = docType.getDeclaredStructType("mystructinfoobar");
+        assertNotNull(struct);
+        assertNotNull(struct.getField("f3"));
+        struct = docType.getDeclaredStructType("mystruct");
+        assertNotNull(struct);
+        assertNotNull(struct.getField("f0"));
+    }
+
     // TODO test clone(). Also fieldSets not part of clone()..!
 
     // TODO add imported field to equals()/hashCode() for DocumentType? fieldSets not part of this...
-
-    // TODO test reference to own doc type
 
 }
