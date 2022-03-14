@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
@@ -19,6 +20,8 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -37,6 +40,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparing;
+import static java.util.Comparator.reverseOrder;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -106,6 +110,21 @@ public class DeploymentTrigger {
             }
             applications().store(application);
         });
+    }
+
+    /** Returns target versions for given confidence, by descending version number. */
+    public List<Version> targetsForPolicy(VersionStatus versions, DeploymentSpec.UpgradePolicy policy) {
+        Version systemVersion = controller.systemVersion(versions);
+        if (policy == DeploymentSpec.UpgradePolicy.canary)
+            return List.of(systemVersion);
+
+        VespaVersion.Confidence target = policy == DeploymentSpec.UpgradePolicy.defaultPolicy ? VespaVersion.Confidence.normal : VespaVersion.Confidence.high;
+        return versions.versions().stream()
+                       .filter(version ->    ! version.versionNumber().isAfter(systemVersion)
+                                          &&   version.confidence().equalOrHigherThan(target))
+                       .map(VespaVersion::versionNumber)
+                       .sorted(reverseOrder())
+                       .collect(Collectors.toList());
     }
 
     /**

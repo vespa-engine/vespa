@@ -92,9 +92,9 @@ public class Upgrader extends ControllerMaintainer {
                                                                                                    .not().upgradingTo(targetAndNewer);
 
         Map<ApplicationId, Version> targets = new LinkedHashMap<>();
-        for (Version version : targetsForPolicy(versionStatus, policy)) {
+        for (Version version : controller().applications().deploymentTrigger().targetsForPolicy(versionStatus, policy)) {
             targetAndNewer.add(version);
-            InstanceList eligible = eligibleForVersion(remaining, version, cancellationCriterion, targetMajorVersion);
+            InstanceList eligible = eligibleForVersion(remaining, version, targetMajorVersion);
             InstanceList outdated = cancellationCriterion.apply(eligible);
             cancelUpgradesOf(outdated.upgrading(), "Upgrading to outdated versions");
 
@@ -111,25 +111,10 @@ public class Upgrader extends ControllerMaintainer {
         }
     }
 
-    /** Returns target versions for given confidence, by descending version number. */
-    private List<Version> targetsForPolicy(VersionStatus versions, UpgradePolicy policy) {
-        Version systemVersion = controller().systemVersion(versions);
-        if (policy == UpgradePolicy.canary)
-            return List.of(systemVersion);
-
-        Confidence target = policy == UpgradePolicy.defaultPolicy ? Confidence.normal : Confidence.high;
-        return versions.versions().stream()
-                .filter(version ->    ! version.versionNumber().isAfter(systemVersion)
-                                   &&   version.confidence().equalOrHigherThan(target))
-                .map(VespaVersion::versionNumber)
-                .sorted(reverseOrder())
-                .collect(Collectors.toList());
-    }
-
-    private InstanceList eligibleForVersion(InstanceList instances, Version version, UnaryOperator<InstanceList> cancellationCriterion, Optional<Integer> targetMajorVersion) {
+    private InstanceList eligibleForVersion(InstanceList instances, Version version, Optional<Integer> targetMajorVersion) {
         Change change = Change.of(version);
         return instances.not().failingOn(version)
-                        .allowMajorVersion(version.getMajor(), targetMajorVersion.orElse(version.getMajor()))
+                        .allowingMajorVersion(version.getMajor(), targetMajorVersion.orElse(version.getMajor()))
                         .not().hasCompleted(change) // Avoid rescheduling change for instances without production steps.
                         .onLowerVersionThan(version)
                         .canUpgradeAt(version, controller().clock().instant());
