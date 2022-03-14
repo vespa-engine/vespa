@@ -382,8 +382,8 @@ public class SchemaTestCase {
                 "    }" +
                 "  }" +
                 "}");
-        var application = ApplicationBuilder.createFromStrings(new DeployLoggerStub(), profile).application();
-        var r3 = application.rankProfileRegistry().resolve(application.schemas().get("test").getDocument(), "r3");
+        var builder = ApplicationBuilder.createFromStrings(new DeployLoggerStub(), profile);
+        var r3 = builder.getRankProfileRegistry().resolve(builder.application().schemas().get("test").getDocument(), "r3");
         assertEquals(1, r3.allFilterFields().size());
     }
 
