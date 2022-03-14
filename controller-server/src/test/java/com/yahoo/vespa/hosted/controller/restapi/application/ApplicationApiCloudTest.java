@@ -92,7 +92,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                         .roles(Set.of(Role.administrator(tenantName)));
         tester.assertResponse(postPartial, "{\"message\":\"Tenant info updated\"}", 200);
 
-        String partialContacts = "\"contacts\": [{\"audience\": [\"tenant\"],\"email\": \"contact1@example.com\"}]";
+        String partialContacts = "{\"contacts\": [{\"audiences\": [\"tenant\"],\"email\": \"contact1@example.com\"}]}";
         var postPartialContacts =
                 request("/application/v4/tenant/scoober/info", PUT)
                         .data(partialContacts)
@@ -100,7 +100,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         tester.assertResponse(postPartialContacts, "{\"message\":\"Tenant info updated\"}", 200);
 
         // Read back the updated info
-        tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"newName\",\"contactEmail\":\"foo@example.com\",\"billingContact\":{\"name\":\"billingName\",\"email\":\"\",\"phone\":\"\"},\"contacts\":[]}", 200);
+        tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"newName\",\"contactEmail\":\"foo@example.com\",\"billingContact\":{\"name\":\"billingName\",\"email\":\"\",\"phone\":\"\"},\"contacts\":[{\"audiences\":[\"tenant\"],\"email\":\"contact1@example.com\"}]}", 200);
 
         String fullAddress = "{\"addressLines\":\"addressLines\",\"postalCodeOrZip\":\"postalCodeOrZip\",\"city\":\"city\",\"stateRegionProvince\":\"stateRegionProvince\",\"country\":\"country\"}";
         String fullBillingContact = "{\"name\":\"name\",\"email\":\"foo@example\",\"phone\":\"phone\",\"address\":" + fullAddress + "}";
@@ -171,6 +171,20 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 .data(addressInfo)
                 .roles(Set.of(Role.administrator(tenantName)));
         tester.assertResponse(addressInfoResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"All address fields must be set\"}", 400);
+
+        // at least one notification activity must be enabled
+        var contactsWithoutAudience = "{\"contacts\": [{\"email\": \"contact1@example.com\"}]}";
+        var contactsWithoutAudienceResponse = request("/application/v4/tenant/scoober/info", PUT)
+                .data(contactsWithoutAudience)
+                .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(contactsWithoutAudienceResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"at least one notification activity must be enabled\"}", 400);
+
+        // email needs to be present, not blank, and contain an @
+        var contactsWithInvalidEmail = "{\"contacts\": [{\"audiences\": [\"tenant\"],\"email\": \"contact1\"}]}";
+        var contactsWithInvalidEmailResponse = request("/application/v4/tenant/scoober/info", PUT)
+                .data(contactsWithInvalidEmail)
+                .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(contactsWithInvalidEmailResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"'email' needs to be an email address\"}", 400);
 
         // updating a tenant that already has the fields set works
         var basicInfo = "{\"contactName\": \"Scoober Rentals Inc.\", \"contactEmail\": \"foo@example.com\"}";

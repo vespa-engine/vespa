@@ -57,7 +57,7 @@ public class TenantContacts {
 
         public Contact(List<Audience> audiences) {
             this.audiences = List.copyOf(audiences);
-            if (audiences.isEmpty()) throw new IllegalArgumentException("audience cannot be empty");
+            if (audiences.isEmpty()) throw new IllegalArgumentException("at least one notification activity must be enabled");
         }
 
         public List<Audience> audiences() { return audiences; }

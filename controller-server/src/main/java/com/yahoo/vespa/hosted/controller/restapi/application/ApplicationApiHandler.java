@@ -679,10 +679,14 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (!insp.valid()) return oldContacts;
 
         List<TenantContacts.Contact> contacts = SlimeUtils.entriesStream(insp).map(inspector -> {
+                String email = inspector.field("email").asString().trim();
                 List<TenantContacts.Audience> audiences = SlimeUtils.entriesStream(inspector.field("audiences"))
-                        .map(audience -> fromAudience(audience.asString()))
-                        .collect(Collectors.toUnmodifiableList());
-            return new TenantContacts.EmailContact(audiences, inspector.field("email").asString());
+                            .map(audience -> fromAudience(audience.asString()))
+                            .collect(Collectors.toUnmodifiableList());
+                if (!email.contains("@")) {
+                    throw new IllegalArgumentException("'email' needs to be an email address");
+                }
+                return new TenantContacts.EmailContact(audiences, email);
             }).collect(toUnmodifiableList());
 
         return new TenantContacts(contacts);
