@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.collections.AbstractFilteringList;
 import com.yahoo.component.Version;
+import com.yahoo.component.VersionCompatibility;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
@@ -31,6 +32,17 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
     private InstanceList(Collection<? extends ApplicationId> items, boolean negate, Map<ApplicationId, DeploymentStatus> instances) {
         super(items, negate, (i, n) -> new InstanceList(i, n, instances));
         this.instances = Map.copyOf(instances);
+    }
+
+    /**
+     * Returns the subset of instances where all production deployments are compatible with the given version.
+     *
+     * @param platform the version which applications returned are compatible with
+     */
+    public InstanceList compatibleWithPlatform(Version platform, VersionCompatibility compatibility) {
+        return matching(id -> instance(id).productionDeployments().values().stream()
+                                          .flatMap(deployment -> deployment.applicationVersion().compileVersion().stream())
+                                          .noneMatch(version -> compatibility.refuse(platform, version)));
     }
 
     /**
