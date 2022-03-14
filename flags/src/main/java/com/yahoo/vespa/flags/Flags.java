@@ -215,13 +215,6 @@ public class Flags {
             TENANT_ID, CONSOLE_USER_EMAIL
     );
 
-    public static final UnboundBooleanFlag DELETE_UNMAINTAINED_CERTIFICATES = defineFeatureFlag(
-            "delete-unmaintained-certificates", true,
-            List.of("andreer"), "2021-09-23", "2022-03-14",
-            "Whether to delete certificates that are known by provider but not by controller",
-            "Takes effect on next run of EndpointCertificateMaintainer"
-    );
-
     public static final UnboundBooleanFlag UNORDERED_MERGE_CHAINING = defineFeatureFlag(
             "unordered-merge-chaining", true,
             List.of("vekterli", "geirst"), "2021-11-15", "2022-06-01",
