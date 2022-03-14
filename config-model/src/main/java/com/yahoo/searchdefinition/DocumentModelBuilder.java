@@ -291,9 +291,10 @@ public class DocumentModelBuilder {
         }
         else if (type instanceof ReferenceDataType) {
             ReferenceDataType t = (ReferenceDataType) type;
-            var tt = t.getTargetType();
-            var doc = getDocumentType(docs, tt.getId());
-            type = doc.getReferenceDataType();
+            if (t.getTargetType() instanceof TemporaryStructuredDataType) {
+                DataType targetType = resolveTemporariesRecurse(t.getTargetType(), repo, docs, replacements);
+                t.setTargetType((StructuredDataType) targetType);
+            }
         }
         if (type != original) {
             replacements.add(new TypeReplacement(original, type));

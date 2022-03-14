@@ -1,0 +1,15 @@
+schema bar {
+    document bar {
+        field bpref type reference<parent> {
+            indexing: attribute
+        }
+        field bartitle type string {
+            indexing: attribute
+        }
+    }
+    import field bpref.x as barsximp {}
+    document-summary other {
+        summary bartitle type string {}
+        summary barsximp type int {}
+    }
+}

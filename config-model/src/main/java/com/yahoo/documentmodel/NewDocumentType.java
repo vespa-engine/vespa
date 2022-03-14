@@ -4,10 +4,8 @@ package com.yahoo.documentmodel;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.Field;
-import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.StructuredDataType;
-import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.document.annotation.AnnotationTypeRegistry;
 import com.yahoo.document.datatypes.FieldValue;
@@ -383,20 +381,6 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
             return name.equals(((Name)other).getName());
         }
 
-    }
-
-    private ReferenceDataType refToThis = null;
-
-    @SuppressWarnings("deprecation")
-    public ReferenceDataType getReferenceDataType() {
-        if (refToThis == null) {
-            // super ugly, the APIs for this are horribly inconsistent
-            var tmptmp = TemporaryStructuredDataType.create(getName());
-            var tmp = ReferenceDataType.createWithInferredId(tmptmp);
-            tmp.setTargetType((StructuredDataType) this);
-            refToThis = tmp;
-        }
-        return refToThis;
     }
 
 }

@@ -1,0 +1,7 @@
+schema parent {
+   document parent {
+       field x type int {
+           indexing: attribute
+       }
+   }
+}
