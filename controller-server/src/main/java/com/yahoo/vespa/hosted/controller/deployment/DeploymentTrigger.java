@@ -98,18 +98,39 @@ public class DeploymentTrigger {
         applications().lockApplicationIfPresent(id, application -> {
             DeploymentStatus status = jobs.deploymentStatus(application.get());
             for (InstanceName instanceName : application.get().deploymentSpec().instanceNames()) {
-                Change outstanding = status.outstandingChange(instanceName);
+                Change outstanding = outstandingChange(status, instanceName);
                 if (   outstanding.hasTargets()
                     && status.instanceSteps().get(instanceName)
                              .readyAt(outstanding)
                              .map(readyAt -> ! readyAt.isAfter(clock.instant())).orElse(false)
                     && acceptNewApplicationVersion(status, instanceName, outstanding.application().get())) {
                     application = application.with(instanceName,
-                                                   instance -> withRemainingChange(instance, instance.change().with(outstanding.application().get()), status));
+                                                   instance -> withRemainingChange(instance, outstanding.onTopOf(instance.change()), status));
                 }
             }
             applications().store(application);
         });
+    }
+
+    /** Returns any outstanding change for the given instance, coupled with any necessary platform upgrade. */
+    private Change outstandingChange(DeploymentStatus status, InstanceName instance) {
+        Change outstanding = status.outstandingChange(instance);
+        Optional<Version> compileVersion = outstanding.application().flatMap(ApplicationVersion::compileVersion);
+
+        // If the outstanding revision requires a certain platform for compatibility, add that here.
+        if (status.application().productionDeployments().getOrDefault(instance, List.of()).stream()
+                  .anyMatch(deployment -> status.isIncompatible(deployment.version(), compileVersion))) {
+            return targetsForPolicy(controller.readVersionStatus(), status.application().deploymentSpec().requireInstance(instance).upgradePolicy())
+                    .stream() // Pick the latest platform which is compatible with the compile version, and is ready for this instance.
+                    .filter(platform -> controller.applications().incompatibleMajorVersions().stream()
+                                                  .noneMatch(boundary -> platform.getMajor() >= boundary != compileVersion.get().getMajor() >= boundary))
+                    .map(outstanding::with)
+                    .filter(change -> status.instanceSteps().get(instance).readyAt(change)
+                                            .map(readyAt -> ! readyAt.isAfter(controller.clock().instant()))
+                                            .orElse(false))
+                    .findFirst().orElse(Change.empty());
+        }
+        return outstanding;
     }
 
     /** Returns target versions for given confidence, by descending version number. */
