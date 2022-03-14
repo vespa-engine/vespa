@@ -106,7 +106,7 @@ func printPublicKey(system vespa.System, apiKeyFile, tenant string) error {
 	log.Printf("\nThis is your public key:\n%s", color.GreenString(string(pemPublicKey)))
 	log.Printf("Its fingerprint is:\n%s\n", color.CyanString(fingerprint))
 	log.Print("\nTo use this key in Vespa Cloud click 'Add custom key' at")
-	log.Printf(color.CyanString("%s/tenant/%s/keys"), system.ConsoleURL, tenant)
+	log.Printf(color.CyanString("%s/tenant/%s/account/keys"), system.ConsoleURL, tenant)
 	log.Print("and paste the entire public key including the BEGIN and END lines.")
 	return nil
 }
