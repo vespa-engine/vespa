@@ -329,8 +329,8 @@ public class DeploymentStatus {
                 existingApplication = Optional.of(target.targetApplication());
             }
             List<Job> toRun = new ArrayList<>();
-            boolean deployingCompatibilityChange =    isIncompatible(existingPlatform, change.application())
-                                                   || isIncompatible(change.platform(), existingApplication);
+            boolean deployingCompatibilityChange =    areIncompatible(existingPlatform, change.application())
+                                                   || areIncompatible(change.platform(), existingApplication);
             List<Change> changes = deployingCompatibilityChange ? List.of(change) : changes(job, step, change);
             if (changes.isEmpty()) return;
             for (Change partial : changes) {
@@ -348,7 +348,7 @@ public class DeploymentStatus {
         return jobs;
     }
 
-    private boolean isIncompatible(Optional<Version> platform, Optional<ApplicationVersion> application) {
+    private boolean areIncompatible(Optional<Version> platform, Optional<ApplicationVersion> application) {
         return    platform.isPresent()
                && application.flatMap(ApplicationVersion::compileVersion).isPresent()
                && versionCompatibility.refuse(platform.get(), application.get().compileVersion().get());
