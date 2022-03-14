@@ -5,6 +5,7 @@
 #include "result.h"
 #include "sequencer.h"
 #include "sourcesessionparams.h"
+#include <atomic>
 #include <condition_variable>
 
 namespace mbus {
@@ -23,15 +24,15 @@ private:
 
     std::mutex              _lock;
     std::condition_variable _cond;
-    MessageBus         &_mbus;
-    ReplyGate          *_gate;
-    Sequencer           _sequencer;
-    IReplyHandler      &_replyHandler;
-    IThrottlePolicy::SP _throttlePolicy;
-    duration            _timeout;
-    uint32_t            _pendingCount;
-    bool                _closed;
-    bool                _done;
+    MessageBus             &_mbus;
+    ReplyGate              *_gate;
+    Sequencer               _sequencer;
+    IReplyHandler          &_replyHandler;
+    IThrottlePolicy::SP     _throttlePolicy;
+    duration                _timeout;
+    std::atomic<uint32_t>   _pendingCount;
+    bool                    _closed;
+    bool                    _done;
 
 private:
     /**
@@ -113,7 +114,9 @@ public:
      *
      * @return The pending count.
      */
-    uint32_t getPendingCount() const { return _pendingCount; }
+    [[nodiscard]] uint32_t getPendingCount() const noexcept {
+        return _pendingCount.load(std::memory_order_relaxed);
+    }
 
     /**
      * Sets the number of seconds a message can be attempted sent until it times out.
