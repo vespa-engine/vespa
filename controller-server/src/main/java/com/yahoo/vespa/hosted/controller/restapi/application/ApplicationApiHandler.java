@@ -544,7 +544,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             contact.audiences().forEach(audience -> audiencesArray.addString(toAudience(audience)));
             switch (contact.type()) {
                 case EMAIL:
-                    var email = (TenantContacts.EmailContact) contact.data();
+                    var email = (TenantContacts.EmailContact) contact;
                     contactCursor.setString("email", email.email());
                     return;
                 default:
@@ -678,12 +678,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private TenantContacts updateTenantInfoContacts(Inspector insp, TenantContacts oldContacts) {
         if (!insp.valid()) return oldContacts;
 
-        List<TenantContacts.Contact<?>> contacts = SlimeUtils.entriesStream(insp).map(inspector -> {
-                TenantContacts.EmailContact email = new TenantContacts.EmailContact(inspector.field("email").asString());
+        List<TenantContacts.Contact> contacts = SlimeUtils.entriesStream(insp).map(inspector -> {
                 List<TenantContacts.Audience> audiences = SlimeUtils.entriesStream(inspector.field("audiences"))
                         .map(audience -> fromAudience(audience.asString()))
                         .collect(Collectors.toUnmodifiableList());
-                return new TenantContacts.Contact<>(TenantContacts.Type.EMAIL, audiences, email);
+            return new TenantContacts.EmailContact(audiences, inspector.field("email").asString());
             }).collect(toUnmodifiableList());
 
         return new TenantContacts(contacts);

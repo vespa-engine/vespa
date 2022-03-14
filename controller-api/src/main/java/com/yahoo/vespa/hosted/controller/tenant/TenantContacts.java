@@ -14,9 +14,9 @@ import java.util.Optional;
  * @author ogronnesby
  */
 public class TenantContacts {
-    private final List<Contact<?>> contacts;
+    private final List<? extends Contact> contacts;
 
-    public TenantContacts(List<Contact<?>> contacts) {
+    public TenantContacts(List<? extends Contact> contacts) {
         this.contacts = List.copyOf(contacts);
     }
 
@@ -24,7 +24,7 @@ public class TenantContacts {
         return new TenantContacts(List.of());
     }
 
-    public List<Contact<?>> all() {
+    public List<? extends Contact> all() {
         return contacts;
     }
 
@@ -52,53 +52,37 @@ public class TenantContacts {
                 '}';
     }
 
-    public static class Contact<T> {
-        private final Type type;
+    public abstract static class Contact {
         private final List<Audience> audiences;
-        protected final T data;
 
-        public Contact(Type type, List<Audience> audiences, T data) {
-            this.type = type;
-            this.audiences = audiences;
-            this.data = data;
+        public Contact(List<Audience> audiences) {
+            this.audiences = List.copyOf(audiences);
             if (audiences.isEmpty()) throw new IllegalArgumentException("audience cannot be empty");
         }
 
-        public Type type() { return type; }
         public List<Audience> audiences() { return audiences; }
-        public T data() { return data; }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Contact<?> contact = (Contact<?>) o;
-            return type == contact.type && audiences.equals(contact.audiences) && data.equals(contact.data);
-        }
+        public abstract Type type();
 
-        @Override
-        public int hashCode() {
-            return Objects.hash(type, audiences, data);
-        }
-
-        @Override
-        public String toString() {
-            return "Contact{" +
-                    "type=" + type +
-                    ", audience=" + audiences +
-                    ", data=" + data +
-                    '}';
-        }
+        public abstract boolean equals(Object o);
+        public abstract int hashCode();
+        public abstract String toString();
     }
 
-    public static class EmailContact {
+    public static class EmailContact extends Contact {
         private final String email;
 
-        public EmailContact(String email) {
+        public EmailContact(List<Audience> audiences, String email) {
+            super(audiences);
             this.email = email;
         }
 
         public String email() { return email; }
+
+        @Override
+        public Type type() {
+            return Type.EMAIL;
+        }
 
         @Override
         public boolean equals(Object o) {

@@ -299,7 +299,7 @@ public class TenantSerializer {
     }
 
     private TenantContacts tenantContactsFrom(Inspector object) {
-        List<TenantContacts.Contact<?>> contacts = SlimeUtils.entriesStream(object)
+        List<TenantContacts.Contact> contacts = SlimeUtils.entriesStream(object)
                 .map(this::readContact)
                 .collect(Collectors.toUnmodifiableList());
         return new TenantContacts(contacts);
@@ -348,14 +348,14 @@ public class TenantSerializer {
         return personLists;
     }
 
-    private void writeContact(TenantContacts.Contact<?> contact, Cursor cursor) {
+    private void writeContact(TenantContacts.Contact contact, Cursor cursor) {
         cursor.setString("type", contact.type().value());
         Cursor audiencesArray = cursor.setArray("audiences");
         contact.audiences().forEach(audience -> audiencesArray.addString(toAudience(audience)));
         var data = cursor.setObject("data");
         switch (contact.type()) {
             case EMAIL:
-                var email = (TenantContacts.EmailContact) contact.data();
+                var email = (TenantContacts.EmailContact) contact;
                 data.setString("email", email.email());
                 return;
             default:
@@ -363,7 +363,7 @@ public class TenantSerializer {
         }
     }
 
-    private TenantContacts.Contact<?> readContact(Inspector inspector) {
+    private TenantContacts.Contact readContact(Inspector inspector) {
         var type = TenantContacts.Type.from(inspector.field("type").asString())
                 .orElseThrow(() -> new RuntimeException("Unknown type: " + inspector.field("type").asString()));
         var audiences = SlimeUtils.entriesStream(inspector.field("audiences"))
@@ -371,8 +371,7 @@ public class TenantSerializer {
                 .collect(Collectors.toUnmodifiableList());
         switch (type) {
             case EMAIL:
-                var email = new TenantContacts.EmailContact(inspector.field("data").field("email").asString());
-                return new TenantContacts.Contact<>(type, audiences, email);
+                return new TenantContacts.EmailContact(audiences, inspector.field("data").field("email").asString());
             default:
                 throw new IllegalArgumentException("Serialization for contact type not implemented: " + type);
         }

@@ -175,8 +175,8 @@ public class TenantSerializerTest {
     public void cloud_tenant_with_tenant_info_contacts() {
         TenantInfo tenantInfo = TenantInfo.empty()
                 .withContacts(new TenantContacts(List.of(
-                        new TenantContacts.Contact<>(TenantContacts.Type.EMAIL, List.of(TenantContacts.Audience.TENANT), new TenantContacts.EmailContact("email1@email.com")),
-                        new TenantContacts.Contact<>(TenantContacts.Type.EMAIL, List.of(TenantContacts.Audience.TENANT, TenantContacts.Audience.NOTIFICATIONS), new TenantContacts.EmailContact("email2@email.com")))));
+                        new TenantContacts.EmailContact(List.of(TenantContacts.Audience.TENANT), "email1@email.com"),
+                        new TenantContacts.EmailContact(List.of(TenantContacts.Audience.TENANT, TenantContacts.Audience.NOTIFICATIONS), "email2@email.com"))));
         Slime slime = new Slime();
         Cursor parentCursor = slime.setObject();
         serializer.toSlime(tenantInfo, parentCursor);
