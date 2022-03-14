@@ -158,6 +158,19 @@
       "public static final com.yahoo.component.Version emptyVersion"
     ]
   },
+  "com.yahoo.component.VersionCompatibility": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public static com.yahoo.component.VersionCompatibility fromVersionList(java.util.List)",
+      "public boolean accept(com.yahoo.component.Version, com.yahoo.component.Version)",
+      "public boolean refuse(com.yahoo.component.Version, com.yahoo.component.Version)"
+    ],
+    "fields": []
+  },
   "com.yahoo.component.VersionSpecification": {
     "superClass": "java.lang.Object",
     "interfaces": [
