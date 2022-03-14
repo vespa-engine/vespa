@@ -3,9 +3,7 @@ package com.yahoo.vespa.hosted.controller.tenant;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -16,10 +14,10 @@ import java.util.Optional;
  * @author ogronnesby
  */
 public class TenantContacts {
-    private final Map<String, Contact<?>> contacts;
+    private final List<Contact<?>> contacts;
 
     public TenantContacts() {
-        this.contacts = new LinkedHashMap<>();
+        this.contacts = new ArrayList<>();
     }
 
     public static TenantContacts empty() {
@@ -33,15 +31,12 @@ public class TenantContacts {
     }
 
     public <T> void add(Contact<T> contact) {
-        contacts.put(contact.name(), contact);
-    }
-
-    public Optional<Contact<?>> get(String name) {
-        return Optional.ofNullable(contacts.get(name));
+        contacts.removeIf(c -> c.data().equals(contact.data()));
+        contacts.add(contact);
     }
 
     public List<Contact<?>> all() {
-        return new ArrayList<>(contacts.values());
+        return List.copyOf(contacts);
     }
 
     public boolean isEmpty() {
@@ -49,19 +44,16 @@ public class TenantContacts {
     }
 
     public static class Contact<T> {
-        private final String name;
         private final Type type;
         private final Audience audience;
         protected final T data;
 
-        public Contact(String name, Type type, Audience audience, T data) {
-            this.name = name;
+        public Contact(Type type, Audience audience, T data) {
             this.type = type;
             this.audience = audience;
             this.data = data;
         }
 
-        public String name() { return name; }
         public Type type() { return type; }
         public Audience audience() { return audience; }
         public T data() { return data; }
@@ -69,8 +61,7 @@ public class TenantContacts {
         @Override
         public String toString() {
             return "Contact{" +
-                    "name='" + name + '\'' +
-                    ", type=" + type +
+                    "type=" + type +
                     ", audience=" + audience +
                     ", data=" + data +
                     '}';

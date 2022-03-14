@@ -298,9 +298,9 @@ public class TenantSerializer {
 
     private void toSlime(TenantContacts contacts, Cursor parent) {
         if (contacts.isEmpty()) return;
-        var cursor = parent.setObject("contacts");
+        var cursor = parent.setArray("contacts");
         contacts.all().forEach(contact -> {
-            writeContact(contact, cursor.setObject(contact.name()));
+            writeContact(contact, cursor.addObject());
         });
     }
 
@@ -363,7 +363,6 @@ public class TenantSerializer {
     }
 
     private void writeContact(TenantContacts.Contact<?> contact, Cursor cursor) {
-        cursor.setString("name", contact.name());
         cursor.setString("type", contact.type().value());
         cursor.setString("audience", contact.audience().value());
         var data = cursor.setObject("data");
@@ -378,7 +377,6 @@ public class TenantSerializer {
     }
 
     private TenantContacts.Contact<?> readContact(Inspector inspector) {
-        var name = inspector.field("name").asString();
         var type = TenantContacts.Type.from(inspector.field("type").asString())
                 .orElseThrow(() -> new RuntimeException("Unknown type: " + inspector.field("type").asString()));
         var audience = TenantContacts.Audience.from(inspector.field("audience").asString())
@@ -386,7 +384,7 @@ public class TenantSerializer {
         switch (type) {
             case EMAIL:
                 var email = new TenantContacts.EmailContact(inspector.field("data").field("email").asString());
-                return new TenantContacts.Contact<>(name, type, audience, email);
+                return new TenantContacts.Contact<>(type, audience, email);
             default:
                 throw new IllegalArgumentException("Serialization for contact type not implemented: " + type);
         }
