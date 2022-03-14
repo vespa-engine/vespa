@@ -21,7 +21,7 @@ func TestQuery(t *testing.T) {
 
 func TestQueryVerbose(t *testing.T) {
 	client := &mock.HTTPClient{}
-	client.NextResponse(200, "{\"query\":\"result\"}")
+	client.NextResponseString(200, "{\"query\":\"result\"}")
 
 	cli, stdout, stderr := newTestCLI(t)
 	cli.httpClient = client
@@ -59,7 +59,7 @@ func TestServerError(t *testing.T) {
 
 func assertQuery(t *testing.T, expectedQuery string, query ...string) {
 	client := &mock.HTTPClient{}
-	client.NextResponse(200, "{\"query\":\"result\"}")
+	client.NextResponseString(200, "{\"query\":\"result\"}")
 	cli, stdout, _ := newTestCLI(t)
 	cli.httpClient = client
 
@@ -76,7 +76,7 @@ func assertQuery(t *testing.T, expectedQuery string, query ...string) {
 
 func assertQueryError(t *testing.T, status int, errorMessage string) {
 	client := &mock.HTTPClient{}
-	client.NextResponse(status, errorMessage)
+	client.NextResponseString(status, errorMessage)
 	cli, _, stderr := newTestCLI(t)
 	cli.httpClient = client
 	assert.NotNil(t, cli.Run("query", "yql=select from sources * where title contains 'foo'"))
@@ -88,7 +88,7 @@ func assertQueryError(t *testing.T, status int, errorMessage string) {
 
 func assertQueryServiceError(t *testing.T, status int, errorMessage string) {
 	client := &mock.HTTPClient{}
-	client.NextResponse(status, errorMessage)
+	client.NextResponseString(status, errorMessage)
 	cli, _, stderr := newTestCLI(t)
 	cli.httpClient = client
 	assert.NotNil(t, cli.Run("query", "yql=select from sources * where title contains 'foo'"))

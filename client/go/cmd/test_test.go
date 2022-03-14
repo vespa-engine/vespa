@@ -25,7 +25,7 @@ func TestSuite(t *testing.T) {
 	client.NextStatus(200)
 	client.NextStatus(200)
 	for i := 0; i < 11; i++ {
-		client.NextResponse(200, string(searchResponse))
+		client.NextResponseString(200, string(searchResponse))
 	}
 
 	expectedBytes, _ := ioutil.ReadFile("testdata/tests/expected-suite.out")
@@ -96,8 +96,8 @@ func TestSingleTest(t *testing.T) {
 	searchResponse, _ := ioutil.ReadFile("testdata/tests/response.json")
 	client.NextStatus(200)
 	client.NextStatus(200)
-	client.NextResponse(200, string(searchResponse))
-	client.NextResponse(200, string(searchResponse))
+	client.NextResponseString(200, string(searchResponse))
+	client.NextResponseString(200, string(searchResponse))
 	cli, stdout, stderr := newTestCLI(t)
 	cli.httpClient = client
 
@@ -136,8 +136,8 @@ func TestSingleTestWithCloudAndEndpoints(t *testing.T) {
 	require.Nil(t, err)
 	client.NextStatus(200)
 	client.NextStatus(200)
-	client.NextResponse(200, string(searchResponse))
-	client.NextResponse(200, string(searchResponse))
+	client.NextResponseString(200, string(searchResponse))
+	client.NextResponseString(200, string(searchResponse))
 
 	assert.Nil(t, cli.Run("test", "testdata/tests/system-test/test.json", "-t", "cloud", "-a", "t.a.i"))
 	expectedBytes, err := ioutil.ReadFile("testdata/tests/expected.out")

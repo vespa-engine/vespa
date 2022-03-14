@@ -10,7 +10,7 @@ import (
 
 func TestVersion(t *testing.T) {
 	c := &mock.HTTPClient{}
-	c.NextResponse(200, `[{"tag_name": "v1.2.3", "published_at": "2021-09-10T12:00:00Z"}]`)
+	c.NextResponseString(200, `[{"tag_name": "v1.2.3", "published_at": "2021-09-10T12:00:00Z"}]`)
 
 	sp := &mock.Exec{}
 	cli, stdout, stderr := newTestCLI(t)
@@ -27,7 +27,7 @@ func TestVersion(t *testing.T) {
 
 func TestVersionCheckHomebrew(t *testing.T) {
 	c := &mock.HTTPClient{}
-	c.NextResponse(200, `[{"tag_name": "v1.2.3", "published_at": "2021-09-10T12:00:00Z"}]`)
+	c.NextResponseString(200, `[{"tag_name": "v1.2.3", "published_at": "2021-09-10T12:00:00Z"}]`)
 
 	sp := &mock.Exec{ProgramPath: "/usr/local/bin/vespa", CombinedOutput: "/usr/local"}
 	cli, stdout, stderr := newTestCLI(t)
