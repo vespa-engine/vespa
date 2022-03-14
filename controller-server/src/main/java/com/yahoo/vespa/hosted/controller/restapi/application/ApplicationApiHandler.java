@@ -32,6 +32,7 @@ import com.yahoo.restapi.Path;
 import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.security.KeyUtils;
+import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonParseException;
@@ -98,6 +99,7 @@ import com.yahoo.vespa.hosted.controller.maintenance.ResourceMeterMaintainer;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.SupportAccessSerializer;
+import com.yahoo.vespa.hosted.controller.persistence.TenantSerializer;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationId;
@@ -113,6 +115,7 @@ import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContact;
+import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -137,6 +140,7 @@ import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
@@ -508,6 +512,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             infoCursor.setString("contactEmail", info.contact().email());
             toSlime(info.address(), infoCursor);
             toSlime(info.billingContact(), infoCursor);
+            toSlime(info.contacts(), infoCursor);
         }
 
         return new SlimeJsonResponse(slime);
@@ -533,6 +538,40 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         addressCursor.setString("phone", billingContact.contact().phone());
         toSlime(billingContact.address(), addressCursor);
     }
+
+    private void toSlime(TenantContacts contacts, Cursor parentCursor) {
+        Cursor contactsCursor = parentCursor.setArray("contacts");
+        contacts.all().forEach(contact -> {
+            Cursor contactCursor = contactsCursor.addObject();
+            Cursor audiencesArray = contactCursor.setArray("audiences");
+            contact.audiences().forEach(audience -> audiencesArray.addString(toAudience(audience)));
+            switch (contact.type()) {
+                case EMAIL:
+                    var email = (TenantContacts.EmailContact) contact.data();
+                    contactCursor.setString("email", email.email());
+                    return;
+                default:
+                    throw new IllegalArgumentException("Serialization for contact type not implemented: " + contact.type());
+            }
+        });
+    }
+
+    private static TenantContacts.Audience fromAudience(String value) {
+        switch (value) {
+            case "tenant":  return TenantContacts.Audience.TENANT;
+            case "notifications":  return TenantContacts.Audience.NOTIFICATIONS;
+            default: throw new IllegalArgumentException("Unknown contact audience '" + value + "'.");
+        }
+    }
+
+    private static String toAudience(TenantContacts.Audience audience) {
+        switch (audience) {
+            case TENANT: return "tenant";
+            case NOTIFICATIONS: return "notifications";
+            default: throw new IllegalArgumentException("Unexpected contact audience '" + audience + "'.");
+        }
+    }
+
 
     private HttpResponse updateTenantInfo(String tenantName, HttpRequest request) {
         return controller.tenants().get(TenantName.from(tenantName))
@@ -561,7 +600,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 .withWebsite(getString(insp.field("website"), oldInfo.website()))
                 .withContact(mergedContact)
                 .withAddress(updateTenantInfoAddress(insp.field("address"), oldInfo.address()))
-                .withBilling(updateTenantInfoBillingContact(insp.field("billingContact"), oldInfo.billingContact()));
+                .withBilling(updateTenantInfoBillingContact(insp.field("billingContact"), oldInfo.billingContact()))
+                .withContacts(updateTenantInfoContacts(insp.field("contacts"), oldInfo.contacts()));
 
         // Assert that we have a valid tenant info
         if (mergedInfo.contact().name().isBlank()) {
@@ -636,6 +676,22 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return TenantBilling.empty()
                 .withContact(updateTenantInfoContact(insp, oldContact.contact()))
                 .withAddress(updateTenantInfoAddress(insp.field("address"), oldContact.address()));
+    }
+
+    private TenantContacts updateTenantInfoContacts(Inspector insp, TenantContacts oldContacts) {
+        if (!insp.valid()) return oldContacts;
+
+        var contacts = new ArrayList<TenantContacts.Contact<?>>();
+
+        insp.traverse((ArrayTraverser)(index, inspector) -> {
+                var email = new TenantContacts.EmailContact(inspector.field("email").asString());
+                var audiences = SlimeUtils.entriesStream(inspector.field("audiences"))
+                        .map(audience -> fromAudience(audience.asString()))
+                        .collect(Collectors.toUnmodifiableList());
+                contacts.add( new TenantContacts.Contact<>(TenantContacts.Type.EMAIL, email, audiences ));
+            });
+
+        return TenantContacts.from(contacts);
     }
 
     private HttpResponse notifications(HttpRequest request, Optional<String> tenant, boolean includeTenantFieldInResponse) {

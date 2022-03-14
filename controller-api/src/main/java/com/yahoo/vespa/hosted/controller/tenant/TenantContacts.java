@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.tenant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -30,9 +31,10 @@ public class TenantContacts {
         return tc;
     }
 
-    public <T> void add(Contact<T> contact) {
+    public <T> TenantContacts add(Contact<T> contact) {
         contacts.removeIf(c -> c.data().equals(contact.data()));
         contacts.add(contact);
+        return this;
     }
 
     public List<Contact<?>> all() {
@@ -43,26 +45,60 @@ public class TenantContacts {
         return contacts.isEmpty();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TenantContacts that = (TenantContacts) o;
+        return contacts.equals(that.contacts);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(contacts);
+    }
+
+    @Override
+    public String toString() {
+        return "TenantContacts{" +
+                "contacts=" + contacts +
+                '}';
+    }
+
     public static class Contact<T> {
         private final Type type;
-        private final Audience audience;
+        private final List<Audience> audiences;
         protected final T data;
 
-        public Contact(Type type, Audience audience, T data) {
+        public Contact(Type type, List<Audience> audiences, T data) {
             this.type = type;
-            this.audience = audience;
+            this.audiences = audiences;
             this.data = data;
+            if (audiences.isEmpty()) throw new IllegalArgumentException("audience cannot be empty");
         }
 
         public Type type() { return type; }
-        public Audience audience() { return audience; }
+        public List<Audience> audiences() { return audiences; }
         public T data() { return data; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Contact<?> contact = (Contact<?>) o;
+            return type == contact.type && audiences.equals(contact.audiences) && data.equals(contact.data);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(type, audiences, data);
+        }
 
         @Override
         public String toString() {
             return "Contact{" +
                     "type=" + type +
-                    ", audience=" + audience +
+                    ", audience=" + audiences +
                     ", data=" + data +
                     '}';
         }
@@ -76,6 +112,19 @@ public class TenantContacts {
         }
 
         public String email() { return email; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            EmailContact that = (EmailContact) o;
+            return email.equals(that.email);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(email);
+        }
 
         @Override
         public String toString() {

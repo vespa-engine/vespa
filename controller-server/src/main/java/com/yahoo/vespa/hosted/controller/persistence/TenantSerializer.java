@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Slime serialization of {@link Tenant} sub-types.
@@ -307,9 +308,9 @@ public class TenantSerializer {
     private TenantContacts tenantContactsFrom(Inspector object) {
         var contacts = new ArrayList<TenantContacts.Contact<?>>();
 
-        object.traverse((String name, Inspector inspector) -> {
-            var c = readContact(inspector);
-            contacts.add(c);
+        object.traverse((ArrayTraverser)(index, inspector) -> {
+            TenantContacts.Contact<?> contact = readContact(inspector);
+            contacts.add(contact);
         });
 
         if (contacts.isEmpty()) {
@@ -364,7 +365,8 @@ public class TenantSerializer {
 
     private void writeContact(TenantContacts.Contact<?> contact, Cursor cursor) {
         cursor.setString("type", contact.type().value());
-        cursor.setString("audience", contact.audience().value());
+        Cursor audiencesArray = cursor.setArray("audiences");
+        contact.audiences().forEach(audience -> audiencesArray.addString(toAudience(audience)));
         var data = cursor.setObject("data");
         switch (contact.type()) {
             case EMAIL:
@@ -379,12 +381,13 @@ public class TenantSerializer {
     private TenantContacts.Contact<?> readContact(Inspector inspector) {
         var type = TenantContacts.Type.from(inspector.field("type").asString())
                 .orElseThrow(() -> new RuntimeException("Unknown type: " + inspector.field("type").asString()));
-        var audience = TenantContacts.Audience.from(inspector.field("audience").asString())
-                .orElseThrow(() -> new RuntimeException("Unknown audience: " + inspector.field("audience").asString()));
+        var audiences = SlimeUtils.entriesStream(inspector.field("audiences"))
+                .map(audience -> TenantSerializer.fromAudience(audience.asString()))
+                .collect(Collectors.toUnmodifiableList());
         switch (type) {
             case EMAIL:
                 var email = new TenantContacts.EmailContact(inspector.field("data").field("email").asString());
-                return new TenantContacts.Contact<>(type, audience, email);
+                return new TenantContacts.Contact<>(type, audiences, email);
             default:
                 throw new IllegalArgumentException("Serialization for contact type not implemented: " + type);
         }
@@ -426,4 +429,21 @@ public class TenantSerializer {
             default: throw new IllegalArgumentException("Unexpected user level '" + userLevel + "'.");
         }
     }
+
+    private static TenantContacts.Audience fromAudience(String value) {
+        switch (value) {
+            case "tenant":  return TenantContacts.Audience.TENANT;
+            case "notifications":  return TenantContacts.Audience.NOTIFICATIONS;
+            default: throw new IllegalArgumentException("Unknown contact audience '" + value + "'.");
+        }
+    }
+
+    private static String toAudience(TenantContacts.Audience audience) {
+        switch (audience) {
+            case TENANT: return "tenant";
+            case NOTIFICATIONS: return "notifications";
+            default: throw new IllegalArgumentException("Unexpected contact audience '" + audience + "'.");
+        }
+    }
+
 }

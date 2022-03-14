@@ -101,12 +101,18 @@ public class TenantInfo {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TenantInfo that = (TenantInfo) o;
-        return Objects.equals(name, that.name) && Objects.equals(email, that.email) && Objects.equals(website, that.website) && Objects.equals(contact, that.contact) && Objects.equals(address, that.address) && Objects.equals(billingContact, that.billingContact);
+        return Objects.equals(name, that.name) &&
+                Objects.equals(email, that.email) &&
+                Objects.equals(website, that.website) &&
+                Objects.equals(contact, that.contact) &&
+                Objects.equals(address, that.address) &&
+                Objects.equals(billingContact, that.billingContact) &&
+                Objects.equals(contacts, that.contacts);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, email, website, contact, address, billingContact);
+        return Objects.hash(name, email, website, contact, address, billingContact, contacts);
     }
 
     @Override
@@ -118,6 +124,7 @@ public class TenantInfo {
                 ", contact=" + contact +
                 ", address=" + address +
                 ", billingContact=" + billingContact +
+                ", contacts=" + contacts +
                 '}';
     }
 }
