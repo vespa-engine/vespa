@@ -20,6 +20,7 @@ import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
@@ -123,6 +124,7 @@ public class ApplicationController {
     private final ApplicationPackageValidator applicationPackageValidator;
     private final EndpointCertificates endpointCertificates;
     private final StringFlag dockerImageRepoFlag;
+    private final ListFlag<Integer> incompatibleMajorVersions;
     private final BillingController billingController;
 
     ApplicationController(Controller controller, CuratorDb curator, AccessControl accessControl, Clock clock,
@@ -137,6 +139,7 @@ public class ApplicationController {
         artifactRepository = controller.serviceRegistry().artifactRepository();
         applicationStore = controller.serviceRegistry().applicationStore();
         dockerImageRepoFlag = PermanentFlags.DOCKER_IMAGE_REPO.bindTo(flagSource);
+        incompatibleMajorVersions = PermanentFlags.INCOMPATIBLE_MAJOR_VERSIONS.bindTo(flagSource);
         deploymentTrigger = new DeploymentTrigger(controller, clock);
         applicationPackageValidator = new ApplicationPackageValidator(controller);
         endpointCertificates = new EndpointCertificates(controller,
@@ -749,6 +752,10 @@ public class ApplicationController {
      */
     private Lock lockForDeployment(ApplicationId application, ZoneId zone) {
         return curator.lockForDeployment(application, zone);
+    }
+
+    public List<Integer> incompatibleMajorVersions() {
+        return incompatibleMajorVersions.value();
     }
 
     /**

@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
+import com.yahoo.component.AbstractComponent;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -14,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author freva
  */
-public class InMemoryFlagSource implements FlagSource {
+public class InMemoryFlagSource extends AbstractComponent implements FlagSource {
     private final Map<FlagId, RawFlag> rawFlagsById = new ConcurrentHashMap<>();
 
     public InMemoryFlagSource withBooleanFlag(FlagId flagId, boolean value) {

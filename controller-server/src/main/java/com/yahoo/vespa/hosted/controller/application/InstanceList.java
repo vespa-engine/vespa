@@ -34,12 +34,12 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
     }
 
     /**
-     * Returns the subset of instances that aren't pinned to an an earlier major version than the given one.
+     * Returns the subset of instances that aren't pinned to an earlier major version than the given one.
      *
      * @param targetMajorVersion the target major version which applications returned allows upgrading to
      * @param defaultMajorVersion the default major version to assume for applications not specifying one
      */
-    public InstanceList allowMajorVersion(int targetMajorVersion, int defaultMajorVersion) {
+    public InstanceList allowingMajorVersion(int targetMajorVersion, int defaultMajorVersion) {
         return matching(id -> targetMajorVersion <= application(id).deploymentSpec().majorVersion()
                                                                    .orElse(application(id).majorVersion()
                                                                                           .orElse(defaultMajorVersion)));

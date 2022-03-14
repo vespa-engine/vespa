@@ -59,7 +59,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.endStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static java.util.Comparator.naturalOrder;
 import static java.util.function.Predicate.not;
 import static java.util.logging.Level.INFO;
 import static java.util.stream.Collectors.toList;

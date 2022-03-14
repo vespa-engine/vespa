@@ -12,6 +12,7 @@ import com.yahoo.jdisc.http.filter.SecurityRequestFilterChain;
 import com.yahoo.test.json.JsonTestHelper;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
@@ -52,6 +53,10 @@ public class ContainerTester {
 
     public AthenzClientFactoryMock athenzClientFactory() {
         return (AthenzClientFactoryMock) container.components().getComponent(AthenzClientFactoryMock.class.getName());
+    }
+
+    public InMemoryFlagSource flagSource() {
+        return (InMemoryFlagSource) container.components().getComponent(InMemoryFlagSource.class.getName());
     }
 
     public ServiceRegistryMock serviceRegistry() {
@@ -110,8 +115,8 @@ public class ContainerTester {
                     .replaceAll("\"?\\(ignore\\)\"?", "\\\\E" +
                             stopCharacters + "*\\\\Q");
             if (!Pattern.matches(expectedResponsePattern, responseString)) {
-                throw new ComparisonFailure(responseFile.toString() + " (with ignored fields)",
-                        expectedResponsePattern, responseString);
+                throw new ComparisonFailure(responseFile + " (with ignored fields)",
+                                            expectedResponsePattern, responseString);
             }
         } else {
             if (compareJson) {
@@ -211,4 +216,3 @@ public class ContainerTester {
         void accept(T t) throws Exception;
     }
 }
-    
