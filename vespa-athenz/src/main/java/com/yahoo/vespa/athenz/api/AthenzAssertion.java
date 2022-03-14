@@ -39,6 +39,7 @@ public class AthenzAssertion {
     public boolean satisfies(AthenzAssertion other) {
         return role.equals(other.role()) &&
                 action.equals(other.action()) &&
+                effect().equals(other.effect()) &&
                 resource.equals(other.resource());
     }
 

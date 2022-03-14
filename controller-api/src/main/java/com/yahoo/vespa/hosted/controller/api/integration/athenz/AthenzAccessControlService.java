@@ -165,6 +165,8 @@ public class AthenzAccessControlService implements AccessControlService {
 
     private AthenzAssertion getApprovalAssertion(AthenzRole accessRole) {
         var approverRole = new AthenzRole(accessRole.domain(), "vespa-access-approver");
-        return AthenzAssertion.newBuilder(approverRole, accessRole.toResourceName(), "update_members").build();
+        return AthenzAssertion.newBuilder(approverRole, accessRole.toResourceName(), "update_members")
+                .effect(AthenzAssertion.Effect.ALLOW)
+                .build();
     }
 }
