@@ -36,6 +36,13 @@ public class AthenzAssertion {
         return new Builder(role, resource, action);
     }
 
+    public boolean satisfies(AthenzAssertion other) {
+        return role.equals(other.role()) &&
+                action.equals(other.action()) &&
+                effect().equals(other.effect()) &&
+                resource.equals(other.resource());
+    }
+
     public static class Builder {
         private Long id;
         private Effect effect;
