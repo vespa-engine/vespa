@@ -27,7 +27,7 @@ type httpResponse struct {
 
 func (c *HTTPClient) NextStatus(status int) { c.NextResponseBytes(status, nil) }
 
-func (c *HTTPClient) NextResponse(status int, body string) {
+func (c *HTTPClient) NextResponseString(status int, body string) {
 	c.NextResponseBytes(status, []byte(body))
 }
 
