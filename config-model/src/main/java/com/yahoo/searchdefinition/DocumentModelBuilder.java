@@ -190,11 +190,14 @@ public class DocumentModelBuilder {
     }
 
     // This is how you make a "Pair" class in java....
-    private static class TypeReplacement extends AbstractMap.SimpleEntry<DataType,DataType> {
-        DataType oldType() { return getKey(); }
-        DataType newType() { return getValue(); }
+    private static class TypeReplacement {
+        private final DataType oldType;
+        private final DataType newType;
+        DataType oldType() { return oldType; }
+        DataType newType() { return newType; }
         public TypeReplacement(DataType oldType, DataType newType) {
-            super(oldType, newType);
+            this.oldType = oldType;
+            this.newType = newType;
         }
     }
     
@@ -236,6 +239,11 @@ public class DocumentModelBuilder {
     private static DataType resolveTemporariesRecurse(DataType type, DataTypeCollection repo,
                                                       Collection<NewDocumentType> docs,
                                                       Set<TypeReplacement> replacements) {
+        for (var repl : replacements) {
+            if (repl.oldType() == type) {
+                return repl.newType();
+            }
+        }
         DataType original = type;
         if (type instanceof TemporaryStructuredDataType) {
             DataType other = repo.getDataType(type.getId());
@@ -273,21 +281,31 @@ public class DocumentModelBuilder {
         }
         else if (type instanceof MapDataType) {
             MapDataType t = (MapDataType) type;
-            var kt = resolveTemporariesRecurse(t.getKeyType(), repo, docs, replacements);
-            var vt = resolveTemporariesRecurse(t.getValueType(), repo, docs, replacements);
-            type = new MapDataType(kt, vt, t.getId());
+            var old_kt = t.getKeyType();
+            var old_vt = t.getValueType();
+            var kt = resolveTemporariesRecurse(old_kt, repo, docs, replacements);
+            var vt = resolveTemporariesRecurse(old_vt, repo, docs, replacements);
+            if (kt != old_kt || vt != old_vt) {
+                type = new MapDataType(kt, vt, t.getId());
+            }
         }
         else if (type instanceof ArrayDataType) {
             ArrayDataType t = (ArrayDataType) type;
-            var nt = resolveTemporariesRecurse(t.getNestedType(), repo, docs, replacements);
-            type = new ArrayDataType(nt, t.getId());
+            var old_nt = t.getNestedType();
+            var nt = resolveTemporariesRecurse(old_nt, repo, docs, replacements);
+            if (nt != old_nt) {
+                type = new ArrayDataType(nt, t.getId());
+            }
         }
         else if (type instanceof WeightedSetDataType) {
             WeightedSetDataType t = (WeightedSetDataType) type;
-            var nt = resolveTemporariesRecurse(t.getNestedType(), repo, docs, replacements);
-            boolean c = t.createIfNonExistent();
-            boolean r = t.removeIfZero();
-            type = new WeightedSetDataType(nt, c, r, t.getId());
+            var old_nt = t.getNestedType();
+            var nt = resolveTemporariesRecurse(old_nt, repo, docs, replacements);
+            if (nt != old_nt) {
+                boolean c = t.createIfNonExistent();
+                boolean r = t.removeIfZero();
+                type = new WeightedSetDataType(nt, c, r, t.getId());
+            }
         }
         else if (type instanceof ReferenceDataType) {
             ReferenceDataType t = (ReferenceDataType) type;
