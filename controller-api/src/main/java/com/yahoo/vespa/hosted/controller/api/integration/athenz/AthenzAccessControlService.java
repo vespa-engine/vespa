@@ -3,6 +3,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.athenz.api.AthenzAssertion;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzGroup;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -23,6 +24,7 @@ public class AthenzAccessControlService implements AccessControlService {
     private static final String ALLOWED_OPERATOR_GROUPNAME = "vespa-team";
     private static final String DATAPLANE_ACCESS_ROLENAME = "operator-data-plane";
     private final String TENANT_DOMAIN_PREFIX = "vespa.tenant";
+    private final String ACCESS_APPROVAL_POLICY = "vespa-access-requester";
     private final ZmsClient zmsClient;
     private final AthenzRole dataPlaneAccessRole;
     private final AthenzGroup vespaTeam;
@@ -129,16 +131,24 @@ public class AthenzAccessControlService implements AccessControlService {
         vespaZmsClient.ifPresentOrElse(
                 zms -> {
                     var role = sshRole(tenantName);
-
-                    var policyName = "vespa-access-requester";
-                    var action = "update_members";
-                    var approverRole = new AthenzRole(role.domain(), "vespa-access-approver");
+                    var assertion = getApprovalAssertion(role);
                     if (preapprovedAccess) {
-                        zms.addPolicyRule(role.domain(), policyName, action, role.toResourceName(), approverRole);
+                        zms.addPolicyRule(role.domain(), ACCESS_APPROVAL_POLICY, assertion.action(), assertion.resource(), assertion.role());
                     } else {
-                        zms.deletePolicyRule(role.domain(), policyName, action, role.toResourceName(), approverRole);
+                        zms.deletePolicyRule(role.domain(), ACCESS_APPROVAL_POLICY, assertion.action(), assertion.resource(), assertion.role());
                     }
                 },() -> { throw new UnsupportedOperationException("Only allowed in systems running Vespa Athenz instance"); });
+    }
+
+    public boolean getPreapprovedAccess(TenantName tenantName) {
+        return vespaZmsClient.map(
+                zms -> {
+                    var role = sshRole(tenantName);
+                    var approvalAssertion = getApprovalAssertion(role);
+                    return zms.getPolicy(role.domain(), ACCESS_APPROVAL_POLICY)
+                            .map(policy -> policy.assertions().stream().anyMatch(assertion -> assertion.satisfies(approvalAssertion)))
+                            .orElse(false);
+                }).orElseThrow(() -> new UnsupportedOperationException("Only allowed in systems running Vespa Athenz instance") );
     }
 
     private AthenzRole sshRole(TenantName tenantName) {
@@ -151,5 +161,10 @@ public class AthenzAccessControlService implements AccessControlService {
 
     public boolean isVespaTeamMember(AthenzUser user) {
         return zmsClient.getGroupMembership(vespaTeam, user);
+    }
+
+    private AthenzAssertion getApprovalAssertion(AthenzRole accessRole) {
+        var approverRole = new AthenzRole(accessRole.domain(), "vespa-access-approver");
+        return AthenzAssertion.newBuilder(approverRole, accessRole.toResourceName(), "update_members").build();
     }
 }

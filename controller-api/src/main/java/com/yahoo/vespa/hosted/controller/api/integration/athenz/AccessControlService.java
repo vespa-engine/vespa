@@ -21,5 +21,6 @@ public interface AccessControlService {
     boolean requestSshAccess(TenantName tenantName);
     AthenzRoleInformation getAccessRoleInformation(TenantName tenantName);
     void setPreapprovedAccess(TenantName tenantName, boolean preapproved);
+    boolean getPreapprovedAccess(TenantName tenantName);
     Collection<AthenzUser> listMembers();
 }

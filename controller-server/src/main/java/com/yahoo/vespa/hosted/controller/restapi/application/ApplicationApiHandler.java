@@ -413,12 +413,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse accessRequests(String tenantName, HttpRequest request) {
-        if (controller.tenants().require(TenantName.from(tenantName)).type() != Tenant.Type.cloud)
+        var tenant = TenantName.from(tenantName);
+        if (controller.tenants().require(tenant).type() != Tenant.Type.cloud)
             return ErrorResponse.badRequest("Can only see access requests for cloud tenants");
 
         var accessControlService = controller.serviceRegistry().accessControlService();
-        var accessRoleInformation = accessControlService.getAccessRoleInformation(TenantName.from(tenantName));
-        var preapprovedAccess = !accessRoleInformation.isSelfServe() && !accessRoleInformation.isReviewEnabled();
+        var accessRoleInformation = accessControlService.getAccessRoleInformation(tenant);
+        var preapprovedAccess = accessControlService.getPreapprovedAccess(tenant);
         var slime = new Slime();
         var cursor = slime.setObject();
         cursor.setBool("preapprovedAccess", preapprovedAccess);
