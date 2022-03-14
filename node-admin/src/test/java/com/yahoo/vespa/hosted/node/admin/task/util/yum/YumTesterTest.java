@@ -38,6 +38,11 @@ public class YumTesterTest {
 
         assertYumMethod(yum -> yum.expectInstallFixedVersion(minimalPackage.toName()).withEnableRepo(repos),
                 yum -> yum.installFixedVersion(minimalPackage).enableRepo(repos).converge(context));
+
+        // versionlock always returns success
+        assertYumMethodAlwaysSuccess(yum -> yum.expectDeleteVersionLock(minimalPackage.toName()),
+                                     yum -> yum.deleteVersionLock(minimalPackage).converge(context));
+
     }
 
     @Test
@@ -48,10 +53,19 @@ public class YumTesterTest {
     }
 
     private void assertYumMethod(Function<YumTester, YumTester.GenericYumCommandExpectation> yumTesterExpectationFunction,
-                                       Function<Yum, Boolean> yumFunction) {
+                                 Function<Yum, Boolean> yumFunction) {
         List.of(true, false).forEach(wantedReturnValue -> {
             yumTesterExpectationFunction.apply(yum).andReturn(wantedReturnValue);
             assertEquals(wantedReturnValue, yumFunction.apply(yum));
+            terminal.verifyAllCommandsExecuted();
+        });
+    }
+
+    private void assertYumMethodAlwaysSuccess(Function<YumTester, YumTester.GenericYumCommandExpectation> yumTesterExpectationFunction,
+                                              Function<Yum, Boolean> yumFunction) {
+        List.of(true, false).forEach(wantedReturnValue -> {
+            yumTesterExpectationFunction.apply(yum).andReturn(wantedReturnValue);
+            assertEquals(true, yumFunction.apply(yum));
             terminal.verifyAllCommandsExecuted();
         });
     }
