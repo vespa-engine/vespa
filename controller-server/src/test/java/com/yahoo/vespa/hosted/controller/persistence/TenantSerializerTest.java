@@ -17,10 +17,10 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
+import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContact;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
-import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
 import org.junit.Test;
 
 import java.net.URI;
@@ -174,9 +174,9 @@ public class TenantSerializerTest {
     @Test
     public void cloud_tenant_with_tenant_info_contacts() {
         TenantInfo tenantInfo = TenantInfo.empty()
-                .withContacts(TenantContacts.empty()
-                        .add(new TenantContacts.Contact<>(TenantContacts.Type.EMAIL, List.of(TenantContacts.Audience.TENANT), new TenantContacts.EmailContact("email1@email.com")))
-                        .add(new TenantContacts.Contact<>(TenantContacts.Type.EMAIL, List.of(TenantContacts.Audience.TENANT, TenantContacts.Audience.NOTIFICATIONS), new TenantContacts.EmailContact("email2@email.com"))));
+                .withContacts(new TenantContacts(List.of(
+                        new TenantContacts.Contact<>(TenantContacts.Type.EMAIL, List.of(TenantContacts.Audience.TENANT), new TenantContacts.EmailContact("email1@email.com")),
+                        new TenantContacts.Contact<>(TenantContacts.Type.EMAIL, List.of(TenantContacts.Audience.TENANT, TenantContacts.Audience.NOTIFICATIONS), new TenantContacts.EmailContact("email2@email.com")))));
         Slime slime = new Slime();
         Cursor parentCursor = slime.setObject();
         serializer.toSlime(tenantInfo, parentCursor);

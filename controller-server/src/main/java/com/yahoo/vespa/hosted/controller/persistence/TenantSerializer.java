@@ -9,24 +9,24 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
+import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContact;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
-import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
 
 import java.net.URI;
 import java.security.Principal;
@@ -229,19 +229,14 @@ public class TenantSerializer {
     }
 
     private List<TenantSecretStore> secretStoresFromSlime(Inspector secretStoresObject) {
-        List<TenantSecretStore> secretStores = new ArrayList<>();
-        if (!secretStoresObject.valid()) return secretStores;
+        if (!secretStoresObject.valid()) return List.of();
 
-        secretStoresObject.traverse((ArrayTraverser) (index, inspector) -> {
-            secretStores.add(
-                    new TenantSecretStore(
-                            inspector.field(nameField).asString(),
-                            inspector.field(awsIdField).asString(),
-                            inspector.field(roleField).asString()
-                    )
-            );
-        });
-        return secretStores;
+        return SlimeUtils.entriesStream(secretStoresObject)
+                .map(inspector -> new TenantSecretStore(
+                        inspector.field(nameField).asString(),
+                        inspector.field(awsIdField).asString(),
+                        inspector.field(roleField).asString()))
+                .collect(Collectors.toUnmodifiableList());
     }
 
     private LastLoginInfo lastLoginInfoFromSlime(Inspector lastLoginInfoObject) {
@@ -300,24 +295,14 @@ public class TenantSerializer {
     private void toSlime(TenantContacts contacts, Cursor parent) {
         if (contacts.isEmpty()) return;
         var cursor = parent.setArray("contacts");
-        contacts.all().forEach(contact -> {
-            writeContact(contact, cursor.addObject());
-        });
+        contacts.all().forEach(contact -> writeContact(contact, cursor.addObject()));
     }
 
     private TenantContacts tenantContactsFrom(Inspector object) {
-        var contacts = new ArrayList<TenantContacts.Contact<?>>();
-
-        object.traverse((ArrayTraverser)(index, inspector) -> {
-            TenantContacts.Contact<?> contact = readContact(inspector);
-            contacts.add(contact);
-        });
-
-        if (contacts.isEmpty()) {
-            return TenantContacts.empty();
-        } else {
-            return TenantContacts.from(contacts);
-        }
+        List<TenantContacts.Contact<?>> contacts = SlimeUtils.entriesStream(object)
+                .map(this::readContact)
+                .collect(Collectors.toUnmodifiableList());
+        return new TenantContacts(contacts);
     }
 
     private Optional<Contact> contactFrom(Inspector object) {

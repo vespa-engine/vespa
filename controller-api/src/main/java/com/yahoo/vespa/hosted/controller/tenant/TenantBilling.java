@@ -11,17 +11,13 @@ public class TenantBilling {
     private final TenantContact contact;
     private final TenantAddress address;
 
-    TenantBilling(String name, String email, String phone, TenantAddress address) {
-        this(TenantContact.from(name, email, phone), address);
-    }
-
-    TenantBilling(TenantContact contact, TenantAddress address) {
+    public TenantBilling(TenantContact contact, TenantAddress address) {
         this.contact = Objects.requireNonNull(contact);
         this.address = Objects.requireNonNull(address);
     }
 
     public static TenantBilling empty() {
-        return new TenantBilling("", "", "", TenantAddress.empty());
+        return new TenantBilling(TenantContact.empty(), TenantAddress.empty());
     }
 
     public TenantContact contact() {

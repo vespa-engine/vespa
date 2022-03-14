@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.tenant;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -17,28 +16,16 @@ import java.util.Optional;
 public class TenantContacts {
     private final List<Contact<?>> contacts;
 
-    public TenantContacts() {
-        this.contacts = new ArrayList<>();
+    public TenantContacts(List<Contact<?>> contacts) {
+        this.contacts = List.copyOf(contacts);
     }
 
     public static TenantContacts empty() {
-        return new TenantContacts();
-    }
-
-    public static TenantContacts from(List<Contact<?>> contacts) {
-        var tc = new TenantContacts();
-        contacts.forEach(tc::add);
-        return tc;
-    }
-
-    public <T> TenantContacts add(Contact<T> contact) {
-        contacts.removeIf(c -> c.data().equals(contact.data()));
-        contacts.add(contact);
-        return this;
+        return new TenantContacts(List.of());
     }
 
     public List<Contact<?>> all() {
-        return List.copyOf(contacts);
+        return contacts;
     }
 
     public boolean isEmpty() {

@@ -32,7 +32,6 @@ import com.yahoo.restapi.Path;
 import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.security.KeyUtils;
-import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonParseException;
@@ -99,7 +98,6 @@ import com.yahoo.vespa.hosted.controller.maintenance.ResourceMeterMaintainer;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.SupportAccessSerializer;
-import com.yahoo.vespa.hosted.controller.persistence.TenantSerializer;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationId;
@@ -114,10 +112,10 @@ import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
+import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContact;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
-import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
@@ -140,7 +138,6 @@ import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
@@ -681,17 +678,15 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private TenantContacts updateTenantInfoContacts(Inspector insp, TenantContacts oldContacts) {
         if (!insp.valid()) return oldContacts;
 
-        var contacts = new ArrayList<TenantContacts.Contact<?>>();
-
-        insp.traverse((ArrayTraverser)(index, inspector) -> {
-                var email = new TenantContacts.EmailContact(inspector.field("email").asString());
-                var audiences = SlimeUtils.entriesStream(inspector.field("audiences"))
+        List<TenantContacts.Contact<?>> contacts = SlimeUtils.entriesStream(insp).map(inspector -> {
+                TenantContacts.EmailContact email = new TenantContacts.EmailContact(inspector.field("email").asString());
+                List<TenantContacts.Audience> audiences = SlimeUtils.entriesStream(inspector.field("audiences"))
                         .map(audience -> fromAudience(audience.asString()))
                         .collect(Collectors.toUnmodifiableList());
-                contacts.add( new TenantContacts.Contact<>(TenantContacts.Type.EMAIL, email, audiences ));
-            });
+                return new TenantContacts.Contact<>(TenantContacts.Type.EMAIL, audiences, email);
+            }).collect(toUnmodifiableList());
 
-        return TenantContacts.from(contacts);
+        return new TenantContacts(contacts);
     }
 
     private HttpResponse notifications(HttpRequest request, Optional<String> tenant, boolean includeTenantFieldInResponse) {

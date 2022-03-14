@@ -7,9 +7,9 @@ import java.util.Objects;
  * @author ogronnesby
  */
 public class TenantContact {
-    private String name;
-    private String email;
-    private String phone;
+    private final String name;
+    private final String email;
+    private final String phone;
 
     private TenantContact(String name, String email, String phone) {
         this.name = Objects.requireNonNull(name);
