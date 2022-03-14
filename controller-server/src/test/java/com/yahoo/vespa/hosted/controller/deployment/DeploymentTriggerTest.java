@@ -2036,10 +2036,16 @@ public class DeploymentTriggerTest {
                                                                              .build())
                                       .deploy();
 
+        tester.controllerTester().upgradeSystem(version2);
+        tester.upgrader().run();
+        assertEquals(Change.empty(), app.instance().change());
+
         app.submit(new ApplicationPackageBuilder().region("us-east-3")
                                                   .compileVersion(version2)
                                                   .build());
         app.deploy();
+        assertEquals(version2, tester.jobs().last(app.instanceId(), productionUsEast3).get().versions().targetPlatform());
+        assertEquals(version2, tester.jobs().last(app.instanceId(), productionUsEast3).get().versions().targetApplication().compileVersion().get());
     }
 
 }
