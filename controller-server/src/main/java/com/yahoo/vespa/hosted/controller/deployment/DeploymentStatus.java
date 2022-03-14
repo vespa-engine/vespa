@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
+import com.yahoo.component.VersionCompatibility;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.DeclaredTest;
@@ -87,18 +88,18 @@ public class DeploymentStatus {
     private final JobList allJobs;
     private final SystemName system;
     private final Version systemVersion;
-    private final List<Integer> incompatibleMajorVersions;
+    private final VersionCompatibility versionCompatibility;
     private final Instant now;
     private final Map<JobId, StepStatus> jobSteps;
     private final List<StepStatus> allSteps;
 
     public DeploymentStatus(Application application, Map<JobId, JobStatus> allJobs, SystemName system,
-                            Version systemVersion, List<Integer> incompatibleMajorVersions, Instant now) {
+                            Version systemVersion, VersionCompatibility versionCompatibility, Instant now) {
         this.application = requireNonNull(application);
         this.allJobs = JobList.from(allJobs.values());
         this.system = requireNonNull(system);
         this.systemVersion = requireNonNull(systemVersion);
-        this.incompatibleMajorVersions = List.copyOf(incompatibleMajorVersions);
+        this.versionCompatibility = versionCompatibility;
         this.now = requireNonNull(now);
         List<StepStatus> allSteps = new ArrayList<>();
         this.jobSteps = jobDependencies(application.deploymentSpec(), allSteps);
@@ -347,14 +348,10 @@ public class DeploymentStatus {
         return jobs;
     }
 
-    public boolean isIncompatible(Version platform, Optional<Version> compileVersion) {
-        return compileVersion.map(version -> incompatibleMajorVersions.stream().anyMatch(major -> major >= platform.getMajor() != major >= version.getMajor()))
-                             .orElse(false);
-    }
-
-    public boolean isIncompatible(Optional<Version> platform, Optional<ApplicationVersion> application) {
-        return platform.map(version -> isIncompatible(version, application.flatMap(ApplicationVersion::compileVersion)))
-                       .orElse(false);
+    private boolean isIncompatible(Optional<Version> platform, Optional<ApplicationVersion> application) {
+        return    platform.isPresent()
+               && application.flatMap(ApplicationVersion::compileVersion).isPresent()
+               && versionCompatibility.refuse(platform.get(), application.get().compileVersion().get());
     }
 
     /** Changes to deploy with the given job, possibly split in two steps. */

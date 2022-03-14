@@ -186,7 +186,7 @@ public class TenantApplicationsTest {
         applications.activateApplication(createSet(app1, deployedVersion1), 1);
         assertTrue("New major is compatible", applications.compatibleWith(Optional.of(nodeVersion0), app1));
 
-        flagSource.withListFlag(PermanentFlags.INCOMPATIBLE_MAJOR_VERSIONS.id(), List.of(8), Integer.class);
+        flagSource.withListFlag(PermanentFlags.INCOMPATIBLE_VERSIONS.id(), List.of("8"), String.class);
         Version deployedVersion2 = Version.fromString("8.1");
         applications.activateApplication(createSet(app1, deployedVersion2), 1);
         assertFalse("New major is incompatible", applications.compatibleWith(Optional.of(nodeVersion0), app1));

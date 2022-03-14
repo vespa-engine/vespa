@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
+import com.yahoo.component.VersionCompatibility;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
@@ -118,12 +119,13 @@ public class DeploymentTrigger {
         Optional<Version> compileVersion = outstanding.application().flatMap(ApplicationVersion::compileVersion);
 
         // If the outstanding revision requires a certain platform for compatibility, add that here.
+        VersionCompatibility compatibility = applications().versionCompatibility();
+        Predicate<Version> compatibleWithCompileVersion = version -> compileVersion.map(compiled -> compatibility.accept(version, compiled)).orElse(true);
         if (status.application().productionDeployments().getOrDefault(instance, List.of()).stream()
-                  .anyMatch(deployment -> status.isIncompatible(deployment.version(), compileVersion))) {
+                  .anyMatch(deployment -> ! compatibleWithCompileVersion.test(deployment.version()))) {
             return targetsForPolicy(controller.readVersionStatus(), status.application().deploymentSpec().requireInstance(instance).upgradePolicy())
                     .stream() // Pick the latest platform which is compatible with the compile version, and is ready for this instance.
-                    .filter(platform -> controller.applications().incompatibleMajorVersions().stream()
-                                                  .noneMatch(boundary -> platform.getMajor() >= boundary != compileVersion.get().getMajor() >= boundary))
+                    .filter(compatibleWithCompileVersion)
                     .map(outstanding::with)
                     .filter(change -> status.instanceSteps().get(instance).readyAt(change)
                                             .map(readyAt -> ! readyAt.isAfter(controller.clock().instant()))

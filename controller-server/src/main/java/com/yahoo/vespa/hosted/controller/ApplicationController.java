@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.component.Version;
+import com.yahoo.component.VersionCompatibility;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
@@ -124,7 +125,7 @@ public class ApplicationController {
     private final ApplicationPackageValidator applicationPackageValidator;
     private final EndpointCertificates endpointCertificates;
     private final StringFlag dockerImageRepoFlag;
-    private final ListFlag<Integer> incompatibleMajorVersions;
+    private final ListFlag<String> incompatibleVersions;
     private final BillingController billingController;
 
     ApplicationController(Controller controller, CuratorDb curator, AccessControl accessControl, Clock clock,
@@ -139,7 +140,7 @@ public class ApplicationController {
         artifactRepository = controller.serviceRegistry().artifactRepository();
         applicationStore = controller.serviceRegistry().applicationStore();
         dockerImageRepoFlag = PermanentFlags.DOCKER_IMAGE_REPO.bindTo(flagSource);
-        incompatibleMajorVersions = PermanentFlags.INCOMPATIBLE_MAJOR_VERSIONS.bindTo(flagSource);
+        incompatibleVersions = PermanentFlags.INCOMPATIBLE_VERSIONS.bindTo(flagSource);
         deploymentTrigger = new DeploymentTrigger(controller, clock);
         applicationPackageValidator = new ApplicationPackageValidator(controller);
         endpointCertificates = new EndpointCertificates(controller,
@@ -754,8 +755,8 @@ public class ApplicationController {
         return curator.lockForDeployment(application, zone);
     }
 
-    public List<Integer> incompatibleMajorVersions() {
-        return incompatibleMajorVersions.value();
+    public VersionCompatibility versionCompatibility() {
+        return VersionCompatibility.fromVersionList(incompatibleVersions.value());
     }
 
     /**

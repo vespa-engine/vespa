@@ -138,7 +138,7 @@ public final class ControllerTester {
         this.curator = curator;
         this.rotationsConfig = rotationsConfig;
         this.flagSource = flagSource.withBooleanFlag(PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true)
-                                    .withListFlag(PermanentFlags.INCOMPATIBLE_MAJOR_VERSIONS.id(), List.of(), Integer.class);
+                                    .withListFlag(PermanentFlags.INCOMPATIBLE_VERSIONS.id(), List.of(), String.class);
         this.controller = controller;
 
         // Make root logger use time from manual clock

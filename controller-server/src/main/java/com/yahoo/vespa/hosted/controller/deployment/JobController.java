@@ -340,7 +340,7 @@ public class JobController {
                                                                    LinkedHashMap::new)),
                                     controller.system(),
                                     systemVersion,
-                                    controller.applications().incompatibleMajorVersions(),
+                                    controller.applications().versionCompatibility(),
                                     controller.clock().instant());
     }
 
