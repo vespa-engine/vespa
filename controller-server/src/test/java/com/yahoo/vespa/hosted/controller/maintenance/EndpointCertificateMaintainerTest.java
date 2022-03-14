@@ -33,9 +33,6 @@ public class EndpointCertificateMaintainerTest {
     private final SecretStoreMock secretStore = (SecretStoreMock) tester.controller().secretStore();
     private final EndpointCertificateMaintainer maintainer = new EndpointCertificateMaintainer(tester.controller(), Duration.ofHours(1));
     private final EndpointCertificateMetadata exampleMetadata = new EndpointCertificateMetadata("keyName", "certName", 0, 0, "root-request-uuid", Optional.of("leaf-request-uuid"), List.of(), "issuer", Optional.empty(), Optional.empty());
-    {
-        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.DELETE_UNMAINTAINED_CERTIFICATES.id(), true);
-    }
 
     @Test
     public void old_and_unused_cert_is_deleted() {
