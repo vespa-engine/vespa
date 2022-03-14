@@ -3,7 +3,6 @@ package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.searchdefinition.parser.ParseException;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -26,7 +25,6 @@ public class ImportedFieldsTestCase extends AbstractExportingTestCase {
     }
 
     @Test
-    @Ignore
     public void configs_for_imported_struct_fields_are_derived_new() throws IOException, ParseException {
         assertCorrectDeriving("imported_struct_fields", "child",
                               new TestProperties().setExperimentalSdParsing(true),
