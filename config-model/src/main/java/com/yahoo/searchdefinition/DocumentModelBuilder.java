@@ -212,15 +212,15 @@ public class DocumentModelBuilder {
             lst.add(convert(doc));
             model.getDocumentManager().add(lst.getLast());
         }
-        Set<TypeReplacement> replacements = new HashSet<>();
+        Map<DataType, DataType> replacements = new IdentityHashMap<>();
         for(NewDocumentType doc : lst) {
             resolveTemporaries(doc.getAllTypes(), lst, replacements);
         }
         for(NewDocumentType doc : lst) {
-            for (var entry : replacements) {
-                var old = entry.oldType();
+            for (var entry : replacements.entrySet()) {
+                var old = entry.getKey();
                 if (doc.getDataType(old.getId()) == old) {
-                    doc.replace(entry.newType());
+                    doc.replace(entry.getValue());
                 }
             }
         }
@@ -228,8 +228,7 @@ public class DocumentModelBuilder {
 
     private static void resolveTemporaries(DataTypeCollection dtc,
                                            Collection<NewDocumentType> docs,
-                                           Set<TypeReplacement> replacements)
-    {
+                                           Map<DataType, DataType> replacements) {
         for (DataType type : dtc.getTypes()) {
             resolveTemporariesRecurse(type, dtc, docs, replacements);
         }
@@ -238,11 +237,9 @@ public class DocumentModelBuilder {
     @SuppressWarnings("deprecation")
     private static DataType resolveTemporariesRecurse(DataType type, DataTypeCollection repo,
                                                       Collection<NewDocumentType> docs,
-                                                      Set<TypeReplacement> replacements) {
-        for (var repl : replacements) {
-            if (repl.oldType() == type) {
-                return repl.newType();
-            }
+                                                      Map<DataType, DataType> replacements) {
+        if (replacements.containsKey(type)) {
+            return replacements.get(type);
         }
         DataType original = type;
         if (type instanceof TemporaryStructuredDataType) {
@@ -315,7 +312,7 @@ public class DocumentModelBuilder {
             }
         }
         if (type != original) {
-            replacements.add(new TypeReplacement(original, type));
+            replacements.put(original, type);
         }
         return type;
     }
