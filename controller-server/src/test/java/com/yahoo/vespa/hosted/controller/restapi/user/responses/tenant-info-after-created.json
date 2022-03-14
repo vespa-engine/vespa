@@ -3,5 +3,6 @@
   "email": "",
   "website":"",
   "contactName": "administrator",
-  "contactEmail": "administrator@tenant"
+  "contactEmail": "administrator@tenant",
+  "contacts": []
 }
