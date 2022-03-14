@@ -19,7 +19,7 @@ public class NoopRoleService implements RoleService {
 
     @Override
     public TenantRoles getTenantRole(TenantName tenant) {
-        return new TenantRoles(tenant.value() + "-legacy-host-role", tenant.value() + "-host-role", tenant.value() + "-host-service-role", tenant.value() + "-tenant-role");
+        return new TenantRoles(tenant.value() + "-host-role", tenant.value() + "-host-service-role", tenant.value() + "-tenant-role");
     }
 
     @Override
