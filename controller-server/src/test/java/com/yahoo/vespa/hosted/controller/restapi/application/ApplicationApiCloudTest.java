@@ -89,19 +89,26 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         tester.assertResponse(infoRequest, "{}", 200);
 
         String partialInfo = "{\"contactName\":\"newName\", \"contactEmail\": \"foo@example.com\", \"billingContact\":{\"name\":\"billingName\"}}";
-
         var postPartial =
                 request("/application/v4/tenant/scoober/info", PUT)
                         .data(partialInfo)
                         .roles(Set.of(Role.administrator(tenantName)));
         tester.assertResponse(postPartial, "{\"message\":\"Tenant info updated\"}", 200);
 
+        String partialContacts = "\"contacts\": [{\"audience\": [\"tenant\"],\"email\": \"contact1@example.com\"}]";
+        var postPartialContacts =
+                request("/application/v4/tenant/scoober/info", PUT)
+                        .data(partialContacts)
+                        .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(postPartialContacts, "{\"message\":\"Tenant info updated\"}", 200);
+
         // Read back the updated info
         tester.assertResponse(infoRequest, "{\"name\":\"\",\"email\":\"\",\"website\":\"\",\"contactName\":\"newName\",\"contactEmail\":\"foo@example.com\",\"billingContact\":{\"name\":\"billingName\",\"email\":\"\",\"phone\":\"\"}}", 200);
 
         String fullAddress = "{\"addressLines\":\"addressLines\",\"postalCodeOrZip\":\"postalCodeOrZip\",\"city\":\"city\",\"stateRegionProvince\":\"stateRegionProvince\",\"country\":\"country\"}";
         String fullBillingContact = "{\"name\":\"name\",\"email\":\"foo@example\",\"phone\":\"phone\",\"address\":" + fullAddress + "}";
-        String fullInfo = "{\"name\":\"name\",\"email\":\"foo@example\",\"website\":\"https://yahoo.com\",\"contactName\":\"contactName\",\"contactEmail\":\"contact@example.com\",\"address\":" + fullAddress + ",\"billingContact\":" + fullBillingContact + "}";
+        String fullContacts = "[{\"audience\": [\"tenant\"], \"email\": \"contact1@example.com\"},{\"audience\": [\"notification\"],\"email\": \"contact2@example.com\"},{\"audience\": [\"tenant\", \"notification\"],\"email\": \"contact3@example.com\"}]";
+        String fullInfo = "{\"name\":\"name\",\"email\":\"foo@example\",\"website\":\"https://yahoo.com\",\"contactName\":\"contactName\",\"contactEmail\":\"contact@example.com\",\"address\":" + fullAddress + ",\"billingContact\":" + fullBillingContact + ",\"contacts\":" + fullContacts + "}";
 
         // Now set all fields
         var postFull =
