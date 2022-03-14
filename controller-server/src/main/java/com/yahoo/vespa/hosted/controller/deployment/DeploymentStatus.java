@@ -310,6 +310,13 @@ public class DeploymentStatus {
     private Map<JobId, List<Job>> productionJobs(InstanceName instance, Change change, boolean assumeUpgradesSucceed) {
         Map<JobId, List<Job>> jobs = new LinkedHashMap<>();
         jobSteps.forEach((job, step) -> {
+            if ( ! job.application().instance().equals(instance) || ! job.type().isProduction())
+                return;
+
+            // Signal strict completion criterion by depending on job itself.
+            if (step.completedAt(change, Optional.of(job)).isPresent())
+                return;
+
             // When computing eager test jobs for outstanding changes, assume current change completes successfully.
             Optional<Deployment> deployment = deploymentFor(job);
             Optional<Version> existingPlatform = deployment.map(Deployment::version);
@@ -320,22 +327,22 @@ public class DeploymentStatus {
                 existingPlatform = Optional.of(target.targetPlatform());
                 existingApplication = Optional.of(target.targetApplication());
             }
-            if (job.application().instance().equals(instance) && job.type().isProduction()) {
-                List<Job> toRun = new ArrayList<>();
-                List<Change> changes = changes(job, step, change);
-                if (changes.isEmpty()) return;
-                for (Change partial : changes) {
-                    Job jobToRun = new Job(job.type(),
-                                           Versions.from(partial, application, existingPlatform, existingApplication, systemVersion),
-                                           step.readyAt(partial, Optional.of(job)),
-                                           partial);
-                    toRun.add(jobToRun);
-                    // Assume first partial change is applied before the second.
-                    existingPlatform = Optional.of(jobToRun.versions.targetPlatform());
-                    existingApplication = Optional.of(jobToRun.versions.targetApplication());
-                }
-                jobs.put(job, toRun);
+            List<Job> toRun = new ArrayList<>();
+            boolean deployingCompatibilityChange =    isIncompatible(existingPlatform, change.application())
+                                                   || isIncompatible(change.platform(), existingApplication);
+            List<Change> changes = deployingCompatibilityChange ? List.of(change) : changes(job, step, change);
+            if (changes.isEmpty()) return;
+            for (Change partial : changes) {
+                Job jobToRun = new Job(job.type(),
+                                       Versions.from(partial, application, existingPlatform, existingApplication, systemVersion),
+                                       step.readyAt(partial, Optional.of(job)),
+                                       partial);
+                toRun.add(jobToRun);
+                // Assume first partial change is applied before the second.
+                existingPlatform = Optional.of(jobToRun.versions.targetPlatform());
+                existingApplication = Optional.of(jobToRun.versions.targetApplication());
             }
+            jobs.put(job, toRun);
         });
         return jobs;
     }
@@ -352,10 +359,6 @@ public class DeploymentStatus {
 
     /** Changes to deploy with the given job, possibly split in two steps. */
     private List<Change> changes(JobId job, StepStatus step, Change change) {
-        // Signal strict completion criterion by depending on job itself.
-        if (step.completedAt(change, Optional.of(job)).isPresent())
-            return List.of();
-
         if (change.platform().isEmpty() || change.application().isEmpty() || change.isPinned())
             return List.of(change);
 
