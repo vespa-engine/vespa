@@ -322,15 +322,18 @@ public class DeploymentStatus {
             Optional<Deployment> deployment = deploymentFor(job);
             Optional<Version> existingPlatform = deployment.map(Deployment::version);
             Optional<ApplicationVersion> existingApplication = deployment.map(Deployment::applicationVersion);
+            boolean deployingCompatibilityChange =    areIncompatible(existingPlatform, change.application())
+                                                   || areIncompatible(change.platform(), existingApplication);
             if (assumeUpgradesSucceed) {
+                if (deployingCompatibilityChange) // No eager tests for this.
+                    return;
+
                 Change currentChange = application.require(instance).change();
                 Versions target = Versions.from(currentChange, application, deployment, systemVersion);
                 existingPlatform = Optional.of(target.targetPlatform());
                 existingApplication = Optional.of(target.targetApplication());
             }
             List<Job> toRun = new ArrayList<>();
-            boolean deployingCompatibilityChange =    areIncompatible(existingPlatform, change.application())
-                                                   || areIncompatible(change.platform(), existingApplication);
             List<Change> changes = deployingCompatibilityChange ? List.of(change) : changes(job, step, change);
             if (changes.isEmpty()) return;
             for (Change partial : changes) {

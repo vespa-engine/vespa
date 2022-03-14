@@ -189,6 +189,8 @@ public final class ControllerTester {
 
     public AthenzDbMock athenzDb() { return athenzDb; }
 
+    public InMemoryFlagSource flagSource() { return flagSource; }
+
     public MemoryNameService nameService() {
         return serviceRegistry.nameService();
     }
