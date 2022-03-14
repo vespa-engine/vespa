@@ -16,13 +16,6 @@ GO_FLAGS := -ldflags "-X github.com/vespa-engine/vespa/client/go/build.Version=$
 GIT_ROOT := $(shell git rev-parse --show-toplevel)
 DIST_TARGETS := dist-mac dist-mac-arm64 dist-linux dist-linux-arm64 dist-win32 dist-win64
 
-GOPROXY_OVERRIDE :=
-ifndef GOPROXY
-ifeq ($(shell go env GOPROXY),direct)
-GOPROXY_OVERRIDE := GOPROXY=https://proxy.golang.org,direct
-endif
-endif
-
 all: test checkfmt install
 
 #
@@ -83,7 +76,7 @@ dist-win64: GOOS=windows
 dist-win64: GOARCH=amd64
 
 $(DIST_TARGETS): DIST_NAME=vespa-cli_$(VERSION)_$(GOOS)_$(GOARCH)
-$(DIST_TARGETS): dist-version manpages
+$(DIST_TARGETS): dist-version ci manpages
 $(DIST_TARGETS):
 	mkdir -p $(DIST)/$(DIST_NAME)/bin
 	env GOOS=$(GOOS) GOARCH=$(GOARCH) $(GOPROXY_OVERRIDE) go build -o $(DIST)/$(DIST_NAME)/bin $(GO_FLAGS) ./...
@@ -109,11 +102,15 @@ install-all: all manpages
 # Development targets
 #
 
-install:
+ci:
 ifdef CI
+# Ensure that CI systems use a proxy for downloading dependencies
+	go env -w GOPROXY="https://proxy.golang.org,direct"
 	go env
 endif
-	env GOBIN=$(BIN) $(GOPROXY_OVERRIDE) go install $(GO_FLAGS) ./...
+
+install: ci
+	env GOBIN=$(BIN) go install $(GO_FLAGS) ./...
 
 manpages: install
 	mkdir -p $(SHARE)/man/man1
@@ -125,8 +122,8 @@ clean:
 	rmdir -p $(BIN) &> /dev/null || true
 	rmdir -p $(SHARE)/man/man1 &> /dev/null || true
 
-test:
-	env $(GOPROXY_OVERRIDE) go test ./...
+test: ci
+	go test ./...
 
 checkfmt:
 	@bash -c "diff --line-format='%L' <(echo -n) <(gofmt -l .)" || { echo "one or more files need to be formatted: try make fmt to fix this automatically"; exit 1; }
