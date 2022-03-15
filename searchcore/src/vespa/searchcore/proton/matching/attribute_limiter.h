@@ -32,8 +32,8 @@ public:
                      DiversityCutoffStrategy diversityCutoffStrategy);
     ~AttributeLimiter();
     search::queryeval::SearchIterator::UP create_search(size_t want_hits, size_t max_group_size, bool strictSearch);
-    bool was_used() const { return ((!_match_datas.empty()) || (_blueprint.get() != nullptr)); }
-    ssize_t getEstimatedHits() const { return _estimatedHits; }
+    bool was_used() const;
+    ssize_t getEstimatedHits() const;
     static DiversityCutoffStrategy toDiversityCutoffStrategy(vespalib::stringref strategy);
 private:
     const vespalib::string & toString(DiversityCutoffStrategy strategy);
@@ -45,7 +45,7 @@ private:
     std::mutex                                 _lock;
     std::vector<search::fef::MatchData::UP>    _match_datas;
     search::queryeval::Blueprint::UP           _blueprint;
-    ssize_t                                    _estimatedHits;
+    std::atomic<ssize_t>                       _estimatedHits;
     double                                     _diversityCutoffFactor;
     DiversityCutoffStrategy                    _diversityCutoffStrategy;
 };

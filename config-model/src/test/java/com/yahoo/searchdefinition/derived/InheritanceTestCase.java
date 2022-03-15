@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.document.config.DocumentmanagerConfig;
@@ -54,7 +55,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         try {
             assertCorrectDeriving("inheritfromnull");
         } catch (IllegalArgumentException e) {
-            assertEquals("Document type 'foo' not found", e.getMessage());
+            assertEquals("document inheritfromnull inherits from unavailable document foo", e.getMessage());
         }
     }
 
@@ -64,14 +65,17 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         List<String> files = Arrays.asList("grandparent.sd", "mother.sd", "father.sd", "child.sd");
         File outDir = tmpDir.newFolder("out");
         for (int startIdx = 0; startIdx < files.size(); ++startIdx) {
-            ApplicationBuilder builder = new ApplicationBuilder();
+            var builder = new ApplicationBuilder
+                (new TestProperties().setExperimentalSdParsing(true));
             for (int fileIdx = startIdx; fileIdx < startIdx + files.size(); ++fileIdx) {
                 String fileName = files.get(fileIdx % files.size());
                 builder.addSchemaFile(dir + fileName);
             }
             builder.build(true);
             DocumentmanagerConfig.Builder b = new DocumentmanagerConfig.Builder();
-            DerivedConfiguration.exportDocuments(new DocumentManager().produce(builder.getModel(), b), outDir.getPath());
+            DerivedConfiguration.exportDocuments(new DocumentManager().
+                                                 useV8DocManagerCfg(false).
+                                                 produce(builder.getModel(), b), outDir.getPath());
             DocumentmanagerConfig dc = b.build();
             assertEquals(13, dc.datatype().size());
             assertNull(structType("child.body", dc));
@@ -82,11 +86,11 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
             assertEquals(childHeader.field(3).name(), "cox");
             DocumentmanagerConfig.Datatype.Documenttype child = documentType("child", dc);
             assertEquals(child.inherits(0).name(), "document");
-            assertEquals(child.inherits(1).name(), "father");
-            assertEquals(child.inherits(2).name(), "mother");
+            assertEquals(child.inherits(1).name(), "mother");
+            assertEquals(child.inherits(2).name(), "father");
             DocumentmanagerConfig.Datatype.Documenttype mother = documentType("mother", dc);
-            assertEquals(mother.inherits(0).name(), "grandparent");
-            assertEquals(mother.inherits(1).name(), "document");
+            assertEquals(mother.inherits(0).name(), "document");
+            assertEquals(mother.inherits(1).name(), "grandparent");
         }
     }
 
@@ -161,6 +165,20 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         prefixed = (SDField)child.getField("prefixed");
         assertNotNull(prefixed);
         assertEquals(new Index("prefixed", true), childSchema.getIndex("prefixed"));
+    }
+
+    @Test
+    public void testInheritStructDiamondNew() throws IOException, ParseException {
+        String dir = "src/test/derived/declstruct/";
+        List<String> files = Arrays.asList("common.sd", "foo.sd", "bar.sd", "foobar.sd");
+        var builder = new ApplicationBuilder
+            (new TestProperties().setExperimentalSdParsing(true));
+        for (String fileName : files) {
+            builder.addSchemaFile(dir + fileName);
+        }
+        builder.build(true);
+        derive("declstruct", builder, builder.getSchema("foobar"));
+        assertCorrectConfigFiles("declstruct");
     }
 
 }

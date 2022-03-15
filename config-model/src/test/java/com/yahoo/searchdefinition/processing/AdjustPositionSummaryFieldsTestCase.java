@@ -186,9 +186,10 @@ public class AdjustPositionSummaryFieldsTestCase {
 
         private void createPositionField(Schema schema, boolean setupPosAttr, boolean setupBadAttr) {
             String ilScript = setupPosAttr ? "{ summary | attribute }" : "{ summary }";
-            schema.getDocument().addField(createField("pos", PositionDataType.INSTANCE, ilScript));
+            var doc = schema.getDocument();
+            doc.addField(createField(doc, "pos", PositionDataType.INSTANCE, ilScript));
             if (setupBadAttr) {
-                schema.getDocument().addField(createField("pos_zcurve", DataType.LONG, "{ attribute }"));
+                doc.addField(createField(doc, "pos_zcurve", DataType.LONG, "{ attribute }"));
             }
         }
 

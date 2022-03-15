@@ -108,6 +108,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     public static final Logger log = Logger.getLogger(VespaModel.class.getName());
 
     private final Version version;
+    private final Version wantedNodeVersion;
     private final ConfigModelRepo configModelRepo = new ConfigModelRepo();
     private final AllocatedHosts allocatedHosts;
 
@@ -170,6 +171,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             throws IOException, SAXException {
         super("vespamodel");
         version = deployState.getVespaVersion();
+        wantedNodeVersion = deployState.getWantedNodeVespaVersion();
         fileReferencesRepository = new FileReferencesRepository(deployState.getFileRegistry());
         rankingConstants = new RankingConstants(deployState.getFileRegistry(), Optional.empty());
         validationOverrides = deployState.validationOverrides();
@@ -405,6 +407,11 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     @Override
     public Version version() {
         return version;
+    }
+
+    @Override
+    public Version wantedNodeVersion() {
+        return wantedNodeVersion;
     }
 
     /**

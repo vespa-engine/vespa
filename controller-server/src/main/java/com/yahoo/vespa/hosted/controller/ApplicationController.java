@@ -446,21 +446,17 @@ public class ApplicationController {
                 controller.notificationsDb().removeNotifications(notification.source());
         }
 
-        var oldestDeployedVersion = application.get().productionDeployments().values().stream()
-                                               .flatMap(List::stream)
-                                               .map(Deployment::applicationVersion)
-                                               .filter(version -> ! version.isDeployedDirectly())
-                                               .min(naturalOrder())
-                                               .orElse(ApplicationVersion.unknown);
+        ApplicationVersion oldestDeployedVersion = application.get().oldestDeployedApplication()
+                                                              .orElse(ApplicationVersion.unknown);
 
-        var olderVersions = application.get().versions().stream()
-                .filter(version -> version.compareTo(oldestDeployedVersion) < 0)
-                .sorted()
-                .collect(Collectors.toList());
+        List<ApplicationVersion> olderVersions = application.get().versions().stream()
+                                                            .filter(version -> version.compareTo(oldestDeployedVersion) < 0)
+                                                            .sorted()
+                                                            .collect(Collectors.toList());
 
         // Remove any version not deployed anywhere - but keep one
-        for (int i = 0; i < olderVersions.size() - 1; i++) {
-            application = application.withoutVersion(olderVersions.get(i));
+        for (ApplicationVersion version : olderVersions) {
+            application = application.withoutVersion(version);
         }
 
         store(application);

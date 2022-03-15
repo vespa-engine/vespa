@@ -7,10 +7,9 @@ search common {
         field title type string {
             bolding: on
             indexing: index|summary
-            summary-to: smallsum
         }
         field mid type int {
-            indexing: attribute|index|summary
+            indexing: attribute|summary
         }
         field scorekey type string {
             indexing: summary
@@ -43,12 +42,6 @@ search common {
         }
         annotation DocumentImplSub inherits DocumentImpl { }
     }
-    field weight type float {
-    }
-    field w1 type float {
-    }
-    field w2 type float {
-    }
     rank-profile default {
         first-phase {
             expression: nativeRank
@@ -62,5 +55,9 @@ search common {
     }
     field w2 type float {
         indexing: input w2_src + input weight_src | summary
+    }
+    document-summary smallsum {
+        from-disk
+        summary title type string {}
     }
 }

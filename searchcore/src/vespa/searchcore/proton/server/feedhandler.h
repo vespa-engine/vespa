@@ -78,7 +78,7 @@ private:
     TlsWriter                             *_tlsWriter;
     TlsReplayProgress::UP                  _tlsReplayProgress;
     // the serial num of the last feed operation processed by feed handler.
-    SerialNum                              _serialNum;
+    std::atomic<SerialNum>                 _serialNum;
     // the serial num considered to be fully procssessed and flushed to stable storage. Used to prune transaction log.
     SerialNum                              _prunedSerialNum;
     // the serial num of the last feed operation in the transaction log at startup before replay
@@ -215,9 +215,15 @@ public:
         _bucketDBHandler = bucketDBHandler;
     }
 
-    void setSerialNum(SerialNum serialNum) { _serialNum = serialNum; }
-    SerialNum inc_serial_num() override { return ++_serialNum; }
-    SerialNum getSerialNum() const override { return _serialNum; }
+    // Must only be called from writer thread:
+    void setSerialNum(SerialNum serialNum) { _serialNum.store(serialNum, std::memory_order_relaxed); }
+    SerialNum inc_serial_num() override {
+        const auto post_inc = _serialNum.load(std::memory_order_relaxed) + 1u;
+        _serialNum.store(post_inc, std::memory_order_relaxed);
+        return post_inc;
+    }
+    // May be called from non-writer threads:
+    SerialNum getSerialNum() const override { return _serialNum.load(std::memory_order_relaxed); }
     // The two following methods are used when saving initial config
     SerialNum get_replay_end_serial_num() const { return _replay_end_serial_num; }
     SerialNum inc_replay_end_serial_num() { return ++_replay_end_serial_num; }

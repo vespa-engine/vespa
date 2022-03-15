@@ -3,7 +3,6 @@
 #pragma once
 
 #include "array_traverser.h"
-#include "basic_value.h"
 #include "basic_value_factory.h"
 #include "binary_format.h"
 #include "convenience.h"
@@ -22,7 +21,6 @@
 #include "symbol.h"
 #include "symbol_inserter.h"
 #include "symbol_lookup.h"
-#include "symbol_table.h"
 #include "type.h"
 #include "value.h"
 #include "value_factory.h"
@@ -53,79 +51,54 @@ private:
     typedef slime::Cursor        Cursor;
     typedef slime::Inspector     Inspector;
 
-    SymbolTable::UP              _names;
-    Stash::UP                    _stash;
-    RootValue                    _root;
+    std::unique_ptr<SymbolTable>   _names;
+    std::unique_ptr<Stash>         _stash;
+    RootValue                      _root;
 
 public:
     typedef std::unique_ptr<Slime> UP;
     class Params {
     private:
-        SymbolTable::UP  _symbols;
-        size_t           _chunkSize;
+        std::unique_ptr<SymbolTable>  _symbols;
+        size_t                        _chunkSize;
     public:
-        Params() : Params(std::make_unique<SymbolTable>()) { }
-        explicit Params(SymbolTable::UP symbols) : _symbols(std::move(symbols)), _chunkSize(4096) { }
+        Params();
+        explicit Params(std::unique_ptr<SymbolTable> symbols) noexcept;
+        Params(Params &&) noexcept;
+        ~Params();
         Params & setChunkSize(size_t chunkSize) {
             _chunkSize = chunkSize;
             return *this;
         }
         size_t getChunkSize() const { return _chunkSize; }
-        SymbolTable::UP detachSymbols() { return std::move(_symbols); }
+        std::unique_ptr<SymbolTable> detachSymbols();
     };
     /**
      * Construct an initially empty Slime object.
      **/
-    explicit Slime(Params params = Params()) :
-        _names(params.detachSymbols()),
-        _stash(std::make_unique<Stash>(params.getChunkSize())),
-        _root(_stash.get())
-    { }
+    explicit Slime(Params params = Params());
 
     ~Slime();
 
-    Slime(Slime &&rhs) noexcept :
-        _names(std::move(rhs._names)),
-        _stash(std::move(rhs._stash)),
-        _root(std::move(rhs._root))
-    {
-    }
+    Slime(Slime &&rhs) noexcept;
+    Slime &operator=(Slime &&rhs) noexcept;
 
     Slime(const Slime & rhs) = delete;
     Slime& operator = (const Slime & rhs) = delete;
 
-    static SymbolTable::UP reclaimSymbols(Slime &&rhs) {
-        rhs._stash.reset();
-        rhs._root = RootValue(nullptr);
-        return std::move(rhs._names);
-    }
+    static std::unique_ptr<SymbolTable> reclaimSymbols(Slime &&rhs);
 
-    Slime &operator=(Slime &&rhs) {
-        _names = std::move(rhs._names);
-        _stash = std::move(rhs._stash);
-        _root = std::move(rhs._root);
-        return *this;
-    }
+    size_t symbols() const noexcept;
 
-    size_t symbols() const {
-        return _names->symbols();
-    }
+    Memory inspect(Symbol symbol) const;
 
-    Memory inspect(Symbol symbol) const {
-        return _names->inspect(symbol);
-    }
+    Symbol insert(Memory name);
 
-    Symbol insert(Memory name) {
-        return _names->insert(name);
-    }
+    Symbol lookup(Memory name) const;
 
-    Symbol lookup(Memory name) const {
-        return _names->lookup(name);
-    }
+    Cursor &get() noexcept { return _root.get(); }
 
-    Cursor &get() { return _root.get(); }
-
-    Inspector &get() const { return _root.get(); }
+    Inspector &get() const noexcept { return _root.get(); }
 
     template <typename ID>
     Inspector &operator[](ID id) const { return get()[id]; }
@@ -177,7 +150,7 @@ public:
     vespalib::string toString() const { return get().toString(); }
 };
 
-bool operator == (const Slime & a, const Slime & b);
+bool operator == (const Slime & a, const Slime & b) noexcept;
 std::ostream & operator << (std::ostream & os, const Slime & slime);
 
 } // namespace vespalib

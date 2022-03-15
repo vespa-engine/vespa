@@ -80,6 +80,7 @@ protected:
     using generation_t = vespalib::GenerationHandler::generation_t;
 
 public:
+    using ArrayRef = vespalib::ArrayRef<EntryT>;
     using ConstArrayRef = vespalib::ConstArrayRef<EntryT>;
     MappingTestBase()
         : _stats(),
@@ -107,8 +108,8 @@ public:
     ~MappingTestBase() { }
 
     void set(uint32_t docId, const std::vector<EntryT> &values) { _mvMapping->set(docId, values); }
-    void replace(uint32_t docId, const std::vector<EntryT> &values) { _mvMapping->replace(docId, values); }
     ConstArrayRef get(uint32_t docId) { return _mvMapping->get(docId); }
+    ArrayRef get_writable(uint32_t docId) { return _mvMapping->get_writable(docId); }
     void assertGet(uint32_t docId, const std::vector<EntryT> &exp) {
         ConstArrayRef act = get(docId);
         EXPECT_EQ(exp, std::vector<EntryT>(act.cbegin(), act.cend()));
@@ -307,7 +308,7 @@ TEST_F(IntMappingTest, test_that_totalValueCnt_works)
     EXPECT_EQ(5u, getTotalValueCnt());
 }
 
-TEST_F(IntMappingTest, test_that_replace_works)
+TEST_F(IntMappingTest, test_that_get_writable_works)
 {
     setup(3);
     addDocs(10);
@@ -315,7 +316,12 @@ TEST_F(IntMappingTest, test_that_replace_works)
     auto old4 = get(4);
     assertArray({10, 14, 17, 16}, old4);
     EXPECT_EQ(4u, getTotalValueCnt());
-    replace(4, {20, 24, 27, 26});
+    {
+        auto array = get_writable(4);
+        for (auto& elem : array) {
+            elem += 10;
+        }
+    }
     assertArray({20, 24, 27, 26}, old4);
     EXPECT_EQ(4u, getTotalValueCnt());
 }

@@ -342,7 +342,8 @@ public class TenantRepository {
                                        configserverConfig,
                                        hostRegistry,
                                        new TenantFileSystemDirs(configServerDB, tenantName),
-                                       clock);
+                                       clock,
+                                       flagSource);
         PermanentApplicationPackage permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);
         SessionPreparer sessionPreparer = new SessionPreparer(modelFactoryRegistry,
                                                               fileDistributionFactory,

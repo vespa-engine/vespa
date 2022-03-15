@@ -24,25 +24,33 @@ public class WeightedSetDataType extends CollectionDataType {
 
     public WeightedSetDataType(DataType nestedType, boolean createIfNonExistent, boolean removeIfZero) {
         this(nestedType, createIfNonExistent, removeIfZero, 0);
-        if ((nestedType == STRING) && createIfNonExistent && removeIfZero) { // the tag type definition
-            setId(18);
-        } else {
-            setId(getName().toLowerCase().hashCode());
-        }
     }
 
     public WeightedSetDataType(DataType nestedType, boolean createIfNonExistent, boolean removeIfZero, int id) {
         super(createName(nestedType, createIfNonExistent, removeIfZero), id, nestedType);
         this.createIfNonExistent = createIfNonExistent;
         this.removeIfZero = removeIfZero;
+        if (id == 0) {
+            if ((nestedType == STRING) && createIfNonExistent && removeIfZero) { // the tag type definition
+                setId(TAG_ID);
+            } else {
+                setId(getName().toLowerCase().hashCode());
+            }
+        }
+        int code = getId();
+        if ((code >= 0) && (code <= DataType.lastPredefinedDataTypeId()) && (code != TAG_ID)) {
+            throw new IllegalArgumentException("Cannot create a weighted set datatype with code " + code);
+        }
     }
 
+    /*
+     * @deprecated // TODO remove on Vespa 8
+     * Do not use - use one of the constructors above.
+     * Note: ignores typeName argument.
+     */
+    @Deprecated
     public WeightedSetDataType(String typeName, int code, DataType nestedType, boolean createIfNonExistent, boolean removeIfZero) {
-        super(typeName != null ? createName(nestedType, createIfNonExistent, removeIfZero) : null, code, nestedType);
-        if ((code >= 0) && (code <= DataType.lastPredefinedDataTypeId()) && (code != 18)) // 18 == DataType.TAG.getId() is not yet initialized
-            throw new IllegalArgumentException("Cannot create a weighted set datatype with code " + code);
-        this.createIfNonExistent = createIfNonExistent;
-        this.removeIfZero = removeIfZero;
+        this(nestedType, createIfNonExistent, removeIfZero, code);
     }
 
     @Override

@@ -23,9 +23,7 @@ extern char **environ;
 };
 
 int
-FastOS_UNIX_Application::GetOpt (const char *optionsString,
-                                 const char* &optionArgument,
-                                 int &optionIndex)
+FastOS_UNIX_Application::GetOpt (const char *optionsString, const char* &optionArgument, int &optionIndex)
 {
     int rc = getopt(_argc, _argv, optionsString);
     optionArgument = optarg;
@@ -34,16 +32,10 @@ FastOS_UNIX_Application::GetOpt (const char *optionsString,
 }
 
 int
-FastOS_UNIX_Application::GetOptLong(const char *optionsString,
-               const char* &optionArgument,
-               int &optionIndex,
-               const struct option *longopts,
-               int *longindex)
+FastOS_UNIX_Application::GetOptLong(const char *optionsString, const char* &optionArgument, int &optionIndex,
+                                    const struct option *longopts,int *longindex)
 {
-    int rc = getopt_long(_argc, _argv, optionsString,
-                         longopts,
-                         longindex);
-
+    int rc = getopt_long(_argc, _argv, optionsString, longopts, longindex);
     optionArgument = optarg;
     optionIndex = optind;
     return rc;
@@ -74,14 +66,7 @@ bool FastOS_UNIX_Application::PreThreadInit ()
 
 bool FastOS_UNIX_Application::Init ()
 {
-    bool rc = false;
-
-    if(FastOS_ApplicationInterface::Init())
-    {
-        rc = true;
-    }
-
-    return rc;
+    return FastOS_ApplicationInterface::Init();
 }
 
 void FastOS_UNIX_Application::Cleanup ()

@@ -78,7 +78,7 @@ public class ApplicationConfigProducerRoot extends AbstractConfigProducer<Abstra
     }
 
     private boolean useV8GeoPositions = false;
-    private boolean useV8DocManagerCfg = false;
+    private boolean useV8DocManagerCfg = true;
 
     public void useFeatureFlags(ModelContext.FeatureFlags featureFlags) {
         this.useV8GeoPositions = featureFlags.useV8GeoPositions();

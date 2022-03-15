@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.ReferenceDataType;
@@ -57,7 +58,7 @@ public class ReferenceFieldTestCase {
 
     @Test
     public void cyclic_document_dependencies_are_detected() throws ParseException {
-        ApplicationBuilder builder = new ApplicationBuilder();
+        var builder = new ApplicationBuilder(new TestProperties().setExperimentalSdParsing(false));
         String campaignSdContent =
                 "search campaign {\n" +
                         "  document campaign {\n" +
@@ -74,6 +75,28 @@ public class ReferenceFieldTestCase {
         builder.addSchema(adSdContent);
         exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
         exceptionRule.expectMessage("Document dependency cycle detected: campaign->ad->campaign.");
+        builder.build(true);
+    }
+
+    @Test
+    public void cyclic_document_dependencies_are_detected_new_parser() throws ParseException {
+        var builder = new ApplicationBuilder(new TestProperties().setExperimentalSdParsing(true));
+        String campaignSdContent =
+                "search campaign {\n" +
+                        "  document campaign {\n" +
+                        "    field ad_ref type reference<ad> { indexing: attribute }\n" +
+                        "  }\n" +
+                        "}";
+        String adSdContent =
+                "search ad {\n" +
+                        "  document ad {\n" +
+                        "    field campaign_ref type reference<campaign> { indexing: attribute }\n" +
+                        "  }\n" +
+                        "}";
+        builder.addSchema(campaignSdContent);
+        builder.addSchema(adSdContent);
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage("reference cycle for documents");
         builder.build(true);
     }
 

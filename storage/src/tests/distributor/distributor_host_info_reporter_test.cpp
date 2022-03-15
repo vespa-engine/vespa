@@ -7,6 +7,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <chrono>
 #include <vespa/vespalib/gtest/gtest.h>
 
 namespace storage::distributor {

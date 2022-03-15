@@ -11,7 +11,7 @@
   },
   "applications": [
     {
-      "id": "tenant3.application3.instance3",
+      "id": "tenant1.application1.instance1",
       "load": {
         "cpu": 0.0,
         "memory": 0.0,
@@ -31,7 +31,7 @@
       "unutilizedCost": 0.0
     },
     {
-      "id": "tenant4.application4.instance4",
+      "id": "tenant3.application3.instance3",
       "load": {
         "cpu": 0.0,
         "memory": 0.0,
@@ -41,7 +41,7 @@
       "unutilizedCost": 0.0
     },
     {
-      "id": "tenant1.application1.instance1",
+      "id": "tenant4.application4.instance4",
       "load": {
         "cpu": 0.0,
         "memory": 0.0,

@@ -81,16 +81,16 @@ LoadUtils::loadUDAT(const AttributeVector& attr)
 
 
 #define INSTANTIATE_ARRAY(ValueType, Saver) \
-template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<Value<ValueType>> &, ReaderBase &, vespalib::ConstArrayRef<ValueType>, vespalib::ConstArrayRef<uint32_t>, Saver)
+template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<Value<ValueType>> &, ReaderBase &, vespalib::ConstArrayRef<atomic_utils::NonAtomicValue_t<ValueType>>, vespalib::ConstArrayRef<uint32_t>, Saver)
 #define INSTANTIATE_WSET(ValueType, Saver) \
-template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<WeightedValue<ValueType>> &, ReaderBase &, vespalib::ConstArrayRef<ValueType>, vespalib::ConstArrayRef<uint32_t>, Saver)
+template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<WeightedValue<ValueType>> &, ReaderBase &, vespalib::ConstArrayRef<atomic_utils::NonAtomicValue_t<ValueType>>, vespalib::ConstArrayRef<uint32_t>, Saver)
 #define INSTANTIATE_SINGLE(ValueType, Saver) \
-template void loadFromEnumeratedSingleValue(vespalib::RcuVectorBase<ValueType> &, vespalib::GenerationHolder &, ReaderBase &, vespalib::ConstArrayRef<load_utils::NonAtomicValue_t<ValueType>>, vespalib::ConstArrayRef<uint32_t>, Saver)
+template void loadFromEnumeratedSingleValue(vespalib::RcuVectorBase<ValueType> &, vespalib::GenerationHolder &, ReaderBase &, vespalib::ConstArrayRef<atomic_utils::NonAtomicValue_t<ValueType>>, vespalib::ConstArrayRef<uint32_t>, Saver)
 
 #define INSTANTIATE_SINGLE_ARRAY_WSET(ValueType, Saver) \
 INSTANTIATE_SINGLE(ValueType, Saver); \
-INSTANTIATE_ARRAY(load_utils::NonAtomicValue_t<ValueType>, Saver); \
-INSTANTIATE_WSET(load_utils::NonAtomicValue_t<ValueType>, Saver)
+INSTANTIATE_ARRAY(ValueType, Saver); \
+INSTANTIATE_WSET(ValueType, Saver)
 
 #define INSTANTIATE_ENUM(Saver) \
 INSTANTIATE_SINGLE_ARRAY_WSET(AtomicEntryRef, Saver)

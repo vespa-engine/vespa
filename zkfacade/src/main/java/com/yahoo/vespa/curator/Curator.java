@@ -3,6 +3,8 @@ package com.yahoo.vespa.curator;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.CuratorConfig;
+import com.yahoo.component.AbstractComponent;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.curator.api.VespaCurator;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
@@ -34,9 +36,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -49,7 +58,7 @@ import java.util.logging.Logger;
  * @author vegardh
  * @author bratseth
  */
-public class Curator implements VespaCurator, AutoCloseable {
+public class Curator extends AbstractComponent implements VespaCurator, AutoCloseable {
 
     private static final Logger LOG = Logger.getLogger(Curator.class.getName());
     private static final File ZK_CLIENT_CONFIG_FILE = new File(Defaults.getDefaults().underVespaHome("conf/zookeeper/zookeeper-client.cfg"));
@@ -82,7 +91,6 @@ public class Curator implements VespaCurator, AutoCloseable {
     }
 
     @Inject
-    // TODO jonmv: Use a Provider for this, due to required shutdown.
     public Curator(CuratorConfig curatorConfig, @SuppressWarnings("unused") VespaZooKeeperServer server) {
         // Depends on ZooKeeperServer to make sure it is started first
         this(ConnectionSpec.create(curatorConfig.server(),
@@ -313,7 +321,21 @@ public class Curator implements VespaCurator, AutoCloseable {
 
     @Override
     public void close() {
-        curatorFramework.close();
+        ExecutorService executor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("curator-shutdown"));
+        Future<?> shutdown = CompletableFuture.runAsync(curatorFramework::close, executor);
+        try {
+            shutdown.get(10, TimeUnit.SECONDS);
+        }
+        catch (Exception e) {
+           LOG.log(Level.WARNING, "Failed shutting down curator framework (within 10 seconds)", e);
+           if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+        }
+        executor.shutdownNow();
+    }
+
+    @Override
+    public void deconstruct() {
+        close();
     }
 
     /**

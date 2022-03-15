@@ -6,6 +6,7 @@
 #include "lidstatevector.h"
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
+#include <atomic>
 
 namespace proton::documentmetastore {
 
@@ -25,7 +26,7 @@ private:
     LidStateVector              _pendingHoldLids;
     bool                        _lidFreeListConstructed;
     LidStateVector              _activeLids;
-    uint32_t                    _numActiveLids;
+    std::atomic<uint32_t>       _numActiveLids;
 
 public:
     LidAllocator(uint32_t size,
@@ -54,8 +55,8 @@ public:
     void clearDocs(DocId lidLow, DocId lidLimit);
     void shrinkLidSpace(DocId committedDocIdLimit);
     uint32_t getNumUsedLids() const { return _usedLids.count(); }
-    uint32_t getNumActiveLids() const {
-        return _numActiveLids;
+    uint32_t getNumActiveLids() const noexcept {
+        return _numActiveLids.load(std::memory_order_relaxed);
     }
     void setFreeListConstructed() {
         _lidFreeListConstructed = true;

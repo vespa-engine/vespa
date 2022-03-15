@@ -3,7 +3,6 @@
 #pragma once
 
 #include "enum_store_types.h"
-#include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/arrayref.h>
 #include <cassert>
 #include <limits>
@@ -67,7 +66,7 @@ public:
     int32_t getWeight() const { return _weight; }
 };
     
-typedef vespalib::Array<LoadedEnumAttribute> LoadedEnumAttributeVector;
+using LoadedEnumAttributeVector = std::vector<LoadedEnumAttribute, vespalib::allocator_large<LoadedEnumAttribute>>;
 
 
 /**

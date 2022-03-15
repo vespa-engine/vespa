@@ -23,32 +23,35 @@ public class DeploymentFailureMails {
     public Mail nodeAllocationFailure(RunId id, Collection<String> recipients) {
         return mail(id, recipients, " due to node allocation failure",
                     "as your node resource request could not be " +
-                    "fulfilled for your tenant. Contact Vespa Cloud support.");
+                    "fulfilled for your tenant. Please contact Vespa Cloud support.");
     }
 
     public Mail deploymentFailure(RunId id, Collection<String> recipients) {
         return mail(id, recipients, " deployment",
                     "and any previous deployment in the zone is unaffected. " +
-                    "This is usually due to an invalid application configuration, or because " +
-                    "of timeouts waiting for other deployments of the same application to finish.");
+                    "This is usually due to an invalid application configuration. " +
+                    "Please review warnings and errors in the deployment job log.");
     }
 
     public Mail installationFailure(RunId id, Collection<String> recipients) {
         return mail(id, recipients, "installation",
-                    "as nodes were not able to upgrade to the new configuration. " +
+                    "as nodes were not able to deploy to the new configuration. " +
                     "This is often due to a misconfiguration of the components of an " +
-                    "application, where one or more of these can not be instantiated.");
+                    "application, where one or more of these can not be instantiated. " +
+                    "Please check the Vespa log for errors, and contact Vespa Cloud " +
+                    "support if unable to resolve these.");
     }
 
     public Mail testFailure(RunId id, Collection<String> recipients) {
         return mail(id, recipients, "tests",
-                    "as one or more verification tests against the deployment failed.");
+                    "as one or more verification tests against the deployment failed. " +
+                    "Please review test output in the deployment job log.");
     }
 
     public Mail systemError(RunId id, Collection<String> recipients) {
         return mail(id, recipients, "due to system error",
-                    "as something in the framework went wrong. Such errors are " +
-                    "usually transient. Please contact the Vespa team if the problem persists!");
+                    "as something in the deployment framework went wrong. Such errors are " +
+                    "usually transient. Please contact Vespa Cloud support if the problem persists.");
     }
 
     private Mail mail(RunId id, Collection<String> recipients, String summaryDetail, String messageDetail) {
@@ -72,7 +75,8 @@ public class DeploymentFailureMails {
             return "System test";
         if (type == JobType.stagingTest)
             return "Staging test";
-        return "Deployment to " + type.zone(registry.system()).region();
+        return (type.isDeployment() ? "Deployment to " : "Verification test of ") +
+               type.zone(registry.system()).region();
     }
 
 }

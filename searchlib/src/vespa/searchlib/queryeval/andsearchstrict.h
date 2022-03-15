@@ -3,10 +3,8 @@
 #pragma once
 
 #include "andsearchnostrict.h"
-#include <vespa/fastos/dynamiclibrary.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * A simple strict implementation of the And search operation.
@@ -105,6 +103,4 @@ AndSearchStrict<Unpack>::andWith(SearchIterator::UP filter, uint32_t estimate_)
     return filter; // Should always be empty, returning it incase logic changes.
 }
 
-} // namespace queryeval
-} // namespace search
-
+}

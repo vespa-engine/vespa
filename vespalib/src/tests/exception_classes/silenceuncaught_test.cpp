@@ -13,6 +13,14 @@ using namespace vespalib;
 #endif
 #endif
 
+#ifndef __SANITIZE_THREAD__
+#if defined(__has_feature)
+#if __has_feature(thread_sanitizer)
+#define __SANITIZE_THREAD__
+#endif
+#endif
+#endif
+
 TEST("that uncaught exception causes negative exitcode.") {
     Process proc("ulimit -c 0 && exec ./vespalib_caught_uncaught_app uncaught");
     EXPECT_LESS(proc.join(), 0);
@@ -34,6 +42,7 @@ TEST("that caught silenced exception causes exitcode 0") {
 }
 
 #ifndef __SANITIZE_ADDRESS__
+#ifndef __SANITIZE_THREAD__
 #ifdef __APPLE__
 // setrlimit with RLIMIT_AS is broken on Darwin
 #else
@@ -51,6 +60,7 @@ TEST("that mmap beyond limits with set VESPA_SILENCE_CORE_ON_OOM cause exitcode 
     Process proc("VESPA_SILENCE_CORE_ON_OOM=1 exec ./vespalib_mmap_app 100000000 10485760 10");
     EXPECT_EQUAL(proc.join(), 66);
 }
+#endif
 #endif
 #endif
 

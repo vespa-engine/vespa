@@ -1,0 +1,13 @@
+search product {
+  document product {
+    struct mystruct {
+        field zero type string {}
+        field one type string {}
+        field two type string {}
+        field three type string {}
+    }
+    field more_stuff type map<string, mystruct> {
+      indexing: summary
+    }
+  }
+}

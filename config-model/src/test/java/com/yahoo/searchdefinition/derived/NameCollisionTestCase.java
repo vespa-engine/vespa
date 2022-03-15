@@ -19,21 +19,22 @@ public class NameCollisionTestCase extends AbstractExportingTestCase {
 
     @Test
     public void testNameCollision() throws Exception {
-        var ex = assertThrows(IllegalArgumentException.class, () -> {
+        var ex = assertThrows(RuntimeException.class, () -> {
                 assertCorrectDeriving("namecollision", "collisionstruct",
                                       new TestProperties().setExperimentalSdParsing(false),
                                       new TestableDeployLogger());
                 var docman = DocumentTypeManager.fromFile("temp/namecollision/documentmanager.cfg");
             });
+        ex.printStackTrace();
         System.err.println("MSG 1: "+ex.getClass()+" -> "+ex.getMessage());
-        var ey = assertThrows(IllegalArgumentException.class, () -> {
+        var ey = assertThrows(RuntimeException.class, () -> {
                 assertCorrectDeriving("namecollision", "collisionstruct",
                                       new TestProperties().setExperimentalSdParsing(true),
                                       new TestableDeployLogger());
                 var docman = DocumentTypeManager.fromFile("temp/namecollision/documentmanager.cfg");
             });
-        System.err.println("MSG 2: "+ey.getMessage());
-
+        ey.printStackTrace();
+        System.err.println("MSG 2: "+ey.getClass()+" -> "+ey.getMessage());
     }
 
 }

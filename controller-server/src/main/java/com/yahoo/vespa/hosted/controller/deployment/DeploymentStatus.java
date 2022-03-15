@@ -43,7 +43,6 @@ import static com.yahoo.config.provision.Environment.staging;
 import static com.yahoo.config.provision.Environment.test;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
-import static java.util.Collections.reverseOrder;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
@@ -201,7 +200,7 @@ public class DeploymentStatus {
         jobs.putAll(productionJobs);
         // Add runs for idle, declared test jobs if they have no successes on their instance's change's versions.
         jobSteps.forEach((job, step) -> {
-            if ( ! step.isDeclared() || step.type() != StepType.test || jobs.containsKey(job))
+            if ( ! step.isDeclared() || job.type().isProduction() || jobs.containsKey(job))
                 return;
 
             Change change = changes.get(job.application().instance());
@@ -212,9 +211,8 @@ public class DeploymentStatus {
                                                                        .filter(jobId -> jobId.type().isProduction() && jobId.type().isDeployment())
                                                                        .filter(jobId -> deploymentFor(jobId).isPresent())
                                                                        .findFirst();
-
             Versions versions = Versions.from(change, application, firstProductionJobWithDeployment.flatMap(this::deploymentFor), systemVersion);
-            if (step.completedAt(change, firstProductionJobWithDeployment).isEmpty())
+            if (step.completedAt(change, Optional.empty()).isEmpty())
                 jobs.merge(job, List.of(new Job(job.type(), versions, step.readyAt(change), change)), DeploymentStatus::union);
         });
         return Collections.unmodifiableMap(jobs);
@@ -266,16 +264,18 @@ public class DeploymentStatus {
      * For the "exclusive" revision upgrade policy it is the oldest such revision; otherwise, it is the latest.
      */
     public Change outstandingChange(InstanceName instance) {
-        return Optional.ofNullable(instanceSteps().get(instance))
-                       .flatMap(instanceStatus -> application.deployableVersions(application.deploymentSpec().requireInstance(instance).revisionTarget() == next).stream()
-                                                             .filter(version -> instanceStatus.dependenciesCompletedAt(Change.of(version), Optional.empty()).map(at -> ! at.isAfter(now)).orElse(false))
-                                                             .filter(version -> application.productionDeployments().getOrDefault(instance, List.of()).stream()
-                                                                                           .noneMatch(deployment -> deployment.applicationVersion().compareTo(version) > 0))
-                                                             .map(Change::of)
-                                                             .filter(change -> application.require(instance).change().application().map(change::upgrades).orElse(true))
-                                                             .filter(change -> ! hasCompleted(instance, change))
-                                                             .findFirst())
-                       .orElse(Change.empty());
+        StepStatus status = instanceSteps().get(instance);
+        if (status == null) return Change.empty();
+        for (ApplicationVersion version : application.deployableVersions(application.deploymentSpec().requireInstance(instance).revisionTarget() == next)) {
+            if (status.dependenciesCompletedAt(Change.of(version), Optional.empty()).map(now::isBefore).orElse(true)) continue;
+            Change change = Change.of(version);
+            if (application.productionDeployments().getOrDefault(instance, List.of()).stream()
+                           .anyMatch(deployment -> change.downgrades(deployment.applicationVersion()))) continue;
+            if ( ! application.require(instance).change().application().map(change::upgrades).orElse(true)) continue;
+            if (hasCompleted(instance, change)) continue;
+            return change;
+        }
+        return Change.empty();
     }
 
     /** Earliest instant when job was triggered with given versions, or both system and staging tests were successful. */
@@ -703,7 +703,7 @@ public class DeploymentStatus {
             return    (   (change.platform().isEmpty() || change.platform().equals(instance.change().platform()))
                        && (change.application().isEmpty() || change.application().equals(instance.change().application()))
                    || step().steps().stream().noneMatch(step -> step.concerns(prod)))
-                      ? dependenciesCompletedAt(change, dependent)
+                      ? dependenciesCompletedAt(change, dependent).or(() -> Optional.of(Instant.EPOCH).filter(__ -> change.hasTargets()))
                       : Optional.empty();
         }
 
@@ -805,7 +805,7 @@ public class DeploymentStatus {
                                           .orElse(false))
                         return job.lastCompleted().flatMap(Run::end);
 
-                    return (dependent.equals(job()) ? job.lastSuccess().stream()
+                    return (dependent.equals(job()) ? job.lastTriggered().filter(run -> run.status() == RunStatus.success).stream()
                                                     : RunList.from(job).status(RunStatus.success).asList().stream())
                             .filter(run ->    change.platform().map(run.versions().targetPlatform()::equals).orElse(true)
                                            && change.application().map(run.versions().targetApplication()::equals).orElse(true))
@@ -857,10 +857,13 @@ public class DeploymentStatus {
                 @Override
                 Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
                     return RunList.from(job)
-                                  .matching(run -> run.versions().targetsMatch(Versions.from(change,
-                                                                                             status.application,
-                                                                                             dependent.flatMap(status::deploymentFor),
-                                                                                             status.systemVersion)))
+                                  .matching(run -> dependent.flatMap(status::deploymentFor)
+                                                            .map(deployment -> run.versions().targetsMatch(Versions.from(change,
+                                                                                                                         status.application,
+                                                                                                                         Optional.of(deployment),
+                                                                                                                         status.systemVersion)))
+                                                            .orElseGet(() ->    (change.platform().isEmpty()    || change.platform().get().equals(run.versions().targetPlatform()))
+                                                                             && (change.application().isEmpty() || change.application().get().equals(run.versions().targetApplication()))))
                                   .status(RunStatus.success)
                                   .asList().stream()
                                   .map(run -> run.end().get())

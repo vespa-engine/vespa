@@ -99,20 +99,6 @@ public:
     void setFAdviseOptions(int options)               { _fAdviseOptions = options; }
 
     /**
-     * Initialize the file class. This is invoked by
-     * @ref FastOS_Application::Init().
-     * @return Boolean success/failure
-     */
-    static bool InitializeClass ();
-
-    /**
-     * Cleanup the file class. This is invoked by
-     * @ref FastOS_Application::Cleanup().
-     * @return Boolean success/failure
-     */
-    static bool CleanupClass ();
-
-    /**
      * Copy a single file. Will overwrite destination if it already exists.
      *
      * @author Sveinar Rasmussen

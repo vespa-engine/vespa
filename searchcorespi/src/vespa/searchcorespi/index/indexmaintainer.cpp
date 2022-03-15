@@ -490,7 +490,7 @@ IndexMaintainer::doneInitFlush(FlushArgs *args, IMemoryIndex::SP *new_index)
     args->old_absolute_id = _current_index_id + _last_fusion_id;
     args->old_source_list = _source_list;
     string selector_name = IndexDiskLayout::getSelectorFileName(getFlushDir(args->old_absolute_id));
-    args->flush_serial_num = _current_serial_num;
+    args->flush_serial_num = current_serial_num();
     {
         LockGuard lock(_index_update_lock);
         // Handover of extra memory indexes to flush
@@ -795,7 +795,7 @@ IndexMaintainer::doneSetSchema(SetSchemaArgs &args, IMemoryIndex::SP &newIndex)
     args._oldSourceList = _source_list; // Delay destruction
     uint32_t oldAbsoluteId = _current_index_id + _last_fusion_id;
     string selectorName = IndexDiskLayout::getSelectorFileName(getFlushDir(oldAbsoluteId));
-    SerialNum freezeSerialNum = _current_serial_num;
+    SerialNum freezeSerialNum = current_serial_num();
     bool dropEmptyLast = false;
     SaveInfo::UP saveInfo;
 
@@ -921,7 +921,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
 
         _flush_serial_num = IndexReadUtilities::readSerialNum(latest_index_dir);
         _lastFlushTime = search::FileKit::getModificationTime(latest_index_dir);
-        _current_serial_num = _flush_serial_num;
+        set_current_serial_num(_flush_serial_num);
         const string selector = IndexDiskLayout::getSelectorFileName(latest_index_dir);
         _selector = FixedSourceSelector::load(selector, _next_id - 1);
     } else {
@@ -941,7 +941,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
     assert(_current_index_id < ISourceSelector::SOURCE_LIMIT);
     _selector->setDefaultSource(_current_index_id);
     auto sourceList = loadDiskIndexes(spec, std::make_unique<IndexCollection>(_selector));
-    _current_index = operations.createMemoryIndex(_schema, *sourceList, _current_serial_num);
+    _current_index = operations.createMemoryIndex(_schema, *sourceList, current_serial_num());
     LOG(debug, "Index manager created with flushed serial num %" PRIu64, _flush_serial_num);
     sourceList->append(_current_index_id, _current_index);
     sourceList->setCurrentIndex(_current_index_id);
@@ -966,10 +966,10 @@ IndexMaintainer::initFlush(SerialNum serialNum, searchcorespi::FlushStats * stat
     assert(_ctx.getThreadingService().master().isCurrentThread()); // while flush engine scheduler thread waits
     {
         LockGuard lock(_index_update_lock);
-        _current_serial_num = std::max(_current_serial_num, serialNum);
+        set_current_serial_num(std::max(current_serial_num(), serialNum));
     }
 
-    IMemoryIndex::SP new_index(_operations.createMemoryIndex(getSchema(), *_current_index, _current_serial_num));
+    IMemoryIndex::SP new_index(_operations.createMemoryIndex(getSchema(), *_current_index, current_serial_num()));
     FlushArgs args;
     args.stats = stats;
     // Ensure that all index thread tasks accessing memory index have completed.
@@ -984,7 +984,7 @@ IndexMaintainer::initFlush(SerialNum serialNum, searchcorespi::FlushStats * stat
     if (args._skippedEmptyLast && args._extraIndexes.empty()) {
         // No memory index to flush, it was empty
         LockGuard lock(_state_lock);
-        _flush_serial_num = _current_serial_num;
+        _flush_serial_num = current_serial_num();
         _lastFlushTime = vespalib::system_clock::now();
         LOG(debug, "No memory index to flush. Update serial number and flush time to current: "
             "flushSerialNum(%" PRIu64 "), lastFlushTime(%f)",
@@ -1014,7 +1014,7 @@ IndexMaintainer::doFusion(SerialNum serialNum, std::shared_ptr<search::IFlushTok
     // XXX: Claims to have flushed memory index when starting fusion.
     {
         LockGuard lock(_index_update_lock);
-        _current_serial_num = std::max(_current_serial_num, serialNum);
+        set_current_serial_num(std::max(current_serial_num(), serialNum));
     }
 
     FusionSpec spec;
@@ -1234,7 +1234,7 @@ IndexMaintainer::putDocument(uint32_t lid, const Document &doc, SerialNum serial
     _selector->setSource(lid, _current_index_id);
     _source_list->setSource(lid);
     ++_source_selector_changes;
-    _current_serial_num = serialNum;
+    set_current_serial_num(serialNum);
 }
 
 void
@@ -1247,7 +1247,7 @@ IndexMaintainer::removeDocuments(LidVector lids, SerialNum serialNum)
         _source_list->setSource(lid);
     }
     _source_selector_changes += lids.size();
-    _current_serial_num = serialNum;
+    set_current_serial_num(serialNum);
     _current_index->removeDocuments(std::move(lids));
 }
 
@@ -1267,7 +1267,7 @@ IndexMaintainer::commit(vespalib::Gate& gate)
     // only triggered via commit_and_wait()
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
-    _current_index->commit(std::make_shared<vespalib::GateCallback>(gate), _current_serial_num);
+    _current_index->commit(std::make_shared<vespalib::GateCallback>(gate), current_serial_num());
 }
 
 void
@@ -1275,7 +1275,7 @@ IndexMaintainer::commit(SerialNum serialNum, OnWriteDoneType onWriteDone)
 {
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
-    _current_serial_num = serialNum;
+    set_current_serial_num(serialNum);
     _current_index->commit(onWriteDone, serialNum);
 }
 
@@ -1284,7 +1284,7 @@ IndexMaintainer::heartBeat(SerialNum serialNum)
 {
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
-    _current_serial_num = serialNum;
+    set_current_serial_num(serialNum);
 }
 
 void
@@ -1293,7 +1293,7 @@ IndexMaintainer::compactLidSpace(uint32_t lidLimit, SerialNum serialNum)
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LOG(info, "compactLidSpace(%u, %" PRIu64 ")", lidLimit, serialNum);
     LockGuard lock(_index_update_lock);
-    _current_serial_num = serialNum;
+    set_current_serial_num(serialNum);
     _selector->compactLidSpace(lidLimit);
 }
 
@@ -1313,7 +1313,7 @@ IndexMaintainer::setSchema(const Schema & schema, SerialNum serialNum)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     pruneRemovedFields(schema, serialNum);
-    IMemoryIndex::SP new_index(_operations.createMemoryIndex(schema, *_current_index, _current_serial_num));
+    IMemoryIndex::SP new_index(_operations.createMemoryIndex(schema, *_current_index, current_serial_num()));
     SetSchemaArgs args;
 
     args._newSchema = schema;

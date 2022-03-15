@@ -10,11 +10,7 @@
 #pragma once
 
 
-#include <vespa/fastos/types.h>
-
-class FastOS_ThreadPool;
-
-#include <mutex>
+#include "types.h"
 
 /**
  * FastOS application wrapper class.
@@ -125,14 +121,7 @@ class FastOS_ThreadPool;
 class FastOS_ApplicationInterface
 {
     friend int main (int argc, char **argv);
-
-private:
-    FastOS_ApplicationInterface(const FastOS_ApplicationInterface&);
-    FastOS_ApplicationInterface& operator=(const FastOS_ApplicationInterface&);
-
 protected:
-    FastOS_ThreadPool       *_threadPool;
-
     virtual bool PreThreadInit () { return true; }
 
 public:
@@ -140,7 +129,8 @@ public:
     char **_argv;
 
     FastOS_ApplicationInterface();
-
+    FastOS_ApplicationInterface(const FastOS_ApplicationInterface&) = delete;
+    FastOS_ApplicationInterface& operator=(const FastOS_ApplicationInterface&) = delete;
     virtual ~FastOS_ApplicationInterface();
 
     /**
@@ -182,8 +172,6 @@ public:
      * of @ref Init() and @ref Main().
      */
     virtual void Cleanup ();
-
-    FastOS_ThreadPool *GetThreadPool ();
 };
 
 

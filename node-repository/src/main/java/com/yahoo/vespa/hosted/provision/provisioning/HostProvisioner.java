@@ -23,12 +23,10 @@ public interface HostProvisioner {
         /** The host must be provisioned exclusively for the applicationId */
         exclusive,
 
-        /** The host must be provisioned to be shared with other applications. \
-         */
+        /** The host must be provisioned to be shared with other applications. */
         shared,
 
-        /** The client has no requirements on whether the host must be provisio\
-         ned exclusively or shared. */
+        /** The client has no requirements on whether the host must be provisioned exclusively or shared. */
         any
     }
 

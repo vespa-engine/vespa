@@ -3,11 +3,10 @@
 #pragma once
 
 #include "no_loaded_vector.h"
-#include "enum_store_loaders.h"
-#include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/attribute/changevector.h>
-#include <vespa/searchlib/attribute/i_enum_store.h>
-#include <vespa/searchlib/attribute/loadedenumvalue.h>
+#include "attributevector.h"
+#include "changevector.h"
+#include "i_enum_store.h"
+#include "loadedenumvalue.h"
 #include <vespa/vespalib/regex/regex.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
@@ -158,7 +157,7 @@ protected:
         template<typename WeightedT, typename Accessor, typename Collector>
         int32_t findNextMatch(vespalib::ConstArrayRef<WeightedT> w, int32_t elemId, const Accessor & ac, Collector & collector) const {
             for (uint32_t i(elemId); i < w.size(); i++) {
-                if (isMatch(ac.get(w[i].value()))) {
+                if (isMatch(ac.get(w[i].value_ref().load_acquire()))) {
                     collector.addWeight(w[i].weight());
                     return i;
                 }

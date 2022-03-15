@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/stringbase.h>
-#include <vespa/searchlib/attribute/enumattribute.h>
-#include <vespa/searchlib/attribute/enumstore.h>
-#include <vespa/searchlib/attribute/multienumattribute.h>
-#include <vespa/searchlib/attribute/multi_value_mapping.h>
+#include "stringbase.h"
+#include "enumattribute.h"
+#include "enumstore.h"
+#include "multienumattribute.h"
+#include "multi_value_mapping.h"
 #include "enumhintsearchcontext.h"
 #include "multivalue.h"
 
@@ -61,7 +61,7 @@ public:
         if (indices.size() == 0) {
             return NULL;
         } else {
-            return this->_enumStore.get_value(indices[0].value());
+            return this->_enumStore.get_value(indices[0].value_ref().load_acquire());
         }
     }
 
@@ -77,7 +77,7 @@ public:
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for(uint32_t i = 0, m = std::min(sz, valueCount); i < m; i++) {
-            buffer[i] = this->_enumStore.get_value(indices[i].value());
+            buffer[i] = this->_enumStore.get_value(indices[i].value_ref().load_acquire());
         }
         return valueCount;
     }
@@ -94,7 +94,7 @@ public:
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
-            buffer[i] = WeightedType(this->_enumStore.get_value(indices[i].value()), indices[i].weight());
+            buffer[i] = WeightedType(this->_enumStore.get_value(indices[i].value_ref().load_acquire()), indices[i].weight());
         }
         return valueCount;
     }
@@ -162,7 +162,7 @@ public:
 };
 
 
-using ArrayStringAttribute = MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::Value<IEnumStore::Index> >;
-using WeightedSetStringAttribute = MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<IEnumStore::Index> >;
+using ArrayStringAttribute = MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::Value<vespalib::datastore::AtomicEntryRef> >;
+using WeightedSetStringAttribute = MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef> >;
 
 }

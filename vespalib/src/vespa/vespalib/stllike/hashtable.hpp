@@ -2,7 +2,6 @@
 #pragma once
 
 #include "hashtable.h"
-#include <vespa/vespalib/util/array.hpp>
 #include <algorithm>
 
 namespace vespalib {
@@ -173,7 +172,7 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insertInternal(V && n
             const next_t p(_nodes[h].getNext());
             const next_t newIdx(_nodes.size());
             _nodes[h].setNext(newIdx);
-            new (_nodes.push_back_fast()) Node(std::forward<V>(node), p);
+            _nodes.template emplace_back(std::forward<V>(node), p);
             _count++;
             return insert_result(iterator(this, newIdx), true);
         } else {
@@ -197,7 +196,7 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::force_insert(Value &&
             const next_t p(_nodes[h].getNext());
             const next_t newIdx(_nodes.size());
             _nodes[h].setNext(newIdx);
-            new (_nodes.push_back_fast()) Node(std::move(value), p);
+            _nodes.template emplace_back(std::move(value), p);
             _count++;
         } else {
             resize(_nodes.capacity()*2);

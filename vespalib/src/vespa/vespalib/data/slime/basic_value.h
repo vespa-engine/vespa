@@ -3,7 +3,6 @@
 #pragma once
 
 #include "value.h"
-#include "memory.h"
 #include <vespa/vespalib/util/traits.h>
 
 namespace vespalib { class Stash; }

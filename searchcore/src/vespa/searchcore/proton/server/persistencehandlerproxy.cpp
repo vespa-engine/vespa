@@ -133,9 +133,9 @@ PersistenceHandlerProxy::handleListActiveBuckets(IBucketIdListResultHandler &res
 }
 
 void
-PersistenceHandlerProxy::handlePopulateActiveBuckets(document::BucketId::List &buckets, IGenericResultHandler &resultHandler)
+PersistenceHandlerProxy::handlePopulateActiveBuckets(document::BucketId::List buckets, IGenericResultHandler &resultHandler)
 {
-    _bucketHandler.handlePopulateActiveBuckets(buckets, resultHandler);
+    _bucketHandler.handlePopulateActiveBuckets(std::move(buckets), resultHandler);
 }
 
 } // namespace proton

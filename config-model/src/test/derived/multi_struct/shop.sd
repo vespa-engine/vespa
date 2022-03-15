@@ -1,0 +1,12 @@
+search shop {
+    document shop {
+        struct mystruct {
+            field one type string {}
+            field two type string {}
+            field three type string {}
+        }
+        field some_stuff type map<string, mystruct> {
+            indexing: summary
+        }
+    }
+}

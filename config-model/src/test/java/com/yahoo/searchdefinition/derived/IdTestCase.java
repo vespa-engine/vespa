@@ -29,7 +29,7 @@ public class IdTestCase extends AbstractExportingTestCase {
         Schema schema = new Schema("test", MockApplicationPackage.createEmpty());
         SDDocumentType document = new SDDocumentType("test");
         schema.addDocument(document);
-        SDField uri = new SDField("URI", DataType.URI);
+        SDField uri = new SDField(document, "URI", DataType.URI);
         uri.parseIndexingScript("{ summary | index }");
         document.addField(uri);
 

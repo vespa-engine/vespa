@@ -18,7 +18,6 @@ import com.yahoo.searchdefinition.Schema;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -37,8 +36,8 @@ import java.util.Set;
 public class SDDocumentType implements Cloneable, Serializable {
 
     public static final SDDocumentType VESPA_DOCUMENT;
-    private final Map<DataTypeName, SDDocumentType> inheritedTypes = new HashMap<>();
-    private final Map<NewDocumentType.Name, SDDocumentType> ownedTypes = new HashMap<>();
+    private final Map<DataTypeName, SDDocumentType> inheritedTypes = new LinkedHashMap<>();
+    private final Map<NewDocumentType.Name, SDDocumentType> ownedTypes = new LinkedHashMap<>();
     private final AnnotationTypeRegistry annotationTypes = new AnnotationTypeRegistry();
     private DocumentType docType;    
     private DataType structType;
@@ -269,8 +268,8 @@ public class SDDocumentType implements Cloneable, Serializable {
         return field;
     }
 
-    public Field addField(String string, DataType dataType, boolean header, int code) {
-        SDField field = new SDField(this, string, code, dataType, header);
+    public Field addField(String fName, DataType dataType, boolean header, int code) {
+        SDField field = new SDField(this, fName, code, dataType);
         addField(field);
         return field;
     }

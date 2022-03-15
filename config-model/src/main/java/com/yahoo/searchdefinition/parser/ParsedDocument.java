@@ -65,8 +65,7 @@ public class ParsedDocument extends ParsedBlock {
         String annName = annotation.name();
         verifyThat(! docAnnotations.containsKey(annName), "already has annotation", annName);
         docAnnotations.put(annName, annotation);
-        annotation.tagOwner(name());
-        annotation.getStruct().ifPresent(s -> s.tagOwner(name()));
+        annotation.tagOwner(this);
     }
 
     public String toString() { return "document " + name(); }

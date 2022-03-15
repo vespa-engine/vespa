@@ -192,6 +192,8 @@ public class ConfigFileFormat implements SlimeFormat, ObjectTraverser {
     }
 
     @Override
+    @Deprecated(since = "7", forRemoval = true)
+    @SuppressWarnings("removal")
     public void decode(InputStream is, Slime slime) throws IOException {
         throw new UnsupportedOperationException("decode is not supported");
     }

@@ -1,12 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "enumhintsearchcontext.h"
+#include "i_enum_store_dictionary.h"
 #include <vespa/searchlib/queryeval/emptysearch.h>
+#include <vespa/vespalib/datastore/i_unique_store_dictionary_read_snapshot.h>
+
 
 namespace search::attribute {
 
 using queryeval::SearchIterator;
-using vespalib::btree::BTreeNode;
 using fef::TermFieldMatchData;
 
 EnumHintSearchContext::

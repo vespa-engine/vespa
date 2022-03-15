@@ -33,7 +33,9 @@ import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -122,6 +124,8 @@ public class ConvertSchemaCollection {
         typeConverter.convert(true);
     }
 
+    private Map<String, SDDocumentType> convertedDocuments = new LinkedHashMap();
+
     public List<Schema> convertToSchemas() {
         typeConverter = new ConvertParsedTypes(orderedInput, docMan);
         typeConverter.convert(false);
@@ -145,34 +149,21 @@ public class ConvertSchemaCollection {
         return resultList;
     }
 
-    private void convertAnnotation(Schema schema, SDDocumentType document, ParsedAnnotation parsed, ConvertParsedFields fieldConverter) {
-        var type = new SDAnnotationType(parsed.name());
-        for (String inherit : parsed.getInherited()) {
-            type.inherit(inherit);
-        }
-        var payload = parsed.getStruct();
-        if (payload.isPresent()) {
-            var struct = fieldConverter.convertStructDeclaration(schema, payload.get());
-            type = new SDAnnotationType(parsed.name(), struct, type.getInherits());
-            // WTF?
-            struct.setStruct(null);
-        }
-        document.addAnnotation(type);
-    }
-
     private void convertDocument(Schema schema, ParsedDocument parsed,
                                  ConvertParsedFields fieldConverter)
     {
         SDDocumentType document = new SDDocumentType(parsed.name());
         for (String inherit : parsed.getInherited()) {
-            document.inherit(new DataTypeName(inherit));
+            var parent = convertedDocuments.get(inherit);
+            assert(parent != null);
+            document.inherit(parent);
         }
         for (var struct : parsed.getStructs()) {
-            var structProxy = fieldConverter.convertStructDeclaration(schema, struct);
+            var structProxy = fieldConverter.convertStructDeclaration(schema, document, struct);
             document.addType(structProxy);
         }
         for (var annotation : parsed.getAnnotations()) {
-            convertAnnotation(schema, document, annotation, fieldConverter);
+            fieldConverter.convertAnnotation(schema, document, annotation);
         }
         for (var field : parsed.getFields()) {
             var sdf = fieldConverter.convertDocumentField(schema, document, field);
@@ -180,6 +171,7 @@ public class ConvertSchemaCollection {
                 document.setFieldId(sdf, field.idOverride());
             }
         }
+        convertedDocuments.put(parsed.name(), document);
         schema.addDocument(document);
     }
 
@@ -239,7 +231,7 @@ public class ConvertSchemaCollection {
         if (parsed.hasStemming()) {
             schema.setStemming(parsed.getStemming());
         }
-        schema.enableRawAsBase64(parsed.getRawAsBase64());
+        parsed.getRawAsBase64().ifPresent(value -> schema.enableRawAsBase64(value));
         var typeContext = typeConverter.makeContext(parsed.getDocument());
         var fieldConverter = new ConvertParsedFields(typeContext);
         convertDocument(schema, parsed.getDocument(), fieldConverter);
@@ -257,6 +249,9 @@ public class ConvertSchemaCollection {
         }
         for (var fieldSet : parsed.getFieldSets()) {
             convertFieldSet(schema, fieldSet);
+        }
+        if (documentsOnly) {
+            return; // skip ranking-only content, not used for document type generation
         }
         for (var rankingConstant : parsed.getRankingConstants()) {
             schema.rankingConstants().add(rankingConstant);

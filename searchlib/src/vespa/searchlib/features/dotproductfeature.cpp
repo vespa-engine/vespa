@@ -193,7 +193,7 @@ DotProductExecutorByEnum::execute(uint32_t docId) {
     const IWeightedIndexVector::WeightedIndex *values(nullptr);
     uint32_t sz = _attribute->getEnumHandles(docId, values);
     for (size_t i = 0; i < sz; ++i) {
-        auto itr = _queryVector.getDimMap().find(values[i].value().ref());
+        auto itr = _queryVector.getDimMap().find(values[i].value_ref().load_relaxed().ref());
         if (itr != _end) {
             val += values[i].weight() * itr->second;
         }
@@ -213,7 +213,7 @@ public:
         const IWeightedIndexVector::WeightedIndex *values(nullptr);
         uint32_t sz = _attribute->getEnumHandles(docId, values);
         for (size_t i = 0; i < sz; ++i) {
-            if (values[i].value().ref() == _key) {
+            if (values[i].value_ref().load_relaxed().ref() == _key) {
                 outputs().set_number(0, values[i].weight()*_value);
                 return;
             }

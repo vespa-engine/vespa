@@ -607,11 +607,7 @@ public class JobController {
 
     private void prunePackages(TenantAndApplicationId id) {
         controller.applications().lockApplicationIfPresent(id, application -> {
-            application.get().productionDeployments().values().stream()
-                       .flatMap(List::stream)
-                       .map(Deployment::applicationVersion)
-                       .filter(version -> ! version.isUnknown() && ! version.isDeployedDirectly())
-                       .min(naturalOrder())
+            application.get().oldestDeployedApplication()
                        .ifPresent(oldestDeployed -> {
                            controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed);
                            controller.applications().applicationStore().pruneTesters(id.tenant(), id.application(), oldestDeployed);

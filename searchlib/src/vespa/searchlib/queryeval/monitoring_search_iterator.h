@@ -5,8 +5,7 @@
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <stack>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * Search iterator that monitors an underlying search iterator
@@ -122,6 +121,4 @@ public:
     const Stats &getStats() const { return _stats; }
 };
 
-} // namespace queryeval
-} // namespace search
-
+}

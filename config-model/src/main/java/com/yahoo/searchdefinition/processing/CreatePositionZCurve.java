@@ -10,6 +10,7 @@ import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.GeoPos;
+import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
@@ -35,8 +36,11 @@ import java.util.logging.Level;
  */
 public class CreatePositionZCurve extends Processor {
 
+    private final SDDocumentType repo;
+
     public CreatePositionZCurve(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
         super(schema, deployLogger, rankProfileRegistry, queryProfiles);
+        this.repo = schema.getDocument();
     }
 
     private boolean useV8GeoPositions = false;
@@ -105,7 +109,7 @@ public class CreatePositionZCurve extends Processor {
                                                     "' already created.");
         }
         boolean isArray = inputField.getDataType() instanceof ArrayDataType;
-        SDField field = new SDField(fieldName, isArray ? DataType.getArray(DataType.LONG) : DataType.LONG);
+        SDField field = new SDField(repo, fieldName, isArray ? DataType.getArray(DataType.LONG) : DataType.LONG);
         Attribute attribute = new Attribute(fieldName, Attribute.Type.LONG, isArray ? Attribute.CollectionType.ARRAY :
                                                                             Attribute.CollectionType.SINGLE);
         attribute.setPosition(true);

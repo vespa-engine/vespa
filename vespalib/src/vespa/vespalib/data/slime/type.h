@@ -15,10 +15,10 @@ private:
     uint32_t _id;
 
 protected:
-    Type(uint32_t id) : _id(id) {}
+    Type(uint32_t id) noexcept : _id(id) {}
 
 public:
-    uint32_t getId() const { return _id; }
+    uint32_t getId() const noexcept { return _id; }
 };
 
 /**

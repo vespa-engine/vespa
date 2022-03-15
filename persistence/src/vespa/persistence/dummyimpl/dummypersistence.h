@@ -138,12 +138,12 @@ class DummyPersistence : public AbstractPersistenceProvider
 {
 public:
     DummyPersistence(const std::shared_ptr<const document::DocumentTypeRepo>& repo);
-    ~DummyPersistence();
+    ~DummyPersistence() override;
 
     Result initialize() override;
     BucketIdListResult listBuckets(BucketSpace bucketSpace) const override;
 
-    void setModifiedBuckets(const BucketIdListResult::List& result);
+    void setModifiedBuckets(BucketIdListResult::List result);
 
     // Important: any subsequent mutations to the bucket set in fake_info will reset
     // the bucket info due to implicit recalculation of bucket info.

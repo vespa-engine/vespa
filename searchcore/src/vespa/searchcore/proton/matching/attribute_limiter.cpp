@@ -34,6 +34,18 @@ AttributeLimiter::AttributeLimiter(Searchable &searchable_attributes,
 {
 }
 
+bool
+AttributeLimiter::was_used() const
+{
+    return (_estimatedHits.load(std::memory_order_relaxed) >= 0);
+}
+
+ssize_t
+AttributeLimiter::getEstimatedHits() const
+{
+    return _estimatedHits.load(std::memory_order_relaxed);
+}
+
 AttributeLimiter::~AttributeLimiter() = default;
 
 namespace {
@@ -78,7 +90,7 @@ AttributeLimiter::create_search(size_t want_hits, size_t max_group_size, bool st
         field.add(FieldSpec(_attribute_name, my_field_id, my_handle));
         _blueprint = _searchable_attributes.createBlueprint(_requestContext, field, node);
         _blueprint->fetchPostings(ExecuteInfo::create(strictSearch));
-        _estimatedHits = _blueprint->getState().estimate().estHits;
+        _estimatedHits.store(_blueprint->getState().estimate().estHits, std::memory_order_relaxed);
         _blueprint->freeze();
     }
     _match_datas.push_back(layout.createMatchData());

@@ -8,7 +8,6 @@
 #include <vespa/vespalib/util/stash.h>
 #include <atomic>
 
-class FNETConnection;
 class FNET_Packet;
 
 class FRT_IAbortHandler

@@ -3,39 +3,38 @@
 #pragma once
 
 #include "value_factory.h"
-#include "basic_value.h"
-#include <vespa/vespalib/util/stash.h>
+#include <vespa/vespalib/data/memory.h>
 
 namespace vespalib::slime {
 
 struct BoolValueFactory final : public ValueFactory {
     bool input;
     BoolValueFactory(bool in) noexcept : input(in) {}
-    Value *create(Stash & stash) const override { return & stash.create<BasicBoolValue>(input); }
+    Value *create(Stash & stash) const override;
 };
 
 struct LongValueFactory final : public ValueFactory {
     int64_t input;
     LongValueFactory(int64_t in) noexcept : input(in) {}
-    Value *create(Stash & stash) const override { return & stash.create<BasicLongValue>(input); }
+    Value *create(Stash & stash) const override;
 };
 
 struct DoubleValueFactory final : public ValueFactory {
     double input;
     DoubleValueFactory(double in) noexcept : input(in) {}
-    Value *create(Stash & stash) const override { return & stash.create<BasicDoubleValue>(input); }
+    Value *create(Stash & stash) const override;
 };
 
 struct StringValueFactory final : public ValueFactory {
     Memory input;
     StringValueFactory(Memory in) noexcept : input(in) {}
-    Value *create(Stash & stash) const override { return & stash.create<BasicStringValue>(input, stash); }
+    Value *create(Stash & stash) const override;
 };
 
 struct DataValueFactory final : public ValueFactory {
     Memory input;
     DataValueFactory(Memory in) noexcept : input(in) {}
-    Value *create(Stash & stash) const override { return & stash.create<BasicDataValue>(input, stash); }
+    Value *create(Stash & stash) const override;
 };
 
 } // namespace vespalib::slime

@@ -1,6 +1,4 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("featureoverride_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/fef/fef.h>
 
@@ -9,11 +7,23 @@ LOG_SETUP("featureoverride_test");
 #include <vespa/searchlib/fef/test/plugin/double.h>
 #include <vespa/searchlib/fef/test/plugin/sum.h>
 #include <vespa/searchlib/features/valuefeature.h>
+#include <vespa/searchlib/features/rankingexpressionfeature.h>
+#include <vespa/searchlib/fef/test/test_features.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/eval/value_codec.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/issue.h>
 
-using namespace search::fef;
-using namespace search::fef::test;
 using namespace search::features;
+using namespace search::fef::test;
+using namespace search::fef;
 using search::feature_t;
+using vespalib::Issue;
+using vespalib::eval::TensorSpec;
+using vespalib::eval::FastValueBuilderFactory;
+using vespalib::make_string_short::fmt;
+
 
 typedef Blueprint::SP       BPSP;
 
@@ -50,7 +60,7 @@ TEST_F("test decorator - single override", Fixture)
 {
     FeatureExecutor *fe = &f.createValueExecutor();
     vespalib::Stash &stash = f.stash;
-    fe = &stash.create<FeatureOverrider>(*fe, 1, 50.0);
+    fe = &stash.create<FeatureOverrider>(*fe, 1, 50.0, nullptr);
     f.add(fe, 3).run();
     EXPECT_EQUAL(fe->outputs().size(), 3u);
 
@@ -63,8 +73,8 @@ TEST_F("test decorator - multiple overrides", Fixture)
 {
     FeatureExecutor *fe = &f.createValueExecutor();
     vespalib::Stash &stash = f.stash;
-    fe = &stash.create<FeatureOverrider>(*fe, 0, 50.0);
-    fe = &stash.create<FeatureOverrider>(*fe, 2, 100.0);
+    fe = &stash.create<FeatureOverrider>(*fe, 0, 50.0, nullptr);
+    fe = &stash.create<FeatureOverrider>(*fe, 2, 100.0, nullptr);
     f.add(fe, 3).run();
     EXPECT_EQUAL(fe->outputs().size(), 3u);
 
@@ -77,7 +87,7 @@ TEST_F("test decorator - non-existing override", Fixture)
 {
     FeatureExecutor *fe = &f.createValueExecutor();
     vespalib::Stash &stash = f.stash;
-    fe = &stash.create<FeatureOverrider>(*fe, 1000, 50.0);
+    fe = &stash.create<FeatureOverrider>(*fe, 1000, 50.0, nullptr);
     f.add(fe, 3).run();
     EXPECT_EQUAL(fe->outputs().size(), 3u);
 
@@ -90,12 +100,12 @@ TEST_F("test decorator - transitive override", Fixture)
 {
     FeatureExecutor *fe = &f.createValueExecutor();
     vespalib::Stash &stash = f.stash;
-    fe = &stash.create<FeatureOverrider>(*fe, 1, 50.0);
+    fe = &stash.create<FeatureOverrider>(*fe, 1, 50.0, nullptr);
     f.add(fe, 3);
     EXPECT_EQUAL(fe->outputs().size(), 3u);
 
     FeatureExecutor *fe2 = &stash.create<DoubleExecutor>(3);
-    fe2 = &stash.create<FeatureOverrider>(*fe2, 2, 10.0);
+    fe2 = &stash.create<FeatureOverrider>(*fe2, 2, 10.0, nullptr);
     auto inputs = stash.create_array<LazyValue>(3, nullptr);
     inputs[0] = LazyValue(fe->outputs().get_raw(0), fe);
     inputs[1] = LazyValue(fe->outputs().get_raw(1), fe);
@@ -168,5 +178,124 @@ TEST("test overrides")
     EXPECT_APPROX(res["double(value(3))"],                       6.0, 1e-6);
     EXPECT_APPROX(res["double(value(3)).0"],                     6.0, 1e-6);
 }
+
+//-----------------------------------------------------------------------------
+
+struct SimpleRankFixture {
+    BlueprintFactory factory;
+    IndexEnvironment indexEnv;
+    BlueprintResolver::SP resolver;
+    Properties overrides;
+    MatchData::UP match_data;
+    RankProgram program;
+    static vespalib::string expr_feature(const vespalib::string &name) {
+        return fmt("rankingExpression(%s)", name.c_str());
+    }
+    SimpleRankFixture()
+      : factory(), indexEnv(), resolver(new BlueprintResolver(factory, indexEnv)),
+        overrides(), match_data(), program(resolver)
+    {
+        factory.addPrototype(std::make_shared<DocidBlueprint>());
+        factory.addPrototype(std::make_shared<RankingExpressionBlueprint>());
+    }
+    ~SimpleRankFixture();
+    void add_expr(const vespalib::string &name, const vespalib::string &expr) {
+        vespalib::string feature_name = expr_feature(name);
+        vespalib::string expr_name = feature_name + ".rankingScript";
+        indexEnv.getProperties().add(expr_name, expr);
+    }
+    void add_override(const vespalib::string &name, const TensorSpec &spec) {
+        vespalib::nbostream data;
+        auto tensor = vespalib::eval::value_from_spec(spec, FastValueBuilderFactory::get());
+        vespalib::eval::encode_value(*tensor, data);
+        overrides.add(name, vespalib::stringref(data.peek(), data.size()));
+    }
+    void add_override(const vespalib::string &name, const vespalib::string &str) {
+        overrides.add(name, str);
+    }
+    bool try_compile(const vespalib::string &seed) {
+        resolver->addSeed(seed);
+        if (!resolver->compile()) {
+            return false;
+        }
+        MatchDataLayout mdl;
+        QueryEnvironment queryEnv(&indexEnv);
+        match_data = mdl.createMatchData();
+        program.setup(*match_data, queryEnv, overrides);
+        return true;
+    }
+    void compile(const vespalib::string &seed) {
+        ASSERT_TRUE(try_compile(seed));
+    }
+    TensorSpec get(uint32_t docid) {
+        auto result = program.get_seeds(false);
+        ASSERT_EQUAL(1u, result.num_features());
+        return TensorSpec::from_value(result.resolve(0).as_object(docid));
+    }
+};
+SimpleRankFixture::~SimpleRankFixture() = default;
+
+TensorSpec from_expr(const vespalib::string &expr) {
+    auto result = TensorSpec::from_expr(expr);
+    ASSERT_TRUE(result.type() != "error");
+    return result;
+}
+
+struct MyIssues : Issue::Handler {
+    std::vector<vespalib::string> list;
+    Issue::Binding capture;
+    MyIssues() : list(), capture(Issue::listen(*this)) {}
+    void handle(const Issue &issue) override { list.push_back(issue.message()); }
+};
+
+//-----------------------------------------------------------------------------
+
+TEST_F("require expression without override works", SimpleRankFixture) {
+    auto expect = from_expr("tensor<float>(x[3]):[1,2,3]");
+    f1.add_expr("foo", "tensor<float>(x[3]):[1,2,3]");
+    f1.compile(f1.expr_feature("foo"));
+    EXPECT_EQUAL(f1.get(1), expect);
+}
+
+TEST_F("require that const binary override works", SimpleRankFixture) {
+    auto expect = from_expr("tensor<float>(x[3]):[5,6,7]");
+    f1.add_expr("foo", "tensor<float>(x[3]):[1,2,3]");
+    f1.add_override(f1.expr_feature("foo"), expect);
+    f1.compile(f1.expr_feature("foo"));
+    EXPECT_EQUAL(f1.get(1), expect);
+}
+
+TEST_F("require that non-const binary override works", SimpleRankFixture) {
+    auto expect = from_expr("tensor<float>(x[3]):[5,6,7]");
+    f1.add_expr("foo", "tensor<float>(x[3]):[docid,2,3]");
+    f1.add_override(f1.expr_feature("foo"), expect);
+    f1.compile(f1.expr_feature("foo"));
+    EXPECT_EQUAL(f1.get(1), expect);
+}
+
+TEST_F("require that wrong type binary override is ignored", SimpleRankFixture) {
+    MyIssues issues;
+    auto expect = from_expr("tensor<float>(x[3]):[1,2,3]");
+    auto other = from_expr("tensor(x[3]):[5,6,7]");
+    f1.add_expr("foo", "tensor<float>(x[3]):[1,2,3]");
+    f1.add_override(f1.expr_feature("foo"), other);
+    f1.compile(f1.expr_feature("foo"));
+    ASSERT_EQUAL(issues.list.size(), 1u);
+    EXPECT_LESS(issues.list[0].find("has invalid type"), issues.list[0].size());
+    fprintf(stderr, "issue: %s\n", issues.list[0].c_str());
+}
+
+TEST_F("require that bad format binary override is ignored", SimpleRankFixture) {
+    MyIssues issues;
+    auto expect = from_expr("tensor<float>(x[3]):[1,2,3]");
+    f1.add_expr("foo", "tensor<float>(x[3]):[1,2,3]");
+    f1.add_override(f1.expr_feature("foo"), vespalib::string("bad format"));
+    f1.compile(f1.expr_feature("foo"));
+    ASSERT_EQUAL(issues.list.size(), 1u);
+    EXPECT_LESS(issues.list[0].find("has invalid format"), issues.list[0].size());
+    fprintf(stderr, "issue: %s\n", issues.list[0].c_str());
+}
+
+//-----------------------------------------------------------------------------
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -4,7 +4,6 @@
 
 #include "nativerankfeature.h"
 #include "queryterm.h"
-#include <vespa/fastos/dynamiclibrary.h>
 
 namespace search::features {
 

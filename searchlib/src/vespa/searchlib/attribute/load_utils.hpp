@@ -11,12 +11,14 @@ template <class MvMapping, class Saver>
 uint32_t
 loadFromEnumeratedMultiValue(MvMapping & mapping,
                              ReaderBase & attrReader,
-                             vespalib::ConstArrayRef<typename MvMapping::MultiValueType::ValueType> enumValueToValueMap,
+                             vespalib::ConstArrayRef<atomic_utils::NonAtomicValue_t<typename MvMapping::MultiValueType::ValueType>> enumValueToValueMap,
                              vespalib::ConstArrayRef<uint32_t> enum_value_remapping,
                              Saver saver)
 {
     mapping.prepareLoadFromMultiValue();
     using MultiValueType = typename MvMapping::MultiValueType;
+    using ValueType = typename MultiValueType::ValueType;
+    using NonAtomicValueType = atomic_utils::NonAtomicValue_t<ValueType>;
     std::vector<MultiValueType> indices;
     uint32_t numDocs = attrReader.getNumIdx() - 1;
     uint64_t numValues = attrReader.getEnumCount();
@@ -35,7 +37,11 @@ loadFromEnumeratedMultiValue(MvMapping & mapping,
                 enumValue = enum_value_remapping[enumValue];
             }
             int32_t weight = MultiValueType::_hasWeight ? attrReader.getNextWeight() : 1;
-            indices.emplace_back(enumValueToValueMap[enumValue], weight);
+            if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
+                indices.emplace_back(enumValueToValueMap[enumValue], weight);
+            } else {
+                indices.emplace_back(ValueType(enumValueToValueMap[enumValue]), weight);
+            }
             saver.save(enumValue, doc, weight);
         }
         if (maxValueCount < indices.size()) {
@@ -54,12 +60,12 @@ void
 loadFromEnumeratedSingleValue(Vector &vector,
                               vespalib::GenerationHolder &genHolder,
                               ReaderBase &attrReader,
-                              vespalib::ConstArrayRef<load_utils::NonAtomicValue_t<typename Vector::ValueType>> enumValueToValueMap,
+                              vespalib::ConstArrayRef<atomic_utils::NonAtomicValue_t<typename Vector::ValueType>> enumValueToValueMap,
                               vespalib::ConstArrayRef<uint32_t> enum_value_remapping,
                               Saver saver)
 {
     using ValueType = typename Vector::ValueType;
-    using NonAtomicValueType = load_utils::NonAtomicValue_t<ValueType>;
+    using NonAtomicValueType = atomic_utils::NonAtomicValue_t<ValueType>;
     uint32_t numDocs = attrReader.getEnumCount();
     genHolder.clearHoldLists();
     vector.reset();

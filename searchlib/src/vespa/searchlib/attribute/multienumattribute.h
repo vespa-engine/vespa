@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "enum_store_loaders.h"
 #include "i_enum_store.h"
 #include "loadedenumvalue.h"
 #include "multivalue.h"
@@ -14,7 +13,7 @@ namespace search {
 class IWeightedIndexVector {
 public:
     virtual ~IWeightedIndexVector() = default;
-    using WeightedIndex = multivalue::WeightedValue<IEnumStore::Index>;
+    using WeightedIndex = multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>;
     /**
      * Provides a reference to the underlying enum/weight pairs.
      * This method should only be invoked if @ref getCollectionType(docId) returns CollectionType::WEIGHTED_SET.
@@ -40,6 +39,7 @@ class MultiValueEnumAttribute : public MultiValueAttribute<B, M>,
                                 public IWeightedIndexVector
 {
 protected:
+    using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using Change = typename B::BaseClass::Change;
     using DocId = typename B::BaseClass::DocId;
     using EnumHandle = typename B::BaseClass::EnumHandle;
@@ -92,7 +92,7 @@ public:
         if (indices.size() == 0) {
             return std::numeric_limits<uint32_t>::max();
         } else {
-            return indices[0].value().ref();
+            return indices[0].value_ref().load_acquire().ref();
         }
     }
 
@@ -100,7 +100,7 @@ public:
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
-            e[i] = indices[i].value().ref();
+            e[i] = indices[i].value_ref().load_acquire().ref();
         }
         return valueCount;
     }
@@ -108,7 +108,7 @@ public:
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
-            e[i] = WeightedEnum(indices[i].value().ref(), indices[i].weight());
+            e[i] = WeightedEnum(indices[i].value_ref().load_acquire().ref(), indices[i].weight());
         }
         return valueCount;
     }

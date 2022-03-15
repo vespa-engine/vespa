@@ -4,6 +4,7 @@
 #include "load_utils.h"
 #include "readerbase.h"
 #include "stringbase.h"
+#include "enum_store_loaders.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/searchlib/util/fileutil.hpp>

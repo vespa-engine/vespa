@@ -191,6 +191,7 @@ public class SessionPreparer {
             this.containerEndpoints = readEndpointsIfNull(params.containerEndpoints());
             this.athenzDomain = params.athenzDomain();
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
+                                                              vespaVersion,
                                                               configserverConfig,
                                                               zone,
                                                               Set.copyOf(containerEndpoints),

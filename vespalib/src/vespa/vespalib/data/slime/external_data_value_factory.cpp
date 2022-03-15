@@ -3,8 +3,11 @@
 #include "external_data_value_factory.h"
 #include "external_data_value.h"
 #include "basic_value.h"
+#include <vespa/vespalib/util/stash.h>
 
 namespace vespalib::slime {
+
+ExternalDataValueFactory::~ExternalDataValueFactory() = default;
 
 Value *
 ExternalDataValueFactory::create(Stash &stash) const

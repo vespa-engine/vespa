@@ -26,7 +26,7 @@ search video {
          indexing: index|summary
       }
       field year type int {
-         indexing: attribute|index|summary
+         indexing: attribute|summary
       }
    }
 

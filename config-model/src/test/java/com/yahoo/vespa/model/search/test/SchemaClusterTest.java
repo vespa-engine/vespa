@@ -42,7 +42,7 @@ public class SchemaClusterTest {
         // sd1
         SDDocumentType sdt1 = new SDDocumentType("s1");
         Schema schema1 = new Schema("s1", MockApplicationPackage.createEmpty());
-        SDField f1 = new SDField("f1", DataType.STRING);
+        SDField f1 = new SDField(sdt1, "f1", DataType.STRING);
         f1.addAttribute(new Attribute("f1", DataType.STRING));
         f1.setIndexingScript(new ScriptExpression(new StatementExpression(new AttributeExpression("f1"))));
         sdt1.addField(f1);
@@ -51,7 +51,7 @@ public class SchemaClusterTest {
         // sd2
         SDDocumentType sdt2 = new SDDocumentType("s2");
         Schema schema2 = new Schema("s2", MockApplicationPackage.createEmpty());
-        SDField f2=new SDField("f2", DataType.STRING);
+        SDField f2=new SDField(sdt2, "f2", DataType.STRING);
         f2.addAttribute(new Attribute("f2", DataType.STRING));
         f2.setIndexingScript(new ScriptExpression(new StatementExpression(new AttributeExpression("f2"))));
         sdt2.addField(f2);

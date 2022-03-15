@@ -42,6 +42,13 @@ public class DocumentTypes {
         }
     }
 
+    static private <T> List<T> sortedList(Collection<T> unsorted, Comparator<T> cmp) {
+        var list = new ArrayList<T>();
+        list.addAll(unsorted);
+        list.sort(cmp);
+        return list;
+    }
+
     private void buildConfig(NewDocumentType documentType, DocumenttypesConfig.Builder builder) {
         if (documentType == VespaDocumentType.INSTANCE) {
             return;
@@ -56,10 +63,10 @@ public class DocumentTypes {
             db.inherits(new DocumenttypesConfig.Documenttype.Inherits.Builder().id(inherited.getId()));
             markAsBuilt(built, inherited.getAllTypes());
         }
-        for (DataType dt : documentType.getTypes()) {
+        for (DataType dt : sortedList(documentType.getTypes(), (a,b) -> a.getName().compareTo(b.getName()))) {
             buildConfig(dt, db, built);
         }
-        for (AnnotationType annotation : documentType.getAnnotations()) {
+        for (AnnotationType annotation : sortedList(documentType.getAnnotations(), (a,b) -> a.getName().compareTo(b.getName()))) {
             DocumenttypesConfig.Documenttype.Annotationtype.Builder atb = new DocumenttypesConfig.Documenttype.Annotationtype.Builder();
             db.annotationtype(atb);
             buildConfig(annotation, atb);

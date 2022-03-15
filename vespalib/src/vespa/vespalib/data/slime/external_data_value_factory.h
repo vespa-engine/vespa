@@ -3,17 +3,19 @@
 #pragma once
 
 #include "value_factory.h"
-#include "external_memory.h"
-#include <vespa/vespalib/util/stash.h>
+#include <memory>
 
 namespace vespalib::slime {
+
+class ExternalMemory;
 
 /**
  * Value factory for data values using external memory.
  **/
 struct ExternalDataValueFactory : public ValueFactory {
-    mutable ExternalMemory::UP input;
-    ExternalDataValueFactory(ExternalMemory::UP in) : input(std::move(in)) {}
+    mutable std::unique_ptr<ExternalMemory> input;
+    ExternalDataValueFactory(std::unique_ptr<ExternalMemory> in) : input(std::move(in)) {}
+    ~ExternalDataValueFactory() override;
     Value *create(Stash &stash) const override;
 };
 

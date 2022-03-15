@@ -1,0 +1,15 @@
+schema foo {
+    document foo {
+        field myref type reference<parent> {
+            indexing: attribute
+        }
+        field foo type string {
+            indexing: attribute | summary
+        }
+    }
+    import field myref.x as myx {}
+    document-summary small {
+        summary myx type int {}
+        summary foo type string {}
+    }
+}

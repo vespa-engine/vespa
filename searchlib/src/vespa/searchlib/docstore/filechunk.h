@@ -8,6 +8,7 @@
 #include "randread.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/memoryusage.h>

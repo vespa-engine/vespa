@@ -15,12 +15,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 class XGBoostParser {
 
-    private List<XGBoostTree> xgboostTrees;
+    private final List<XGBoostTree> xgboostTrees;
 
     /**
      * Constructor stores parsed JSON trees.
      *
-     * @param filePath XGBoost JSON output file.
+     * @param filePath XGBoost JSON intput file.
      * @throws JsonProcessingException Fails JSON parsing.
      * @throws IOException             Fails file reading.
      */

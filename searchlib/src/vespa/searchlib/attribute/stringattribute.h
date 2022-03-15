@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/stringbase.h>
-#include <vespa/searchlib/attribute/enumstore.h>
+#include "stringbase.h"
+#include "enumstore.h"
 
 namespace search {
 

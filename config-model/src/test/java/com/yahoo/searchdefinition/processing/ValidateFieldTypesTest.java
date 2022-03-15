@@ -65,8 +65,8 @@ public class ValidateFieldTypesTest {
     }
 
     private static ImportedFields createSingleImportedField(String fieldName, DataType dataType) {
-        Schema targetSchema = createSearch("target_doc");
-        SDField targetField = new SDField("target_field", dataType);
+        Schema targetSchema = createSearchWithDocument("target_doc");
+        SDField targetField = new SDField(targetSchema.getDocument(), "target_field", dataType);
         DocumentReference documentReference = new DocumentReference(new Field("reference_field"), targetSchema);
         ImportedField importedField = new ImportedSimpleField(fieldName, documentReference, targetField);
         return new ImportedFields(Collections.singletonMap(fieldName, importedField));

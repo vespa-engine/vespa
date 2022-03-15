@@ -3,8 +3,7 @@
 
 #include "monitoring_search_iterator.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * Search iterator that dumps the search stats of the underlying
@@ -29,6 +28,4 @@ public:
     }
 };
 
-} // namespace queryeval
-} // namespace search
-
+}

@@ -5,8 +5,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include "andsearch.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * The near search base implements the common logic of the near and o-near search.
@@ -145,6 +144,4 @@ public:
 
 };
 
-} // queryeval
-} // search
-
+}

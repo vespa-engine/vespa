@@ -233,7 +233,7 @@ public:
     bucketdb::BucketDeltaPair handleSplit(const bucketdb::SplitBucketSession &session) override;
     bucketdb::BucketDeltaPair handleJoin(const bucketdb::JoinBucketsSession &session) override;
     void setBucketState(const BucketId &bucketId, bool active) override;
-    void populateActiveBuckets(const BucketId::List &buckets) override;
+    void populateActiveBuckets(BucketId::List buckets) override;
     ConstIterator beginFrozen() const;
 
     const vespalib::GenerationHandler & getGenerationHandler() const {

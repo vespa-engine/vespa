@@ -5,6 +5,7 @@
 #include "multi_value_mapping.h"
 #include "multi_value_mapping.hpp"
 #include "multivalue.h"
+#include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/util/array.hpp>
 
@@ -13,8 +14,8 @@ using search::multivalue::WeightedValue;
 
 namespace search::attribute {
 
-template class MultiValueMapping<Value<IEnumStore::Index>>;
-template class MultiValueMapping<WeightedValue<IEnumStore::Index>>;
+template class MultiValueMapping<Value<vespalib::datastore::AtomicEntryRef>>;
+template class MultiValueMapping<WeightedValue<vespalib::datastore::AtomicEntryRef>>;
 template class MultiValueMapping<Value<int8_t>>;
 template class MultiValueMapping<WeightedValue<int8_t>>;
 template class MultiValueMapping<Value<int16_t>>;

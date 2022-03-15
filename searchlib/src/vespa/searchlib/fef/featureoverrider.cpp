@@ -17,10 +17,11 @@ FeatureOverrider::handle_bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs
     _executor.bind_outputs(outputs);
 }
 
-FeatureOverrider::FeatureOverrider(FeatureExecutor &executor, uint32_t outputIdx, feature_t value)
+FeatureOverrider::FeatureOverrider(FeatureExecutor &executor, uint32_t outputIdx, feature_t number, Value::UP object)
     : _executor(executor),
       _outputIdx(outputIdx),
-      _value(value)
+      _number(number),
+      _object(std::move(object))
 {
 }
 
@@ -35,7 +36,11 @@ FeatureOverrider::execute(uint32_t docId)
 {
     _executor.lazy_execute(docId);
     if (_outputIdx < outputs().size()) {
-        outputs().set_number(_outputIdx, _value);
+        if (_object) {
+            outputs().set_object(_outputIdx, *_object);
+        } else {
+            outputs().set_number(_outputIdx, _number);
+        }
     }
 }
 

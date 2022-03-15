@@ -60,7 +60,7 @@ public:
     void handleGetBucketInfo(const storage::spi::Bucket &bucket,
                              IBucketInfoResultHandler &resultHandler);
     void handleListActiveBuckets(IBucketIdListResultHandler &resultHandler);
-    void handlePopulateActiveBuckets(document::BucketId::List &buckets,
+    void handlePopulateActiveBuckets(document::BucketId::List buckets,
                                      IGenericResultHandler &resultHandler);
     bool hasBucket(const storage::spi::Bucket &bucket);
 

@@ -14,6 +14,8 @@ public:
     Value(T v) noexcept : _v(v) { }
     Value(T v, int32_t w) noexcept : _v(v) { (void) w; }
     T value()           const { return _v; }
+    const T& value_ref() const { return _v; }
+    T& value_ref()            { return _v; }
     operator T ()       const { return _v; }
     operator T & ()           { return _v; }
     int32_t weight()    const { return 1; }
@@ -36,6 +38,8 @@ public:
     WeightedValue() noexcept : _v(), _w(1) { }
     WeightedValue(T v, int32_t w) noexcept : _v(v), _w(w) { }
     T value()             const { return _v; }
+    const T& value_ref() const  { return _v; }
+    T& value_ref()              { return _v; }
     operator T ()         const { return _v; }
     operator T & ()             { return _v; }
     int32_t weight()      const { return _w; }

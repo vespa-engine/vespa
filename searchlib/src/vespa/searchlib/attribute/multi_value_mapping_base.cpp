@@ -3,6 +3,7 @@
 #include "multi_value_mapping_base.h"
 #include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
+#include <vespa/vespalib/util/array.hpp>
 #include <cassert>
 
 namespace search::attribute {
@@ -24,14 +25,19 @@ MultiValueMappingBase::~MultiValueMappingBase() = default;
 MultiValueMappingBase::RefCopyVector
 MultiValueMappingBase::getRefCopy(uint32_t size) const {
     assert(size <= _indices.size());
-    return RefCopyVector(&_indices[0], &_indices[0] + size);
+    RefCopyVector result;
+    result.reserve(size);
+    for (uint32_t lid = 0; lid < size; ++lid) {
+        result.push_back(_indices[lid].load_relaxed());
+    }
+    return result;
 }
 
 void
 MultiValueMappingBase::addDoc(uint32_t & docId)
 {
     uint32_t retval = _indices.size();
-    _indices.push_back(EntryRef());
+    _indices.push_back(AtomicEntryRef());
     docId = retval;
 }
 
@@ -54,7 +60,7 @@ MultiValueMappingBase::clearDocs(uint32_t lidLow, uint32_t lidLimit, std::functi
     assert(lidLow <= lidLimit);
     assert(lidLimit <= _indices.size());
     for (uint32_t lid = lidLow; lid < lidLimit; ++lid) {
-        if (_indices[lid].valid()) {
+        if (_indices[lid].load_relaxed().valid()) {
             clearDoc(lid);
         }
     }
@@ -88,5 +94,11 @@ MultiValueMappingBase::considerCompact(const CompactionStrategy &compactionStrat
     }
     return false;
 }
+
+}
+
+namespace vespalib {
+
+template class Array<datastore::AtomicEntryRef>;
 
 }

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author mortent
@@ -21,16 +22,16 @@ public class RoleEntity {
     private final List<AuditLogEntry> auditLog;
 
     @JsonCreator
-    public RoleEntity(@JsonProperty("roleName") String roleName,
+    public RoleEntity(@JsonProperty("name") String roleName,
                       @JsonProperty("roleMembers") List<Member> roleMembers,
                       @JsonProperty("selfServe") Boolean selfServe,
                       @JsonProperty("reviewEnabled") Boolean reviewEnabled,
                       @JsonProperty("auditLog") List<AuditLogEntry> auditLog) {
         this.roleName = roleName;
-        this.roleMembers = roleMembers;
-        this.selfServe = selfServe;
-        this.reviewEnabled = reviewEnabled;
-        this.auditLog = auditLog == null ? new ArrayList<>() : auditLog;
+        this.roleMembers = Optional.ofNullable(roleMembers).orElse(new ArrayList<>());
+        this.selfServe = Optional.ofNullable(selfServe).orElse(false);
+        this.reviewEnabled = Optional.ofNullable(reviewEnabled).orElse(false);
+        this.auditLog = Optional.ofNullable(auditLog).orElse(new ArrayList<>());;
     }
 
     public String roleName() {

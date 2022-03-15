@@ -1873,7 +1873,7 @@ public class DeploymentTriggerTest {
         // Deploy manually again, then submit new package.
         app.runJob(productionCdUsEast1, cdPackage);
         app.submit(cdPackage);
-        app.runJob(systemTest);
+        app.triggerJobs().jobAborted(systemTest).runJob(systemTest);
         // Staging test requires unknown initial version, and is broken.
         tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false, true, true);
         app.runJob(productionCdUsEast1)

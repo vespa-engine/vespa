@@ -12,13 +12,7 @@
 #include <cstring>
 #include <fcntl.h>
 
-FastOS_ThreadPool *FastOS_ApplicationInterface::GetThreadPool ()
-{
-    return _threadPool;
-}
-
 FastOS_ApplicationInterface::FastOS_ApplicationInterface() :
-    _threadPool(nullptr),
     _argc(0),
     _argv(nullptr)
 {
@@ -44,13 +38,10 @@ bool FastOS_ApplicationInterface::Init ()
 
     if (PreThreadInit()) {
         if (FastOS_Thread::InitializeClass()) {
-            if (FastOS_File::InitializeClass()) {
-                _threadPool = new FastOS_ThreadPool(128 * 1024);
-                rc = true;
-            } else
-                fprintf(stderr, "FastOS_File class initialization failed.\n");
-        } else
+            rc = true;
+        } else {
             fprintf(stderr, "FastOS_Thread class initialization failed.\n");
+        }
     } else
         fprintf(stderr, "FastOS_PreThreadInit failed.\n");
 
@@ -60,12 +51,6 @@ bool FastOS_ApplicationInterface::Init ()
 
 void FastOS_ApplicationInterface::Cleanup ()
 {
-    if(_threadPool != nullptr) {
-        _threadPool->Close();
-        delete _threadPool;
-        _threadPool = nullptr;
-    }
-    FastOS_File::CleanupClass();
     FastOS_Thread::CleanupClass();
 }
 

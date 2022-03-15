@@ -236,8 +236,13 @@ public class DeploymentContext {
     /** Flush count pending DNS updates */
     public DeploymentContext flushDnsUpdates(int count) {
         var dispatcher = new NameServiceDispatcher(tester.controller(), Duration.ofSeconds(count));
-        dispatcher.run();
-        return this;
+        try {
+            dispatcher.run();
+            return this;
+        }
+        finally {
+            dispatcher.shutdown();
+        }
     }
 
     /** Add a routing policy for this in given zone, with status set to inactive */
@@ -255,6 +260,11 @@ public class DeploymentContext {
     }
 
     /** Submit given application package for deployment */
+    public DeploymentContext resubmit(ApplicationPackage applicationPackage) {
+        return submit(applicationPackage, Optional.of(defaultSourceRevision), salt.get());
+    }
+
+    /** Submit given application package for deployment */
     public DeploymentContext submit(ApplicationPackage applicationPackage) {
         return submit(applicationPackage, Optional.of(defaultSourceRevision));
     }
@@ -266,7 +276,7 @@ public class DeploymentContext {
 
     /** Submit given application package for deployment */
     public DeploymentContext submit(ApplicationPackage applicationPackage, Optional<SourceRevision> sourceRevision) {
-        return submit(applicationPackage, sourceRevision, salt.getAndIncrement());
+        return submit(applicationPackage, sourceRevision, salt.incrementAndGet());
     }
 
     /** Submit given application package for deployment */
@@ -597,8 +607,9 @@ public class DeploymentContext {
         runner.advance(currentRun(job));
         assertTrue(jobs.run(id).get().hasEnded());
         assertFalse(jobs.run(id).get().hasFailed());
-        assertEquals(job.type().isProduction(), instance().deployments().containsKey(zone));
-        assertTrue(configServer().nodeRepository().list(zone, NodeFilter.all().applications(TesterId.of(id.application()).id())).isEmpty());
+        Instance instance = tester.application(TenantAndApplicationId.from(instanceId)).require(id.application().instance());
+        assertEquals(job.type().isProduction(), instance.deployments().containsKey(zone));
+        assertTrue(configServer().nodeRepository().list(zone, NodeFilter.all().applications(TesterId.of(instance.id()).id())).isEmpty());
     }
 
     private JobId jobId(JobType type) {

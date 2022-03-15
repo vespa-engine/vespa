@@ -3,10 +3,12 @@ package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.Utf8;
@@ -26,6 +28,8 @@ import com.yahoo.vespa.curator.CompletionTimeoutException;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.mock.MockCuratorFramework;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.apache.curator.framework.CuratorFramework;
@@ -47,6 +51,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import static com.yahoo.vespa.config.server.application.TenantApplications.RemoveApplicationWaiter;
@@ -66,7 +72,6 @@ public class TenantApplicationsTest {
 
     private Curator curator;
     private CuratorFramework curatorFramework;
-    private TenantApplications applications;
     private ConfigserverConfig configserverConfig;
 
     @Rule
@@ -88,7 +93,6 @@ public class TenantApplicationsTest {
                 .build();
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenantName);
-        applications = createTenantApplications(tenantName, curator, configserverConfig, new MockReloadListener());
     }
 
     @Test
@@ -150,6 +154,47 @@ public class TenantApplicationsTest {
         assertEquals(0, repo.activeApplications().size());
     }
 
+    private static ApplicationSet createSet(ApplicationId id, Version version) throws IOException, SAXException {
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(),
+                                          new DeployState.Builder().wantedNodeVespaVersion(version)
+                                                                   .applicationPackage(FilesApplicationPackage.fromFile(new File("src/test/apps/app")))
+                                                                   .build());
+        return ApplicationSet.from(new Application(model,
+                                                   new ServerCache(),
+                                                   1,
+                                                   Version.emptyVersion,
+                                                   MetricUpdater.createTestUpdater(),
+                                                   id));
+    }
+
+    @Test
+    public void major_version_compatibility() throws Exception {
+        InMemoryFlagSource flagSource = new InMemoryFlagSource();
+        TenantApplications applications = createZKAppRepo(flagSource);
+        ApplicationId app1 = createApplicationId("myapp");
+        applications.createApplication(app1);
+        applications.createPutTransaction(app1, 1).commit();
+
+        Version deployedVersion0 = Version.fromString("6.1");
+        applications.activateApplication(createSet(app1, deployedVersion0), 1);
+        assertTrue("Empty version is compatible", applications.compatibleWith(Optional.empty(), app1));
+
+        Version nodeVersion0 = Version.fromString("6.0");
+        assertTrue("Lower version is compatible", applications.compatibleWith(Optional.of(nodeVersion0), app1));
+
+        Version deployedVersion1 = Version.fromString("7.1");
+        applications.activateApplication(createSet(app1, deployedVersion1), 1);
+        assertTrue("New major is compatible", applications.compatibleWith(Optional.of(nodeVersion0), app1));
+
+        flagSource.withListFlag(PermanentFlags.INCOMPATIBLE_MAJOR_VERSIONS.id(), List.of(8), Integer.class);
+        Version deployedVersion2 = Version.fromString("8.1");
+        applications.activateApplication(createSet(app1, deployedVersion2), 1);
+        assertFalse("New major is incompatible", applications.compatibleWith(Optional.of(nodeVersion0), app1));
+
+        Version nodeVersion1 = Version.fromString("8.0");
+        assertTrue("Node is compatible after upgrading", applications.compatibleWith(Optional.of(nodeVersion1), app1));
+    }
+
     public static class MockReloadListener implements ReloadListener {
         public final AtomicInteger reloaded = new AtomicInteger(0);
         final AtomicInteger removed = new AtomicInteger(0);
@@ -175,14 +220,10 @@ public class TenantApplicationsTest {
         }
     }
 
-    private void assertdefaultAppNotFound() {
-        assertFalse(applications.hasApplication(ApplicationId.defaultId(), Optional.of(vespaVersion)));
-    }
-
     @Test
     public void testListConfigs() throws IOException, SAXException {
-        applications = createTenantApplications(TenantName.defaultName(), new MockCurator(), configserverConfig, new MockReloadListener());
-        assertdefaultAppNotFound();
+        TenantApplications applications = createTenantApplications(TenantName.defaultName(), new MockCurator(), configserverConfig, new MockReloadListener(), new InMemoryFlagSource());
+        assertFalse(applications.hasApplication(ApplicationId.defaultId(), Optional.of(vespaVersion)));
 
         VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(new File("src/test/apps/app")));
         ApplicationId applicationId = ApplicationId.defaultId();
@@ -209,6 +250,7 @@ public class TenantApplicationsTest {
 
     @Test
     public void testAppendIdsInNonRecursiveListing() {
+        TenantApplications applications = createTenantApplications(tenantName, curator, configserverConfig, new MockReloadListener(), new InMemoryFlagSource());
         assertEquals(applications.appendOneLevelOfId("search/music", "search/music/qrservers/default/qr.0"), "search/music/qrservers");
         assertEquals(applications.appendOneLevelOfId("search", "search/music/qrservers/default/qr.0"), "search/music");
         assertEquals(applications.appendOneLevelOfId("search/music/qrservers/default/qr.0", "search/music/qrservers/default/qr.0"), "search/music/qrservers/default/qr.0");
@@ -251,9 +293,12 @@ public class TenantApplicationsTest {
     }
 
     private TenantApplications createZKAppRepo() {
-        return createTenantApplications(tenantName, curator, configserverConfig, new MockReloadListener());
+        return createZKAppRepo(new InMemoryFlagSource());
     }
 
+    private TenantApplications createZKAppRepo(InMemoryFlagSource flagSource) {
+        return createTenantApplications(tenantName, curator, configserverConfig, new MockReloadListener(), flagSource);
+    }
 
     private static ApplicationId createApplicationId() {
         return createApplicationId("foo");
@@ -285,17 +330,18 @@ public class TenantApplicationsTest {
     private TenantApplications createTenantApplications(TenantName tenantName,
                        Curator curator,
                        ConfigserverConfig configserverConfig,
-                       ReloadListener reloadListener) {
+                       ReloadListener reloadListener, InMemoryFlagSource flagSource) {
         return new TenantApplications(tenantName,
-             curator,
-             new StripedExecutor<>(new InThreadExecutorService()),
-             new InThreadExecutorService(),
-             Metrics.createTestMetrics(),
-             reloadListener,
-             configserverConfig,
-             new HostRegistry(),
-             new TenantFileSystemDirs(new ConfigServerDB(configserverConfig), tenantName),
-             Clock.systemUTC());
+                                      curator,
+                                      new StripedExecutor<>(new InThreadExecutorService()),
+                                      new InThreadExecutorService(),
+                                      Metrics.createTestMetrics(),
+                                      reloadListener,
+                                      configserverConfig,
+                                      new HostRegistry(),
+                                      new TenantFileSystemDirs(new ConfigServerDB(configserverConfig), tenantName),
+                                      Clock.systemUTC(),
+                                      flagSource);
     }
 
     private static class MockCurator3ConfigServers extends Curator {

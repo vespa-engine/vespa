@@ -3,6 +3,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.athenz.api.AthenzAssertion;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzGroup;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -23,14 +24,15 @@ public class AthenzAccessControlService implements AccessControlService {
     private static final String ALLOWED_OPERATOR_GROUPNAME = "vespa-team";
     private static final String DATAPLANE_ACCESS_ROLENAME = "operator-data-plane";
     private final String TENANT_DOMAIN_PREFIX = "vespa.tenant";
+    private final String ACCESS_APPROVAL_POLICY = "vespa-access-requester";
     private final ZmsClient zmsClient;
     private final AthenzRole dataPlaneAccessRole;
     private final AthenzGroup vespaTeam;
-    private final ZmsClient vespaZmsClient; //TODO: Merge ZMS clients
+    private final Optional<ZmsClient> vespaZmsClient;
     private final AthenzInstanceSynchronizer athenzInstanceSynchronizer;
 
 
-    public AthenzAccessControlService(ZmsClient zmsClient, AthenzDomain domain, ZmsClient vespaZmsClient, AthenzInstanceSynchronizer athenzInstanceSynchronizer) {
+    public AthenzAccessControlService(ZmsClient zmsClient, AthenzDomain domain, Optional<ZmsClient> vespaZmsClient, AthenzInstanceSynchronizer athenzInstanceSynchronizer) {
         this.zmsClient = zmsClient;
         this.vespaZmsClient = vespaZmsClient;
         this.athenzInstanceSynchronizer = athenzInstanceSynchronizer;
@@ -66,11 +68,16 @@ public class AthenzAccessControlService implements AccessControlService {
      */
     @Override
     public AthenzRoleInformation getAccessRoleInformation(TenantName tenantName) {
-        var role = sshRole(tenantName);
-        if (!vespaZmsClient.listRoles(role.domain()).contains(role))
-            vespaZmsClient.createRole(role, Map.of());
+        return vespaZmsClient.map(
+                zms -> {
+                    var role = sshRole(tenantName);
+                    if (!zms.listRoles(role.domain()).contains(role))
+                        zms.createRole(role, Map.of());
 
-        return vespaZmsClient.getFullRoleInformation(role);
+                    return zms.getFullRoleInformation(role);
+                }
+        ).orElseThrow(() -> new UnsupportedOperationException("Only allowed in systems running Vespa Athenz instance"));
+
     }
 
     /**
@@ -78,22 +85,25 @@ public class AthenzAccessControlService implements AccessControlService {
      */
     @Override
     public boolean decideSshAccess(TenantName tenantName, Instant expiry, OAuthCredentials oAuthCredentials, boolean approve) {
-        var role = sshRole(tenantName);
+        return vespaZmsClient.map(
+                zms -> {
+                    var role = sshRole(tenantName);
+                    if (!zms.listRoles(role.domain()).contains(role))
+                        zms.createRole(role, Map.of());
 
-        if (!vespaZmsClient.listRoles(role.domain()).contains(role))
-            vespaZmsClient.createRole(role, Map.of());
+                    if (zms.getMembership(role, vespaTeam))
+                        return false;
 
-        if (vespaZmsClient.getMembership(role, vespaTeam))
-            return false;
+                    var roleInformation = zms.getFullRoleInformation(role);
+                    if (roleInformation.getPendingRequest().isEmpty())
+                        return false;
+                    var reason = roleInformation.getPendingRequest().get().getReason();
 
-        var roleInformation = vespaZmsClient.getFullRoleInformation(role);
-        if (roleInformation.getPendingRequest().isEmpty())
-            return false;
-        var reason = roleInformation.getPendingRequest().get().getReason();
-
-        vespaZmsClient.decidePendingRoleMembership(role, vespaTeam, expiry, Optional.of(reason), Optional.of(oAuthCredentials), approve);
-        athenzInstanceSynchronizer.synchronizeInstances(tenantName);
-        return true;
+                    zms.decidePendingRoleMembership(role, vespaTeam, expiry, Optional.of(reason), Optional.of(oAuthCredentials), approve);
+                    athenzInstanceSynchronizer.synchronizeInstances(tenantName);
+                    return true;
+                }
+        ).orElseThrow(() -> new UnsupportedOperationException("Only allowed in systems running Vespa Athenz instance"));
     }
 
     /**
@@ -101,43 +111,62 @@ public class AthenzAccessControlService implements AccessControlService {
      */
     @Override
     public boolean requestSshAccess(TenantName tenantName) {
-        var role = sshRole(tenantName);
+        return vespaZmsClient.map(
+                zms -> {
+                    var role = sshRole(tenantName);
 
-        if (!vespaZmsClient.listRoles(role.domain()).contains(role))
-            vespaZmsClient.createRole(role, Map.of());
+                    if (!zms.listRoles(role.domain()).contains(role))
+                        zms.createRole(role, Map.of());
 
-        if (vespaZmsClient.getMembership(role, vespaTeam))
-            return false;
+                    if (zms.getMembership(role, vespaTeam))
+                        return false;
 
-        vespaZmsClient.addRoleMember(role, vespaTeam, Optional.empty());
-        return true;
+                    zms.addRoleMember(role, vespaTeam, Optional.empty());
+                    return true;
+                }
+        ).orElseThrow(() -> new UnsupportedOperationException("Only allowed in systems running Vespa Athenz instance"));
     }
 
     public void setPreapprovedAccess(TenantName tenantName, boolean preapprovedAccess) {
-        var role = sshRole(tenantName);
+        vespaZmsClient.ifPresentOrElse(
+                zms -> {
+                    var role = sshRole(tenantName);
+                    var assertion = getApprovalAssertion(role);
+                    if (preapprovedAccess) {
+                        zms.addPolicyRule(role.domain(), ACCESS_APPROVAL_POLICY, assertion.action(), assertion.resource(), assertion.role());
+                    } else {
+                        zms.deletePolicyRule(role.domain(), ACCESS_APPROVAL_POLICY, assertion.action(), assertion.resource(), assertion.role());
+                    }
+                },() -> { throw new UnsupportedOperationException("Only allowed in systems running Vespa Athenz instance"); });
+    }
 
-        var attributes = Map.<String, Object>of(
-                "selfServe", !preapprovedAccess,
-                "reviewEnabled", !preapprovedAccess
-        );
-        vespaZmsClient.createRole(role, attributes);
+    public boolean getPreapprovedAccess(TenantName tenantName) {
+        return vespaZmsClient.map(
+                zms -> {
+                    var role = sshRole(tenantName);
+                    var approvalAssertion = getApprovalAssertion(role);
+                    return zms.getPolicy(role.domain(), ACCESS_APPROVAL_POLICY)
+                            .map(policy -> policy.assertions().stream().anyMatch(assertion -> assertion.satisfies(approvalAssertion)))
+                            .orElse(false);
+                }).orElseThrow(() -> new UnsupportedOperationException("Only allowed in systems running Vespa Athenz instance") );
     }
 
     private AthenzRole sshRole(TenantName tenantName) {
-        return new AthenzRole(getOrCreateTenantDomain(tenantName), "ssh_access");
+        return new AthenzRole(getTenantDomain(tenantName), "ssh_access");
     }
 
-    private AthenzDomain getOrCreateTenantDomain(TenantName tenantName) {
-        var domain = new AthenzDomain(TENANT_DOMAIN_PREFIX + "." + tenantName.value());
-
-        if (vespaZmsClient.getDomainList(domain.getName()).isEmpty()) {
-            vespaZmsClient.createSubdomain(new AthenzDomain(TENANT_DOMAIN_PREFIX), tenantName.value());
-        }
-
-        return domain;
+    private AthenzDomain getTenantDomain(TenantName tenantName) {
+        return new AthenzDomain(TENANT_DOMAIN_PREFIX + "." + tenantName.value());
     }
 
     public boolean isVespaTeamMember(AthenzUser user) {
         return zmsClient.getGroupMembership(vespaTeam, user);
+    }
+
+    private AthenzAssertion getApprovalAssertion(AthenzRole accessRole) {
+        var approverRole = new AthenzRole(accessRole.domain(), "vespa-access-approver");
+        return AthenzAssertion.newBuilder(approverRole, accessRole.toResourceName(), "update_members")
+                .effect(AthenzAssertion.Effect.ALLOW)
+                .build();
     }
 }

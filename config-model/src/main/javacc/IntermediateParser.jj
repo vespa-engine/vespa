@@ -958,10 +958,7 @@ void indexingOperation(ParsedField field, boolean multiLine) : { }
 {
     {
         IndexingOperation oldOp = newIndexingOperation(multiLine);
-        // TODO conversion via SDField is very ugly
-        SDField tmpField = new SDField("temp", com.yahoo.document.DataType.STRING);
-        oldOp.apply(tmpField);
-        ParsedIndexingOp newOp = new ParsedIndexingOp(tmpField.getIndexingScript());
+        ParsedIndexingOp newOp = new ParsedIndexingOp(oldOp.getScript());
         field.setIndexingOperation(newOp);
     }
 }

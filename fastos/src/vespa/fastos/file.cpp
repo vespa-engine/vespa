@@ -52,16 +52,6 @@ FastOS_FileInterface::FastOS_FileInterface(const char *filename)
 
 FastOS_FileInterface::~FastOS_FileInterface() = default;
 
-bool FastOS_FileInterface::InitializeClass ()
-{
-    return true;
-}
-
-bool FastOS_FileInterface::CleanupClass ()
-{
-    return true;
-}
-
 void
 FastOS_FileInterface::ReadBuf(void *buffer, size_t length)
 {

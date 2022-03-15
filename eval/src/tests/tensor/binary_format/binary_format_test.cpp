@@ -11,6 +11,7 @@
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;

@@ -9,7 +9,6 @@
 
 using vespalib::make_string;
 
-
 namespace mbus {
 
 SourceSession::SourceSession(MessageBus &mbus, const SourceSessionParams &params)
@@ -75,26 +74,29 @@ SourceSession::send(Message::UP msg)
     if (msg->getTimeRemaining() == 0ms) {
         msg->setTimeRemaining(_timeout);
     }
+    uint32_t my_pending_count = 0;
     {
         std::lock_guard guard(_lock);
         if (_closed) {
             return Result(Error(ErrorCode::SEND_QUEUE_CLOSED, "Source session is closed."), std::move(msg));
         }
-        if (_throttlePolicy && !_throttlePolicy->canSend(*msg, _pendingCount)) {
+        my_pending_count = getPendingCount();
+        if (_throttlePolicy && !_throttlePolicy->canSend(*msg, my_pending_count)) {
             return Result(Error(ErrorCode::SEND_QUEUE_FULL,
-                                make_string("Too much pending data (%d messages).", _pendingCount)),
+                                make_string("Too much pending data (%d messages).", my_pending_count)),
                           std::move(msg));
         }
         msg->pushHandler(_replyHandler);
         if (_throttlePolicy) {
             _throttlePolicy->processMessage(*msg);
         }
-        ++_pendingCount;
+        ++my_pending_count;
+        _pendingCount.store(my_pending_count, std::memory_order_relaxed);
     }
     if (msg->getTrace().shouldTrace(TraceLevel::COMPONENT)) {
         msg->getTrace().trace(TraceLevel::COMPONENT,
                               make_string("Source session accepted a %d byte message. %d message(s) now pending.",
-                                          msg->getApproxSize(), _pendingCount));
+                                          msg->getApproxSize(), my_pending_count));
     }
     msg->pushHandler(*this);
     _sequencer.handleMessage(std::move(msg));
@@ -105,25 +107,28 @@ void
 SourceSession::handleReply(Reply::UP reply)
 {
     bool done;
+    uint32_t my_pending_count = 0;
     {
         std::lock_guard guard(_lock);
-        assert(_pendingCount > 0);
-        --_pendingCount;
+        my_pending_count = getPendingCount();
+        assert(my_pending_count > 0);
+        --my_pending_count;
+        _pendingCount.store(my_pending_count, std::memory_order_relaxed);
         if (_throttlePolicy) {
             _throttlePolicy->processReply(*reply);
         }
-        done = (_closed && _pendingCount == 0);
+        done = (_closed && my_pending_count == 0);
     }
     if (reply->getTrace().shouldTrace(TraceLevel::COMPONENT)) {
         reply->getTrace().trace(TraceLevel::COMPONENT,
-                                make_string("Source session received reply. %d message(s) now pending.", _pendingCount));
+                                make_string("Source session received reply. %d message(s) now pending.", my_pending_count));
     }
     IReplyHandler &handler = reply->getCallStack().pop(*reply);
     handler.handleReply(std::move(reply));
     if (done) {
         {
             std::lock_guard guard(_lock);
-            assert(_pendingCount == 0);
+            assert(getPendingCount() == 0);
             assert(_closed);
             _done = true;
         }
@@ -136,7 +141,7 @@ SourceSession::close()
 {
     std::unique_lock guard(_lock);
     _closed = true;
-    if (_pendingCount == 0) {
+    if (getPendingCount() == 0) {
         _done = true;
     }
     while (!_done) {

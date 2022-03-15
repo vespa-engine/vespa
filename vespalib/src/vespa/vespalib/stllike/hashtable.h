@@ -1,8 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/util/array.h>
+#include "allocator.h"
 #include <vespa/vespalib/util/traits.h>
+#include <vespa/vespalib/util/alloc.h>
 #include <algorithm>
 #include <iterator>
 
@@ -102,15 +103,15 @@ class hash_node {
 public:
     using next_t=hashtable_base::next_t;
     enum {npos=-1u, invalid=-2u};
-    hash_node()
+    hash_node() noexcept
         : _next(invalid)
     {}
-    hash_node(const V & node, next_t next=npos)
+    hash_node(const V & node, next_t next=npos) noexcept(std::is_nothrow_copy_constructible_v<V>)
         : _next(next)
     {
         new (_node) V(node);
     }
-    hash_node(V &&node, next_t next=npos)
+    hash_node(V &&node, next_t next=npos) noexcept
         : _next(next)
     {
         new (_node) V(std::move(node));
@@ -132,14 +133,14 @@ public:
         }
         return *this;
     }
-    hash_node(const hash_node & rhs)
+    hash_node(const hash_node & rhs) noexcept(std::is_nothrow_copy_constructible_v<V>)
         : _next(rhs._next)
     {
         if (rhs.valid()) {
             new (_node) V(rhs.getValue());
         }
     }
-    hash_node &operator=(const hash_node & rhs) {
+    hash_node &operator=(const hash_node & rhs) noexcept (std::is_nothrow_copy_constructible_v<V>) {
         destruct();
         if (rhs.valid()) {
             new (_node) V(rhs.getValue());
@@ -149,25 +150,25 @@ public:
         }
         return *this;
     }
-    ~hash_node() {
+    ~hash_node() noexcept {
         destruct();
     }
-    bool operator == (const hash_node & rhs) const {
+    bool operator == (const hash_node & rhs) const noexcept {
         return (_next == rhs._next) && (!valid() || (getValue() == rhs.getValue()));
     }
-    V & getValue()             { return *reinterpret_cast<V *>(_node); }
-    const V & getValue() const { return *reinterpret_cast<const V *>(_node); }
-    next_t getNext()     const { return _next; }
-    void setNext(next_t next)  { _next = next; }
-    void invalidate()          {
+    V & getValue()             noexcept { return *reinterpret_cast<V *>(_node); }
+    const V & getValue() const noexcept { return *reinterpret_cast<const V *>(_node); }
+    next_t getNext()     const noexcept { return _next; }
+    void setNext(next_t next)  noexcept { _next = next; }
+    void invalidate()          noexcept {
         destruct();
         _next = invalid;
     }
-    void terminate()           { _next = npos; }
-    bool valid()         const { return _next != invalid; }
-    bool hasNext()       const { return valid() && (_next != npos); }
+    void terminate()           noexcept { _next = npos; }
+    bool valid()         const noexcept { return _next != invalid; }
+    bool hasNext()       const noexcept { return valid() && (_next != npos); }
 private:
-    void destruct() {
+    void destruct() noexcept {
         if constexpr (!can_skip_destruction<V>::value) {
             if (valid()) {
                 getValue().~V();
@@ -184,7 +185,7 @@ class hashtable : public hashtable_base
 private:
     using Node=hash_node<Value>;
 protected:
-    using NodeStore = vespalib::Array<Node>;
+    using NodeStore = std::vector<Node, allocator_large<Node>>;
     virtual void move(NodeStore && oldStore);
 public:
     class const_iterator;

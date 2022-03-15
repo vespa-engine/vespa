@@ -7,6 +7,7 @@
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/minmaxaggregated.h>
 #include <vespa/vespalib/btree/minmaxaggrcalc.h>
+#include <vespa/vespalib/datastore/atomic_value_wrapper.h>
 
 namespace storage::bucketdb {
 
@@ -38,10 +39,11 @@ namespace storage::bucketdb {
 template <typename DataStoreTraitsT>
 class GenericBTreeBucketDatabase {
 public:
-    using DataStoreType     = typename DataStoreTraitsT::DataStoreType;
-    using ValueType         = typename DataStoreTraitsT::ValueType;
-    using ConstValueRef     = typename DataStoreTraitsT::ConstValueRef;
-    using GenerationHandler = vespalib::GenerationHandler;
+    using DataStoreType      = typename DataStoreTraitsT::DataStoreType;
+    using ValueType          = typename DataStoreTraitsT::ValueType;
+    using ConstValueRef      = typename DataStoreTraitsT::ConstValueRef;
+    using GenerationHandler  = vespalib::GenerationHandler;
+    using AtomicValueWrapper = vespalib::datastore::AtomicValueWrapper<uint64_t>;
 
     struct KeyUsedBitsMinMaxAggrCalc : vespalib::btree::MinMaxAggrCalc {
         constexpr static bool aggregate_over_values() { return false; }
@@ -51,7 +53,18 @@ public:
         }
     };
 
-    using BTree = vespalib::btree::BTree<uint64_t, uint64_t,
+    // Rationale for using an atomic u64 value type:
+    // It is expected that the set of bucket keys is much less frequently updated than their
+    // corresponding values. Since values must be stable for concurrent readers, all written values
+    // are _immutable_ once created. Consequently, every single mutation of a bucket will replace its
+    // value with a new (immutable) entry. For distributors, this replaces an entire array of values.
+    // Instead of constantly thawing and freezing subtrees for each bucket update, we atomically
+    // replace the value to point to a new u32 EntryRef mangled together with an u32 timestamp.
+    // This means updates that don't change the set of buckets leave the B-tree node structure
+    // itself entirely untouched.
+    // This requires great care to be taken when writing and reading to ensure memory visibility.
+    using BTree = vespalib::btree::BTree<uint64_t,
+                                         vespalib::datastore::AtomicValueWrapper<uint64_t>,
                                          vespalib::btree::MinMaxAggregated,
                                          std::less<>,
                                          vespalib::btree::BTreeDefaultTraits,

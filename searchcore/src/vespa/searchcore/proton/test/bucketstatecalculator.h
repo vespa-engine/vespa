@@ -5,6 +5,7 @@
 #include <vespa/document/bucket/bucketidlist.h>
 #include <vespa/document/bucket/bucket.h>
 #include <set>
+#include <memory>
 
 namespace proton::test {
 
@@ -23,8 +24,8 @@ private:
     bool                   _nodeMaintenance;
 
 public:
-    typedef std::shared_ptr<BucketStateCalculator> SP;
-    BucketStateCalculator() :
+    using SP = std::shared_ptr<BucketStateCalculator>;
+    BucketStateCalculator() noexcept :
         _ready(),
         _asked(),
         _clusterUp(true),
@@ -33,6 +34,8 @@ public:
         _nodeMaintenance(false)
     {
     }
+    BucketStateCalculator(BucketStateCalculator &&) noexcept = default;
+    BucketStateCalculator & operator =(BucketStateCalculator &&) noexcept = default;
     ~BucketStateCalculator() override;
     BucketStateCalculator &addReady(const document::BucketId &bucket) {
         _ready.insert(bucket);

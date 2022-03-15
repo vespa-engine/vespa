@@ -217,7 +217,7 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
     }
 
     void handleListBuckets(IBucketIdListResultHandler &resultHandler) override {
-        resultHandler.handle(BucketIdListResult(bucketList));
+        resultHandler.handle(BucketIdListResult(BucketId::List(bucketList.begin(), bucketList.end())));
     }
 
     void handleSetClusterState(const ClusterState &calc, IGenericResultHandler &resultHandler) override {
@@ -245,7 +245,7 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
     }
 
     void handleGetModifiedBuckets(IBucketIdListResultHandler &resultHandler) override {
-        resultHandler.handle(BucketIdListResult(modBucketList));
+        resultHandler.handle(BucketIdListResult(std::move(modBucketList)));
     }
 
     void handleSplit(FeedToken token, const storage::spi::Bucket &, const storage::spi::Bucket &,
@@ -261,18 +261,17 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
     }
 
     RetrieversSP getDocumentRetrievers(storage::spi::ReadConsistency) override {
-        RetrieversSP ret(new std::vector<IDocumentRetriever::SP>);
-        ret->push_back(IDocumentRetriever::SP(new MyDocumentRetriever(nullptr, Timestamp(), lastDocId)));
-        ret->push_back(IDocumentRetriever::SP(new MyDocumentRetriever(document, existingTimestamp, lastDocId)));
+        auto ret = std::make_shared<std::vector<IDocumentRetriever::SP>>();
+        ret->push_back(std::make_shared<MyDocumentRetriever>(nullptr, Timestamp(), lastDocId));
+        ret->push_back(std::make_shared<MyDocumentRetriever>(document, existingTimestamp, lastDocId));
         return ret;
     }
 
     void handleListActiveBuckets(IBucketIdListResultHandler &resultHandler) override {
-        BucketIdListResult::List list;
-        resultHandler.handle(BucketIdListResult(list));
+        resultHandler.handle(BucketIdListResult());
     }
 
-    void handlePopulateActiveBuckets(document::BucketId::List &buckets, IGenericResultHandler &resultHandler) override {
+    void handlePopulateActiveBuckets(document::BucketId::List buckets, IGenericResultHandler &resultHandler) override {
         (void) buckets;
         resultHandler.handle(Result());
     }
