@@ -277,25 +277,4 @@ public class AdminTestCase {
         assertTrue(configIds.toString(), configIds.contains("hosts/myhost0/logforwarder"));
     }
 
-    @Test
-    public void testDisableFileDistributorForAllApps() {
-        DeployState state = new DeployState.Builder()
-                .zone(new Zone(Environment.dev, RegionName.from("baz")))
-                .properties(
-                        new TestProperties().
-                                setApplicationId(new ApplicationId.Builder().
-                                        tenant("quux").
-                                        applicationName("foo").instanceName("bim")
-                                                      .build()))
-                .build();
-        TestRoot root = new TestDriver().buildModel(state);
-        String localhost = HostName.getLocalhost();
-        SentinelConfig sentinelConfig = root.getConfig(SentinelConfig.class, "hosts/" + localhost);
-        assertEquals(4, sentinelConfig.service().size());
-        assertEquals("logserver", sentinelConfig.service(0).name());
-        assertEquals("slobrok", sentinelConfig.service(1).name());
-        assertEquals(METRICS_PROXY_CONTAINER.serviceName, sentinelConfig.service(2).name());
-        assertEquals("logd", sentinelConfig.service(3).name());
-    }
-
 }
