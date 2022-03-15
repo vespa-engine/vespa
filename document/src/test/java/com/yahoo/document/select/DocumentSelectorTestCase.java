@@ -17,6 +17,7 @@ import com.yahoo.document.MapDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.FloatFieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
@@ -373,6 +374,8 @@ public class DocumentSelectorTestCase {
         documents.add(createDocument("id:myspace:test:g=mygroup:qux", 15, 1.0f, "quux", "corge"));
         documents.add(createDocument("id:myspace:test::missingint", null, 2.0f, null, "bar"));
         documents.add(createDocument("id:myspace:test::ampersand", null, 2.0f, null, "&"));
+        documents.add(createDocument("id:foo:test::withtruefield", null, 0.0f, null, ""));
+        documents.add(createDocument("id:foo:test::withfalsefield", null, 0.0f, null, ""));
 
         // Add some array/struct info to doc 1
         Struct sval = new Struct(documents.get(1).getDocument().getField("mystruct").getDataType());
@@ -445,6 +448,9 @@ public class DocumentSelectorTestCase {
         intvals2.add(new IntegerFieldValue(23));
         intvals2.add(new IntegerFieldValue(9));
         documents.get(1).getDocument().setFieldValue("intarray", intvals2);
+
+        documents.get(8).getDocument().setFieldValue("truth", new BoolFieldValue(true));
+        documents.get(9).getDocument().setFieldValue("truth", new BoolFieldValue(false));
 
         return documents;
     }
@@ -737,6 +743,17 @@ public class DocumentSelectorTestCase {
 
         assertEquals(Result.TRUE, evaluate("test.structarrmap{$x}.key == 15 AND test.stringweightedset{$x}", documents.get(1)));
         assertEquals(Result.FALSE, evaluate("test.structarrmap{$x}.key == 17 AND test.stringweightedset{$x}", documents.get(1)));
+    }
+
+    @Test
+    public void boolean_fields_can_be_used_for_equality_comparisons() throws ParseException {
+        var documents = createDocs();
+        assertEquals(Result.TRUE, evaluate("test.truth == 1", documents.get(8))); // has explicit field set to true
+        assertEquals(Result.FALSE, evaluate("test.truth == 1", documents.get(9))); // has explicit field set to false
+        assertEquals(Result.TRUE, evaluate("test.truth == 0", documents.get(9)));
+        // FIXME very un-intuitive behavior when nulls are implicitly returned:
+        assertEquals(Result.FALSE, evaluate("test.truth == 1", documents.get(0))); // Does not have field set in document
+        assertEquals(Result.FALSE, evaluate("test.truth == 0", documents.get(0))); // Does not have field set in document
     }
 
     @Test
