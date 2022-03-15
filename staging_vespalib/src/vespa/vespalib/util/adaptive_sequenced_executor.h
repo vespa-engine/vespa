@@ -142,9 +142,9 @@ private:
     Config                             _cfg;
 
     void maybe_block_self(std::unique_lock<std::mutex> &lock);
-    bool maybe_unblock_self(const std::unique_lock<std::mutex> &lock);
+    void maybe_unblock_self(const std::unique_lock<std::mutex> &lock);
 
-    Worker *get_worker_to_wake(const std::unique_lock<std::mutex> &lock);
+    void maybe_wake_worker(const std::unique_lock<std::mutex> &lock);
     bool obtain_strand(Worker &worker, std::unique_lock<std::mutex> &lock);
     bool exchange_strand(Worker &worker, std::unique_lock<std::mutex> &lock);
     TaggedTask next_task(Worker &worker, std::optional<uint32_t> prev_token);
