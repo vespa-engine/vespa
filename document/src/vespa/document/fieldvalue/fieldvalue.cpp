@@ -48,10 +48,6 @@ FieldValue::hash() const
     return vespalib::hashValue(os.data(), os.size()) ;
 }
 
-bool
-FieldValue::isA(const FieldValue& other) const {
-    return (getDataType()->isA(*other.getDataType()));
-}
 int
 FieldValue::compare(const FieldValue& other) const {
     return getDataType()->cmpId(*other.getDataType());
@@ -216,7 +212,7 @@ FieldValue::createArray(const DataType & baseType)
 }
 
 std::ostream& operator<<(std::ostream& out, const FieldValue & p) {
-    p.print(out);
+    p.print(out, false, "");
     return out;
 }
 

@@ -239,7 +239,7 @@ private:
     }
 
     void printText(const document::FieldValue &toPrint) {
-        toPrint.print(std::cout, _verbose);
+        toPrint.print(std::cout, _verbose, "");
         std::cout << std::endl;
     }
 
@@ -250,9 +250,9 @@ public:
           _verbose(verbose)
     {
     }
-    virtual void replay(const PutOperation &op) override {
+    void replay(const PutOperation &op) override {
         print(op);
-        if (op.getDocument().get() != NULL) {
+        if (op.getDocument()) {
             if (_printXml) {
                 printXml(*op.getDocument());
             } else {
@@ -260,10 +260,10 @@ public:
             }
         }
     }
-    virtual void replay(const RemoveOperation &op) override {
+    void replay(const RemoveOperation &op) override {
         print(op);
     }
-    virtual void replay(const UpdateOperation &op) override {
+    void replay(const UpdateOperation &op) override {
         print(op);
         if (op.getUpdate().get() != NULL) {
             if (_printXml) {
@@ -273,14 +273,14 @@ public:
             }
         }
     }
-    virtual void replay(const NoopOperation &) override { }
-    virtual void replay(const NewConfigOperation &) override { }
-    virtual void replay(const DeleteBucketOperation &) override { }
-    virtual void replay(const SplitBucketOperation &) override { }
-    virtual void replay(const JoinBucketsOperation &) override { }
-    virtual void replay(const PruneRemovedDocumentsOperation &) override { }
-    virtual void replay(const MoveOperation &) override { }
-    virtual void replay(const CreateBucketOperation &) override { }
+    void replay(const NoopOperation &) override { }
+    void replay(const NewConfigOperation &) override { }
+    void replay(const DeleteBucketOperation &) override { }
+    void replay(const SplitBucketOperation &) override { }
+    void replay(const JoinBucketsOperation &) override { }
+    void replay(const PruneRemovedDocumentsOperation &) override { }
+    void replay(const MoveOperation &) override { }
+    void replay(const CreateBucketOperation &) override { }
 };
 
 
