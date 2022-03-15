@@ -261,7 +261,7 @@ func (c *CLI) configureCommands() {
 	rootCmd.AddCommand(newVersionCmd(c))            // version
 }
 
-func (c *CLI) printErr(err error, hints ...string) {
+func (c *CLI) printErrHint(err error, hints ...string) {
 	fmt.Fprintln(c.Stderr, color.RedString("Error:"), err)
 	for _, hint := range hints {
 		fmt.Fprintln(c.Stderr, color.CyanString("Hint:"), hint)
@@ -269,10 +269,10 @@ func (c *CLI) printErr(err error, hints ...string) {
 }
 
 func (c *CLI) printSuccess(msg ...interface{}) {
-	fmt.Fprintln(c.Stdout, color.GreenString("Success:"), fmt.Sprint(msg...))
+	log.Print(color.GreenString("Success: "), fmt.Sprint(msg...))
 }
 
-func (c *CLI) printWarning(msg interface{}, hints ...string) {
+func (c *CLI) printWarning(msg string, hints ...string) {
 	fmt.Fprintln(c.Stderr, color.YellowString("Warning:"), msg)
 	for _, hint := range hints {
 		fmt.Fprintln(c.Stderr, color.CyanString("Hint:"), hint)
@@ -287,7 +287,7 @@ func (c *CLI) target(opts targetOptions) (vespa.Target, error) {
 	}
 	if !c.isCloudCI() { // Vespa Cloud always runs an up-to-date version
 		if err := target.CheckVersion(c.version); err != nil {
-			c.printWarning(err, "This version may not work as expected", "Try 'vespa version' to check for a new version")
+			c.printWarning(err.Error(), "This version may not work as expected", "Try 'vespa version' to check for a new version")
 		}
 	}
 	return target, nil
@@ -467,10 +467,10 @@ func (c *CLI) Run(args ...string) error {
 	if err != nil {
 		if cliErr, ok := err.(ErrCLI); ok {
 			if !cliErr.quiet {
-				c.printErr(cliErr, cliErr.hints...)
+				c.printErrHint(cliErr, cliErr.hints...)
 			}
 		} else {
-			c.printErr(err)
+			c.printErrHint(err)
 		}
 	}
 	return err

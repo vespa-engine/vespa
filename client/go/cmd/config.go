@@ -95,7 +95,6 @@ $ vespa config get target`,
 
 type Config struct {
 	homeDir     string
-	cacheDir    string
 	environment map[string]string
 	bindings    ConfigBindings
 	createDirs  bool
@@ -132,13 +131,8 @@ func loadConfig(environment map[string]string, bindings ConfigBindings) (*Config
 	if err != nil {
 		return nil, fmt.Errorf("could not detect config directory: %w", err)
 	}
-	cacheDir, err := vespaCliCacheDir(environment)
-	if err != nil {
-		return nil, fmt.Errorf("could not detect cache directory: %w", err)
-	}
 	c := &Config{
 		homeDir:     home,
-		cacheDir:    cacheDir,
 		environment: environment,
 		bindings:    bindings,
 		createDirs:  true,

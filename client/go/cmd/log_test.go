@@ -12,7 +12,7 @@ import (
 func TestLog(t *testing.T) {
 	pkgDir := mockApplicationPackage(t, false)
 	httpClient := &mock.HTTPClient{}
-	httpClient.NextResponseString(200, `1632738690.905535	host1a.dev.aws-us-east-1c	806/53	logserver-container	Container.com.yahoo.container.jdisc.ConfiguredApplication	info	Switching to the latest deployed set of configurations and components. Application config generation: 52532`)
+	httpClient.NextResponse(200, `1632738690.905535	host1a.dev.aws-us-east-1c	806/53	logserver-container	Container.com.yahoo.container.jdisc.ConfiguredApplication	info	Switching to the latest deployed set of configurations and components. Application config generation: 52532`)
 	cli, stdout, stderr := newTestCLI(t)
 	cli.httpClient = httpClient
 
@@ -36,8 +36,8 @@ func TestLogOldClient(t *testing.T) {
 
 	pkgDir := mockApplicationPackage(t, false)
 	httpClient := &mock.HTTPClient{}
-	httpClient.NextResponseString(200, `{"minVersion": "8.0.0"}`)
-	httpClient.NextResponseString(200, `1632738690.905535	host1a.dev.aws-us-east-1c	806/53	logserver-container	Container.com.yahoo.container.jdisc.ConfiguredApplication	info	Switching to the latest deployed set of configurations and components. Application config generation: 52532`)
+	httpClient.NextResponse(200, `{"minVersion": "8.0.0"}`)
+	httpClient.NextResponse(200, `1632738690.905535	host1a.dev.aws-us-east-1c	806/53	logserver-container	Container.com.yahoo.container.jdisc.ConfiguredApplication	info	Switching to the latest deployed set of configurations and components. Application config generation: 52532`)
 	cli.httpClient = httpClient
 
 	assert.Nil(t, cli.Run("config", "set", "application", "t1.a1.i1"))

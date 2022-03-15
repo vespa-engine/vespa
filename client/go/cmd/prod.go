@@ -359,7 +359,7 @@ func prompt(cli *CLI, stdin *bufio.Reader, question, defaultAnswer string, valid
 		}
 
 		if err := validator(input); err != nil {
-			cli.printErr(err)
+			cli.printErrHint(err)
 			fmt.Fprintln(cli.Stderr)
 			input = ""
 		}
