@@ -17,20 +17,23 @@ public class AssertionEntity {
     private final String resource;
     private final String action;
     private final Long id;
+    private final String effect;
 
 
-    public AssertionEntity(String role, String resource, String action) {
-        this(role, resource, action, null);
+    public AssertionEntity(String role, String resource, String action, String effect) {
+        this(role, resource, action, null, effect);
     }
 
     public AssertionEntity(@JsonProperty("role") String role,
                            @JsonProperty("resource") String resource,
                            @JsonProperty("action") String action,
-                           @JsonProperty("id") Long id) {
+                           @JsonProperty("id") Long id,
+                           @JsonProperty("effect") String effect) {
         this.role = role;
         this.resource = resource;
         this.action = action;
         this.id = id;
+        this.effect = effect;
     }
 
     public String getRole() {
@@ -43,6 +46,10 @@ public class AssertionEntity {
 
     public String getAction() {
         return action;
+    }
+
+    public String getEffect() {
+        return effect;
     }
 
     @JsonIgnore
