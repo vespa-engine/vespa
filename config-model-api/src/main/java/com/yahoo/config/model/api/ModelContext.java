@@ -118,6 +118,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default boolean avoidRenamingSummaryFeatures() { return false; }
         @ModelFeatureFlag(owners = {"bjorncs", "baldersheim"}) default boolean mergeGroupingResultInSearchInvoker() { return false; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean experimentalSdParsing() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default String adminClusterNodeArchitecture() { return "x86_64"; } // TODO: Cluster controllers only for now
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

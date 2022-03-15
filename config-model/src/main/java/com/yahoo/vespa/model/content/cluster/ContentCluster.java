@@ -62,6 +62,9 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 
+import static com.yahoo.config.provision.NodeResources.Architecture;
+import static com.yahoo.config.provision.NodeResources.DiskSpeed;
+import static com.yahoo.config.provision.NodeResources.StorageType;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -282,9 +285,11 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
                                            DeployState deployState) {
             if (admin == null) return; // only in tests
             if (contentCluster.getPersistence() == null) return;
+
             ClusterControllerContainerCluster clusterControllers;
+            String clusterName = "cluster-controllers";
             if (context.properties().hostedVespa()) {
-                clusterControllers = getDedicatedSharedControllers(contentElement, admin, context, deployState);
+                clusterControllers = getDedicatedSharedControllers(contentElement, admin, context, deployState, clusterName);
             }
             else if (admin.multitenant()) { // system tests: Put on logserver
                 if (admin.getClusterControllers() == null) {
@@ -292,7 +297,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
                     List<HostResource> host = admin.getLogserver() == null ? List.of() : List.of(admin.getLogserver().getHostResource());
                     admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(admin, "standalone", deployState),
                                                                          host,
-                                                                         "cluster-controllers",
+                                                                         clusterName,
                                                                          true,
                                                                          deployState),
                                                 deployState);
@@ -324,26 +329,29 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             }
         }
 
-        public static final NodeResources clusterControllerResources = new NodeResources(0.25, 1, 10, 0.3, NodeResources.DiskSpeed.any, NodeResources.StorageType.any);
+        public static final NodeResources clusterControllerResources = new NodeResources(0.25, 1, 10, 0.3, DiskSpeed.any, StorageType.any);
 
-        private ClusterControllerContainerCluster getDedicatedSharedControllers(ModelElement contentElement, Admin admin,
-                                                                                ConfigModelContext context, DeployState deployState) {
+        private ClusterControllerContainerCluster getDedicatedSharedControllers(ModelElement contentElement,
+                                                                                Admin admin,
+                                                                                ConfigModelContext context,
+                                                                                DeployState deployState,
+                                                                                String clusterName) {
             if (admin.getClusterControllers() == null) {
+                NodeResources nodeResources = clusterControllerResources
+                        .with(Architecture.valueOf(deployState.featureFlags().adminClusterNodeArchitecture()));
                 NodesSpecification spec = NodesSpecification.requiredFromSharedParents(deployState.zone().environment().isProduction() ? 3 : 1,
-                                                                                       clusterControllerResources,
+                                                                                       nodeResources,
                                                                                        contentElement,
                                                                                        context);
-
                 Collection<HostResource> hosts = spec.provision(admin.hostSystem(),
                                                                 ClusterSpec.Type.admin,
-                                                                ClusterSpec.Id.from("cluster-controllers"),
+                                                                ClusterSpec.Id.from(clusterName),
                                                                 context.getDeployLogger(),
                                                                 true)
                                                      .keySet();
-
                 admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(admin, "standalone", deployState),
                                                                      hosts,
-                                                                     "cluster-controllers",
+                                                                     clusterName,
                                                                      true,
                                                                      context.getDeployState()),
                                             deployState);
