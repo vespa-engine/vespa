@@ -69,6 +69,17 @@ public class VersionStatus {
      * Calling this is free, but the returned status is slightly out of date.
      */
     public List<VespaVersion> versions() { return versions; }
+
+    /** Lists all currently active Vespa versions, from lowest to highest number, which are not newer than the system version. */
+    public List<VespaVersion> deployableVersions() {
+        List<VespaVersion> deployable = new ArrayList<>();
+        for (VespaVersion version : versions) {
+            deployable.add(version);
+            if (version.isSystemVersion())
+                return deployable;
+        }
+        return List.of();
+    }
     
     /** Returns the given version, or null if it is not present */
     public VespaVersion version(Version version) {

@@ -875,11 +875,9 @@ public class ApplicationController {
     /** Returns the latest known version within the given major, which is not newer than the system version. */
     public Optional<Version> lastCompatibleVersion(int targetMajorVersion) {
         VersionStatus versions = controller.readVersionStatus();
-        Version systemVersion = controller.systemVersion(versions);
-        return versions.versions().stream()
+        return versions.deployableVersions().stream()
                        .map(VespaVersion::versionNumber)
                        .filter(version -> version.getMajor() == targetMajorVersion)
-                       .filter(version -> ! version.isAfter(systemVersion))
                        .max(naturalOrder());
     }
 

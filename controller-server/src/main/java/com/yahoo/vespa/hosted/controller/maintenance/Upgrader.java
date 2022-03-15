@@ -25,10 +25,8 @@ import java.util.Random;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
-import static java.util.Comparator.reverseOrder;
 
 /**
  * Maintenance job which schedules applications for Vespa version upgrade

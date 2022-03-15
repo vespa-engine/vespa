@@ -12,11 +12,13 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "build": 1
+              "build": 1,
+              "compileVersion": "6.1.0"
             },
             "sourcePlatform":"6.1.0",
             "sourceApplication": {
-              "build": 1
+              "build": 1,
+              "compileVersion": "6.1.0"
             }
           },
           "steps": [
@@ -43,7 +45,8 @@
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
-              "build": 1
+              "build": 1,
+              "compileVersion": "6.1.0"
             }
           },
           "steps": [

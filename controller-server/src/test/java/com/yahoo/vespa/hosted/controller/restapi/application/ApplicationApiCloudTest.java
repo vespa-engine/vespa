@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import ai.vespa.hosted.api.MultiPartStreamer;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
@@ -311,6 +312,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         var application = ApplicationName.from("unique");
         var applicationPackage = new ApplicationPackageBuilder().withoutAthenzIdentity().build();
 
+        new ControllerTester(tester).upgradeSystem(new Version("6.1"));
         assertTrue(tester.controller().applications().getApplication(TenantAndApplicationId.from(tenantName, application)).isEmpty());
 
         tester.assertResponse(
@@ -372,6 +374,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 .globalServiceId("foo")
                 .region("aws-us-east-1c")
                 .build();
+        new ControllerTester(tester).upgradeSystem(new Version("6.1"));
         tester.controller().jobController().deploy(ApplicationId.from("scoober", "albums", "default"),
                                                    JobType.productionAwsUsEast1c,
                                                    Optional.empty(),
