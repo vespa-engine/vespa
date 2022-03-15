@@ -39,6 +39,7 @@ DocumenttypesConfig TestDocRepo::getDefaultConfig() {
                                .addField("key", DataType::T_INT)
                                .addField("value", DataType::T_STRING))
                      .addField("tags", Array(DataType::T_STRING))
+                     .addField("boolfield", DataType::T_BOOL)
                      .addField("stringweightedset", Wset(DataType::T_STRING))
                      .addField("stringweightedset2", DataType::T_TAG)
                      .addField("byteweightedset", Wset(DataType::T_BYTE))

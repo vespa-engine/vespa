@@ -273,39 +273,44 @@ std::unique_ptr<Value>
 IteratorHandler::getInternalValue(const FieldValue& fval) const
 {
     switch(fval.getClass().id()) {
+        case document::BoolFieldValue::classId:
+        {
+            const auto& val(dynamic_cast<const BoolFieldValue&>(fval));
+            return std::make_unique<IntegerValue>(val.getAsInt(), false);
+        }
         case document::IntFieldValue::classId:
         {
-            const IntFieldValue& val(dynamic_cast<const IntFieldValue&>(fval));
+            const auto& val(dynamic_cast<const IntFieldValue&>(fval));
             return std::make_unique<IntegerValue>(val.getAsInt(), false);
         }
         case document::ByteFieldValue::classId:
         {
-            const ByteFieldValue& val(dynamic_cast<const ByteFieldValue&>(fval));
+            const auto& val(dynamic_cast<const ByteFieldValue&>(fval));
             return std::make_unique<IntegerValue>(val.getAsByte(), false);
         }
         case LongFieldValue::classId:
         {
-            const LongFieldValue& val(dynamic_cast<const LongFieldValue&>(fval));
+            const auto& val(dynamic_cast<const LongFieldValue&>(fval));
             return std::make_unique<IntegerValue>(val.getAsLong(), false);
         }
         case FloatFieldValue::classId:
         {
-            const FloatFieldValue& val(dynamic_cast<const FloatFieldValue&>(fval));
+            const auto& val(dynamic_cast<const FloatFieldValue&>(fval));
             return std::make_unique<FloatValue>(val.getAsFloat());
         }
         case DoubleFieldValue::classId:
         {
-            const DoubleFieldValue& val(dynamic_cast<const DoubleFieldValue&>(fval));
+            const auto& val(dynamic_cast<const DoubleFieldValue&>(fval));
             return std::make_unique<FloatValue>(val.getAsDouble());
         }
         case StringFieldValue::classId:
         {
-            const StringFieldValue& val(dynamic_cast<const StringFieldValue&>(fval));
+            const auto& val(dynamic_cast<const StringFieldValue&>(fval));
             return std::make_unique<StringValue>(val.getAsString());
         }
         case ReferenceFieldValue::classId:
         {
-            const ReferenceFieldValue& val(dynamic_cast<const ReferenceFieldValue&>(fval));
+            const auto& val(dynamic_cast<const ReferenceFieldValue&>(fval));
             if (val.hasValidDocumentId()) {
                 return std::make_unique<StringValue>(val.getDocumentId().toString());
             } else {
@@ -314,7 +319,7 @@ IteratorHandler::getInternalValue(const FieldValue& fval) const
         }
         case ArrayFieldValue::classId:
         {
-            const ArrayFieldValue& val(dynamic_cast<const ArrayFieldValue&>(fval));
+            const auto& val(dynamic_cast<const ArrayFieldValue&>(fval));
             if (val.size() == 0) {
                 return std::make_unique<NullValue>();
             } else {
@@ -325,7 +330,7 @@ IteratorHandler::getInternalValue(const FieldValue& fval) const
         }
         case StructFieldValue::classId:
         {
-            const StructFieldValue& val(dynamic_cast<const StructFieldValue&>(fval));
+            const auto& val(dynamic_cast<const StructFieldValue&>(fval));
             if (val.empty()) {
                 return std::make_unique<NullValue>();
             } else {
@@ -339,7 +344,7 @@ IteratorHandler::getInternalValue(const FieldValue& fval) const
         }
         case MapFieldValue::classId:
         {
-            const MapFieldValue& val(static_cast<const MapFieldValue&>(fval));
+            const auto& val(static_cast<const MapFieldValue&>(fval));
             if (val.isEmpty()) {
                 return std::make_unique<NullValue>();
             } else {
