@@ -10,7 +10,14 @@ import java.util.OptionalLong;
  */
 public class AthenzAssertion {
 
-    public enum Effect { ALLOW, DENY }
+    public enum Effect {
+        ALLOW, DENY;
+
+        public static Effect valueOrNull(String value) {
+            try { return valueOf(value); }
+            catch (RuntimeException e) { return null; }
+        }
+    }
 
     private final Long id;
     private final Effect effect;

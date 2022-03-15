@@ -229,7 +229,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 athenzDomain.getName(), athenzPolicy));
         HttpUriRequest request = RequestBuilder.put()
                 .setUri(uri)
-                .setEntity(toJsonStringEntity(new AssertionEntity(athenzRole.toResourceNameString(), resourceName.toResourceNameString(), action)))
+                .setEntity(toJsonStringEntity(new AssertionEntity(athenzRole.toResourceNameString(), resourceName.toResourceNameString(), action, "ALLOW")))
                 .build();
         execute(request, response -> readEntity(response, Void.class));
     }
@@ -281,6 +281,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                         AthenzResourceName.fromString(a.getResource()),
                         a.getAction())
                         .id(a.getId())
+                        .effect(AthenzAssertion.Effect.valueOrNull(a.getEffect()))
                         .build())
                 .collect(toList());
         return Optional.of(new AthenzPolicy(entity.getName(), assertions));
