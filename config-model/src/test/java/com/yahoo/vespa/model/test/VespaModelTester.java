@@ -53,6 +53,7 @@ public class VespaModelTester {
     private final Map<NodeResources, Collection<Host>> hostsByResources = new HashMap<>();
     private ApplicationId applicationId = ApplicationId.defaultId();
     private boolean useDedicatedNodeForLogserver = false;
+    private String adminClusterArchitecture = "x86_64";
     private HostProvisioner provisioner;
 
     public VespaModelTester() {
@@ -99,6 +100,9 @@ public class VespaModelTester {
 
     /** Sets whether this sets up a model for a hosted system. Default: true */
     public void setHosted(boolean hosted) { this.hosted = hosted; }
+
+    /** Sets architecture to use for admin clusters. Default: x86_64 */
+    public void setAdminClusterArchitecture(String architecture) { this.adminClusterArchitecture = architecture; }
 
     /** Sets the tenant, application name, and instance name of the model being built. */
     public void setApplicationId(String tenant, String applicationName, String instanceName) {
@@ -198,7 +202,8 @@ public class VespaModelTester {
                 .setMultitenant(hosted) // Note: system tests are multitenant but not hosted
                 .setHostedVespa(hosted)
                 .setApplicationId(applicationId)
-                .setUseDedicatedNodeForLogserver(useDedicatedNodeForLogserver);
+                .setUseDedicatedNodeForLogserver(useDedicatedNodeForLogserver)
+                .setAdminClusterNodeResourcesArchitecture(adminClusterArchitecture);
 
         DeployState.Builder deployState = deployStatebuilder
                 .applicationPackage(appPkg)

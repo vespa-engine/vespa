@@ -211,6 +211,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean avoidRenamingSummaryFeatures;
         private final boolean mergeGroupingResultInSearchInvoker;
         private final boolean experimentalSdParsing;
+        private final String adminClusterNodeResourcesArchitecture;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -260,6 +261,7 @@ public class ModelContextImpl implements ModelContext {
             this.avoidRenamingSummaryFeatures = flagValue(source, appId, version, Flags.AVOID_RENAMING_SUMMARY_FEATURES);
             this.mergeGroupingResultInSearchInvoker = flagValue(source, appId, version, Flags.MERGE_GROUPING_RESULT_IN_SEARCH_INVOKER);
             this.experimentalSdParsing = flagValue(source, appId, version, Flags.EXPERIMENTAL_SD_PARSING);
+            this.adminClusterNodeResourcesArchitecture = flagValue(source, appId, version, ClusterSpec.Type.admin, PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE);
         }
 
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -311,6 +313,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean avoidRenamingSummaryFeatures() { return avoidRenamingSummaryFeatures; }
         @Override public boolean mergeGroupingResultInSearchInvoker() { return mergeGroupingResultInSearchInvoker; }
         @Override public boolean experimentalSdParsing() { return experimentalSdParsing; }
+        @Override public String adminClusterNodeArchitecture() { return adminClusterNodeResourcesArchitecture; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

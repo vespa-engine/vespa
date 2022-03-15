@@ -1474,6 +1474,49 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testUseArm64NodesForClusterControllers() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                        "<services>" +
+                        "   <container version='1.0' id='container'>" +
+                        "      <nodes count='2'>" +
+                        "         <resources vcpu='2' memory='8Gb' disk='30Gb'/>" +
+                        "      </nodes>" +
+                        "   </container>" +
+                        "   <content version='1.0' id='foo'>" +
+                        "      <documents>" +
+                        "        <document type='type1' mode='index'/>" +
+                        "      </documents>" +
+                        "      <nodes count='2'>" +
+                        "         <resources vcpu='2' memory='8Gb' disk='30Gb'/>" +
+                        "      </nodes>" +
+                        "   </content>" +
+                        "</services>";
+
+        VespaModelTester tester = new VespaModelTester();
+        tester.setHosted(true);
+        tester.setAdminClusterArchitecture("arm64");
+        tester.addHosts(new NodeResources(13.5, 100,         1000, 0.3), 6);
+        tester.addHosts(new NodeResources(85,   200, 1000_000_000, 0.3), 20);
+        tester.addHosts(new NodeResources(0.5, 2, 10, 0.3, NodeResources.DiskSpeed.any, NodeResources.StorageType.any, NodeResources.Architecture.arm64), 3);
+        VespaModel model = tester.createModel(services, true, true);
+        List<HostResource> hosts = model.getRoot().hostSystem().getHosts();
+        assertEquals(7, hosts.size());
+        Set<HostResource> clusterControllerResources =
+                hosts.stream()
+                     .filter(host -> host.getHostInfo().getServices().stream()
+                                         .anyMatch(service -> service.getServiceType().equals("container-clustercontroller")))
+                     .collect(Collectors.toSet());
+        assertEquals(3, clusterControllerResources.size());
+        assertTrue(clusterControllerResources.stream().allMatch(host -> host.realResources().architecture().name().equals("arm64")));
+
+        // Other hosts should be x86_64
+        assertTrue(hosts.stream()
+                        .filter(host -> !clusterControllerResources.contains(host))
+                        .allMatch(host -> host.realResources().architecture().name().equals("x86_64")));
+    }
+
+    @Test
     public void testContainerOnly() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
