@@ -12,10 +12,10 @@ import (
 
 func TestListSampleApps(t *testing.T) {
 	c := &mock.HTTPClient{}
-	c.NextResponseString(200, readTestData(t, "sample-apps-contents.json"))
-	c.NextResponseString(200, readTestData(t, "sample-apps-news.json"))
-	c.NextResponseString(200, readTestData(t, "sample-apps-operations.json"))
-	c.NextResponseString(200, readTestData(t, "sample-apps-vespa-cloud.json"))
+	c.NextResponse(200, readTestData(t, "sample-apps-contents.json"))
+	c.NextResponse(200, readTestData(t, "sample-apps-news.json"))
+	c.NextResponse(200, readTestData(t, "sample-apps-operations.json"))
+	c.NextResponse(200, readTestData(t, "sample-apps-vespa-cloud.json"))
 
 	apps, err := listSampleApps(c)
 	assert.Nil(t, err)

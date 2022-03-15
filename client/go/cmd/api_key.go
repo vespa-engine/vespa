@@ -70,7 +70,7 @@ func doApiKey(cli *CLI, overwriteKey bool, args []string) error {
 	apiKeyFile := cli.config.apiKeyPath(app.Tenant)
 	if util.PathExists(apiKeyFile) && !overwriteKey {
 		err := fmt.Errorf("refusing to overwrite %s", apiKeyFile)
-		cli.printErr(err, "Use -f to overwrite it")
+		cli.printErrHint(err, "Use -f to overwrite it")
 		printPublicKey(system, apiKeyFile, app.Tenant)
 		return ErrCLI{error: err, quiet: true}
 	}

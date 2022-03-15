@@ -13,12 +13,12 @@ func TestAccessToken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	httpClient.NextResponseString(400, `{"message": "bad request"}`)
+	httpClient.NextResponse(400, `{"message": "bad request"}`)
 	_, err = client.AccessToken("vespa.vespa", tls.Certificate{})
 	if err == nil {
 		t.Fatal("want error for non-ok response status")
 	}
-	httpClient.NextResponseString(200, `{"access_token": "foo bar"}`)
+	httpClient.NextResponse(200, `{"access_token": "foo bar"}`)
 	token, err := client.AccessToken("vespa.vespa", tls.Certificate{})
 	if err != nil {
 		t.Fatal(err)
