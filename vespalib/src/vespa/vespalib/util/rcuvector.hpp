@@ -21,12 +21,14 @@ template <typename T>
 void
 RcuVectorBase<T>::unsafe_resize(size_t n) {
     _data.resize(n);
+    update_vector_start();
 }
 
 template <typename T>
 void
 RcuVectorBase<T>::unsafe_reserve(size_t n) {
     _data.reserve(n);
+    update_vector_start();
 }
 
 template <typename T>
@@ -112,11 +114,13 @@ template <typename T>
 RcuVectorBase<T>::RcuVectorBase(GenerationHolderType &genHolder,
                                 const Alloc &initialAlloc)
     : _data(initialAlloc),
+      _vector_start(nullptr),
       _growPercent(100),
       _growDelta(0),
       _genHolder(genHolder)
 {
     _data.reserve(16);
+    update_vector_start();
 }
 
 template <typename T>
@@ -126,11 +130,13 @@ RcuVectorBase<T>::RcuVectorBase(size_t initialCapacity,
                                 GenerationHolderType &genHolder,
                                 const Alloc &initialAlloc)
     : _data(initialAlloc),
+      _vector_start(nullptr),
       _growPercent(growPercent),
       _growDelta(growDelta),
       _genHolder(genHolder)
 {
     _data.reserve(initialCapacity);
+    update_vector_start();
 }
 
 template <typename T>
@@ -154,11 +160,22 @@ RcuVectorBase<T>::getMemoryUsage() const
 
 template <typename T>
 void
-RcuVectorBase<T>::onReallocation() { }
+RcuVectorBase<T>::update_vector_start()
+{
+    _vector_start.store(&_data[0], std::memory_order_release);
+}
+
+template <typename T>
+void
+RcuVectorBase<T>::onReallocation()
+{
+    update_vector_start();
+}
 
 template <typename T>
 void
 RcuVector<T>::onReallocation() {
+    RcuVectorBase<T>::onReallocation();
     _genHolderStore.transferHoldLists(_generation);
 }
 
