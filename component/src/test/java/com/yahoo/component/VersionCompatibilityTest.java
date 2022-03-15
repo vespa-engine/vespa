@@ -4,6 +4,7 @@ package com.yahoo.component;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Locale;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -12,7 +13,7 @@ import static org.junit.Assert.fail;
 /**
  * @author jonmv
  */
-public class VersionIncompatibilityTest {
+public class VersionCompatibilityTest {
 
     @Test
     public void testNoIncompatibilities() {
@@ -55,61 +56,32 @@ public class VersionIncompatibilityTest {
 
     @Test
     public void testIllegalIncompatibilities() {
+        assertThrows(List.of("1", "*"),         IllegalArgumentException.class, "may not have siblings");
+        assertThrows(List.of("*", "*.*"),       IllegalArgumentException.class, "may not have siblings");
+        assertThrows(List.of("*", "*"),         IllegalArgumentException.class, "may not have siblings");
+        assertThrows(List.of("*.1"),            IllegalArgumentException.class, "may only have wildcard children");
+        assertThrows(List.of("0", "0"),         IllegalArgumentException.class, "duplicate element");
+        assertThrows(List.of("0", "0.0.0"),     IllegalArgumentException.class, "duplicate element");
+        assertThrows(List.of("0.0.0", "0.0.0"), IllegalArgumentException.class, "duplicate element");
+        assertThrows(List.of("."),              IllegalArgumentException.class, "1 to 3 parts");
+        assertThrows(List.of("0.0.0.0"),        IllegalArgumentException.class, "1 to 3 parts");
+        assertThrows(List.of("-1"),             IllegalArgumentException.class, "must be non-negative");
+        assertThrows(List.of(""),               NumberFormatException.class,    "input string: \"\"");
+        assertThrows(List.of("x"),              NumberFormatException.class,    "input string: \"x\"");
+    }
+
+    static void assertThrows(List<String> spec, Class<? extends IllegalArgumentException> clazz, String fragment) {
+        IllegalArgumentException thrown = null;
         try {
-            VersionCompatibility.fromVersionList(List.of("1", "*"));
-            fail();
+            VersionCompatibility.fromVersionList(spec);
         }
-        catch (IllegalArgumentException expected) { }
-        try {
-            VersionCompatibility.fromVersionList(List.of("*", "*"));
-            fail();
+        catch (IllegalArgumentException e) {
+            if (clazz.isInstance(e) && e.getMessage().toLowerCase(Locale.ROOT).contains(fragment.toLowerCase(Locale.ROOT)))
+                return;
+            thrown = e;
         }
-        catch (IllegalArgumentException expected) { }
-        try {
-            VersionCompatibility.fromVersionList(List.of("-1"));
-            fail();
-        }
-        catch (IllegalArgumentException expected) { }
-        try {
-            VersionCompatibility.fromVersionList(List.of("0", "0"));
-            fail();
-        }
-        catch (IllegalArgumentException expected) { }
-        try {
-            VersionCompatibility.fromVersionList(List.of("0", "0.0.0"));
-            fail();
-        }
-        catch (IllegalArgumentException expected) { }
-        try {
-            VersionCompatibility.fromVersionList(List.of("0.0.0", "0.0.0"));
-            fail();
-        }
-        catch (IllegalArgumentException expected) { }
-        try {
-            VersionCompatibility.fromVersionList(List.of("*.1"));
-            fail();
-        }
-        catch (IllegalArgumentException expected) { }
-        try {
-            VersionCompatibility.fromVersionList(List.of("*", "*.*"));
-            fail();
-        }
-        catch (IllegalArgumentException expected) { }
-        try {
-            VersionCompatibility.fromVersionList(List.of(""));
-            fail();
-        }
-        catch (NumberFormatException expected) { }
-        try {
-            VersionCompatibility.fromVersionList(List.of("0.0.0.0"));
-            fail();
-        }
-        catch (IllegalArgumentException expected) { }
-        try {
-            VersionCompatibility.fromVersionList(List.of("x"));
-            fail();
-        }
-        catch (NumberFormatException expected) { }
+        fail("Should fail with " + clazz.getSimpleName() + " containing '" + fragment + "' in its message, but got " +
+             (thrown == null ? "no exception" : "'" + thrown + "'"));
     }
 
 }
