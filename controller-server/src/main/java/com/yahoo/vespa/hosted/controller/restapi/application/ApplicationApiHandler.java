@@ -111,9 +111,11 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
+import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
+import com.yahoo.vespa.hosted.controller.tenant.TenantContact;
+import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
-import com.yahoo.vespa.hosted.controller.tenant.TenantInfoAddress;
-import com.yahoo.vespa.hosted.controller.tenant.TenantInfoBillingContact;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
@@ -504,36 +506,70 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             infoCursor.setString("name", info.name());
             infoCursor.setString("email", info.email());
             infoCursor.setString("website", info.website());
-            infoCursor.setString("invoiceEmail", info.invoiceEmail());
-            infoCursor.setString("contactName", info.contactName());
-            infoCursor.setString("contactEmail", info.contactEmail());
+            infoCursor.setString("contactName", info.contact().name());
+            infoCursor.setString("contactEmail", info.contact().email());
             toSlime(info.address(), infoCursor);
             toSlime(info.billingContact(), infoCursor);
+            toSlime(info.contacts(), infoCursor);
         }
 
         return new SlimeJsonResponse(slime);
     }
 
-    private void toSlime(TenantInfoAddress address, Cursor parentCursor) {
+    private void toSlime(TenantAddress address, Cursor parentCursor) {
         if (address.isEmpty()) return;
 
         Cursor addressCursor = parentCursor.setObject("address");
-        addressCursor.setString("addressLines", address.addressLines());
-        addressCursor.setString("postalCodeOrZip", address.postalCodeOrZip());
+        addressCursor.setString("addressLines", address.address());
+        addressCursor.setString("postalCodeOrZip", address.code());
         addressCursor.setString("city", address.city());
-        addressCursor.setString("stateRegionProvince", address.stateRegionProvince());
+        addressCursor.setString("stateRegionProvince", address.region());
         addressCursor.setString("country", address.country());
     }
 
-    private void toSlime(TenantInfoBillingContact billingContact, Cursor parentCursor) {
+    private void toSlime(TenantBilling billingContact, Cursor parentCursor) {
         if (billingContact.isEmpty()) return;
 
         Cursor addressCursor = parentCursor.setObject("billingContact");
-        addressCursor.setString("name", billingContact.name());
-        addressCursor.setString("email", billingContact.email());
-        addressCursor.setString("phone", billingContact.phone());
+        addressCursor.setString("name", billingContact.contact().name());
+        addressCursor.setString("email", billingContact.contact().email());
+        addressCursor.setString("phone", billingContact.contact().phone());
         toSlime(billingContact.address(), addressCursor);
     }
+
+    private void toSlime(TenantContacts contacts, Cursor parentCursor) {
+        Cursor contactsCursor = parentCursor.setArray("contacts");
+        contacts.all().forEach(contact -> {
+            Cursor contactCursor = contactsCursor.addObject();
+            Cursor audiencesArray = contactCursor.setArray("audiences");
+            contact.audiences().forEach(audience -> audiencesArray.addString(toAudience(audience)));
+            switch (contact.type()) {
+                case EMAIL:
+                    var email = (TenantContacts.EmailContact) contact;
+                    contactCursor.setString("email", email.email());
+                    return;
+                default:
+                    throw new IllegalArgumentException("Serialization for contact type not implemented: " + contact.type());
+            }
+        });
+    }
+
+    private static TenantContacts.Audience fromAudience(String value) {
+        switch (value) {
+            case "tenant":  return TenantContacts.Audience.TENANT;
+            case "notifications":  return TenantContacts.Audience.NOTIFICATIONS;
+            default: throw new IllegalArgumentException("Unknown contact audience '" + value + "'.");
+        }
+    }
+
+    private static String toAudience(TenantContacts.Audience audience) {
+        switch (audience) {
+            case TENANT: return "tenant";
+            case NOTIFICATIONS: return "notifications";
+            default: throw new IllegalArgumentException("Unexpected contact audience '" + audience + "'.");
+        }
+    }
+
 
     private HttpResponse updateTenantInfo(String tenantName, HttpRequest request) {
         return controller.tenants().get(TenantName.from(tenantName))
@@ -551,24 +587,28 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         // Merge info from request with the existing info
         Inspector insp = toSlime(request.getData()).get();
-        TenantInfo mergedInfo = TenantInfo.EMPTY
+
+        TenantContact mergedContact = TenantContact.empty()
+                .withName(getString(insp.field("contactName"), oldInfo.contact().name()))
+                .withEmail(getString(insp.field("contactEmail"), oldInfo.contact().email()));
+
+        TenantInfo mergedInfo = TenantInfo.empty()
                 .withName(getString(insp.field("name"), oldInfo.name()))
-                .withEmail(getString(insp.field("email"),  oldInfo.email()))
-                .withWebsite(getString(insp.field("website"),  oldInfo.website()))
-                .withInvoiceEmail(getString(insp.field("invoiceEmail"), oldInfo.invoiceEmail()))
-                .withContactName(getString(insp.field("contactName"), oldInfo.contactName()))
-                .withContactEmail(getString(insp.field("contactEmail"), oldInfo.contactEmail()))
+                .withEmail(getString(insp.field("email"), oldInfo.email()))
+                .withWebsite(getString(insp.field("website"), oldInfo.website()))
+                .withContact(mergedContact)
                 .withAddress(updateTenantInfoAddress(insp.field("address"), oldInfo.address()))
-                .withBillingContact(updateTenantInfoBillingContact(insp.field("billingContact"), oldInfo.billingContact()));
+                .withBilling(updateTenantInfoBillingContact(insp.field("billingContact"), oldInfo.billingContact()))
+                .withContacts(updateTenantInfoContacts(insp.field("contacts"), oldInfo.contacts()));
 
         // Assert that we have a valid tenant info
-        if (mergedInfo.contactName().isBlank()) {
+        if (mergedInfo.contact().name().isBlank()) {
             throw new IllegalArgumentException("'contactName' cannot be empty");
         }
-        if (mergedInfo.contactEmail().isBlank()) {
+        if (mergedInfo.contact().email().isBlank()) {
             throw new IllegalArgumentException("'contactEmail' cannot be empty");
         }
-        if (! mergedInfo.contactEmail().contains("@")) {
+        if (! mergedInfo.contact().email().contains("@")) {
             // email address validation is notoriously hard - we should probably just try to send a
             // verification email to this address.  checking for @ is a simple best-effort.
             throw new IllegalArgumentException("'contactEmail' needs to be an email address");
@@ -590,20 +630,20 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return new MessageResponse("Tenant info updated");
     }
 
-    private TenantInfoAddress updateTenantInfoAddress(Inspector insp, TenantInfoAddress oldAddress) {
+    private TenantAddress updateTenantInfoAddress(Inspector insp, TenantAddress oldAddress) {
         if (!insp.valid()) return oldAddress;
-        TenantInfoAddress address = TenantInfoAddress.EMPTY
+        TenantAddress address = TenantAddress.empty()
                 .withCountry(getString(insp.field("country"), oldAddress.country()))
-                .withStateRegionProvince(getString(insp.field("stateRegionProvince"), oldAddress.stateRegionProvince()))
+                .withRegion(getString(insp.field("stateRegionProvince"), oldAddress.region()))
                 .withCity(getString(insp.field("city"), oldAddress.city()))
-                .withPostalCodeOrZip(getString(insp.field("postalCodeOrZip"), oldAddress.postalCodeOrZip()))
-                .withAddressLines(getString(insp.field("addressLines"), oldAddress.addressLines()));
+                .withCode(getString(insp.field("postalCodeOrZip"), oldAddress.code()))
+                .withAddress(getString(insp.field("addressLines"), oldAddress.address()));
 
-        List<String> fields = List.of(address.addressLines(),
-                        address.postalCodeOrZip(),
+        List<String> fields = List.of(address.address(),
+                        address.code(),
                         address.country(),
                         address.city(),
-                        address.stateRegionProvince());
+                        address.region());
 
         if (fields.stream().allMatch(String::isBlank) || fields.stream().noneMatch(String::isBlank))
             return address;
@@ -611,7 +651,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         throw new IllegalArgumentException("All address fields must be set");
     }
 
-    private TenantInfoBillingContact updateTenantInfoBillingContact(Inspector insp, TenantInfoBillingContact oldContact) {
+    private TenantContact updateTenantInfoContact(Inspector insp, TenantContact oldContact) {
         if (!insp.valid()) return oldContact;
 
         String email = getString(insp.field("email"), oldContact.email());
@@ -622,11 +662,35 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             throw new IllegalArgumentException("'email' needs to be an email address");
         }
 
-        return TenantInfoBillingContact.EMPTY
+        return TenantContact.empty()
                 .withName(getString(insp.field("name"), oldContact.name()))
-                .withEmail(email)
-                .withPhone(getString(insp.field("phone"), oldContact.phone()))
+                .withEmail(getString(insp.field("email"), oldContact.email()))
+                .withPhone(getString(insp.field("phone"), oldContact.phone()));
+    }
+
+    private TenantBilling updateTenantInfoBillingContact(Inspector insp, TenantBilling oldContact) {
+        if (!insp.valid()) return oldContact;
+
+        return TenantBilling.empty()
+                .withContact(updateTenantInfoContact(insp, oldContact.contact()))
                 .withAddress(updateTenantInfoAddress(insp.field("address"), oldContact.address()));
+    }
+
+    private TenantContacts updateTenantInfoContacts(Inspector insp, TenantContacts oldContacts) {
+        if (!insp.valid()) return oldContacts;
+
+        List<TenantContacts.Contact> contacts = SlimeUtils.entriesStream(insp).map(inspector -> {
+                String email = inspector.field("email").asString().trim();
+                List<TenantContacts.Audience> audiences = SlimeUtils.entriesStream(inspector.field("audiences"))
+                            .map(audience -> fromAudience(audience.asString()))
+                            .collect(Collectors.toUnmodifiableList());
+                if (!email.contains("@")) {
+                    throw new IllegalArgumentException("'email' needs to be an email address");
+                }
+                return new TenantContacts.EmailContact(audiences, email);
+            }).collect(toUnmodifiableList());
+
+        return new TenantContacts(contacts);
     }
 
     private HttpResponse notifications(HttpRequest request, Optional<String> tenant, boolean includeTenantFieldInResponse) {
@@ -648,6 +712,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 .forEach(notification -> toSlime(notificationsArray.addObject(), notification, includeTenantFieldInResponse, excludeMessages));
         return new SlimeJsonResponse(slime);
     }
+
     private static <T> boolean propertyEquals(HttpRequest request, String property, Function<String, T> mapper, Optional<T> value) {
         return Optional.ofNullable(request.getProperty(property))
                 .map(propertyValue -> value.isPresent() && mapper.apply(propertyValue).equals(value.get()))
@@ -1852,8 +1917,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             User user = getAttribute(request, User.ATTRIBUTE_NAME, User.class);
             TenantInfo info = controller.tenants().require(tenant, CloudTenant.class)
                     .info()
-                    .withContactName(user.name())
-                    .withContactEmail(user.email());
+                    .withContact(TenantContact.from(user.name(), user.email()));
             // Store changes
             controller.tenants().lockOrThrow(tenant, LockedTenant.Cloud.class, lockedTenant -> {
                 lockedTenant = lockedTenant.withInfo(info);

@@ -13,51 +13,34 @@ import java.util.Objects;
  * @author smorgrav
  */
 public class TenantInfo {
-    // Editable as 'Tenant Information - Company Name'
-    // Viewable in the 'Account - Profile' section as 'Company Name'
+
     private final String name;
-
-    // Editable as 'Tenant Information - Email'
-    // Not displayed outside of 'Edit profile'
     private final String email;
-
-    // Editable as 'Tenant Information - Website'
-    // Viewable in the 'Account - Profile' section at bottom of 'Contact Information'
     private final String website;
 
-    // Editable as 'Contact Information - Contact Name'
-    // Viewable in the 'Account - Profile' section in 'Contact Information'
-    private final String contactName;
-
-    // Editable as 'Contact Information - Contact Email'
-    // Viewable in the 'Account - Profile' section in 'Contact Information'
-    private final String contactEmail;
-
-    // Not editable in the account setting
-    // Not viewable.
-    // TODO: Remove
-    private final String invoiceEmail;
-
-    // See class for more info
-    private final TenantInfoAddress address;
-
-    // See class for more info
-    private final TenantInfoBillingContact billingContact;
+    private final TenantContact contact;
+    private final TenantAddress address;
+    private final TenantBilling billingContact;
+    private final TenantContacts contacts;
 
     TenantInfo(String name, String email, String website, String contactName, String contactEmail,
-               String invoiceEmail, TenantInfoAddress address, TenantInfoBillingContact billingContact) {
+               TenantAddress address, TenantBilling billingContact, TenantContacts contacts) {
+        this(name, email, website, TenantContact.from(contactName, contactEmail), address, billingContact, contacts);
+    }
+
+    TenantInfo(String name, String email, String website, TenantContact contact, TenantAddress address, TenantBilling billing, TenantContacts contacts) {
         this.name = Objects.requireNonNull(name);
         this.email = Objects.requireNonNull(email);
         this.website = Objects.requireNonNull(website);
-        this.contactName = Objects.requireNonNull(contactName);
-        this.contactEmail = Objects.requireNonNull(contactEmail);
-        this.invoiceEmail = Objects.requireNonNull(invoiceEmail);
+        this.contact = Objects.requireNonNull(contact);
         this.address = Objects.requireNonNull(address);
-        this.billingContact = Objects.requireNonNull(billingContact);
+        this.billingContact = Objects.requireNonNull(billing);
+        this.contacts = Objects.requireNonNull(contacts);
     }
 
-    public static final TenantInfo EMPTY = new TenantInfo("","","", "", "", "",
-            TenantInfoAddress.EMPTY, TenantInfoBillingContact.EMPTY);
+    public static TenantInfo empty() {
+        return new TenantInfo("", "", "", "", "", TenantAddress.empty(), TenantBilling.empty(), TenantContacts.empty());
+    }
 
     public String name() {
         return name;
@@ -71,60 +54,46 @@ public class TenantInfo {
         return website;
     }
 
-    public String contactName() {
-        return contactName;
-    }
+    public TenantContact contact() { return contact; }
 
-    public String contactEmail() {
-        return contactEmail;
-    }
+    public TenantAddress address() { return address; }
 
-    public String invoiceEmail() {
-        return invoiceEmail;
-    }
-
-    public TenantInfoAddress address() {
-        return address;
-    }
-
-    public TenantInfoBillingContact billingContact() {
+    public TenantBilling billingContact() {
         return billingContact;
     }
 
-    public TenantInfo withName(String newName) {
-        return new TenantInfo(newName, email, website, contactName, contactEmail, invoiceEmail, address, billingContact);
-    }
-
-    public TenantInfo withEmail(String newEmail) {
-        return new TenantInfo(name, newEmail, website, contactName, contactEmail, invoiceEmail, address, billingContact);
-    }
-
-    public TenantInfo withWebsite(String newWebsite) {
-        return new TenantInfo(name, email, newWebsite, contactName, contactEmail, invoiceEmail, address, billingContact);
-    }
-
-    public TenantInfo withContactName(String newContactName) {
-        return new TenantInfo(name, email, website, newContactName, contactEmail, invoiceEmail, address, billingContact);
-    }
-
-    public TenantInfo withContactEmail(String newContactEmail) {
-        return new TenantInfo(name, email, website, contactName, newContactEmail, invoiceEmail, address, billingContact);
-    }
-
-    public TenantInfo withInvoiceEmail(String newInvoiceEmail) {
-        return new TenantInfo(name, email, website, contactName, contactEmail, newInvoiceEmail, address, billingContact);
-    }
-
-    public TenantInfo withAddress(TenantInfoAddress newAddress) {
-        return new TenantInfo(name, email, website, contactName, contactEmail, invoiceEmail, newAddress, billingContact);
-    }
-
-    public TenantInfo withBillingContact(TenantInfoBillingContact newBillingContact) {
-        return new TenantInfo(name, email, website, contactName, contactEmail, invoiceEmail, address, newBillingContact);
-    }
+    public TenantContacts contacts() { return contacts; }
 
     public boolean isEmpty() {
-        return this.equals(EMPTY);
+        return this.equals(empty());
+    }
+
+    public TenantInfo withName(String name) {
+        return new TenantInfo(name, email, website, contact, address, billingContact, contacts);
+    }
+
+    public TenantInfo withEmail(String email) {
+        return new TenantInfo(name, email, website, contact, address, billingContact, contacts);
+    }
+
+    public TenantInfo withWebsite(String website) {
+        return new TenantInfo(name, email, website, contact, address, billingContact, contacts);
+    }
+
+    public TenantInfo withContact(TenantContact contact) {
+        return new TenantInfo(name, email, website, contact, address, billingContact, contacts);
+    }
+
+    public TenantInfo withAddress(TenantAddress address) {
+        return new TenantInfo(name, email, website, contact, address, billingContact, contacts);
+    }
+
+    public TenantInfo withBilling(TenantBilling billingContact) {
+        return new TenantInfo(name, email, website, contact, address, billingContact, contacts);
+    }
+
+    public TenantInfo withContacts(TenantContacts contacts) {
+        return new TenantInfo(name, email, website, contact, address, billingContact, contacts);
     }
 
     @Override
@@ -132,18 +101,30 @@ public class TenantInfo {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TenantInfo that = (TenantInfo) o;
-        return name.equals(that.name) &&
-                email.equals(that.email) &&
-                website.equals(that.website) &&
-                contactName.equals(that.contactName) &&
-                contactEmail.equals(that.contactEmail) &&
-                invoiceEmail.equals(that.invoiceEmail) &&
-                address.equals(that.address) &&
-                billingContact.equals(that.billingContact);
+        return Objects.equals(name, that.name) &&
+                Objects.equals(email, that.email) &&
+                Objects.equals(website, that.website) &&
+                Objects.equals(contact, that.contact) &&
+                Objects.equals(address, that.address) &&
+                Objects.equals(billingContact, that.billingContact) &&
+                Objects.equals(contacts, that.contacts);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, email, website, contactName, contactEmail, invoiceEmail, address, billingContact);
+        return Objects.hash(name, email, website, contact, address, billingContact, contacts);
+    }
+
+    @Override
+    public String toString() {
+        return "TenantInfo{" +
+                "name='" + name + '\'' +
+                ", email='" + email + '\'' +
+                ", website='" + website + '\'' +
+                ", contact=" + contact +
+                ", address=" + address +
+                ", billingContact=" + billingContact +
+                ", contacts=" + contacts +
+                '}';
     }
 }

@@ -53,7 +53,7 @@ public class CloudTenant extends Tenant {
                                createdAt,
                                LastLoginInfo.EMPTY,
                                Optional.ofNullable(creator),
-                               ImmutableBiMap.of(), TenantInfo.EMPTY, List.of(), Optional.empty());
+                               ImmutableBiMap.of(), TenantInfo.empty(), List.of(), Optional.empty());
     }
 
     /** The user that created the tenant */

@@ -9,22 +9,24 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.tenant.TenantAddress;
+import com.yahoo.vespa.hosted.controller.tenant.TenantBilling;
+import com.yahoo.vespa.hosted.controller.tenant.TenantContact;
+import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
-import com.yahoo.vespa.hosted.controller.tenant.TenantInfoAddress;
-import com.yahoo.vespa.hosted.controller.tenant.TenantInfoBillingContact;
 
 import java.net.URI;
 import java.security.Principal;
@@ -35,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Slime serialization of {@link Tenant} sub-types.
@@ -193,50 +196,47 @@ public class TenantSerializer {
     }
 
     TenantInfo tenantInfoFromSlime(Inspector infoObject) {
-        if (!infoObject.valid()) return TenantInfo.EMPTY;
+        if (!infoObject.valid()) return TenantInfo.empty();
 
-        return TenantInfo.EMPTY
+        return TenantInfo.empty()
                 .withName(infoObject.field("name").asString())
                 .withEmail(infoObject.field("email").asString())
                 .withWebsite(infoObject.field("website").asString())
-                .withContactName(infoObject.field("contactName").asString())
-                .withContactEmail(infoObject.field("contactEmail").asString())
-                .withInvoiceEmail(infoObject.field("invoiceEmail").asString())
+                .withContact(TenantContact.from(
+                        infoObject.field("contactName").asString(),
+                        infoObject.field("contactEmail").asString()))
                 .withAddress(tenantInfoAddressFromSlime(infoObject.field("address")))
-                .withBillingContact(tenantInfoBillingContactFromSlime(infoObject.field("billingContact")));
+                .withBilling(tenantInfoBillingContactFromSlime(infoObject.field("billingContact")))
+                .withContacts(tenantContactsFrom(infoObject.field("contacts")));
     }
 
-    private TenantInfoAddress tenantInfoAddressFromSlime(Inspector addressObject) {
-        return TenantInfoAddress.EMPTY
-                .withAddressLines(addressObject.field("addressLines").asString())
-                .withPostalCodeOrZip(addressObject.field("postalCodeOrZip").asString())
+    private TenantAddress tenantInfoAddressFromSlime(Inspector addressObject) {
+        return TenantAddress.empty()
+                .withAddress(addressObject.field("addressLines").asString())
+                .withCode(addressObject.field("postalCodeOrZip").asString())
                 .withCity(addressObject.field("city").asString())
-                .withStateRegionProvince(addressObject.field("stateRegionProvince").asString())
+                .withRegion(addressObject.field("stateRegionProvince").asString())
                 .withCountry(addressObject.field("country").asString());
     }
 
-    private TenantInfoBillingContact tenantInfoBillingContactFromSlime(Inspector billingObject) {
-        return TenantInfoBillingContact.EMPTY
-                .withName(billingObject.field("name").asString())
-                .withEmail(billingObject.field("email").asString())
-                .withPhone(billingObject.field("phone").asString())
+    private TenantBilling tenantInfoBillingContactFromSlime(Inspector billingObject) {
+        return TenantBilling.empty()
+                .withContact(TenantContact.from(
+                        billingObject.field("name").asString(),
+                        billingObject.field("email").asString(),
+                        billingObject.field("phone").asString()))
                 .withAddress(tenantInfoAddressFromSlime(billingObject.field("address")));
     }
 
     private List<TenantSecretStore> secretStoresFromSlime(Inspector secretStoresObject) {
-        List<TenantSecretStore> secretStores = new ArrayList<>();
-        if (!secretStoresObject.valid()) return secretStores;
+        if (!secretStoresObject.valid()) return List.of();
 
-        secretStoresObject.traverse((ArrayTraverser) (index, inspector) -> {
-            secretStores.add(
-                    new TenantSecretStore(
-                            inspector.field(nameField).asString(),
-                            inspector.field(awsIdField).asString(),
-                            inspector.field(roleField).asString()
-                    )
-            );
-        });
-        return secretStores;
+        return SlimeUtils.entriesStream(secretStoresObject)
+                .map(inspector -> new TenantSecretStore(
+                        inspector.field(nameField).asString(),
+                        inspector.field(awsIdField).asString(),
+                        inspector.field(roleField).asString()))
+                .collect(Collectors.toUnmodifiableList());
     }
 
     private LastLoginInfo lastLoginInfoFromSlime(Inspector lastLoginInfoObject) {
@@ -252,31 +252,31 @@ public class TenantSerializer {
         infoCursor.setString("name", info.name());
         infoCursor.setString("email", info.email());
         infoCursor.setString("website", info.website());
-        infoCursor.setString("invoiceEmail", info.invoiceEmail());
-        infoCursor.setString("contactName", info.contactName());
-        infoCursor.setString("contactEmail", info.contactEmail());
+        infoCursor.setString("contactName", info.contact().name());
+        infoCursor.setString("contactEmail", info.contact().email());
         toSlime(info.address(), infoCursor);
         toSlime(info.billingContact(), infoCursor);
+        toSlime(info.contacts(), infoCursor);
     }
 
-    private void toSlime(TenantInfoAddress address, Cursor parentCursor) {
+    private void toSlime(TenantAddress address, Cursor parentCursor) {
         if (address.isEmpty()) return;
 
         Cursor addressCursor = parentCursor.setObject("address");
-        addressCursor.setString("addressLines", address.addressLines());
-        addressCursor.setString("postalCodeOrZip", address.postalCodeOrZip());
+        addressCursor.setString("addressLines", address.address());
+        addressCursor.setString("postalCodeOrZip", address.code());
         addressCursor.setString("city", address.city());
-        addressCursor.setString("stateRegionProvince", address.stateRegionProvince());
+        addressCursor.setString("stateRegionProvince", address.region());
         addressCursor.setString("country", address.country());
     }
 
-    private void toSlime(TenantInfoBillingContact billingContact, Cursor parentCursor) {
+    private void toSlime(TenantBilling billingContact, Cursor parentCursor) {
         if (billingContact.isEmpty()) return;
 
         Cursor addressCursor = parentCursor.setObject("billingContact");
-        addressCursor.setString("name", billingContact.name());
-        addressCursor.setString("email", billingContact.email());
-        addressCursor.setString("phone", billingContact.phone());
+        addressCursor.setString("name", billingContact.contact().name());
+        addressCursor.setString("email", billingContact.contact().email());
+        addressCursor.setString("phone", billingContact.contact().phone());
         toSlime(billingContact.address(), addressCursor);
     }
 
@@ -290,7 +290,19 @@ public class TenantSerializer {
             secretStoreCursor.setString(awsIdField, tenantSecretStore.getAwsId());
             secretStoreCursor.setString(roleField, tenantSecretStore.getRole());
         });
+    }
 
+    private void toSlime(TenantContacts contacts, Cursor parent) {
+        if (contacts.isEmpty()) return;
+        var cursor = parent.setArray("contacts");
+        contacts.all().forEach(contact -> writeContact(contact, cursor.addObject()));
+    }
+
+    private TenantContacts tenantContactsFrom(Inspector object) {
+        List<TenantContacts.Contact> contacts = SlimeUtils.entriesStream(object)
+                .map(this::readContact)
+                .collect(Collectors.toUnmodifiableList());
+        return new TenantContacts(contacts);
     }
 
     private Optional<Contact> contactFrom(Inspector object) {
@@ -336,6 +348,36 @@ public class TenantSerializer {
         return personLists;
     }
 
+    private void writeContact(TenantContacts.Contact contact, Cursor cursor) {
+        cursor.setString("type", contact.type().value());
+        Cursor audiencesArray = cursor.setArray("audiences");
+        contact.audiences().forEach(audience -> audiencesArray.addString(toAudience(audience)));
+        var data = cursor.setObject("data");
+        switch (contact.type()) {
+            case EMAIL:
+                var email = (TenantContacts.EmailContact) contact;
+                data.setString("email", email.email());
+                return;
+            default:
+                throw new IllegalArgumentException("Serialization for contact type not implemented: " + contact.type());
+        }
+    }
+
+    private TenantContacts.Contact readContact(Inspector inspector) {
+        var type = TenantContacts.Type.from(inspector.field("type").asString())
+                .orElseThrow(() -> new RuntimeException("Unknown type: " + inspector.field("type").asString()));
+        var audiences = SlimeUtils.entriesStream(inspector.field("audiences"))
+                .map(audience -> TenantSerializer.fromAudience(audience.asString()))
+                .collect(Collectors.toUnmodifiableList());
+        switch (type) {
+            case EMAIL:
+                return new TenantContacts.EmailContact(audiences, inspector.field("data").field("email").asString());
+            default:
+                throw new IllegalArgumentException("Serialization for contact type not implemented: " + type);
+        }
+
+    }
+
     private static Tenant.Type typeOf(String value) {
         switch (value) {
             case "athenz":  return Tenant.Type.athenz;
@@ -371,4 +413,21 @@ public class TenantSerializer {
             default: throw new IllegalArgumentException("Unexpected user level '" + userLevel + "'.");
         }
     }
+
+    private static TenantContacts.Audience fromAudience(String value) {
+        switch (value) {
+            case "tenant":  return TenantContacts.Audience.TENANT;
+            case "notifications":  return TenantContacts.Audience.NOTIFICATIONS;
+            default: throw new IllegalArgumentException("Unknown contact audience '" + value + "'.");
+        }
+    }
+
+    private static String toAudience(TenantContacts.Audience audience) {
+        switch (audience) {
+            case TENANT: return "tenant";
+            case NOTIFICATIONS: return "notifications";
+            default: throw new IllegalArgumentException("Unexpected contact audience '" + audience + "'.");
+        }
+    }
+
 }
