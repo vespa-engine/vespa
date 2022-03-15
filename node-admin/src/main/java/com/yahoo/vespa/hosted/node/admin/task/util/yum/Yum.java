@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 import java.util.List;
 import java.util.Optional;
 
+import static com.yahoo.vespa.hosted.node.admin.task.util.yum.YumCommand.DeleteVersionLockYumCommand;
 import static com.yahoo.vespa.hosted.node.admin.task.util.yum.YumCommand.GenericYumCommand;
 import static com.yahoo.vespa.hosted.node.admin.task.util.yum.YumCommand.InstallFixedYumCommand;
 
@@ -66,6 +67,10 @@ public class Yum {
 
     public GenericYumCommand remove(List<String> packages) {
         return remove(packages.stream().map(YumPackageName::fromString).toArray(YumPackageName[]::new));
+    }
+
+    public YumCommand.DeleteVersionLockYumCommand deleteVersionLock(YumPackageName yumPackage) {
+        return new DeleteVersionLockYumCommand(terminal, yumPackage);
     }
 
     static YumPackageName[] toYumPackageNameArray(String package1, String... packages) {

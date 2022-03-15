@@ -158,36 +158,15 @@ public abstract class YumCommand<T extends YumCommand<T>> {
         public boolean converge(TaskContext context) {
             String targetVersionLockName = yumPackage.toVersionLockName();
 
-            List<String> command = new ArrayList<>(4);
-            command.add("yum");
-            command.add("versionlock");
-            command.add("list");
-
-            boolean alreadyLocked = terminal
-                    .newCommandLine(context)
-                    .add(command)
-                    .executeSilently()
-                    .getOutputLinesStream()
-                    .map(YumPackageName::parseString)
-                    .filter(Optional::isPresent) // removes garbage first lines, even with --quiet
-                    .map(Optional::get)
-                    .anyMatch(packageName -> {
-                        // Ignore lines for other packages
-                        if (packageName.getName().equals(yumPackage.getName())) {
-                            // If existing lock doesn't exactly match the full package name,
-                            // it means it's locked to another version and we must remove that lock.
-                            String versionLockName = packageName.toVersionLockName();
-                            if (versionLockName.equals(targetVersionLockName)) {
-                                return true;
-                            } else {
-                                terminal.newCommandLine(context)
-                                        .add("yum", "versionlock", "delete", versionLockName)
-                                        .execute();
-                            }
-                        }
-
-                        return false;
-                    });
+            boolean alreadyLocked = false;
+            Optional<String> versionLock = versionLockExists(context, terminal, yumPackage);
+            if (versionLock.isPresent()) {
+                if (versionLock.get().equals(targetVersionLockName)) {
+                    alreadyLocked = true;
+                } else {
+                    YumCommand.deleteVersionLock(context, terminal, versionLock.get());
+                }
+            }
 
             boolean modified = false;
 
@@ -240,6 +219,24 @@ public abstract class YumCommand<T extends YumCommand<T>> {
         protected InstallFixedYumCommand getThis() { return this; }
     }
 
+    public static class DeleteVersionLockYumCommand extends YumCommand<DeleteVersionLockYumCommand> {
+        private final Terminal terminal;
+        private final YumPackageName yumPackage;
+
+        DeleteVersionLockYumCommand(Terminal terminal, YumPackageName yumPackage) {
+            super(terminal);
+            this.terminal = terminal;
+            this.yumPackage = yumPackage;
+        }
+
+        @Override
+        public boolean converge(TaskContext context) {
+            return deleteVersionLock(context, terminal, yumPackage.toName());
+        }
+
+        protected DeleteVersionLockYumCommand getThis() { return this; }
+    }
+
     protected boolean isInstalled(TaskContext context, YumPackageName yumPackage) {
         return queryInstalled(terminal, context, yumPackage).map(yumPackage::isSubsetOf).orElse(false);
     }
@@ -264,4 +261,37 @@ public abstract class YumCommand<T extends YumCommand<T>> {
 
         return Optional.of(builder.build());
     }
+
+    private static Optional<String> versionLockExists(TaskContext context, Terminal terminal, YumPackageName yumPackage) {
+
+        List<String> command = new ArrayList<>(4);
+        command.add("yum");
+        command.add("versionlock");
+        command.add("list");
+
+        return terminal
+                .newCommandLine(context)
+                .add(command)
+                .executeSilently()
+                .getOutputLinesStream()
+                .map(YumPackageName::parseString)
+                .filter(Optional::isPresent) // removes garbage first lines, even with --quiet
+                .map(Optional::get)
+                // Ignore lines for other packages
+                .filter(packageName -> packageName.getName().equals(yumPackage.getName()))
+                // If existing lock doesn't exactly match the full package name,
+                // it means it's locked to another version and we must remove that lock.
+                .map(YumPackageName::toVersionLockName)
+                .findFirst();
+    }
+
+    private static boolean deleteVersionLock(TaskContext context, Terminal terminal, String wildcardEntry) {
+        // Idempotent command, gives exit code 0 also when versionlock does not exist
+        terminal.newCommandLine(context)
+                       .add("yum", "versionlock", "delete", wildcardEntry)
+                       .execute()
+                       .getOutputLinesStream();
+        return true;
+    }
+
 }

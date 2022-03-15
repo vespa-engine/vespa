@@ -301,6 +301,19 @@ public class YumTest {
         yum.upgrade().converge(taskContext);
     }
 
+    @Test
+    public void testDeleteVersionLock() {
+        terminal.expectCommand("yum versionlock delete openssh-0:8.0p1-4.el8_1.x86_64 2>&1");
+
+        YumPackageName pkg = new YumPackageName
+                .Builder("openssh")
+                .setVersion("8.0p1")
+                .setRelease("4.el8_1")
+                .setArchitecture("x86_64")
+                .build();
+        assertTrue(yum.deleteVersionLock(pkg).converge(taskContext));
+    }
+
     private void mockRpmQuery(String packageName, YumPackageName installedOrNull) {
         new YumTester(terminal).expectQueryInstalled(packageName).andReturn(installedOrNull);
     }
