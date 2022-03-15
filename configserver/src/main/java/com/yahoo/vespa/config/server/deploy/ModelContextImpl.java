@@ -261,7 +261,7 @@ public class ModelContextImpl implements ModelContext {
             this.avoidRenamingSummaryFeatures = flagValue(source, appId, version, Flags.AVOID_RENAMING_SUMMARY_FEATURES);
             this.mergeGroupingResultInSearchInvoker = flagValue(source, appId, version, Flags.MERGE_GROUPING_RESULT_IN_SEARCH_INVOKER);
             this.experimentalSdParsing = flagValue(source, appId, version, Flags.EXPERIMENTAL_SD_PARSING);
-            this.adminClusterNodeResourcesArchitecture = flagValue(source, appId, version, ClusterSpec.Type.admin, PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE);
+            this.adminClusterNodeResourcesArchitecture = flagValue(source, appId, version, PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE);
         }
 
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
