@@ -154,7 +154,7 @@ TEST("requireThatAnnotationsCanHaveValues") {
 }
 
 TEST("requireThatAnnotationsCanReferenceAnnotations") {
-    SpanList::UP root(new SpanList);
+    auto root = std::make_unique<SpanList>();
     SpanTree tree("html", std::move(root));
     size_t san_index = tree.annotate(makeUP(new Annotation(text_type)));
     size_t fran_index = tree.annotate(makeUP(new Annotation(text_type)));
@@ -174,7 +174,6 @@ TEST("requireThatAnnotationsCanReferenceAnnotations") {
     Annotation city(city_type, std::move(city_data));
 
     ASSERT_TRUE(city.getFieldValue());
-    EXPECT_TRUE(city.getFieldValue()->isA(original));
     EXPECT_EQUAL(original, *city.getFieldValue());
 }
 

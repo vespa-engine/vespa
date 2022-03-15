@@ -65,9 +65,6 @@ public:
     /** Get the datatype describing what can be stored in this fieldvalue. */
     virtual const DataType *getDataType() const = 0;
 
-    /** Wrapper for datatypes isA() function. See DataType. */
-    virtual bool isA(const FieldValue& other) const;
-
     void serialize(vespalib::nbostream &stream) const;
     vespalib::nbostream serialize() const;
 
@@ -171,10 +168,6 @@ public:
     }
 
     virtual void print(std::ostream& out, bool verbose, const std::string& indent) const = 0;
-    // Duplication to reduce size of FieldValue
-    void print(std::ostream& out) const { print(out, false, ""); }
-    void print(std::ostream& out, bool verbose) const { print(out, verbose, ""); }
-    void print(std::ostream& out, const std::string& indent) const { print(out, false, indent); }
     /** Utility function to get this output as a string.  */
     std::string toString(bool verbose=false, const std::string& indent="") const;
     virtual void printXml(XmlOutputStream& out) const = 0;
