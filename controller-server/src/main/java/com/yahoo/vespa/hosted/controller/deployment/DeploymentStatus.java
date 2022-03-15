@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
+import com.yahoo.component.VersionCompatibility;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.DeclaredTest;
@@ -87,16 +88,18 @@ public class DeploymentStatus {
     private final JobList allJobs;
     private final SystemName system;
     private final Version systemVersion;
+    private final VersionCompatibility versionCompatibility;
     private final Instant now;
     private final Map<JobId, StepStatus> jobSteps;
     private final List<StepStatus> allSteps;
 
     public DeploymentStatus(Application application, Map<JobId, JobStatus> allJobs, SystemName system,
-                            Version systemVersion, Instant now) {
+                            Version systemVersion, VersionCompatibility versionCompatibility, Instant now) {
         this.application = requireNonNull(application);
         this.allJobs = JobList.from(allJobs.values());
         this.system = requireNonNull(system);
         this.systemVersion = requireNonNull(systemVersion);
+        this.versionCompatibility = versionCompatibility;
         this.now = requireNonNull(now);
         List<StepStatus> allSteps = new ArrayList<>();
         this.jobSteps = jobDependencies(application.deploymentSpec(), allSteps);
@@ -308,42 +311,54 @@ public class DeploymentStatus {
     private Map<JobId, List<Job>> productionJobs(InstanceName instance, Change change, boolean assumeUpgradesSucceed) {
         Map<JobId, List<Job>> jobs = new LinkedHashMap<>();
         jobSteps.forEach((job, step) -> {
+            if ( ! job.application().instance().equals(instance) || ! job.type().isProduction())
+                return;
+
+            // Signal strict completion criterion by depending on job itself.
+            if (step.completedAt(change, Optional.of(job)).isPresent())
+                return;
+
             // When computing eager test jobs for outstanding changes, assume current change completes successfully.
             Optional<Deployment> deployment = deploymentFor(job);
             Optional<Version> existingPlatform = deployment.map(Deployment::version);
             Optional<ApplicationVersion> existingApplication = deployment.map(Deployment::applicationVersion);
+            boolean deployingCompatibilityChange =    areIncompatible(existingPlatform, change.application())
+                                                   || areIncompatible(change.platform(), existingApplication);
             if (assumeUpgradesSucceed) {
+                if (deployingCompatibilityChange) // No eager tests for this.
+                    return;
+
                 Change currentChange = application.require(instance).change();
                 Versions target = Versions.from(currentChange, application, deployment, systemVersion);
                 existingPlatform = Optional.of(target.targetPlatform());
                 existingApplication = Optional.of(target.targetApplication());
             }
-            if (job.application().instance().equals(instance) && job.type().isProduction()) {
-                List<Job> toRun = new ArrayList<>();
-                List<Change> changes = changes(job, step, change);
-                if (changes.isEmpty()) return;
-                for (Change partial : changes) {
-                    Job jobToRun = new Job(job.type(),
-                                           Versions.from(partial, application, existingPlatform, existingApplication, systemVersion),
-                                           step.readyAt(partial, Optional.of(job)),
-                                           partial);
-                    toRun.add(jobToRun);
-                    // Assume first partial change is applied before the second.
-                    existingPlatform = Optional.of(jobToRun.versions.targetPlatform());
-                    existingApplication = Optional.of(jobToRun.versions.targetApplication());
-                }
-                jobs.put(job, toRun);
+            List<Job> toRun = new ArrayList<>();
+            List<Change> changes = deployingCompatibilityChange ? List.of(change) : changes(job, step, change);
+            if (changes.isEmpty()) return;
+            for (Change partial : changes) {
+                Job jobToRun = new Job(job.type(),
+                                       Versions.from(partial, application, existingPlatform, existingApplication, systemVersion),
+                                       step.readyAt(partial, Optional.of(job)),
+                                       partial);
+                toRun.add(jobToRun);
+                // Assume first partial change is applied before the second.
+                existingPlatform = Optional.of(jobToRun.versions.targetPlatform());
+                existingApplication = Optional.of(jobToRun.versions.targetApplication());
             }
+            jobs.put(job, toRun);
         });
         return jobs;
     }
 
+    private boolean areIncompatible(Optional<Version> platform, Optional<ApplicationVersion> application) {
+        return    platform.isPresent()
+               && application.flatMap(ApplicationVersion::compileVersion).isPresent()
+               && versionCompatibility.refuse(platform.get(), application.get().compileVersion().get());
+    }
+
     /** Changes to deploy with the given job, possibly split in two steps. */
     private List<Change> changes(JobId job, StepStatus step, Change change) {
-        // Signal strict completion criterion by depending on job itself.
-        if (step.completedAt(change, Optional.of(job)).isPresent())
-            return List.of();
-
         if (change.platform().isEmpty() || change.application().isEmpty() || change.isPinned())
             return List.of(change);
 

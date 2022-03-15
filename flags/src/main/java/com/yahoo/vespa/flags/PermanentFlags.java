@@ -240,6 +240,20 @@ public class PermanentFlags {
             "Takes effect immediately.",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundListFlag<String> INCOMPATIBLE_VERSIONS = defineListFlag(
+            "incompatible-versions", List.of("8"), String.class,
+            "A list of versions which are binary-incompatible with earlier versions. " +
+            "A platform version A and an application package compiled against version B are thus incompatible if this " +
+            "list contains a version X such that (A >= X) != (B >= X). " +
+            "A version specifying only major, or major and minor, imply 0s for the unspecified parts." +
+            "This list may also contain '*' wildcards for any suffix of its version number; see the VersionCompatibility " +
+            "class for further details. " +
+            "The controller will attempt to couple platform upgrades to application changes if their compile versions are " +
+            "incompatible with any current deployments. " +
+            "The config server will refuse to serve config to nodes running a version which is incompatible with their " +
+            "current wanted node version, i.e., nodes about to upgrade to a version which is incompatible with the current.",
+            "Takes effect immediately");
+
     public static final UnboundListFlag<Integer> INCOMPATIBLE_MAJOR_VERSIONS = defineListFlag(
             "incompatible-major-versions", List.of(8), Integer.class,
             "A list of major versions which are binary-incompatible and requires an application package to " +

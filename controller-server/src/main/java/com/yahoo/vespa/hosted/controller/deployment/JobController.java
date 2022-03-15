@@ -59,7 +59,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.endStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static java.util.Comparator.naturalOrder;
 import static java.util.function.Predicate.not;
 import static java.util.logging.Level.INFO;
 import static java.util.stream.Collectors.toList;
@@ -341,6 +340,7 @@ public class JobController {
                                                                    LinkedHashMap::new)),
                                     controller.system(),
                                     systemVersion,
+                                    controller.applications().versionCompatibility(),
                                     controller.clock().instant());
     }
 
@@ -496,6 +496,12 @@ public class JobController {
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
     public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment, JobProfile profile, Optional<String> reason) {
+        if (versions.targetApplication().compileVersion()
+                    .map(version -> controller.applications().versionCompatibility().refuse(versions.targetPlatform(), version))
+                    .orElse(false))
+            throw new IllegalArgumentException("Will not start a job with incompatible platform version (" + versions.targetPlatform() + ") " +
+                                               "and compile versions (" + versions.targetApplication().compileVersion().get() + ")");
+
         locked(id, type, __ -> {
             Optional<Run> last = last(id, type);
             if (last.flatMap(run -> active(run.id())).isPresent())

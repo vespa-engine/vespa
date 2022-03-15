@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.component.VersionCompatibility;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
@@ -74,7 +75,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     private final Clock clock;
     private final TenantFileSystemDirs tenantFileSystemDirs;
     private final ConfigserverConfig configserverConfig;
-    private final ListFlag<Integer> incompatibleMajorVersions;
+    private final ListFlag<String> incompatibleVersions;
 
     public TenantApplications(TenantName tenant, Curator curator, StripedExecutor<TenantName> zkWatcherExecutor,
                               ExecutorService zkCacheExecutor, Metrics metrics, ReloadListener reloadListener,
@@ -95,7 +96,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         this.tenantFileSystemDirs = tenantFileSystemDirs;
         this.clock = clock;
         this.configserverConfig = configserverConfig;
-        this.incompatibleMajorVersions = PermanentFlags.INCOMPATIBLE_MAJOR_VERSIONS.bindTo(flagSource);
+        this.incompatibleVersions = PermanentFlags.INCOMPATIBLE_VERSIONS.bindTo(flagSource);
     }
 
     /** The curator backed ZK storage of this. */
@@ -392,8 +393,8 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         if (vespaVersion.isEmpty()) return true;
         Version wantedVersion = applicationMapper.getForVersion(application, Optional.empty(), clock.instant())
                                                  .getModel().wantedNodeVersion();
-        boolean compatibleMajor = ! incompatibleMajorVersions.value().contains(wantedVersion.getMajor());
-        return compatibleMajor || vespaVersion.get().getMajor() == wantedVersion.getMajor();
+        return VersionCompatibility.fromVersionList(incompatibleVersions.value())
+                                   .accept(vespaVersion.get(), wantedVersion);
     }
 
     @Override

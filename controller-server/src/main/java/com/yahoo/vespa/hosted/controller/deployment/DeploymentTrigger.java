@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.yahoo.component.Version;
+import com.yahoo.component.VersionCompatibility;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
@@ -19,6 +21,8 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -37,6 +41,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparing;
+import static java.util.Comparator.reverseOrder;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -94,18 +99,55 @@ public class DeploymentTrigger {
         applications().lockApplicationIfPresent(id, application -> {
             DeploymentStatus status = jobs.deploymentStatus(application.get());
             for (InstanceName instanceName : application.get().deploymentSpec().instanceNames()) {
-                Change outstanding = status.outstandingChange(instanceName);
+                Change outstanding = outstandingChange(status, instanceName);
                 if (   outstanding.hasTargets()
                     && status.instanceSteps().get(instanceName)
                              .readyAt(outstanding)
                              .map(readyAt -> ! readyAt.isAfter(clock.instant())).orElse(false)
                     && acceptNewApplicationVersion(status, instanceName, outstanding.application().get())) {
                     application = application.with(instanceName,
-                                                   instance -> withRemainingChange(instance, instance.change().with(outstanding.application().get()), status));
+                                                   instance -> withRemainingChange(instance, outstanding.onTopOf(instance.change()), status));
                 }
             }
             applications().store(application);
         });
+    }
+
+    /** Returns any outstanding change for the given instance, coupled with any necessary platform upgrade. */
+    private Change outstandingChange(DeploymentStatus status, InstanceName instance) {
+        Change outstanding = status.outstandingChange(instance);
+        Optional<Version> compileVersion = outstanding.application().flatMap(ApplicationVersion::compileVersion);
+
+        // If the outstanding revision requires a certain platform for compatibility, add that here.
+        VersionCompatibility compatibility = applications().versionCompatibility();
+        Predicate<Version> compatibleWithCompileVersion = version -> compileVersion.map(compiled -> compatibility.accept(version, compiled)).orElse(true);
+        if (status.application().productionDeployments().getOrDefault(instance, List.of()).stream()
+                  .anyMatch(deployment -> ! compatibleWithCompileVersion.test(deployment.version()))) {
+            return targetsForPolicy(controller.readVersionStatus(), status.application().deploymentSpec().requireInstance(instance).upgradePolicy())
+                    .stream() // Pick the latest platform which is compatible with the compile version, and is ready for this instance.
+                    .filter(compatibleWithCompileVersion)
+                    .map(outstanding::with)
+                    .filter(change -> status.instanceSteps().get(instance).readyAt(change)
+                                            .map(readyAt -> ! readyAt.isAfter(controller.clock().instant()))
+                                            .orElse(false))
+                    .findFirst().orElse(Change.empty());
+        }
+        return outstanding;
+    }
+
+    /** Returns target versions for given confidence, by descending version number. */
+    public List<Version> targetsForPolicy(VersionStatus versions, DeploymentSpec.UpgradePolicy policy) {
+        Version systemVersion = controller.systemVersion(versions);
+        if (policy == DeploymentSpec.UpgradePolicy.canary)
+            return List.of(systemVersion);
+
+        VespaVersion.Confidence target = policy == DeploymentSpec.UpgradePolicy.defaultPolicy ? VespaVersion.Confidence.normal : VespaVersion.Confidence.high;
+        return versions.versions().stream()
+                       .filter(version ->    ! version.versionNumber().isAfter(systemVersion)
+                                          &&   version.confidence().equalOrHigherThan(target))
+                       .map(VespaVersion::versionNumber)
+                       .sorted(reverseOrder())
+                       .collect(Collectors.toList());
     }
 
     /**

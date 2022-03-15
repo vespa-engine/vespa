@@ -17,6 +17,7 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OAuthCredentials;
+import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
@@ -92,6 +93,7 @@ public final class ControllerTester {
     private final ServiceRegistryMock serviceRegistry;
     private final CuratorDb curator;
     private final RotationsConfig rotationsConfig;
+    private final InMemoryFlagSource flagSource;
     private final AtomicLong nextPropertyId = new AtomicLong(1000);
     private final AtomicInteger nextProjectId = new AtomicInteger(1000);
     private final AtomicInteger nextDomainId = new AtomicInteger(1000);
@@ -126,15 +128,17 @@ public final class ControllerTester {
         this(new AthenzDbMock(), new MockCuratorDb(), defaultRotationsConfig(), new ServiceRegistryMock(system));
     }
 
-    private ControllerTester(AthenzDbMock athenzDb, boolean inContainer,
-                             CuratorDb curator, RotationsConfig rotationsConfig,
-                             ServiceRegistryMock serviceRegistry, Controller controller) {
+    private ControllerTester(AthenzDbMock athenzDb, boolean inContainer, CuratorDb curator,
+                             RotationsConfig rotationsConfig, ServiceRegistryMock serviceRegistry,
+                             InMemoryFlagSource flagSource, Controller controller) {
         this.athenzDb = athenzDb;
         this.inContainer = inContainer;
         this.clock = serviceRegistry.clock();
         this.serviceRegistry = serviceRegistry;
         this.curator = curator;
         this.rotationsConfig = rotationsConfig;
+        this.flagSource = flagSource.withBooleanFlag(PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true)
+                                    .withListFlag(PermanentFlags.INCOMPATIBLE_VERSIONS.id(), List.of(), String.class);
         this.controller = controller;
 
         // Make root logger use time from manual clock
@@ -148,8 +152,14 @@ public final class ControllerTester {
     private ControllerTester(AthenzDbMock athenzDb,
                              CuratorDb curator, RotationsConfig rotationsConfig,
                              ServiceRegistryMock serviceRegistry) {
-        this(athenzDb, false, curator, rotationsConfig, serviceRegistry,
-             createController(curator, rotationsConfig, athenzDb, serviceRegistry));
+        this(athenzDb, curator, rotationsConfig, serviceRegistry, new InMemoryFlagSource());
+    }
+
+    private ControllerTester(AthenzDbMock athenzDb,
+                             CuratorDb curator, RotationsConfig rotationsConfig,
+                             ServiceRegistryMock serviceRegistry, InMemoryFlagSource flagSource) {
+        this(athenzDb, false, curator, rotationsConfig, serviceRegistry, flagSource,
+             createController(curator, rotationsConfig, athenzDb, serviceRegistry, flagSource));
     }
 
     /** Creates a ControllerTester built on the ContainerTester's controller. This controller can not be recreated. */
@@ -159,6 +169,7 @@ public final class ControllerTester {
              tester.controller().curator(),
              null,
              tester.serviceRegistry(),
+             tester.flagSource(),
              tester.controller());
     }
 
@@ -177,6 +188,8 @@ public final class ControllerTester {
     public ManualClock clock() { return clock; }
 
     public AthenzDbMock athenzDb() { return athenzDb; }
+
+    public InMemoryFlagSource flagSource() { return flagSource; }
 
     public MemoryNameService nameService() {
         return serviceRegistry.nameService();
@@ -217,10 +230,10 @@ public final class ControllerTester {
     }
 
     /** Create a new controller instance. Useful to verify that controller state is rebuilt from persistence */
-    public final void createNewController() {
+    public void createNewController() {
         if (inContainer)
             throw new UnsupportedOperationException("Cannot recreate this controller");
-        controller = createController(curator, rotationsConfig, athenzDb, serviceRegistry);
+        controller = createController(curator, rotationsConfig, athenzDb, serviceRegistry, flagSource);
     }
 
     /** Upgrade controller to given version */
@@ -373,9 +386,8 @@ public final class ControllerTester {
 
     private static Controller createController(CuratorDb curator, RotationsConfig rotationsConfig,
                                                AthenzDbMock athensDb,
-                                               ServiceRegistryMock serviceRegistry) {
-        InMemoryFlagSource flagSource = new InMemoryFlagSource()
-                .withBooleanFlag(PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true);
+                                               ServiceRegistryMock serviceRegistry,
+                                               FlagSource flagSource) {
         Controller controller = new Controller(curator,
                                                rotationsConfig,
                                                serviceRegistry.zoneRegistry().system().isPublic() ?

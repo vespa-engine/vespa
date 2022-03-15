@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.collections.AbstractFilteringList;
 import com.yahoo.component.Version;
+import com.yahoo.component.VersionCompatibility;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
@@ -34,12 +35,23 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
     }
 
     /**
-     * Returns the subset of instances that aren't pinned to an an earlier major version than the given one.
+     * Returns the subset of instances where all production deployments are compatible with the given version.
+     *
+     * @param platform the version which applications returned are compatible with
+     */
+    public InstanceList compatibleWithPlatform(Version platform, VersionCompatibility compatibility) {
+        return matching(id -> instance(id).productionDeployments().values().stream()
+                                          .flatMap(deployment -> deployment.applicationVersion().compileVersion().stream())
+                                          .noneMatch(version -> compatibility.refuse(platform, version)));
+    }
+
+    /**
+     * Returns the subset of instances that aren't pinned to an earlier major version than the given one.
      *
      * @param targetMajorVersion the target major version which applications returned allows upgrading to
      * @param defaultMajorVersion the default major version to assume for applications not specifying one
      */
-    public InstanceList allowMajorVersion(int targetMajorVersion, int defaultMajorVersion) {
+    public InstanceList allowingMajorVersion(int targetMajorVersion, int defaultMajorVersion) {
         return matching(id -> targetMajorVersion <= application(id).deploymentSpec().majorVersion()
                                                                    .orElse(application(id).majorVersion()
                                                                                           .orElse(defaultMajorVersion)));

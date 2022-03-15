@@ -6,6 +6,7 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -2021,4 +2022,30 @@ public class DeploymentTriggerTest {
         List<RetriggerEntry> retriggerEntries = tester.controller().curator().readRetriggerEntries();
         Assert.assertEquals(1, retriggerEntries.size());
     }
+
+    @Test
+    public void testOrchestrationWithIncompatibleVersionPairs() {
+        Version version1 = new Version("7");
+        Version version2 = new Version("8");
+        tester.controllerTester().flagSource().withListFlag(PermanentFlags.INCOMPATIBLE_VERSIONS.id(), List.of("8"), String.class);
+
+        tester.controllerTester().upgradeSystem(version1);
+        DeploymentContext app = tester.newDeploymentContext()
+                                      .submit(new ApplicationPackageBuilder().region("us-east-3")
+                                                                             .compileVersion(version1)
+                                                                             .build())
+                                      .deploy();
+
+        tester.controllerTester().upgradeSystem(version2);
+        tester.upgrader().run();
+        assertEquals(Change.empty(), app.instance().change());
+
+        app.submit(new ApplicationPackageBuilder().region("us-east-3")
+                                                  .compileVersion(version2)
+                                                  .build());
+        app.deploy();
+        assertEquals(version2, tester.jobs().last(app.instanceId(), productionUsEast3).get().versions().targetPlatform());
+        assertEquals(version2, tester.jobs().last(app.instanceId(), productionUsEast3).get().versions().targetApplication().compileVersion().get());
+    }
+
 }
