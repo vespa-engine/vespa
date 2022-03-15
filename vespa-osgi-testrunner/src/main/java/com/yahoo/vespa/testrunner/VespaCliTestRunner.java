@@ -44,7 +44,7 @@ public class VespaCliTestRunner implements TestRunner {
     private final Path testsPath;
     private final AtomicReference<Status> status = new AtomicReference<>(Status.NOT_STARTED);
 
-    private Path vespaCliHome = null;
+    private Path vespaCliRoot = null;
 
     @Inject
     public VespaCliTestRunner(VespaCliTestRunnerConfig config) {
@@ -100,12 +100,12 @@ public class VespaCliTestRunner implements TestRunner {
         }
     }
 
-    private Path ensureHomeDirectoryForVespaCli() {
-        if (vespaCliHome == null) {
-            vespaCliHome = uncheck(() -> Files.createTempDirectory(VespaCliTestRunner.class.getSimpleName()));
-            vespaCliHome.toFile().deleteOnExit();
+    private Path ensureDirectoryForVespaCli(String dir) {
+        if (vespaCliRoot == null) {
+            vespaCliRoot = uncheck(() -> Files.createTempDirectory(VespaCliTestRunner.class.getSimpleName()));
+            vespaCliRoot.toFile().deleteOnExit();
         }
-        return vespaCliHome;
+        return uncheck(() -> Files.createDirectories(vespaCliRoot.resolve(dir)));
     }
 
     ProcessBuilder testRunProcessBuilder(Suite suite, TestConfig config) throws IOException {
@@ -121,7 +121,8 @@ public class VespaCliTestRunner implements TestRunner {
         // The CI environment variables tells Vespa CLI to omit certain warnings that do not apply to CI environments
         builder.environment().put("CI", "true");
         builder.environment().put("VESPA_CLI_CLOUD_CI", "true");
-        builder.environment().put("VESPA_CLI_HOME", ensureHomeDirectoryForVespaCli().toString());
+        builder.environment().put("VESPA_CLI_HOME", ensureDirectoryForVespaCli("cli-home").toString());
+        builder.environment().put("VESPA_CLI_CACHE_DIR", ensureDirectoryForVespaCli("cli-cache").toString());
         builder.environment().put("VESPA_CLI_ENDPOINTS", toEndpointsConfig(config));
         builder.environment().put("VESPA_CLI_DATA_PLANE_KEY_FILE", artifactsPath.resolve("key").toAbsolutePath().toString());
         builder.environment().put("VESPA_CLI_DATA_PLANE_CERT_FILE", artifactsPath.resolve("cert").toAbsolutePath().toString());
