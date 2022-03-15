@@ -603,6 +603,9 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_setup_time.max"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_setup_time.sum"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_setup_time.count"));
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.grouping_time.max"));
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.grouping_time.sum"));
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.grouping_time.count"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.rerank_time.max"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.rerank_time.sum"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.rerank_time.count"));
