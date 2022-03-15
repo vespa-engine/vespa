@@ -58,6 +58,8 @@ class VespaCliTestRunnerTest {
                      builder.command());
         assertTrue(builder.environment().containsKey("CI"));
         assertTrue(builder.environment().containsKey("VESPA_CLI_CLOUD_CI"));
+        assertTrue(builder.environment().containsKey("VESPA_CLI_HOME"));
+        assertTrue(builder.environment().containsKey("VESPA_CLI_CACHE_DIR"));
         assertEquals("{\"endpoints\":[{\"cluster\":\"default\",\"url\":\"https://dev.endpoint:443/\"}]}",
                      builder.environment().get("VESPA_CLI_ENDPOINTS"));
         assertEquals(artifacts.resolve("key").toAbsolutePath().toString(),
