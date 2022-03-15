@@ -119,7 +119,7 @@ func assertDeploy(applicationPackage string, arguments []string, t *testing.T) {
 
 func assertPrepare(applicationPackage string, arguments []string, t *testing.T) {
 	client := &mock.HTTPClient{}
-	client.NextResponse(200, `{"session-id":"42"}`)
+	client.NextResponseString(200, `{"session-id":"42"}`)
 	cli, stdout, _ := newTestCLI(t)
 	cli.httpClient = client
 	assert.Nil(t, cli.Run(arguments...))
@@ -170,7 +170,7 @@ func assertDeployRequestMade(target string, client *mock.HTTPClient, t *testing.
 
 func assertApplicationPackageError(t *testing.T, cmd string, status int, expectedMessage string, returnBody string) {
 	client := &mock.HTTPClient{}
-	client.NextResponse(status, returnBody)
+	client.NextResponseString(status, returnBody)
 	cli, _, stderr := newTestCLI(t)
 	cli.httpClient = client
 	assert.NotNil(t, cli.Run(cmd, "testdata/applications/withTarget/target/application.zip"))
@@ -181,7 +181,7 @@ func assertApplicationPackageError(t *testing.T, cmd string, status int, expecte
 
 func assertDeployServerError(t *testing.T, status int, errorMessage string) {
 	client := &mock.HTTPClient{}
-	client.NextResponse(status, errorMessage)
+	client.NextResponseString(status, errorMessage)
 	cli, _, stderr := newTestCLI(t)
 	cli.httpClient = client
 	assert.NotNil(t, cli.Run("deploy", "testdata/applications/withTarget/target/application.zip"))

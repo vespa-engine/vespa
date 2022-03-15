@@ -152,7 +152,7 @@ func TestProdSubmit(t *testing.T) {
 	createApplication(t, pkgDir, false)
 
 	httpClient := &mock.HTTPClient{}
-	httpClient.NextResponse(200, `ok`)
+	httpClient.NextResponseString(200, `ok`)
 
 	cli, stdout, _ := newTestCLI(t, "CI=true")
 	cli.httpClient = httpClient
@@ -195,7 +195,7 @@ func TestProdSubmitWithJava(t *testing.T) {
 	createApplication(t, pkgDir, true)
 
 	httpClient := &mock.HTTPClient{}
-	httpClient.NextResponse(200, `ok`)
+	httpClient.NextResponseString(200, `ok`)
 	cli, stdout, _ := newTestCLI(t, "CI=true")
 	cli.httpClient = httpClient
 	assert.Nil(t, cli.Run("config", "set", "application", "t1.a1.i1"))

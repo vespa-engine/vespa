@@ -11,7 +11,7 @@ import (
 
 type HTTPClient struct {
 	// The responses to return for future requests. Once a response is consumed, it's removed from this slice
-	nextResponses []httpResponse
+	nextResponses []HTTPResponse
 
 	// LastRequest is the last HTTP request made through this
 	LastRequest *http.Request
@@ -20,34 +20,42 @@ type HTTPClient struct {
 	Requests []*http.Request
 }
 
-type httpResponse struct {
-	status int
-	body   []byte
+type HTTPResponse struct {
+	Status int
+	Body   []byte
+	Header http.Header
 }
 
 func (c *HTTPClient) NextStatus(status int) { c.NextResponseBytes(status, nil) }
 
-func (c *HTTPClient) NextResponse(status int, body string) {
+func (c *HTTPClient) NextResponseString(status int, body string) {
 	c.NextResponseBytes(status, []byte(body))
 }
 
 func (c *HTTPClient) NextResponseBytes(status int, body []byte) {
-	c.nextResponses = append(c.nextResponses, httpResponse{status: status, body: body})
+	c.nextResponses = append(c.nextResponses, HTTPResponse{Status: status, Body: body})
+}
+
+func (c *HTTPClient) NextResponse(response HTTPResponse) {
+	c.nextResponses = append(c.nextResponses, response)
 }
 
 func (c *HTTPClient) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
-	response := httpResponse{status: 200}
+	response := HTTPResponse{Status: 200}
 	if len(c.nextResponses) > 0 {
 		response = c.nextResponses[0]
 		c.nextResponses = c.nextResponses[1:]
 	}
 	c.LastRequest = request
 	c.Requests = append(c.Requests, request)
+	if response.Header == nil {
+		response.Header = make(http.Header)
+	}
 	return &http.Response{
-			Status:     "Status " + strconv.Itoa(response.status),
-			StatusCode: response.status,
-			Body:       ioutil.NopCloser(bytes.NewBuffer(response.body)),
-			Header:     make(http.Header),
+			Status:     "Status " + strconv.Itoa(response.Status),
+			StatusCode: response.Status,
+			Body:       ioutil.NopCloser(bytes.NewBuffer(response.Body)),
+			Header:     response.Header,
 		},
 		nil
 }
