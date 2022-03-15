@@ -5,3 +5,7 @@
 
 deadlock:storage::MergeThrottler::onFlush
 
+deadlock:search::AttributeContext::getAttribute
+deadlock:search::AttributeContext::getAttributeStableEnum
+deadlock:proton::ImportedAttributesContext::getAttribute
+deadlock:proton::ImportedAttributesContext::getAttributeStableEnum
