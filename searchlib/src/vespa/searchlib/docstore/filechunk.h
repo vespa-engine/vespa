@@ -115,7 +115,7 @@ public:
     virtual ssize_t read(uint32_t lid, SubChunkId chunk, vespalib::DataBuffer & buffer) const;
     virtual void read(LidInfoWithLidV::const_iterator begin, size_t count, IBufferVisitor & visitor) const;
     void remove(uint32_t lid, uint32_t size);
-    virtual size_t getDiskFootprint() const { return _diskFootprint; }
+    virtual size_t getDiskFootprint() const { return _diskFootprint.load(std::memory_order_relaxed); }
     virtual size_t getMemoryFootprint() const;
     virtual size_t getMemoryMetaFootprint() const;
     virtual vespalib::MemoryUsage getMemoryUsage() const;
@@ -210,13 +210,13 @@ private:
     const bool             _skipCrcOnRead;
     size_t                 _erasedCount;
     size_t                 _erasedBytes;
-    size_t                 _diskFootprint;
+    std::atomic<size_t>    _diskFootprint;
     size_t                 _sumNumBuckets;
     size_t                 _numChunksWithBuckets;
     size_t                 _numUniqueBuckets;
     File                   _file;
 protected:
-    void setDiskFootprint(size_t sz) { _diskFootprint = sz; }
+    void setDiskFootprint(size_t sz) { _diskFootprint.store(sz, std::memory_order_relaxed); }
     static size_t adjustSize(size_t sz);
 
     class ChunkInfo

@@ -607,8 +607,8 @@ WriteableFileChunk::getDiskFootprint(const unique_lock & guard) const
 {
     assert(guard.mutex() == &_lock && guard.owns_lock());
     return frozen()
-           ? FileChunk::getDiskFootprint()
-           : _currentDiskFootprint + FileChunk::getDiskFootprint();
+        ? FileChunk::getDiskFootprint()
+        : _currentDiskFootprint.load(std::memory_order_relaxed) + FileChunk::getDiskFootprint();
 }
 
 size_t
@@ -859,7 +859,7 @@ WriteableFileChunk::needFlushPendingChunks(const unique_lock & guard, uint64_t s
 
 void
 WriteableFileChunk::updateCurrentDiskFootprint() {
-    _currentDiskFootprint = _idxFileSize + _dataFile.getSize();
+    _currentDiskFootprint.store(_idxFileSize + _dataFile.getSize(), std::memory_order_relaxed);
 }
 
 /*

@@ -93,13 +93,13 @@ FileChunk::FileChunk(FileId fileId, NameId nameId, const vespalib::string & base
         if (!dataFile.Sync()) {
             throw SummaryException("Failed syncing dat file", dataFile, VESPA_STRLOC);
         }
-        _diskFootprint += dataFile.GetSize();
+        _diskFootprint.fetch_add(dataFile.GetSize(), std::memory_order_relaxed);
         FastOS_File idxFile(_idxFileName.c_str());
         if (idxFile.OpenReadOnly()) {
             if (!idxFile.Sync()) {
                 throw SummaryException("Failed syncing idx file", idxFile, VESPA_STRLOC);
             }
-            _diskFootprint += idxFile.GetSize();
+            _diskFootprint.fetch_add(idxFile.GetSize(), std::memory_order_relaxed);
             _modificationTime = FileKit::getModificationTime(_idxFileName);
         } else {
             throw SummaryException("Failed opening idx file", idxFile, VESPA_STRLOC);
@@ -488,7 +488,7 @@ FileChunk::verify(bool reportOnly) const
     (void) reportOnly;
     LOG(info,
         "Verifying file '%s' with fileid '%u'. erased-count='%zu' and erased-bytes='%zu'. diskFootprint='%zu'",
-        _name.c_str(), _fileId.getId(), _erasedCount, _erasedBytes, _diskFootprint);
+        _name.c_str(), _fileId.getId(), _erasedCount, _erasedBytes, _diskFootprint.load(std::memory_order_relaxed));
     uint64_t lastSerial(0);
     size_t chunkId(0);
     bool errorInPrev(false);

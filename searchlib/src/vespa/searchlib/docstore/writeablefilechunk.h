@@ -121,7 +121,7 @@ private:
     uint64_t          _pendingIdx;
     uint64_t          _pendingDat;
     uint64_t          _idxFileSize;
-    uint64_t          _currentDiskFootprint;
+    std::atomic<uint64_t> _currentDiskFootprint;
     uint32_t          _nextChunkId;
     Chunk::UP         _active;
     size_t            _alignment;
