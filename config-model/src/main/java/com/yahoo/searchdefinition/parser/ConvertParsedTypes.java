@@ -222,7 +222,7 @@ public class ConvertParsedTypes {
     private ParsedStruct findParsedStruct(ParsedDocument doc, String name) {
         ParsedStruct found = doc.getStruct(name);
         if (found != null) return found;
-        for (var parent : doc.getResolvedInherits()) {
+        for (var parent : doc.getAllResolvedParents()) {
             var fromParent = findParsedStruct(parent, name);
             if (fromParent == null) continue;
             if (fromParent == found) continue;
@@ -238,7 +238,7 @@ public class ConvertParsedTypes {
     private ParsedAnnotation findParsedAnnotation(ParsedDocument doc, String name) {
         ParsedAnnotation found = doc.getAnnotation(name);
         if (found != null) return found;
-        for (var parent : doc.getResolvedInherits()) {
+        for (var parent : doc.getAllResolvedParents()) {
             var fromParent = findParsedAnnotation(parent, name);
             if (fromParent == null) continue;
             if (fromParent == found) continue;

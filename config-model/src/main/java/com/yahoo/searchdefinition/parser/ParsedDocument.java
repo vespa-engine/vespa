@@ -17,6 +17,7 @@ import java.util.Optional;
 public class ParsedDocument extends ParsedBlock {
     private final List<String> inherited = new ArrayList<>();
     private final Map<String, ParsedDocument> resolvedInherits = new LinkedHashMap();
+    private final Map<String, ParsedDocument> resolvedReferences = new LinkedHashMap();
     private final Map<String, ParsedField> docFields = new LinkedHashMap<>();
     private final Map<String, ParsedStruct> docStructs = new LinkedHashMap<>();
     private final Map<String, ParsedAnnotation> docAnnotations = new LinkedHashMap<>();
@@ -27,7 +28,19 @@ public class ParsedDocument extends ParsedBlock {
 
     List<String> getInherited() { return List.copyOf(inherited); }
     List<ParsedAnnotation> getAnnotations() { return List.copyOf(docAnnotations.values()); }
-    List<ParsedDocument> getResolvedInherits() { return List.copyOf(resolvedInherits.values()); }
+    List<ParsedDocument> getResolvedInherits() {
+        assert(inherited.size() == resolvedInherits.size());
+        return List.copyOf(resolvedInherits.values());
+    }
+    List<ParsedDocument> getResolvedReferences() {
+        return List.copyOf(resolvedReferences.values());
+    }
+    List<ParsedDocument> getAllResolvedParents() {
+        List<ParsedDocument> all = new ArrayList<>();
+        all.addAll(getResolvedInherits());
+        all.addAll(getResolvedReferences());
+        return all;
+    }
     List<ParsedField> getFields() { return List.copyOf(docFields.values()); }
     List<ParsedStruct> getStructs() { return List.copyOf(docStructs.values()); }
     ParsedStruct getStruct(String name) { return docStructs.get(name); }
@@ -78,10 +91,8 @@ public class ParsedDocument extends ParsedBlock {
     }
 
     void resolveReferenced(ParsedDocument parsed) {
-        // TODO - not really inheritance:
-        var old = resolvedInherits.put(parsed.name(), parsed);
+        var old = resolvedReferences.put(parsed.name(), parsed);
         assert(old == null || old == parsed);
     }
 
 }
-

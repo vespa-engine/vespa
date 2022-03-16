@@ -107,7 +107,7 @@ public class InheritanceResolver {
                                                String.join(" -> ", seen));
         }
         seen.add(name);
-        for (ParsedDocument parent : document.getResolvedInherits()) {
+        for (ParsedDocument parent : document.getAllResolvedParents()) {
             inheritanceCycleCheck(parent, seen);
         }
         seen.remove(name);
