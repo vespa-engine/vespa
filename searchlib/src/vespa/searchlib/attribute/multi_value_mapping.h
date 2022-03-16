@@ -31,7 +31,7 @@ public:
                       const vespalib::GrowStrategy &gs,
                       std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator);
     ~MultiValueMapping() override;
-    ConstArrayRef get(uint32_t docId) const { return _store.get(_indices[docId].load_acquire()); }
+    ConstArrayRef get(uint32_t docId) const { return _store.get(acquire_multi_value_entry_ref(docId)); }
     ConstArrayRef getDataForIdx(EntryRef idx) const { return _store.get(idx); }
     void set(uint32_t docId, ConstArrayRef values);
 
