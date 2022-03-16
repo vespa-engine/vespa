@@ -4,6 +4,7 @@ package com.yahoo.document.select.rule;
 import com.yahoo.document.BucketId;
 import com.yahoo.document.BucketIdFactory;
 import com.yahoo.document.DocumentId;
+import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.FieldPathIteratorHandler;
 import com.yahoo.document.datatypes.NumericFieldValue;
 import com.yahoo.document.idstring.IdIdString;
@@ -279,6 +280,8 @@ public class ComparisonNode implements ExpressionNode {
             return ((Number)value).doubleValue();
         } else if (value instanceof NumericFieldValue) {
             return getAsNumber(((NumericFieldValue)value).getNumber());
+        } else if (value instanceof BoolFieldValue) {
+            return ((BoolFieldValue)value).getBoolean() ? 1 : 0;
         } else {
             return Double.NaN; //new IllegalStateException("Term '" + value + "' (" + value.getClass() + ") does not evaluate to a number.");
         }
