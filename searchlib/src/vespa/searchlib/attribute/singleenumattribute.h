@@ -20,6 +20,7 @@ protected:
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using AtomicEntryRefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
     using DocId = AttributeVector::DocId;
+    using EntryRef = vespalib::datastore::EntryRef;
     using EnumHandle = AttributeVector::EnumHandle;
     using EnumIndex = IEnumStore::Index;
     using EnumIndexRemapper = IEnumStore::EnumIndexRemapper;
@@ -28,8 +29,12 @@ protected:
 public:
     using EnumIndexCopyVector = vespalib::Array<EnumIndex>;
 
-    IEnumStore::Index getEnumIndex(DocId docId) const { return _enumIndices[docId].load_acquire(); }
-    EnumHandle getE(DocId doc) const { return _enumIndices[doc].load_acquire().ref(); }
+protected:
+    EntryRef acquire_enum_entry_ref(DocId docId) const noexcept { return _enumIndices.acquire_elem_ref(docId).load_acquire(); }
+
+public:
+    IEnumStore::Index getEnumIndex(DocId docId) const noexcept { return acquire_enum_entry_ref(docId); }
+    EnumHandle getE(DocId doc) const noexcept { return acquire_enum_entry_ref(doc).ref(); }
 protected:
     SingleValueEnumAttributeBase(const attribute::Config & c, GenerationHolder &genHolder, const vespalib::alloc::Alloc& initial_alloc);
     ~SingleValueEnumAttributeBase();
