@@ -107,8 +107,7 @@ public class ConvertParsedTypes {
                 fillAnnotationStruct(annotation);
             }
             for (var struct : doc.getStructs()) {
-                String structId = doc.name() + "->" + struct.name();
-                var toFill = structsFromSchemas.get(structId);
+                var toFill = findStructFromParsed(struct);
                 // evil ugliness
                 for (ParsedField field : struct.getFields()) {
                     if (! field.hasIdOverride()) {
@@ -124,8 +123,8 @@ public class ConvertParsedTypes {
                         toFill.addField(f);
                     }
                 }
-                for (String inherit : struct.getInherited()) {
-                    var parent = findStructFromSchemas(inherit, doc);
+                for (var inherit : struct.getResolvedInherits()) {
+                    var parent = findStructFromParsed(inherit);
                     // ensure a nice, compatible exception message
                     for (var field : toFill.getFields()) {
                         if (parent.hasField(field)) {
