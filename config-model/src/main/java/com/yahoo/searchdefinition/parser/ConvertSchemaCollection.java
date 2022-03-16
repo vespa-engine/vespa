@@ -125,6 +125,9 @@ public class ConvertSchemaCollection {
     }
 
     public List<Schema> convertToSchemas() {
+        resolveStructInheritance();
+        resolveAnnotationInheritance();
+        addMissingAnnotationStructs();
         var converter = new ConvertParsedSchemas(orderedInput,
                                                  docMan,
                                                  applicationPackage,
@@ -134,6 +137,98 @@ public class ConvertSchemaCollection {
                                                  rankProfileRegistry,
                                                  documentsOnly);
         return converter.convertToSchemas();
+    }
+
+    private void resolveStructInheritance() {
+        List<ParsedStruct> all = new ArrayList();
+        for (var schema : orderedInput) {
+            var doc = schema.getDocument();
+            for (var struct : doc.getStructs()) {
+                for (String inherit : struct.getInherited()) {
+                    var parent = doc.findParsedStruct(inherit);
+                    if (parent == null) {
+                        throw new IllegalArgumentException("Can not find parent for "+struct+" in "+doc);
+                    }
+                    struct.resolveInherit(inherit, parent);
+                }
+                all.add(struct);
+            }
+        }
+        List<String> seen = new ArrayList<>();
+        for (ParsedStruct struct : all) {
+            inheritanceCycleCheck(struct, seen);
+        }
+    }
+
+    private void resolveAnnotationInheritance() {
+        List<ParsedAnnotation> all = new ArrayList();
+        for (var schema : orderedInput) {
+            var doc = schema.getDocument();
+            for (var annotation : doc.getAnnotations()) {
+                for (String inherit : annotation.getInherited()) {
+                    var parent = doc.findParsedAnnotation(inherit);
+                    if (parent == null) {
+                        throw new IllegalArgumentException("Can not find parent for "+annotation+" in "+doc);
+                    }
+                    annotation.resolveInherit(inherit, parent);
+                }
+                all.add(annotation);
+            }
+        }
+        List<String> seen = new ArrayList<>();
+        for (ParsedAnnotation annotation : all) {
+            inheritanceCycleCheck(annotation, seen);
+        }
+    }
+
+    private void fixupAnnotationStruct(ParsedAnnotation parsed) {
+        for (var parent : parsed.getResolvedInherits()) {
+            fixupAnnotationStruct(parent);
+            parent.getStruct().ifPresent(ps -> {
+                    var myStruct = parsed.ensureStruct();
+                    if (! myStruct.getInherited().contains(ps.name())) {
+                        myStruct.inherit(ps.name());
+                        myStruct.resolveInherit(ps.name(), ps);
+                    }
+                });
+        }
+    }
+
+    private void addMissingAnnotationStructs() {
+        for (var schema : orderedInput) {
+            var doc = schema.getDocument();
+            for (var annotation : doc.getAnnotations()) {
+                fixupAnnotationStruct(annotation);
+            }
+        }
+    }
+
+    private void inheritanceCycleCheck(ParsedStruct struct, List<String> seen) {
+        String name = struct.name();
+        if (seen.contains(name)) {
+            seen.add(name);
+            throw new IllegalArgumentException("Inheritance/reference cycle for structs: " +
+                                               String.join(" -> ", seen));
+        }
+        seen.add(name);
+        for (ParsedStruct parent : struct.getResolvedInherits()) {
+            inheritanceCycleCheck(parent, seen);
+        }
+        seen.remove(name);
+    }
+
+    private void inheritanceCycleCheck(ParsedAnnotation annotation, List<String> seen) {
+        String name = annotation.name();
+        if (seen.contains(name)) {
+            seen.add(name);
+            throw new IllegalArgumentException("Inheritance/reference cycle for annotations: " +
+                                               String.join(" -> ", seen));
+        }
+        seen.add(name);
+        for (ParsedAnnotation parent : annotation.getResolvedInherits()) {
+            inheritanceCycleCheck(parent, seen);
+        }
+        seen.remove(name);
     }
 
 }
