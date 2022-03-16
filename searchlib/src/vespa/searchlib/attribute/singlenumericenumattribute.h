@@ -103,7 +103,7 @@ public:
     // Attribute read API
     //-------------------------------------------------------------------------
     T get(DocId doc) const override {
-        return this->_enumStore.get_value(this->_enumIndices[doc].load_acquire());
+        return this->_enumStore.get_value(this->acquire_enum_entry_ref(doc));
     }
     largeint_t getInt(DocId doc) const override {
         return static_cast<largeint_t>(get(doc));
