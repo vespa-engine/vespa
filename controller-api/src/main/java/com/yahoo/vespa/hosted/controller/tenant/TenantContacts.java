@@ -18,6 +18,13 @@ public class TenantContacts {
 
     public TenantContacts(List<? extends Contact> contacts) {
         this.contacts = List.copyOf(contacts);
+        for (int i = 0; i < contacts.size(); i++) {
+            for (int j = 0; j < i; j++) {
+                if (contacts.get(i).equals(contacts.get(j))) {
+                    throw new IllegalArgumentException("Duplicate contact: " + contacts.get(i));
+                }
+            }
+        }
     }
 
     public static TenantContacts empty() {
@@ -57,7 +64,7 @@ public class TenantContacts {
 
         public Contact(List<Audience> audiences) {
             this.audiences = List.copyOf(audiences);
-            if (audiences.isEmpty()) throw new IllegalArgumentException("at least one notification activity must be enabled");
+            if (audiences.isEmpty()) throw new IllegalArgumentException("At least one notification activity must be enabled");
         }
 
         public List<Audience> audiences() { return audiences; }
@@ -99,9 +106,7 @@ public class TenantContacts {
 
         @Override
         public String toString() {
-            return "EmailContact{" +
-                    "email='" + email + '\'' +
-                    '}';
+            return "email '" + email + '\'';
         }
     }
 
