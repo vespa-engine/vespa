@@ -9,7 +9,6 @@ import com.yahoo.document.StructDataType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
-import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
 
 import java.util.ArrayList;
@@ -48,7 +47,7 @@ public class ConvertParsedTypes {
 
     private Map<String, DocumentType> documentsFromSchemas = new HashMap<>();
     private Map<String, StructDataType> structsFromSchemas = new HashMap<>();
-    private Map<String, AnnotationType> annotationsFromSchemas = new HashMap<>();
+    private Map<String, SDAnnotationType> annotationsFromSchemas = new HashMap<>();
 
     private void startDataTypes() {
         for (var schema : orderedInput) {
@@ -200,7 +199,7 @@ public class ConvertParsedTypes {
         return struct;
     }
 
-    private AnnotationType findAnnotationFromSchemas(String name, ParsedDocument context) {
+    private SDAnnotationType findAnnotationFromSchemas(String name, ParsedDocument context) {
         var resolved = context.findParsedAnnotation(name);
         String annotationId = resolved.getOwnerName() + "->" + resolved.name();
         var annotation = annotationsFromSchemas.get(annotationId);
@@ -210,7 +209,7 @@ public class ConvertParsedTypes {
         return annotation;
     }
 
-    private AnnotationType findAnnotationFromParsed(ParsedAnnotation resolved) {
+    private SDAnnotationType findAnnotationFromParsed(ParsedAnnotation resolved) {
         String annotationId = resolved.getOwnerName() + "->" + resolved.name();
         var annotation = annotationsFromSchemas.get(annotationId);
         if (annotation == null) {
@@ -246,7 +245,7 @@ public class ConvertParsedTypes {
     }
 
     private DataType createAnnRef(ParsedType pType, ParsedDocument context) {
-        AnnotationType annotation = findAnnotationFromSchemas(pType.getNameOfReferencedAnnotation(), context);
+        SDAnnotationType annotation = findAnnotationFromSchemas(pType.getNameOfReferencedAnnotation(), context);
         return new AnnotationReferenceDataType(annotation);
     }
 
@@ -293,7 +292,7 @@ public class ConvertParsedTypes {
         for (DocumentType t : documentsFromSchemas.values()) {
             docMan.register(t);
         }
-        for (AnnotationType t : annotationsFromSchemas.values()) {
+        for (SDAnnotationType t : annotationsFromSchemas.values()) {
             docMan.getAnnotationTypeRegistry().register(t);
         }
     }
@@ -311,7 +310,7 @@ public class ConvertParsedTypes {
             }
             return r;
         }
-        public AnnotationType resolveAnnotation(String name) {
+        public SDAnnotationType resolveAnnotation(String name) {
             return findAnnotationFromSchemas(name, context);
         }
         TypeResolver(ParsedDocument context) {
