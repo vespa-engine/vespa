@@ -64,7 +64,7 @@ public class TenantContacts {
 
         public Contact(List<Audience> audiences) {
             this.audiences = List.copyOf(audiences);
-            if (audiences.isEmpty()) throw new IllegalArgumentException("at least one notification activity must be enabled");
+            if (audiences.isEmpty()) throw new IllegalArgumentException("At least one notification activity must be enabled");
         }
 
         public List<Audience> audiences() { return audiences; }
@@ -106,9 +106,7 @@ public class TenantContacts {
 
         @Override
         public String toString() {
-            return "EmailContact{" +
-                    "email='" + email + '\'' +
-                    '}';
+            return "email '" + email + '\'';
         }
     }
 

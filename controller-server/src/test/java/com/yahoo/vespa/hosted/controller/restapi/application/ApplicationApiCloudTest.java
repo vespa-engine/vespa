@@ -177,7 +177,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         var contactsWithoutAudienceResponse = request("/application/v4/tenant/scoober/info", PUT)
                 .data(contactsWithoutAudience)
                 .roles(Set.of(Role.administrator(tenantName)));
-        tester.assertResponse(contactsWithoutAudienceResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"at least one notification activity must be enabled\"}", 400);
+        tester.assertResponse(contactsWithoutAudienceResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"At least one notification activity must be enabled\"}", 400);
 
         // email needs to be present, not blank, and contain an @
         var contactsWithInvalidEmail = "{\"contacts\": [{\"audiences\": [\"tenant\"],\"email\": \"contact1\"}]}";
@@ -191,7 +191,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         var contactsWithDuplicateEmailResponse = request("/application/v4/tenant/scoober/info", PUT)
                 .data(contactsWithDuplicateEmail)
                 .roles(Set.of(Role.administrator(tenantName)));
-        tester.assertResponse(contactsWithDuplicateEmailResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Duplicate contact: EmailContact{email='contact1@email.com'}\"}", 400);
+        tester.assertResponse(contactsWithDuplicateEmailResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Duplicate contact: email 'contact1@email.com'\"}", 400);
 
         // updating a tenant that already has the fields set works
         var basicInfo = "{\"contactName\": \"Scoober Rentals Inc.\", \"contactEmail\": \"foo@example.com\"}";
