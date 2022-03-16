@@ -252,14 +252,8 @@ public class PermanentFlags {
             "incompatible with any current deployments. " +
             "The config server will refuse to serve config to nodes running a version which is incompatible with their " +
             "current wanted node version, i.e., nodes about to upgrade to a version which is incompatible with the current.",
-            "Takes effect immediately");
-
-    public static final UnboundListFlag<Integer> INCOMPATIBLE_MAJOR_VERSIONS = defineListFlag(
-            "incompatible-major-versions", List.of(8), Integer.class,
-            "A list of major versions which are binary-incompatible and requires an application package to " +
-            "be built specifically for that Vespa version. When an application upgrades to an incompatible major " +
-            "version, the config server will refuse to serve config to nodes still running on older major versions",
-            "Takes effect immediately");
+            "Takes effect immediately",
+            APPLICATION_ID);
 
     public static final UnboundStringFlag ADMIN_CLUSTER_NODE_ARCHITECTURE = defineStringFlag(
             "admin-cluster-node-architecture", "x86_64",

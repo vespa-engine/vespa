@@ -27,6 +27,7 @@ import com.yahoo.vespa.curator.CompletionTimeoutException;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
+import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
@@ -49,6 +50,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -393,7 +395,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         if (vespaVersion.isEmpty()) return true;
         Version wantedVersion = applicationMapper.getForVersion(application, Optional.empty(), clock.instant())
                                                  .getModel().wantedNodeVersion();
-        return VersionCompatibility.fromVersionList(incompatibleVersions.value())
+        return VersionCompatibility.fromVersionList(incompatibleVersions.with(APPLICATION_ID, application.serializedForm()).value())
                                    .accept(vespaVersion.get(), wantedVersion);
     }
 

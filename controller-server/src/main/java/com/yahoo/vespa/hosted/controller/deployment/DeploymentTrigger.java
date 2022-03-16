@@ -119,7 +119,7 @@ public class DeploymentTrigger {
         Optional<Version> compileVersion = outstanding.application().flatMap(ApplicationVersion::compileVersion);
 
         // If the outstanding revision requires a certain platform for compatibility, add that here.
-        VersionCompatibility compatibility = applications().versionCompatibility();
+        VersionCompatibility compatibility = applications().versionCompatibility(status.application().id().instance(instance));
         Predicate<Version> compatibleWithCompileVersion = version -> compileVersion.map(compiled -> compatibility.accept(version, compiled)).orElse(true);
         if (status.application().productionDeployments().getOrDefault(instance, List.of()).stream()
                   .anyMatch(deployment -> ! compatibleWithCompileVersion.test(deployment.version()))) {
