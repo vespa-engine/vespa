@@ -194,7 +194,7 @@ public class ConvertParsedTypes {
         if (resolved == null) {
             throw new IllegalArgumentException("no struct named " + name + " in context " + context);
         }
-        String structId = resolved.getOwner() + "->" + resolved.name();
+        String structId = resolved.getOwnerName() + "->" + resolved.name();
         var struct = structsFromSchemas.get(structId);
         assert(struct != null);
         return struct;

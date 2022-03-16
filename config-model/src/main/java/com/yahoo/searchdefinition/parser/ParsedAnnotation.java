@@ -32,6 +32,6 @@ class ParsedAnnotation extends ParsedBlock {
     void tagOwner(ParsedDocument owner) {
         verifyThat(ownedBy == null, "already owned by", ownedBy);
         this.ownedBy = owner;
-        getStruct().ifPresent(s -> s.tagOwner(owner.name()));
+        getStruct().ifPresent(s -> s.tagOwner(owner));
     }
 }

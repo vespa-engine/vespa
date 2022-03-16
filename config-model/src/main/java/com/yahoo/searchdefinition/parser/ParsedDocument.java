@@ -58,7 +58,7 @@ public class ParsedDocument extends ParsedBlock {
         String sName = struct.name();
         verifyThat(! docStructs.containsKey(sName), "already has struct", sName);
         docStructs.put(sName, struct);
-        struct.tagOwner(name());
+        struct.tagOwner(this);
     }
 
     void addAnnotation(ParsedAnnotation annotation) {
