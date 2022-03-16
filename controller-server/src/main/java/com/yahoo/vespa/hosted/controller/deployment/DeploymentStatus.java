@@ -88,13 +88,13 @@ public class DeploymentStatus {
     private final JobList allJobs;
     private final SystemName system;
     private final Version systemVersion;
-    private final VersionCompatibility versionCompatibility;
+    private final Function<InstanceName, VersionCompatibility> versionCompatibility;
     private final Instant now;
     private final Map<JobId, StepStatus> jobSteps;
     private final List<StepStatus> allSteps;
 
     public DeploymentStatus(Application application, Map<JobId, JobStatus> allJobs, SystemName system,
-                            Version systemVersion, VersionCompatibility versionCompatibility, Instant now) {
+                            Version systemVersion, Function<InstanceName, VersionCompatibility> versionCompatibility, Instant now) {
         this.application = requireNonNull(application);
         this.allJobs = JobList.from(allJobs.values());
         this.system = requireNonNull(system);
@@ -322,8 +322,8 @@ public class DeploymentStatus {
             Optional<Deployment> deployment = deploymentFor(job);
             Optional<Version> existingPlatform = deployment.map(Deployment::version);
             Optional<ApplicationVersion> existingApplication = deployment.map(Deployment::applicationVersion);
-            boolean deployingCompatibilityChange =    areIncompatible(existingPlatform, change.application())
-                                                   || areIncompatible(change.platform(), existingApplication);
+            boolean deployingCompatibilityChange =    areIncompatible(existingPlatform, change.application(), instance)
+                                                   || areIncompatible(change.platform(), existingApplication, instance);
             if (assumeUpgradesSucceed) {
                 if (deployingCompatibilityChange) // No eager tests for this.
                     return;
@@ -350,10 +350,10 @@ public class DeploymentStatus {
         return jobs;
     }
 
-    private boolean areIncompatible(Optional<Version> platform, Optional<ApplicationVersion> application) {
+    private boolean areIncompatible(Optional<Version> platform, Optional<ApplicationVersion> application, InstanceName instance) {
         return    platform.isPresent()
                && application.flatMap(ApplicationVersion::compileVersion).isPresent()
-               && versionCompatibility.refuse(platform.get(), application.get().compileVersion().get());
+               && versionCompatibility.apply(instance).refuse(platform.get(), application.get().compileVersion().get());
     }
 
     /** Changes to deploy with the given job, possibly split in two steps. */

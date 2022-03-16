@@ -90,11 +90,10 @@ public class Upgrader extends ControllerMaintainer {
                                                                                            : i -> i.failing()
                                                                                                    .not().upgradingTo(targetAndNewer);
 
-        VersionCompatibility compatibility = controller().applications().versionCompatibility();
         Map<ApplicationId, Version> targets = new LinkedHashMap<>();
         for (Version version : controller().applications().deploymentTrigger().targetsForPolicy(versionStatus, policy)) {
             targetAndNewer.add(version);
-            InstanceList eligible = eligibleForVersion(remaining, version, targetMajorVersion, compatibility);
+            InstanceList eligible = eligibleForVersion(remaining, version, targetMajorVersion);
             InstanceList outdated = cancellationCriterion.apply(eligible);
             cancelUpgradesOf(outdated.upgrading(), "Upgrading to outdated versions");
 
@@ -112,11 +111,11 @@ public class Upgrader extends ControllerMaintainer {
     }
 
     private InstanceList eligibleForVersion(InstanceList instances, Version version,
-                                            Optional<Integer> targetMajorVersion, VersionCompatibility compatibility) {
+                                            Optional<Integer> targetMajorVersion) {
         Change change = Change.of(version);
         return instances.not().failingOn(version)
                         .allowingMajorVersion(version.getMajor(), targetMajorVersion.orElse(version.getMajor()))
-                        .compatibleWithPlatform(version, compatibility)
+                        .compatibleWithPlatform(version, controller().applications()::versionCompatibility)
                         .not().hasCompleted(change) // Avoid rescheduling change for instances without production steps.
                         .onLowerVersionThan(version)
                         .canUpgradeAt(version, controller().clock().instant());

@@ -347,7 +347,7 @@ public class JobController {
                                                                    LinkedHashMap::new)),
                                     controller.system(),
                                     systemVersion,
-                                    controller.applications().versionCompatibility(),
+                                    instance -> controller.applications().versionCompatibility(application.id().instance(instance)),
                                     controller.clock().instant());
     }
 
@@ -504,7 +504,7 @@ public class JobController {
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
     public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment, JobProfile profile, Optional<String> reason) {
         if (versions.targetApplication().compileVersion()
-                    .map(version -> controller.applications().versionCompatibility().refuse(versions.targetPlatform(), version))
+                    .map(version -> controller.applications().versionCompatibility(id).refuse(versions.targetPlatform(), version))
                     .orElse(false))
             throw new IllegalArgumentException("Will not start a job with incompatible platform version (" + versions.targetPlatform() + ") " +
                                                "and compile versions (" + versions.targetApplication().compileVersion().get() + ")");
@@ -551,7 +551,7 @@ public class JobController {
 
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             controller.applications().applicationStore().putDev(deploymentId, version, applicationPackage.zippedContent(), diff);
-            Version targetPlatform = platform.orElseGet(() -> findTargetPlatform(applicationPackage, lastRun));
+            Version targetPlatform = platform.orElseGet(() -> findTargetPlatform(applicationPackage, lastRun, id));
             start(id,
                   type,
                   new Versions(targetPlatform, version, lastRun.map(run -> run.versions().targetPlatform()), lastRun.map(run -> run.versions().targetApplication())),
@@ -565,7 +565,7 @@ public class JobController {
         });
     }
 
-    private Version findTargetPlatform(ApplicationPackage applicationPackage, Optional<Run> lastRun) {
+    private Version findTargetPlatform(ApplicationPackage applicationPackage, Optional<Run> lastRun, ApplicationId id) {
         Optional<Integer> major = applicationPackage.deploymentSpec().majorVersion();
         if (major.isPresent())
             return controller.applications().lastCompatibleVersion(major.get())
@@ -574,7 +574,7 @@ public class JobController {
 
         // Prefer previous platform if possible.
         VersionStatus versionStatus = controller.readVersionStatus();
-        VersionCompatibility compatibility = controller.applications().versionCompatibility();
+        VersionCompatibility compatibility = controller.applications().versionCompatibility(id);
         Optional<Version> target = lastRun.map(run -> run.versions().targetPlatform()).filter(versionStatus::isActive);
         if (target.isPresent() && compatibility.accept(target.get(), applicationPackage.compileVersion().orElse(target.get())))
             return target.get();

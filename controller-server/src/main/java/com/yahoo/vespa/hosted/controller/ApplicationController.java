@@ -94,6 +94,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
 import static java.util.Comparator.naturalOrder;
@@ -544,7 +545,7 @@ public class ApplicationController {
             Optional<DockerImage> dockerImageRepo = Optional.ofNullable(
                     dockerImageRepoFlag
                             .with(FetchVector.Dimension.ZONE_ID, zone.value())
-                            .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
+                            .with(APPLICATION_ID, application.serializedForm())
                             .value())
                     .filter(s -> !s.isBlank())
                     .map(DockerImage::fromString);
@@ -797,8 +798,8 @@ public class ApplicationController {
         return curator.lockForDeployment(application, zone);
     }
 
-    public VersionCompatibility versionCompatibility() {
-        return VersionCompatibility.fromVersionList(incompatibleVersions.value());
+    public VersionCompatibility versionCompatibility(ApplicationId id) {
+        return VersionCompatibility.fromVersionList(incompatibleVersions.with(APPLICATION_ID, id.serializedForm()).value());
     }
 
     /**

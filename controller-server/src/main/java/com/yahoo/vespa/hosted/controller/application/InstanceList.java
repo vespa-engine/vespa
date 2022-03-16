@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
@@ -39,10 +40,10 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
      *
      * @param platform the version which applications returned are compatible with
      */
-    public InstanceList compatibleWithPlatform(Version platform, VersionCompatibility compatibility) {
+    public InstanceList compatibleWithPlatform(Version platform, Function<ApplicationId, VersionCompatibility> compatibility) {
         return matching(id -> instance(id).productionDeployments().values().stream()
                                           .flatMap(deployment -> deployment.applicationVersion().compileVersion().stream())
-                                          .noneMatch(version -> compatibility.refuse(platform, version)));
+                                          .noneMatch(version -> compatibility.apply(id).refuse(platform, version)));
     }
 
     /**
