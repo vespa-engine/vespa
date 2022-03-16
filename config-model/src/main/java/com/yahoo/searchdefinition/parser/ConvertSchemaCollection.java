@@ -124,147 +124,16 @@ public class ConvertSchemaCollection {
         typeConverter.convert(true);
     }
 
-    private Map<String, SDDocumentType> convertedDocuments = new LinkedHashMap();
-
     public List<Schema> convertToSchemas() {
-        typeConverter = new ConvertParsedTypes(orderedInput, docMan);
-        typeConverter.convert(false);
-        var resultList = new ArrayList<Schema>();
-        for (var parsed : orderedInput) {
-            Optional<String> inherited;
-            var inheritList = parsed.getInherited();
-            if (inheritList.size() == 0) {
-                inherited = Optional.empty();
-            } else if (inheritList.size() == 1) {
-                inherited = Optional.of(inheritList.get(0));
-            } else {
-                throw new IllegalArgumentException("schema " + parsed.name() + "cannot inherit more than once");
-            }
-            Schema schema = parsed.getDocumentWithoutSchema()
-                ? new DocumentOnlySchema(applicationPackage, fileRegistry, deployLogger, properties)
-                : new Schema(parsed.name(), applicationPackage, inherited, fileRegistry, deployLogger, properties);
-            convertSchema(schema, parsed);
-            resultList.add(schema);
-        }
-        return resultList;
-    }
-
-    private void convertDocument(Schema schema, ParsedDocument parsed,
-                                 ConvertParsedFields fieldConverter)
-    {
-        SDDocumentType document = new SDDocumentType(parsed.name());
-        for (String inherit : parsed.getInherited()) {
-            var parent = convertedDocuments.get(inherit);
-            assert(parent != null);
-            document.inherit(parent);
-        }
-        for (var struct : parsed.getStructs()) {
-            var structProxy = fieldConverter.convertStructDeclaration(schema, document, struct);
-            document.addType(structProxy);
-        }
-        for (var annotation : parsed.getAnnotations()) {
-            fieldConverter.convertAnnotation(schema, document, annotation);
-        }
-        for (var field : parsed.getFields()) {
-            var sdf = fieldConverter.convertDocumentField(schema, document, field);
-            if (field.hasIdOverride()) {
-                document.setFieldId(sdf, field.idOverride());
-            }
-        }
-        convertedDocuments.put(parsed.name(), document);
-        schema.addDocument(document);
-    }
-
-    private void convertDocumentSummary(Schema schema, ParsedDocumentSummary parsed, TypeResolver typeContext) {
-        var docsum = new DocumentSummary(parsed.name(), schema);
-        var inheritList = parsed.getInherited();
-        if (inheritList.size() == 1) {
-            docsum.setInherited(inheritList.get(0));
-        } else if (inheritList.size() != 0) {
-            throw new IllegalArgumentException("document-summary "+parsed.name()+" cannot inherit more than once");
-        }
-        if (parsed.getFromDisk()) {
-            docsum.setFromDisk(true);
-        }
-        if (parsed.getOmitSummaryFeatures()) {
-            docsum.setOmitSummaryFeatures(true);
-        }
-        for (var parsedField : parsed.getSummaryFields()) {
-            DataType dataType = typeContext.resolveType(parsedField.getType());
-            var summaryField = new SummaryField(parsedField.name(), dataType);
-            // XXX does not belong here:
-            summaryField.setVsmCommand(SummaryField.VsmCommand.FLATTENSPACE);
-            ConvertParsedFields.convertSummaryFieldSettings(summaryField, parsedField);
-            docsum.add(summaryField);
-        }
-        schema.addSummary(docsum);
-    }
-
-    private void convertImportField(Schema schema, ParsedSchema.ImportedField f) {
-        // needs rethinking
-        var importedFields = schema.temporaryImportedFields().get();
-        if (importedFields.hasField(f.asFieldName)) {
-            throw new IllegalArgumentException("For schema '" + schema.getName() +
-                                               "', import field as '" + f.asFieldName +
-                                               "': Field already imported");
-        }
-        importedFields.add(new TemporaryImportedField(f.asFieldName, f.refFieldName, f.foreignFieldName));
-    }
-
-    private void convertFieldSet(Schema schema, ParsedFieldSet parsed) {
-        String setName = parsed.name();
-        for (String field : parsed.getFieldNames()) {
-            schema.fieldSets().addUserFieldSetItem(setName, field);
-        }
-        for (String command : parsed.getQueryCommands()) {
-            schema.fieldSets().userFieldSets().get(setName).queryCommands().add(command);
-        }
-        if (parsed.getMatchSettings().isPresent()) {
-            // same ugliness as SDParser.jj used to have:
-            var tmp = new SDField(setName, DataType.STRING);
-            ConvertParsedFields.convertMatchSettings(tmp, parsed.matchSettings());
-            schema.fieldSets().userFieldSets().get(setName).setMatching(tmp.getMatching());
-        }
-    }
-
-    private void convertSchema(Schema schema, ParsedSchema parsed) {
-        if (parsed.hasStemming()) {
-            schema.setStemming(parsed.getStemming());
-        }
-        parsed.getRawAsBase64().ifPresent(value -> schema.enableRawAsBase64(value));
-        var typeContext = typeConverter.makeContext(parsed.getDocument());
-        var fieldConverter = new ConvertParsedFields(typeContext);
-        convertDocument(schema, parsed.getDocument(), fieldConverter);
-        for (var field : parsed.getFields()) {
-            fieldConverter.convertExtraField(schema, field);
-        }
-        for (var index : parsed.getIndexes()) {
-            fieldConverter.convertExtraIndex(schema, index);
-        }
-        for (var docsum : parsed.getDocumentSummaries()) {
-            convertDocumentSummary(schema, docsum, typeContext);
-        }
-        for (var importedField : parsed.getImportedFields()) {
-            convertImportField(schema, importedField);
-        }
-        for (var fieldSet : parsed.getFieldSets()) {
-            convertFieldSet(schema, fieldSet);
-        }
-        if (documentsOnly) {
-            return; // skip ranking-only content, not used for document type generation
-        }
-        for (var rankingConstant : parsed.getRankingConstants()) {
-            schema.rankingConstants().add(rankingConstant);
-        }
-        for (var onnxModel : parsed.getOnnxModels()) {
-            schema.onnxModels().add(onnxModel);
-        }
-        rankProfileRegistry.add(new DefaultRankProfile(schema, rankProfileRegistry, schema.rankingConstants()));
-        rankProfileRegistry.add(new UnrankedRankProfile(schema, rankProfileRegistry, schema.rankingConstants()));
-        var rankConverter = new ConvertParsedRanking(rankProfileRegistry);
-        for (var rankProfile : parsed.getRankProfiles()) {
-            rankConverter.convertRankProfile(schema, rankProfile);
-        }
+        var converter = new ConvertParsedSchemas(orderedInput,
+                                                 docMan,
+                                                 applicationPackage,
+                                                 fileRegistry,
+                                                 deployLogger,
+                                                 properties,
+                                                 rankProfileRegistry,
+                                                 documentsOnly);
+        return converter.convertToSchemas();
     }
 
 }
