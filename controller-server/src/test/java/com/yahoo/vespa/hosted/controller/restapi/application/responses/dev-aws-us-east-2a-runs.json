@@ -9,7 +9,8 @@
       "versions": {
         "targetPlatform": "7.1.0",
         "targetApplication": {
-          "build": 1
+          "build": 1,
+          "compileVersion": "6.1.0"
         }
       },
       "steps": [

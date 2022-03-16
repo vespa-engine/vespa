@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
@@ -17,6 +18,8 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
+
+import static com.yahoo.collections.Iterables.reversed;
 
 /**
  * Upgrades instances in manually deployed zones to the system version, at a convenient time.
@@ -33,22 +36,32 @@ public class DeploymentUpgrader extends ControllerMaintainer {
     protected double maintain() {
         AtomicInteger attempts = new AtomicInteger();
         AtomicInteger failures = new AtomicInteger();
-        Version systemVersion = controller().readSystemVersion();
+
+        Version targetPlatform = null; // Upgrade to the newest non-broken, deployable version.
+        for (VespaVersion platform : controller().readVersionStatus().deployableVersions())
+            if (platform.confidence().equalOrHigherThan(VespaVersion.Confidence.low))
+                targetPlatform = platform.versionNumber();
+
+        if (targetPlatform == null)
+            return 0;
 
         for (Application application : controller().applications().readable())
             for (Instance instance : application.instances().values())
                 for (Deployment deployment : instance.deployments().values())
                     try {
-                        attempts.incrementAndGet();
                         JobId job = new JobId(instance.id(), JobType.from(controller().system(), deployment.zone()).get());
                         if ( ! deployment.zone().environment().isManuallyDeployed()) continue;
 
                         Run last = controller().jobController().last(job).get();
-                        Versions target = new Versions(systemVersion, last.versions().targetApplication(), Optional.of(last.versions().targetPlatform()), Optional.of(last.versions().targetApplication()));
+                        Versions target = new Versions(targetPlatform, last.versions().targetApplication(), Optional.of(last.versions().targetPlatform()), Optional.of(last.versions().targetApplication()));
+                        if (last.versions().targetApplication().compileVersion()
+                                .map(version -> controller().applications().versionCompatibility().refuse(version, target.targetPlatform()))
+                                .orElse(false)) continue;
                         if ( ! deployment.version().isBefore(target.targetPlatform())) continue;
                         if ( ! isLikelyNightFor(job)) continue;
 
                         log.log(Level.FINE, "Upgrading deployment of " + instance.id() + " in " + deployment.zone());
+                        attempts.incrementAndGet();
                         controller().jobController().start(instance.id(), JobType.from(controller().system(), deployment.zone()).get(), target, true, Optional.of("automated upgrade"));
                     } catch (Exception e) {
                         failures.incrementAndGet();

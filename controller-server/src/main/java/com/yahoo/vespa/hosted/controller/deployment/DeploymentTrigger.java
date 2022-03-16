@@ -142,9 +142,8 @@ public class DeploymentTrigger {
             return List.of(systemVersion);
 
         VespaVersion.Confidence target = policy == DeploymentSpec.UpgradePolicy.defaultPolicy ? VespaVersion.Confidence.normal : VespaVersion.Confidence.high;
-        return versions.versions().stream()
-                       .filter(version ->    ! version.versionNumber().isAfter(systemVersion)
-                                          &&   version.confidence().equalOrHigherThan(target))
+        return versions.deployableVersions().stream()
+                       .filter(version -> version.confidence().equalOrHigherThan(target))
                        .map(VespaVersion::versionNumber)
                        .sorted(reverseOrder())
                        .collect(Collectors.toList());

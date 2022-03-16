@@ -6,7 +6,8 @@
         {
           "versions": {
             "targetApplication": {
-              "build": 1
+              "build": 1,
+              "compileVersion": "6.1.0"
             },
             "targetPlatform": "7.1.0"
           },
