@@ -14,9 +14,10 @@ import java.util.Map;
  **/
 public class ParsedStruct extends ParsedBlock {
     private final List<String> inherited = new ArrayList<>();
+    private final List<ParsedStruct> resolvedInherits = new ArrayList<>();
     private final Map<String, ParsedField> fields = new LinkedHashMap<>();
     private final ParsedType asParsedType;
-    private String ownedBy = null;
+    private ParsedDocument ownedBy = null;
 
     public ParsedStruct(String name) {
         super(name, "struct");
@@ -26,7 +27,12 @@ public class ParsedStruct extends ParsedBlock {
 
     List<ParsedField> getFields() { return List.copyOf(fields.values()); }
     List<String> getInherited() { return List.copyOf(inherited); }
-    String getOwner() { return ownedBy; }
+    ParsedDocument getOwnerDoc() { return ownedBy; }
+    String getOwnerName() { return ownedBy.name(); }
+    List<ParsedStruct> getResolvedInherits() {
+        assert(inherited.size() == resolvedInherits.size());
+        return List.copyOf(resolvedInherits);
+    }
 
     void addField(ParsedField field) {
         String fieldName = field.name();
@@ -39,9 +45,15 @@ public class ParsedStruct extends ParsedBlock {
         inherited.add(other);
     }
 
-    void tagOwner(String document) {
+    void tagOwner(ParsedDocument document) {
         verifyThat(ownedBy == null, "already owned by document "+ownedBy);
         this.ownedBy = document;
+    }
+
+    void resolveInherit(String name, ParsedStruct parsed) {
+        verifyThat(inherited.contains(name), "resolveInherit for non-inherited name", name);
+        verifyThat(name.equals(parsed.name()), "resolveInherit name mismatch for", name);
+        resolvedInherits.add(parsed);
     }
 
 }

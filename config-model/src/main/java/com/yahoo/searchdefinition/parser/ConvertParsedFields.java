@@ -15,6 +15,7 @@ import com.yahoo.searchdefinition.document.RankType;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Sorting;
+import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 
@@ -311,11 +312,13 @@ public class ConvertParsedFields {
     }
 
     void convertAnnotation(Schema schema, SDDocumentType document, ParsedAnnotation parsed) {
-        var annType = context.resolveAnnotation(parsed.name());
-        var payload = parsed.getStruct();
-        if (payload.isPresent()) {
-            var structProxy = convertStructDeclaration(schema, document, payload.get());
-            document.addType(structProxy);
+        SDAnnotationType annType = context.resolveAnnotation(parsed.name());
+        var withStruct = parsed.getStruct();
+        if (withStruct.isPresent()) {
+            ParsedStruct parsedStruct = withStruct.get();
+            SDDocumentType structProxy = convertStructDeclaration(schema, document, parsedStruct);
+            structProxy.setStruct(context.resolveStruct(parsedStruct));
+            annType.setSdDocType(structProxy);
         }
         document.addAnnotation(annType);
     }
