@@ -71,9 +71,6 @@ public class AthenzAccessControlService implements AccessControlService {
         return vespaZmsClient.map(
                 zms -> {
                     var role = sshRole(tenantName);
-                    if (!zms.listRoles(role.domain()).contains(role))
-                        zms.createRole(role, Map.of());
-
                     return zms.getFullRoleInformation(role);
                 }
         ).orElseThrow(() -> new UnsupportedOperationException("Only allowed in systems running Vespa Athenz instance"));
@@ -88,11 +85,6 @@ public class AthenzAccessControlService implements AccessControlService {
         return vespaZmsClient.map(
                 zms -> {
                     var role = sshRole(tenantName);
-                    if (!zms.listRoles(role.domain()).contains(role))
-                        zms.createRole(role, Map.of());
-
-                    if (zms.getMembership(role, vespaTeam))
-                        return false;
 
                     var roleInformation = zms.getFullRoleInformation(role);
                     if (roleInformation.getPendingRequest().isEmpty())
@@ -114,9 +106,6 @@ public class AthenzAccessControlService implements AccessControlService {
         return vespaZmsClient.map(
                 zms -> {
                     var role = sshRole(tenantName);
-
-                    if (!zms.listRoles(role.domain()).contains(role))
-                        zms.createRole(role, Map.of());
 
                     if (zms.getMembership(role, vespaTeam))
                         return false;
