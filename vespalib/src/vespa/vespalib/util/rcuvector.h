@@ -44,6 +44,7 @@ protected:
     using GenerationHolderType = GenerationHolder;
 private:
     ArrayType             _data;
+    std::atomic<const T*> _vector_start;
     size_t                _growPercent;
     size_t                _growDelta;
     GenerationHolderType &_genHolder;
@@ -57,6 +58,8 @@ private:
     }
     void expand(size_t newCapacity);
     void expandAndInsert(const T & v);
+    void update_vector_start();
+protected:
     virtual void onReallocation();
 
 public:
@@ -118,6 +121,12 @@ public:
     void clear() { _data.clear(); }
     T & operator[](size_t i) { return _data[i]; }
     const T & operator[](size_t i) const { return _data[i]; }
+    /*
+     * Readers holding a generation guard can call acquire_elem_ref(i)
+     * to get a const reference to element i. Array bound must be handled
+     * by reader, cf. committed docid limit in attribute vectors.
+     */
+    const T& acquire_elem_ref(size_t i) const noexcept { return *(_vector_start.load(std::memory_order_acquire) + i); }
 
     void reset();
     void shrink(size_t newSize) __attribute__((noinline));
