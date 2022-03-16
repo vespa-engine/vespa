@@ -82,7 +82,7 @@ filter_matching_elements_in_input_field_while_converting_to_slime(const FieldVal
     // Only difference is that we filter matched elements on the fly.
     auto converted = SummaryFieldConverter::convert_field_with_filter(false, input_field_value, matching_elems);
     // This should hold as we also have asserted that (type == ResType::RES_JSONSTRING);
-    assert(converted->getClass().inherits(LiteralFieldValueB::classId));
+    assert(converted->isLiteral());
     auto& literal = static_cast<const LiteralFieldValueB&>(*converted);
     vespalib::stringref buf = literal.getValueRef();
     Slime input_field_as_slime;

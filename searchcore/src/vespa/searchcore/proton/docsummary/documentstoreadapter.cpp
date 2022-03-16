@@ -58,7 +58,7 @@ DocumentStoreAdapter::writeField(const FieldValue &value, ResType type)
     case RES_LONG_STRING:
     case RES_JSONSTRING:
         {
-            if (value.getClass().inherits(LiteralFieldValueB::classId)) {
+            if (value.isLiteral()) {
                 auto & lfv = static_cast<const LiteralFieldValueB &>(value);
                 vespalib::stringref s = lfv.getValueRef();
                 return writeStringField(s.data(), s.size(), type);
@@ -80,7 +80,7 @@ DocumentStoreAdapter::writeField(const FieldValue &value, ResType type)
     case RES_TENSOR:
         {
             vespalib::nbostream serialized;
-            if (value.getClass().inherits(TensorFieldValue::classId)) {
+            if (value.isA(FieldValue::Type::TENSOR)) {
                 const auto &tvalue = static_cast<const TensorFieldValue &>(value);
                 auto tensor = tvalue.getAsTensorPtr();
                 if (tensor) {

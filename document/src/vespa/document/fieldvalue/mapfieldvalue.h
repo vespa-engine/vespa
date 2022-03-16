@@ -18,7 +18,7 @@ namespace document {
 namespace mapfieldvalue {
     class HashMap;
 }
-class MapFieldValue : public FieldValue
+class MapFieldValue final : public FieldValue
 {
 public:
     using IArray=vespalib::IArrayT<FieldValue>;
@@ -162,8 +162,6 @@ public:
     }
 
     FieldValue::UP createValue() const;
-
-    DECLARE_IDENTIFIABLE_ABSTRACT(MapFieldValue);
 };
 
 }  // namespace document

@@ -25,8 +25,6 @@ namespace document {
 
 using namespace fieldvalue;
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(MapFieldValue, FieldValue);
-
 namespace {
 const MapDataType *verifyMapType(const DataType& type) {
     const MapDataType *ptr(dynamic_cast<const MapDataType *>(&type));
@@ -75,7 +73,7 @@ public:
 }
 
 MapFieldValue::MapFieldValue(const DataType &mapType)
-    : FieldValue(),
+    : FieldValue(Type::MAP),
       _type(verifyMapType(mapType)),
       _count(0),
       _keys(static_cast<IArray *>(createArray(getMapType().getKeyType()).release())),
@@ -369,7 +367,7 @@ MapFieldValue::buildLookupMap() const {
 MapFieldValue::const_iterator
 MapFieldValue::find(const FieldValue& key) const
 {
-    if ((size() > 0) && (key.getClass().id() == (*_keys)[0].getClass().id())) {
+    if ((size() > 0) && (key.type() == (*_keys)[0].type())) {
         ssize_t index = findIndex(key);
         if (index >= 0) {
             return const_iterator(*this, index);
@@ -381,7 +379,7 @@ MapFieldValue::find(const FieldValue& key) const
 MapFieldValue::iterator
 MapFieldValue::find(const FieldValue& key)
 {
-    if ((size() > 0) && (key.getClass().id() == (*_keys)[0].getClass().id())) {
+    if ((size() > 0) && (key.type() == (*_keys)[0].type())) {
         ssize_t index = findIndex(key);
         if (index >= 0) {
             return iterator(*this, index);
@@ -393,7 +391,7 @@ MapFieldValue::find(const FieldValue& key)
 ssize_t
 MapFieldValue::findIndex(const FieldValue& key) const
 {
-    if ((size() > 0) && (key.getClass().id() == (*_keys)[0].getClass().id())) {
+    if ((size() > 0) && (key.type() == (*_keys)[0].type())) {
         ensureLookupMap();
         auto found = _lookupMap->find(key);
         if (found != _lookupMap->end()) {
@@ -428,7 +426,7 @@ MapFieldValue::iterateNestedImpl(PathRange nested,
     IteratorHandler::CollectionScope autoScope(handler, complexFieldValue);
     std::vector<const FieldValue*> keysToRemove;
     bool wasModified = false;
-    const bool isWSet(complexFieldValue.inherits(WeightedSetFieldValue::classId));
+    const bool isWSet(complexFieldValue.isA(FieldValue::Type::WSET));
 
     uint32_t index(0);
     if ( ! nested.atEnd() ) {

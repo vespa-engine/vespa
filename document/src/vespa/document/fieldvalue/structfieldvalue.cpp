@@ -27,10 +27,8 @@ using namespace vespalib::xml;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(StructFieldValue, StructuredFieldValue);
-
 StructFieldValue::StructFieldValue(const DataType &type)
-    : StructuredFieldValue(type),
+    : StructuredFieldValue(Type::STRUCT, type),
       _fields(),
       _repo(nullptr),
       _doc_type(nullptr),

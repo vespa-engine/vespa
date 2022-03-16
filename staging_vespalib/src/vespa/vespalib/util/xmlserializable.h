@@ -17,7 +17,7 @@ class XmlSerializable
 {
 public:
     XmlSerializable() {}
-    virtual ~XmlSerializable() {}
+    virtual ~XmlSerializable() = default;
 
     virtual void printXml(XmlOutputStream& out) const = 0;
 

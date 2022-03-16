@@ -36,7 +36,7 @@ TensorFieldValue::TensorFieldValue()
 }
 
 TensorFieldValue::TensorFieldValue(const TensorDataType &dataType)
-    : FieldValue(),
+    : FieldValue(Type::TENSOR),
       _dataType(dataType),
       _tensor(),
       _altered(true)
@@ -44,7 +44,7 @@ TensorFieldValue::TensorFieldValue(const TensorDataType &dataType)
 }
 
 TensorFieldValue::TensorFieldValue(const TensorFieldValue &rhs)
-    : FieldValue(),
+    : FieldValue(Type::TENSOR),
       _dataType(rhs._dataType),
       _tensor(),
       _altered(true)
@@ -56,7 +56,7 @@ TensorFieldValue::TensorFieldValue(const TensorFieldValue &rhs)
 
 
 TensorFieldValue::TensorFieldValue(TensorFieldValue &&rhs)
-    : FieldValue(),
+    : FieldValue(Type::TENSOR),
       _dataType(rhs._dataType),
       _tensor(),
       _altered(true)
@@ -173,9 +173,8 @@ TensorFieldValue::printXml(XmlOutputStream& out) const
 FieldValue &
 TensorFieldValue::assign(const FieldValue &value)
 {
-    const TensorFieldValue *rhs =
-        Identifiable::cast<const TensorFieldValue *>(&value);
-    if (rhs != nullptr) {
+    if (value.isA(Type::TENSOR)) {
+        auto rhs = static_cast<const TensorFieldValue *>(&value);
         *this = *rhs;
     } else {
         return FieldValue::assign(value);
@@ -231,7 +230,5 @@ TensorFieldValue::compare(const FieldValue &other) const
     auto rhs_spec = spec_from_value(*rhs._tensor).to_string();
     return lhs_spec.compare(rhs_spec);
 }
-
-IMPLEMENT_IDENTIFIABLE(TensorFieldValue, FieldValue);
 
 } // document

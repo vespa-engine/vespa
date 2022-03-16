@@ -26,8 +26,6 @@ namespace document {
 
 using namespace fieldvalue;
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(FieldValue, vespalib::Identifiable);
-
 void FieldValue::serialize(nbostream &stream) const {
     VespaDocumentSerializer serializer(stream);
     serializer.write(*this);

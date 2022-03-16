@@ -4,6 +4,7 @@
 #include "updatevisitor.h"
 #include <vespa/document/base/fieldpath.h>
 #include <vespa/document/util/printable.h>
+#include <vespa/document/util/identifiableid.h>
 
 namespace document {
 

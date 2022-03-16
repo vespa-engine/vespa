@@ -20,9 +20,9 @@
 
 #include "updatevisitor.h"
 #include <vespa/document/util/printable.h>
-#include <vespa/document/util/xmlserializable.h>
 #include <vespa/document/util/identifiableid.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/xmlserializable.h>
 
 namespace document {
 
@@ -33,12 +33,13 @@ class DataType;
 
 class ValueUpdate : public vespalib::Identifiable,
                     public Printable,
-                    public XmlSerializable
+public vespalib::xml::XmlSerializable
 {
 protected:
     using nbostream = vespalib::nbostream;
 public:
     using CP = vespalib::CloneablePtr<ValueUpdate>;
+    using XmlOutputStream = vespalib::xml::XmlOutputStream;
 
     /**
      * Create a value update object from the given stream.

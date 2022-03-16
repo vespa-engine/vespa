@@ -14,14 +14,14 @@ using namespace vespalib::xml;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE(PredicateFieldValue, FieldValue);
-
 PredicateFieldValue::PredicateFieldValue()
-    : _slime(std::make_unique<Slime>()), _altered(false) {
+    : FieldValue(Type::PREDICATE),
+      _slime(std::make_unique<Slime>()),
+      _altered(false) {
 }
 
 PredicateFieldValue::PredicateFieldValue(vespalib::Slime::UP s)
-    : FieldValue(),
+    : FieldValue(Type::PREDICATE),
       _slime(std::move(s)),
       _altered(false)
 { }
@@ -38,7 +38,7 @@ PredicateFieldValue::~PredicateFieldValue() = default;
 
 FieldValue &
 PredicateFieldValue::assign(const FieldValue &rhs) {
-    if (rhs.inherits(PredicateFieldValue::classId)) {
+    if (rhs.isA(Type::PREDICATE)) {
         operator=(static_cast<const PredicateFieldValue &>(rhs));
     } else {
         _slime.reset();

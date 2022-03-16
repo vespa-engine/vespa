@@ -6,6 +6,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/util/classname.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.documentfieldnode");
@@ -29,11 +30,12 @@ DocumentFieldNode::DocumentFieldNode(const DocumentFieldNode & rhs) :
     _fieldPath(rhs._fieldPath),
     _value(rhs._value),
     _fieldName(rhs._fieldName),
-    _doc(NULL)
+    _doc(nullptr)
 {
 }
 
-DocumentFieldNode & DocumentFieldNode::operator = (const DocumentFieldNode & rhs)
+DocumentFieldNode &
+DocumentFieldNode::operator = (const DocumentFieldNode & rhs)
 {
     if (this != &rhs) {
         DocumentAccessorNode::operator=(rhs);
@@ -49,12 +51,11 @@ std::unique_ptr<ResultNode>
 deduceResultNode(vespalib::stringref fieldName, const FieldValue & fv, bool preserveAccurateTypes, bool nestedMultiValue)
 {
     std::unique_ptr<ResultNode> value;
-    const Identifiable::RuntimeClass & cInfo = fv.getClass();
-    if (cInfo.inherits(ByteFieldValue::classId) || cInfo.inherits(IntFieldValue::classId) || cInfo.inherits(LongFieldValue::classId)) {
+    if (fv.isA(FieldValue::Type::BYTE) || fv.isA(FieldValue::Type::INT) || fv.isA(FieldValue::Type::LONG)) {
         if (preserveAccurateTypes) {
-            if (cInfo.inherits(ByteFieldValue::classId)) {
+            if (fv.isA(FieldValue::Type::BYTE)) {
                 value.reset(nestedMultiValue ? static_cast<ResultNode *>(new Int8ResultNodeVector()) : static_cast<ResultNode *>(new Int8ResultNode()));
-            } else if (cInfo.inherits(IntFieldValue::classId)) {
+            } else if (fv.isA(FieldValue::Type::INT)) {
                 value.reset(nestedMultiValue ? static_cast<ResultNode *>(new Int32ResultNodeVector()) : static_cast<ResultNode *>(new Int32ResultNode()));
             } else {
                 value.reset(nestedMultiValue ? static_cast<ResultNode *>(new Int64ResultNodeVector()) : static_cast<ResultNode *>(new Int64ResultNode()));
@@ -62,22 +63,20 @@ deduceResultNode(vespalib::stringref fieldName, const FieldValue & fv, bool pres
         } else {
             value.reset(nestedMultiValue ? static_cast<ResultNode *>(new Int64ResultNodeVector()) : static_cast<ResultNode *>(new Int64ResultNode()));
         }
-    } else if (cInfo.inherits(FloatFieldValue::classId) || cInfo.inherits(DoubleFieldValue::classId)) {
+    } else if (fv.isA(FieldValue::Type::FLOAT) || fv.isA(FieldValue::Type::DOUBLE)) {
         value.reset(nestedMultiValue ? static_cast<ResultNode *>(new FloatResultNodeVector()) : static_cast<ResultNode *>(new FloatResultNode()));
-    } else if (cInfo.inherits(BoolFieldValue::classId)) {
+    } else if (fv.isA(FieldValue::Type::BOOL)) {
         value.reset(nestedMultiValue ? static_cast<ResultNode *>(new BoolResultNodeVector()) : static_cast<ResultNode *>(new BoolResultNode()));
-    } else if (cInfo.inherits(StringFieldValue::classId)) {
+    } else if (fv.isA(FieldValue::Type::STRING)) {
         value.reset(nestedMultiValue ? static_cast<ResultNode *>(new StringResultNodeVector()) : static_cast<ResultNode *>(new StringResultNode()));
-    } else if (cInfo.inherits(RawFieldValue::classId)) {
+    } else if (fv.isA(FieldValue::Type::RAW)) {
         value.reset(nestedMultiValue ? static_cast<ResultNode *>(new RawResultNodeVector()) : static_cast<ResultNode *>(new RawResultNode()));
-    } else if (cInfo.inherits(CollectionFieldValue::classId) || cInfo.inherits(MapFieldValue::classId)) {
-        if (cInfo.inherits(CollectionFieldValue::classId)) {
+    } else if (fv.isCollection() || fv.isA(FieldValue::Type::MAP)) {
+        if (fv.isCollection()) {
             value = deduceResultNode(fieldName, *static_cast<const CollectionFieldValue &>(fv).createNested(), preserveAccurateTypes, nestedMultiValue);
-        } else if (cInfo.inherits(MapFieldValue::classId)) {
-            value = deduceResultNode(fieldName, *static_cast<const MapFieldValue &>(fv).createValue(), preserveAccurateTypes, nestedMultiValue);
         } else {
-            throw std::runtime_error(make_string("Can not deduce correct resultclass for documentfield '%s' in based on class '%s'",
-                                                 vespalib::string(fieldName).c_str(), cInfo.name()));
+            assert(fv.isA(FieldValue::Type::MAP));
+            value = deduceResultNode(fieldName, *static_cast<const MapFieldValue &>(fv).createValue(), preserveAccurateTypes, nestedMultiValue);
         }
         const Identifiable::RuntimeClass & rInfo = value->getClass();
         if (rInfo.inherits(ResultNodeVector::classId)) {
@@ -100,16 +99,17 @@ deduceResultNode(vespalib::stringref fieldName, const FieldValue & fv, bool pres
             value.reset(new RawResultNodeVector());
         } else {
             throw std::runtime_error(make_string("Can not deduce correct resultclass for documentfield '%s' in based on class '%s'. It nests down to %s which is not expected",
-                                                 vespalib::string(fieldName).c_str(), cInfo.name(), rInfo.name()));
+                                                 vespalib::string(fieldName).c_str(), vespalib::getClassName(fv).c_str(), rInfo.name()));
         }
     } else {
         throw std::runtime_error(make_string("Can not deduce correct resultclass for documentfield '%s' in based on class '%s'",
-                                             vespalib::string(fieldName).c_str(), cInfo.name()));
+                                             vespalib::string(fieldName).c_str(), vespalib::getClassName(fv).c_str()));
     }
     return value;
 }
 
-void DocumentFieldNode::onPrepare(bool preserveAccurateTypes)
+void
+DocumentFieldNode::onPrepare(bool preserveAccurateTypes)
 {
     LOG(debug, "DocumentFieldNode::onPrepare(this=%p)", this);
 
@@ -118,8 +118,8 @@ void DocumentFieldNode::onPrepare(bool preserveAccurateTypes)
         for(document::FieldPath::const_iterator it(_fieldPath.begin()), mt(_fieldPath.end()); !nestedMultiValue && (it != mt); it++) {
             const FieldPathEntry & fpe = **it;
             if (fpe.getType() == document::FieldPathEntry::STRUCT_FIELD) {
-                const vespalib::Identifiable::RuntimeClass & cInfo(fpe.getFieldValueToSet().getClass());
-                nestedMultiValue = cInfo.inherits(CollectionFieldValue::classId) || cInfo.inherits(MapFieldValue::classId);
+                const FieldValue & fv = fpe.getFieldValueToSet();
+                nestedMultiValue = fv.isCollection() || fv.isA(FieldValue::Type::MAP);
             }
         }
         const document::FieldPathEntry & endOfPath(_fieldPath.back());
@@ -127,9 +127,9 @@ void DocumentFieldNode::onPrepare(bool preserveAccurateTypes)
             const FieldValue& fv = endOfPath.getFieldValueToSet();
             _value.reset(deduceResultNode(_fieldName, fv, preserveAccurateTypes, nestedMultiValue).release());
             if (_value->inherits(ResultNodeVector::classId)) {
-                _handler.reset(new MultiHandler(static_cast<ResultNodeVector &>(*_value)));
+                _handler = std::make_unique<MultiHandler>(static_cast<ResultNodeVector &>(*_value));
             } else {
-                _handler.reset(new SingleHandler(*_value));
+                _handler = std::make_unique<SingleHandler>(*_value);
             }
         } else {
             if (endOfPath.getDataType().isStructured()) {
@@ -222,10 +222,10 @@ DocumentFieldNode::Handler::onCollectionStart(const Content & c)
 {
     const document::FieldValue & fv = c.getValue();
     LOG(spam, "onCollectionStart: field value '%s'", fv.toString().c_str());
-    if (fv.inherits(document::ArrayFieldValue::classId)) {
+    if (fv.isA(FieldValue::Type::ARRAY)) {
         const document::ArrayFieldValue & afv = static_cast<const document::ArrayFieldValue &>(fv);
         LOG(spam, "onCollectionStart: Array size = '%zu'", afv.size());
-    } else if (fv.inherits(document::WeightedSetFieldValue::classId)) {
+    } else if (fv.isA(FieldValue::Type::WSET)) {
         const document::WeightedSetFieldValue & wsfv = static_cast<const document::WeightedSetFieldValue &>(fv);
         LOG(spam, "onCollectionStart: WeightedSet size = '%zu'", wsfv.size());
     }
@@ -253,9 +253,6 @@ DocumentFieldNode::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     visit(visitor, "fieldName", _fieldName);
     visit(visitor, "value", _value);
-    visitor.openStruct("fieldPath", "FieldPath");
-    _fieldPath.visitMembers(visitor);
-    visitor.closeStruct();
 }
 
 class String2ResultNode : public ResultNode

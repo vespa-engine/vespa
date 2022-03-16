@@ -6,8 +6,6 @@
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(NumericFieldValueBase, FieldValue);
-
 void
 NumericFieldValueBase::printXml(XmlOutputStream& out) const
 {

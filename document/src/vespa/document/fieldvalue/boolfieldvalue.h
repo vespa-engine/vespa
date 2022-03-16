@@ -9,7 +9,7 @@ namespace document {
 /**
  * Represent the value in a field of type 'bool' which can be either true or false.
  **/
-class BoolFieldValue : public FieldValue {
+class BoolFieldValue final : public FieldValue {
     bool _value;
     bool _altered;
 
@@ -42,7 +42,6 @@ public:
     vespalib::string getAsString() const override;
 
     BoolFieldValue& operator=(vespalib::stringref) override;
-    DECLARE_IDENTIFIABLE(BoolFieldValue);
     static std::unique_ptr<BoolFieldValue> make(bool value=false) { return std::make_unique<BoolFieldValue>(value); }
 };
 

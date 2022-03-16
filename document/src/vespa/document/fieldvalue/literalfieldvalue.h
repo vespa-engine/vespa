@@ -24,15 +24,14 @@ class LiteralFieldValueB : public FieldValue {
 public:
     typedef vespalib::string string;
     typedef vespalib::stringref stringref;
-    DECLARE_IDENTIFIABLE_ABSTRACT(LiteralFieldValueB);
     typedef std::unique_ptr<LiteralFieldValueB> UP;
     typedef string value_type;
 
-    LiteralFieldValueB();
+    LiteralFieldValueB(Type type);
     ~LiteralFieldValueB();
 
     LiteralFieldValueB(const LiteralFieldValueB &);
-    LiteralFieldValueB(const stringref & value);
+    LiteralFieldValueB(Type type, const stringref & value);
 
     const value_type & getValue() const { sync(); return _backing; }
     /**
@@ -83,15 +82,15 @@ private:
     virtual bool getAddZeroTerm() const = 0;
 };
 
-template<typename SubClass, int type, bool addZeroTerm>
+template<typename SubClass, int dataType, bool addZeroTerm>
 class LiteralFieldValue : public LiteralFieldValueB {
 private:
     bool getAddZeroTerm() const  override{ return addZeroTerm; }
 public:
     typedef std::unique_ptr<SubClass> UP;
 
-    LiteralFieldValue() : LiteralFieldValueB() { }
-    LiteralFieldValue(const stringref& value) : LiteralFieldValueB(value) { }
+    LiteralFieldValue(Type type) : LiteralFieldValueB(type) { }
+    LiteralFieldValue(Type type, const stringref& value) : LiteralFieldValueB(type, value) { }
     const DataType *getDataType() const override;
 };
 

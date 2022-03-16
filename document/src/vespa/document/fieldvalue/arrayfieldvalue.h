@@ -18,7 +18,7 @@
 
 namespace document {
 
-class ArrayFieldValue : public CollectionFieldValue {
+class ArrayFieldValue final : public CollectionFieldValue {
 private:
     using IArray = vespalib::IArrayT<FieldValue>;
     std::unique_ptr<IArray> _array;
@@ -75,7 +75,6 @@ public:
     const_iterator begin() const { return array().begin(); }
     const_iterator end() const { return array().end(); }
 
-    DECLARE_IDENTIFIABLE_ABSTRACT(ArrayFieldValue);
 private:
     iterator begin() { return array().begin(); }
     iterator end() { return array().end(); }

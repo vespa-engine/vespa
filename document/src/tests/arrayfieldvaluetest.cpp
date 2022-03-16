@@ -105,7 +105,7 @@ TEST(ArrayFieldValueTest, testArray)
     // Iterating
     const ArrayFieldValue& constVal(value);
     for(const FieldValue & fval1 : constVal) {
-        EXPECT_EQ((uint32_t) IntFieldValue::classId, fval1.getClass().id());
+        EXPECT_EQ(FieldValue::Type::INT, fval1.type());
     }
     value2 = value;
     for(size_t i(0); i < value2.size(); i++) {

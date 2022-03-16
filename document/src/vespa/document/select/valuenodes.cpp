@@ -11,7 +11,6 @@
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/text/lowercase.h>
-#include <regex>
 #include <iomanip>
 #include <sys/time.h>
 
@@ -272,43 +271,43 @@ IteratorHandler::onPrimitive(uint32_t fid, const Content& fv) {
 std::unique_ptr<Value>
 IteratorHandler::getInternalValue(const FieldValue& fval) const
 {
-    switch(fval.getClass().id()) {
-        case document::BoolFieldValue::classId:
+    switch(fval.type()) {
+        case FieldValue::Type::BOOL:
         {
             const auto& val(dynamic_cast<const BoolFieldValue&>(fval));
             return std::make_unique<IntegerValue>(val.getAsInt(), false);
         }
-        case document::IntFieldValue::classId:
+        case FieldValue::Type::INT:
         {
             const auto& val(dynamic_cast<const IntFieldValue&>(fval));
             return std::make_unique<IntegerValue>(val.getAsInt(), false);
         }
-        case document::ByteFieldValue::classId:
+        case FieldValue::Type::BYTE:
         {
             const auto& val(dynamic_cast<const ByteFieldValue&>(fval));
             return std::make_unique<IntegerValue>(val.getAsByte(), false);
         }
-        case LongFieldValue::classId:
+        case FieldValue::Type::LONG:
         {
             const auto& val(dynamic_cast<const LongFieldValue&>(fval));
             return std::make_unique<IntegerValue>(val.getAsLong(), false);
         }
-        case FloatFieldValue::classId:
+        case FieldValue::Type::FLOAT:
         {
             const auto& val(dynamic_cast<const FloatFieldValue&>(fval));
             return std::make_unique<FloatValue>(val.getAsFloat());
         }
-        case DoubleFieldValue::classId:
+        case FieldValue::Type::DOUBLE:
         {
             const auto& val(dynamic_cast<const DoubleFieldValue&>(fval));
             return std::make_unique<FloatValue>(val.getAsDouble());
         }
-        case StringFieldValue::classId:
+        case FieldValue::Type::STRING:
         {
             const auto& val(dynamic_cast<const StringFieldValue&>(fval));
             return std::make_unique<StringValue>(val.getAsString());
         }
-        case ReferenceFieldValue::classId:
+        case FieldValue::Type::REFERENCE:
         {
             const auto& val(dynamic_cast<const ReferenceFieldValue&>(fval));
             if (val.hasValidDocumentId()) {
@@ -317,7 +316,7 @@ IteratorHandler::getInternalValue(const FieldValue& fval) const
                 return std::make_unique<InvalidValue>();
             }
         }
-        case ArrayFieldValue::classId:
+        case FieldValue::Type::ARRAY:
         {
             const auto& val(dynamic_cast<const ArrayFieldValue&>(fval));
             if (val.size() == 0) {
@@ -328,7 +327,7 @@ IteratorHandler::getInternalValue(const FieldValue& fval) const
                 return std::make_unique<ArrayValue>(values);
             }
         }
-        case StructFieldValue::classId:
+        case FieldValue::Type::STRUCT:
         {
             const auto& val(dynamic_cast<const StructFieldValue&>(fval));
             if (val.empty()) {
@@ -342,7 +341,7 @@ IteratorHandler::getInternalValue(const FieldValue& fval) const
                 return std::make_unique<StructValue>(values);
             }
         }
-        case MapFieldValue::classId:
+        case FieldValue::Type::MAP:
         {
             const auto& val(static_cast<const MapFieldValue&>(fval));
             if (val.isEmpty()) {
@@ -353,6 +352,8 @@ IteratorHandler::getInternalValue(const FieldValue& fval) const
                 return std::make_unique<ArrayValue>(values);
             }
         }
+        default:
+            break;
     }
     LOG(warning, "Tried to use unsupported datatype %s in field comparison",
         fval.getDataType()->toString().c_str());

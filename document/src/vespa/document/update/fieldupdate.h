@@ -23,7 +23,7 @@ class DocumentType;
 
 class FieldUpdate : public vespalib::Identifiable,
                     public Printable,
-                    public XmlSerializable
+                    public vespalib::xml::XmlSerializable
 {
     Field _field;
     std::vector<ValueUpdate::CP> _updates;
@@ -31,6 +31,7 @@ class FieldUpdate : public vespalib::Identifiable,
 
 public:
     typedef vespalib::CloneablePtr<FieldUpdate> CP;
+    using XmlOutputStream = vespalib::xml::XmlOutputStream;
 
     FieldUpdate(const Field& field);
     FieldUpdate(const FieldUpdate &);

@@ -40,13 +40,14 @@ class VespaDocumentSerializer;
  * path updates was added, and a new serialization format was
  * introduced while keeping the old one.
  */
-class DocumentUpdate final : public Printable, public XmlSerializable
+class DocumentUpdate final : public Printable, public vespalib::xml::XmlSerializable
 {
 public:
-    typedef std::unique_ptr<DocumentUpdate> UP;
-    typedef std::shared_ptr<DocumentUpdate> SP;
-    typedef std::vector<FieldUpdate> FieldUpdateV;
-    typedef std::vector<FieldPathUpdate::CP> FieldPathUpdateV;
+    using UP = std::unique_ptr<DocumentUpdate>;
+    using SP = std::shared_ptr<DocumentUpdate>;
+    using FieldUpdateV = std::vector<FieldUpdate>;
+    using FieldPathUpdateV = std::vector<FieldPathUpdate::CP>;
+    using XmlOutputStream = vespalib::xml::XmlOutputStream;
 
     /**
      * Create new style document update, possibly with field path updates.

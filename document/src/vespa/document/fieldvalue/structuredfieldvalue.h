@@ -44,7 +44,7 @@ class StructuredFieldValue : public FieldValue
     virtual StructuredCache * getCache() const { return nullptr; }
 
 protected:
-    StructuredFieldValue(const DataType &type) : FieldValue(), _type(&type) {}
+    StructuredFieldValue(Type type, const DataType &dataType) : FieldValue(type), _type(&dataType) {}
 
     /** Called from Document when deserializing alters type. */
     virtual void setType(const DataType& type) { _type = &type; }
@@ -106,8 +106,6 @@ protected:
     fieldvalue::ModificationStatus
     onIterateNested(PathRange nested, fieldvalue::IteratorHandler & handler) const override;
 public:
-    DECLARE_IDENTIFIABLE_ABSTRACT(StructuredFieldValue);
-
     StructuredFieldValue* clone() const override = 0;
     const DataType *getDataType() const override { return _type; }
 

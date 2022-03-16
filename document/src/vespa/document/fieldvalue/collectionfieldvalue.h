@@ -27,9 +27,9 @@ protected:
     void verifyType(const CollectionFieldValue& other) const;
 
 public:
-    CollectionFieldValue(const DataType &type)
-        : FieldValue(),
-          _type(&type)
+    CollectionFieldValue(Type type, const DataType &dataType)
+        : FieldValue(type),
+          _type(&dataType)
     {}
 
     CollectionFieldValue(const CollectionFieldValue& other);
@@ -61,8 +61,6 @@ public:
     virtual bool isEmpty() const = 0;
     virtual size_t size() const = 0;
     virtual void clear() = 0;
-
-    DECLARE_IDENTIFIABLE_ABSTRACT(CollectionFieldValue);
 };
 
 }

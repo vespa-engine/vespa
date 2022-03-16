@@ -8,10 +8,8 @@ using namespace vespalib::xml;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(LiteralFieldValueB, FieldValue);
-
-LiteralFieldValueB::LiteralFieldValueB() :
-    FieldValue(),
+LiteralFieldValueB::LiteralFieldValueB(Type type) :
+    FieldValue(type),
     _value(),
     _backing(),
     _altered(true)
@@ -30,8 +28,8 @@ LiteralFieldValueB::LiteralFieldValueB(const LiteralFieldValueB& other)
     _value = _backing;
 }
 
-LiteralFieldValueB::LiteralFieldValueB(const stringref & value)
-    : FieldValue(),
+LiteralFieldValueB::LiteralFieldValueB(Type type, const stringref & value)
+    : FieldValue(type),
       _value(),
       _backing(value),
       _altered(true)

@@ -18,8 +18,6 @@ namespace document {
 
 using namespace fieldvalue;
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(WeightedSetFieldValue, CollectionFieldValue);
-
 namespace {
 const DataType &getKeyType(const DataType &type) {
     const WeightedSetDataType *wtype = dynamic_cast<const WeightedSetDataType *>(&type);
@@ -32,7 +30,7 @@ const DataType &getKeyType(const DataType &type) {
 }  // namespace
 
 WeightedSetFieldValue::WeightedSetFieldValue(const DataType &type)
-    : CollectionFieldValue(type),
+    : CollectionFieldValue(Type::WSET, type),
       _map_type(std::make_shared<MapDataType>(getKeyType(type), *DataType::INT)),
       _map(*_map_type),
       _altered(true)

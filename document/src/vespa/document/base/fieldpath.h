@@ -2,10 +2,7 @@
 #pragma once
 
 #include "field.h"
-#include <vespa/document/util/identifiableid.h>
-#include <vector>
-
-namespace vespalib { class ObjectVisitor; }
+#include <vespa/vespalib/util/memory.h>
 
 namespace document {
 
@@ -80,7 +77,6 @@ public:
     FieldValue * getFieldValueToSetPtr() const { return _fillInVal.get(); }
     FieldValue & getFieldValueToSet() const { return *_fillInVal; }
     std::unique_ptr<FieldValue> stealFieldValueToSet() const;
-    void visitMembers(vespalib::ObjectVisitor &visitor) const;
     /**
      * Parses a string of the format {["]escaped string["]} to its unescaped value.
      * @param key is the incoming value, and contains what is left when done.
@@ -115,8 +111,8 @@ public:
     FieldPath();
     FieldPath(const FieldPath &);
     FieldPath & operator=(const FieldPath &);
-    FieldPath(FieldPath &&) = default;
-    FieldPath & operator=(FieldPath &&) = default;
+    FieldPath(FieldPath &&) noexcept = default;
+    FieldPath & operator=(FieldPath &&) noexcept = default;
     ~FieldPath();
 
     template <typename InputIterator>
@@ -150,8 +146,6 @@ public:
     FieldPathEntry & operator[](Container::size_type i) { return *_path[i]; }
 
     const FieldPathEntry & operator[](Container::size_type i) const { return *_path[i]; }
-
-    void visitMembers(vespalib::ObjectVisitor &visitor) const;
 
     template <typename IT>
     class Range {

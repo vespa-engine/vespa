@@ -7,6 +7,7 @@
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/xmlstream.h>
+#include <vespa/vespalib/util/classname.h>
 #include <ostream>
 
 using vespalib::IllegalArgumentException;
@@ -63,14 +64,14 @@ AddValueUpdate::print(std::ostream& out, bool, const std::string& indent) const
 bool
 AddValueUpdate::applyTo(FieldValue& value) const
 {
-    if (value.inherits(ArrayFieldValue::classId)) {
+    if (value.isA(FieldValue::Type::ARRAY)) {
         ArrayFieldValue& doc(static_cast<ArrayFieldValue&>(value));
         doc.add(*_value);	
-    } else if (value.inherits(WeightedSetFieldValue::classId)) {
+    } else if (value.isA(FieldValue::Type::WSET)) {
         WeightedSetFieldValue& doc(static_cast<WeightedSetFieldValue&>(value));
         doc.add(*_value, _weight);	
     } else {
-        std::string err = make_string("Unable to add a value to a \"%s\" field value.", value.getClass().name());
+        vespalib::string err = make_string("Unable to add a value to a \"%s\" field value.", vespalib::getClassName(value).c_str());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     return true;

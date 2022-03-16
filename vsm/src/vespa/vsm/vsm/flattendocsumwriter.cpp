@@ -18,13 +18,12 @@ FlattenDocsumWriter::onPrimitive(uint32_t, const Content & c)
 {
     considerSeparator();
     const document::FieldValue & fv = c.getValue();
-    const auto & clazz = fv.getClass();
-    if (clazz.inherits(document::LiteralFieldValueB::classId)) {
+    if (fv.isLiteral()) {
         const document::LiteralFieldValueB & lfv = static_cast<const document::LiteralFieldValueB &>(fv);
         vespalib::stringref value = lfv.getValueRef();
         _output.put(value.data(), value.size());
-    } else if (clazz.inherits(document::NumericFieldValueBase::classId) ||
-               clazz.inherits(document::BoolFieldValue::classId))
+    } else if (fv.isNumeric() ||
+               fv.isA(document::FieldValue::Type::BOOL))
     {
         vespalib::string value = fv.getAsString();
         _output.put(value.data(), value.size());

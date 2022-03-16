@@ -22,7 +22,7 @@ class FixedTypeRepo;
 class FieldSet;
 class StructDataType;
 
-class StructFieldValue : public StructuredFieldValue
+class StructFieldValue final : public StructuredFieldValue
 {
 private:
     SerializableArray       _fields;
@@ -85,9 +85,6 @@ public:
      * has no content. This clears content and sets changed to false.
      */
     void reset();
-
-    DECLARE_IDENTIFIABLE_ABSTRACT(StructFieldValue);
-
 private:
     void setFieldValue(const Field&, FieldValue::UP value) override;
     FieldValue::UP getFieldValue(const Field&) const override;

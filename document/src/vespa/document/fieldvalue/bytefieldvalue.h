@@ -12,12 +12,12 @@
 
 namespace document {
 
-class ByteFieldValue : public NumericFieldValue<int8_t> {
+class ByteFieldValue final : public NumericFieldValue<int8_t> {
 public:
     typedef int8_t Number;
 
     ByteFieldValue(Number value = 0)
-        : NumericFieldValue<Number>(value) {}
+        : NumericFieldValue<Number>(Type::BYTE, value) {}
 
     void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
     void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
@@ -25,7 +25,6 @@ public:
     ByteFieldValue* clone() const override { return new ByteFieldValue(*this); }
 
     using NumericFieldValue<Number>::operator=;
-    DECLARE_IDENTIFIABLE(ByteFieldValue);
     static std::unique_ptr<ByteFieldValue> make(Number value=0) { return std::make_unique<ByteFieldValue>(value); }
 };
 

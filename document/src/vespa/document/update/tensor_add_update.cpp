@@ -8,13 +8,12 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
-#include <vespa/document/util/serializableexceptions.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/fast_value.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/xmlstream.h>
+#include <vespa/vespalib/util/classname.h>
 #include <ostream>
 
 using vespalib::IllegalArgumentException;
@@ -99,7 +98,7 @@ TensorAddUpdate::apply_to(const Value &old_tensor,
 bool
 TensorAddUpdate::applyTo(FieldValue& value) const
 {
-    if (value.inherits(TensorFieldValue::classId)) {
+    if (value.isA(FieldValue::Type::TENSOR)) {
         TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
         tensorFieldValue.make_empty_if_not_existing();
         auto oldTensor = tensorFieldValue.getAsTensorPtr();
@@ -110,7 +109,7 @@ TensorAddUpdate::applyTo(FieldValue& value) const
         }
     } else {
         vespalib::string err = make_string("Unable to perform a tensor add update on a '%s' field value",
-                                           value.getClass().name());
+                                           vespalib::getClassName(value).c_str());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     return true;
@@ -136,11 +135,11 @@ void
 TensorAddUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &type, nbostream & stream)
 {
     auto tensor = type.createFieldValue();
-    if (tensor->inherits(TensorFieldValue::classId)) {
+    if (tensor->isA(FieldValue::Type::TENSOR)) {
         _tensor.reset(static_cast<TensorFieldValue *>(tensor.release()));
     } else {
         vespalib::string err = make_string("Expected tensor field value, got a '%s' field value",
-                                           tensor->getClass().name());
+                                           vespalib::getClassName(*tensor).c_str());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());

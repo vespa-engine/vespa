@@ -23,10 +23,8 @@ using fieldvalue::ModificationStatus;
 using fieldvalue::IteratorHandler;
 using fieldvalue::VariableMap;
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(ArrayFieldValue, CollectionFieldValue);
-
 ArrayFieldValue::ArrayFieldValue(const DataType &type)
-    : CollectionFieldValue(type),
+    : CollectionFieldValue(Type::ARRAY, type),
       _array()
 {
     _array.reset(static_cast<IArray *>(createArray(getNestedType()).release()));

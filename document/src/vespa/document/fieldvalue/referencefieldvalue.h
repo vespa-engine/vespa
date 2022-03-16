@@ -22,7 +22,7 @@ namespace document {
  * document type "foo" inheriting "bar", you cannot have a reference<bar> field
  * containing a document ID for a "foo" document.
  */
-class ReferenceFieldValue : public FieldValue {
+class ReferenceFieldValue final : public FieldValue {
     const ReferenceDataType* _dataType;
     // TODO wrap in std::optional once available.
     DocumentId _documentId;
@@ -66,13 +66,10 @@ public:
     bool hasChanged() const override;
     void accept(FieldValueVisitor&) override;
     void accept(ConstFieldValueVisitor&) const override;
-
-    DECLARE_IDENTIFIABLE(ReferenceFieldValue);
 private:
     // Throws vespalib::IllegalArgumentException if  doc type of `id` does not
     // match the name of `type`.
-    static void requireIdOfMatchingType(
-            const DocumentId& id, const DocumentType& type);
+    static void requireIdOfMatchingType(const DocumentId& id, const DocumentType& type);
 };
 
 } // document

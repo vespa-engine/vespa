@@ -16,8 +16,6 @@ namespace document {
 
 using namespace fieldvalue;
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(StructuredFieldValue, FieldValue);
-
 StructuredFieldValue::Iterator::Iterator()
     : _iterator(),
       _field(nullptr)

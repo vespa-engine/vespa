@@ -9,7 +9,7 @@ namespace vespalib {
 }
 namespace document {
 
-class PredicateFieldValue : public FieldValue {
+class PredicateFieldValue final : public FieldValue {
     std::unique_ptr<vespalib::Slime> _slime;
     bool _altered;
 
@@ -38,8 +38,6 @@ public:
     const vespalib::Slime &getSlime() const { return *_slime; }
 
     FieldValue &assign(const FieldValue &rhs) override;
-
-    DECLARE_IDENTIFIABLE(PredicateFieldValue);
 };
 
 }

@@ -11,26 +11,25 @@ using vespalib::make_string;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE(ReferenceFieldValue, FieldValue);
-
 ReferenceFieldValue::ReferenceFieldValue()
-    : _dataType(nullptr),
+    : FieldValue(Type::REFERENCE),
+      _dataType(nullptr),
       _documentId(),
       _altered(true)
 {
 }
 
 ReferenceFieldValue::ReferenceFieldValue(const ReferenceDataType& dataType)
-    : _dataType(&dataType),
+    : FieldValue(Type::REFERENCE),
+      _dataType(&dataType),
       _documentId(),
       _altered(true)
 {
 }
 
-ReferenceFieldValue::ReferenceFieldValue(
-        const ReferenceDataType& dataType,
-        const DocumentId& documentId)
-    : _dataType(&dataType),
+ReferenceFieldValue::ReferenceFieldValue(const ReferenceDataType& dataType, const DocumentId& documentId)
+    : FieldValue(Type::REFERENCE),
+      _dataType(&dataType),
       _documentId(documentId),
       _altered(true)
 {

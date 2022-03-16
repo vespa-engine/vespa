@@ -5,6 +5,5 @@
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE(IntFieldValue, NumericFieldValueBase);
 
 } // document

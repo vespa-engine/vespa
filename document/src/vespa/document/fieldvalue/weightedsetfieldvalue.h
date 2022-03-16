@@ -14,7 +14,7 @@
 
 namespace document {
 
-class WeightedSetFieldValue : public CollectionFieldValue
+class WeightedSetFieldValue final : public CollectionFieldValue
 {
 public:
     struct FieldValuePtrOrder {
@@ -46,7 +46,7 @@ public:
     WeightedSetFieldValue & operator = (const WeightedSetFieldValue &);
     WeightedSetFieldValue(WeightedSetFieldValue &&) = default;
     WeightedSetFieldValue & operator = (WeightedSetFieldValue &&) = default;
-    ~WeightedSetFieldValue();
+    ~WeightedSetFieldValue() override;
 
     void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
     void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
@@ -92,8 +92,6 @@ public:
 
     const_iterator find(const FieldValue& fv) const;
     iterator find(const FieldValue& fv);
-
-    DECLARE_IDENTIFIABLE_ABSTRACT(WeightedSetFieldValue);
 };
 
 } // document

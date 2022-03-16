@@ -495,7 +495,7 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
 
     const AddValueUpdate* add = static_cast<const AddValueUpdate*>(serValue);
     const FieldValue* value = &add->getValue();
-    EXPECT_TRUE(value->inherits(FloatFieldValue::classId));
+    EXPECT_TRUE(value->isA(FieldValue::Type::FLOAT));
     EXPECT_FLOAT_EQ(value->getAsFloat(), 5.00f);
 
     serValue = &serField3[1];
@@ -503,7 +503,7 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
 
     add = static_cast<const AddValueUpdate*>(serValue);
     value = &add->getValue();
-    EXPECT_TRUE(value->inherits(FloatFieldValue::classId));
+    EXPECT_TRUE(value->isA(FieldValue::Type::FLOAT));
     EXPECT_FLOAT_EQ(value->getAsFloat(), 4.23f);
 
     serValue = &serField3[2];
@@ -511,7 +511,7 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
 
     add = static_cast<const AddValueUpdate*>(serValue);
     value = &add->getValue();
-    EXPECT_TRUE(value->inherits(FloatFieldValue::classId));
+    EXPECT_TRUE(value->isA(FieldValue::Type::FLOAT));
     EXPECT_FLOAT_EQ(value->getAsFloat(), -1.00f);
 
 }
