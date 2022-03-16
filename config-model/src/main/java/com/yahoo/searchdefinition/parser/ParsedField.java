@@ -44,9 +44,10 @@ class ParsedField extends ParsedBlock {
     }
 
     ParsedType getType() { return this.type; }
-    boolean getBolding() { return this.hasBolding; }
-    boolean getFilter() { return this.isFilter; }
-    boolean getLiteral() { return this.isLiteral; }
+    boolean hasBolding() { return this.hasBolding; }
+    boolean hasFilter() { return this.isFilter; }
+    boolean hasLiteral() { return this.isLiteral; }
+    boolean hasNormal() { return this.isNormal; }
     boolean hasIdOverride() { return overrideId != 0; }
     int idOverride() { return overrideId; }
     List<DictionaryOption> getDictionaryOptions() { return List.copyOf(dictionaryOptions); }
