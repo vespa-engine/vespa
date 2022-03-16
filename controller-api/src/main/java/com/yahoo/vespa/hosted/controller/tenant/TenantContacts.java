@@ -18,6 +18,13 @@ public class TenantContacts {
 
     public TenantContacts(List<? extends Contact> contacts) {
         this.contacts = List.copyOf(contacts);
+        for (int i = 0; i < contacts.size(); i++) {
+            for (int j = 0; j < i; j++) {
+                if (contacts.get(i).equals(contacts.get(j))) {
+                    throw new IllegalArgumentException("Duplicate contact: " + contacts.get(i));
+                }
+            }
+        }
     }
 
     public static TenantContacts empty() {

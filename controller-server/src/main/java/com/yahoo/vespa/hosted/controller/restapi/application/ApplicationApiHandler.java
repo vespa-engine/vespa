@@ -684,9 +684,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 List<TenantContacts.Audience> audiences = SlimeUtils.entriesStream(inspector.field("audiences"))
                             .map(audience -> fromAudience(audience.asString()))
                             .collect(Collectors.toUnmodifiableList());
+
                 if (!email.contains("@")) {
                     throw new IllegalArgumentException("'email' needs to be an email address");
                 }
+
                 return new TenantContacts.EmailContact(audiences, email);
             }).collect(toUnmodifiableList());
 
