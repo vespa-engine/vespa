@@ -146,6 +146,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Scanner;
 import java.util.SortedSet;
 import java.util.StringJoiner;
@@ -248,7 +249,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}/validate")) return validateSecretStore(path.get("tenant"), path.get("name"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/compile-version")) return compileVersion(path.get("tenant"), path.get("application"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/compile-version")) return compileVersion(path.get("tenant"), path.get("application"), request.getProperty("allowMajor"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deployment")) return JobControllerApiHandlerHelper.overviewResponse(controller, TenantAndApplicationId.from(path.get("tenant"), path.get("application")), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/package")) return applicationPackage(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/diff/{number}")) return applicationPackageDiff(path.get("tenant"), path.get("application"), path.get("number"));
@@ -852,10 +853,18 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse compileVersion(String tenantName, String applicationName) {
+    private HttpResponse compileVersion(String tenantName, String applicationName, String allowMajorParam) {
         Slime slime = new Slime();
-        slime.setObject().setString("compileVersion",
-                                    compileVersion(TenantAndApplicationId.from(tenantName, applicationName)).toFullString());
+        OptionalInt allowMajor = OptionalInt.empty();
+        if (allowMajorParam != null) {
+            try {
+                allowMajor = OptionalInt.of(Integer.parseInt(allowMajorParam));
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Invalid major version '" + allowMajorParam + "'", e);
+            }
+        }
+        Version compileVersion = controller.applications().compileVersion(TenantAndApplicationId.from(tenantName, applicationName), allowMajor);
+        slime.setObject().setString("compileVersion", compileVersion.toFullString());
         return new SlimeJsonResponse(slime);
     }
 
@@ -1696,31 +1705,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private URI monitoringSystemUri(DeploymentId deploymentId) {
         return controller.zoneRegistry().getMonitoringSystemUri(deploymentId);
-    }
-
-    /**
-     * Returns a non-broken, released version at least as old as the oldest platform the given application is on.
-     *
-     * If no known version is applicable, the newest version at least as old as the oldest platform is selected,
-     * among all versions released for this system. If no such versions exists, throws an IllegalStateException.
-     */
-    private Version compileVersion(TenantAndApplicationId id) {
-        Version oldestPlatform = controller.applications().oldestInstalledPlatform(id);
-        VersionStatus versionStatus = controller.readVersionStatus();
-        return versionStatus.versions().stream()
-                            .filter(version -> version.confidence().equalOrHigherThan(VespaVersion.Confidence.low))
-                            .filter(VespaVersion::isReleased)
-                            .map(VespaVersion::versionNumber)
-                            .filter(version -> ! version.isAfter(oldestPlatform))
-                            .max(Comparator.naturalOrder())
-                            .orElseGet(() -> controller.mavenRepository().metadata().versions().stream()
-                                                  .filter(version -> ! version.isAfter(oldestPlatform))
-                                                  .filter(version -> ! versionStatus.versions().stream()
-                                                                                    .map(VespaVersion::versionNumber)
-                                                                                    .collect(Collectors.toSet()).contains(version))
-                                                  .max(Comparator.naturalOrder())
-                                                  .orElseThrow(() -> new IllegalStateException("No available releases of " +
-                                                                                               controller.mavenRepository().artifactId())));
     }
 
     private HttpResponse setGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region, boolean inService, HttpRequest request) {

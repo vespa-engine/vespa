@@ -859,6 +859,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Aborting run 2 of staging-test for tenant1.application1.instance1\"}");
 
+        // GET compile version for specific major
+        deploymentTester.controllerTester().upgradeSystem(Version.fromString("7.0"));
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/compile-version", GET)
+                                      .userIdentity(USER_ID).properties(Map.of("allowMajor", "7")),
+                              "{\"compileVersion\":\"7.0.0\"}");
+
         // OPTIONS return 200 OK
         tester.assertResponse(request("/application/v4/", Request.Method.OPTIONS)
                                       .userIdentity(USER_ID),

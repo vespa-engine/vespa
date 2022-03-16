@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.maven.ArtifactId;
 import com.yahoo.vespa.hosted.controller.api.integration.maven.Metadata;
 import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -17,11 +18,24 @@ public class MockMavenRepository implements MavenRepository {
 
     public static final ArtifactId id = new ArtifactId("ai.vespa", "search");
 
+    private final List<Version> versions = new ArrayList<>();
+
+    public MockMavenRepository() {
+        versions.addAll(List.of(Version.fromString("6.0"),
+                                Version.fromString("6.1"),
+                                Version.fromString("6.2")));
+    }
+
+    public MockMavenRepository addVersion(String... versions) {
+        for (var version : versions) {
+            this.versions.add(Version.fromString(version));
+        }
+        return this;
+    }
+
     @Override
     public Metadata metadata() {
-        return new Metadata(id, List.of(Version.fromString("6.0"),
-                                        Version.fromString("6.1"),
-                                        Version.fromString("6.2")));
+        return new Metadata(id, versions);
     }
 
     @Override
