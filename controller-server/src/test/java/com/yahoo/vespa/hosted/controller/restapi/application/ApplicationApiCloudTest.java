@@ -186,6 +186,13 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 .roles(Set.of(Role.administrator(tenantName)));
         tester.assertResponse(contactsWithInvalidEmailResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"'email' needs to be an email address\"}", 400);
 
+        // duplicate contact is not allowed
+        var contactsWithDuplicateEmail = "{\"contacts\": [{\"audiences\": [\"tenant\"],\"email\": \"contact1@email.com\"}, {\"audiences\": [\"tenant\"],\"email\": \"contact1@email.com\"}]}";
+        var contactsWithDuplicateEmailResponse = request("/application/v4/tenant/scoober/info", PUT)
+                .data(contactsWithDuplicateEmail)
+                .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(contactsWithDuplicateEmailResponse, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Duplicate contact: EmailContact{email='contact1@email.com'}\"}", 400);
+
         // updating a tenant that already has the fields set works
         var basicInfo = "{\"contactName\": \"Scoober Rentals Inc.\", \"contactEmail\": \"foo@example.com\"}";
         var basicInfoResponse = request("/application/v4/tenant/scoober/info", PUT)
