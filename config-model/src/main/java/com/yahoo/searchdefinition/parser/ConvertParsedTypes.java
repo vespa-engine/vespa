@@ -104,6 +104,10 @@ public class ConvertParsedTypes {
         for (var schema : orderedInput) {
             var doc = schema.getDocument();
             for (var annotation : doc.getAnnotations()) {
+                var at = findAnnotationFromParsed(annotation);
+                for (var parent : annotation.getResolvedInherits()) {
+                    at.inherit(findAnnotationFromParsed(parent));
+                }
                 fillAnnotationStruct(annotation);
             }
             for (var struct : doc.getStructs()) {

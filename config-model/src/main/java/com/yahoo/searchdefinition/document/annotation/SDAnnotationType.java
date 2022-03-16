@@ -26,6 +26,11 @@ public class SDAnnotationType extends AnnotationType {
         return sdDocType;
     }
 
+    public void setSdDocType(SDDocumentType value) {
+        assert(sdDocType == null);
+        sdDocType = value;
+    }
+
     public String getInherits() {
         return inherits;
     }

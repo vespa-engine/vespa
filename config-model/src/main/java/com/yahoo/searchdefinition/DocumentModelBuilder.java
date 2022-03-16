@@ -401,6 +401,11 @@ public class DocumentModelBuilder {
                         }
                         structInheritance.put(s, "annotation."+sa.getInherits());
                     }
+                } else {
+                    var dt = annotation.getDataType();
+                    if (dt instanceof StructDataType) {
+                        handleStruct((StructDataType) dt);
+                    }
                 }
             }
             for (Map.Entry<AnnotationType, String> e : annotationInheritance.entrySet()) {
