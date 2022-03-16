@@ -13,14 +13,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Contains the properties properties of a query.
+ * Contains the properties of a query.
  * This is a multimap: Multiple properties may be set for the same key.
  *
  * @author bratseth
  */
 public class RankProperties implements Cloneable {
 
-    private Map<String, List<Object>> properties;
+    private final Map<String, List<Object>> properties;
 
     public RankProperties() {
         this(new LinkedHashMap<>());
@@ -61,7 +61,7 @@ public class RankProperties implements Cloneable {
         return Collections.unmodifiableList(stringValues);
     }
 
-    /** Removes all properties properties for a given name */
+    /** Removes all properties for a given name */
     public void remove(String name) {
         properties.remove(name);
     }

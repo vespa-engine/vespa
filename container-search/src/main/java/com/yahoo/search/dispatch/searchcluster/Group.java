@@ -18,7 +18,6 @@ public class Group {
 
     private static final Logger log = Logger.getLogger(Group.class.getName());
 
-    // If documents on a node is more than 10% off from the average the group is unbalanced
     private final static double maxContentSkew = 0.10;
     private final static int minDocsPerNodeToRequireLowSkew = 100;
 
@@ -78,8 +77,9 @@ public class Group {
             if (!isBalanced.get() || balanced != isBalanced.get()) {
                 if (!isSparse())
                     log.info("Content in " + this + ", with " + numWorkingNodes + "/" + nodes.size() + " working nodes, is " +
-                             (balanced ? "" : "not ") + "well balanced. Current deviation = " + skew * 100 / activeDocs +
-                             " %. activeDocs = " + activeDocs + ", skew = " + skew + ", average = " + average);
+                             (balanced ? "" : "not ") + "well balanced. Current deviation: " + skew * 100 / activeDocs +
+                             "%. Active documents: " + activeDocs + ", skew: " + skew + ", average: " + average +
+                             (balanced ? "" : ". Top-k summary fetch optimization is deactivated."));
                 isBalanced.set(balanced);
             }
         } else {

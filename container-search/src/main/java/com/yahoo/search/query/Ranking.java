@@ -255,7 +255,7 @@ public class Ranking implements Cloneable {
 
     /** Sets sorting from a string. See {@link Sorting} on syntax */
     public void setSorting(String sortingString) {
-        if (sortingString==null)
+        if (sortingString == null)
             setSorting((Sorting)null);
         else
             setSorting(new Sorting(sortingString));

@@ -86,7 +86,6 @@ public class MapEncoder {
      *
      * Returns the number of maps encoded - 0 or 1
      */
-
     public static <T> int encodeMultiMap(String mapName, Map<String,List<T>> map, ByteBuffer buffer) {
         if (map.isEmpty()) return 0;
 
