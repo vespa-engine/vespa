@@ -78,7 +78,7 @@ public class ConvertParsedTypes {
         }
         var doc = annotation.getOwnerDoc();
         for (String inherit : annotation.getInherited()) {
-            var parent = findParsedAnnotation(doc, inherit);
+            var parent = doc.findParsedAnnotation(inherit);
             var parentStruct = fillAnnotationStruct(parent);
             if (parentStruct == null) {
                 continue;
@@ -190,7 +190,7 @@ public class ConvertParsedTypes {
     }
 
     private StructDataType findStructFromSchemas(String name, ParsedDocument context) {
-        var resolved = findParsedStruct(context, name);
+        var resolved = context.findParsedStruct(name);
         if (resolved == null) {
             throw new IllegalArgumentException("no struct named " + name + " in context " + context);
         }
@@ -201,7 +201,7 @@ public class ConvertParsedTypes {
     }
 
     private AnnotationType findAnnotationFromSchemas(String name, ParsedDocument context) {
-        var resolved = findParsedAnnotation(context, name);
+        var resolved = context.findParsedAnnotation(name);
         String annotationId = resolved.getOwnerName() + "->" + resolved.name();
         var annotation = annotationsFromSchemas.get(annotationId);
         if (annotation == null) {
@@ -217,38 +217,6 @@ public class ConvertParsedTypes {
             throw new IllegalArgumentException("no annotation " + resolved.name() + " in " + resolved.getOwnerName());
         }
         return annotation;
-    }
-
-    private ParsedStruct findParsedStruct(ParsedDocument doc, String name) {
-        ParsedStruct found = doc.getStruct(name);
-        if (found != null) return found;
-        for (var parent : doc.getAllResolvedParents()) {
-            var fromParent = findParsedStruct(parent, name);
-            if (fromParent == null) continue;
-            if (fromParent == found) continue;
-            if (found == null) {
-                found = fromParent;
-            } else {
-                throw new IllegalArgumentException("conflicting values for struct " + name + " in " +doc);
-            }
-        }
-        return found;
-    }
-
-    private ParsedAnnotation findParsedAnnotation(ParsedDocument doc, String name) {
-        ParsedAnnotation found = doc.getAnnotation(name);
-        if (found != null) return found;
-        for (var parent : doc.getAllResolvedParents()) {
-            var fromParent = findParsedAnnotation(parent, name);
-            if (fromParent == null) continue;
-            if (fromParent == found) continue;
-            if (found == null) {
-                found = fromParent;
-            } else {
-                throw new IllegalArgumentException("conflicting values for annotation " + name + " in " +doc);
-            }
-        }
-        return found;
     }
 
     private DataType createArray(ParsedType pType, ParsedDocument context) {
@@ -306,7 +274,7 @@ public class ConvertParsedTypes {
             // fallthrough
         }
         // unknown is probably struct
-        var found = findParsedStruct(context, name);
+        var found = context.findParsedStruct(name);
         if (found != null) {
             pType.setVariant(ParsedType.Variant.STRUCT);
             return findStructFromSchemas(name, context);

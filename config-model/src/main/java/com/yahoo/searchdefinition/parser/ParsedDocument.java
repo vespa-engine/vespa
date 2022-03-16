@@ -95,4 +95,36 @@ public class ParsedDocument extends ParsedBlock {
         assert(old == null || old == parsed);
     }
 
+    ParsedStruct findParsedStruct(String name) {
+        ParsedStruct found = getStruct(name);
+        if (found != null) return found;
+        for (var parent : getAllResolvedParents()) {
+            var fromParent = parent.findParsedStruct(name);
+            if (fromParent == null) continue;
+            if (fromParent == found) continue;
+            if (found == null) {
+                found = fromParent;
+            } else {
+                throw new IllegalArgumentException("conflicting values for struct " + name + " in " +this);
+            }
+        }
+        return found;
+    }
+
+    ParsedAnnotation findParsedAnnotation(String name) {
+        ParsedAnnotation found = docAnnotations.get(name);
+        if (found != null) return found;
+        for (var parent : getResolvedInherits()) {
+            var fromParent = parent.findParsedAnnotation(name);
+            if (fromParent == null) continue;
+            if (fromParent == found) continue;
+            if (found == null) {
+                found = fromParent;
+            } else {
+                throw new IllegalArgumentException("conflicting values for annotation " + name + " in " +this);
+            }
+        }
+        return found;
+    }
+
 }
