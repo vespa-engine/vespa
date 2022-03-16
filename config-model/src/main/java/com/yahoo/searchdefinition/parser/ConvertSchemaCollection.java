@@ -9,34 +9,12 @@ import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.document.DataType;
-import com.yahoo.document.DataTypeName;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.document.PositionDataType;
-import com.yahoo.document.ReferenceDataType;
-import com.yahoo.document.StructDataType;
-import com.yahoo.document.WeightedSetDataType;
-import com.yahoo.document.annotation.AnnotationReferenceDataType;
-import com.yahoo.document.annotation.AnnotationType;
-import com.yahoo.searchdefinition.DefaultRankProfile;
-import com.yahoo.searchdefinition.DocumentOnlySchema;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.UnrankedRankProfile;
-import com.yahoo.searchdefinition.document.SDDocumentType;
-import com.yahoo.searchdefinition.document.SDField;
-import com.yahoo.searchdefinition.document.TemporaryImportedField;
-import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
-import com.yahoo.searchdefinition.parser.ConvertParsedTypes.TypeResolver;
-import com.yahoo.vespa.documentmodel.DocumentSummary;
-import com.yahoo.vespa.documentmodel.SummaryField;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * Class converting a collection of schemas from the intermediate format.
