@@ -32,11 +32,18 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
 
     private final OwnershipIssues ownershipIssues;
     private final ApplicationController applications;
+    private final int shards;
 
     public ApplicationOwnershipConfirmer(Controller controller, Duration interval, OwnershipIssues ownershipIssues) {
+        this(controller, interval, ownershipIssues, 24);
+    }
+
+    public ApplicationOwnershipConfirmer(Controller controller, Duration interval, OwnershipIssues ownershipIssues, int shards) {
         super(controller, interval);
         this.ownershipIssues = ownershipIssues;
         this.applications = controller.applications();
+        if (shards <= 0) throw new IllegalArgumentException("shards must be a positive number, but got " + shards);
+        this.shards = shards;
     }
 
     @Override
@@ -57,10 +64,10 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
                        .asList()
                        .stream()
                        .filter(application -> application.createdAt().isBefore(controller().clock().instant().minus(Duration.ofDays(90))))
+                       .filter(application -> isInCurrentShard(application.id()))
                        .forEach(application -> {
                            try {
                                attempts.incrementAndGet();
-                               // TODO jvenstad: Makes sense to require, and run this only in main?
                                tenantOf(application.id()).contact().flatMap(contact -> {
                                    return ownershipIssues.confirmOwnership(application.ownershipIssueId(),
                                                                            summaryOf(application.id()),
@@ -74,6 +81,12 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
                            }
                        });
         return asSuccessFactor(attempts.get(), failures.get());
+    }
+
+    private boolean isInCurrentShard(TenantAndApplicationId id) {
+        double participants = Math.max(1, controller().curator().cluster().size());
+        long ticksSinceEpoch = Math.round((controller().clock().millis() * participants / interval().toMillis()));
+        return (ticksSinceEpoch + id.hashCode()) % shards == 0;
     }
 
     private ApplicationSummary summaryOf(TenantAndApplicationId application) {

@@ -11,7 +11,7 @@ import java.util.Objects;
 /**
  * Tenant and application name pair.
  *
- * TODO jonmv: rename to ApplicationId if ApplicationId is renamed.
+ * @author jonmv
  */
 public class TenantAndApplicationId implements Comparable<TenantAndApplicationId> {
 
