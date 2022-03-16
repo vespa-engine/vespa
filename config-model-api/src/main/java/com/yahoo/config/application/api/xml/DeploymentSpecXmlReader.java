@@ -49,7 +49,6 @@ public class DeploymentSpecXmlReader {
 
     private static final String deploymentTag = "deployment";
     private static final String instanceTag = "instance";
-    private static final String majorVersionTag = "major-version";
     private static final String testTag = "test";
     private static final String stagingTag = "staging";
     private static final String upgradeTag = "upgrade";
@@ -67,6 +66,7 @@ public class DeploymentSpecXmlReader {
     private static final String athenzServiceAttribute = "athenz-service";
     private static final String athenzDomainAttribute = "athenz-domain";
     private static final String testerFlavorAttribute = "tester-flavor";
+    private static final String majorVersionAttribute = "major-version";
 
     private final boolean validate;
     private final Clock clock;
@@ -133,7 +133,7 @@ public class DeploymentSpecXmlReader {
         }
 
         return new DeploymentSpec(steps,
-                                  optionalIntegerAttribute(majorVersionTag, root),
+                                  optionalIntegerAttribute(majorVersionAttribute, root),
                                   stringAttribute(athenzDomainAttribute, root).map(AthenzDomain::from),
                                   stringAttribute(athenzServiceAttribute, root).map(AthenzService::from),
                                   applicationEndpoints,
