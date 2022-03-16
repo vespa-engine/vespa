@@ -40,8 +40,6 @@ COMMA= [,]
 //BLOCK_END= \}
 INTEGER = [0-9]+
 FLOAT = {INTEGER}[.][0-9]+[e]?
-COMPARISON_OPERATOR = [<>]|(==)|(<=)|(>=)|(\~=)
-ARITHMETIC_OPERATOR = [\-+*/%]
 STRING = \"([^\"\\]*(\\.[^\"\\]*)*)\"
 WORD = \w+
 
@@ -50,15 +48,13 @@ WORD = \w+
 
 <YYINITIAL> {
   /**
-   In here, we match keywords. So if a keyword is found, this returns a token which corresponds to that keyword.
+   Here we match keywords. If a keyword is found, this returns a token which corresponds to that keyword.
    These tokens are generated using the 'sd.bnf' file and located in the SdTypes class.
    These tokens are Parsed uses these return values to match token squence to a parser rule.
+
+   This list of keywords has to be synchronized with sd.bnf file. If you add a keyword here, you should add it to the
+   sd.bnf file as well (to the rule KeywordOrIdentifier / KeywordNotIdentifier).
    */
-   
-   /**
-    This list of keywords has to be synchronized with sd.bnf file. If you add a keyword here, you should add it to the 
-    sd.bnf file as well (to the rule KeywordOrIdentifier / KeywordNotIdentifier).
-    */
   
   "search"                   { return SEARCH; }
   "schema"                   { return SCHEMA; }
@@ -219,7 +215,24 @@ WORD = \w+
       
   "evaluation-point"         { return EVALUATION_POINT; }
   "pre-post-filter-tipping-point" { return PRE_POST_FILTER_TIPPING_POINT; }
-      
+
+  "<"                        { return COMPARISON_OPERATOR; }
+  ">"                        { return COMPARISON_OPERATOR; }
+  "=="                       { return COMPARISON_OPERATOR; }
+  "<="                       { return COMPARISON_OPERATOR; }
+  ">="                       { return COMPARISON_OPERATOR; }
+  "~="                       { return COMPARISON_OPERATOR; }
+  "!="                       { return COMPARISON_OPERATOR; }
+
+  "+"                        { return ARITHMETIC_OPERATOR; }
+  "-"                        { return ARITHMETIC_OPERATOR; }
+  "*"                        { return ARITHMETIC_OPERATOR; }
+  "/"                        { return ARITHMETIC_OPERATOR; }
+  "%"                        { return ARITHMETIC_OPERATOR; }
+  "^"                        { return ARITHMETIC_OPERATOR; }
+  "||"                       { return ARITHMETIC_OPERATOR; }
+  "&&"                       { return ARITHMETIC_OPERATOR; }
+
   // Here we check for character sequences which matches regular expressions defined above.
   {ID}                       { return ID_REG; }
   {ID_WITH_DASH}             { return ID_WITH_DASH_REG; }           
@@ -233,8 +246,6 @@ WORD = \w+
   //{BLOCK_END}                { return BLOCK_END; }
   {INTEGER}                  { return INTEGER_REG; }
   {FLOAT}                    { return FLOAT_REG; }
-  {ARITHMETIC_OPERATOR}      { return ARITHMETIC_OPERATOR; }
-  {COMPARISON_OPERATOR}      { return COMPARISON_OPERATOR; }
   {WORD}                     { return WORD_REG; }
   {STRING}                   { return STRING_REG; }  
 

@@ -34,8 +34,6 @@
         COMMA = 'regexp:[,]'
         //BLOCK_START = '{'
         //BLOCK_END = '}'
-        COMPARISON_OPERATOR = 'regexp:[<>]|(==)|(<=)|(>=)|(~=)'
-        ARITHMETIC_OPERATOR = 'regexp:[\-+*/%]'
         INTEGER_REG = 'regexp:[0-9]+'
         FLOAT_REG = 'regexp:[0-9]+[.][0-9]+[e]?'
         STRING_REG = 'regexp:\"([^\"\\]*(\\.[^\"\\]*)*)\"' // TODO: Should also support single-quotes
@@ -122,9 +120,13 @@ IfFunctionExpr ::= "if" '(' RankingExpression COMMA RankingExpression COMMA Rank
 
 InListRankingExpr ::= RankingExpression "in" '[' RankingExpression (COMMA RankingExpression)* ']'
 
-BooleanExpr ::= RankingExpression COMPARISON_OPERATOR RankingExpression
-                
-ArithmeticExpr ::= RankingExpression ARITHMETIC_OPERATOR RankingExpression
+BooleanExpr ::= RankingExpression ComparisonOperator RankingExpression
+
+ComparisonOperator ::= '<' | '>' | "==" | "<=" | ">=" | "~=" | "!="
+
+ArithmeticExpr ::= RankingExpression ArithmeticOperator RankingExpression
+
+ArithmeticOperator ::= '+' | '-' | '*' | '/' | '%' | '^' | "||" | "&&"
 
 QueryDefinitionExpr ::= QueryDefinition | ItemRawScoreDefinition
 
@@ -286,7 +288,7 @@ IndexingStatementOptions ::= summary | attribute | index | set_language | lowerc
                              (input (DottedIdentifier | IndexingStuff)+) |
                              ('{' IndexingStatementOptions '}') | IndexingStuff+
 private IndexingStuff ::= WordWrapper | INTEGER_REG | FLOAT_REG | STRING_REG | ('{' IndexingStatement '}') |
-                          ':' | ('|' IndexingStatementOptions) | ';' | '.' | '(' | ')' | ARITHMETIC_OPERATOR | COMPARISON_OPERATOR
+                          ':' | ('|' IndexingStatementOptions) | ';' | '.' | '(' | ')' | ArithmeticOperator | ComparisonOperator
 // Attribute
 AttributeDefinition ::= attribute ((':' SimpleAttributeProperty) | ('{' (ComplexAttributeProperty | SimpleAttributeProperty)+ '}'))
 SimpleAttributeProperty ::= fast-search | fast-access | paged | mutable | enable-bit-vectors | enable-only-bit-vector | WordWrapper // Does not support zero-or-one occurrences
