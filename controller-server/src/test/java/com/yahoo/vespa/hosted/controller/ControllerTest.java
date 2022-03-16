@@ -1129,6 +1129,21 @@ public class ControllerTest {
         tester.controllerTester().upgradeController(version2);
         assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.empty()));
         assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.of(8)));
+
+        // Default major version is set to 8.
+        tester.applications().setTargetMajorVersion(Optional.of(8));
+        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.of(7)));
+        assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.empty()));
+
+        // Application sets target major to 7.
+        tester.applications().lockApplicationOrThrow(application, locked -> tester.applications().store(locked.withMajorVersion(7)));
+        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.empty()));
+        assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.of(8)));
+
+        // Application sets target major to 8.
+        tester.applications().lockApplicationOrThrow(application, locked -> tester.applications().store(locked.withMajorVersion(8)));
+        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.of(7)));
+        assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.empty()));
     }
 
 }

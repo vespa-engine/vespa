@@ -227,6 +227,16 @@ public class ApplicationController {
         return curator.readApplications(false);
     }
 
+    /** Returns the target major version for applications not specifying one */
+    public OptionalInt targetMajorVersion() {
+        return curator.readTargetMajorVersion().map(OptionalInt::of).orElse(OptionalInt.empty());
+    }
+
+    /** Sets the default target major version. Set to empty to determine target version normally (by confidence) */
+    public void setTargetMajorVersion(Optional<Integer> targetMajorVersion) {
+        curator.writeTargetMajorVersion(targetMajorVersion);
+    }
+
     /**
      * Returns a snapshot of all readable applications. Unlike {@link ApplicationController#asList()} this ignores
      * applications that cannot currently be read (e.g. due to serialization issues) and may return an incomplete
@@ -320,15 +330,24 @@ public class ApplicationController {
                                               .filter(version -> !version.isAfter(oldestPlatform))
                                               .max(Comparator.naturalOrder())
                                               .orElseGet(() -> publishedVersionNotAfter(oldestPlatform, versionsInSystem));
-        if (wantedMajor.isPresent() && compileVersion.getMajor() != wantedMajor.getAsInt()) {
+        OptionalInt targetMajor = firstNonEmpty(wantedMajor, requireApplication(id).majorVersion(), targetMajorVersion());
+        if (targetMajor.isPresent() && compileVersion.getMajor() != targetMajor.getAsInt()) {
             // Choose the oldest version matching wanted major so that the returned version is stable in the transition
             // to next major
             Optional<Version> versionMatchingMajor = versionsInSystem.stream()
-                                                                     .filter(version -> version.getMajor() == wantedMajor.getAsInt())
+                                                                     .filter(version -> version.getMajor() == targetMajor.getAsInt())
                                                                      .min(Comparator.naturalOrder());
             return versionMatchingMajor.orElse(compileVersion);
         }
         return compileVersion;
+    }
+
+    private OptionalInt firstNonEmpty(OptionalInt... choices) {
+        for (OptionalInt choice : choices)
+            if (choice.isPresent())
+                return choice;
+
+        return OptionalInt.empty();
     }
 
     /** Returns a version that is published to a Maven repository not older than oldestPlatform and known by the system */
