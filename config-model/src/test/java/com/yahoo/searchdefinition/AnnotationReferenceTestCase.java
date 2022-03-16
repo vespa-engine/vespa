@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.document.DataType;
+import com.yahoo.document.StructDataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.searchdefinition.Schema;
@@ -12,6 +13,7 @@ import org.junit.Test;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author arnej
@@ -44,7 +46,17 @@ public class AnnotationReferenceTestCase {
         var builder = new ApplicationBuilder(new TestProperties().setExperimentalSdParsing(true));
         builder.addSchema(sd);
         builder.build(true);
-        checkForAnnRef(builder.getSchema().getDocument());
+        var doc = builder.getSchema().getDocument();
+        checkForAnnRef(doc);
+        var complex = doc.findAnnotation("complex");
+        System.err.println("annotation: "+complex);
+        var dt = complex.getDataType();
+        System.err.println("associated datatype: "+dt);
+        assertTrue(dt instanceof StructDataType);
+        var struct = (StructDataType)dt;
+        var field = struct.getField("owner");
+        System.err.println("owner field: "+field);
+        assertTrue(field.getDataType() instanceof AnnotationReferenceDataType);
     }
 
     void checkForAnnRef(SDDocumentType doc) {
