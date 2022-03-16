@@ -53,6 +53,7 @@ public class FileWriter {
         return this;
     }
 
+    /** @see UnixPath#setPermissions */
     public FileWriter withPermissions(String permissions) {
         fileDataBuilder.withPermissions(permissions);
         return this;

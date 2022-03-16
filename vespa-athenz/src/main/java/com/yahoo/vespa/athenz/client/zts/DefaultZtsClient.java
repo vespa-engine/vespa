@@ -94,12 +94,17 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
 
     @Override
     public Identity getServiceIdentity(AthenzIdentity identity, String keyId, Pkcs10Csr csr) {
+        return getServiceIdentity(identity, keyId, csr, Optional.empty());
+    }
+
+    public Identity getServiceIdentity(AthenzIdentity identity, String keyId, Pkcs10Csr csr, Optional<NToken> nToken) {
         URI uri = ztsUrl.resolve(String.format("instance/%s/%s/refresh", identity.getDomainName(), identity.getName()));
-        HttpUriRequest request = RequestBuilder.post()
-                .setUri(uri)
-                .setEntity(toJsonStringEntity(new IdentityRefreshRequestEntity(csr, keyId)))
-                .build();
-        return execute(request, response -> {
+        RequestBuilder builder = RequestBuilder.post()
+                                               .setUri(uri)
+                                               .setEntity(toJsonStringEntity(new IdentityRefreshRequestEntity(csr, keyId)));
+        nToken.ifPresent(n -> builder.setHeader("Athenz-Principal-Auth", n.getRawToken()));
+
+        return execute(builder.build(), response -> {
             IdentityResponseEntity entity = readEntity(response, IdentityResponseEntity.class);
             return new Identity(entity.certificate(), entity.caCertificateBundle());
         });

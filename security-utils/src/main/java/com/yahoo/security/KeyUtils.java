@@ -88,6 +88,14 @@ public class KeyUtils {
         }
     }
 
+    public static KeyPair toKeyPair(PrivateKey privateKey) {
+        return new KeyPair(extractPublicKey(privateKey), privateKey);
+    }
+
+    public static KeyPair keyPairFromPemEncodedPrivateKey(String pem) {
+        return toKeyPair(fromPemEncodedPrivateKey(pem));
+    }
+
     public static PrivateKey fromPemEncodedPrivateKey(String pem) {
         try (PEMParser parser = new PEMParser(new StringReader(pem))) {
             List<Object> unknownObjects = new ArrayList<>();
