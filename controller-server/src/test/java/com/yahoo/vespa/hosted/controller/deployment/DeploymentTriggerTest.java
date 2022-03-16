@@ -1109,8 +1109,10 @@ public class DeploymentTriggerTest {
         assertEquals(Change.empty(), alpha.instance().change());
         assertEquals(Change.of(version1), beta.instance().change());
 
+        tester.outstandingChangeDeployer().run();
         beta.triggerJobs();
         tester.runner().run();
+        tester.outstandingChangeDeployer().run();
         beta.triggerJobs();
         tester.outstandingChangeDeployer().run();
         beta.assertRunning(productionUsEast3);
@@ -1134,6 +1136,11 @@ public class DeploymentTriggerTest {
 
         beta.assertRunning(productionUsEast3);
         beta.assertNotRunning(testUsEast3);
+
+        beta.runJob(productionUsEast3)
+            .runJob(testUsEast3);
+
+        assertEquals(Change.empty(), beta.instance().change());
     }
 
     @Test

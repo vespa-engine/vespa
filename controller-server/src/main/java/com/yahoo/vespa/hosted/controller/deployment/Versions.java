@@ -75,6 +75,12 @@ public class Versions {
                targetApplication.equals(versions.targetApplication());
     }
 
+    /** Returns wheter this change could result in the given target versions. */
+    public boolean targetsMatch(Change change) {
+        return    change.platform().map(targetPlatform::equals).orElse(true)
+               && change.application().map(targetApplication::equals).orElse(true);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
