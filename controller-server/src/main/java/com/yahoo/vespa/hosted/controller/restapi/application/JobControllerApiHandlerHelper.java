@@ -285,7 +285,7 @@ class JobControllerApiHandlerHelper {
             if (stepStatus.type() == DeploymentStatus.StepType.instance) {
                 Cursor deployingObject = stepObject.setObject("deploying");
                 if ( ! change.isEmpty()) {
-                    change.platform().ifPresent(version -> deployingObject.setString("platform", version.toString()));
+                    change.platform().ifPresent(version -> deployingObject.setString("platform", version.toFullString()));
                     change.application().ifPresent(version -> toSlime(deployingObject.setObject("application"), version));
                 }
 

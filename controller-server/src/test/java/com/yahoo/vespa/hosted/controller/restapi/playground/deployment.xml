@@ -31,7 +31,7 @@
         </prod>
     </instance>
     <instance id='prod25'>
-        <upgrade rollout="simultaneous" revision-change="when-failing" revision-target="next" />
+        <upgrade rollout="simultaneous" revision-change="when-clear" revision-target="next" />
         <prod>
             <parallel>
                 <steps>
@@ -52,6 +52,17 @@
     <instance id='prod100'>
         <upgrade rollout="simultaneous" revision-change="when-clear" revision-target="next" />
         <prod>
+            <steps>
+                <parallel>
+                    <steps>
+                        <region>eu-west-1</region>
+                        <test>eu-west-1</test>
+                    </steps>
+                    <steps>
+                        <region>ap-northeast-1</region>
+                        <test>ap-northeast-1</test>
+                    </steps>
+                </parallel>
             <parallel>
                 <steps>
                     <region>us-east-3</region>
@@ -66,6 +77,7 @@
                     <test>us-west-1</test>
                 </steps>
             </parallel>
+            </steps>
         </prod>
     </instance>
 </deployment>

@@ -335,7 +335,6 @@ public class DeploymentStatus {
             }
             List<Job> toRun = new ArrayList<>();
             List<Change> changes = deployingCompatibilityChange ? List.of(change) : changes(job, step, change);
-            if (changes.isEmpty()) return;
             for (Change partial : changes) {
                 Job jobToRun = new Job(job.type(),
                                        Versions.from(partial, application, existingPlatform, existingApplication, systemVersion),
@@ -820,24 +819,28 @@ public class DeploymentStatus {
                                           .orElse(false))
                         return job.lastCompleted().flatMap(Run::end);
 
-                    return (dependent.equals(job()) ? job.lastTriggered().filter(run -> run.status() == RunStatus.success).stream()
-                                                    : RunList.from(job).status(RunStatus.success).asList().stream())
-                            .filter(run ->    change.platform().map(run.versions().targetPlatform()::equals).orElse(true)
-                                           && change.application().map(run.versions().targetApplication()::equals).orElse(true))
-                            .map(Run::end)
-                            .flatMap(Optional::stream)
-                            .min(naturalOrder());
+                    Optional<Instant> end = Optional.empty();
+                    for (Run run : job.runs().descendingMap().values()) {
+                        if (run.versions().targetsMatch(change)) {
+                            if (run.status() == RunStatus.success) end = run.end();
+                        }
+                        else if (dependent.equals(job())) // If strict completion, consider only last time this change was deployed.
+                            break;
+                    }
+                    return end;
                 }
             };
         }
 
         private static JobStepStatus ofProductionTest(DeclaredTest step, List<StepStatus> dependencies,
-                                                      DeploymentStatus status, InstanceName instance, JobType testType, JobType prodType) {
+                                                      DeploymentStatus status, InstanceName instance,
+                                                      JobType testType, JobType prodType) {
             JobStatus job = status.instanceJobs(instance).get(testType);
+            JobId prodId = new JobId(status.application().id().instance(instance), prodType);
+
             return new JobStepStatus(StepType.test, step, dependencies, job, status) {
                 @Override
                 Optional<Instant> readyAt(Change change, Optional<JobId> dependent) {
-                    JobId prodId = new JobId(status.application().id().instance(instance()), prodType);
                     Optional<Instant> readyAt = super.readyAt(change, dependent);
                     Optional<Instant> deployedAt = status.jobSteps().get(prodId).completedAt(change, Optional.of(prodId));
                     if (readyAt.isEmpty() || deployedAt.isEmpty()) return Optional.empty();
@@ -846,20 +849,12 @@ public class DeploymentStatus {
 
                 @Override
                 Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
-                    Versions versions = Versions.from(change, status.application, status.deploymentFor(job.id()), status.systemVersion);
-                    return dependent.equals(job()) ? job.lastSuccess()
-                                                        .filter(run -> versions.targetsMatch(run.versions()))
-                                                        .filter(run -> ! status.jobs()
-                                                                               .instance(instance)
-                                                                               .type(prodType)
-                                                                               .lastCompleted().endedNoLaterThan(run.start())
-                                                                               .isEmpty())
-                                                        .map(run -> run.end().get())
-                                                   : RunList.from(job)
-                                                            .matching(run -> versions.targetsMatch(run.versions()))
-                                                            .status(RunStatus.success)
-                                                            .first()
-                                                            .map(run -> run.end().get());
+                    Optional<Instant> deployedAt = status.jobSteps().get(prodId).completedAt(change, Optional.of(prodId));
+                    return (dependent.equals(job()) ? job.lastTriggered().filter(run -> deployedAt.map(at -> ! run.start().isBefore(at)).orElse(false)).stream()
+                                                    : job.runs().values().stream())
+                            .filter(run -> run.status() == RunStatus.success)
+                            .filter(run -> run.versions().targetsMatch(change))
+                            .flatMap(run -> run.end().stream()).findFirst();
                 }
             };
         }
