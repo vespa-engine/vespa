@@ -40,7 +40,7 @@ protected:
         _totalValues += newValues - oldValues;
     }
 
-    EntryRef acquire_multi_value_entry_ref(uint32_t docId) const noexcept { return _indices.acquire_elem_ref(docId).load_acquire(); }
+    EntryRef acquire_entry_ref(uint32_t docId) const noexcept { return _indices.acquire_elem_ref(docId).load_acquire(); }
 public:
     using RefCopyVector = vespalib::Array<EntryRef>;
 
