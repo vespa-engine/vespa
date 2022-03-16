@@ -41,6 +41,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -152,10 +153,13 @@ public abstract class ControllerHttpClient {
         return ZoneId.from(environment.value(), rootObject.field("name").asString());
     }
 
-    /** Returns the Vespa version to compile against, for a hosted Vespa application. This is its lowest runtime version. */
-    public String compileVersion(ApplicationId id) {
-        return toInspector(send(request(HttpRequest.newBuilder(compileVersionPath(id.tenant(), id.application()))
-                                                   .timeout(Duration.ofSeconds(20)),
+    /** Returns the Vespa version to compile against, for a hosted Vespa application */
+    public String compileVersion(ApplicationId id, OptionalInt allowMajor) {
+        URI url = compileVersionPath(id.tenant(), id.application());
+        if (allowMajor.isPresent()) {
+            url = withQuery(url, "allowMajor", Integer.toString(allowMajor.getAsInt()));
+        }
+        return toInspector(send(request(HttpRequest.newBuilder(url).timeout(Duration.ofSeconds(20)),
                                         GET)))
                 .field("compileVersion").asString();
     }
