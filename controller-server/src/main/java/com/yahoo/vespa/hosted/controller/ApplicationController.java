@@ -86,10 +86,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -296,6 +296,48 @@ public class ApplicationController {
                          .flatMap(Optional::stream)
                          .min(naturalOrder())
                          .orElse(controller.readSystemVersion());
+    }
+
+    /**
+     * Returns a non-broken, released version at least as old as the oldest platform the given application is on.
+     *
+     * If no known version is applicable, the newest version at least as old as the oldest platform is selected,
+     * among all versions released for this system. If no such versions exists, throws an IllegalStateException.
+     *
+     * If a non-empty wantedMajor is given, return a version within that major if such version is exists in this system.
+     */
+    public Version compileVersion(TenantAndApplicationId id, OptionalInt wantedMajor) {
+        Version oldestPlatform = oldestInstalledPlatform(id);
+        VersionStatus versionStatus = controller.readVersionStatus();
+        Set<Version> versionsInSystem = versionStatus.versions().stream()
+                                                     .map(VespaVersion::versionNumber)
+                                                     .collect(Collectors.toSet());
+        Version compileVersion = versionStatus.versions().stream()
+                                              .filter(version -> version.confidence().equalOrHigherThan(VespaVersion.Confidence.low))
+                                              .filter(VespaVersion::isReleased)
+                                              .map(VespaVersion::versionNumber)
+                                              .filter(version -> !version.isAfter(oldestPlatform))
+                                              .max(Comparator.naturalOrder())
+                                              .orElseGet(() -> publishedVersionNotAfter(oldestPlatform, versionsInSystem));
+        if (wantedMajor.isPresent() && compileVersion.getMajor() != wantedMajor.getAsInt()) {
+            // Choose the oldest version matching wanted major so that the returned version is stable in the transition
+            // to next major
+            Optional<Version> versionMatchingMajor = versionsInSystem.stream()
+                                                                     .filter(version -> version.getMajor() == wantedMajor.getAsInt())
+                                                                     .min(Comparator.naturalOrder());
+            return versionMatchingMajor.orElse(compileVersion);
+        }
+        return compileVersion;
+    }
+
+    /** Returns a version that is published to a Maven repository not older than oldestPlatform and known by the system */
+    private Version publishedVersionNotAfter(Version oldestPlatform, Set<Version> versionsInSystem) {
+        return controller.mavenRepository().metadata().versions().stream()
+                         .filter(version -> !version.isAfter(oldestPlatform))
+                         .filter(versionsInSystem::contains)
+                         .max(Comparator.naturalOrder())
+                         .orElseThrow(() -> new IllegalStateException("No available releases of " +
+                                                                      controller.mavenRepository().artifactId()));
     }
 
     /**

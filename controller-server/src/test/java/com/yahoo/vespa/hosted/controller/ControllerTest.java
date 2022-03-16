@@ -27,9 +27,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.WeightedAliasTarget;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMavenRepository;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
@@ -1048,6 +1050,36 @@ public class ControllerTest {
             assertEquals("Endpoint with ID 'default' in instance 'dev' clashes with endpoint 'dev' in instance 'default'",
                          e.getMessage());
         }
+    }
+
+    @Test
+    public void testCompileVersion() {
+        DeploymentContext context = tester.newDeploymentContext();
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder().region("us-west-1").build();
+        TenantAndApplicationId application = TenantAndApplicationId.from(context.instanceId());
+        ((MockMavenRepository) tester.controller().mavenRepository()).addVersion("7.1", "7.2", "8.0");
+
+        // No deployments result in system version
+        Version version0 = Version.fromString("7.1");
+        tester.controllerTester().upgradeSystem(version0);
+        assertEquals(version0, tester.applications().compileVersion(application, OptionalInt.empty()));
+        context.submit(applicationPackage).deploy();
+
+        // System is upgraded
+        Version version1 = Version.fromString("7.2");
+        tester.controllerTester().upgradeSystem(version1);
+        assertEquals(version0, tester.applications().compileVersion(application, OptionalInt.empty()));
+
+        // Application is upgraded and compile version is bumped
+        tester.upgrader().maintain();
+        context.deployPlatform(version1);
+        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.empty()));
+
+        // A new major is released to the system
+        Version version2 = Version.fromString("8.0");
+        tester.controllerTester().upgradeController(version2);
+        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.empty()));
+        assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.of(8)));
     }
 
 }
