@@ -6,10 +6,9 @@ import com.yahoo.athenz.auth.util.CryptoException;
 
 import java.security.PrivateKey;
 import java.security.SecureRandom;
+import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.function.LongSupplier;
-import java.util.function.Supplier;
 
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
@@ -19,7 +18,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class NTokenGenerator {
     private final Signer signer;
-    private final Supplier<Instant> time;
+    private final Clock clock;
 
     private String domain = null;
     private String name = null;
@@ -37,12 +36,12 @@ public class NTokenGenerator {
         String sign(String message, PrivateKey key) throws CryptoException;
     }
 
-    public NTokenGenerator() { this(Crypto::sign, Instant::now, new SecureRandom()::nextLong); }
+    public NTokenGenerator() { this(Crypto::sign, Clock.systemUTC(), new SecureRandom()::nextLong); }
 
     /** For testing. */
-    NTokenGenerator(Signer signer, Supplier<Instant> time, LongSupplier randomGenerator) {
+    NTokenGenerator(Signer signer, Clock clock, LongSupplier randomGenerator) {
         this.signer = signer;
-        this.time = time;
+        this.clock = clock;
         this.randomGenerator = randomGenerator;
     }
 
@@ -77,7 +76,7 @@ public class NTokenGenerator {
     public NToken sign(PrivateKey privateKey) {
         // See https://github.com/AthenZ/athenz/blob/master/libs/go/zmssvctoken/token.go
 
-        var generationTime = time.get();
+        var generationTime = clock.instant();
 
         token.setLength(0);
         append('v', "S1");

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.athenz.api;
 
 import com.yahoo.athenz.auth.util.CryptoException;
+import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
 import java.security.PrivateKey;
@@ -15,13 +16,12 @@ import static org.mockito.Mockito.mock;
  * @author hakonhall
  */
 public class NTokenGeneratorTest {
-    private NTokenGenerator generator;
     private final PrivateKey key = mock(PrivateKey.class);
 
     @Test
     public void ntoken() {
         var signer = new Signer("signature");
-        generator = new NTokenGenerator(signer, () -> Instant.ofEpochSecond(12L), () -> 3L);
+        NTokenGenerator generator = new NTokenGenerator(signer, new ManualClock(Instant.ofEpochSecond(12L)), () -> 3L);
         AthenzIdentity identity = new AthenzService("domain", "service");
 
         NToken token = generator.setIdentity(identity)
