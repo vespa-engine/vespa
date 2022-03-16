@@ -335,7 +335,6 @@ public class DeploymentStatus {
             }
             List<Job> toRun = new ArrayList<>();
             List<Change> changes = deployingCompatibilityChange ? List.of(change) : changes(job, step, change);
-            if (changes.isEmpty()) return;
             for (Change partial : changes) {
                 Job jobToRun = new Job(job.type(),
                                        Versions.from(partial, application, existingPlatform, existingApplication, systemVersion),
