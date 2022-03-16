@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -125,7 +124,7 @@ func (ap *ApplicationPackage) zipReader(test bool) (io.ReadCloser, error) {
 		zipFile = ap.TestPath
 	}
 	if !ap.IsZip() {
-		tempZip, err := ioutil.TempFile("", "vespa")
+		tempZip, err := os.CreateTemp("", "vespa")
 		if err != nil {
 			return nil, fmt.Errorf("could not create a temporary zip file for the application package: %w", err)
 		}

@@ -9,7 +9,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math"
 	"net/http"
 	"net/url"
@@ -75,7 +75,7 @@ func runTests(cli *CLI, zone, rootPath string, dryRun bool) (int, []string, erro
 	if stat, err := os.Stat(rootPath); err != nil {
 		return 0, nil, errHint(err, "See https://docs.vespa.ai/en/reference/testing")
 	} else if stat.IsDir() {
-		tests, err := ioutil.ReadDir(rootPath) // TODO: Use os.ReadDir when >= 1.16 is required.
+		tests, err := os.ReadDir(rootPath)
 		if err != nil {
 			return 0, nil, errHint(err, "See https://docs.vespa.ai/en/reference/testing")
 		}
@@ -118,7 +118,7 @@ func runTests(cli *CLI, zone, rootPath string, dryRun bool) (int, []string, erro
 // Runs the test at the given path, and returns the specified test name if the test fails
 func runTest(testPath string, context testContext) (string, error) {
 	var test test
-	testBytes, err := ioutil.ReadFile(testPath)
+	testBytes, err := os.ReadFile(testPath)
 	if err != nil {
 		return "", errHint(err, "See https://docs.vespa.ai/en/reference/testing")
 	}
@@ -238,7 +238,7 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 		URL:    requestUrl,
 		Method: method,
 		Header: header,
-		Body:   ioutil.NopCloser(bytes.NewReader(requestBody)),
+		Body:   io.NopCloser(bytes.NewReader(requestBody)),
 	}
 	defer request.Body.Close()
 
@@ -289,7 +289,7 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 		return "", "", nil
 	}
 
-	responseBodyBytes, err := ioutil.ReadAll(response.Body)
+	responseBodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", "", err
 	}
@@ -399,7 +399,7 @@ func getParameters(parametersRaw []byte, testsPath string) (map[string]string, e
 				return nil, err
 			}
 			resolvedParametersPath := filepath.Join(testsPath, parametersPath)
-			parametersRaw, err = ioutil.ReadFile(resolvedParametersPath)
+			parametersRaw, err = os.ReadFile(resolvedParametersPath)
 			if err != nil {
 				return nil, fmt.Errorf("failed to read request parameters at %s: %w", resolvedParametersPath, err)
 			}
@@ -420,7 +420,7 @@ func getBody(bodyRaw []byte, testsPath string) ([]byte, error) {
 			return nil, err
 		}
 		resolvedBodyPath := filepath.Join(testsPath, bodyPath)
-		bodyRaw, err = ioutil.ReadFile(resolvedBodyPath)
+		bodyRaw, err = os.ReadFile(resolvedBodyPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read body file at %s: %w", resolvedBodyPath, err)
 		}

@@ -3,7 +3,7 @@ package mock
 import (
 	"bytes"
 	"crypto/tls"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -54,7 +54,7 @@ func (c *HTTPClient) Do(request *http.Request, timeout time.Duration) (*http.Res
 	return &http.Response{
 			Status:     "Status " + strconv.Itoa(response.Status),
 			StatusCode: response.Status,
-			Body:       ioutil.NopCloser(bytes.NewBuffer(response.Body)),
+			Body:       io.NopCloser(bytes.NewBuffer(response.Body)),
 			Header:     response.Header,
 		},
 		nil

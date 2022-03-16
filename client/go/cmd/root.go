@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -174,7 +173,7 @@ func (c *CLI) configureOutput(cmd *cobra.Command, args []string) error {
 		c.Stderr = colorable.NewColorable(f)
 	}
 	if quiet, _ := c.config.get(quietFlag); quiet == "true" {
-		c.Stdout = ioutil.Discard
+		c.Stdout = io.Discard
 	}
 	log.SetFlags(0) // No timestamps
 	log.SetOutput(c.Stdout)

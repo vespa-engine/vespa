@@ -15,7 +15,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/big"
 	"net/http"
 	"strings"
@@ -133,7 +132,7 @@ func (rs *RequestSigner) SignRequest(request *http.Request) error {
 		return err
 	}
 	base64Signature := base64.StdEncoding.EncodeToString(signature)
-	request.Body = ioutil.NopCloser(body)
+	request.Body = io.NopCloser(body)
 	if request.Header == nil {
 		request.Header = make(http.Header)
 	}

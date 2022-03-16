@@ -7,7 +7,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strings"
 	"time"
 
@@ -179,7 +178,7 @@ func documentService(cli *CLI) (*vespa.Service, error) {
 }
 
 func operationOptions(stderr io.Writer, printCurl bool, timeoutSecs int) vespa.OperationOptions {
-	curlOutput := ioutil.Discard
+	curlOutput := io.Discard
 	if printCurl {
 		curlOutput = stderr
 	}

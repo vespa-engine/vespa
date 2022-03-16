@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -134,7 +133,7 @@ func TestLog(t *testing.T) {
 	vc.deploymentConverged = true
 
 	var buf bytes.Buffer
-	target := createCloudTarget(t, srv.URL, ioutil.Discard)
+	target := createCloudTarget(t, srv.URL, io.Discard)
 	if err := target.PrintLog(LogOptions{Writer: &buf, Level: 3}); err != nil {
 		t.Fatal(err)
 	}
@@ -148,7 +147,7 @@ func TestCheckVersion(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(vc.mockVespaHandler))
 	defer srv.Close()
 
-	target := createCloudTarget(t, srv.URL, ioutil.Discard)
+	target := createCloudTarget(t, srv.URL, io.Discard)
 	assert.Nil(t, target.CheckVersion(version.MustParse("8.0.0")))
 	assert.Nil(t, target.CheckVersion(version.MustParse("8.1.0")))
 	assert.NotNil(t, target.CheckVersion(version.MustParse("7.0.0")))
