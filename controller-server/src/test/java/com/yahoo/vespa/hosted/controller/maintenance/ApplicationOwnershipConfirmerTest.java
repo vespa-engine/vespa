@@ -34,7 +34,7 @@ public class ApplicationOwnershipConfirmerTest {
     public void setup() {
         tester = new DeploymentTester();
         issues = new MockOwnershipIssues();
-        confirmer = new ApplicationOwnershipConfirmer(tester.controller(), Duration.ofDays(1), issues);
+        confirmer = new ApplicationOwnershipConfirmer(tester.controller(), Duration.ofDays(1), issues, 1);
     }
 
     @Test
