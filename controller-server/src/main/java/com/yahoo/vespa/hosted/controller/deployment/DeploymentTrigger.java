@@ -174,10 +174,8 @@ public class DeploymentTrigger {
 
         var prodJobs = new ArrayList<Job>();
         var testJobs = new ArrayList<Job>();
-        for (Job job : readyJobs) {
-            if (job.jobType.isTest()) testJobs.add(job);
-            else prodJobs.add(job);
-        }
+        for (Job job : readyJobs)
+            (job.jobType().isProduction() ? prodJobs : testJobs).add(job);
 
         // Flat list of prod jobs, grouped by application id, retaining the step order
         List<Job> sortedProdJobs = prodJobs.stream()
