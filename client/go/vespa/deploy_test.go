@@ -2,7 +2,6 @@
 package vespa
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -77,7 +76,7 @@ func writeFile(t *testing.T, name string) {
 	err := os.MkdirAll(filepath.Dir(name), 0755)
 	assert.Nil(t, err)
 	if !strings.HasSuffix(name, string(os.PathSeparator)) {
-		err = ioutil.WriteFile(name, []byte{0}, 0644)
+		err = os.WriteFile(name, []byte{0}, 0644)
 		assert.Nil(t, err)
 	}
 }

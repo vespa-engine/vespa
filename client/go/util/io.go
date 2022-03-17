@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -43,7 +42,7 @@ func ReaderToBytes(reader io.Reader) []byte {
 
 // Returns the contents of reader as indented JSON
 func ReaderToJSON(reader io.Reader) string {
-	bodyBytes, _ := ioutil.ReadAll(reader)
+	bodyBytes, _ := io.ReadAll(reader)
 	var prettyJSON bytes.Buffer
 	parseError := json.Indent(&prettyJSON, bodyBytes, "", "    ")
 	if parseError != nil { // Not JSON: Print plainly
@@ -55,7 +54,7 @@ func ReaderToJSON(reader io.Reader) string {
 // AtomicWriteFile atomically writes data to filename.
 func AtomicWriteFile(filename string, data []byte) error {
 	dir := filepath.Dir(filename)
-	tmpFile, err := ioutil.TempFile(dir, "vespa")
+	tmpFile, err := os.CreateTemp(dir, "vespa")
 	if err != nil {
 		return err
 	}

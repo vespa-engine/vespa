@@ -7,7 +7,6 @@ package cmd
 import (
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -254,7 +253,7 @@ func (c *Config) readAPIKey(tenantName string) ([]byte, error) {
 	if override, ok := c.get(apiKeyFlag); ok {
 		return []byte(override), nil
 	}
-	return ioutil.ReadFile(c.apiKeyPath(tenantName))
+	return os.ReadFile(c.apiKeyPath(tenantName))
 }
 
 // useAPIKey returns true if an API key should be used when authenticating with system.
@@ -282,7 +281,7 @@ func (c *Config) readSessionID(app vespa.ApplicationID) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	b, err := ioutil.ReadFile(sessionPath)
+	b, err := os.ReadFile(sessionPath)
 	if err != nil {
 		return 0, err
 	}
@@ -294,7 +293,7 @@ func (c *Config) writeSessionID(app vespa.ApplicationID, sessionID int64) error 
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(sessionPath, []byte(fmt.Sprintf("%d\n", sessionID)), 0600)
+	return os.WriteFile(sessionPath, []byte(fmt.Sprintf("%d\n", sessionID)), 0600)
 }
 
 func (c *Config) applicationFilePath(app vespa.ApplicationID, name string) (string, error) {

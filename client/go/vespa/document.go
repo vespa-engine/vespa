@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -64,7 +63,7 @@ func sendOperation(documentId string, jsonFile string, service *Service, operati
 			return util.FailureWithDetail("Could not open file '"+jsonFile+"'", err.Error())
 		}
 		defer fileReader.Close()
-		documentData, err = ioutil.ReadAll(fileReader)
+		documentData, err = io.ReadAll(fileReader)
 		if err != nil {
 			return util.FailureWithDetail("Failed to read '"+jsonFile+"'", err.Error())
 		}
@@ -101,7 +100,7 @@ func sendOperation(documentId string, jsonFile string, service *Service, operati
 		URL:    url,
 		Method: operationToHTTPMethod(operation),
 		Header: header,
-		Body:   ioutil.NopCloser(bytes.NewReader(documentData)),
+		Body:   io.NopCloser(bytes.NewReader(documentData)),
 	}
 	response, err := serviceDo(service, request, jsonFile, options)
 	if err != nil {

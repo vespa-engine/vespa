@@ -2,7 +2,6 @@
 package cmd
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -93,6 +92,6 @@ func TestUseAPIKey(t *testing.T) {
 	_, err := os.Create(filepath.Join(cli.config.homeDir, "t2.api-key.pem"))
 	require.Nil(t, err)
 	assert.True(t, cli.config.useAPIKey(cli, vespa.PublicSystem, "t2"))
-	require.Nil(t, ioutil.WriteFile(filepath.Join(cli.config.homeDir, "auth.json"), []byte(authContent), 0600))
+	require.Nil(t, os.WriteFile(filepath.Join(cli.config.homeDir, "auth.json"), []byte(authContent), 0600))
 	assert.False(t, cli.config.useAPIKey(cli, vespa.PublicSystem, "t2"))
 }

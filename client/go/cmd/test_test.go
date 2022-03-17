@@ -5,9 +5,10 @@
 package cmd
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -21,14 +22,14 @@ import (
 
 func TestSuite(t *testing.T) {
 	client := &mock.HTTPClient{}
-	searchResponse, _ := ioutil.ReadFile("testdata/tests/response.json")
+	searchResponse, _ := os.ReadFile("testdata/tests/response.json")
 	client.NextStatus(200)
 	client.NextStatus(200)
 	for i := 0; i < 11; i++ {
 		client.NextResponseString(200, string(searchResponse))
 	}
 
-	expectedBytes, _ := ioutil.ReadFile("testdata/tests/expected-suite.out")
+	expectedBytes, _ := os.ReadFile("testdata/tests/expected-suite.out")
 	cli, stdout, stderr := newTestCLI(t)
 	cli.httpClient = client
 	assert.NotNil(t, cli.Run("test", "testdata/tests/system-test"))
@@ -93,7 +94,7 @@ func TestSuiteWithoutTests(t *testing.T) {
 
 func TestSingleTest(t *testing.T) {
 	client := &mock.HTTPClient{}
-	searchResponse, _ := ioutil.ReadFile("testdata/tests/response.json")
+	searchResponse, _ := os.ReadFile("testdata/tests/response.json")
 	client.NextStatus(200)
 	client.NextStatus(200)
 	client.NextResponseString(200, string(searchResponse))
@@ -101,7 +102,7 @@ func TestSingleTest(t *testing.T) {
 	cli, stdout, stderr := newTestCLI(t)
 	cli.httpClient = client
 
-	expectedBytes, _ := ioutil.ReadFile("testdata/tests/expected.out")
+	expectedBytes, _ := os.ReadFile("testdata/tests/expected.out")
 	assert.Nil(t, cli.Run("test", "testdata/tests/system-test/test.json"))
 	assert.Equal(t, string(expectedBytes), stdout.String())
 	assert.Equal(t, "", stderr.String())
@@ -119,8 +120,8 @@ func TestSingleTestWithCloudAndEndpoints(t *testing.T) {
 	certFile := filepath.Join(certDir, "cert")
 	kp, err := vespa.CreateKeyPair()
 	require.Nil(t, err)
-	require.Nil(t, ioutil.WriteFile(keyFile, kp.PrivateKey, 0600))
-	require.Nil(t, ioutil.WriteFile(certFile, kp.Certificate, 0600))
+	require.Nil(t, os.WriteFile(keyFile, kp.PrivateKey, 0600))
+	require.Nil(t, os.WriteFile(certFile, kp.Certificate, 0600))
 
 	client := &mock.HTTPClient{}
 	cli, stdout, stderr := newTestCLI(
@@ -132,7 +133,7 @@ func TestSingleTestWithCloudAndEndpoints(t *testing.T) {
 	)
 	cli.httpClient = client
 
-	searchResponse, err := ioutil.ReadFile("testdata/tests/response.json")
+	searchResponse, err := os.ReadFile("testdata/tests/response.json")
 	require.Nil(t, err)
 	client.NextStatus(200)
 	client.NextStatus(200)
@@ -140,7 +141,7 @@ func TestSingleTestWithCloudAndEndpoints(t *testing.T) {
 	client.NextResponseString(200, string(searchResponse))
 
 	assert.Nil(t, cli.Run("test", "testdata/tests/system-test/test.json", "-t", "cloud", "-a", "t.a.i"))
-	expectedBytes, err := ioutil.ReadFile("testdata/tests/expected.out")
+	expectedBytes, err := os.ReadFile("testdata/tests/expected.out")
 	require.Nil(t, err)
 	assert.Equal(t, "", stderr.String())
 	assert.Equal(t, string(expectedBytes), stdout.String())
@@ -166,7 +167,7 @@ func createRequest(method string, uri string, body string) *http.Request {
 		URL:    requestUrl,
 		Method: method,
 		Header: nil,
-		Body:   ioutil.NopCloser(strings.NewReader(body)),
+		Body:   io.NopCloser(strings.NewReader(body)),
 	}
 }
 

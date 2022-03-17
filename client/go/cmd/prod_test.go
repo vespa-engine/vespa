@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -79,7 +78,7 @@ func TestProdInit(t *testing.T) {
 }
 
 func readFileString(t *testing.T, filename string) string {
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +97,7 @@ func createApplication(t *testing.T, pkgDir string, java bool) {
     <region>aws-us-east-1c</region>
   </prod>
 </deployment>`
-	if err := ioutil.WriteFile(filepath.Join(appDir, "deployment.xml"), []byte(deploymentXML), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(appDir, "deployment.xml"), []byte(deploymentXML), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -119,19 +118,19 @@ func createApplication(t *testing.T, pkgDir string, java bool) {
   </content>
 </services>`
 
-	if err := ioutil.WriteFile(filepath.Join(appDir, "services.xml"), []byte(servicesXML), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(appDir, "services.xml"), []byte(servicesXML), 0644); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
 		t.Fatal(err)
 	}
 	if java {
-		if err := ioutil.WriteFile(filepath.Join(pkgDir, "pom.xml"), []byte(""), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(pkgDir, "pom.xml"), []byte(""), 0644); err != nil {
 			t.Fatal(err)
 		}
 	} else {
 		testsDir := filepath.Join(pkgDir, "src", "test", "application", "tests")
-		testBytes, _ := ioutil.ReadAll(strings.NewReader("{\"steps\":[{}]}"))
+		testBytes, _ := io.ReadAll(strings.NewReader("{\"steps\":[{}]}"))
 		writeTest(filepath.Join(testsDir, "system-test", "test.json"), testBytes, t)
 		writeTest(filepath.Join(testsDir, "staging-setup", "test.json"), testBytes, t)
 		writeTest(filepath.Join(testsDir, "staging-test", "test.json"), testBytes, t)
@@ -142,7 +141,7 @@ func writeTest(path string, content []byte, t *testing.T) {
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		t.Fatal(err)
 	}
-	if err := ioutil.WriteFile(path, content, 0644); err != nil {
+	if err := os.WriteFile(path, content, 0644); err != nil {
 		t.Fatal(err)
 	}
 }

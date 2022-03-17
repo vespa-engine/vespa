@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -235,7 +234,7 @@ func Submit(opts DeploymentOptions) error {
 	request := &http.Request{
 		URL:    u,
 		Method: "POST",
-		Body:   ioutil.NopCloser(&body),
+		Body:   io.NopCloser(&body),
 		Header: make(http.Header),
 	}
 	request.Header.Set("Content-Type", writer.FormDataContentType())
@@ -270,7 +269,7 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (PrepareResu
 		URL:    url,
 		Method: "POST",
 		Header: header,
-		Body:   ioutil.NopCloser(zipReader),
+		Body:   io.NopCloser(zipReader),
 	}
 	service, err := opts.Target.Service(DeployService, opts.Timeout, 0, "")
 	if err != nil {
@@ -323,7 +322,7 @@ func checkResponse(req *http.Request, response *http.Response, serviceDescriptio
 
 // Returns the error message in the given JSON, or the entire content if it could not be extracted
 func extractError(reader io.Reader) string {
-	responseData, _ := ioutil.ReadAll(reader)
+	responseData, _ := io.ReadAll(reader)
 	var response map[string]interface{}
 	json.Unmarshal(responseData, &response)
 	if response["error-code"] == "INVALID_APPLICATION_PACKAGE" {

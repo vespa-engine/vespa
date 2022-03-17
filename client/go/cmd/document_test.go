@@ -5,7 +5,7 @@
 package cmd
 
 import (
-	"io/ioutil"
+	"os"
 	"strconv"
 	"testing"
 
@@ -121,7 +121,7 @@ func assertDocumentSend(arguments []string, expectedOperation string, expectedMe
 	assert.Equal(t, "application/json", client.LastRequest.Header.Get("Content-Type"))
 	assert.Equal(t, expectedMethod, client.LastRequest.Method)
 
-	expectedPayload, _ := ioutil.ReadFile(expectedPayloadFile)
+	expectedPayload, _ := os.ReadFile(expectedPayloadFile)
 	assert.Equal(t, string(expectedPayload), util.ReaderToString(client.LastRequest.Body))
 }
 

@@ -1,6 +1,6 @@
 module github.com/vespa-engine/vespa/client/go
 
-go 1.15
+go 1.16
 
 require (
 	github.com/briandowns/spinner v1.16.0

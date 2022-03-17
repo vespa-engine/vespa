@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -171,7 +170,7 @@ $ vespa prod submit`,
 func writeWithBackup(stdout io.Writer, pkg vespa.ApplicationPackage, filename, contents string) error {
 	dst := filepath.Join(pkg.Path, filename)
 	if util.PathExists(dst) {
-		data, err := ioutil.ReadFile(dst)
+		data, err := os.ReadFile(dst)
 		if err != nil {
 			return err
 		}
@@ -196,7 +195,7 @@ func writeWithBackup(stdout io.Writer, pkg vespa.ApplicationPackage, filename, c
 		}
 	}
 	fmt.Fprintf(stdout, "Writing %s\n", color.GreenString(dst))
-	return ioutil.WriteFile(dst, []byte(contents), 0644)
+	return os.WriteFile(dst, []byte(contents), 0644)
 }
 
 func updateRegions(cli *CLI, stdin *bufio.Reader, deploymentXML xml.Deployment, system vespa.System) (xml.Deployment, error) {

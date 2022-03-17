@@ -5,8 +5,8 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -78,7 +78,7 @@ func doApiKey(cli *CLI, overwriteKey bool, args []string) error {
 	if err != nil {
 		return fmt.Errorf("could not create api key: %w", err)
 	}
-	if err := ioutil.WriteFile(apiKeyFile, apiKey, 0600); err == nil {
+	if err := os.WriteFile(apiKeyFile, apiKey, 0600); err == nil {
 		cli.printSuccess("API private key written to ", apiKeyFile)
 		return printPublicKey(system, apiKeyFile, app.Tenant)
 	} else {
@@ -87,7 +87,7 @@ func doApiKey(cli *CLI, overwriteKey bool, args []string) error {
 }
 
 func printPublicKey(system vespa.System, apiKeyFile, tenant string) error {
-	pemKeyData, err := ioutil.ReadFile(apiKeyFile)
+	pemKeyData, err := os.ReadFile(apiKeyFile)
 	if err != nil {
 		return fmt.Errorf("failed to read: %s: %w", apiKeyFile, err)
 	}

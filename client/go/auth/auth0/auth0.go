@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -287,7 +286,7 @@ func (a *Auth0) persistConfig() error {
 		return err
 	}
 
-	if err := ioutil.WriteFile(a.Path, buf, 0600); err != nil {
+	if err := os.WriteFile(a.Path, buf, 0600); err != nil {
 		return err
 	}
 
@@ -334,7 +333,7 @@ func (a *Auth0) initContext() (err error) {
 	}
 
 	var buf []byte
-	if buf, err = ioutil.ReadFile(a.Path); err != nil {
+	if buf, err = os.ReadFile(a.Path); err != nil {
 		return err
 	}
 

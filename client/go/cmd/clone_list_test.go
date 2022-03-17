@@ -2,7 +2,7 @@
 package cmd
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -59,7 +59,7 @@ func TestListSampleApps(t *testing.T) {
 }
 
 func readTestData(t *testing.T, name string) string {
-	contents, err := ioutil.ReadFile(filepath.Join("testdata", name))
+	contents, err := os.ReadFile(filepath.Join("testdata", name))
 	if err != nil {
 		t.Fatal(err)
 	}
