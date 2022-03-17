@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -43,7 +45,7 @@ public class InstanceSerializerTest {
                 0,
                 "configserverhostname",
                 "instancehostname",
-                Instant.now(),
+                Instant.now().truncatedTo(ChronoUnit.MICROS),  // Truncate to the precision given from EntityBindingsMapper.toAttestationData()
                 Collections.emptySet(),
                 IdentityType.NODE);
 
