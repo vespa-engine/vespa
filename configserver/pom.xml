@@ -231,6 +231,12 @@
     <dependency>
       <groupId>org.glassfish.jersey.core</groupId>
       <artifactId>jersey-server</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.glassfish.jersey.media</groupId>
+          <artifactId>jersey-media-jaxb</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.glassfish.jersey.ext</groupId>
@@ -239,6 +245,11 @@
     <dependency>
       <groupId>org.glassfish.jersey.media</groupId>
       <artifactId>jersey-media-json-jackson</artifactId>
+    </dependency>
+    <dependency>
+      <!-- Not needed by configserver, but by controller. Also pulls in mimepull. -->
+      <groupId>org.glassfish.jersey.media</groupId>
+      <artifactId>jersey-media-multipart</artifactId>
     </dependency>
     <!-- Jersey END -->
 
