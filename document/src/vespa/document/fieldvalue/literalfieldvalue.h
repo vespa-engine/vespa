@@ -27,7 +27,7 @@ public:
     typedef std::unique_ptr<LiteralFieldValueB> UP;
     typedef string value_type;
 
-    LiteralFieldValueB(Type type);
+    explicit LiteralFieldValueB(Type type);
     ~LiteralFieldValueB();
 
     LiteralFieldValueB(const LiteralFieldValueB &);
@@ -78,24 +78,18 @@ protected:
     mutable stringref _value;
     mutable string    _backing; // Lazily set when needed
     mutable bool      _altered; // Set if altered after deserialization
-private:
-    virtual bool getAddZeroTerm() const = 0;
 };
 
-template<typename SubClass, int dataType, bool addZeroTerm>
+template<typename SubClass, int dataType>
 class LiteralFieldValue : public LiteralFieldValueB {
-private:
-    bool getAddZeroTerm() const  override{ return addZeroTerm; }
 public:
-    typedef std::unique_ptr<SubClass> UP;
-
-    LiteralFieldValue(Type type) : LiteralFieldValueB(type) { }
+    explicit LiteralFieldValue(Type type) : LiteralFieldValueB(type) { }
     LiteralFieldValue(Type type, const stringref& value) : LiteralFieldValueB(type, value) { }
     const DataType *getDataType() const override;
 };
 
-extern template class LiteralFieldValue<RawFieldValue, DataType::T_RAW, false>;
-extern template class LiteralFieldValue<StringFieldValue, DataType::T_STRING, true>;
+extern template class LiteralFieldValue<RawFieldValue, DataType::T_RAW>;
+extern template class LiteralFieldValue<StringFieldValue, DataType::T_STRING>;
 
 } // document
 

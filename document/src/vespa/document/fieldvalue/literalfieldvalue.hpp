@@ -6,9 +6,9 @@
 
 namespace document {
 
-template<typename SubClass, int dataType, bool addZeroTerm>
+template<typename SubClass, int dataType>
 const DataType *
-LiteralFieldValue<SubClass, dataType, addZeroTerm>::getDataType() const
+LiteralFieldValue<SubClass, dataType>::getDataType() const
 {
     switch (dataType) {
     case DataType::T_URI:    return DataType::URI;

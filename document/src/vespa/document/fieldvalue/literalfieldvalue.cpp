@@ -113,7 +113,7 @@ LiteralFieldValueB::syncBacking() const
     _value = _backing;
 }
 
-template class LiteralFieldValue<RawFieldValue, DataType::T_RAW, false>;
-template class LiteralFieldValue<StringFieldValue, DataType::T_STRING, true>;
+template class LiteralFieldValue<RawFieldValue, DataType::T_RAW>;
+template class LiteralFieldValue<StringFieldValue, DataType::T_STRING>;
 
 }  // namespace document

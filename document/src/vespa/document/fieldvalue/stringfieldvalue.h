@@ -17,9 +17,9 @@ namespace document {
 class FixedTypeRepo;
 class DocumentTypeRepo;
 
-class StringFieldValue final : public LiteralFieldValue<StringFieldValue, DataType::T_STRING, true> {
+class StringFieldValue final : public LiteralFieldValue<StringFieldValue, DataType::T_STRING> {
 public:
-    typedef LiteralFieldValue<StringFieldValue, DataType::T_STRING, true> Parent;
+    typedef LiteralFieldValue<StringFieldValue, DataType::T_STRING> Parent;
     typedef std::vector<SpanTree::UP> SpanTrees;
 
     StringFieldValue() : Parent(Type::STRING), _annotationData() { }

@@ -12,10 +12,10 @@
 
 namespace document {
 
-class RawFieldValue final : public LiteralFieldValue<RawFieldValue, DataType::T_RAW, false>
+class RawFieldValue final : public LiteralFieldValue<RawFieldValue, DataType::T_RAW>
 {
 public:
-    typedef LiteralFieldValue<RawFieldValue, DataType::T_RAW, false> Parent;
+    typedef LiteralFieldValue<RawFieldValue, DataType::T_RAW> Parent;
 
     RawFieldValue()
         : Parent(Type::RAW) { }
