@@ -4,11 +4,14 @@
 
 namespace proton {
 
-MockSharedThreadingService::MockSharedThreadingService(ThreadExecutor& warmup_in, ThreadExecutor& shared_in)
+MockSharedThreadingService::MockSharedThreadingService(ThreadExecutor& warmup_in,
+                                                       ThreadExecutor& shared_in,
+                                                       size_t num_bucket_executors)
     : _warmup(warmup_in),
       _shared(shared_in),
       _invokeService(10ms),
       _transport(),
+      _bucket_executor(num_bucket_executors),
       _clock(_invokeService.nowRef())
 {
 }

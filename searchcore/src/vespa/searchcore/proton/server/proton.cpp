@@ -276,8 +276,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
 
     setBucketCheckSumType(protonConfig);
     setFS4Compression(protonConfig);
-    _shared_service = std::make_unique<SharedThreadingService>(SharedThreadingServiceConfig::make(protonConfig, hwInfo.cpu()), _transport);
-    _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(_shared_service->transport(), protonConfig.basedir,
+    _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(_transport, protonConfig.basedir,
                                                                  diskMemUsageSamplerConfig(protonConfig, hwInfo));
 
     _tls = std::make_unique<TLS>(_configUri.createWithNewId(protonConfig.tlsconfigid), _fileHeaderContext);
@@ -324,6 +323,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                                                              _diskMemUsageSampler->notifier(),
                                                              protonConfig.visit.defaultserializedsize,
                                                              protonConfig.visit.ignoremaxbytes);
+    _shared_service = std::make_unique<SharedThreadingService>(
+            SharedThreadingServiceConfig::make(protonConfig, hwInfo.cpu()), _transport, *_persistenceEngine);
 
     vespalib::string fileConfigId;
     _compile_cache_executor_binding = vespalib::eval::CompileCache::bind(_shared_service->shared_raw());
@@ -612,7 +613,6 @@ Proton::addDocumentDB(const document::DocumentType &docType,
                                   config,
                                   *this,
                                   *_shared_service,
-                                  *_persistenceEngine,
                                   *_tls->getTransLogServer(),
                                   *_metricsEngine,
                                   _fileHeaderContext,

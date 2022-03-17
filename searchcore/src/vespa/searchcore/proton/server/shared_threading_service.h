@@ -23,9 +23,12 @@ private:
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _field_writer;
     vespalib::InvokeServiceImpl                       _invokeService;
     std::vector<Registration>                         _invokeRegistrations;
+    storage::spi::BucketExecutor&                     _bucket_executor;
     vespalib::Clock                                   _clock;
 public:
-    SharedThreadingService(const SharedThreadingServiceConfig& cfg, FNET_Transport & transport);
+    SharedThreadingService(const SharedThreadingServiceConfig& cfg,
+                           FNET_Transport& transport,
+                           storage::spi::BucketExecutor& bucket_executor);
     ~SharedThreadingService() override;
 
     std::shared_ptr<vespalib::Executor> shared_raw() { return _shared; }
@@ -36,6 +39,7 @@ public:
     vespalib::ISequencedTaskExecutor* field_writer() override { return _field_writer.get(); }
     vespalib::InvokeService & invokeService() override { return _invokeService; }
     FNET_Transport & transport() override { return _transport; }
+    storage::spi::BucketExecutor& bucket_executor() override { return _bucket_executor; }
     const vespalib::Clock & clock() const override { return _clock; }
 };
 

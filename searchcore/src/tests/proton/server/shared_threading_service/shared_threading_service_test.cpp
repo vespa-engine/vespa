@@ -1,18 +1,20 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
 #include <vespa/searchcore/config/config-proton.h>
 #include <vespa/searchcore/proton/server/shared_threading_service.h>
 #include <vespa/searchcore/proton/server/shared_threading_service_config.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
-#include <vespa/vespalib/gtest/gtest.h>
 
-using namespace proton;
-using vespalib::ISequencedTaskExecutor;
-using vespalib::SequencedTaskExecutor;
 using ProtonConfig = vespa::config::search::core::ProtonConfig;
 using ProtonConfigBuilder = vespa::config::search::core::ProtonConfigBuilder;
+using namespace proton;
+using storage::spi::dummy::DummyBucketExecutor;
+using vespalib::ISequencedTaskExecutor;
+using vespalib::SequencedTaskExecutor;
 
 ProtonConfig
 make_proton_config(double concurrency)
@@ -49,15 +51,18 @@ TEST(SharedThreadingServiceConfigTest, shared_threads_are_derived_from_cpu_cores
 class SharedThreadingServiceTest : public ::testing::Test {
 public:
     Transport transport;
+    storage::spi::dummy::DummyBucketExecutor bucket_executor;
     std::unique_ptr<SharedThreadingService> service;
     SharedThreadingServiceTest()
         : transport(),
+          bucket_executor(2),
           service()
     { }
     ~SharedThreadingServiceTest() = default;
     void setup(double concurrency, uint32_t cpu_cores) {
         service = std::make_unique<SharedThreadingService>(
-                SharedThreadingServiceConfig::make(make_proton_config(concurrency), HwInfo::Cpu(cpu_cores)), transport.transport());
+                SharedThreadingServiceConfig::make(make_proton_config(concurrency), HwInfo::Cpu(cpu_cores)),
+                transport.transport(), bucket_executor);
     }
     SequencedTaskExecutor* field_writer() {
         return dynamic_cast<SequencedTaskExecutor*>(service->field_writer());

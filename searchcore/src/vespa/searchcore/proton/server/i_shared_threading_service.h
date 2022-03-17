@@ -3,6 +3,8 @@
 
 class FNET_Transport;
 
+namespace storage::spi { struct BucketExecutor; }
+
 namespace vespalib {
 class ISequencedTaskExecutor;
 class ThreadExecutor;
@@ -52,6 +54,12 @@ public:
      * Returns a shared transport object that can be utilized by multiple services.
      */
     virtual FNET_Transport & transport() = 0;
+
+
+    /**
+     * Returns the executor for running a BucketTask in the persistence layer above the SPI.
+     */
+    virtual storage::spi::BucketExecutor& bucket_executor() = 0;
 
     /**
      * Return a very cheap clock.
