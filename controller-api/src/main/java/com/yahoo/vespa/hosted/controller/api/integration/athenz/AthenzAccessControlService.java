@@ -92,7 +92,7 @@ public class AthenzAccessControlService implements AccessControlService {
                     var reason = roleInformation.getPendingRequest().get().getReason();
 
                     zms.decidePendingRoleMembership(role, vespaTeam, expiry, Optional.of(reason), Optional.of(oAuthCredentials), approve);
-                    athenzInstanceSynchronizer.synchronizeInstances(tenantName);
+                    if (approve) athenzInstanceSynchronizer.synchronizeInstances(tenantName);
                     return true;
                 }
         ).orElseThrow(() -> new UnsupportedOperationException("Only allowed in systems running Vespa Athenz instance"));
