@@ -10,7 +10,6 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/docsummary/docsumcontext.h>
 #include <vespa/searchcore/proton/docsummary/documentstoreadapter.h>
@@ -180,7 +179,6 @@ public:
     vespalib::ThreadStackExecutor _summaryExecutor;
     MockSharedThreadingService    _shared_service;
     TransLogServer                _tls;
-    storage::spi::dummy::DummyBucketExecutor _bucketExecutor;
     bool _mkdirOk;
     matching::QueryLimiter _queryLimiter;
     DummyWireService _dummy;
@@ -200,7 +198,6 @@ public:
           _summaryExecutor(8, 128_Ki),
           _shared_service(_summaryExecutor, _summaryExecutor),
           _tls(_shared_service.transport(), "tmp", 9013, ".", _fileHeaderContext),
-          _bucketExecutor(2),
           _mkdirOk(FastOS_File::MakeDirectory("tmpdb")),
           _queryLimiter(),
           _dummy(),
@@ -227,7 +224,7 @@ public:
         }
         _ddb = DocumentDB::create("tmpdb", _configMgr.getConfig(), "tcp/localhost:9013", _queryLimiter,
                                   DocTypeName(docTypeName), makeBucketSpace(), *b->getProtonConfigSP(), *this,
-                                  _shared_service, _bucketExecutor, _tls, _dummy, _fileHeaderContext,
+                                  _shared_service, _tls, _dummy, _fileHeaderContext,
                                   std::make_unique<MemoryConfigStore>(),
                                   std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), _hwInfo),
             _ddb->start();

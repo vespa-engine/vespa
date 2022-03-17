@@ -17,16 +17,18 @@ namespace proton {
 
 using SharedFieldWriterExecutor = ThreadingServiceConfig::ProtonConfig::Feeding::SharedFieldWriterExecutor;
 
-SharedThreadingService::SharedThreadingService(const SharedThreadingServiceConfig& cfg, FNET_Transport & transport)
-    :
-      _transport(transport),
+SharedThreadingService::SharedThreadingService(const SharedThreadingServiceConfig& cfg,
+                                               FNET_Transport& transport,
+                                               storage::spi::BucketExecutor& bucket_executor)
+    : _transport(transport),
       _warmup(cfg.warmup_threads(), 128_Ki, CpuUsage::wrap(proton_warmup_executor, CpuUsage::Category::COMPACT)),
       _shared(std::make_shared<vespalib::BlockingThreadStackExecutor>(cfg.shared_threads(), 128_Ki,
-                                                                      cfg.shared_task_limit(), proton_shared_executor)),
+                                                                        cfg.shared_task_limit(), proton_shared_executor)),
       _field_writer(),
       _invokeService(std::max(vespalib::adjustTimeoutByDetectedHz(1ms),
                               cfg.field_writer_config().reactionTime())),
       _invokeRegistrations(),
+      _bucket_executor(bucket_executor),
       _clock(_invokeService.nowRef())
 {
     const auto& fw_cfg = cfg.field_writer_config();

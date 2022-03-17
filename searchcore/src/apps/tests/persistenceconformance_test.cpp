@@ -16,7 +16,6 @@
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/fastos/file.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
-#include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
@@ -176,7 +175,6 @@ private:
     vespalib::ThreadStackExecutor _summaryExecutor;
     MockSharedThreadingService    _shared_service;
     TransLogServer                _tls;
-    storage::spi::dummy::DummyBucketExecutor _bucketExecutor;
 
     static std::shared_ptr<ProtonConfig> make_proton_config() {
         ProtonConfigBuilder proton_config;
@@ -210,7 +208,7 @@ public:
         mgr.nextGeneration(_shared_service.transport(), 0ms);
         return DocumentDB::create(_baseDir, mgr.getConfig(), _tlsSpec, _queryLimiter, docType, bucketSpace,
                                   *b->getProtonConfigSP(), const_cast<DocumentDBFactory &>(*this),
-                                  _shared_service, _bucketExecutor, _tls, _metricsWireService,
+                                  _shared_service, _tls, _metricsWireService,
                                   _fileHeaderContext, _config_stores.getConfigStore(docType.toString()),
                                   std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), HwInfo());
     }
@@ -225,8 +223,7 @@ DocumentDBFactory::DocumentDBFactory(const vespalib::string &baseDir, int tlsLis
       _metricsWireService(),
       _summaryExecutor(8, 128_Ki),
       _shared_service(_summaryExecutor, _summaryExecutor),
-      _tls(_shared_service.transport(), "tls", tlsListenPort, baseDir, _fileHeaderContext),
-      _bucketExecutor(2)
+      _tls(_shared_service.transport(), "tls", tlsListenPort, baseDir, _fileHeaderContext)
 {}
 DocumentDBFactory::~DocumentDBFactory()  = default;
 

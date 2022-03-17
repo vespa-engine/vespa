@@ -6,7 +6,6 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
-#include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
 #include <vespa/searchcore/proton/attribute/flushableattribute.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
 #include <vespa/searchcore/proton/docsummary/summaryflushtarget.h>
@@ -122,7 +121,6 @@ struct Fixture : public FixtureBase {
     vespalib::ThreadStackExecutor _summaryExecutor;
     MockSharedThreadingService _shared_service;
     HwInfo _hwInfo;
-    storage::spi::dummy::DummyBucketExecutor _bucketExecutor;
     DocumentDB::SP _db;
     DummyFileHeaderContext _fileHeaderContext;
     TransLogServer _tls;
@@ -146,7 +144,6 @@ Fixture::Fixture(bool file_config)
       _summaryExecutor(8, 128_Ki),
       _shared_service(_summaryExecutor, _summaryExecutor),
       _hwInfo(),
-      _bucketExecutor(2),
       _db(),
       _fileHeaderContext(),
       _tls(_shared_service.transport(), "tmp", 9014, ".", _fileHeaderContext),
@@ -167,7 +164,7 @@ Fixture::Fixture(bool file_config)
     mgr.nextGeneration(_shared_service.transport(), 0ms);
     _db = DocumentDB::create(".", mgr.getConfig(), "tcp/localhost:9014", _queryLimiter, DocTypeName("typea"),
                              makeBucketSpace(),
-                             *b->getProtonConfigSP(), _myDBOwner, _shared_service, _bucketExecutor, _tls, _dummy,
+                             *b->getProtonConfigSP(), _myDBOwner, _shared_service, _tls, _dummy,
                              _fileHeaderContext, make_config_store(),
                              std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), _hwInfo);
     _db->start();
