@@ -1,13 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/fieldvalue/intfieldvalue.h>
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/searchcore/proton/attribute/attribute_populator.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/test/test.h>
+#include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -79,7 +80,8 @@ struct Fixture
           _shared(),
           _hwInfo(),
           _mgr(std::make_shared<AttributeManager>(TEST_DIR, "test.subdb", TuneFileAttributes(),
-                                                  _fileHeader, _attributeFieldWriter, _shared, _hwInfo)),
+                                                  _fileHeader, std::make_shared<search::attribute::Interlock>(),
+                                                  _attributeFieldWriter, _shared, _hwInfo)),
           _pop(),
           _ctx()
     {

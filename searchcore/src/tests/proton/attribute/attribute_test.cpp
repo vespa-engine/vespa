@@ -1,18 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/config-attributes.h>
-#include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/mapdatatype.h>
+#include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/predicate/predicate_slime_builder.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
-#include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/test/value_compare.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
@@ -30,8 +30,8 @@
 #include <vespa/searchlib/attribute/bitvector_search_cache.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
+#include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
-#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/predicate/predicate_hash.h>
@@ -47,6 +47,7 @@
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/vespalib/util/gate.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/util/sequencedtaskexecutorobserver.h>
 
 #include <vespa/log/log.h>
@@ -611,6 +612,7 @@ public:
           _baseMgr(new proton::AttributeManager(test_dir, "test.subdb",
                                                 TuneFileAttributes(),
                                                 _fileHeaderContext,
+                                                std::make_shared<search::attribute::Interlock>(),
                                                 _attributeFieldWriter,
                                                 _shared,
                                                 _hwInfo)),

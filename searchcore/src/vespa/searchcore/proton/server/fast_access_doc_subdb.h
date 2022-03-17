@@ -8,6 +8,8 @@
 #include <vespa/searchcore/proton/metrics/attribute_metrics.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
 
+namespace search::attribute { class Interlock; }
+
 namespace proton {
 
 /**
@@ -47,13 +49,17 @@ public:
         const StoreOnlyDocSubDB::Context _storeOnlyCtx;
         AttributeMetrics                &_subAttributeMetrics;
         MetricsWireService              &_metricsWireService;
+        std::shared_ptr<search::attribute::Interlock> _attribute_interlock;
         Context(const StoreOnlyDocSubDB::Context &storeOnlyCtx,
                 AttributeMetrics &subAttributeMetrics,
-                MetricsWireService &metricsWireService)
+                MetricsWireService &metricsWireService,
+                std::shared_ptr<search::attribute::Interlock> attribute_interlock)
         : _storeOnlyCtx(storeOnlyCtx),
           _subAttributeMetrics(subAttributeMetrics),
-          _metricsWireService(metricsWireService)
+          _metricsWireService(metricsWireService),
+          _attribute_interlock(std::move(attribute_interlock))
         { }
+        ~Context();
     };
 
 private:
@@ -82,6 +88,7 @@ protected:
 
     const bool           _addMetrics;
     MetricsWireService  &_metricsWireService;
+    std::shared_ptr<search::attribute::Interlock> _attribute_interlock;
     DocIdLimit           _docIdLimit;
 
     AttributeCollectionSpec::UP createAttributeSpec(const AttributesConfig &attrCfg, const AllocStrategy& alloc_strategy, SerialNum serialNum) const;

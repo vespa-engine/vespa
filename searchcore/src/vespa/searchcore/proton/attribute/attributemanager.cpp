@@ -1,29 +1,29 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attribute_factory.h"
 #include "attribute_directory.h"
+#include "attribute_factory.h"
+#include "attribute_type_matcher.h"
 #include "attributedisklayout.h"
 #include "attributemanager.h"
-#include "attribute_type_matcher.h"
+#include "flushableattribute.h"
 #include "imported_attributes_context.h"
 #include "imported_attributes_repo.h"
 #include "sequential_attributes_initializer.h"
-#include "flushableattribute.h"
-#include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
-#include <vespa/searchlib/attribute/attributecontext.h>
-#include <vespa/searchlib/attribute/attribute_read_guard.h>
-#include <vespa/searchlib/attribute/imported_attribute_vector.h>
-#include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
-#include <vespa/searchlib/attribute/interlock.h>
-#include <vespa/vespalib/util/isequencedtaskexecutor.h>
-#include <vespa/searchlib/common/threaded_compactable_lid_space.h>
+#include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
+#include <vespa/searchlib/attribute/attribute_read_guard.h>
+#include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/vespalib/util/threadexecutor.h>
+#include <vespa/searchlib/attribute/imported_attribute_vector.h>
+#include <vespa/searchlib/attribute/interlock.h>
+#include <vespa/searchlib/common/flush_token.h>
+#include <vespa/searchlib/common/threaded_compactable_lid_space.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/gate.h>
-#include <vespa/vespalib/util/destructor_callbacks.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
+#include <vespa/vespalib/util/threadexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attributemanager");
@@ -239,6 +239,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
                                    const vespalib::string &documentSubDbName,
                                    const TuneFileAttributes &tuneFileAttributes,
                                    const FileHeaderContext &fileHeaderContext,
+                                   std::shared_ptr<search::attribute::Interlock> interlock,
                                    vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                                    vespalib::Executor& shared_executor,
                                    const HwInfo &hwInfo)
@@ -251,7 +252,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _tuneFileAttributes(tuneFileAttributes),
       _fileHeaderContext(fileHeaderContext),
       _factory(std::make_shared<AttributeFactory>()),
-      _interlock(std::make_shared<search::attribute::Interlock>()),
+      _interlock(std::move(interlock)),
       _attributeFieldWriter(attributeFieldWriter),
       _shared_executor(shared_executor),
       _hwInfo(hwInfo),
@@ -263,6 +264,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
                                    const vespalib::string &documentSubDbName,
                                    const search::TuneFileAttributes &tuneFileAttributes,
                                    const search::common::FileHeaderContext &fileHeaderContext,
+                                   std::shared_ptr<search::attribute::Interlock> interlock,
                                    vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                                    vespalib::Executor& shared_executor,
                                    const IAttributeFactory::SP &factory,
@@ -276,7 +278,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _tuneFileAttributes(tuneFileAttributes),
       _fileHeaderContext(fileHeaderContext),
       _factory(factory),
-      _interlock(std::make_shared<search::attribute::Interlock>()),
+      _interlock(std::move(interlock)),
       _attributeFieldWriter(attributeFieldWriter),
       _shared_executor(shared_executor),
       _hwInfo(hwInfo),

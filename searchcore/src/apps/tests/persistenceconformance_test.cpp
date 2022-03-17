@@ -10,6 +10,7 @@
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
+#include <vespa/config/subscription/sourcespec.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -33,12 +34,12 @@
 #include <vespa/searchcore/proton/server/threading_service_config.h>
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/test/mock_shared_threading_service.h>
+#include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/config/subscription/sourcespec.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("persistenceconformance_test");
@@ -209,7 +210,8 @@ public:
         return DocumentDB::create(_baseDir, mgr.getConfig(), _tlsSpec, _queryLimiter, docType, bucketSpace,
                                   *b->getProtonConfigSP(), const_cast<DocumentDBFactory &>(*this),
                                   _shared_service, _tls, _metricsWireService,
-                                  _fileHeaderContext, _config_stores.getConfigStore(docType.toString()),
+                                  _fileHeaderContext, std::make_shared<search::attribute::Interlock>(),
+                                  _config_stores.getConfigStore(docType.toString()),
                                   std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), HwInfo());
     }
 };

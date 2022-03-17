@@ -106,6 +106,7 @@ public:
                      const vespalib::string &documentSubDbName,
                      const search::TuneFileAttributes &tuneFileAttributes,
                      const search::common::FileHeaderContext & fileHeaderContext,
+                     std::shared_ptr<search::attribute::Interlock> interlock,
                      vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                      vespalib::Executor& shared_executor,
                      const HwInfo &hwInfo);
@@ -114,6 +115,7 @@ public:
                      const vespalib::string &documentSubDbName,
                      const search::TuneFileAttributes &tuneFileAttributes,
                      const search::common::FileHeaderContext & fileHeaderContext,
+                     std::shared_ptr<search::attribute::Interlock> interlock,
                      vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                      vespalib::Executor& shared_executor,
                      const IAttributeFactory::SP &factory,

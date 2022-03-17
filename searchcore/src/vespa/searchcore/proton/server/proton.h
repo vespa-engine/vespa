@@ -30,7 +30,10 @@
 #include <shared_mutex>
 
 namespace vespalib { class StateServer; }
-namespace search::transactionlog { class TransLogServerApp; }
+namespace search {
+    namespace attribute { class Interlock; }
+    namespace transactionlog { class TransLogServerApp; }
+}
 namespace metrics {
     class MetricLockGuard;
     class MetricManager;
@@ -40,14 +43,14 @@ namespace storage::spi { struct PersistenceProvider; }
 namespace proton {
 
 class DiskMemUsageSampler;
+class FlushEngine;
 class IDocumentDBReferenceRegistry;
 class IProtonDiskLayout;
+class MatchEngine;
+class MetricsEngine;
+class PersistenceEngine;
 class PrepareRestartHandler;
 class SummaryEngine;
-class FlushEngine;
-class MatchEngine;
-class PersistenceEngine;
-class MetricsEngine;
 
 class Proton : public IProtonConfigurerOwner,
                public search::engine::MonitorServer,
@@ -89,6 +92,7 @@ private:
     std::unique_ptr<metrics::UpdateHook>   _metricsHook;
     std::unique_ptr<MetricsEngine>         _metricsEngine;
     ProtonFileHeaderContext                _fileHeaderContext;
+    std::shared_ptr<search::attribute::Interlock> _attribute_interlock;
     std::unique_ptr<TLS>                   _tls;
     std::unique_ptr<DiskMemUsageSampler>   _diskMemUsageSampler;
     std::unique_ptr<PersistenceEngine>     _persistenceEngine;

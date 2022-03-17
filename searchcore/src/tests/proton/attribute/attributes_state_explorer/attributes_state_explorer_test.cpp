@@ -5,12 +5,13 @@
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchcore/proton/test/attribute_vectors.h>
+#include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attributes_state_explorer_test");
@@ -50,6 +51,7 @@ struct AttributesStateExplorerTest : public ::testing::Test
           _hwInfo(),
           _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(),
                                     _fileHeaderContext,
+                                    std::make_shared<search::attribute::Interlock>(),
                                     *_attribute_field_writer,
                                     _shared,
                                     _hwInfo)),

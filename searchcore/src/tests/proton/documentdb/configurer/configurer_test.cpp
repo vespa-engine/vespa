@@ -6,29 +6,30 @@
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
-#include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
-#include <vespa/searchcore/proton/server/searchable_doc_subdb_configurer.h>
-#include <vespa/searchcore/proton/server/fast_access_doc_subdb_configurer.h>
-#include <vespa/searchcore/proton/server/summaryadapter.h>
-#include <vespa/searchcore/proton/server/attribute_writer_factory.h>
-#include <vespa/searchcore/proton/server/reconfig_params.h>
-#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
-#include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
-#include <vespa/searchcore/proton/test/documentdb_config_builder.h>
-#include <vespa/searchcore/proton/test/mock_summary_adapter.h>
-#include <vespa/searchcore/proton/test/mock_gid_to_lid_change_handler.h>
-#include <vespa/searchcore/proton/test/transport_helper.h>
+#include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
+#include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
+#include <vespa/searchcore/proton/server/attribute_writer_factory.h>
+#include <vespa/searchcore/proton/server/fast_access_doc_subdb_configurer.h>
+#include <vespa/searchcore/proton/server/reconfig_params.h>
+#include <vespa/searchcore/proton/server/searchable_doc_subdb_configurer.h>
+#include <vespa/searchcore/proton/server/summaryadapter.h>
+#include <vespa/searchcore/proton/test/documentdb_config_builder.h>
+#include <vespa/searchcore/proton/test/mock_gid_to_lid_change_handler.h>
+#include <vespa/searchcore/proton/test/mock_summary_adapter.h>
+#include <vespa/searchcore/proton/test/transport_helper.h>
+#include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/testclock.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 using namespace config;
 using namespace document;
@@ -189,7 +190,8 @@ Fixture::initViewSet(ViewSet &views)
     auto indexMgr = make_shared<IndexManager>(BASE_DIR, IndexConfig(searchcorespi::index::WarmupConfig(), 2, 0), Schema(), 1,
                                               views._reconfigurer, views._service.write(), _summaryExecutor,
                                               TuneFileIndexManager(), TuneFileAttributes(), views._fileHeaderContext);
-    auto attrMgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(), views._fileHeaderContext,
+    auto attrMgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(),
+                                                 views._fileHeaderContext, std::make_shared<search::attribute::Interlock>(),
                                                  views._service.write().attributeFieldWriter(), views._service.write().shared(), views._hwInfo);
     auto summaryMgr = make_shared<SummaryManager>
             (_summaryExecutor, search::LogDocumentStore::Config(), search::GrowStrategy(), BASE_DIR, views._docTypeName,
@@ -261,7 +263,8 @@ struct MyFastAccessFeedView
         StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, _dmsc, repo,
                                                 _pendingLidsForCommit, *_gidToLidChangeHandler, _writeService);
         StoreOnlyFeedView::PersistentParams params(1, 1, DocTypeName(DOC_TYPE), 0, SubDbType::NOTREADY);
-        auto mgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(), _fileHeaderContext,
+        auto mgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(),
+                                                 _fileHeaderContext, std::make_shared<search::attribute::Interlock>(),
                                                  _writeService.attributeFieldWriter(), _writeService.shared(), _hwInfo);
         auto writer = std::make_shared<AttributeWriter>(mgr);
         FastAccessFeedView::Context fastUpdateCtx(writer, _docIdLimit);

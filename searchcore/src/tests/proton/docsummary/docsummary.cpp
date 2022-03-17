@@ -28,6 +28,7 @@
 #include <vespa/searchcore/proton/server/summaryadapter.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/test/mock_shared_threading_service.h>
+#include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/engine/docsumapi.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -225,6 +226,7 @@ public:
         _ddb = DocumentDB::create("tmpdb", _configMgr.getConfig(), "tcp/localhost:9013", _queryLimiter,
                                   DocTypeName(docTypeName), makeBucketSpace(), *b->getProtonConfigSP(), *this,
                                   _shared_service, _tls, _dummy, _fileHeaderContext,
+                                  std::make_shared<search::attribute::Interlock>(),
                                   std::make_unique<MemoryConfigStore>(),
                                   std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), _hwInfo),
             _ddb->start();
