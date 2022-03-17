@@ -55,7 +55,7 @@ public interface BillingDatabaseClient {
     /**
      * Add a line item to an open bill
      *
-     * @param lineItem
+     * @param lineItem  The line item to add
      * @param billId    The optional ID of the bill this line item is for
      * @return The Id of the new line item
      * @throws RuntimeException if the bill is not in OPEN state
