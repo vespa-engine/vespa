@@ -4,7 +4,6 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/xmlstream.h>
-#include <vespa/vespalib/util/classname.h>
 #include <ostream>
 
 using vespalib::IllegalArgumentException;
@@ -62,7 +61,7 @@ ArithmeticValueUpdate::applyTo(FieldValue& value) const
     } else {
         vespalib::string err = vespalib::make_string(
                 "Unable to perform an arithmetic update on a \"%s\" field "
-                "value.", vespalib::getClassName(value).c_str());
+                "value.", value.className());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     return true;

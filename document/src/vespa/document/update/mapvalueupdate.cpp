@@ -44,7 +44,7 @@ MapValueUpdate::checkCompatibility(const Field& field) const
 {
     // Check compatibility of nested types.
     if (field.getDataType().isArray()) {
-	    if (_key->type() != FieldValue::Type::INT) {
+        if ( !_key->isA(FieldValue::Type::INT)) {
             throw IllegalArgumentException(vespalib::make_string(
                     "Key for field '%s' is of wrong type (expected '%s', was '%s').",
                     field.getName().data(), DataType::INT->toString().c_str(),
@@ -60,7 +60,7 @@ MapValueUpdate::checkCompatibility(const Field& field) const
         }
     } else {
         throw IllegalArgumentException("MapValueUpdate does not support "
-                "datatype " + field.getDataType().toString() + ".", VESPA_STRLOC);
+                                       "datatype " + field.getDataType().toString() + ".", VESPA_STRLOC);
     }
 }
 

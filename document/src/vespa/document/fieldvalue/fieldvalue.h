@@ -30,7 +30,11 @@ class DataType;
 class FieldValue
 {
 public:
-    enum class Type : uint8_t {NONE,BOOL, BYTE, SHORT, INT, LONG, FLOAT, DOUBLE, STRING, RAW, PREDICATE, TENSOR, ANNOTATION_REFERENCE, REFERENCE, ARRAY, WSET, MAP, STRUCT, DOCUMENT};
+    enum class Type : uint8_t {
+        NONE, BOOL, BYTE, SHORT, INT, LONG, FLOAT, DOUBLE,
+        STRING, RAW, PREDICATE, TENSOR, ANNOTATION_REFERENCE,
+        REFERENCE, ARRAY, WSET, MAP, STRUCT, DOCUMENT
+    };
     using PathRange = FieldPath::Range<FieldPath::const_iterator>;
     using UP = std::unique_ptr<FieldValue>;
     using SP = std::shared_ptr<FieldValue>;
@@ -180,6 +184,7 @@ public:
     bool isFixedSizeSingleValue() const noexcept {
         return (_type == Type::BOOL) || isNumeric();
     }
+    const char * className() const noexcept;
 protected:
     FieldValue(Type type) noexcept : _type(type) { }
     FieldValue(const FieldValue&) = default;

@@ -7,7 +7,6 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/xmlstream.h>
-#include <vespa/vespalib/util/classname.h>
 #include <ostream>
 
 using vespalib::IllegalArgumentException;
@@ -72,7 +71,7 @@ AssignValueUpdate::applyTo(FieldValue& value) const
          !value.getDataType()->isValueType(*_value))) {
         vespalib::string err = vespalib::make_string(
                 "Unable to assign a \"%s\" value to a \"%s\" field value.",
-                vespalib::getClassName(*_value).c_str(), vespalib::getClassName(value).c_str());
+                _value->className(), value.className());
         throw IllegalStateException(err, VESPA_STRLOC);	
     }
     if (_value) {

@@ -15,7 +15,6 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/xmlstream.h>
-#include <vespa/vespalib/util/classname.h>
 #include <ostream>
 
 using vespalib::IllegalArgumentException;
@@ -189,7 +188,7 @@ TensorModifyUpdate::applyTo(FieldValue& value) const
         }
     } else {
         vespalib::string err = make_string("Unable to perform a tensor modify update on a '%s' field value",
-                                           vespalib::getClassName(value).c_str());
+                                           value.className());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     return true;
@@ -246,7 +245,7 @@ TensorModifyUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &ty
         _tensor.reset(static_cast<TensorFieldValue *>(tensor.release()));
     } else {
         vespalib::string err = make_string("Expected tensor field value, got a '%s' field value",
-                                           vespalib::getClassName(*tensor).c_str());
+                                           tensor->className());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());

@@ -160,7 +160,7 @@ UrlFieldInverter::processUrlField(const FieldValue &url_field)
         processUrlOldStyle(url_str);
         return;
     }
-    assert(url_field.type() == FieldValue::Type::STRUCT);
+    assert(url_field.isA(FieldValue::Type::STRUCT));
     const auto &field = static_cast<const StructFieldValue &>(url_field);
 
     const FieldValue::UP all_val = field.getValue("all");
@@ -274,7 +274,7 @@ UrlFieldInverter::processWeightedSetUrlField(const WeightedSetFieldValue &field)
     for (const auto & el : field) {
         const FieldValue &key = *el.first;
         const FieldValue &xweight = *el.second;
-        assert(xweight.type() == FieldValue::Type::INT);
+        assert(xweight.isA(FieldValue::Type::INT));
         int32_t weight = xweight.getAsInt();
         startElement(weight);
         processUrlField(key);

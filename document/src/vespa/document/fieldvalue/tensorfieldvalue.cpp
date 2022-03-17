@@ -174,7 +174,7 @@ FieldValue &
 TensorFieldValue::assign(const FieldValue &value)
 {
     if (value.isA(Type::TENSOR)) {
-        auto rhs = static_cast<const TensorFieldValue *>(&value);
+        const auto * rhs = static_cast<const TensorFieldValue *>(&value);
         *this = *rhs;
     } else {
         return FieldValue::assign(value);

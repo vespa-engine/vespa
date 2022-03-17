@@ -24,7 +24,6 @@
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/classname.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -145,7 +144,7 @@ AttributeUpdater::handleUpdateT(V & vec, Accessor, uint32_t lid, const ValueUpda
                     appendValue(vec, lid, ac);
                 } else {
                     LOG(warning, "Unsupported value %s in assign operation on multivalue vector %s",
-                                 vespalib::getClassName(fv).c_str(), vec.getName().c_str());
+                                 fv.className(), vec.getName().c_str());
                 }
             }
         } else if (op == ValueUpdate::Add) {
@@ -158,7 +157,7 @@ AttributeUpdater::handleUpdateT(V & vec, Accessor, uint32_t lid, const ValueUpda
             const MapValueUpdate & map(static_cast<const MapValueUpdate &>(upd));
             if (!vec.AttributeVector::apply(lid, map)) {
                 throw UpdateException(make_string("attribute map(%s, %s) failed: %s[%u]",
-                                                  vespalib::getClassName(map.getKey()).c_str(), map.getUpdate().getClass().name(),
+                                                  map.getKey().className(), map.getUpdate().getClass().name(),
                                                   vec.getName().c_str(), lid));
             }
         } else {
@@ -330,7 +329,7 @@ AttributeUpdater::handleValueT(V & vec, Accessor, uint32_t lid, const FieldValue
             WeightedSetAccessor<Accessor> ac(static_cast<const WeightedSetFieldValue & >(val));
             appendValue(vec, lid, ac);
         } else {
-            LOG(warning, "Unsupported value '%s' to assign on multivalue vector '%s'", vespalib::getClassName(val).c_str(), vec.getName().c_str());
+            LOG(warning, "Unsupported value '%s' to assign on multivalue vector '%s'", val.className(), vec.getName().c_str());
         }
     } else {
         updateValue(vec, lid, val);

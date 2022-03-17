@@ -33,7 +33,7 @@ class DataType;
 
 class ValueUpdate : public vespalib::Identifiable,
                     public Printable,
-public vespalib::xml::XmlSerializable
+                    public vespalib::xml::XmlSerializable
 {
 protected:
     using nbostream = vespalib::nbostream;

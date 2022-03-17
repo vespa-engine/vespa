@@ -7,7 +7,6 @@
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/xmlstream.h>
-#include <vespa/vespalib/util/classname.h>
 #include <ostream>
 
 using vespalib::IllegalArgumentException;
@@ -71,7 +70,7 @@ AddValueUpdate::applyTo(FieldValue& value) const
         WeightedSetFieldValue& doc(static_cast<WeightedSetFieldValue&>(value));
         doc.add(*_value, _weight);	
     } else {
-        vespalib::string err = make_string("Unable to add a value to a \"%s\" field value.", vespalib::getClassName(value).c_str());
+        vespalib::string err = make_string("Unable to add a value to a \"%s\" field value.", value.className());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     return true;

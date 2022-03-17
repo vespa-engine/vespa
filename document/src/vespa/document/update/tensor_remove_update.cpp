@@ -10,7 +10,6 @@
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/util/xmlstream.h>
-#include <vespa/vespalib/util/classname.h>
 #include <ostream>
 
 using vespalib::IllegalArgumentException;
@@ -134,7 +133,7 @@ TensorRemoveUpdate::applyTo(FieldValue &value) const
         }
     } else {
         vespalib::string err = make_string("Unable to perform a tensor remove update on a '%s' field value",
-                                           vespalib::getClassName(value).c_str());
+                                           value.className());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     return true;

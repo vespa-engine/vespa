@@ -7,7 +7,6 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/classname.h>
 #include <ostream>
 #include <cassert>
 
@@ -60,7 +59,7 @@ AddIteratorHandler::doModify(FieldValue &fv) {
             cf.add(_values[i]);
         }
     } else {
-        vespalib::string err = make_string("Unable to add a value to a \"%s\" field value.", vespalib::getClassName(fv).c_str());
+        vespalib::string err = make_string("Unable to add a value to a \"%s\" field value.", fv.className());
         throw vespalib::IllegalArgumentException(err, VESPA_STRLOC);
     }
     return ModificationStatus::MODIFIED;

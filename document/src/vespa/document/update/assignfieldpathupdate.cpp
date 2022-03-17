@@ -7,7 +7,6 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/classname.h>
 #include <boost/numeric/conversion/cast.hpp>
 #include <ostream>
 
@@ -118,8 +117,7 @@ AssignValueIteratorHandler::doModify(FieldValue& fv) {
     if (!(*fv.getDataType() == *_newValue.getDataType())) {
         vespalib::string err = vespalib::make_string(
                 "Trying to assign \"%s\" of type %s to an instance of type %s",
-                _newValue.toString().c_str(), vespalib::getClassName(_newValue).c_str(),
-                vespalib::getClassName(fv).c_str());
+                _newValue.toString().c_str(), _newValue.className(), fv.className());
         throw vespalib::IllegalArgumentException(err, VESPA_STRLOC);
     }
     if (_removeIfZero

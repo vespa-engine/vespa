@@ -18,7 +18,6 @@
 #include <vespa/searchlib/util/url.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/classname.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <stdexcept>
 
@@ -475,7 +474,7 @@ FieldInverter::invertNormalDocTextField(const FieldValue &val)
                 throw std::runtime_error(make_string("Expected DataType::STRING, got '%s'", wset.getNestedType().getName().c_str()));
             }
         } else {
-            throw std::runtime_error(make_string("Expected weighted set, got '%s'", vespalib::getClassName(val).c_str()));
+            throw std::runtime_error(make_string("Expected weighted set, got '%s'", val.className()));
         }
         break;
     case CollectionType::ARRAY:
@@ -487,7 +486,7 @@ FieldInverter::invertNormalDocTextField(const FieldValue &val)
                 throw std::runtime_error(make_string("Expected DataType::STRING, got '%s'", arr.getNestedType().getName().c_str()));
             }
         } else {
-            throw std::runtime_error(make_string("Expected Array, got '%s'", vespalib::getClassName(val).c_str()));
+            throw std::runtime_error(make_string("Expected Array, got '%s'", val.className()));
         }
         break;
     default:

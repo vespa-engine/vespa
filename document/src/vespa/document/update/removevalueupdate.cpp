@@ -7,7 +7,6 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/vespalib/util/xmlstream.h>
-#include <vespa/vespalib/util/classname.h>
 #include <ostream>
 
 using vespalib::IllegalArgumentException;
@@ -64,7 +63,7 @@ RemoveValueUpdate::applyTo(FieldValue& value) const
         WeightedSetFieldValue& doc(static_cast<WeightedSetFieldValue&>(value));
         doc.remove(*_key);
     } else {
-        std::string err = vespalib::make_string("Unable to remove a value from a \"%s\" field value.", vespalib::getClassName(value).c_str());
+        std::string err = vespalib::make_string("Unable to remove a value from a \"%s\" field value.", value.className());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     return true;

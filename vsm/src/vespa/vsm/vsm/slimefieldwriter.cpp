@@ -4,7 +4,6 @@
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/util/classname.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/document/datatype/positiondatatype.h>
 
@@ -50,7 +49,7 @@ void
 SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv, Inserter &inserter)
 {
     LOG(debug, "traverseRecursive: class(%s), fieldValue(%s), currentPath(%s)",
-      vespalib::getClassName(fv).c_str(), fv.toString().c_str(), toString(_currPath).c_str());
+        fv.className(), fv.toString().c_str(), toString(_currPath).c_str());
 
     if (fv.isCollection()) {
         const document::CollectionFieldValue & cfv = static_cast<const document::CollectionFieldValue &>(fv);

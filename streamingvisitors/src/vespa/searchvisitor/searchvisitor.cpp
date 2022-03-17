@@ -16,7 +16,6 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/util/classname.h>
 #include <vespa/fnet/databuffer.h>
 #include "matching_elements_filler.h"
 
@@ -73,7 +72,7 @@ createMultiValueAttribute(const vespalib::string & name, const document::FieldVa
         ndt = &cdt->getNestedType();
     }
     LOG(debug, "Create %s attribute '%s' with data type '%s' (%s)",
-        arrayType ? "array" : "weighted set", name.c_str(), ndt->getName().c_str(), vespalib::getClassName(fv).c_str());
+        arrayType ? "array" : "weighted set", name.c_str(), ndt->getName().c_str(), fv.className());
     if (ndt->getId() == DataType::T_BYTE ||
         ndt->getId() == DataType::T_INT ||
         ndt->getId() == DataType::T_LONG)
@@ -90,7 +89,7 @@ createMultiValueAttribute(const vespalib::string & name, const document::FieldVa
                          : std::make_shared<search::WeightedSetStringExtAttribute>(name);
     } else {
         LOG(debug, "Can not make an multivalue attribute out of %s with data type '%s' (%s)",
-            name.c_str(), ndt->getName().c_str(), vespalib::getClassName(fv).c_str());
+            name.c_str(), ndt->getName().c_str(), fv.className());
     }
     return AttributeVector::SP();
 }
@@ -98,7 +97,7 @@ createMultiValueAttribute(const vespalib::string & name, const document::FieldVa
 AttributeVector::SP
 createAttribute(const vespalib::string & name, const document::FieldValue & fv)
 {
-    LOG(debug, "Create single value attribute '%s' with value type '%s'", name.c_str(), vespalib::getClassName(fv).c_str());
+    LOG(debug, "Create single value attribute '%s' with value type '%s'", name.c_str(), fv.className());
     if (fv.isA(document::FieldValue::Type::BYTE) || fv.isA(document::FieldValue::Type::INT) || fv.isA(document::FieldValue::Type::LONG)) {
         return std::make_shared<search::SingleIntegerExtAttribute>(name);
     } else if (fv.isA(document::FieldValue::Type::DOUBLE) || fv.isA(document::FieldValue::Type::FLOAT)) {
@@ -106,7 +105,7 @@ createAttribute(const vespalib::string & name, const document::FieldValue & fv)
     } else if (fv.isA(document::FieldValue::Type::STRING)) {
         return std::make_shared<search::SingleStringExtAttribute>(name);
     } else {
-        LOG(debug, "Can not make an attribute out of %s of type '%s'.", name.c_str(), vespalib::getClassName(fv).c_str());
+        LOG(debug, "Can not make an attribute out of %s of type '%s'.", name.c_str(), fv.className());
     }
     return AttributeVector::SP();
 }
@@ -762,14 +761,14 @@ void SearchVisitor::setupAttributeVector(const FieldPath &fieldPath) {
 
     if (attr) {
         LOG(debug, "Adding attribute '%s' for field '%s' with data type '%s' (%s)",
-            attr->getName().c_str(), attrName.c_str(), fv.getDataType()->getName().c_str(), vespalib::getClassName(fv).c_str());
+            attr->getName().c_str(), attrName.c_str(), fv.getDataType()->getName().c_str(), fv.className());
         if ( ! _attrMan.add(attr) ) {
             LOG(warning, "Failed adding attribute '%s' for field '%s' with data type '%s' (%s)",
-                attr->getName().c_str(), attrName.c_str(), fv.getDataType()->getName().c_str(), vespalib::getClassName(fv).c_str());
+                attr->getName().c_str(), attrName.c_str(), fv.getDataType()->getName().c_str(), fv.className());
         }
     } else {
         LOG(debug, "Cannot setup attribute for field '%s' with data type '%s' (%s). Aggregation and sorting will not work for this field",
-            attrName.c_str(), fv.getDataType()->getName().c_str(), vespalib::getClassName(fv).c_str());
+            attrName.c_str(), fv.getDataType()->getName().c_str(), fv.className());
     }
 }
 

@@ -6,7 +6,6 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/locale/c.h>
-#include <vespa/vespalib/util/classname.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.documentfieldnode");
@@ -99,11 +98,11 @@ deduceResultNode(vespalib::stringref fieldName, const FieldValue & fv, bool pres
             value.reset(new RawResultNodeVector());
         } else {
             throw std::runtime_error(make_string("Can not deduce correct resultclass for documentfield '%s' in based on class '%s'. It nests down to %s which is not expected",
-                                                 vespalib::string(fieldName).c_str(), vespalib::getClassName(fv).c_str(), rInfo.name()));
+                                                 vespalib::string(fieldName).c_str(), fv.className(), rInfo.name()));
         }
     } else {
         throw std::runtime_error(make_string("Can not deduce correct resultclass for documentfield '%s' in based on class '%s'",
-                                             vespalib::string(fieldName).c_str(), vespalib::getClassName(fv).c_str()));
+                                             vespalib::string(fieldName).c_str(), fv.className()));
     }
     return value;
 }
