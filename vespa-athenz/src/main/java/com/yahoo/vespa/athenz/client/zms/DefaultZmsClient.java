@@ -306,7 +306,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     public void decidePendingRoleMembership(AthenzRole athenzRole, AthenzIdentity athenzIdentity, Instant expiry,
                                              Optional<String> reason, Optional<OAuthCredentials> oAuthCredentials, boolean approve) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s/member/%s/decision", athenzRole.domain().getName(), athenzRole.roleName(), athenzIdentity.getFullName()));
-        MembershipEntity membership = new MembershipEntity.RoleMembershipEntity(athenzIdentity.getFullName(), approve, athenzRole.roleName(), Long.toString(expiry.getEpochSecond()));
+        var membership = new MembershipEntity.RoleMembershipDecisionEntity(athenzIdentity.getFullName(), approve, athenzRole.roleName(), Long.toString(expiry.getEpochSecond()), approve);
 
         var requestBuilder = RequestBuilder.put()
                 .setUri(uri)

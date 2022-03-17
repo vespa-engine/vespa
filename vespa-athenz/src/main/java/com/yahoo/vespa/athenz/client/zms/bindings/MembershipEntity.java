@@ -61,6 +61,21 @@ public class MembershipEntity {
 
     }
 
+    public static class RoleMembershipDecisionEntity extends RoleMembershipEntity {
+        public final boolean approved;
+
+        @JsonCreator
+        public RoleMembershipDecisionEntity(@JsonProperty("memberName") String memberName,
+                                            @JsonProperty("isMember") boolean isMember,
+                                            @JsonProperty("roleName") String roleName,
+                                            @JsonProperty("expiration") String expiration,
+                                            @JsonProperty("approved") boolean approved) {
+            super(memberName, isMember, roleName, expiration);
+            this.approved = approved;
+        }
+
+    }
+
     public static class GroupMembershipEntity extends MembershipEntity {
         public final String groupName;
 
