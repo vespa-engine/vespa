@@ -24,4 +24,7 @@ public class ArtifactId {
     /** Artifact ID of this. */
     public String artifactId() { return artifactId; }
 
+    @Override
+    public String toString() { return groupId + "." + artifactId; }
+
 }
