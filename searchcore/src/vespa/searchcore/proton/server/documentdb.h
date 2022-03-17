@@ -6,8 +6,8 @@
 #include "configstore.h"
 #include "ddbstate.h"
 #include "disk_mem_usage_forwarder.h"
-#include "documentdb_metrics_updater.h"
 #include "document_db_config_owner.h"
+#include "documentdb_metrics_updater.h"
 #include "documentdbconfig.h"
 #include "documentsubdbcollection.h"
 #include "executorthreadingservice.h"
@@ -19,10 +19,10 @@
 #include "threading_service_config.h"
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
+#include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
 #include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
-#include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchlib/docstore/cachestats.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
 #include <vespa/vespalib/util/retain_guard.h>
@@ -31,6 +31,7 @@
 #include <condition_variable>
 
 namespace search {
+    namespace attribute { class Interlock; }
     namespace common { class FileHeaderContext; }
     namespace transactionlog {
         class TransLogClient;
@@ -205,6 +206,7 @@ private:
                const search::transactionlog::WriterFactory &tlsWriterFactory,
                MetricsWireService &metricsWireService,
                const search::common::FileHeaderContext &fileHeaderContext,
+               std::shared_ptr<search::attribute::Interlock> attribute_interlock,
                ConfigStore::UP config_store,
                InitializeThreads initializeThreads,
                const HwInfo &hwInfo);
@@ -234,6 +236,7 @@ public:
            const search::transactionlog::WriterFactory &tlsWriterFactory,
            MetricsWireService &metricsWireService,
            const search::common::FileHeaderContext &fileHeaderContext,
+           std::shared_ptr<search::attribute::Interlock> attribute_interlock,
            ConfigStore::UP config_store,
            InitializeThreads initializeThreads,
            const HwInfo &hwInfo);

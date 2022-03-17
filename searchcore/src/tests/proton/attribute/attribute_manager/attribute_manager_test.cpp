@@ -11,8 +11,8 @@
 #include <vespa/searchcore/proton/attribute/exclusive_attribute_read_accessor.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/attribute/sequential_attributes_initializer.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
@@ -24,6 +24,7 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
+#include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
@@ -161,7 +162,8 @@ struct BaseFixture
     ~BaseFixture();
     proton::AttributeManager::SP make_manager() {
         return std::make_shared<proton::AttributeManager>(test_dir, "test.subdb", TuneFileAttributes(),
-                                                          _fileHeaderContext, _attributeFieldWriter, _shared, _hwInfo);
+                                                          _fileHeaderContext, std::make_shared<search::attribute::Interlock>(),
+                                                          _attributeFieldWriter, _shared, _hwInfo);
     }
 };
 

@@ -56,6 +56,8 @@ extractAttributeManager(const FastAccessFeedView::SP &feedView)
 
 }
 
+FastAccessDocSubDB::Context::~Context() = default;
+
 InitializerTask::SP
 FastAccessDocSubDB::createAttributeManagerInitializer(const DocumentDBConfig &configSnapshot,
                                                       SerialNum configSerialNum,
@@ -70,6 +72,7 @@ FastAccessDocSubDB::createAttributeManagerInitializer(const DocumentDBConfig &co
                                                getSubDbName(),
                                                configSnapshot.getTuneFileDocumentDBSP()->_attr,
                                                _fileHeaderContext,
+                                               _attribute_interlock,
                                                _writeService.attributeFieldWriter(),
                                                _writeService.shared(),
                                                attrFactory,
@@ -200,8 +203,10 @@ FastAccessDocSubDB::FastAccessDocSubDB(const Config &cfg, const Context &ctx)
       _subAttributeMetrics(ctx._subAttributeMetrics),
       _addMetrics(cfg._addMetrics),
       _metricsWireService(ctx._metricsWireService),
+      _attribute_interlock(std::move(ctx._attribute_interlock)),
       _docIdLimit(0)
-{ }
+{
+}
 
 FastAccessDocSubDB::~FastAccessDocSubDB() = default;
 

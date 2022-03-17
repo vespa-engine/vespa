@@ -8,8 +8,9 @@
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/common/indexmetainfo.h>
+#include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/flush_token.h>
+#include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/datastore/datastorebase.h>
@@ -17,9 +18,9 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/util/idestructorcallback.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -297,7 +298,8 @@ struct AttributeManagerFixture
 
 AttributeManagerFixture::AttributeManagerFixture(BaseFixture &bf)
     : _msp(std::make_shared<AttributeManager>(test_dir, "test.subdb", TuneFileAttributes(),
-                                              bf._fileHeaderContext, bf._attributeFieldWriter, bf._shared, bf._hwInfo)),
+                                              bf._fileHeaderContext, std::make_shared<search::attribute::Interlock>(),
+                                              bf._attributeFieldWriter, bf._shared, bf._hwInfo)),
       _m(*_msp)
 {}
 AttributeManagerFixture::~AttributeManagerFixture() = default;

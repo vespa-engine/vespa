@@ -28,6 +28,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         searchcorespi::index::IThreadingService &writeService,
         vespalib::Executor &warmupExecutor,
         const search::common::FileHeaderContext &fileHeaderContext,
+        std::shared_ptr<search::attribute::Interlock> attribute_interlock,
         MetricsWireService &metricsWireService,
         DocumentDBTaggedMetrics &metrics,
         matching::QueryLimiter &queryLimiter,
@@ -57,7 +58,10 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                 StoreOnlyDocSubDB::Config(docTypeName, "0.ready", baseDir,_readySubDbId, SubDbType::READY),
                 true, true, false),
                                 SearchableDocSubDB::Context(
-                                        FastAccessDocSubDB::Context(context, metrics.ready.attributes, metricsWireService),
+                                        FastAccessDocSubDB::Context(context,
+                                                                    metrics.ready.attributes,
+                                                                    metricsWireService,
+                                                                    attribute_interlock),
                                         queryLimiter, clock, warmupExecutor)));
 
     _subDBs.push_back
@@ -68,7 +72,10 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         (new FastAccessDocSubDB(FastAccessDocSubDB::Config(
                 StoreOnlyDocSubDB::Config(docTypeName, "2.notready", baseDir,_notReadySubDbId, SubDbType::NOTREADY),
                 true, true, true),
-                                FastAccessDocSubDB::Context(context, metrics.notReady.attributes, metricsWireService)));
+                                FastAccessDocSubDB::Context(context,
+                                                            metrics.notReady.attributes,
+                                                            metricsWireService,
+                                                            attribute_interlock)));
 }
 
 

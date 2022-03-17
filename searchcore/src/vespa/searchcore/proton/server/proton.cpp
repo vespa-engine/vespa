@@ -18,6 +18,7 @@
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/fnet/transport.h>
 #include <vespa/metrics/updatehook.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
@@ -29,6 +30,7 @@
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
+#include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
 #include <vespa/searchlib/transactionlog/translogserverapp.h>
@@ -43,7 +45,6 @@
 #include <vespa/vespalib/util/random.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/fnet/transport.h>
 #ifdef __linux__
 #include <malloc.h>
 #endif
@@ -217,6 +218,7 @@ Proton::Proton(FastOS_ThreadPool & threadPool, FNET_Transport & transport, const
       _metricsHook(std::make_unique<MetricsUpdateHook>(*this)),
       _metricsEngine(std::make_unique<MetricsEngine>()),
       _fileHeaderContext(progName),
+      _attribute_interlock(std::make_shared<search::attribute::Interlock>()),
       _tls(),
       _diskMemUsageSampler(),
       _persistenceEngine(),
@@ -616,6 +618,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
                                   *_tls->getTransLogServer(),
                                   *_metricsEngine,
                                   _fileHeaderContext,
+                                  _attribute_interlock,
                                   std::move(config_store),
                                   initializeThreads,
                                   bootstrapConfig->getHwInfo());

@@ -1,42 +1,43 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/config-bucketspaces.h>
+#include <vespa/config/subscription/sourcespec.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
+#include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/metrics/attribute_metrics.h>
 #include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reprocessing/reprocessingrunner.h>
-#include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/document_subdb_explorer.h>
+#include <vespa/searchcore/proton/server/document_subdb_initializer.h>
 #include <vespa/searchcore/proton/server/emptysearchview.h>
 #include <vespa/searchcore/proton/server/fast_access_document_retriever.h>
 #include <vespa/searchcore/proton/server/i_document_subdb_owner.h>
 #include <vespa/searchcore/proton/server/igetserialnum.h>
 #include <vespa/searchcore/proton/server/minimal_document_retriever.h>
-#include <vespa/searchcore/proton/server/searchabledocsubdb.h>
-#include <vespa/searchcore/proton/server/document_subdb_initializer.h>
 #include <vespa/searchcore/proton/server/reconfig_params.h>
-#include <vespa/searchcore/proton/matching/querylimiter.h>
+#include <vespa/searchcore/proton/server/searchabledocsubdb.h>
 #include <vespa/searchcore/proton/test/test.h>
-#include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
-#include <vespa/vespalib/util/idestructorcallback.h>
+#include <vespa/searchcore/proton/test/transport_helper.h>
+#include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/testclock.h>
-#include <vespa/config/subscription/sourcespec.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 using namespace cloud::config::filedistribution;
 using namespace document;
@@ -200,7 +201,7 @@ MyFastAccessContext::MyFastAccessContext(IThreadingService &writeService,
     : _storeOnlyCtx(writeService, bucketDB, bucketDBHandlerInitializer),
       _attributeMetrics(nullptr),
       _wireService(),
-      _ctx(_storeOnlyCtx._ctx, _attributeMetrics, _wireService)
+      _ctx(_storeOnlyCtx._ctx, _attributeMetrics, _wireService, std::make_shared<search::attribute::Interlock>())
 {}
 MyFastAccessContext::~MyFastAccessContext() = default;
 

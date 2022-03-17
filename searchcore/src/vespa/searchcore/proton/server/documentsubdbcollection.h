@@ -17,6 +17,7 @@ namespace vespalib {
 }
 
 namespace search {
+    namespace attribute { class Interlock; }
     namespace common { class FileHeaderContext; }
     namespace transactionlog { class SyncProxy; }
 }
@@ -28,22 +29,22 @@ namespace searchcorespi {
 
 namespace proton {
 
-class DocumentDBConfig;
-struct DocumentDBTaggedMetrics;
-class MaintenanceController;
-struct MetricsWireService;
-struct IDocumentDBReferenceResolver;
-class IGetSerialNum;
 class DocTypeName;
+class DocumentDBConfig;
+class FeedHandler;
 class HwInfo;
-class IFeedView;
-struct IBucketStateCalculator;
-class IDocumentSubDBOwner;
-class IDocumentSubDB;
 class IDocumentRetriever;
+class IDocumentSubDB;
+class IDocumentSubDBOwner;
+class IFeedView;
+class IGetSerialNum;
+class MaintenanceController;
 class ReconfigParams;
 class RemoveDocumentsOperation;
-class FeedHandler;
+struct DocumentDBTaggedMetrics;
+struct IBucketStateCalculator;
+struct IDocumentDBReferenceResolver;
+struct MetricsWireService;
 
 namespace matching {
     class QueryLimiter;
@@ -88,6 +89,7 @@ public:
             searchcorespi::index::IThreadingService &writeService,
             vespalib::Executor &warmupExecutor,
             const search::common::FileHeaderContext &fileHeaderContext,
+            std::shared_ptr<search::attribute::Interlock> attribute_interlock,
             MetricsWireService &metricsWireService,
             DocumentDBTaggedMetrics &metrics,
             matching::QueryLimiter & queryLimiter,
