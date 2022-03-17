@@ -189,18 +189,21 @@ public class ConvertParsedFields {
         }
         parsed.getRankTypes().forEach((indexName, rankType) -> convertRankType(field, indexName, rankType));
         parsed.getSorting().ifPresent(sortInfo -> convertSorting(field, sortInfo, name));
-        if (parsed.getBolding()) {
+        if (parsed.hasBolding()) {
             // TODO must it be so ugly:
             SummaryField summaryField = field.getSummaryField(name, true);
             summaryField.addSource(name);
             summaryField.addDestination("default");
             summaryField.setTransform(summaryField.getTransform().bold());
         }
-        if (parsed.getLiteral()) {
+        if (parsed.hasLiteral()) {
             field.getRanking().setLiteral(true);
         }
-        if (parsed.getFilter()) {
+        if (parsed.hasFilter()) {
             field.getRanking().setFilter(true);
+        }
+        if (parsed.hasNormal()) {
+            field.getRanking().setNormal(true);
         }
     }
 
