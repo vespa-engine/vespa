@@ -28,7 +28,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.WeightedAliasTarget;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMavenRepository;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
@@ -1106,7 +1105,6 @@ public class ControllerTest {
         DeploymentContext context = tester.newDeploymentContext();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder().region("us-west-1").build();
         TenantAndApplicationId application = TenantAndApplicationId.from(context.instanceId());
-        ((MockMavenRepository) tester.controller().mavenRepository()).addVersion("7.1", "7.2", "8.0");
 
         // No deployments result in system version
         Version version0 = Version.fromString("7.1");
@@ -1126,9 +1124,28 @@ public class ControllerTest {
 
         // A new major is released to the system
         Version version2 = Version.fromString("8.0");
-        tester.controllerTester().upgradeController(version2);
+        tester.controllerTester().upgradeSystem(version2);
+        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.empty()));
+        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.of(8)));
+
+        // The new major is marked as incompatible with older compile versions
+        tester.controllerTester().flagSource().withListFlag(PermanentFlags.INCOMPATIBLE_VERSIONS.id(), List.of("8"), String.class);
+        assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.of(8)));
+
+        // Default major version is set to 8.
+        tester.applications().setTargetMajorVersion(Optional.of(8));
+        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.of(7)));
+        assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.empty()));
+
+        // Application sets target major to 7.
+        tester.applications().lockApplicationOrThrow(application, locked -> tester.applications().store(locked.withMajorVersion(7)));
         assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.empty()));
         assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.of(8)));
+
+        // Application sets target major to 8.
+        tester.applications().lockApplicationOrThrow(application, locked -> tester.applications().store(locked.withMajorVersion(8)));
+        assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.of(7)));
+        assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.empty()));
     }
 
 }

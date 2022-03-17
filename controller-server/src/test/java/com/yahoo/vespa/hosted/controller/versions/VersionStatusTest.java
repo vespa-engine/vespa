@@ -372,10 +372,10 @@ public class VersionStatusTest {
         List<VespaVersion> versions = tester.controller().readVersionStatus().versions();
         assertEquals(List.of("6.2", "6.4", "6.5"), versions.stream().map(version -> version.versionNumber().toString()).collect(Collectors.toList()));
 
-        // Check release status is correct (static data in MockMavenRepository).
+        // Check release status is correct (static data in MockMavenRepository, and upgradeSystem "releases" a version).
         assertTrue(versions.get(0).isReleased());
-        assertFalse(versions.get(1).isReleased());
-        assertFalse(versions.get(2).isReleased());
+        assertFalse(versions.get(1).isReleased()); // tesst quirk: maven repo lost during controller recreation; useful to test status though
+        assertTrue(versions.get(2).isReleased());
     }
 
     @Test

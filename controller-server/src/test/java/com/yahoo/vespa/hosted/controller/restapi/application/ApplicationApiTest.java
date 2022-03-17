@@ -25,6 +25,7 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OAuthCredentials;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -861,6 +862,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // GET compile version for specific major
         deploymentTester.controllerTester().upgradeSystem(Version.fromString("7.0"));
+        deploymentTester.controllerTester().flagSource().withListFlag(PermanentFlags.INCOMPATIBLE_VERSIONS.id(), List.of("*"), String.class);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/compile-version", GET)
                                       .userIdentity(USER_ID).properties(Map.of("allowMajor", "7")),
                               "{\"compileVersion\":\"7.0.0\"}");

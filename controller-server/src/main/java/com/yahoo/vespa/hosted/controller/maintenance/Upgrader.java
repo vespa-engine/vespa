@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
-import com.yahoo.component.VersionCompatibility;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.curator.Lock;
@@ -21,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Random;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
@@ -56,7 +56,7 @@ public class Upgrader extends ControllerMaintainer {
         VersionStatus versionStatus = controller().readVersionStatus();
         cancelBrokenUpgrades(versionStatus);
 
-        Optional<Integer> targetMajorVersion = targetMajorVersion();
+        OptionalInt targetMajorVersion = targetMajorVersion();
         InstanceList instances = instances(controller().systemVersion(versionStatus));
         for (UpgradePolicy policy : UpgradePolicy.values())
             updateTargets(versionStatus, instances, policy, targetMajorVersion);
@@ -83,7 +83,7 @@ public class Upgrader extends ControllerMaintainer {
         }
     }
 
-    private void updateTargets(VersionStatus versionStatus, InstanceList instances, UpgradePolicy policy, Optional<Integer> targetMajorVersion) {
+    private void updateTargets(VersionStatus versionStatus, InstanceList instances, UpgradePolicy policy, OptionalInt targetMajorVersion) {
         InstanceList remaining = instances.with(policy);
         List<Version> targetAndNewer = new ArrayList<>();
         UnaryOperator<InstanceList> cancellationCriterion = policy == UpgradePolicy.canary ? i -> i.not().upgradingTo(targetAndNewer)
@@ -111,7 +111,7 @@ public class Upgrader extends ControllerMaintainer {
     }
 
     private InstanceList eligibleForVersion(InstanceList instances, Version version,
-                                            Optional<Integer> targetMajorVersion) {
+                                            OptionalInt targetMajorVersion) {
         Change change = Change.of(version);
         return instances.not().failingOn(version)
                         .allowingMajorVersion(version.getMajor(), targetMajorVersion.orElse(version.getMajor()))
@@ -158,13 +158,13 @@ public class Upgrader extends ControllerMaintainer {
     }
 
     /** Returns the target major version for applications not specifying one */
-    public Optional<Integer> targetMajorVersion() {
-        return curator.readTargetMajorVersion();
+    public OptionalInt targetMajorVersion() {
+        return controller().applications().targetMajorVersion();
     }
 
     /** Sets the default target major version. Set to empty to determine target version normally (by confidence) */
     public void setTargetMajorVersion(Optional<Integer> targetMajorVersion) {
-        curator.writeTargetMajorVersion(targetMajorVersion);
+        controller().applications().setTargetMajorVersion(targetMajorVersion);
     }
 
     /** Override confidence for given version. This will cause the computed confidence to be ignored */
