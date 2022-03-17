@@ -393,8 +393,10 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                    <source>${target_jdk_version}</source>
-                    <target>${target_jdk_version}</target>
+                    <jdkToolchain>
+                        <version>${target_jdk_version}</version>
+                    </jdkToolchain>
+                    <release>${target_jdk_version}</release>
                     <showWarnings>true</showWarnings>
                     <showDeprecation>true</showDeprecation>
                     <compilerArgs>
