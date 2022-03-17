@@ -8,8 +8,9 @@ ifeq ($(VERSION),)
 	VERSION = $(DEVEL_VERSION)
 endif
 
-BIN ?= $(CURDIR)/bin
-SHARE ?= $(CURDIR)/share
+PREFIX ?= $(CURDIR)
+BIN ?= $(PREFIX)/bin
+SHARE ?= $(PREFIX)/share
 DIST ?= $(CURDIR)/dist
 
 GO_FLAGS := -ldflags "-X github.com/vespa-engine/vespa/client/go/build.Version=$(VERSION)"
