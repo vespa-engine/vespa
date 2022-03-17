@@ -111,17 +111,18 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
         AtomicInteger attempts = new AtomicInteger(0);
         AtomicInteger failures = new AtomicInteger(0);
         for (Application application : applications())
-            application.ownershipIssueId().ifPresent(issueId -> {
-                try {
-                    attempts.incrementAndGet();
-                    Tenant tenant = tenantOf(application.id());
-                    ownershipIssues.ensureResponse(issueId, tenant.contact());
-                }
-                catch (RuntimeException e) {
-                    failures.incrementAndGet();
-                    log.log(Level.INFO, "Exception caught when attempting to escalate issue with id '" + issueId + "': " + Exceptions.toMessageString(e));
-                }
-            });
+            if (isInCurrentShard(application.id()))
+                application.ownershipIssueId().ifPresent(issueId -> {
+                    try {
+                        attempts.incrementAndGet();
+                        Tenant tenant = tenantOf(application.id());
+                        ownershipIssues.ensureResponse(issueId, tenant.contact());
+                    }
+                    catch (RuntimeException e) {
+                        failures.incrementAndGet();
+                        log.log(Level.INFO, "Exception caught when attempting to escalate issue with id '" + issueId + "': " + Exceptions.toMessageString(e));
+                    }
+                });
         return asSuccessFactor(attempts.get(), failures.get());
     }
 
@@ -133,6 +134,7 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
                 .withProductionDeployment()
                 .asList()
                 .stream()
+                .filter(application -> isInCurrentShard(application.id()))
                 .filter(application -> application.ownershipIssueId().isPresent())
                 .forEach(application -> {
                     attempts.incrementAndGet();
