@@ -81,6 +81,8 @@ constexpr vespalib::duration TIMEOUT = 60s;
 
 namespace {
 
+VESPA_THREAD_STACK_TAG(my_executor_init);
+
 void
 sampleThreadId(FastOS_ThreadId *threadId)
 {
@@ -205,11 +207,11 @@ struct MyBucketModifiedHandler : public IBucketModifiedHandler
 
 struct MySessionCachePruner : public ISessionCachePruner
 {
-    bool isInvoked;
+    std::atomic<bool> isInvoked;
     MySessionCachePruner() : isInvoked(false) { }
     void pruneTimedOutSessions(vespalib::steady_time current) override {
         (void) current;
-        isInvoked = true;
+        isInvoked.store(true, std::memory_order_relaxed);
     }
 };
 
@@ -222,7 +224,7 @@ class MyFeedHandler : public IDocumentMoveHandler,
     FastOS_ThreadId                _executorThreadId;
     std::vector<MyDocumentSubDB *> _subDBs;
     SerialNum                      _serialNum;
-    uint32_t                       _heartBeats;
+    std::atomic<uint32_t>          _heartBeats;
 public:
     explicit MyFeedHandler(FastOS_ThreadId &executorThreadId);
 
@@ -246,17 +248,20 @@ public:
     }
 
     uint32_t getHeartBeats() const {
-        return _heartBeats;
+        return _heartBeats.load(std::memory_order_relaxed);
     }
 };
 
-
-class MyExecutor: public vespalib::ThreadStackExecutor
+class MyExecutor : public vespalib::ThreadStackExecutorBase
 {
 public:
     FastOS_ThreadId       _threadId;
 
     MyExecutor();
+    bool acceptNewTask(unique_lock &, std::condition_variable &) override {
+        return isRoomForNewTask();
+    }
+    void wakeup(unique_lock &, std::condition_variable &) override {}
 
     ~MyExecutor() override;
 
@@ -694,7 +699,7 @@ void
 MyFeedHandler::heartBeat()
 {
     assert(isExecutorThread());
-    ++_heartBeats;
+    _heartBeats.store(_heartBeats.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
 }
 
 
@@ -712,16 +717,20 @@ MyFeedHandler::appendOperation(const FeedOperation &op, DoneCallback)
 }
 
 MyExecutor::MyExecutor()
-    : vespalib::ThreadStackExecutor(1, 128_Ki),
-      _threadId()
+  : vespalib::ThreadStackExecutorBase(128_Ki, -1, my_executor_init),
+    _threadId()
 {
+    start(1);
     execute(makeLambdaTask([this]() {
-        sampleThreadId(&_threadId);
-    }));
+                sampleThreadId(&_threadId);
+            }));
     sync();
 }
 
-MyExecutor::~MyExecutor() = default;
+MyExecutor::~MyExecutor()
+{
+    cleanup();
+}
 
 bool
 MyExecutor::isIdle()
@@ -946,17 +955,17 @@ TEST_F("require that heartbeats are scheduled", MaintenanceControllerFixture)
 TEST_F("require that periodic session prunings are scheduled",
        MaintenanceControllerFixture)
 {
-    ASSERT_FALSE(f._gsp.isInvoked);
+    ASSERT_FALSE(f._gsp.isInvoked.load(std::memory_order_relaxed));
     f.notifyClusterStateChanged();
     f.startMaintenance();
     f.setGroupingSessionPruneInterval(200ms);
     for (uint32_t i = 0; i < 600; ++i) {
         std::this_thread::sleep_for(100ms);
-        if (f._gsp.isInvoked) {
+        if (f._gsp.isInvoked.load(std::memory_order_relaxed)) {
             break;
         }
     }
-    ASSERT_TRUE(f._gsp.isInvoked);
+    ASSERT_TRUE(f._gsp.isInvoked.load(std::memory_order_relaxed));
 }
 
 TEST_F("require that a simple maintenance job is executed", MaintenanceControllerFixture)
