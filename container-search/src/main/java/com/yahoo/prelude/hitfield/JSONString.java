@@ -180,6 +180,7 @@ public class JSONString implements Inspectable {
             return renderTarget;
         }
 
+        @Deprecated // TODO: Remove on Vespa 8
         public static StringBuilder renderStruct(StringBuilder renderTarget, JSONObject object, int nestingLevel) {
             StructureFieldRenderer.renderStructure(renderTarget, object, nestingLevel + 1);
             indent(renderTarget, nestingLevel);
@@ -191,7 +192,8 @@ public class JSONString implements Inspectable {
         public abstract void closeTag(StringBuilder renderTarget, int nestingLevel, String closing);
 
         /** Returns a value from an object, or null if not found */
-        protected static Object get(String field,JSONObject source) {
+        @Deprecated // TODO: Remove on Vespa 8
+        protected static Object get(String field, JSONObject source) {
             try {
                 return source.get(field);
             }
@@ -210,7 +212,7 @@ public class JSONString implements Inspectable {
             } else if (value.getClass() == JSONObject.class) {
                 renderStruct(renderTarget, (JSONObject) value, nestingLevel);
             } else {
-                renderTarget.append(value.toString());
+                renderTarget.append(value);
             }
         }
 
@@ -246,14 +248,14 @@ public class JSONString implements Inspectable {
             renderTarget.append('\n');
             indent(renderTarget, nestingLevel);
             renderTarget.append("<item><key>");
-            renderValue(get("key",object), renderTarget, nestingLevel);
+            renderValue(get("key", object), renderTarget, nestingLevel);
             renderTarget.append("</key><value>");
-            renderValue(get("value",object), renderTarget, nestingLevel);
+            renderValue(get("value", object), renderTarget, nestingLevel);
             renderTarget.append("</value></item>");
         }
 
         /** Returns a value from an array, or null if it does not exist */
-        private static Object get(int index,JSONArray source) {
+        private static Object get(int index, JSONArray source) {
             try {
                 return source.get(index);
             }
@@ -279,8 +281,8 @@ public class JSONString implements Inspectable {
         public static void renderStructure(StringBuilder renderTarget, JSONObject structure, int nestingLevel) {
             for (Iterator<?> i = structure.keys(); i.hasNext();) {
                 String key = (String) i.next();
-                Object value=get(key,structure);
-                if (value==null) continue;
+                Object value = get(key, structure);
+                if (value == null) continue;
                 renderTarget.append('\n');
                 indent(renderTarget, nestingLevel);
                 renderTarget.append("<struct-field name=\"").append(key).append("\">");
