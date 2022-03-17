@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.derived;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.document.ReferenceDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.searchdefinition.Application;
 import com.yahoo.searchdefinition.Schema;
@@ -27,7 +27,7 @@ public class VsmFieldsTestCase {
         Schema schema = new Schema("test", MockApplicationPackage.createEmpty(), new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
         var sdoc = new SDDocumentType("test");
         schema.addDocument(sdoc);
-        SDField refField = new TemporarySDField(sdoc, "ref_field", ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create("parent_type")));
+        SDField refField = new TemporarySDField(sdoc, "ref_field", NewDocumentReferenceDataType.forDocumentName("parent_type"));
         refField.parseIndexingScript("{ summary }");
         schema.getDocument().addField(refField);
 

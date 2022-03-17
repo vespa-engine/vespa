@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
-import com.yahoo.document.ReferenceDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.TemporaryImportedField;
@@ -31,7 +31,7 @@ public class ImportedFieldsEnumeratorTest {
         Schema fooSchema = new Schema(FOO, MockApplicationPackage.createEmpty());
         /*
         SDField fooRefToParent = new SDField(
-                "foo_ref", ReferenceDataType.createWithInferredId(parentDocument.getDocumentType()));
+                "foo_ref", NewDocumentReferenceDataType.createWithInferredId(parentDocument.getDocumentType()));
         AttributeUtils.addAttributeAspect(fooRefToParent);
         */
         var fooImports = fooSchema.temporaryImportedFields().get();
@@ -44,7 +44,7 @@ public class ImportedFieldsEnumeratorTest {
         Schema barSchema = new Schema(BAR, MockApplicationPackage.createEmpty());
         /*
         SDField barRefToParent = new SDField(
-                "bar_ref", ReferenceDataType.createWithInferredId(parentDocument.getDocumentType()));
+                "bar_ref", NewDocumentReferenceDataType.createWithInferredId(parentDocument.getDocumentType()));
         AttributeUtils.addAttributeAspect(barRefToParent);
         */
         var barImports = barSchema.temporaryImportedFields().get();

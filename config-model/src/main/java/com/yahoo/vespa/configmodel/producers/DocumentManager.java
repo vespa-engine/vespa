@@ -7,6 +7,7 @@ import com.yahoo.document.*;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.documentmodel.DataTypeCollection;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.VespaDocumentType;
 import com.yahoo.searchdefinition.document.FieldSet;
@@ -172,8 +173,11 @@ public class DocumentManager {
             // Nothing to do; the type of the tensor is instead stored in each field as detailed type information
             // to provide better compatibility. A tensor field can have its tensorType changed (in compatible ways)
             // without changing the field type and thus requiring data refeed
-        } else if (type instanceof ReferenceDataType) {
-            ReferenceDataType refType = (ReferenceDataType) type;
+        } else if (type instanceof NewDocumentReferenceDataType) {
+            NewDocumentReferenceDataType refType = (NewDocumentReferenceDataType) type;
+            if (refType.isTemporary()) {
+                throw new IllegalArgumentException("Still temporary: " + refType);
+            }
             builder.referencetype(new Datatype.Referencetype.Builder().target_type_id(refType.getTargetType().getId()));
         } else {
             throw new IllegalArgumentException("Can not create config for data type " + type + " of class " + type.getClass());
@@ -356,8 +360,12 @@ public class DocumentManager {
             docTypeBuildOneType((AnnotationReferenceDataType) type, documentBuilder, indexMap);
         } else if (type instanceof TensorDataType) {
             docTypeBuildOneType((TensorDataType) type, documentBuilder, indexMap);
-        } else if (type instanceof ReferenceDataType) {
-            docTypeBuildOneType((ReferenceDataType) type, documentBuilder, indexMap);
+        } else if (type instanceof NewDocumentReferenceDataType) {
+            var refType = (NewDocumentReferenceDataType) type;
+            if (refType.isTemporary()) {
+                throw new IllegalArgumentException("Still temporary: " + refType);
+            }
+            docTypeBuildOneType(refType, documentBuilder, indexMap);
         } else if (type instanceof PrimitiveDataType) {
             docTypeBuildOneType((PrimitiveDataType) type, documentBuilder, indexMap);
         } else if (type instanceof DocumentType) {
@@ -465,7 +473,7 @@ public class DocumentManager {
                               .annotationtype(indexMap.idxOf(type.getAnnotationType())));
     }
 
-    private void docTypeBuildOneType(ReferenceDataType type,
+    private void docTypeBuildOneType(NewDocumentReferenceDataType type,
                                      DocumentmanagerConfig.Doctype.Builder builder,
                                      IdxMap indexMap)
     {

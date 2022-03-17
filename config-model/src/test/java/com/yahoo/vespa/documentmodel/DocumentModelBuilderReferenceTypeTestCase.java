@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.documentmodel;
 
-import com.yahoo.document.ReferenceDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -51,7 +51,7 @@ public class DocumentModelBuilderReferenceTypeTestCase extends AbstractReference
                 "}"));
         NewDocumentType campaignType = model.getDocumentManager().getDocumentType("campaign");
         NewDocumentType adType = model.getDocumentManager().getDocumentType("ad");
-        ReferenceDataType campaignRefType = (ReferenceDataType) adType.getField("campaign_ref").getDataType();
+        NewDocumentReferenceDataType campaignRefType = (NewDocumentReferenceDataType) adType.getField("campaign_ref").getDataType();
         assertEquals(campaignRefType.getTargetType(), campaignType);
     }
 

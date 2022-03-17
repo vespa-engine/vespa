@@ -7,7 +7,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
-import com.yahoo.document.ReferenceDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.StructuredDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
@@ -304,8 +304,8 @@ public class DocumentModelBuilder {
                 type = new WeightedSetDataType(nt, c, r, t.getId());
             }
         }
-        else if (type instanceof ReferenceDataType) {
-            ReferenceDataType t = (ReferenceDataType) type;
+        else if (type instanceof NewDocumentReferenceDataType) {
+            var t = (NewDocumentReferenceDataType) type;
             var tt = t.getTargetType();
             var doc = getDocumentType(docs, tt.getId());
             type = doc.getReferenceDataType();

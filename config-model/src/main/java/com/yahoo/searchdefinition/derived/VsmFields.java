@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.derived;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.NumericDataType;
-import com.yahoo.document.ReferenceDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.PredicateFieldValue;
@@ -214,7 +214,7 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
                 return Type.UNSEARCHABLESTRING;
             } else if (fieldType instanceof CollectionDataType) {
                 return convertType(((CollectionDataType) fieldType).getNestedType());
-            } else if (fieldType instanceof ReferenceDataType) {
+            } else if (fieldType instanceof NewDocumentReferenceDataType) {
                 return Type.UNSEARCHABLESTRING;
             } else {
                 throw new IllegalArgumentException("Don't know which streaming field type to convert " +

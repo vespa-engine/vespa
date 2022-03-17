@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.document.ReferenceDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDField;
@@ -36,14 +36,14 @@ public class ReferenceFieldsProcessor extends Processor {
     private void clearSummaryAttributeAspectForExplicitSummaryFields() {
         for (DocumentSummary docSum : schema.getSummaries().values()) {
             docSum.getSummaryFields().values().stream()
-                    .filter(summaryField  -> summaryField.getDataType() instanceof ReferenceDataType)
+                    .filter(summaryField  -> summaryField.getDataType() instanceof NewDocumentReferenceDataType)
                     .forEach(summaryField -> summaryField.setTransform(SummaryTransform.NONE));
         }
     }
 
     private void clearSummaryAttributeAspectForConcreteFields() {
         for (SDField field : schema.allConcreteFields()) {
-            if (field.getDataType() instanceof ReferenceDataType) {
+            if (field.getDataType() instanceof NewDocumentReferenceDataType) {
                 removeFromAttributePrefetchSummaryClass(field);
                 clearSummaryTransformOnSummaryFields(field);
             }

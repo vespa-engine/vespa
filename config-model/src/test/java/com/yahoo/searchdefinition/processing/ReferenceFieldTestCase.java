@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
-import com.yahoo.document.ReferenceDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.searchdefinition.DocumentGraphValidator;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.ApplicationBuilder;
@@ -106,8 +106,8 @@ public class ReferenceFieldTestCase {
         Field field = documentType.getDocumentType().getField(expectedFieldname);
         assertNotNull("Field does not exist in document type: " + expectedFieldname, field);
         DataType dataType = field.getDataType();
-        assertTrue(dataType instanceof ReferenceDataType);
-        ReferenceDataType refField = (ReferenceDataType) dataType;
+        assertTrue(dataType instanceof NewDocumentReferenceDataType);
+        NewDocumentReferenceDataType refField = (NewDocumentReferenceDataType) dataType;
         assertEquals(referencedDocType, refField.getTargetType().getName());
     }
 

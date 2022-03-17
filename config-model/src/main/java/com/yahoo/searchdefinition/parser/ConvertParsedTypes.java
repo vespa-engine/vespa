@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.parser;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.document.ReferenceDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.document.WeightedSetDataType;
@@ -244,7 +244,7 @@ public class ConvertParsedTypes {
     private DataType createDocRef(ParsedType pType) {
         var ref = pType.getReferencedDocumentType();
         assert(ref.getVariant() == ParsedType.Variant.DOCUMENT);
-        return ReferenceDataType.createWithInferredId(findDocFromSchemas(ref.name()));
+        return new NewDocumentReferenceDataType(findDocFromSchemas(ref.name()));
     }
 
     private DataType resolveFromContext(ParsedType pType, ParsedDocument context) {

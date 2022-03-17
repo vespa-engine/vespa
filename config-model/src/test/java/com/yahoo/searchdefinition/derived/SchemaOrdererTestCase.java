@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.document.ReferenceDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.DocumentReferences;
@@ -92,7 +92,7 @@ public class SchemaOrdererTestCase extends AbstractSchemaTestCase {
     @SuppressWarnings("deprecation")
     private static void createDocumentReference(Schema from, Schema to, String refFieldName) {
         SDDocumentType fromDocument = from.getDocument();
-        SDField refField = new TemporarySDField(fromDocument, refFieldName, ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create(to.getName())));
+        SDField refField = new TemporarySDField(fromDocument, refFieldName, NewDocumentReferenceDataType.forDocumentName(to.getName()));
         fromDocument.addField(refField);
         Map<String, DocumentReference> originalMap = fromDocument.getDocumentReferences().get().referenceMap();
         HashMap<String, DocumentReference> modifiedMap = new HashMap<>(originalMap);

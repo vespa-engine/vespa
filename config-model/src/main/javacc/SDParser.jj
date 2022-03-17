@@ -848,6 +848,7 @@ DataType dataType() :
     DataType wsetType = null;
     TensorType tensorType;
     TemporaryStructuredDataType referenceType;
+    String referencedDoc;
 }
 {
     (   LOOKAHEAD(<ARRAY> <LESSTHAN>)               ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN> { return DataType.getArray(arrayType); } )
@@ -855,7 +856,7 @@ DataType dataType() :
       | LOOKAHEAD(<MAP> <LESSTHAN>)                 ( mapType = mapDataType() { return mapType; } )
       | LOOKAHEAD(<ANNOTATIONREFERENCE> <LESSTHAN>) ( mapType = annotationRefDataType() { return mapType; } )
       | LOOKAHEAD(<TENSOR_TYPE>)                    ( tensorType = tensorType("Field type") { return DataType.getTensor(tensorType); } )
-      | LOOKAHEAD(<REFERENCE>)                      ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> { return ReferenceDataType.createWithInferredId(referenceType); } )
+      | LOOKAHEAD(<REFERENCE>)                      ( <REFERENCE> <LESSTHAN> referencedDoc = identifier() <GREATERTHAN> { return NewDocumentReferenceDataType.forDocumentName(referencedDoc); } )
       | ( typeName = identifier() ["[]" { isArrayOldStyle = true; }] )
     )
     {
@@ -873,17 +874,6 @@ DataType dataType() :
         }
         if ("tag".equalsIgnoreCase(typeName) && type instanceof WeightedSetDataType) ((WeightedSetDataType)type).setTag(true);
         return type;
-    }
-}
-
-TemporaryStructuredDataType referenceType() :
-{
-    String documentName;
-}
-{
-    ( documentName = identifier() )
-    {
-        return TemporaryStructuredDataType.create(documentName);
     }
 }
 

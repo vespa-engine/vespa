@@ -7,7 +7,7 @@ import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
-import com.yahoo.document.ReferenceDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
@@ -68,7 +68,7 @@ public class SearchDataTypeValidator extends Validator {
             return true; // Maps will work for summary, see disallowIndexingOfMaps()
         } else if (dataType instanceof TensorDataType) {
             return true;
-        } else if (dataType instanceof ReferenceDataType) {
+        } else if (dataType instanceof NewDocumentReferenceDataType) {
             return true;
         } else {
             return dataType.equals(DataType.INT) ||
