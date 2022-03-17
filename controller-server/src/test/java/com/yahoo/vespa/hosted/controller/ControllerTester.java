@@ -274,6 +274,7 @@ public final class ControllerTester {
 
     /** Upgrade entire system to given version */
     public void upgradeSystem(Version version) {
+        ((MockMavenRepository) controller.mavenRepository()).addVersion(version);
         upgradeController(version);
         upgradeSystemApplications(version);
     }

@@ -90,6 +90,7 @@ import java.util.OptionalInt;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -97,10 +98,12 @@ import java.util.stream.Collectors;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
+import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.low;
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * A singleton owned by the Controller which contains the methods and state for controlling applications.
@@ -310,36 +313,76 @@ public class ApplicationController {
     }
 
     /**
-     * Returns a non-broken, released version at least as old as the oldest platform the given application is on.
+     * Returns the preferred Vespa version to compile against, for the given application, on an optionally restricted major.
      *
-     * If no known version is applicable, the newest version at least as old as the oldest platform is selected,
-     * among all versions released for this system. If no such versions exists, throws an IllegalStateException.
+     * A target major may be specified as an argument; or it may be set specifically for the application;
+     * or in general, for all applications; the first such specification wins.
      *
-     * If a non-empty wantedMajor is given, return a version within that major if such version is exists in this system.
+     * The returned version is not newer than the oldest deployed platform for the application, unless
+     * the target major differs from the oldest deployed platform, in which case it is not newer than
+     * the oldest available platform version on that major instead.
+     *
+     * The returned version is compatible with a platform version available in the system.
+     *
+     * A candidate is sought first among versions with non-broken confidence, then among those with forgotten confidence.
+     *
+     * The returned version is the latest in the relevant candidate set.
+     *
+     * If no such version exists, an {@link IllegalArgumentException} is thrown.
      */
     public Version compileVersion(TenantAndApplicationId id, OptionalInt wantedMajor) {
-        Version oldestPlatform = oldestInstalledPlatform(id);
-        VersionStatus versionStatus = controller.readVersionStatus();
-        Set<Version> versionsInSystem = versionStatus.versions().stream()
-                                                     .map(VespaVersion::versionNumber)
-                                                     .collect(Collectors.toSet());
-        Version compileVersion = versionStatus.versions().stream()
-                                              .filter(version -> version.confidence().equalOrHigherThan(VespaVersion.Confidence.low))
-                                              .filter(VespaVersion::isReleased)
-                                              .map(VespaVersion::versionNumber)
-                                              .filter(version -> !version.isAfter(oldestPlatform))
-                                              .max(Comparator.naturalOrder())
-                                              .orElseGet(() -> publishedVersionNotAfter(oldestPlatform, versionsInSystem));
+
+        // Read version status, and pick out target platforms we could run the compiled package on.
         OptionalInt targetMajor = firstNonEmpty(wantedMajor, requireApplication(id).majorVersion(), targetMajorVersion());
-        if (targetMajor.isPresent() && compileVersion.getMajor() != targetMajor.getAsInt()) {
-            // Choose the oldest version matching wanted major so that the returned version is stable in the transition
-            // to next major
-            Optional<Version> versionMatchingMajor = versionsInSystem.stream()
-                                                                     .filter(version -> version.getMajor() == targetMajor.getAsInt())
-                                                                     .min(Comparator.naturalOrder());
-            return versionMatchingMajor.orElse(compileVersion);
-        }
-        return compileVersion;
+        VersionStatus versionStatus = controller.readVersionStatus();
+        Version systemVersion = controller.systemVersion(versionStatus);
+        Version oldestInstalledPlatform = oldestInstalledPlatform(id);
+
+        // Target platforms are all versions not older than the oldest installed platform, unless forcing a major version change.
+        Predicate<Version> isTargetPlatform = targetMajor.isEmpty() || targetMajor.getAsInt() == oldestInstalledPlatform.getMajor()
+                                              ? version -> ! version.isBefore(oldestInstalledPlatform)
+                                              : version -> targetMajor.getAsInt() == version.getMajor();
+        Set<Version> platformVersions = versionStatus.versions().stream()
+                                                     .map(VespaVersion::versionNumber)
+                                                     .filter(version -> ! version.isAfter(systemVersion))
+                                                     .filter(isTargetPlatform)
+                                                     .collect(toSet());
+        if (platformVersions.isEmpty())
+            throw new IllegalArgumentException("this system has no available versions" +
+                                               (targetMajor.isPresent() ? " on specified major: " + targetMajor.getAsInt() : ""));
+
+        // The returned compile version must be compatible with at least one target platform.
+        // If it is incompatible with any of the current platforms, the system will trigger a platform change.
+        // The returned compile version should also be at least as old as both the oldest target platform version,
+        // and the oldest current platform, unless the two are incompatible, in which case only the target matters.
+        VersionCompatibility compatibility = versionCompatibility(id.defaultInstance()); // Wrong id level >_<
+        Version oldestTargetPlatform = platformVersions.stream().min(naturalOrder()).get();
+        Version newestVersion =    compatibility.accept(oldestInstalledPlatform, oldestTargetPlatform)
+                                && oldestInstalledPlatform.isBefore(oldestTargetPlatform)
+                                ? oldestInstalledPlatform
+                                : oldestTargetPlatform;
+        Predicate<Version> systemCompatible = version ->    ! version.isAfter(newestVersion)
+                                                         &&   platformVersions.stream().anyMatch(platform -> compatibility.accept(platform, version));
+
+        // Find the newest, system-compatible version with non-broken confidence.
+        Optional<Version> nonBroken = versionStatus.versions().stream()
+                                                   .filter(VespaVersion::isReleased)
+                                                   .filter(version -> version.confidence().equalOrHigherThan(low))
+                                                   .map(VespaVersion::versionNumber)
+                                                   .filter(systemCompatible)
+                                                   .max(naturalOrder());
+        if (nonBroken.isPresent()) return nonBroken.get();
+
+        // Fall back to the newest, system-compatible version with unknown confidence.
+        Set<Version> knownVersions = versionStatus.versions().stream().map(VespaVersion::versionNumber).collect(toSet());
+        Optional<Version> unknown = controller.mavenRepository().metadata().versions().stream()
+                                              .filter(version -> ! knownVersions.contains(version))
+                                              .filter(systemCompatible)
+                                              .max(naturalOrder());
+        if (unknown.isPresent()) return unknown.get();
+
+        throw new IllegalArgumentException("no suitable, released compile version exists" +
+                                           (targetMajor.isPresent() ? " for specified major: " + targetMajor.getAsInt() : ""));
     }
 
     private OptionalInt firstNonEmpty(OptionalInt... choices) {
@@ -348,16 +391,6 @@ public class ApplicationController {
                 return choice;
 
         return OptionalInt.empty();
-    }
-
-    /** Returns a version that is published to a Maven repository not older than oldestPlatform and known by the system */
-    private Version publishedVersionNotAfter(Version oldestPlatform, Set<Version> versionsInSystem) {
-        return controller.mavenRepository().metadata().versions().stream()
-                         .filter(version -> !version.isAfter(oldestPlatform))
-                         .filter(versionsInSystem::contains)
-                         .max(Comparator.naturalOrder())
-                         .orElseThrow(() -> new IllegalStateException("No available releases of " +
-                                                                      controller.mavenRepository().artifactId()));
     }
 
     /**

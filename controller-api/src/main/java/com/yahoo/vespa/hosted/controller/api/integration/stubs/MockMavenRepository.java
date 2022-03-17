@@ -26,11 +26,8 @@ public class MockMavenRepository implements MavenRepository {
                                 Version.fromString("6.2")));
     }
 
-    public MockMavenRepository addVersion(String... versions) {
-        for (var version : versions) {
-            this.versions.add(Version.fromString(version));
-        }
-        return this;
+    public void addVersion(Version version) {
+        versions.add(version);
     }
 
     @Override
