@@ -19,9 +19,17 @@ using namespace search::streaming;
 #endif
 #endif
 
+#ifndef __SANITIZE_THREAD__
+#if defined(__has_feature)
+#if __has_feature(thread_sanitizer)
+#define __SANITIZE_THREAD__
+#endif
+#endif
+#endif
+
 namespace {
 
-void setMaxStackSize(rlim_t maxStackSize)
+[[maybe_unused]] void setMaxStackSize(rlim_t maxStackSize)
 {
     struct rlimit limit;
     getrlimit(RLIMIT_STACK, &limit);
@@ -35,11 +43,15 @@ void setMaxStackSize(rlim_t maxStackSize)
 // NOTE: This test explicitly sets thread stack size and will fail due to
 // a stack overflow if the stack usage increases.
 TEST("testveryLongQueryResultingInBug6850778") {
-    const uint32_t NUMITEMS=20000;
+    uint32_t NUMITEMS=20000;
 #ifdef __SANITIZE_ADDRESS__
     setMaxStackSize(12_Mi);
 #else
+#ifdef __SANITIZE_THREAD__
+    NUMITEMS = 10000;
+#else
     setMaxStackSize(4_Mi);
+#endif
 #endif
     QueryBuilder<SimpleQueryNodeTypes> builder;
     for (uint32_t i=0; i <= NUMITEMS; i++) {
