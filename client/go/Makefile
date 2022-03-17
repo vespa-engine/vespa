@@ -9,6 +9,8 @@ ifeq ($(VERSION),)
 endif
 
 PREFIX ?= $(CURDIR)
+BIN ?= $(PREFIX)/bin
+SHARE ?= $(PREFIX)/share
 DIST ?= $(CURDIR)/dist
 
 GO_FLAGS := -ldflags "-X github.com/vespa-engine/vespa/client/go/build.Version=$(VERSION)"
@@ -109,16 +111,17 @@ ifdef CI
 endif
 
 install: ci
-	env GOBIN=$(PREFIX)/bin go install $(GO_FLAGS) ./...
+	env GOBIN=$(BIN) go install $(GO_FLAGS) ./...
 
 manpages: install
-	mkdir -p $(PREFIX)/share/man/man1
-	$(PREFIX)/bin/vespa man $(PREFIX)/share/man/man1
+	mkdir -p $(SHARE)/man/man1
+	$(BIN)/vespa man $(SHARE)/man/man1
 
 clean:
 	rm -rf $(DIST)
-	rm -f $(PREFIX)/bin/vespa $(PREFIX)/share/man/man1/vespa.1 $(PREFIX)/share/man/man1/vespa-*.1
-	rmdir -p $(PREFIX)/bin $(PREFIX)/share/man/man1 &> /dev/null || true
+	rm -f $(BIN)/vespa $(SHARE)/man/man1/vespa.1 $(SHARE)/man/man1/vespa-*.1
+	rmdir -p $(BIN) &> /dev/null || true
+	rmdir -p $(SHARE)/man/man1 &> /dev/null || true
 
 test: ci
 	go test ./...
