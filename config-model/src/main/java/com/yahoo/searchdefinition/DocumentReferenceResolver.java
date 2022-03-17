@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.document.Field;
-import com.yahoo.document.ReferenceDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 
@@ -16,7 +16,7 @@ import static java.util.stream.Collectors.toMap;
 /**
  * Resolves all document references in the search definitions
  *
- * Iterates through all document fields having a {@link ReferenceDataType} and uses {@link ReferenceDataType#getTargetType()}
+ * Iterates through all document fields having a {@link NewDocumentReferenceDataType} and uses {@link NewDocumentReferenceDataType#getTargetType()}
  * to determine the referenced document. This information is aggregated into a {@link DocumentReferences} object.
  *
  * @author bjorncs
@@ -50,7 +50,7 @@ public class DocumentReferenceResolver {
 
     private Map<String, DocumentReference> createFieldToDocumentReferenceMapping(SDDocumentType documentType) {
         return fieldStream(documentType)
-                .filter(field -> field.getDataType() instanceof ReferenceDataType)
+                .filter(field -> field.getDataType() instanceof NewDocumentReferenceDataType)
                 .collect(toMap(Field::getName, this::createDocumentReference));
     }
 
@@ -61,7 +61,7 @@ public class DocumentReferenceResolver {
                             "The field '%s' is an invalid document reference. The field must be an attribute.",
                             field.getName()));
         }
-        ReferenceDataType reference = (ReferenceDataType) field.getDataType();
+        NewDocumentReferenceDataType reference = (NewDocumentReferenceDataType) field.getDataType();
         String targetDocumentName = getTargetDocumentName(reference);
         Schema schema = schemaMapping.get(targetDocumentName);
         if (schema == null) {
@@ -87,7 +87,7 @@ public class DocumentReferenceResolver {
         return documentType.getDocumentType().getFields().stream();
     }
 
-    private static String getTargetDocumentName(ReferenceDataType reference) {
+    private static String getTargetDocumentName(NewDocumentReferenceDataType reference) {
         return reference.getTargetType().getName();
     }
 

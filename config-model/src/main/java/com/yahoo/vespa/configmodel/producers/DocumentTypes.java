@@ -6,6 +6,7 @@ import com.yahoo.document.config.DocumenttypesConfig;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.documentmodel.DataTypeCollection;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.VespaDocumentType;
 import com.yahoo.searchdefinition.document.FieldSet;
@@ -125,8 +126,12 @@ public class DocumentTypes {
                 // to provide better compatibility. A tensor field can have its tensorType changed (in compatible ways)
                 // without changing the field type and thus requiring data refeed
                 return;
-            } else if (type instanceof ReferenceDataType) {
-                buildConfig((ReferenceDataType) type, documentBuilder);
+            } else if (type instanceof NewDocumentReferenceDataType) {
+                var refType = (NewDocumentReferenceDataType) type;
+                if (refType.isTemporary()) {
+                    throw new IllegalArgumentException("Still temporary: " + refType);
+                }
+                buildConfig(refType, documentBuilder);
                 return;
             } else {
                 return;
@@ -213,9 +218,9 @@ public class DocumentTypes {
                                 id(type.getAnnotationType().getId())));
     }
 
-    private void buildConfig(ReferenceDataType type,
+    private void buildConfig(NewDocumentReferenceDataType type,
                              DocumenttypesConfig.Documenttype.Builder documentBuilder) {
-        ReferenceDataType refType = type;
+        NewDocumentReferenceDataType refType = type;
         DocumenttypesConfig.Documenttype.Referencetype.Builder refBuilder =
                 new DocumenttypesConfig.Documenttype.Referencetype.Builder();
         refBuilder.id(refType.getId());

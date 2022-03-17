@@ -8,7 +8,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.PositionDataType;
-import com.yahoo.document.ReferenceDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.StructuredDataType;
 import com.yahoo.document.TensorDataType;
@@ -939,7 +939,7 @@ public class DocumentGenMojo extends AbstractMojo {
         if (dt instanceof ArrayDataType) return "java.util.List<"+toJavaType(((ArrayDataType)dt).getNestedType())+">";
         if (dt instanceof MapDataType) return "java.util.Map<"+toJavaType(((MapDataType)dt).getKeyType())+","+toJavaType(((MapDataType)dt).getValueType())+">";
         if (dt instanceof AnnotationReferenceDataType) return className(((AnnotationReferenceDataType) dt).getAnnotationType().getName());
-        if (dt instanceof ReferenceDataType) {
+        if (dt instanceof NewDocumentReferenceDataType) {
             return "com.yahoo.document.DocumentId";
         }
         if (dt instanceof TensorDataType) {
@@ -971,10 +971,10 @@ public class DocumentGenMojo extends AbstractMojo {
         // For annotation references and generated types, the references are to the actual objects of the correct types, so most likely this is never needed,
         // but there might be scenarios where we want to look up the AnnotationType in the AnnotationTypeRegistry here instead.
         if (dt instanceof AnnotationReferenceDataType) return "new com.yahoo.document.annotation.AnnotationReferenceDataType(new com.yahoo.document.annotation.AnnotationType(\""+((AnnotationReferenceDataType)dt).getAnnotationType().getName()+"\"))";
-        if (dt instanceof ReferenceDataType) {
+        if (dt instanceof NewDocumentReferenceDataType) {
             // All concrete document types have a public `type` constant with their DocumentType.
             return String.format("new com.yahoo.document.ReferenceDataType(%s.type, %d)",
-                    className(((ReferenceDataType) dt).getTargetType().getName()), dt.getId());
+                    className(((NewDocumentReferenceDataType) dt).getTargetType().getName()), dt.getId());
         }
         if (dt instanceof TensorDataType) {
             return String.format("new com.yahoo.document.TensorDataType(com.yahoo.tensor.TensorType.fromSpec(\"%s\"))",

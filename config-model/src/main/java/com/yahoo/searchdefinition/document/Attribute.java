@@ -6,7 +6,7 @@ import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.PrimitiveDataType;
-import com.yahoo.document.ReferenceDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.document.StructuredDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.document.TensorDataType;
@@ -255,6 +255,11 @@ public final class Attribute implements Cloneable, Serializable {
 
     /** Converts to the right attribute type from a field datatype */
     public static Type convertDataType(DataType fieldType) {
+        if (fieldType instanceof NewDocumentReferenceDataType) {
+            return Type.REFERENCE;
+        } else if (fieldType instanceof CollectionDataType) {
+            return convertDataType(((CollectionDataType) fieldType).getNestedType());
+        }
         FieldValue fval = fieldType.createFieldValue();
         if (fval instanceof StringFieldValue) {
             return Type.STRING;
@@ -278,13 +283,9 @@ public final class Attribute implements Cloneable, Serializable {
             return Type.PREDICATE;
         } else if (fval instanceof TensorFieldValue) {
             return Type.TENSOR;
-        } else if (fieldType instanceof CollectionDataType) {
-            return convertDataType(((CollectionDataType) fieldType).getNestedType());
-        } else if (fieldType instanceof ReferenceDataType) {
-            return Type.REFERENCE;
         } else {
-            throw new IllegalArgumentException("Don't know which attribute type to " +
-                                               "convert " + fieldType + " to");
+            throw new IllegalArgumentException("Don't know which attribute type to convert "
+                                               + fieldType + " [" + fieldType.getClass() + "] to");
         }
     }
 
@@ -298,7 +299,7 @@ public final class Attribute implements Cloneable, Serializable {
             return CollectionType.SINGLE;
         } else if (fieldType instanceof PrimitiveDataType) {
             return CollectionType.SINGLE;
-        } else if (fieldType instanceof ReferenceDataType) {
+        } else if (fieldType instanceof NewDocumentReferenceDataType) {
             return CollectionType.SINGLE;
         } else {
             throw new IllegalArgumentException("Field " + fieldType + " not supported in convertCollectionType");
@@ -312,9 +313,9 @@ public final class Attribute implements Cloneable, Serializable {
 
     private static Optional<StructuredDataType> convertTargetType(DataType fieldType) {
         return Optional.of(fieldType)
-                .filter(ReferenceDataType.class::isInstance)
-                .map(ReferenceDataType.class::cast)
-                .map(ReferenceDataType::getTargetType);
+                .filter(NewDocumentReferenceDataType.class::isInstance)
+                .map(NewDocumentReferenceDataType.class::cast)
+                .map(NewDocumentReferenceDataType::getTargetType);
     }
 
     /** Converts to the right field type from an attribute type */
@@ -342,9 +343,9 @@ public final class Attribute implements Cloneable, Serializable {
         }
         StructuredDataType type = referenceDocumentType.get();
         if (type instanceof DocumentType) {
-            return ReferenceDataType.createWithInferredId((DocumentType) type);
+            return new NewDocumentReferenceDataType((DocumentType) type);
         } else {
-            return ReferenceDataType.createWithInferredId((TemporaryStructuredDataType) type);
+            return NewDocumentReferenceDataType.forDocumentName(type.getName());
         }
     }
 

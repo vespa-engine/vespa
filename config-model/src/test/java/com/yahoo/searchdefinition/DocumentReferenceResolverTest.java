@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
-import com.yahoo.document.ReferenceDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
@@ -41,7 +41,7 @@ public class DocumentReferenceResolverTest {
         Schema fooSchema = new Schema(FOO, MockApplicationPackage.createEmpty());
         SDDocumentType fooDocument = new SDDocumentType("foo", fooSchema);
         SDField fooRefToBarField = new SDField
-            (fooDocument, "bar_ref", ReferenceDataType.createWithInferredId(barDocument.getDocumentType()));
+            (fooDocument, "bar_ref", new NewDocumentReferenceDataType(barDocument.getDocumentType()));
         AttributeUtils.addAttributeAspect(fooRefToBarField);
         SDField irrelevantField = new SDField(fooDocument, "irrelevant_stuff", DataType.INT);
         fooDocument.addField(fooRefToBarField);
@@ -66,7 +66,7 @@ public class DocumentReferenceResolverTest {
         SDDocumentType fooDocument = new SDDocumentType("foo", fooSchema);
         SDField fooRefToBarField = new SDField(
                 fooDocument,
-                "bar_ref", ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create("bar")));
+                "bar_ref", NewDocumentReferenceDataType.forDocumentName("bar"));
         AttributeUtils.addAttributeAspect(fooRefToBarField);
         fooDocument.addField(fooRefToBarField);
         fooSchema.addDocument(fooDocument);
@@ -90,7 +90,7 @@ public class DocumentReferenceResolverTest {
         Schema fooSchema = new Schema(FOO, MockApplicationPackage.createEmpty());
         SDDocumentType fooDocument = new SDDocumentType("foo", fooSchema);
         SDField fooRefToBarField = new SDField
-            (fooDocument, "bar_ref", ReferenceDataType.createWithInferredId(barDocument.getDocumentType()));
+            (fooDocument, "bar_ref", new NewDocumentReferenceDataType(barDocument.getDocumentType()));
         fooDocument.addField(fooRefToBarField);
         fooSchema.addDocument(fooDocument);
 

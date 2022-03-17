@@ -6,7 +6,7 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
-import com.yahoo.document.ReferenceDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.searchdefinition.Application;
 import com.yahoo.searchdefinition.DocumentReference;
@@ -45,7 +45,7 @@ public class ParentChildSearchModel {
 
     @SuppressWarnings("deprecation")
     protected static SDField createRefField(SDDocumentType repo, String parentType, String fieldName) {
-        return new TemporarySDField(repo, fieldName, ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create(parentType)));
+        return new TemporarySDField(repo, fieldName, NewDocumentReferenceDataType.forDocumentName(parentType));
     }
 
     protected static void addRefField(Schema child, Schema parent, String fieldName) {

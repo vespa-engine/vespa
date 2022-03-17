@@ -5,7 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.document.DataType;
 import com.yahoo.document.NumericDataType;
-import com.yahoo.document.ReferenceDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Matching;
@@ -75,7 +75,7 @@ public class StreamingValidator extends Validator {
     private static void failStreamingDocumentReferences(SearchCluster sc) {
         for (Attribute attribute : sc.getSdConfig().getAttributeFields().attributes()) {
             DataType dataType = attribute.getDataType();
-            if (dataType instanceof ReferenceDataType) {
+            if (dataType instanceof NewDocumentReferenceDataType) {
                 String errorMessage = String.format(
                         "For streaming search cluster '%s': Attribute '%s' has type '%s'. " +
                                 "Document references and imported fields are not allowed in streaming search.",

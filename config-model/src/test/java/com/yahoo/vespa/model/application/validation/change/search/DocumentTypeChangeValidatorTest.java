@@ -5,7 +5,7 @@ import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
-import com.yahoo.document.ReferenceDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.searchdefinition.FieldSets;
@@ -205,7 +205,7 @@ public class DocumentTypeChangeValidatorTest {
 
     private static NewDocumentType createDocumentTypeWithReferenceField(String nameReferencedDocumentType) {
         StructDataType headerfields = new StructDataType("headerfields");
-        headerfields.addField(new Field("ref", new ReferenceDataType(new DocumentType(nameReferencedDocumentType), 0)));
+        headerfields.addField(new Field("ref", new NewDocumentReferenceDataType(new DocumentType(nameReferencedDocumentType))));
         return new NewDocumentType(
                 new NewDocumentType.Name("mydoc"),
                 headerfields,
