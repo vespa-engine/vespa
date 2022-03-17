@@ -117,9 +117,7 @@ public class Nginx implements Router {
         String configBasename = NginxPath.config.in(fileSystem).getFileName().toString();
         Files.list(NginxPath.root.in(fileSystem))
              .filter(Files::isRegularFile)
-             .filter(path -> path.getFileName().toString().startsWith(configBasename) ||
-                             // TODO(mpolden): This cleans up old layer 7 files. Remove after 2022-03-15
-                             path.getFileName().toString().startsWith("nginx.conf-"))
+             .filter(path -> path.getFileName().toString().startsWith(configBasename))
              .filter(path -> rotatedAt(path).map(instant -> instant.isBefore(oneWeekAgo))
                                             .orElse(false))
              .forEach(path -> Exceptions.uncheck(() -> Files.deleteIfExists(path)));

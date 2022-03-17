@@ -99,8 +99,6 @@ public class NginxTest {
 
         // Some time passes and new tables are loaded. Old rotated files are removed
         tester.clock.advance(Duration.ofDays(3));
-        // Simulate old rotated layer 7 config file, which should be removed
-        Exceptions.uncheck(() -> Files.createFile(NginxPath.root.in(tester.fileSystem).resolve("nginx.conf-2021-12-15-15:00:00.000")));
         tester.load(table0);
         tester.clock.advance(Duration.ofDays(4).plusSeconds(1));
         tester.load(table1)
