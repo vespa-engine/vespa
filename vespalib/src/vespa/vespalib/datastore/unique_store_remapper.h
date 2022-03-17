@@ -46,6 +46,15 @@ public:
         }
     }
 
+    void remap(vespalib::ArrayRef<AtomicEntryRef> refs) const {
+        for (auto &atomic_ref : refs) {
+            auto ref = atomic_ref.load_relaxed();
+            if (ref.valid() && _compacting_buffer.has(ref)) {
+                atomic_ref.store_release(remap(ref));
+            }
+        }
+    }
+
     const EntryRefFilter& get_entry_ref_filter() const noexcept { return _compacting_buffer; }
 
     virtual void done() = 0;

@@ -4,9 +4,10 @@
 
 #include "attribute_read_guard.h"
 #include "attributeguard.h"
-#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/common/i_document_meta_store_context.h>
+#include <vespa/vespalib/datastore/atomic_value_wrapper.h>
+#include <vespa/vespalib/util/arrayref.h>
 
 namespace search::attribute {
 
@@ -29,7 +30,8 @@ class ImportedAttributeVectorReadGuard : public IAttributeVector,
                                          public AttributeReadGuard
 {
 private:
-    using TargetLids = vespalib::ConstArrayRef<uint32_t>;
+    using AtomicTargetLid = vespalib::datastore::AtomicValueWrapper<uint32_t>;
+    using TargetLids = vespalib::ConstArrayRef<AtomicTargetLid>;
     IDocumentMetaStoreContext::IReadGuard::UP _target_document_meta_store_read_guard;
     const ImportedAttributeVector   &_imported_attribute;
     TargetLids                       _targetLids;
@@ -42,7 +44,7 @@ protected:
 protected:
     uint32_t getTargetLid(uint32_t lid) const {
         // Check range to avoid reading memory beyond end of mapping array
-        return lid < _targetLids.size() ? _targetLids[lid] : 0u;
+        return lid < _targetLids.size() ? _targetLids[lid].load_acquire() : 0u;
     }
 
 public:

@@ -75,7 +75,7 @@ ReferenceAttribute::addDoc(DocId &doc)
 {
     bool incGen = _indices.isFull();
     doc = _indices.size();
-    _indices.push_back(EntryRef());
+    _indices.push_back(AtomicEntryRef());
     _referenceMappings.addDoc();
     incNumDocs();
     updateUncommittedDocIdLimit(doc);
@@ -116,7 +116,7 @@ ReferenceAttribute::buildReverseMapping()
     uint32_t numDocs = _indices.size();
     indices.reserve(numDocs);
     for (uint32_t lid = 0; lid < numDocs; ++lid) {
-        EntryRef ref = _indices[lid];
+        EntryRef ref = _indices[lid].load_relaxed();
         if (ref.valid()) {
             indices.emplace_back(ref, lid);
         }
@@ -144,10 +144,10 @@ ReferenceAttribute::clearDoc(DocId doc)
 {
     updateUncommittedDocIdLimit(doc);
     assert(doc < _indices.size());
-    EntryRef oldRef = _indices[doc];
+    EntryRef oldRef = _indices[doc].load_relaxed();
     if (oldRef.valid()) {
         removeReverseMapping(oldRef, doc);
-        _indices[doc] = EntryRef();
+        _indices[doc].store_release(EntryRef());
         _store.remove(oldRef);
         return 1u;
     } else {
@@ -247,7 +247,7 @@ ReferenceAttribute::onLoad(vespalib::Executor *)
     _indices.unsafe_reserve(numDocs);
     for (uint32_t doc = 0; doc < numDocs; ++doc) {
         uint32_t enumValue = attrReader.getNextEnum();
-        _indices.push_back(builder.mapEnumValueToEntryRef(enumValue));
+        _indices.push_back(AtomicEntryRef(builder.mapEnumValueToEntryRef(enumValue)));
     }
     builder.makeDictionary();
     setNumDocs(numDocs);
@@ -262,11 +262,11 @@ ReferenceAttribute::update(DocId doc, const GlobalId &gid)
 {
     updateUncommittedDocIdLimit(doc);
     assert(doc < _indices.size());
-    EntryRef oldRef = _indices[doc];
+    EntryRef oldRef = _indices[doc].load_relaxed();
     Reference refToAdd(gid);
     EntryRef newRef = _store.add(refToAdd).ref();
     std::atomic_thread_fence(std::memory_order_release);
-    _indices[doc] = newRef;
+    _indices[doc].store_release(newRef);
     if (oldRef.valid()) {
         if (oldRef != newRef) {
             removeReverseMapping(oldRef, doc);
@@ -281,8 +281,10 @@ ReferenceAttribute::update(DocId doc, const GlobalId &gid)
 const Reference *
 ReferenceAttribute::getReference(DocId doc) const
 {
-    assert(doc < _indices.size());
-    EntryRef ref = _indices[doc];
+    if (doc >= getCommittedDocIdLimit()) {
+        return nullptr;
+    }
+    EntryRef ref = _indices.acquire_elem_ref(doc).load_acquire();
     if (!ref.valid()) {
         return nullptr;
     } else {
@@ -306,7 +308,7 @@ ReferenceAttribute::compact_worst_values(const CompactionStrategy& compaction_st
     CompactionSpec compaction_spec(true, true);
     auto remapper(_store.compact_worst(compaction_spec, compaction_strategy));
     if (remapper) {
-        remapper->remap(vespalib::ArrayRef<EntryRef>(&_indices[0], _indices.size()));
+        remapper->remap(vespalib::ArrayRef<AtomicEntryRef>(&_indices[0], _indices.size()));
         remapper->done();
     }
 }
@@ -335,7 +337,12 @@ ReferenceAttribute::IndicesCopyVector
 ReferenceAttribute::getIndicesCopy(uint32_t size) const
 {
     assert(size <= _indices.size());
-    return IndicesCopyVector(&_indices[0], &_indices[0] + size);
+    IndicesCopyVector result;
+    result.reserve(size);
+    for (uint32_t i = 0; i < size; ++i) {
+        result.push_back(_indices[i].load_relaxed());
+    }
+    return result;
 }
 
 void
@@ -428,10 +435,10 @@ ReferenceAttribute::clearDocs(DocId lidLow, DocId lidLimit)
     assert(lidLow <= lidLimit);
     assert(lidLimit <= getNumDocs());
     for (DocId lid = lidLow; lid < lidLimit; ++lid) {
-        EntryRef oldRef = _indices[lid];
+        EntryRef oldRef = _indices[lid].load_relaxed();
         if (oldRef.valid()) {
             removeReverseMapping(oldRef, lid);
-            _indices[lid] = EntryRef();
+            _indices[lid].store_release(EntryRef());
             _store.remove(oldRef);
         }
     }
