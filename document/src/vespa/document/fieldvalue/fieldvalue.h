@@ -168,24 +168,24 @@ public:
     // Utility functions to set commonly used value types.
     virtual FieldValue& operator=(vespalib::stringref);
 
-    Type type() const { return _type; }
-    bool isA(Type type) const { return type == _type; }
-    bool isCollection() const { return (_type == Type::WSET) || (_type == Type::ARRAY); }
-    bool isStructured() const { return (_type == Type::DOCUMENT) || (_type == Type::STRUCT); }
-    bool isLiteral() const { return (_type == Type::STRING) || (_type == Type::RAW); }
-    bool isNumeric() const {
+    Type type() const noexcept { return _type; }
+    bool isA(Type type) const noexcept { return type == _type; }
+    bool isCollection() const noexcept { return (_type == Type::WSET) || (_type == Type::ARRAY); }
+    bool isStructured() const noexcept { return (_type == Type::DOCUMENT) || (_type == Type::STRUCT); }
+    bool isLiteral() const noexcept { return (_type == Type::STRING) || (_type == Type::RAW); }
+    bool isNumeric() const noexcept {
         return (_type == Type::BYTE) || (_type == Type::SHORT) ||
                (_type == Type::INT) || (_type == Type::LONG) || (_type == Type::FLOAT) || (_type == Type::DOUBLE);
     }
-    bool isFixedSizeSingleValue() const {
+    bool isFixedSizeSingleValue() const noexcept {
         return (_type == Type::BOOL) || isNumeric();
     }
 protected:
-    FieldValue(Type type) : _type(type) { }
+    FieldValue(Type type) noexcept : _type(type) { }
     FieldValue(const FieldValue&) = default;
     FieldValue& operator=(const FieldValue&) = default;
-    FieldValue(FieldValue &&) = default;
-    FieldValue& operator=(FieldValue &&) = default;
+    FieldValue(FieldValue &&) noexcept = default;
+    FieldValue& operator=(FieldValue &&) noexcept = default;
     static std::unique_ptr<vespalib::IArrayBase> createArray(const DataType & baseType);
 private:
     fieldvalue::ModificationStatus
