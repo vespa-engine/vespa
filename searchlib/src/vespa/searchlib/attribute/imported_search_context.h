@@ -7,6 +7,7 @@
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/attribute/posting_list_merger.h>
 #include <vespa/searchlib/common/i_document_meta_store_context.h>
+#include <vespa/vespalib/datastore/atomic_value_wrapper.h>
 #include <vespa/vespalib/util/arrayref.h>
 
 namespace search::fef { class TermFieldMatchData; }
@@ -26,7 +27,8 @@ class SearchContextParams;
  * considered a match.
  */
 class ImportedSearchContext : public ISearchContext {
-    using TargetLids = vespalib::ConstArrayRef<uint32_t>;
+    using AtomicTargetLid = vespalib::datastore::AtomicValueWrapper<uint32_t>;
+    using TargetLids = vespalib::ConstArrayRef<AtomicTargetLid>;
     const ImportedAttributeVector&                  _imported_attribute;
     vespalib::string                                _queryTerm;
     bool                                            _useSearchCache;
@@ -41,7 +43,7 @@ class ImportedSearchContext : public ISearchContext {
 
     uint32_t getTargetLid(uint32_t lid) const {
         // Check range to avoid reading memory beyond end of mapping array
-        return lid < _targetLids.size() ? _targetLids[lid] : 0u;
+        return lid < _targetLids.size() ? _targetLids[lid].load_acquire() : 0u;
     }
 
     void makeMergedPostings(bool isFilter);

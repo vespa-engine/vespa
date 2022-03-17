@@ -4,6 +4,7 @@
 #include "reference.h"
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
+#include <vespa/vespalib/util/rcuvector.hpp>
 
 namespace search::attribute {
 
@@ -37,7 +38,7 @@ ReferenceMappings::syncForwardMapping(const Reference &entry)
     auto &targetLids = _targetLids;
     _reverseMapping.foreach_unfrozen_key(revMapIdx,
                                          [&targetLids, targetLid](uint32_t lid)
-                                         { targetLids[lid] = targetLid; });
+                                         { targetLids[lid].store_release(targetLid); });
 }
 
 void
@@ -46,10 +47,9 @@ ReferenceMappings::syncReverseMappingIndices(const Reference &entry)
     uint32_t targetLid = entry.lid();
     if (targetLid != 0u) {
         _reverseMappingIndices.ensure_size(targetLid + 1);
-        _reverseMappingIndices[targetLid] = entry.revMapIdx();
-        if (targetLid >= _targetLidLimit) {
-            std::atomic_thread_fence(std::memory_order_release);
-            _targetLidLimit = targetLid + 1;
+        _reverseMappingIndices[targetLid].store_release(entry.revMapIdx());
+        if (targetLid >= _targetLidLimit.load(std::memory_order_relaxed)) {
+            _targetLidLimit.store(targetLid + 1, std::memory_order_release);
         }
     }
 }
@@ -62,7 +62,7 @@ ReferenceMappings::removeReverseMapping(const Reference &entry, uint32_t lid)
     std::atomic_thread_fence(std::memory_order_release);
     entry.setRevMapIdx(revMapIdx);
     syncReverseMappingIndices(entry);
-    _targetLids[lid] = 0; // forward mapping
+    _targetLids[lid].store_release(0); // forward mapping
 }
 
 void
@@ -74,7 +74,7 @@ ReferenceMappings::addReverseMapping(const Reference &entry, uint32_t lid)
     std::atomic_thread_fence(std::memory_order_release);
     entry.setRevMapIdx(revMapIdx);
     syncReverseMappingIndices(entry);
-    _targetLids[lid] = entry.lid(); // forward mapping
+    _targetLids[lid].store_release(entry.lid()); // forward mapping
 }
 
 void
@@ -92,7 +92,7 @@ ReferenceMappings::notifyReferencedPut(const Reference &entry, uint32_t targetLi
     uint32_t oldTargetLid = entry.lid();
     if (oldTargetLid != targetLid) {
         if (oldTargetLid != 0u && oldTargetLid < _reverseMappingIndices.size()) {
-            _reverseMappingIndices[oldTargetLid] = EntryRef();
+            _reverseMappingIndices[oldTargetLid].store_release(EntryRef());
         }
         entry.setLid(targetLid);
     }
@@ -106,7 +106,7 @@ ReferenceMappings::notifyReferencedRemove(const Reference &entry)
     uint32_t oldTargetLid = entry.lid();
     if (oldTargetLid != 0) {
         if (oldTargetLid < _reverseMappingIndices.size()) {
-            _reverseMappingIndices[oldTargetLid] = EntryRef();
+            _reverseMappingIndices[oldTargetLid].store_release(EntryRef());
         }
         entry.setLid(0);
     }
@@ -123,7 +123,7 @@ ReferenceMappings::onAddDocs(uint32_t docIdLimit)
 void
 ReferenceMappings::addDoc()
 {
-    _targetLids.push_back(0);
+    _targetLids.push_back(AtomicTargetLid(0));
 }
 
 void

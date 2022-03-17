@@ -38,10 +38,11 @@ public:
         return mapped_ref;
     }
 
-    void remap(vespalib::ArrayRef<EntryRef> refs) const {
-        for (auto &ref : refs) {
+    void remap(vespalib::ArrayRef<AtomicEntryRef> refs) const {
+        for (auto &atomic_ref : refs) {
+            auto ref = atomic_ref.load_relaxed();
             if (ref.valid() && _compacting_buffer.has(ref)) {
-                ref = remap(ref);
+                atomic_ref.store_release(remap(ref));
             }
         }
     }

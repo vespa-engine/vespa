@@ -150,7 +150,7 @@ TargetWeightedResult::getResult(ReverseMappingRefs reverseMappingRefs, const Rev
     }
     it->initRange(1, docIdLimit);
     for (uint32_t lid = it->seekFirst(1); !it->isAtEnd(); lid = it->seekNext(lid+1)) {
-        EntryRef revMapIdx = reverseMappingRefs[lid];
+        EntryRef revMapIdx = reverseMappingRefs[lid].load_acquire();
         if (__builtin_expect(revMapIdx.valid(), true)) {
             uint32_t size = reverseMapping.frozenSize(revMapIdx);
             targetResult.sizeSum += size;
@@ -175,7 +175,7 @@ TargetResult::getResult(ReverseMappingRefs reverseMappingRefs, const ReverseMapp
     }
     it->initRange(1, docIdLimit);
     for (uint32_t lid = it->seekFirst(1); !it->isAtEnd(); lid = it->seekNext(lid+1)) {
-        EntryRef revMapIdx = reverseMappingRefs[lid];
+        EntryRef revMapIdx = reverseMappingRefs[lid].load_acquire();
         if (__builtin_expect(revMapIdx.valid(), true)) {
             merger.addToBitVector(ReverseMappingBitVector(reverseMapping, revMapIdx));
         }
