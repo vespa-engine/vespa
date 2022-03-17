@@ -393,9 +393,6 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                    <jdkToolchain>
-                        <version>${target_jdk_version}</version>
-                    </jdkToolchain>
                     <release>${target_jdk_version}</release>
                     <showWarnings>true</showWarnings>
                     <showDeprecation>true</showDeprecation>
