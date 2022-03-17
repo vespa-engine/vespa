@@ -2,17 +2,26 @@
 package com.yahoo.documentmodel;
 
 import com.yahoo.document.DataType;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.StructuredDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.ReferenceFieldValue;
 
 /**
+ * Model for ReferenceDataType which is more suitable when
+ * we want to end up with NewDocumentType as target type.
+ *
  * @author arnej
- */
+ **/
 @SuppressWarnings("deprecation")
 public final class NewDocumentReferenceDataType extends DataType {
 
     private StructuredDataType target;
+    private DocumentType docTypeTarget = null;
+    private ReferenceDataType delegate = null;
+
     private final boolean temporary;
 
     private NewDocumentReferenceDataType(NewDocumentType.Name nameAndId,
@@ -29,8 +38,15 @@ public final class NewDocumentReferenceDataType extends DataType {
         return new NewDocumentType.Name(typeName);
     }
 
-    public NewDocumentReferenceDataType(String documentName) {
-        this(buildTypeName(documentName), TemporaryStructuredDataType.create(documentName), true);
+    public static NewDocumentReferenceDataType forDocumentName(String documentName) {
+        return new NewDocumentReferenceDataType(buildTypeName(documentName),
+                                                TemporaryStructuredDataType.create(documentName),
+                                                true);
+    }
+
+    public NewDocumentReferenceDataType(DocumentType document) {
+        this(buildTypeName(document.getName()), document, true);
+        this.docTypeTarget = document;
     }
 
     public NewDocumentReferenceDataType(NewDocumentType document) {
@@ -45,26 +61,44 @@ public final class NewDocumentReferenceDataType extends DataType {
         assert(target.getName().equals(type.getName()));
         if (temporary) {
             this.target = type;
+            if ((docTypeTarget == null) && (type instanceof DocumentType)) {
+                this.docTypeTarget = (DocumentType) type;
+            }
         } else {
             throw new IllegalStateException
                 (String.format("Unexpected attempt to replace already concrete target " +
-                               "type in ReferenceDataType instance (type is '%s')", target.getName()));
+                               "type in NewDocumentReferenceDataType instance (type is '%s')", target.getName()));
         }
     }
 
     @Override
     public FieldValue createFieldValue() {
-        throw new IllegalArgumentException("not implemented");
+        // TODO why do we even need this
+        if (delegate == null) {
+            if (docTypeTarget == null) {
+                var tmptmp = TemporaryStructuredDataType.create(target.getName());
+                var tmp = ReferenceDataType.createWithInferredId(tmptmp);
+                return tmp.createFieldValue();
+            }
+            delegate = ReferenceDataType.createWithInferredId(docTypeTarget);
+        }
+        return delegate.createFieldValue();
     }
 
     @Override
-    public Class<FieldValue> getValueClass() {
-        throw new IllegalArgumentException("not implemented");
+    public Class<? extends ReferenceFieldValue> getValueClass() {
+        return ReferenceFieldValue.class;
     }
 
     @Override
     public boolean isValueCompatible(FieldValue value) {
-        throw new IllegalArgumentException("not implemented");
+        var dt = value.getDataType();
+        if (dt instanceof ReferenceDataType) {
+            var refType = (ReferenceDataType) dt;
+            var docTypeName = refType.getTargetType().getName();
+            return docTypeName.equals(target.getName());
+        }
+        return false;
     }
 
     @Override
