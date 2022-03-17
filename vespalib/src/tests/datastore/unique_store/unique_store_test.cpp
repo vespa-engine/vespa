@@ -119,24 +119,27 @@ struct TestBase : public ::testing::Test {
     }
     void compactWorst() {
         CompactionSpec compaction_spec(true, true);
-        CompactionStrategy compaction_strategy;
+        // Use a compaction strategy that will compact all active buffers
+        CompactionStrategy compaction_strategy(0.0, 0.0, EntryRefType::numBuffers(), 1.0);
         auto remapper = store.compact_worst(compaction_spec, compaction_strategy);
-        std::vector<EntryRef> refs;
+        std::vector<AtomicEntryRef> refs;
         for (const auto &elem : refStore) {
-            refs.push_back(elem.first);
+            refs.push_back(AtomicEntryRef(elem.first));
         }
-        refs.push_back(EntryRef());
-        std::vector<EntryRef> compactedRefs = refs;
-        remapper->remap(ArrayRef<EntryRef>(compactedRefs));
+        refs.push_back(AtomicEntryRef());
+        std::vector<AtomicEntryRef> compactedRefs = refs;
+        remapper->remap(ArrayRef<AtomicEntryRef>(compactedRefs));
         remapper->done();
         remapper.reset();
-        ASSERT_FALSE(refs.back().valid());
+        ASSERT_FALSE(refs.back().load_relaxed().valid());
         refs.pop_back();
+        ASSERT_FALSE(compactedRefs.back().load_relaxed().valid());
+        compactedRefs.pop_back();
         ReferenceStore compactedRefStore;
         for (size_t i = 0; i < refs.size(); ++i) {
-            ASSERT_EQ(0u, compactedRefStore.count(compactedRefs[i]));
-            ASSERT_EQ(1u, refStore.count(refs[i]));
-            compactedRefStore.insert(std::make_pair(compactedRefs[i], refStore[refs[i]]));
+            ASSERT_EQ(0u, compactedRefStore.count(compactedRefs[i].load_relaxed()));
+            ASSERT_EQ(1u, refStore.count(refs[i].load_relaxed()));
+            compactedRefStore.insert(std::make_pair(compactedRefs[i].load_relaxed(), refStore[refs[i].load_relaxed()]));
         }
         refStore = compactedRefStore;
     }
