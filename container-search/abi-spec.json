@@ -2318,7 +2318,9 @@
       "public static final java.lang.String SELECT_PARAMETER_PARSING",
       "public static final com.yahoo.processing.request.CompoundName PARAM_CONTINUE",
       "public static final com.yahoo.processing.request.CompoundName PARAM_REQUEST",
-      "public static final com.yahoo.processing.request.CompoundName PARAM_TIMEZONE"
+      "public static final com.yahoo.processing.request.CompoundName PARAM_TIMEZONE",
+      "public static final com.yahoo.processing.request.CompoundName PARAM_DEFAULT_MAX_HITS",
+      "public static final com.yahoo.processing.request.CompoundName PARAM_DEFAULT_MAX_GROUPS"
     ]
   },
   "com.yahoo.search.grouping.GroupingRequest": {
@@ -2336,6 +2338,10 @@
       "public com.yahoo.search.grouping.GroupingRequest setTimeZone(java.util.TimeZone)",
       "public com.yahoo.search.grouping.result.RootGroup getResultGroup(com.yahoo.search.Result)",
       "public java.util.List continuations()",
+      "public java.util.OptionalInt defaultMaxHits()",
+      "public void setDefaultMaxHits(int)",
+      "public java.util.OptionalInt defaultMaxGroups()",
+      "public void setDefaultMaxGroups(int)",
       "public static com.yahoo.search.grouping.GroupingRequest newInstance(com.yahoo.search.Query)",
       "public java.lang.String toString()"
     ],

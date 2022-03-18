@@ -150,6 +150,8 @@ public class GroupingExecutor extends Searcher {
         builder.setDefaultSummaryName(query.getPresentation().getSummary());
         builder.setTimeZone(req.getTimeZone());
         builder.addContinuations(req.continuations());
+        req.defaultMaxGroups().ifPresent(builder::setDefaultMaxGroups);
+        req.defaultMaxHits().ifPresent(builder::setDefaultMaxHits);
         builder.build();
 
         RequestContext ctx = new RequestContext(req, builder.getTransform());
