@@ -125,7 +125,7 @@ public class AllocatableClusterResources {
     }
 
     private static NodeResources averageRealResourcesOf(List<Node> nodes, NodeRepository nodeRepository) {
-        NodeResources sum = new NodeResources(0, 0, 0, 0);
+        NodeResources sum = new NodeResources(0, 0, 0, 0).justNumbers();
         for (Node node : nodes)
             sum = sum.add(nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository).justNumbers());
         return nodes.get(0).allocation().get().requestedResources().justNonNumbers()

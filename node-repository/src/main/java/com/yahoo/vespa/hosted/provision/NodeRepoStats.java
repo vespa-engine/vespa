@@ -58,7 +58,7 @@ public class NodeRepoStats {
     }
 
     private static Pair<Load, Load> computeLoad(NodeList allNodes, List<NodeTimeseries> allNodeTimeseries) {
-        NodeResources totalActiveResources = NodeResources.zero();
+        NodeResources totalActiveResources = NodeResources.zero().justNumbers();
         Load load = Load.zero();
         for (var nodeTimeseries : allNodeTimeseries) {
             Optional<Node> node = allNodes.node(nodeTimeseries.hostname());
@@ -73,7 +73,7 @@ public class NodeRepoStats {
             totalActiveResources = totalActiveResources.add(resources.justNumbers());
         }
 
-        NodeResources totalHostResources = NodeResources.zero();
+        NodeResources totalHostResources = NodeResources.zero().justNumbers();
         for (var host : allNodes.hosts()) {
 
             totalHostResources = totalHostResources.add(host.resources().justNumbers());
@@ -91,8 +91,8 @@ public class NodeRepoStats {
                                             .not().tester()
                                             .groupingBy(node -> node.allocation().get().owner()).entrySet()) {
 
-            NodeResources totalResources = NodeResources.zero();
-            NodeResources totalUtilizedResources = NodeResources.zero();
+            NodeResources totalResources = NodeResources.zero().justNumbers();
+            NodeResources totalUtilizedResources = NodeResources.zero().justNumbers();
             for (var node : applicationNodes.getValue()) {
                 var snapshot = snapshotsByHost.get(node.hostname());
                 if (snapshot == null) continue;

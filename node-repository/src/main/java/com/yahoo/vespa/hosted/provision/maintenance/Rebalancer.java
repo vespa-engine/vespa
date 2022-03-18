@@ -77,14 +77,14 @@ public class Rebalancer extends NodeMover<Rebalancer.Move> {
     }
 
     private double skewReductionByRemoving(Node node, Node fromHost, HostCapacity capacity) {
-        NodeResources freeHostCapacity = capacity.unusedCapacityOf(fromHost);
+        NodeResources freeHostCapacity = capacity.unusedCapacityOf(fromHost).justNumbers();
         double skewBefore = Node.skew(fromHost.flavor().resources(), freeHostCapacity);
         double skewAfter = Node.skew(fromHost.flavor().resources(), freeHostCapacity.add(node.flavor().resources().justNumbers()));
         return skewBefore - skewAfter;
     }
 
     private double skewReductionByAdding(Node node, Node toHost, HostCapacity capacity) {
-        NodeResources freeHostCapacity = capacity.unusedCapacityOf(toHost);
+        NodeResources freeHostCapacity = capacity.unusedCapacityOf(toHost).justNumbers();
         double skewBefore = Node.skew(toHost.flavor().resources(), freeHostCapacity);
         double skewAfter = Node.skew(toHost.flavor().resources(), freeHostCapacity.subtract(node.resources().justNumbers()));
         return skewBefore - skewAfter;

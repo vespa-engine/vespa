@@ -17,10 +17,8 @@ import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 /**
  * @author bratseth
@@ -35,7 +33,7 @@ public class ReservationExpirerTest {
         NodeRepository nodeRepository = tester.nodeRepository();
         TestMetric metric = new TestMetric();
 
-        NodeResources nodeResources = new NodeResources(2, 8, 50, 1);
+        NodeResources nodeResources = new NodeResources(2, 8, 50, 1).justNumbers();
         NodeResources hostResources = nodeResources.add(nodeResources).add(nodeResources);
         tester.makeReadyNodes(2, nodeResources);
         tester.makeReadyHosts(1, hostResources);
