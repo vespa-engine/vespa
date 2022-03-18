@@ -4,13 +4,13 @@ package com.yahoo.vespa.hosted.ca.restapi;
 import com.yahoo.security.Pkcs10CsrUtils;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
-import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.ca.CertificateTester;
 import com.yahoo.vespa.hosted.ca.instance.InstanceIdentity;
 import com.yahoo.vespa.hosted.ca.instance.InstanceRefresh;
@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -43,7 +44,7 @@ public class InstanceSerializerTest {
                 0,
                 "configserverhostname",
                 "instancehostname",
-                Instant.now(),
+                Instant.now().truncatedTo(ChronoUnit.MICROS),  // Truncate to the precision given from EntityBindingsMapper.toAttestationData()
                 Collections.emptySet(),
                 IdentityType.NODE);
 
