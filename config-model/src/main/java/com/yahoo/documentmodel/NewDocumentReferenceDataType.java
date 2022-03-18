@@ -15,7 +15,6 @@ import com.yahoo.document.datatypes.ReferenceFieldValue;
  *
  * @author arnej
  **/
-@SuppressWarnings("deprecation")
 public final class NewDocumentReferenceDataType extends DataType {
 
     private final StructuredDataType target;
