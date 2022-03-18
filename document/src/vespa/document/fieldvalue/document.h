@@ -86,8 +86,6 @@ public:
 
     void clear() override;
 
-    bool hasChanged() const override;
-
     // FieldValue implementation.
     FieldValue& assign(const FieldValue&) override;
     int compare(const FieldValue& other) const override;

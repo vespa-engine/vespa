@@ -17,22 +17,21 @@ template<typename Number>
 FieldValue&
 NumericFieldValue<Number>::assign(const FieldValue& value)
 {
-    if        (value.type() == FieldValue::Type::BYTE) {
+    if (value.isA(FieldValue::Type::BYTE)) {
         _value = static_cast<Number>(value.getAsByte());
-    } else if (value.type() == FieldValue::Type::SHORT) {
+    } else if (value.isA(FieldValue::Type::SHORT)) {
         _value = static_cast<Number>(value.getAsInt());
-    } else if (value.type() == FieldValue::Type::INT) {
+    } else if (value.isA(FieldValue::Type::INT)) {
         _value = static_cast<Number>(value.getAsInt());
-    } else if (value.type() == FieldValue::Type::LONG) {
+    } else if (value.isA(FieldValue::Type::LONG)) {
         _value = static_cast<Number>(value.getAsLong());
-    } else if (value.type() == FieldValue::Type::FLOAT) {
+    } else if (value.isA(FieldValue::Type::FLOAT)) {
         _value = static_cast<Number>(value.getAsFloat());
-    } else if (value.type() == FieldValue::Type::DOUBLE) {
+    } else if (value.isA(FieldValue::Type::DOUBLE)) {
         _value = static_cast<Number>(value.getAsDouble());
     } else {
         return FieldValue::assign(value);
     }
-    _altered = true;
     return *this;
 }
 
@@ -91,7 +90,6 @@ NumericFieldValue<Number>::operator=(vespalib::stringref value)
                 // Allow numbers to be specified in range max signed to max
                 // unsigned. These become negative numbers.
             _value = static_cast<Number>(val);
-            _altered = true;
             return *this;
         }
     }
@@ -118,7 +116,6 @@ NumericFieldValue<Number>::operator=(vespalib::stringref value)
             }
         }
     }
-    _altered = true;
     return *this;
 }
 

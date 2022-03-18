@@ -76,7 +76,12 @@ public:
 
     bool empty() const override;
 
-    bool hasChanged() const override { return _hasChanged; }
+    /**
+     * Returns true if this object have been altered since last
+     * serialization/deserialization. If hasChanged() is false, then cached
+     * information from last serialization effort is still valid.
+     */
+    bool hasChanged() const { return _hasChanged; }
 
     uint32_t calculateChecksum() const;
 

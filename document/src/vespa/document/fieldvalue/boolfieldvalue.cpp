@@ -10,7 +10,7 @@ using namespace vespalib::xml;
 namespace document {
 
 BoolFieldValue::BoolFieldValue(bool value)
-    : FieldValue(Type::BOOL), _value(value), _altered(false) {
+    : FieldValue(Type::BOOL), _value(value) {
 }
 
 BoolFieldValue::~BoolFieldValue() = default;
@@ -21,7 +21,6 @@ BoolFieldValue::assign(const FieldValue &rhs) {
         operator=(static_cast<const BoolFieldValue &>(rhs));
         return *this;
     } else {
-        _altered = true;
         return FieldValue::assign(rhs);
     }
 }
@@ -47,11 +46,6 @@ BoolFieldValue::print(std::ostream& out, bool, const std::string&) const {
 const DataType *
 BoolFieldValue::getDataType() const {
     return DataType::BOOL;
-}
-
-bool
-BoolFieldValue::hasChanged() const {
-    return _altered;
 }
 
 FieldValue *

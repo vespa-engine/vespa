@@ -26,10 +26,8 @@ protected:
 template<typename Number>
 class NumericFieldValue : public NumericFieldValueBase {
 protected:
-    explicit NumericFieldValue(Type type, Number value=0) : NumericFieldValueBase(type), _value(value), _altered(false) { }
+    explicit NumericFieldValue(Type type, Number value=0) : NumericFieldValueBase(type), _value(value) { }
     Number _value;
-    bool _altered;
-
 public:
     typedef Number value_type;
 
@@ -51,7 +49,6 @@ public:
     vespalib::string getAsString() const override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    bool hasChanged() const override final { return _altered; }
 };
 
 extern template class NumericFieldValue<float>;

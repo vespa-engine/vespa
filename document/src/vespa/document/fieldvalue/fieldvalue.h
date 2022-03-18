@@ -79,13 +79,6 @@ public:
      */
     virtual int fastCompare(const FieldValue& other) const;
 
-    /**
-     * Returns true if this object have been altered since last
-     * serialization/deserialization. If hasChanged() is false, then cached
-     * information from last serialization effort is still valid.
-     */
-    virtual bool hasChanged() const = 0;
-
     /** Cloneable implementation */
     virtual FieldValue* clone() const = 0;
 

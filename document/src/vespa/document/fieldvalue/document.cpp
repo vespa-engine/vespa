@@ -171,12 +171,6 @@ Document::setFieldValue(const Field& field, FieldValue::UP data)
     _fields.setFieldValue(field, std::move(data));
 }
 
-bool
-Document::hasChanged() const
-{
-    return _fields.hasChanged();
-}
-
 FieldValue&
 Document::assign(const FieldValue& value)
 {

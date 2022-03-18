@@ -68,7 +68,6 @@ public:
     int compare(const FieldValue&) const override;
     void printXml(XmlOutputStream& out) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    bool hasChanged() const override;
     void swap(ArrayFieldValue & other) { _array.swap(other._array); }
 
         // Iterator functionality

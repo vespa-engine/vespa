@@ -32,7 +32,6 @@ public:
     AnnotationReferenceFieldValue *clone() const override;
     const DataType *getDataType() const override { return _type; }
     void printXml(XmlOutputStream &out) const override;
-    bool hasChanged() const override;
 };
 
 }  // namespace document

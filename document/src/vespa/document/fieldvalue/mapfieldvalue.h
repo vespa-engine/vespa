@@ -134,7 +134,6 @@ public:
     MapFieldValue* clone() const override { return new MapFieldValue(*this); }
     int compare(const FieldValue&) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    bool hasChanged() const override;
     const DataType *getDataType() const override;
     void printXml(XmlOutputStream& out) const override;
 

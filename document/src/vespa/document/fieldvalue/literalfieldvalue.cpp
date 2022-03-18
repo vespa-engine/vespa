@@ -11,8 +11,7 @@ namespace document {
 LiteralFieldValueB::LiteralFieldValueB(Type type) :
     FieldValue(type),
     _value(),
-    _backing(),
-    _altered(true)
+    _backing()
 {
     _value = _backing;
 }
@@ -22,8 +21,7 @@ LiteralFieldValueB::~LiteralFieldValueB() = default;
 LiteralFieldValueB::LiteralFieldValueB(const LiteralFieldValueB& other)
     : FieldValue(other),
       _value(),
-      _backing(other.getValueRef()),
-      _altered(other._altered)
+      _backing(other.getValueRef())
 {
     _value = _backing;
 }
@@ -31,8 +29,7 @@ LiteralFieldValueB::LiteralFieldValueB(const LiteralFieldValueB& other)
 LiteralFieldValueB::LiteralFieldValueB(Type type, const stringref & value)
     : FieldValue(type),
       _value(),
-      _backing(value),
-      _altered(true)
+      _backing(value)
 {
     _value = _backing;
 }
@@ -43,7 +40,6 @@ LiteralFieldValueB::operator=(const LiteralFieldValueB& other)
     FieldValue::operator=(other);
     _backing = other.getValueRef();
     _value = _backing;
-    _altered = other._altered;
     return *this;
 }
 

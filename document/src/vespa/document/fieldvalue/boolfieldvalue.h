@@ -11,7 +11,6 @@ namespace document {
  **/
 class BoolFieldValue final : public FieldValue {
     bool _value;
-    bool _altered;
 
 public:
     BoolFieldValue(bool value=false);
@@ -27,7 +26,6 @@ public:
     void print(std::ostream &out, bool verbose, const std::string &indent) const override;
 
     const DataType *getDataType() const override;
-    bool hasChanged() const override;
 
     bool getValue() const { return _value; }
     void setValue(bool v) { _value = v; }

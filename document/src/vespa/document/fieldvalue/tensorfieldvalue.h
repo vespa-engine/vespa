@@ -17,7 +17,6 @@ class TensorFieldValue final : public FieldValue {
 private:
     const TensorDataType &_dataType;
     std::unique_ptr<vespalib::eval::Value> _tensor;
-    bool _altered;
 public:
     TensorFieldValue();
     explicit TensorFieldValue(const TensorDataType &dataType);
@@ -33,7 +32,6 @@ public:
     void accept(FieldValueVisitor &visitor) override;
     void accept(ConstFieldValueVisitor &visitor) const override;
     const DataType *getDataType() const override;
-    bool hasChanged() const override;
     TensorFieldValue* clone() const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void printXml(XmlOutputStream& out) const override;

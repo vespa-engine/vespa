@@ -79,8 +79,7 @@ MapFieldValue::MapFieldValue(const DataType &mapType)
       _keys(static_cast<IArray *>(createArray(getMapType().getKeyType()).release())),
       _values(static_cast<IArray *>(createArray(getMapType().getValueType()).release())),
       _present(),
-      _lookupMap(),
-      _altered(true)
+      _lookupMap()
 {
 }
 
@@ -93,8 +92,7 @@ MapFieldValue::MapFieldValue(const MapFieldValue & rhs) :
     _keys(rhs._keys ? rhs._keys->clone() : nullptr),
     _values(rhs._values ? rhs._values->clone() : nullptr),
     _present(rhs._present),
-    _lookupMap(),
-    _altered(rhs._altered)
+    _lookupMap()
 {
 }
 
@@ -116,7 +114,6 @@ MapFieldValue::swap(MapFieldValue & rhs) {
     std::swap(_values, rhs._values);
     std::swap(_present, rhs._present);
     std::swap(_lookupMap, rhs._lookupMap);
-    std::swap(_altered, rhs._altered);
 }
 
 void MapFieldValue::verifyKey(const FieldValue & fv) const
@@ -144,7 +141,6 @@ MapFieldValue::insertVerify(const FieldValue& key, const FieldValue& value)
     bool result(false);
     if (found != end()) {
         if (!(value == *found->second)) {
-            _altered = true;
             found->second->assign(value);
         }
     } else {
@@ -164,8 +160,6 @@ MapFieldValue::push_back(const FieldValue& key, const FieldValue& value)
     if (_lookupMap) {
         _lookupMap->insert(_present.size() - 1);
     }
-
-    _altered = true;
 }
 
 
@@ -179,7 +173,6 @@ MapFieldValue::push_back(FieldValue::UP key, FieldValue::UP value)
     if (_lookupMap) {
         _lookupMap->insert(_present.size() - 1);
     }
-    _altered = true;
 }
 
 bool
@@ -253,7 +246,6 @@ MapFieldValue::erase(const FieldValue& key)
         _count--;
         _present[found.offset()] = false;
         _lookupMap->erase(found.offset());
-        _altered = true;
     }
     return result;
 }
@@ -329,13 +321,6 @@ MapFieldValue::printXml(XmlOutputStream& xos) const
     }
 }
 
-bool
-MapFieldValue::hasChanged() const
-{
-    // Keys are not allowed to change in a map, so the keys should not be
-    // referred to externally, and should thus not need to be checked.
-    return _altered;
-}
 const DataType *
 MapFieldValue::getDataType() const {
     return _type;

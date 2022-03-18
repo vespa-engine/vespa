@@ -14,24 +14,21 @@ namespace document {
 ReferenceFieldValue::ReferenceFieldValue()
     : FieldValue(Type::REFERENCE),
       _dataType(nullptr),
-      _documentId(),
-      _altered(true)
+      _documentId()
 {
 }
 
 ReferenceFieldValue::ReferenceFieldValue(const ReferenceDataType& dataType)
     : FieldValue(Type::REFERENCE),
       _dataType(&dataType),
-      _documentId(),
-      _altered(true)
+      _documentId()
 {
 }
 
 ReferenceFieldValue::ReferenceFieldValue(const ReferenceDataType& dataType, const DocumentId& documentId)
     : FieldValue(Type::REFERENCE),
       _dataType(&dataType),
-      _documentId(documentId),
-      _altered(true)
+      _documentId(documentId)
 {
     requireIdOfMatchingType(_documentId, _dataType->getTargetType());
 }
@@ -66,7 +63,6 @@ FieldValue& ReferenceFieldValue::assign(const FieldValue& rhs) {
     }
     _documentId = refValueRhs->_documentId;
     _dataType = refValueRhs->_dataType;
-    _altered = true;
     return *this;
 }
 
@@ -76,7 +72,6 @@ void ReferenceFieldValue::setDeserializedDocumentId(const DocumentId& id) {
     _documentId = id;
     // Pre-cache GID to ensure it's not attempted lazily initialized later in a racing manner.
     (void) _documentId.getGlobalId();
-    _altered = false;
 }
 
 ReferenceFieldValue* ReferenceFieldValue::clone() const {
@@ -106,10 +101,6 @@ void ReferenceFieldValue::print(std::ostream& os, bool verbose, const std::strin
     (void) verbose;
     assert(_dataType != nullptr);
     os << indent << "ReferenceFieldValue(" << *_dataType << ", DocumentId(" << _documentId << "))";
-}
-
-bool ReferenceFieldValue::hasChanged() const {
-    return _altered;
 }
 
 void ReferenceFieldValue::accept(FieldValueVisitor& visitor) {

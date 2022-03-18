@@ -447,8 +447,6 @@ VespaDocumentDeserializer::read(ReferenceFieldValue& value) {
         DocumentId id;
         read(id);
         value.setDeserializedDocumentId(id);
-    } else {
-        value.clearChanged();
     }
 }
 

@@ -26,7 +26,6 @@ class ReferenceFieldValue final : public FieldValue {
     const ReferenceDataType* _dataType;
     // TODO wrap in std::optional once available.
     DocumentId _documentId;
-    bool _altered;
 public:
     // Empty constructor required for Identifiable.
     ReferenceFieldValue();
@@ -53,9 +52,6 @@ public:
     // Should only be called by deserializer code, as it will clear hasChanged.
     // `id` must be a valid document ID and cannot be empty.
     void setDeserializedDocumentId(const DocumentId& id);
-    void clearChanged() {
-        _altered = false;
-    }
 
     const DataType* getDataType() const override { return _dataType; }
     FieldValue& assign(const FieldValue&) override;
@@ -63,7 +59,6 @@ public:
     int compare(const FieldValue&) const override;
     void printXml(XmlOutputStream&) const override { /* Not implemented */ }
     void print(std::ostream&, bool, const std::string&) const override;
-    bool hasChanged() const override;
     void accept(FieldValueVisitor&) override;
     void accept(ConstFieldValueVisitor&) const override;
 private:

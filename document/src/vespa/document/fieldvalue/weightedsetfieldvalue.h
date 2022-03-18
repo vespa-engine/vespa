@@ -26,7 +26,6 @@ public:
 private:
     std::shared_ptr<const MapDataType> _map_type;
     WeightedFieldValueMap _map;
-    bool _altered;
 
     void verifyKey(const FieldValue & key);
     bool addValue(const FieldValue& fval) override { return add(fval, 1); }
@@ -78,7 +77,6 @@ public:
     int compare(const FieldValue&) const override;
     void printXml(XmlOutputStream& out) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    bool hasChanged() const override;
 
     // Implements iterating through internal content.
     typedef WeightedFieldValueMap::const_iterator const_iterator;

@@ -168,15 +168,6 @@ ArrayFieldValue::print(std::ostream& out, bool verbose,
     out << "\n" << indent << ")";
 }
 
-bool
-ArrayFieldValue::hasChanged() const
-{
-    for (uint32_t i=0, n=_array->size(); i<n; ++i) {
-        if (array()[i].hasChanged()) return true;
-    }
-    return false;
-}
-
 fieldvalue::ModificationStatus
 ArrayFieldValue::iterateSubset(int startPos, int endPos,
                                vespalib::stringref variable,

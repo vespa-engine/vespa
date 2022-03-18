@@ -29,8 +29,4 @@ void AnnotationReferenceFieldValue::printXml(XmlOutputStream &out) const {
     out << _annotation_index;
 }
 
-bool AnnotationReferenceFieldValue::hasChanged() const {
-    return false;
-}
-
 }  // namespace document

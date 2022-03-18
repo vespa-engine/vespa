@@ -32,8 +32,7 @@ const DataType &getKeyType(const DataType &type) {
 WeightedSetFieldValue::WeightedSetFieldValue(const DataType &type)
     : CollectionFieldValue(Type::WSET, type),
       _map_type(std::make_shared<MapDataType>(getKeyType(type), *DataType::INT)),
-      _map(*_map_type),
-      _altered(true)
+      _map(*_map_type)
 { }
 
 WeightedSetFieldValue::WeightedSetFieldValue(const WeightedSetFieldValue &) = default;
@@ -52,7 +51,6 @@ WeightedSetFieldValue::add(const FieldValue& key, int weight)
 {
     verifyKey(key);
     const WeightedSetDataType & wdt(static_cast<const WeightedSetDataType&>(*_type));
-    _altered = true;
     if (wdt.removeIfZero() && (weight == 0)) {
         _map.erase(key);
         return false;
@@ -64,14 +62,12 @@ bool
 WeightedSetFieldValue::addIgnoreZeroWeight(const FieldValue& key, int32_t weight)
 {
     verifyKey(key);
-    _altered = true;
     return _map.insert(FieldValue::UP(key.clone()), IntFieldValue::make(weight));
 }
 
 void
 WeightedSetFieldValue::push_back(FieldValue::UP key, int weight)
 {
-    _altered = true;
     _map.push_back(std::move(key), IntFieldValue::make(weight));
 }
 
@@ -101,7 +97,6 @@ WeightedSetFieldValue::increment(const FieldValue& key, int val)
             _map.erase(key);
         }
     }
-    _altered = true;
 }
 
 int32_t
@@ -123,7 +118,6 @@ bool
 WeightedSetFieldValue::removeValue(const FieldValue& key)
 {
     bool result = _map.erase(key);
-    _altered |= result;
     return result;
 }
 
@@ -175,14 +169,6 @@ WeightedSetFieldValue::print(std::ostream& out, bool verbose, const std::string&
     }
     if (_map.size() > 0) out << "\n" << indent;
     out << ")";
-}
-
-bool
-WeightedSetFieldValue::hasChanged() const
-{
-    // Keys are not allowed to change in a map, so the keys should not be
-    // referred to externally, and should thus not need to be checked.
-    return _altered;
 }
 
 WeightedSetFieldValue::const_iterator

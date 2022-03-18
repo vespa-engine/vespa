@@ -16,20 +16,17 @@ namespace document {
 
 PredicateFieldValue::PredicateFieldValue()
     : FieldValue(Type::PREDICATE),
-      _slime(std::make_unique<Slime>()),
-      _altered(false) {
-}
+      _slime(std::make_unique<Slime>())
+{ }
 
 PredicateFieldValue::PredicateFieldValue(vespalib::Slime::UP s)
     : FieldValue(Type::PREDICATE),
-      _slime(std::move(s)),
-      _altered(false)
+      _slime(std::move(s))
 { }
 
 PredicateFieldValue::PredicateFieldValue(const PredicateFieldValue &rhs)
     : FieldValue(rhs),
-      _slime(new Slime),
-      _altered(rhs._altered)
+      _slime(new Slime)
 {
     inject(rhs._slime->get(), SlimeInserter(*_slime));
 }
@@ -42,7 +39,6 @@ PredicateFieldValue::assign(const FieldValue &rhs) {
         operator=(static_cast<const PredicateFieldValue &>(rhs));
     } else {
         _slime.reset();
-        _altered = true;
     }
     return *this;
 }
@@ -52,7 +48,6 @@ PredicateFieldValue::operator=(const PredicateFieldValue &rhs)
 {
     _slime = std::make_unique<Slime>();
     inject(rhs._slime->get(), SlimeInserter(*_slime));
-    _altered = true;
     return *this;
 }
 
@@ -77,11 +72,6 @@ PredicateFieldValue::print(std::ostream& out, bool, const std::string&) const {
 const DataType *
 PredicateFieldValue::getDataType() const {
     return DataType::PREDICATE;
-}
-
-bool
-PredicateFieldValue::hasChanged() const {
-    return _altered;
 }
 
 FieldValue *
