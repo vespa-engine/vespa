@@ -16,7 +16,7 @@ import static java.util.stream.Collectors.toMap;
 /**
  * Resolves all document references in the search definitions
  *
- * Iterates through all document fields having a {@link NewDocumentReferenceDataType} and uses {@link NewDocumentReferenceDataType#getTargetType()}
+ * Iterates through all document fields having a {@link NewDocumentReferenceDataType} and uses {@link NewDocumentReferenceDataType#getTargetTypeName()}
  * to determine the referenced document. This information is aggregated into a {@link DocumentReferences} object.
  *
  * @author bjorncs
@@ -88,7 +88,7 @@ public class DocumentReferenceResolver {
     }
 
     private static String getTargetDocumentName(NewDocumentReferenceDataType reference) {
-        return reference.getTargetType().getName();
+        return reference.getTargetTypeName();
     }
 
 }

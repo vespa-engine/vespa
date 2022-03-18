@@ -224,7 +224,7 @@ public class DocumentTypes {
         DocumenttypesConfig.Documenttype.Referencetype.Builder refBuilder =
                 new DocumenttypesConfig.Documenttype.Referencetype.Builder();
         refBuilder.id(refType.getId());
-        refBuilder.target_type_id(type.getTargetType().getId());
+        refBuilder.target_type_id(type.getTargetTypeId());
         documentBuilder.referencetype(refBuilder);
     }
 

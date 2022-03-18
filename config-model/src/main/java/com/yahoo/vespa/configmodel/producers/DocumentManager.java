@@ -178,7 +178,7 @@ public class DocumentManager {
             if (refType.isTemporary()) {
                 throw new IllegalArgumentException("Still temporary: " + refType);
             }
-            builder.referencetype(new Datatype.Referencetype.Builder().target_type_id(refType.getTargetType().getId()));
+            builder.referencetype(new Datatype.Referencetype.Builder().target_type_id(refType.getTargetTypeId()));
         } else {
             throw new IllegalArgumentException("Can not create config for data type " + type + " of class " + type.getClass());
         }

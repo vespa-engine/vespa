@@ -18,18 +18,20 @@ import com.yahoo.document.datatypes.ReferenceFieldValue;
 @SuppressWarnings("deprecation")
 public final class NewDocumentReferenceDataType extends DataType {
 
-    private StructuredDataType target;
-    private DocumentType docTypeTarget = null;
+    private final StructuredDataType target;
+    private final DocumentType docTypeTarget;
     private ReferenceDataType delegate = null;
 
     private final boolean temporary;
 
     private NewDocumentReferenceDataType(NewDocumentType.Name nameAndId,
                                          StructuredDataType target,
+                                         DocumentType docTypeTarget,
                                          boolean temporary)
     {
         super(nameAndId.getName(), nameAndId.getId());
         this.target = target;
+        this.docTypeTarget = docTypeTarget;
         this.temporary = temporary;
     }
 
@@ -39,47 +41,27 @@ public final class NewDocumentReferenceDataType extends DataType {
     }
 
     public static NewDocumentReferenceDataType forDocumentName(String documentName) {
-        return new NewDocumentReferenceDataType(buildTypeName(documentName),
-                                                TemporaryStructuredDataType.create(documentName),
-                                                true);
+        return new NewDocumentReferenceDataType(new DocumentType(documentName));
     }
 
     public NewDocumentReferenceDataType(DocumentType document) {
-        this(buildTypeName(document.getName()), document, true);
-        this.docTypeTarget = document;
+        this(buildTypeName(document.getName()), document, document, true);
     }
 
     public NewDocumentReferenceDataType(NewDocumentType document) {
-        this(buildTypeName(document.getName()), document, false);
+        this(buildTypeName(document.getName()), document, new DocumentType(document.getName()), false);
     }
 
     public boolean isTemporary() { return temporary; }
 
     public StructuredDataType getTargetType() { return target; }
-
-    public void setTargetType(StructuredDataType type) {
-        assert(target.getName().equals(type.getName()));
-        if (temporary) {
-            this.target = type;
-            if ((docTypeTarget == null) && (type instanceof DocumentType)) {
-                this.docTypeTarget = (DocumentType) type;
-            }
-        } else {
-            throw new IllegalStateException
-                (String.format("Unexpected attempt to replace already concrete target " +
-                               "type in NewDocumentReferenceDataType instance (type is '%s')", target.getName()));
-        }
-    }
+    public String getTargetTypeName() { return target.getName(); }
+    public int getTargetTypeId() { return target.getId(); }
 
     @Override
     public FieldValue createFieldValue() {
         // TODO why do we even need this
         if (delegate == null) {
-            if (docTypeTarget == null) {
-                var tmptmp = TemporaryStructuredDataType.create(target.getName());
-                var tmp = ReferenceDataType.createWithInferredId(tmptmp);
-                return tmp.createFieldValue();
-            }
             delegate = ReferenceDataType.createWithInferredId(docTypeTarget);
         }
         return delegate.createFieldValue();
@@ -109,4 +91,10 @@ public final class NewDocumentReferenceDataType extends DataType {
         }
         return false;
     }
+
+    @Override
+    public String toString() {
+        return "{NDRTDT " + getName() + " id=" + getId() + " target=" + target + " [" + target.getClass().getSimpleName() + "]}";
+    }
+
 }
