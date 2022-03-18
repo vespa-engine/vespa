@@ -17,7 +17,8 @@
       "down": false,
       "retired": false,
       "restarting": false,
-      "rebooting": false
+      "rebooting": false,
+      "group": ""
     }
   ]
 }

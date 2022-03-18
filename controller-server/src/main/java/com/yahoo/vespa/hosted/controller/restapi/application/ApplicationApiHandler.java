@@ -1123,6 +1123,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             nodeObject.setBool("retired", node.retired() || node.wantToRetire());
             nodeObject.setBool("restarting", node.wantedRestartGeneration() > node.restartGeneration());
             nodeObject.setBool("rebooting", node.wantedRebootGeneration() > node.rebootGeneration());
+            nodeObject.setString("group", node.group());
         }
         return new SlimeJsonResponse(slime);
     }
