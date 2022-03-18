@@ -297,7 +297,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}")) return updateTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/access/request/operator")) return requestSshAccess(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/access/approve/operator")) return approveAccessRequest(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/access/preapprove/operator")) return addPreapprovedAccess(path.get("tenant"));
+        if (path.matches("/application/v4/tenant/{tenant}/access/managed/operator")) return addManagedAccess(path.get("tenant"));
         if (path.matches("/application/v4/tenant/{tenant}/info")) return updateTenantInfo(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/archive-access")) return allowArchiveAccess(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}")) return addSecretStore(path.get("tenant"), path.get("name"), request);
@@ -345,7 +345,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse handleDELETE(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return deleteTenant(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/access/preapprove/operator")) return removePreapprovedAccess(path.get("tenant"));
+        if (path.matches("/application/v4/tenant/{tenant}/access/managed/operator")) return removeManagedAccess(path.get("tenant"));
         if (path.matches("/application/v4/tenant/{tenant}/key")) return removeDeveloperKey(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/archive-access")) return removeArchiveAccess(path.get("tenant"));
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}")) return deleteSecretStore(path.get("tenant"), path.get("name"), request);
@@ -422,10 +422,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         var accessControlService = controller.serviceRegistry().accessControlService();
         var accessRoleInformation = accessControlService.getAccessRoleInformation(tenant);
-        var preapprovedAccess = accessControlService.getPreapprovedAccess(tenant);
+        var managedAccess = accessControlService.getManagedAccess(tenant);
         var slime = new Slime();
         var cursor = slime.setObject();
-        cursor.setBool("preapprovedAccess", preapprovedAccess);
+        cursor.setBool("managedAccess", managedAccess);
         accessRoleInformation.getPendingRequest()
                 .ifPresent(membershipRequest -> {
                     var requestCursor = cursor.setObject("pendingRequest");
@@ -473,23 +473,23 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return new MessageResponse("OK");
     }
 
-    private HttpResponse addPreapprovedAccess(String tenantName) {
-        return setPreapprovedAccess(tenantName, true);
+    private HttpResponse addManagedAccess(String tenantName) {
+        return setManagedAccess(tenantName, true);
     }
 
-    private HttpResponse removePreapprovedAccess(String tenantName) {
-        return setPreapprovedAccess(tenantName, false);
+    private HttpResponse removeManagedAccess(String tenantName) {
+        return setManagedAccess(tenantName, false);
     }
 
-    private HttpResponse setPreapprovedAccess(String tenantName, boolean preapprovedAccess) {
+    private HttpResponse setManagedAccess(String tenantName, boolean managedAccess) {
         var tenant = TenantName.from(tenantName);
 
         if (controller.tenants().require(tenant).type() != Tenant.Type.cloud)
             return ErrorResponse.badRequest("Can only set access privel for cloud tenants");
 
-        controller.serviceRegistry().accessControlService().setPreapprovedAccess(tenant, preapprovedAccess);
+        controller.serviceRegistry().accessControlService().setManagedAccess(tenant, managedAccess);
         var slime = new Slime();
-        slime.setObject().setBool("preapprovedAccess", preapprovedAccess);
+        slime.setObject().setBool("managedAccess", managedAccess);
         return new SlimeJsonResponse(slime);
     }
 

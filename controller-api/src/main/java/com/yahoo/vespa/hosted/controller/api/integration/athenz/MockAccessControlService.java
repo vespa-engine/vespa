@@ -50,12 +50,12 @@ public class MockAccessControlService implements AccessControlService {
     }
 
     @Override
-    public void setPreapprovedAccess(TenantName tenantName, boolean preapproved) {
+    public void setManagedAccess(TenantName tenantName, boolean managedAccess) {
 
     }
 
     @Override
-    public boolean getPreapprovedAccess(TenantName tenant) {
+    public boolean getManagedAccess(TenantName tenant) {
         return false;
     }
 
