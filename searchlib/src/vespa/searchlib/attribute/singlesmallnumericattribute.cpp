@@ -176,7 +176,7 @@ SingleValueSmallNumericAttribute::getSearch(std::unique_ptr<QueryTermSimple> qTe
 }
 
 void
-SingleValueSmallNumericAttribute::clearDocs(DocId lidLow, DocId lidLimit)
+SingleValueSmallNumericAttribute::clearDocs(DocId lidLow, DocId lidLimit, bool)
 {
     assert(lidLow <= lidLimit);
     assert(lidLimit <= getNumDocs());

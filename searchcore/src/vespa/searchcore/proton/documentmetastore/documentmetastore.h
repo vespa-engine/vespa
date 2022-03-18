@@ -246,7 +246,7 @@ public:
 
     const search::GrowableBitVector &getActiveLids() const { return _lidAlloc.getActiveLids(); }
 
-    void clearDocs(DocId lidLow, DocId lidLimit) override;
+    void clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space) override;
 
     /*
      * Called by document db executor to unblock shrinking of lid

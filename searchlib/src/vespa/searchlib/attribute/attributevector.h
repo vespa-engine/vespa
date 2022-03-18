@@ -253,9 +253,8 @@ protected:
 
     void updateCommittedDocIdLimit() {
         if (_uncommittedDocIdLimit != 0) {
-            if (_uncommittedDocIdLimit > _committedDocIdLimit) {
-                std::atomic_thread_fence(std::memory_order_release);
-                _committedDocIdLimit = _uncommittedDocIdLimit;
+            if (_uncommittedDocIdLimit > _committedDocIdLimit.load(std::memory_order_relaxed)) {
+                _committedDocIdLimit.store(_uncommittedDocIdLimit, std::memory_order_release);
             }
             _uncommittedDocIdLimit = 0;
         }
@@ -403,15 +402,16 @@ public:
 
     // Implements IAttributeVector
     uint32_t getNumDocs() const override final { return _status.getNumDocs(); }
-    uint32_t & getCommittedDocIdLimitRef() { return _committedDocIdLimit; }
+    const std::atomic<uint32_t>& getCommittedDocIdLimitRef() noexcept { return _committedDocIdLimit; }
     void setCommittedDocIdLimit(uint32_t committedDocIdLimit) {
-        _committedDocIdLimit = committedDocIdLimit;
+        _committedDocIdLimit.store(committedDocIdLimit, std::memory_order_release);
     }
     void updateUncommittedDocIdLimit(DocId doc) {
         if (_uncommittedDocIdLimit <= doc)  {
             _uncommittedDocIdLimit = doc + 1;
         }
     }
+    void clear_uncommitted_doc_id_limit() noexcept { _uncommittedDocIdLimit = 0; }
 
     const Status & getStatus() const { return _status; }
     Status & getStatus() { return _status; }
@@ -422,7 +422,7 @@ public:
     CollectionType::Type getCollectionType() const override final { return getInternalCollectionType().type(); }
     bool getIsFilter() const override final { return _config.getIsFilter(); }
     bool getIsFastSearch() const override final { return _config.fastSearch(); }
-    uint32_t getCommittedDocIdLimit() const override final { return _committedDocIdLimit; }
+    uint32_t getCommittedDocIdLimit() const override final { return _committedDocIdLimit.load(std::memory_order_acquire); }
     bool isImported() const override;
 
     /**
@@ -578,7 +578,7 @@ private:
     Status                                _status;
     int                                   _highestValueCount;
     uint32_t                              _enumMax;
-    uint32_t                              _committedDocIdLimit; // docid limit for search
+    std::atomic<uint32_t>                 _committedDocIdLimit; // docid limit for search
     uint32_t                              _uncommittedDocIdLimit; // based on queued changes
     uint64_t                              _createSerialNum;
     uint64_t                              _compactLidSpaceGeneration;
@@ -634,8 +634,8 @@ public:
     virtual uint64_t getUniqueValueCount() const;
     virtual uint64_t getTotalValueCount() const;
     void compactLidSpace(uint32_t wantedLidLimit) override;
-    virtual void clearDocs(DocId lidLow, DocId lidLimit);
-    bool wantShrinkLidSpace() const { return _committedDocIdLimit < getNumDocs(); }
+    virtual void clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space);
+    bool wantShrinkLidSpace() const { return _committedDocIdLimit.load(std::memory_order_relaxed) < getNumDocs(); }
     bool canShrinkLidSpace() const override;
     void shrinkLidSpace() override;
     virtual void onShrinkLidSpace();

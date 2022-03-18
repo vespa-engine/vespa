@@ -274,7 +274,7 @@ MultiValueAttribute<B, M>::getTotalValueCount() const
 
 template <typename B, typename M>
 void
-MultiValueAttribute<B, M>::clearDocs(DocId lidLow, DocId lidLimit)
+MultiValueAttribute<B, M>::clearDocs(DocId lidLow, DocId lidLimit, bool)
 {
     _mvMapping.clearDocs(lidLow, lidLimit, [this](uint32_t docId) { this->clearDoc(docId); });
 }

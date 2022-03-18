@@ -992,7 +992,7 @@ DocumentMetaStore::populateActiveBuckets(BucketId::List buckets)
 }
 
 void
-DocumentMetaStore::clearDocs(DocId lidLow, DocId lidLimit)
+DocumentMetaStore::clearDocs(DocId lidLow, DocId lidLimit, bool)
 {
     assert(lidLow <= lidLimit);
     assert(lidLimit <= getNumDocs());

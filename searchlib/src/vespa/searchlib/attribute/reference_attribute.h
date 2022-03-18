@@ -89,7 +89,7 @@ public:
     bool notifyReferencedRemoveNoCommit(const GlobalId &gid);
     void notifyReferencedRemove(const GlobalId &gid);
     void populateTargetLids(const std::vector<GlobalId>& removes);
-    void clearDocs(DocId lidLow, DocId lidLimit) override;
+    void clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space) override;
     void onShrinkLidSpace() override;
 
     template <typename FunctionType>

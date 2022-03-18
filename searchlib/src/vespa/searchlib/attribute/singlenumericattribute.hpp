@@ -171,7 +171,7 @@ SingleValueNumericAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
 
 template <typename B>
 void
-SingleValueNumericAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit)
+SingleValueNumericAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space)
 {
     assert(lidLow <= lidLimit);
     assert(lidLimit <= this->getNumDocs());
@@ -182,6 +182,9 @@ SingleValueNumericAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit)
             this->clearDoc(lid);
         }
         if ((++count % commit_interval) == 0) {
+            if (in_shrink_lid_space) {
+                this->clear_uncommitted_doc_id_limit();
+            }
             this->commit();
         }
     }

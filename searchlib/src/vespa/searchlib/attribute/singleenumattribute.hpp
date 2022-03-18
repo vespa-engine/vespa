@@ -287,7 +287,7 @@ SingleValueEnumAttribute<B>::onGenerationChange(generation_t generation)
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit)
+SingleValueEnumAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit, bool)
 {
     EnumHandle e(0);
     bool findDefaultEnumRes(this->findEnum(this->getDefaultEnumTypeValue(), e));

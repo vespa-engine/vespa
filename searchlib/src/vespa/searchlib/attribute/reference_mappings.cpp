@@ -8,7 +8,7 @@
 
 namespace search::attribute {
 
-ReferenceMappings::ReferenceMappings(GenerationHolder &genHolder, const uint32_t &committedDocIdLimit)
+ReferenceMappings::ReferenceMappings(GenerationHolder &genHolder, const std::atomic<uint32_t>& committedDocIdLimit)
     : _reverseMappingIndices(genHolder),
       _targetLidLimit(0),
       _reverseMapping(),

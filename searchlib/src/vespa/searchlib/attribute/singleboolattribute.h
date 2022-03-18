@@ -24,7 +24,7 @@ public:
     void onUpdateStat() override;
     bool onLoad(vespalib::Executor *executor) override;
     void onSave(IAttributeSaveTarget &saveTarget) override;
-    void clearDocs(DocId lidLow, DocId lidLimit) override;
+    void clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space) override;
     void onShrinkLidSpace() override;
     void removeOldGenerations(generation_t firstUsed) override;
     void onGenerationChange(generation_t generation) override;

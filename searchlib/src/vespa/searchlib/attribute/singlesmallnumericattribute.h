@@ -187,7 +187,7 @@ public:
         return 0;
     }
 
-    void clearDocs(DocId lidLow, DocId lidLimit) override;
+    void clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space) override;
     void onShrinkLidSpace() override;
     uint64_t getEstimatedSaveByteSize() const override;
 };
