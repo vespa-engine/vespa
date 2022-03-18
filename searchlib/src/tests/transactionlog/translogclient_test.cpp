@@ -433,7 +433,7 @@ visitDomainTest(TransLogClient & tls, Session * s1, const vespalib::string & nam
     auto visitor = tls.createVisitor(name, ca);
     ASSERT_TRUE(visitor);
     EXPECT_TRUE( visitor->visit(0, 1) );
-    EXPECT_TRUE( ca.wait_for_eof() );
+    ASSERT_TRUE( ca.wait_for_eof() );
     EXPECT_TRUE( ! ca.hasSerial(0) );
     EXPECT_TRUE( ca.hasSerial(1) );
     EXPECT_TRUE( ! ca.hasSerial(2) );
@@ -442,7 +442,7 @@ visitDomainTest(TransLogClient & tls, Session * s1, const vespalib::string & nam
     visitor = tls.createVisitor(name, ca);
     ASSERT_TRUE(visitor.get());
     EXPECT_TRUE( visitor->visit(1, 2) );
-    EXPECT_TRUE( ca.wait_for_eof() );
+    ASSERT_TRUE( ca.wait_for_eof() );
     EXPECT_TRUE( ! ca.hasSerial(0) );
     EXPECT_TRUE( ! ca.hasSerial(1) );
     EXPECT_TRUE( ca.hasSerial(2) );
@@ -452,7 +452,7 @@ visitDomainTest(TransLogClient & tls, Session * s1, const vespalib::string & nam
     visitor = tls.createVisitor(name, ca);
     EXPECT_TRUE(visitor.get());
     EXPECT_TRUE( visitor->visit(0, 3) );
-    EXPECT_TRUE( ca.wait_for_eof() );
+    ASSERT_TRUE( ca.wait_for_eof() );
     EXPECT_TRUE( ! ca.hasSerial(0) );
     EXPECT_TRUE( ca.hasSerial(1) );
     EXPECT_TRUE( ca.hasSerial(2) );
@@ -462,7 +462,7 @@ visitDomainTest(TransLogClient & tls, Session * s1, const vespalib::string & nam
     visitor = tls.createVisitor(name, ca);
     ASSERT_TRUE(visitor.get());
     EXPECT_TRUE( visitor->visit(2, 3) );
-    EXPECT_TRUE( ca.wait_for_eof() );
+    ASSERT_TRUE( ca.wait_for_eof() );
     EXPECT_TRUE( ! ca.hasSerial(0) );
     EXPECT_TRUE( !ca.hasSerial(1) );
     EXPECT_TRUE( !ca.hasSerial(2) );
