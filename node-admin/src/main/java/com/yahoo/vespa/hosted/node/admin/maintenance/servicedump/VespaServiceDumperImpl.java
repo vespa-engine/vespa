@@ -61,6 +61,8 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
 
     @Override
     public void processServiceDumpRequest(NodeAgentContext context) {
+        if (context.zone().getCloudName().value().equals("gcp")) return;
+
         Instant startedAt = clock.instant();
         NodeSpec nodeSpec = context.node();
         ServiceDumpReport request = nodeSpec.reports().getReport(ServiceDumpReport.REPORT_ID, ServiceDumpReport.class)
