@@ -38,7 +38,7 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
     private final DataTypeRepo dataTypes = new DataTypeRepo();
     private final Map<Integer, NewDocumentType> inherits = new LinkedHashMap<>();
     private final AnnotationTypeRegistry annotations = new AnnotationTypeRegistry();
-    private final StructDataType header;
+    private final StructDataType contentStruct;
     private final Set<FieldSet> fieldSets = new LinkedHashSet<>();
     private final Set<Name> documentReferences;
     // Imported fields are virtual and therefore exist outside of the SD's document field definition
@@ -66,13 +66,13 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
     }
 
     public NewDocumentType(Name name,
-                           StructDataType header,
+                           StructDataType contentStruct,
                            FieldSets fs,
                            Set<Name> documentReferences,
                            Set<String> importedFieldNames) {
         super(name.getName());
         this.name = name;
-        this.header = header;
+        this.contentStruct = contentStruct;
         if (fs != null) {
             this.fieldSets.addAll(fs.userFieldSets().values());
             for (FieldSet f : fs.builtInFieldSets().values()) {
@@ -90,27 +90,10 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
         return name;
     }
 
-    public DataType getHeader() { return header; }
+    public DataType getContentStruct() { return contentStruct; }
     public Collection<NewDocumentType> getInherited() { return inherits.values(); }
     public NewDocumentType getInherited(Name inherited) { return inherits.get(inherited.getId()); }
     public NewDocumentType removeInherited(Name inherited) { return inherits.remove(inherited.getId()); }
-
-    /**
-     * Data type of the header fields of this and all inherited document types
-     * @return merged {@link StructDataType}
-     */
-    public StructDataType allHeader() {
-        StructDataType ret = new StructDataType(header.getName());
-        for (Field f : header.getFields()) {
-            ret.addField(f);
-        }
-        for (NewDocumentType inherited : getInherited()) {
-            for (Field f : ((StructDataType) inherited.getHeader()).getFields()) {
-                ret.addField(f);
-            }
-        }
-        return ret;
-    }
 
     @Override
     public Class<Document> getValueClass() {
@@ -172,7 +155,7 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
 
     @Override
     public Field getField(String name) {
-        Field field = header.getField(name);
+        Field field = contentStruct.getField(name);
         if (field == null) {
             for (NewDocumentType inheritedType : inherits.values()) {
                 field = inheritedType.getField(name);
@@ -190,7 +173,7 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
 
     @Override
     public Field getField(int id) {
-        Field field = header.getField(id);
+        Field field = contentStruct.getField(id);
         if (field == null) {
             for (NewDocumentType inheritedType : inherits.values()) {
                 field = inheritedType.getField(id);
@@ -209,13 +192,13 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
             collection.addAll(type.getAllFields());
         }
 
-        collection.addAll(header.getFields());
+        collection.addAll(contentStruct.getFields());
         return Collections.unmodifiableCollection(collection);
     }
 
     public Collection<Field> getFields() {
         Collection<Field> collection = new LinkedList<>();
-        collection.addAll(header.getFields());
+        collection.addAll(contentStruct.getFields());
         return Collections.unmodifiableCollection(collection);
     }
 
