@@ -116,27 +116,27 @@ public class AthenzAccessControlService implements AccessControlService {
         ).orElseThrow(() -> new UnsupportedOperationException("Only allowed in systems running Vespa Athenz instance"));
     }
 
-    public void setPreapprovedAccess(TenantName tenantName, boolean preapprovedAccess) {
+    public void setManagedAccess(TenantName tenantName, boolean managedAccess) {
         vespaZmsClient.ifPresentOrElse(
                 zms -> {
                     var role = sshRole(tenantName);
                     var assertion = getApprovalAssertion(role);
-                    if (preapprovedAccess) {
-                        zms.addPolicyRule(role.domain(), ACCESS_APPROVAL_POLICY, assertion.action(), assertion.resource(), assertion.role());
-                    } else {
+                    if (managedAccess) {
                         zms.deletePolicyRule(role.domain(), ACCESS_APPROVAL_POLICY, assertion.action(), assertion.resource(), assertion.role());
+                    } else {
+                        zms.addPolicyRule(role.domain(), ACCESS_APPROVAL_POLICY, assertion.action(), assertion.resource(), assertion.role());
                     }
                 },() -> { throw new UnsupportedOperationException("Only allowed in systems running Vespa Athenz instance"); });
     }
 
-    public boolean getPreapprovedAccess(TenantName tenantName) {
+    public boolean getManagedAccess(TenantName tenantName) {
         return vespaZmsClient.map(
                 zms -> {
                     var role = sshRole(tenantName);
                     var approvalAssertion = getApprovalAssertion(role);
                     return zms.getPolicy(role.domain(), ACCESS_APPROVAL_POLICY)
-                            .map(policy -> policy.assertions().stream().anyMatch(assertion -> assertion.satisfies(approvalAssertion)))
-                            .orElse(false);
+                            .map(policy -> policy.assertions().stream().noneMatch(assertion -> assertion.satisfies(approvalAssertion)))
+                            .orElse(true);
                 }).orElseThrow(() -> new UnsupportedOperationException("Only allowed in systems running Vespa Athenz instance") );
     }
 
