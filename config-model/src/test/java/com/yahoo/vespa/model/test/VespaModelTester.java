@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.yahoo.config.provision.NodeResources.Architecture;
 import static com.yahoo.vespa.model.test.utils.ApplicationPackageUtils.generateSchemas;
 
 /**
@@ -53,7 +54,7 @@ public class VespaModelTester {
     private final Map<NodeResources, Collection<Host>> hostsByResources = new HashMap<>();
     private ApplicationId applicationId = ApplicationId.defaultId();
     private boolean useDedicatedNodeForLogserver = false;
-    private String adminClusterArchitecture = "x86_64";
+    private Architecture adminClusterArchitecture = Architecture.getDefault();;
     private HostProvisioner provisioner;
 
     public VespaModelTester() {
@@ -102,7 +103,9 @@ public class VespaModelTester {
     public void setHosted(boolean hosted) { this.hosted = hosted; }
 
     /** Sets architecture to use for admin clusters. Default: x86_64 */
-    public void setAdminClusterArchitecture(String architecture) { this.adminClusterArchitecture = architecture; }
+    public void setAdminClusterArchitecture(Architecture architecture) {
+        this.adminClusterArchitecture = architecture;
+    }
 
     /** Sets the tenant, application name, and instance name of the model being built. */
     public void setApplicationId(String tenant, String applicationName, String instanceName) {

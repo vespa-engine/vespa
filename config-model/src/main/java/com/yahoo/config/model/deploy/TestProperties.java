@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.yahoo.config.provision.NodeResources.Architecture;
+
 /**
  * A test-only Properties class
  *
@@ -81,7 +83,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<String> environmentVariables = List.of();
     private boolean avoidRenamingSummaryFeatures = false;
     private boolean experimentalSdParsing = false;
-    private String adminClusterNodeResourcesArchitecture = "x86_64";
+    private Architecture adminClusterNodeResourcesArchitecture = Architecture.getDefault();
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -143,7 +145,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public List<String> environmentVariables() { return environmentVariables; }
     @Override public boolean avoidRenamingSummaryFeatures() { return this.avoidRenamingSummaryFeatures; }
     @Override public boolean experimentalSdParsing() { return this.experimentalSdParsing; }
-    @Override public String adminClusterNodeArchitecture() { return adminClusterNodeResourcesArchitecture; }
+    @Override public Architecture adminClusterArchitecture() { return adminClusterNodeResourcesArchitecture; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -391,8 +393,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties setAdminClusterNodeResourcesArchitecture(String architectureFunction) {
-        this.adminClusterNodeResourcesArchitecture = architectureFunction;
+    public TestProperties setAdminClusterNodeResourcesArchitecture(Architecture architecture) {
+        this.adminClusterNodeResourcesArchitecture = architecture;
         return this;
     }
 
