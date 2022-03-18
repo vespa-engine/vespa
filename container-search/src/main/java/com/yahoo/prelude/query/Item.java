@@ -11,7 +11,6 @@ import com.yahoo.text.Utf8;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
-import java.util.Optional;
 
 
 /**
@@ -322,7 +321,7 @@ public abstract class Item implements Cloneable {
     public String toString() {
         StringBuilder buffer = new StringBuilder();
 
-        if (shouldParenthize()) {
+        if (shouldParenthesize()) {
             buffer.append("(");
         }
         if (isFilter()) {
@@ -330,7 +329,7 @@ public abstract class Item implements Cloneable {
         }
         appendHeadingString(buffer);
         appendBodyString(buffer);
-        if (shouldParenthize()) {
+        if (shouldParenthesize()) {
             buffer.append(")");
         }
 
@@ -343,10 +342,10 @@ public abstract class Item implements Cloneable {
     }
 
     /**
-     * Returns whether this item should be parethized when printed.
+     * Returns whether this item should be parenthesized when printed.
      * Default is false - no parentheses
      */
-    protected boolean shouldParenthize() {
+    protected boolean shouldParenthesize() {
         return false;
     }
 

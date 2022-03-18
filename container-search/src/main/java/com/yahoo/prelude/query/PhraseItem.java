@@ -202,7 +202,7 @@ public class PhraseItem extends CompositeIndexedItem {
 
     /** Returns false, no parenthezes for phrases */
     @Override
-    protected boolean shouldParenthize() {
+    protected boolean shouldParenthesize() {
         return false;
     }
 
