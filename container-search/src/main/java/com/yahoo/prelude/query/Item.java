@@ -19,7 +19,7 @@ import java.util.Objects;
  * Items are in general mutable and not thread safe.
  * They can be deeply cloned by calling clone().
  * Their identity is defined by their content
- * (i.e the field value of two items decide if they are equal).
+ * (i.e. the field value of two items decide if they are equal).
  *
  * @author bratseth
  * @author havardpe
@@ -232,36 +232,34 @@ public abstract class Item implements Cloneable {
     public abstract int encode(ByteBuffer buffer);
 
     protected void encodeThis(ByteBuffer buffer) {
-        int FEAT_SHIFT = 5;
-        int CODE_MASK = 0x1f;
-        int FEAT_MASK = 0xe0;
-        int FEAT_WEIGHT = 0x01;
-        int FEAT_UNIQUEID = 0x02;
-        int FEAT_FLAGS = 0x04;
+        byte CODE_MASK =     0b00011111;
+        byte FEAT_WEIGHT =   0b00100000;
+        byte FEAT_UNIQUEID = 0b01000000;
+        byte FEAT_FLAGS =   -0b10000000;
 
-        int features = 0;
+        byte type = (byte) (getCode() & CODE_MASK);
+        if (type != getCode())
+            throw new IllegalStateException("must increase number of bytes in serialization format for queries");
 
         if (weight != DEFAULT_WEIGHT) {
-            features |= FEAT_WEIGHT;
+            type |= FEAT_WEIGHT;
         }
         if (hasUniqueID()) {
-            features |= FEAT_UNIQUEID;
+            type |= FEAT_UNIQUEID;
         }
         byte flags = getFlagsFeature();
         if (flags != 0) {
-            features |= FEAT_FLAGS;
+            type |= FEAT_FLAGS;
         }
-        byte type = (byte)(((getCode() & CODE_MASK)
-                       | ((features << FEAT_SHIFT) & FEAT_MASK)) & 0xff);
 
         buffer.put(type);
-        if ((features & FEAT_WEIGHT) != 0) {
+        if ((type & FEAT_WEIGHT) != 0) {
             IntegerCompressor.putCompressedNumber(weight, buffer);
         }
-        if ((features & FEAT_UNIQUEID) != 0) {
+        if ((type & FEAT_UNIQUEID) != 0) {
             IntegerCompressor.putCompressedPositiveNumber(uniqueID, buffer);
         }
-        if (flags != 0) {
+        if ((type & FEAT_FLAGS) != 0) {
             buffer.put(flags);
         }
     }
