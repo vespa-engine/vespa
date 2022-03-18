@@ -42,13 +42,9 @@ public abstract class CompositeItem extends Item {
     }
 
     public void ensureNotInSubtree(CompositeItem item) {
-        for (Iterator<Item> i = item.getItemIterator(); i.hasNext();) {
-            Item possibleCycle = i.next();
-
-            if (this == possibleCycle) {
+        for (Item i = this; i != null; i = i.getParent()) {
+            if (i == item) {
                 throw new IllegalArgumentException("Cannot add " + item + " to " + this + " as it would create a cycle");
-            } else if (possibleCycle instanceof CompositeItem) {
-                ensureNotInSubtree((CompositeItem) possibleCycle);
             }
         }
     }
@@ -205,7 +201,7 @@ public abstract class CompositeItem extends Item {
     }
 
     /** Composite items should be parenthized when not on the top level */
-    protected boolean shouldParenthize() {
+    protected boolean shouldParenthesize() {
         return getParent()!= null && ! (getParent() instanceof QueryTree);
     }
 

@@ -20,7 +20,7 @@ public class EquivItem extends CompositeTaggableItem {
     public EquivItem() {}
 
     /**
-     * Creates an EQUIV with the given item as child.  The new EQUIV will take connectivity,
+     * Creates an EQUIV with the given item as child. The new EQUIV will take connectivity,
      * significance and weight from the given item.
      *
      * @param item will be modified and added as a child
@@ -48,7 +48,7 @@ public class EquivItem extends CompositeTaggableItem {
         // steal other item's weight:
         setWeight(item.getWeight());
 
-        // we have now stolen all of the other item's unique id needs:
+        // we have now stolen all the other item's unique id needs:
         item.setHasUniqueID(false);
     }
 

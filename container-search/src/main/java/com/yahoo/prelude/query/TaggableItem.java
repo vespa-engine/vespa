@@ -18,10 +18,10 @@ public interface TaggableItem {
      * This is used to influence ranking features taking proximity into account: nativeRank and a subset of the
      * fieldMatch features.
      * <p>
-     * By default consecutive query terms are 'somewhat' connected, meaning ranking features will be better in documents
+     * By default consecutive query terms are 'somewhat' connected, meaning ranking features will score higher in documents
      * where the terms are found close to each other. This effect can be increased or decreased by manipulating the
      * connectivity value. Typical use is to increase the connectivity between terms in the query that we believe are
-     * semantically connected. E.g in the query 'new york hotel', it is a good idea to increase the connectivity between
+     * semantically connected. E.g., in the query 'new york hotel', it is a good idea to increase the connectivity between
      * "new" and "york" to ensure that a document containing "List of hotels in New York" is ranked above one containing
      * "List of new hotels in York".
      *
@@ -36,8 +36,8 @@ public interface TaggableItem {
     /**
      * Used for setting explicit term significance (in the tf/idf sense) to a single term or phrase,
      * relative to the rest of the query.
-     * This influences ranking features which take term significance into account and overrides the default
-     * partial corpus based term significance computation happening in the backend.
+     * This influences ranking features which take term significance into account, and overrides the default
+     * partial corpus based term significance computation in the backend.
      */
     void setSignificance(double significance);
     boolean hasExplicitSignificance();
