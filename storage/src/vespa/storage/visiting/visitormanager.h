@@ -84,9 +84,11 @@ private:
     bool _enforceQueueUse;
     VisitorFactory::Map _visitorFactories;
 public:
-    VisitorManager(const config::ConfigUri & configUri, StorageComponentRegister&,
+    VisitorManager(const config::ConfigUri & configUri,
+                   StorageComponentRegister&,
                    VisitorMessageSessionFactory&,
-                   const VisitorFactory::Map& external = VisitorFactory::Map());
+                   const VisitorFactory::Map& external = VisitorFactory::Map(),
+                   bool defer_manager_thread_start = false);
     ~VisitorManager() override;
 
     void onClose() override;
@@ -115,6 +117,8 @@ public:
     }
     /** For unit testing */
     bool hasPendingMessageState() const;
+    // Must be called exactly once iff manager was created with defer_manager_thread_start == true
+    void create_and_start_manager_thread();
 
     void enforceQueueUsage() { _enforceQueueUse = true; }
 

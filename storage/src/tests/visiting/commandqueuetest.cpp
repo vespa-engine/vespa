@@ -155,12 +155,11 @@ TEST(CommandQueueTest, release_lowest_priority) {
     std::vector<std::shared_ptr<api::CreateVisitorCommand>> commands;
     for (;;) {
         std::shared_ptr<api::CreateVisitorCommand> cmdPeek(queue.peekLowestPriorityCommand());
-        std::pair<std::shared_ptr<api::CreateVisitorCommand>, uint64_t> cmd(
-                queue.releaseLowestPriorityCommand());
-        if (cmd.first.get() == 0 || cmdPeek != cmd.first) {
+        auto cmd_and_deadline = queue.releaseLowestPriorityCommand();
+        if (!cmd_and_deadline.first || cmdPeek != cmd_and_deadline.first) {
             break;
         }
-        commands.push_back(cmd.first);
+        commands.push_back(cmd_and_deadline.first);
     }
     ASSERT_EQ(7, commands.size());
     EXPECT_EQ("sixth t=14 p=50",  getCommandString(commands[0]));

@@ -22,7 +22,8 @@ namespace storage {
 VisitorManager::VisitorManager(const config::ConfigUri & configUri,
                                StorageComponentRegister& componentRegister,
                                VisitorMessageSessionFactory& messageSF,
-                               const VisitorFactory::Map& externalFactories)
+                               const VisitorFactory::Map& externalFactories,
+                               bool defer_manager_thread_start)
     : StorageLink("Visitor Manager"),
       framework::HtmlStatusReporter("visitorman", "Visitor Manager"),
       _componentRegister(componentRegister),
@@ -51,7 +52,9 @@ VisitorManager::VisitorManager(const config::ConfigUri & configUri,
     _configFetcher->subscribe<vespa::config::content::core::StorVisitorConfig>(configUri.getConfigId(), this);
     _configFetcher->start();
     _component.registerMetric(*_metrics);
-    _thread = _component.startThread(*this, 30s, 1s, 1, vespalib::CpuUsage::Category::READ);
+    if (!defer_manager_thread_start) {
+        create_and_start_manager_thread();
+    }
     _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
     _visitorFactories["dumpvisitor"] = std::make_shared<DumpVisitorSingleFactory>();
     _visitorFactories["dumpvisitorsingle"] = std::make_shared<DumpVisitorSingleFactory>();
@@ -65,12 +68,19 @@ VisitorManager::VisitorManager(const config::ConfigUri & configUri,
 VisitorManager::~VisitorManager() {
     closeNextLink();
     LOG(debug, "Deleting link %s.", toString().c_str());
-    if (_thread.get() != 0) {
+    if (_thread) {
         _thread->interrupt();
         _visitorCond.notify_all();
         _thread->join();
     }
     _visitorThread.clear();
+}
+
+void
+VisitorManager::create_and_start_manager_thread()
+{
+    assert(!_thread);
+    _thread = _component.startThread(*this, 30s, 1s, 1, vespalib::CpuUsage::Category::READ);
 }
 
 void
@@ -207,13 +217,14 @@ VisitorManager::run(framework::ThreadHandle& thread)
             }
             timedOut = _visitorQueue.releaseTimedOut();
         }
-        framework::MicroSecTime currentTime(_component.getClock().getTimeInMicros());
+        const auto currentTime = _component.getClock().getMonotonicTime();
         for (std::list<CQ::CommandEntry>::iterator it = timedOut.begin();
              it != timedOut.end(); ++it)
         {
-            _metrics->queueTimeoutWaitTime.addValue(currentTime.getTime() - it->_time);
+            // TODO is this really tracking what the metric description implies it's tracking...?
+            _metrics->queueTimeoutWaitTime.addValue(vespalib::to_s(currentTime - it->_time) * 1000.0); // Double metric in millis
             std::shared_ptr<api::StorageReply> reply(it->_command->makeReply());
-            reply->setResult(api::ReturnCode(api::ReturnCode::BUSY,"Visitor timed out in visitor queue"));
+            reply->setResult(api::ReturnCode(api::ReturnCode::BUSY, "Visitor timed out in visitor queue"));
             sendUp(reply);
         }
         {
@@ -224,10 +235,10 @@ VisitorManager::run(framework::ThreadHandle& thread)
                 _visitorCond.wait_for(waiter, 1000ms);
                 thread.registerTick(framework::WAIT_CYCLE);
             } else {
-                uint64_t timediff = (_visitorQueue.tbegin()->_time- currentTime.getTime()) / 1000000;
-                timediff = std::min(timediff, uint64_t(1000));
-                if (timediff > 0) {
-                    _visitorCond.wait_for(waiter, std::chrono::milliseconds(timediff));
+                auto time_diff = _visitorQueue.tbegin()->_time - currentTime;
+                time_diff = (time_diff < 1000ms) ? time_diff : 1000ms;
+                if (time_diff.count() > 0) {
+                    _visitorCond.wait_for(waiter, time_diff);
                     thread.registerTick(framework::WAIT_CYCLE);
                 }
             }
@@ -307,12 +318,13 @@ VisitorManager::scheduleVisitor(
                         std::shared_ptr<api::CreateVisitorCommand> tail(_visitorQueue.peekLowestPriorityCommand());
                             // Lower int ==> higher pri
                         if (cmd->getPriority() < tail->getPriority()) {
-                            std::pair<api::CreateVisitorCommand::SP, time_t> evictCommand(_visitorQueue.releaseLowestPriorityCommand());
+                            auto evictCommand = _visitorQueue.releaseLowestPriorityCommand();
                             assert(tail == evictCommand.first);
                             _visitorQueue.add(cmd);
                             _visitorCond.notify_one();
-                            framework::MicroSecTime t(_component.getClock().getTimeInMicros());
-                            _metrics->queueEvictedWaitTime.addValue(t.getTime() - evictCommand.second);
+                            auto now = _component.getClock().getMonotonicTime();
+                            // TODO is this really tracking what the metric description implies it's tracking...?
+                            _metrics->queueEvictedWaitTime.addValue(vespalib::to_s(now - evictCommand.second) * 1000.0); // Double metric in millis
                             failCommand = evictCommand.first;
                         } else {
                             failCommand = cmd;
@@ -491,11 +503,12 @@ VisitorManager::attemptScheduleQueuedVisitor(MonitorGuard& visitorLock)
     std::shared_ptr<api::CreateVisitorCommand> cmd(_visitorQueue.peekNextCommand());
     assert(cmd.get());
     if (totCount < maximumConcurrent(*cmd)) {
-        std::pair<api::CreateVisitorCommand::SP, time_t> cmd2(_visitorQueue.releaseNextCommand());
+        auto cmd2 = _visitorQueue.releaseNextCommand();
         assert(cmd == cmd2.first);
         scheduleVisitor(cmd, true, visitorLock);
-        framework::MicroSecTime time(_component.getClock().getTimeInMicros());
-        _metrics->queueWaitTime.addValue(time.getTime() - cmd2.second);
+        auto now = _component.getClock().getMonotonicTime();
+        // TODO is this really tracking what the metric description implies it's tracking...?
+        _metrics->queueWaitTime.addValue(vespalib::to_s(now - cmd2.second) * 1000.0); // Double metric in millis
         // visitorLock is unlocked at this point
         return true;
     }
@@ -584,7 +597,7 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
             }
             out << "<h3>Queued visitors</h3>\n<ul>\n";
 
-            framework::MicroSecTime time(_component.getClock().getTimeInMicros());
+            const auto now = _component.getClock().getMonotonicTime();
             for (CommandQueue<api::CreateVisitorCommand>::const_iterator it
                     = _visitorQueue.begin(); it != _visitorQueue.end(); ++it)
             {
@@ -592,7 +605,7 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
                 assert(cmd);
                 out << "<li>" << cmd->getInstanceId() << " - "
                     << vespalib::count_ms(cmd->getQueueTimeout()) << ", remaining timeout "
-                    << (it->_time - time.getTime()) / 1000000 << " ms\n";
+                    << vespalib::count_ms(it->_time - now) << " ms\n";
             }
             if (_visitorQueue.empty()) {
                 out << "None\n";
