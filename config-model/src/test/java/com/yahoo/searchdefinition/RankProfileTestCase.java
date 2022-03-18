@@ -8,6 +8,7 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
+import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
@@ -363,6 +364,9 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
         type.addField(new FieldDescription("ranking.features.query(numeric)",
                 FieldType.fromString("integer", typeRegistry)), typeRegistry);
         typeRegistry.register(type);
+        var profile = new QueryProfile(new ComponentId("testprofile"));
+        profile.setType(type);
+        registry.register(profile);
         return registry;
     }
 
