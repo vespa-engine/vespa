@@ -66,7 +66,8 @@ private:
 
 TEST("require that StoreByBucket gives bucket by bucket and ordered within")
 {
-    vespalib::MemoryDataStore backing;
+    std::mutex backing_lock;
+    vespalib::MemoryDataStore backing(vespalib::alloc::Alloc::alloc(256), &backing_lock);
     vespalib::ThreadStackExecutor executor(8, 128_Ki);
     StoreByBucket sbb(backing, executor, CompressionConfig::LZ4);
     for (size_t i(1); i <=500; i++) {
