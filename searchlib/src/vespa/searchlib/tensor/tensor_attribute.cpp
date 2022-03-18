@@ -234,7 +234,7 @@ TensorAttribute::get_state(const vespalib::slime::Inserter& inserter) const
 }
 
 void
-TensorAttribute::clearDocs(DocId lidLow, DocId lidLimit)
+TensorAttribute::clearDocs(DocId lidLow, DocId lidLimit, bool)
 {
     assert(lidLow <= lidLimit);
     assert(lidLimit <= this->getNumDocs());

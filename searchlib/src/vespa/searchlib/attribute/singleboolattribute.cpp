@@ -224,7 +224,7 @@ SingleBoolAttribute::onSave(IAttributeSaveTarget &saveTarget)
 }
 
 void
-SingleBoolAttribute::clearDocs(DocId lidLow, DocId lidLimit)
+SingleBoolAttribute::clearDocs(DocId lidLow, DocId lidLimit, bool)
 {
     assert(lidLow <= lidLimit);
     assert(lidLimit <= getNumDocs());

@@ -39,7 +39,7 @@ class ReferenceMappings
     ReverseMapping _reverseMapping;
     // vector containing target lid given source lid
     vespalib::RcuVectorBase<AtomicTargetLid> _targetLids;
-    const uint32_t &_committedDocIdLimit;
+    const std::atomic<uint32_t>& _committedDocIdLimit;
 
     void syncForwardMapping(const Reference &entry);
     void syncReverseMappingIndices(const Reference &entry);
@@ -49,7 +49,7 @@ public:
     // Class used to map from target lid to source lids
     using ReverseMappingRefs = vespalib::ConstArrayRef<AtomicEntryRef>;
 
-    ReferenceMappings(GenerationHolder &genHolder, const uint32_t &committedDocIdLimit);
+    ReferenceMappings(GenerationHolder &genHolder, const std::atomic<uint32_t>& committedDocIdLimit);
 
     ~ReferenceMappings();
 
@@ -85,12 +85,13 @@ public:
     foreach_lid(uint32_t targetLid, FunctionType &&func) const;
 
     TargetLids getTargetLids() const {
-        uint32_t committedDocIdLimit = _committedDocIdLimit;
+        uint32_t committedDocIdLimit = _committedDocIdLimit.load(std::memory_order_acquire);
         return TargetLids(&_targetLids.acquire_elem_ref(0), committedDocIdLimit);
     }
     uint32_t getTargetLid(uint32_t doc) const {
         // Check limit to avoid reading memory beyond end of valid mapping array
-        return doc < _committedDocIdLimit ? _targetLids.acquire_elem_ref(doc).load_acquire() : 0u;
+        uint32_t committed_doc_id_limit = _committedDocIdLimit.load(std::memory_order_acquire);
+        return doc < committed_doc_id_limit ? _targetLids.acquire_elem_ref(doc).load_acquire() : 0u;
     }
     ReverseMappingRefs getReverseMappingRefs() const {
         uint32_t targetLidLimit = _targetLidLimit.load(std::memory_order_acquire);

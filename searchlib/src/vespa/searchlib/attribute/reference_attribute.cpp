@@ -430,7 +430,7 @@ ReferenceAttribute::populateTargetLids(const std::vector<GlobalId>& removes)
 }
 
 void
-ReferenceAttribute::clearDocs(DocId lidLow, DocId lidLimit)
+ReferenceAttribute::clearDocs(DocId lidLow, DocId lidLimit, bool)
 {
     assert(lidLow <= lidLimit);
     assert(lidLimit <= getNumDocs());

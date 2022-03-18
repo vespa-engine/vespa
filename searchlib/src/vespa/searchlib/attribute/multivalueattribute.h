@@ -71,7 +71,7 @@ private:
     void apply_attribute_changes_to_wset(DocumentValues& docValues);
 
 public:
-    void clearDocs(DocId lidLow, DocId lidLimit) override;
+    void clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space) override;
     void onShrinkLidSpace() override ;
     void onAddDocs(DocId lidLimit) override;
 };

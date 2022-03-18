@@ -577,12 +577,13 @@ uint32_t AttributeVector::getVersion() const { return 0; }
 void
 AttributeVector::compactLidSpace(uint32_t wantedLidLimit) {
     commit();
-    assert(_committedDocIdLimit >= wantedLidLimit);
-    if (wantedLidLimit < _committedDocIdLimit) {
-        clearDocs(wantedLidLimit, _committedDocIdLimit);
+    uint32_t committed_doc_id_limit = _committedDocIdLimit.load(std::memory_order_relaxed);
+    assert(committed_doc_id_limit >= wantedLidLimit);
+    if (wantedLidLimit < committed_doc_id_limit) {
+        clearDocs(wantedLidLimit, committed_doc_id_limit, false);
     }
     commit();
-    _committedDocIdLimit = wantedLidLimit;
+    _committedDocIdLimit.store(wantedLidLimit, std::memory_order_release);
     _compactLidSpaceGeneration = _genHandler.getCurrentGeneration();
     incGeneration();
 }
@@ -603,14 +604,15 @@ AttributeVector::shrinkLidSpace()
     if (!canShrinkLidSpace()) {
         return;
     }
-    uint32_t committedDocIdLimit = _committedDocIdLimit;
-    clearDocs(committedDocIdLimit, getNumDocs());
+    uint32_t committed_doc_id_limit = _committedDocIdLimit.load(std::memory_order_relaxed);
+    clearDocs(committed_doc_id_limit, getNumDocs(), true);
+    clear_uncommitted_doc_id_limit();
     commit();
-    _committedDocIdLimit = committedDocIdLimit;
+    assert(committed_doc_id_limit == _committedDocIdLimit.load(std::memory_order_relaxed));
     onShrinkLidSpace();
     attribute::IPostingListAttributeBase *pab = getIPostingListAttributeBase();
     if (pab != NULL) {
-        pab->forwardedShrinkLidSpace(_committedDocIdLimit);
+        pab->forwardedShrinkLidSpace(committed_doc_id_limit);
     }
     incGeneration();
     updateStat(true);
@@ -619,7 +621,7 @@ AttributeVector::shrinkLidSpace()
 void AttributeVector::onShrinkLidSpace() {}
 
 void
-AttributeVector::clearDocs(DocId lidLow, DocId lidLimit)
+AttributeVector::clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space)
 {
     assert(lidLow <= lidLimit);
     assert(lidLimit <= getNumDocs());
@@ -628,6 +630,9 @@ AttributeVector::clearDocs(DocId lidLow, DocId lidLimit)
     for (DocId lid = lidLow; lid < lidLimit; ++lid) {
         clearDoc(lid);
         if ((++count % commit_interval) == 0) {
+            if (in_shrink_lid_space) {
+                clear_uncommitted_doc_id_limit();
+            }
             commit();
         }
     }
