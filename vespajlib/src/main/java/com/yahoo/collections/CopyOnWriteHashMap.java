@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A hashmap wrapper which defers cloning of the enclosed map until it is written to.
@@ -21,8 +22,8 @@ public class CopyOnWriteHashMap<K,V> extends AbstractMap<K,V> implements Cloneab
 
     private Map<K,V> map;
 
-    /** True when this class is allowed to write to the map */
-    private boolean writable = true;
+    /** This class may write to the map if it is the sole owner */
+    private AtomicInteger owners = new AtomicInteger(1);
 
     /** Lazily initialized view */
     private transient Set<Map.Entry<K,V>> entrySet = null;
@@ -40,13 +41,18 @@ public class CopyOnWriteHashMap<K,V> extends AbstractMap<K,V> implements Cloneab
     }
 
     private void makeReadOnly() {
-        writable = false;
+        owners.incrementAndGet();
+    }
+
+    private boolean isWritable() {
+        return owners.get() == 1;
     }
 
     private void makeWritable() {
-        if (writable) return;
+        if (isWritable()) return;
         map = copyMap(map);
-        writable = true;
+        owners.decrementAndGet();
+        owners = new AtomicInteger(1);
         entrySet = null;
     }
 
@@ -62,8 +68,7 @@ public class CopyOnWriteHashMap<K,V> extends AbstractMap<K,V> implements Cloneab
     public CopyOnWriteHashMap<K,V> clone() {
         try {
             CopyOnWriteHashMap<K,V> clone = (CopyOnWriteHashMap<K,V>)super.clone();
-            this.makeReadOnly();
-            clone.makeReadOnly();
+            makeReadOnly(); // owners shared with clone
             return clone;
         }
         catch (CloneNotSupportedException e) {
@@ -94,7 +99,7 @@ public class CopyOnWriteHashMap<K,V> extends AbstractMap<K,V> implements Cloneab
     @Override
     public boolean equals(Object other) {
         if ( ! (other instanceof CopyOnWriteHashMap)) return false;
-        return this.map.equals(((CopyOnWriteHashMap)other).map);
+        return this.map.equals(((CopyOnWriteHashMap<?, ?>)other).map);
     }
 
     @Override
@@ -137,7 +142,7 @@ public class CopyOnWriteHashMap<K,V> extends AbstractMap<K,V> implements Cloneab
     private class EntryIterator implements Iterator<Map.Entry<K,V>> {
 
         /** Wrapped iterator */
-        private Iterator<Map.Entry<K,V>> mapIterator;
+        private final Iterator<Map.Entry<K,V>> mapIterator;
 
         public EntryIterator() {
             mapIterator = map.entrySet().iterator();
@@ -152,7 +157,7 @@ public class CopyOnWriteHashMap<K,V> extends AbstractMap<K,V> implements Cloneab
         }
 
         public void remove() {
-            if ( ! writable)
+            if ( ! isWritable())
                 throw new UnsupportedOperationException("Cannot perform the copy-on-write operation during iteration");
             mapIterator.remove();
         }
