@@ -95,6 +95,24 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
     public NewDocumentType getInherited(Name inherited) { return inherits.get(inherited.getId()); }
     public NewDocumentType removeInherited(Name inherited) { return inherits.remove(inherited.getId()); }
 
+    /**
+     * Data type of the header fields of this and all inherited document types
+     * Used by DocumentGenMojo
+     * @return merged {@link StructDataType}
+     */
+    public StructDataType allHeader() {
+        StructDataType ret = new StructDataType(contentStruct.getName());
+        for (Field f : contentStruct.getFields()) {
+            ret.addField(f);
+        }
+        for (NewDocumentType inherited : getInherited()) {
+            for (Field f : ((StructDataType) inherited.getContentStruct()).getFields()) {
+                ret.addField(f);
+            }
+        }
+        return ret;
+    }
+
     @Override
     public Class<Document> getValueClass() {
         return Document.class;
