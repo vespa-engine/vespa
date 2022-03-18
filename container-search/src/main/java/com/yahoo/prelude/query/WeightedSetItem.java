@@ -10,6 +10,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 
+import static java.util.Objects.requireNonNullElse;
+
 /**
  * A term which contains a weighted set.
  *
@@ -30,20 +32,12 @@ public class WeightedSetItem extends SimpleTaggableItem {
 
     /** Creates an empty weighted set; note you must provide an index name up front */
     public WeightedSetItem(String indexName) {
-        if (indexName == null) {
-            this.indexName = "";
-        } else {
-            this.indexName = indexName;
-        }
+        this.indexName = requireNonNullElse(indexName, "");
         set = new CopyOnWriteHashMap<>(1000);
     }
 
     public WeightedSetItem(String indexName, Map<Object, Integer> map) {
-        if (indexName == null) {
-            this.indexName = "";
-        } else {
-            this.indexName = indexName;
-        }
+        this.indexName = requireNonNullElse(indexName, "");
         set = new CopyOnWriteHashMap<>(map);
     }
 
@@ -96,11 +90,7 @@ public class WeightedSetItem extends SimpleTaggableItem {
 
     @Override
     public void setIndexName(String index) {
-        if (index == null) {
-            this.indexName = "";
-        } else {
-            this.indexName = index;
-        }
+        this.indexName = requireNonNullElse(index, "");
     }
 
     public String getIndexName() {

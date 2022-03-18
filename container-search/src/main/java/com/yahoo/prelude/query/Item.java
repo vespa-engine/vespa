@@ -296,7 +296,7 @@ public abstract class Item implements Cloneable {
 
 
     /** Utility method for turning a string into utf-8 bytes */
-    protected static final byte[] getBytes(String string) {
+    protected static byte[] getBytes(String string) {
         return Utf8.toBytes(string);
     }
     public static void putString(String s, ByteBuffer buffer) {
