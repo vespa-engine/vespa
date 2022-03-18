@@ -20,6 +20,18 @@ LowerCase::convert(vespalib::stringref input)
     return output;
 }
 
+std::vector<uint32_t>
+LowerCase::convert_to_ucs4(vespalib::stringref input)
+{
+    std::vector<uint32_t> result;
+    result.reserve(input.size());
+    Utf8Reader reader(input.data());
+    while (reader.hasMore()) {
+        result.emplace_back(convert(reader.getChar()));
+    }
+    return result;
+}
+
 
 /*
   NOTE: the tables below are generated from Java code to

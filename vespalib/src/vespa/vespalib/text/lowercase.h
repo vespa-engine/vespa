@@ -5,6 +5,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <vector>
 
 namespace vespalib {
 
@@ -103,6 +104,15 @@ public:
      * CHARACTER (U+FFFD).
      **/
     static vespalib::string convert(vespalib::stringref input);
+
+    /**
+     * Lowercase a string in UTF-8 format while converting it to UCS-4 codepoints.
+     */
+    static std::vector<uint32_t> convert_to_ucs4(vespalib::stringref input);
+    static std::vector<uint32_t> convert_to_ucs4(std::string_view input) {
+        return convert_to_ucs4(vespalib::stringref(input.data(), input.size()));
+    }
+
 };
 
 

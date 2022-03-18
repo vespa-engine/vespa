@@ -9,13 +9,8 @@ LOG_SETUP("lowercase_test");
 
 using namespace vespalib;
 
-TEST_SETUP(Test);
-
-int
-Test::Main()
+TEST("test basic lowercase")
 {
-    TEST_INIT("lowercase_test");
-
     EXPECT_EQUAL('a', LowerCase::convert('A'));
     EXPECT_EQUAL((int8_t)'a', LowerCase::convert((int8_t)'A'));
     EXPECT_EQUAL((uint8_t)'a', LowerCase::convert((uint8_t)'A'));
@@ -34,5 +29,15 @@ Test::Main()
         }
         // printf("lowercase( %d )= %d\n", hi, lo);
     }
-    TEST_DONE();
 }
+
+TEST("lowercase utf8 string to ucs4")
+{
+    auto res = LowerCase::convert_to_ucs4(std::string_view("ABC"));
+    EXPECT_EQUAL(3u, res.size());
+    EXPECT_EQUAL((uint32_t)'a', res[0]);
+    EXPECT_EQUAL((uint32_t)'b', res[1]);
+    EXPECT_EQUAL((uint32_t)'c', res[2]);
+}
+
+TEST_MAIN() { TEST_RUN_ALL(); }
