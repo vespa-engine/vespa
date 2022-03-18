@@ -59,7 +59,8 @@ public abstract class Item implements Cloneable {
         NEAREST_NEIGHBOR(26),
         GEO_LOCATION_TERM(27),
         TRUE(28),
-        FALSE(29);
+        FALSE(29),
+        MULTI_TERM(30);
 
         public final int code;
 

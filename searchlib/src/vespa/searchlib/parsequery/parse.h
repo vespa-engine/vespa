@@ -56,12 +56,12 @@ public:
         ITEM_GEO_LOCATION_TERM     =   27,
         ITEM_TRUE                  =   28,
         ITEM_FALSE                 =   29,
-        ITEM_MAX                   =   30,  // Indicates how long tables must be.
+        ITEM_MULTI_TERM            =   30,
         ITEM_UNDEF                 =   31,
     };
 
     /** A tag identifying the origin of this query node.
-     *  Note that descendants may origin from elsewhere.
+     *  Note that descendants may originate from elsewhere.
      *  If changes necessary:
      *  NB! Append at end of list - corresponding type
      *  used in Juniper and updates of these two types must be synchronized.
