@@ -375,7 +375,7 @@ public abstract class Item implements Cloneable {
             // note: connectedItem and connectedBacklink references are corrected in CompositeItem.clone()
             return clone;
         } catch (CloneNotSupportedException e) {
-            throw new RuntimeException("Someone made Item unclonable");
+            throw new RuntimeException("Someone made Item uncloneable");
         }
     }
 
