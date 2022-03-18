@@ -13,6 +13,8 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.function.Function;
 
+import static com.yahoo.config.provision.NodeResources.Architecture;
+
 /**
  * Defines the policies for assigning cluster capacity in various environments
  *
@@ -23,10 +25,12 @@ public class CapacityPolicies {
 
     private final Zone zone;
     private final Function<ClusterSpec.Type, Boolean> sharedHosts;
+    private final Architecture architectureForAdminCluster;
 
     public CapacityPolicies(NodeRepository nodeRepository) {
         this.zone = nodeRepository.zone();
         this.sharedHosts = type -> PermanentFlags.SHARED_HOST.bindTo(nodeRepository.flagSource()).value().isEnabled(type.name());
+        this.architectureForAdminCluster = Architecture.valueOf(PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE.bindTo(nodeRepository.flagSource()).value());
     }
 
     public Capacity applyOn(Capacity capacity, ApplicationId application) {
@@ -72,8 +76,8 @@ public class CapacityPolicies {
     public NodeResources defaultNodeResources(ClusterSpec.Type clusterType) {
         if (clusterType == ClusterSpec.Type.admin) {
             return zone.getCloud().dynamicProvisioning() && ! sharedHosts.apply(clusterType) ?
-                   new NodeResources(0.5, 4, 50, 0.3) :
-                   new NodeResources(0.5, 2, 50, 0.3);
+                    new NodeResources(0.5, 4, 50, 0.3).with(architectureForAdminCluster) :
+                    new NodeResources(0.5, 2, 50, 0.3).with(architectureForAdminCluster);
         }
 
         return zone.getCloud().dynamicProvisioning() ?
