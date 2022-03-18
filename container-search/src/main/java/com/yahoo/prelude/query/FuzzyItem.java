@@ -9,16 +9,16 @@ import java.nio.ByteBuffer;
  * @author alexeyche
  */
 public class FuzzyItem extends TermItem {
-    private String fuzzyQuery;
+    private String term;
 
-    public FuzzyItem(String indexName, boolean isFromQuery, String fuzzyQuery) {
+    public FuzzyItem(String indexName, boolean isFromQuery, String term) {
         super(indexName, isFromQuery, null);
-        setValue(fuzzyQuery);
+        setValue(term);
     }
 
     @Override
     public void setValue(String value) {
-        this.fuzzyQuery = value;
+        this.term = value;
     }
 
     @Override
@@ -43,7 +43,7 @@ public class FuzzyItem extends TermItem {
 
     @Override
     public String stringValue() {
-        return fuzzyQuery;
+        return term;
     }
 
     @Override
@@ -73,11 +73,11 @@ public class FuzzyItem extends TermItem {
             return false;
         }
         FuzzyItem other = (FuzzyItem) obj;
-        if (fuzzyQuery == null) {
-            if (other.fuzzyQuery != null) {
+        if (term == null) {
+            if (other.term != null) {
                 return false;
             }
-        } else if (!fuzzyQuery.equals(other.fuzzyQuery)) {
+        } else if (!term.equals(other.term)) {
             return false;
         }
         return true;
@@ -87,17 +87,18 @@ public class FuzzyItem extends TermItem {
     public int hashCode() {
         final int prime = 31;
         int result = super.hashCode();
-        result = prime * result + ((fuzzyQuery == null) ? 0 : fuzzyQuery.hashCode());
+        result = prime * result + ((term == null) ? 0 : term.hashCode());
         return result;
     }
 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("FuzzyItem [fuzzyQuery=").append(fuzzyQuery).append("]");
+        builder.append("FuzzyItem [term=").append(term).append("]");
         return builder.toString();
     }
 
+    @Override
     protected void encodeThis(ByteBuffer buffer) {
         super.encodeThis(buffer);
         putString(getIndexedString(), buffer);

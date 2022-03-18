@@ -8,7 +8,25 @@ import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.BoolItem;
+import com.yahoo.prelude.query.ExactStringItem;
+import com.yahoo.prelude.query.FuzzyItem;
+import com.yahoo.prelude.query.IndexedItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.MarkerWordItem;
+import com.yahoo.prelude.query.PhraseItem;
+import com.yahoo.prelude.query.PhraseSegmentItem;
+import com.yahoo.prelude.query.PrefixItem;
+import com.yahoo.prelude.query.QueryCanonicalizer;
+import com.yahoo.prelude.query.RegExpItem;
+import com.yahoo.prelude.query.SegmentingRule;
+import com.yahoo.prelude.query.Substring;
+import com.yahoo.prelude.query.SubstringItem;
+import com.yahoo.prelude.query.SuffixItem;
+import com.yahoo.prelude.query.WeakAndItem;
+import com.yahoo.prelude.query.WordAlternativesItem;
+import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.querytransform.QueryRewrite;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
@@ -366,8 +384,11 @@ public class YqlParserTestCase {
 
     @Test
     public void testFuzzy() {
-        assertParse("select foo from bar where baz contains fuzzy(\"a\")",
-                "FUZZY baz:a");
+        QueryTree x = parse("select foo from bar where baz contains fuzzy(\"a b\")");
+        Item root = x.getRoot();
+        assertSame(FuzzyItem.class, root.getClass());
+        assertEquals("baz", ((FuzzyItem) root).getIndexName());
+        assertEquals("a b", ((FuzzyItem) root).stringValue());
     }
 
     @Test
