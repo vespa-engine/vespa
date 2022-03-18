@@ -107,11 +107,6 @@ public class ConvertParsedSchemas {
                                  ConvertParsedFields fieldConverter)
     {
         SDDocumentType document = new SDDocumentType(parsed.name());
-        for (String inherit : parsed.getInherited()) {
-            var parent = convertedDocuments.get(inherit);
-            assert(parent != null);
-            document.inherit(parent);
-        }
         for (var struct : parsed.getStructs()) {
             var structProxy = fieldConverter.convertStructDeclaration(schema, document, struct);
             document.addType(structProxy);
@@ -124,6 +119,11 @@ public class ConvertParsedSchemas {
             if (field.hasIdOverride()) {
                 document.setFieldId(sdf, field.idOverride());
             }
+        }
+        for (String inherit : parsed.getInherited()) {
+            var parent = convertedDocuments.get(inherit);
+            assert(parent != null);
+            document.inherit(parent);
         }
         convertedDocuments.put(parsed.name(), document);
         schema.addDocument(document);
