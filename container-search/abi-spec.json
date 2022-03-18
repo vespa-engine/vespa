@@ -774,7 +774,7 @@
       "public com.yahoo.prelude.query.CompositeItem getParent()",
       "public abstract int encode(java.nio.ByteBuffer)",
       "protected void encodeThis(java.nio.ByteBuffer)",
-      "protected static final byte[] getBytes(java.lang.String)",
+      "protected static byte[] getBytes(java.lang.String)",
       "public static void putString(java.lang.String, java.nio.ByteBuffer)",
       "public static void putBytes(byte[], java.nio.ByteBuffer)",
       "public abstract int getTermCount()",
