@@ -114,7 +114,17 @@ public class ConvertParsedSchemas {
         }
         for (var struct : parsed.getStructs()) {
             var structProxy = fieldConverter.convertStructDeclaration(schema, document, struct);
-            document.addType(structProxy);
+            var old = document.getType(struct.name());
+            if (old == null) {
+                document.addType(structProxy);
+            } else {
+                var oldFields = old.fieldSet();
+                var newFields = structProxy.fieldSet();
+                if (! newFields.equals(oldFields)) {
+                    throw new IllegalArgumentException("Cannot modify already-existing struct: "+struct.name());
+                }
+                // else: log warning
+            }
         }
         for (var annotation : parsed.getAnnotations()) {
             fieldConverter.convertAnnotation(schema, document, annotation);
