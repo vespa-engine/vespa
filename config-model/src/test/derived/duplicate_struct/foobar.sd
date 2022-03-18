@@ -1,0 +1,16 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+search foobar {
+  document foobar inherits foo {
+    field title type string {
+      indexing: summary | index
+    }
+  }
+
+  struct mystruct {
+    field name type string { }
+    field company type string { }
+  }
+
+}
+

@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
 
 /**
  * Class converting a collection of schemas from the intermediate format.
@@ -114,7 +115,17 @@ public class ConvertParsedSchemas {
         }
         for (var struct : parsed.getStructs()) {
             var structProxy = fieldConverter.convertStructDeclaration(schema, document, struct);
-            document.addType(structProxy);
+            var old = document.getType(struct.name());
+            if (old == null) {
+                document.addType(structProxy);
+            } else {
+                var oldFields = old.fieldSet();
+                var newFields = structProxy.fieldSet();
+                if (! newFields.equals(oldFields)) {
+                    throw new IllegalArgumentException("Cannot modify already-existing struct: " + struct.name());
+                }
+                deployLogger.logApplicationPackage(Level.WARNING, "Duplicate struct declaration for: " + struct.name());
+            }
         }
         for (var annotation : parsed.getAnnotations()) {
             fieldConverter.convertAnnotation(schema, document, annotation);
