@@ -37,6 +37,8 @@ public class GroupingQueryParser extends Searcher {
     public static final CompoundName PARAM_CONTINUE = new CompoundName("continue");
     public static final CompoundName PARAM_REQUEST = new CompoundName(Select.SELECT);
     public static final CompoundName PARAM_TIMEZONE = new CompoundName("timezone");
+    public static final CompoundName PARAM_DEFAULT_MAX_HITS = new CompoundName("grouping.defaultMaxHits");
+    public static final CompoundName PARAM_DEFAULT_MAX_GROUPS = new CompoundName("grouping.defaultMaxGroups");
     private static final ThreadLocal<ZoneCache> zoneCache = new ThreadLocal<>();
 
     @Override
@@ -52,6 +54,8 @@ public class GroupingQueryParser extends Searcher {
                 grpRequest.setRootOperation(op);
                 grpRequest.setTimeZone(zone);
                 grpRequest.continuations().addAll(continuations);
+                grpRequest.setDefaultMaxGroups(query.properties().getInteger(PARAM_DEFAULT_MAX_GROUPS, -1));
+                grpRequest.setDefaultMaxHits(query.properties().getInteger(PARAM_DEFAULT_MAX_HITS, -1));
             }
             return execution.search(query);
         }

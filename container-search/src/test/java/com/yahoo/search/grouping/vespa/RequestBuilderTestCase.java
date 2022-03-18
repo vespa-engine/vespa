@@ -698,6 +698,36 @@ public class RequestBuilderTestCase {
         assertOutput(test);
     }
 
+    @Test
+    public void require_that_default_max_values_from_request_builder_restricts_max_groups_and_hits() {
+        int defaultMaxHits = 19;
+        int defaultMaxGroups = 7;
+        RequestBuilder builder = new RequestBuilder(0)
+                .setDefaultMaxGroups(defaultMaxGroups)
+                .setDefaultMaxHits(defaultMaxHits)
+                .setRootOperation(GroupingOperation.fromString("all(group(foo)each(each(output(summary()))))"));
+        builder.build();
+        List<Grouping> requests = builder.getRequestList();
+        assertEquals(defaultMaxGroups + 1, requests.get(0).getLevels().get(0).getMaxGroups());
+        HitsAggregationResult hitsAggregation =
+                (HitsAggregationResult)requests.get(0).getLevels().get(0).getGroupPrototype().getAggregationResults().get(0);
+        assertEquals(defaultMaxHits + 1, hitsAggregation.getMaxHits());
+    }
+
+    @Test
+    public void require_that_default_max_values_from_request_builder_restricts_respects_explicit_max() {
+        RequestBuilder builder = new RequestBuilder(0)
+                .setDefaultMaxGroups(7)
+                .setDefaultMaxHits(19)
+                .setRootOperation(GroupingOperation.fromString("all(group(foo)max(11)each(max(21)each(output(summary()))))"));
+        builder.build();
+        List<Grouping> requests = builder.getRequestList();
+        assertEquals(12, requests.get(0).getLevels().get(0).getMaxGroups());
+        HitsAggregationResult hitsAggregation =
+                (HitsAggregationResult)requests.get(0).getLevels().get(0).getGroupPrototype().getAggregationResults().get(0);
+        assertEquals(22, hitsAggregation.getMaxHits());
+    }
+
     private static CompositeContinuation newComposite(EncodableContinuation... conts) {
         CompositeContinuation ret = new CompositeContinuation();
         for (EncodableContinuation cont : conts) {

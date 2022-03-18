@@ -27,6 +27,8 @@ class RequestBuilder {
     private final GroupingTransform transform;
     private GroupingOperation root;
     private int tag = 0;
+    private int defaultMaxHits = -1;
+    private int defaultMaxGroups = -1;
 
     /**
      * Constructs a new instance of this class.
@@ -138,6 +140,10 @@ class RequestBuilder {
         return this;
     }
 
+    public RequestBuilder setDefaultMaxGroups(int v) { this.defaultMaxGroups = v; return this; }
+
+    public RequestBuilder setDefaultMaxHits(int v) { this.defaultMaxHits = v; return this; }
+
     private void processRequestNode(BuildFrame frame) {
         int level = frame.astNode.getLevel();
         if (level > 2) {
@@ -173,10 +179,16 @@ class RequestBuilder {
                 grpLevel.setPrecision(frame.state.precision + offset);
                 frame.state.precision = null;
             }
+            int max = -1;
             if (frame.state.max != null) {
-                transform.putMax(tag, frame.state.max, "group list");
-                grpLevel.setMaxGroups(LOOKAHEAD + frame.state.max + offset);
+                max = frame.state.max;
                 frame.state.max = null;
+            } else if (defaultMaxGroups >= 0) {
+                max = defaultMaxGroups;
+            }
+            if (max >= 0) {
+                transform.putMax(tag, max, "group list");
+                grpLevel.setMaxGroups(LOOKAHEAD + max + offset);
             }
             frame.grouping.getLevels().add(grpLevel);
         }
@@ -285,11 +297,17 @@ class RequestBuilder {
                 throw new UnsupportedOperationException("Can not label expression '" + exp + "'.");
             }
             HitsAggregationResult hits = (HitsAggregationResult)result;
+            int max = -1;
             if (frame.state.max != null) {
-                transform.putMax(tag, frame.state.max, "hit list");
-                int offset = transform.getOffset(tag);
-                hits.setMaxHits(LOOKAHEAD + frame.state.max + offset);
+                max = frame.state.max;
                 frame.state.max = null;
+            } else if (defaultMaxHits >= 0) {
+                max = defaultMaxHits;
+            }
+            if (max >= 0) {
+                transform.putMax(tag, max, "hit list");
+                int offset = transform.getOffset(tag);
+                hits.setMaxHits(LOOKAHEAD + max + offset);
             }
             transform.putLabel(group.getTag(), tag, frame.state.label, "hit list");
         } else {

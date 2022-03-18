@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping;
 
+import com.yahoo.api.annotations.Beta;
 import com.yahoo.net.URI;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -13,6 +14,7 @@ import com.yahoo.search.result.Hit;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.TimeZone;
 
 /**
@@ -30,6 +32,8 @@ public class GroupingRequest {
     private final List<Continuation> continuations = new ArrayList<>();
     private GroupingOperation root;
     private TimeZone timeZone;
+    private int defaultMaxHits = -1;
+    private int defaultMaxGroups = -1;
 
     private GroupingRequest(Select parent) {
         this.parent = parent;
@@ -38,16 +42,20 @@ public class GroupingRequest {
     private GroupingRequest(Select parent,
                             List<Continuation> continuations,
                             GroupingOperation root,
-                            TimeZone timeZone) {
+                            TimeZone timeZone,
+                            int defaultMaxHits,
+                            int defaultMaxGroups) {
         this.parent = parent;
         continuations.forEach(item -> this.continuations.add(item.copy()));
         this.root = root != null ? root.copy(null) : null;
         this.timeZone = timeZone;
+        this.defaultMaxHits = defaultMaxHits;
+        this.defaultMaxGroups = defaultMaxGroups;
     }
 
     /** Returns a deep copy of this */
     public GroupingRequest copy(Select parentOfCopy) {
-        return new GroupingRequest(parentOfCopy, continuations, root, timeZone);
+        return new GroupingRequest(parentOfCopy, continuations, root, timeZone, defaultMaxHits, defaultMaxGroups);
     }
 
     /**
@@ -130,6 +138,20 @@ public class GroupingRequest {
     public List<Continuation> continuations() {
         return continuations;
     }
+
+    @Beta
+    public OptionalInt defaultMaxHits() {
+        return defaultMaxHits >= 0 ? OptionalInt.of(defaultMaxHits) : OptionalInt.empty();
+    }
+
+    @Beta public void setDefaultMaxHits(int v) { this.defaultMaxHits = v; }
+
+    @Beta
+    public OptionalInt defaultMaxGroups() {
+        return defaultMaxGroups >= 0 ? OptionalInt.of(defaultMaxGroups) : OptionalInt.empty();
+    }
+
+    @Beta public void setDefaultMaxGroups(int v) { this.defaultMaxGroups = v; }
 
     /**
      * Creates a new grouping request and adds it to the query.getSelect().getGrouping() list
