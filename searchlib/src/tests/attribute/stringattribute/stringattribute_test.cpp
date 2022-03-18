@@ -386,8 +386,8 @@ testSingleValue(Attribute & svsa, Config &cfg)
 TEST("testSingleValue")
 {
     EXPECT_EQUAL(24u, sizeof(AttributeVector::SearchContext));
-    EXPECT_EQUAL(32u, sizeof(StringSearchHelper));
-    EXPECT_EQUAL(64u, sizeof(SingleValueStringAttribute::StringSingleImplSearchContext));
+    EXPECT_EQUAL(56u, sizeof(StringSearchHelper));
+    EXPECT_EQUAL(88u, sizeof(SingleValueStringAttribute::StringSingleImplSearchContext));
     {
         Config cfg(BasicType::STRING, CollectionType::SINGLE);
         SingleValueStringAttribute svsa("svsa", cfg);
