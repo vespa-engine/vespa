@@ -76,7 +76,8 @@ public class CapacityCheckerTester {
                                             new MemoryMetricsDb(clock),
                                             new OrchestratorMock(),
                                             true,
-                                            0, 1000);
+                                            0,
+                                            1000);
     }
 
     private void updateCapacityChecker() {
@@ -208,7 +209,8 @@ public class CapacityCheckerTester {
 
     NodeResources containingNodeResources(List<NodeResources> resources, NodeResources excessCapacity) {
         NodeResources usedByChildren = resources.stream()
-                .reduce(new NodeResources(0, 0, 0, 0), NodeResources::add);
+                                                .map(NodeResources::justNumbers)
+                                                .reduce(new NodeResources(0, 0, 0, 0).justNumbers(), NodeResources::add);
         return usedByChildren.add(excessCapacity);
     }
 

@@ -296,11 +296,11 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
             NodeResources resources = hostCapacity.availableCapacityOf(host);
             for (Move move : moves) {
                 if ( ! move.toHost().equals(host)) continue;
-                resources = resources.subtract(move.node().resources());
+                resources = resources.subtract(move.node().resources()).justNumbers();
             }
             for (Move move : moves) {
                 if ( ! move.fromHost().equals(host)) continue;
-                resources = resources.add(move.node().resources());
+                resources = resources.add(move.node().resources()).justNumbers();
             }
             return resources;
         }

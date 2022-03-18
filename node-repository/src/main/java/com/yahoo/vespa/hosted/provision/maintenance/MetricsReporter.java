@@ -343,7 +343,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                         (applicationId, applicationNodes) -> {
                             var allocatedCapacity = applicationNodes.stream()
                                     .map(node -> node.allocation().get().requestedResources().justNumbers())
-                                    .reduce(new NodeResources(0, 0, 0, 0, any), NodeResources::add);
+                                    .reduce(new NodeResources(0, 0, 0, 0, any).justNumbers(), NodeResources::add);
 
                             var context = getContext(dimensions(applicationId));
 
@@ -379,14 +379,14 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         return nodes.hosts().state(State.active).asList().stream()
                     .map(host -> host.flavor().resources())
                     .map(NodeResources::justNumbers)
-                    .reduce(new NodeResources(0, 0, 0, 0, any), NodeResources::add);
+                    .reduce(new NodeResources(0, 0, 0, 0, any).justNumbers(), NodeResources::add);
     }
 
     private static NodeResources getFreeCapacityTotal(NodeList nodes) {
         return nodes.hosts().state(State.active).asList().stream()
                     .map(n -> freeCapacityOf(nodes, n))
                     .map(NodeResources::justNumbers)
-                    .reduce(new NodeResources(0, 0, 0, 0, any), NodeResources::add);
+                    .reduce(new NodeResources(0, 0, 0, 0, any).justNumbers(), NodeResources::add);
     }
 
     private static NodeResources freeCapacityOf(NodeList nodes, Node host) {
