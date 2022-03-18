@@ -18,6 +18,7 @@ import java.lang.annotation.Target;
 @Target({
         ElementType.CONSTRUCTOR,
         ElementType.METHOD,
-        ElementType.TYPE
+        ElementType.TYPE,
+        ElementType.FIELD
 })
 public @interface Beta {}
