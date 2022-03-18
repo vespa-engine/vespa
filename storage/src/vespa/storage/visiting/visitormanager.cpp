@@ -56,11 +56,11 @@ VisitorManager::VisitorManager(const config::ConfigUri & configUri,
         create_and_start_manager_thread();
     }
     _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
-    _visitorFactories["dumpvisitor"] = std::make_shared<DumpVisitorSingleFactory>();
+    _visitorFactories["dumpvisitor"]       = std::make_shared<DumpVisitorSingleFactory>();
     _visitorFactories["dumpvisitorsingle"] = std::make_shared<DumpVisitorSingleFactory>();
-    _visitorFactories["testvisitor"] = std::make_shared<TestVisitorFactory>();
-    _visitorFactories["countvisitor"] = std::make_shared<CountVisitorFactory>();
-    _visitorFactories["recoveryvisitor"] = std::make_shared<RecoveryVisitorFactory>();
+    _visitorFactories["testvisitor"]       = std::make_shared<TestVisitorFactory>();
+    _visitorFactories["countvisitor"]      = std::make_shared<CountVisitorFactory>();
+    _visitorFactories["recoveryvisitor"]   = std::make_shared<RecoveryVisitorFactory>();
     _visitorFactories["reindexingvisitor"] = std::make_shared<ReindexingVisitorFactory>();
     _component.registerStatusPage(*this);
 }
@@ -96,17 +96,15 @@ VisitorManager::onClose()
     _configFetcher->close();
     {
         std::lock_guard sync(_visitorLock);
-        for (CommandQueue<api::CreateVisitorCommand>::iterator it
-                = _visitorQueue.begin(); it != _visitorQueue.end(); ++it)
-        {
-            auto reply = std::make_shared<api::CreateVisitorReply>(*it->_command);
+        for (auto& enqueued : _visitorQueue) {
+            auto reply = std::make_shared<api::CreateVisitorReply>(*enqueued._command);
             reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Shutting down storage node."));
             sendUp(reply);
         }
         _visitorQueue.clear();
     }
-    for (uint32_t i=0; i<_visitorThread.size(); ++i) {
-        _visitorThread[i].first->shutdown();
+    for (auto& visitor_thread : _visitorThread) {
+        visitor_thread.first->shutdown();
     }
 }
 
@@ -155,7 +153,7 @@ VisitorManager::configure(std::unique_ptr<vespa::config::content::core::StorVisi
        maxConcurrentVisitorsVariable = 0;
     }
 
-    bool liveUpdate = (_visitorThread.size() > 0);
+    bool liveUpdate = !_visitorThread.empty();
     if (liveUpdate) {
         if (_visitorThread.size() != static_cast<uint32_t>(config->visitorthreads)) {
             LOG(warning, "Ignoring config change requesting %u visitor "
@@ -187,7 +185,10 @@ VisitorManager::configure(std::unique_ptr<vespa::config::content::core::StorVisi
         _metrics->initThreads(config->visitorthreads);
         for (int32_t i=0; i<config->visitorthreads; ++i) {
             _visitorThread.emplace_back(
-                    new VisitorThread(i, _componentRegister, _messageSessionFactory, _visitorFactories, *_metrics->threads[i], *this),
+                    // Naked new due to a lot of private inheritance in VisitorThread and VisitorManager
+                    std::shared_ptr<VisitorThread>(
+                            new VisitorThread(i, _componentRegister, _messageSessionFactory,
+                                              _visitorFactories, *_metrics->threads[i], *this)),
                     std::map<api::VisitorId, std::string>());
         }
     }
@@ -206,8 +207,8 @@ VisitorManager::run(framework::ThreadHandle& thread)
 {
     LOG(debug, "Started visitor manager thread with pid %d.", getpid());
     typedef CommandQueue<api::CreateVisitorCommand> CQ;
-    std::list<CQ::CommandEntry> timedOut;
-        // Run forever, dump messages in the visitor queue that times out.
+    std::vector<CQ::CommandEntry> timedOut;
+    // Run forever, dump messages in the visitor queue that times out.
     while (true) {
         thread.registerTick(framework::PROCESS_CYCLE);
         {
@@ -218,12 +219,10 @@ VisitorManager::run(framework::ThreadHandle& thread)
             timedOut = _visitorQueue.releaseTimedOut();
         }
         const auto currentTime = _component.getClock().getMonotonicTime();
-        for (std::list<CQ::CommandEntry>::iterator it = timedOut.begin();
-             it != timedOut.end(); ++it)
-        {
+        for (auto& timed_out_entry : timedOut) {
             // TODO is this really tracking what the metric description implies it's tracking...?
-            _metrics->queueTimeoutWaitTime.addValue(vespalib::to_s(currentTime - it->_time) * 1000.0); // Double metric in millis
-            std::shared_ptr<api::StorageReply> reply(it->_command->makeReply());
+            _metrics->queueTimeoutWaitTime.addValue(vespalib::to_s(currentTime - timed_out_entry._deadline) * 1000.0); // Double metric in millis
+            std::shared_ptr<api::StorageReply> reply(timed_out_entry._command->makeReply());
             reply->setResult(api::ReturnCode(api::ReturnCode::BUSY, "Visitor timed out in visitor queue"));
             sendUp(reply);
         }
@@ -235,7 +234,7 @@ VisitorManager::run(framework::ThreadHandle& thread)
                 _visitorCond.wait_for(waiter, 1000ms);
                 thread.registerTick(framework::WAIT_CYCLE);
             } else {
-                auto time_diff = _visitorQueue.tbegin()->_time - currentTime;
+                auto time_diff = _visitorQueue.tbegin()->_deadline - currentTime;
                 time_diff = (time_diff < 1000ms) ? time_diff : 1000ms;
                 if (time_diff.count() > 0) {
                     _visitorCond.wait_for(waiter, time_diff);
@@ -267,8 +266,8 @@ VisitorManager::getActiveVisitorCount() const
 {
     std::lock_guard sync(_visitorLock);
     uint32_t totalCount = 0;
-    for (uint32_t i=0; i<_visitorThread.size(); ++i) {
-        totalCount += _visitorThread[i].second.size();
+    for (const auto& visitor_thread : _visitorThread) {
+        totalCount += visitor_thread.second.size();
     }
     return totalCount;
 }
@@ -285,8 +284,8 @@ void
 VisitorManager::setTimeBetweenTicks(uint32_t time)
 {
     std::lock_guard sync(_visitorLock);
-    for (uint32_t i=0; i<_visitorThread.size(); ++i) {
-        _visitorThread[i].first->setTimeBetweenTicks(time);
+    for (auto& visitor_thread : _visitorThread) {
+        visitor_thread.first->setTimeBetweenTicks(time);
     }
 }
 
@@ -296,8 +295,8 @@ VisitorManager::scheduleVisitor(
         MonitorGuard& visitorLock)
 {
     api::VisitorId id;
-    typedef std::map<std::string, api::VisitorId> NameToIdMap;
-    typedef std::pair<std::string, api::VisitorId> NameIdPair;
+    using NameToIdMap = std::map<std::string, api::VisitorId>;
+    using NameIdPair  = std::pair<std::string, api::VisitorId>;
     std::pair<NameToIdMap::iterator, bool> newEntry;
     {
         uint32_t totCount;
@@ -457,8 +456,7 @@ VisitorManager::send(const std::shared_ptr<api::StorageCommand>& cmd,
     // Only add to internal state if not destroy iterator command, as
     // these are considered special-cased fire-and-forget commands
     // that don't have replies.
-    if (static_cast<const api::InternalCommand&>(*cmd).getType() != DestroyIteratorCommand::ID)
-    {
+    if (static_cast<const api::InternalCommand&>(*cmd).getType() != DestroyIteratorCommand::ID) {
         MessageInfo inf;
         inf.id = visitor.getVisitorId();
         inf.timestamp = _component.getClock().getTimeInSeconds().getTime();
@@ -500,7 +498,7 @@ VisitorManager::attemptScheduleQueuedVisitor(MonitorGuard& visitorLock)
 
     uint32_t totCount;
     getLeastLoadedThread(_visitorThread, totCount);
-    std::shared_ptr<api::CreateVisitorCommand> cmd(_visitorQueue.peekNextCommand());
+    auto cmd = _visitorQueue.peekNextCommand();
     assert(cmd.get());
     if (totCount < maximumConcurrent(*cmd)) {
         auto cmd2 = _visitorQueue.releaseNextCommand();
@@ -519,9 +517,9 @@ void
 VisitorManager::closed(api::VisitorId id)
 {
     std::unique_lock sync(_visitorLock);
-    std::map<api::VisitorId, std::string>& usedIds(_visitorThread[id % _visitorThread.size()].second);
+    auto& usedIds(_visitorThread[id % _visitorThread.size()].second);
 
-    std::map<api::VisitorId, std::string>::iterator it = usedIds.find(id);
+    auto it = usedIds.find(id);
     if (it == usedIds.end()) {
         LOG(warning, "VisitorManager::closed() called multiple times for the "
                      "same visitor. This was not intended.");
@@ -583,14 +581,11 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
             for (uint32_t i=0; i<_visitorThread.size(); ++i) {
                 visitorCount += _visitorThread[i].second.size();
                 out << "Thread " << i << ":";
-                if (_visitorThread[i].second.size() == 0) {
+                if (_visitorThread[i].second.empty()) {
                     out << " none";
                 } else {
-                    for (std::map<api::VisitorId,std::string>::const_iterator it
-                             = _visitorThread[i].second.begin();
-                         it != _visitorThread[i].second.end(); it++)
-                    {
-                        out << " " << it->second << " (" << it->first << ")";
+                    for (const auto& id_and_visitor : _visitorThread[i].second) {
+                        out << " " << id_and_visitor.second << " (" << id_and_visitor.first << ")";
                     }
                 }
                 out << "<br>\n";
@@ -598,20 +593,18 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
             out << "<h3>Queued visitors</h3>\n<ul>\n";
 
             const auto now = _component.getClock().getMonotonicTime();
-            for (CommandQueue<api::CreateVisitorCommand>::const_iterator it
-                    = _visitorQueue.begin(); it != _visitorQueue.end(); ++it)
-            {
-                std::shared_ptr<api::CreateVisitorCommand> cmd(it->_command);
+            for (const auto& enqueued : _visitorQueue) {
+                auto& cmd = enqueued._command;
                 assert(cmd);
                 out << "<li>" << cmd->getInstanceId() << " - "
                     << vespalib::count_ms(cmd->getQueueTimeout()) << ", remaining timeout "
-                    << vespalib::count_ms(it->_time - now) << " ms\n";
+                    << vespalib::count_ms(enqueued._deadline - now) << " ms\n";
             }
             if (_visitorQueue.empty()) {
                 out << "None\n";
             }
             out << "</ul>\n";
-            if (_visitorMessages.size() > 0) {
+            if (!_visitorMessages.empty()) {
                 out << "<h3>Waiting for the following visitor replies</h3>"
                     << "\n<table><tr>"
                     << "<th>Storage API message id</th>"

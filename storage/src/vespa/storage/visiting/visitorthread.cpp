@@ -24,7 +24,7 @@ namespace storage {
 
 VisitorThread::Event::Event(Event&& other) noexcept
     : _visitorId(other._visitorId),
-      _message(other._message),
+      _message(std::move(other._message)),
       _mbusReply(std::move(other._mbusReply)),
       _timer(other._timer),
       _type(other._type)
@@ -37,18 +37,18 @@ VisitorThread::Event&
 VisitorThread::Event::operator= (Event&& other) noexcept
 {
     _visitorId = other._visitorId;
-    _message = other._message;
+    _message = std::move(other._message);
     _mbusReply = std::move(other._mbusReply);
     _timer = other._timer;
     _type = other._type;
     return *this;
 }
 
-VisitorThread::Event::Event(api::VisitorId visitor, const std::shared_ptr<api::StorageMessage>& msg)
+VisitorThread::Event::Event(api::VisitorId visitor, std::shared_ptr<api::StorageMessage> msg)
     : _visitorId(visitor),
-      _message(msg),
+      _message(std::move(msg)),
       _timer(),
-      _type(PERSISTENCE)
+      _type(Type::PERSISTENCE)
 {
 }
 
@@ -56,7 +56,7 @@ VisitorThread::Event::Event(api::VisitorId visitor, mbus::Reply::UP reply)
     : _visitorId(visitor),
       _mbusReply(std::move(reply)),
       _timer(),
-      _type(MBUS)
+      _type(Type::MBUS)
 {
 }
 
@@ -102,7 +102,7 @@ VisitorThread::VisitorThread(uint32_t threadIndex,
 
 VisitorThread::~VisitorThread()
 {
-    if (_thread.get() != 0) {
+    if (_thread) {
         _thread->interruptAndJoin(_cond);
     }
 }
@@ -125,12 +125,11 @@ VisitorThread::shutdown()
     // Answer all queued up commands and clear queue
     {
         std::lock_guard sync(_lock);
-        for (const Event & event : _queue)
-        {
+        for (const Event & event : _queue) {
             if (event._message.get()) {
                 if (!event._message->getType().isReply()
-                && (event._message->getType() != api::MessageType::INTERNAL
-                    || static_cast<const api::InternalCommand&>(*event._message).getType() != PropagateVisitorConfig::ID))
+                    && (event._message->getType() != api::MessageType::INTERNAL
+                        || static_cast<const api::InternalCommand&>(*event._message).getType() != PropagateVisitorConfig::ID))
                 {
                     std::shared_ptr<api::StorageReply> reply(
                             static_cast<api::StorageCommand&>(*event._message).makeReply());
@@ -142,9 +141,7 @@ VisitorThread::shutdown()
         _queue.clear();
     }
     // Close all visitors. Send create visitor replies
-    for (VisitorMap::iterator it = _visitors.begin();
-         it != _visitors.end();)
-    {
+    for (auto it = _visitors.begin(); it != _visitors.end();) {
         LOG(debug, "Force-closing visitor %s as we're shutting down.",
             it->second->getVisitorName().c_str());
         _currentlyRunningVisitor = it++;
@@ -158,9 +155,8 @@ VisitorThread::processMessage(api::VisitorId id,
                               const std::shared_ptr<api::StorageMessage>& msg)
 {
     {
-        Event m(id, msg);
         std::unique_lock sync(_lock);
-        _queue.push_back(Event(id, msg));
+        _queue.emplace_back(id, msg);
     }
     _cond.notify_one();
 }
