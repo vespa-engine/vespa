@@ -3,7 +3,9 @@ package com.yahoo.search.dispatch;
 
 import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
+import com.yahoo.search.Query;
 import com.yahoo.searchlib.aggregation.Grouping;
+import com.yahoo.searchlib.aggregation.Hit;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,12 +23,14 @@ class GroupingResultAggregator {
     private static final Logger log = Logger.getLogger(GroupingResultAggregator.class.getName());
 
     private final Map<Integer, Grouping> groupings = new LinkedHashMap<>();
-    private DocsumDefinitionSet documentDefinitions = null;
+    private DocsumDefinitionSet docsumDefinitions = null;
+    private Query query = null;
     private int groupingHitsMerged = 0;
 
     void mergeWith(GroupingListHit result) {
-        if (groupingHitsMerged == 0) documentDefinitions = result.getDocsumDefinitionSet();
         ++groupingHitsMerged;
+        if (docsumDefinitions == null) docsumDefinitions = result.getDocsumDefinitionSet();
+        if (query == null) query = result.getQuery();
         log.log(Level.FINE, () ->
                 String.format("Merging hit #%d having %d groupings",
                         groupingHitsMerged, result.getGroupingList().size()));
@@ -41,10 +45,15 @@ class GroupingResultAggregator {
     Optional<GroupingListHit> toAggregatedHit() {
         if (groupingHitsMerged == 0) return Optional.empty();
         log.log(Level.FINE, () ->
-                String.format("Creating aggregated hit containing %d groupings from %d hits",
-                        groupings.size(), groupingHitsMerged));
-        groupings.values().forEach(Grouping::postMerge);
-        return Optional.of(new GroupingListHit(List.copyOf(groupings.values()), documentDefinitions));
+                String.format("Creating aggregated hit containing %d groupings from %d hits with docsums '%s' and %s",
+                        groupings.size(), groupingHitsMerged, docsumDefinitions, query));
+        GroupingListHit groupingHit = new GroupingListHit(List.copyOf(groupings.values()), docsumDefinitions);
+        groupingHit.setQuery(query);
+        groupingHit.getGroupingList().forEach(g -> {
+            g.select(o -> o instanceof Hit, o -> ((Hit)o).setContext(groupingHit));
+            g.postMerge();
+        });
+        return Optional.of(groupingHit);
     }
 
 }

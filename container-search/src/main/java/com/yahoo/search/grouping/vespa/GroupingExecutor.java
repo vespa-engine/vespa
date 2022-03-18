@@ -1,19 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.vespa;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
-
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Provides;
-import java.util.logging.Level;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.QueryCanonicalizer;
@@ -29,8 +19,16 @@ import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.Grouping;
-import com.yahoo.vespa.objects.ObjectOperation;
-import com.yahoo.vespa.objects.ObjectPredicate;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Executes the {@link GroupingRequest grouping requests} set up by other searchers. This does the necessary
@@ -318,9 +316,11 @@ public class GroupingExecutor extends Searcher {
         for (Iterator<Hit> i = result.hits().unorderedIterator(); i.hasNext(); ) {
             Hit hit = i.next();
             if (hit instanceof GroupingListHit) {
-                ContextInjector injector = new ContextInjector(hit);
                 for (Grouping grp : ((GroupingListHit)hit).getGroupingList()) {
-                    grp.select(injector, injector);
+                    grp.select(
+                            o -> o instanceof com.yahoo.searchlib.aggregation.Hit
+                                    && ((com.yahoo.searchlib.aggregation.Hit)o).getContext() == null,
+                            o -> ((com.yahoo.searchlib.aggregation.Hit)o).setContext(hit));
                     Grouping old = ret.get(grp.getId());
                     if (old != null) {
                         old.merge(grp);
@@ -371,25 +371,6 @@ public class GroupingExecutor extends Searcher {
 
     private static CompoundName newCompoundName(String name) {
         return new CompoundName(GroupingExecutor.class.getName() + "." + name);
-    }
-
-    private static class ContextInjector implements ObjectPredicate, ObjectOperation {
-
-        final Object context;
-
-        ContextInjector(Object context) {
-            this.context = context;
-        }
-
-        @Override
-        public boolean check(Object obj) {
-            return com.yahoo.searchlib.aggregation.Hit.class.isInstance(obj);
-        }
-
-        @Override
-        public void execute(Object obj) {
-            ((com.yahoo.searchlib.aggregation.Hit)obj).setContext(context);
-        }
     }
 
     private static class RequestContext {
