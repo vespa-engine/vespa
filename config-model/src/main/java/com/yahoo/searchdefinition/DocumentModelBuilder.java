@@ -306,8 +306,7 @@ public class DocumentModelBuilder {
         }
         else if (type instanceof NewDocumentReferenceDataType) {
             var t = (NewDocumentReferenceDataType) type;
-            var tt = t.getTargetType();
-            var doc = getDocumentType(docs, tt.getId());
+            var doc = getDocumentType(docs, t.getTargetTypeId());
             type = doc.getReferenceDataType();
         }
         if (type != original) {

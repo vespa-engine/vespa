@@ -58,7 +58,7 @@ public class DocumentTypes {
         db.
                 id(documentType.getId()).
                 name(documentType.getName()).
-                headerstruct(documentType.getHeader().getId());
+                headerstruct(documentType.getContentStruct().getId());
         Set<Integer> built = new HashSet<>();
         for (NewDocumentType inherited : documentType.getInherited()) {
             db.inherits(new DocumenttypesConfig.Documenttype.Inherits.Builder().id(inherited.getId()));
@@ -224,7 +224,7 @@ public class DocumentTypes {
         DocumenttypesConfig.Documenttype.Referencetype.Builder refBuilder =
                 new DocumenttypesConfig.Documenttype.Referencetype.Builder();
         refBuilder.id(refType.getId());
-        refBuilder.target_type_id(type.getTargetType().getId());
+        refBuilder.target_type_id(type.getTargetTypeId());
         documentBuilder.referencetype(refBuilder);
     }
 

@@ -138,7 +138,7 @@ public class DocumentManager {
             builder.documenttype(doc);
             doc.
                 name(dt.getName()).
-                headerstruct(dt.getHeader().getId());
+                headerstruct(dt.getContentStruct().getId());
             for (NewDocumentType inherited : dt.getInherited()) {
                 doc.inherits(new Datatype.Documenttype.Inherits.Builder().name(inherited.getName()));
             }
@@ -178,7 +178,7 @@ public class DocumentManager {
             if (refType.isTemporary()) {
                 throw new IllegalArgumentException("Still temporary: " + refType);
             }
-            builder.referencetype(new Datatype.Referencetype.Builder().target_type_id(refType.getTargetType().getId()));
+            builder.referencetype(new Datatype.Referencetype.Builder().target_type_id(refType.getTargetTypeId()));
         } else {
             throw new IllegalArgumentException("Can not create config for data type " + type + " of class " + type.getClass());
         }
@@ -280,13 +280,13 @@ public class DocumentManager {
         db.
             idx(indexMap.idxOf(documentType)).
             name(documentType.getName()).
-            contentstruct(indexMap.idxOf(documentType.getHeader()));
+            contentstruct(indexMap.idxOf(documentType.getContentStruct()));
         docTypeBuildFieldSets(documentType.getFieldSets(), db);
         docTypeBuildImportedFields(documentType.getImportedFieldNames(), db);
         for (NewDocumentType inherited : documentType.getInherited()) {
             db.inherits(b -> b.idx(indexMap.idxOf(inherited)));
         }
-        docTypeBuildAnyType(documentType.getHeader(), db, indexMap);
+        docTypeBuildAnyType(documentType.getContentStruct(), db, indexMap);
 
         for (DataType dt : sortedList(documentType.getAllTypes().getTypes(),
                                       (a,b) -> a.getName().compareTo(b.getName()))) {

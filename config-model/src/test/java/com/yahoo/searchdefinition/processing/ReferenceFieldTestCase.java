@@ -108,7 +108,8 @@ public class ReferenceFieldTestCase {
         DataType dataType = field.getDataType();
         assertTrue(dataType instanceof NewDocumentReferenceDataType);
         NewDocumentReferenceDataType refField = (NewDocumentReferenceDataType) dataType;
-        assertEquals(referencedDocType, refField.getTargetType().getName());
+        assertEquals(referencedDocType, refField.getTargetTypeName());
+        assertTrue(! refField.isTemporary());
     }
 
 }
