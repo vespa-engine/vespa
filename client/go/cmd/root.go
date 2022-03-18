@@ -27,6 +27,7 @@ import (
 
 const (
 	applicationFlag = "application"
+	instanceFlag    = "instance"
 	targetFlag      = "target"
 	waitFlag        = "wait"
 	colorFlag       = "color"
@@ -58,6 +59,7 @@ type CLI struct {
 type Flags struct {
 	target      string
 	application string
+	instance    string
 	waitSecs    int
 	color       string
 	quiet       bool
@@ -151,11 +153,12 @@ func (c *CLI) loadConfig() error {
 	bindings := NewConfigBindings()
 	bindings.bindFlag(targetFlag, c.cmd)
 	bindings.bindFlag(applicationFlag, c.cmd)
+	bindings.bindFlag(instanceFlag, c.cmd)
 	bindings.bindFlag(waitFlag, c.cmd)
 	bindings.bindFlag(colorFlag, c.cmd)
 	bindings.bindFlag(quietFlag, c.cmd)
 	bindings.bindFlag(apiKeyFileFlag, c.cmd)
-	bindings.bindEnvironment(apiKeyFlag, "VESPA_CLI_API_KEY")
+	bindings.bindEnvironment(apiKeyFlag, "VESPA_CLI_API_KEY") // not bound to a flag because we don't want secrets in argv
 	bindings.bindEnvironment(apiKeyFileFlag, "VESPA_CLI_API_KEY_FILE")
 	config, err := loadConfig(c.Environment, bindings)
 	if err != nil {
@@ -197,6 +200,7 @@ func (c *CLI) configureFlags() {
 	flags := Flags{}
 	c.cmd.PersistentFlags().StringVarP(&flags.target, targetFlag, "t", "local", "The name or URL of the recipient of this command")
 	c.cmd.PersistentFlags().StringVarP(&flags.application, applicationFlag, "a", "", "The application to manage")
+	c.cmd.PersistentFlags().StringVarP(&flags.instance, instanceFlag, "i", "", "The instance of the application to manage")
 	c.cmd.PersistentFlags().IntVarP(&flags.waitSecs, waitFlag, "w", 0, "Number of seconds to wait for a service to become ready")
 	c.cmd.PersistentFlags().StringVarP(&flags.color, colorFlag, "c", "auto", "Whether to use colors in output.")
 	c.cmd.PersistentFlags().BoolVarP(&flags.quiet, quietFlag, "q", false, "Quiet mode. Only errors will be printed")

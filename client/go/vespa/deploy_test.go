@@ -16,6 +16,10 @@ func TestApplicationFromString(t *testing.T) {
 	assert.Equal(t, ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"}, app)
 	_, err = ApplicationFromString("foo")
 	assert.NotNil(t, err)
+
+	app, err = ApplicationFromString("t1.a1")
+	assert.Nil(t, err)
+	assert.Equal(t, ApplicationID{Tenant: "t1", Application: "a1", Instance: "default"}, app)
 }
 
 func TestZoneFromString(t *testing.T) {

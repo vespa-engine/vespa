@@ -88,10 +88,14 @@ func (d *DeploymentOptions) url(path string) (*url.URL, error) {
 
 func ApplicationFromString(s string) (ApplicationID, error) {
 	parts := strings.Split(s, ".")
-	if len(parts) != 3 {
+	if len(parts) < 2 || len(parts) > 3 {
 		return ApplicationID{}, fmt.Errorf("invalid application: %q", s)
 	}
-	return ApplicationID{Tenant: parts[0], Application: parts[1], Instance: parts[2]}, nil
+	instance := "default"
+	if len(parts) == 3 {
+		instance = parts[2]
+	}
+	return ApplicationID{Tenant: parts[0], Application: parts[1], Instance: instance}, nil
 }
 
 func ZoneFromString(s string) (ZoneID, error) {

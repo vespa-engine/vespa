@@ -50,9 +50,19 @@ overridden by setting the VESPA_CLI_HOME environment variable.`,
 
 func newConfigSetCmd(cli *CLI) *cobra.Command {
 	return &cobra.Command{
-		Use:               "set option-name value",
-		Short:             "Set a configuration option.",
-		Example:           "$ vespa config set target cloud",
+		Use:   "set option-name value",
+		Short: "Set a configuration option.",
+		Example: `# Set the target to Vespa Cloud
+$ vespa config set target cloud
+
+# Set application, without a specific instance. The instance will be named "default"
+$ vespa config set application my-tenant.my-application
+
+# Set application with a specific instance
+$ vespa config set application my-tenant.my-application.my-instance
+
+# Set the instance explicitly. This will take precedence over an instance specified as part of the application option.
+$ vespa config set instance other-instance`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(2),
@@ -176,7 +186,11 @@ func (c *Config) application() (vespa.ApplicationID, error) {
 	}
 	application, err := vespa.ApplicationFromString(app)
 	if err != nil {
-		return vespa.ApplicationID{}, errHint(err, "application format is <tenant>.<app>.<instance>")
+		return vespa.ApplicationID{}, errHint(err, "application format is <tenant>.<app>[.<instance>]")
+	}
+	instance, ok := c.get(instanceFlag)
+	if ok {
+		application.Instance = instance
 	}
 	return application, nil
 }
@@ -346,9 +360,13 @@ func (c *Config) set(option, value string) error {
 			return nil
 		}
 	case applicationFlag:
-		if _, err := vespa.ApplicationFromString(value); err != nil {
+		app, err := vespa.ApplicationFromString(value)
+		if err != nil {
 			return err
 		}
+		viper.Set(option, app.String())
+		return nil
+	case instanceFlag:
 		viper.Set(option, value)
 		return nil
 	case waitFlag:
