@@ -203,6 +203,7 @@ public class DocumentModelBuilder {
         Map<DataType, DataType> replacements = new IdentityHashMap<>();
         for(NewDocumentType doc : lst) {
             resolveTemporaries(doc.getAllTypes(), lst, replacements);
+            resolveTemporariesRecurse(doc.getContentStruct(), doc.getAllTypes(), lst, replacements);
         }
         for(NewDocumentType doc : lst) {
             for (var entry : replacements.entrySet()) {
