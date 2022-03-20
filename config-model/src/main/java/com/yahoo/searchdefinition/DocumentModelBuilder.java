@@ -189,18 +189,6 @@ public class DocumentModelBuilder {
         }
     }
 
-    // This is how you make a "Pair" class in java....
-    private static class TypeReplacement {
-        private final DataType oldType;
-        private final DataType newType;
-        DataType oldType() { return oldType; }
-        DataType newType() { return newType; }
-        public TypeReplacement(DataType oldType, DataType newType) {
-            this.oldType = oldType;
-            this.newType = newType;
-        }
-    }
-    
     private static String descT(DataType type) {
         if (type == null) { return "<null>"; }
         return "'" + type.getName() + "' [" + type.getId() + "] {"+type.getClass() + "}";
