@@ -72,7 +72,7 @@ public class PredicateProcessor extends Processor {
                     if (summary != null) {
                         summary.remove(attribute.getName());
                     }
-                    for (SummaryField summaryField : schema.getSummaryFields(field).values()) {
+                    for (SummaryField summaryField : schema.getSummaryFields(field)) {
                         summaryField.setTransform(SummaryTransform.NONE);
                     }
                 }

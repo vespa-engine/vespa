@@ -58,7 +58,7 @@ public class ReferenceFieldsProcessor extends Processor {
     }
 
     private void clearSummaryTransformOnSummaryFields(SDField field) {
-        schema.getSummaryFields(field).values().forEach(summaryField -> summaryField.setTransform(SummaryTransform.NONE));
+        schema.getSummaryFields(field).forEach(summaryField -> summaryField.setTransform(SummaryTransform.NONE));
     }
 
 }
