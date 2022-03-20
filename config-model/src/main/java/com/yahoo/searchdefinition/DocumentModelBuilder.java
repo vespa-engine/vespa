@@ -233,13 +233,13 @@ public class DocumentModelBuilder {
         if (type instanceof TemporaryStructuredDataType) {
             DataType other = repo.getDataType(type.getId());
             if (other == null || other == type) {
-                other = getDocumentType(docs, type.getId());
+                other = getDocumentType(docs, type.getName());
             }
             if (other != null) {
                 type = other;
             }
         } else if (type instanceof DocumentType) {
-            DataType other = getDocumentType(docs, type.getId());
+            DataType other = getDocumentType(docs, type.getName());
             if (other != null) {
                 type = other;
             } else if (! type.getName().equals("document")) {
@@ -247,7 +247,7 @@ public class DocumentModelBuilder {
                     ("Can not handle nested document definitions. Undefined document type: " + type.toString());
             }
         } else if (type instanceof NewDocumentType) {
-            DataType other = getDocumentType(docs, type.getId());
+            DataType other = getDocumentType(docs, type.getName());
             if (other != null) {
                 type = other;
             }
@@ -297,7 +297,7 @@ public class DocumentModelBuilder {
         }
         else if (type instanceof NewDocumentReferenceDataType) {
             var t = (NewDocumentReferenceDataType) type;
-            var doc = getDocumentType(docs, t.getTargetTypeId());
+            var doc = getDocumentType(docs, t.getTargetTypeName());
             type = doc.getReferenceDataType();
         }
         if (type != original) {
@@ -306,9 +306,9 @@ public class DocumentModelBuilder {
         return type;
     }
 
-    private static NewDocumentType getDocumentType(Collection<NewDocumentType> docs, int id) {
+    private static NewDocumentType getDocumentType(Collection<NewDocumentType> docs, String name) {
         for (NewDocumentType doc : docs) {
-            if (doc.getId() == id) {
+            if (doc.getName().equals(name)) {
                 return doc;
             }
         }
