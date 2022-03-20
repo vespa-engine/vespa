@@ -242,7 +242,7 @@ public class DocumentModelBuilder {
             DataType other = getDocumentType(docs, type.getName());
             if (other != null) {
                 type = other;
-            } else if (! type.getName().equals("document")) {
+            } else if (type != DataType.DOCUMENT) {
                 throw new IllegalArgumentException
                     ("Can not handle nested document definitions. Undefined document type: " + type.toString());
             }
