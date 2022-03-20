@@ -264,17 +264,20 @@ public class DocumentModelBuilder {
                 type = other;
             }
         } else if (type instanceof StructDataType) {
+            // trick avoids infinite recursion:
+            var old = replacements.put(original, type);
+            assert(old == null);
             StructDataType dt = (StructDataType) type;
             for (com.yahoo.document.Field field : dt.getFields()) {
                 var ft = field.getDataType();
-                if (ft != type) {
-                    var newft = resolveTemporariesRecurse(ft, repo, docs, replacements);
-                    if (ft != newft) {
-                        // XXX deprecated:
-                        field.setDataType(newft);
-                    }
+                var newft = resolveTemporariesRecurse(ft, repo, docs, replacements);
+                if (ft != newft) {
+                    // XXX deprecated:
+                    field.setDataType(newft);
                 }
             }
+            old = replacements.remove(original);
+            assert(old == type);
         }
         else if (type instanceof MapDataType) {
             MapDataType t = (MapDataType) type;
