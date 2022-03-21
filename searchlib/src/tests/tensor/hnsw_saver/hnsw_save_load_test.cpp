@@ -89,13 +89,13 @@ public:
     HnswGraph copy;
 
     void expect_empty_d(uint32_t docid) const {
-        EXPECT_FALSE(copy.node_refs[docid].load_acquire().valid());
+        EXPECT_FALSE(copy.acquire_node_ref(docid).valid());
     }
 
     void expect_level_0(uint32_t docid, const V& exp_links) const {
-        auto levels = copy.get_level_array(docid);
+        auto levels = copy.acquire_level_array(docid);
         EXPECT_GE(levels.size(), 1);
-        auto links = copy.get_link_array(docid, 0);
+        auto links = copy.acquire_link_array(docid, 0);
         EXPECT_EQ(exp_links.size(), links.size());
         for (size_t i = 0; i < exp_links.size() && i < links.size(); ++i) {
             EXPECT_EQ(exp_links[i], links[i]);
@@ -103,9 +103,9 @@ public:
     }
 
     void expect_level_1(uint32_t docid, const V& exp_links) const {
-        auto levels = copy.get_level_array(docid);
+        auto levels = copy.acquire_level_array(docid);
         EXPECT_EQ(2, levels.size());
-        auto links = copy.get_link_array(docid, 1);
+        auto links = copy.acquire_link_array(docid, 1);
         EXPECT_EQ(exp_links.size(), links.size());
         for (size_t i = 0; i < exp_links.size() && i < links.size(); ++i) {
             EXPECT_EQ(exp_links[i], links[i]);

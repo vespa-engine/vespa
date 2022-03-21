@@ -245,7 +245,7 @@ HnswIndex::find_nearest_in_layer(const TypedCells& input, const HnswCandidate& e
     while (keep_searching) {
         keep_searching = false;
         for (uint32_t neighbor_docid : _graph.get_link_array(nearest.node_ref, level)) {
-            auto neighbor_ref = _graph.get_node_ref(neighbor_docid);
+            auto neighbor_ref = _graph.acquire_node_ref(neighbor_docid);
             double dist = calc_distance(input, neighbor_docid);
             if (_graph.still_valid(neighbor_docid, neighbor_ref)
                 && dist < nearest.distance)
@@ -289,7 +289,7 @@ HnswIndex::search_layer_helper(const TypedCells& input, uint32_t neighbors_to_fi
             if (neighbor_docid >= doc_id_limit) {
                 continue;
             }
-            auto neighbor_ref = _graph.get_node_ref(neighbor_docid);
+            auto neighbor_ref = _graph.acquire_node_ref(neighbor_docid);
             if ((! neighbor_ref.valid())
                 || ! visited.try_mark(neighbor_docid))
             {
@@ -433,7 +433,7 @@ HnswIndex::prepare_add_document(uint32_t docid,
             TypedCells vector,
             vespalib::GenerationHandler::Guard read_guard) const
 {
-    uint32_t max_nodes = _graph.node_refs.size();
+    uint32_t max_nodes = _graph.node_refs_size.load(std::memory_order_acquire);
     if (max_nodes < _cfg.min_size_before_two_phase()) {
         // the first documents added will do all work in write thread
         // to ensure they are linked together:
@@ -543,7 +543,7 @@ HnswIndex::compact_link_arrays(CompactionSpec compaction_spec, const CompactionS
     auto context = _graph.links.compactWorst(compaction_spec, compaction_strategy);
     uint32_t doc_id_limit = _graph.node_refs.size();
     for (uint32_t doc_id = 1; doc_id < doc_id_limit; ++doc_id) {
-        EntryRef level_ref = _graph.node_refs[doc_id].load_relaxed();
+        EntryRef level_ref = _graph.get_node_ref(doc_id);
         if (level_ref.valid()) {
             vespalib::ArrayRef<AtomicEntryRef> refs(_graph.nodes.get_writable(level_ref));
             context->compact(refs);
@@ -756,7 +756,7 @@ HnswIndex::top_k_candidates(const TypedCells &vector, uint32_t k, const BitVecto
 HnswNode
 HnswIndex::get_node(uint32_t docid) const
 {
-    auto node_ref = _graph.node_refs[docid].load_acquire();
+    auto node_ref = _graph.acquire_node_ref(docid);
     if (!node_ref.valid()) {
         return HnswNode();
     }
@@ -790,15 +790,16 @@ bool
 HnswIndex::check_link_symmetry() const
 {
     bool all_sym = true;
-    for (size_t docid = 0; docid < _graph.node_refs.size(); ++docid) {
-        auto node_ref = _graph.node_refs[docid].load_acquire();
+    size_t doc_id_limit = _graph.size();
+    for (size_t docid = 0; docid < doc_id_limit; ++docid) {
+        auto node_ref = _graph.acquire_node_ref(docid);
         if (node_ref.valid()) {
             auto levels = _graph.nodes.get(node_ref);
             uint32_t level = 0;
             for (const auto& links_ref : levels) {
                 auto links = _graph.links.get(links_ref.load_acquire());
                 for (auto neighbor_docid : links) {
-                    auto neighbor_links = _graph.get_link_array(neighbor_docid, level);
+                    auto neighbor_links = _graph.acquire_link_array(neighbor_docid, level);
                     if (! has_link_to(neighbor_links, docid)) {
                         all_sym = false;
                         LOG(warning, "check_link_symmetry: docid %zu links to %u on level %u, but no backlink",
@@ -822,8 +823,10 @@ HnswIndex::count_reachable_nodes() const
     }
     std::vector<bool> visited(_graph.size());
     LinkArray found_links;
-    found_links.push_back(entry.docid);
-    visited[entry.docid] = true;
+    if (entry.docid < visited.size()) {
+        found_links.push_back(entry.docid);
+        visited[entry.docid] = true;
+    }
     vespalib::steady_time doom = vespalib::steady_clock::now() + MAX_COUNT_DURATION;
     while (search_level >= 0) {
         for (uint32_t idx = 0; idx < found_links.size(); ++idx) {
@@ -831,11 +834,15 @@ HnswIndex::count_reachable_nodes() const
                 return {found_links.size(), false};
             }
             uint32_t docid = found_links[idx];
-            auto neighbors = _graph.get_link_array(docid, search_level);
-            for (uint32_t neighbor : neighbors) {
-                if (visited[neighbor]) continue;
-                visited[neighbor] = true;
-                found_links.push_back(neighbor);
+            if (docid < visited.size()) {
+                auto neighbors = _graph.acquire_link_array(docid, search_level);
+                for (uint32_t neighbor : neighbors) {
+                    if (neighbor >= visited.size() || visited[neighbor]) {
+                        continue;
+                    }
+                    visited[neighbor] = true;
+                    found_links.push_back(neighbor);
+                }
             }
         }
         --search_level;
