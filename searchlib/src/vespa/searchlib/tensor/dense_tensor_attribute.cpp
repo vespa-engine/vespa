@@ -113,7 +113,7 @@ DenseTensorAttribute::internal_set_tensor(DocId docid, const vespalib::eval::Val
 void
 DenseTensorAttribute::consider_remove_from_index(DocId docid)
 {
-    if (_index && _refVector[docid].valid()) {
+    if (_index && _refVector[docid].load_relaxed().valid()) {
         _index->remove_document(docid);
     }
 }
@@ -209,7 +209,7 @@ DenseTensorAttribute::getTensor(DocId docId) const
 {
     EntryRef ref;
     if (docId < getCommittedDocIdLimit()) {
-        ref = _refVector[docId];
+        ref = acquire_entry_ref(docId);
     }
     if (!ref.valid()) {
         return {};
@@ -222,7 +222,7 @@ DenseTensorAttribute::extract_cells_ref(DocId docId) const
 {
     EntryRef ref;
     if (docId < getCommittedDocIdLimit()) {
-        ref = _refVector[docId];
+        ref = acquire_entry_ref(docId);
     }
     return _denseTensorStore.get_typed_cells(ref);
 }
@@ -370,12 +370,12 @@ DenseTensorAttribute::onLoad(vespalib::Executor *executor)
         if (reader.is_present()) {
             auto raw = _denseTensorStore.allocRawBuffer();
             reader.readTensor(raw.data, _denseTensorStore.getBufSize());
-            _refVector.push_back(raw.ref);
+            _refVector.push_back(AtomicEntryRef(raw.ref));
             if (loader) {
                 loader->load(lid, raw.ref);
             }
         } else {
-            _refVector.push_back(EntryRef());
+            _refVector.push_back(AtomicEntryRef());
         }
     }
     if (loader) {
@@ -483,8 +483,7 @@ DenseTensorAttribute::onShrinkLidSpace()
 vespalib::eval::TypedCells
 DenseTensorAttribute::get_vector(uint32_t docid) const
 {
-    assert(docid < _refVector.size());
-    EntryRef ref = _refVector[docid];
+    EntryRef ref = acquire_entry_ref(docid);
     return _denseTensorStore.get_typed_cells(ref);
 }
 

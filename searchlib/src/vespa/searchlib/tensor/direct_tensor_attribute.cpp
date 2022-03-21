@@ -50,10 +50,10 @@ DirectTensorAttribute::onLoad(vespalib::Executor *)
             tensorReader.readBlob(&buffer[0], tensorSize);
             auto tensor = deserialize_tensor(&buffer[0], tensorSize);
             EntryRef ref = _direct_store.store_tensor(std::move(tensor));
-            _refVector.push_back(ref);
+            _refVector.push_back(AtomicEntryRef(ref));
         } else {
             EntryRef invalid;
-            _refVector.push_back(invalid);
+            _refVector.push_back(AtomicEntryRef(invalid));
         }
     }
     setNumDocs(numDocs);
@@ -82,7 +82,7 @@ DirectTensorAttribute::update_tensor(DocId docId,
 {
     EntryRef ref;
     if (docId < getCommittedDocIdLimit()) {
-        ref = _refVector[docId];
+        ref = _refVector[docId].load_relaxed();
     }
     if (ref.valid()) {
         auto ptr = _direct_store.get_tensor(ref);
@@ -107,7 +107,7 @@ DirectTensorAttribute::getTensor(DocId docId) const
 {
     EntryRef ref;
     if (docId < getCommittedDocIdLimit()) {
-        ref = _refVector[docId];
+        ref = acquire_entry_ref(docId);
     }
     if (ref.valid()) {
         auto ptr = _direct_store.get_tensor(ref);
@@ -124,7 +124,7 @@ DirectTensorAttribute::get_tensor_ref(DocId docId) const
 {
     EntryRef ref;
     if (docId < getCommittedDocIdLimit()) {
-        ref = _refVector[docId];
+        ref = acquire_entry_ref(docId);
     }
     if (ref.valid()) {
         auto ptr = _direct_store.get_tensor(ref);
