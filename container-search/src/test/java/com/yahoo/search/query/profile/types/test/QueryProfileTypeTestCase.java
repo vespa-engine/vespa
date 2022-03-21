@@ -25,9 +25,11 @@ import org.junit.Test;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -441,42 +443,42 @@ public class QueryProfileTypeTestCase {
 
     @Test
     public void testUnembeddedTensorRankFeatureInRequest() {
-        QueryProfile profile = new QueryProfile("test");
-        profile.setType(testtype);
-        registry.register(profile);
+        String text = "text to embed into a tensor";
+        Tensor embedding1 = Tensor.from("tensor<float>(x[5]):[3,7,4,0,0]]");
+        Tensor embedding2 = Tensor.from("tensor<float>(x[5]):[1,2,3,4,0]]");
 
-        CompiledQueryProfileRegistry cRegistry = registry.compile();
-        String textToEmbed = "text to embed into a tensor";
-        String destinationFeature = "query(myTensor4)";
-        Tensor expectedTensor = Tensor.from("tensor<float>(x[5]):[3,7,4,0,0]]");
-        Query query1 = new Query.Builder().setRequest(HttpRequest.createTestRequest("?" + urlEncode("ranking.features." + destinationFeature) +
-                                                                                   "=" + urlEncode("embed(" + textToEmbed + ")"),
-                                                                                   com.yahoo.jdisc.http.HttpRequest.Method.GET))
-                                         .setQueryProfile(cRegistry.getComponent("test"))
-                                         .setEmbedder(new MockEmbedder(textToEmbed,
-                                                                       Language.UNKNOWN,
-                                                                       destinationFeature,
-                                                                       expectedTensor))
-                                         .build();
-        assertEquals(0, query1.errors().size());
-        assertEquals(expectedTensor, query1.properties().get("ranking.features.query(myTensor4)"));
-        assertEquals(expectedTensor, query1.getRanking().getFeatures().getTensor("query(myTensor4)").get());
+        Map<String, Embedder> embedders = Map.of(
+                "emb1", new MockEmbedder(text, Language.UNKNOWN, embedding1)
+        );
+        assertEmbedQuery("embed(" + text + ")", embedding1, embedders);
+        assertEmbedQuery("embed('" + text + "')", embedding1, embedders);
+        assertEmbedQuery("embed(\"" + text + "\")", embedding1, embedders);
+        assertEmbedQuery("embed(emb1, '" + text + "')", embedding1, embedders);
+        assertEmbedQuery("embed(emb1, \"" + text + "\")", embedding1, embedders);
+        assertEmbedQueryFails("embed(emb2, \"" + text + "\")", embedding1, embedders,
+                              "Can't find embedder 'emb2'. Valid embedders are emb1");
 
-        // Explicit language
-        Query query2 = new Query.Builder().setRequest(HttpRequest.createTestRequest("?" + urlEncode("ranking.features." + destinationFeature) +
-                                                                                   "=" + urlEncode("embed(" + textToEmbed + ")") +
-                                                                                   "&language=en",
-                                                                                   com.yahoo.jdisc.http.HttpRequest.Method.GET))
-                                         .setQueryProfile(cRegistry.getComponent("test"))
-                                         .setEmbedder(new MockEmbedder(textToEmbed,
-                                                                       Language.ENGLISH,
-                                                                       destinationFeature,
-                                                                       expectedTensor))
-                                         .build();
-        assertEquals(0, query2.errors().size());
-        assertEquals(expectedTensor, query2.properties().get("ranking.features.query(myTensor4)"));
-        assertEquals(expectedTensor, query2.getRanking().getFeatures().getTensor("query(myTensor4)").get());
+        embedders = Map.of(
+                "emb1", new MockEmbedder(text, Language.UNKNOWN, embedding1),
+                "emb2", new MockEmbedder(text, Language.UNKNOWN, embedding2)
+        );
+        assertEmbedQuery("embed(emb1, '" + text + "')", embedding1, embedders);
+        assertEmbedQuery("embed(emb2, '" + text + "')", embedding2, embedders);
+        assertEmbedQueryFails("embed(emb3, \"" + text + "\")", embedding1, embedders,
+                "Can't find embedder 'emb3'. Valid embedders are emb1,emb2");
 
+        // And with specified language
+        embedders = Map.of(
+                "emb1", new MockEmbedder(text, Language.ENGLISH, embedding1)
+        );
+        assertEmbedQuery("embed(" + text + ")", embedding1, embedders, Language.ENGLISH.languageCode());
+
+        embedders = Map.of(
+                "emb1", new MockEmbedder(text, Language.ENGLISH, embedding1),
+                "emb2", new MockEmbedder(text, Language.UNKNOWN, embedding2)
+        );
+        assertEmbedQuery("embed(emb1, '" + text + "')", embedding1, embedders, Language.ENGLISH.languageCode());
+        assertEmbedQuery("embed(emb2, '" + text + "')", embedding2, embedders, Language.UNKNOWN.languageCode());
     }
 
     private String urlEncode(String s) {
@@ -729,20 +731,52 @@ public class QueryProfileTypeTestCase {
         }
     }
 
+    private void assertEmbedQuery(String embed, Tensor expected, Map<String, Embedder> embedders) {
+        assertEmbedQuery(embed, expected, embedders, null);
+    }
+
+    private void assertEmbedQuery(String embed, Tensor expected, Map<String, Embedder> embedders, String language) {
+        QueryProfile profile = new QueryProfile("test");
+        profile.setType(testtype);
+        registry.register(profile);
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+
+        String languageParam = language == null ? "" : "&language=" + language;
+        String destination = "query(myTensor4)";
+
+        Query query = new Query.Builder().setRequest(HttpRequest.createTestRequest(
+                                "?" + urlEncode("ranking.features." + destination) +
+                                "=" + urlEncode(embed) +
+                                languageParam,
+                                com.yahoo.jdisc.http.HttpRequest.Method.GET))
+                .setQueryProfile(cRegistry.getComponent("test"))
+                .setEmbedders(embedders)
+                .build();
+        assertEquals(0, query.errors().size());
+        assertEquals(expected, query.properties().get("ranking.features." + destination));
+        assertEquals(expected, query.getRanking().getFeatures().getTensor(destination).get());
+    }
+
+    private void assertEmbedQueryFails(String embed, Tensor expected, Map<String, Embedder> embedders, String errMsg) {
+        Throwable t = assertThrows(IllegalArgumentException.class, () -> assertEmbedQuery(embed, expected, embedders));
+        while (t != null) {
+            if (t.getMessage().equals(errMsg)) return;
+            t = t.getCause();
+        }
+        fail("Error '" + errMsg + "' not thrown");
+    }
+
     private static final class MockEmbedder implements Embedder {
 
         private final String expectedText;
         private final Language expectedLanguage;
-        private final String expectedDestination;
         private final Tensor tensorToReturn;
 
         public MockEmbedder(String expectedText,
                             Language expectedLanguage,
-                            String expectedDestination,
                             Tensor tensorToReturn) {
             this.expectedText = expectedText;
             this.expectedLanguage = expectedLanguage;
-            this.expectedDestination = expectedDestination;
             this.tensorToReturn = tensorToReturn;
         }
 
@@ -756,7 +790,6 @@ public class QueryProfileTypeTestCase {
         public Tensor embed(String text, Embedder.Context context, TensorType tensorType) {
             assertEquals(expectedText, text);
             assertEquals(expectedLanguage, context.getLanguage());
-            assertEquals(expectedDestination, context.getDestination());
             assertEquals(tensorToReturn.type(), tensorType);
             return tensorToReturn;
         }
