@@ -14,3 +14,5 @@ deadlock:proton::ImportedAttributesContext::getAttributeStableEnum
 # creation and locking is not strictly enough ordered.
 
 race:llvm::sys::MutexImpl
+race:llvm::sys::SmartMutex<false>::lock
+race:llvm::sys::SmartMutex<true>::lock
