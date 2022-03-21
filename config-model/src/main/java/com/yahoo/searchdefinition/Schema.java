@@ -602,7 +602,9 @@ public class Schema implements ImmutableSchema {
                     for (var already : summaryFields) {
                         if (summaryField == already) wanted = false;
                     }
-                    summaryFields.add(summaryField);
+                    if (wanted) {
+                        summaryFields.add(summaryField);
+                    }
                 }
             }
         }
