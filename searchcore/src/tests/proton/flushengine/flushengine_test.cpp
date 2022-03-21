@@ -196,7 +196,7 @@ void WrappedFlushTask::run()
 }
 
 class SimpleTask : public searchcorespi::FlushTask {
-    search::SerialNum &_flushedSerial;
+    std::atomic<search::SerialNum> &_flushedSerial;
     search::SerialNum &_currentSerial;
 public:
     vespalib::Gate &_start;
@@ -207,7 +207,7 @@ public:
     SimpleTask(vespalib::Gate &start,
                vespalib::Gate &done,
                vespalib::Gate *proceed,
-               search::SerialNum &flushedSerial,
+               std::atomic<search::SerialNum> &flushedSerial,
                search::SerialNum &currentSerial)
         : _flushedSerial(flushedSerial), _currentSerial(currentSerial),
           _start(start), _done(done), _proceed(proceed)
@@ -218,7 +218,7 @@ public:
         if (_proceed != nullptr) {
             _proceed->await();
         }
-        _flushedSerial = _currentSerial;
+        _flushedSerial.store(_currentSerial, std::memory_order_relaxed);
         _done.countDown();
     }
 
@@ -227,7 +227,7 @@ public:
 
 class SimpleTarget : public test::DummyFlushTarget {
 public:
-    search::SerialNum _flushedSerial;
+    std::atomic<search::SerialNum> _flushedSerial;
     search::SerialNum _currentSerial;
     vespalib::Gate    _proceed;
     vespalib::Gate    _initDone;
@@ -276,8 +276,8 @@ public:
     Time getLastFlushTime() const override { return vespalib::system_clock::now(); }
 
     SerialNum getFlushedSerialNum() const override {
-        LOG(info, "SimpleTarget(%s)::getFlushedSerialNum() = %" PRIu64, getName().c_str(), _flushedSerial);
-        return _flushedSerial;
+        LOG(info, "SimpleTarget(%s)::getFlushedSerialNum() = %" PRIu64, getName().c_str(), _flushedSerial.load(std::memory_order_relaxed));
+        return _flushedSerial.load(std::memory_order_relaxed);
     }
 
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>) override {
