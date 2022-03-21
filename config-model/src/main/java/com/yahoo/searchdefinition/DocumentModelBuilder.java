@@ -189,18 +189,6 @@ public class DocumentModelBuilder {
         }
     }
 
-    // This is how you make a "Pair" class in java....
-    private static class TypeReplacement {
-        private final DataType oldType;
-        private final DataType newType;
-        DataType oldType() { return oldType; }
-        DataType newType() { return newType; }
-        public TypeReplacement(DataType oldType, DataType newType) {
-            this.oldType = oldType;
-            this.newType = newType;
-        }
-    }
-    
     private static String descT(DataType type) {
         if (type == null) { return "<null>"; }
         return "'" + type.getName() + "' [" + type.getId() + "] {"+type.getClass() + "}";
@@ -215,6 +203,7 @@ public class DocumentModelBuilder {
         Map<DataType, DataType> replacements = new IdentityHashMap<>();
         for(NewDocumentType doc : lst) {
             resolveTemporaries(doc.getAllTypes(), lst, replacements);
+            resolveTemporariesRecurse(doc.getContentStruct(), doc.getAllTypes(), lst, replacements);
         }
         for(NewDocumentType doc : lst) {
             for (var entry : replacements.entrySet()) {
@@ -245,36 +234,39 @@ public class DocumentModelBuilder {
         if (type instanceof TemporaryStructuredDataType) {
             DataType other = repo.getDataType(type.getId());
             if (other == null || other == type) {
-                other = getDocumentType(docs, type.getId());
+                other = getDocumentType(docs, type.getName());
             }
             if (other != null) {
                 type = other;
             }
         } else if (type instanceof DocumentType) {
-            DataType other = getDocumentType(docs, type.getId());
+            DataType other = getDocumentType(docs, type.getName());
             if (other != null) {
                 type = other;
-            } else if (! type.getName().equals("document")) {
+            } else if (type != DataType.DOCUMENT) {
                 throw new IllegalArgumentException
                     ("Can not handle nested document definitions. Undefined document type: " + type.toString());
             }
         } else if (type instanceof NewDocumentType) {
-            DataType other = getDocumentType(docs, type.getId());
+            DataType other = getDocumentType(docs, type.getName());
             if (other != null) {
                 type = other;
             }
         } else if (type instanceof StructDataType) {
+            // trick avoids infinite recursion:
+            var old = replacements.put(original, type);
+            assert(old == null);
             StructDataType dt = (StructDataType) type;
             for (com.yahoo.document.Field field : dt.getFields()) {
                 var ft = field.getDataType();
-                if (ft != type) {
-                    var newft = resolveTemporariesRecurse(ft, repo, docs, replacements);
-                    if (ft != newft) {
-                        // XXX deprecated:
-                        field.setDataType(newft);
-                    }
+                var newft = resolveTemporariesRecurse(ft, repo, docs, replacements);
+                if (ft != newft) {
+                    // XXX deprecated:
+                    field.setDataType(newft);
                 }
             }
+            old = replacements.remove(original);
+            assert(old == type);
         }
         else if (type instanceof MapDataType) {
             MapDataType t = (MapDataType) type;
@@ -306,7 +298,7 @@ public class DocumentModelBuilder {
         }
         else if (type instanceof NewDocumentReferenceDataType) {
             var t = (NewDocumentReferenceDataType) type;
-            var doc = getDocumentType(docs, t.getTargetTypeId());
+            var doc = getDocumentType(docs, t.getTargetTypeName());
             type = doc.getReferenceDataType();
         }
         if (type != original) {
@@ -315,9 +307,9 @@ public class DocumentModelBuilder {
         return type;
     }
 
-    private static NewDocumentType getDocumentType(Collection<NewDocumentType> docs, int id) {
+    private static NewDocumentType getDocumentType(Collection<NewDocumentType> docs, String name) {
         for (NewDocumentType doc : docs) {
-            if (doc.getId() == id) {
+            if (doc.getName().equals(name)) {
                 return doc;
             }
         }
