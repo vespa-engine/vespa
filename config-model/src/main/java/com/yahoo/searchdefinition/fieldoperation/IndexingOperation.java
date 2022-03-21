@@ -13,6 +13,8 @@ import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import com.yahoo.yolean.Exceptions;
 
+import java.util.Map;
+
 /**
  * @author Einar M R Rosenvinge
  */
@@ -32,13 +34,13 @@ public class IndexingOperation implements FieldOperation {
 
     /** Creates an indexing operation which will use the simple linguistics implementation suitable for testing */
     public static IndexingOperation fromStream(SimpleCharStream input, boolean multiLine) throws ParseException {
-        return fromStream(input, multiLine, new SimpleLinguistics(), Embedder.throwsOnUse);
+        return fromStream(input, multiLine, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
     }
 
     public static IndexingOperation fromStream(SimpleCharStream input, boolean multiLine,
-                                               Linguistics linguistics, Embedder embedder)
+                                               Linguistics linguistics, Map<String, Embedder> embedders)
             throws ParseException {
-        ScriptParserContext config = new ScriptParserContext(linguistics, embedder);
+        ScriptParserContext config = new ScriptParserContext(linguistics, embedders);
         config.setAnnotatorConfig(new AnnotatorConfig());
         config.setInputStream(input);
         ScriptExpression exp;

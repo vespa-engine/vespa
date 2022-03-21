@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docprocs.indexing;
 
+import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.docproc.Processing;
 import com.yahoo.document.Document;
@@ -128,6 +129,6 @@ public class IndexingProcessorTestCase {
         return new IndexingProcessor(new DocumentTypeManager(ConfigGetter.getConfig(DocumentmanagerConfig.class, configId)),
                                      ConfigGetter.getConfig(IlscriptsConfig.class, configId),
                                      new SimpleLinguistics(),
-                                     Embedder.throwsOnUse);
+                                     new ComponentRegistry<Embedder>());
     }
 }

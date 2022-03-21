@@ -15,6 +15,8 @@ import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import com.yahoo.vespa.objects.Selectable;
 
+import java.util.Map;
+
 /**
  * @author Simon Thoresen Hult
  */
@@ -191,11 +193,11 @@ public abstract class Expression extends Selectable {
 
     /** Creates an expression with simple lingustics for testing */
     public static Expression fromString(String expression) throws ParseException {
-        return fromString(expression, new SimpleLinguistics(), Embedder.throwsOnUse);
+        return fromString(expression, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
     }
 
-    public static Expression fromString(String expression, Linguistics linguistics, Embedder embedder) throws ParseException {
-        return newInstance(new ScriptParserContext(linguistics, embedder).setInputStream(new IndexingInput(expression)));
+    public static Expression fromString(String expression, Linguistics linguistics, Map<String, Embedder> embedders) throws ParseException {
+        return newInstance(new ScriptParserContext(linguistics, embedders).setInputStream(new IndexingInput(expression)));
     }
 
     public static Expression newInstance(ScriptParserContext context) throws ParseException {

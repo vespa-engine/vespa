@@ -45,7 +45,7 @@ public class IndexingParser {
 
     private String defaultFieldName;
     private Linguistics linguistics;
-    private Embedder embedder;
+    private Map<String, Embedder> embedders;
     private AnnotatorConfig annotatorCfg;
 
     public IndexingParser(String str) {
@@ -62,8 +62,8 @@ public class IndexingParser {
         return this;
     }
 
-    public IndexingParser setEmbedder(Embedder embedder) {
-        this.embedder = embedder;
+    public IndexingParser setEmbedders(Map<String, Embedder> embedders) {
+        this.embedders = embedders;
         return this;
     }
 
@@ -367,10 +367,13 @@ Expression echoExp() : { }
     { return new EchoExpression(); }
 }
 
-Expression embedExp() : { }
+Expression embedExp() :
 {
-    ( <EMBED> )
-    { return new EmbedExpression(embedder); }
+    String val = "";
+}
+{
+    ( <EMBED> [ LOOKAHEAD(2) val = identifier() ] )
+    { return new EmbedExpression(embedders, val); }
 }
 
 Expression exactExp() : { }

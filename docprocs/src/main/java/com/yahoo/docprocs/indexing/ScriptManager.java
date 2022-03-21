@@ -28,11 +28,11 @@ public class ScriptManager {
     private final Map<String, Map<String, DocumentScript>> documentFieldScripts;
     private final DocumentTypeManager docTypeMgr;
 
-    public ScriptManager(DocumentTypeManager docTypeMgr, IlscriptsConfig config, Linguistics linguistics, Embedder embedder) {
+    public ScriptManager(DocumentTypeManager docTypeMgr, IlscriptsConfig config, Linguistics linguistics,
+                         Map<String, Embedder> embedders) {
         this.docTypeMgr = docTypeMgr;
-        documentFieldScripts = createScriptsMap(docTypeMgr, config, linguistics, embedder);
+        documentFieldScripts = createScriptsMap(docTypeMgr, config, linguistics, embedders);
     }
-
 
     private Map<String, DocumentScript> getScripts(DocumentType inputType) {
         Map<String, DocumentScript> scripts = documentFieldScripts.get(inputType.getName());
@@ -75,9 +75,9 @@ public class ScriptManager {
     private static Map<String, Map<String, DocumentScript>>  createScriptsMap(DocumentTypeManager docTypeMgr,
                                                                               IlscriptsConfig config,
                                                                               Linguistics linguistics,
-                                                                              Embedder embedder) {
+                                                                              Map<String, Embedder> embedders) {
         Map<String, Map<String, DocumentScript>> documentFieldScripts = new HashMap<>(config.ilscript().size());
-        ScriptParserContext parserContext = new ScriptParserContext(linguistics, embedder);
+        ScriptParserContext parserContext = new ScriptParserContext(linguistics, embedders);
         parserContext.getAnnotatorConfig().setMaxTermOccurrences(config.maxtermoccurrences());
         parserContext.getAnnotatorConfig().setMaxTokenLength(config.fieldmatchmaxlength());
 

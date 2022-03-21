@@ -12,6 +12,10 @@ import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Embeds a string in a tensor space using the configured Embedder component
  *
@@ -20,6 +24,7 @@ import com.yahoo.tensor.TensorType;
 public class EmbedExpression extends Expression  {
 
     private final Embedder embedder;
+    private final String embedderId;
 
     /** The destination the embedding will be written to on the form [schema name].[field name] */
     private String destination;
@@ -27,9 +32,28 @@ public class EmbedExpression extends Expression  {
     /** The target type we are embedding into. */
     private TensorType targetType;
 
-    public EmbedExpression(Embedder embedder) {
+    public EmbedExpression(Map<String, Embedder> embedders, String embedderId) {
         super(DataType.STRING);
-        this.embedder = embedder;
+        this.embedderId = embedderId;
+
+        boolean embedderIdProvided = embedderId != null && embedderId.length() > 0;
+
+        if (embedders.size() == 0) {
+            throw new IllegalStateException("No embedders provided");  // should never happen
+        }
+        else if (embedders.size() > 1 && ! embedderIdProvided) {
+            this.embedder = new Embedder.FailingEmbedder("Multiple embedders are provided but no embedder id is given. " +
+                    "Valid embedders are " + validEmbedders(embedders));
+        }
+        else if (embedders.size() == 1 && ! embedderIdProvided) {
+            this.embedder = embedders.entrySet().stream().findFirst().get().getValue();
+        }
+        else if ( ! embedders.containsKey(embedderId)) {
+            this.embedder = new Embedder.FailingEmbedder("Can't find embedder '" + embedderId + "'. " +
+                    "Valid embedders are " + validEmbedders(embedders));
+        } else  {
+            this.embedder = embedders.get(embedderId);
+        }
     }
 
     @Override
@@ -71,12 +95,26 @@ public class EmbedExpression extends Expression  {
     }
 
     @Override
-    public String toString() { return "embed"; }
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("embed");
+        if (this.embedderId != null && this.embedderId.length() > 0) {
+            sb.append(" ").append(this.embedderId);
+        }
+        return sb.toString();
+    }
 
     @Override
     public int hashCode() { return 1; }
 
     @Override
     public boolean equals(Object o) { return o instanceof EmbedExpression; }
+
+    private static String validEmbedders(Map<String, Embedder> embedders) {
+        List<String> embedderIds = new ArrayList<>();
+        embedders.forEach((key, value) -> embedderIds.add(key));
+        embedderIds.sort(null);
+        return String.join(",", embedderIds);
+    }
 
 }

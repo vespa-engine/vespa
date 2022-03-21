@@ -6,6 +6,9 @@ import com.yahoo.language.process.Embedder;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import com.yahoo.vespa.indexinglanguage.parser.CharStream;
 
+import java.util.Collections;
+import java.util.Map;
+
 /**
  * @author Simon Thoresen Hult
  */
@@ -13,13 +16,13 @@ public class ScriptParserContext {
 
     private AnnotatorConfig annotatorConfig = new AnnotatorConfig();
     private Linguistics linguistics;
-    private final Embedder embedder;
+    private final Map<String, Embedder> embedders;
     private String defaultFieldName = null;
     private CharStream inputStream = null;
 
-    public ScriptParserContext(Linguistics linguistics, Embedder embedder) {
+    public ScriptParserContext(Linguistics linguistics, Map<String, Embedder> embedders) {
         this.linguistics = linguistics;
-        this.embedder = embedder;
+        this.embedders = embedders;
     }
 
     public AnnotatorConfig getAnnotatorConfig() {
@@ -40,8 +43,8 @@ public class ScriptParserContext {
         return this;
     }
 
-    public Embedder getEmbedder() {
-        return embedder;
+    public Map<String, Embedder> getEmbedders() {
+        return Collections.unmodifiableMap(embedders);
     }
 
     public String getDefaultFieldName() {
