@@ -70,7 +70,7 @@ public:
      */
     virtual void closed(api::VisitorId id) = 0;
 
-    virtual ~VisitorMessageHandler() {}
+    virtual ~VisitorMessageHandler() = default;
 };
 
 /**

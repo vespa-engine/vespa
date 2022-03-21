@@ -33,15 +33,15 @@ class VisitorThread : public framework::Runnable,
                       private api::MessageHandler,
                       private framework::MetricUpdateHook
 {
-    typedef std::map<std::string, std::shared_ptr<VisitorEnvironment> > LibMap;
+    using LibMap = std::map<std::string, std::shared_ptr<VisitorEnvironment>>;
     LibMap _libs;
 
-    typedef std::map<api::VisitorId, std::shared_ptr<Visitor> > VisitorMap;
+    using VisitorMap = std::map<api::VisitorId, std::shared_ptr<Visitor>>;
     VisitorMap _visitors;
-    std::deque<std::pair<api::VisitorId, framework::SecondTime> > _recentlyCompleted;
+    std::deque<std::pair<api::VisitorId, framework::SecondTime>> _recentlyCompleted;
 
     struct Event {
-        enum Type {
+        enum class Type {
             MBUS,
             PERSISTENCE,
             NONE
@@ -50,21 +50,20 @@ class VisitorThread : public framework::Runnable,
         api::VisitorId _visitorId;
         std::shared_ptr<api::StorageMessage> _message;
         mbus::Reply::UP _mbusReply;
-
         metrics::MetricTimer _timer;
         Type _type;
 
-        Event() noexcept : _visitorId(0), _message(), _timer(), _type(NONE) {}
+        Event() noexcept : _visitorId(0), _message(), _timer(), _type(Type::NONE) {}
         Event(Event&& other) noexcept;
         Event& operator= (Event&& other) noexcept;
         Event(const Event& other) = delete;
         Event& operator= (const Event& other) = delete;
         Event(api::VisitorId visitor, mbus::Reply::UP reply);
-        Event(api::VisitorId visitor, const std::shared_ptr<api::StorageMessage>& msg);
+        Event(api::VisitorId visitor, std::shared_ptr<api::StorageMessage> msg);
         ~Event();
 
-        bool empty() const noexcept {
-            return (_type == NONE);
+        [[nodiscard]] bool empty() const noexcept {
+            return (_type == Type::NONE);
         }
     };
 
@@ -105,9 +104,6 @@ public:
     void setTimeBetweenTicks(uint32_t time) { _timeBetweenTicks.store(time, std::memory_order_relaxed); }
     void handleMessageBusReply(std::unique_ptr<mbus::Reply> reply, Visitor& visitor);
 
-    /** For unit tests needing to pause thread. */
-    std::mutex & getQueueMonitor() { return _lock; }
-
     const VisitorThreadMetrics& getMetrics() const noexcept {
         return _metrics;
     }
@@ -130,8 +126,6 @@ private:
                                            vespalib::asciistream & error);
 
     bool onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>&) override;
-
-    bool onVisitorReply(const std::shared_ptr<api::StorageReply>& reply);
     bool onInternal(const std::shared_ptr<api::InternalCommand>&) override;
     bool onInternalReply(const std::shared_ptr<api::InternalReply>&) override;
 

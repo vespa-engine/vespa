@@ -36,9 +36,7 @@ public:
     void setSourceIndex(uint16_t sourceIndex) { _sourceIndex = sourceIndex; }
     uint16_t getSourceIndex() const { return _sourceIndex; }
 
-    /** Set timeout in milliseconds. */
-    void setTimeout(duration milliseconds) { _timeout = milliseconds; }
-    /** Get timeout in milliseconds. */
+    void setTimeout(duration timeout) { _timeout = timeout; }
     duration getTimeout() const { return _timeout; }
 
     /** Used to set a new id so the message can be resent. */

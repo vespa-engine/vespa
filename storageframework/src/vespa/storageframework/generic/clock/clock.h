@@ -21,7 +21,7 @@ namespace storage::framework {
 struct Clock {
     using UP = std::unique_ptr<Clock>;
 
-    virtual ~Clock() {}
+    virtual ~Clock() = default;
 
     virtual MicroSecTime getTimeInMicros() const = 0;
     virtual MilliSecTime getTimeInMillis() const = 0;

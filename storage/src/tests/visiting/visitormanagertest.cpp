@@ -53,7 +53,7 @@ protected:
     ~VisitorManagerTest();
 
     // Not using setUp since can't throw exception out of it.
-    void initializeTest();
+    void initializeTest(bool defer_manager_thread_start = false);
     void addSomeRemoves(bool removeAll = false);
     void TearDown() override;
     TestVisitorMessageSession& getSession(uint32_t n);
@@ -78,7 +78,7 @@ VisitorManagerTest::~VisitorManagerTest() = default;
 uint32_t VisitorManagerTest::docCount = 10;
 
 void
-VisitorManagerTest::initializeTest()
+VisitorManagerTest::initializeTest(bool defer_manager_thread_start)
 {
     vdstestlib::DirConfig config(getStandardConfig(true));
     config.getConfig("stor-visitor").set("visitorthreads", "1");
@@ -88,7 +88,11 @@ VisitorManagerTest::initializeTest()
     _node->setupDummyPersistence();
     _node->getStateUpdater().setClusterState(std::make_shared<lib::ClusterState>("storage:1 distributor:1"));
     _top = std::make_unique<DummyStorageLink>();
-    auto vm = std::make_unique<VisitorManager>(config::ConfigUri(config.getConfigId()), _node->getComponentRegister(), *_messageSessionFactory);
+    auto vm = std::make_unique<VisitorManager>(config::ConfigUri(config.getConfigId()),
+                                               _node->getComponentRegister(),
+                                               *_messageSessionFactory,
+                                               VisitorFactory::Map(),
+                                               defer_manager_thread_start);
     _manager = vm.get();
     _top->push_back(std::move(vm));
     _top->push_back(std::make_unique<FileStorManager>(config::ConfigUri(config.getConfigId()), _node->getPersistenceProvider(),
@@ -753,21 +757,21 @@ TEST_F(VisitorManagerTest, abort_on_field_path_error) {
 }
 
 TEST_F(VisitorManagerTest, visitor_queue_timeout) {
-    ASSERT_NO_FATAL_FAILURE(initializeTest());
+    ASSERT_NO_FATAL_FAILURE(initializeTest(true));
     _manager->enforceQueueUsage();
 
     {
-        std::lock_guard guard(_manager->getThread(0).getQueueMonitor());
-
         auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis", "");
         cmd->addBucketToBeVisited(document::BucketId(16, 3));
         cmd->setAddress(_Address);
         cmd->setQueueTimeout(1ms);
         cmd->setTimeout(100 * 1000 * 1000ms);
+        // The manager thread isn't running yet so the visitor stays on the queue
         _top->sendDown(cmd);
-
-        _node->getClock().addSecondsToTime(1000);
     }
+
+    _node->getClock().addSecondsToTime(1000);
+    _manager->create_and_start_manager_thread();
 
     // Don't answer any messages. Make sure we timeout anyways.
     _top->waitForMessages(1, 60);

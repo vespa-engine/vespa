@@ -18,7 +18,7 @@
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/storageframework/generic/clock/clock.h>
-#include <list>
+#include <vector>
 #include <ostream>
 
 namespace storage {
@@ -28,17 +28,21 @@ class CommandQueue : public vespalib::Printable
 {
 public:
     struct CommandEntry {
-        typedef typename Command::Priority PriorityType;
+        using PriorityType = typename Command::Priority;
+
         std::shared_ptr<Command> _command;
-        uint64_t _time;
-        uint64_t _sequenceId;
-        PriorityType _priority;
+        vespalib::steady_time    _deadline;
+        uint64_t                 _sequenceId;
+        PriorityType             _priority;
 
         CommandEntry(const std::shared_ptr<Command>& cmd,
-                     uint64_t time,
+                     vespalib::steady_time deadline,
                      uint64_t sequenceId,
                      PriorityType priority)
-            : _command(cmd), _time(time), _sequenceId(sequenceId), _priority(priority)
+            : _command(cmd),
+              _deadline(deadline),
+              _sequenceId(sequenceId),
+              _priority(priority)
         {}
 
         // Sort on both priority and sequence ID
@@ -51,23 +55,22 @@ public:
     };
 
 private:
-    typedef boost::multi_index::multi_index_container<
+    using CommandList = boost::multi_index::multi_index_container<
                 CommandEntry,
                 boost::multi_index::indexed_by<
                     boost::multi_index::ordered_unique<
                         boost::multi_index::identity<CommandEntry>
                     >,
                     boost::multi_index::ordered_non_unique<
-                        boost::multi_index::member<CommandEntry, uint64_t, &CommandEntry::_time>
+                        boost::multi_index::member<CommandEntry, vespalib::steady_time, &CommandEntry::_deadline>
                     >
                 >
-            > CommandList;
-    typedef typename boost::multi_index
-                        ::nth_index<CommandList, 1>::type timelist;
+            >;
+    using timelist = typename boost::multi_index::nth_index<CommandList, 1>::type;
 
     const framework::Clock& _clock;
-    mutable CommandList _commands;
-    uint64_t _sequenceId;
+    mutable CommandList     _commands;
+    uint64_t                _sequenceId;
 
 public:
     typedef typename CommandList::iterator iterator;
@@ -76,7 +79,7 @@ public:
     typedef typename CommandList::const_reverse_iterator const_reverse_iterator;
     typedef typename timelist::const_iterator const_titerator;
 
-    CommandQueue(const framework::Clock& clock)
+    explicit CommandQueue(const framework::Clock& clock)
         : _clock(clock),
           _sequenceId(0) {}
 
@@ -89,22 +92,22 @@ public:
     const_iterator end() const { return _commands.end(); }
 
     const_titerator tbegin() const {
-        timelist& tl = boost::multi_index::get<1>(_commands);
+        auto& tl = boost::multi_index::get<1>(_commands);
         return tl.begin();
     }
     const_titerator tend() const {
-        timelist& tl = boost::multi_index::get<1>(_commands);
+        auto& tl = boost::multi_index::get<1>(_commands);
         return tl.end();
     }
 
     bool empty() const { return _commands.empty(); }
     uint32_t size() const { return _commands.size(); }
-    std::pair<std::shared_ptr<Command>, time_t> releaseNextCommand();
+    std::pair<std::shared_ptr<Command>, vespalib::steady_time> releaseNextCommand();
     std::shared_ptr<Command> peekNextCommand() const;
     void add(const std::shared_ptr<Command>& msg);
     void erase(iterator it) { _commands.erase(it); }
-    std::list<CommandEntry> releaseTimedOut();
-    std::pair<std::shared_ptr<Command>, time_t> releaseLowestPriorityCommand();
+    std::vector<CommandEntry> releaseTimedOut();
+    std::pair<std::shared_ptr<Command>, vespalib::steady_time> releaseLowestPriorityCommand();
 
     std::shared_ptr<Command> peekLowestPriorityCommand() const;
     void clear() { return _commands.clear(); }
@@ -113,15 +116,14 @@ public:
 
 
 template<class Command>
-std::pair<std::shared_ptr<Command>, time_t>
+std::pair<std::shared_ptr<Command>, vespalib::steady_time>
 CommandQueue<Command>::releaseNextCommand()
 {
-    std::pair<std::shared_ptr<Command>, time_t> retVal(
-                std::shared_ptr<Command>(), 0);
+    std::pair<std::shared_ptr<Command>, vespalib::steady_time> retVal;
     if (!_commands.empty()) {
         iterator first = _commands.begin();
         retVal.first = first->_command;
-        retVal.second = first->_time;
+        retVal.second = first->_deadline;
         _commands.erase(first);
     }
     return retVal;
@@ -143,38 +145,36 @@ template<class Command>
 void
 CommandQueue<Command>::add(const std::shared_ptr<Command>& cmd)
 {
-    framework::MicroSecTime time(_clock.getTimeInMicros()
-            + framework::MicroSecTime(vespalib::count_us(cmd->getQueueTimeout())));
-    _commands.insert(CommandEntry(cmd, time.getTime(), ++_sequenceId, cmd->getPriority()));
+    auto deadline = _clock.getMonotonicTime() + cmd->getQueueTimeout();
+    _commands.insert(CommandEntry(cmd, deadline, ++_sequenceId, cmd->getPriority()));
 }
 
 template<class Command>
-std::list<typename CommandQueue<Command>::CommandEntry>
+std::vector<typename CommandQueue<Command>::CommandEntry>
 CommandQueue<Command>::releaseTimedOut()
 {
-    std::list<CommandEntry> mylist;
-    framework::MicroSecTime time(_clock.getTimeInMicros());
-    while (!empty() && tbegin()->_time <= time.getTime()) {
-        mylist.push_back(*tbegin());
+    std::vector<CommandEntry> timed_out;
+    auto now = _clock.getMonotonicTime();
+    while (!empty() && (tbegin()->_deadline <= now)) {
+        timed_out.emplace_back(*tbegin());
         timelist& tl = boost::multi_index::get<1>(_commands);
         tl.erase(tbegin());
     }
-    return mylist;
+    return timed_out;
 }
 
 template <class Command>
-std::pair<std::shared_ptr<Command>, time_t>
+std::pair<std::shared_ptr<Command>, vespalib::steady_time>
 CommandQueue<Command>::releaseLowestPriorityCommand()
 {
     if (!_commands.empty()) {
         iterator last = (++_commands.rbegin()).base();
-        time_t time = last->_time;
+        auto deadline = last->_deadline;
         std::shared_ptr<Command> cmd(last->_command);
         _commands.erase(last);
-        return std::pair<std::shared_ptr<Command>, time_t>(cmd, time);
+        return {cmd, deadline};
     } else {
-        return std::pair<std::shared_ptr<Command>, time_t>(
-                std::shared_ptr<Command>(), 0);
+        return {};
     }
 }
 
@@ -198,12 +198,12 @@ CommandQueue<Command>::print(std::ostream& out, bool verbose, const std::string&
     out << "Insert order:\n";
     for (const_iterator it = begin(); it != end(); ++it) {
         out << indent << *it->_command << ", priority " << it->_priority
-            << ", time " << it->_time << "\n";
+            << ", time " << vespalib::count_ms(it->_deadline.time_since_epoch()) << "\n";
     }
     out << indent << "Time order:";
     for (const_titerator it = tbegin(); it != tend(); ++it) {
         out << "\n" << indent << *it->_command << ", priority " << it->_priority
-            << ", time " << it->_time;
+            << ", time " << vespalib::count_ms(it->_deadline.time_since_epoch());
     }
 }
 
