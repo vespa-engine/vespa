@@ -46,6 +46,6 @@ public interface ImmutableSchema {
     }
     List<ImmutableSDField> allFieldsList();
 
-    Map<String, SummaryField> getSummaryFields(ImmutableSDField field);
+    List<SummaryField> getSummaryFields(ImmutableSDField field);
 
 }

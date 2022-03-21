@@ -34,7 +34,7 @@ public class AddAttributeTransformToSummaryOfImportedFields extends Processor {
     }
 
     private Stream<SummaryField> getSummaryFieldsForImportedField(ImmutableSDField importedField) {
-        return schema.getSummaryFields(importedField).values().stream();
+        return schema.getSummaryFields(importedField).stream();
     }
 
     private void setTransform(ImmutableSDField field) {

@@ -42,7 +42,7 @@ public class IndexingOutputs extends Processor {
     }
 
     public void findSummaryTo(Schema schema, SDField field, Set<String> dynamicSummary, Set<String> staticSummary) {
-        Map<String, SummaryField> summaryFields = schema.getSummaryFields(field);
+        var summaryFields = schema.getSummaryFields(field);
         if (summaryFields.isEmpty()) {
             fillSummaryToFromField(field, dynamicSummary, staticSummary);
         } else {
@@ -50,9 +50,9 @@ public class IndexingOutputs extends Processor {
         }
     }
 
-    private void fillSummaryToFromSearch(Schema schema, SDField field, Map<String, SummaryField> summaryFields,
+    private void fillSummaryToFromSearch(Schema schema, SDField field, List<SummaryField> summaryFields,
                                          Set<String> dynamicSummary, Set<String> staticSummary) {
-        for (SummaryField summaryField : summaryFields.values()) {
+        for (SummaryField summaryField : summaryFields) {
             fillSummaryToFromSummaryField(schema, field, summaryField, dynamicSummary, staticSummary);
         }
     }

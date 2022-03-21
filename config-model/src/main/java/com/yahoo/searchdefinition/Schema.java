@@ -584,21 +584,27 @@ public class Schema implements ImmutableSchema {
     public Map<String, DocumentSummary> getSummariesInThis() { return Collections.unmodifiableMap(summaries); }
 
     /**
-     * Returns all summary fields, of all document summaries, which has the given field as source. If there are
-     * multiple summary fields with the same name, the last one will be used (they should all have the same content, if
-     * this is a valid search definition).The map becomes owned by the receiver.
+     * Returns all summary fields, of all document summaries, which has the given field as source.
+     * The list becomes owned by the receiver.
      *
      * @param field the source field
-     * @return the map of summary fields found
+     * @return the list of summary fields found
      */
     @Override
-    public Map<String, SummaryField> getSummaryFields(ImmutableSDField field) {
-        Map<String, SummaryField> summaryFields = inherited.isPresent() ? requireInherited().getSummaryFields(field)
-                                                                        : new java.util.LinkedHashMap<>();
+    public List<SummaryField> getSummaryFields(ImmutableSDField field) {
+        List<SummaryField> summaryFields = inherited.isPresent()
+            ? requireInherited().getSummaryFields(field)
+            : new java.util.ArrayList<>();
         for (DocumentSummary documentSummary : summaries.values()) {
             for (SummaryField summaryField : documentSummary.getSummaryFields().values()) {
                 if (summaryField.hasSource(field.getName())) {
-                    summaryFields.put(summaryField.getName(), summaryField);
+                    boolean wanted = true;
+                    for (var already : summaryFields) {
+                        if (summaryField == already) wanted = false;
+                    }
+                    if (wanted) {
+                        summaryFields.add(summaryField);
+                    }
                 }
             }
         }
