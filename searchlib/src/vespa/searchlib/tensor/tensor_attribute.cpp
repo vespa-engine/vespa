@@ -72,9 +72,9 @@ TensorAttribute::asTensorAttribute() const
 uint32_t
 TensorAttribute::clearDoc(DocId docId)
 {
-    EntryRef oldRef(_refVector[docId]);
+    EntryRef oldRef(_refVector[docId].load_relaxed());
     updateUncommittedDocIdLimit(docId);
-    _refVector[docId] = EntryRef();
+    _refVector[docId] = AtomicEntryRef();
     if (oldRef.valid()) {
         _tensorStore.holdTensor(oldRef);
         return 1u;
@@ -125,7 +125,7 @@ bool
 TensorAttribute::addDoc(DocId &docId)
 {
     bool incGen = _refVector.isFull();
-    _refVector.push_back(EntryRef());
+    _refVector.push_back(AtomicEntryRef());
     AttributeVector::incNumDocs();
     docId = AttributeVector::getNumDocs() - 1;
     updateUncommittedDocIdLimit(docId);
@@ -155,8 +155,8 @@ TensorAttribute::setTensorRef(DocId docId, EntryRef ref)
     // TODO: validate if following fence is sufficient.
     std::atomic_thread_fence(std::memory_order_release);
     // TODO: Check if refVector must consist of std::atomic<EntryRef>
-    EntryRef oldRef(_refVector[docId]);
-    _refVector[docId] = ref;
+    EntryRef oldRef(_refVector[docId].load_relaxed());
+    _refVector[docId].store_release(ref);
     if (oldRef.valid()) {
         _tensorStore.holdTensor(oldRef);
     }
@@ -239,10 +239,11 @@ TensorAttribute::clearDocs(DocId lidLow, DocId lidLimit, bool)
     assert(lidLow <= lidLimit);
     assert(lidLimit <= this->getNumDocs());
     for (DocId lid = lidLow; lid < lidLimit; ++lid) {
-        EntryRef &ref = _refVector[lid];
+        AtomicEntryRef& atomic_ref = _refVector[lid];
+        EntryRef ref = atomic_ref.load_relaxed();
         if (ref.valid()) {
             _tensorStore.holdTensor(ref);
-            ref = EntryRef();
+            atomic_ref.store_release(EntryRef());
         }
     }
 }
@@ -268,7 +269,12 @@ TensorAttribute::getRefCopy() const
 {
     uint32_t size = getCommittedDocIdLimit();
     assert(size <= _refVector.size());
-    return RefCopyVector(&_refVector[0], &_refVector[0] + size);
+    RefCopyVector result;
+    result.reserve(size);
+    for (uint32_t i = 0; i < size; ++i) {
+        result.push_back(_refVector[i].load_relaxed());
+    }
+    return result;
 }
 
 void

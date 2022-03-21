@@ -13,13 +13,11 @@ TensorAttribute::doCompactWorst()
     uint32_t bufferId = _tensorStore.startCompactWorstBuffer();
     size_t lidLimit = _refVector.size();
     for (uint32_t lid = 0; lid < lidLimit; ++lid) {
-        RefType ref = _refVector[lid];
+        RefType ref = _refVector[lid].load_relaxed();
         (void) ref;
         if (ref.valid() && ref.bufferId() == bufferId) {
             RefType newRef = _tensorStore.move(ref);
-            // TODO: validate if following fence is sufficient.
-            std::atomic_thread_fence(std::memory_order_release);
-            _refVector[lid] = newRef;
+            _refVector[lid].store_release(newRef);
         }
     }
     _tensorStore.finishCompactWorstBuffer(bufferId);

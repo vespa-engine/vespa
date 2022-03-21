@@ -45,7 +45,7 @@ SerializedFastValueAttribute::getTensor(DocId docId) const
 {
     EntryRef ref;
     if (docId < getCommittedDocIdLimit()) {
-        ref = _refVector[docId];
+        ref = acquire_entry_ref(docId);
     }
     if (!ref.valid()) {
         return {};
@@ -78,10 +78,10 @@ SerializedFastValueAttribute::onLoad(vespalib::Executor *)
             tensorReader.readBlob(&buffer[0], tensorSize);
             vespalib::nbostream source(&buffer[0], tensorSize);
             EntryRef ref = _streamedValueStore.store_encoded_tensor(source);
-            _refVector.push_back(ref);
+            _refVector.push_back(AtomicEntryRef(ref));
         } else {
             EntryRef invalid;
-            _refVector.push_back(invalid);
+            _refVector.push_back(AtomicEntryRef(invalid));
         }
     }
     setNumDocs(numDocs);

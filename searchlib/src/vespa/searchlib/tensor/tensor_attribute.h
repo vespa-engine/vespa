@@ -19,8 +19,9 @@ namespace search::tensor {
 class TensorAttribute : public NotImplementedAttribute, public ITensorAttribute
 {
 protected:
+    using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = TensorStore::EntryRef;
-    using RefVector = vespalib::RcuVectorBase<EntryRef>;
+    using RefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
 
     RefVector _refVector; // docId -> ref in data store for serialized tensor
     TensorStore &_tensorStore; // data store for serialized tensors
@@ -37,6 +38,7 @@ protected:
     virtual vespalib::MemoryUsage memory_usage() const;
     void populate_state(vespalib::slime::Cursor& object) const;
     void populate_address_space_usage(AddressSpaceUsage& usage) const override;
+    EntryRef acquire_entry_ref(DocId doc_id) const noexcept { return _refVector.acquire_elem_ref(doc_id).load_acquire(); }
 
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(TensorAttribute);
