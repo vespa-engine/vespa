@@ -288,7 +288,7 @@ public class CapacityChecker {
                                                                   Map<Node, List<Allocation>> containedAllocations) {
         List<AllocationFailureReason> allocationFailureReasons = new ArrayList<>();
         for (var host : hosts) {
-            AllocationFailureReason reason = new AllocationFailureReason(host);
+            AllocationFailureReason reason = new AllocationFailureReason();
             var availableHostResources = availableResources.get(host);
             reason.violatesParentHostPolicy = violatesParentHostPolicy(node, host, containedAllocations);
 
@@ -304,6 +304,8 @@ public class CapacityChecker {
             if (r.diskSpeed() != NodeResources.DiskSpeed.any && r.diskSpeed() != l.diskSpeed())
                 reason.incompatibleDiskSpeed = true;
             if (r.storageType() != NodeResources.StorageType.any && r.storageType() != l.storageType())
+                reason.incompatibleStorageType = true;
+            if (r.architecture() != NodeResources.Architecture.any && r.architecture() != l.architecture())
                 reason.incompatibleStorageType = true;
             if (availableHostResources.availableIPs < 1)
                 reason.insufficientAvailableIPs = true;
@@ -418,15 +420,12 @@ public class CapacityChecker {
      */
     private static class AllocationFailureReason {
 
-        private final Node host;
-        public AllocationFailureReason (Node host) {
-            this.host = host;
-        }
         public boolean insufficientVcpu = false;
         public boolean insufficientMemoryGb = false;
         public boolean insufficientDiskGb = false;
         public boolean incompatibleDiskSpeed = false;
         public boolean incompatibleStorageType = false;
+        public boolean incompatibleArchitecture = false;
         public boolean insufficientAvailableIPs = false;
         public boolean violatesParentHostPolicy = false;
 
@@ -436,6 +435,7 @@ public class CapacityChecker {
             if (insufficientMemoryGb) n++;
             if (insufficientDiskGb) n++;
             if (incompatibleDiskSpeed) n++;
+            if (incompatibleArchitecture) n++;
             if (insufficientAvailableIPs) n++;
             if (violatesParentHostPolicy) n++;
             return n;
@@ -449,6 +449,7 @@ public class CapacityChecker {
             if (insufficientDiskGb) reasons.add("insufficientDiskGb");
             if (incompatibleDiskSpeed) reasons.add("incompatibleDiskSpeed");
             if (incompatibleStorageType) reasons.add("incompatibleStorageType");
+            if (incompatibleArchitecture) reasons.add("incompatibleArchitecture");
             if (insufficientAvailableIPs) reasons.add("insufficientAvailableIPs");
             if (violatesParentHostPolicy) reasons.add("violatesParentHostPolicy");
 
@@ -473,6 +474,7 @@ public class CapacityChecker {
         public long insufficientDiskGb()       { return allocationFailureReasons.stream().filter(r -> r.insufficientDiskGb).count(); }
         public long incompatibleDiskSpeed()    { return allocationFailureReasons.stream().filter(r -> r.incompatibleDiskSpeed).count(); }
         public long incompatibleStorageType()  { return allocationFailureReasons.stream().filter(r -> r.incompatibleStorageType).count(); }
+        public long incompatibleArchitecture() { return allocationFailureReasons.stream().filter(r -> r.incompatibleArchitecture).count(); }
         public long insufficientAvailableIps() { return allocationFailureReasons.stream().filter(r -> r.insufficientAvailableIPs).count(); }
         public long violatesParentHostPolicy() { return allocationFailureReasons.stream().filter(r -> r.violatesParentHostPolicy).count(); }
 
@@ -489,9 +491,9 @@ public class CapacityChecker {
         }
         @Override
         public String toString() {
-            return String.format("CPU (%3d), Memory (%3d), Disk size (%3d), Disk speed (%3d), Storage type (%3d), IP (%3d), Parent-Host Policy (%3d)",
+            return String.format("CPU (%3d), Memory (%3d), Disk size (%3d), Disk speed (%3d), Storage type (%3d), Architecture (%3d), IP (%3d), Parent-Host Policy (%3d)",
                     insufficientVcpu(), insufficientMemoryGb(), insufficientDiskGb(), incompatibleDiskSpeed(),
-                                 incompatibleStorageType(), insufficientAvailableIps(), violatesParentHostPolicy());
+                                 incompatibleStorageType(), incompatibleArchitecture(), insufficientAvailableIps(), violatesParentHostPolicy());
         }
 
     }
