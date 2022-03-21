@@ -1,0 +1,78 @@
+
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+search test {
+  document test {
+
+    struct elem {
+      field sf1s type string {
+      }
+      field sf2m type map<string,string> {
+      }
+      field sf3s type string {
+        match {
+          exact
+          exact-terminator: "@elem@"
+        }
+      }
+      field sf4m type map<string,string> {
+        match {
+          exact
+          exact-terminator: "@elem@"
+        }
+      }
+    }
+
+    struct combined {
+      field cf5e1 type elem {
+      }
+      field cf6e2 type elem {
+        match {
+          exact
+          exact-terminator: "@combi@"
+        }
+      }
+    }
+
+    field stuff type combined {
+      indexing: summary
+      struct-field cf5e1.sf1s {
+        indexing: attribute
+      }
+      struct-field cf5e1.sf2m.key {
+        indexing: attribute
+      }
+      struct-field cf5e1.sf2m.value {
+        indexing: attribute
+      }
+      struct-field cf5e1.sf3s {
+        indexing: attribute
+      }
+      struct-field cf5e1.sf4m.key {
+        indexing: attribute
+      }
+      struct-field cf5e1.sf4m.value {
+        indexing: attribute
+      }
+      struct-field cf6e2.sf1s {
+        indexing: attribute
+      }
+      struct-field cf6e2.sf2m.key {
+        indexing: attribute
+      }
+      struct-field cf6e2.sf2m.value {
+        indexing: attribute
+      }
+      struct-field cf6e2.sf3s {
+        indexing: attribute
+      }
+      struct-field cf6e2.sf4m.key {
+        indexing: attribute
+      }
+      struct-field cf6e2.sf4m.value {
+        indexing: attribute
+      }
+    }
+
+  }
+}

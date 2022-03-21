@@ -279,9 +279,11 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
 
         java.util.function.BiConsumer<String, DataType> supplyStructField = (fieldName, fieldType) -> {
             if (structFields.containsKey(fieldName)) return;
+            Matching subFieldMatching = new Matching();
+            subFieldMatching.merge(this.matching);
             String subName = getName().concat(".").concat(fieldName);
             var subField = new SDField(sdoc, subName, fieldType, null,
-                                       null, structFieldDepth + 1);
+                                       subFieldMatching, structFieldDepth + 1);
             structFields.put(fieldName, subField);
         };
 
@@ -297,6 +299,12 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
             }
             if (dataType instanceof CollectionDataType) {
                 dataType = ((CollectionDataType)dataType).getNestedType();
+            }
+            if ((dataType instanceof MapDataType) || (dataType instanceof CollectionDataType)) {
+                // "array of map" or "array of array" will not have any struct fields
+                // TODO: consider what this would mean
+                doneStructFields = true;
+                return;
             }
             SDDocumentType subType = sdoc != null ? sdoc.getType(dataType.getName()) : null;
             if (dataType instanceof TemporaryStructuredDataType && subType != null) {
@@ -319,13 +327,11 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
                 for (Field f : subType.fieldSet()) {
                     if (f instanceof SDField) {
                         SDField field = (SDField) f;
-                        Matching subFieldMatching = new Matching();
-                        subFieldMatching.merge(this.matching);
-                        subFieldMatching.merge(field.getMatching());
                         SDField subField = structFields.get(field.getName());
                         if (subField != null) {
-                            // we just made this with no matching, so nop:
-                            // subFieldMatching.merge(subField.getMatching());
+                            // we just made this with a copy of our matching (see above)
+                            Matching subFieldMatching = subField.getMatching();
+                            subFieldMatching.merge(field.getMatching());
                             subField.setMatching(subFieldMatching);
                         }
                     } else {
@@ -333,6 +339,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
                     }
                 }
             }
+            // else ("missing subtype for struct fields in: " + this + " type " + getDataType() + " [" + getDataType().getClass().getSimpleName() + "]");
         }
         doneStructFields = true;
     }

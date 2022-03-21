@@ -76,5 +76,14 @@ public class MatchSettingsResolvingTestCase extends AbstractExportingTestCase {
                               new TestProperties().setExperimentalSdParsing(true));
     }
 
+
+    @Test
+    public void testMapInStruct() throws IOException, ParseException {
+        assertCorrectDeriving("matchsettings_map_in_struct",
+                              new TestProperties().setExperimentalSdParsing(false));
+        assertCorrectDeriving("matchsettings_map_in_struct",
+                              new TestProperties().setExperimentalSdParsing(true));
+    }
+
     
 }
