@@ -67,7 +67,7 @@ FieldValue::className() const noexcept {
             return "DocumentFieldValue";
         case Type::NONE:
         default:
-            return "NONE - Impossible";
+            abort();
     }
 }
 void FieldValue::serialize(nbostream &stream) const {
