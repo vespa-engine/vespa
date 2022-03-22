@@ -2,8 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
 
-import com.yahoo.slime.Inspector;
-
 import java.time.Duration;
 import java.util.Optional;
 
