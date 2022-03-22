@@ -48,6 +48,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
+import static com.yahoo.config.provision.NodeResources.Architecture;
+import static com.yahoo.config.provision.NodeResources.DiskSpeed;
+import static com.yahoo.config.provision.NodeResources.StorageType;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static com.yahoo.vespa.model.search.NodeResourcesTuning.GB;
 import static com.yahoo.vespa.model.search.NodeResourcesTuning.reservedMemoryGb;
@@ -1474,10 +1477,12 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testUseArm64NodesForClusterControllers() {
+    public void testUseArm64NodesForAdminCluster() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>" +
                         "<services>" +
+                        "   <admin version='4.0'>" +
+                        "   </admin>" +
                         "   <container version='1.0' id='container'>" +
                         "      <nodes count='2'>" +
                         "         <resources vcpu='2' memory='8Gb' disk='30Gb'/>" +
@@ -1495,25 +1500,35 @@ public class ModelProvisioningTest {
 
         VespaModelTester tester = new VespaModelTester();
         tester.setHosted(true);
-        tester.setAdminClusterArchitecture("arm64");
+        tester.setAdminClusterArchitecture(Architecture.arm64);
+        tester.useDedicatedNodeForLogserver(true);
         tester.addHosts(new NodeResources(13.5, 100,         1000, 0.3), 6);
         tester.addHosts(new NodeResources(85,   200, 1000_000_000, 0.3), 20);
-        tester.addHosts(new NodeResources(0.5, 2, 10, 0.3, NodeResources.DiskSpeed.any, NodeResources.StorageType.any, NodeResources.Architecture.arm64), 3);
+        tester.addHosts(new NodeResources(0.5, 2, 10, 0.3, DiskSpeed.any, StorageType.any, Architecture.arm64), 4);
         VespaModel model = tester.createModel(services, true, true);
         List<HostResource> hosts = model.getRoot().hostSystem().getHosts();
-        assertEquals(7, hosts.size());
-        Set<HostResource> clusterControllerResources =
-                hosts.stream()
-                     .filter(host -> host.getHostInfo().getServices().stream()
-                                         .anyMatch(service -> service.getServiceType().equals("container-clustercontroller")))
-                     .collect(Collectors.toSet());
-        assertEquals(3, clusterControllerResources.size());
-        assertTrue(clusterControllerResources.stream().allMatch(host -> host.realResources().architecture().name().equals("arm64")));
+        assertEquals(8, hosts.size());
 
-        // Other hosts should be x86_64
+        Set<HostResource> clusterControllerResources = getHostResourcesForService(hosts, "container-clustercontroller");
+        assertEquals(3, clusterControllerResources.size());
+        assertTrue(clusterControllerResources.stream().allMatch(host -> host.realResources().architecture() == Architecture.arm64));
+
+        Set<HostResource> logserverResources = getHostResourcesForService(hosts, "logserver-container");
+        assertEquals(1, logserverResources.size());
+        assertTrue(logserverResources.stream().allMatch(host -> host.realResources().architecture() == Architecture.arm64));
+
+        // Other hosts should be default
         assertTrue(hosts.stream()
                         .filter(host -> !clusterControllerResources.contains(host))
-                        .allMatch(host -> host.realResources().architecture().name().equals("x86_64")));
+                        .filter(host -> !logserverResources.contains(host))
+                        .allMatch(host -> host.realResources().architecture() == Architecture.getDefault()));
+    }
+
+    private Set<HostResource> getHostResourcesForService(List<HostResource> hosts, String service) {
+        return hosts.stream()
+                    .filter(host -> host.getHostInfo().getServices().stream()
+                                        .anyMatch(s -> s.getServiceType().equals(service)))
+                    .collect(Collectors.toSet());
     }
 
     @Test

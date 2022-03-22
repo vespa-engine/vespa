@@ -24,6 +24,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
+import static com.yahoo.config.provision.NodeResources.Architecture;
+
 /**
  * Model context containing state provided to model factories.
  *
@@ -118,7 +120,8 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default boolean avoidRenamingSummaryFeatures() { return false; }
         @ModelFeatureFlag(owners = {"bjorncs", "baldersheim"}) default boolean mergeGroupingResultInSearchInvoker() { return false; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean experimentalSdParsing() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default String adminClusterNodeArchitecture() { return "x86_64"; } // TODO: Cluster controllers only for now
+        @ModelFeatureFlag(owners = {"hmusum"}) default String adminClusterNodeArchitecture() { return adminClusterArchitecture().name(); } // TODO: Remove when 7.564 is oldest version in use
+        @ModelFeatureFlag(owners = {"hmusum"}) default Architecture adminClusterArchitecture() { return Architecture.getDefault(); }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
