@@ -12,11 +12,11 @@
 
 namespace document {
 
-class DoubleFieldValue : public NumericFieldValue<double> {
+class DoubleFieldValue final : public NumericFieldValue<double> {
 public:
     typedef double Number;
 
-    DoubleFieldValue(Number value = 0) : NumericFieldValue<Number>(value) {}
+    DoubleFieldValue(Number value = 0) : NumericFieldValue<Number>(Type::DOUBLE, value) {}
 
     void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
     void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
@@ -25,7 +25,6 @@ public:
     DoubleFieldValue* clone() const override { return new DoubleFieldValue(*this); }
 
     using NumericFieldValue<Number>::operator=;
-    DECLARE_IDENTIFIABLE(DoubleFieldValue);
     static std::unique_ptr<DoubleFieldValue> make(Number value=0) { return std::make_unique<DoubleFieldValue>(value); }
 };
 

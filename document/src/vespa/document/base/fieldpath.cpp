@@ -5,7 +5,6 @@
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/vespalib/objects/visit.hpp>
 
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
@@ -127,17 +126,6 @@ FieldPathEntry::stealFieldValueToSet() const
     return FieldValue::UP(_fillInVal.release());
 }
 
-void
-FieldPathEntry::visitMembers(vespalib::ObjectVisitor &visitor) const
-{
-    visit(visitor, "type", _type);
-    visit(visitor, "name", _name);
-    visit(visitor, "lookupIndex", _lookupIndex);
-    visit(visitor, "lookupKey", _lookupKey);
-    visit(visitor, "variableName", _variableName);
-    visit(visitor, "fillInVal", _fillInVal);
-}
-
 vespalib::string
 FieldPathEntry::parseKey(vespalib::stringref & key)
 {
@@ -191,21 +179,13 @@ FieldPath::FieldPath(const FieldPath &) = default;
 FieldPath & FieldPath::operator=(const FieldPath &) = default;
 FieldPath::~FieldPath() = default;
 
-FieldPath::iterator FieldPath::insert(iterator pos, std::unique_ptr<FieldPathEntry> entry) {
+FieldPath::iterator
+FieldPath::insert(iterator pos, std::unique_ptr<FieldPathEntry> entry) {
     return _path.insert(pos, vespalib::CloneablePtr<FieldPathEntry>(entry.release()));
 }
 void FieldPath::push_back(std::unique_ptr<FieldPathEntry> entry) { _path.emplace_back(entry.release()); }
 void FieldPath::pop_back() { _path.pop_back(); }
 void FieldPath::clear() { _path.clear(); }
 void FieldPath::reserve(size_t sz) { _path.reserve(sz); }
-
-void
-FieldPath::visitMembers(vespalib::ObjectVisitor& visitor) const
-{
-    (void) visitor;
-    for (uint32_t i = 0; i < _path.size(); ++i) {
-//        visit(visitor, vespalib::make_string("[%u]", i), _path[i]);
-    }
-}
 
 }

@@ -13,38 +13,35 @@
 
 #include "fieldvaluevisitor.h"
 #include "modificationstatus.h"
-#include <vespa/document/util/xmlserializable.h>
+#include <vespa/document/util/identifiableid.h>
 #include <vespa/document/base/fieldpath.h>
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/util/polymorphicarraybase.h>
 
 namespace vespalib { class nbostream; }
+namespace vespalib::xml { class XmlOutputStream; }
+
+namespace document::fieldvalue { class IteratorHandler; }
 
 namespace document {
 
-namespace fieldvalue { class IteratorHandler; }
-
 class DataType;
 
-class FieldValue : public vespalib::Identifiable
+class FieldValue
 {
-protected:
-    FieldValue(const FieldValue&) = default;
-    FieldValue& operator=(const FieldValue&) = default;
-    FieldValue(FieldValue &&) = default;
-    FieldValue& operator=(FieldValue &&) = default;
-    static std::unique_ptr<vespalib::IArrayBase> createArray(const DataType & baseType);
-
 public:
+    enum class Type : uint8_t {
+        NONE, BOOL, BYTE, SHORT, INT, LONG, FLOAT, DOUBLE,
+        STRING, RAW, PREDICATE, TENSOR, ANNOTATION_REFERENCE,
+        REFERENCE, ARRAY, WSET, MAP, STRUCT, DOCUMENT
+    };
     using PathRange = FieldPath::Range<FieldPath::const_iterator>;
     using UP = std::unique_ptr<FieldValue>;
     using SP = std::shared_ptr<FieldValue>;
     using CP = vespalib::CloneablePtr<FieldValue>;
+    using XmlOutputStream = vespalib::xml::XmlOutputStream;
 
-    DECLARE_IDENTIFIABLE_ABSTRACT(FieldValue);
-
-    FieldValue() = default;
-
+    virtual ~FieldValue() = default;
     /**
      * Visit this fieldvalue for double dispatch.
      */
@@ -81,13 +78,6 @@ public:
      * @return See compare
      */
     virtual int fastCompare(const FieldValue& other) const;
-
-    /**
-     * Returns true if this object have been altered since last
-     * serialization/deserialization. If hasChanged() is false, then cached
-     * information from last serialization effort is still valid.
-     */
-    virtual bool hasChanged() const = 0;
 
     /** Cloneable implementation */
     virtual FieldValue* clone() const = 0;
@@ -174,6 +164,27 @@ public:
 
     // Utility functions to set commonly used value types.
     virtual FieldValue& operator=(vespalib::stringref);
+
+    Type type() const noexcept { return _type; }
+    bool isA(Type type) const noexcept { return type == _type; }
+    bool isCollection() const noexcept { return (_type == Type::WSET) || (_type == Type::ARRAY); }
+    bool isStructured() const noexcept { return (_type == Type::DOCUMENT) || (_type == Type::STRUCT); }
+    bool isLiteral() const noexcept { return (_type == Type::STRING) || (_type == Type::RAW); }
+    bool isNumeric() const noexcept {
+        return (_type == Type::BYTE) || (_type == Type::SHORT) ||
+               (_type == Type::INT) || (_type == Type::LONG) || (_type == Type::FLOAT) || (_type == Type::DOUBLE);
+    }
+    bool isFixedSizeSingleValue() const noexcept {
+        return (_type == Type::BOOL) || isNumeric();
+    }
+    const char * className() const noexcept;
+protected:
+    FieldValue(Type type) noexcept : _type(type) { }
+    FieldValue(const FieldValue&) = default;
+    FieldValue& operator=(const FieldValue&) = default;
+    FieldValue(FieldValue &&) noexcept = default;
+    FieldValue& operator=(FieldValue &&) noexcept = default;
+    static std::unique_ptr<vespalib::IArrayBase> createArray(const DataType & baseType);
 private:
     fieldvalue::ModificationStatus
     iterateNested(FieldPath::const_iterator start, FieldPath::const_iterator end, fieldvalue::IteratorHandler & handler) const {
@@ -181,10 +192,12 @@ private:
     }
     virtual FieldValue::UP onGetNestedFieldValue(PathRange nested) const;
     virtual fieldvalue::ModificationStatus onIterateNested(PathRange nested, fieldvalue::IteratorHandler & handler) const;
+
+    Type  _type;
 };
 
 std::ostream& operator<<(std::ostream& out, const FieldValue & p);
 
-XmlOutputStream & operator<<(XmlOutputStream & out, const FieldValue & p);
+vespalib::xml::XmlOutputStream & operator<<(vespalib::xml::XmlOutputStream & out, const FieldValue & p);
 
 } // document

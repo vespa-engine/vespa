@@ -24,7 +24,7 @@ namespace document {
 
 class TransactionGuard;
 
-class Document : public StructuredFieldValue
+class Document final : public StructuredFieldValue
 {
 private:
     DocumentId _id;
@@ -86,8 +86,6 @@ public:
 
     void clear() override;
 
-    bool hasChanged() const override;
-
     // FieldValue implementation.
     FieldValue& assign(const FieldValue&) override;
     int compare(const FieldValue& other) const override;
@@ -109,9 +107,6 @@ public:
     bool empty() const override { return _fields.empty(); }
 
     uint32_t calculateChecksum() const;
-
-    DECLARE_IDENTIFIABLE_ABSTRACT(Document);
-
     void setFieldValue(const Field& field, FieldValue::UP data) override;
 private:
     friend TransactionGuard;

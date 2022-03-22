@@ -141,8 +141,7 @@ TEST(WeightedSetFieldValueTest, testWeightedSet)
     {
         const FieldValue& fval1(*it->first);
         (void) fval1;
-        EXPECT_EQ((uint32_t) IntFieldValue::classId,
-                             it->first->getClass().id());
+        EXPECT_TRUE(it->first->isA(FieldValue::Type::INT));
         const IntFieldValue& val = dynamic_cast<const IntFieldValue&>(*it->second);
         (void) val;
     }

@@ -5,6 +5,4 @@
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE(FloatFieldValue, NumericFieldValueBase);
-
 } // document

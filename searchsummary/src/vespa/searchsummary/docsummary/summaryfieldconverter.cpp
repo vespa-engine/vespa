@@ -29,7 +29,6 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/util/url.h>
-#include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -176,7 +175,7 @@ void handleIndexingTerms(Handler &handler, const StringFieldValue &value) {
 const StringFieldValue &ensureStringFieldValue(const FieldValue &value) __attribute__((noinline));
 
 const StringFieldValue &ensureStringFieldValue(const FieldValue &value) {
-    if (!value.inherits(IDENTIFIABLE_CLASSID(StringFieldValue))) {
+    if (!value.isA(FieldValue::Type::STRING)) {
         throw vespalib::IllegalArgumentException("Illegal field type. " + value.toString(), VESPA_STRLOC);
     }
     return static_cast<const StringFieldValue &>(value);
@@ -287,9 +286,7 @@ class SummaryFieldValueConverter : protected ConstFieldValueVisitor
     void visit(const StructFieldValue &value) override {
         if (*value.getDataType() == *SearchDataType::URI) {
             FieldValue::UP uriAllValue = value.getValue("all");
-            if (uriAllValue &&
-                uriAllValue->inherits(IDENTIFIABLE_CLASSID(StringFieldValue)))
-            {
+            if (uriAllValue && uriAllValue->isA(FieldValue::Type::STRING)) {
                 uriAllValue->accept(*this);
                 return;
             }
@@ -488,9 +485,7 @@ private:
         }
         if (*value.getDataType() == *SearchDataType::URI) {
             FieldValue::UP uriAllValue = value.getValue("all");
-            if (uriAllValue &&
-                uriAllValue->inherits(IDENTIFIABLE_CLASSID(StringFieldValue)))
-            {
+            if (uriAllValue && uriAllValue->isA(FieldValue::Type::STRING)) {
                 uriAllValue->accept(*this);
                 return;
             }

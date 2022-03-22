@@ -25,8 +25,6 @@ namespace document {
 
 using namespace fieldvalue;
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(MapFieldValue, FieldValue);
-
 namespace {
 const MapDataType *verifyMapType(const DataType& type) {
     const MapDataType *ptr(dynamic_cast<const MapDataType *>(&type));
@@ -75,14 +73,13 @@ public:
 }
 
 MapFieldValue::MapFieldValue(const DataType &mapType)
-    : FieldValue(),
+    : FieldValue(Type::MAP),
       _type(verifyMapType(mapType)),
       _count(0),
       _keys(static_cast<IArray *>(createArray(getMapType().getKeyType()).release())),
       _values(static_cast<IArray *>(createArray(getMapType().getValueType()).release())),
       _present(),
-      _lookupMap(),
-      _altered(true)
+      _lookupMap()
 {
 }
 
@@ -95,8 +92,7 @@ MapFieldValue::MapFieldValue(const MapFieldValue & rhs) :
     _keys(rhs._keys ? rhs._keys->clone() : nullptr),
     _values(rhs._values ? rhs._values->clone() : nullptr),
     _present(rhs._present),
-    _lookupMap(),
-    _altered(rhs._altered)
+    _lookupMap()
 {
 }
 
@@ -118,7 +114,6 @@ MapFieldValue::swap(MapFieldValue & rhs) {
     std::swap(_values, rhs._values);
     std::swap(_present, rhs._present);
     std::swap(_lookupMap, rhs._lookupMap);
-    std::swap(_altered, rhs._altered);
 }
 
 void MapFieldValue::verifyKey(const FieldValue & fv) const
@@ -146,7 +141,6 @@ MapFieldValue::insertVerify(const FieldValue& key, const FieldValue& value)
     bool result(false);
     if (found != end()) {
         if (!(value == *found->second)) {
-            _altered = true;
             found->second->assign(value);
         }
     } else {
@@ -166,8 +160,6 @@ MapFieldValue::push_back(const FieldValue& key, const FieldValue& value)
     if (_lookupMap) {
         _lookupMap->insert(_present.size() - 1);
     }
-
-    _altered = true;
 }
 
 
@@ -181,7 +173,6 @@ MapFieldValue::push_back(FieldValue::UP key, FieldValue::UP value)
     if (_lookupMap) {
         _lookupMap->insert(_present.size() - 1);
     }
-    _altered = true;
 }
 
 bool
@@ -255,7 +246,6 @@ MapFieldValue::erase(const FieldValue& key)
         _count--;
         _present[found.offset()] = false;
         _lookupMap->erase(found.offset());
-        _altered = true;
     }
     return result;
 }
@@ -331,13 +321,6 @@ MapFieldValue::printXml(XmlOutputStream& xos) const
     }
 }
 
-bool
-MapFieldValue::hasChanged() const
-{
-    // Keys are not allowed to change in a map, so the keys should not be
-    // referred to externally, and should thus not need to be checked.
-    return _altered;
-}
 const DataType *
 MapFieldValue::getDataType() const {
     return _type;
@@ -369,7 +352,7 @@ MapFieldValue::buildLookupMap() const {
 MapFieldValue::const_iterator
 MapFieldValue::find(const FieldValue& key) const
 {
-    if ((size() > 0) && (key.getClass().id() == (*_keys)[0].getClass().id())) {
+    if ((size() > 0) && (key.type() == (*_keys)[0].type())) {
         ssize_t index = findIndex(key);
         if (index >= 0) {
             return const_iterator(*this, index);
@@ -381,7 +364,7 @@ MapFieldValue::find(const FieldValue& key) const
 MapFieldValue::iterator
 MapFieldValue::find(const FieldValue& key)
 {
-    if ((size() > 0) && (key.getClass().id() == (*_keys)[0].getClass().id())) {
+    if ((size() > 0) && (key.type() == (*_keys)[0].type())) {
         ssize_t index = findIndex(key);
         if (index >= 0) {
             return iterator(*this, index);
@@ -393,7 +376,7 @@ MapFieldValue::find(const FieldValue& key)
 ssize_t
 MapFieldValue::findIndex(const FieldValue& key) const
 {
-    if ((size() > 0) && (key.getClass().id() == (*_keys)[0].getClass().id())) {
+    if ((size() > 0) && (key.type() == (*_keys)[0].type())) {
         ensureLookupMap();
         auto found = _lookupMap->find(key);
         if (found != _lookupMap->end()) {
@@ -428,7 +411,7 @@ MapFieldValue::iterateNestedImpl(PathRange nested,
     IteratorHandler::CollectionScope autoScope(handler, complexFieldValue);
     std::vector<const FieldValue*> keysToRemove;
     bool wasModified = false;
-    const bool isWSet(complexFieldValue.inherits(WeightedSetFieldValue::classId));
+    const bool isWSet(complexFieldValue.isA(FieldValue::Type::WSET));
 
     uint32_t index(0);
     if ( ! nested.atEnd() ) {

@@ -12,20 +12,19 @@
 
 namespace document {
 
-class RawFieldValue
-        : public LiteralFieldValue<RawFieldValue, DataType::T_RAW, false>
+class RawFieldValue final : public LiteralFieldValue<RawFieldValue, DataType::T_RAW>
 {
 public:
-    typedef LiteralFieldValue<RawFieldValue, DataType::T_RAW, false> Parent;
+    typedef LiteralFieldValue<RawFieldValue, DataType::T_RAW> Parent;
 
     RawFieldValue()
-        : Parent() { }
+        : Parent(Type::RAW) { }
 
     RawFieldValue(const string& value)
-        : Parent(value) {}
+        : Parent(Type::RAW, value) {}
 
     RawFieldValue(const char* rawVal, int len)
-        : Parent(string(rawVal, len))
+        : Parent(Type::RAW, string(rawVal, len))
     {
     }
 
@@ -37,8 +36,6 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     RawFieldValue& operator=(const string& value) { setValue(value); return *this; }
-
-    DECLARE_IDENTIFIABLE(RawFieldValue);
 };
 
 } // document

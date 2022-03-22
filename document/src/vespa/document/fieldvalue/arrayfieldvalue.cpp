@@ -23,10 +23,8 @@ using fieldvalue::ModificationStatus;
 using fieldvalue::IteratorHandler;
 using fieldvalue::VariableMap;
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(ArrayFieldValue, CollectionFieldValue);
-
 ArrayFieldValue::ArrayFieldValue(const DataType &type)
-    : CollectionFieldValue(type),
+    : CollectionFieldValue(Type::ARRAY, type),
       _array()
 {
     _array.reset(static_cast<IArray *>(createArray(getNestedType()).release()));
@@ -168,15 +166,6 @@ ArrayFieldValue::print(std::ostream& out, bool verbose,
         out << ",\n" << indent << "(Deserialization failed)";
     }
     out << "\n" << indent << ")";
-}
-
-bool
-ArrayFieldValue::hasChanged() const
-{
-    for (uint32_t i=0, n=_array->size(); i<n; ++i) {
-        if (array()[i].hasChanged()) return true;
-    }
-    return false;
 }
 
 fieldvalue::ModificationStatus

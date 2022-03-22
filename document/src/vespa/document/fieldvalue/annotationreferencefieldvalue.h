@@ -9,15 +9,17 @@ namespace document {
 class Annotation;
 class AnnotationReferenceDataType;
 
-class AnnotationReferenceFieldValue : public FieldValue {
+class AnnotationReferenceFieldValue final : public FieldValue {
     const DataType *_type;
     int32_t _annotation_index;
 
 public:
     AnnotationReferenceFieldValue(const DataType &type)
-        : _type(&type), _annotation_index(0) {}
-    AnnotationReferenceFieldValue(const DataType &type,
-                                  int32_t annotation_index);
+        : AnnotationReferenceFieldValue(type, 0) {}
+    AnnotationReferenceFieldValue(const DataType &type, int32_t annotation_index)
+        : FieldValue(Type::ANNOTATION_REFERENCE), _type(&type), _annotation_index(annotation_index)
+    {}
+
     void setAnnotationIndex(int32_t index) { _annotation_index = index; }
 
     void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
@@ -30,7 +32,6 @@ public:
     AnnotationReferenceFieldValue *clone() const override;
     const DataType *getDataType() const override { return _type; }
     void printXml(XmlOutputStream &out) const override;
-    bool hasChanged() const override;
 };
 
 }  // namespace document

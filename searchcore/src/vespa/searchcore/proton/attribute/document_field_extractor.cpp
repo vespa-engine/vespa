@@ -110,13 +110,6 @@ makeArray(const FieldPathEntry &fieldPathEntry, size_t size)
     return array;
 }
 
-bool
-checkInherits(const FieldValue &fieldValue, unsigned id)
-{
-    const vespalib::Identifiable::RuntimeClass &rc = fieldValue.getClass();
-    return rc.inherits(id);
-}
-
 }
 
 DocumentFieldExtractor::DocumentFieldExtractor(const Document &doc)
@@ -176,7 +169,7 @@ template <typename ExtractorFunc>
 std::unique_ptr<FieldValue>
 extractFieldFromMap(const FieldValue *outerFieldValue, const FieldPathEntry &innerEntry, ExtractorFunc &&extractor)
 {
-    if (outerFieldValue != nullptr && checkInherits(*outerFieldValue, MapFieldValue::classId)) {
+    if (outerFieldValue && outerFieldValue->isA(FieldValue::Type::MAP)) {
         const auto outerMap = static_cast<const MapFieldValue *>(outerFieldValue);
         auto array = makeArray(innerEntry, outerMap->size());
         uint32_t arrayIndex = 0;
@@ -190,9 +183,9 @@ extractFieldFromMap(const FieldValue *outerFieldValue, const FieldPathEntry &inn
 
 template <typename CollectionFieldValueT, typename ExtractorFunc>
 std::unique_ptr<FieldValue>
-extractFieldFromStructCollection(const FieldValue *outerFieldValue, const FieldPathEntry &innerEntry, ExtractorFunc &&extractor)
+extractFieldFromStructCollection(const FieldValue *outerFieldValue, FieldValue::Type expectedType, const FieldPathEntry &innerEntry, ExtractorFunc &&extractor)
 {
-    if (outerFieldValue != nullptr && checkInherits(*outerFieldValue, CollectionFieldValueT::classId)) {
+    if (outerFieldValue && outerFieldValue->isA(expectedType)) {
         const auto *outerCollection = static_cast<const CollectionFieldValueT *>(outerFieldValue);
         auto array = makeArray(innerEntry, outerCollection->size());
         uint32_t arrayIndex = 0;
@@ -213,7 +206,7 @@ extractFieldFromStructCollection(const FieldValue *outerFieldValue, const FieldP
 std::unique_ptr<FieldValue>
 DocumentFieldExtractor::extractFieldFromStructArray(const FieldPath &fieldPath)
 {
-    return extractFieldFromStructCollection<ArrayFieldValue>(getCachedFieldValue(fieldPath[0]), fieldPath[1],
+    return extractFieldFromStructCollection<ArrayFieldValue>(getCachedFieldValue(fieldPath[0]), FieldValue::Type::ARRAY, fieldPath[1],
                                                              [](const auto *elem){ return elem; });
 }
 
@@ -234,7 +227,7 @@ DocumentFieldExtractor::extractValueFieldFromPrimitiveMap(const FieldPath &field
 std::unique_ptr<document::FieldValue>
 DocumentFieldExtractor::extractValueFieldFromStructMap(const FieldPath &fieldPath)
 {
-    return extractFieldFromStructCollection<MapFieldValue>(getCachedFieldValue(fieldPath[0]), fieldPath[2],
+    return extractFieldFromStructCollection<MapFieldValue>(getCachedFieldValue(fieldPath[0]), FieldValue::Type::MAP, fieldPath[2],
                                                            [](const auto *elem){ return elem->second; });
 }
 

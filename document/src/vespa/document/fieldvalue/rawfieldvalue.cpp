@@ -9,8 +9,6 @@ using namespace vespalib::xml;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE(RawFieldValue, LiteralFieldValueB);
-
 void
 RawFieldValue::printXml(XmlOutputStream& out) const
 {

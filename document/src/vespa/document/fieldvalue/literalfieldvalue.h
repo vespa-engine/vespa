@@ -24,15 +24,14 @@ class LiteralFieldValueB : public FieldValue {
 public:
     typedef vespalib::string string;
     typedef vespalib::stringref stringref;
-    DECLARE_IDENTIFIABLE_ABSTRACT(LiteralFieldValueB);
     typedef std::unique_ptr<LiteralFieldValueB> UP;
     typedef string value_type;
 
-    LiteralFieldValueB();
+    explicit LiteralFieldValueB(Type type);
     ~LiteralFieldValueB();
 
     LiteralFieldValueB(const LiteralFieldValueB &);
-    LiteralFieldValueB(const stringref & value);
+    LiteralFieldValueB(Type type, const stringref & value);
 
     const value_type & getValue() const { sync(); return _backing; }
     /**
@@ -46,13 +45,11 @@ public:
 
     void setValueRef(stringref value) {
         _value = value;
-        _altered = true;
     }
 
     void setValue(stringref value) {
         _backing = value;
         _value = _backing;
-        _altered = true;
     }
     size_t hash() const override final { return vespalib::hashValue(_value.data(), _value.size()); }
     void setValue(const char* val, size_t size) { setValue(stringref(val, size)); }
@@ -66,7 +63,6 @@ public:
     void printXml(XmlOutputStream& out) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     FieldValue& assign(const FieldValue&) override;
-    bool hasChanged() const  override{ return _altered; }
 
     FieldValue& operator=(vespalib::stringref) override;
 protected:
@@ -78,25 +74,18 @@ protected:
     }
     mutable stringref _value;
     mutable string    _backing; // Lazily set when needed
-    mutable bool      _altered; // Set if altered after deserialization
-private:
-    virtual bool getAddZeroTerm() const = 0;
 };
 
-template<typename SubClass, int type, bool addZeroTerm>
+template<typename SubClass, int dataType>
 class LiteralFieldValue : public LiteralFieldValueB {
-private:
-    bool getAddZeroTerm() const  override{ return addZeroTerm; }
 public:
-    typedef std::unique_ptr<SubClass> UP;
-
-    LiteralFieldValue() : LiteralFieldValueB() { }
-    LiteralFieldValue(const stringref& value) : LiteralFieldValueB(value) { }
+    explicit LiteralFieldValue(Type type) : LiteralFieldValueB(type) { }
+    LiteralFieldValue(Type type, const stringref& value) : LiteralFieldValueB(type, value) { }
     const DataType *getDataType() const override;
 };
 
-extern template class LiteralFieldValue<RawFieldValue, DataType::T_RAW, false>;
-extern template class LiteralFieldValue<StringFieldValue, DataType::T_STRING, true>;
+extern template class LiteralFieldValue<RawFieldValue, DataType::T_RAW>;
+extern template class LiteralFieldValue<StringFieldValue, DataType::T_STRING>;
 
 } // document
 

@@ -54,7 +54,7 @@ TensorRemoveUpdate::TensorRemoveUpdate(const TensorRemoveUpdate &rhs)
 
 TensorRemoveUpdate::TensorRemoveUpdate(std::unique_ptr<TensorFieldValue> tensor)
     : _tensorType(std::make_unique<TensorDataType>(dynamic_cast<const TensorDataType &>(*tensor->getDataType()))),
-      _tensor(Identifiable::cast<TensorFieldValue *>(_tensorType->createFieldValue().release()))
+      _tensor(static_cast<TensorFieldValue *>(_tensorType->createFieldValue().release()))
 {
     *_tensor = *tensor;
 }
@@ -67,7 +67,7 @@ TensorRemoveUpdate::operator=(const TensorRemoveUpdate &rhs)
     if (&rhs != this) {
         _tensor.reset();
         _tensorType = std::make_unique<TensorDataType>(*rhs._tensorType);
-        _tensor.reset(Identifiable::cast<TensorFieldValue *>(_tensorType->createFieldValue().release()));
+        _tensor.reset(static_cast<TensorFieldValue *>(_tensorType->createFieldValue().release()));
         *_tensor = *rhs._tensor;
     }
     return *this;
@@ -122,7 +122,7 @@ TensorRemoveUpdate::apply_to(const Value &old_tensor,
 bool
 TensorRemoveUpdate::applyTo(FieldValue &value) const
 {
-    if (value.inherits(TensorFieldValue::classId)) {
+    if (value.isA(FieldValue::Type::TENSOR)) {
         TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
         auto oldTensor = tensorFieldValue.getAsTensorPtr();
         if (oldTensor) {
@@ -133,7 +133,7 @@ TensorRemoveUpdate::applyTo(FieldValue &value) const
         }
     } else {
         vespalib::string err = make_string("Unable to perform a tensor remove update on a '%s' field value",
-                                           value.getClass().name());
+                                           value.className());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     return true;

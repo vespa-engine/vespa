@@ -26,8 +26,50 @@ namespace document {
 
 using namespace fieldvalue;
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(FieldValue, vespalib::Identifiable);
-
+const char *
+FieldValue::className() const noexcept {
+    switch (type()) {
+        case Type::BOOL:
+            return "BoolFieldValue";
+        case Type::BYTE:
+            return "ByteFieldValue";
+        case Type::SHORT:
+            return "ShortFieldValue";
+        case Type::INT:
+            return "IntFieldValue";
+        case Type::LONG:
+            return "LongFieldValue";
+        case Type::FLOAT:
+            return "FloatFieldValue";
+        case Type::DOUBLE:
+            return "DoubleFieldValue";
+        case Type::STRING:
+            return "StringFieldValue";
+        case Type::RAW:
+            return "RawFieldValue";
+        case Type::PREDICATE:
+            return "PredicateFieldValue";
+        case Type::TENSOR:
+            return "TensorFieldValue";
+        case Type::ANNOTATION_REFERENCE:
+            return "AnnotationReferenceFieldValue";
+        case Type::REFERENCE:
+            return "ReferenceFieldValue";
+        case Type::ARRAY:
+            return "ArrayFieldValue";
+        case Type::WSET:
+            return "WSetFieldValue";
+        case Type::MAP:
+            return "MapFieldValue";
+        case Type::STRUCT:
+            return "StructFieldValue";
+        case Type::DOCUMENT:
+            return "DocumentFieldValue";
+        case Type::NONE:
+        default:
+            abort();
+    }
+}
 void FieldValue::serialize(nbostream &stream) const {
     VespaDocumentSerializer serializer(stream);
     serializer.write(*this);

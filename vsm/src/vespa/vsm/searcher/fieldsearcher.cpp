@@ -30,7 +30,7 @@ FieldSearcherBase::FieldSearcherBase() :
     _qtl(),
     _qtlFastBuffer(),
     _qtlFastSize(0),
-    _qtlFast(NULL)
+    _qtlFast(nullptr)
 {
 }
 
@@ -38,7 +38,7 @@ FieldSearcherBase::FieldSearcherBase(const FieldSearcherBase & org) :
     _qtl(),
     _qtlFastBuffer(),
     _qtlFastSize(0),
-    _qtlFast(NULL)
+    _qtlFast(nullptr)
 {
     prepare(org._qtl);
 }
@@ -260,8 +260,7 @@ bool FieldSearcher::onSearch(const StorageDocument & doc)
     bool retval(true);
     size_t fNo(field());
     const StorageDocument::SubDocument & sub = doc.getComplexField(fNo);
-    if (sub.getFieldValue() != NULL) {
-        LOG(spam, "onSearch %s : %s", sub.getFieldValue()->getClass().name(), sub.getFieldValue()->toString().c_str());
+    if (sub.getFieldValue() != nullptr) {
         IteratorHandler ih(*this);
         sub.getFieldValue()->iterateNested(sub.getRange(), ih);
     }
@@ -282,10 +281,10 @@ FieldSearcher::IteratorHandler::onCollectionStart(const Content & c)
 {
     const document::FieldValue & fv = c.getValue();
     LOG(spam, "onCollectionStart: field value '%s'", fv.toString().c_str());
-    if (fv.inherits(document::ArrayFieldValue::classId)) {
+    if (fv.isA(document::FieldValue::Type::ARRAY)) {
         const document::ArrayFieldValue & afv = static_cast<const document::ArrayFieldValue &>(fv);
         LOG(spam, "onCollectionStart: Array size = '%zu'", afv.size());
-    } else if (fv.inherits(document::WeightedSetFieldValue::classId)) {
+    } else if (fv.isA(document::FieldValue::Type::WSET)) {
         const document::WeightedSetFieldValue & wsfv = static_cast<const document::WeightedSetFieldValue &>(fv);
         LOG(spam, "onCollectionStart: WeightedSet size = '%zu'", wsfv.size());
     }

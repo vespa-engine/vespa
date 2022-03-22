@@ -4,6 +4,4 @@
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE(LongFieldValue, NumericFieldValueBase);
-
 } // document

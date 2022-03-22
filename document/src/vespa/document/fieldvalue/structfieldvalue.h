@@ -22,7 +22,7 @@ class FixedTypeRepo;
 class FieldSet;
 class StructDataType;
 
-class StructFieldValue : public StructuredFieldValue
+class StructFieldValue final : public StructuredFieldValue
 {
 private:
     SerializableArray       _fields;
@@ -76,7 +76,12 @@ public:
 
     bool empty() const override;
 
-    bool hasChanged() const override { return _hasChanged; }
+    /**
+     * Returns true if this object have been altered since last
+     * serialization/deserialization. If hasChanged() is false, then cached
+     * information from last serialization effort is still valid.
+     */
+    bool hasChanged() const { return _hasChanged; }
 
     uint32_t calculateChecksum() const;
 
@@ -85,9 +90,6 @@ public:
      * has no content. This clears content and sets changed to false.
      */
     void reset();
-
-    DECLARE_IDENTIFIABLE_ABSTRACT(StructFieldValue);
-
 private:
     void setFieldValue(const Field&, FieldValue::UP value) override;
     FieldValue::UP getFieldValue(const Field&) const override;

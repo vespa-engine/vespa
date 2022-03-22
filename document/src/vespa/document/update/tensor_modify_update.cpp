@@ -94,7 +94,7 @@ TensorModifyUpdate::TensorModifyUpdate()
 TensorModifyUpdate::TensorModifyUpdate(const TensorModifyUpdate &rhs)
     : _operation(rhs._operation),
       _tensorType(std::make_unique<TensorDataType>(*rhs._tensorType)),
-      _tensor(Identifiable::cast<TensorFieldValue *>(_tensorType->createFieldValue().release()))
+      _tensor(static_cast<TensorFieldValue *>(_tensorType->createFieldValue().release()))
 {
     *_tensor = *rhs._tensor;
 }
@@ -102,7 +102,7 @@ TensorModifyUpdate::TensorModifyUpdate(const TensorModifyUpdate &rhs)
 TensorModifyUpdate::TensorModifyUpdate(Operation operation, std::unique_ptr<TensorFieldValue> tensor)
     : _operation(operation),
       _tensorType(std::make_unique<TensorDataType>(dynamic_cast<const TensorDataType &>(*tensor->getDataType()))),
-      _tensor(Identifiable::cast<TensorFieldValue *>(_tensorType->createFieldValue().release()))
+      _tensor(static_cast<TensorFieldValue *>(_tensorType->createFieldValue().release()))
 {
     *_tensor = *tensor;
 }
@@ -116,7 +116,7 @@ TensorModifyUpdate::operator=(const TensorModifyUpdate &rhs)
         _operation = rhs._operation;
         _tensor.reset();
         _tensorType = std::make_unique<TensorDataType>(*rhs._tensorType);
-        _tensor.reset(Identifiable::cast<TensorFieldValue *>(_tensorType->createFieldValue().release()));
+        _tensor.reset(dynamic_cast<TensorFieldValue *>(_tensorType->createFieldValue().release()));
         *_tensor = *rhs._tensor;
     }
     return *this;
@@ -177,7 +177,7 @@ TensorModifyUpdate::apply_to(const Value &old_tensor,
 bool
 TensorModifyUpdate::applyTo(FieldValue& value) const
 {
-    if (value.inherits(TensorFieldValue::classId)) {
+    if (value.isA(FieldValue::Type::TENSOR)) {
         TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
         auto oldTensor = tensorFieldValue.getAsTensorPtr();
         if (oldTensor) {
@@ -188,7 +188,7 @@ TensorModifyUpdate::applyTo(FieldValue& value) const
         }
     } else {
         vespalib::string err = make_string("Unable to perform a tensor modify update on a '%s' field value",
-                                           value.getClass().name());
+                                           value.className());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     return true;
@@ -241,11 +241,11 @@ TensorModifyUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &ty
     _operation = static_cast<Operation>(op);
     _tensorType = convertToCompatibleType(dynamic_cast<const TensorDataType &>(type));
     auto tensor = _tensorType->createFieldValue();
-    if (tensor->inherits(TensorFieldValue::classId)) {
+    if (tensor->isA(FieldValue::Type::TENSOR)) {
         _tensor.reset(static_cast<TensorFieldValue *>(tensor.release()));
     } else {
         vespalib::string err = make_string("Expected tensor field value, got a '%s' field value",
-                                           tensor->getClass().name());
+                                           tensor->className());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());

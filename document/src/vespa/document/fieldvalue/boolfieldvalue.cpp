@@ -9,47 +9,43 @@ using namespace vespalib::xml;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE(BoolFieldValue, FieldValue);
-
 BoolFieldValue::BoolFieldValue(bool value)
-    : _value(value), _altered(false) {
+    : FieldValue(Type::BOOL), _value(value) {
 }
 
 BoolFieldValue::~BoolFieldValue() = default;
 
-FieldValue &BoolFieldValue::assign(const FieldValue &rhs) {
-    if (rhs.inherits(BoolFieldValue::classId)) {
+FieldValue &
+BoolFieldValue::assign(const FieldValue &rhs) {
+    if (rhs.isA(Type::BOOL)) {
         operator=(static_cast<const BoolFieldValue &>(rhs));
         return *this;
     } else {
-        _altered = true;
         return FieldValue::assign(rhs);
     }
 }
 
-int BoolFieldValue::compare(const FieldValue&rhs) const {
+int
+BoolFieldValue::compare(const FieldValue&rhs) const {
     int diff = FieldValue::compare(rhs);
     if (diff != 0) return diff;
     const BoolFieldValue &o = static_cast<const BoolFieldValue &>(rhs);
     return (_value == o._value) ? 0 : _value ? 1 : -1;
 }
 
-void BoolFieldValue::printXml(XmlOutputStream& out) const {
+void
+BoolFieldValue::printXml(XmlOutputStream& out) const {
     out << XmlContent(getAsString());
 }
 
-void BoolFieldValue::print(std::ostream& out, bool, const std::string&) const {
+void
+BoolFieldValue::print(std::ostream& out, bool, const std::string&) const {
     out << (_value ? "true" : "false") << "\n";
 }
 
 const DataType *
 BoolFieldValue::getDataType() const {
     return DataType::BOOL;
-}
-
-bool
-BoolFieldValue::hasChanged() const {
-    return _altered;
 }
 
 FieldValue *

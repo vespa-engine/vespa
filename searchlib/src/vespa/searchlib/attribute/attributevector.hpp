@@ -10,23 +10,6 @@
 
 namespace search {
 
-template <typename T>
-inline bool myIsNan(T v) { (void)v; return false; }
-
-template <>
-inline bool
-myIsNan<float>(float v)
-{
-    return std::isnan(v);
-}
-
-template <>
-inline bool
-myIsNan<double>(double v)
-{
-    return std::isnan(v);
-}
-
 template<typename T>
 bool
 AttributeVector::adjustWeight(ChangeVectorT< ChangeTemplate<T> > & changes, DocId doc, const T & v,
@@ -70,7 +53,7 @@ AttributeVector::adjustWeight(ChangeVectorT< ChangeTemplate<T> >& changes, DocId
         size_t oldSz(changes.size());
         if (wu.hasValue()) {
             const FieldValue &wv = wu.getValue();
-            if (wv.inherits(document::IntFieldValue::classId)) {
+            if (wv.isA(FieldValue::Type::INT)) {
                 changes.push_back(ChangeTemplate<T>(ChangeBase::SETWEIGHT, doc, v, wv.getAsInt()));
             } else {
                 retval = false;

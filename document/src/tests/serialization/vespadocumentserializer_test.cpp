@@ -986,22 +986,6 @@ TEST_F("ReferenceFieldValue with ID can be roundtrip serialized", RefFixture) {
     serializeAndDeserialize(ref_with_id, stream, f.fixed_repo);
 }
 
-TEST_F("Empty ReferenceFieldValue has changed-flag cleared after deserialization", RefFixture) {
-    ReferenceFieldValue src(f.ref_type());
-    ReferenceFieldValue dest(f.ref_type());
-    f.roundtrip_serialize(src, dest);
-
-    EXPECT_FALSE(dest.hasChanged());
-}
-
-TEST_F("ReferenceFieldValue with ID has changed-flag cleared after deserialization", RefFixture) {
-    ReferenceFieldValue src(f.ref_type(), DocumentId("id:ns:" + doc_name + "::foo"));
-    ReferenceFieldValue dest(f.ref_type());
-    f.roundtrip_serialize(src, dest);
-
-    EXPECT_FALSE(dest.hasChanged());
-}
-
 TEST_F("Empty ReferenceFieldValue serialization matches Java", RefFixture) {
     ReferenceFieldValue value(f.ref_type());
     f.verify_cross_language_serialization("empty_reference", value);

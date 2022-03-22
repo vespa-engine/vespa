@@ -12,7 +12,7 @@ template <typename T>
 std::unique_ptr<T>
 StructuredFieldValue::getAs(const Field &field) const {
     FieldValue::UP val = getValue(field);
-    T *t = Identifiable::cast<T *>(val.get());
+    T *t = dynamic_cast<T *>(val.get());
     if (val.get() && !t) {
         throw vespalib::IllegalStateException("Field " + field.toString() + " has unexpected type.", VESPA_STRLOC);
     }

@@ -48,13 +48,12 @@ namespace vsm {
 void
 SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv, Inserter &inserter)
 {
-    const auto & clazz = fv.getClass();
     LOG(debug, "traverseRecursive: class(%s), fieldValue(%s), currentPath(%s)",
-        clazz.name(), fv.toString().c_str(), toString(_currPath).c_str());
+        fv.className(), fv.toString().c_str(), toString(_currPath).c_str());
 
-    if (clazz.inherits(document::CollectionFieldValue::classId)) {
+    if (fv.isCollection()) {
         const document::CollectionFieldValue & cfv = static_cast<const document::CollectionFieldValue &>(fv);
-        if (cfv.inherits(document::ArrayFieldValue::classId)) {
+        if (cfv.isA(document::FieldValue::Type::ARRAY)) {
             const document::ArrayFieldValue & afv = static_cast<const document::ArrayFieldValue &>(cfv);
             Cursor &a = inserter.insertArray();
             for (size_t i = 0; i < afv.size(); ++i) {
@@ -62,7 +61,8 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv, Inserter &i
                 ArrayInserter ai(a);
                 traverseRecursive(nfv, ai);
             }
-        } else if (cfv.inherits(document::WeightedSetFieldValue::classId)) {
+        } else {
+            assert(cfv.isA(document::FieldValue::Type::WSET));
             const document::WeightedSetFieldValue & wsfv = static_cast<const document::WeightedSetFieldValue &>(cfv);
             Cursor &a = inserter.insertArray();
             Symbol isym = a.resolve("item");
@@ -75,10 +75,8 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv, Inserter &i
                 int weight = static_cast<const document::IntFieldValue &>(*entry.second).getValue();
                 o.setLong(wsym, weight);
             }
-        } else {
-            LOG(warning, "traverseRecursive: Cannot handle collection field value of type '%s'", clazz.name());
         }
-    } else if (clazz.inherits(document::MapFieldValue::classId)) {
+    } else if (fv.isA(document::FieldValue::Type::MAP)) {
         const document::MapFieldValue & mfv = static_cast<const document::MapFieldValue &>(fv);
         Cursor &a = inserter.insertArray();
         Symbol keysym = a.resolve("key");
@@ -92,7 +90,7 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv, Inserter &i
             traverseRecursive(*entry.second, vi);
             _currPath.pop_back();
         }
-    } else if (clazz.inherits(document::StructuredFieldValue::classId)) {
+    } else if (fv.isStructured()) {
         const document::StructuredFieldValue & sfv = static_cast<const document::StructuredFieldValue &>(fv);
         Cursor &o = inserter.insertObject();
         if (sfv.getDataType() == &document::PositionDataType::getInstance()
@@ -135,10 +133,10 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv, Inserter &i
             }
         }
     } else {
-        if (clazz.inherits(document::LiteralFieldValueB::classId)) {
+        if (fv.isLiteral()) {
             const document::LiteralFieldValueB & lfv = static_cast<const document::LiteralFieldValueB &>(fv);
             inserter.insertString(lfv.getValueRef());
-        } else if (clazz.inherits(document::NumericFieldValueBase::classId)) {
+        } else if (fv.isNumeric()) {
             switch (fv.getDataType()->getId()) {
             case document::DataType::T_BYTE:
             case document::DataType::T_SHORT:
@@ -155,7 +153,7 @@ SlimeFieldWriter::traverseRecursive(const document::FieldValue & fv, Inserter &i
             default:
                 inserter.insertString(fv.getAsString());
             }
-        } else if (clazz.inherits(document::BoolFieldValue::classId)) {
+        } else if (fv.isA(document::FieldValue::Type::BOOL)) {
             const auto & bfv = static_cast<const document::BoolFieldValue &>(fv);
             inserter.insertBool(bfv.getValue());
         } else {

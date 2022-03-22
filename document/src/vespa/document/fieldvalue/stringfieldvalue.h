@@ -17,14 +17,14 @@ namespace document {
 class FixedTypeRepo;
 class DocumentTypeRepo;
 
-class StringFieldValue : public LiteralFieldValue<StringFieldValue, DataType::T_STRING, true> {
+class StringFieldValue final : public LiteralFieldValue<StringFieldValue, DataType::T_STRING> {
 public:
-    typedef LiteralFieldValue<StringFieldValue, DataType::T_STRING, true> Parent;
+    typedef LiteralFieldValue<StringFieldValue, DataType::T_STRING> Parent;
     typedef std::vector<SpanTree::UP> SpanTrees;
 
-    StringFieldValue() : Parent(), _annotationData() { }
+    StringFieldValue() : Parent(Type::STRING), _annotationData() { }
     StringFieldValue(const vespalib::stringref &value)
-            : Parent(value), _annotationData() { }
+            : Parent(Type::STRING, value), _annotationData() { }
 
     StringFieldValue(const StringFieldValue &rhs);
 
@@ -55,7 +55,6 @@ public:
     }
 
     using LiteralFieldValueB::operator=;
-    DECLARE_IDENTIFIABLE(StringFieldValue);
     static std::unique_ptr<StringFieldValue> make(vespalib::stringref value) { return std::make_unique<StringFieldValue>(value); }
     static std::unique_ptr<StringFieldValue> make() { return StringFieldValue::make(""); }
 private:

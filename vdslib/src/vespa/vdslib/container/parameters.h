@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <vespa/document/util/xmlserializable.h>
+#include <vespa/vespalib/util/xmlserializable.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 
 namespace vespalib { class GrowableByteBuffer; }
@@ -22,7 +22,7 @@ namespace document { class ByteBuffer; }
 
 namespace vdslib {
 
-class Parameters : public document::XmlSerializable {
+class Parameters : public vespalib::xml::XmlSerializable {
 public:
     typedef vespalib::stringref KeyT;
     class Value : public vespalib::string
@@ -39,7 +39,7 @@ public:
 private:
     ParametersMap _parameters;
 
-    void printXml(document::XmlOutputStream& xos) const override;
+    void printXml(vespalib::xml::XmlOutputStream& xos) const override;
 
 public:
     Parameters();

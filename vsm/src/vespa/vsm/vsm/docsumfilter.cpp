@@ -71,7 +71,7 @@ public:
     StringResultHandler(ResType t, ResultPacker & p) : _type(t), _packer(p) {}
     void onPrimitive(uint32_t, const Content & c) override {
         const document::FieldValue & fv = c.getValue();
-        if (fv.getClass().inherits(document::LiteralFieldValueB::classId)) {
+        if (fv.isLiteral()) {
             const document::LiteralFieldValueB & lfv = static_cast<const document::LiteralFieldValueB &>(fv);
             vespalib::stringref s = lfv.getValueRef();
             addToPacker(s.data(), s.size());

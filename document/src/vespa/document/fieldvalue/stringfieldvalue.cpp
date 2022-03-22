@@ -19,17 +19,16 @@ using vespalib::stringref;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE(StringFieldValue, LiteralFieldValueB);
-
-StringFieldValue::StringFieldValue(const StringFieldValue & rhs) :
-    Parent(rhs),
-    _annotationData(rhs.copyAnnotationData())
+StringFieldValue::StringFieldValue(const StringFieldValue & rhs)
+    : Parent(rhs),
+      _annotationData(rhs.copyAnnotationData())
 {
 }
 
-StringFieldValue::~StringFieldValue() {}
+StringFieldValue::~StringFieldValue() = default;
 
-StringFieldValue & StringFieldValue::operator=(const StringFieldValue & rhs)
+StringFieldValue &
+StringFieldValue::operator=(const StringFieldValue & rhs)
 {
     if (&rhs != this) {
         Parent::operator=(rhs);
@@ -38,8 +37,9 @@ StringFieldValue & StringFieldValue::operator=(const StringFieldValue & rhs)
     return *this;
 }
 
-int StringFieldValue::compare(const FieldValue& other) const {
-    if (other.inherits(StringFieldValue::classId)) {
+int
+StringFieldValue::compare(const FieldValue& other) const {
+    if (other.isA(Type::STRING)) {
         const StringFieldValue &other_s(static_cast<const StringFieldValue &>(other));
         return _value.compare(other_s._value);
     } else {
@@ -47,7 +47,8 @@ int StringFieldValue::compare(const FieldValue& other) const {
     }
 }
 
-void StringFieldValue::print(std::ostream& out, bool verbose, const std::string& indent) const {
+void
+StringFieldValue::print(std::ostream& out, bool verbose, const std::string& indent) const {
     if ( ! hasSpanTrees()) {
         Parent::print(out, verbose, indent);
     } else {
@@ -88,7 +89,8 @@ StringFieldValue::doClearSpanTrees() {
     _annotationData.reset();
 }
 
-const SpanTree * StringFieldValue::findTree(const SpanTrees & trees, stringref name)
+const SpanTree *
+StringFieldValue::findTree(const SpanTrees & trees, stringref name)
 {
     for(const auto & tree : trees) {
         if (tree->getName() == name) {
@@ -98,16 +100,18 @@ const SpanTree * StringFieldValue::findTree(const SpanTrees & trees, stringref n
     return nullptr;
 }
 
-StringFieldValue &StringFieldValue::operator=(stringref value)
+StringFieldValue &
+StringFieldValue::operator=(stringref value)
 {
     setValue(value);
     _annotationData.reset();
     return *this;
 }
 
-FieldValue & StringFieldValue::assign(const FieldValue & rhs)
+FieldValue &
+StringFieldValue::assign(const FieldValue & rhs)
 {
-    if (rhs.inherits(StringFieldValue::classId)) {
+    if (rhs.isA(Type::STRING)) {
         *this = static_cast<const StringFieldValue &>(rhs);
     } else {
         *this = rhs.getAsString().operator stringref();

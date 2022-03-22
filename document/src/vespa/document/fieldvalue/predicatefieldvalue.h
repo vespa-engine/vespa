@@ -9,9 +9,8 @@ namespace vespalib {
 }
 namespace document {
 
-class PredicateFieldValue : public FieldValue {
+class PredicateFieldValue final : public FieldValue {
     std::unique_ptr<vespalib::Slime> _slime;
-    bool _altered;
 
     PredicateFieldValue & operator=(const PredicateFieldValue &rhs);
 public:
@@ -33,13 +32,10 @@ public:
     void print(std::ostream &out, bool verbose, const std::string &indent) const override;
 
     const DataType *getDataType() const override;
-    bool hasChanged() const override;
 
     const vespalib::Slime &getSlime() const { return *_slime; }
 
     FieldValue &assign(const FieldValue &rhs) override;
-
-    DECLARE_IDENTIFIABLE(PredicateFieldValue);
 };
 
 }

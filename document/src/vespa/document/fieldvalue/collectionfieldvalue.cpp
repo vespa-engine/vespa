@@ -5,7 +5,6 @@
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(CollectionFieldValue, FieldValue);
 
 CollectionFieldValue::CollectionFieldValue(const CollectionFieldValue& other)
     : FieldValue(other),

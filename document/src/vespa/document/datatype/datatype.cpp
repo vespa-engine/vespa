@@ -51,32 +51,32 @@ class DataType2FieldValueId
 {
 public:
     DataType2FieldValueId();
-    unsigned int getFieldValueId(unsigned int id) const {
+    FieldValue::Type getFieldValueId(unsigned int id) const {
         return id < sizeof(_type2FieldValueId)/sizeof(_type2FieldValueId[0])
                ? _type2FieldValueId[id]
-               : 0;
+               : FieldValue::Type::NONE;
     }
 private:
-    unsigned int _type2FieldValueId[DataType::MAX];
+    FieldValue::Type _type2FieldValueId[DataType::MAX];
 };
 
 DataType2FieldValueId::DataType2FieldValueId()
 {
     for (size_t i(0); i < sizeof(_type2FieldValueId)/sizeof(_type2FieldValueId[0]); i++) {
-        _type2FieldValueId[i] = 0;
+        _type2FieldValueId[i] = FieldValue::Type::NONE;
     }
-    _type2FieldValueId[DataType::T_BYTE]  = ByteFieldValue::classId;
-    _type2FieldValueId[DataType::T_SHORT] = ShortFieldValue::classId;
-    _type2FieldValueId[DataType::T_INT] = IntFieldValue::classId;
-    _type2FieldValueId[DataType::T_LONG] = LongFieldValue::classId;
-    _type2FieldValueId[DataType::T_FLOAT] = FloatFieldValue::classId;
-    _type2FieldValueId[DataType::T_DOUBLE] = DoubleFieldValue::classId;
-    _type2FieldValueId[DataType::T_BOOL] = BoolFieldValue::classId;
-    _type2FieldValueId[DataType::T_STRING] = StringFieldValue::classId;
-    _type2FieldValueId[DataType::T_RAW] = RawFieldValue::classId;
-    _type2FieldValueId[DataType::T_URI] = StringFieldValue::classId;
-    _type2FieldValueId[DataType::T_PREDICATE] = PredicateFieldValue::classId;
-    _type2FieldValueId[DataType::T_TENSOR] = TensorFieldValue::classId;
+    _type2FieldValueId[DataType::T_BYTE]  = FieldValue::Type::BYTE;
+    _type2FieldValueId[DataType::T_SHORT] = FieldValue::Type::SHORT;
+    _type2FieldValueId[DataType::T_INT] = FieldValue::Type::INT;
+    _type2FieldValueId[DataType::T_LONG] = FieldValue::Type::LONG;
+    _type2FieldValueId[DataType::T_FLOAT] = FieldValue::Type::FLOAT;
+    _type2FieldValueId[DataType::T_DOUBLE] = FieldValue::Type::DOUBLE;
+    _type2FieldValueId[DataType::T_BOOL] = FieldValue::Type::BOOL;
+    _type2FieldValueId[DataType::T_STRING] = FieldValue::Type::STRING;
+    _type2FieldValueId[DataType::T_RAW] = FieldValue::Type::RAW;
+    _type2FieldValueId[DataType::T_URI] = FieldValue::Type::STRING;
+    _type2FieldValueId[DataType::T_PREDICATE] = FieldValue::Type::PREDICATE;
+    _type2FieldValueId[DataType::T_TENSOR] = FieldValue::Type::TENSOR;
 }
 
 DataType2FieldValueId _G_type2FieldValueId;
@@ -86,9 +86,8 @@ DataType2FieldValueId _G_type2FieldValueId;
 bool DataType::isValueType(const FieldValue & fv) const
 {
     if ((_dataTypeId >= 0) && _dataTypeId < MAX) {
-        const uint32_t cid(_G_type2FieldValueId.getFieldValueId(_dataTypeId));
-        if (cid != 0) {
-            return cid == fv.getClass().id();
+        if (fv.isA(_G_type2FieldValueId.getFieldValueId(_dataTypeId))) {
+            return true;
         }
     }
     return _dataTypeId == fv.getDataType()->getId();

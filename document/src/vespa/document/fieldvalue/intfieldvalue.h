@@ -12,11 +12,11 @@
 
 namespace document {
 
-class IntFieldValue : public NumericFieldValue<int32_t> {
+class IntFieldValue final : public NumericFieldValue<int32_t> {
 public:
     typedef int32_t Number;
 
-    IntFieldValue(Number value = 0) : NumericFieldValue<Number>(value) {}
+    IntFieldValue(Number value = 0) : NumericFieldValue<Number>(Type::INT, value) {}
 
     void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
     void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
@@ -25,7 +25,6 @@ public:
     IntFieldValue* clone() const override { return new IntFieldValue(*this); }
 
     using NumericFieldValue<Number>::operator=;
-    DECLARE_IDENTIFIABLE(IntFieldValue);
     static std::unique_ptr<IntFieldValue> make(Number value=0) { return std::make_unique<IntFieldValue>(value); }
 };
 

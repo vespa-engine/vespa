@@ -271,7 +271,7 @@ FieldInverter::saveWord(const vespalib::stringref word)
 uint32_t
 FieldInverter::saveWord(const document::FieldValue &fv)
 {
-    assert(fv.getClass().id() == StringFieldValue::classId);
+    assert(fv.isA(FieldValue::Type::STRING));
     using RawRef = std::pair<const char*, size_t>;
     RawRef sRef = fv.getAsRaw();
     return saveWord(vespalib::stringref(sRef.first, sRef.second));
@@ -303,8 +303,7 @@ FieldInverter::endDoc()
     }
     _calculator.add_field_length(field_length);
     uint32_t newPosSize = static_cast<uint32_t>(_positions.size());
-    _pendingDocs.insert({ _docId,
-                             { _oldPosSize, newPosSize - _oldPosSize } });
+    _pendingDocs.insert({ _docId, { _oldPosSize, newPosSize - _oldPosSize } });
     _docId = 0;
     _oldPosSize = newPosSize;
 }
@@ -324,7 +323,7 @@ FieldInverter::processNormalDocArrayTextField(const ArrayFieldValue &field)
     uint32_t ele = field.size();
     for (;el < ele; ++el) {
         const FieldValue &elfv = field[el];
-        assert(elfv.getClass().id() == StringFieldValue::classId);
+        assert(elfv.isA(FieldValue::Type::STRING));
         const auto &element = static_cast<const StringFieldValue &>(elfv);
         startElement(1);
         processAnnotations(element);
@@ -338,8 +337,8 @@ FieldInverter::processNormalDocWeightedSetTextField(const WeightedSetFieldValue 
     for (const auto & el : field) {
         const FieldValue &key = *el.first;
         const FieldValue &xweight = *el.second;
-        assert(key.getClass().id() == StringFieldValue::classId);
-        assert(xweight.getClass().id() == IntFieldValue::classId);
+        assert(key.isA(FieldValue::Type::STRING));
+        assert(xweight.isA(FieldValue::Type::INT));
         const auto &element = static_cast<const StringFieldValue &>(key);
         int32_t weight = xweight.getAsInt();
         startElement(weight);
@@ -457,18 +456,17 @@ FieldInverter::startDoc(uint32_t docId) {
 void
 FieldInverter::invertNormalDocTextField(const FieldValue &val)
 {
-    const vespalib::Identifiable::RuntimeClass & cInfo(val.getClass());
     const Schema::IndexField &field = _schema.getIndexField(_fieldId);
     switch (field.getCollectionType()) {
     case CollectionType::SINGLE:
-        if (cInfo.id() == StringFieldValue::classId) {
+        if (val.isA(FieldValue::Type::STRING)) {
             processNormalDocTextField(static_cast<const StringFieldValue &>(val));
         } else {
             throw std::runtime_error(make_string("Expected DataType::STRING, got '%s'", val.getDataType()->getName().c_str()));
         }
         break;
     case CollectionType::WEIGHTEDSET:
-        if (cInfo.id() == WeightedSetFieldValue::classId) {
+        if (val.isA(FieldValue::Type::WSET)) {
             const auto &wset = static_cast<const WeightedSetFieldValue &>(val);
             if (wset.getNestedType() == *DataType::STRING) {
                 processNormalDocWeightedSetTextField(wset);
@@ -476,11 +474,11 @@ FieldInverter::invertNormalDocTextField(const FieldValue &val)
                 throw std::runtime_error(make_string("Expected DataType::STRING, got '%s'", wset.getNestedType().getName().c_str()));
             }
         } else {
-            throw std::runtime_error(make_string("Expected weighted set, got '%s'", cInfo.name()));
+            throw std::runtime_error(make_string("Expected weighted set, got '%s'", val.className()));
         }
         break;
     case CollectionType::ARRAY:
-        if (cInfo.id() == ArrayFieldValue::classId) {
+        if (val.isA(FieldValue::Type::ARRAY)) {
             const auto &arr = static_cast<const ArrayFieldValue&>(val);
             if (arr.getNestedType() == *DataType::STRING) {
                 processNormalDocArrayTextField(arr);
@@ -488,7 +486,7 @@ FieldInverter::invertNormalDocTextField(const FieldValue &val)
                 throw std::runtime_error(make_string("Expected DataType::STRING, got '%s'", arr.getNestedType().getName().c_str()));
             }
         } else {
-            throw std::runtime_error(make_string("Expected Array, got '%s'", cInfo.name()));
+            throw std::runtime_error(make_string("Expected Array, got '%s'", val.className()));
         }
         break;
     default:

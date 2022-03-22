@@ -7,7 +7,6 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <ostream>
-#include <sstream>
 
 using namespace document;
 
@@ -44,14 +43,6 @@ TEST_F("Reference can be constructed with document ID", Fixture) {
     EXPECT_EQUAL(DocumentId("id:ns:foo::itsa-me"), fv.getDocumentId());
 }
 
-TEST_F("Newly constructed reference is marked as changed", Fixture) {
-    ReferenceFieldValue fv(f.refType);
-    EXPECT_TRUE(fv.hasChanged());
-
-    ReferenceFieldValue fv2(f.refType, DocumentId("id:ns:foo::itsa-me"));
-    EXPECT_TRUE(fv2.hasChanged());
-}
-
 TEST_F("Exception is thrown if constructor doc ID type does not match referenced document type", Fixture) {
     EXPECT_EXCEPTION(
             ReferenceFieldValue(f.refType, DocumentId("id:ns:bar::wario-time")),
@@ -78,12 +69,6 @@ TEST_F("Can explicitly assign new document ID to reference", Fixture) {
     EXPECT_EQUAL(f.refType, *fv.getDataType());
 }
 
-TEST_F("Assigning explicit document ID clears changed-flag", Fixture) {
-    ReferenceFieldValue fv(f.refType);
-    fv.setDeserializedDocumentId(DocumentId("id:ns:foo::yoshi-eggs"));
-    EXPECT_FALSE(fv.hasChanged());
-}
-
 TEST_F("Exception is thrown if explicitly assigned doc ID does not have same type as reference target type", Fixture) {
     ReferenceFieldValue fv(f.refType);
 
@@ -104,19 +89,6 @@ TEST_F("assign()ing another reference field value assigns doc ID and type", Fixt
     EXPECT_EQUAL(src.getDataType(), dest.getDataType());
 }
 
-// Different FieldValue subclasses actually disagree on whether this should be
-// the case, e.g. LiteralFieldValue and TensorFieldValue. We go with the
-// latter's approach, as that should be the most conservative one.
-TEST_F("assign() marks assignee as changed", Fixture) {
-    ReferenceFieldValue src(f.refType, DocumentId("id:ns:foo::yoshi"));
-    ReferenceFieldValue dest(f.refType);
-
-    dest.setDeserializedDocumentId(DocumentId("id:ns:foo::yoshi-eggs"));
-    EXPECT_FALSE(dest.hasChanged());
-
-    dest.assign(src);
-    EXPECT_TRUE(dest.hasChanged());
-}
 
 TEST_F("clone()ing creates new instance with same ID and type", Fixture) {
     ReferenceFieldValue src(f.refType, DocumentId("id:ns:foo::yoshi"));
@@ -126,7 +98,6 @@ TEST_F("clone()ing creates new instance with same ID and type", Fixture) {
     ASSERT_TRUE(cloned->hasValidDocumentId());
     EXPECT_EQUAL(src.getDocumentId(), cloned->getDocumentId());
     EXPECT_EQUAL(src.getDataType(), cloned->getDataType());
-    EXPECT_TRUE(cloned->hasChanged());
 }
 
 TEST_F("Can clone() value without document ID", Fixture) {
@@ -136,7 +107,6 @@ TEST_F("Can clone() value without document ID", Fixture) {
     ASSERT_TRUE(cloned);
     EXPECT_FALSE(cloned->hasValidDocumentId());
     EXPECT_EQUAL(src.getDataType(), cloned->getDataType());
-    EXPECT_TRUE(cloned->hasChanged());
 }
 
 TEST_F("compare() orders first on type ID, then on document ID", Fixture) {

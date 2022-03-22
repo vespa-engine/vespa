@@ -58,7 +58,7 @@ setValue(DocumentIdT lid, Document &doc, const document::Field & field, const IA
             break;
         }
         FieldValue::UP fv = field.getDataType().createFieldValue();
-        if (fv.get() && fv->getClass().id() != ArrayFieldValue::classId) {
+        if (fv && ! fv->isA(FieldValue::Type::ARRAY)) {
             throw IllegalStateException("Field " + field.getName() + " does not contain an array.", VESPA_STRLOC);
         }
         ArrayFieldValue &array = static_cast<ArrayFieldValue &>(*fv.get());
@@ -78,7 +78,7 @@ setValue(DocumentIdT lid, Document &doc, const document::Field & field, const IA
             break;
         }
         FieldValue::UP fv = field.getDataType().createFieldValue();
-        if (fv.get() && fv->getClass().id() != WeightedSetFieldValue::classId) {
+        if (fv &&  ! fv->isA(FieldValue::Type::WSET)) {
             throw IllegalStateException("Field " + field.getName() + " does not contain a wset.", VESPA_STRLOC);
         }
         WeightedSetFieldValue & wset(static_cast<WeightedSetFieldValue &>(*fv.get()));

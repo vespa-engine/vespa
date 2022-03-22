@@ -50,11 +50,11 @@ TEST(DocumentTest, testSizeOf)
     EXPECT_EQ(32u, sizeof(vespalib::GrowableByteBuffer));
     EXPECT_EQ(88ul, sizeof(IdString));
     EXPECT_EQ(104ul, sizeof(DocumentId));
-    EXPECT_EQ(240ul, sizeof(Document));
+    EXPECT_EQ(256ul, sizeof(Document));
     EXPECT_EQ(80ul, sizeof(NumericDataType));
     EXPECT_EQ(24ul, sizeof(LongFieldValue));
-    EXPECT_EQ(96ul, sizeof(StructFieldValue));
-    EXPECT_EQ(16ul, sizeof(StructuredFieldValue));
+    EXPECT_EQ(104ul, sizeof(StructFieldValue));
+    EXPECT_EQ(24ul, sizeof(StructuredFieldValue));
     EXPECT_EQ(56ul, sizeof(SerializableArray));
 }
 
@@ -929,48 +929,6 @@ TEST(DocumentTest, testCRC32)
     const_cast<char *>(buf.peek())[pos] ^= 72;
 
     /// \todo TODO (was warning):  Cannot test for in memory representation altered, as there is no syntax for getting internal refs to data from document. Add test when this is added.
-}
-
-TEST(DocumentTest, testHasChanged)
-{
-    TestDocRepo test_repo;
-    Document doc(*test_repo.getDocumentType("testdoctype1"),
-                 DocumentId("id:ns:testdoctype1::crawler:http://www.ntnu.no/"));
-        // Before deserialization we are changed.
-    EXPECT_TRUE(doc.hasChanged());
-
-    doc.setValue(doc.getField("hstringval"), StringFieldValue("bla bla bla bla bla"));
-        // Still changed after setting a value of course.
-    EXPECT_TRUE(doc.hasChanged());
-
-    nbostream buf;
-    doc.serialize(buf);
-        // Setting a value in doc tags us changed.
-    {
-        buf.rp(0);
-        Document doc2(test_repo.getTypeRepo(), buf);
-        EXPECT_TRUE(!doc2.hasChanged());
-
-        doc2.setValue("headerval", IntFieldValue::make(13));
-        EXPECT_TRUE(doc2.hasChanged());
-    }
-        // Overwriting a value in doc tags us changed.
-    {
-        buf.rp(0);
-        Document doc2(test_repo.getTypeRepo(), buf);
-
-        doc2.setValue("hstringval", StringFieldValue::make("bla bla bla bla bla"));
-        EXPECT_TRUE(doc2.hasChanged());
-    }
-        // Clearing value tags us changed.
-    {
-        buf.rp(0);
-        Document doc2(test_repo.getTypeRepo(), buf);
-
-        doc2.clear();
-        EXPECT_TRUE(doc2.hasChanged());
-    }
-        // Add more tests here when we allow non-const refs to internals
 }
 
 TEST(DocumentTest, testSliceSerialize)

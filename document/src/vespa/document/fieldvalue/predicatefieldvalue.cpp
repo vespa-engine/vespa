@@ -14,22 +14,19 @@ using namespace vespalib::xml;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE(PredicateFieldValue, FieldValue);
-
 PredicateFieldValue::PredicateFieldValue()
-    : _slime(std::make_unique<Slime>()), _altered(false) {
-}
+    : FieldValue(Type::PREDICATE),
+      _slime(std::make_unique<Slime>())
+{ }
 
 PredicateFieldValue::PredicateFieldValue(vespalib::Slime::UP s)
-    : FieldValue(),
-      _slime(std::move(s)),
-      _altered(false)
+    : FieldValue(Type::PREDICATE),
+      _slime(std::move(s))
 { }
 
 PredicateFieldValue::PredicateFieldValue(const PredicateFieldValue &rhs)
     : FieldValue(rhs),
-      _slime(new Slime),
-      _altered(rhs._altered)
+      _slime(new Slime)
 {
     inject(rhs._slime->get(), SlimeInserter(*_slime));
 }
@@ -38,11 +35,10 @@ PredicateFieldValue::~PredicateFieldValue() = default;
 
 FieldValue &
 PredicateFieldValue::assign(const FieldValue &rhs) {
-    if (rhs.inherits(PredicateFieldValue::classId)) {
+    if (rhs.isA(Type::PREDICATE)) {
         operator=(static_cast<const PredicateFieldValue &>(rhs));
     } else {
         _slime.reset();
-        _altered = true;
     }
     return *this;
 }
@@ -52,7 +48,6 @@ PredicateFieldValue::operator=(const PredicateFieldValue &rhs)
 {
     _slime = std::make_unique<Slime>();
     inject(rhs._slime->get(), SlimeInserter(*_slime));
-    _altered = true;
     return *this;
 }
 
@@ -77,11 +72,6 @@ PredicateFieldValue::print(std::ostream& out, bool, const std::string&) const {
 const DataType *
 PredicateFieldValue::getDataType() const {
     return DataType::PREDICATE;
-}
-
-bool
-PredicateFieldValue::hasChanged() const {
-    return _altered;
 }
 
 FieldValue *

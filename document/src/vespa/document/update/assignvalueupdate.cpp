@@ -71,7 +71,7 @@ AssignValueUpdate::applyTo(FieldValue& value) const
          !value.getDataType()->isValueType(*_value))) {
         vespalib::string err = vespalib::make_string(
                 "Unable to assign a \"%s\" value to a \"%s\" field value.",
-                _value->getClass().name(), value.getClass().name());
+                _value->className(), value.className());
         throw IllegalStateException(err, VESPA_STRLOC);	
     }
     if (_value) {

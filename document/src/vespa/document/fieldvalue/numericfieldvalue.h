@@ -18,20 +18,18 @@ namespace document {
 class NumericFieldValueBase : public FieldValue
 {
 public:
-    DECLARE_IDENTIFIABLE_ABSTRACT(NumericFieldValueBase);
     void printXml(XmlOutputStream& out) const override;
+protected:
+    NumericFieldValueBase(Type type) : FieldValue(type) {}
 };
 
 template<typename Number>
 class NumericFieldValue : public NumericFieldValueBase {
 protected:
+    explicit NumericFieldValue(Type type, Number value=0) : NumericFieldValueBase(type), _value(value) { }
     Number _value;
-    bool _altered;
-
 public:
     typedef Number value_type;
-
-    explicit NumericFieldValue(Number value=0) : NumericFieldValueBase(), _value(value), _altered(false) { }
 
     value_type getValue() const { return _value; }
     void setValue(Number newValue) { _value = newValue; }
@@ -51,7 +49,6 @@ public:
     vespalib::string getAsString() const override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    bool hasChanged() const override final { return _altered; }
 };
 
 extern template class NumericFieldValue<float>;

@@ -9,12 +9,6 @@ using std::string;
 
 namespace document {
 
-AnnotationReferenceFieldValue::AnnotationReferenceFieldValue(
-        const DataType &type, int32_t annotation_index)
-    : _type(&type),
-      _annotation_index(annotation_index) {
-}
-
 int AnnotationReferenceFieldValue::compare(const FieldValue &other) const {
     if (getDataType()->equals(*other.getDataType())) {
         const AnnotationReferenceFieldValue &val(static_cast<const AnnotationReferenceFieldValue &>(other));
@@ -33,10 +27,6 @@ AnnotationReferenceFieldValue *AnnotationReferenceFieldValue::clone() const {
 
 void AnnotationReferenceFieldValue::printXml(XmlOutputStream &out) const {
     out << _annotation_index;
-}
-
-bool AnnotationReferenceFieldValue::hasChanged() const {
-    return false;
 }
 
 }  // namespace document

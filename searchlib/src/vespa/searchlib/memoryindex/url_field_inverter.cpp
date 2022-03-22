@@ -6,7 +6,6 @@
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-#include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/util/url.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
@@ -122,7 +121,7 @@ UrlFieldInverter::processUrlSubField(FieldInverter *inverter,
     if (!sfv) {
         return;
     }
-    if (!sfv->inherits(IDENTIFIABLE_CLASSID(StringFieldValue))) {
+    if (!sfv->isA(FieldValue::Type::STRING)) {
         LOG(error,
             "Illegal field type %s for URL subfield %s, expected string",
             sfv->getDataType()->getName().c_str(),
@@ -155,13 +154,13 @@ UrlFieldInverter::processAnnotatedUrlField(const StructFieldValue & field)
 void
 UrlFieldInverter::processUrlField(const FieldValue &url_field)
 {
-    if (url_field.inherits(IDENTIFIABLE_CLASSID(StringFieldValue))) {
+    if (url_field.isA(FieldValue::Type::STRING)) {
         const vespalib::string &url_str =
             static_cast<const StringFieldValue &>(url_field).getValue();
         processUrlOldStyle(url_str);
         return;
     }
-    assert(url_field.getClass().id() == StructFieldValue::classId);
+    assert(url_field.isA(FieldValue::Type::STRUCT));
     const auto &field = static_cast<const StructFieldValue &>(url_field);
 
     const FieldValue::UP all_val = field.getValue("all");
@@ -173,7 +172,7 @@ UrlFieldInverter::processUrlField(const FieldValue &url_field)
         return;
     }
 
-    if (!all_val->inherits(IDENTIFIABLE_CLASSID(StringFieldValue))) {
+    if (!all_val->isA(FieldValue::Type::STRING)) {
         LOG(error,
             "Illegal field type %s for URL subfield all, expected string",
             all_val->getDataType()->getName().c_str());
@@ -275,7 +274,7 @@ UrlFieldInverter::processWeightedSetUrlField(const WeightedSetFieldValue &field)
     for (const auto & el : field) {
         const FieldValue &key = *el.first;
         const FieldValue &xweight = *el.second;
-        assert(xweight.getClass().id() == IntFieldValue::classId);
+        assert(xweight.isA(FieldValue::Type::INT));
         int32_t weight = xweight.getAsInt();
         startElement(weight);
         processUrlField(key);
@@ -298,7 +297,6 @@ isUriType(const DataType &type)
 void
 UrlFieldInverter::invertUrlField(const FieldValue &val)
 {
-    const vespalib::Identifiable::RuntimeClass & cInfo(val.getClass());
     switch (_collectionType) {
     case CollectionType::SINGLE:
         if (isUriType(*val.getDataType())) {
@@ -309,30 +307,29 @@ UrlFieldInverter::invertUrlField(const FieldValue &val)
             throw std::runtime_error(make_string("Expected URI struct, got '%s'", val.getDataType()->getName().c_str()));
         }
         break;
-    case CollectionType::WEIGHTEDSET:
-        if (cInfo.id() == WeightedSetFieldValue::classId) {
-            const auto &wset = static_cast<const WeightedSetFieldValue &>(val);
-            if (isUriType(wset.getNestedType())) {
-                processWeightedSetUrlField(wset);
-            } else {
-                throw std::runtime_error(make_string("Expected wset of URI struct, got '%s'", wset.getNestedType().getName().c_str()));
-            }
+    case CollectionType::WEIGHTEDSET: {
+        assert(val.isA(FieldValue::Type::WSET));
+        const auto &wset = static_cast<const WeightedSetFieldValue &>(val);
+        if (isUriType(wset.getNestedType())) {
+            processWeightedSetUrlField(wset);
         } else {
-            throw std::runtime_error(make_string("Expected weighted set, got '%s'", cInfo.name()));
+            throw std::runtime_error(
+                    make_string("Expected wset of URI struct, got '%s'", wset.getNestedType().getName().c_str()));
         }
         break;
-    case CollectionType::ARRAY:
-        if (cInfo.id() == ArrayFieldValue::classId) {
-            const auto &arr = static_cast<const ArrayFieldValue&>(val);
-            if (isUriType(arr.getNestedType())) {
-                processArrayUrlField(arr);
-            } else {
-                throw std::runtime_error(make_string("Expected array of URI struct, got '%s' (%s)", arr.getNestedType().getName().c_str(), arr.getNestedType().toString(true).c_str()));
-            }
+    }
+    case CollectionType::ARRAY: {
+        assert(val.isA(FieldValue::Type::ARRAY));
+        const auto &arr = static_cast<const ArrayFieldValue &>(val);
+        if (isUriType(arr.getNestedType())) {
+            processArrayUrlField(arr);
         } else {
-            throw std::runtime_error(make_string("Expected Array, got '%s'", cInfo.name()));
+            throw std::runtime_error(
+                    make_string("Expected array of URI struct, got '%s' (%s)", arr.getNestedType().getName().c_str(),
+                                arr.getNestedType().toString(true).c_str()));
         }
         break;
+    }
     default:
         break;
     }

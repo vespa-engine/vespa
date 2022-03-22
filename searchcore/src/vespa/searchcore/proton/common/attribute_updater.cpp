@@ -136,16 +136,15 @@ AttributeUpdater::handleUpdateT(V & vec, Accessor, uint32_t lid, const ValueUpda
             const AssignValueUpdate & assign(static_cast<const AssignValueUpdate &>(upd));
             if (assign.hasValue()) {
                 const FieldValue & fv(assign.getValue());
-                const vespalib::Identifiable::RuntimeClass & rc(fv.getClass());
-                if (rc.inherits(ArrayFieldValue::classId)) {
+                if (fv.isA(FieldValue::Type::ARRAY)) {
                     ArrayAccessor<Accessor> ac(static_cast<const ArrayFieldValue & >(fv));
                     appendValue(vec, lid, ac);
-                } else if (rc.inherits(WeightedSetFieldValue::classId)) {
+                } else if (fv.isA(FieldValue::Type::WSET)) {
                     WeightedSetAccessor<Accessor> ac(static_cast<const WeightedSetFieldValue & >(fv));
                     appendValue(vec, lid, ac);
                 } else {
                     LOG(warning, "Unsupported value %s in assign operation on multivalue vector %s",
-                                 rc.name(), vec.getName().c_str());
+                                 fv.className(), vec.getName().c_str());
                 }
             }
         } else if (op == ValueUpdate::Add) {
@@ -158,7 +157,7 @@ AttributeUpdater::handleUpdateT(V & vec, Accessor, uint32_t lid, const ValueUpda
             const MapValueUpdate & map(static_cast<const MapValueUpdate &>(upd));
             if (!vec.AttributeVector::apply(lid, map)) {
                 throw UpdateException(make_string("attribute map(%s, %s) failed: %s[%u]",
-                                                  map.getKey().getClass().name(), map.getUpdate().getClass().name(),
+                                                  map.getKey().className(), map.getUpdate().getClass().name(),
                                                   vec.getName().c_str(), lid));
             }
         } else {
@@ -323,15 +322,14 @@ AttributeUpdater::handleValueT(V & vec, Accessor, uint32_t lid, const FieldValue
 {
     if (vec.hasMultiValue()) {
         vec.clearDoc(lid);
-        const vespalib::Identifiable::RuntimeClass & rc = val.getClass();
-        if (rc.inherits(ArrayFieldValue::classId)) {
+        if (val.isA(FieldValue::Type::ARRAY)) {
             ArrayAccessor<Accessor> ac(static_cast<const ArrayFieldValue & >(val));
             appendValue(vec, lid, ac);
-        } else if (rc.inherits(WeightedSetFieldValue::classId)) {
+        } else if (val.isA(FieldValue::Type::WSET)) {
             WeightedSetAccessor<Accessor> ac(static_cast<const WeightedSetFieldValue & >(val));
             appendValue(vec, lid, ac);
         } else {
-            LOG(warning, "Unsupported value '%s' to assign on multivalue vector '%s'", rc.name(), vec.getName().c_str());
+            LOG(warning, "Unsupported value '%s' to assign on multivalue vector '%s'", val.className(), vec.getName().c_str());
         }
     } else {
         updateValue(vec, lid, val);
@@ -412,7 +410,7 @@ namespace {
 
 const vespalib::string &
 getString(const search::StringAttribute & attr, uint32_t lid, const FieldValue & val) {
-    if ( ! val.inherits(LiteralFieldValueB::classId) ) {
+    if ( ! val.isLiteral() ) {
         throw UpdateException(make_string("Can not update a string attribute '%s' for lid=%d from a non-literal fieldvalue: %s",
                                           attr.getName().c_str(), lid, val.toString().c_str()));
     }
@@ -453,11 +451,10 @@ AttributeUpdater::updateValue(StringAttribute & vec, uint32_t lid, const FieldVa
 
 namespace {
 
-template <typename ExpFieldValueType>
 void
-validate_field_value_type(const FieldValue& val, const vespalib::string& attr_type, const vespalib::string& value_type)
+validate_field_value_type(FieldValue::Type expectedType, const FieldValue& val, const vespalib::string& attr_type, const vespalib::string& value_type)
 {
-    if (!val.inherits(ExpFieldValueType::classId)) {
+    if (!val.isA(expectedType)) {
         throw UpdateException(
                 make_string("%s must be updated with %s, but was '%s'",
                             attr_type.c_str(), value_type.c_str(), val.toString(false).c_str()));
@@ -469,14 +466,14 @@ validate_field_value_type(const FieldValue& val, const vespalib::string& attr_ty
 void
 AttributeUpdater::updateValue(PredicateAttribute &vec, uint32_t lid, const FieldValue &val)
 {
-    validate_field_value_type<PredicateFieldValue>(val, "PredicateAttribute", "PredicateFieldValue");
+    validate_field_value_type(FieldValue::Type::PREDICATE, val, "PredicateAttribute", "PredicateFieldValue");
     vec.updateValue(lid, static_cast<const PredicateFieldValue &>(val));
 }
 
 void
 AttributeUpdater::updateValue(TensorAttribute &vec, uint32_t lid, const FieldValue &val)
 {
-    validate_field_value_type<TensorFieldValue>(val, "TensorAttribute", "TensorFieldValue");
+    validate_field_value_type(FieldValue::Type::TENSOR, val, "TensorAttribute", "TensorFieldValue");
     const auto &tensor = static_cast<const TensorFieldValue &>(val).getAsTensorPtr();
     if (tensor) {
         vec.setTensor(lid, *tensor);
@@ -488,7 +485,7 @@ AttributeUpdater::updateValue(TensorAttribute &vec, uint32_t lid, const FieldVal
 void
 AttributeUpdater::updateValue(ReferenceAttribute &vec, uint32_t lid, const FieldValue &val)
 {
-    if (!val.inherits(ReferenceFieldValue::classId)) {
+    if (!val.isA(FieldValue::Type::REFERENCE)) {
         vec.clearDoc(lid);
         throw UpdateException(
                 make_string("ReferenceAttribute must be updated with "
@@ -518,7 +515,7 @@ validate_tensor_attribute_type(AttributeVector& attr)
 std::unique_ptr<PrepareResult>
 prepare_set_tensor(TensorAttribute& attr, uint32_t docid, const FieldValue& val)
 {
-    validate_field_value_type<TensorFieldValue>(val, "TensorAttribute", "TensorFieldValue");
+    validate_field_value_type(FieldValue::Type::TENSOR, val, "TensorAttribute", "TensorFieldValue");
     const auto& tensor = static_cast<const TensorFieldValue&>(val).getAsTensorPtr();
     if (tensor) {
         return attr.prepare_set_tensor(docid, *tensor);
@@ -529,7 +526,7 @@ prepare_set_tensor(TensorAttribute& attr, uint32_t docid, const FieldValue& val)
 void
 complete_set_tensor(TensorAttribute& attr, uint32_t docid, const FieldValue& val, std::unique_ptr<PrepareResult> prepare_result)
 {
-    validate_field_value_type<TensorFieldValue>(val, "TensorAttribute", "TensorFieldValue");
+    validate_field_value_type(FieldValue::Type::TENSOR, val, "TensorAttribute", "TensorFieldValue");
     const auto& tensor = static_cast<const TensorFieldValue&>(val).getAsTensorPtr();
     if (tensor) {
         attr.complete_set_tensor(docid, *tensor, std::move(prepare_result));

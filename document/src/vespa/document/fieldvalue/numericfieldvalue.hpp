@@ -17,22 +17,21 @@ template<typename Number>
 FieldValue&
 NumericFieldValue<Number>::assign(const FieldValue& value)
 {
-    if        (value.getClass().id() == IDENTIFIABLE_CLASSID(ByteFieldValue)) {
+    if (value.isA(FieldValue::Type::BYTE)) {
         _value = static_cast<Number>(value.getAsByte());
-    } else if (value.getClass().id() == IDENTIFIABLE_CLASSID(ShortFieldValue)) {
+    } else if (value.isA(FieldValue::Type::SHORT)) {
         _value = static_cast<Number>(value.getAsInt());
-    } else if (value.getClass().id() == IDENTIFIABLE_CLASSID(IntFieldValue)) {
+    } else if (value.isA(FieldValue::Type::INT)) {
         _value = static_cast<Number>(value.getAsInt());
-    } else if (value.getClass().id() == IDENTIFIABLE_CLASSID(LongFieldValue)) {
+    } else if (value.isA(FieldValue::Type::LONG)) {
         _value = static_cast<Number>(value.getAsLong());
-    } else if (value.getClass().id() == IDENTIFIABLE_CLASSID(FloatFieldValue)) {
+    } else if (value.isA(FieldValue::Type::FLOAT)) {
         _value = static_cast<Number>(value.getAsFloat());
-    } else if (value.getClass().id() == IDENTIFIABLE_CLASSID(DoubleFieldValue)) {
+    } else if (value.isA(FieldValue::Type::DOUBLE)) {
         _value = static_cast<Number>(value.getAsDouble());
     } else {
         return FieldValue::assign(value);
     }
-    _altered = true;
     return *this;
 }
 
@@ -91,7 +90,6 @@ NumericFieldValue<Number>::operator=(vespalib::stringref value)
                 // Allow numbers to be specified in range max signed to max
                 // unsigned. These become negative numbers.
             _value = static_cast<Number>(val);
-            _altered = true;
             return *this;
         }
     }
@@ -118,7 +116,6 @@ NumericFieldValue<Number>::operator=(vespalib::stringref value)
             }
         }
     }
-    _altered = true;
     return *this;
 }
 

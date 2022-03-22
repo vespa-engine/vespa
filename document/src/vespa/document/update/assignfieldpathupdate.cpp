@@ -3,7 +3,6 @@
 #include "assignfieldpathupdate.h"
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
-#include <vespa/document/select/parser.h>
 #include <vespa/document/select/variablemap.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -118,12 +117,11 @@ AssignValueIteratorHandler::doModify(FieldValue& fv) {
     if (!(*fv.getDataType() == *_newValue.getDataType())) {
         vespalib::string err = vespalib::make_string(
                 "Trying to assign \"%s\" of type %s to an instance of type %s",
-                _newValue.toString().c_str(), _newValue.getClass().name(),
-                fv.getClass().name());
+                _newValue.toString().c_str(), _newValue.className(), fv.className());
         throw vespalib::IllegalArgumentException(err, VESPA_STRLOC);
     }
     if (_removeIfZero
-        && _newValue.inherits(NumericFieldValueBase::classId)
+        && _newValue.isNumeric()
         && static_cast<const NumericFieldValueBase&>(_newValue).getAsLong() == 0)
     {
         return ModificationStatus::REMOVED;
@@ -135,13 +133,13 @@ AssignValueIteratorHandler::doModify(FieldValue& fv) {
 ModificationStatus
 AssignExpressionIteratorHandler::doModify(FieldValue& fv) {
     LOG(spam, "fv = %s", fv.toString().c_str());
-    if (fv.inherits(NumericFieldValueBase::classId)) {
+    if (fv.isNumeric()) {
         std::unique_ptr<select::VariableMap> varHolder = std::make_unique<select::VariableMap>();
         select::VariableMap & vars = *varHolder;
         for (VariableMap::const_iterator i(getVariables().begin()),
                  e(getVariables().end()); i != e; ++i)
         {
-            if (i->second.key.get() && i->second.key->inherits(NumericFieldValueBase::classId)) {
+            if (i->second.key.get() && i->second.key->isNumeric()) {
                 vars[i->first] = i->second.key->getAsDouble();
             } else {
                 vars[i->first] = i->second.index;

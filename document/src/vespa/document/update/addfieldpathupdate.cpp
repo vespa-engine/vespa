@@ -31,7 +31,7 @@ AddFieldPathUpdate::AddFieldPathUpdate()
     : FieldPathUpdate(), _values()
 { }
 
-AddFieldPathUpdate::~AddFieldPathUpdate() { }
+AddFieldPathUpdate::~AddFieldPathUpdate() = default;
 
 FieldPathUpdate*
 AddFieldPathUpdate::clone() const {
@@ -53,13 +53,13 @@ private:
 
 ModificationStatus
 AddIteratorHandler::doModify(FieldValue &fv) {
-    if (fv.inherits(CollectionFieldValue::classId)) {
+    if (fv.isCollection()) {
         CollectionFieldValue &cf = static_cast<CollectionFieldValue &>(fv);
         for (std::size_t i = 0; i < _values.size(); ++i) {
             cf.add(_values[i]);
         }
     } else {
-        vespalib::string err = make_string("Unable to add a value to a \"%s\" field value.", fv.getClass().name());
+        vespalib::string err = make_string("Unable to add a value to a \"%s\" field value.", fv.className());
         throw vespalib::IllegalArgumentException(err, VESPA_STRLOC);
     }
     return ModificationStatus::MODIFIED;

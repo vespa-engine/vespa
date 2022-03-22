@@ -2,7 +2,6 @@
 #include "arithmeticvalueupdate.h"
 #include <vespa/document/base/field.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <ostream>
@@ -44,25 +43,25 @@ ArithmeticValueUpdate::checkCompatibility(const Field& field) const
 bool
 ArithmeticValueUpdate::applyTo(FieldValue& value) const
 {
-    if (value.inherits(ByteFieldValue::classId)) {
+    if (value.isA(FieldValue::Type::BYTE)) {
         ByteFieldValue& bValue = static_cast<ByteFieldValue&>(value);
         bValue.setValue((int)applyTo(static_cast<int64_t>(bValue.getAsInt())));
-    } else if (value.inherits(DoubleFieldValue::classId)) {
+    } else if (value.isA(FieldValue::Type::DOUBLE)) {
         DoubleFieldValue& dValue = static_cast<DoubleFieldValue&>(value);
         dValue.setValue(applyTo(dValue.getAsDouble()));
-    } else if (value.inherits(FloatFieldValue::classId)) {
+    } else if (value.isA(FieldValue::Type::FLOAT)) {
         FloatFieldValue& fValue = static_cast<FloatFieldValue&>(value);
         fValue.setValue((float)applyTo(fValue.getAsFloat()));
-    } else if (value.inherits(IntFieldValue::classId)) {
+    } else if (value.isA(FieldValue::Type::INT)) {
         IntFieldValue& iValue = static_cast<IntFieldValue&>(value);
         iValue.setValue((int)applyTo(static_cast<int64_t>(iValue.getAsInt())));
-    } else if (value.inherits(LongFieldValue::classId)) {
+    } else if (value.isA(FieldValue::Type::LONG)) {
         LongFieldValue& lValue = static_cast<LongFieldValue&>(value);
         lValue.setValue(applyTo(lValue.getAsLong()));
     } else {
-        std::string err = vespalib::make_string(
+        vespalib::string err = vespalib::make_string(
                 "Unable to perform an arithmetic update on a \"%s\" field "
-                "value.", value.getClass().name());
+                "value.", value.className());
         throw IllegalStateException(err, VESPA_STRLOC);
     }
     return true;

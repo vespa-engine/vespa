@@ -18,7 +18,7 @@
 
 namespace document {
 
-class ArrayFieldValue : public CollectionFieldValue {
+class ArrayFieldValue final : public CollectionFieldValue {
 private:
     using IArray = vespalib::IArrayT<FieldValue>;
     std::unique_ptr<IArray> _array;
@@ -68,14 +68,12 @@ public:
     int compare(const FieldValue&) const override;
     void printXml(XmlOutputStream& out) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    bool hasChanged() const override;
     void swap(ArrayFieldValue & other) { _array.swap(other._array); }
 
         // Iterator functionality
     const_iterator begin() const { return array().begin(); }
     const_iterator end() const { return array().end(); }
 
-    DECLARE_IDENTIFIABLE_ABSTRACT(ArrayFieldValue);
 private:
     iterator begin() { return array().begin(); }
     iterator end() { return array().end(); }
