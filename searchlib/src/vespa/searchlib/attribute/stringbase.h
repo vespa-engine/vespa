@@ -10,7 +10,7 @@
 #include <vespa/vespalib/regex/regex.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
-#include <vespa/vespalib/fuzzy/fuzzy.h>
+#include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
 #include <optional>
 
 namespace search {
@@ -29,10 +29,10 @@ public:
     bool isCased() const { return _isCased; }
     bool isFuzzy() const { return _isFuzzy; }
     const vespalib::Regex & getRegex() const { return _regex; }
-    const vespalib::Fuzzy & getFuzzy() const { return _fuzzy; }
+    const vespalib::FuzzyMatcher & getFuzzyMatcher() const { return _fuzzyMatcher; }
 private:
     vespalib::Regex                _regex;
-    vespalib::Fuzzy                _fuzzy;
+    vespalib::FuzzyMatcher         _fuzzyMatcher;
     union {
         const ucs4_t *_ucs4;
         const char   *_char;
@@ -133,7 +133,7 @@ protected:
         bool isCased() const { return _helper.isCased(); }
         bool isFuzzy() const { return _helper.isFuzzy(); }
         const vespalib::Regex & getRegex() const { return _helper.getRegex(); }
-        const vespalib::Fuzzy & getFuzzy() const { return _helper.getFuzzy(); }
+        const vespalib::FuzzyMatcher & getFuzzyMatcher() const { return _helper.getFuzzyMatcher(); }
 
         class CollectHitCount {
         public:

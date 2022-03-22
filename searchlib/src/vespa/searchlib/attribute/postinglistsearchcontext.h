@@ -283,7 +283,7 @@ StringPostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const Att
             auto comp = _enumStore.make_folded_comparator_prefix(prefix.c_str());
             this->lookupRange(comp, comp);
         } else if (this->isFuzzy()) {
-            vespalib::string prefix(this->getFuzzy().getPrefix());
+            vespalib::string prefix(this->getFuzzyMatcher().getPrefix());
             auto comp = _enumStore.make_folded_comparator_prefix(prefix.c_str());
             this->lookupRange(comp, comp);
         } else {
@@ -306,7 +306,7 @@ StringPostingSearchContext<BaseSC, AttrT, DataT>::useThis(const PostingListSearc
     } else if ( this->isCased() ) {
         return this->isMatch(_enumStore.get_value(it.getKey().load_acquire()));
     } else if (this->isFuzzy()) {
-        return this->getFuzzy().isMatch(_enumStore.get_value(it.getKey().load_acquire()));
+        return this->getFuzzyMatcher().isMatch(_enumStore.get_value(it.getKey().load_acquire()));
     }
     return true;
 }

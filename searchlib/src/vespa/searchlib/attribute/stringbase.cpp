@@ -18,7 +18,7 @@ namespace search {
 
 StringSearchHelper::StringSearchHelper(QueryTermUCS4 & term, bool cased)
     : _regex(),
-      _fuzzy(),
+      _fuzzyMatcher(),
       _term(),
       _termLen(),
       _isPrefix(term.isPrefix()),
@@ -36,7 +36,7 @@ StringSearchHelper::StringSearchHelper(QueryTermUCS4 & term, bool cased)
         _term._char = term.getTerm();
         _termLen = term.getTermLen();
     } else if (isFuzzy()) {
-        _fuzzy = vespalib::Fuzzy::from_term(term.getTerm());
+        _fuzzyMatcher = vespalib::FuzzyMatcher::from_term(term.getTerm());
     } else {
         term.term(_term._ucs4);
     }
@@ -59,7 +59,7 @@ StringSearchHelper::isMatch(const char *src) const {
         return (res == 0) && (src[_termLen] == 0 || isPrefix());
     }
     if (__builtin_expect(isFuzzy(), false)) {
-        return getFuzzy().isMatch(src);
+        return getFuzzyMatcher().isMatch(src);
     }
     vespalib::Utf8ReaderForZTS u8reader(src);
     uint32_t j = 0;

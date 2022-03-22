@@ -1,43 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Levenstein distance algorithm is based off Java implementation from apache commons-text library licensed under the Apache 2.0 license.
 
-#include "fuzzy.h"
+#include "levenstein_distance.h"
 
 #include <limits>
 
-#include <vespa/vespalib/text/utf8.h>
-#include <vespa/vespalib/text/lowercase.h>
-
-vespalib::Fuzzy vespalib::Fuzzy::from_term(std::string_view term) {
-    return Fuzzy(folded_codepoints(term));
-}
-
-std::vector<uint32_t> vespalib::Fuzzy::folded_codepoints(const char* src, size_t srcSize) {
-    std::vector<uint32_t> result;
-    result.reserve(srcSize);
-    Utf8ReaderForZTS srcReader(src);
-    while (srcReader.hasMore()) {
-        result.emplace_back(LowerCase::convert(srcReader.getChar()));
-    }
-    return result;
-}
-
-std::vector<uint32_t> vespalib::Fuzzy::folded_codepoints(std::string_view src) {
-    return folded_codepoints(src.data(), src.size());
-}
-
-std::optional<uint32_t> vespalib::Fuzzy::levenstein_distance(std::string_view source, std::string_view target, uint32_t threshold) {
-    std::vector<uint32_t> sourceCodepoints = folded_codepoints(source.data(), source.size());
-    std::vector<uint32_t> targetCodepoints = folded_codepoints(target.data(), target.size());
-    return levenstein_distance(sourceCodepoints, targetCodepoints, threshold);
-}
-
-std::optional<uint32_t> vespalib::Fuzzy::levenstein_distance(const std::vector<uint32_t>& left, const std::vector<uint32_t>& right, uint32_t threshold) {
+std::optional<uint32_t> vespalib::LevensteinDistance::calculate(const std::vector<uint32_t>& left, const std::vector<uint32_t>& right, uint32_t threshold) {
     uint32_t n = left.size();
     uint32_t m = right.size();
 
     if (n > m) {
-        return levenstein_distance(right, left, threshold);
+        return calculate(right, left, threshold);
     }
 
     // if one string is empty, the edit distance is necessarily the length
@@ -83,7 +56,6 @@ std::optional<uint32_t> vespalib::Fuzzy::levenstein_distance(const std::vector<u
                        n : std::min(n, j + threshold);
 
         // ignore entry left of leftmost
-        // printf("j = %d, min = %d, max = %d, n = %d\n", j, min, max, n);
         if (min > 1) {
             d[min - 1] = std::numeric_limits<uint32_t>::max();
         }
@@ -111,18 +83,4 @@ std::optional<uint32_t> vespalib::Fuzzy::levenstein_distance(const std::vector<u
         return {p[n]};
     }
     return std::nullopt;
-}
-
-bool vespalib::Fuzzy::isMatch(std::string_view src) const {
-    std::vector<uint32_t> srcCodepoints = folded_codepoints(src);
-    return levenstein_distance(_folded_term_codepoints, srcCodepoints, _edit_distance).has_value();
-}
-
-vespalib::string vespalib::Fuzzy::getPrefix() const {
-    vespalib::string prefix;
-    Utf8Writer writer(prefix);
-    for (uint8_t i=0; i <_prefix_size && i <_folded_term_codepoints.size(); ++i) {
-        writer.putChar(_folded_term_codepoints.at(i));
-    }
-    return prefix;
 }

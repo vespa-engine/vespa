@@ -62,7 +62,7 @@ SingleValueStringAttributeT<B>::StringTemplSearchContext::StringTemplSearchConte
             auto comp = enumStore.make_folded_comparator_prefix(prefix.c_str());
             lookupRange(comp, comp);
         } else if (this->isFuzzy()) {
-            vespalib::string prefix(this->getFuzzy().getPrefix());
+            vespalib::string prefix(this->getFuzzyMatcher().getPrefix());
             auto comp = enumStore.make_folded_comparator_prefix(prefix.c_str());
             lookupRange(comp, comp);
         } else {
