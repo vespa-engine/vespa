@@ -49,7 +49,7 @@ public class QueryProfileProperties extends Properties {
     }
 
     public QueryProfileProperties(CompiledQueryProfile profile, Embedder embedder) {
-        this(profile, Map.of(Embedder.defaultEmbedderName, embedder));
+        this(profile, Map.of(Embedder.defaultEmbedderId, embedder));
     }
 
     /** Creates an instance from a profile, throws an exception if the given profile is null */

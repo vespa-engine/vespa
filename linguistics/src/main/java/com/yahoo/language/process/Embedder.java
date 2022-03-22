@@ -16,14 +16,14 @@ import java.util.Map;
 public interface Embedder {
 
     /** Name of embedder when none is explicity given */
-    String defaultEmbedderName = "defaultEmbedder";
+    String defaultEmbedderId = "default";
 
     /** An instance of this which throws IllegalStateException if attempted used */
     Embedder throwsOnUse = new FailingEmbedder();
 
     /** Returns this embedder instance as a map with the default embedder name */
     default Map<String, Embedder> asMap() {
-        return asMap(defaultEmbedderName);
+        return asMap(defaultEmbedderId);
     }
 
     /** Returns this embedder instance as a map with the given name */

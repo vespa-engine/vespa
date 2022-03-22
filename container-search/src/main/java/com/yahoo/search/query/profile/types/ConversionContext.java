@@ -19,7 +19,7 @@ public class ConversionContext {
 
     public ConversionContext(String destination, CompiledQueryProfileRegistry registry, Embedder embedder,
                              Map<String, String> context) {
-        this(destination, registry, Map.of(Embedder.defaultEmbedderName, embedder), context);
+        this(destination, registry, Map.of(Embedder.defaultEmbedderId, embedder), context);
     }
 
     public ConversionContext(String destination, CompiledQueryProfileRegistry registry,

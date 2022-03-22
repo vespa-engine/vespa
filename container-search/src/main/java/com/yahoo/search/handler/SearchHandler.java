@@ -721,7 +721,7 @@ public class SearchHandler extends LoggingRequestHandler {
 
     private static ComponentRegistry<Embedder> toRegistry(Embedder embedder) {
         ComponentRegistry<Embedder> emb = new ComponentRegistry<>();
-        emb.register(new ComponentId(Embedder.defaultEmbedderName), embedder);
+        emb.register(new ComponentId(Embedder.defaultEmbedderId), embedder);
         return emb;
     }
 

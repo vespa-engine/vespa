@@ -37,7 +37,7 @@ public class QueryProperties extends Properties {
     private final Map<String, Embedder> embedders;
 
     public QueryProperties(Query query, CompiledQueryProfileRegistry profileRegistry, Embedder embedder) {
-        this(query, profileRegistry, Map.of(Embedder.defaultEmbedderName, embedder));
+        this(query, profileRegistry, Map.of(Embedder.defaultEmbedderId, embedder));
     }
 
     public QueryProperties(Query query, CompiledQueryProfileRegistry profileRegistry, Map<String, Embedder> embedders) {

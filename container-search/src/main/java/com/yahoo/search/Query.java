@@ -1171,7 +1171,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         public CompiledQueryProfile getQueryProfile() { return queryProfile; }
 
         public Builder setEmbedder(Embedder embedder) {
-            return setEmbedders(Map.of(Embedder.defaultEmbedderName, embedder));
+            return setEmbedders(Map.of(Embedder.defaultEmbedderId, embedder));
         }
 
         public Builder setEmbedders(Map<String, Embedder> embedders) {
