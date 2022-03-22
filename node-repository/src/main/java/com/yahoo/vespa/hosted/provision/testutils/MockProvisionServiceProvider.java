@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.testutils;
 
 import com.google.inject.Inject;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerServiceMock;
 import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
@@ -38,7 +37,7 @@ public class MockProvisionServiceProvider implements ProvisionServiceProvider {
     }
 
     @Override
-    public Optional<LoadBalancerService> getLoadBalancerService(NodeRepository nodeRepository) {
+    public Optional<LoadBalancerService> getLoadBalancerService() {
         return loadBalancerService;
     }
 

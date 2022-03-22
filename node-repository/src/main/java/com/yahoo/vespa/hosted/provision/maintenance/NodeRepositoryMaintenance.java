@@ -66,7 +66,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         maintainers.add(new ScalingSuggestionsMaintainer(nodeRepository, defaults.scalingSuggestionsInterval, metric));
         maintainers.add(new SwitchRebalancer(nodeRepository, defaults.switchRebalancerInterval, metric, deployer));
 
-        provisionServiceProvider.getLoadBalancerService(nodeRepository)
+        provisionServiceProvider.getLoadBalancerService()
                                 .map(lbService -> new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService, metric))
                                 .ifPresent(maintainers::add);
         provisionServiceProvider.getHostProvisioner()
