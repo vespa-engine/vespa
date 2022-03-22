@@ -375,7 +375,7 @@
       "public abstract com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)"
     ],
     "fields": [
-      "public static final java.lang.String defaultEmbedderName",
+      "public static final java.lang.String defaultEmbedderId",
       "public static final com.yahoo.language.process.Embedder throwsOnUse"
     ]
   },
