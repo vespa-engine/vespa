@@ -74,7 +74,7 @@ struct HnswGraph {
         return LevelArrayRef();
     }
 
-    LevelArrayRef get_level_array(uint32_t docid) {
+    LevelArrayRef get_level_array(uint32_t docid) const {
         auto node_ref = get_node_ref(docid);
         return get_level_array(node_ref);
     }
@@ -94,7 +94,7 @@ struct HnswGraph {
         return LinkArrayRef();
     }
 
-    LinkArrayRef get_link_array(uint32_t docid, uint32_t level) {
+    LinkArrayRef get_link_array(uint32_t docid, uint32_t level) const {
         auto levels = get_level_array(docid);
         return get_link_array(levels, level);
     }
