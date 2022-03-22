@@ -214,9 +214,9 @@ Domain::triggerSyncNow(std::unique_ptr<vespalib::IDestructorCallback> after_sync
         std::unique_lock guard(_currentChunkMutex);
         commitAndTransferResponses(guard);
     }
-    _singleCommitter->execute(makeLambdaTask([after_sync=std::move(after_sync), domainPart=getActivePart()]() {
+    _singleCommitter->execute(makeLambdaTask([this, after_sync=std::move(after_sync)]() {
         (void) after_sync;
-        domainPart->sync();
+        getActivePart()->sync();
     }));
 }
 
