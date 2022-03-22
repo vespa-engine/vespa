@@ -38,8 +38,10 @@ public class VcmrMaintainerTest {
     private VcmrMaintainer maintainer;
     private NodeRepositoryMock nodeRepo;
     private final ZoneId zoneId = ZoneId.from("prod.us-east-3");
+    private final ZoneId zone2 = ZoneId.from("prod.us-west-1");
     private final HostName host1 = HostName.from("host1");
     private final HostName host2 = HostName.from("host2");
+    private final HostName host3 = HostName.from("host3");
     private final String changeRequestId = "id123";
 
     @Before
@@ -55,9 +57,7 @@ public class VcmrMaintainerTest {
         vcmrReport.addVcmr("id123", ZonedDateTime.now(), ZonedDateTime.now());
         var parkedNode = createNode(host1, NodeType.host, Node.State.parked, true);
         var failedNode = createNode(host2, NodeType.host, Node.State.failed, false);
-        Map<String, String> reports = vcmrReport.toNodeReports().entrySet().stream()
-                                                .collect(Collectors.toMap(Map.Entry::getKey,
-                                                                          kv -> kv.getValue().toString()));
+        var reports = vcmrReport.toNodeReports();
         parkedNode = Node.builder(parkedNode)
                          .reports(reports)
                          .build();
@@ -89,6 +89,7 @@ public class VcmrMaintainerTest {
         maintainer.maintain();
 
         var writtenChangeRequest = tester.curator().readChangeRequest(changeRequestId).get();
+        assertEquals(2, writtenChangeRequest.getHostActionPlan().size());
         var configAction = writtenChangeRequest.getHostActionPlan().get(0);
         var tenantHostAction = writtenChangeRequest.getHostActionPlan().get(1);
         assertEquals(State.REQUIRES_OPERATOR_ACTION, configAction.getState());
@@ -201,6 +202,24 @@ public class VcmrMaintainerTest {
         assertFalse(retiringNode.wantToRetire());
     }
 
+    @Test
+    public void handle_multizone_vcmr() {
+        var node1 = createNode(host1, NodeType.config, Node.State.active, false);
+        var node2 = createNode(host2, NodeType.host, Node.State.active, false);
+        var node3 = createNode(host3, NodeType.host, Node.State.active, false);
+        nodeRepo.putNodes(zoneId, List.of(node1, node2));
+        nodeRepo.putNodes(zone2, List.of(node3));
+        nodeRepo.hasSpareCapacity(true);
+
+        tester.curator().writeChangeRequest(futureChangeRequest());
+        maintainer.maintain();
+
+        var writtenChangeRequest = tester.curator().readChangeRequest(changeRequestId).get();
+        var actionPlan = writtenChangeRequest.getHostActionPlan();
+        assertEquals(State.REQUIRES_OPERATOR_ACTION, actionPlan.get(0).getState());
+        assertEquals(State.PENDING_RETIREMENT, actionPlan.get(1).getState());
+        assertEquals(State.PENDING_RETIREMENT, actionPlan.get(2).getState());
+    }
 
     private VespaChangeRequest canceledChangeRequest() {
         return newChangeRequest(ChangeRequestSource.Status.CANCELED, State.RETIRED, State.RETIRING, ZonedDateTime.now());
@@ -233,7 +252,7 @@ public class VcmrMaintainerTest {
                 changeRequestId,
                 source,
                 List.of("switch1"),
-                List.of("host1", "host2"),
+                List.of("host1", "host2", "host3"),
                 ChangeRequest.Approval.REQUESTED,
                 ChangeRequest.Impact.VERY_HIGH,
                 VespaChangeRequest.Status.IN_PROGRESS,
