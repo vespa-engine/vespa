@@ -15,6 +15,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -126,8 +127,10 @@ public class OnnxModelProbe {
     }
 
     private static String callVespaAnalyzeOnnxModel(String jsonInput) throws IOException, InterruptedException {
-        ProcessBuilder processBuilder = new ProcessBuilder(binary, "--probe-types");
         StringBuilder output = new StringBuilder();
+
+        ProcessBuilder processBuilder = new ProcessBuilder(binary, "--probe-types");
+        processBuilder.redirectError(ProcessBuilder.Redirect.DISCARD);
         Process process = processBuilder.start();
 
         // Write json array to process stdin
@@ -142,6 +145,7 @@ public class OnnxModelProbe {
             if (b == -1) break;
             output.append((char)b);
         }
+
         int returnCode = process.waitFor();
         if (returnCode != 0) {
             throw new IllegalArgumentException("Error from '" + binary + "'. Return code: " + returnCode + ". Output:\n" + output);
