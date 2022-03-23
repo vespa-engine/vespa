@@ -245,6 +245,7 @@ GroupingOperation eachOperation(GroupingOperation parent) :
 
 void operationBody(GroupingOperation parent) :
 {
+    ConstantValue<?> maxOperand = null;
     String str;
     Number num;
     GroupingExpression exp;
@@ -255,7 +256,14 @@ void operationBody(GroupingOperation parent) :
     ( ( <ACCURACY>  lbrace() num = number()                               rbrace() { parent.setAccuracy(num.doubleValue()); } ) |
       ( <ALIAS>     lbrace() str = identifier() comma() exp = exp(parent) rbrace() { parent.putAlias(str, exp); }             ) |
       ( <HINT>      lbrace() str = identifier()                           rbrace() { parent.addHint(str); }                   ) |
-      ( <MAX>       lbrace() num = number()                               rbrace() { parent.setMax(num.intValue()); }         ) |
+      ( <MAX>       lbrace() ( maxOperand = infinitePositiveValue() | maxOperand = constantValue() ) rbrace()
+      {
+            if (maxOperand instanceof InfiniteValue) {
+                parent.setMax(GroupingOperation.UNLIMITED_MAX);
+            } else {
+                parent.setMax(((Number)maxOperand.getValue()).intValue());
+            }
+      } ) |
       ( <ORDER>     lbrace() lst = expList(parent)                        rbrace() { parent.addOrderBy(lst); }                ) |
       ( <OUTPUT>    lbrace() lst = expList(parent)                        rbrace() { parent.addOutputs(lst); }                ) |
       ( <PRECISION> lbrace() num = number()                               rbrace() { parent.setPrecision(num.intValue()); }   ) |

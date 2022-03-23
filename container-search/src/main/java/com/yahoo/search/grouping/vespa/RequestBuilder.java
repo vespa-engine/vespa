@@ -179,14 +179,14 @@ class RequestBuilder {
                 grpLevel.setPrecision(frame.state.precision + offset);
                 frame.state.precision = null;
             }
-            int max = -1;
+            int max = GroupingOperation.UNSPECIFIED_MAX;
             if (frame.state.max != null) {
                 max = frame.state.max;
                 frame.state.max = null;
             } else if (defaultMaxGroups >= 0) {
                 max = defaultMaxGroups;
             }
-            if (max >= 0) {
+            if (max >= 0 && max != GroupingOperation.UNLIMITED_MAX) {
                 transform.putMax(tag, max, "group list");
                 grpLevel.setMaxGroups(LOOKAHEAD + max + offset);
             }
@@ -246,11 +246,12 @@ class RequestBuilder {
     }
     private void resolveMax(BuildFrame frame) {
         if (frame.astNode.hasMax()) {
-            int max = frame.astNode.getMax();
             if (isTopNAllowed(frame)) {
-                frame.grouping.setTopN(computeNewTopN(frame.grouping.getTopN(), max));
+                if (!frame.astNode.hasUnlimitedMax()) {
+                    frame.grouping.setTopN(computeNewTopN(frame.grouping.getTopN(), frame.astNode.getMax()));
+                }
             } else {
-                frame.state.max = max;
+                frame.state.max = frame.astNode.getMax();
             }
         }
     }
@@ -297,14 +298,14 @@ class RequestBuilder {
                 throw new UnsupportedOperationException("Can not label expression '" + exp + "'.");
             }
             HitsAggregationResult hits = (HitsAggregationResult)result;
-            int max = -1;
+            int max = GroupingOperation.UNSPECIFIED_MAX;
             if (frame.state.max != null) {
                 max = frame.state.max;
                 frame.state.max = null;
             } else if (defaultMaxHits >= 0) {
                 max = defaultMaxHits;
             }
-            if (max >= 0) {
+            if (max >= 0 && max != GroupingOperation.UNLIMITED_MAX) {
                 transform.putMax(tag, max, "hit list");
                 int offset = transform.getOffset(tag);
                 hits.setMaxHits(LOOKAHEAD + max + offset);
