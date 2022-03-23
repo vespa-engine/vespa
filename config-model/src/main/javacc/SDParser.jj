@@ -826,9 +826,10 @@ SDDocumentType structDefinition(Schema schema, SDDocumentType repo) :
             // empty
         }
         SDDocumentType sdtype = repo.getOwnedType(struct.getDocumentName());
-        DataType stype = sdtype != null
-                         ? sdtype.getStruct()
-                         : TemporaryStructuredDataType.create(struct.getName());
+        if (sdtype != null) {
+            throw new ParseException("Struct '" + name + "' is already defined.");
+        }
+        DataType stype = new OwnedTemporaryType(name, repo.getName());
         struct.setStruct(stype);
         return struct;
     }
@@ -847,7 +848,6 @@ DataType dataType() :
     DataType arrayType = null;
     DataType wsetType = null;
     TensorType tensorType;
-    TemporaryStructuredDataType referenceType;
     String referencedDoc;
 }
 {
@@ -863,9 +863,9 @@ DataType dataType() :
         DataType type = VespaDocumentType.INSTANCE.getDataType(typeName);
 
         if (type == null) {
-            // we are basically creating TemporaryStructDataType instances for ANYTHING here!!
+            // we are basically creating TemporaryUnknownType instances for ANYTHING here!!
             // we must do this and clean them up later.
-            type = TemporaryStructuredDataType.create(typeName);
+            type = new TemporaryUnknownType(typeName);
         }
 
         if (isArrayOldStyle) {
