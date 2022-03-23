@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespamalloc/malloc/allocchunk.h>
 #include <vespamalloc/malloc/mmappool.h>
+#include <unistd.h>
 
 TEST("verify lock freeness of atomics"){
     {
@@ -23,29 +24,32 @@ TEST("verify lock freeness of atomics"){
 
 TEST("test explicit mmap/munmap") {
     vespamalloc::MMapPool mmapPool;
+    size_t page_size = getpagesize();
+    size_t mmap1_size = 3 * page_size;
+    size_t mmap2_size = 7 * page_size;
     EXPECT_EQUAL(0u, mmapPool.getNumMappings());
     EXPECT_EQUAL(0u, mmapPool.getMmappedBytes());
 
-    void * mmap1 = mmapPool.mmap(0xe000);
+    void * mmap1 = mmapPool.mmap(mmap1_size);
     EXPECT_EQUAL(1u, mmapPool.getNumMappings());
-    EXPECT_EQUAL(0xe000u, mmapPool.getMmappedBytes());
-    EXPECT_EQUAL(0xe000u, mmapPool.get_size(mmap1));
+    EXPECT_EQUAL(mmap1_size, mmapPool.getMmappedBytes());
+    EXPECT_EQUAL(mmap1_size, mmapPool.get_size(mmap1));
     mmapPool.unmap(mmap1);
     EXPECT_EQUAL(0u, mmapPool.getNumMappings());
     EXPECT_EQUAL(0u, mmapPool.getMmappedBytes());
-    mmap1 = mmapPool.mmap(0xe000);
+    mmap1 = mmapPool.mmap(mmap1_size);
     EXPECT_EQUAL(1u, mmapPool.getNumMappings());
-    EXPECT_EQUAL(0xe000u, mmapPool.getMmappedBytes());
-    EXPECT_EQUAL(0xe000u, mmapPool.get_size(mmap1));
+    EXPECT_EQUAL(mmap1_size, mmapPool.getMmappedBytes());
+    EXPECT_EQUAL(mmap1_size, mmapPool.get_size(mmap1));
 
-    void * mmap2 = mmapPool.mmap(0x1e000);
+    void * mmap2 = mmapPool.mmap(mmap2_size);
     EXPECT_EQUAL(2u, mmapPool.getNumMappings());
-    EXPECT_EQUAL(0x2c000u, mmapPool.getMmappedBytes());
-    EXPECT_EQUAL(0xe000u, mmapPool.get_size(mmap1));
-    EXPECT_EQUAL(0x1e000u, mmapPool.get_size(mmap2));
+    EXPECT_EQUAL(mmap1_size + mmap2_size, mmapPool.getMmappedBytes());
+    EXPECT_EQUAL(mmap1_size, mmapPool.get_size(mmap1));
+    EXPECT_EQUAL(mmap2_size, mmapPool.get_size(mmap2));
     mmapPool.unmap(mmap1);
     EXPECT_EQUAL(1u, mmapPool.getNumMappings());
-    EXPECT_EQUAL(0x1e000u, mmapPool.getMmappedBytes());
+    EXPECT_EQUAL(mmap2_size, mmapPool.getMmappedBytes());
     mmapPool.unmap(mmap2);
     EXPECT_EQUAL(0u, mmapPool.getNumMappings());
     EXPECT_EQUAL(0u, mmapPool.getMmappedBytes());
