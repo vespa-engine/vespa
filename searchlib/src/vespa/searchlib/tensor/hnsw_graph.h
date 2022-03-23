@@ -56,11 +56,15 @@ struct HnswGraph {
     void trim_node_refs_size();
 
     NodeRef get_node_ref(uint32_t docid) const {
-        return node_refs[docid].load_acquire();
+        return node_refs[docid].load_relaxed();
+    }
+
+    NodeRef acquire_node_ref(uint32_t docid) const {
+        return node_refs.acquire_elem_ref(docid).load_acquire();
     }
 
     bool still_valid(uint32_t docid, NodeRef node_ref) const {
-        return node_ref.valid() && (get_node_ref(docid) == node_ref);
+        return node_ref.valid() && (acquire_node_ref(docid) == node_ref);
     }
 
     LevelArrayRef get_level_array(NodeRef node_ref) const {
@@ -72,6 +76,11 @@ struct HnswGraph {
 
     LevelArrayRef get_level_array(uint32_t docid) const {
         auto node_ref = get_node_ref(docid);
+        return get_level_array(node_ref);
+    }
+
+    LevelArrayRef acquire_level_array(uint32_t docid) const {
+        auto node_ref = acquire_node_ref(docid);
         return get_level_array(node_ref);
     }
 
@@ -87,6 +96,11 @@ struct HnswGraph {
 
     LinkArrayRef get_link_array(uint32_t docid, uint32_t level) const {
         auto levels = get_level_array(docid);
+        return get_link_array(levels, level);
+    }
+
+    LinkArrayRef acquire_link_array(uint32_t docid, uint32_t level) const {
+        auto levels = acquire_level_array(docid);
         return get_link_array(levels, level);
     }
 
@@ -124,7 +138,7 @@ struct HnswGraph {
         while (true) {
             uint64_t value = get_entry_atomic();
             entry.docid = (uint32_t)value;
-            entry.node_ref = get_node_ref(entry.docid);
+            entry.node_ref = acquire_node_ref(entry.docid);
             entry.level = (int32_t)(value >> 32);
             if ((entry.docid == 0)
                 && (entry.level == -1)
@@ -144,7 +158,7 @@ struct HnswGraph {
         }
     }
 
-    size_t size() const { return node_refs.size(); }
+    size_t size() const { return node_refs_size.load(std::memory_order_acquire); }
 
     struct Histograms {
         std::vector<uint32_t> level_histogram;

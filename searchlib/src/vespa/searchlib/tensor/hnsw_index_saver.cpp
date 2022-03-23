@@ -14,7 +14,7 @@ count_valid_link_arrays(const HnswGraph & graph) {
     size_t count(0);
     size_t num_nodes = graph.node_refs.size();
     for (size_t i = 0; i < num_nodes; ++i) {
-        auto node_ref = graph.node_refs[i].load_acquire();
+        auto node_ref = graph.get_node_ref(i);
         if (node_ref.valid()) {
             count += graph.nodes.get(node_ref).size();
         }
@@ -47,11 +47,11 @@ HnswIndexSaver::HnswIndexSaver(const HnswGraph &graph)
     _meta_data.nodes.reserve(num_nodes+1);
     for (size_t i = 0; i < num_nodes; ++i) {
         _meta_data.nodes.push_back(_meta_data.refs.size());
-        auto node_ref = graph.node_refs[i].load_acquire();
+        auto node_ref = graph.get_node_ref(i);
         if (node_ref.valid()) {
             auto levels = graph.nodes.get(node_ref);
             for (const auto& links_ref : levels) {
-                _meta_data.refs.push_back(links_ref.load_acquire());
+                _meta_data.refs.push_back(links_ref.load_relaxed());
             }
         }
     }

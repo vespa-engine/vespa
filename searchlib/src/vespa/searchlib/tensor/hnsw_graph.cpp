@@ -26,7 +26,7 @@ HnswGraph::make_node_for_document(uint32_t docid, uint32_t num_levels)
 {
     node_refs.ensure_size(docid + 1, AtomicEntryRef());
     // A document cannot be added twice.
-    assert(!node_refs[docid].load_acquire().valid());
+    assert(!get_node_ref(docid).valid());
     // Note: The level array instance lives as long as the document is present in the index.
     vespalib::Array<AtomicEntryRef> levels(num_levels, AtomicEntryRef());
     auto node_ref = nodes.add(levels);
@@ -40,7 +40,7 @@ HnswGraph::make_node_for_document(uint32_t docid, uint32_t num_levels)
 void
 HnswGraph::remove_node_for_document(uint32_t docid)
 {
-    auto node_ref = node_refs[docid].load_acquire();
+    auto node_ref = get_node_ref(docid);
     assert(node_ref.valid());
     auto levels = nodes.get(node_ref);
     vespalib::datastore::EntryRef invalid;
@@ -48,7 +48,7 @@ HnswGraph::remove_node_for_document(uint32_t docid)
     // Ensure data referenced through the old ref can be recycled:
     nodes.remove(node_ref);
     for (size_t i = 0; i < levels.size(); ++i) {
-        auto old_links_ref = levels[i].load_acquire();
+        auto old_links_ref = levels[i].load_relaxed();
         links.remove(old_links_ref);
     }
     if (docid + 1 == node_refs_size.load(std::memory_order_relaxed)) {
@@ -60,7 +60,7 @@ void
 HnswGraph::trim_node_refs_size()
 {
     uint32_t check_doc_id = node_refs_size.load(std::memory_order_relaxed) - 1;
-    while (check_doc_id > 0u && !node_refs[check_doc_id].load_relaxed().valid()) {
+    while (check_doc_id > 0u && !get_node_ref(check_doc_id).valid()) {
         --check_doc_id;
     }
     node_refs_size.store(check_doc_id + 1, std::memory_order_release);
@@ -70,11 +70,11 @@ void
 HnswGraph::set_link_array(uint32_t docid, uint32_t level, const LinkArrayRef& new_links)
 {
     auto new_links_ref = links.add(new_links);
-    auto node_ref = node_refs[docid].load_acquire();
+    auto node_ref = get_node_ref(docid);
     assert(node_ref.valid());
     auto levels = nodes.get_writable(node_ref);
     assert(level < levels.size());
-    auto old_links_ref = levels[level].load_acquire();
+    auto old_links_ref = levels[level].load_relaxed();
     levels[level].store_release(new_links_ref);
     links.remove(old_links_ref);
 }
@@ -83,9 +83,9 @@ HnswGraph::Histograms
 HnswGraph::histograms() const
 {
     Histograms result;
-    size_t num_nodes = node_refs.size();
+    size_t num_nodes = node_refs_size.load(std::memory_order_acquire);
     for (size_t i = 0; i < num_nodes; ++i) {
-        auto node_ref = node_refs[i].load_acquire();
+        auto node_ref = acquire_node_ref(i);
         if (node_ref.valid()) {
             uint32_t levels = 0;
             uint32_t l0links = 0;
