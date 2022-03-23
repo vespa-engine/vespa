@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.resource;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.math.BigDecimal;
@@ -19,11 +20,12 @@ public class CostInfo {
     private final BigDecimal cpuCost;
     private final BigDecimal memoryCost;
     private final BigDecimal diskCost;
+    private final NodeResources.Architecture architecture;
 
 
     public CostInfo(ApplicationId applicationId, ZoneId zoneId,
                     BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours,
-                    BigDecimal cpuCost, BigDecimal memoryCost, BigDecimal diskCost) {
+                    BigDecimal cpuCost, BigDecimal memoryCost, BigDecimal diskCost, NodeResources.Architecture architecture) {
         this.applicationId = applicationId;
         this.zoneId = zoneId;
         this.cpuHours = cpuHours;
@@ -32,6 +34,7 @@ public class CostInfo {
         this.cpuCost = cpuCost;
         this.memoryCost = memoryCost;
         this.diskCost = diskCost;
+        this.architecture = architecture;
     }
 
     public ApplicationId getApplicationId() {
@@ -68,6 +71,10 @@ public class CostInfo {
 
     public BigDecimal getTotalCost() {
         return cpuCost.add(memoryCost).add(diskCost);
+    }
+
+    public NodeResources.Architecture getArchitecture() {
+        return architecture;
     }
 
 }

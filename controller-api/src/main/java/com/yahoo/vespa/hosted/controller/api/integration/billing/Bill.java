@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 
@@ -187,6 +188,7 @@ public class Bill {
         private BigDecimal cpuCost;
         private BigDecimal memoryCost;
         private BigDecimal diskCost;
+        private NodeResources.Architecture architecture;
 
         public LineItem(String id, String description, BigDecimal amount, String plan, String agent, ZonedDateTime addedAt) {
             this.id = id;
@@ -198,7 +200,7 @@ public class Bill {
         }
 
         public LineItem(String id, String description, BigDecimal amount, String plan, String agent, ZonedDateTime addedAt, ZonedDateTime startedAt, ZonedDateTime endedAt, ApplicationId applicationId, ZoneId zoneId,
-                        BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours, BigDecimal cpuCost, BigDecimal memoryCost, BigDecimal diskCost) {
+                        BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours, BigDecimal cpuCost, BigDecimal memoryCost, BigDecimal diskCost, NodeResources.Architecture architecture) {
             this(id, description, amount, plan, agent, addedAt);
             this.startedAt = startedAt;
             this.endedAt = endedAt;
@@ -214,6 +216,7 @@ public class Bill {
             this.cpuCost = cpuCost;
             this.memoryCost = memoryCost;
             this.diskCost = diskCost;
+            this.architecture = architecture;
         }
 
         /** The opaque ID of this */
@@ -288,6 +291,10 @@ public class Bill {
 
         public Optional<BigDecimal> getDiskCost() {
             return Optional.ofNullable(diskCost);
+        }
+
+        public Optional<NodeResources.Architecture> getArchitecture() {
+            return Optional.ofNullable(architecture);
         }
 
         @Override
