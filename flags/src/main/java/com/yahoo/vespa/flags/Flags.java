@@ -370,7 +370,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag REUSE_NODE_INDEXES = defineFeatureFlag(
-            "reuse-node-indexes", false,
+            "reuse-node-indexes", true,
             List.of("bratseth"), "2022-02-25", "2022-04-25",
             "Whether we should reuse earlier indexes when allocating new nodes",
             "Takes effect immediately",
