@@ -179,16 +179,10 @@ class RequestBuilder {
                 grpLevel.setPrecision(frame.state.precision + offset);
                 frame.state.precision = null;
             }
-            int max = GroupingOperation.UNSPECIFIED_MAX;
             if (frame.state.max != null) {
-                max = frame.state.max;
+                transform.putMax(tag, frame.state.max, "group list");
+                grpLevel.setMaxGroups(LOOKAHEAD + frame.state.max + offset);
                 frame.state.max = null;
-            } else if (defaultMaxGroups >= 0) {
-                max = defaultMaxGroups;
-            }
-            if (max >= 0 && max != GroupingOperation.UNLIMITED_MAX) {
-                transform.putMax(tag, max, "group list");
-                grpLevel.setMaxGroups(LOOKAHEAD + max + offset);
             }
             frame.grouping.getLevels().add(grpLevel);
         }
@@ -245,13 +239,19 @@ class RequestBuilder {
         return (oldMax < 0) ? newMax : Math.min(oldMax, newMax);
     }
     private void resolveMax(BuildFrame frame) {
-        if (frame.astNode.hasMax()) {
-            if (isTopNAllowed(frame)) {
-                if (!frame.astNode.hasUnlimitedMax()) {
-                    frame.grouping.setTopN(computeNewTopN(frame.grouping.getTopN(), frame.astNode.getMax()));
-                }
-            } else {
+        if (isTopNAllowed(frame)) {
+            if (frame.astNode.hasMax() && !frame.astNode.hasUnlimitedMax()) {
+                frame.grouping.setTopN(computeNewTopN(frame.grouping.getTopN(), frame.astNode.getMax()));
+            }
+        } else {
+            if (frame.astNode.hasUnlimitedMax()) {
+                frame.state.max = null;
+            } else if (frame.astNode.hasMax()) {
                 frame.state.max = frame.astNode.getMax();
+            } else if (frame.state.groupBy != null && defaultMaxGroups != -1) {
+                frame.state.max = defaultMaxGroups;
+            } else if (frame.state.groupBy == null && defaultMaxHits != -1) {
+                frame.state.max = defaultMaxHits;
             }
         }
     }
@@ -298,17 +298,11 @@ class RequestBuilder {
                 throw new UnsupportedOperationException("Can not label expression '" + exp + "'.");
             }
             HitsAggregationResult hits = (HitsAggregationResult)result;
-            int max = GroupingOperation.UNSPECIFIED_MAX;
             if (frame.state.max != null) {
-                max = frame.state.max;
-                frame.state.max = null;
-            } else if (defaultMaxHits >= 0) {
-                max = defaultMaxHits;
-            }
-            if (max >= 0 && max != GroupingOperation.UNLIMITED_MAX) {
-                transform.putMax(tag, max, "hit list");
+                transform.putMax(tag, frame.state.max, "hit list");
                 int offset = transform.getOffset(tag);
-                hits.setMaxHits(LOOKAHEAD + max + offset);
+                hits.setMaxHits(LOOKAHEAD + frame.state.max + offset);
+                frame.state.max = null;
             }
             transform.putLabel(group.getTag(), tag, frame.state.label, "hit list");
         } else {
