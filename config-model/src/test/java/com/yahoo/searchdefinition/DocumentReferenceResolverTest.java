@@ -4,7 +4,6 @@ package com.yahoo.searchdefinition;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
-import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import org.junit.Rule;

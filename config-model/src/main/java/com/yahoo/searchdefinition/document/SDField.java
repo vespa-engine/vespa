@@ -7,9 +7,10 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.StructDataType;
-import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
+import com.yahoo.documentmodel.OwnedTemporaryType;
+import com.yahoo.documentmodel.TemporaryUnknownType;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
@@ -307,7 +308,11 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
                 return;
             }
             SDDocumentType subType = sdoc != null ? sdoc.getType(dataType.getName()) : null;
-            if (dataType instanceof TemporaryStructuredDataType && subType != null) {
+            if (dataType instanceof TemporaryUnknownType && subType != null) {
+                for (Field field : subType.fieldSet()) {
+                    supplyStructField.accept(field.getName(), field.getDataType());
+                }
+            } else if (dataType instanceof OwnedTemporaryType && subType != null) {
                 for (Field field : subType.fieldSet()) {
                     supplyStructField.accept(field.getName(), field.getDataType());
                 }

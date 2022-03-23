@@ -8,7 +8,6 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.PrimitiveDataType;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.document.StructuredDataType;
-import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.BoolFieldValue;

@@ -5,7 +5,6 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
-import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.searchdefinition.Application;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDDocumentType;

@@ -7,7 +7,6 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
-import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.searchdefinition.Application;
 import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.DocumentReferences;

@@ -8,6 +8,8 @@ import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.documentmodel.DataTypeCollection;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.documentmodel.NewDocumentType;
+import com.yahoo.documentmodel.OwnedTemporaryType;
+import com.yahoo.documentmodel.TemporaryUnknownType;
 import com.yahoo.documentmodel.VespaDocumentType;
 import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.vespa.documentmodel.DocumentModel;
@@ -111,6 +113,12 @@ public class DocumentTypes {
             built.add(type.getId());
             DocumenttypesConfig.Documenttype.Datatype.Builder dataTypeBuilder = new DocumenttypesConfig.Documenttype.Datatype.Builder();
             dataTypeBuilder.id(type.getId());
+            if (type instanceof TemporaryUnknownType) {
+                throw new IllegalArgumentException("Can not create config for temporary data type: " + type.getName());
+            }
+            if (type instanceof OwnedTemporaryType) {
+                throw new IllegalArgumentException("Can not create config for temporary data type: " + type.getName());
+            }
             if (type instanceof StructDataType) {
                 buildConfig((StructDataType) type, dataTypeBuilder, documentBuilder, built);
             } else if (type instanceof ArrayDataType) {
