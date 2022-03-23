@@ -69,7 +69,7 @@ public class IntermediateParserTestCase {
              "  }",
              "}");
         var e = assertThrows(IllegalArgumentException.class, () -> parseString(input));
-        assertEquals("schema 'foo' error: already has document foo so cannot add document foo2", e.getMessage());
+        assertEquals("schema 'foo' error: already has document 'foo' so cannot add document 'foo2'", e.getMessage());
     }
 
     void checkFileParses(String fileName) throws Exception {
