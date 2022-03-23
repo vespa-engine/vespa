@@ -15,6 +15,7 @@ public class ParsedBlock {
     }
 
     public final String name() { return name; }
+    public final String blockType() { return blockType; }
 
     protected void verifyThat(boolean check, String msg, Object ... msgDetails) {
         if (check) return;
@@ -28,5 +29,8 @@ public class ParsedBlock {
         throw new IllegalArgumentException(buf.toString());
     }
 
+    public String toString() {
+        return blockType + " '" + name + "'";
+    }
 }
 
