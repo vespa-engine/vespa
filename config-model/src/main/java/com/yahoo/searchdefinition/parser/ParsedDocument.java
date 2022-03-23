@@ -62,8 +62,9 @@ public class ParsedDocument extends ParsedBlock {
     void inherit(String other) { inherited.add(other); }
 
     void addField(ParsedField field) {
-        String fieldName = field.name();
-        verifyThat(! docFields.containsKey(fieldName), "already has field", fieldName);
+        String fieldName = field.name().toLowerCase();
+        verifyThat(! docFields.containsKey(fieldName),
+                   "Duplicate (case insensitively) " + field + " in document type '" + this.name() + "'");
         docFields.put(fieldName, field);
     }
 
@@ -80,8 +81,6 @@ public class ParsedDocument extends ParsedBlock {
         docAnnotations.put(annName, annotation);
         annotation.tagOwner(this);
     }
-
-    public String toString() { return "document " + name(); }
 
     void resolveInherit(String name, ParsedDocument parsed) {
         verifyThat(inherited.contains(name), "resolveInherit for non-inherited name", name);
