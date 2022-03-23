@@ -2927,6 +2927,7 @@
       "public com.yahoo.search.grouping.request.GroupingOperation setMax(int)",
       "public int getMax()",
       "public boolean hasMax()",
+      "public boolean hasUnlimitedMax()",
       "public com.yahoo.search.grouping.request.GroupingOperation setAccuracy(double)",
       "public double getAccuracy()",
       "public com.yahoo.search.grouping.request.GroupingOperation addOrderBy(com.yahoo.search.grouping.request.GroupingExpression)",
@@ -2951,7 +2952,9 @@
       "public static java.util.List fromStringAsList(java.lang.String)",
       "public bridge synthetic com.yahoo.search.grouping.request.GroupingNode setLabel(java.lang.String)"
     ],
-    "fields": []
+    "fields": [
+      "public static final int UNLIMITED_MAX"
+    ]
   },
   "com.yahoo.search.grouping.request.HourOfDayFunction": {
     "superClass": "com.yahoo.search.grouping.request.FunctionNode",

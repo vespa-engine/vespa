@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -579,6 +580,11 @@ public class GroupingParserTestCase {
         assertIllegalArgument("all(group(debugwait(artist, 3.3, lol)))",
                               "Encountered \" <IDENTIFIER> \"lol\"\" at line 1, column 34");
         assertParse("all(group(artist) each(output(stddev(simple))))");
+
+        // Test max()
+        assertTrue(assertParse("all(group(artist) max(inf))").get(0).hasUnlimitedMax());
+        assertEquals(1, assertParse("all(group(artist) max(1))").get(0).getMax());
+        assertFalse(assertParse("all(group(artist))").get(0).hasMax());
     }
 
     @Test

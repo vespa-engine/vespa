@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
+import com.yahoo.api.annotations.Beta;
 import com.yahoo.collections.LazyMap;
 import com.yahoo.collections.LazySet;
 import com.yahoo.search.grouping.request.parser.GroupingParser;
@@ -24,6 +25,8 @@ import java.util.Set;
  * @author Simon Thoresen Hult
  */
 public abstract class GroupingOperation extends GroupingNode {
+
+    @Beta public static final int UNLIMITED_MAX = Integer.MAX_VALUE;
 
     private final List<GroupingExpression> orderBy = new ArrayList<>();
     private final List<GroupingExpression> outputs = new ArrayList<>();
@@ -268,6 +271,8 @@ public abstract class GroupingOperation extends GroupingNode {
 
     /** Indicates if the 'max' value has been set. */
     public boolean hasMax() { return max >= 0; }
+
+    @Beta public boolean hasUnlimitedMax() { return max == Integer.MAX_VALUE; }
 
     /**
      * Assigns an accuracy value for this. This is a number between 0 and 1 describing the accuracy of the result, which
