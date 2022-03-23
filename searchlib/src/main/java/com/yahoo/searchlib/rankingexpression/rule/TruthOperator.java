@@ -21,7 +21,7 @@ public enum TruthOperator  implements Serializable {
     private final String operatorString;
 
     TruthOperator(String operatorString) {
-        this.operatorString=operatorString;
+        this.operatorString = operatorString;
     }
 
     /** Perform the truth operation on the input */

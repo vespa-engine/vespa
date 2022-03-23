@@ -129,8 +129,8 @@ public final class DoubleValue extends DoubleCompatibleValue {
 
     /** Returns this or a mutable copy assigned the given value */
     private DoubleValue mutable(double value) {
-        DoubleValue mutable=this.asMutable();
-        mutable.value=value;
+        DoubleValue mutable = this.asMutable();
+        mutable.value = value;
         return mutable;
     }
 
@@ -147,7 +147,7 @@ public final class DoubleValue extends DoubleCompatibleValue {
 
     @Override
     public boolean equals(Object other) {
-        if (this==other) return true;
+        if (this == other) return true;
         if ( ! (other instanceof Value)) return false;
         if ( ! ((Value) other).hasDouble()) return false;
         return this.asDouble() == ((Value) other).asDouble();

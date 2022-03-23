@@ -26,10 +26,7 @@ import java.util.Objects;
  */
 public abstract class Item implements Cloneable {
 
-    /**
-     * The definitions in Item.ItemType must match the ones in
-     * searchlib/src/vespa/searchlib/parsequery/parse.h
-     */
+    // These must match the types in searchlib/src/vespa/searchlib/parsequery/parse.h
     public enum ItemType {
         OR(0),
         AND(1),
@@ -70,10 +67,7 @@ public abstract class Item implements Cloneable {
 
     }
 
-    /**
-     * The definitions in Item.ItemCreator must match the ones in
-     * searchlib/src/searchlib/parsequery/parse.h
-     */
+    // These must match the definitions in searchlib/src/searchlib/parsequery/parse.h
     public enum ItemCreator {
 
         ORIG(0),
@@ -266,11 +260,11 @@ public abstract class Item implements Cloneable {
     }
 
     /**
-     * Returns an integer that contains all feature flags for this item. This must be kept in sync with the flags
-     * defined in searchlib/parsequery/parse.h.
+     * Returns an integer that contains all feature flags for this item.
      *
      * @return the feature flags
      */
+    // This must be kept in sync with the flags in searchlib/parsequery/parse.h.
     private byte getFlagsFeature() {
         byte FLAGS_NORANK = 0x01;
         byte FLAGS_SPECIALTOKEN = 0x02;
@@ -419,7 +413,7 @@ public abstract class Item implements Cloneable {
      * the back-end to identify specific items for ranking purposes.
      *
      * @param label label for this item
-     **/
+     */
     public void setLabel(String label) {
         setHasUniqueID(true);
         this.label = label;

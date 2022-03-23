@@ -10,9 +10,7 @@ package com.yahoo.search.grouping.request;
  */
 public class DocIdNsSpecificValue extends DocumentValue {
 
-    /**
-     * Constructs a new instance of this class.
-     */
+    /** Constructs a new instance of this class. */
     public DocIdNsSpecificValue() {
         this(null, null);
     }
