@@ -4,11 +4,12 @@ package com.yahoo.searchdefinition.parser;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.documentmodel.NewDocumentReferenceDataType;
-import com.yahoo.document.StructDataType;
 import com.yahoo.document.PositionDataType;
+import com.yahoo.document.StructDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
+import com.yahoo.documentmodel.OwnedStructDataType;
 import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
 
 import java.util.ArrayList;
@@ -58,7 +59,7 @@ public class ConvertParsedTypes {
             var doc = schema.getDocument();
             for (var struct : doc.getStructs()) {
                 String structId = doc.name() + "->" + struct.name();
-                var dt = new StructDataType(struct.name());
+                var dt = new OwnedStructDataType(struct.name(), doc.name());
                 structsFromSchemas.put(structId, dt);
             }
             for (var annotation : doc.getAnnotations()) {
@@ -72,7 +73,7 @@ public class ConvertParsedTypes {
                 if (withStruct.isPresent()) {
                     ParsedStruct struct = withStruct.get();
                     String structId = doc.name() + "->" + struct.name();
-                    var old = structsFromSchemas.put(structId, new StructDataType(struct.name()));
+                    var old = structsFromSchemas.put(structId, new OwnedStructDataType(struct.name(), doc.name()));
                     assert(old == null);
                 }
             }

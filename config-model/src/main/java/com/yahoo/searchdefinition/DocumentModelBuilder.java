@@ -16,6 +16,7 @@ import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.documentmodel.DataTypeCollection;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.documentmodel.NewDocumentType;
+import com.yahoo.documentmodel.OwnedStructDataType;
 import com.yahoo.documentmodel.OwnedTemporaryType;
 import com.yahoo.documentmodel.TemporaryUnknownType;
 import com.yahoo.documentmodel.VespaDocumentType;
@@ -253,6 +254,17 @@ public class DocumentModelBuilder {
             if (other == null || other == type) {
                 throw new IllegalArgumentException("No replacement found for temporary type: " + type);
             }
+            if (other instanceof OwnedStructDataType) {
+                var owned = (OwnedTemporaryType) type;
+                String ownedBy = owned.getOwnerName();
+                var otherOwned = (OwnedStructDataType) other;
+                String otherOwnedBy = otherOwned.getOwnerName();
+                if (! ownedBy.equals(otherOwnedBy)) {
+                    throw new IllegalArgumentException("Wrong document for type: " + otherOwnedBy + " but expected " + ownedBy);
+                }
+            } else {
+                throw new IllegalArgumentException("Found wrong sort of type: " + other + " [" + other.getClass() + "]");
+            }
             type = other;
         } else if (type instanceof DocumentType) {
             DataType other = getDocumentType(docs, type.getName());
@@ -379,6 +391,8 @@ public class DocumentModelBuilder {
                 for (SDDocumentType proxy : type.getInheritedTypes()) {
                     var inherited = (StructDataType) targetDt.getDataTypeRecursive(proxy.getName());
                     var converted = (StructDataType) targetDt.getDataType(type.getName());
+                    assert(converted instanceof OwnedStructDataType);
+                    assert(inherited instanceof OwnedStructDataType);
                     if (! converted.inherits(inherited)) {
                         converted.inherit(inherited);
                     }
@@ -397,15 +411,15 @@ public class DocumentModelBuilder {
                         StructDataType s = handleStruct(sa.getSdDocType());
                         annotation.setDataType(s);
                         if ((sa.getInherits() != null)) {
-                            structInheritance.put(s, "annotation."+sa.getInherits());
+                            structInheritance.put(s, "annotation." + sa.getInherits());
                         }
                     } else if (sa.getInherits() != null) {
-                        StructDataType s = new StructDataType("annotation."+annotation.getName());
+                        StructDataType s = new OwnedStructDataType("annotation." + annotation.getName(), sdoc.getName());
                         if (anyParentsHavePayLoad(sa, sdoc)) {
                             annotation.setDataType(s);
                             addType(s);
                         }
-                        structInheritance.put(s, "annotation."+sa.getInherits());
+                        structInheritance.put(s, "annotation." + sa.getInherits());
                     }
                 } else {
                     var dt = annotation.getDataType();
@@ -558,7 +572,7 @@ public class DocumentModelBuilder {
                         return handleStruct((StructDataType) st);
                     }
             }
-            StructDataType s = new StructDataType(type.getName());
+            StructDataType s = new OwnedStructDataType(type.getName(), targetDt.getName());
             for (Field f : type.getDocumentType().contentStruct().getFieldsThisTypeOnly()) {
                 specialHandleAnnotationReference(f);
                 s.addField(f);
