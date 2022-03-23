@@ -32,6 +32,61 @@ class ParsedType {
     private boolean createIfNonExistent = false;
     private boolean removeIfZero = false;
 
+    public String toString() {
+        var buf = new StringBuilder();
+        buf.append("[type ").append(variant).append("] {");
+        switch (variant) {
+        case NONE:
+            break;
+        case BUILTIN:
+            buf.append(name);
+            break;
+        case POSITION:
+            buf.append(name);
+            break;
+        case TENSOR:
+            buf.append(tensorType.toString());
+            break;
+        case ARRAY: buf
+                .append(" array<")
+                .append(valType.toString())
+                .append("> ");
+            break;
+        case WSET: buf
+                .append(" weightedset<")
+                .append(valType.toString())
+                .append(">");
+            if (createIfNonExistent) buf.append(",createIfNonExistent");
+            if (removeIfZero) buf.append(",removeIfZero");
+            buf.append(" ");
+            break;
+        case MAP: buf
+                .append(" map<")
+                .append(keyType.toString())
+                .append(",")
+                .append(valType.toString())
+                .append("> ");
+            break;
+        case DOC_REFERENCE: buf
+                .append(" reference<")
+                .append(valType.toString())
+                .append("> ");
+            break;
+        case ANN_REFERENCE: buf
+                .append(" ")
+                .append(toString())
+                .append(" ");
+            break;
+        case STRUCT:
+        case DOCUMENT:
+        case UNKNOWN:
+            buf.append(" ").append(name).append(" ");
+            break;
+        }
+        buf.append("}");
+        return buf.toString();
+    }
+
     private static Variant guessVariant(String name) {
         switch (name) {
         case "bool":      return Variant.BUILTIN;
