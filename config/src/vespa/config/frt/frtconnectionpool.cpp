@@ -73,11 +73,13 @@ FRTConnectionPool::getNextRoundRobin()
     FRTConnection* nextFRTConnection = nullptr;
 
     if ( ! ready.empty()) {
-        int sel = _selectIdx % (int)ready.size();
+        unsigned int sel = _selectIdx % (int)ready.size();
+        LOG_ASSERT(sel < ready.size());
         _selectIdx = sel + 1;
         nextFRTConnection = ready[sel];
     } else if ( ! suspended.empty()) {
-        int sel = _selectIdx % (int)suspended.size();
+        unsigned int sel = _selectIdx % (int)suspended.size();
+        LOG_ASSERT(sel < suspended.size());
         _selectIdx = sel + 1;
         nextFRTConnection = suspended[sel];
     }
@@ -113,10 +115,12 @@ FRTConnectionPool::getNextHashBased()
     FRTConnection* nextFRTConnection = nullptr;
 
     if ( ! ready.empty()) {
-        int sel = std::abs(hashCode(_hostname) % (int)ready.size());
+        unsigned int sel = std::abs(hashCode(_hostname) % (int)ready.size());
+        LOG_ASSERT(sel < ready.size());
         nextFRTConnection = ready[sel];
     } else if ( ! suspended.empty() ){
-        int sel = std::abs(hashCode(_hostname) % (int)suspended.size());
+        unsigned int sel = std::abs(hashCode(_hostname) % (int)suspended.size());
+        LOG_ASSERT(sel < suspended.size());
         nextFRTConnection = suspended[sel];
     }
     return nextFRTConnection;
