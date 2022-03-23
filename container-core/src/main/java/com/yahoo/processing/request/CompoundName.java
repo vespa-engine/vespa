@@ -67,7 +67,7 @@ public final class CompoundName {
 
         this.name = name;
         this.lowerCasedName = toLowerCase(name);
-        if (compounds.size()==1 && compounds.get(0).isEmpty())
+        if (compounds.size() == 1 && compounds.get(0).isEmpty())
             this.compounds = ImmutableList.of();
         else
             this.compounds = ImmutableList.copyOf(compounds);

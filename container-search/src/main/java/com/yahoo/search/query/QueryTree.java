@@ -48,7 +48,7 @@ public class QueryTree extends CompositeItem {
         return getRoot().encode(buffer);
     }
 
-    //Lets not pollute toString() by adding "ROOT"
+    // Let's not pollute toString() by adding "ROOT"
     protected void appendHeadingString(StringBuilder sb) {
     }
 
@@ -65,7 +65,7 @@ public class QueryTree extends CompositeItem {
         if (this.getItemCount() == 0) // initializing
             super.addItem(root);
         else
-            setItem(0,root); // replacing
+            setItem(0, root); // replacing
     }
 
     @Override
@@ -88,7 +88,7 @@ public class QueryTree extends CompositeItem {
 
     @Override
     public void addItem(Item item) {
-        if (getItemCount()==0)
+        if (getItemCount() == 0)
             super.addItem(item);
         else
             throw new RuntimeException("Programming error: Cannot add multiple roots");
@@ -96,8 +96,8 @@ public class QueryTree extends CompositeItem {
 
     @Override
     public void addItem(int index, Item item) {
-        if (getItemCount()==0 && index==0)
-            super.addItem(index,item);
+        if (getItemCount() == 0 && index == 0)
+            super.addItem(index, item);
         else
             throw new RuntimeException("Programming error: Cannot add multiple roots, have '" + getRoot() + "'");
     }
