@@ -87,7 +87,7 @@ void Application::usage() {
 
 int Application::Main() {
     parseOpts();
-
+    fprintf(stderr, "Getting config from: %s\n", _specString.c_str());
     config::ServerSpec spec(_specString);
     config::ConfigUri uri = config::ConfigUri::createFromSpec(_cfgId, spec);
     ConfigStatus status(_flags, uri);
