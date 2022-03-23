@@ -38,7 +38,7 @@ public abstract class Item implements Cloneable {
         WORD(4),
         INT(5),
         PHRASE(6),
-        // 7 was PAREN, unused in Vespa 7
+        MULTI_TERM(7),
         PREFIX(8),
         SUBSTRING(9),
         NEAR(11),
@@ -59,8 +59,7 @@ public abstract class Item implements Cloneable {
         NEAREST_NEIGHBOR(26),
         GEO_LOCATION_TERM(27),
         TRUE(28),
-        FALSE(29),
-        MULTI_TERM(30);
+        FALSE(29);
 
         public final int code;
 

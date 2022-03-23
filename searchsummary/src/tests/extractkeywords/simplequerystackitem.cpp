@@ -186,8 +186,9 @@ SimpleQueryStackItem::AppendBuffer(RawBuf *buf) const
         buf->appendCompressedPositiveNumber(_arg2); // allow_approximate
         buf->appendCompressedPositiveNumber(_arg3); // explore_additional_hits
         break;
-    case ITEM_PREDICATE_QUERY: // not handled at all here
     case ITEM_MULTI_TERM: // TODO: handle
+    case ITEM_PREDICATE_QUERY: // not handled at all here
+    case ITEM_MAX:
     case ITEM_UNDEF:
         abort();
         break;
