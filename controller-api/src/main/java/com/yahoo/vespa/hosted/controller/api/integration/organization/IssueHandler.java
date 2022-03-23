@@ -100,4 +100,12 @@ public interface IssueHandler {
      */
     boolean issueExists(Issue issue);
 
+    /**
+     * Returns information about project identified by the project key
+     *
+     * @param projectKey The project key to find information for
+     * @return Project info for project
+     * @throws RuntimeException exception if project not found
+     */
+    ProjectInfo projectInfo(String projectKey);
 }

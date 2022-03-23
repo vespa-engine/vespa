@@ -24,6 +24,7 @@ public class MockIssueHandler implements IssueHandler {
     private final Clock clock;
     private final AtomicLong counter = new AtomicLong();
     private final Map<IssueId, MockIssue> issues = new HashMap<>();
+    private final Map<String, ProjectInfo> projects = new HashMap<>();
 
     @Inject
     @SuppressWarnings("unused")
@@ -112,6 +113,11 @@ public class MockIssueHandler implements IssueHandler {
         return issues.values().stream().anyMatch(i -> i.issue.summary().equals(issue.summary()));
     }
 
+    @Override
+    public ProjectInfo projectInfo(String projectKey) {
+        return projects.get(projectKey);
+    }
+
     public MockIssueHandler close(IssueId issueId) {
         issues.get(issueId).open = false;
         touch(issueId);
@@ -135,6 +141,10 @@ public class MockIssueHandler implements IssueHandler {
 
     private void touch(IssueId issueId) {
         issues.get(issueId).updated = clock.instant();
+    }
+
+    public void addProject(String projectKey, ProjectInfo projectInfo) {
+        projects.put(projectKey, projectInfo);
     }
 
     private static class PropertyInfo {
