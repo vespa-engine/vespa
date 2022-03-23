@@ -4,8 +4,6 @@ package com.yahoo.vespa.hosted.provision.lb;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
 import java.util.Optional;
@@ -18,8 +16,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class SharedLoadBalancerServiceTest {
 
-    private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
-    private final SharedLoadBalancerService loadBalancerService = new SharedLoadBalancerService(tester.nodeRepository(), "vip.example.com");
+    private final SharedLoadBalancerService loadBalancerService = new SharedLoadBalancerService("vip.example.com");
     private final ApplicationId applicationId = ApplicationId.from("tenant1", "application1", "default");
     private final ClusterSpec.Id clusterId = ClusterSpec.Id.from("qrs1");
     private final Set<Real> reals = Set.of(
@@ -29,18 +26,12 @@ public class SharedLoadBalancerServiceTest {
 
     @Test
     public void test_create_lb() {
-        tester.makeReadyNodes(2, "default", NodeType.proxy);
         var lb = loadBalancerService.create(new LoadBalancerSpec(applicationId, clusterId, reals), false);
 
         assertEquals(HostName.from("vip.example.com"), lb.hostname());
         assertEquals(Optional.empty(), lb.dnsZone());
-        assertEquals(Set.of("127.0.0.1/32", "127.0.0.2/32", "::1/128", "::2/128"), lb.networks());
-        assertEquals(Set.of(4080, 4443), lb.ports());
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void test_exception_on_missing_proxies() {
-        loadBalancerService.create(new LoadBalancerSpec(applicationId, clusterId, reals), false);
+        assertEquals(Set.of(), lb.networks());
+        assertEquals(Set.of(4443), lb.ports());
     }
 
     @Test

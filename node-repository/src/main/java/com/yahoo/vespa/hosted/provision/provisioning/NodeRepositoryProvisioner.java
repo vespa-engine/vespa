@@ -70,7 +70,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         this.allocationOptimizer = new AllocationOptimizer(nodeRepository);
         this.capacityPolicies = new CapacityPolicies(nodeRepository);
         this.zone = zone;
-        this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService(nodeRepository)
+        this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService()
                                                                .map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService));
         this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
         this.preparer = new Preparer(nodeRepository,
