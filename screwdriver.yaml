@@ -229,6 +229,24 @@ jobs:
       - update-sample-apps: |
           screwdriver/update-vespa-version-in-sample-apps.sh $VESPA_VERSION
 
+  publish-cli-release:
+    annotations:
+      screwdriver.cd/buildPeriodically: H 0 * * *
+    secrets:
+      - HOMEBREW_GITHUB_API_TOKEN
+      - GH_TOKEN
+    steps:
+      - install-dependencies: |
+          export NONINTERACTIVE=1
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          brew install gh
+      - publish-github:
+          make -C client/go clean dist-github
+      - publish-homebrew:
+          make -C client/go clean dist-homebrew
+      - verify-brew-install:
+          make -C client/go brew-install
+
   verify-opensource-release-7days:
     annotations:
       screwdriver.cd/buildPeriodically: H 0 * * *
