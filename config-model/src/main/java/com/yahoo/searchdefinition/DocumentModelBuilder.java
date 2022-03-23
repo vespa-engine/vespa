@@ -7,7 +7,6 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
-import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.StructuredDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
@@ -15,7 +14,10 @@ import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.documentmodel.DataTypeCollection;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.documentmodel.NewDocumentType;
+import com.yahoo.documentmodel.OwnedTemporaryType;
+import com.yahoo.documentmodel.TemporaryUnknownType;
 import com.yahoo.documentmodel.VespaDocumentType;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.SDDocumentType;
@@ -232,13 +234,26 @@ public class DocumentModelBuilder {
         }
         DataType original = type;
         if (type instanceof TemporaryStructuredDataType) {
+            throw new IllegalArgumentException("Cannot handle temporary: " + type);
+        }
+        if (type instanceof TemporaryUnknownType) {
+            // must be a known struct or document type
             DataType other = repo.getDataType(type.getId());
             if (other == null || other == type) {
+                // maybe it is the name of a document type:
                 other = getDocumentType(docs, type.getName());
             }
-            if (other != null) {
-                type = other;
+            if (other == null) {
+                throw new IllegalArgumentException("No replacement found for temporary type: " + type);
             }
+            type = other;
+        } else if (type instanceof OwnedTemporaryType) {
+            // must be replaced with the real struct type
+            DataType other = repo.getDataType(type.getId());
+            if (other == null || other == type) {
+                throw new IllegalArgumentException("No replacement found for temporary type: " + type);
+            }
+            type = other;
         } else if (type instanceof DocumentType) {
             DataType other = getDocumentType(docs, type.getName());
             if (other != null) {
@@ -532,11 +547,13 @@ public class DocumentModelBuilder {
 
         @SuppressWarnings("deprecation")
         private StructDataType handleStruct(SDDocumentType type) {
+            // System.err.println("handle struct " + type + " for doc " + targetDt.getName());
             if (type.isStruct()) {
                 var st = type.getStruct();
                 if (st.getName().equals(type.getName()) &&
                     (st instanceof StructDataType) &&
-                    ! (st instanceof TemporaryStructuredDataType))
+                    (! (st instanceof TemporaryUnknownType)) &&
+                    (! (st instanceof OwnedTemporaryType)))
                     {
                         return handleStruct((StructDataType) st);
                     }
