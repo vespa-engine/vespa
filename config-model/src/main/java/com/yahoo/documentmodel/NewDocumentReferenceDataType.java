@@ -5,7 +5,6 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.StructuredDataType;
-import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.ReferenceFieldValue;
 

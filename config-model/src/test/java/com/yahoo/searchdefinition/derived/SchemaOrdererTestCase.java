@@ -3,7 +3,6 @@ package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
-import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.DocumentReferences;
 import com.yahoo.searchdefinition.Schema;

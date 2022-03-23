@@ -7,7 +7,6 @@ import com.yahoo.document.Field;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.StructuredDataType;
-import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.document.annotation.AnnotationTypeRegistry;
 import com.yahoo.document.datatypes.FieldValue;
