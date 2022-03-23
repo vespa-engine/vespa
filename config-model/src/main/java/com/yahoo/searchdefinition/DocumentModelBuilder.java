@@ -254,6 +254,17 @@ public class DocumentModelBuilder {
             if (other == null || other == type) {
                 throw new IllegalArgumentException("No replacement found for temporary type: " + type);
             }
+            if (other instanceof OwnedStructDataType) {
+                var owned = (OwnedTemporaryType) type;
+                String ownedBy = owned.getOwnerName();
+                var otherOwned = (OwnedStructDataType) other;
+                String otherOwnedBy = otherOwned.getOwnerName();
+                if (! ownedBy.equals(otherOwnedBy)) {
+                    throw new IllegalArgumentException("Wrong document for type: " + otherOwnedBy + " but expected " + ownedBy);
+                }
+            } else {
+                throw new IllegalArgumentException("Found wrong sort of type: " + other + " [" + other.getClass() + "]");
+            }
             type = other;
         } else if (type instanceof DocumentType) {
             DataType other = getDocumentType(docs, type.getName());
