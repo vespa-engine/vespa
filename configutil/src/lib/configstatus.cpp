@@ -109,7 +109,7 @@ public:
 
 MyHttpHandler::~MyHttpHandler() = default;
 
-ConfigStatus::ConfigStatus(Flags flags, const config::ConfigUri uri)
+ConfigStatus::ConfigStatus(Flags flags, const config::ConfigUri &uri)
     : _cfg(), _flags(flags), _generation(0)
 {
     if (_flags.verbose) {

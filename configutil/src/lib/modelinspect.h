@@ -20,7 +20,7 @@ public:
         ~Flags();
     };
 
-    ModelInspect(Flags flags, const config::ConfigUri uri, std::ostream &out);
+    ModelInspect(Flags flags, const config::ConfigUri &uri, std::ostream &out);
     virtual ~ModelInspect();
 
     int action(int cnt, char *argv[]);

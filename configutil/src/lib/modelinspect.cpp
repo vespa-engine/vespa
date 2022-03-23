@@ -21,7 +21,7 @@ ModelInspect::Flags::Flags(const Flags &) = default;
 ModelInspect::Flags & ModelInspect::Flags::operator = (const Flags &) = default;
 ModelInspect::Flags::~Flags() { }
 
-ModelInspect::ModelInspect(Flags flags, const config::ConfigUri uri, std::ostream &out)
+ModelInspect::ModelInspect(Flags flags, const config::ConfigUri &uri, std::ostream &out)
     : _cfg(), _flags(flags), _out(out)
 {
     if (_flags.verbose) {
