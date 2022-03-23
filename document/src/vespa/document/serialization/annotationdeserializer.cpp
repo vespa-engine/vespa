@@ -119,9 +119,10 @@ void AnnotationDeserializer::readAnnotation(Annotation & annotation) {
     if (features & 2) {  // has value
         uint32_t data_type_id = readValue<uint32_t>(_stream);
 
-        const DataType *data_type = _repo.getDataType(data_type_id);
+        const DataType *data_type = type->getDataType();
         if (!data_type) {
-            LOG(warning, "Unknown data type %d", data_type_id);
+            LOG(warning, "Skipping payload (data type %d) for annotation type %s",
+                data_type_id, type->getName().c_str());
             _stream.adjustReadPos(size - sizeof(uint32_t));
         } else {
             FieldValue::UP value(data_type->createFieldValue());
