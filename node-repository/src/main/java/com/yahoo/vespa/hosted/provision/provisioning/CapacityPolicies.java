@@ -8,12 +8,15 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.function.Function;
 
 import static com.yahoo.config.provision.NodeResources.Architecture;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
+import static com.yahoo.vespa.flags.PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE;
 
 /**
  * Defines the policies for assigning cluster capacity in various environments
@@ -25,12 +28,12 @@ public class CapacityPolicies {
 
     private final Zone zone;
     private final Function<ClusterSpec.Type, Boolean> sharedHosts;
-    private final Architecture architectureForAdminCluster;
+    private final FlagSource flagSource;
 
     public CapacityPolicies(NodeRepository nodeRepository) {
         this.zone = nodeRepository.zone();
         this.sharedHosts = type -> PermanentFlags.SHARED_HOST.bindTo(nodeRepository.flagSource()).value().isEnabled(type.name());
-        this.architectureForAdminCluster = Architecture.valueOf(PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE.bindTo(nodeRepository.flagSource()).value());
+        this.flagSource = nodeRepository.flagSource();
     }
 
     public Capacity applyOn(Capacity capacity, ApplicationId application) {
@@ -73,11 +76,16 @@ public class CapacityPolicies {
         return target;
     }
 
-    public NodeResources defaultNodeResources(ClusterSpec.Type clusterType) {
+    public NodeResources defaultNodeResources(ClusterSpec.Type clusterType, ApplicationId applicationId) {
         if (clusterType == ClusterSpec.Type.admin) {
+            Architecture architecture = Architecture.valueOf(
+                    ADMIN_CLUSTER_NODE_ARCHITECTURE.bindTo(flagSource)
+                                                   .with(APPLICATION_ID, applicationId.serializedForm())
+                                                   .value());
+
             return zone.getCloud().dynamicProvisioning() && ! sharedHosts.apply(clusterType) ?
-                    new NodeResources(0.5, 4, 50, 0.3).with(architectureForAdminCluster) :
-                    new NodeResources(0.5, 2, 50, 0.3).with(architectureForAdminCluster);
+                    new NodeResources(0.5, 4, 50, 0.3).with(architecture) :
+                    new NodeResources(0.5, 2, 50, 0.3).with(architecture);
         }
 
         return zone.getCloud().dynamicProvisioning() ?

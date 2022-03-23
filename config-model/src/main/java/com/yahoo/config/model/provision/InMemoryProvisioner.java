@@ -36,7 +36,7 @@ import java.util.stream.IntStream;
  */
 public class InMemoryProvisioner implements HostProvisioner {
 
-    public static final NodeResources defaultResources = new NodeResources(1, 3, 10, 1);
+    public static final NodeResources defaultResources = new NodeResources(1, 3, 50, 1);
 
     /**
      * If this is true an exception is thrown when all nodes are used.
@@ -153,7 +153,7 @@ public class InMemoryProvisioner implements HostProvisioner {
         if (alwaysReturnOneNode)
             nodes = 1;
 
-        int groups = requested.groups() > nodes ? nodes : requested.groups();
+        int groups = Math.min(requested.groups(), nodes);
 
         List<HostSpec> allocation = new ArrayList<>();
         if (groups == 1) {

@@ -15,7 +15,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
@@ -240,7 +239,7 @@ public class AutoscalingTest {
         ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         NodeResources defaultResources =
-                new CapacityPolicies(tester.nodeRepository()).defaultNodeResources(cluster1.type());
+                new CapacityPolicies(tester.nodeRepository()).defaultNodeResources(cluster1.type(), application1);
 
         // deploy
         tester.deploy(application1, cluster1, Capacity.from(min, max));

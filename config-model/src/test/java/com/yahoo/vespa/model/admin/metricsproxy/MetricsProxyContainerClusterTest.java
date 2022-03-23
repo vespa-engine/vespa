@@ -104,7 +104,7 @@ public class MetricsProxyContainerClusterTest {
 
     private void assertNodeConfig(MetricsNodesConfig.Node node) {
         assertTrue(node.role().startsWith("container/foo/0/"));
-        assertTrue(node.hostname().startsWith("node-1-3-10-"));
+        assertTrue(node.hostname().startsWith("node-1-3-50-"));
         assertEquals(MetricsProxyContainer.BASEPORT, node.metricsPort());
         assertEquals(MetricsV1Handler.VALUES_PATH, node.metricsPath());
     }

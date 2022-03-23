@@ -260,7 +260,7 @@ public class PermanentFlags {
             "Architecture to use for node resources. Used when implicitly creating admin clusters " +
             "(logserver, clustercontroller). Valid values: x86_64, arm64",
             "Takes effect on next redeployment",
-            ZONE_ID, APPLICATION_ID, CLUSTER_ID, CLUSTER_TYPE);
+            ZONE_ID, APPLICATION_ID);
 
     private PermanentFlags() {}
 
