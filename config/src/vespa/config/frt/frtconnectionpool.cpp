@@ -116,6 +116,17 @@ FRTConnectionPool::getNextHashBased()
 
     if ( ! ready.empty()) {
         unsigned int sel = std::abs(hashCode(_hostname) % (int)ready.size());
+        if (sel >= ready.size()) {
+            int h = hashCode(_hostname);
+            int r = (int)ready.size();
+            int m = h % r;
+            int d = h / r;
+            int a = std::abs(m);
+            fprintf(stderr, "MOD: %d %% %d -> %d; %d / %d -> %d; abs(%d) -> %d -> %u\n",
+                    h, r, m,
+                    h, r, d,
+                    m, a, sel);
+        }
         LOG_ASSERT(sel < ready.size());
         nextFRTConnection = ready[sel];
     } else if ( ! suspended.empty() ){
