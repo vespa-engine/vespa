@@ -500,6 +500,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               "INFO - All good");
 
+        // Get content/../foo
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-east-1/content/%2E%2E%2Ffoo", GET).userIdentity(USER_ID),
+                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Access denied\"}", 403);
         // Get content - root
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-east-1/content/", GET).userIdentity(USER_ID),
                 "{\"path\":\"/\"}");

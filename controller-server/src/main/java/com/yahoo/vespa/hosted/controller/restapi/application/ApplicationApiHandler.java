@@ -1883,6 +1883,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse content(String tenantName, String applicationName, String instanceName, String environment, String region, String restPath, HttpRequest request) {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
+
+        String normalizedRestPath = URI.create("content/" + restPath).normalize().toString();
+        // Only content/ is allowed
+        if ( ! normalizedRestPath.startsWith("content/")) {
+            return ErrorResponse.forbidden("Access denied");
+        }
+
         return controller.serviceRegistry().configServer().getApplicationPackageContent(deploymentId, "/" + restPath, request.getUri());
     }
 
