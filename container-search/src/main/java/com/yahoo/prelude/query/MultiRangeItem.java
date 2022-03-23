@@ -46,6 +46,8 @@ import static java.util.Objects.requireNonNull;
  * Adding ranges in ascending order is much faster than not; ascending order here has the rather lax
  * requirement that each added interval is not completely before the current last interval.
  *
+ * todo: cover all three cases of single index + ranges, dual index + ranges, dual index + points
+ *
  * @author jonmv
  */
 public class MultiRangeItem extends MultiTermItem {
@@ -80,9 +82,17 @@ public class MultiRangeItem extends MultiTermItem {
             return Objects.hash(start, end);
         }
 
+        @Override
+        public String toString() {
+            return "(" + start + ", " + end + ")";
+        }
+
     }
 
-    private static final Comparator<Number> comparator = comparingDouble(Number::doubleValue);
+    static final Comparator<Number> comparator = (a, b) -> {
+        double u = a.doubleValue(), v = b.doubleValue();
+        return u < v ? -1 : u > v ? 1 : 0;
+    };
 
     private final String startIndex;
     private final String endIndex;
@@ -113,8 +123,17 @@ public class MultiRangeItem extends MultiTermItem {
         return overRanges(index, startInclusive, index, endInclusive);
     }
 
+    /** Adds the given point to this item. More efficient when each added point is not completely before the current last one. */
+    public MultiRangeItem addPoint(Number point) {
+        return addRange(point, point);
+    }
+
     /** Adds the given range to this item. More efficient when each added range is not completely before the current last one. */
-    public MultiRangeItem add(Number start, Number end) {
+    public MultiRangeItem addRange(Number start, Number end) {
+        if (Double.isNaN(start.doubleValue()))
+            throw new IllegalArgumentException("range start cannot be NaN");
+        if (Double.isNaN(end.doubleValue()))
+            throw new IllegalArgumentException("range end cannot be NaN");
         if (comparator.compare(start, end) > 0)
             throw new IllegalArgumentException("ranges must satisfy start <= end, but got " + start + " > " + end);
 
@@ -154,7 +173,7 @@ public class MultiRangeItem extends MultiTermItem {
         return comparator.compare(a, b) >= 0 ? a : b;
     }
 
-    private List<Range> sortedRanges() {
+    List<Range> sortedRanges() {
         if (sorted)
             return ranges;
 
