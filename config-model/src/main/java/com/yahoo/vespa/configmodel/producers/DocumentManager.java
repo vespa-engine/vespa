@@ -9,6 +9,8 @@ import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.documentmodel.DataTypeCollection;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.documentmodel.NewDocumentType;
+import com.yahoo.documentmodel.OwnedTemporaryType;
+import com.yahoo.documentmodel.TemporaryUnknownType;
 import com.yahoo.documentmodel.VespaDocumentType;
 import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.vespa.documentmodel.DocumentModel;
@@ -83,6 +85,12 @@ public class DocumentManager {
             if (dataType instanceof TemporaryStructuredDataType) {
                 throw new IllegalArgumentException("Can not create config for temporary data type: " + dataType.getName());
             }
+            if (dataType instanceof TemporaryUnknownType) {
+                throw new IllegalArgumentException("Can not create config for temporary data type: " + dataType.getName());
+            }
+            if (dataType instanceof OwnedTemporaryType) {
+                throw new IllegalArgumentException("Can not create config for temporary data type: " + dataType.getName());
+            }
             if ((dataType.getId() < 0) || (dataType.getId()> DataType.lastPredefinedDataTypeId())) {
                 Datatype.Builder dataTypeBuilder = new Datatype.Builder();
                 documentConfigBuilder.datatype(dataTypeBuilder);
@@ -144,8 +152,6 @@ public class DocumentManager {
             }
             buildConfig(dt.getFieldSets(), doc);
             buildImportedFieldsConfig(dt.getImportedFieldNames(), doc);
-        } else if (type instanceof TemporaryStructuredDataType) {
-            throw new IllegalArgumentException("Can not create config for temporary data type: " + type.getName());
         } else if (type instanceof StructDataType) {
             StructDataType structType = (StructDataType) type;
             Datatype.Structtype.Builder structBuilder = new Datatype.Structtype.Builder();
@@ -348,7 +354,11 @@ public class DocumentManager {
         indexMap.setDone(type);
         if (type instanceof TemporaryStructuredDataType) {
             throw new IllegalArgumentException("Can not create config for temporary data type: " + type.getName());
-        } if (type instanceof StructDataType) {
+        } else if (type instanceof TemporaryUnknownType) {
+            throw new IllegalArgumentException("Can not create config for temporary data type: " + type.getName());
+        } else if (type instanceof OwnedTemporaryType) {
+            throw new IllegalArgumentException("Can not create config for temporary data type: " + type.getName());
+        } else if (type instanceof StructDataType) {
             docTypeBuildOneType((StructDataType) type, documentBuilder, indexMap);
         } else if (type instanceof ArrayDataType) {
             docTypeBuildOneType((ArrayDataType) type, documentBuilder, indexMap);
