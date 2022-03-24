@@ -592,10 +592,10 @@ public class DocumentGenPluginTest {
         bookGeneric.setFieldValue("title", title);
 
         bookGeneric.setFieldValue("year", new IntegerFieldValue(1851));
-        Struct myS0 = new Struct(mgr.getDataType("ss0"));
+        Struct myS0 = new Struct(bookT.getStructType("ss0"));
         myS0.setFieldValue("s0", new StringFieldValue("My s0"));
         myS0.setFieldValue("d0", new DoubleFieldValue(99));
-        Struct myS1 = new Struct(mgr.getDataType("ss1"));
+        Struct myS1 = new Struct(bookT.getStructType("ss1"));
         myS1.setFieldValue("s1", new StringFieldValue("My s1"));
         myS1.setFieldValue("l1", new LongFieldValue(89));
         Array<StringFieldValue> myAs1 = new Array<>(DataType.getArray(DataType.STRING));
@@ -648,10 +648,10 @@ public class DocumentGenPluginTest {
         assertEquals(((StructuredFieldValue) titleAnnCheck.getFieldValue()).getFieldValue("exacttime").getWrappedValue(), 99L);
 
         bookGeneric.setFieldValue("year", new IntegerFieldValue(1851));
-        Struct myS0 = new Struct(mgr.getDataType("ss0"));
+        Struct myS0 = new Struct(bookT.getStructType("ss0"));
         myS0.setFieldValue("s0", new StringFieldValue("My s0"));
         myS0.setFieldValue("d0", new DoubleFieldValue(99));
-        Struct myS1 = new Struct(mgr.getDataType("ss1"));
+        Struct myS1 = new Struct(bookT.getStructType("ss1"));
         myS1.setFieldValue("s1", new StringFieldValue("My s1"));
         myS1.setFieldValue("l1", new LongFieldValue(89));
         Array<StringFieldValue> myAs1 = new Array<>(DataType.getArray(DataType.STRING));

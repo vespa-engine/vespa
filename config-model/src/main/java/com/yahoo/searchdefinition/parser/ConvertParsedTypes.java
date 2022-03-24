@@ -248,11 +248,30 @@ public class ConvertParsedTypes {
         return new NewDocumentReferenceDataType(findDocFromSchemas(ref.name()));
     }
 
+    private DataType getBuiltinType(String name) {
+        switch (name) {
+        case "bool":      return DataType.BOOL;
+        case "byte":      return DataType.BYTE;
+        case "int":       return DataType.INT;
+        case "long":      return DataType.LONG;
+        case "string":    return DataType.STRING;
+        case "float":     return DataType.FLOAT;
+        case "double":    return DataType.DOUBLE;
+        case "uri":       return DataType.URI;
+        case "predicate": return DataType.PREDICATE;
+        case "raw":       return DataType.RAW;
+        case "tag":       return DataType.TAG;
+        case "float16":   return DataType.FLOAT16;
+        default:
+            throw new IllegalArgumentException("Unknown builtin type: "+name);
+        }
+    }
+
     private DataType resolveFromContext(ParsedType pType, ParsedDocument context) {
         String name = pType.name();
         switch (pType.getVariant()) {
         case NONE:     return DataType.NONE;
-        case BUILTIN:  return docMan.getDataType(name);
+        case BUILTIN:  return getBuiltinType(name);
         case POSITION: return PositionDataType.INSTANCE;
         case ARRAY:    return createArray(pType, context);
         case WSET:     return createWset(pType, context);

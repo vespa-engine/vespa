@@ -5,6 +5,7 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
+import com.yahoo.document.StructDataType;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.serialization.*;
@@ -42,33 +43,35 @@ public class SystemTestCase {
         root.add(dateSpan);
         root.add(placeSpan);
 
-        Struct personValue = new Struct(manager.getDataType("annotation.person"));
+        DocumentType docType = document.getDataType();
+        Struct personValue = new Struct(personType.getDataType());
         personValue.setFieldValue("name", "george washington");
         Annotation person = new Annotation(personType, personValue);
         tree.annotate(personSpan, person);
 
-        Struct artistValue = new Struct(manager.getDataType("annotation.artist"));
+        Struct artistValue = new Struct((StructDataType) artistType.getDataType());
         artistValue.setFieldValue("name", "elvis presley");
         artistValue.setFieldValue("instrument", 20);
         Annotation artist = new Annotation(artistType, artistValue);
         tree.annotate(artistSpan, artist);
 
-        Struct dateValue = new Struct(manager.getDataType("annotation.date"));
+        Struct dateValue = new Struct((StructDataType) dateType.getDataType());
         dateValue.setFieldValue("exacttime", 123456789L);
         Annotation date = new Annotation(dateType, dateValue);
         tree.annotate(dateSpan, date);
 
-        Struct placeValue = new Struct(manager.getDataType("annotation.place"));
+        Struct placeValue = new Struct((StructDataType) placeType.getDataType());
         placeValue.setFieldValue("lat", 1467L);
         placeValue.setFieldValue("lon", 789L);
         Annotation place = new Annotation(placeType, placeValue);
         tree.annotate(placeSpan, place);
 
-        Struct eventValue = new Struct(manager.getDataType("annotation.event"));
+        var eventStruct = (StructDataType) eventType.getDataType();
+        Struct eventValue = new Struct(eventStruct);
         eventValue.setFieldValue("description", "Big concert");
-        eventValue.setFieldValue("person", new AnnotationReference((AnnotationReferenceDataType) manager.getDataType("annotationreference<person>"), person));
-        eventValue.setFieldValue("date", new AnnotationReference((AnnotationReferenceDataType) manager.getDataType("annotationreference<date>"), date));
-        eventValue.setFieldValue("place", new AnnotationReference((AnnotationReferenceDataType) manager.getDataType("annotationreference<place>"), place));
+        eventValue.setFieldValue("person", new AnnotationReference((AnnotationReferenceDataType) eventStruct.getField("person").getDataType(), person));
+        eventValue.setFieldValue("date", new AnnotationReference((AnnotationReferenceDataType) eventStruct.getField("date").getDataType(), date));
+        eventValue.setFieldValue("place", new AnnotationReference((AnnotationReferenceDataType) eventStruct.getField("place").getDataType(), place));
         Annotation event = new Annotation(eventType, eventValue);
         tree.annotate(root, event);
 

@@ -134,7 +134,24 @@ public class DocumentTypeManager {
         return dataTypes.containsKey(code);
     }
 
+    /**
+     * @deprecated //TODO Will be package-private or removed on Vespa 8
+     * Use constants and factories in DataType instead.
+     * For structs, use getStructType() in DocumentType.
+     * For annotation payloads, use getDataType() in AnnotationType.
+     **/
+    @Deprecated
     public DataType getDataType(String name) {
+        return getDataTypeInternal(name);
+    }
+
+    /**
+     * For internal use only, avoid whenever possible.
+     * Use constants and factories in DataType instead.
+     * For structs, use getStructType() in DocumentType.
+     * For annotation payloads, use getDataType() in AnnotationType.
+     **/
+    DataType getDataTypeInternal(String name) {
         if (name.startsWith("tensor(")) // built-in dynamic
             return new TensorDataType(TensorType.fromSpec(name));
 
