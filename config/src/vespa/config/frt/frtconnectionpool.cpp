@@ -97,7 +97,7 @@ namespace {
  * @return the hash value
  */
 int hashCode(const vespalib::string & s) {
-    int hashval = 0;
+    unsigned int hashval = 0;
 
     for (int i = 0; i < (int) s.length(); i++) {
         hashval = 31 * hashval + s[i];
