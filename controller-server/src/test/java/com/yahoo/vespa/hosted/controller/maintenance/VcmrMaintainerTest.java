@@ -22,8 +22,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -38,8 +36,10 @@ public class VcmrMaintainerTest {
     private VcmrMaintainer maintainer;
     private NodeRepositoryMock nodeRepo;
     private final ZoneId zoneId = ZoneId.from("prod.us-east-3");
+    private final ZoneId zone2 = ZoneId.from("prod.us-west-1");
     private final HostName host1 = HostName.from("host1");
     private final HostName host2 = HostName.from("host2");
+    private final HostName host3 = HostName.from("host3");
     private final String changeRequestId = "id123";
 
     @Before
@@ -55,9 +55,7 @@ public class VcmrMaintainerTest {
         vcmrReport.addVcmr("id123", ZonedDateTime.now(), ZonedDateTime.now());
         var parkedNode = createNode(host1, NodeType.host, Node.State.parked, true);
         var failedNode = createNode(host2, NodeType.host, Node.State.failed, false);
-        Map<String, String> reports = vcmrReport.toNodeReports().entrySet().stream()
-                                                .collect(Collectors.toMap(Map.Entry::getKey,
-                                                                          kv -> kv.getValue().toString()));
+        var reports = vcmrReport.toNodeReports();
         parkedNode = Node.builder(parkedNode)
                          .reports(reports)
                          .build();
@@ -89,8 +87,10 @@ public class VcmrMaintainerTest {
         maintainer.maintain();
 
         var writtenChangeRequest = tester.curator().readChangeRequest(changeRequestId).get();
-        var configAction = writtenChangeRequest.getHostActionPlan().get(0);
-        var tenantHostAction = writtenChangeRequest.getHostActionPlan().get(1);
+        var actionPlan = writtenChangeRequest.getHostActionPlan();
+        assertEquals(2, actionPlan.size());
+        var configAction = findHostAction(actionPlan, configNode);
+        var tenantHostAction = findHostAction(actionPlan, activeNode);
         assertEquals(State.REQUIRES_OPERATOR_ACTION, configAction.getState());
         assertEquals(State.PENDING_RETIREMENT, tenantHostAction.getState());
         assertEquals(Status.REQUIRES_OPERATOR_ACTION, writtenChangeRequest.getStatus());
@@ -107,8 +107,9 @@ public class VcmrMaintainerTest {
         maintainer.maintain();
 
         var writtenChangeRequest = tester.curator().readChangeRequest(changeRequestId).orElseThrow();
-        var parkedNodeAction = writtenChangeRequest.getHostActionPlan().get(0);
-        var failedNodeAction = writtenChangeRequest.getHostActionPlan().get(1);
+        var actionPlan = writtenChangeRequest.getHostActionPlan();
+        var parkedNodeAction = findHostAction(actionPlan, activeNode);
+        var failedNodeAction = findHostAction(actionPlan, failedNode);
         assertEquals(State.RETIRING, parkedNodeAction.getState());
         assertEquals(State.NONE, failedNodeAction.getState());
         assertEquals(Status.IN_PROGRESS, writtenChangeRequest.getStatus());
@@ -128,9 +129,10 @@ public class VcmrMaintainerTest {
         maintainer.maintain();
 
         var writtenChangeRequest = tester.curator().readChangeRequest(changeRequestId).orElseThrow();
-        var parkedNodeAction = writtenChangeRequest.getHostActionPlan().get(0);
-        var failedNodeAction = writtenChangeRequest.getHostActionPlan().get(1);
-        assertEquals(State.REQUIRES_OPERATOR_ACTION, parkedNodeAction.getState());
+        var actionPlan = writtenChangeRequest.getHostActionPlan();
+        var activeNodeAction = findHostAction(actionPlan, activeNode);
+        var failedNodeAction = findHostAction(actionPlan, failedNode);
+        assertEquals(State.REQUIRES_OPERATOR_ACTION, activeNodeAction.getState());
         assertEquals(State.REQUIRES_OPERATOR_ACTION, failedNodeAction.getState());
         assertEquals(Status.REQUIRES_OPERATOR_ACTION, writtenChangeRequest.getStatus());
 
@@ -201,6 +203,29 @@ public class VcmrMaintainerTest {
         assertFalse(retiringNode.wantToRetire());
     }
 
+    @Test
+    public void handle_multizone_vcmr() {
+        var configNode = createNode(host1, NodeType.config, Node.State.active, false);
+        var tenantNode1 = createNode(host2, NodeType.host, Node.State.active, false);
+        var tenantNode2 = createNode(host3, NodeType.host, Node.State.active, false);
+        nodeRepo.putNodes(zoneId, List.of(configNode, tenantNode1));
+        nodeRepo.putNodes(zone2, List.of(tenantNode2));
+        nodeRepo.hasSpareCapacity(true);
+
+        tester.curator().writeChangeRequest(futureChangeRequest());
+        maintainer.maintain();
+
+        var writtenChangeRequest = tester.curator().readChangeRequest(changeRequestId).get();
+        var actionPlan = writtenChangeRequest.getHostActionPlan();
+
+        var configAction = findHostAction(actionPlan, configNode);
+        var tenantAction1 = findHostAction(actionPlan, tenantNode1);
+        var tenantAction2 = findHostAction(actionPlan, tenantNode2);
+
+        assertEquals(State.REQUIRES_OPERATOR_ACTION, configAction.getState());
+        assertEquals(State.PENDING_RETIREMENT, tenantAction1.getState());
+        assertEquals(State.PENDING_RETIREMENT, tenantAction2.getState());
+    }
 
     private VespaChangeRequest canceledChangeRequest() {
         return newChangeRequest(ChangeRequestSource.Status.CANCELED, State.RETIRED, State.RETIRING, ZonedDateTime.now());
@@ -233,7 +258,7 @@ public class VcmrMaintainerTest {
                 changeRequestId,
                 source,
                 List.of("switch1"),
-                List.of("host1", "host2"),
+                List.of("host1", "host2", "host3"),
                 ChangeRequest.Approval.REQUESTED,
                 ChangeRequest.Impact.VERY_HIGH,
                 VespaChangeRequest.Status.IN_PROGRESS,
@@ -249,5 +274,11 @@ public class VcmrMaintainerTest {
                    .state(state)
                    .wantToRetire(wantToRetire)
                    .build();
+    }
+
+    private HostAction findHostAction(List<HostAction> actions, Node node) {
+        return actions.stream()
+                .filter(action -> node.hostname().value().equals(action.getHostname()))
+                .findFirst().orElseThrow();
     }
 }
