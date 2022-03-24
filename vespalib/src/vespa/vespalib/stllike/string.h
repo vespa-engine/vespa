@@ -111,6 +111,7 @@ public:
         }
         return npos;
     }
+
     /**
      * Find the last occurrence of a substring, starting at e and
      * searching in reverse order.
@@ -126,6 +127,17 @@ public:
         int diff(memcmp(_s, s, std::min(sz, size())));
         return (diff != 0) ? diff : (size() - sz);
     }
+
+    /**
+     * Returns true iff input string is a prefix of this string.
+     */
+    [[nodiscard]] bool starts_with(stringref prefix) const noexcept {
+        if (prefix.size() > size()) {
+            return false;
+        }
+        return (memcmp(data(), prefix.data(), prefix.size()) == 0);
+    }
+
     const char & operator [] (size_t i) const { return _s[i]; }
     operator std::string () const { return std::string(_s, _sz); }
     bool operator  <        (const char * s) const noexcept { return compare(s, strlen(s)) < 0; }
@@ -254,6 +266,16 @@ public:
      */
     void pop_back() {
       _resize(size() - 1);
+    }
+
+    /**
+     * Returns true iff input string is a prefix of this string.
+     */
+    [[nodiscard]] bool starts_with(stringref prefix) const noexcept {
+        if (prefix.size() > size()) {
+            return false;
+        }
+        return (memcmp(buffer(), prefix.data(), prefix.size()) == 0);
     }
 
     /**
