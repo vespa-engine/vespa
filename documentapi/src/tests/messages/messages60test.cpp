@@ -400,7 +400,7 @@ Messages60Test::testPutDocumentMessage()
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
     EXPECT_EQUAL(64u, sizeof(vespalib::string));
-    EXPECT_EQUAL(sizeof(std::string), sizeof(TestAndSetCondition));
+    EXPECT_EQUAL(sizeof(vespalib::string), sizeof(TestAndSetCondition));
     EXPECT_EQUAL(112u, sizeof(DocumentMessage));
     EXPECT_EQUAL(sizeof(TestAndSetCondition) + sizeof(DocumentMessage), sizeof(TestAndSetMessage));
     EXPECT_EQUAL(sizeof(TestAndSetMessage) + 24, sizeof(PutDocumentMessage));
