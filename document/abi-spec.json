@@ -437,6 +437,7 @@
       "public java.lang.Class getValueClass()",
       "public boolean isValueCompatible(com.yahoo.document.datatypes.FieldValue)",
       "public com.yahoo.document.StructDataType contentStruct()",
+      "public com.yahoo.document.StructDataType getStructType(java.lang.String)",
       "public com.yahoo.document.StructDataType getDeclaredStructType(java.lang.String)",
       "public com.yahoo.document.StructDataType getHeaderType()",
       "protected void register(com.yahoo.document.DocumentTypeManager, java.util.List)",
