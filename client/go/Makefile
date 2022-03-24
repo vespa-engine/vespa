@@ -128,7 +128,7 @@ manpages: install
 clean:
 	rm -rf $(DIST)
 	rm -f $(BIN)/vespa $(SHARE)/man/man1/vespa.1 $(SHARE)/man/man1/vespa-*.1
-	rmdir -p $(BIN) $(SHARE)/man/man1 &> /dev/null || true
+	rmdir -p $(BIN) $(SHARE)/man/man1 > /dev/null 2>&1 || true
 
 test: ci
 	go test ./...
