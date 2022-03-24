@@ -5,6 +5,24 @@
 
 deadlock:storage::MergeThrottler::onFlush
 
+# We hold the attribute context lock when getting a shared lock on
+# enumerated attributes to prevent references to enumerated values
+# from being changed due to compaction while performing grouping on
+# the attribute. Thus we have an apparent lock order cycle between the
+# attribute context lock and the shared lock on each attribute.
+#
+# We use an interlock to ensure that only one thread at a time tries
+# to get an exclusive lock on an enumerated attribute (before
+# compacting the enum store). Without that interlock, we could get a
+# deadlock with
+#
+# Thread A having shared lock on attribute E and trying to get a shared lock
+#          on attribute F, blocked by thread D.
+# Thread B having shared lock on attribute F and trying to get a shared lock
+#          on attribute E, blocked by thread C.
+# Thread C trying to get exclusive lock on attribute E, blocked by thread A
+# Thread D trying to get exclusive lock on attribute F, blocked by thread B
+
 deadlock:search::AttributeContext::getAttribute
 deadlock:search::AttributeContext::getAttributeStableEnum
 deadlock:proton::ImportedAttributesContext::getAttribute
