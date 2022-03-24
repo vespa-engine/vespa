@@ -99,9 +99,9 @@ public class ComparisonNode implements ExpressionNode {
                 String name = (String)value;
                 if ((operator.equals("=") && name.contains("*")) ||
                     (operator.equals("=~") && ((name.contains("*") || name.contains("?")))))
-                {
-                    return null; // no idea
-                }
+                    {
+                        return null; // no idea
+                    }
                 return new BucketSet(factory.getBucketId(new DocumentId(name)));
             }
         } else if (field.equalsIgnoreCase("user")) {
@@ -112,10 +112,10 @@ public class ComparisonNode implements ExpressionNode {
             if (value instanceof String) {
                 String name = (String)value;
                 if ((operator.equals("=") && name.contains("*")) ||
-                        (operator.equals("=~") && ((name.contains("*") || name.contains("?")))))
-                {
-                    return null; // no idea
-                }
+                    (operator.equals("=~") && ((name.contains("*") || name.contains("?")))))
+                    {
+                        return null; // no idea
+                    }
                 return new BucketSet(new BucketId(factory.getLocationBitCount(), IdIdString.makeLocation(name)));
             }
         } else if (field.equalsIgnoreCase("bucket")) {
@@ -270,7 +270,7 @@ public class ComparisonNode implements ExpressionNode {
         double a = getAsNumber(lhs);
         double b = getAsNumber(rhs);
         if (Double.isNaN(a) || Double.isNaN(b)) {
-        	return Result.toResult(lhs.toString().equals(rhs.toString()));
+            return Result.toResult(lhs.toString().equals(rhs.toString()));
         }
         return Result.toResult(a == b); // Ugh, comparing doubles? Should be converted to long value perhaps...
     }
@@ -295,11 +295,11 @@ public class ComparisonNode implements ExpressionNode {
      * @return The evaluation result.
      */
     private Result evaluateNumber(Object lhs, Object rhs) {
-    	double a = getAsNumber(lhs);
-    	double b = getAsNumber(rhs);
-    	if (Double.isNaN(a) || Double.isNaN(b)) {
-    		return Result.INVALID;
-    	}
+        double a = getAsNumber(lhs);
+        double b = getAsNumber(rhs);
+        if (Double.isNaN(a) || Double.isNaN(b)) {
+            return Result.INVALID;
+        }
         if (operator.equals("<")) {
             return Result.toResult(a < b);
         } else if (operator.equals("<=")) {
@@ -353,25 +353,25 @@ public class ComparisonNode implements ExpressionNode {
      */
     private String globToRegex(char glob) {
         switch (glob) {
-            case'*':
-                return ".*";
-            case'?':
-                return ".";
-            case'^':
-            case'$':
-            case'|':
-            case'{':
-            case'}':
-            case'(':
-            case')':
-            case'[':
-            case']':
-            case'\\':
-            case'+':
-            case'.':
-                return "\\" + glob;
-            default:
-                return "" + glob;
+        case'*':
+            return ".*";
+        case'?':
+            return ".";
+        case'^':
+        case'$':
+        case'|':
+        case'{':
+        case'}':
+        case'(':
+        case')':
+        case'[':
+        case']':
+        case'\\':
+        case'+':
+        case'.':
+            return "\\" + glob;
+        default:
+            return "" + glob;
         }
     }
 

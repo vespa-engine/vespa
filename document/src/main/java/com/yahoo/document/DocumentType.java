@@ -291,8 +291,8 @@ public class DocumentType extends StructuredDataType {
      * @param type An already DocumentType object.
      */
     public void inherit(DocumentType type) {
-    	//TODO: There is also a check like the following in SDDocumentType addField(), try to move that to this class' addField() to get it proper,
-    	// as this method is called only when the doc types are exported.
+        //TODO: There is also a check like the following in SDDocumentType addField(), try to move that to this class' addField() to get it proper,
+        // as this method is called only when the doc types are exported.
         verifyTypeConsistency(type);
         if (isRegistered()) {
             throw new IllegalStateException("You cannot add inheritance to a document type that is already registered.");

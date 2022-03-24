@@ -127,20 +127,20 @@ public class DocumentIdTestCase {
 
     private void compareStringByte(String s, byte[] b){
         /*
-        System.out.println("-- "+s+" --");
-        System.out.print("++ 0x");
-        for (int i=0; i<b.length; ++i) {
-            int nr = b[i] & 0xFF;
-            System.out.print(Integer.toHexString(nr / 16) + Integer.toHexString(nr % 16));
-        }
-        System.out.println(" ++");
+          System.out.println("-- "+s+" --");
+          System.out.print("++ 0x");
+          for (int i=0; i<b.length; ++i) {
+          int nr = b[i] & 0xFF;
+          System.out.print(Integer.toHexString(nr / 16) + Integer.toHexString(nr % 16));
+          }
+          System.out.println(" ++");
         */
         s = s.substring(2);
         assertEquals(s.length()/2, b.length);
         for(int i=0; i<b.length;i++){
             String ss = s.substring(2*i,2*i+2);
             assertEquals(Integer.valueOf(ss, 16).intValue(),(((int)b[i])+256)%256);
-        }	
+        }       
     }
 
     //Compares bucketId with C++ implementation located in
@@ -213,9 +213,9 @@ public class DocumentIdTestCase {
     @Test
     public void testDocumentIdCanOnlyContainTextCharacters() throws UnsupportedEncodingException {
         assertExceptionWhenConstructing(new byte[]{105, 100, 58, 97, 58, 98, 58, 58, 0, 99}, // "id:a:b::0x0c"
-                "illegal code point 0x0");
+                                        "illegal code point 0x0");
         assertExceptionWhenConstructing(new byte[]{105, 100, 58, 97, 58, 98, 58, 58, 7, 99}, // "id:a:b::0x7c"
-                "illegal code point 0x7");
+                                        "illegal code point 0x7");
     }
 
     private void assertExceptionWhenConstructing(byte[] rawId,

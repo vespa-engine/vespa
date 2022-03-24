@@ -238,8 +238,8 @@ public class SpanTreeAdvTest {
         if (debug) System.out.println("\n\nSpanList: [" + root.getFrom() + ", " + root.getTo() + "] num Children: " + root.numChildren());
         if (debug) System.out.println("-------------------");
         Iterator<SpanNode> childIterator = root.childIterator();
-		while (childIterator.hasNext()) {
-			SpanNode node = childIterator.next();
+        while (childIterator.hasNext()) {
+            SpanNode node = childIterator.next();
             //System.out.println("Span Node: " + node); // + " Span Text: " + node.getText(fieldValStr));
             if (debug) System.out.println("\n\nSpan Node: [" + node.getFrom() + ", " + node.getTo() + "] ");
             if (node instanceof AlternateSpanList) {
@@ -252,10 +252,10 @@ public class SpanTreeAdvTest {
                 while (lli.hasNext()) System.out.print(" " + lli.next() + " ");
                 consumeAnnotations((SpanList) node);
             } else {
-       			if (debug) System.out.println("\nGetting annotations for this span node: [" + node.getFrom() + ", " + node.getTo() + "] ");
-   	    	    getAnnotationsForNode(node);
+                if (debug) System.out.println("\nGetting annotations for this span node: [" + node.getFrom() + ", " + node.getTo() + "] ");
+                getAnnotationsForNode(node);
             }
-		}
+        }
         if (debug) System.out.println("\nGetting annotations for the SpanList itself : [" + root.getFrom() + ", " + root.getTo() + "] ");
         getAnnotationsForNode(root);
     }
@@ -301,19 +301,19 @@ public class SpanTreeAdvTest {
     public void getAnnotationsForNode(SpanNode node) {
         Iterator<Annotation> iter = tree.iterator(node);
         boolean annotationPresent = false;
-		while (iter.hasNext()) {
+        while (iter.hasNext()) {
             annotationPresent = true;
-			Annotation xx = iter.next();
-			AnnotationType t = xx.getType();
-			StringFieldValue fValue = (StringFieldValue) xx.getFieldValue();
-			if (debug) System.out.println("Annotation: " + xx);
+            Annotation xx = iter.next();
+            AnnotationType t = xx.getType();
+            StringFieldValue fValue = (StringFieldValue) xx.getFieldValue();
+            if (debug) System.out.println("Annotation: " + xx);
             if (fValue == null) {
                 if (debug) System.out.println("Field Value is null");
                 return;
             } else {
                 if (debug) System.out.println("Field Value: " + fValue.getString());
             }
-		}
+        }
         if (!annotationPresent) {
             if (debug) System.out.println("****No annotations found for the span node: [" + node.getFrom() + ", " + node.getTo() + "] ");
         }
