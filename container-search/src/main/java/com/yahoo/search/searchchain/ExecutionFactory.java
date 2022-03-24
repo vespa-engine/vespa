@@ -11,7 +11,6 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.ChainsConfig;
-import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.IndexFacts;
@@ -42,6 +41,7 @@ public class ExecutionFactory extends AbstractComponent {
     private final IndexFacts indexFacts;
     private final SpecialTokenRegistry specialTokens;
     private final Linguistics linguistics;
+    private final ThreadPoolExecutor renderingExecutor;
     private final RendererRegistry rendererRegistry;
     private final Executor executor;
 
@@ -67,7 +67,8 @@ public class ExecutionFactory extends AbstractComponent {
         this.indexFacts = new IndexFacts(new IndexModel(indexInfo, clusters)).freeze();
         this.specialTokens = new SpecialTokenRegistry(specialTokens);
         this.linguistics = linguistics;
-        this.rendererRegistry = new RendererRegistry(renderers.allComponents(), createRenderingExecutor());
+        this.renderingExecutor = createRenderingExecutor();
+        this.rendererRegistry = new RendererRegistry(renderers.allComponents(), renderingExecutor);
         this.executor = executor != null ? executor : Executors.newSingleThreadExecutor();
     }
 
@@ -80,7 +81,7 @@ public class ExecutionFactory extends AbstractComponent {
                             SpecialtokensConfig specialTokens,
                             Linguistics linguistics,
                             ComponentRegistry<Renderer> renderers) {
-        this(chainsConfig, indexInfo, clusters, searchers, specialTokens, linguistics, renderers, (Executor)null);
+        this(chainsConfig, indexInfo, clusters, searchers, specialTokens, linguistics, renderers, null);
     }
 
     private SearchChainRegistry createSearchChainRegistry(ComponentRegistry<Searcher> searchers, ChainsConfig chainsConfig) {
@@ -118,6 +119,14 @@ public class ExecutionFactory extends AbstractComponent {
     @Override
     public void deconstruct() {
         rendererRegistry.deconstruct();
+        renderingExecutor.shutdown();
+        try {
+            if ( ! renderingExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                renderingExecutor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            renderingExecutor.shutdownNow();
+        }
     }
 
     public static ExecutionFactory empty() {
@@ -128,7 +137,7 @@ public class ExecutionFactory extends AbstractComponent {
                                     new SpecialtokensConfig.Builder().build(),
                                     new SimpleLinguistics(),
                                     new ComponentRegistry<>(),
-                                    (Executor)null);
+                                    null);
     }
 
 }
