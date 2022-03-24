@@ -188,12 +188,10 @@ FNET_Transport::Listen(const char *spec, FNET_IPacketStreamer *streamer,
 
 FNET_Connection *
 FNET_Transport::Connect(const char *spec, FNET_IPacketStreamer *streamer,
-                        FNET_IPacketHandler *adminHandler,
-                        FNET_Context adminContext,
                         FNET_IServerAdapter *serverAdapter,
                         FNET_Context connContext)
 {
-    return select_thread(spec, strlen(spec))->Connect(spec, streamer, adminHandler, adminContext, serverAdapter, connContext);
+    return select_thread(spec, strlen(spec))->Connect(spec, streamer, serverAdapter, connContext);
 }
 
 uint32_t

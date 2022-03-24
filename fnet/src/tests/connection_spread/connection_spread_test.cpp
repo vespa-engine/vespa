@@ -16,7 +16,6 @@
 using namespace std::literals;
 
 struct DummyAdapter : FNET_IServerAdapter {
-    bool InitAdminChannel(FNET_Channel *) override { return false; }
     bool InitChannel(FNET_Channel *, uint32_t) override { return false; }
 };
 

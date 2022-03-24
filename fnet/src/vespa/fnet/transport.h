@@ -217,25 +217,15 @@ public:
      * holds a host name (or IP address) and a port number. Example:
      * connect to www.fast.no on port 80 (using tcp/ip): spec =
      * 'tcp/www.fast.no:80'. The newly created connection will be
-     * serviced by this transport layer object. If the adminHandler
-     * parameter is given, an internal admin channel is created in the
-     * connection object. The admin channel will be used to deliver
-     * packets tagged with the reserved channel id (FNET_NOID) to the
-     * admin handler.
+     * serviced by this transport layer object.
      *
      * @return an object representing the new connection.
      * @param spec string specifying how and where to connect.
      * @param streamer custom packet streamer.
-     * @param adminHandler packet handler for incoming packets on the
-     *                     admin channel.
-     * @param adminContext application context to be used for incoming
-     *                     packets on the admin channel.
      * @param serverAdapter adapter used to support 2way channel creation.
      * @param connContext application context for the connection.
      **/
     FNET_Connection *Connect(const char *spec, FNET_IPacketStreamer *streamer,
-                             FNET_IPacketHandler *adminHandler = nullptr,
-                             FNET_Context adminContext = FNET_Context(),
                              FNET_IServerAdapter *serverAdapter = nullptr,
                              FNET_Context connContext = FNET_Context());
 

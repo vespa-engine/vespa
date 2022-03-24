@@ -17,7 +17,6 @@ class PingServer : public FNET_IServerAdapter,
                    public FastOS_Application
 {
 public:
-    bool InitAdminChannel(FNET_Channel *) override { return false; }
     bool InitChannel(FNET_Channel *channel, uint32_t) override {
         channel->SetContext(FNET_Context(channel));
         channel->SetHandler(this);

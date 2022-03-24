@@ -96,7 +96,6 @@ private:
     using ResolveHandlerSP = std::shared_ptr<ResolveHandler>;
     FNET_IPacketStreamer    *_streamer;        // custom packet streamer
     FNET_IServerAdapter     *_serverAdapter;   // only on server side
-    FNET_Channel            *_adminChannel;    // only on client side
     vespalib::CryptoSocket::UP _socket;          // socket for this conn
     ResolveHandlerSP         _resolve_handler; // async resolve callback
     FNET_Context             _context;         // connection context
@@ -266,16 +265,12 @@ public:
      * @param owner the TransportThread object serving this connection
      * @param streamer custom packet streamer
      * @param serverAdapter object for custom channel creation
-     * @param adminHandler packet handler for admin channel
-     * @param adminContext context for admin channel
      * @param context initial context for this connection
      * @param spec connect spec
      **/
     FNET_Connection(FNET_TransportThread *owner,
                     FNET_IPacketStreamer *streamer,
                     FNET_IServerAdapter *serverAdapter,
-                    FNET_IPacketHandler *adminHandler,
-                    FNET_Context adminContext,
                     FNET_Context context,
                     const char *spec);
 
@@ -442,23 +437,6 @@ public:
      * @param channel the channel to close and free.
      **/
     void CloseAndFreeChannel(FNET_Channel *channel);
-
-
-    /**
-     * Close the admin channel on a client connection. Invoking this
-     * method on connections in the server aspect will have no effect.
-     *
-     * This method is needed because on the client side the application
-     * does not own the actual admin channel object. The admin channel
-     * on server-side connections are handled as normal channels.
-     *
-     * After this method returns, no more packets will be delivered to
-     * the admin packet handler. In other words: this method is used to
-     * make the connection loose the reference to the admin packet
-     * handler in a thread-safe way, enabling the admin packet handler
-     * to be deleted or the like.
-     **/
-    void CloseAdminChannel();
 
 
     /**

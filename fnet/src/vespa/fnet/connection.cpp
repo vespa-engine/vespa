@@ -148,14 +148,9 @@ FNET_Connection::SetState(State state)
     }
 
     if ( ! toDelete.empty() ) {
-        FNET_Channel *ach        = _adminChannel;
-
         for (const FNET_Channel::UP & ch : toDelete) {
-            if (ch.get() == ach) {
-                _adminChannel = nullptr;
-            } else {
-                SubRef_NoLock();
-            }
+            (void) ch;
+            SubRef_NoLock();
         }
     }
 }
@@ -189,11 +184,7 @@ FNET_Connection::HandlePacket(uint32_t plen, uint32_t pcode,
             _channels.Unregister(channel);
 
             if (hp_rc == FNET_IPacketHandler::FNET_FREE_CHANNEL) {
-                if (channel == _adminChannel) {
-                    _adminChannel = nullptr;
-                } else {
-                    SubRef_NoLock();
-                }
+                SubRef_NoLock();
                 toDelete.reset(channel);
             }
         }
@@ -480,7 +471,6 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
     : FNET_IOComponent(owner, socket.get(), spec, /* time-out = */ true),
       _streamer(streamer),
       _serverAdapter(serverAdapter),
-      _adminChannel(nullptr),
       _socket(owner->owner().create_server_crypto_socket(std::move(socket))),
       _resolve_handler(nullptr),
       _context(),
@@ -507,14 +497,11 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
 FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
                                  FNET_IPacketStreamer *streamer,
                                  FNET_IServerAdapter *serverAdapter,
-                                 FNET_IPacketHandler *adminHandler,
-                                 FNET_Context adminContext,
                                  FNET_Context context,
                                  const char *spec)
     : FNET_IOComponent(owner, -1, spec, /* time-out = */ true),
       _streamer(streamer),
       _serverAdapter(serverAdapter),
-      _adminChannel(nullptr),
       _socket(),
       _resolve_handler(nullptr),
       _context(context),
@@ -533,21 +520,12 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _callbackTarget(nullptr),
       _cleanup(nullptr)
 {
-    if (adminHandler != nullptr) {
-        FNET_Channel::UP admin(new FNET_Channel(FNET_NOID, this, adminHandler, adminContext));
-        _adminChannel = admin.get();
-        _channels.Register(admin.release());
-    }
     _num_connections.fetch_add(1, std::memory_order_relaxed);
 }
 
 
 FNET_Connection::~FNET_Connection()
 {
-    if (_adminChannel != nullptr) {
-        _channels.Unregister(_adminChannel);
-        delete _adminChannel;
-    }
     assert(_cleanup == nullptr);
     _num_connections.fetch_sub(1, std::memory_order_relaxed);
 }
@@ -559,20 +537,6 @@ FNET_Connection::Init()
     // set up relevant events
     EnableReadEvent(true);
     EnableWriteEvent(true);
-
-    // init server admin channel
-    if (CanAcceptChannels() && _adminChannel == nullptr) {
-        FNET_Channel::UP ach(new FNET_Channel(FNET_NOID, this));
-        if (_serverAdapter->InitAdminChannel(ach.get())) {
-            AddRef_NoLock();
-            _channels.Register(ach.release());
-        }
-    }
-
-    // handle close by admin channel init
-    if (GetState() == FNET_CLOSED) {
-        return false;
-    }
 
     // initiate async resolve
     if (IsClient()) {
@@ -672,22 +636,6 @@ FNET_Connection::CloseAndFreeChannel(FNET_Channel *channel)
     _channels.Unregister(channel);
     SubRef_HasLock(std::move(guard));
     delete channel;
-}
-
-
-void
-FNET_Connection::CloseAdminChannel()
-{
-    FNET_Channel::UP toDelete;
-    std::unique_lock<std::mutex> guard(_ioc_lock);
-    if (_adminChannel != nullptr) {
-        WaitCallback(guard, _adminChannel);
-        if (_adminChannel != nullptr) {
-            _channels.Unregister(_adminChannel);
-            toDelete.reset(_adminChannel);
-            _adminChannel = nullptr;
-        }
-    }
 }
 
 
