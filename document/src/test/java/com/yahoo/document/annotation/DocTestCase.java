@@ -242,7 +242,8 @@ public class DocTestCase {
         SpanList root = new SpanList();
         SpanTree tree = new SpanTree("html", root);
 
-        StructDataType positionType = (StructDataType) dtm.getDataType("position");
+        var docType = dtm.getDocumentType("blogpost");
+        StructDataType positionType = docType.getDeclaredStructType("position");
 
         AnnotationType textType = atr.getType("text");
         AnnotationType beginTag = atr.getType("begintag");

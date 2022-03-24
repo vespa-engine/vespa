@@ -38,6 +38,7 @@ public class Bug4261985TestCase {
     }
 
     public void annotate(Document document, DocumentTypeManager manager) {
+        DocumentType docType = manager.getDocumentType("blog");
         AnnotationTypeRegistry registry = manager.getAnnotationTypeRegistry();
 
         AnnotationType company = registry.getType("company");
@@ -90,7 +91,7 @@ public class Bug4261985TestCase {
         Struct companyValue = (Struct) company.getDataType().createFieldValue();
         companyValue.setFieldValue("name", "Sun");
 
-        Struct locationVal = new Struct(manager.getDataType("annotation.location"));
+        Struct locationVal = new Struct(location.getDataType());
         locationVal.setFieldValue("lat", 37.774929);
         locationVal.setFieldValue("lon", -122.419415);
         Annotation locAnnotation = new Annotation(location, locationVal);
@@ -142,7 +143,7 @@ public class Bug4261985TestCase {
         tree.annotate(span5, dirAnnotation1);
         tree.annotate(span6, dirAnnotation2);
 
-        Struct indValue = new Struct(manager.getDataType("annotation.industry"));
+        Struct indValue = new Struct(industry.getDataType());
         indValue.setFieldValue("vertical", "Manufacturing");
         Annotation indAn = new Annotation(industry, indValue);
         tree.annotate(span4, indAn);

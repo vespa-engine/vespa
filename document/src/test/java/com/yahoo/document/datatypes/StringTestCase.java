@@ -256,17 +256,17 @@ public class StringTestCase extends AbstractTypesTest {
         Annotation compAn = new Annotation(company, companyValue);
         tree.annotate(companySpan, compAn);
 
-        Struct personValue = new Struct(manager.getDataType("annotation.person"));
+        Struct personValue = new Struct(person.getDataType());
         personValue.setFieldValue("name", new StringFieldValue("Richard Bair"));
         Annotation personAn = new Annotation(person, personValue);
         tree.annotate(personSpan, personAn);
 
-        Struct locValue = new Struct(manager.getDataType("annotation.location"));
+        Struct locValue = new Struct(location.getDataType());
         locValue.setFieldValue("name", new StringFieldValue("Prinsens Gate"));
         Annotation loc = new Annotation(location, locValue);
         tree.annotate(locationSpan, loc);
 
-        Struct locValue2 = new Struct(manager.getDataType("annotation.location"));
+        Struct locValue2 = new Struct(location.getDataType());
         locValue2.setFieldValue("name", new StringFieldValue("Kongens Gate"));
         Annotation locAn = new Annotation(location, locValue2);
         tree.annotate(locationSpan, locAn);
@@ -281,17 +281,17 @@ public class StringTestCase extends AbstractTypesTest {
         branch.add(span3);
         branch.add(span2);
 
-        Struct industryValue = new Struct(manager.getDataType("annotation.industry"));
+        Struct industryValue = new Struct(industry.getDataType());
         industryValue.setFieldValue("vertical", new StringFieldValue("Manufacturing"));
         Annotation ind = new Annotation(industry, industryValue);
         tree.annotate(span1, ind);
 
-        Struct pValue = new Struct(manager.getDataType("annotation.person"));
+        Struct pValue = new Struct(person.getDataType());
         pValue.setFieldValue("name", new StringFieldValue("Praveen Mohan"));
         Annotation pAn = new Annotation(person, pValue);
         tree.annotate(span2, pAn);
 
-        Struct lValue = new Struct(manager.getDataType("annotation.location"));
+        Struct lValue = new Struct(location.getDataType());
         lValue.setFieldValue("name", new StringFieldValue("Embassy Golf Links"));
         Annotation locn = new Annotation(location, lValue);
         tree.annotate(span3, locn);
@@ -305,7 +305,7 @@ public class StringTestCase extends AbstractTypesTest {
         Annotation cAn = new Annotation(company, cValue);
         tree.annotate(branch, cAn);
 
-        Struct pVal = new Struct(manager.getDataType("annotation.person"));
+        Struct pVal = new Struct(person.getDataType());
         pVal.setFieldValue("name", new StringFieldValue("Kim Omar"));
         Annotation an = new Annotation(person, pVal);
         tree.annotate(root, an);

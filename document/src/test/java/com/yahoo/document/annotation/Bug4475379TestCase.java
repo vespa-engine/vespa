@@ -37,6 +37,8 @@ public class Bug4475379TestCase {
     }
 
     public void annotate(DocumentTypeManager manager, Document document) {
+        DocumentType docType = manager.getDocumentType("blog");
+
         AnnotationTypeRegistry registry = manager.getAnnotationTypeRegistry();
 
         AnnotationType company = registry.getType("company");
@@ -64,17 +66,17 @@ public class Bug4475379TestCase {
             compAn1 = new Annotation(company, companyValue1);
         }
         {
-            Struct personValue1 = new Struct(manager.getDataType("annotation.person"));
+            Struct personValue1 = new Struct(person.getDataType());
             personValue1.setFieldValue("name", new StringFieldValue("Richard Bair"));
             personAn1 = new Annotation(person, personValue1);
         }
         {
-            Struct locValue1 = new Struct(manager.getDataType("annotation.location"));
+            Struct locValue1 = new Struct(location.getDataType());
             locValue1.setFieldValue("name", new StringFieldValue("Prinsens Gate"));
             locAn1 = new Annotation(location, locValue1);
         }
         {
-            Struct indValue1 = new Struct(manager.getDataType("annotation.industry"));
+            Struct indValue1 = new Struct(industry.getDataType());
             indValue1.setFieldValue("vertical", new StringFieldValue("Software Services"));
             indAn1 = new Annotation(industry, indValue1);
         }
@@ -89,17 +91,17 @@ public class Bug4475379TestCase {
             compAn2 = new Annotation(company, companyValue2);
         }
         {
-            Struct personValue2 = new Struct(manager.getDataType("annotation.person"));
+            Struct personValue2 = new Struct(person.getDataType());
             personValue2.setFieldValue("name", new StringFieldValue("Kim Johansen"));
             personAn2 = new Annotation(person, personValue2);
         }
         {
-            Struct locValue2 = new Struct(manager.getDataType("annotation.location"));
+            Struct locValue2 = new Struct(location.getDataType());
             locValue2.setFieldValue("name", new StringFieldValue("RT Nagar"));
             locAn2 = new Annotation(location, locValue2);
         }
         {
-            Struct indValue2 = new Struct(manager.getDataType("annotation.industry"));
+            Struct indValue2 = new Struct(industry.getDataType());
             indValue2.setFieldValue("vertical", new StringFieldValue("Software Consulting"));
             indAn2 = new Annotation(industry, indValue2);
         }
