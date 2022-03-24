@@ -8,8 +8,8 @@ namespace vespalib::slime {
 
 extern std::string strfmt(const char *fmt, ...)
 #ifdef __GNUC__
-        // Add printf format checks with gcc
-        __attribute__ ((format (printf,1,2)))
+        __attribute__ ((format (printf,1,2))) // Add printf format checks with gcc
+        __attribute__((nonnull(1))) // Format string can never be null
 #endif
     ;
 
