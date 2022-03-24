@@ -110,12 +110,6 @@ public class DocprocBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void testDocprocConfig() {
-        assertEquals(200000, docprocConfig.maxqueuetimems());
-
-    }
-
-    @Test
     public void testContainerMbusConfig() {
         assertTrue(containerMbusConfig.enabled());
         assertTrue(containerMbusConfig.port() >= HostPorts.BASE_PORT);
