@@ -40,19 +40,15 @@ SingleValueNumericAttribute<B>::onCommit()
         typename B::ValueModifier valueGuard(this->getValueModifier());
         for (const auto & change : this->_changes.getInsertOrder()) {
             if (change._type == ChangeBase::UPDATE) {
-                std::atomic_thread_fence(std::memory_order_release);
-                _data[change._doc] = change._data;
+                vespalib::atomic::store_ref_relaxed(_data[change._doc], change._data);
             } else if (change._type >= ChangeBase::ADD && change._type <= ChangeBase::DIV) {
-                std::atomic_thread_fence(std::memory_order_release);
-                _data[change._doc] = this->template applyArithmetic<T, typename B::Change::DataType>(_data[change._doc], change._data.getArithOperand(), change._type);
+                vespalib::atomic::store_ref_relaxed(_data[change._doc], this->template applyArithmetic<T, typename B::Change::DataType>(_data[change._doc], change._data.getArithOperand(), change._type));
             } else if (change._type == ChangeBase::CLEARDOC) {
-                std::atomic_thread_fence(std::memory_order_release);
-                _data[change._doc] = this->_defaultValue._data;
+                vespalib::atomic::store_ref_relaxed(_data[change._doc], this->_defaultValue._data);
             }
         }
     }
 
-    std::atomic_thread_fence(std::memory_order_release);
     this->removeAllOldGenerations();
 
     this->_changes.clear();
@@ -220,7 +216,7 @@ SingleValueNumericAttribute<B>::SingleSearchContext<M>::SingleSearchContext(Quer
                                                                             const NumericAttribute & toBeSearched) :
     M(*qTerm, true),
     AttributeVector::SearchContext(toBeSearched),
-    _data(&static_cast<const SingleValueNumericAttribute<B> &>(toBeSearched)._data[0])
+    _data(&static_cast<const SingleValueNumericAttribute<B> &>(toBeSearched)._data.acquire_elem_ref(0))
 { }
 
 
