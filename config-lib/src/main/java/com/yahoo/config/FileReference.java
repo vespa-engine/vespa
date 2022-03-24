@@ -10,8 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * An immutable file reference that can only be created from classes within the same package.
- * This is to prevent clients from creating arbitrary and invalid file references.
+ * An immutable file reference.
  *
  * @author Tony Vaagenes
  */
