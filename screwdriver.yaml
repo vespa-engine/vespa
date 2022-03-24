@@ -231,7 +231,8 @@ jobs:
 
   publish-cli-release:
     annotations:
-      screwdriver.cd/buildPeriodically: H 0 * * *
+      # Run once an hour, in the hours 7-15 UTC, Monday-Thursday
+      screwdriver.cd/buildPeriodically: H 7-15 * * 1-4
     secrets:
       - HOMEBREW_GITHUB_API_TOKEN
       - GH_TOKEN
