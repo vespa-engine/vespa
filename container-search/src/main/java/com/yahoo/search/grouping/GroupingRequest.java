@@ -15,6 +15,7 @@ import com.yahoo.search.result.Hit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.TimeZone;
 
 /**
@@ -34,6 +35,7 @@ public class GroupingRequest {
     private TimeZone timeZone;
     private int defaultMaxHits = -1;
     private int defaultMaxGroups = -1;
+    private long globalMaxGroups = -1;
 
     private GroupingRequest(Select parent) {
         this.parent = parent;
@@ -44,18 +46,20 @@ public class GroupingRequest {
                             GroupingOperation root,
                             TimeZone timeZone,
                             int defaultMaxHits,
-                            int defaultMaxGroups) {
+                            int defaultMaxGroups,
+                            long globalMaxGroups) {
         this.parent = parent;
         continuations.forEach(item -> this.continuations.add(item.copy()));
         this.root = root != null ? root.copy(null) : null;
         this.timeZone = timeZone;
         this.defaultMaxHits = defaultMaxHits;
         this.defaultMaxGroups = defaultMaxGroups;
+        this.globalMaxGroups = globalMaxGroups;
     }
 
     /** Returns a deep copy of this */
     public GroupingRequest copy(Select parentOfCopy) {
-        return new GroupingRequest(parentOfCopy, continuations, root, timeZone, defaultMaxHits, defaultMaxGroups);
+        return new GroupingRequest(parentOfCopy, continuations, root, timeZone, defaultMaxHits, defaultMaxGroups, globalMaxGroups);
     }
 
     /**
@@ -152,6 +156,13 @@ public class GroupingRequest {
     }
 
     @Beta public void setDefaultMaxGroups(int v) { this.defaultMaxGroups = v; }
+
+    @Beta
+    public OptionalLong globalMaxGroups() {
+        return globalMaxGroups >= 0 ? OptionalLong.of(globalMaxGroups) : OptionalLong.empty();
+    }
+
+    @Beta public void setGlobalMaxGroups(long v) { this.globalMaxGroups = v; }
 
     /**
      * Creates a new grouping request and adds it to the query.getSelect().getGrouping() list

@@ -5,15 +5,16 @@ import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.component.chain.dependencies.Provides;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.query.Select;
+import com.yahoo.search.query.properties.DefaultProperties;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
-import com.yahoo.processing.IllegalInputException;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -45,6 +46,10 @@ public class GroupingQueryParser extends Searcher {
     @Override
     public Result search(Query query, Execution execution) {
         try {
+            if (query.getHttpRequest().getProperty(DefaultProperties.GROUPING_GLOBAL_MAX_GROUPS.toString()) != null) {
+                throw new IllegalInputException(DefaultProperties.GROUPING_GLOBAL_MAX_GROUPS + " must be specified in a query profile.");
+            }
+
             String reqParam = query.properties().getString(PARAM_REQUEST);
             if (reqParam == null) return execution.search(query);
 
@@ -57,6 +62,7 @@ public class GroupingQueryParser extends Searcher {
                 grpRequest.continuations().addAll(continuations);
                 grpRequest.setDefaultMaxGroups(query.properties().getInteger(PARAM_DEFAULT_MAX_GROUPS, -1));
                 grpRequest.setDefaultMaxHits(query.properties().getInteger(PARAM_DEFAULT_MAX_HITS, -1));
+                grpRequest.setGlobalMaxGroups(query.properties().getLong(DefaultProperties.GROUPING_GLOBAL_MAX_GROUPS));
             }
             return execution.search(query);
         }

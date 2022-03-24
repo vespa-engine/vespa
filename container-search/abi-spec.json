@@ -2369,6 +2369,8 @@
       "public void setDefaultMaxHits(int)",
       "public java.util.OptionalInt defaultMaxGroups()",
       "public void setDefaultMaxGroups(int)",
+      "public java.util.OptionalLong globalMaxGroups()",
+      "public void setGlobalMaxGroups(long)",
       "public static com.yahoo.search.grouping.GroupingRequest newInstance(com.yahoo.search.Query)",
       "public java.lang.String toString()"
     ],
@@ -6624,6 +6626,7 @@
     "fields": [
       "public static final com.yahoo.processing.request.CompoundName MAX_OFFSET",
       "public static final com.yahoo.processing.request.CompoundName MAX_HITS",
+      "public static final com.yahoo.processing.request.CompoundName GROUPING_GLOBAL_MAX_GROUPS",
       "public static final com.yahoo.search.query.profile.types.QueryProfileType argumentType"
     ]
   },

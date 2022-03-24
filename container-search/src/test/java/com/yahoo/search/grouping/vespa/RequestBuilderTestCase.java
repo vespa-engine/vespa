@@ -1,13 +1,38 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.vespa;
 
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.grouping.Continuation;
-import com.yahoo.search.grouping.request.*;
-import com.yahoo.searchlib.aggregation.*;
-import com.yahoo.searchlib.expression.*;
+import com.yahoo.search.grouping.request.AllOperation;
+import com.yahoo.search.grouping.request.AttributeValue;
+import com.yahoo.search.grouping.request.EachOperation;
+import com.yahoo.search.grouping.request.GroupingOperation;
+import com.yahoo.search.grouping.request.SummaryValue;
+import com.yahoo.searchlib.aggregation.AggregationResult;
+import com.yahoo.searchlib.aggregation.CountAggregationResult;
+import com.yahoo.searchlib.aggregation.ExpressionCountAggregationResult;
+import com.yahoo.searchlib.aggregation.Group;
+import com.yahoo.searchlib.aggregation.Grouping;
+import com.yahoo.searchlib.aggregation.GroupingLevel;
+import com.yahoo.searchlib.aggregation.HitsAggregationResult;
+import com.yahoo.searchlib.aggregation.SumAggregationResult;
+import com.yahoo.searchlib.expression.AddFunctionNode;
+import com.yahoo.searchlib.expression.AttributeMapLookupNode;
+import com.yahoo.searchlib.expression.AttributeNode;
+import com.yahoo.searchlib.expression.ConstantNode;
+import com.yahoo.searchlib.expression.ExpressionNode;
+import com.yahoo.searchlib.expression.StrCatFunctionNode;
+import com.yahoo.searchlib.expression.StringResultNode;
+import com.yahoo.searchlib.expression.TimeStampFunctionNode;
+import com.yahoo.searchlib.expression.ToStringFunctionNode;
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.TimeZone;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -739,6 +764,46 @@ public class RequestBuilderTestCase {
             HitsAggregationResult hitsAggregation =
                     (HitsAggregationResult)requests.get(0).getLevels().get(0).getGroupPrototype().getAggregationResults().get(0);
             assertEquals(-1, hitsAggregation.getMaxHits());
+        }
+    }
+
+    @Test
+    public void require_that_total_groups_and_summaries_calculation_is_correct() {
+        assertTotalGroupsAndSummaries(5, "all(group(a) max(5) each(output(count())))");
+        assertTotalGroupsAndSummaries(5+5*7, "all(group(a) max(5) each(max(7) each(output(summary()))))");
+        assertTotalGroupsAndSummaries(3+3*5+3*5*7+3*5*7*11,
+                "all( group(a) max(3) each(output(count())" +
+                "     all(group(b) max(5) each(output(count())" +
+                "         all(group(c) max(7) each(max(11) output(count())" +
+                "             each(output(summary()))))))))");
+        assertTotalGroupsAndSummaries(2*(3+3*5),
+                "all(" +
+                        "   all(group(a) max(3) each(output(count()) max(5) each(output(summary())))) " +
+                        "   all(group(b) max(3) each(output(count()) max(5) each(output(summary())))))");
+    }
+
+    @Test
+    public void require_that_unbounded_queries_fails_when_global_max_is_enabled() {
+        assertQueryFailsOnGlobalMax(4, "all(group(a) max(5) each(output(count())))", "5 > 4");
+        assertQueryFailsOnGlobalMax(Long.MAX_VALUE, "all(group(a) each(output(count())))", "unbounded number of groups");
+        assertQueryFailsOnGlobalMax(Long.MAX_VALUE, "all(group(a) max(5) each(each(output(summary()))))", "unbounded number of summaries");
+    }
+
+    private static void assertTotalGroupsAndSummaries(long expected, String query) {
+        RequestBuilder builder = new RequestBuilder(0)
+                .setRootOperation(GroupingOperation.fromString(query)).setGlobalMaxGroups(Long.MAX_VALUE);
+        builder.build();
+        assertEquals(expected, builder.totalGroupsAndSummaries().orElseThrow());
+    }
+
+    private static void assertQueryFailsOnGlobalMax(long globalMax, String query, String errorSubstring) {
+        RequestBuilder builder = new RequestBuilder(0)
+                .setRootOperation(GroupingOperation.fromString(query)).setGlobalMaxGroups(globalMax);
+        try {
+            builder.build();
+            fail();
+        } catch (IllegalInputException e) {
+            Assertions.assertThat(e.getMessage()).contains(errorSubstring);
         }
     }
 

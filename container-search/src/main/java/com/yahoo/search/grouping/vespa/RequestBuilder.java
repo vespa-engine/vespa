@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.vespa;
 
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.grouping.Continuation;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.request.AllOperation;
@@ -8,10 +9,22 @@ import com.yahoo.search.grouping.request.EachOperation;
 import com.yahoo.search.grouping.request.GroupingExpression;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.grouping.request.NegFunction;
-import com.yahoo.searchlib.aggregation.*;
+import com.yahoo.searchlib.aggregation.AggregationResult;
+import com.yahoo.searchlib.aggregation.ExpressionCountAggregationResult;
+import com.yahoo.searchlib.aggregation.Group;
+import com.yahoo.searchlib.aggregation.Grouping;
+import com.yahoo.searchlib.aggregation.GroupingLevel;
+import com.yahoo.searchlib.aggregation.HitsAggregationResult;
 import com.yahoo.searchlib.expression.ExpressionNode;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.OptionalLong;
+import java.util.Stack;
+import java.util.TimeZone;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * This class implements the necessary logic to build a list of {@link Grouping} objects from an instance of {@link
@@ -29,6 +42,8 @@ class RequestBuilder {
     private int tag = 0;
     private int defaultMaxHits = -1;
     private int defaultMaxGroups = -1;
+    private long globalMaxGroups = -1;
+    private long totalGroupsAndSummaries = -1;
 
     /**
      * Constructs a new instance of this class.
@@ -128,6 +143,7 @@ class RequestBuilder {
             }
         }
         pruneRequests();
+        validateGlobalMax();
     }
 
     public RequestBuilder addContinuations(Iterable<Continuation> continuations) {
@@ -143,6 +159,12 @@ class RequestBuilder {
     public RequestBuilder setDefaultMaxGroups(int v) { this.defaultMaxGroups = v; return this; }
 
     public RequestBuilder setDefaultMaxHits(int v) { this.defaultMaxHits = v; return this; }
+
+    public RequestBuilder setGlobalMaxGroups(long v) { this.globalMaxGroups = v; return this; }
+
+    OptionalLong totalGroupsAndSummaries() {
+        return totalGroupsAndSummaries != -1 ? OptionalLong.of(totalGroupsAndSummaries) : OptionalLong.empty();
+    }
 
     private void processRequestNode(BuildFrame frame) {
         int level = frame.astNode.getLevel();
@@ -375,6 +397,55 @@ class RequestBuilder {
                 requestList.remove(reqIdx);
             }
         }
+    }
+
+    private void validateGlobalMax() {
+        this.totalGroupsAndSummaries = -1;
+        if (globalMaxGroups < 0) return;
+        int totalGroupsAndSummaries = 0;
+        for (Grouping grp : requestList) {
+            int levelMultiplier = 1;
+            for (GroupingLevel lvl : grp.getLevels()) {
+                totalGroupsAndSummaries += (levelMultiplier *= validateSummaryMax(lvl));
+                var hars = hitsAggregationResult(lvl);
+                for (HitsAggregationResult har : hars) {
+                    totalGroupsAndSummaries += (levelMultiplier * validateSummaryMax(har));
+                }
+            }
+        }
+        if (totalGroupsAndSummaries > globalMaxGroups)
+            throw new IllegalInputException(String.format(
+                    "The theoretical total number of groups and summaries in grouping query exceeds " +
+                            "'grouping.globalMaxGroups' ( %d > %d ). " +
+                            "Either restrict group/summary counts with max() or disable 'grouping.globalMaxGroups'. " +
+                            "See https://docs.vespa.ai/en/grouping.html for details.",
+                    totalGroupsAndSummaries, globalMaxGroups));
+        this.totalGroupsAndSummaries = totalGroupsAndSummaries;
+    }
+
+    private int validateSummaryMax(GroupingLevel lvl) {
+        int max = transform.getMax(lvl.getGroupPrototype().getTag());
+        if (max <= 0) throw new IllegalInputException(
+                "Cannot return unbounded number of groups when 'grouping.globalMaxGroups' is enabled. " +
+                        "Either restrict group count with max() or disable 'grouping.globalMaxGroups'. " +
+                        "See https://docs.vespa.ai/en/grouping.html for details.");
+        return max;
+    }
+
+    private int validateSummaryMax(HitsAggregationResult res) {
+        int max = transform.getMax(res.getTag());
+        if (max <= 0) throw new IllegalInputException(
+                "Cannot return unbounded number of summaries when 'grouping.globalMaxGroups' is enabled. " +
+                        "Either restrict summary count with max() or disable 'grouping.globalMaxGroups'. " +
+                        "See https://docs.vespa.ai/en/grouping.html for details.");
+        return max;
+    }
+
+    private List<HitsAggregationResult> hitsAggregationResult(GroupingLevel lvl) {
+        return lvl.getGroupPrototype().getAggregationResults().stream()
+                .filter(ar -> ar instanceof HitsAggregationResult)
+                .map(ar -> (HitsAggregationResult) ar)
+                .collect(toList());
     }
 
     private static class BuildFrame {
