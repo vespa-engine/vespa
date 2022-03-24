@@ -8,6 +8,7 @@ import com.yahoo.component.chain.ChainsConfigurer;
 import com.yahoo.component.chain.model.ChainsModel;
 import com.yahoo.component.chain.model.ChainsModelBuilder;
 import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.handler.threadpool.ContainerThreadPool;
@@ -24,6 +25,9 @@ import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Provides creation of fully configured query Execution instances.
@@ -41,6 +45,15 @@ public class ExecutionFactory extends AbstractComponent {
     private final RendererRegistry rendererRegistry;
     private final Executor executor;
 
+    private static ThreadPoolExecutor createRenderingExecutor() {
+        int threadCount = Runtime.getRuntime().availableProcessors();
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(threadCount, threadCount, 1L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(),
+                ThreadFactoryFactory.getThreadFactory("common-rendering"));
+        executor.prestartAllCoreThreads();
+        return executor;
+    }
+
     @Inject
     public ExecutionFactory(ChainsConfig chainsConfig,
                             IndexInfoConfig indexInfo,
@@ -54,7 +67,7 @@ public class ExecutionFactory extends AbstractComponent {
         this.indexFacts = new IndexFacts(new IndexModel(indexInfo, clusters)).freeze();
         this.specialTokens = new SpecialTokenRegistry(specialTokens);
         this.linguistics = linguistics;
-        this.rendererRegistry = new RendererRegistry(renderers.allComponents());
+        this.rendererRegistry = new RendererRegistry(renderers.allComponents(), createRenderingExecutor());
         this.executor = executor != null ? executor : Executors.newSingleThreadExecutor();
     }
 
