@@ -66,6 +66,11 @@ public class DockerImage {
         return new DockerImage(registry, repository, tag);
     }
 
+    /** Returns a copy of this with repository set to given value */
+    public DockerImage withRepository(String repository) {
+        return new DockerImage(registry, repository, tag);
+    }
+
     public String asString() {
         if (equals(EMPTY)) return "";
         return registry + "/" + repository + tag.map(t -> ':' + t).orElse("");
