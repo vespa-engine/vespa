@@ -53,7 +53,8 @@ dist-homebrew:
 # TODO(mpolden): Remove @echo when this is ready
 	@echo gh release create v$(VERSION) --repo vespa-engine/vespa --notes-file $(CURDIR)/README.md --title "Vespa CLI $(VERSION)" \
 		$(DIST)/vespa-cli_$(VERSION)_sha256sums.txt \
-		$(DIST)/vespa-cli_$(VERSION)_*.{zip,tar.gz}
+		$(DIST)/vespa-cli_$(VERSION)_*.zip \
+		$(DIST)/vespa-cli_$(VERSION)_*.tar.gz
 
 dist-github:
 	go run cond_make.go --dist-github
@@ -96,7 +97,7 @@ $(DIST_TARGETS):
 	fi
 
 dist-sha256sums:
-	cd $(DIST) && sha256sum vespa-cli_$(VERSION)_*.{zip,tar.gz} > vespa-cli_$(VERSION)_sha256sums.txt
+	sha256sum $(DIST)/vespa-cli_$(VERSION)_*.zip $(DIST)/vespa-cli_$(VERSION)_*.tar.gz | sed 's|$(DIST)/||' > $(DIST)/vespa-cli_$(VERSION)_sha256sums.txt
 
 dist-version:
 ifeq ($(VERSION),$(DEVEL_VERSION))
