@@ -31,7 +31,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  *
@@ -81,8 +80,7 @@ public class VcmrMaintainer extends ControllerMaintainer {
                             var updatedVcmr = vcmr.withActionPlan(nextActions)
                                     .withStatus(status);
                             curator.writeChangeRequest(updatedVcmr);
-                            if (nodes.keySet().size() == 1)
-                                approveChangeRequest(updatedVcmr);
+                            approveChangeRequest(updatedVcmr);
                         });
             }
         });
@@ -121,30 +119,19 @@ public class VcmrMaintainer extends ControllerMaintainer {
         return Status.NOOP;
     }
 
-    private List<HostAction> getNextActions(Map<ZoneId, List<Node>> nodesByZone, VespaChangeRequest changeRequest) {
-        return nodesByZone.entrySet()
-                .stream()
-                .flatMap(entry -> {
-                    var zone = entry.getKey();
-                    var nodes = entry.getValue();
-                    if (nodes.isEmpty()) {
-                        return Stream.empty();
-                    }
-                    var spareCapacity = hasSpareCapacity(zone, nodes);
-                    return nodes.stream().map(node -> nextAction(zone, node, changeRequest, spareCapacity));
-                }).collect(Collectors.toList());
-
+    private List<HostAction> getNextActions(List<Node> nodes, VespaChangeRequest changeRequest) {
+        var spareCapacity = hasSpareCapacity(changeRequest.getZoneId(), nodes);
+        return nodes.stream()
+                .map(node -> nextAction(node, changeRequest, spareCapacity))
+                .collect(Collectors.toList());
     }
 
     // Get the superset of impacted hosts by looking at impacted switches
-    private Map<ZoneId, List<Node>> impactedNodes(Map<ZoneId, List<Node>> nodesByZone, VespaChangeRequest changeRequest) {
-        return nodesByZone.entrySet()
+    private List<Node> impactedNodes(Map<ZoneId, List<Node>> nodesByZone, VespaChangeRequest changeRequest) {
+        return nodesByZone.get(changeRequest.getZoneId())
                 .stream()
-                .filter(entry -> entry.getValue().stream().anyMatch(isImpacted(changeRequest))) // Skip zones without impacted nodes
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        entry -> entry.getValue().stream().filter(isImpacted(changeRequest)).collect(Collectors.toList())
-                ));
+                .filter(isImpacted(changeRequest))
+                .collect(Collectors.toList());
     }
 
     private Optional<HostAction> getPreviousAction(Node node, VespaChangeRequest changeRequest) {
@@ -154,25 +141,25 @@ public class VcmrMaintainer extends ControllerMaintainer {
                 .findFirst();
     }
 
-    private HostAction nextAction(ZoneId zoneId, Node node, VespaChangeRequest changeRequest, boolean spareCapacity) {
+    private HostAction nextAction(Node node, VespaChangeRequest changeRequest, boolean spareCapacity) {
         var hostAction = getPreviousAction(node, changeRequest)
                 .orElse(new HostAction(node.hostname().value(), State.NONE, Instant.now()));
 
         if (changeRequest.getChangeRequestSource().isClosed()) {
             LOG.fine(() -> changeRequest.getChangeRequestSource().getId() + " is closed, recycling " + node.hostname());
-            recycleNode(zoneId, node, hostAction);
-            removeReport(zoneId, changeRequest, node);
+            recycleNode(changeRequest.getZoneId(), node, hostAction);
+            removeReport(changeRequest, node);
             return hostAction.withState(State.COMPLETE);
         }
 
         if (isLowImpact(changeRequest))
             return hostAction;
 
-        addReport(zoneId, changeRequest, node);
+        addReport(changeRequest, node);
 
         if (isPostponed(changeRequest, hostAction)) {
             LOG.fine(() -> changeRequest.getChangeRequestSource().getId() + " is postponed, recycling " + node.hostname());
-            recycleNode(zoneId, node, hostAction);
+            recycleNode(changeRequest.getZoneId(), node, hostAction);
             return hostAction.withState(State.PENDING_RETIREMENT);
         }
 
@@ -185,11 +172,11 @@ public class VcmrMaintainer extends ControllerMaintainer {
                 LOG.info(Text.format("Retiring %s due to %s", node.hostname().value(), changeRequest.getChangeRequestSource().getId()));
                 // TODO: Remove try/catch once retirement is stabilized
                 try {
-                    setWantToRetire(zoneId, node, true);
+                    setWantToRetire(changeRequest.getZoneId(), node, true);
                 } catch (Exception e) {
                     LOG.warning("Failed to retire host " + node.hostname() + ": " + Exceptions.toMessageString(e));
                     // Check if retirement actually failed
-                    if (!nodeRepository.getNode(zoneId, node.hostname().value()).wantToRetire()) {
+                    if (!nodeRepository.getNode(changeRequest.getZoneId(), node.hostname().value()).wantToRetire()) {
                         return hostAction;
                     }
                 }
@@ -304,20 +291,20 @@ public class VcmrMaintainer extends ControllerMaintainer {
         changeRequestClient.approveChangeRequest(changeRequest);
     }
 
-    private void removeReport(ZoneId zoneId, VespaChangeRequest changeRequest, Node node) {
+    private void removeReport(VespaChangeRequest changeRequest, Node node) {
         var report = VcmrReport.fromReports(node.reports());
 
         if (report.removeVcmr(changeRequest.getChangeRequestSource().getId())) {
-            updateReport(zoneId, node, report);
+            updateReport(changeRequest.getZoneId(), node, report);
         }
     }
 
-    private void addReport(ZoneId zoneId, VespaChangeRequest changeRequest, Node node) {
+    private void addReport(VespaChangeRequest changeRequest, Node node) {
         var report = VcmrReport.fromReports(node.reports());
 
         var source = changeRequest.getChangeRequestSource();
         if (report.addVcmr(source.getId(), source.getPlannedStartTime(), source.getPlannedEndTime())) {
-            updateReport(zoneId, node, report);
+            updateReport(changeRequest.getZoneId(), node, report);
         }
     }
 
