@@ -6,6 +6,7 @@
 // This source file is not part of the standard Vespa CLI build and is only used from the Makefile in this directory.
 
 //go:build ignore
+// +build ignore
 
 package main
 
