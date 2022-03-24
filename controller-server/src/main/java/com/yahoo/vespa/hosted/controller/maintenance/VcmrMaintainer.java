@@ -243,11 +243,9 @@ public class VcmrMaintainer extends ControllerMaintainer {
                 node.state() == Node.State.parked;
     }
 
-    /**
-     * TODO: For now, we choose to retire any active host
-     */
     private boolean pendingRetirement(Node node, HostAction action) {
-        return action.getState() == State.NONE && node.state() == Node.State.active;
+        return List.of(State.NONE, State.REQUIRES_OPERATOR_ACTION).contains(action.getState())
+                && node.state() == Node.State.active;
     }
 
     private Map<ZoneId, List<Node>> nodesByZone() {
