@@ -110,6 +110,8 @@ public class ApplicationPackage {
         this.trustedCertificates = files.get(trustedCertificatesFile).map(bytes -> X509CertificateUtils.certificateListFromPem(new String(bytes, UTF_8))).orElse(List.of());
 
         this.bundleHash = calculateBundleHash();
+
+        preProcessAndPopulateCache();
     }
 
     /** Returns a copy of this with the given certificate appended. */
@@ -177,7 +179,6 @@ public class ApplicationPackage {
 
     /** Returns a zip containing meta data about deployments of this package by the given job. */
     public byte[] metaDataZip() {
-        preProcessAndPopulateCache();
         return cacheZip();
     }
 
@@ -276,7 +277,8 @@ public class ApplicationPackage {
         }
 
         public FileSystemWrapper wrapper() {
-            return FileSystemWrapper.ofFiles(path -> get(path).isPresent(), // Assume content asked for will also be read ...
+            return FileSystemWrapper.ofFiles(Path.of("./"), // zip archive root
+                                             path -> get(path).isPresent(), // Assume content asked for will also be read ...
                                              path -> get(path).orElseThrow(() -> new NoSuchFileException(path.toString())));
         }
 

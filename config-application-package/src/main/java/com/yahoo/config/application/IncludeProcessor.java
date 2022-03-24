@@ -29,7 +29,7 @@ class IncludeProcessor implements PreProcessor {
     private final FileWrapper application;
 
     public IncludeProcessor(File application) {
-        this(FileSystemWrapper.getDefault().wrap(application.toPath()));
+        this(FileSystemWrapper.getDefault(application.toPath()).wrap(application.toPath()));
     }
 
     public IncludeProcessor(FileWrapper application) {
