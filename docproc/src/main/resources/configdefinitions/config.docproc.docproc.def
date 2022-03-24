@@ -1,14 +1,9 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=config.docproc
 
-# Queue size (in milliseconds) for this node
-# Positive size gives a ThroughPutLimitQueue. ### Experimental.
-# 0 Gives a PriorityQueue
-# Negative values gives a SynchronousQueue if numthreads <= 0 (which increases thread pool size as required),
-# otherwise a LinkedBlockingQueue
 # Depreacated and a noop
 maxqueuetimems int default=-1
 
 # The number of threads in the DocprocHandler worker thread pool
-# Default is number of cpu's, but is dynamic up to 2048
+# Default is number of cpu's, but any positive number larger than 0 will be used explicit.
 numthreads int default=-1
