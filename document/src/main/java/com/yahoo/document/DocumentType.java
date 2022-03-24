@@ -142,17 +142,19 @@ public class DocumentType extends StructuredDataType {
     /**
      * Get a struct declared in this document (or any inherited
      * document). Returns null if no such struct was found.
+     * If multiple possible structs are found in inherited
+     * documents, throws exception.
      *
      * @param name the name of the struct
      * @return reference to a struct data type, or null
      **/
-    public StructDataType getDeclaredStructType(String name) {
+    public StructDataType getStructType(String name) {
         var mine = declaredStructTypes.get(name);
         if (mine != null) {
             return mine;
         }
         for (DocumentType inheritedType : inherits) {
-            var fromParent = inheritedType.getDeclaredStructType(name);
+            var fromParent = inheritedType.getStructType(name);
             if (fromParent == null) {
                 continue;
             } else if (mine == null) {
@@ -162,6 +164,17 @@ public class DocumentType extends StructuredDataType {
             }
         }
         return mine;
+    }
+
+    /**
+     * Get a struct declared in this document only.
+     * Returns null if no such struct was found.
+     *
+     * @param name the name of the struct
+     * @return reference to a struct data type, or null
+     **/
+    public StructDataType getDeclaredStructType(String name) {
+        return declaredStructTypes.get(name);
     }
 
     /** only used during configuration */
