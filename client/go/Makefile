@@ -31,7 +31,7 @@ all: test checkfmt install
 #
 # Example:
 #
-# $ make maybe-dist-homebrew
+# $ make dist-homebrew
 --dist-homebrew: dist-version
 	brew bump-formula-pr --version $(VERSION) --no-browse vespa-cli
 
@@ -47,7 +47,7 @@ dist-homebrew:
 #
 # Example:
 #
-# $ make maybe-dist-github
+# $ make dist-github
 --dist-github: dist
 	gh release create v$(VERSION) --repo vespa-engine/vespa --notes-file $(CURDIR)/README.md --title "Vespa CLI $(VERSION)" \
 		$(DIST)/vespa-cli_$(VERSION)_sha256sums.txt \
