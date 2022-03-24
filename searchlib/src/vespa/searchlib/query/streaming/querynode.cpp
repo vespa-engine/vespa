@@ -86,6 +86,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
     case ParseItem::ITEM_SUFFIXTERM:
     case ParseItem::ITEM_PURE_WEIGHTED_STRING:
     case ParseItem::ITEM_PURE_WEIGHTED_LONG:
+    case ParseItem::ITEM_FUZZY:
     {
         vespalib::string index = queryRep.getIndexName();
         if (index.empty()) {
@@ -115,6 +116,9 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
             break;
         case ParseItem::ITEM_SUFFIXTERM:
             sTerm = TermType::SUFFIXTERM;
+            break;
+        case ParseItem::ITEM_FUZZY:
+            sTerm = TermType::FUZZYTERM;
             break;
         default:
             break;

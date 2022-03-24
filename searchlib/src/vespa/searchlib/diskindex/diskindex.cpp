@@ -409,6 +409,7 @@ public:
     void visit(RegExpTerm &n)    override { visitTerm(n); }
     void visit(PredicateQuery &n) override { not_supported(n); }
     void visit(NearestNeighborTerm &n) override { not_supported(n); }
+    void visit(FuzzyTerm &n)    override { visitTerm(n); }
 };
 
 Blueprint::UP

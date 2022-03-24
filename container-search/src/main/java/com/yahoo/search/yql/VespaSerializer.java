@@ -16,6 +16,7 @@ import static com.yahoo.search.yql.YqlParser.DOT_PRODUCT;
 import static com.yahoo.search.yql.YqlParser.END_ANCHOR;
 import static com.yahoo.search.yql.YqlParser.EQUIV;
 import static com.yahoo.search.yql.YqlParser.FILTER;
+import static com.yahoo.search.yql.YqlParser.FUZZY;
 import static com.yahoo.search.yql.YqlParser.GEO_LOCATION;
 import static com.yahoo.search.yql.YqlParser.HIT_LIMIT;
 import static com.yahoo.search.yql.YqlParser.IMPLICIT_TRANSFORMS;
@@ -70,6 +71,7 @@ import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.DotProductItem;
 import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.FalseItem;
+import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.IntItem;
@@ -513,6 +515,32 @@ public class VespaSerializer {
             String annotations = leafAnnotations(regexp);
             destination.append(normalizeIndexName(regexp.getIndexName())).append(" matches ");
             annotatedTerm(destination, regexp, annotations);
+            return false;
+        }
+    }
+
+    private static class FuzzySerializer extends Serializer<FuzzyItem> {
+
+        @Override
+        void onExit(StringBuilder destination, FuzzyItem item) { }
+
+        @Override
+        boolean serialize(StringBuilder destination, FuzzyItem fuzzy) {
+            String annotations = leafAnnotations(fuzzy);
+            destination.append(normalizeIndexName(fuzzy.getIndexName())).append(" contains ");
+
+            if (annotations.length() > 0) {
+                destination.append('(').append(annotations);
+            }
+
+            destination.append(FUZZY).append('(');
+            destination.append('"');
+            escape(fuzzy.getIndexedString(), destination).append('"');
+            destination.append(')');
+
+            if (annotations.length() > 0) {
+                destination.append(')');
+            }
             return false;
         }
     }
@@ -1239,6 +1267,7 @@ public class VespaSerializer {
         dispatchBuilder.put(WordItem.class, new WordSerializer());
         dispatchBuilder.put(RegExpItem.class, new RegExpSerializer());
         dispatchBuilder.put(UriItem.class, new UriSerializer());
+        dispatchBuilder.put(FuzzyItem.class, new FuzzySerializer());
         dispatch = ImmutableMap.copyOf(dispatchBuilder);
     }
 

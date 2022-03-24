@@ -125,6 +125,10 @@ StringTemplSearchContext(QueryTermSimpleUP qTerm, const AttrType & toBeSearched)
             vespalib::string prefix(vespalib::RegexpUtil::get_prefix(this->queryTerm()->getTerm()));
             auto comp = enumStore.make_folded_comparator_prefix(prefix.c_str());
             lookupRange(comp, comp);
+        } else if (this->isFuzzy()) {
+            vespalib::string prefix(this->getFuzzyMatcher().getPrefix());
+            auto comp = enumStore.make_folded_comparator_prefix(prefix.c_str());
+            lookupRange(comp, comp);
         } else {
             auto comp = enumStore.make_folded_comparator(queryTerm()->getTerm());
             lookupTerm(comp);

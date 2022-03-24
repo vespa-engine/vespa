@@ -541,6 +541,30 @@
     ],
     "fields": []
   },
+  "com.yahoo.prelude.query.FuzzyItem": {
+    "superClass": "com.yahoo.prelude.query.TermItem",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, boolean, java.lang.String)",
+      "public void setValue(java.lang.String)",
+      "public java.lang.String getRawWord()",
+      "public boolean isWords()",
+      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
+      "public java.lang.String getName()",
+      "public java.lang.String stringValue()",
+      "public boolean isStemmed()",
+      "public java.lang.String getIndexedString()",
+      "public int getNumWords()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()",
+      "protected void encodeThis(java.nio.ByteBuffer)"
+    ],
+    "fields": []
+  },
   "com.yahoo.prelude.query.GeoLocationItem": {
     "superClass": "com.yahoo.prelude.query.TermItem",
     "interfaces": [],
@@ -742,6 +766,7 @@
       "public static final enum com.yahoo.prelude.query.Item$ItemType GEO_LOCATION_TERM",
       "public static final enum com.yahoo.prelude.query.Item$ItemType TRUE",
       "public static final enum com.yahoo.prelude.query.Item$ItemType FALSE",
+      "public static final enum com.yahoo.prelude.query.Item$ItemType FUZZY",
       "public final int code"
     ]
   },

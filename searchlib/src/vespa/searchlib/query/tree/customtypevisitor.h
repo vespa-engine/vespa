@@ -52,6 +52,7 @@ public:
     virtual void visit(typename NodeTypes::NearestNeighborTerm &) = 0;
     virtual void visit(typename NodeTypes::TrueQueryNode &) = 0;
     virtual void visit(typename NodeTypes::FalseQueryNode &) = 0;
+    virtual void visit(typename NodeTypes::FuzzyTerm &) = 0;
 
 private:
     // Route QueryVisit requests to the correct custom type.
@@ -81,6 +82,7 @@ private:
     typedef typename NodeTypes::NearestNeighborTerm TNearestNeighborTerm;
     typedef typename NodeTypes::TrueQueryNode TTrueQueryNode;
     typedef typename NodeTypes::FalseQueryNode TFalseQueryNode;
+    typedef typename NodeTypes::FuzzyTerm TFuzzyTerm;
 
     void visit(And &n) override { visit(static_cast<TAnd&>(n)); }
     void visit(AndNot &n) override { visit(static_cast<TAndNot&>(n)); }
@@ -107,6 +109,7 @@ private:
     void visit(NearestNeighborTerm &n) override { visit(static_cast<TNearestNeighborTerm&>(n)); }
     void visit(TrueQueryNode &n) override { visit(static_cast<TTrueQueryNode&>(n)); }
     void visit(FalseQueryNode &n) override { visit(static_cast<TFalseQueryNode&>(n)); }
+    void visit(FuzzyTerm &n) override { visit(static_cast<TFuzzyTerm &>(n)); }
 };
 
 }

@@ -193,6 +193,12 @@ private:
     void visit(FalseQueryNode &) override {
         _builder.add_false_node();
     }
+
+    void visit(FuzzyTerm &node) override {
+        replicate(node, _builder.addFuzzyTerm(
+                node.getTerm(), node.getView(),
+                node.getId(), node.getWeight()));
+    }
 };
 
 }

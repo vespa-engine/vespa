@@ -197,6 +197,8 @@ private:
                 t = &builder.addPredicateQuery(queryStack.getPredicateQueryTerm(), view, id, weight);
             } else if (type == ParseItem::ITEM_REGEXP) {
                 t = &builder.addRegExpTerm(term, view, id, weight);
+            } else if (type == ParseItem::ITEM_FUZZY) {
+                t = &builder.addFuzzyTerm(term, view, id, weight);
             } else {
                 vespalib::Issue::report("query builder: Unable to create query tree from stack dump. node type = %d.", type);
             }

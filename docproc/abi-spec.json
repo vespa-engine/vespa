@@ -251,10 +251,10 @@
     "methods": [
       "public void <init>()",
       "public abstract com.yahoo.docproc.DocumentProcessor$Progress process(com.yahoo.docproc.Processing)",
-      "public java.lang.String toString()",
       "public void setFieldMap(java.util.Map)",
       "public java.util.Map getFieldMap()",
-      "public java.util.Map getDocMap(java.lang.String)"
+      "public java.util.Map getDocMap(java.lang.String)",
+      "public java.lang.String toString()"
     ],
     "fields": []
   },

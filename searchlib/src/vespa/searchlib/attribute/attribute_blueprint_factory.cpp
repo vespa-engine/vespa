@@ -779,6 +779,8 @@ public:
                                                                         n.get_distance_threshold(),
                                                                         getRequestContext().get_attribute_blueprint_params().nearest_neighbor_brute_force_limit));
     }
+
+    void visit(query::FuzzyTerm &n) override { visitTerm(n); }
 };
 
 template <typename WS>

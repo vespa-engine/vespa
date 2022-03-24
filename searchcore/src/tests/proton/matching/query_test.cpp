@@ -278,6 +278,7 @@ public:
     void visit(ProtonSubstringTerm &n) override { checkNode(n, 0, true); }
     void visit(ProtonSuffixTerm &n) override { checkNode(n, 2, false); }
     void visit(ProtonPhrase &n) override { checkNode(n, 0, true); }
+    void visit(ProtonFuzzyTerm &n) override { checkNode(n, 1, false); }
     void visit(ProtonWeightedSetTerm &) override {}
     void visit(ProtonDotProduct &) override {}
     void visit(ProtonWandTerm &) override {}
@@ -435,6 +436,7 @@ public:
     void visit(ProtonPredicateQuery &) override {}
     void visit(ProtonRegExpTerm &) override {}
     void visit(ProtonNearestNeighborTerm &) override {}
+    void visit(ProtonFuzzyTerm &) override {}
 };
 
 void Test::requireThatTermDataIsFilledIn() {

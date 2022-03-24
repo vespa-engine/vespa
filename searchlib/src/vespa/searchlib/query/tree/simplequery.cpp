@@ -52,4 +52,6 @@ SimpleRegExpTerm::~SimpleRegExpTerm() = default;
 
 SimpleNearestNeighborTerm::~SimpleNearestNeighborTerm() = default;
 
+SimpleFuzzyTerm::~SimpleFuzzyTerm() = default;
+
 }

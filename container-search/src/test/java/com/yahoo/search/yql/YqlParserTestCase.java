@@ -11,6 +11,7 @@ import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.ExactStringItem;
+import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.MarkerWordItem;
@@ -379,6 +380,15 @@ public class YqlParserTestCase {
                     "phrase(\"a\", \"b\", [ {origin: {original: \"c d\", offset: 0, length: 3}} ]" +
                     "phrase(\"c\", \"d\"));",
                     "baz:\"a b 'c d'\"");
+    }
+
+    @Test
+    public void testFuzzy() {
+        QueryTree x = parse("select foo from bar where baz contains fuzzy(\"a b\")");
+        Item root = x.getRoot();
+        assertSame(FuzzyItem.class, root.getClass());
+        assertEquals("baz", ((FuzzyItem) root).getIndexName());
+        assertEquals("a b", ((FuzzyItem) root).stringValue());
     }
 
     @Test

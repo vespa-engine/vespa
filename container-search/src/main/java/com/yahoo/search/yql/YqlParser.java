@@ -34,6 +34,7 @@ import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.DotProductItem;
 import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.FalseItem;
+import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
@@ -192,6 +193,7 @@ public class YqlParser implements Parser {
     public static final String WEAK_AND = "weakAnd";
     public static final String WEIGHT = "weight";
     public static final String WEIGHTED_SET = "weightedSet";
+    public static final String FUZZY = "fuzzy";
 
     private final IndexFacts indexFacts;
     private final List<ConnectedItem> connectedItems = new ArrayList<>();
@@ -1171,7 +1173,7 @@ public class YqlParser implements Parser {
         assertHasOperator(ast, ExpressionOperator.CONTAINS);
         String field = getIndex(ast.getArgument(0));
         if (userQuery != null && indexFactsSession.getIndex(field).isAttribute()) {
-            userQuery.trace("Field '" + field + "' is an attribute, 'contains' will only match exactly", 2);
+            userQuery.trace("Field '" + field + "' is an attribute, 'contains' will only match exactly (unless fuzzy is used)", 2);
         }
         return instantiateLeafItem(field, ast.<OperatorNode<ExpressionOperator>> getArgument(1));
     }
@@ -1298,9 +1300,21 @@ public class YqlParser implements Parser {
                 return instantiateWordAlternativesItem(field, ast);
             case URI:
                 return instantiateUriItem(field, ast);
+            case FUZZY:
+                return instantiateFuzzyItem(field, ast);
             default:
-                throw newUnexpectedArgumentException(names.get(0), EQUIV, NEAR, ONEAR, PHRASE, SAME_ELEMENT, URI);
+                throw newUnexpectedArgumentException(names.get(0), EQUIV, NEAR, ONEAR, PHRASE, SAME_ELEMENT, URI, FUZZY);
         }
+    }
+
+    private Item instantiateFuzzyItem(String field, OperatorNode<ExpressionOperator> ast) {
+        List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
+        Preconditions.checkArgument(args.size() == 1, "Expected 1 argument, got %s.", args.size());
+
+        String wordData = getStringContents(args.get(0));
+
+        FuzzyItem fuzzy = new FuzzyItem(field, true, wordData);
+        return leafStyleSettings(ast, fuzzy);
     }
 
     private Item instantiateEquivItem(String field, OperatorNode<ExpressionOperator> ast) {

@@ -56,8 +56,9 @@ public:
         ITEM_GEO_LOCATION_TERM     =   27,
         ITEM_TRUE                  =   28,
         ITEM_FALSE                 =   29,
-        ITEM_MAX                   =   30,  // Indicates how long tables must be.
-        ITEM_UNDEF                 =   31,
+        ITEM_FUZZY                 =   30,
+        ITEM_MAX                   =   31,  // Indicates how long tables must be.
+        ITEM_UNDEF                 =   32,
     };
 
     /** A tag identifying the origin of this query node.

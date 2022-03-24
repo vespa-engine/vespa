@@ -158,6 +158,7 @@ SimpleQueryStackItem::AppendBuffer(RawBuf *buf) const
     case ITEM_EXACTSTRINGTERM:
     case ITEM_SUFFIXTERM:
     case ITEM_REGEXP:
+    case ITEM_FUZZY:
         buf->appendCompressedPositiveNumber(indexLen);
         buf->append(_indexName.c_str(), indexLen);
         buf->appendCompressedPositiveNumber(termLen);

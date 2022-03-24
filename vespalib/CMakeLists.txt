@@ -62,6 +62,7 @@ vespa_define_module(
     src/tests/explore_modern_cpp
     src/tests/false
     src/tests/fiddle
+    src/tests/fuzzy
     src/tests/gencnt
     src/tests/guard
     src/tests/host_name
@@ -169,6 +170,7 @@ vespa_define_module(
     src/vespa/vespalib/data
     src/vespa/vespalib/data/slime
     src/vespa/vespalib/datastore
+    src/vespa/vespalib/fuzzy
     src/vespa/vespalib/geo
     src/vespa/vespalib/hwaccelrated
     src/vespa/vespalib/io

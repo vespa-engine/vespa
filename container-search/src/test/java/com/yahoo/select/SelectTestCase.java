@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.ExactStringItem;
+import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PrefixItem;
@@ -672,6 +673,15 @@ public class SelectTestCase {
         assertSame(WordAlternativesItem.class, root.getClass());
         WordAlternativesItem alternatives = (WordAlternativesItem) root;
         checkWordAlternativesContent(alternatives);
+    }
+
+    @Test
+    public void testFuzzy() {
+        QueryTree x = parseWhere("{ \"contains\": [\"description\", { \"fuzzy\": [\"a b\"] }] }");
+        Item root = x.getRoot();
+        assertSame(FuzzyItem.class, root.getClass());
+        assertEquals("description", ((FuzzyItem) root).getIndexName());
+        assertEquals("a b", ((FuzzyItem) root).stringValue());
     }
 
     //------------------------------------------------------------------- grouping tests

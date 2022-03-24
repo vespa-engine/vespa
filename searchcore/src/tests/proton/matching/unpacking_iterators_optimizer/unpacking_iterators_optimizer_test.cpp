@@ -69,6 +69,7 @@ struct DumpQuery : QueryVisitor {
     void visit(NearestNeighborTerm &) override {}
     void visit(TrueQueryNode &) override {}
     void visit(FalseQueryNode &) override {}
+    void visit(FuzzyTerm &) override {}
 };
 
 std::string dump_query(Node &root) {

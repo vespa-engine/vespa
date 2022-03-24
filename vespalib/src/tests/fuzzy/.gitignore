@@ -1,0 +1,4 @@
+.depend
+Makefile
+fuzzy_test
+vespalib_fuzzy_test_app
