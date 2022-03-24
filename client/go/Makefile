@@ -33,8 +33,7 @@ all: test checkfmt install
 #
 # $ make maybe-dist-homebrew
 --dist-homebrew: dist-version
-# TODO(mpolden): Remove --dry-run when this is ready
-	brew bump-formula-pr --dry-run --version $(VERSION) --no-browse vespa-cli
+	brew bump-formula-pr --version $(VERSION) --no-browse vespa-cli
 
 dist-homebrew:
 	go run cond_make.go --dist-homebrew
@@ -50,8 +49,7 @@ dist-homebrew:
 #
 # $ make maybe-dist-github
 --dist-github: dist
-# TODO(mpolden): Remove @echo when this is ready
-	@echo gh release create v$(VERSION) --repo vespa-engine/vespa --notes-file $(CURDIR)/README.md --title "Vespa CLI $(VERSION)" \
+	gh release create v$(VERSION) --repo vespa-engine/vespa --notes-file $(CURDIR)/README.md --title "Vespa CLI $(VERSION)" \
 		$(DIST)/vespa-cli_$(VERSION)_sha256sums.txt \
 		$(DIST)/vespa-cli_$(VERSION)_*.zip \
 		$(DIST)/vespa-cli_$(VERSION)_*.tar.gz
