@@ -246,7 +246,7 @@ jobs:
       - publish-homebrew:
           make -C client/go clean dist-homebrew
       - verify-brew-install:
-          make -C client/go brew-install
+          make -C client/go install-brew
 
   verify-opensource-release-7days:
     annotations:
