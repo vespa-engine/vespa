@@ -32,7 +32,15 @@ public class ApplicationFileManager implements AddFileInterface {
 
     @Override
     public FileReference addFile(String relativePath) throws IOException {
-        return fileDirectory.addFile(new File(applicationDir, relativePath));
+        Path path = Path.of(relativePath).normalize();
+        if (path.isAbsolute())
+            throw new IllegalArgumentException(relativePath + " is not relative");
+        File file = new File(applicationDir, relativePath);
+        Path relative = applicationDir.toPath().relativize(file.toPath()).normalize();
+        if (relative.isAbsolute() || relative.startsWith(".."))
+            throw new IllegalArgumentException(file + " is not a descendant of " + applicationDir);
+
+        return fileDirectory.addFile(file);
     }
 
     @Override
