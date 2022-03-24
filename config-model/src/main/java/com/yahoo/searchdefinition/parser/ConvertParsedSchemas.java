@@ -108,24 +108,14 @@ public class ConvertParsedSchemas {
                                  ConvertParsedFields fieldConverter)
     {
         SDDocumentType document = new SDDocumentType(parsed.name());
+        for (var struct : parsed.getStructs()) {
+            var structProxy = fieldConverter.convertStructDeclaration(schema, document, struct);
+            document.addType(structProxy);
+        }
         for (String inherit : parsed.getInherited()) {
             var parent = convertedDocuments.get(inherit);
             assert(parent != null);
             document.inherit(parent);
-        }
-        for (var struct : parsed.getStructs()) {
-            var structProxy = fieldConverter.convertStructDeclaration(schema, document, struct);
-            var old = document.getType(struct.name());
-            if (old == null) {
-                document.addType(structProxy);
-            } else {
-                var oldFields = old.fieldSet();
-                var newFields = structProxy.fieldSet();
-                if (! newFields.equals(oldFields)) {
-                    throw new IllegalArgumentException("Cannot modify already-existing struct: " + struct.name());
-                }
-                deployLogger.logApplicationPackage(Level.WARNING, "Duplicate struct declaration for: " + struct.name());
-            }
         }
         for (var annotation : parsed.getAnnotations()) {
             fieldConverter.convertAnnotation(schema, document, annotation);
