@@ -282,7 +282,7 @@ bool put_is_from_reindexing_visitor(const api::PutCommand& cmd) {
 
 // Precondition: put_is_from_reindexing_visitor(cmd) == true
 std::string extract_reindexing_token(const api::PutCommand& cmd) {
-    const auto& tas_str = cmd.getCondition().getSelection();
+    const std::string& tas_str = cmd.getCondition().getSelection();
     auto eq_idx = tas_str.find_first_of('=');
     if (eq_idx != std::string::npos) {
         return tas_str.substr(eq_idx + 1);
