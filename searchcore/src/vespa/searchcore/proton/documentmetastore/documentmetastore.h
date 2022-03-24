@@ -178,7 +178,7 @@ public:
     bool validLidFast(DocId lid) const { return _lidAlloc.validLid(lid); }
     bool validLid(DocId lid) const override { return validLidFast(lid); }
     void removeBatch(const std::vector<DocId> &lidsToRemove, const DocId docIdLimit) override;
-    const RawDocumentMetaData & getRawMetaData(DocId lid) const override { return _metaDataStore[lid]; }
+    const RawDocumentMetaData & getRawMetaData(DocId lid) const override { return _metaDataStore.acquire_elem_ref(lid); }
 
     /**
      * Implements search::IDocumentMetaStore

@@ -21,12 +21,12 @@ private:
     typedef vespalib::RcuVectorBase<RawDocumentMetaData> MetaDataStore;
 
     const document::GlobalId &_gid;
-    const MetaDataStore      &_metaDataStore;
+    const RawDocumentMetaData* _metaDataView;
     const document::GlobalId::BucketOrderCmp _gidCompare;
 
     const document::GlobalId &getGid(const GidToLidMapKey &key) const {
         if (!key.is_find_key()) {
-            return _metaDataStore[key.get_lid()].getGid();
+            return _metaDataView[key.get_lid()].getGid();
         }
         return _gid;
     }

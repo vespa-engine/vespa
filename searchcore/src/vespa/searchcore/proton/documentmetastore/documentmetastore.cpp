@@ -261,7 +261,8 @@ DocumentMetaStore::onInitSave(vespalib::stringref fileName)
     GenerationHandler::Guard guard(getGuard());
     return std::make_unique<DocumentMetaStoreSaver>
         (std::move(guard), createAttributeHeader(fileName),
-         _gidToLidMap.getFrozenView().begin(), _metaDataStore);
+         _gidToLidMap.getFrozenView().begin(),
+         vespalib::ConstArrayRef(&_metaDataStore[0], getCommittedDocIdLimit()));
 }
 
 DocumentMetaStore::DocId
