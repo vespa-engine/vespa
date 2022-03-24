@@ -489,4 +489,23 @@ TEST("test that empty_string is shared and empty") {
     EXPECT_EQUAL(empty_string(), "");
 }
 
+TEST("starts_with has expected semantics for small_string") {
+    vespalib::string a("foobar");
+    EXPECT_TRUE(a.starts_with(""));
+    EXPECT_TRUE(a.starts_with("foo"));
+    EXPECT_TRUE(a.starts_with("foobar"));
+    EXPECT_FALSE(a.starts_with("foobarf"));
+    EXPECT_FALSE(a.starts_with("oobar"));
+}
+
+TEST("starts_with has expected semantics for stringref") {
+    vespalib::string a("foobar");
+    vespalib::stringref ar(a);
+    EXPECT_TRUE(ar.starts_with(""));
+    EXPECT_TRUE(ar.starts_with("foo"));
+    EXPECT_TRUE(ar.starts_with("foobar"));
+    EXPECT_FALSE(ar.starts_with("foobarf"));
+    EXPECT_FALSE(ar.starts_with("oobar"));
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
