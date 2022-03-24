@@ -395,7 +395,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
 
             void createSimpleTypes() {
                 for (var typeconf : docTypeConfig.primitivetype()) {
-                    DataType type = manager.getDataType(typeconf.name());
+                    DataType type = manager.getDataTypeInternal(typeconf.name());
                     if (! (type instanceof PrimitiveDataType)) {
                         throw new IllegalArgumentException("Needed primitive type for '"+typeconf.name()+"' [idx "+typeconf.idx()+"] but got: "+type);
                     }

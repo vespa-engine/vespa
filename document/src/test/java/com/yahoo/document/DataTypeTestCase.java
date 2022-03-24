@@ -34,9 +34,9 @@ public class DataTypeTestCase {
     public void testTagType() {
         DocumentTypeManager manager = new DocumentTypeManager();
         //assertEquals(DataType.getWeightedSet(DataType.STRING,true,true),DataType.TAG.getBaseType());
-        assertNotNull(manager.getDataType("tag"));
-        assertEquals(DataType.TAG, manager.getDataType("tag"));
-        assertEquals(manager.getDataType("tag").getCode(), 18);
+        assertNotNull(manager.getDataTypeInternal("tag"));
+        assertEquals(DataType.TAG, manager.getDataTypeInternal("tag"));
+        assertEquals(manager.getDataTypeInternal("tag").getCode(), 18);
         assertEquals(DataType.getWeightedSet(DataType.STRING,true,true).getCode(), 18);
     }
 
