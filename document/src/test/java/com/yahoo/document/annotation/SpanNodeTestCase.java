@@ -237,7 +237,7 @@ public class SpanNodeTestCase {
     public void testOrder() {
         {
             String text = "08/20/1999";
-                         //012345678901
+            //012345678901
             Span d = new Span(3, 2);
             Span m = new Span(0, 2);
             Span y = new Span(6, 4);
@@ -380,7 +380,7 @@ public class SpanNodeTestCase {
         AnnotationType phraseType = new AnnotationType("phrase");
 
         String text = "There is no bizniz like showbizniz";
-                     //0123456789012345678901234567890123456789
+        //0123456789012345678901234567890123456789
         SpanList sentence = new SpanList();
         SpanTree tree = new SpanTree("sentence", sentence);
 
@@ -501,76 +501,76 @@ public class SpanNodeTestCase {
         Iterator<Annotation> annotations = annotationList.iterator();
 
         {
-        assertTrue(annotations.hasNext());
-        Annotation annotation = annotations.next();
-        assertEquals("There", annotation.getSpanNode().getText(text));
-        assertEquals(word, annotation.getType());  //there: word
+            assertTrue(annotations.hasNext());
+            Annotation annotation = annotations.next();
+            assertEquals("There", annotation.getSpanNode().getText(text));
+            assertEquals(word, annotation.getType());  //there: word
         }
         {
-        assertTrue(annotations.hasNext());
-        Annotation annotation = annotations.next();
-        assertEquals("Thereisnobiznizlikeshowbizniz", annotation.getSpanNode().getText(text).toString());
-        assertEquals(sentenceType, annotation.getType());  //sentence
+            assertTrue(annotations.hasNext());
+            Annotation annotation = annotations.next();
+            assertEquals("Thereisnobiznizlikeshowbizniz", annotation.getSpanNode().getText(text).toString());
+            assertEquals(sentenceType, annotation.getType());  //sentence
         }
         {
-        assertTrue(annotations.hasNext());
-        Annotation annotation = annotations.next();
-        assertEquals("is", annotation.getSpanNode().getText(text));
-        assertEquals(word, annotation.getType());  //is: word
+            assertTrue(annotations.hasNext());
+            Annotation annotation = annotations.next();
+            assertEquals("is", annotation.getSpanNode().getText(text));
+            assertEquals(word, annotation.getType());  //is: word
         }
         {
-        assertTrue(annotations.hasNext());
-        Annotation annotation = annotations.next();
-        assertEquals("is", annotation.getSpanNode().getText(text));
-        assertEquals(verb, annotation.getType());  //is: verb
+            assertTrue(annotations.hasNext());
+            Annotation annotation = annotations.next();
+            assertEquals("is", annotation.getSpanNode().getText(text));
+            assertEquals(verb, annotation.getType());  //is: verb
         }
         {
-        assertTrue(annotations.hasNext());
-        Annotation annotation = annotations.next();
-        assertEquals("no", annotation.getSpanNode().getText(text));
-        assertEquals(word, annotation.getType());  //no: word
+            assertTrue(annotations.hasNext());
+            Annotation annotation = annotations.next();
+            assertEquals("no", annotation.getSpanNode().getText(text));
+            assertEquals(word, annotation.getType());  //no: word
         }
         {
-        assertTrue(annotations.hasNext());
-        Annotation annotation = annotations.next();
-        assertEquals("nobiznizlikeshowbizniz", annotation.getSpanNode().getText(text).toString());
-        assertEquals(phraseType, annotation.getType());  //no bizniz like showbizniz: phrase
+            assertTrue(annotations.hasNext());
+            Annotation annotation = annotations.next();
+            assertEquals("nobiznizlikeshowbizniz", annotation.getSpanNode().getText(text).toString());
+            assertEquals(phraseType, annotation.getType());  //no bizniz like showbizniz: phrase
         }
         {
-        assertTrue(annotations.hasNext());
-        Annotation annotation = annotations.next();
-        assertEquals("bizniz", annotation.getSpanNode().getText(text));
-        assertEquals(word, annotation.getType());  //bizniz: word
+            assertTrue(annotations.hasNext());
+            Annotation annotation = annotations.next();
+            assertEquals("bizniz", annotation.getSpanNode().getText(text));
+            assertEquals(word, annotation.getType());  //bizniz: word
         }
         {
-        assertTrue(annotations.hasNext());
-        Annotation annotation = annotations.next();
-        assertEquals("bizniz", annotation.getSpanNode().getText(text));
-        assertEquals(noun, annotation.getType());  //bizniz: noun
+            assertTrue(annotations.hasNext());
+            Annotation annotation = annotations.next();
+            assertEquals("bizniz", annotation.getSpanNode().getText(text));
+            assertEquals(noun, annotation.getType());  //bizniz: noun
         }
         {
-        assertTrue(annotations.hasNext());
-        Annotation annotation = annotations.next();
-        assertEquals("like", annotation.getSpanNode().getText(text));
-        assertEquals(word, annotation.getType());  //like: word
+            assertTrue(annotations.hasNext());
+            Annotation annotation = annotations.next();
+            assertEquals("like", annotation.getSpanNode().getText(text));
+            assertEquals(word, annotation.getType());  //like: word
         }
         {
-        assertTrue(annotations.hasNext());
-        Annotation annotation = annotations.next();
-        assertEquals("likeshowbizniz", annotation.getSpanNode().getText(text).toString());
-        assertEquals(phraseType, annotation.getType());  //like showbizniz: phrase
+            assertTrue(annotations.hasNext());
+            Annotation annotation = annotations.next();
+            assertEquals("likeshowbizniz", annotation.getSpanNode().getText(text).toString());
+            assertEquals(phraseType, annotation.getType());  //like showbizniz: phrase
         }
         {
-        assertTrue(annotations.hasNext());
-        Annotation annotation = annotations.next();
-        assertEquals("showbizniz", annotation.getSpanNode().getText(text));
-        assertEquals(word, annotation.getType());  //showbizniz: word
+            assertTrue(annotations.hasNext());
+            Annotation annotation = annotations.next();
+            assertEquals("showbizniz", annotation.getSpanNode().getText(text));
+            assertEquals(word, annotation.getType());  //showbizniz: word
         }
         {
-        assertTrue(annotations.hasNext());
-        Annotation annotation = annotations.next();
-        assertEquals("showbizniz", annotation.getSpanNode().getText(text));
-        assertEquals(noun, annotation.getType());  //showbizniz: noun
+            assertTrue(annotations.hasNext());
+            Annotation annotation = annotations.next();
+            assertEquals("showbizniz", annotation.getSpanNode().getText(text));
+            assertEquals(noun, annotation.getType());  //showbizniz: noun
         }
 
         assertFalse(annotations.hasNext());
@@ -586,37 +586,37 @@ public class SpanNodeTestCase {
     }
 
     @Test
-	public void testMultilevelRecursion() {
-		//			   01234567890123
-		String text = "Hello!Goodbye!";
+    public void testMultilevelRecursion() {
+        //                         01234567890123
+        String text = "Hello!Goodbye!";
         AnnotationType block = new AnnotationType("block");
-		SpanList root = new SpanList();
+        SpanList root = new SpanList();
         SpanTree tree = new SpanTree("root", root);
 
-		SpanList block1 = new SpanList();
-		SpanNode hello = new Span(0,6);
+        SpanList block1 = new SpanList();
+        SpanNode hello = new Span(0,6);
         tree.annotate(hello, block);
-		block1.add(hello);
+        block1.add(hello);
 
-		SpanList block2 = new SpanList();
-		SpanNode goodbye = new Span(6,8);
+        SpanList block2 = new SpanList();
+        SpanNode goodbye = new Span(6,8);
         tree.annotate(goodbye, block);
-		block2.add(goodbye);
+        block2.add(goodbye);
 
-		root.add(block1).add(block2);
+        root.add(block1).add(block2);
 
-		Iterator<SpanNode> nodeIterator = root.childIteratorRecursive();
-		assertTrue(nodeIterator.hasNext());
-		assertTrue(nodeIterator.next().equals(hello));
-		assertTrue(nodeIterator.hasNext());
-		assertTrue(nodeIterator.next().equals(block1));
-		assertTrue(nodeIterator.hasNext());
-		assertTrue(nodeIterator.next().equals(goodbye));
-		assertTrue(nodeIterator.hasNext());
-		assertTrue(nodeIterator.next().equals(block2));
-		assertFalse(nodeIterator.hasNext());
-		assertTrue(root.getText(text).toString().equals(text));
-	}
+        Iterator<SpanNode> nodeIterator = root.childIteratorRecursive();
+        assertTrue(nodeIterator.hasNext());
+        assertTrue(nodeIterator.next().equals(hello));
+        assertTrue(nodeIterator.hasNext());
+        assertTrue(nodeIterator.next().equals(block1));
+        assertTrue(nodeIterator.hasNext());
+        assertTrue(nodeIterator.next().equals(goodbye));
+        assertTrue(nodeIterator.hasNext());
+        assertTrue(nodeIterator.next().equals(block2));
+        assertFalse(nodeIterator.hasNext());
+        assertTrue(root.getText(text).toString().equals(text));
+    }
 
     @Test
     public void testRecursiveIteratorDeterministicBehavior() {

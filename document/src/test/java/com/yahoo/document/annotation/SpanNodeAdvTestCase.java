@@ -99,139 +99,139 @@ public class SpanNodeAdvTestCase {
         root.addChildren(1, subtreeList4, 10.0d);
     }
 
-	@Test
-	public void assertIsValid() {
-		populateSpanTree();
-		root.clearChildren(1);
-		root.remove(span3);
+    @Test
+    public void assertIsValid() {
+        populateSpanTree();
+        root.clearChildren(1);
+        root.remove(span3);
 
         assertTrue(root.isValid());
         assertTrue(span1.isValid());
         assertTrue(span2.isValid());
 
         assertFalse(span3.isValid());
-		assertFalse(alternate1.isValid());
+        assertFalse(alternate1.isValid());
         assertFalse(span11.isValid());
-		assertFalse(branch.isValid());
-		assertFalse(span22.isValid());
-		assertFalse(alternate2.isValid());
-		assertFalse(span33.isValid());
-		assertFalse(branch1.isValid());
-		assertFalse(span333.isValid());
-		assertFalse(span111.isValid());
-		assertFalse(span222.isValid());
-	}
+        assertFalse(branch.isValid());
+        assertFalse(span22.isValid());
+        assertFalse(alternate2.isValid());
+        assertFalse(span33.isValid());
+        assertFalse(branch1.isValid());
+        assertFalse(span333.isValid());
+        assertFalse(span111.isValid());
+        assertFalse(span222.isValid());
+    }
 
     @Test
-	public void assertIsLeafNode() {
-		populateSpanTree();
-		assertFalse(root.isLeafNode());
-		assertFalse(alternate1.isLeafNode());
-		assertFalse(branch.isLeafNode());
-		assertTrue(span11.isLeafNode());
-		assertTrue(span22.isLeafNode());
-		assertFalse(alternate2.isLeafNode());
-		assertTrue(span33.isLeafNode());
-		assertFalse(branch1.isLeafNode());
-		assertTrue(span111.isLeafNode());
-		assertTrue(span222.isLeafNode());
-		assertTrue(span333.isLeafNode());
-	}
-
-	@Test
-	public void assertOverlaps() {
-		populateSpanTree();
-		assertTrue(span1.overlaps(span2));
-		assertTrue(span1.overlaps(span3));
-		assertTrue(span2.overlaps(span3));
-		assertFalse(span11.overlaps(span22));
-		assertTrue(span22.overlaps(span33));
-		assertFalse(span11.overlaps(span33));
-		assertTrue(span111.overlaps(span222));
-		assertFalse(span111.overlaps(span333));
-		assertFalse(span222.overlaps(span333));
-		assertTrue(span1.overlaps(span222));
-		assertFalse(span1.overlaps(span333));
-		assertTrue(span2.overlaps(span222));
-		assertFalse(span3.overlaps(span22));
-
-		assertTrue(span2.overlaps(span1));
-		assertTrue(span3.overlaps(span1));
-		assertTrue(span3.overlaps(span2));
-		assertFalse(span22.overlaps(span11));
-		assertTrue(span33.overlaps(span22));
-		assertFalse(span33.overlaps(span11));
-		assertTrue(span222.overlaps(span111));
-		assertFalse(span333.overlaps(span111));
-		assertFalse(span333.overlaps(span222));
-		assertTrue(span222.overlaps(span1));
-		assertFalse(span333.overlaps(span1));
-		assertTrue(span222.overlaps(span2));
-		assertTrue(span1.overlaps(span1));
-		assertFalse(span22.overlaps(span3));
-		assertFalse(root.overlaps(alternate1));
-		assertTrue(alternate2.overlaps(span22));
-		assertTrue(branch.overlaps(root));
-		assertTrue(branch.overlaps(alternate2));
-		assertTrue(root.overlaps(alternate2));
-		assertTrue(span22.overlaps(root));
-
-	}
-
-	@Test
-	public void assertContains() {
-		populateSpanTree();
-		assertTrue(span222.contains(span1));
-		assertFalse(span1.contains(span222));
-		assertTrue(span1.contains(span3));
-		assertFalse(span33.contains(span111));
-		assertTrue(span222.contains(span3));
-		assertTrue(span111.contains(span2));
-		assertTrue(span2.contains(span111));
-		assertTrue(branch.contains(root));
-		assertTrue(branch.contains(alternate2));
-		assertTrue(root.contains(alternate2));
-		assertFalse(alternate2.contains(span22));
-	}
+    public void assertIsLeafNode() {
+        populateSpanTree();
+        assertFalse(root.isLeafNode());
+        assertFalse(alternate1.isLeafNode());
+        assertFalse(branch.isLeafNode());
+        assertTrue(span11.isLeafNode());
+        assertTrue(span22.isLeafNode());
+        assertFalse(alternate2.isLeafNode());
+        assertTrue(span33.isLeafNode());
+        assertFalse(branch1.isLeafNode());
+        assertTrue(span111.isLeafNode());
+        assertTrue(span222.isLeafNode());
+        assertTrue(span333.isLeafNode());
+    }
 
     @Test
-	public void assertCompareTo() {
-		populateSpanTree();
-		assertEquals(1 , span1.compareTo(span2));
-		assertEquals(-1, span2.compareTo(span1));
-		assertEquals(-1 , span2.compareTo(span3));
-		assertEquals(1, span3.compareTo(span2));
-		assertEquals(0, span2.compareTo(span111));
-		assertEquals(1, root.compareTo(branch));
-		assertEquals(-1, alternate1.compareTo(root));
-		assertEquals(1, branch.compareTo(span22));
-		assertEquals(-1, branch.compareTo(alternate2));
-		assertEquals(1, alternate2.compareTo(root));
-		assertEquals(-1, span111.compareTo(root));
-		assertEquals(0, span333.compareTo(branch1));
-		assertEquals(0, alternate2.compareTo(span33));
-		root.removeChildren();
-		tree.cleanup();
-		assertEquals(1, span11.compareTo(root));
-	}
+    public void assertOverlaps() {
+        populateSpanTree();
+        assertTrue(span1.overlaps(span2));
+        assertTrue(span1.overlaps(span3));
+        assertTrue(span2.overlaps(span3));
+        assertFalse(span11.overlaps(span22));
+        assertTrue(span22.overlaps(span33));
+        assertFalse(span11.overlaps(span33));
+        assertTrue(span111.overlaps(span222));
+        assertFalse(span111.overlaps(span333));
+        assertFalse(span222.overlaps(span333));
+        assertTrue(span1.overlaps(span222));
+        assertFalse(span1.overlaps(span333));
+        assertTrue(span2.overlaps(span222));
+        assertFalse(span3.overlaps(span22));
+
+        assertTrue(span2.overlaps(span1));
+        assertTrue(span3.overlaps(span1));
+        assertTrue(span3.overlaps(span2));
+        assertFalse(span22.overlaps(span11));
+        assertTrue(span33.overlaps(span22));
+        assertFalse(span33.overlaps(span11));
+        assertTrue(span222.overlaps(span111));
+        assertFalse(span333.overlaps(span111));
+        assertFalse(span333.overlaps(span222));
+        assertTrue(span222.overlaps(span1));
+        assertFalse(span333.overlaps(span1));
+        assertTrue(span222.overlaps(span2));
+        assertTrue(span1.overlaps(span1));
+        assertFalse(span22.overlaps(span3));
+        assertFalse(root.overlaps(alternate1));
+        assertTrue(alternate2.overlaps(span22));
+        assertTrue(branch.overlaps(root));
+        assertTrue(branch.overlaps(alternate2));
+        assertTrue(root.overlaps(alternate2));
+        assertTrue(span22.overlaps(root));
+
+    }
 
     @Test
-	public void assertGetParent() {
-		populateSpanTree();
-		assertEquals(root, span1.getParent());
-		assertEquals(root, span2.getParent());
+    public void assertContains() {
+        populateSpanTree();
+        assertTrue(span222.contains(span1));
+        assertFalse(span1.contains(span222));
+        assertTrue(span1.contains(span3));
+        assertFalse(span33.contains(span111));
+        assertTrue(span222.contains(span3));
+        assertTrue(span111.contains(span2));
+        assertTrue(span2.contains(span111));
+        assertTrue(branch.contains(root));
+        assertTrue(branch.contains(alternate2));
+        assertTrue(root.contains(alternate2));
+        assertFalse(alternate2.contains(span22));
+    }
+
+    @Test
+    public void assertCompareTo() {
+        populateSpanTree();
+        assertEquals(1 , span1.compareTo(span2));
+        assertEquals(-1, span2.compareTo(span1));
+        assertEquals(-1 , span2.compareTo(span3));
+        assertEquals(1, span3.compareTo(span2));
+        assertEquals(0, span2.compareTo(span111));
+        assertEquals(1, root.compareTo(branch));
+        assertEquals(-1, alternate1.compareTo(root));
+        assertEquals(1, branch.compareTo(span22));
+        assertEquals(-1, branch.compareTo(alternate2));
+        assertEquals(1, alternate2.compareTo(root));
+        assertEquals(-1, span111.compareTo(root));
+        assertEquals(0, span333.compareTo(branch1));
+        assertEquals(0, alternate2.compareTo(span33));
+        root.removeChildren();
+        tree.cleanup();
+        assertEquals(1, span11.compareTo(root));
+    }
+
+    @Test
+    public void assertGetParent() {
+        populateSpanTree();
+        assertEquals(root, span1.getParent());
+        assertEquals(root, span2.getParent());
         assertEquals(root, span3.getParent());
-		assertEquals(root, alternate1.getParent());
-		assertEquals(alternate1, span11.getParent());
-		assertEquals(alternate1, branch.getParent());
-		assertEquals(branch, span22.getParent());
-		assertEquals(branch, alternate2.getParent());
-		assertEquals(alternate2, span33.getParent());
-		assertEquals(alternate2, span111.getParent());
-		assertEquals(branch1, span333.getParent());
-		assertEquals(alternate2, branch1.getParent());
-		assertEquals(alternate1, span11.getParent());
-	}
+        assertEquals(root, alternate1.getParent());
+        assertEquals(alternate1, span11.getParent());
+        assertEquals(alternate1, branch.getParent());
+        assertEquals(branch, span22.getParent());
+        assertEquals(branch, alternate2.getParent());
+        assertEquals(alternate2, span33.getParent());
+        assertEquals(alternate2, span111.getParent());
+        assertEquals(branch1, span333.getParent());
+        assertEquals(alternate2, branch1.getParent());
+        assertEquals(alternate1, span11.getParent());
+    }
 
 
     @After
@@ -250,8 +250,8 @@ public class SpanNodeAdvTestCase {
         if (debug) System.out.println("\n\nSpanList: [" + root.getFrom() + ", " + root.getTo() + "] num Children: " + root.numChildren());
         if (debug) System.out.println("-------------------");
         Iterator<SpanNode> childIterator = root.childIterator();
-		while (childIterator.hasNext()) {
-			SpanNode node = childIterator.next();
+        while (childIterator.hasNext()) {
+            SpanNode node = childIterator.next();
             //System.out.println("Span Node: " + node); // + " Span Text: " + node.getText(fieldValStr));
             if (debug) System.out.println("\n\nSpan Node: [" + node.getFrom() + ", " + node.getTo() + "] ");
             if (node instanceof AlternateSpanList) {
@@ -264,10 +264,10 @@ public class SpanNodeAdvTestCase {
                 while (lli.hasNext()) System.out.print(" " + lli.next() + " ");
                 consumeAnnotations((SpanList) node);
             } else {
-       			if (debug) System.out.println("\nGetting annotations for this span node: [" + node.getFrom() + ", " + node.getTo() + "] ");
-   	    	    getAnnotationsForNode(node);
+                if (debug) System.out.println("\nGetting annotations for this span node: [" + node.getFrom() + ", " + node.getTo() + "] ");
+                getAnnotationsForNode(node);
             }
-		}
+        }
         if (debug) System.out.println("\nGetting annotations for the SpanList itself : [" + root.getFrom() + ", " + root.getTo() + "] ");
         getAnnotationsForNode(root);
     }
@@ -313,19 +313,19 @@ public class SpanNodeAdvTestCase {
     public void getAnnotationsForNode(SpanNode node) {
         Iterator<Annotation> iter = tree.iterator(node);
         boolean annotationPresent = false;
-		while (iter.hasNext()) {
+        while (iter.hasNext()) {
             annotationPresent = true;
-			Annotation xx = iter.next();
-			AnnotationType t = xx.getType();
-			StringFieldValue fValue = (StringFieldValue) xx.getFieldValue();
-			if (debug) System.out.println("Annotation: " + xx);
+            Annotation xx = iter.next();
+            AnnotationType t = xx.getType();
+            StringFieldValue fValue = (StringFieldValue) xx.getFieldValue();
+            if (debug) System.out.println("Annotation: " + xx);
             if (fValue == null) {
                 if (debug) System.out.println("Field Value is null");
                 return;
             } else {
                 if (debug) System.out.println("Field Value: " + fValue.getString());
             }
-		}
+        }
         if (!annotationPresent) {
             if (debug) System.out.println("****No annotations found for the span node: [" + node.getFrom() + ", " + node.getTo() + "] ");
         }

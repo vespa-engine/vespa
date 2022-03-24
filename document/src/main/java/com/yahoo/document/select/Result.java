@@ -25,9 +25,9 @@ public enum Result {
      * @return inverted result
      */
     public static Result invert(Result result) {
-    	if (result == Result.TRUE) return Result.FALSE;
-    	if (result == Result.FALSE) return Result.TRUE;
-    	return Result.INVALID;
+        if (result == Result.TRUE) return Result.FALSE;
+        if (result == Result.FALSE) return Result.TRUE;
+        return Result.INVALID;
     }
 
     /**

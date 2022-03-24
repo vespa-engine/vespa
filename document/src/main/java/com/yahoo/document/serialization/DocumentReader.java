@@ -14,12 +14,12 @@ import com.yahoo.document.DocumentTypeManager;
  */
 public interface DocumentReader {
 
-	/**
-	 * Read a document
-	 *
-	 * @param document - document to be read
-	 */
-	void read(Document document);
+    /**
+     * Read a document
+     *
+     * @param document - document to be read
+     */
+    void read(Document document);
 
     DocumentId readDocumentId();
     DocumentType readDocumentType();

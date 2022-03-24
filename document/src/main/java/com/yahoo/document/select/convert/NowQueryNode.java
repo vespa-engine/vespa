@@ -14,7 +14,7 @@ public class NowQueryNode {
         this.value = value;
     }
     NowQueryNode(ArithmeticNode node) {
-    	// Assumes that the structure is checked and verified earlier
+        // Assumes that the structure is checked and verified earlier
         this.value = Long.parseLong(node.getItems().get(1).getNode().toString());
     }
     @Override
