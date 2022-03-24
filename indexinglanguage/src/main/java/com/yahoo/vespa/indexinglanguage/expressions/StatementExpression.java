@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Simon Thoresen Hult
@@ -99,11 +100,11 @@ public final class StatementExpression extends ExpressionList<Expression> {
 
     /** Creates an expression with simple lingustics for testing */
     public static StatementExpression fromString(String expression) throws ParseException {
-        return fromString(expression, new SimpleLinguistics(), Embedder.throwsOnUse);
+        return fromString(expression, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
     }
 
-    public static StatementExpression fromString(String expression, Linguistics linguistics, Embedder embedder) throws ParseException {
-        return newInstance(new ScriptParserContext(linguistics, embedder).setInputStream(new IndexingInput(expression)));
+    public static StatementExpression fromString(String expression, Linguistics linguistics, Map<String, Embedder> embedders) throws ParseException {
+        return newInstance(new ScriptParserContext(linguistics, embedders).setInputStream(new IndexingInput(expression)));
     }
 
     public static StatementExpression newInstance(ScriptParserContext config) throws ParseException {

@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * @author Simon Thoresen Hult
@@ -92,11 +93,11 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
     /** Creates an expression with simple lingustics for testing */
     @SuppressWarnings("deprecation")
     public static ScriptExpression fromString(String expression) throws ParseException {
-        return fromString(expression, new SimpleLinguistics(), Embedder.throwsOnUse);
+        return fromString(expression, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
     }
 
-    public static ScriptExpression fromString(String expression, Linguistics linguistics, Embedder embedder) throws ParseException {
-        return newInstance(new ScriptParserContext(linguistics, embedder).setInputStream(new IndexingInput(expression)));
+    public static ScriptExpression fromString(String expression, Linguistics linguistics, Map<String, Embedder> embedders) throws ParseException {
+        return newInstance(new ScriptParserContext(linguistics, embedders).setInputStream(new IndexingInput(expression)));
     }
 
     public static ScriptExpression newInstance(ScriptParserContext config) throws ParseException {

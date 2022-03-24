@@ -337,7 +337,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     public Query(HttpRequest request, Map<String, String> requestMap, CompiledQueryProfile queryProfile) {
         super(new QueryPropertyAliases(propertyAliases));
         this.httpRequest = request;
-        init(requestMap, queryProfile, Embedder.throwsOnUse, ZoneInfo.defaultInfo());
+        init(requestMap, queryProfile, Embedder.throwsOnUse.asMap(), ZoneInfo.defaultInfo());
     }
 
     // TODO: Deprecate most constructors above here
@@ -346,31 +346,31 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         this(builder.getRequest(),
              builder.getRequestMap(),
              builder.getQueryProfile(),
-             builder.getEmbedder(),
+             builder.getEmbedders(),
              builder.getZoneInfo());
     }
 
-    private Query(HttpRequest request, Map<String, String> requestMap, CompiledQueryProfile queryProfile, Embedder embedder,
+    private Query(HttpRequest request, Map<String, String> requestMap, CompiledQueryProfile queryProfile, Map<String, Embedder> embedders,
                   ZoneInfo zoneInfo) {
         super(new QueryPropertyAliases(propertyAliases));
         this.httpRequest = request;
-        init(requestMap, queryProfile, embedder, zoneInfo);
+        init(requestMap, queryProfile, embedders, zoneInfo);
     }
 
     private void init(Map<String, String> requestMap,
                       CompiledQueryProfile queryProfile,
-                      Embedder embedder,
+                      Map<String, Embedder> embedders,
                       ZoneInfo zoneInfo) {
         startTime = httpRequest.getJDiscRequest().creationTime(TimeUnit.MILLISECONDS);
         if (queryProfile != null) {
             // Move all request parameters to the query profile just to validate that the parameter settings are legal
-            Properties queryProfileProperties = new QueryProfileProperties(queryProfile, embedder);
+            Properties queryProfileProperties = new QueryProfileProperties(queryProfile, embedders);
             properties().chain(queryProfileProperties);
             // TODO: Just checking legality rather than actually setting would be faster
             setPropertiesFromRequestMap(requestMap, properties(), true); // Adds errors to the query for illegal set attempts
 
             // Create the full chain
-            properties().chain(new QueryProperties(this, queryProfile.getRegistry(), embedder)).
+            properties().chain(new QueryProperties(this, queryProfile.getRegistry(), embedders)).
                          chain(new ModelObjectMap()).
                          chain(new RequestContextProperties(requestMap, zoneInfo)).
                          chain(queryProfileProperties).
@@ -389,7 +389,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         }
         else { // bypass these complications if there is no query profile to get values from and validate against
             properties().
-                    chain(new QueryProperties(this, CompiledQueryProfileRegistry.empty, embedder)).
+                    chain(new QueryProperties(this, CompiledQueryProfileRegistry.empty, embedders)).
                     chain(new PropertyMap()).
                     chain(new DefaultProperties());
             setPropertiesFromRequestMap(requestMap, properties(), false);
@@ -1131,7 +1131,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         private HttpRequest request = null;
         private Map<String, String> requestMap = null;
         private CompiledQueryProfile queryProfile = null;
-        private Embedder embedder = Embedder.throwsOnUse;
+        private Map<String, Embedder> embedders = Embedder.throwsOnUse.asMap();
         private ZoneInfo zoneInfo = ZoneInfo.defaultInfo();
 
         public Builder setRequest(String query) {
@@ -1171,11 +1171,22 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         public CompiledQueryProfile getQueryProfile() { return queryProfile; }
 
         public Builder setEmbedder(Embedder embedder) {
-            this.embedder = embedder;
+            return setEmbedders(Map.of(Embedder.defaultEmbedderId, embedder));
+        }
+
+        public Builder setEmbedders(Map<String, Embedder> embedders) {
+            this.embedders = embedders;
             return this;
         }
 
-        public Embedder getEmbedder() { return embedder; }
+        public Embedder getEmbedder() {
+            if (embedders.size() != 1) {
+                throw new IllegalArgumentException("Attempt to get single embedder but multiple exists.");
+            }
+            return embedders.entrySet().stream().findFirst().get().getValue();
+        }
+
+        public Map<String, Embedder> getEmbedders() { return embedders; }
 
         public Builder setZoneInfo(ZoneInfo zoneInfo) {
             this.zoneInfo = zoneInfo;

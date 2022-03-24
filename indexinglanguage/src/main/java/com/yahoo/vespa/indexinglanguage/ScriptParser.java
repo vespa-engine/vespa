@@ -62,7 +62,7 @@ public final class ScriptParser {
         parser.setAnnotatorConfig(context.getAnnotatorConfig());
         parser.setDefaultFieldName(context.getDefaultFieldName());
         parser.setLinguistics(context.getLinguistcs());
-        parser.setEmbedder(context.getEmbedder());
+        parser.setEmbedders(context.getEmbedders());
         try {
             return method.call(parser);
         } catch (ParseException e) {

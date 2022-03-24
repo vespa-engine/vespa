@@ -415,14 +415,14 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         return wasConfiguredToDoAttributing;
     }
 
-    /** Parse an indexing expression which will use the simple linguistics implementatino suitable for testing */
+    /** Parse an indexing expression which will use the simple linguistics implementation suitable for testing */
     public void parseIndexingScript(String script) {
-        parseIndexingScript(script, new SimpleLinguistics(), Embedder.throwsOnUse);
+        parseIndexingScript(script, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
     }
 
-    public void parseIndexingScript(String script, Linguistics linguistics, Embedder embedder) {
+    public void parseIndexingScript(String script, Linguistics linguistics, Map<String, Embedder> embedders) {
         try {
-            ScriptParserContext config = new ScriptParserContext(linguistics, embedder);
+            ScriptParserContext config = new ScriptParserContext(linguistics, embedders);
             config.setInputStream(new IndexingInput(script));
             setIndexingScript(ScriptExpression.newInstance(config));
         } catch (ParseException e) {

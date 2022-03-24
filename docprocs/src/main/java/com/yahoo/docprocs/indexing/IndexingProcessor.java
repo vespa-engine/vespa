@@ -7,6 +7,7 @@ import com.google.inject.Inject;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.component.chain.dependencies.Provides;
+import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.docproc.DocumentProcessor;
 import com.yahoo.docproc.Processing;
 import com.yahoo.document.Document;
@@ -15,17 +16,19 @@ import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.document.DocumentUpdate;
-import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.language.Linguistics;
-import java.util.logging.Level;
-
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.provider.DefaultEmbedderProvider;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.AdapterFactory;
 import com.yahoo.vespa.indexinglanguage.SimpleAdapterFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.stream.Collectors;
+
 
 /**
  * @author Simon Thoresen Hult
@@ -55,9 +58,9 @@ public class IndexingProcessor extends DocumentProcessor {
     public IndexingProcessor(DocumentTypeManager documentTypeManager,
                              IlscriptsConfig ilscriptsConfig,
                              Linguistics linguistics,
-                             Embedder embedder) {
+                             ComponentRegistry<Embedder> embedders) {
         docTypeMgr = documentTypeManager;
-        scriptMgr = new ScriptManager(docTypeMgr, ilscriptsConfig, linguistics, embedder);
+        scriptMgr = new ScriptManager(docTypeMgr, ilscriptsConfig, linguistics, toMap(embedders));
         adapterFactory = new SimpleAdapterFactory(new ExpressionSelector());
     }
 
@@ -126,6 +129,16 @@ public class IndexingProcessor extends DocumentProcessor {
     private void processRemove(DocumentRemove prev, List<DocumentOperation> out) {
         log.log(Level.FINE, "Not processing remove '%s'.", prev.getId());
         out.add(prev);
+    }
+
+    private Map<String, Embedder> toMap(ComponentRegistry<Embedder> embedders) {
+        var map = embedders.allComponentsById().entrySet().stream()
+                    .collect(Collectors.toMap(e -> e.getKey().stringValue(), Map.Entry::getValue));
+        if (map.size() > 1) {
+            map.remove(DefaultEmbedderProvider.class.getName());
+            // Ideally, this should be handled by dependency injection, however for now this workaround is necessary.
+        }
+        return map;
     }
 
 }

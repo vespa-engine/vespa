@@ -30,7 +30,7 @@ import java.util.Map;
 public class QueryProfileProperties extends Properties {
 
     private final CompiledQueryProfile profile;
-    private final Embedder embedder;
+    private final Map<String, Embedder> embedders;
 
     // Note: The priority order is: values has precedence over references
 
@@ -45,14 +45,18 @@ public class QueryProfileProperties extends Properties {
     private List<Pair<CompoundName, CompiledQueryProfile>> references = null;
 
     public QueryProfileProperties(CompiledQueryProfile profile) {
-        this(profile, Embedder.throwsOnUse);
+        this(profile, Embedder.throwsOnUse.asMap());
+    }
+
+    public QueryProfileProperties(CompiledQueryProfile profile, Embedder embedder) {
+        this(profile, Map.of(Embedder.defaultEmbedderId, embedder));
     }
 
     /** Creates an instance from a profile, throws an exception if the given profile is null */
-    public QueryProfileProperties(CompiledQueryProfile profile, Embedder embedder) {
+    public QueryProfileProperties(CompiledQueryProfile profile, Map<String, Embedder> embedders) {
         Validator.ensureNotNull("The profile wrapped by this cannot be null", profile);
         this.profile = profile;
-        this.embedder = embedder;
+        this.embedders = embedders;
     }
 
     /** Returns the query profile backing this, or null if none */
@@ -147,7 +151,7 @@ public class QueryProfileProperties extends Properties {
 
             if (fieldDescription != null) {
                 if (i == name.size() - 1) { // at the end of the path, check the assignment type
-                    var conversionContext = new ConversionContext(localName, profile.getRegistry(), embedder, context);
+                    var conversionContext = new ConversionContext(localName, profile.getRegistry(), embedders, context);
                     var convertedValue = fieldDescription.getType().convertFrom(value, conversionContext);
                     if (convertedValue == null
                         && fieldDescription.getType() instanceof QueryProfileFieldType

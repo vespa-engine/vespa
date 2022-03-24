@@ -1868,7 +1868,9 @@
       "public com.yahoo.search.Query$Builder setQueryProfile(com.yahoo.search.query.profile.compiled.CompiledQueryProfile)",
       "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile getQueryProfile()",
       "public com.yahoo.search.Query$Builder setEmbedder(com.yahoo.language.process.Embedder)",
+      "public com.yahoo.search.Query$Builder setEmbedders(java.util.Map)",
       "public com.yahoo.language.process.Embedder getEmbedder()",
+      "public java.util.Map getEmbedders()",
       "public com.yahoo.search.Query$Builder setZoneInfo(ai.vespa.cloud.ZoneInfo)",
       "public ai.vespa.cloud.ZoneInfo getZoneInfo()",
       "public com.yahoo.search.Query build()"
@@ -4354,7 +4356,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.jdisc.Metric, com.yahoo.container.handler.threadpool.ContainerThreadPool, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.container.core.ContainerHttpConfig, com.yahoo.language.process.Embedder, com.yahoo.search.searchchain.ExecutionFactory, ai.vespa.cloud.ZoneInfo)",
+      "public void <init>(com.yahoo.jdisc.Metric, com.yahoo.container.handler.threadpool.ContainerThreadPool, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.container.core.ContainerHttpConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.search.searchchain.ExecutionFactory, ai.vespa.cloud.ZoneInfo)",
       "public void <init>(com.yahoo.jdisc.Metric, com.yahoo.container.handler.threadpool.ContainerThreadPool, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.container.core.ContainerHttpConfig, com.yahoo.language.process.Embedder, com.yahoo.search.searchchain.ExecutionFactory)",
       "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric, com.yahoo.container.handler.threadpool.ContainerThreadPool, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.container.core.ContainerHttpConfig, com.yahoo.language.process.Embedder, com.yahoo.search.searchchain.ExecutionFactory)",
       "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric, com.yahoo.container.handler.threadpool.ContainerThreadPool, com.yahoo.container.logging.AccessLog, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.container.core.ContainerHttpConfig, com.yahoo.search.searchchain.ExecutionFactory)",
@@ -5993,6 +5995,7 @@
     "methods": [
       "public void <init>(com.yahoo.search.query.profile.compiled.CompiledQueryProfile)",
       "public void <init>(com.yahoo.search.query.profile.compiled.CompiledQueryProfile, com.yahoo.language.process.Embedder)",
+      "public void <init>(com.yahoo.search.query.profile.compiled.CompiledQueryProfile, java.util.Map)",
       "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile getQueryProfile()",
       "public java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
       "public void set(com.yahoo.processing.request.CompoundName, java.lang.Object, java.util.Map)",
@@ -6368,6 +6371,7 @@
     ],
     "methods": [
       "public void <init>(java.lang.String, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.language.process.Embedder, java.util.Map)",
+      "public void <init>(java.lang.String, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, java.util.Map, java.util.Map)",
       "public java.lang.String destination()",
       "public static com.yahoo.search.query.profile.types.ConversionContext empty()"
     ],
@@ -6642,6 +6646,7 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.search.Query, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.language.process.Embedder)",
+      "public void <init>(com.yahoo.search.Query, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, java.util.Map)",
       "public void setParentQuery(com.yahoo.search.Query)",
       "public java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
       "public void set(com.yahoo.processing.request.CompoundName, java.lang.Object, java.util.Map)",

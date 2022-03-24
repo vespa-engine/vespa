@@ -14,14 +14,20 @@ public class ConversionContext {
 
     private final String destination;
     private final CompiledQueryProfileRegistry registry;
-    private final Embedder embedder;
+    private final Map<String, Embedder> embedders;
     private final Language language;
 
     public ConversionContext(String destination, CompiledQueryProfileRegistry registry, Embedder embedder,
                              Map<String, String> context) {
+        this(destination, registry, Map.of(Embedder.defaultEmbedderId, embedder), context);
+    }
+
+    public ConversionContext(String destination, CompiledQueryProfileRegistry registry,
+                             Map<String, Embedder> embedders,
+                             Map<String, String> context) {
         this.destination = destination;
         this.registry = registry;
-        this.embedder = embedder;
+        this.embedders = embedders;
         this.language = context.containsKey("language") ? Language.fromLanguageTag(context.get("language"))
                                                         : Language.UNKNOWN;
     }
@@ -33,14 +39,14 @@ public class ConversionContext {
     CompiledQueryProfileRegistry registry() {return registry;}
 
     /** Returns the configured embedder, never null */
-    Embedder embedder() { return embedder; }
+    Map<String, Embedder> embedders() { return embedders; }
 
     /** Returns the language, which is never null but may be UNKNOWN */
     Language language() { return language; }
 
     /** Returns an empty context */
     public static ConversionContext empty() {
-        return new ConversionContext(null, null, Embedder.throwsOnUse, Map.of());
+        return new ConversionContext(null, null, Embedder.throwsOnUse.asMap(), Map.of());
     }
 
 }

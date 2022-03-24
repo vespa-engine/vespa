@@ -3,10 +3,10 @@ package com.yahoo.language.process;
 
 import com.yahoo.language.Language;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * An embedder converts a text string to a tensor
@@ -15,8 +15,21 @@ import java.util.List;
  */
 public interface Embedder {
 
+    /** Name of embedder when none is explicity given */
+    String defaultEmbedderId = "default";
+
     /** An instance of this which throws IllegalStateException if attempted used */
     Embedder throwsOnUse = new FailingEmbedder();
+
+    /** Returns this embedder instance as a map with the default embedder name */
+    default Map<String, Embedder> asMap() {
+        return asMap(defaultEmbedderId);
+    }
+
+    /** Returns this embedder instance as a map with the given name */
+    default Map<String, Embedder> asMap(String name) {
+        return Map.of(name, this);
+    }
 
     /**
      * Converts text into a list of token id's (a vector embedding)
@@ -82,14 +95,24 @@ public interface Embedder {
 
     class FailingEmbedder implements Embedder {
 
+        private final String message;
+
+        public FailingEmbedder() {
+            this("No embedder has been configured");
+        }
+
+        public FailingEmbedder(String message) {
+            this.message = message;
+        }
+
         @Override
         public List<Integer> embed(String text, Context context) {
-            throw new IllegalStateException("No embedder has been configured");
+            throw new IllegalStateException(message);
         }
 
         @Override
         public Tensor embed(String text, Context context, TensorType tensorType) {
-            throw new IllegalStateException("No embedder has been configured");
+            throw new IllegalStateException(message);
         }
 
     }

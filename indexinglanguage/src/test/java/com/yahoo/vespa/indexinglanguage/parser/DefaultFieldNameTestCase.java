@@ -19,7 +19,7 @@ public class DefaultFieldNameTestCase {
     public void requireThatDefaultFieldNameIsAppliedWhenArgumentIsMissing() throws ParseException {
         IndexingInput input = new IndexingInput("input");
         InputExpression exp = (InputExpression)Expression.newInstance(new ScriptParserContext(new SimpleLinguistics(),
-                                                                                              Embedder.throwsOnUse)
+                                                                                              Embedder.throwsOnUse.asMap())
                                                                               .setInputStream(input)
                                                                               .setDefaultFieldName("foo"));
         assertEquals("foo", exp.getFieldName());

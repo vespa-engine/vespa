@@ -85,9 +85,9 @@ public class ExpressionTestCase {
 
     private static void assertExpression(Class expectedClass, String str) throws ParseException {
         Linguistics linguistics = new SimpleLinguistics();
-        Expression foo = Expression.fromString(str, linguistics, Embedder.throwsOnUse);
+        Expression foo = Expression.fromString(str, linguistics, Embedder.throwsOnUse.asMap());
         assertEquals(expectedClass, foo.getClass());
-        Expression bar = Expression.fromString(foo.toString(), linguistics, Embedder.throwsOnUse);
+        Expression bar = Expression.fromString(foo.toString(), linguistics, Embedder.throwsOnUse.asMap());
         assertEquals(foo.hashCode(), bar.hashCode());
         assertEquals(foo, bar);
     }

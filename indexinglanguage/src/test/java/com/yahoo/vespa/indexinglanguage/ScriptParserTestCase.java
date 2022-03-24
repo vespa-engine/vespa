@@ -96,7 +96,7 @@ public class ScriptParserTestCase {
     }
 
     private static ScriptParserContext newContext(String input) {
-        return new ScriptParserContext(new SimpleLinguistics(), Embedder.throwsOnUse).setInputStream(new IndexingInput(input));
+        return new ScriptParserContext(new SimpleLinguistics(), Embedder.throwsOnUse.asMap()).setInputStream(new IndexingInput(input));
     }
 
 }

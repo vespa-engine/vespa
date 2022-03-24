@@ -34,12 +34,16 @@ public class QueryProperties extends Properties {
 
     private Query query;
     private final CompiledQueryProfileRegistry profileRegistry;
-    private final Embedder embedder;
+    private final Map<String, Embedder> embedders;
 
     public QueryProperties(Query query, CompiledQueryProfileRegistry profileRegistry, Embedder embedder) {
+        this(query, profileRegistry, Map.of(Embedder.defaultEmbedderId, embedder));
+    }
+
+    public QueryProperties(Query query, CompiledQueryProfileRegistry profileRegistry, Map<String, Embedder> embedders) {
         this.query = query;
         this.profileRegistry = profileRegistry;
-        this.embedder = embedder;
+        this.embedders = embedders;
     }
 
     public void setParentQuery(Query query) {
@@ -394,7 +398,7 @@ public class QueryProperties extends Properties {
         if (type == null) return value; // no type info -> keep as string
         FieldDescription field = type.getField(key);
         if (field == null) return value; // ditto
-        return field.getType().convertFrom(value, new ConversionContext(key, profileRegistry, embedder, context));
+        return field.getType().convertFrom(value, new ConversionContext(key, profileRegistry, embedders, context));
     }
 
     private void throwIllegalParameter(String key,String namespace) {
