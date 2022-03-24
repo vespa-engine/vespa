@@ -74,8 +74,7 @@ FRT_Supervisor::Get2WayTarget(const char *spec, FNET_Context connContext)
     FNET_TransportThread *thread = _transport->select_thread(spec, strlen(spec));
     return new FRT_Target(thread->GetScheduler(),
                           thread->Connect(spec, &_packetStreamer,
-                                  nullptr, FNET_Context(),
-                                  this, connContext));
+                                          this, connContext));
 }
 
 
@@ -143,13 +142,6 @@ FRT_Supervisor::InvokeSync(SchedulerPtr scheduler, FNET_Connection *conn, FRT_RP
     FRT_SingleReqWait waiter;
     InvokeAsync(scheduler, conn, req, timeout, &waiter);
     waiter.WaitReq();
-}
-
-
-bool
-FRT_Supervisor::InitAdminChannel(FNET_Channel *)
-{
-    return false;
 }
 
 

@@ -12,7 +12,6 @@ vespa_define_module(
     TESTS
     src/examples/frt/rpc
     src/examples/ping
-    src/examples/proxy
     src/examples/timeout
     src/tests/connect
     src/tests/connection_spread

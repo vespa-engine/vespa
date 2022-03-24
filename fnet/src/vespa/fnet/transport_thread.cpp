@@ -282,13 +282,11 @@ FNET_TransportThread::Listen(const char *spec, FNET_IPacketStreamer *streamer,
 
 FNET_Connection*
 FNET_TransportThread::Connect(const char *spec, FNET_IPacketStreamer *streamer,
-                              FNET_IPacketHandler *adminHandler,
-                              FNET_Context adminContext,
                               FNET_IServerAdapter *serverAdapter,
                               FNET_Context connContext)
 {
     std::unique_ptr<FNET_Connection> conn = std::make_unique<FNET_Connection>(this, streamer, serverAdapter,
-            adminHandler, adminContext, connContext, spec);
+                                                                              connContext, spec);
     if (conn->Init()) {
         return conn.release();
     }

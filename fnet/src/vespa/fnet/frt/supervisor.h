@@ -84,7 +84,6 @@ public:
 
 
     // FNET ServerAdapter Interface
-    bool InitAdminChannel(FNET_Channel *channel) override;
     bool InitChannel(FNET_Channel *channel, uint32_t pcode) override;
 
     // Packet Handling
