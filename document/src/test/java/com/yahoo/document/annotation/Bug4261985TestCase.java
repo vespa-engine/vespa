@@ -107,10 +107,10 @@ public class Bug4261985TestCase {
         companyValue.setFieldValue(compLocField, compLocFieldVal);
 
         companyValue.setFieldValue("vertical", "software");
-        Struct dirValue1 = new Struct(manager.getDataType("annotation.person"));
+        Struct dirValue1 = new Struct(person.getDataType());
         dirValue1.setFieldValue("name", "Jonathan Schwartz");
         Annotation dirAnnotation1 = new Annotation(person, dirValue1);
-        Struct dirValue2 = new Struct(manager.getDataType("annotation.person"));
+        Struct dirValue2 = new Struct(person.getDataType());
         dirValue2.setFieldValue("name", "Scott Mcnealy");
         Annotation dirAnnotation2 = new Annotation(person, dirValue2);
         Field dirField = ((StructDataType) company.getDataType()).getField("directors");
