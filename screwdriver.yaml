@@ -230,6 +230,7 @@ jobs:
           screwdriver/update-vespa-version-in-sample-apps.sh $VESPA_VERSION
 
   publish-cli-release:
+    image: homebrew/brew
     annotations:
       # Run once an hour, in the hours 7-15 UTC, Monday-Thursday
       screwdriver.cd/buildPeriodically: H 7-15 * * 1-4
@@ -238,9 +239,8 @@ jobs:
       - GH_TOKEN
     steps:
       - install-dependencies: |
-          export NONINTERACTIVE=1
-          bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          brew install gh
+          export HOMEBREW_NO_INSTALL_CLEANUP=1 HOMEBREW_NO_ANALYTICS=1
+          brew install --quiet gh zip go
       - publish-github:
           make -C client/go clean dist-github
       - publish-homebrew:
