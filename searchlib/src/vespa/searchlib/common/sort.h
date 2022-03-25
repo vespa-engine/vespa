@@ -463,8 +463,7 @@ template<typename T, typename GR, typename GE, int LEN, int POS>
 void radix_sort(GR R, GE E, T * a, unsigned int n, unsigned int insertSortLevel=10, unsigned int topn=std::numeric_limits<unsigned int>::max())
 {
     if (n > insertSortLevel) {
-        radix_sort_internal<T, GR, GE, LEN, POS>(R, E, a, n, insertSortLevel,
-                                                 topn);
+        radix_sort_internal<T, GR, GE, LEN, POS>(R, E, a, n, insertSortLevel, topn);
     } else if (n > 1) {
         std::sort(a, a + n, E);
     }
@@ -524,8 +523,7 @@ template<typename T, typename GR, typename GE, int SHIFT>
 T* radix_stable_sort(GR R, GE E, T * a, T * b, unsigned int n, unsigned int insertSortLevel=10)
 {
     if (n > insertSortLevel) {
-        return radix_stable_sort_internal<T, GR, GE, SHIFT>(R, E, a, b, n,
-                                                            insertSortLevel);
+        return radix_stable_sort_internal<T, GR, GE, SHIFT>(R, E, a, b, n, insertSortLevel);
     } else if (n > 1) {
         std::stable_sort(a, a + n, E);
     }
