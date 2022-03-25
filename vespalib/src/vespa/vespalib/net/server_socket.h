@@ -20,7 +20,7 @@ private:
 
     void cleanup();
 public:
-    ServerSocket() : _handle(), _path() {}
+    ServerSocket() : _handle(), _path(), _blocking(false), _shutdown() {}
     explicit ServerSocket(const SocketSpec &spec);
     explicit ServerSocket(const vespalib::string &spec);
     explicit ServerSocket(int port);
