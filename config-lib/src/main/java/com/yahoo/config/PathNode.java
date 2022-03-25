@@ -23,7 +23,13 @@ public class PathNode extends LeafNode<Path> {
 
     public PathNode(FileReference fileReference) {
         super(true);
-        this.value = new File(fileReference.value()).toPath();
+        Path value = Path.of(fileReference.value()).normalize();
+        if (value.isAbsolute())
+            throw new IllegalArgumentException("path must be relative");
+        if (value.startsWith(".."))
+            throw new IllegalArgumentException("'..' not allowed in path");
+
+        this.value = value;
         this.fileReference = fileReference;
     }
 
