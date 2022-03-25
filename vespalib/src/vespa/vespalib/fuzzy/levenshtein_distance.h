@@ -8,7 +8,7 @@
 namespace vespalib {
 
 /**
- * LevensteinDistance::calculate implements basic Levenstein distance algorithm
+ * LevenshteinDistance::calculate implements basic Levenshtein distance algorithm
  * with early stopping if the distance is already too high.
  * If the distance is above threshold method would return empty optional,
  * if the distance is below or equal to it, the distance will be wrapped in optional.
@@ -17,7 +17,7 @@ namespace vespalib {
  *
  * Algorithm is based off Java implementation from commons-text library
  */
-class LevensteinDistance {
+class LevenshteinDistance {
 public:
     static std::optional<uint32_t> calculate(const std::vector<uint32_t>& left, const std::vector<uint32_t>& right, uint32_t threshold);
 };

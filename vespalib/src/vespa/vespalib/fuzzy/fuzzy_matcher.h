@@ -9,7 +9,7 @@
 namespace vespalib {
 
 /**
- * Fuzzy matching between a lowercased instances of query and document terms based on Levenstein distance.
+ * Fuzzy matching between lowercased instances of query and document terms based on Levenshtein distance.
  * Class has two main parameters:
  * - prefix size, i.e the size of the prefix that is considered frozen.
  * - max edit distance, i.e an upper bound for edit distance for it to be a match between terms

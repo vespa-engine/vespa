@@ -8,11 +8,11 @@ vespa_add_executable(vespalib_fuzzy_matcher_test_app TEST
         )
 vespa_add_test(NAME vespalib_fuzzy_matcher_test_app COMMAND vespalib_fuzzy_matcher_test_app)
 
-vespa_add_executable(vespalib_levenstein_distance_test_app TEST
+vespa_add_executable(vespalib_levenshtein_distance_test_app TEST
         SOURCES
-        levenstein_distance_test.cpp
+        levenshtein_distance_test.cpp
         DEPENDS
         vespalib
         GTest::GTest
         )
-vespa_add_test(NAME vespalib_levenstein_distance_test_app COMMAND vespalib_levenstein_distance_test_app)
+vespa_add_test(NAME vespalib_levenshtein_distance_test_app COMMAND vespalib_levenshtein_distance_test_app)

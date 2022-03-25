@@ -2,7 +2,7 @@
 vespa_add_library(vespalib_vespalib_fuzzy OBJECT
         SOURCES
         fuzzy_matcher.cpp
-        levenstein_distance.cpp
+        levenshtein_distance.cpp
         DEPENDS
         )
 
