@@ -14,33 +14,31 @@ namespace {
 
 /*
  * Functor class to write meta data for a single lid. Note that during
- * a background save with active feeding, timestamp, bucketused bits
+ * a background save with active feeding, timestamp, bucket used bits
  * and size might reflect future values due to missing snapshot
- * properties in MetaDataStore.  size might also reflect a mix between
- * current ant future value due to non-atomic access.
+ * properties in RcuVector. Size might also reflect a mix between
+ * current and future value due to non-atomic access.
  */
 class WriteMetaData
 {
-    search::BufferWriter &_datWriter;
-    const RawDocumentMetaData *_metaDataStore;
-    uint32_t _metaDataStoreSize;
-    bool _writeDocSize;
-    using MetaDataStore = DocumentMetaStoreSaver::MetaDataStore;
+    using MetaDataView = DocumentMetaStoreSaver::MetaDataView;
     using GlobalId = documentmetastore::IStore::GlobalId;
     using BucketId = documentmetastore::IStore::BucketId;
     using Timestamp = documentmetastore::IStore::Timestamp;
+    search::BufferWriter &_datWriter;
+    MetaDataView _metaDataView;
+    bool _writeDocSize;
 public:
-    WriteMetaData(search::BufferWriter &datWriter, const MetaDataStore &metaDataStore, bool writeDocSize)
+    WriteMetaData(search::BufferWriter &datWriter, MetaDataView metaDataView, bool writeDocSize)
         : _datWriter(datWriter),
-          _metaDataStore(&metaDataStore[0]),
-          _metaDataStoreSize(metaDataStore.size()),
+          _metaDataView(metaDataView),
           _writeDocSize(writeDocSize)
     { }
 
     void operator()(documentmetastore::GidToLidMapKey key) {
         auto lid = key.get_lid();
-        assert(lid < _metaDataStoreSize);
-        const RawDocumentMetaData &metaData = _metaDataStore[lid];
+        assert(lid < _metaDataView.size());
+        const RawDocumentMetaData &metaData = _metaDataView[lid];
         const GlobalId &gid = metaData.getGid();
         // 6 bits used for bucket bits
         uint8_t bucketUsedBits = metaData.getBucketUsedBits();
@@ -71,10 +69,10 @@ DocumentMetaStoreSaver::
 DocumentMetaStoreSaver(vespalib::GenerationHandler::Guard &&guard,
                        const search::attribute::AttributeHeader &header,
                        const GidIterator &gidIterator,
-                       const MetaDataStore &metaDataStore)
+                       MetaDataView metaDataView)
     : AttributeSaver(std::move(guard), header),
       _gidIterator(gidIterator),
-      _metaDataStore(metaDataStore),
+      _metaDataView(metaDataView),
       _writeDocSize(true)
 {
     if (header.getVersion() == documentmetastore::NO_DOCUMENT_SIZE_TRACKING_VERSION) {
@@ -92,7 +90,7 @@ DocumentMetaStoreSaver::onSave(IAttributeSaveTarget &saveTarget)
     // write <lid,gid> pairs, sorted on gid
     std::unique_ptr<search::BufferWriter>
         datWriter(saveTarget.datWriter().allocBufferWriter());
-    _gidIterator.foreach_key(WriteMetaData(*datWriter, _metaDataStore, _writeDocSize));
+    _gidIterator.foreach_key(WriteMetaData(*datWriter, _metaDataView, _writeDocSize));
     datWriter->flush();
     return true;
 }

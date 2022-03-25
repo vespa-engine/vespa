@@ -5,17 +5,17 @@
 namespace proton::documentmetastore {
 
 LidGidKeyComparator::LidGidKeyComparator(const document::GlobalId &gid,
-                                         const MetaDataStore &metaDataStore)
+                                         UnboundMetaDataView metaDataView)
     : _gid(gid),
-      _metaDataStore(metaDataStore),
+      _metaDataView(metaDataView),
       _gidCompare()
 {
 }
 
 LidGidKeyComparator::LidGidKeyComparator(const RawDocumentMetaData &metaData,
-                                         const MetaDataStore &metaDataStore)
+                                         UnboundMetaDataView metaDataView)
     : _gid(metaData.getGid()),
-      _metaDataStore(metaDataStore),
+      _metaDataView(metaDataView),
       _gidCompare()
 {
 }
