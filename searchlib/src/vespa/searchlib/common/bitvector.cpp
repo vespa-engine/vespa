@@ -106,11 +106,13 @@ BitVector::clearIntervalNoInvalidation(Range range_in)
     Index endw = wordNum(last);
 
     if (endw > startw) {
-        _words[startw++] &= startBits(range.start());
-        memset(_words+startw, 0, sizeof(*_words)*(endw-startw));
-        _words[endw] &= endBits(last);
+        vespalib::atomic::store_ref_relaxed(_words[startw], _words[startw] & startBits(range.start()));
+        for (Index i = startw + 1; i < endw; ++i) {
+            vespalib::atomic::store_ref_relaxed(_words[i], 0);
+        }
+        vespalib::atomic::store_ref_relaxed(_words[endw], _words[endw] & endBits(last));
     } else {
-        _words[startw] &= (startBits(range.start()) | endBits(last));
+        vespalib::atomic::store_ref_relaxed(_words[startw], _words[startw] & (startBits(range.start()) | endBits(last)));
     }
 }
 

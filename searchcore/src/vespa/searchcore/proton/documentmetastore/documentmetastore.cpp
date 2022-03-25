@@ -1064,10 +1064,8 @@ DocumentMetaStore::getEstimatedShrinkLidSpaceGain() const
 BucketId
 DocumentMetaStore::getBucketOf(const vespalib::GenerationHandler::Guard &, uint32_t lid) const
 {
-    if (__builtin_expect(lid < getCommittedDocIdLimit(), true)) {
-        if (__builtin_expect(validLidFast(lid), true)) {
-            return getRawMetaData(lid).getBucketId();
-        }
+    if (__builtin_expect(validLidFastSafe(lid, getCommittedDocIdLimit()), true)) {
+        return getRawMetaData(lid).getBucketId();
     }
     return BucketId();
 }
