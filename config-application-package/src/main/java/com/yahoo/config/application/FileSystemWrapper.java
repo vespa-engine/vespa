@@ -16,20 +16,22 @@ import java.util.function.Predicate;
  */
 public class FileSystemWrapper {
 
-    Predicate<Path> existence;
-    ThrowingFunction<Path, byte[], IOException> reader;
+    final Path root;
+    final Predicate<Path> existence;
+    final ThrowingFunction<Path, byte[], IOException> reader;
 
-    private FileSystemWrapper(Predicate<Path> existence, ThrowingFunction<Path, byte[], IOException> reader) {
+    private FileSystemWrapper(Path root, Predicate<Path> existence, ThrowingFunction<Path, byte[], IOException> reader) {
+        this.root = root;
         this.existence = existence;
         this.reader = reader;
     }
 
-    public static FileSystemWrapper ofFiles(Predicate<Path> existence, ThrowingFunction<Path, byte[], IOException> reader) {
-        return new FileSystemWrapper(existence, reader);
+    public static FileSystemWrapper ofFiles(Path root, Predicate<Path> existence, ThrowingFunction<Path, byte[], IOException> reader) {
+        return new FileSystemWrapper(root, existence, reader);
     }
 
-    public static FileSystemWrapper getDefault() {
-        return ofFiles(Files::exists, Files::readAllBytes);
+    public static FileSystemWrapper getDefault(Path root) {
+        return ofFiles(root, Files::exists, Files::readAllBytes);
     }
 
     public FileWrapper wrap(Path path) {
@@ -39,7 +41,13 @@ public class FileSystemWrapper {
 
     public class FileWrapper {
         private final Path path;
-        private FileWrapper(Path path) { this.path = path; }
+        private FileWrapper(Path path) {
+            Path relative = root.relativize(path).normalize();
+            if (relative.isAbsolute() || relative.startsWith(".."))
+                throw new IllegalArgumentException(path + " is not a descendant of " + root);
+
+            this.path = path;
+        }
 
         public Path path() { return path; }
         public boolean exists() { return existence.test(path); }

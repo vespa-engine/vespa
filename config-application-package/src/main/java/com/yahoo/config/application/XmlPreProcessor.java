@@ -44,7 +44,7 @@ public class XmlPreProcessor {
     }
 
     public XmlPreProcessor(File applicationDir, Reader xmlInput, InstanceName instance, Environment environment, RegionName region) {
-        this(FileSystemWrapper.getDefault().wrap(applicationDir.toPath()), xmlInput, instance, environment, region);
+        this(FileSystemWrapper.getDefault(applicationDir.toPath()).wrap(applicationDir.toPath()), xmlInput, instance, environment, region);
     }
 
     public XmlPreProcessor(FileWrapper applicationDir, Reader xmlInput, InstanceName instance, Environment environment, RegionName region) {

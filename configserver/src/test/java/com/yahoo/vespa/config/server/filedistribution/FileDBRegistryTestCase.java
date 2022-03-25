@@ -25,6 +25,8 @@ public class FileDBRegistryTestCase {
     private static final String APP = "src/test/apps/zkapp";
     private static final String FOO_FILE = "files/foo.json";
     private static final String NO_FOO_FILE = "files/no_foo.json";
+    private static final String BOO_FILE = "/files/no_foo.json";
+    private static final String BAR_FILE = "../files/no_foo.json";
     private static final String BLOB_NAME = "myblob.name";
     private static final FileReference BLOB_REF = new FileReference("12f292a25163dd9");
     private static final FileReference FOO_REF = new FileReference("b5ce94ca1feae86c");
@@ -41,6 +43,18 @@ public class FileDBRegistryTestCase {
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("src/test/apps/zkapp/files/no_foo.json (No such file or directory)", e.getCause().getMessage());
+        }
+        try {
+            fileRegistry.addFile(BOO_FILE);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("/files/no_foo.json is not relative", e.getMessage());
+        }
+        try {
+            fileRegistry.addFile(BAR_FILE);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("src/test/apps/zkapp/../files/no_foo.json is not a descendant of src/test/apps/zkapp", e.getMessage());
         }
         assertEquals(BLOB_REF, fileRegistry.addBlob(BLOB_NAME, ByteBuffer.wrap(BLOB.getBytes(StandardCharsets.UTF_8))));
         String serializedRegistry = FileDBRegistry.exportRegistry(fileRegistry);

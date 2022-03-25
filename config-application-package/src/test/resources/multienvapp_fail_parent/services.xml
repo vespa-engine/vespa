@@ -1,0 +1,4 @@
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services version='1.0' xmlns:deploy="vespa" xmlns:preprocess="properties">
+    <preprocess:include file='../multienvapp/services.xml' />
+</services>

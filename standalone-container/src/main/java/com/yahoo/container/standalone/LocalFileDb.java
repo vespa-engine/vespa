@@ -52,6 +52,10 @@ public class LocalFileDb implements FileAcquirer, FileRegistry {
     @Override
     public FileReference addFile(String relativePath) {
         File file = appPath.resolve(relativePath).toFile();
+        Path relative = appPath.relativize(file.toPath()).normalize();
+        if (relative.isAbsolute() || relative.startsWith(".."))
+            throw new IllegalArgumentException(file + " is not a descendant of " + appPath);
+
         if (!file.exists()) {
             throw new RuntimeException("The file does not exist: " + file.getPath());
         }

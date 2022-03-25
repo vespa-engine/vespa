@@ -2,6 +2,7 @@
 package com.yahoo.config.application;
 
 import com.yahoo.config.application.api.ApplicationPackage;
+import org.junit.Assert;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -12,6 +13,9 @@ import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.NoSuchFileException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author Ulf Lilleengen
@@ -78,11 +82,33 @@ public class IncludeProcessorTest {
         TestBase.assertDocument(expected, doc);
     }
 
+    @Test
+    public void testIllegalParent() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        try {
+            File app = new File("src/test/resources/multienvapp_fail_parent");
+            DocumentBuilder docBuilder = Xml.getPreprocessDocumentBuilder();
+            new IncludeProcessor(app).process(docBuilder.parse(getServices(app)));
+            fail("sibling to package should not be allowed");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("src/test/resources/multienvapp_fail_parent/../multienvapp/services.xml is not a descendant of src/test/resources/multienvapp_fail_parent", e.getMessage());
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIllegalParent2() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        File app = new File("src/test/resources/multienvapp_fail_parent2");
+        DocumentBuilder docBuilder = Xml.getPreprocessDocumentBuilder();
+        new IncludeProcessor(app).process(docBuilder.parse(getServices(app)));
+        fail("absolute include path should not be allowed");
+    }
+
     @Test(expected = NoSuchFileException.class)
     public void testRequiredIncludeIsDefault() throws ParserConfigurationException, IOException, SAXException, TransformerException {
         File app = new File("src/test/resources/multienvapp_failrequired");
         DocumentBuilder docBuilder = Xml.getPreprocessDocumentBuilder();
         new IncludeProcessor(app).process(docBuilder.parse(getServices(app)));
+        fail("should fail by default to include a non-existent file");
     }
 
     static File getServices(File app) {
