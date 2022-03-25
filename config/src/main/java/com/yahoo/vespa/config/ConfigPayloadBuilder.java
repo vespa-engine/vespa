@@ -69,8 +69,8 @@ public class ConfigPayloadBuilder {
     /**
      * Get a new payload builder for a config struct, which can be used to add inner values to that struct.
      *
-     * @param name Name of the struct to create.
-     * @return A payload builder corresponding to the name.
+     * @param name name of the struct to create
+     * @return a payload builder corresponding to the name
      */
     public ConfigPayloadBuilder getObject(String name) {
         ConfigPayloadBuilder p = objectMap.get(name);

@@ -15,34 +15,35 @@ import java.util.regex.Pattern;
 
 /**
  * Represents one legal def file, or (internally) one array or inner array definition in a def file.
- * @author Vegard Balgaard Havdal
  *
+ * @author Vegard Havdal
  */
 public class ConfigDefinition {
+
     public static final Pattern namePattern = Pattern.compile("[a-zA-Z][a-zA-Z0-9-_]*");
     public static final Pattern namespacePattern = Pattern.compile("[a-zA-Z][a-zA-Z0-9-._]*");
 
-    public static Logger log = Logger.getLogger(ConfigDefinition.class.getName());
+    public static final Logger log = Logger.getLogger(ConfigDefinition.class.getName());
     private final String name;
     private final String namespace;
     ConfigDefinition parent = null;
 
     // TODO Strings without default are null, could be not OK.
-    private Map<String, StringDef> stringDefs = new LinkedHashMap<>();
-    private Map<String, BoolDef> boolDefs = new LinkedHashMap<>();
-    private Map<String, IntDef> intDefs = new LinkedHashMap<>();
-    private Map<String, LongDef> longDefs = new LinkedHashMap<>();
-    private Map<String, DoubleDef> doubleDefs = new LinkedHashMap<>();
-    private Map<String, EnumDef> enumDefs = new LinkedHashMap<>();
-    private Map<String, RefDef> referenceDefs = new LinkedHashMap<>();
-    private Map<String, FileDef> fileDefs = new LinkedHashMap<>();
-    private Map<String, PathDef> pathDefs = new LinkedHashMap<>();
-    private Map<String, UrlDef> urlDefs = new LinkedHashMap<>();
-    private Map<String, StructDef> structDefs = new LinkedHashMap<>();
-    private Map<String, InnerArrayDef> innerArrayDefs = new LinkedHashMap<>();
-    private Map<String, ArrayDef> arrayDefs = new LinkedHashMap<>();
-    private Map<String, LeafMapDef> leafMapDefs = new LinkedHashMap<>();
-    private Map<String, StructMapDef> structMapDefs = new LinkedHashMap<>();
+    private final Map<String, StringDef> stringDefs = new LinkedHashMap<>();
+    private final Map<String, BoolDef> boolDefs = new LinkedHashMap<>();
+    private final Map<String, IntDef> intDefs = new LinkedHashMap<>();
+    private final Map<String, LongDef> longDefs = new LinkedHashMap<>();
+    private final Map<String, DoubleDef> doubleDefs = new LinkedHashMap<>();
+    private final Map<String, EnumDef> enumDefs = new LinkedHashMap<>();
+    private final Map<String, RefDef> referenceDefs = new LinkedHashMap<>();
+    private final Map<String, FileDef> fileDefs = new LinkedHashMap<>();
+    private final Map<String, PathDef> pathDefs = new LinkedHashMap<>();
+    private final Map<String, UrlDef> urlDefs = new LinkedHashMap<>();
+    private final Map<String, StructDef> structDefs = new LinkedHashMap<>();
+    private final Map<String, InnerArrayDef> innerArrayDefs = new LinkedHashMap<>();
+    private final Map<String, ArrayDef> arrayDefs = new LinkedHashMap<>();
+    private final Map<String, LeafMapDef> leafMapDefs = new LinkedHashMap<>();
+    private final Map<String, StructMapDef> structMapDefs = new LinkedHashMap<>();
 
     static final Integer INT_MIN = -0x80000000;
     static final Integer INT_MAX = 0x7fffffff;
@@ -73,12 +74,12 @@ public class ConfigDefinition {
         return namespace;
     }
 
-    /** @return  The parent ConfigDefinition, or null if this is the root. */
+    /** Returns the parent ConfigDefinition, or null if this is the root. */
     private ConfigDefinition getParent() {
         return parent;
     }
 
-    /** @return The root ConfigDefinition, might be this. */
+    /** Returns the root ConfigDefinition, might be this. */
     private ConfigDefinition getRoot() {
         ConfigDefinition ancestor = this;
         while (ancestor.getParent() != null) {
@@ -88,7 +89,8 @@ public class ConfigDefinition {
     }
 
     private static void defFail(String id, String val, String type, Exception e) {
-        defFail("Invalid value '" + val + "' for " + type + " '" + id + "'. "+ Exceptions.toMessageString(e));
+        throw new IllegalArgumentException("Invalid value '" + val + "' for " + type + " '" + id + "': " +
+                                           Exceptions.toMessageString(e));
     }
 
     public void verify(String id, String val) {
@@ -119,30 +121,28 @@ public class ConfigDefinition {
         } else if (innerArrayDefs.containsKey(id)) {
             verifyInnerArray(id);
         } else if (leafMapDefs.containsKey(id)) {
-		verifyLeafMap(id);
+		    verifyLeafMap(id);
         } else if (structMapDefs.containsKey(id)) {
             verifyStructMap(id);
         } else {
-            defFail("No such field in definition " + getRoot().getNamespace() + "." + getRoot().getName() +
-                    ": " + getAncestorString() + id);
+            throw new IllegalArgumentException("No such field in definition " + getRoot().getNamespace() + "." +
+                                               getRoot().getName() + ": " + getAncestorString() + id);
         }
     }
 
-    private boolean verifyDouble(String id, String val) {
+    private void verifyDouble(String id, String val) {
         try {
-            return verifyDouble(id, Double.parseDouble(val));
+            verifyDouble(id, Double.parseDouble(val));
         } catch (NumberFormatException e) {
             defFail(id, val, "double", e);
-            return false;
         }
     }
 
-    private boolean verifyBool(String id, String val) {
+    private void verifyBool(String id, String val) {
         if ("true".equalsIgnoreCase(val) || "false".equalsIgnoreCase(val)) {
-            return verifyBool(id);
+            verifyBool(id);
         } else {
             defFail(id, val, "bool", null);
-            return false;
         }
     }
 
@@ -185,13 +185,13 @@ public class ConfigDefinition {
      *
      */
     public static class TypeSpec {
-        private String type; // TODO Class?
+        private final String type; // TODO Class?
         private Integer index;
-        private String name;
-        private Object defVal;
-        private Object min;
-        private Object max;
-        private List<String> enumVals;
+        private final String name;
+        private final Object defVal;
+        private final Object min;
+        private final Object max;
+        private final List<String> enumVals;
 
         public TypeSpec(String name, String type, Object defVal, String enumValsCommaSep, Object min, Object max) {
             this.name=name;
@@ -218,9 +218,6 @@ public class ConfigDefinition {
         public String getType() {
             return type;
         }
-        /*public Class getTypeClass() {
-          return typeClass;
-          }*/
         public Object getDef() {
             return defVal;
         }
@@ -234,17 +231,16 @@ public class ConfigDefinition {
             return enumVals;
         }
 
-        boolean checkValue(String id, String val, int index) {
+        void checkValue(String id, String val, int index) {
             if ("int".equals(getType())) {
-                return checkInt(id, val, index);
+                checkInt(id, val, index);
             } else if ("long".equals(getType())) {
-                return checkLong(id, val, index);
+                checkLong(id, val, index);
             } else if ("double".equals(getType())) {
-                return checkDouble(id, val, index);
+                checkDouble(id, val, index);
             } else if ("enum".equals(getType())) {
-                return checkEnum(id, val, index);
+                checkEnum(id, val, index);
             }
-            return true;
         }
 
         private boolean checkEnum(String id, String val, int index) {
@@ -255,79 +251,56 @@ public class ConfigDefinition {
             return true;
         }
 
-        private boolean checkDouble(String id, String val, int index) {
+        private void checkDouble(String id, String val, int index) {
             try {
-                return checkDouble(Double.parseDouble(val), id, index);
+                checkDouble(Double.parseDouble(val), id, index);
             } catch (NumberFormatException e) {
                 ConfigDefinition.defFail(id, val, "double", e);
-                return false;
             }
         }
 
-        private boolean checkLong(String id, String val, int index) {
+        private void checkLong(String id, String val, int index) {
             try {
-                return checkLong(Long.parseLong(val), id, index);
+                checkLong(Long.parseLong(val), id, index);
             } catch (NumberFormatException e) {
                 ConfigDefinition.defFail(id, val, "long", e);
-                return false;
             }
         }
 
-        private boolean checkInt(String id, String val, int index) {
+        private void checkInt(String id, String val, int index) {
             try {
-                return checkInt(Integer.parseInt(val), id, index);
+                checkInt(Integer.parseInt(val), id, index);
             } catch (NumberFormatException e) {
                 ConfigDefinition.defFail(id, val, "int", e);
-                return false;
             }
         }
 
-        private boolean checkInt(Integer theVal, String id, int arrayIndex) {
-            if (!"int".equals(getType())) {
-                ConfigDefinition.defFail("Illegal value \""+theVal+"\" for array \""+id+"\"");
-                return false;
-            }
-            if (getMax()!=null && theVal>(Integer)getMax()) {
+        private void checkInt(Integer theVal, String id, int arrayIndex) {
+            if ( ! "int".equals(getType()))
+                throw new IllegalArgumentException("Illegal value '" + theVal + "' for array '" + id + "'");
+            if (getMax() != null && theVal > (Integer)getMax())
                 ConfigDefinition.failTooBig(theVal, getMax(), id, id+"["+arrayIndex+"]");
-                return false;
-            }
-            if (getMin()!=null && theVal<(Integer)getMin()) {
+            if (getMin() != null && theVal < (Integer)getMin())
                 ConfigDefinition.failTooSmall(theVal, getMin(), id, id+"["+arrayIndex+"]");
-                return false;
-            }
-            return true;
         }
 
-        private boolean checkLong(Long theVal, String id, int arrayIndex) {
-            if (!"long".equals(getType())) {
-                ConfigDefinition.defFail("Illegal value \""+theVal+"\" for array \""+id+"\"");
-                return false;
-            }
-            if (getMax()!=null && theVal>(Long)getMax()) {
+        private void checkLong(Long theVal, String id, int arrayIndex) {
+            if ( ! "long".equals(getType()))
+                throw new IllegalArgumentException("Illegal value '" + theVal + "' for array '" + id + "'");
+            if (getMax() != null && theVal > (Long)getMax())
                 ConfigDefinition.failTooBig(theVal, getMax(), id, id+"["+arrayIndex+"]");
-                return false;
-            }
-            if (getMin()!=null && theVal<(Long)getMin()) {
+            if (getMin() != null && theVal < (Long)getMin())
                 ConfigDefinition.failTooSmall(theVal, getMin(), id, id+"["+arrayIndex+"]");
-                return false;
-            }
-            return true;
         }
 
-        private boolean checkDouble(Double theVal, String id, int arrayIndex) {
-            if (!"double".equals(getType())) {
-                ConfigDefinition.defFail("Illegal value \""+theVal+"\" for array \""+id+"\", array type is "+getType());
-                return false;
-            }
-            if (getMax()!=null && (theVal>(Double)getMax())) {
-                ConfigDefinition.failTooBig(theVal, getMax(), id, id+"["+arrayIndex+"]");
-                return false;
-            }
-            if (getMin()!=null && theVal<(Double)getMin()) {
-                ConfigDefinition.failTooSmall(theVal, getMin(), id, id+"["+arrayIndex+"]");
-                return false;
-            }
-            return true;
+        private void checkDouble(Double theVal, String id, int arrayIndex) {
+            if (!"double".equals(getType()))
+                throw new IllegalArgumentException("Illegal value '" + theVal + "' for array " + id +
+                                                   ", array type is " + getType());
+            if (getMax() != null && (theVal > (Double)getMax()))
+                ConfigDefinition.failTooBig(theVal, getMax(), id, id + "[" + arrayIndex + "]");
+            if (getMin() != null && theVal < (Double)getMin())
+                ConfigDefinition.failTooSmall(theVal, getMin(), id, id + "[" + arrayIndex + "]");
         }
 
         public void setIndex(Integer index) {
@@ -387,18 +360,14 @@ public class ConfigDefinition {
         }
     }
 
-    /**
-     * Def of a myMap{} int
-     * @author vegardh
-     *
-     */
+    /** Def of a myMap{} int. */
     public static class LeafMapDef extends ConfigDefinition {
-	private TypeSpec typeSpec;
-	LeafMapDef(String name, ConfigDefinition parent) {
+        private TypeSpec typeSpec;
+        LeafMapDef(String name, ConfigDefinition parent) {
             super(name, parent.getNamespace());
             this.parent = parent;
         }
-	public TypeSpec getTypeSpec() {
+        public TypeSpec getTypeSpec() {
             return typeSpec;
         }
         public void setTypeSpec(TypeSpec typeSpec) {
@@ -406,29 +375,22 @@ public class ConfigDefinition {
         }
     }
 
-    /**
-     * Def of a myMap{}.myInt int
-     * @author vegardh
-     *
-     */
+    /** Def of a myMap{}.myInt int. */
     public static class StructMapDef extends ConfigDefinition {
-	StructMapDef(String name, ConfigDefinition parent) {
+        StructMapDef(String name, ConfigDefinition parent) {
             super(name, parent.getNamespace());
             this.parent = parent;
         }
     }
 
-    /**
-     * A Default specification where instances _may_ have a default value
-     * @author vegardh
-     */
+    /** A Default specification where instances _may_ have a default value. */
     public interface DefaultValued<T> {
         T getDefVal();
     }
 
     public static class EnumDef implements DefaultValued<String>{
-        private List<String> vals;
-        private String defVal;
+        private final List<String> vals;
+        private final String defVal;
         EnumDef(List<String> vals, String defVal) {
             if (defVal!=null && !vals.contains(defVal)) {
                 throw new IllegalArgumentException("Def val "+defVal+" is not in given vals "+vals);
@@ -447,12 +409,10 @@ public class ConfigDefinition {
     }
 
     public static class StringDef implements DefaultValued<String> {
-        private String defVal;
-
+        private final String defVal;
         StringDef(String def) {
             this.defVal=def;
         }
-
         @Override
         public String getDefVal() {
             return defVal;
@@ -460,25 +420,24 @@ public class ConfigDefinition {
     }
 
     public static class BoolDef implements DefaultValued<Boolean> {
-       private Boolean defVal;
-
+       private final Boolean defVal;
        BoolDef(Boolean def) {
            this.defVal=def;
        }
-
        @Override
-        public Boolean getDefVal() {
+       public Boolean getDefVal() {
            return defVal;
        }
     }
 
-    /** The type is called 'double' in .def files, but it is a 64-bit IEE 754 double,
-     * which means it must be represented as a double in Java
+    /**
+     * The type is called 'double' in .def files, but it is a 64-bit IEE 754 double,
+     * which means it must be represented as a double in Java.
      */
     public static class DoubleDef implements DefaultValued<Double> {
-        private Double defVal;
-        private Double min;
-        private Double max;
+        private final Double defVal;
+        private final Double min;
+        private final Double max;
         DoubleDef(Double defVal, Double min, Double max) {
             super();
             this.defVal = defVal;
@@ -499,9 +458,9 @@ public class ConfigDefinition {
     }
 
     public static class IntDef implements DefaultValued<Integer>{
-        private Integer defVal;
-        private Integer min;
-        private Integer max;
+        private final Integer defVal;
+        private final Integer min;
+        private final Integer max;
         IntDef(Integer def, Integer min, Integer max) {
             super();
             this.defVal = def;
@@ -522,9 +481,9 @@ public class ConfigDefinition {
     }
 
     public static class LongDef implements DefaultValued<Long>{
-        private Long defVal;
-        private Long min;
-        private Long max;
+        private final Long defVal;
+        private final Long min;
+        private final Long max;
         LongDef(Long def, Long min, Long max) {
             super();
             this.defVal = def;
@@ -545,7 +504,7 @@ public class ConfigDefinition {
     }
 
     public static class RefDef implements DefaultValued<String>{
-        private String defVal;
+        private final String defVal;
 
         RefDef(String defVal) {
             super();
@@ -559,7 +518,7 @@ public class ConfigDefinition {
     }
 
     public static class FileDef implements DefaultValued<String>{
-        private String defVal;
+        private final String defVal;
 
         FileDef(String defVal) {
             super();
@@ -572,8 +531,8 @@ public class ConfigDefinition {
         }
     }
 
-    public static class PathDef implements DefaultValued<String>{
-        private String defVal;
+    public static class PathDef implements DefaultValued<String> {
+        private final String defVal;
 
         PathDef(String defVal) {
             this.defVal = defVal;
@@ -585,8 +544,8 @@ public class ConfigDefinition {
         }
     }
 
-    public static class UrlDef implements DefaultValued<String>{
-        private String defVal;
+    public static class UrlDef implements DefaultValued<String> {
+        private final String defVal;
 
         UrlDef(String defVal) {
             this.defVal = defVal;
@@ -735,9 +694,7 @@ public class ConfigDefinition {
         return fileDefs;
     }
 
-    public Map<String, PathDef> getPathDefs() {
-        return pathDefs;
-    }
+    public Map<String, PathDef> getPathDefs() { return pathDefs; }
 
     public Map<String, InnerArrayDef> getInnerArrayDefs() {
         return innerArrayDefs;
@@ -753,9 +710,7 @@ public class ConfigDefinition {
 
     public InnerArrayDef innerArrayDef(String name) {
         InnerArrayDef ret = innerArrayDefs.get(name);
-        if (ret!=null) {
-            return ret;
-        }
+        if (ret != null) return ret;
         ret = new InnerArrayDef(name, this);
         innerArrayDefs.put(name, ret);
         return ret;
@@ -767,9 +722,7 @@ public class ConfigDefinition {
 
     public StructDef structDef(String name) {
         StructDef ret = structDefs.get(name);
-        if (ret!=null) {
-            return ret;
-        }
+        if (ret != null) return ret;
         ret = new StructDef(name, this);
         structDefs.put(name, ret);
         return ret;
@@ -781,9 +734,7 @@ public class ConfigDefinition {
 
     public ArrayDef arrayDef(String name) {
         ArrayDef ret = arrayDefs.get(name);
-        if (ret!=null) {
-            return ret;
-        }
+        if (ret != null) return ret;
         ret = new ArrayDef(name, this);
         arrayDefs.put(name, ret);
         return ret;
@@ -794,245 +745,162 @@ public class ConfigDefinition {
     }
 
     public StructMapDef structMapDef(String name) {
-	StructMapDef ret = structMapDefs.get(name);
-	if (ret!=null) {
-		return ret;
-	}
-	ret = new StructMapDef(name, this);
-	structMapDefs.put(name, ret);
-	return ret;
+        StructMapDef ret = structMapDefs.get(name);
+        if (ret != null) return ret;
+        ret = new StructMapDef(name, this);
+        structMapDefs.put(name, ret);
+        return ret;
     }
 
     public LeafMapDef leafMapDef(String name) {
-	LeafMapDef ret = leafMapDefs.get(name);
-	if (ret!=null) {
-		return ret;
-	}
-	ret = new LeafMapDef(name, this);
-	leafMapDefs.put(name, ret);
-	return ret;
+        LeafMapDef ret = leafMapDefs.get(name);
+        if (ret != null) return ret;
+        ret = new LeafMapDef(name, this);
+        leafMapDefs.put(name, ret);
+        return ret;
     }
 
-    /**
-     * Throws if the given value is not legal
-     */
-    private boolean verifyDouble(String id, Double val) {
+    /** Throws if the given value is not legal. */
+    private void verifyDouble(String id, Double val) {
         DoubleDef def = doubleDefs.get(id);
-        if (def==null) {
-            defFail("No such double in " + verifyWarning(id));
-            return false;
-        }
-        if (val==null) {
-            return true;
-        }
-        if (def.getMin()!=null && val<def.getMin()) {
+        if (def == null)
+            throw new IllegalArgumentException("No such double in " + verifyWarning(id));
+        if (val == null) return;
+        if (def.getMin() != null && val < def.getMin())
             failTooSmall(val, def.getMin(), toString(), getAncestorString()+id);
-            return false;
-        }
-        if (def.getMax()!=null && val>def.getMax()) {
+        if (def.getMax() != null && val > def.getMax())
             failTooBig(val, def.getMax(), toString(), getAncestorString()+id);
-            return false;
-        }
-        return true;
     }
 
-    /**
-     * Throws if the given value is not legal
-     */
-    private boolean verifyEnum(String id, String val) {
+    /** Throws if the given value is not legal. */
+    private void verifyEnum(String id, String val) {
         EnumDef def = enumDefs.get(id);
-        if (def==null) {
-            defFail("No such enum in " + verifyWarning(id));
-            return false;
-        }
-        if (!def.getVals().contains(val)) {
-            defFail("Invalid enum value '"+val+"' in def "+toString()+
-                    " enum '"+getAncestorString()+id+"'.");
-            return false;
-        }
-        return true;
+        if (def == null)
+            throw new IllegalArgumentException("No such enum in " + verifyWarning(id));
+        if ( ! def.getVals().contains(val))
+            throw new IllegalArgumentException("Invalid enum value '" + val + "' in def " + this +
+                                               " enum '" + getAncestorString() + id + "'");
     }
 
     /**
      * Throws if the given value is not legal
      */
-    private boolean verifyInt(String id, Integer val) {
+    private void verifyInt(String id, Integer val) {
         IntDef def = intDefs.get(id);
-        if (def==null) {
-            defFail("No such integer in " + verifyWarning(id));
-            return false;
-        }
-        if (val==null) {
-            return true;
-        }
-        if (def.getMin()!=null && val<def.getMin()) {
+        if (def == null)
+            throw new IllegalArgumentException("No such integer in " + verifyWarning(id));
+        if (val == null) return;
+        if (def.getMin() != null && val < def.getMin())
             failTooSmall(val, def.getMin(), name, id);
-            return false;
-        }
-        if (def.getMax()!=null && val>def.getMax()) {
+        if (def.getMax() != null && val > def.getMax())
             failTooBig(val, def.getMax(), name, id);
-            return false;
-        }
-        return true;
     }
 
-    private boolean verifyInt(String id, String val) {
+    private void verifyInt(String id, String val) {
         try {
-            return verifyInt(id, Integer.parseInt(val));
+            verifyInt(id, Integer.parseInt(val));
         } catch (NumberFormatException e) {
             ConfigDefinition.defFail(id, val, "int", e);
-            return false;
         }
     }
 
-    private boolean verifyLong(String id, String val) {
+    private void verifyLong(String id, String val) {
         try {
-            return verifyLong(id, Long.parseLong(val));
+            verifyLong(id, Long.parseLong(val));
         } catch (NumberFormatException e) {
             ConfigDefinition.defFail(id, val, "long", e);
-            return false;
         }
     }
 
-    /**
-     * Throws if the given value is not legal
-     */
-    private boolean verifyLong(String id, Long val) {
+    /** Throws if the given value is not legal. */
+    private void verifyLong(String id, Long val) {
         LongDef def = longDefs.get(id);
-        if (def==null) {
-            defFail("No such long in " + verifyWarning(id));
-            return false;
-        }
-        if (val==null) {
-            return true;
-        }
-        if (def.getMin()!=null && val<def.getMin()) {
+        if (def == null)
+            throw new IllegalArgumentException("No such long in " + verifyWarning(id));
+        if (val == null) return;
+        if (def.getMin() != null && val < def.getMin())
             failTooSmall(val, def.getMin(), name, id);
-            return false;
-        }
-        if (def.getMax()!=null && val>def.getMax()) {
+        if (def.getMax() != null && val > def.getMax())
             failTooBig(val, def.getMax(), name, id);
-            return false;
-        }
-        return true;
     }
 
     private static void failTooSmall(Object val, Object min, String defName, String valKey) {
-        defFail("Value \""+valKey+"\" outside range in definition \""+defName+"\": "+val+"<"+min);
+        throw new IllegalArgumentException("Value '" + valKey + "' outside range " +
+                                           "in definition '" + defName + "': " + val + "<" + min);
     }
 
     private static void failTooBig(Object val, Object max, String defName, String valKey) {
-        defFail("Value \""+valKey+"\" outside range in definition \""+defName+"\": "+val+">"+max);
+        throw new IllegalArgumentException("Value '" + valKey + "' outside range " +
+                                           "in definition '" + defName + "': " + val + ">" + max);
     }
 
     private static void failInvalidEnum(Object val, String defName, String defKey) {
-        defFail("Invalid enum value \""+val+"\" for \""+defKey+"\" in definition \""+defName);
+        throw new IllegalArgumentException("Invalid enum value '" + val + "' for '" + defKey +
+                                           "' in definition '" + defName);
     }
 
-    /**
-     * Adds the given log msg to list, and logs it
-     * @param msg failure message
-     * @return warnings list with msg added
-     */
-    private static List<String> defFail(String msg) {
-        throw new IllegalArgumentException(msg);
+    private void verifyString(String id) {
+        if ( ! stringDefs.containsKey(id))
+            throw new IllegalArgumentException("No such string in " + verifyWarning(id));
     }
 
-    private boolean verifyString(String id) {
-        if (!stringDefs.containsKey(id)) {
-            defFail("No such string in " + verifyWarning(id));
-            return false;
+    private void verifyReference(String id) {
+        if ( ! referenceDefs.containsKey(id))
+            throw new IllegalArgumentException("No such reference in " + verifyWarning(id));
+    }
+
+    private void verifyFile(String id) {
+        if ( ! fileDefs.containsKey(id))
+            throw new IllegalArgumentException("No such file in " + verifyWarning(id));
+    }
+
+    private void verifyPath(String id) {
+        if ( ! pathDefs.containsKey(id))
+            throw new IllegalArgumentException("No such path in " + verifyWarning(id));
+    }
+
+    private void verifyUrl(String id) {
+        if ( ! urlDefs.containsKey(id))
+            throw new IllegalArgumentException("No such url in " + verifyWarning(id));
+    }
+
+    private void verifyBool(String id) {
+        if ( ! boolDefs.containsKey(id))
+            throw new IllegalArgumentException("No such bool in " + verifyWarning(id));
+    }
+
+    private void verifyArray(String id) {
+        String message = "No such array in " + verifyWarning(id);
+        if ( ! arrayDefs.containsKey(id)) {
+            if (innerArrayDefs.containsKey(id))
+                message += ". However, the definition does contain an inner array with the same name";
+            throw new IllegalArgumentException(message);
         }
-        return true;
     }
 
-    private boolean verifyReference(String id) {
-        if (!referenceDefs.containsKey(id)) {
-            defFail("No such reference in " + verifyWarning(id));
-            return false;
+    private void verifyInnerArray(String id) {
+        String message = "No such inner array in " + verifyWarning(id);
+        if ( ! innerArrayDefs.containsKey(id)) {
+            if (arrayDefs.containsKey(id))
+                message += ". However, the definition does contain an array with the same name";
+            throw new IllegalArgumentException(message);
         }
-        return true;
     }
 
-    private boolean verifyFile(String id) {
-        if (!fileDefs.containsKey(id)) {
-            defFail("No such file in " + verifyWarning(id));
-            return false;
-        }
-        return true;
+    private void verifyStruct(String id) {
+        if ( ! structDefs.containsKey(id))
+            throw new IllegalArgumentException("No such struct in " + verifyWarning(id));
     }
 
-    private boolean verifyPath(String id) {
-        if (!pathDefs.containsKey(id)) {
-            defFail("No such path in " + verifyWarning(id));
-            return false;
-        }
-        return true;
+    private void verifyLeafMap(String id) {
+	    if ( ! leafMapDefs.containsKey(id))
+            throw new IllegalArgumentException("No such leaf map in " + verifyWarning(id));
     }
 
-    private boolean verifyUrl(String id) {
-        if (!urlDefs.containsKey(id)) {
-            defFail("No such url in " + verifyWarning(id));
-            return false;
-        }
-        return true;
-    }
-
-    private boolean verifyBool(String id) {
-        if (!boolDefs.containsKey(id)) {
-            defFail("No such bool in " + verifyWarning(id));
-            return false;
-        }
-        return true;
-    }
-
-    private boolean verifyArray(String id) {
-        String failString = "No such array in " + verifyWarning(id);
-        if (!arrayDefs.containsKey(id)) {
-            if (innerArrayDefs.containsKey(id)) {
-                failString += ". However, the definition does contain an inner array with the same name.";
-            }
-            defFail(failString);
-            return false;
-        }
-        return true;
-    }
-
-    private boolean verifyInnerArray(String id) {
-        String failString = "No such inner array in " + verifyWarning(id);
-        if (!innerArrayDefs.containsKey(id)) {
-            if (arrayDefs.containsKey(id)) {
-                failString += ". However, the definition does contain an array with the same name.";
-            }
-            defFail(failString);
-            return false;
-        }
-        return true;
-    }
-
-    private boolean verifyStruct(String id) {
-        if (!structDefs.containsKey(id)) {
-            defFail("No such struct in " + verifyWarning(id));
-            return false;
-        }
-        return true;
-    }
-
-    private boolean verifyLeafMap(String id) {
-	if (!leafMapDefs.containsKey(id)) {
-		defFail("No such leaf map in " + verifyWarning(id));
-            return false;
+    private void verifyStructMap(String id) {
+    	if ( ! structMapDefs.containsKey(id))
+            throw new IllegalArgumentException("No such struct map in " + verifyWarning(id));
 	}
-	return true;
-    }
-
-    private boolean verifyStructMap(String id) {
-	if (!structMapDefs.containsKey(id)) {
-		defFail("No such struct map in " + verifyWarning(id));
-            return false;
-	}
-	return true;
-    }
 
     private String verifyWarning(String id) {
         return "definition '" + getRoot().toString() + "': " + getAncestorString() + id;
@@ -1044,7 +912,7 @@ public class ConfigDefinition {
      * is again a child of 'myStruct', then the returned string will be 'myStruct.innerArray.leafArray.'
      * The trailing '.' is included for the caller's convenience.
      *
-     * @return a string composed of the ancestors of this ConfigDefinition, not including the root.
+     * @return a string composed of the ancestors of this ConfigDefinition, not including the root
      */
     private String getAncestorString() {
         StringBuilder ret = new StringBuilder();
@@ -1060,4 +928,5 @@ public class ConfigDefinition {
     public String toString() {
         return getNamespace() + "." + getName();
     }
+
 }

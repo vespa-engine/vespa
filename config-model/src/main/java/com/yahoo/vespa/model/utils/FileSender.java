@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.UserConfigRepo;
+import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinition.DefaultValued;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -110,12 +111,14 @@ public class FileSender implements Serializable {
         return ("file".equals(arrayType) || "path".equals(arrayType));
     }
 
-    private void sendEntries(ConfigPayloadBuilder builder, Map<String, FileReference> sentFiles, Map<String, ? extends DefaultValued<String>> entries) {
+    private void sendEntries(ConfigPayloadBuilder builder,
+                             Map<String, FileReference> sentFiles,
+                             Map<String, ? extends DefaultValued<String>> entries) {
         for (String name : entries.keySet()) {
             ConfigPayloadBuilder fileEntry = builder.getObject(name);
-            if (fileEntry.getValue() == null) {
-                throw new IllegalArgumentException("Unable to send file for field '" + name + "': Invalid config value " + fileEntry.getValue());
-            }
+            if (fileEntry.getValue() == null)
+                throw new IllegalArgumentException("Unable to send file for field '" + name +
+                                                   "': Invalid config value " + fileEntry.getValue());
             sendFileEntry(fileEntry, sentFiles);
         }
     }
