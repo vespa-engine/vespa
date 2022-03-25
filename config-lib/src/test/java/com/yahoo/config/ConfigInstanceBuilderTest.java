@@ -182,8 +182,8 @@ public class ConfigInstanceBuilderTest
                 intMap("one", 1).
                 intMap("two", 2).
                 stringMap("one", "first").
-                filemap("f1", "var").
-                filemap("f2", "store").
+                filemap("f1", "/var").
+                filemap("f2", "/store").
                 urlMap("u1", new UrlReference("http://docs.vespa.ai/1")).
                 urlMap("u2", new UrlReference("http://docs.vespa.ai/2")).
 
@@ -278,8 +278,8 @@ public class ConfigInstanceBuilderTest
         assertEquals(1, config.intMap("one"));
         assertEquals(2, config.intMap("two"));
         assertEquals("first", config.stringMap("one"));
-        assertEquals("var", config.filemap("f1").value());
-        assertEquals("store", config.filemap("f2").value());
+        assertEquals("/var", config.filemap("f1").value());
+        assertEquals("/store", config.filemap("f2").value());
         assertEquals("basicFoo", config.basicStruct().foo());
         assertEquals(3, config.basicStruct().bar());  // new List api
         assertEquals(2, config.basicStruct().intArr().size());

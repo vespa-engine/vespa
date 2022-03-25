@@ -14,7 +14,7 @@ public abstract class Node {
      *
      * @param configId the configId of the ConfigInstance that owns (or is) this node
      */
-    public void postInitialize(String configId) { }
+    public void postInitialize(String configId) { return; }
 
     /**
      * This method is meant for internal use in the configuration system.
