@@ -548,11 +548,12 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         if (new File(name).isAbsolute())
             throw new IllegalArgumentException("Absolute path to ranking expression file is not allowed: " + name);
 
+        Path path = Path.fromString(name);
         File sdDir = new File(appDir, SCHEMAS_DIR.getRelative());
-        File expressionFile = new File(sdDir, name);
+        File expressionFile = new File(sdDir, path.getRelative());
         if ( ! expressionFile.exists()) {
             sdDir = new File(appDir, SEARCH_DEFINITIONS_DIR.getRelative());
-            expressionFile = new File(sdDir, name);
+            expressionFile = new File(sdDir, path.getRelative());
         }
         return expressionFile;
     }
