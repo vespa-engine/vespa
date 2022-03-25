@@ -105,6 +105,16 @@ public class PathTest {
         assertEquals("/foo/bar/baz/foo/bar/baz", p3.getAbsolute());
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testDoubleDot() {
+        Path.fromString("foo/../bar");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testLastWithDelimiter() {
+        Path.fromString("foo/bar").withLast("../../baz");
+    }
+
     private Path getRelativePath() {
         return Path.fromString("foo/bar/baz");
     }

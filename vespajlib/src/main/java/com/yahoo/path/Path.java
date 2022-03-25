@@ -43,6 +43,10 @@ public final class Path {
      * @param elements a list of path elements
      */
     private Path(List<String> elements, String delimiter) {
+        for (String element : elements)
+            if ("..".equals(element))
+                throw new IllegalArgumentException("'..' is not allowed in path");
+
         this.elements = ImmutableList.copyOf(elements);
         this.delimiter = delimiter;
     }
@@ -138,6 +142,7 @@ public final class Path {
      * @throws IllegalStateException if this path is empty
      */
     public Path withLast(String element) {
+        if (element.contains(delimiter)) throw new IllegalArgumentException("single element cannot contain delimiter " + delimiter);
         if (element.isEmpty()) throw new IllegalStateException("Cannot set the last element of an empty path");
         List<String> newElements = new ArrayList<>(elements);
         newElements.set(newElements.size() -1, element);
