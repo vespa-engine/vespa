@@ -621,7 +621,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     }
 
     /**
-     * <p>Sets the hit orderer for this group.</p>
+     * Sets the hit orderer for this group.
      *
      * @param hitOrderer the new hit orderer, or null to use default relevancy ordering
      */

@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Represents a path represented by a list of elements. Immutable
+ * Represents a path as a list of elements. Immutable.
  *
  * @author Ulf Lilleengen
  * @author bratseth

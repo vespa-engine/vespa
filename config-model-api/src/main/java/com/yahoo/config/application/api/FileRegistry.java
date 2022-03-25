@@ -19,6 +19,7 @@ public interface FileRegistry {
     List<Entry> export();
 
     class Entry {
+
         public final String relativePath;
         public final FileReference reference;
 

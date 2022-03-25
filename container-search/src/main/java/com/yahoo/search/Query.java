@@ -56,6 +56,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -682,21 +683,18 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /** Returns a string describing this query in more detail */
     public String toDetailString() {
-        String queryTree;
-        // getQueryTree isn't exception safe
-        try {
-            queryTree = model.getQueryTree().toString();
-        } catch (Exception | StackOverflowError e) {
-            queryTree = "Could not parse user input: " + model.getQueryString();
-        }
-        return "query=[" + queryTree + "]" + " offset=" + getOffset() + " hits=" + getHits() + "]";
+        return "query=[" + new TextualQueryRepresentation(getModel().getQueryTree().getRoot()) + "]" +
+               " offset=" + getOffset() + " hits=" + getHits() +
+               " sources=" + getModel().getSources() +
+               " restrict= " + getModel().getRestrict() +
+               " rank profile=" + getRanking().getProfile();
     }
 
     /**
-     * Encodes this query onto the given buffer
+     * Encodes this query tree into the given buffer
      *
-     * @param buffer The buffer to encode the query to
-     * @return the number of encoded items
+     * @param buffer the buffer to encode the query to
+     * @return the number of encoded query tree items
      */
     public int encode(ByteBuffer buffer) {
         return model.getQueryTree().encode(buffer);
@@ -964,7 +962,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     /** Returns a hash of this query based on (some of) its content. */
     @Override
     public int hashCode() {
-        return ranking.hashCode()+3*presentation.hashCode()+5* model.hashCode()+ 11*offset+ 13*hits;
+        return Objects.hash(ranking, presentation, model, offset, hits);
     }
 
     /** Returns whether the given query is equal to this */
