@@ -2,7 +2,6 @@
 
 #include "floatbase.hpp"
 #include "attributevector.hpp"
-#include <vespa/searchlib/common/sort.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
 
 namespace search {

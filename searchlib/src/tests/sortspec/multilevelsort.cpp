@@ -50,7 +50,6 @@ public:
         bool _asc;
     };
 private:
-    int _sortMethod;
     template<typename T>
     T getRandomValue() {
         T min = std::numeric_limits<T>::min();
@@ -68,8 +67,8 @@ private:
     void sortAndCheck(const std::vector<Spec> &spec, uint32_t num,
                       uint32_t unique, const std::vector<std::string> &strValues);
 public:
-    MultilevelSortTest() : _sortMethod(0) { srand(time(NULL)); }
-    void testSortMethod(int method);
+    MultilevelSortTest() { srand(time(nullptr)); }
+    void testSort();
 };
 
 template<typename T>
@@ -226,7 +225,7 @@ MultilevelSortTest::sortAndCheck(const std::vector<Spec> &spec, uint32_t num,
             vec[name] = AttributeFactory::createAttribute(name, cfg);
             fill(static_cast<StringAttribute *>(vec[name].get()), num, strValues);
         }
-        if (vec[name].get() != NULL)
+        if (vec[name])
             vec[name]->commit();
     }
 
@@ -239,23 +238,23 @@ MultilevelSortTest::sortAndCheck(const std::vector<Spec> &spec, uint32_t num,
     vespalib::TestClock clock;
     vespalib::Doom doom(clock.clock(), vespalib::steady_time::max());
     search::uca::UcaConverterFactory ucaFactory;
-    FastS_SortSpec sorter(7, doom, ucaFactory, _sortMethod);
+    FastS_SortSpec sorter(7, doom, ucaFactory);
     // init sorter with sort data
     for(uint32_t i = 0; i < spec.size(); ++i) {
         AttributeGuard ag;
         if (spec[i]._type == RANK) {
             sorter._vectors.push_back
                 (VectorRef(spec[i]._asc ? FastS_SortSpec::ASC_RANK :
-                           FastS_SortSpec::DESC_RANK, NULL, NULL));
+                           FastS_SortSpec::DESC_RANK, nullptr, nullptr));
         } else if (spec[i]._type == DOCID) {
             sorter._vectors.push_back
                 (VectorRef(spec[i]._asc ? FastS_SortSpec::ASC_DOCID :
-                           FastS_SortSpec::DESC_DOCID, NULL, NULL));
+                           FastS_SortSpec::DESC_DOCID, nullptr, nullptr));
         } else {
             const search::attribute::IAttributeVector * v = vec[spec[i]._name].get();
             sorter._vectors.push_back
                 (VectorRef(spec[i]._asc ? FastS_SortSpec::ASC_VECTOR :
-                           FastS_SortSpec::DESC_VECTOR, v, NULL));
+                           FastS_SortSpec::DESC_VECTOR, v, nullptr));
         }
     }
 
@@ -322,9 +321,8 @@ MultilevelSortTest::sortAndCheck(const std::vector<Spec> &spec, uint32_t num,
     delete [] buf;
 }
 
-void MultilevelSortTest::testSortMethod(int method)
+void MultilevelSortTest::testSort()
 {
-    _sortMethod = method;
     {
         std::vector<Spec> spec;
         spec.push_back(Spec("int8", INT8));
@@ -345,7 +343,7 @@ void MultilevelSortTest::testSortMethod(int method)
 
         srand(12345);
         sortAndCheck(spec, 5000, 4, strValues);
-        srand(time(NULL));
+        srand(time(nullptr));
         sortAndCheck(spec, 5000, 4, strValues);
 
         strValues.push_back("multilevelsort");
@@ -355,7 +353,7 @@ void MultilevelSortTest::testSortMethod(int method)
 
         srand(56789);
         sortAndCheck(spec, 5000, 8, strValues);
-        srand(time(NULL));
+        srand(time(nullptr));
         sortAndCheck(spec, 5000, 8, strValues);
     }
     {
@@ -387,9 +385,7 @@ void MultilevelSortTest::testSortMethod(int method)
 TEST("require that all sort methods behave the same")
 {
     MultilevelSortTest test;
-    test.testSortMethod(0);
-    test.testSortMethod(1);
-    test.testSortMethod(2);
+    test.testSort();
 }
 
 TEST("test that [docid] translates to [lid][paritionid]") {

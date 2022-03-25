@@ -8,7 +8,6 @@
 #include "primitivereader.h"
 #include "singleenumattribute.hpp"
 #include "singlenumericenumattribute.h"
-#include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/util/fileutil.hpp>

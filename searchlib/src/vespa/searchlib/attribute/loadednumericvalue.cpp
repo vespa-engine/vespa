@@ -1,10 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "loadednumericvalue.h"
+#include <vespa/searchlib/common/sort.h>
 
-
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 template <typename T>
 void
@@ -83,8 +82,5 @@ sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<float>> & l
 template
 void 
 sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<double>> & loaded);
-                  
 
-} // namespace attribute
-} // namespace search
-
+}

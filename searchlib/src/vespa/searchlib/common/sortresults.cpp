@@ -1,11 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sortresults.h"
-#include <vespa/searchlib/util/sort.h>
 #include <vespa/searchlib/common/sort.h>
-#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/document/base/globalid.h>
 #include <vespa/vespalib/util/array.hpp>
 
 #include <vespa/vespalib/util/issue.h>
@@ -244,7 +241,6 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
 
     _sortDataArray.resize(n);
 
-    document::GlobalId gid;
     for (uint32_t i(0), idx(0); (i < n) && !_doom.hard_doom(); ++i) {
         uint32_t len = 0;
         for (auto iter = _vectors.begin(); iter != _vectors.end(); ++iter) {
@@ -298,11 +294,10 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
 }
 
 
-FastS_SortSpec::FastS_SortSpec(uint32_t partitionId, const Doom & doom, const ConverterFactory & ucaFactory, int method) :
+FastS_SortSpec::FastS_SortSpec(uint32_t partitionId, const Doom & doom, const ConverterFactory & ucaFactory) :
     _partitionId(partitionId),
     _doom(doom),
     _ucaFactory(ucaFactory),
-    _method(method),
     _sortSpec(),
     _vectors()
 { }
@@ -395,36 +390,6 @@ FastS_SortSpec::Compare(const FastS_SortSpec *self, const SortData &a,
     return 0;
 }
 
-template <typename T, typename Compare>
-inline T *
-FastS_median3(T *a, T *b, T *c, Compare *compobj)
-{
-    return Compare::Compare(compobj, *a, *b) < 0 ?
-        (Compare::Compare(compobj, *b, *c) < 0 ? b : Compare::Compare(compobj,
-                *a, *c) < 0 ? c : a) :
-        (Compare::Compare(compobj, *b, *c) > 0 ? b : Compare::Compare(compobj,
-                *a, *c) > 0 ? c : a);
-}
-
-
-template <typename T, typename Compare>
-void
-FastS_insertion_sort(T a[], uint32_t n, Compare *compobj)
-{
-    uint32_t i, j;
-    T swap;
-
-    for (i=1; i<n ; i++) {
-        swap = a[i];
-        j = i;
-        while (Compare::Compare(compobj, swap, a[j-1]) < 0) {
-            a[j] = a[j-1];
-            if (!(--j)) break;;
-        }
-        a[j] = swap;
-    }
-}
-
 class StdSortDataCompare
 {
 public:
@@ -484,11 +449,7 @@ FastS_SortSpec::sortResults(RankedHit a[], uint32_t n, uint32_t topn)
 {
     initSortData(a, n);
     SortData * sortData = &_sortDataArray[0];
-    if (_method == 0) {
-        search::qsort<7, 40, SortData, FastS_SortSpec>(sortData, n, this);
-    } else if (_method == 1) {
-        std::sort(sortData, sortData + n, StdSortDataCompare(&_binarySortData[0]));
-    } else {
+    {
         Array<uint32_t> radixScratchPad(n, Alloc::alloc(0, MMAP_LIMIT));
         search::radix_sort(SortDataRadix(&_binarySortData[0]), StdSortDataCompare(&_binarySortData[0]), SortDataEof(), 1, sortData, n, &radixScratchPad[0], 0, 96, topn);
     }

@@ -2,20 +2,16 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/rankedhit.h>
-#include <vespa/searchlib/common/sortspec.h>
-#include <algorithm>
-#include <vector>
+#include "rankedhit.h"
+#include "sortspec.h"
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/doom.h>
 
 #define INSERT_SORT_LEVEL 80
 
-namespace search {
-    namespace attribute {
-        class IAttributeContext;
-        class IAttributeVector;
-    }
+namespace search::attribute {
+    class IAttributeContext;
+    class IAttributeVector;
 }
 /**
  * Sort the given array of results.
@@ -101,7 +97,6 @@ private:
     uint16_t                 _partitionId;
     vespalib::Doom           _doom;
     const ConverterFactory & _ucaFactory;
-    int                      _method;
     search::common::SortSpec _sortSpec;
     VectorRefList            _vectors;
     BinarySortData           _binarySortData;
@@ -114,7 +109,7 @@ private:
 public:
     FastS_SortSpec(const FastS_SortSpec &) = delete;
     FastS_SortSpec & operator = (const FastS_SortSpec &) = delete;
-    FastS_SortSpec(uint32_t partitionId, const vespalib::Doom & doom, const ConverterFactory & ucaFactory, int method=2);
+    FastS_SortSpec(uint32_t partitionId, const vespalib::Doom & doom, const ConverterFactory & ucaFactory);
     ~FastS_SortSpec();
 
     std::pair<const char *, size_t> getSortRef(size_t i) const {
