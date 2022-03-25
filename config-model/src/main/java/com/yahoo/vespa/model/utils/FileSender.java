@@ -44,7 +44,7 @@ public class FileSender implements Serializable {
             return;
 
         UserConfigRepo userConfigs = producer.getUserConfigs();
-        Map<String, FileReference> sentFiles = new HashMap<>();
+        Map<Path, FileReference> sentFiles = new HashMap<>();
         for (ConfigDefinitionKey key : userConfigs.configsProduced()) {
             ConfigPayloadBuilder builder = userConfigs.get(key);
             try {
@@ -55,7 +55,7 @@ public class FileSender implements Serializable {
         }
     }
 
-    private void sendUserConfiguredFiles(ConfigPayloadBuilder builder, Map<String, FileReference> sentFiles, ConfigDefinitionKey key) {
+    private void sendUserConfiguredFiles(ConfigPayloadBuilder builder, Map<Path, FileReference> sentFiles, ConfigDefinitionKey key) {
         ConfigDefinition configDefinition = builder.getConfigDefinition();
         if (configDefinition == null) {
             // TODO: throw new IllegalArgumentException("Not able to find config definition for " + builder);
@@ -112,7 +112,7 @@ public class FileSender implements Serializable {
     }
 
     private void sendEntries(ConfigPayloadBuilder builder,
-                             Map<String, FileReference> sentFiles,
+                             Map<Path, FileReference> sentFiles,
                              Map<String, ? extends DefaultValued<String>> entries) {
         for (String name : entries.keySet()) {
             ConfigPayloadBuilder fileEntry = builder.getObject(name);
@@ -123,17 +123,17 @@ public class FileSender implements Serializable {
         }
     }
 
-    private void sendFileEntries(Collection<ConfigPayloadBuilder> builders, Map<String, FileReference> sentFiles) {
+    private void sendFileEntries(Collection<ConfigPayloadBuilder> builders, Map<Path, FileReference> sentFiles) {
         for (ConfigPayloadBuilder builder : builders) {
             sendFileEntry(builder, sentFiles);
         }
     }
 
-    private void sendFileEntry(ConfigPayloadBuilder builder, Map<String, FileReference> sentFiles) {
-        String path = builder.getValue();
+    private void sendFileEntry(ConfigPayloadBuilder builder, Map<Path, FileReference> sentFiles) {
+        Path path = Path.fromString(builder.getValue());
         FileReference reference = sentFiles.get(path);
         if (reference == null) {
-            reference = fileRegistry.addFile(path);
+            reference = fileRegistry.addFile(path.getRelative());
             sentFiles.put(path, reference);
         }
         builder.setValue(reference.value());
