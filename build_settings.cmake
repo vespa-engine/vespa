@@ -7,7 +7,7 @@ if (VESPA_USE_SANITIZER)
     if (VESPA_USE_SANITIZER STREQUAL "address" OR VESPA_USE_SANITIZER STREQUAL "thread" OR VESPA_USE_SANITIZER STREQUAL "undefined")
         message("-- Instrumenting code using ${VESPA_USE_SANITIZER} sanitizer")
     else()
-        message(FATAL_ERROR "Unsupported sanitizer option '${VESPA_USE_SANITIZER}'. Supported: 'address' or 'thread'")
+        message(FATAL_ERROR "Unsupported sanitizer option '${VESPA_USE_SANITIZER}'. Supported: 'address', 'thread' or 'undefined'")
     endif()
 endif()
 
