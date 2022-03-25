@@ -1,11 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Levenstein distance algorithm is based off Java implementation from apache commons-text library licensed under the Apache 2.0 license.
+// Levenshtein distance algorithm is based off Java implementation from apache commons-text library licensed under the Apache 2.0 license.
 
-#include "levenstein_distance.h"
+#include "levenshtein_distance.h"
 
 #include <limits>
 
-std::optional<uint32_t> vespalib::LevensteinDistance::calculate(const std::vector<uint32_t>& left, const std::vector<uint32_t>& right, uint32_t threshold) {
+std::optional<uint32_t>
+vespalib::LevenshteinDistance::calculate(const std::vector<uint32_t>& left, const std::vector<uint32_t>& right, uint32_t threshold)
+{
     uint32_t n = left.size();
     uint32_t m = right.size();
 
@@ -21,7 +23,6 @@ std::optional<uint32_t> vespalib::LevensteinDistance::calculate(const std::vecto
     if (m == 0) {
         return n <= threshold ? std::optional(n) : std::nullopt;
     }
-
 
     // the edit distance cannot be less than the length difference
     if (m - n > threshold) {
@@ -69,7 +70,6 @@ std::optional<uint32_t> vespalib::LevensteinDistance::calculate(const std::vecto
             } else {
                 // 1 + minimum of cell to the left, to the top, diagonally
                 // left and up
-
                 d[i] = 1 + std::min(std::min(d[i - 1], p[i]), p[i - 1]);
             }
             lowerBound = std::min(lowerBound, d[i]);

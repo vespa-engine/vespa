@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fuzzy_matcher.h"
-#include "levenstein_distance.h"
+#include "levenshtein_distance.h"
 
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
@@ -13,7 +13,7 @@ vespalib::FuzzyMatcher vespalib::FuzzyMatcher::from_term(std::string_view term) 
 bool vespalib::FuzzyMatcher::isMatch(std::string_view target) const {
     std::vector<uint32_t> targetCodepoints = LowerCase::convert_to_ucs4(target);
 
-    return LevensteinDistance::calculate(
+    return LevenshteinDistance::calculate(
             _folded_term_codepoints,
             targetCodepoints,
             _max_edit_distance).has_value();

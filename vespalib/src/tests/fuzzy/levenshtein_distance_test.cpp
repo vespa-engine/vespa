@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/fuzzy/levenstein_distance.h>
+#include <vespa/vespalib/fuzzy/levenshtein_distance.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -8,15 +8,15 @@ std::optional<uint32_t> calculate(std::string_view left, std::string_view right,
     std::vector<uint32_t> leftCodepoints = vespalib::LowerCase::convert_to_ucs4(left);
     std::vector<uint32_t> rightCodepoints = vespalib::LowerCase::convert_to_ucs4(right);
 
-    std::optional<uint32_t> leftRight = vespalib::LevensteinDistance::calculate(leftCodepoints,rightCodepoints, threshold);
-    std::optional<uint32_t> rightLeft = vespalib::LevensteinDistance::calculate(rightCodepoints,leftCodepoints, threshold);
+    std::optional<uint32_t> leftRight = vespalib::LevenshteinDistance::calculate(leftCodepoints, rightCodepoints, threshold);
+    std::optional<uint32_t> rightLeft = vespalib::LevenshteinDistance::calculate(rightCodepoints, leftCodepoints, threshold);
 
     EXPECT_EQ(leftRight, rightLeft); // should be independent whether left or right strings are swapped
 
     return leftRight;
 }
 
-TEST(LevensteinDistance, calculate_edgecases) {
+TEST(LevenshteinDistance, calculate_edgecases) {
     EXPECT_EQ(calculate("abc", "abc", 2), std::optional{0});
     EXPECT_EQ(calculate("abc", "ab1", 2), std::optional{1});
     EXPECT_EQ(calculate("abc", "1bc", 2), std::optional{1});
