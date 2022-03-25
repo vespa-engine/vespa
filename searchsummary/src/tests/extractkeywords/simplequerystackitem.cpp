@@ -189,7 +189,6 @@ SimpleQueryStackItem::AppendBuffer(RawBuf *buf) const
         break;
     case ITEM_MULTI_TERM: // TODO: handle
     case ITEM_PREDICATE_QUERY: // not handled at all here
-    case ITEM_MAX:
     case ITEM_UNDEF:
         abort();
         break;
