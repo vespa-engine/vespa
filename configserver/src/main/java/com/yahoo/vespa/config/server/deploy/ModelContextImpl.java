@@ -314,7 +314,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean avoidRenamingSummaryFeatures() { return avoidRenamingSummaryFeatures; }
         @Override public boolean mergeGroupingResultInSearchInvoker() { return mergeGroupingResultInSearchInvoker; }
         @Override public boolean experimentalSdParsing() { return experimentalSdParsing; }
-        @Override public String adminClusterNodeArchitecture() { return adminClusterArchitecture().name(); } // TODO: Remove when 7.564 is oldest version in use
+        @Override public String adminClusterNodeArchitecture() { return adminClusterArchitecture().name(); }
         @Override public Architecture adminClusterArchitecture() { return adminClusterNodeResourcesArchitecture; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
