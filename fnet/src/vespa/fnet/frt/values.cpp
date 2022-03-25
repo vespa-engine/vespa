@@ -129,10 +129,16 @@ FRT_Values::EnsureFree(uint32_t need)
         cnt = 16;
 
     char *types = (char *) _stash.alloc(cnt + 1);
-    memcpy(types, _typeString, _numValues);
+    if (_numValues > 0) {
+        assert(_typeString != nullptr);
+        memcpy(types, _typeString, _numValues);
+    }
     memset(types + _numValues, FRT_VALUE_NONE, cnt + 1 - _numValues);
     FRT_Value *values = (FRT_Value *) (void *)_stash.alloc(cnt * sizeof(FRT_Value));
-    memcpy(values, _values, _numValues * sizeof(FRT_Value));
+    if (_numValues > 0) {
+        assert(_values != nullptr);
+        memcpy(values, _values, _numValues * sizeof(FRT_Value));
+    }
     _maxValues  = cnt;
     _typeString = types;
     _values     = values;
