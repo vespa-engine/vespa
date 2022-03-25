@@ -4,6 +4,7 @@
 
 #include "integerbase.h"
 #include "floatbase.h"
+#include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/rcuvector.h>
 #include <limits>
 
@@ -45,10 +46,12 @@ protected:
     }
 
     void set(DocId doc, T v) {
-        Word &word = _wordData[doc >> _wordShift];
+        Word &word_ref = _wordData[doc >> _wordShift];
         uint32_t valueShift = (doc & _valueShiftMask) << _valueShiftShift;
+        Word word = vespalib::atomic::load_ref_relaxed(word_ref);
         word = (word & ~(_valueMask << valueShift)) |
                ((v & _valueMask) << valueShift);
+        vespalib::atomic::store_ref_relaxed(word_ref, word);
     }
 
 
@@ -82,7 +85,7 @@ public:
             if ( elemId != 0) return -1;
             const Word &word = _wordData[docId >> _wordShift];
             uint32_t valueShift = (docId & _valueShiftMask) << _valueShiftShift;
-            T v = (word >> valueShift) & _valueMask;
+            T v = (vespalib::atomic::load_ref_relaxed(word) >> valueShift) & _valueMask;
             weight = 1;
             return match(v) ? 0 : -1;
         }
@@ -91,7 +94,7 @@ public:
             if ( elemId != 0) return -1;
             const Word &word = _wordData[docId >> _wordShift];
             uint32_t valueShift = (docId & _valueShiftMask) << _valueShiftShift;
-            T v = (word >> valueShift) & _valueMask;
+            T v = (vespalib::atomic::load_ref_relaxed(word) >> valueShift) & _valueMask;
             return match(v) ? 0 : -1;
         }
 
@@ -125,9 +128,9 @@ public:
     getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams & params) const override;
 
     T getFast(DocId doc) const {
-        const Word &word = _wordData[doc >> _wordShift];
+        const Word &word = _wordData.acquire_elem_ref(doc >> _wordShift);
         uint32_t valueShift = (doc & _valueShiftMask) << _valueShiftShift;
-        return (word >> valueShift) & _valueMask;
+        return (vespalib::atomic::load_ref_relaxed(word) >> valueShift) & _valueMask;
     }
 
     //-------------------------------------------------------------------------

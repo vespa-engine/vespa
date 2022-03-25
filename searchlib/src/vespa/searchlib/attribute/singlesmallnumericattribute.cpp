@@ -214,7 +214,7 @@ bool SingleValueSmallNumericAttribute::SingleSearchContext::valid() const { retu
 SingleValueSmallNumericAttribute::SingleSearchContext::SingleSearchContext(std::unique_ptr<QueryTermSimple> qTerm,
                                                                            const SingleValueSmallNumericAttribute & toBeSearched)
     : NumericAttribute::Range<T>(*qTerm),
-      SearchContext(toBeSearched), _wordData(&toBeSearched._wordData[0]),
+      SearchContext(toBeSearched), _wordData(&toBeSearched._wordData.acquire_elem_ref(0)),
       _valueMask(toBeSearched._valueMask),
       _valueShiftShift(toBeSearched._valueShiftShift),
       _valueShiftMask(toBeSearched._valueShiftMask),
