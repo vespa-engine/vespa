@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config;
 
-import java.nio.file.Path;
-
 /**
  * Represents a 'file' in a {@link ConfigInstance}, usually a filename.
  *
@@ -15,13 +13,7 @@ public class FileNode extends LeafNode<FileReference> {
 
     public FileNode(String stringVal) {
         super(true);
-        Path path = Path.of(ReferenceNode.stripQuotes(stringVal)).normalize();
-        if (path.isAbsolute())
-            throw new IllegalArgumentException("path must be relative");
-        if (path.startsWith(".."))
-            throw new IllegalArgumentException("'..' not allowed in path");
-
-        this.value = new FileReference(path.toString());
+        this.value = new FileReference(ReferenceNode.stripQuotes(stringVal));
     }
 
     public FileReference value() {

@@ -1,11 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 
 
 /**
@@ -28,6 +24,7 @@ public abstract class NodeVector<NODE> implements java.util.List<NODE> {
         return size();
     }
 
+    @SuppressWarnings("serial")
     public static class ReadOnlyException extends RuntimeException {
     }
 
@@ -83,7 +80,7 @@ public abstract class NodeVector<NODE> implements java.util.List<NODE> {
 
     @Override
     public boolean equals(Object o) {
-        return o instanceof NodeVector && vector.equals(((NodeVector<?>) o).vector);
+        return o instanceof NodeVector && vector.equals(((NodeVector) o).vector);
     }
 
     @Override
@@ -91,6 +88,7 @@ public abstract class NodeVector<NODE> implements java.util.List<NODE> {
         return vector.hashCode();
     }
 
+    @SuppressWarnings("unchecked")
     public NODE get(int index) {
         return vector.get(index);
     }
@@ -134,5 +132,4 @@ public abstract class NodeVector<NODE> implements java.util.List<NODE> {
     public <T> T[] toArray(T[] a) {
         return vector.toArray(a);
     }
-
 }
