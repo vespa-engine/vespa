@@ -1291,6 +1291,7 @@ public class DeploymentTriggerTest {
                 "    </instance>\n" +
                 "</deployment>\n";
 
+        tester.atMondayMorning();
         ApplicationPackage applicationPackage = ApplicationPackageBuilder.fromDeploymentXml(complicatedDeploymentSpec);
         var app1 = tester.newDeploymentContext("t", "a", "instance").submit(applicationPackage);
         var app2 = tester.newDeploymentContext("t", "a", "other");
@@ -1412,13 +1413,13 @@ public class DeploymentTriggerTest {
         app1.runJob(stagingTest);   // Tests with only the outstanding application change.
         app2.runJob(systemTest);    // Tests with only the outstanding application change.
 
-        // Confidence rises to high, for the new version, and instance 2 starts to upgrade.
+        // Confidence rises too high, for the new version, and instance 2 starts to upgrade.
         tester.controllerTester().computeVersionStatus();
         tester.upgrader().maintain();
         tester.outstandingChangeDeployer().run();
         tester.triggerJobs();
         assertEquals(tester.jobs().active().toString(), 1, tester.jobs().active().size());
-        assertEquals(Change.empty(), app1.instance().change());
+        assertEquals(Change.empty(), app1.instance().change()); // XXX not empty
         assertEquals(Change.of(version), app2.instance().change());
         assertEquals(Change.empty(), app3.instance().change());
 
