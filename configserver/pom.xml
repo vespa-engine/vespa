@@ -194,6 +194,18 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <!-- Do not remove, as long as this is provided by jdisc and configserver uses jersey-client -->
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <!-- Do not remove, as long as this is provided by jdisc and configserver uses jersey-client -->
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <scope>provided</scope>
@@ -245,6 +257,17 @@
     <dependency>
       <groupId>org.glassfish.jersey.media</groupId>
       <artifactId>jersey-media-json-jackson</artifactId>
+      <exclusions>
+        <!-- Prevent embedding deps provided by jdisc  -->
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-core</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <!-- Not needed by configserver, but by controller. Also pulls in mimepull. -->
