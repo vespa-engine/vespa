@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.serviceview;
 
-import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
@@ -42,7 +41,6 @@ public class StateRequestHandler extends RestApiRequestHandler<StateRequestHandl
             .newBuilder()
             .property(ClientProperties.CONNECT_TIMEOUT, 10000)
             .property(ClientProperties.READ_TIMEOUT, 10000)
-            .register(JacksonJsonProvider.class)
             .register((ClientRequestFilter) ctx -> ctx.getHeaders().put(HttpHeaders.USER_AGENT, List.of(USER_AGENT)))
             .build();
 

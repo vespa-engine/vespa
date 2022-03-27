@@ -50,6 +50,7 @@
         <javax.validation-api.version>1.1.0.Final</javax.validation-api.version>
         <javax.ws.rs-api.version>2.0.1</javax.ws.rs-api.version>
         <jersey2.version>2.25</jersey2.version>
+        <mimepull.version>1.9.6</mimepull.version>
     </properties>
 
     <build>
@@ -122,9 +123,13 @@
                                         <include>org.glassfish.jersey.core:jersey-client:[${jersey2.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.core:jersey-common:[${jersey2.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.core:jersey-server:[${jersey2.version}]:jar:provided</include>
+                                        <include>org.glassfish.jersey.ext:jersey-entity-filtering:[${jersey2.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.ext:jersey-proxy-client:[${jersey2.version}]:jar:provided</include>
+                                        <include>org.glassfish.jersey.media:jersey-media-json-jackson:[${jersey2.version}]:jar:provided</include>
+                                        <include>org.glassfish.jersey.media:jersey-media-multipart:[${jersey2.version}]:jar:provided</include>
                                         <include>org.javassist:javassist:[${javassist.version}]:jar:provided</include>
                                         <include>org.json:json:[${org.json.version}]:jar:provided</include>
+                                        <include>org.jvnet.mimepull:mimepull:[${mimepull.version}]:jar:provided</include>
                                         <include>org.slf4j:jcl-over-slf4j:[${slf4j.version}]:jar:provided</include>
                                         <include>org.slf4j:log4j-over-slf4j:[${slf4j.version}]:jar:provided</include>
                                         <include>org.slf4j:slf4j-api:[${slf4j.version}]:jar:provided</include>
