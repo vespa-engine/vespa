@@ -7,7 +7,6 @@
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/datatype/documenttype.h>
 #include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
@@ -597,7 +596,7 @@ TEST_F(ExternalOperationHandlerTest, non_trivial_updates_are_rejected_if_feed_is
     const auto* doc_type = _testDocMan.getTypeRepo().getDocumentType("testdoctype1");
     document::FieldUpdate upd(doc_type->getField("title"));
     upd.addUpdate(document::AssignValueUpdate(document::StringFieldValue("new value")));
-    cmd->getUpdate()->addUpdate(upd);
+    cmd->getUpdate()->addUpdate(std::move(upd));
 
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(std::move(cmd)));
     EXPECT_EQ("ReturnCode(NO_SPACE, External feed is blocked due to resource exhaustion: full disk)",

@@ -87,7 +87,7 @@ public:
      */
     void applyTo(Document& doc) const;
 
-    DocumentUpdate& addUpdate(const FieldUpdate& update);
+    DocumentUpdate& addUpdate(FieldUpdate && update);
     DocumentUpdate& addFieldPathUpdate(const FieldPathUpdate::CP& update);
 
     /** @return The list of updates. */

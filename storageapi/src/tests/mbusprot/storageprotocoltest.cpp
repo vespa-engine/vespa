@@ -246,9 +246,7 @@ TEST_P(StorageProtocolTest, update) {
     auto update = std::make_shared<document::DocumentUpdate>(
             _docMan.getTypeRepo(), *_testDoc->getDataType(), _testDoc->getId());
     auto assignUpdate = std::make_shared<document::AssignValueUpdate>(document::IntFieldValue(17));
-    document::FieldUpdate fieldUpdate(_testDoc->getField("headerval"));
-    fieldUpdate.addUpdate(*assignUpdate);
-    update->addUpdate(fieldUpdate);
+    update->addUpdate(std::move(document::FieldUpdate(_testDoc->getField("headerval")).addUpdate(*assignUpdate)));
 
     update->addFieldPathUpdate(document::FieldPathUpdate::CP(
                     new document::RemoveFieldPathUpdate("headerval", "testdoctype1.headerval > 0")));

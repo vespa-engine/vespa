@@ -133,7 +133,7 @@ TEST(DocumentUpdateTest, testSimpleUsage)
 
         // Test that a document update can be serialized
     DocumentUpdate docUpdate(repo, *docType, DocumentId("id:ns:test::1"));
-    docUpdate.addUpdate(fieldUpdateCopy);
+    docUpdate.addUpdate(std::move(fieldUpdateCopy));
     nbostream docBuf = serializeHEAD(docUpdate);
     auto docUpdateCopy(DocumentUpdate::createHEAD(repo, docBuf));
 
@@ -150,7 +150,7 @@ TEST(DocumentUpdateTest, testSimpleUsage)
     {
         Document updated(doc);
         DocumentUpdate upd(repo, *docType, DocumentId("id:ns:test::1"));
-        upd.addUpdate(FieldUpdate(docType->getField("intf")).addUpdate(ClearValueUpdate()));
+        upd.addUpdate(std::move(FieldUpdate(docType->getField("intf")).addUpdate(ClearValueUpdate())));
         upd.applyTo(updated);
         EXPECT_NE(doc, updated);
         EXPECT_FALSE(updated.getValue("intf"));
@@ -158,7 +158,7 @@ TEST(DocumentUpdateTest, testSimpleUsage)
     {
         Document updated(doc);
         DocumentUpdate upd(repo, *docType, DocumentId("id:ns:test::1"));
-        upd.addUpdate(FieldUpdate(docType->getField("intf")).addUpdate(AssignValueUpdate(IntFieldValue(15))));
+        upd.addUpdate(std::move(FieldUpdate(docType->getField("intf")).addUpdate(AssignValueUpdate(IntFieldValue(15)))));
         upd.applyTo(updated);
         EXPECT_NE(doc, updated);
         EXPECT_EQ(15, updated.getValue("intf")->getAsInt());
@@ -166,7 +166,7 @@ TEST(DocumentUpdateTest, testSimpleUsage)
     {
         Document updated(doc);
         DocumentUpdate upd(repo, *docType, DocumentId("id:ns:test::1"));
-        upd.addUpdate(FieldUpdate(docType->getField("intf")).addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 15)));
+        upd.addUpdate(std::move(FieldUpdate(docType->getField("intf")).addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 15))));
         upd.applyTo(updated);
         EXPECT_NE(doc, updated);
         EXPECT_EQ(20, updated.getValue("intf")->getAsInt());
@@ -174,7 +174,7 @@ TEST(DocumentUpdateTest, testSimpleUsage)
     {
         Document updated(doc);
         DocumentUpdate upd(repo, *docType, DocumentId("id:ns:test::1"));
-        upd.addUpdate(FieldUpdate(docType->getField("intarr")).addUpdate(AddValueUpdate(IntFieldValue(4))));
+        upd.addUpdate(std::move(FieldUpdate(docType->getField("intarr")).addUpdate(AddValueUpdate(IntFieldValue(4)))));
         upd.applyTo(updated);
         EXPECT_NE(doc, updated);
         std::unique_ptr<ArrayFieldValue> val(dynamic_cast<ArrayFieldValue*>(updated.getValue("intarr").release()));
@@ -184,7 +184,7 @@ TEST(DocumentUpdateTest, testSimpleUsage)
     {
         Document updated(doc);
         DocumentUpdate upd(repo, *docType, DocumentId("id:ns:test::1"));
-        upd.addUpdate(FieldUpdate(docType->getField("intarr")).addUpdate(RemoveValueUpdate(IntFieldValue(3))));
+        upd.addUpdate(std::move(FieldUpdate(docType->getField("intarr")).addUpdate(RemoveValueUpdate(IntFieldValue(3)))));
         upd.applyTo(updated);
         EXPECT_NE(doc, updated);
         std::unique_ptr<ArrayFieldValue> val(dynamic_cast<ArrayFieldValue*>(updated.getValue("intarr").release()));
@@ -194,8 +194,8 @@ TEST(DocumentUpdateTest, testSimpleUsage)
     {
         Document updated(doc);
         DocumentUpdate upd(repo, *docType, DocumentId("id:ns:test::1"));
-        upd.addUpdate(FieldUpdate(docType->getField("bytef"))
-                              .addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 15)));
+        upd.addUpdate(std::move(FieldUpdate(docType->getField("bytef"))
+                              .addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 15))));
         upd.applyTo(updated);
         EXPECT_NE(doc, updated);
         EXPECT_EQ(15, (int) updated.getValue("bytef")->getAsByte());
@@ -212,7 +212,7 @@ TEST(DocumentUpdateTest, testClearField)
 
     // Apply an update.
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
-        .addUpdate(FieldUpdate(doc->getField("headerval")).addUpdate(AssignValueUpdate()))
+        .addUpdate(std::move(FieldUpdate(doc->getField("headerval")).addUpdate(AssignValueUpdate())))
         .applyTo(*doc);
     EXPECT_FALSE(doc->getValue("headerval"));
 }
@@ -227,7 +227,7 @@ TEST(DocumentUpdateTest, testUpdateApplySingleValue)
 
     // Apply an update.
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
-        .addUpdate(FieldUpdate(doc->getField("headerval")).addUpdate(AssignValueUpdate(IntFieldValue(9))))
+        .addUpdate(std::move(FieldUpdate(doc->getField("headerval")).addUpdate(AssignValueUpdate(IntFieldValue(9)))))
         .applyTo(*doc);
     EXPECT_EQ(9, doc->getValue("headerval")->getAsInt());
 }
@@ -245,7 +245,7 @@ TEST(DocumentUpdateTest, testUpdateArray)
 	myarray.add(StringFieldValue("bar"));
 
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
-        .addUpdate(FieldUpdate(doc->getField("tags")).addUpdate(AssignValueUpdate(myarray)))
+        .addUpdate(std::move(FieldUpdate(doc->getField("tags")).addUpdate(AssignValueUpdate(myarray))))
         .applyTo(*doc);
     auto fval1(doc->getAs<ArrayFieldValue>(doc->getField("tags")));
     ASSERT_EQ((size_t) 2, fval1->size());
@@ -254,9 +254,9 @@ TEST(DocumentUpdateTest, testUpdateArray)
 
     // Append array field
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
-        .addUpdate(FieldUpdate(doc->getField("tags"))
+        .addUpdate(std::move(FieldUpdate(doc->getField("tags"))
                    .addUpdate(AddValueUpdate(StringFieldValue("another")))
-                   .addUpdate(AddValueUpdate(StringFieldValue("tag"))))
+                   .addUpdate(AddValueUpdate(StringFieldValue("tag")))))
         .applyTo(*doc);
     std::unique_ptr<ArrayFieldValue>
         fval2(doc->getAs<ArrayFieldValue>(doc->getField("tags")));
@@ -269,16 +269,16 @@ TEST(DocumentUpdateTest, testUpdateArray)
     // Append single value.
     ASSERT_THROW(
         DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
-            .addUpdate(FieldUpdate(doc->getField("tags"))
-                       .addUpdate(AssignValueUpdate(StringFieldValue("THROW MEH!"))))
+            .addUpdate(std::move(FieldUpdate(doc->getField("tags"))
+                       .addUpdate(AssignValueUpdate(StringFieldValue("THROW MEH!")))))
             .applyTo(*doc),
         std::exception) << "Expected exception when assigning a string value to an array field.";
 
     // Remove array field.
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
-        .addUpdate(FieldUpdate(doc->getField("tags"))
+        .addUpdate(std::move(FieldUpdate(doc->getField("tags"))
                    .addUpdate(RemoveValueUpdate(StringFieldValue("foo")))
-                   .addUpdate(RemoveValueUpdate(StringFieldValue("tag"))))
+                   .addUpdate(RemoveValueUpdate(StringFieldValue("tag")))))
         .applyTo(*doc);
     auto fval3(doc->getAs<ArrayFieldValue>(doc->getField("tags")));
     ASSERT_EQ((size_t) 2, fval3->size());
@@ -291,8 +291,8 @@ TEST(DocumentUpdateTest, testUpdateArray)
     myarray2.add(StringFieldValue("bar"));
     ASSERT_THROW(
         DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
-            .addUpdate(FieldUpdate(doc->getField("tags"))
-                       .addUpdate(RemoveValueUpdate(myarray2)))
+            .addUpdate(std::move(FieldUpdate(doc->getField("tags"))
+                       .addUpdate(RemoveValueUpdate(myarray2))))
             .applyTo(*doc),
         std::exception) << "Expected exception when removing an array from a string array.";
 }
@@ -310,7 +310,7 @@ TEST(DocumentUpdateTest, testUpdateWeightedSet)
     wset.add(StringFieldValue("foo"), 3);
     wset.add(StringFieldValue("bar"), 14);
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
-        .addUpdate(FieldUpdate(field).addUpdate(AssignValueUpdate(wset)))
+        .addUpdate(std::move(FieldUpdate(field).addUpdate(AssignValueUpdate(wset))))
         .applyTo(*doc);
     auto fval1(doc->getAs<WeightedSetFieldValue>(field));
     ASSERT_EQ((size_t) 2, fval1->size());
@@ -326,8 +326,8 @@ TEST(DocumentUpdateTest, testUpdateWeightedSet)
     wset2.add(StringFieldValue("foo"), 16);
     wset2.add(StringFieldValue("bar"), 24);
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
-        .addUpdate(FieldUpdate(field)
-                   .addUpdate(AssignValueUpdate(wset2)))
+        .addUpdate(std::move(FieldUpdate(field)
+                   .addUpdate(AssignValueUpdate(wset2))))
         .applyTo(*doc);
     auto fval2(doc->getAs<WeightedSetFieldValue>(field));
     ASSERT_EQ((size_t) 2, fval2->size());
@@ -340,9 +340,9 @@ TEST(DocumentUpdateTest, testUpdateWeightedSet)
 
     // Append weighted field
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
-        .addUpdate(FieldUpdate(field)
+        .addUpdate(std::move(FieldUpdate(field)
                    .addUpdate(AddValueUpdate(StringFieldValue("foo")).setWeight(3))
-                   .addUpdate(AddValueUpdate(StringFieldValue("too")).setWeight(14)))
+                   .addUpdate(AddValueUpdate(StringFieldValue("too")).setWeight(14))))
         .applyTo(*doc);
     std::unique_ptr<WeightedSetFieldValue>
         fval3(doc->getAs<WeightedSetFieldValue>(field));
@@ -356,9 +356,9 @@ TEST(DocumentUpdateTest, testUpdateWeightedSet)
 
     // Remove weighted field
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
-        .addUpdate(FieldUpdate(field)
+        .addUpdate(std::move(FieldUpdate(field)
                    .addUpdate(RemoveValueUpdate(StringFieldValue("foo")))
-                   .addUpdate(RemoveValueUpdate(StringFieldValue("too"))))
+                   .addUpdate(RemoveValueUpdate(StringFieldValue("too")))))
         .applyTo(*doc);
     auto fval4(doc->getAs<WeightedSetFieldValue>(field));
     ASSERT_EQ((size_t) 1, fval4->size());
@@ -404,9 +404,9 @@ WeightedSetAutoCreateFixture::WeightedSetAutoCreateFixture()
       field(docType->getField("strwset")),
       update(repo, *docType, DocumentId("id:ns:test::1"))
 {
-    update.addUpdate(FieldUpdate(field)
+    update.addUpdate(std::move(FieldUpdate(field)
                              .addUpdate(MapValueUpdate(StringFieldValue("foo"),
-                                                       ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 1))));
+                                                       ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 1)))));
 }
 } // anon ns
 
@@ -442,9 +442,9 @@ TEST(DocumentUpdateTest, testIncrementExistingWSetField)
 TEST(DocumentUpdateTest, testIncrementWithZeroResultWeightIsRemoved)
 {
     WeightedSetAutoCreateFixture fixture;
-    fixture.update.addUpdate(FieldUpdate(fixture.field)
+    fixture.update.addUpdate(std::move(FieldUpdate(fixture.field)
             .addUpdate(MapValueUpdate(StringFieldValue("baz"),
-                                      ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 0))));
+                                      ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 0)))));
 
     fixture.applyUpdateToDocument();
 
@@ -524,21 +524,21 @@ TEST(DocumentUpdateTest, testGenerateSerializedFile)
 
     const DocumentType *type(repo.getDocumentType("serializetest"));
     DocumentUpdate upd(repo, *type, DocumentId("id:ns:serializetest::update"));
-    upd.addUpdate(FieldUpdate(type->getField("intfield"))
-		  .addUpdate(AssignValueUpdate(IntFieldValue(4))));
-    upd.addUpdate(FieldUpdate(type->getField("floatfield"))
-		  .addUpdate(AssignValueUpdate(FloatFieldValue(1.00f))));
-    upd.addUpdate(FieldUpdate(type->getField("arrayoffloatfield"))
+    upd.addUpdate(std::move(FieldUpdate(type->getField("intfield"))
+		  .addUpdate(AssignValueUpdate(IntFieldValue(4)))));
+    upd.addUpdate(std::move(FieldUpdate(type->getField("floatfield"))
+		  .addUpdate(AssignValueUpdate(FloatFieldValue(1.00f)))));
+    upd.addUpdate(std::move(FieldUpdate(type->getField("arrayoffloatfield"))
 		  .addUpdate(AddValueUpdate(FloatFieldValue(5.00f)))
 		  .addUpdate(AddValueUpdate(FloatFieldValue(4.23f)))
-		  .addUpdate(AddValueUpdate(FloatFieldValue(-1.00f))));
-    upd.addUpdate(FieldUpdate(type->getField("intfield"))
-          .addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 3)));
-    upd.addUpdate(FieldUpdate(type->getField("wsfield"))
+		  .addUpdate(AddValueUpdate(FloatFieldValue(-1.00f)))));
+    upd.addUpdate(std::move(FieldUpdate(type->getField("intfield"))
+          .addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 3))));
+    upd.addUpdate(std::move(FieldUpdate(type->getField("wsfield"))
           .addUpdate(MapValueUpdate(StringFieldValue("foo"),
                         ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 2)))
           .addUpdate(MapValueUpdate(StringFieldValue("foo"),
-                        ArithmeticValueUpdate(ArithmeticValueUpdate::Mul, 2))));
+                        ArithmeticValueUpdate(ArithmeticValueUpdate::Mul, 2)))));
     nbostream buf(serializeHEAD(upd));
     writeBufferToFile(buf, "data/serializeupdatecpp.dat");
 }
@@ -554,8 +554,8 @@ TEST(DocumentUpdateTest, testSetBadFieldTypes)
     // Assign a float value to an int field.
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
     ASSERT_THROW(
-        update.addUpdate(FieldUpdate(doc->getField("headerval"))
-                 .addUpdate(AssignValueUpdate(FloatFieldValue(4.00f)))),
+        update.addUpdate(std::move(FieldUpdate(doc->getField("headerval"))
+                 .addUpdate(AssignValueUpdate(FloatFieldValue(4.00f))))),
         std::exception) << "Expected exception when adding a float to an int field.";
 
     update.applyTo(*doc);
@@ -572,7 +572,7 @@ TEST(DocumentUpdateTest, testUpdateApplyNoParams)
     EXPECT_EQ((document::FieldValue*)nullptr, doc->getValue(doc->getField("tags")).get());
 
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
-    update.addUpdate(FieldUpdate(doc->getField("tags")).addUpdate(AssignValueUpdate()));
+    update.addUpdate(std::move(FieldUpdate(doc->getField("tags")).addUpdate(AssignValueUpdate())));
 
     update.applyTo(*doc);
 
@@ -589,8 +589,8 @@ TEST(DocumentUpdateTest, testUpdateApplyNoArrayValues)
 
     // Assign array field with no array values = empty array
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
-    update.addUpdate(FieldUpdate(field)
-                     .addUpdate(AssignValueUpdate(ArrayFieldValue(field.getDataType()))));
+    update.addUpdate(std::move(FieldUpdate(field)
+                     .addUpdate(AssignValueUpdate(ArrayFieldValue(field.getDataType())))));
 
     update.applyTo(*doc);
 
@@ -610,7 +610,7 @@ TEST(DocumentUpdateTest, testUpdateArrayEmptyParamValue)
 
     // Assign array field with no array values = empty array.
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
-    update.addUpdate(FieldUpdate(field).addUpdate(AssignValueUpdate(ArrayFieldValue(field.getDataType()))));
+    update.addUpdate(std::move(FieldUpdate(field).addUpdate(AssignValueUpdate(ArrayFieldValue(field.getDataType())))));
     update.applyTo(*doc);
 
     // Verify that the field was set in the document.
@@ -620,7 +620,7 @@ TEST(DocumentUpdateTest, testUpdateArrayEmptyParamValue)
 
     // Remove array field.
     DocumentUpdate update2(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
-    update2.addUpdate(FieldUpdate(field).addUpdate(ClearValueUpdate()));
+    update2.addUpdate(std::move(FieldUpdate(field).addUpdate(ClearValueUpdate())));
     update2.applyTo(*doc);
 
     // Verify that the field was cleared in the document.
@@ -638,7 +638,7 @@ TEST(DocumentUpdateTest, testUpdateWeightedSetEmptyParamValue)
 
     // Assign weighted set with no items = empty set.
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
-    update.addUpdate(FieldUpdate(field).addUpdate(AssignValueUpdate(WeightedSetFieldValue(field.getDataType()))));
+    update.addUpdate(std::move(FieldUpdate(field).addUpdate(AssignValueUpdate(WeightedSetFieldValue(field.getDataType())))));
     update.applyTo(*doc);
 
     // Verify that the field was set in the document.
@@ -648,7 +648,7 @@ TEST(DocumentUpdateTest, testUpdateWeightedSetEmptyParamValue)
 
     // Remove weighted set field.
     DocumentUpdate update2(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
-    update2.addUpdate(FieldUpdate(field).addUpdate(ClearValueUpdate()));
+    update2.addUpdate(std::move(FieldUpdate(field).addUpdate(ClearValueUpdate())));
     update2.applyTo(*doc);
 
     // Verify that the field was cleared in the document.
@@ -667,9 +667,9 @@ TEST(DocumentUpdateTest, testUpdateArrayWrongSubtype)
     // Assign int values to string array.
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
     ASSERT_THROW(
-        update.addUpdate(FieldUpdate(field)
+        update.addUpdate(std::move(FieldUpdate(field)
                  .addUpdate(AddValueUpdate(IntFieldValue(123)))
-                 .addUpdate(AddValueUpdate(IntFieldValue(456)))),
+                 .addUpdate(AddValueUpdate(IntFieldValue(456))))),
         std::exception) << "Expected exception when adding wrong type.";
 
     // Apply update
@@ -691,9 +691,9 @@ TEST(DocumentUpdateTest, testUpdateWeightedSetWrongSubtype)
     // Assign int values to string array.
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
     ASSERT_THROW(
-        update.addUpdate(FieldUpdate(field)
+        update.addUpdate(std::move(FieldUpdate(field)
                  .addUpdate(AddValueUpdate(IntFieldValue(123)).setWeight(1000))
-                 .addUpdate(AddValueUpdate(IntFieldValue(456)).setWeight(2000))),
+                 .addUpdate(AddValueUpdate(IntFieldValue(456)).setWeight(2000)))),
         std::exception) << "Expected exception when adding wrong type.";
 
     // Apply update
@@ -717,29 +717,29 @@ TEST(DocumentUpdateTest, testMapValueUpdate)
     doc->setValue(field2, wsval2);
 
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
-        .addUpdate(FieldUpdate(field1)
+        .addUpdate(std::move(FieldUpdate(field1)
                    .addUpdate(MapValueUpdate(StringFieldValue("banana"),
-                                             ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 1.0))))
+                                             ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 1.0)))))
         .applyTo(*doc);
     std::unique_ptr<WeightedSetFieldValue> fv1 =
         doc->getAs<WeightedSetFieldValue>(field1);
     EXPECT_EQ(0, fv1->size());
 
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
-        .addUpdate(FieldUpdate(field2)
+        .addUpdate(std::move(FieldUpdate(field2)
                    .addUpdate(MapValueUpdate(StringFieldValue("banana"),
-                                             ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 1.0))))
+                                             ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 1.0)))))
         .applyTo(*doc);
     auto fv2 = doc->getAs<WeightedSetFieldValue>(field2);
     EXPECT_EQ(1, fv2->size());
 
     EXPECT_EQ(fv1->find(StringFieldValue("apple")), fv1->end());
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
-        .addUpdate(FieldUpdate(field1).addUpdate(ClearValueUpdate()))
+        .addUpdate(std::move(FieldUpdate(field1).addUpdate(ClearValueUpdate())))
         .applyTo(*doc);
 
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
-        .addUpdate(FieldUpdate(field1).addUpdate(AddValueUpdate(StringFieldValue("apple")).setWeight(1)))
+        .addUpdate(std::move(FieldUpdate(field1).addUpdate(AddValueUpdate(StringFieldValue("apple")).setWeight(1))))
         .applyTo(*doc);
 
     auto fval3(doc->getAs<WeightedSetFieldValue>(field1));
@@ -747,7 +747,7 @@ TEST(DocumentUpdateTest, testMapValueUpdate)
     EXPECT_EQ(1, fval3->get(StringFieldValue("apple")));
 
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
-        .addUpdate(FieldUpdate(field2).addUpdate(AddValueUpdate(StringFieldValue("apple")).setWeight(1)))
+        .addUpdate(std::move(FieldUpdate(field2).addUpdate(AddValueUpdate(StringFieldValue("apple")).setWeight(1))))
         .applyTo(*doc);
 
     auto fval3b(doc->getAs<WeightedSetFieldValue>(field2));
@@ -755,9 +755,9 @@ TEST(DocumentUpdateTest, testMapValueUpdate)
     EXPECT_EQ(1, fval3b->get(StringFieldValue("apple")));
 
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
-        .addUpdate(FieldUpdate(field1)
+        .addUpdate(std::move(FieldUpdate(field1)
                    .addUpdate(MapValueUpdate(StringFieldValue("apple"),
-                                             ArithmeticValueUpdate(ArithmeticValueUpdate::Sub, 1.0))))
+                                             ArithmeticValueUpdate(ArithmeticValueUpdate::Sub, 1.0)))))
         .applyTo(*doc);
 
     auto fv3 = doc->getAs<WeightedSetFieldValue>(field1);
@@ -765,9 +765,9 @@ TEST(DocumentUpdateTest, testMapValueUpdate)
     EXPECT_EQ(0, fv3->get(StringFieldValue("apple")));
 
     DocumentUpdate(docMan.getTypeRepo(), *doc->getDataType(), doc->getId())
-        .addUpdate(FieldUpdate(field2)
+        .addUpdate(std::move(FieldUpdate(field2)
                    .addUpdate(MapValueUpdate(StringFieldValue("apple"),
-                                             ArithmeticValueUpdate(ArithmeticValueUpdate::Sub, 1.0))))
+                                             ArithmeticValueUpdate(ArithmeticValueUpdate::Sub, 1.0)))))
         .applyTo(*doc);
 
     auto fv4 = doc->getAs<WeightedSetFieldValue>(field2);
@@ -853,7 +853,7 @@ struct TensorUpdateFixture {
 
     void applyUpdate(const ValueUpdate &update) {
         DocumentUpdate docUpdate(docMan.getTypeRepo(), *emptyDoc->getDataType(), emptyDoc->getId());
-        docUpdate.addUpdate(FieldUpdate(docUpdate.getType().getField(fieldName)).addUpdate(update));
+        docUpdate.addUpdate(std::move(FieldUpdate(docUpdate.getType().getField(fieldName)).addUpdate(update)));
         docUpdate.applyTo(updatedDoc);
     }
 
@@ -1147,14 +1147,14 @@ struct TensorUpdateSerializeFixture {
         auto result = std::make_unique<DocumentUpdate>
                 (*repo, docType, DocumentId("id:test:test::0"));
 
-        result->addUpdate(FieldUpdate(getField("sparse_tensor"))
+        result->addUpdate(std::move(FieldUpdate(getField("sparse_tensor"))
                                   .addUpdate(AssignValueUpdate(*makeTensor()))
                                   .addUpdate(TensorAddUpdate(makeTensor()))
-                                  .addUpdate(TensorRemoveUpdate(makeTensor())));
-        result->addUpdate(FieldUpdate(getField("dense_tensor"))
+                                  .addUpdate(TensorRemoveUpdate(makeTensor()))));
+        result->addUpdate(std::move(FieldUpdate(getField("dense_tensor"))
                                   .addUpdate(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, makeTensor()))
                                   .addUpdate(TensorModifyUpdate(TensorModifyUpdate::Operation::ADD, makeTensor()))
-                                  .addUpdate(TensorModifyUpdate(TensorModifyUpdate::Operation::MULTIPLY, makeTensor())));
+                                  .addUpdate(TensorModifyUpdate(TensorModifyUpdate::Operation::MULTIPLY, makeTensor()))));
         return result;
     }
 
@@ -1233,10 +1233,10 @@ CreateIfNonExistentFixture::~CreateIfNonExistentFixture() = default;
 CreateIfNonExistentFixture::CreateIfNonExistentFixture()
     : docMan(),
       document(docMan.createDocument()),
-      update(new DocumentUpdate(docMan.getTypeRepo(), *document->getDataType(), document->getId()))
+      update(std::make_unique<DocumentUpdate>(docMan.getTypeRepo(), *document->getDataType(), document->getId()))
 {
-    update->addUpdate(FieldUpdate(document->getField("headerval"))
-                              .addUpdate(AssignValueUpdate(IntFieldValue(1))));
+    update->addUpdate(std::move(FieldUpdate(document->getField("headerval"))
+                              .addUpdate(AssignValueUpdate(IntFieldValue(1)))));
     update->setCreateIfNonExistent(true);
 }
 
@@ -1267,9 +1267,9 @@ ArrayUpdateFixture::ArrayUpdateFixture()
       array_field(doc->getType().getField("tags")) // of type array<string>
 {
     update = std::make_unique<DocumentUpdate>(doc_man.getTypeRepo(), *doc->getDataType(), doc->getId());
-    update->addUpdate(FieldUpdate(array_field)
+    update->addUpdate(std::move(FieldUpdate(array_field)
                               .addUpdate(MapValueUpdate(IntFieldValue(1),
-                                                        AssignValueUpdate(StringFieldValue("bar")))));
+                                                        AssignValueUpdate(StringFieldValue("bar"))))));
 }
 ArrayUpdateFixture::~ArrayUpdateFixture() = default;
 

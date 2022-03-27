@@ -346,9 +346,7 @@ struct UpdateContext {
             fieldValue->assign(document::StringFieldValue("new value"));
         }
         document::AssignValueUpdate assignValueUpdate(*fieldValue);
-        document::FieldUpdate fieldUpdate(field);
-        fieldUpdate.addUpdate(assignValueUpdate);
-        update->addUpdate(fieldUpdate);
+        update->addUpdate(std::move(document::FieldUpdate(field).addUpdate(assignValueUpdate)));
     }
 };
 
@@ -773,11 +771,11 @@ TEST_F("require that update with a fieldpath update will be rejected", SchemaCon
 TEST_F("require that all value updates will be inspected before rejected", SchemaContext) {
     const DocumentType *docType = f.getRepo()->getDocumentType(f.getDocType().getName());
     auto docUpdate = std::make_unique<DocumentUpdate>(*f.getRepo(), *docType, DocumentId("id:ns:" + docType->getName() + "::1"));
-    docUpdate->addUpdate(FieldUpdate(docType->getField("i1")).addUpdate(ClearValueUpdate()));
+    docUpdate->addUpdate(std::move(FieldUpdate(docType->getField("i1")).addUpdate(ClearValueUpdate())));
     EXPECT_FALSE(FeedRejectHelper::mustReject(*docUpdate));
-    docUpdate->addUpdate(FieldUpdate(docType->getField("i1")).addUpdate(ClearValueUpdate()));
+    docUpdate->addUpdate(std::move(FieldUpdate(docType->getField("i1")).addUpdate(ClearValueUpdate())));
     EXPECT_FALSE(FeedRejectHelper::mustReject(*docUpdate));
-    docUpdate->addUpdate(FieldUpdate(docType->getField("i1")).addUpdate(AssignValueUpdate(StringFieldValue())));
+    docUpdate->addUpdate(std::move(FieldUpdate(docType->getField("i1")).addUpdate(AssignValueUpdate(StringFieldValue()))));
     EXPECT_TRUE(FeedRejectHelper::mustReject(*docUpdate));
 }
 

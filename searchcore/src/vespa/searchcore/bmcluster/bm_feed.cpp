@@ -1,17 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bm_feed.h"
-#include "avg_sampler.h"
 #include "bm_feed_operation.h"
 #include "bm_feed_params.h"
 #include "bm_range.h"
 #include "bucket_selector.h"
-#include "pending_tracker.h"
 #include "i_bm_feed_handler.h"
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -74,7 +71,7 @@ BmFeed::make_document_update(uint32_t n, uint32_t i) const
 {
     auto id = make_document_id(n, i);
     auto document_update = std::make_unique<DocumentUpdate>(*_repo, *_document_type, id);
-    document_update->addUpdate(FieldUpdate(_field).addUpdate(AssignValueUpdate(IntFieldValue(15))));
+    document_update->addUpdate(std::move(FieldUpdate(_field).addUpdate(AssignValueUpdate(IntFieldValue(15)))));
     return document_update;
 }
 

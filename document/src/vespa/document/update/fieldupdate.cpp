@@ -35,11 +35,10 @@ FieldUpdate::FieldUpdate(const DocumentTypeRepo& repo, const DataType & type, nb
     _updates.reserve(numUpdates);
     const DataType& dataType = _field.getDataType();
     for(int i(0); i < numUpdates; i++) {
-        _updates.emplace_back(ValueUpdate::createInstance(repo, dataType, stream).release());
+        _updates.emplace_back(ValueUpdate::createInstance(repo, dataType, stream));
     }
 }
 
-FieldUpdate::FieldUpdate(const FieldUpdate &) = default;
 FieldUpdate::~FieldUpdate() = default;
 
 bool
@@ -51,6 +50,14 @@ FieldUpdate::operator==(const FieldUpdate& other) const
         if (*_updates[i] != *other._updates[i]) return false;
     }
     return true;
+}
+
+
+FieldUpdate&
+FieldUpdate::addUpdate(const ValueUpdate& update) {
+    update.checkCompatibility(_field); // May throw exception.
+    _updates.push_back(std::unique_ptr<ValueUpdate>(update.clone()));
+    return *this;
 }
 
 void

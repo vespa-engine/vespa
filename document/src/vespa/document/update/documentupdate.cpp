@@ -122,9 +122,9 @@ void DocumentUpdate::ensureDeserialized() const {
 }
 
 DocumentUpdate&
-DocumentUpdate::addUpdate(const FieldUpdate& update) {
+DocumentUpdate::addUpdate(FieldUpdate &&update) {
     ensureDeserialized();
-    _updates.push_back(update);
+    _updates.push_back(std::move(update));
     reserialize();
     return *this;
 }

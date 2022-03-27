@@ -665,8 +665,7 @@ TEST_F(ConformanceTest, testPutOlderDocumentVersion)
         EXPECT_TRUE(info2.getUsedSize() >= info1.getDocumentSize());
     }
 
-    GetResult gr = spi->get(bucket, document::AllFields(), doc1->getId(),
-                            context);
+    GetResult gr = spi->get(bucket, document::AllFields(), doc1->getId(), context);
 
     EXPECT_EQ(Result::ErrorType::NONE, gr.getErrorCode());
     EXPECT_EQ(Timestamp(5), gr.getTimestamp());
@@ -684,8 +683,7 @@ TEST_F(ConformanceTest, testPutDuplicate)
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
     spi->createBucket(bucket, context);
-    EXPECT_EQ(Result(),
-                         spi->put(bucket, Timestamp(3), doc1, context));
+    EXPECT_EQ(Result(), spi->put(bucket, Timestamp(3), doc1, context));
 
     BucketChecksum checksum;
     {
@@ -693,8 +691,7 @@ TEST_F(ConformanceTest, testPutDuplicate)
         EXPECT_EQ(1, (int)info.getDocumentCount());
         checksum = info.getChecksum();
     }
-    EXPECT_EQ(Result(),
-                         spi->put(bucket, Timestamp(3), doc1, context));
+    EXPECT_EQ(Result(), spi->put(bucket, Timestamp(3), doc1, context));
 
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
@@ -730,10 +727,7 @@ TEST_F(ConformanceTest, testRemove)
     }
 
     // Add a remove entry
-    RemoveResult result2 = spi->remove(bucket,
-                                       Timestamp(5),
-                                       doc1->getId(),
-                                       context);
+    RemoveResult result2 = spi->remove(bucket, Timestamp(5), doc1->getId(), context);
 
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
@@ -753,10 +747,7 @@ TEST_F(ConformanceTest, testRemove)
     }
 
     // Result tagged as document not found
-    RemoveResult result3 = spi->remove(bucket,
-                                       Timestamp(7),
-                                       doc1->getId(),
-                                       context);
+    RemoveResult result3 = spi->remove(bucket, Timestamp(7), doc1->getId(), context);
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
 
@@ -769,10 +760,7 @@ TEST_F(ConformanceTest, testRemove)
 
     EXPECT_TRUE(!result4.hasError());
 
-    RemoveResult result5 = spi->remove(bucket,
-                                       Timestamp(9),
-                                       doc1->getId(),
-                                       context);
+    RemoveResult result5 = spi->remove(bucket, Timestamp(9), doc1->getId(), context);
     {
         const BucketInfo info = spi->getBucketInfo(bucket).getBucketInfo();
 
@@ -782,10 +770,7 @@ TEST_F(ConformanceTest, testRemove)
         EXPECT_TRUE(!result5.hasError());
     }
 
-    GetResult getResult = spi->get(bucket,
-                                document::AllFields(),
-                                doc1->getId(),
-                                context);
+    GetResult getResult = spi->get(bucket, document::AllFields(), doc1->getId(), context);
 
     EXPECT_EQ(Result::ErrorType::NONE, getResult.getErrorCode());
     EXPECT_EQ(Timestamp(9), getResult.getTimestamp());
@@ -843,10 +828,7 @@ TEST_F(ConformanceTest, testRemoveMerge)
 
     // Remove a document that does not exist
     {
-        RemoveResult removeResult = spi->remove(bucket,
-                                                Timestamp(10),
-                                                removeId,
-                                                context);
+        RemoveResult removeResult = spi->remove(bucket, Timestamp(10), removeId, context);
         EXPECT_EQ(Result::ErrorType::NONE, removeResult.getErrorCode());
         EXPECT_EQ(false, removeResult.wasFound());
     }
@@ -869,10 +851,7 @@ TEST_F(ConformanceTest, testRemoveMerge)
     }
     // Add a _newer_ remove for the same document ID we already removed
     {
-        RemoveResult removeResult = spi->remove(bucket,
-                                                Timestamp(11),
-                                                removeId,
-                                                context);
+        RemoveResult removeResult = spi->remove(bucket, Timestamp(11), removeId, context);
         EXPECT_EQ(Result::ErrorType::NONE, removeResult.getErrorCode());
         EXPECT_EQ(false, removeResult.wasFound());
     }
@@ -896,10 +875,7 @@ TEST_F(ConformanceTest, testRemoveMerge)
     // It may or may not be present in a subsequent iteration, but the
     // newest timestamp must still be present.
     {
-        RemoveResult removeResult = spi->remove(bucket,
-                                                Timestamp(7),
-                                                removeId,
-                                                context);
+        RemoveResult removeResult = spi->remove(bucket, Timestamp(7), removeId, context);
         EXPECT_EQ(Result::ErrorType::NONE, removeResult.getErrorCode());
         EXPECT_EQ(false, removeResult.wasFound());
     }
@@ -937,29 +913,24 @@ TEST_F(ConformanceTest, testUpdate)
     std::shared_ptr<document::AssignValueUpdate> assignUpdate(new document::AssignValueUpdate(document::IntFieldValue(42)));
     document::FieldUpdate fieldUpdate(docType->getField("headerval"));
     fieldUpdate.addUpdate(*assignUpdate);
-    update->addUpdate(fieldUpdate);
+    update->addUpdate(std::move(fieldUpdate));
 
     {
-        UpdateResult result = spi->update(bucket, Timestamp(3), update,
-                                          context);
+        UpdateResult result = spi->update(bucket, Timestamp(3), update, context);
         EXPECT_EQ(Result(), Result(result));
         EXPECT_EQ(Timestamp(0), result.getExistingTimestamp());
     }
 
     spi->put(bucket, Timestamp(3), doc1, context);
     {
-        UpdateResult result = spi->update(bucket, Timestamp(4), update,
-                                          context);
+        UpdateResult result = spi->update(bucket, Timestamp(4), update, context);
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(3), result.getExistingTimestamp());
     }
 
     {
-        GetResult result = spi->get(bucket,
-                                    document::AllFields(),
-                                    doc1->getId(),
-                                    context);
+        GetResult result = spi->get(bucket, document::AllFields(), doc1->getId(), context);
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(4), result.getTimestamp());
@@ -972,10 +943,7 @@ TEST_F(ConformanceTest, testUpdate)
     spi->remove(bucket, Timestamp(5), doc1->getId(), context);
 
     {
-        GetResult result = spi->get(bucket,
-                                    document::AllFields(),
-                                    doc1->getId(),
-                                    context);
+        GetResult result = spi->get(bucket, document::AllFields(), doc1->getId(), context);
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(5), result.getTimestamp());
@@ -984,8 +952,7 @@ TEST_F(ConformanceTest, testUpdate)
     }
 
     {
-        UpdateResult result = spi->update(bucket, Timestamp(6), update,
-                                          context);
+        UpdateResult result = spi->update(bucket, Timestamp(6), update, context);
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(0), result.getExistingTimestamp());

@@ -22,9 +22,7 @@ namespace {
 Document::UP createTestDocument(const DocumentTypeRepo& repo)
 {
     const DocumentType* type(repo.getDocumentType("testdoc"));
-    Document::UP
-        doc(new Document(*type,
-                         DocumentId("id:ns:testdoc::crawler/http://www.ntnu.no/")));
+    auto doc = std::make_unique<Document>(*type,DocumentId("id:ns:testdoc::crawler/http://www.ntnu.no/"));
     doc->setRepo(repo);
     std::string s("humlepungens buffer");
     ByteBuffer bb(s.c_str(), s.size());
@@ -47,8 +45,7 @@ Document::UP createTestDocument(const DocumentTypeRepo& repo)
     val.add(rawVal3);
     doc->setValue(doc->getField("rawarrayattr"), val);
 
-    Document::UP doc2(new Document(*type, DocumentId(
-                            "id:ns:testdoc::crawler/http://www.ntnu.no/2")));
+    auto doc2 = std::make_unique<Document>(*type, DocumentId("id:ns:testdoc::crawler/http://www.ntnu.no/2"));
     doc2->setValue(doc2->getField("stringattr"), StringFieldValue("tjo hei paa du"));
     doc->setValue(doc->getField("docfield"), *doc2);
 
@@ -61,19 +58,18 @@ createTestDocumentUpdate(const DocumentTypeRepo& repo)
     const DocumentType* type(repo.getDocumentType("testdoc"));
     DocumentId id("id:ns:testdoc::crawler/http://www.ntnu.no/");
 
-    DocumentUpdate::UP up(new DocumentUpdate(repo, *type, id));
-    up->addUpdate(FieldUpdate(type->getField("intattr"))
-		  .addUpdate(AssignValueUpdate(IntFieldValue(7))));
-    up->addUpdate(FieldUpdate(type->getField("stringattr"))
-		  .addUpdate(AssignValueUpdate(
-                                  StringFieldValue("New value"))));
-    up->addUpdate(FieldUpdate(type->getField("arrayattr"))
+    auto up = std::make_unique<DocumentUpdate>(repo, *type, id);
+    up->addUpdate(std::move(FieldUpdate(type->getField("intattr"))
+		  .addUpdate(AssignValueUpdate(IntFieldValue(7)))));
+    up->addUpdate(std::move(FieldUpdate(type->getField("stringattr"))
+		  .addUpdate(AssignValueUpdate(StringFieldValue("New value")))));
+    up->addUpdate(std::move(FieldUpdate(type->getField("arrayattr"))
 		  .addUpdate(AddValueUpdate(IntFieldValue(123)))
-		  .addUpdate(AddValueUpdate(IntFieldValue(456))));
-    up->addUpdate(FieldUpdate(type->getField("arrayattr"))
+		  .addUpdate(AddValueUpdate(IntFieldValue(456)))));
+    up->addUpdate(std::move(FieldUpdate(type->getField("arrayattr"))
 		  .addUpdate(RemoveValueUpdate(IntFieldValue(123)))
 		  .addUpdate(RemoveValueUpdate(IntFieldValue(456)))
-		  .addUpdate(RemoveValueUpdate(IntFieldValue(789))));
+		  .addUpdate(RemoveValueUpdate(IntFieldValue(789)))));
     return up;
 }
 
