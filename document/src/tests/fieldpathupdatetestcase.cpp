@@ -182,8 +182,9 @@ void testSerialize(const DocumentTypeRepo& repo, const DocumentUpdate& a) {
         }
         EXPECT_EQ(a, *b);
     } catch (std::exception& e) {
-        std::cerr << "Failed while testing document field path update:\n"
-                  << a.toString(true) << "\n";
+        std::cerr << "Failed while testing document field path update:\n";
+        a.print(std::cerr, true, "");
+        std::cerr << std::endl;
         throw;
     }
 }

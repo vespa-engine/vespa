@@ -12,8 +12,7 @@ namespace document {
 using vespalib::nbostream;
 
 FieldUpdate::FieldUpdate(const Field& field)
-    : Printable(),
-      _field(field),
+    : _field(field),
       _updates()
 {
 }
@@ -29,8 +28,7 @@ int readInt(nbostream & stream) {
 }
 
 FieldUpdate::FieldUpdate(const DocumentTypeRepo& repo, const DataType & type, nbostream & stream)
-    : Printable(),
-      _field(type.getField(readInt(stream))),
+    : _field(type.getField(readInt(stream))),
       _updates()
 {
     int numUpdates = readInt(stream);

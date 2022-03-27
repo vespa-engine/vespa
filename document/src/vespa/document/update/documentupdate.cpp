@@ -11,7 +11,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/xmlstream.h>
-#include <ostream>
+#include <sstream>
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
@@ -334,6 +334,15 @@ DocumentUpdate::reserialize()
     serializer.writeHEAD(*this);
     _backing = std::move(stream);
     _needHardReserialize = false;
+}
+
+std::string
+DocumentUpdate::toXml(const std::string& indent) const
+{
+    std::ostringstream ost;
+    XmlOutputStream xos(ost, indent);
+    printXml(xos);
+    return ost.str();
 }
 
 std::ostream &

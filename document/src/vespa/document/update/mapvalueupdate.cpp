@@ -122,7 +122,9 @@ MapValueUpdate::printXml(XmlOutputStream& xos) const
 {
     xos << XmlTag("map")
         << XmlTag("value") << *_key << XmlEndTag()
-        << XmlTag("update") << *_update << XmlEndTag()
+        << XmlTag("update");
+    _update->printXml(xos);
+    xos << XmlEndTag()
         << XmlEndTag();
 }
 

@@ -19,10 +19,9 @@
 #pragma once
 
 #include "updatevisitor.h"
-#include <vespa/document/util/printable.h>
 #include <vespa/document/util/identifiableid.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/util/xmlserializable.h>
+#include <vespa/vespalib/util/xmlstream.h>
 
 namespace document {
 
@@ -31,9 +30,7 @@ class Field;
 class FieldValue;
 class DataType;
 
-class ValueUpdate : public vespalib::Identifiable,
-                    public Printable,
-                    public vespalib::xml::XmlSerializable
+class ValueUpdate : public vespalib::Identifiable
 {
 protected:
     using nbostream = vespalib::nbostream;
@@ -61,11 +58,6 @@ public:
         TensorAddUpdate = IDENTIFIABLE_CLASSID(TensorAddUpdate),
         TensorRemoveUpdate = IDENTIFIABLE_CLASSID(TensorRemoveUpdate)
     };
-
-    ValueUpdate()
-        : Printable(), XmlSerializable() {}
-
-    virtual ~ValueUpdate() = default;
 
     virtual bool operator==(const ValueUpdate&) const = 0;
     bool operator != (const ValueUpdate & rhs) const { return ! (*this == rhs); }
@@ -105,8 +97,13 @@ public:
      */
     virtual void accept(UpdateVisitor &visitor) const = 0;
 
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const = 0;
+    virtual void printXml(XmlOutputStream& out) const = 0;
+
     DECLARE_IDENTIFIABLE_ABSTRACT(ValueUpdate);
 };
+
+std::ostream& operator<<(std::ostream& out, const ValueUpdate & p);
 
 }
 

@@ -21,9 +21,7 @@ namespace document {
 class Document;
 class DocumentType;
 
-class FieldUpdate : public vespalib::Identifiable,
-                    public Printable,
-                    public vespalib::xml::XmlSerializable
+class FieldUpdate : public vespalib::Identifiable
 {
     Field _field;
     std::vector<ValueUpdate::CP> _updates;
@@ -73,8 +71,8 @@ public:
 
     const Field& getField() const { return _field; }
     void applyTo(Document& doc) const;
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    void printXml(XmlOutputStream&) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const;
+    void printXml(XmlOutputStream&) const;
 
     /**
      * Deserializes the given stream into an instance of an update object.
