@@ -2,6 +2,7 @@
 package com.yahoo.vespa.jaxrs.client;
 
 import ai.vespa.util.http.VespaClientBuilderFactory;
+import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.yahoo.vespa.applicationmodel.HostName;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.HttpUrlConnectorProvider;
@@ -33,6 +34,7 @@ public class VespaJerseyJaxRsClientFactory implements JaxRsClientFactory, AutoCl
                 .property(ClientProperties.SUPPRESS_HTTP_COMPLIANCE_VALIDATION, true) // Allow empty PUT
                 .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true) // Allow e.g. PATCH method.
                 .property(ClientProperties.FOLLOW_REDIRECTS, true)
+                .register(JacksonJsonProvider.class)
                 .register((ClientRequestFilter) context -> context.getHeaders().put(HttpHeaders.USER_AGENT, List.of(userAgent)))
                 .build();
     }
