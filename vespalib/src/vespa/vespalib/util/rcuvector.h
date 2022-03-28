@@ -120,13 +120,14 @@ public:
     size_t capacity() const { return _data.capacity(); }
     void clear() { _data.clear(); }
     T & operator[](size_t i) { return _data[i]; }
-    const T & operator[](size_t i) const { return _data[i]; }
     /*
      * Readers holding a generation guard can call acquire_elem_ref(i)
      * to get a const reference to element i. Array bound must be handled
      * by reader, cf. committed docid limit in attribute vectors.
      */
     const T& acquire_elem_ref(size_t i) const noexcept { return *(_vector_start.load(std::memory_order_acquire) + i); }
+
+    const T& get_elem_ref(size_t i) const noexcept { return _data[i]; } // Called from writer only
 
     void reset();
     void shrink(size_t newSize) __attribute__((noinline));

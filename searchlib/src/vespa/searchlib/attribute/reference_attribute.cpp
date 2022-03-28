@@ -337,10 +337,11 @@ ReferenceAttribute::IndicesCopyVector
 ReferenceAttribute::getIndicesCopy(uint32_t size) const
 {
     assert(size <= _indices.size());
+    auto* indices = &_indices.get_elem_ref(0); // Called from writer only
     IndicesCopyVector result;
     result.reserve(size);
     for (uint32_t i = 0; i < size; ++i) {
-        result.push_back(_indices[i].load_relaxed());
+        result.push_back(indices[i].load_relaxed());
     }
     return result;
 }
