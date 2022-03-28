@@ -110,13 +110,27 @@ fmemchr(const char * s, const char * e)
 #endif
 }
 
+namespace {
+
+// Avoid issues with primitive alignment when reading from buffer.
+// Requires caller to ensure buffer is big enough to read from.
+template <typename T>
+inline T read_unaligned(const char* buf) noexcept
+{
+    T tmp;
+    memcpy(&tmp, buf, sizeof(T));
+    return tmp;
+}
+
+}
+
 void
 verifyIdString(const char * id, size_t sz_)
 {
     if (sz_ > 4) {
-        if (_G_id.as16 == *reinterpret_cast<const uint16_t *>(id) && id[2] == ':') {
+        if ((_G_id.as16 == read_unaligned<uint16_t>(id)) && (id[2] == ':')) {
             return;
-        } else if ((sz_ == 6) && (_G_null.as32 == *reinterpret_cast<const uint32_t *>(id)) && (id[4] == ':') && (id[5] == ':')) {
+        } else if ((sz_ == 6) && (_G_null.as32 == read_unaligned<uint32_t>(id)) && (id[4] == ':') && (id[5] == ':')) {
             reportNoId(id);
         } else if (sz_ > 8) {
             reportNoSchemeSeparator(id);
