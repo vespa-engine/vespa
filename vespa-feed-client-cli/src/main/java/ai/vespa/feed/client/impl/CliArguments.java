@@ -55,6 +55,7 @@ class CliArguments {
     private static final String VERSION_OPTION = "version";
     private static final String STDIN_OPTION = "stdin";
     private static final String DOOM_OPTION = "max-failure-seconds";
+    private static final String PROXY_OPTION = "proxy";
 
     private final CommandLine arguments;
 
@@ -164,6 +165,16 @@ class CliArguments {
     boolean readFeedFromStandardInput() { return has(STDIN_OPTION); }
 
     boolean dryrunEnabled() { return has(DRYRUN_OPTION); }
+
+    Optional<URI> proxy() throws CliArgumentsException {
+        try {
+            URL url = (URL) arguments.getParsedOptionValue(PROXY_OPTION);
+            if (url == null) return Optional.empty();
+            return Optional.of(url.toURI());
+        } catch (ParseException | URISyntaxException e) {
+            throw new CliArgumentsException("Invalid proxy: " + e.getMessage(), e);
+        }
+    }
 
     private OptionalInt intValue(String option) throws CliArgumentsException {
         try {
@@ -310,6 +321,12 @@ class CliArguments {
                 .addOption(Option.builder()
                         .longOpt(SHOW_ALL_OPTION)
                         .desc("Print the result of every feed operation")
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt(PROXY_OPTION)
+                        .desc("URI to proxy endpoint")
+                        .hasArg()
+                        .type(URL.class)
                         .build());
     }
 

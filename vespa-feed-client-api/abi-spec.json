@@ -140,6 +140,7 @@
       "public abstract ai.vespa.feed.client.FeedClientBuilder setCaCertificatesFile(java.nio.file.Path)",
       "public abstract ai.vespa.feed.client.FeedClientBuilder setCaCertificates(java.util.Collection)",
       "public abstract ai.vespa.feed.client.FeedClientBuilder setEndpointUris(java.util.List)",
+      "public abstract ai.vespa.feed.client.FeedClientBuilder setProxy(java.net.URI)",
       "public abstract ai.vespa.feed.client.FeedClient build()"
     ],
     "fields": [

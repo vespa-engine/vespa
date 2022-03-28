@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client.impl;
 
-import ai.vespa.feed.client.impl.CliArguments;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -11,7 +10,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bjorncs
@@ -26,7 +28,7 @@ class CliArgumentsTest {
                 "--ca-certificates=ca-certs.pem", "--disable-ssl-hostname-verification",
                 "--header=\"My-Header: my-value\"", "--header", "Another-Header: another-value", "--benchmark",
                 "--route=myroute", "--timeout=0.125", "--trace=9", "--verbose", "--silent",
-                "--show-errors", "--show-all", "--max-failure-seconds=30"});
+                "--show-errors", "--show-all", "--max-failure-seconds=30", "--proxy", "https://myproxy:1234"});
         assertEquals(URI.create("https://vespa.ai:4443/"), args.endpoint());
         assertEquals(Paths.get("feed.json"), args.inputFile().get());
         assertEquals(10, args.connections().getAsInt());
@@ -49,6 +51,7 @@ class CliArgumentsTest {
         assertTrue(args.showErrors());
         assertTrue(args.showSuccesses());
         assertFalse(args.showProgress());
+        assertEquals(URI.create("https://myproxy:1234"), args.proxy().orElse(null));
     }
 
     @Test

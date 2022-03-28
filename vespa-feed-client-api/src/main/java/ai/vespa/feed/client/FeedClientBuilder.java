@@ -109,6 +109,9 @@ public interface FeedClientBuilder {
     /** Overrides endpoint URIs for this client */
     FeedClientBuilder setEndpointUris(List<URI> endpoints);
 
+    /** Specify HTTP(S) proxy for all endpoints */
+    FeedClientBuilder setProxy(URI uri);
+
     /** Constructs instance of {@link FeedClient} from builder configuration */
     FeedClient build();
 
