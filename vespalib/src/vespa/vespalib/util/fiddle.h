@@ -24,8 +24,8 @@ uint32_t mix(uint32_t prefix, uint32_t suffix, uint32_t prefix_bits) {
     if (prefix_bits >= 32) {
         return prefix;
     }
-    uint32_t suffix_mask = (1 << (32 - prefix_bits)) - 1;
-    uint32_t prefix_mask = (0 - 1) - suffix_mask;
+    uint32_t suffix_mask = (1u << (32u - prefix_bits)) - 1u;
+    uint32_t prefix_mask = (0u - 1u) - suffix_mask;
     return (prefix & prefix_mask) | (suffix & suffix_mask);
 }
 
