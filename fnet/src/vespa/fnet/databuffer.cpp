@@ -94,7 +94,9 @@ FNET_DataBuffer::Pack(uint32_t needbytes)
             bufsize *= 2;
 
         Alloc newBuf(Alloc::alloc(bufsize));
-        memcpy(newBuf.get(), _datapt, GetDataLen());
+        if (_datapt != nullptr) {
+            memcpy(newBuf.get(), _datapt, GetDataLen());
+        }
         _ownedBuf.swap(newBuf);
         _bufstart = static_cast<char *>(_ownedBuf.get());
         _freept   = _bufstart + GetDataLen();

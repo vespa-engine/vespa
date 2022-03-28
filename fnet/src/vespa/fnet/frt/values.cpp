@@ -984,7 +984,7 @@ FRT_Values::DecodeBig(FNET_DataBuffer *src, uint32_t len)
     }
 
     if (len != 0) goto error;
-    if (strncmp(typeString, _typeString, numValues) != 0) goto error;
+    if ((numValues > 0) && strncmp(typeString, _typeString, numValues) != 0) goto error;
     return true;
 
 error:
@@ -1385,6 +1385,9 @@ FRT_Values::EncodeBig(FNET_DataBuffer *dst)
     const char *p = _typeString;
 
     dst->WriteInt32Fast(numValues);
+    if (numValues == 0) {
+        return; // p may be nullptr, don't try to write what does not exist.
+    }
     dst->WriteBytesFast(p, numValues);
 
     for (uint32_t i = 0; i < numValues; i++, p++) {
