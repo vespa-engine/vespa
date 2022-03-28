@@ -24,7 +24,7 @@ private:
     class TensorBufferType : public vespalib::datastore::BufferType<TensorSP> {
     private:
         using ParentType = BufferType<TensorSP>;
-        using ParentType::_emptyEntry;
+        using ParentType::empty_entry;
         using CleanContext = typename ParentType::CleanContext;
     public:
         TensorBufferType();
