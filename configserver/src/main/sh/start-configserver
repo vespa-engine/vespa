@@ -157,7 +157,7 @@ jvmargs="$baseuserargs $serveruserargs"
 
 export LD_PRELOAD=${VESPA_HOME}/lib64/vespa/malloc/libvespamalloc.so
 
-printenv > $cfpfile
+vespa-run-as-vespa-user sh -c "printenv > $cfpfile"
 fixddir $bundlecachedir
 
 vespa-run-as-vespa-user vespa-runserver -s configserver -r 30 -p $pidfile -- \
