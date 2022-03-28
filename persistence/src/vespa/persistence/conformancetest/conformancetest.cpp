@@ -910,9 +910,7 @@ TEST_F(ConformanceTest, testUpdate)
     const document::DocumentType *docType(
             testDocMan.getTypeRepo().getDocumentType("testdoctype1"));
     document::DocumentUpdate::SP update(new DocumentUpdate(testDocMan.getTypeRepo(), *docType, doc1->getId()));
-    document::FieldUpdate fieldUpdate(docType->getField("headerval"));
-    fieldUpdate.addUpdate(std::make_unique<document::AssignValueUpdate>(document::IntFieldValue(42)));
-    update->addUpdate(std::move(fieldUpdate));
+    update->addUpdate(document::FieldUpdate(docType->getField("headerval")).addUpdate(std::make_unique<document::AssignValueUpdate>(document::IntFieldValue(42))));
 
     {
         UpdateResult result = spi->update(bucket, Timestamp(3), update, context);

@@ -345,7 +345,7 @@ struct UpdateContext {
         } else {
             fieldValue->assign(document::StringFieldValue("new value"));
         }
-        update->addUpdate(std::move(document::FieldUpdate(field).addUpdate(std::make_unique<document::AssignValueUpdate>(*fieldValue))));
+        update->addUpdate(document::FieldUpdate(field).addUpdate(std::make_unique<document::AssignValueUpdate>(*fieldValue)));
     }
 };
 

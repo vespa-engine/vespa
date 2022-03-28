@@ -482,10 +482,10 @@ TEST_F(AttributeWriterTest, handles_update)
     DocBuilder idb(schema);
     const document::DocumentType &dt(idb.getDocumentType());
     DocumentUpdate upd(*idb.getDocumentTypeRepo(), dt, DocumentId("id:ns:searchdocument::1"));
-    upd.addUpdate(std::move(FieldUpdate(upd.getType().getField("a1"))
-                  .addUpdate(std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 5))));
-    upd.addUpdate(std::move(FieldUpdate(upd.getType().getField("a2"))
-                  .addUpdate(std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10))));
+    upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
+                  .addUpdate(std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 5)));
+    upd.addUpdate(FieldUpdate(upd.getType().getField("a2"))
+                  .addUpdate(std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10)));
 
     DummyFieldUpdateCallback onUpdate;
     update(2, upd, 1, onUpdate);
@@ -527,8 +527,8 @@ TEST_F(AttributeWriterTest, handles_predicate_update)
     const document::DocumentType &dt(idb.getDocumentType());
     DocumentUpdate upd(*idb.getDocumentTypeRepo(), dt, DocumentId("id:ns:searchdocument::1"));
     PredicateFieldValue new_value(builder.feature("foo").value("bar").build());
-    upd.addUpdate(std::move(FieldUpdate(upd.getType().getField("a1"))
-                  .addUpdate(std::make_unique<AssignValueUpdate>(new_value))));
+    upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
+                  .addUpdate(std::make_unique<AssignValueUpdate>(new_value)));
 
     PredicateIndex &index = static_cast<PredicateAttribute &>(*a1).getIndex();
     EXPECT_EQ(1u, index.getZeroConstraintDocs().size());
@@ -728,8 +728,8 @@ TEST_F(AttributeWriterTest, handles_tensor_assign_update)
     TensorDataType xySparseTensorDataType(vespalib::eval::ValueType::from_spec(sparse_tensor));
     TensorFieldValue new_value(xySparseTensorDataType);
     new_value = SimpleValue::from_value(*new_tensor);
-    upd.addUpdate(std::move(FieldUpdate(upd.getType().getField("a1"))
-                  .addUpdate(std::make_unique<AssignValueUpdate>(new_value))));
+    upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
+                  .addUpdate(std::make_unique<AssignValueUpdate>(new_value)));
     DummyFieldUpdateCallback onUpdate;
     update(2, upd, 1, onUpdate);
     EXPECT_EQ(2u, a1->getNumDocs());
@@ -938,7 +938,7 @@ public:
         TensorDataType tensor_type(vespalib::eval::ValueType::from_spec(dense_tensor));
         TensorFieldValue tensor_value(tensor_type);
         tensor_value= SimpleValue::from_value(*tensor);
-        upd->addUpdate(std::move(FieldUpdate(upd->getType().getField("a1")).addUpdate(std::make_unique<AssignValueUpdate>(tensor_value))));
+        upd->addUpdate(FieldUpdate(upd->getType().getField("a1")).addUpdate(std::make_unique<AssignValueUpdate>(tensor_value)));
         return upd;
     }
     void expect_shared_executor_tasks(size_t exp_accepted_tasks) {

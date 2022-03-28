@@ -59,17 +59,17 @@ createTestDocumentUpdate(const DocumentTypeRepo& repo)
     DocumentId id("id:ns:testdoc::crawler/http://www.ntnu.no/");
 
     auto up = std::make_unique<DocumentUpdate>(repo, *type, id);
-    up->addUpdate(std::move(FieldUpdate(type->getField("intattr"))
-		  .addUpdate(std::make_unique<AssignValueUpdate>(IntFieldValue(7)))));
-    up->addUpdate(std::move(FieldUpdate(type->getField("stringattr"))
-		  .addUpdate(std::make_unique<AssignValueUpdate>(StringFieldValue("New value")))));
-    up->addUpdate(std::move(FieldUpdate(type->getField("arrayattr"))
+    up->addUpdate(FieldUpdate(type->getField("intattr"))
+		  .addUpdate(std::make_unique<AssignValueUpdate>(IntFieldValue(7))));
+    up->addUpdate(FieldUpdate(type->getField("stringattr"))
+		  .addUpdate(std::make_unique<AssignValueUpdate>(StringFieldValue("New value"))));
+    up->addUpdate(FieldUpdate(type->getField("arrayattr"))
 		  .addUpdate(std::make_unique<AddValueUpdate>(IntFieldValue(123)))
-		  .addUpdate(std::make_unique<AddValueUpdate>(IntFieldValue(456)))));
-    up->addUpdate(std::move(FieldUpdate(type->getField("arrayattr"))
+		  .addUpdate(std::make_unique<AddValueUpdate>(IntFieldValue(456))));
+    up->addUpdate(FieldUpdate(type->getField("arrayattr"))
 		  .addUpdate(std::make_unique<RemoveValueUpdate>(IntFieldValue(123)))
 		  .addUpdate(std::make_unique<RemoveValueUpdate>(IntFieldValue(456)))
-		  .addUpdate(std::make_unique<RemoveValueUpdate>(IntFieldValue(789)))));
+		  .addUpdate(std::make_unique<RemoveValueUpdate>(IntFieldValue(789))));
     return up;
 }
 

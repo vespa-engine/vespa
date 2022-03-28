@@ -121,8 +121,8 @@ public:
 
     auto makeUpdate() {
         auto upd(std::make_shared<DocumentUpdate>(*_repo, _docType, docId));
-        upd->addUpdate(std::move(FieldUpdate(upd->getType().getField("string")).
-                       addUpdate(std::make_unique<AssignValueUpdate>(StringFieldValue("newval")))));
+        upd->addUpdate(FieldUpdate(upd->getType().getField("string")).
+                       addUpdate(std::make_unique<AssignValueUpdate>(StringFieldValue("newval"))));
         return upd;
     }
     auto makeDoc() {
