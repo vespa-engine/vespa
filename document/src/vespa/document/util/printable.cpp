@@ -23,7 +23,7 @@ void Printable::print(std::ostream& out, const std::string& indent) const {
 }
 
 std::ostream& operator<<(std::ostream& out, const Printable& p) {
-    p.print(out);
+    p.print(out, false, "");
     return out;
 }
 

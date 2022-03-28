@@ -14,7 +14,7 @@ ForceLink::ForceLink(void)
         DocumentType          type("foo", 1);
         Document              document(type, DocumentId("doc:ns:bar"));
         DocumentUpdate        documentUpdate;
-        MapValueUpdate        mapValueUpdate(IntFieldValue(3), ClearValueUpdate());
+        MapValueUpdate        mapValueUpdate(IntFieldValue(3), std::make_unique<ClearValueUpdate>());
         AddValueUpdate        addValueUpdate(IntFieldValue(3));
         RemoveValueUpdate     removeValueUpdate(IntFieldValue(3));
         AssignValueUpdate     assignValueUpdate(IntFieldValue(3));

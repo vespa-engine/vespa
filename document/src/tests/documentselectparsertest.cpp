@@ -137,11 +137,11 @@ DocumentUpdate::SP DocumentSelectParserTest::createUpdate(
         const std::string& hstr)
 {
     const DocumentType* type = _repo->getDocumentType(doctype);
-    DocumentUpdate::SP doc(new DocumentUpdate(*_repo, *type, DocumentId(id)));
+    auto doc = std::make_shared<DocumentUpdate>(*_repo, *type, DocumentId(id));
     doc->addUpdate(FieldUpdate(doc->getType().getField("headerval"))
-                      .addUpdate(AssignValueUpdate(IntFieldValue(hint))));
+                      .addUpdate(std::make_unique<AssignValueUpdate>(IntFieldValue(hint))));
     doc->addUpdate(FieldUpdate(doc->getType().getField("hstringval"))
-                      .addUpdate(AssignValueUpdate(StringFieldValue(hstr))));
+                      .addUpdate(std::make_unique<AssignValueUpdate>(StringFieldValue(hstr))));
     return doc;
 }
 

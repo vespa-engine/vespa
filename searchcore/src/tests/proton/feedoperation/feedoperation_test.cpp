@@ -16,7 +16,6 @@
 #include <vespa/searchlib/query/base.h>
 #include <persistence/spi/types.h>
 #include <vespa/document/base/documentid.h>
-#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
@@ -123,7 +122,7 @@ public:
     auto makeUpdate() {
         auto upd(std::make_shared<DocumentUpdate>(*_repo, _docType, docId));
         upd->addUpdate(FieldUpdate(upd->getType().getField("string")).
-                       addUpdate(AssignValueUpdate(StringFieldValue("newval"))));
+                       addUpdate(std::make_unique<AssignValueUpdate>(StringFieldValue("newval"))));
         return upd;
     }
     auto makeDoc() {

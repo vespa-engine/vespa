@@ -21,24 +21,19 @@ namespace document {
 class Document;
 class DocumentType;
 
-class FieldUpdate : public vespalib::Identifiable,
-                    public Printable,
-                    public vespalib::xml::XmlSerializable
+class FieldUpdate
 {
-    Field _field;
-    std::vector<ValueUpdate::CP> _updates;
-    using nbostream = vespalib::nbostream;
-
 public:
-    typedef vespalib::CloneablePtr<FieldUpdate> CP;
+    using nbostream = vespalib::nbostream;
+    using ValueUpdates = std::vector<std::unique_ptr<ValueUpdate>>;
     using XmlOutputStream = vespalib::xml::XmlOutputStream;
 
     FieldUpdate(const Field& field);
-    FieldUpdate(const FieldUpdate &);
+    FieldUpdate(const FieldUpdate &) = delete;
     FieldUpdate & operator = (const FieldUpdate &) = delete;
     FieldUpdate(FieldUpdate &&) = default;
     FieldUpdate & operator = (FieldUpdate &&) = default;
-    ~FieldUpdate() override;
+    ~FieldUpdate();
 
     /**
      * This is a convenience function to construct a field update directly from
@@ -58,23 +53,20 @@ public:
      * @param update A pointer to the value update to add to this.
      * @return A pointer to this.
      */
-    FieldUpdate& addUpdate(const ValueUpdate& update) {
-        update.checkCompatibility(_field); // May throw exception.
-        _updates.push_back(ValueUpdate::CP(update.clone()));
-        return *this;
-    }
+    FieldUpdate& addUpdate(std::unique_ptr<ValueUpdate> update) &;
+    FieldUpdate&& addUpdate(std::unique_ptr<ValueUpdate> update) &&;
 
     const ValueUpdate& operator[](int index) const { return *_updates[index]; }
     ValueUpdate& operator[](int index) { return *_updates[index]; }
     size_t size() const { return _updates.size(); }
 
     /** @return The non-modifieable list of value updates to perform. */
-    const std::vector<ValueUpdate::CP>& getUpdates() const { return _updates; }
+    const ValueUpdates & getUpdates() const { return _updates; }
 
     const Field& getField() const { return _field; }
     void applyTo(Document& doc) const;
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    void printXml(XmlOutputStream&) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const;
+    void printXml(XmlOutputStream&) const;
 
     /**
      * Deserializes the given stream into an instance of an update object.
@@ -84,7 +76,9 @@ public:
      * @param buffer The stream that contains the serialized update object.
      */
     void deserialize(const DocumentTypeRepo& repo, const DocumentType& type, nbostream& stream);
-
+private:
+    Field _field;
+    ValueUpdates _updates;
 };
 
 } // document

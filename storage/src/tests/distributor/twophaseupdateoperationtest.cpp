@@ -295,9 +295,7 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
         update = std::make_shared<document::DocumentUpdate>(
                 *_repo, *_doc_type,
                 document::DocumentId("id:ns:" + _doc_type->getName() + "::1"));
-        document::FieldUpdate fup(_doc_type->getField("headerval"));
-        fup.addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 10));
-        update->addUpdate(fup);
+        update->addUpdate(FieldUpdate(_doc_type->getField("headerval")).addUpdate(std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10)));
     } else {
         // Create an update to a different doctype than the one returned as
         // part of the Get. Just a sneaky way to force an eval error.
@@ -305,9 +303,7 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
         update = std::make_shared<document::DocumentUpdate>(
                 *_repo, *badDocType,
                 document::DocumentId("id:ns:" + _doc_type->getName() + "::1"));
-        document::FieldUpdate fup(badDocType->getField("onlyinchild"));
-        fup.addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 10));
-        update->addUpdate(fup);
+        update->addUpdate(FieldUpdate(badDocType->getField("onlyinchild")).addUpdate(std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10)));
     }
     update->setCreateIfNonExistent(options._createIfNonExistent);
 

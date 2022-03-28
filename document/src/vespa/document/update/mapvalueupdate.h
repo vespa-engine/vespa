@@ -17,15 +17,6 @@
 namespace document {
 
 class MapValueUpdate : public ValueUpdate {
-    FieldValue::CP _key; // The field value this update is mapping to.
-    ValueUpdate::CP _update; //The update to apply to the value member of this.
-
-    // Used by ValueUpdate's static factory function
-    // Private because it generates an invalid object.
-    friend class ValueUpdate;
-    MapValueUpdate() : ValueUpdate(), _key(), _update() {}
-
-    ACCEPT_UPDATE_VISITOR;
 public:
 
     /**
@@ -35,13 +26,13 @@ public:
      * @param key The identifier of the field value to be updated.
      * @param update The update to map to apply to the field value of this.
      */
-    MapValueUpdate(const FieldValue& key, const ValueUpdate& update);
+    MapValueUpdate(const FieldValue& key, std::unique_ptr<ValueUpdate> update);
     MapValueUpdate(const MapValueUpdate &);
     MapValueUpdate & operator = (const MapValueUpdate &);
     MapValueUpdate(MapValueUpdate &&) = default;
     MapValueUpdate & operator = (MapValueUpdate &&) = default;
 
-    ~MapValueUpdate();
+    ~MapValueUpdate() override;
 
     bool operator==(const ValueUpdate& other) const override;
 
@@ -52,24 +43,13 @@ public:
     ValueUpdate& getUpdate() { return *_update; }
 
     /**
-     * Sets the identifier of the field value to update.
-     *
-     * @param key The field value identifier.
-     * @return A pointer to this.
-     */
-    MapValueUpdate& setKey(const FieldValue& key) {
-        _key.reset(key.clone());
-        return *this;
-    }
-
-    /**
      * Sets the update to apply to the value update of this.
      *
      * @param update The value update.
      * @return A pointer to this.
      */
-    MapValueUpdate& setUpdate(const ValueUpdate& update) {
-        _update.reset(update.clone());
+    MapValueUpdate& setUpdate(std::unique_ptr<ValueUpdate> update) {
+        _update = std::move(update);
         return *this;
     }
 
@@ -78,10 +58,18 @@ public:
     void printXml(XmlOutputStream& xos) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& buffer) override;
-    MapValueUpdate* clone() const override { return new MapValueUpdate(*this); }
 
     DECLARE_IDENTIFIABLE(MapValueUpdate);
+private:
+    std::unique_ptr<FieldValue> _key; // The field value this update is mapping to.
+    std::unique_ptr<ValueUpdate> _update; //The update to apply to the value member of this.
 
+    // Used by ValueUpdate's static factory function
+    // Private because it generates an invalid object.
+    friend class ValueUpdate;
+    MapValueUpdate() : ValueUpdate(), _key(), _update() {}
+
+    ACCEPT_UPDATE_VISITOR;
 };
 
 }

@@ -40,7 +40,7 @@ class VespaDocumentSerializer;
  * path updates was added, and a new serialization format was
  * introduced while keeping the old one.
  */
-class DocumentUpdate final : public Printable, public vespalib::xml::XmlSerializable
+class DocumentUpdate
 {
 public:
     using UP = std::unique_ptr<DocumentUpdate>;
@@ -70,7 +70,9 @@ public:
 
     DocumentUpdate(const DocumentUpdate &) = delete;
     DocumentUpdate & operator = (const DocumentUpdate &) = delete;
-    ~DocumentUpdate() override;
+    DocumentUpdate(DocumentUpdate &&) = delete;
+    DocumentUpdate & operator = (DocumentUpdate &&) = delete;
+    ~DocumentUpdate();
 
     bool operator==(const DocumentUpdate&) const;
     bool operator!=(const DocumentUpdate & rhs) const { return ! (*this == rhs); }
@@ -85,7 +87,7 @@ public:
      */
     void applyTo(Document& doc) const;
 
-    DocumentUpdate& addUpdate(const FieldUpdate& update);
+    DocumentUpdate& addUpdate(FieldUpdate && update);
     DocumentUpdate& addFieldPathUpdate(const FieldPathUpdate::CP& update);
 
     /** @return The list of updates. */
@@ -98,9 +100,8 @@ public:
 
     /** @return The type of document this update is for. */
     const DocumentType& getType() const;
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     void serializeHEAD(vespalib::nbostream &stream) const;
-    void printXml(XmlOutputStream&) const override;
 
     /**
      * Sets whether this update should create the document it updates if that document does not exist.
@@ -115,6 +116,10 @@ public:
 
     int serializeFlags(int size_) const;
 
+    // Only used for debugging
+    void print(std::ostream& out, bool verbose, const std::string& indent) const;
+    void printXml(XmlOutputStream&) const;
+    std::string toXml(const std::string& indent) const;
 private:
     DocumentId              _documentId; // The ID of the document to update.
     const DataType         *_type; // The type of document this update is for.

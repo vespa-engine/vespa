@@ -253,10 +253,4 @@ TensorModifyUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &ty
     verifyCellsTensorIsSparse(_tensor->getAsTensorPtr());
 }
 
-TensorModifyUpdate*
-TensorModifyUpdate::clone() const
-{
-    return new TensorModifyUpdate(*this);
-}
-
 }

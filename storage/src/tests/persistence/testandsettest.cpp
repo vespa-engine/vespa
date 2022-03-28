@@ -7,7 +7,6 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
-#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
@@ -160,9 +159,7 @@ std::shared_ptr<api::UpdateCommand>
 TestAndSetTest::conditional_update_test(bool createIfMissing, api::Timestamp updateTimestamp)
 {
     auto docUpdate = std::make_shared<document::DocumentUpdate>(_env->_testDocMan.getTypeRepo(), testDoc->getType(), testDocId);
-    auto fieldUpdate = document::FieldUpdate(testDoc->getField("content"));
-    fieldUpdate.addUpdate(document::AssignValueUpdate(NEW_CONTENT));
-    docUpdate->addUpdate(fieldUpdate);
+    docUpdate->addUpdate(document::FieldUpdate(testDoc->getField("content")).addUpdate(std::make_unique<document::AssignValueUpdate>(NEW_CONTENT)));
     docUpdate->setCreateIfNonExistent(createIfMissing);
 
     auto updateUp = std::make_unique<api::UpdateCommand>(BUCKET, docUpdate, updateTimestamp);

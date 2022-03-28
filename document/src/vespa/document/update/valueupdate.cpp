@@ -26,4 +26,10 @@ ValueUpdate::createInstance(const DocumentTypeRepo& repo, const DataType& type, 
     }
 }
 
+std::ostream&
+operator<<(std::ostream& out, const ValueUpdate& p) {
+    p.print(out, false, "");
+    return out;
+}
+
 }

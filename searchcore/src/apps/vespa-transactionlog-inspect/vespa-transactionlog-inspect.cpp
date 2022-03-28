@@ -232,9 +232,14 @@ private:
         toPrint.printXml(out);
         std::cout << std::endl;
     }
+    void printXml(const document::DocumentUpdate &toPrint) {
+        vespalib::xml::XmlOutputStream out(std::cout);
+        toPrint.printXml(out);
+        std::cout << std::endl;
+    }
 
-    void printText(const document::Printable &toPrint) {
-        toPrint.print(std::cout, _verbose);
+    void printText(const document::DocumentUpdate &toPrint) {
+        toPrint.print(std::cout, _verbose, "");
         std::cout << std::endl;
     }
 
@@ -265,7 +270,7 @@ public:
     }
     void replay(const UpdateOperation &op) override {
         print(op);
-        if (op.getUpdate().get() != NULL) {
+        if (op.getUpdate()) {
             if (_printXml) {
                 printXml(*op.getUpdate());
             } else {

@@ -12,8 +12,7 @@ namespace document {
 using vespalib::nbostream;
 
 FieldUpdate::FieldUpdate(const Field& field)
-    : Printable(),
-      _field(field),
+    : _field(field),
       _updates()
 {
 }
@@ -29,19 +28,17 @@ int readInt(nbostream & stream) {
 }
 
 FieldUpdate::FieldUpdate(const DocumentTypeRepo& repo, const DataType & type, nbostream & stream)
-    : Printable(),
-      _field(type.getField(readInt(stream))),
+    : _field(type.getField(readInt(stream))),
       _updates()
 {
     int numUpdates = readInt(stream);
     _updates.reserve(numUpdates);
     const DataType& dataType = _field.getDataType();
     for(int i(0); i < numUpdates; i++) {
-        _updates.emplace_back(ValueUpdate::createInstance(repo, dataType, stream).release());
+        _updates.emplace_back(ValueUpdate::createInstance(repo, dataType, stream));
     }
 }
 
-FieldUpdate::FieldUpdate(const FieldUpdate &) = default;
 FieldUpdate::~FieldUpdate() = default;
 
 bool
@@ -53,6 +50,20 @@ FieldUpdate::operator==(const FieldUpdate& other) const
         if (*_updates[i] != *other._updates[i]) return false;
     }
     return true;
+}
+
+
+FieldUpdate&
+FieldUpdate::addUpdate(std::unique_ptr<ValueUpdate> update) & {
+    update->checkCompatibility(_field); // May throw exception.
+    _updates.push_back(std::move(update));
+    return *this;
+}
+
+FieldUpdate&&
+FieldUpdate::addUpdate(std::unique_ptr<ValueUpdate> update) && {
+    addUpdate(std::move(update));
+    return std::move(*this);
 }
 
 void

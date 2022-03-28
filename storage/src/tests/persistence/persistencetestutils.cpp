@@ -225,10 +225,7 @@ PersistenceTestUtils::createBodyUpdate(const document::DocumentId& docId, const 
 {
     const DocumentType* docType(getTypeRepo()->getDocumentType("testdoctype1"));
     auto update = std::make_shared<document::DocumentUpdate>(*getTypeRepo(), *docType, docId);
-    auto assignUpdate = std::make_shared<document::AssignValueUpdate>(updateValue);
-    document::FieldUpdate fieldUpdate(docType->getField("content"));
-    fieldUpdate.addUpdate(*assignUpdate);
-    update->addUpdate(fieldUpdate);
+    update->addUpdate(document::FieldUpdate(docType->getField("content")).addUpdate(std::make_unique<document::AssignValueUpdate>(updateValue)));
     return update;
 }
 
@@ -237,10 +234,7 @@ PersistenceTestUtils::createHeaderUpdate(const document::DocumentId& docId, cons
 {
     const DocumentType* docType(getTypeRepo()->getDocumentType("testdoctype1"));
     auto update = std::make_shared<document::DocumentUpdate>(*getTypeRepo(), *docType, docId);
-    auto assignUpdate = std::make_shared<document::AssignValueUpdate>(updateValue);
-    document::FieldUpdate fieldUpdate(docType->getField("headerval"));
-    fieldUpdate.addUpdate(*assignUpdate);
-    update->addUpdate(fieldUpdate);
+    update->addUpdate(document::FieldUpdate(docType->getField("headerval")).addUpdate(std::make_unique<document::AssignValueUpdate>(updateValue)));
     return update;
 }
 

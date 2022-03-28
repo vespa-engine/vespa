@@ -25,6 +25,8 @@ using document::BucketSpace;
 using document::Document;
 using document::DocumentId;
 using document::DocumentType;
+using document::DocumentTypeRepo;
+using document::DocumentUpdate;
 using document::test::makeBucketSpace;
 using search::DocumentMetaData;
 using storage::spi::Bucket;
@@ -56,19 +58,19 @@ createDocType(const vespalib::string &name, int32_t id)
 }
 
 
-document::Document::SP
+Document::SP
 createDoc(const DocumentType &docType, const DocumentId &docId)
 {
-    return std::make_shared<document::Document>(docType, docId);
+    return std::make_shared<Document>(docType, docId);
 }
 
 
-document::DocumentUpdate::SP
+DocumentUpdate::SP
 createUpd(const DocumentType& docType, const DocumentId &docId)
 {
-    static std::vector<std::unique_ptr<document::DocumentTypeRepo>> repoList;
-    repoList.emplace_back(std::make_unique<document::DocumentTypeRepo>(docType));
-    return std::make_shared<document::DocumentUpdate>(*repoList.back(), docType, docId);
+    static std::vector<std::unique_ptr<DocumentTypeRepo>> repoList;
+    repoList.emplace_back(std::make_unique<DocumentTypeRepo>(docType));
+    return std::make_shared<DocumentUpdate>(*repoList.back(), docType, docId);
 }
 
 storage::spi::ClusterState
@@ -105,14 +107,14 @@ createClusterState(const storage::lib::State& nodeState = storage::lib::State::U
 
 
 struct MyDocumentRetriever : DocumentRetrieverBaseForTest {
-    document::DocumentTypeRepo repo;
+    DocumentTypeRepo repo;
     const Document *document;
     Timestamp timestamp;
     DocumentId &last_doc_id;
 
     MyDocumentRetriever(const Document *d, Timestamp ts, DocumentId &last_id)
         : repo(), document(d), timestamp(ts), last_doc_id(last_id) {}
-    const document::DocumentTypeRepo &getDocumentTypeRepo() const override {
+    const DocumentTypeRepo &getDocumentTypeRepo() const override {
         return repo;
     }
     void getBucketMetaData(const storage::spi::Bucket &, search::DocumentMetaData::Vector &v) const override {
@@ -123,11 +125,11 @@ struct MyDocumentRetriever : DocumentRetrieverBaseForTest {
     DocumentMetaData getDocumentMetaData(const DocumentId &id) const override {
         last_doc_id = id;
         if (document != nullptr) {
-            return DocumentMetaData(1, timestamp, document::BucketId(1), document->getId().getGlobalId());
+            return DocumentMetaData(1, timestamp, BucketId(1), document->getId().getGlobalId());
         }
         return DocumentMetaData();
     }
-    document::Document::UP getFullDocument(search::DocumentIdT) const override {
+    Document::UP getFullDocument(search::DocumentIdT) const override {
         if (document != nullptr) {
             return Document::UP(document->clone());
         }
@@ -271,7 +273,7 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
         resultHandler.handle(BucketIdListResult());
     }
 
-    void handlePopulateActiveBuckets(document::BucketId::List buckets, IGenericResultHandler &resultHandler) override {
+    void handlePopulateActiveBuckets(BucketId::List buckets, IGenericResultHandler &resultHandler) override {
         (void) buckets;
         resultHandler.handle(Result());
     }
@@ -317,10 +319,10 @@ DocumentId docId3("id:type3:type3::1");
 Document::SP doc1(createDoc(type1, docId1));
 Document::SP doc2(createDoc(type2, docId2));
 Document::SP doc3(createDoc(type3, docId3));
-document::DocumentUpdate::SP upd1(createUpd(type1, docId1));
-document::DocumentUpdate::SP upd2(createUpd(type2, docId2));
-document::DocumentUpdate::SP upd3(createUpd(type3, docId3));
-document::DocumentUpdate::SP bad_id_upd(createUpd(type1, docId2));
+DocumentUpdate::SP upd1(createUpd(type1, docId1));
+DocumentUpdate::SP upd2(createUpd(type2, docId2));
+DocumentUpdate::SP upd3(createUpd(type3, docId3));
+DocumentUpdate::SP bad_id_upd(createUpd(type1, docId2));
 BucketId bckId1(1);
 BucketId bckId2(2);
 BucketId bckId3(3);
@@ -518,10 +520,8 @@ TEST_F("require that update is rejected if resource limit is reached", SimpleFix
     DocumentType type(createDocType("type_with_one_string", 1));
     document::Field field("string", 1, *document::DataType::STRING);
     type.addField(field);
-    document::DocumentUpdate::SP upd = createUpd(type, docId1);
-    document::FieldUpdate fUpd(field);
-    fUpd.addUpdate(document::AssignValueUpdate(document::StringFieldValue("new value")));
-    upd->addUpdate(fUpd);
+    DocumentUpdate::SP upd = createUpd(type, docId1);
+    upd->addUpdate(std::move(document::FieldUpdate(field).addUpdate(std::make_unique<document::AssignValueUpdate>(document::StringFieldValue("new value")))));
 
     EXPECT_EQUAL(
             Result(Result::ErrorType::RESOURCE_EXHAUSTED,
