@@ -127,7 +127,6 @@ TEST(TestXml, testDocumentUpdate)
         "    <remove>789</remove>\n"
         "  </alter>\n"
         "</document>";
-    std::ostringstream os;
     EXPECT_EQ(expected, up1->toXml("  "));
 }
 
