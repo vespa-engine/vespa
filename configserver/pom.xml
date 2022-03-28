@@ -299,6 +299,11 @@
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
+        <configuration>
+          <!-- TODO Vespa 8: remove importPackage when the jackson-jaxrs-json-provider bundle is no longer installed in jdisc -->
+          <!--   added to ensure using the same class as orchestrator, core-dump-reporter, provision-controller and controller-clients -->
+          <importPackage>com.fasterxml.jackson.jaxrs.json;version="[2.12.6,3)"</importPackage>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
