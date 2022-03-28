@@ -169,18 +169,9 @@ class ContainerFileSystemTest {
         Files.createDirectories(link.getParent());
         Files.createSymbolicLink(link, destination.getParent());
 
-        { // Cannot write file via symlink
-            ContainerPath file = link.resolve("file");
-            assertThrows(IOException.class, () -> Files.writeString(file, "hello"));
-            Files.writeString(file.pathOnHost(), "hello"); // Writing through host FS works
-        }
-
-        { // Cannot move via symlink
-            ContainerPath file = containerFs.getPath("/file");
-            Files.writeString(file, "world");
-            assertThrows(IOException.class, () -> Files.move(file, link.resolve("dest")));
-            Files.move(file.pathOnHost(), link.resolve("dest").pathOnHost()); // Moving through host FS works
-        }
+        ContainerPath file = link.resolve("file");
+        assertThrows(IOException.class, () -> Files.writeString(file, "hello"));
+        Files.writeString(file.pathOnHost(), "hello"); // Writing through host FS works
     }
 
     private static void assertOwnership(ContainerPath path, int contUid, int contGid, int hostUid, int hostGid) throws IOException {

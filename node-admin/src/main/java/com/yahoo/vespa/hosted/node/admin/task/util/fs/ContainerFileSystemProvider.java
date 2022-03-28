@@ -120,9 +120,7 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     public void move(Path source, Path target, CopyOption... options) throws IOException {
         // Only called when both 'source' and 'target' have 'this' as the FS provider
         Path targetPathOnHost = pathOnHost(target);
-        try (SecureDirectoryStream<Path> sds = leafDirectoryStream(targetPathOnHost)) {
-            sds.move(pathOnHost(source), sds, targetPathOnHost.getFileName());
-        }
+        provider(targetPathOnHost).move(pathOnHost(source), targetPathOnHost, addNoFollow(options));
     }
 
     @Override
