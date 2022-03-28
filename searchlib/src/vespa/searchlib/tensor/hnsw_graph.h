@@ -56,7 +56,7 @@ struct HnswGraph {
     void trim_node_refs_size();
 
     NodeRef get_node_ref(uint32_t docid) const {
-        return node_refs[docid].load_relaxed();
+        return node_refs.get_elem_ref(docid).load_relaxed(); // Called from writer only
     }
 
     NodeRef acquire_node_ref(uint32_t docid) const {

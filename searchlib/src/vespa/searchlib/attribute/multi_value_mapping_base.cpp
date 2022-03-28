@@ -25,10 +25,11 @@ MultiValueMappingBase::~MultiValueMappingBase() = default;
 MultiValueMappingBase::RefCopyVector
 MultiValueMappingBase::getRefCopy(uint32_t size) const {
     assert(size <= _indices.size());
+    auto* indices = &_indices.get_elem_ref(0); // Called from writer only
     RefCopyVector result;
     result.reserve(size);
     for (uint32_t lid = 0; lid < size; ++lid) {
-        result.push_back(_indices[lid].load_relaxed());
+        result.push_back(indices[lid].load_relaxed());
     }
     return result;
 }

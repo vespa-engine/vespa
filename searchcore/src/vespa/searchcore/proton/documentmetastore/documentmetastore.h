@@ -135,7 +135,7 @@ private:
 
     MetaDataView make_meta_data_view() { return vespalib::ConstArrayRef(&_metaDataStore[0], getCommittedDocIdLimit()); }
     UnboundMetaDataView acquire_unbound_meta_data_view() const noexcept { return &_metaDataStore.acquire_elem_ref(0); }
-    UnboundMetaDataView get_unbound_meta_data_view() const noexcept { return &_metaDataStore[0]; }
+    UnboundMetaDataView get_unbound_meta_data_view() const noexcept { return &_metaDataStore.get_elem_ref(0); } // Called from writer only
 
 public:
     typedef TreeType::Iterator Iterator;
