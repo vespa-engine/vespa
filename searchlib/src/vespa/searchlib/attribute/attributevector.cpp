@@ -493,10 +493,10 @@ AttributeVector::apply(DocId doc, const MapValueUpdate &map) {
     bool retval(doc < getNumDocs());
     if (retval) {
         const ValueUpdate & vu(map.getUpdate());
-        if (vu.inherits(ArithmeticValueUpdate::classId)) {
+        if (vu.getType() == ValueUpdate::Arithmetic) {
             const ArithmeticValueUpdate &au(static_cast<const ArithmeticValueUpdate &>(vu));
             retval = applyWeight(doc, map.getKey(), au);
-        } else if (vu.inherits(AssignValueUpdate::classId)) {
+        } else if (vu.getType() == ValueUpdate::Assign) {
             const AssignValueUpdate &au(static_cast<const AssignValueUpdate &>(vu));
             retval = applyWeight(doc, map.getKey(), au);
         } else {

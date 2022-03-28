@@ -12,7 +12,7 @@
 
 namespace document {
 
-class ArithmeticValueUpdate : public ValueUpdate {
+class ArithmeticValueUpdate final : public ValueUpdate {
 public:
     /** Declare all types of arithmetic value updates. */
     enum Operator {
@@ -31,7 +31,7 @@ private:
     // Private because it generates an invalid object.
     friend class ValueUpdate;
     ArithmeticValueUpdate()
-        : ValueUpdate(),
+        : ValueUpdate(Arithmetic),
           _operator(MAX_NUM_OPERATORS),
           _operand(0.0) {}
 
@@ -46,7 +46,7 @@ public:
      * @param opn The operand for the operation.
      */
     ArithmeticValueUpdate(Operator opt, double opn)
-        : ValueUpdate(),
+        : ValueUpdate(Arithmetic),
           _operator(opt),
           _operand(opn) {}
 
@@ -91,8 +91,6 @@ public:
     void printXml(XmlOutputStream& xos) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & buffer) override;
-
-    DECLARE_IDENTIFIABLE(ArithmeticValueUpdate);
 };
 
 } // document

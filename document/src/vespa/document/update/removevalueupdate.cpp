@@ -16,10 +16,8 @@ using namespace vespalib::xml;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE(RemoveValueUpdate, ValueUpdate);
-
 RemoveValueUpdate::RemoveValueUpdate(const FieldValue& key)
-    : ValueUpdate(),
+    : ValueUpdate(Remove),
       _key(key.clone())
 {}
 
@@ -28,7 +26,7 @@ RemoveValueUpdate::~RemoveValueUpdate() = default;
 bool
 RemoveValueUpdate::operator==(const ValueUpdate& other) const
 {
-    if (other.getClass().id() != RemoveValueUpdate::classId) return false;
+    if (other.getType() != Remove) return false;
     const RemoveValueUpdate& o(static_cast<const RemoveValueUpdate&>(other));
     if (*_key != *o._key) return false;
     return true;

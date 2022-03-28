@@ -10,12 +10,12 @@
 
 namespace document {
 
-class RemoveValueUpdate : public ValueUpdate {
+class RemoveValueUpdate final : public ValueUpdate {
     FieldValue::CP _key; // The field value to remove by this update.
 
-    RemoveValueUpdate() : ValueUpdate(), _key() {}
     ACCEPT_UPDATE_VISITOR;
-
+    friend ValueUpdate;
+    RemoveValueUpdate() : ValueUpdate(Remove), _key() {}
 public:
     typedef std::unique_ptr<RemoveValueUpdate> UP;
 
@@ -40,9 +40,6 @@ public:
     void printXml(XmlOutputStream& xos) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& buffer) override;
-
-    DECLARE_IDENTIFIABLE(RemoveValueUpdate);
-
 };
 
 }

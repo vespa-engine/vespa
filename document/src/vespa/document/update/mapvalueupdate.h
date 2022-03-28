@@ -16,7 +16,7 @@
 
 namespace document {
 
-class MapValueUpdate : public ValueUpdate {
+class MapValueUpdate final : public ValueUpdate {
 public:
 
     /**
@@ -59,7 +59,6 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& buffer) override;
 
-    DECLARE_IDENTIFIABLE(MapValueUpdate);
 private:
     std::unique_ptr<FieldValue> _key; // The field value this update is mapping to.
     std::unique_ptr<ValueUpdate> _update; //The update to apply to the value member of this.
@@ -67,7 +66,7 @@ private:
     // Used by ValueUpdate's static factory function
     // Private because it generates an invalid object.
     friend class ValueUpdate;
-    MapValueUpdate() : ValueUpdate(), _key(), _update() {}
+    MapValueUpdate() : ValueUpdate(Map), _key(), _update() {}
 
     ACCEPT_UPDATE_VISITOR;
 };

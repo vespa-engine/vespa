@@ -16,7 +16,7 @@ class TensorFieldValue;
  * The operand is represented as a tensor field value containing a
  * mapped (aka sparse) tensor.
  */
-class TensorModifyUpdate : public ValueUpdate, public TensorUpdate {
+class TensorModifyUpdate final : public ValueUpdate, public TensorUpdate {
 public:
     /** Declare all types of tensor modify updates. */
     enum class Operation { // Operation to be applied to matching tensor cells
@@ -30,6 +30,7 @@ private:
     std::unique_ptr<const TensorDataType> _tensorType;
     std::unique_ptr<TensorFieldValue> _tensor;
 
+    friend ValueUpdate;
     TensorModifyUpdate();
     TensorModifyUpdate(const TensorModifyUpdate &rhs);
     ACCEPT_UPDATE_VISITOR;
@@ -49,8 +50,6 @@ public:
     void printXml(XmlOutputStream &xos) const override;
     void print(std::ostream &out, bool verbose, const std::string &indent) const override;
     void deserialize(const DocumentTypeRepo &repo, const DataType &type, nbostream &stream) override;
-
-    DECLARE_IDENTIFIABLE(TensorModifyUpdate);
 };
 
 }

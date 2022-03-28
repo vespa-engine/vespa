@@ -16,16 +16,14 @@ using namespace vespalib::xml;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE(MapValueUpdate, ValueUpdate);
-
 MapValueUpdate::MapValueUpdate(const FieldValue& key, std::unique_ptr<ValueUpdate> update)
-    : ValueUpdate(),
+    : ValueUpdate(Map),
       _key(key.clone()),
       _update(std::move(update))
 {}
 
 MapValueUpdate::MapValueUpdate(const MapValueUpdate &)
-    : ValueUpdate(),
+    : ValueUpdate(Map),
       _key(),
       _update()
 {
@@ -41,7 +39,7 @@ MapValueUpdate::~MapValueUpdate() = default;
 bool
 MapValueUpdate::operator==(const ValueUpdate& other) const
 {
-    if (other.getClass().id() != MapValueUpdate::classId) return false;
+    if (other.getType() != Map) return false;
     const MapValueUpdate& o(static_cast<const MapValueUpdate&>(other));
     if (*_key != *o._key) return false;
     if (*_update != *o._update) return false;

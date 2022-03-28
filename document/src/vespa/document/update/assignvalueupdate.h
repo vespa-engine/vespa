@@ -16,15 +16,13 @@
 
 namespace document {
 
-class AssignValueUpdate : public ValueUpdate {
+class AssignValueUpdate final : public ValueUpdate {
     FieldValue::CP _value;
 
     ACCEPT_UPDATE_VISITOR;
 public:
     typedef std::unique_ptr<AssignValueUpdate> UP;
-
     AssignValueUpdate();
-
     AssignValueUpdate(const FieldValue& value);
     ~AssignValueUpdate() override;
 
@@ -43,8 +41,6 @@ public:
     void printXml(XmlOutputStream& xos) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & buffer) override;
-
-    DECLARE_IDENTIFIABLE(AssignValueUpdate);
 };
 
 }

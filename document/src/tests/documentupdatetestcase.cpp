@@ -498,7 +498,7 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
 
     serValue = &serField2[0];
     EXPECT_EQ(serValue->getType(), ValueUpdate::Clear);
-    EXPECT_TRUE(serValue->inherits(ClearValueUpdate::classId));
+    EXPECT_EQ(ValueUpdate::Clear, serValue->getType());
 
     // Verify add value update.
     const FieldUpdate & serField3 = upd.getUpdates()[0];

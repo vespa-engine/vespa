@@ -17,19 +17,19 @@ using namespace vespalib::xml;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE(AddValueUpdate, ValueUpdate);
 
 AddValueUpdate:: AddValueUpdate(const FieldValue& value, int weight)
-    : ValueUpdate(),
+    : ValueUpdate(Add),
       _value(value.clone()),
       _weight(weight)
 {}
 
 AddValueUpdate::~AddValueUpdate() = default;
+
 bool
 AddValueUpdate::operator==(const ValueUpdate& other) const
 {
-    if (other.getClass().id() != AddValueUpdate::classId) return false;
+    if (other.getType() != Add) return false;
     const AddValueUpdate& o(static_cast<const AddValueUpdate&>(other));
     if (*_value != *o._value) return false;
     if (_weight != o._weight) return false;

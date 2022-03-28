@@ -82,17 +82,19 @@ convertToCompatibleType(const TensorDataType &tensorType)
 
 }
 
-IMPLEMENT_IDENTIFIABLE(TensorModifyUpdate, ValueUpdate);
-
 TensorModifyUpdate::TensorModifyUpdate()
-    : _operation(Operation::MAX_NUM_OPERATIONS),
+    : ValueUpdate(TensorModify),
+      TensorUpdate(),
+      _operation(Operation::MAX_NUM_OPERATIONS),
       _tensorType(),
       _tensor()
 {
 }
 
 TensorModifyUpdate::TensorModifyUpdate(const TensorModifyUpdate &rhs)
-    : _operation(rhs._operation),
+    : ValueUpdate(rhs),
+      TensorUpdate(),
+      _operation(rhs._operation),
       _tensorType(std::make_unique<TensorDataType>(*rhs._tensorType)),
       _tensor(static_cast<TensorFieldValue *>(_tensorType->createFieldValue().release()))
 {
@@ -100,7 +102,9 @@ TensorModifyUpdate::TensorModifyUpdate(const TensorModifyUpdate &rhs)
 }
 
 TensorModifyUpdate::TensorModifyUpdate(Operation operation, std::unique_ptr<TensorFieldValue> tensor)
-    : _operation(operation),
+    : ValueUpdate(TensorModify),
+      TensorUpdate(),
+      _operation(operation),
       _tensorType(std::make_unique<TensorDataType>(dynamic_cast<const TensorDataType &>(*tensor->getDataType()))),
       _tensor(static_cast<TensorFieldValue *>(_tensorType->createFieldValue().release()))
 {
@@ -134,7 +138,7 @@ TensorModifyUpdate::operator=(TensorModifyUpdate &&rhs)
 bool
 TensorModifyUpdate::operator==(const ValueUpdate &other) const
 {
-    if (other.getClass().id() != TensorModifyUpdate::classId) {
+    if (other.getType() != TensorModify) {
         return false;
     }
     const TensorModifyUpdate& o(static_cast<const TensorModifyUpdate&>(other));

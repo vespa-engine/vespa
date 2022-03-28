@@ -12,14 +12,14 @@
 
 namespace document {
 
-class AddValueUpdate : public ValueUpdate {
+class AddValueUpdate final : public ValueUpdate {
     FieldValue::CP _value; // The field value to add by this update.
     int _weight; // The weight to assign to the contained value.
 
     // Used by ValueUpdate's static factory function
     // Private because it generates an invalid object.
     friend class ValueUpdate;
-    AddValueUpdate() : ValueUpdate(), _value(0), _weight(1) {}
+    AddValueUpdate() : ValueUpdate(Add), _value(0), _weight(1) {}
     ACCEPT_UPDATE_VISITOR;
 public:
     typedef std::unique_ptr<AddValueUpdate> UP;
@@ -67,8 +67,6 @@ public:
     void printXml(XmlOutputStream& xos) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & buffer) override;
-
-    DECLARE_IDENTIFIABLE(AddValueUpdate);
 };
 
 } // document

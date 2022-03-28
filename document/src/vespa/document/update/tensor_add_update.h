@@ -14,9 +14,10 @@ class TensorFieldValue;
  *
  * The cells to add are contained in a tensor of the same type.
  */
-class TensorAddUpdate : public ValueUpdate, public TensorUpdate {
+class TensorAddUpdate final : public ValueUpdate, public TensorUpdate {
     std::unique_ptr<TensorFieldValue> _tensor;
 
+    friend ValueUpdate;
     TensorAddUpdate();
     TensorAddUpdate(const TensorAddUpdate &rhs);
     ACCEPT_UPDATE_VISITOR;
@@ -35,8 +36,6 @@ public:
     void printXml(XmlOutputStream &xos) const override;
     void print(std::ostream &out, bool verbose, const std::string &indent) const override;
     void deserialize(const DocumentTypeRepo &repo, const DataType &type, nbostream &stream) override;
-
-    DECLARE_IDENTIFIABLE(TensorAddUpdate);
 };
 
 }

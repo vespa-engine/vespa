@@ -157,12 +157,12 @@ AttributeUpdater::handleUpdateT(V & vec, Accessor, uint32_t lid, const ValueUpda
             const MapValueUpdate & map(static_cast<const MapValueUpdate &>(upd));
             if (!vec.AttributeVector::apply(lid, map)) {
                 throw UpdateException(make_string("attribute map(%s, %s) failed: %s[%u]",
-                                                  map.getKey().className(), map.getUpdate().getClass().name(),
+                                                  map.getKey().className(), map.getUpdate().className(),
                                                   vec.getName().c_str(), lid));
             }
         } else {
             LOG(warning, "Unsupported value update operation %s on multivalue vector %s",
-                         upd.getClass().name(), vec.getName().c_str());
+                         upd.className(), vec.getName().c_str());
         }
     } else {
         if (op == ValueUpdate::Assign) {
@@ -178,7 +178,7 @@ AttributeUpdater::handleUpdateT(V & vec, Accessor, uint32_t lid, const ValueUpda
         } else if (op == ValueUpdate::Clear) {
             vec.clearDoc(lid);
         } else {
-            LOG(warning, "Unsupported value update operation %s on singlevalue vector %s", upd.getClass().name(), vec.getName().c_str());
+            LOG(warning, "Unsupported value update operation %s on singlevalue vector %s", upd.className(), vec.getName().c_str());
         }
     }
 }
@@ -200,7 +200,7 @@ AttributeUpdater::handleUpdate(PredicateAttribute &vec, uint32_t lid, const Valu
         vec.clearDoc(lid);
     } else {
         LOG(warning, "Unsupported value update operation %s on singlevalue vector %s",
-                     upd.getClass().name(), vec.getName().c_str());
+                     upd.className(), vec.getName().c_str());
     }
 }
 
@@ -217,17 +217,17 @@ AttributeUpdater::handleUpdate(TensorAttribute &vec, uint32_t lid, const ValueUp
             vec.clearDoc(lid);
             updateValue(vec, lid, assign.getValue());
         }
-    } else if (op == ValueUpdate::TensorModifyUpdate) {
+    } else if (op == ValueUpdate::TensorModify) {
         vec.update_tensor(lid, static_cast<const TensorModifyUpdate &>(upd), false);
-    } else if (op == ValueUpdate::TensorAddUpdate) {
+    } else if (op == ValueUpdate::TensorAdd) {
         vec.update_tensor(lid, static_cast<const TensorAddUpdate &>(upd), true);
-    } else if (op == ValueUpdate::TensorRemoveUpdate) {
+    } else if (op == ValueUpdate::TensorRemove) {
         vec.update_tensor(lid, static_cast<const TensorRemoveUpdate &>(upd), false);
     } else if (op == ValueUpdate::Clear) {
         vec.clearDoc(lid);
     } else {
         LOG(warning, "Unsupported value update operation %s on singlevalue tensor attribute %s",
-                     upd.getClass().name(), vec.getName().c_str());
+                     upd.className(), vec.getName().c_str());
     }
 }
 
@@ -247,7 +247,7 @@ AttributeUpdater::handleUpdate(ReferenceAttribute &vec, uint32_t lid, const Valu
         vec.clearDoc(lid);
     } else {
         LOG(warning, "Unsupported value update operation %s on singlevalue reference attribute %s",
-                     upd.getClass().name(), vec.getName().c_str());
+                     upd.className(), vec.getName().c_str());
     }
 }
 
