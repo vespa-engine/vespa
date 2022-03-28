@@ -595,7 +595,7 @@ TEST_F(ExternalOperationHandlerTest, non_trivial_updates_are_rejected_if_feed_is
     auto cmd = makeUpdateCommand("testdoctype1", "id:foo:testdoctype1::foo");
     const auto* doc_type = _testDocMan.getTypeRepo().getDocumentType("testdoctype1");
     document::FieldUpdate upd(doc_type->getField("title"));
-    upd.addUpdate(document::AssignValueUpdate(document::StringFieldValue("new value")));
+    upd.addUpdate(std::make_unique<document::AssignValueUpdate>(document::StringFieldValue("new value")));
     cmd->getUpdate()->addUpdate(std::move(upd));
 
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(std::move(cmd)));

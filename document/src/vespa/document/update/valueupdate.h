@@ -35,7 +35,6 @@ class ValueUpdate : public vespalib::Identifiable
 protected:
     using nbostream = vespalib::nbostream;
 public:
-    using CP = vespalib::CloneablePtr<ValueUpdate>;
     using XmlOutputStream = vespalib::xml::XmlOutputStream;
 
     /**
@@ -76,8 +75,6 @@ public:
      * @return True if value is updated, false if value should be removed.
      */
     virtual bool applyTo(FieldValue& value) const = 0;
-
-    virtual ValueUpdate* clone() const = 0;
 
     /**
      * Deserializes the given stream into an instance of an update object.

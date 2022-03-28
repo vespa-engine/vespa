@@ -60,7 +60,7 @@ TEST(DocumentRejectTest, requireThatClearRemoveTensorRemoveAndArtithmeticUpdates
 
 TEST(DocumentRejectTest, requireThatAddMapTensorModifyAndTensorAddUpdatesWillBeRejected) {
     EXPECT_TRUE(FeedRejectHelper::mustReject(AddValueUpdate(IntFieldValue())));
-    EXPECT_TRUE(FeedRejectHelper::mustReject(MapValueUpdate(IntFieldValue(), ClearValueUpdate())));
+    EXPECT_TRUE(FeedRejectHelper::mustReject(MapValueUpdate(IntFieldValue(), std::make_unique<ClearValueUpdate>())));
     EXPECT_TRUE(FeedRejectHelper::mustReject(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE,
                                                                 std::make_unique<TensorFieldValue>())));
     EXPECT_TRUE(FeedRejectHelper::mustReject(TensorAddUpdate(std::make_unique<TensorFieldValue>())));

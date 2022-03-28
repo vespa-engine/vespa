@@ -53,7 +53,7 @@ public:
      * @param update A pointer to the value update to add to this.
      * @return A pointer to this.
      */
-    FieldUpdate& addUpdate(const ValueUpdate& update);
+    FieldUpdate& addUpdate(std::unique_ptr<ValueUpdate> update);
 
     const ValueUpdate& operator[](int index) const { return *_updates[index]; }
     ValueUpdate& operator[](int index) { return *_updates[index]; }

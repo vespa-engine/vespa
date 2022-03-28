@@ -296,7 +296,7 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
                 *_repo, *_doc_type,
                 document::DocumentId("id:ns:" + _doc_type->getName() + "::1"));
         document::FieldUpdate fup(_doc_type->getField("headerval"));
-        fup.addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 10));
+        fup.addUpdate(std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10));
         update->addUpdate(std::move(fup));
     } else {
         // Create an update to a different doctype than the one returned as
@@ -306,7 +306,7 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
                 *_repo, *badDocType,
                 document::DocumentId("id:ns:" + _doc_type->getName() + "::1"));
         document::FieldUpdate fup(badDocType->getField("onlyinchild"));
-        fup.addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 10));
+        fup.addUpdate(std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10));
         update->addUpdate(std::move(fup));
     }
     update->setCreateIfNonExistent(options._createIfNonExistent);

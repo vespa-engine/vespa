@@ -60,16 +60,16 @@ createTestDocumentUpdate(const DocumentTypeRepo& repo)
 
     auto up = std::make_unique<DocumentUpdate>(repo, *type, id);
     up->addUpdate(std::move(FieldUpdate(type->getField("intattr"))
-		  .addUpdate(AssignValueUpdate(IntFieldValue(7)))));
+		  .addUpdate(std::make_unique<AssignValueUpdate>(IntFieldValue(7)))));
     up->addUpdate(std::move(FieldUpdate(type->getField("stringattr"))
-		  .addUpdate(AssignValueUpdate(StringFieldValue("New value")))));
+		  .addUpdate(std::make_unique<AssignValueUpdate>(StringFieldValue("New value")))));
     up->addUpdate(std::move(FieldUpdate(type->getField("arrayattr"))
-		  .addUpdate(AddValueUpdate(IntFieldValue(123)))
-		  .addUpdate(AddValueUpdate(IntFieldValue(456)))));
+		  .addUpdate(std::make_unique<AddValueUpdate>(IntFieldValue(123)))
+		  .addUpdate(std::make_unique<AddValueUpdate>(IntFieldValue(456)))));
     up->addUpdate(std::move(FieldUpdate(type->getField("arrayattr"))
-		  .addUpdate(RemoveValueUpdate(IntFieldValue(123)))
-		  .addUpdate(RemoveValueUpdate(IntFieldValue(456)))
-		  .addUpdate(RemoveValueUpdate(IntFieldValue(789)))));
+		  .addUpdate(std::make_unique<RemoveValueUpdate>(IntFieldValue(123)))
+		  .addUpdate(std::make_unique<RemoveValueUpdate>(IntFieldValue(456)))
+		  .addUpdate(std::make_unique<RemoveValueUpdate>(IntFieldValue(789)))));
     return up;
 }
 

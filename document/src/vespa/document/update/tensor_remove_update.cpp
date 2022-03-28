@@ -200,10 +200,4 @@ TensorRemoveUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &ty
     _tensor->assignDeserialized(std::move(tensor));
 }
 
-TensorRemoveUpdate *
-TensorRemoveUpdate::clone() const
-{
-    return new TensorRemoveUpdate(*this);
-}
-
 }

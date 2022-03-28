@@ -97,29 +97,28 @@ struct Fixture {
     {
     }
 
-    void applyValueUpdate(AttributeVector & vec, uint32_t docId, const ValueUpdate & upd) {
+    void applyValueUpdate(AttributeVector & vec, uint32_t docId, std::unique_ptr<ValueUpdate> upd) {
         FieldUpdate fupd(docType->getField(vec.getName()));
-        fupd.addUpdate(upd);
+        fupd.addUpdate(std::move(upd));
         search::AttributeUpdater::handleUpdate(vec, docId, fupd);
         vec.commit();
     }
 
     void applyArrayUpdates(AttributeVector & vec, const FieldValue & assign,
                            const FieldValue & first, const FieldValue & second) {
-        applyValueUpdate(vec, 0, AssignValueUpdate(assign));
-        applyValueUpdate(vec, 1, AddValueUpdate(second));
-        applyValueUpdate(vec, 2, RemoveValueUpdate(first));
-        applyValueUpdate(vec, 3, ClearValueUpdate());
+        applyValueUpdate(vec, 0, std::make_unique<AssignValueUpdate>(assign));
+        applyValueUpdate(vec, 1, std::make_unique<AddValueUpdate>(second));
+        applyValueUpdate(vec, 2, std::make_unique<RemoveValueUpdate>(first));
+        applyValueUpdate(vec, 3, std::make_unique<ClearValueUpdate>());
     }
 
     void applyWeightedSetUpdates(AttributeVector & vec, const FieldValue & assign,
                                  const FieldValue & first, const FieldValue & second) {
-        applyValueUpdate(vec, 0, AssignValueUpdate(assign));
-        applyValueUpdate(vec, 1, AddValueUpdate(second, 20));
-        applyValueUpdate(vec, 2, RemoveValueUpdate(first));
-        applyValueUpdate(vec, 3, ClearValueUpdate());
-        ArithmeticValueUpdate arithmetic(ArithmeticValueUpdate::Add, 10);
-        applyValueUpdate(vec, 4, MapValueUpdate(first, arithmetic));
+        applyValueUpdate(vec, 0, std::make_unique<AssignValueUpdate>(assign));
+        applyValueUpdate(vec, 1, std::make_unique<AddValueUpdate>(second, 20));
+        applyValueUpdate(vec, 2, std::make_unique<RemoveValueUpdate>(first));
+        applyValueUpdate(vec, 3, std::make_unique<ClearValueUpdate>());
+        applyValueUpdate(vec, 4, std::make_unique<MapValueUpdate>(first, std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10)));
     }
 };
 
@@ -207,9 +206,9 @@ TEST_F("require that single attributes are updated", Fixture)
         AttributePtr vec = create<int32_t, IntegerAttribute>(3, 32, 0,
                                                              "in1/int",
                                                              Config(bt, ct));
-        f.applyValueUpdate(*vec, 0, AssignValueUpdate(IntFieldValue(64)));
-        f.applyValueUpdate(*vec, 1, ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 10));
-        f.applyValueUpdate(*vec, 2, ClearValueUpdate());
+        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(IntFieldValue(64)));
+        f.applyValueUpdate(*vec, 1, std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10));
+        f.applyValueUpdate(*vec, 2, std::make_unique<ClearValueUpdate>());
         EXPECT_EQUAL(3u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedInt>{WeightedInt(64)}));
         EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(42)}));
@@ -221,9 +220,9 @@ TEST_F("require that single attributes are updated", Fixture)
                                                                  "in1/float",
                                                                  Config(bt,
                                                                         ct));
-        f.applyValueUpdate(*vec, 0, AssignValueUpdate(FloatFieldValue(77.7f)));
-        f.applyValueUpdate(*vec, 1, ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 10));
-        f.applyValueUpdate(*vec, 2, ClearValueUpdate());
+        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(FloatFieldValue(77.7f)));
+        f.applyValueUpdate(*vec, 1, std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10));
+        f.applyValueUpdate(*vec, 2, std::make_unique<ClearValueUpdate>());
         EXPECT_EQUAL(3u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedFloat>{WeightedFloat(77.7f)}));
         EXPECT_TRUE(check(vec, 1, std::vector<WeightedFloat>{WeightedFloat(65.5f)}));
@@ -235,8 +234,8 @@ TEST_F("require that single attributes are updated", Fixture)
                                                                 "in1/string",
                                                                 Config(bt,
                                                                        ct));
-        f.applyValueUpdate(*vec, 0, AssignValueUpdate(StringFieldValue("second")));
-        f.applyValueUpdate(*vec, 2, ClearValueUpdate());
+        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(StringFieldValue("second")));
+        f.applyValueUpdate(*vec, 2, std::make_unique<ClearValueUpdate>());
         EXPECT_EQUAL(3u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedString>{WeightedString("second")}));
         EXPECT_TRUE(check(vec, 1, std::vector<WeightedString>{WeightedString("first")}));
@@ -255,8 +254,8 @@ TEST_F("require that single attributes are updated", Fixture)
             asReferenceAttribute(*vec).update(docId, toGid(doc1));
         }
         vec->commit();
-        f.applyValueUpdate(*vec, 0, AssignValueUpdate(ReferenceFieldValue(dynamic_cast<const ReferenceDataType &>(f.docType->getField("ref").getDataType()), DocumentId(doc2))));
-        f.applyValueUpdate(*vec, 2, ClearValueUpdate());
+        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(ReferenceFieldValue(dynamic_cast<const ReferenceDataType &>(f.docType->getField("ref").getDataType()), DocumentId(doc2))));
+        f.applyValueUpdate(*vec, 2, std::make_unique<ClearValueUpdate>());
         EXPECT_EQUAL(3u, vec->getNumDocs());
         TEST_DO(assertRef(*vec, doc2, 0));
         TEST_DO(assertRef(*vec, doc1, 1));
@@ -453,7 +452,7 @@ TEST_F("require that tensor modify update is applied",
 {
     f.setTensor(TensorSpec(f.type).add({{"x", 0}}, 3).add({{"x", 1}}, 5));
     f.applyValueUpdate(*f.attribute, 1,
-                       TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE,
+                       std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::REPLACE,
                                           makeTensorFieldValue(TensorSpec("tensor(x{})").add({{"x", "0"}}, 7))));
     f.assertTensor(TensorSpec(f.type).add({{"x", 0}}, 7).add({{"x", 1}}, 5));
 }
@@ -463,7 +462,7 @@ TEST_F("require that tensor add update is applied",
 {
     f.setTensor(TensorSpec(f.type).add({{"x", "a"}}, 2));
     f.applyValueUpdate(*f.attribute, 1,
-                       TensorAddUpdate(makeTensorFieldValue(TensorSpec(f.type).add({{"x", "a"}}, 3))));
+                       std::make_unique<TensorAddUpdate>(makeTensorFieldValue(TensorSpec(f.type).add({{"x", "a"}}, 3))));
     f.assertTensor(TensorSpec(f.type).add({{"x", "a"}}, 3));
 }
 
@@ -471,7 +470,7 @@ TEST_F("require that tensor add update to non-existing tensor creates empty tens
        TensorFixture<SerializedFastValueAttribute>("tensor(x{})", "sparse_tensor"))
 {
     f.applyValueUpdate(*f.attribute, 1,
-                       TensorAddUpdate(makeTensorFieldValue(TensorSpec(f.type).add({{"x", "a"}}, 3))));
+                       std::make_unique<TensorAddUpdate>(makeTensorFieldValue(TensorSpec(f.type).add({{"x", "a"}}, 3))));
     f.assertTensor(TensorSpec(f.type).add({{"x", "a"}}, 3));
 }
 
@@ -480,7 +479,7 @@ TEST_F("require that tensor remove update is applied",
 {
     f.setTensor(TensorSpec(f.type).add({{"x", "a"}}, 2).add({{"x", "b"}}, 3));
     f.applyValueUpdate(*f.attribute, 1,
-                       TensorRemoveUpdate(makeTensorFieldValue(TensorSpec(f.type).add({{"x", "b"}}, 1))));
+                       std::make_unique<TensorRemoveUpdate>(makeTensorFieldValue(TensorSpec(f.type).add({{"x", "b"}}, 1))));
     f.assertTensor(TensorSpec(f.type).add({{"x", "a"}}, 2));
 }
 

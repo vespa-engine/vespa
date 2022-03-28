@@ -159,7 +159,7 @@ std::shared_ptr<api::UpdateCommand>
 TestAndSetTest::conditional_update_test(bool createIfMissing, api::Timestamp updateTimestamp)
 {
     auto docUpdate = std::make_shared<document::DocumentUpdate>(_env->_testDocMan.getTypeRepo(), testDoc->getType(), testDocId);
-    docUpdate->addUpdate(std::move(document::FieldUpdate(testDoc->getField("content")).addUpdate(document::AssignValueUpdate(NEW_CONTENT))));
+    docUpdate->addUpdate(std::move(document::FieldUpdate(testDoc->getField("content")).addUpdate(std::make_unique<document::AssignValueUpdate>(NEW_CONTENT))));
     docUpdate->setCreateIfNonExistent(createIfMissing);
 
     auto updateUp = std::make_unique<api::UpdateCommand>(BUCKET, docUpdate, updateTimestamp);

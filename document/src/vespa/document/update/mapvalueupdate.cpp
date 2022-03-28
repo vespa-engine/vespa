@@ -18,14 +18,24 @@ namespace document {
 
 IMPLEMENT_IDENTIFIABLE(MapValueUpdate, ValueUpdate);
 
-MapValueUpdate::MapValueUpdate(const FieldValue& key, const ValueUpdate& update)
+MapValueUpdate::MapValueUpdate(const FieldValue& key, std::unique_ptr<ValueUpdate> update)
     : ValueUpdate(),
       _key(key.clone()),
-      _update(update.clone())
+      _update(std::move(update))
 {}
 
-MapValueUpdate::MapValueUpdate(const MapValueUpdate &) = default;
-MapValueUpdate & MapValueUpdate::operator = (const MapValueUpdate &) = default;
+MapValueUpdate::MapValueUpdate(const MapValueUpdate &)
+    : ValueUpdate(),
+      _key(),
+      _update()
+{
+    abort(); // TODO Will never be called, remove
+}
+MapValueUpdate &
+MapValueUpdate::operator = (const MapValueUpdate &) {
+    abort(); // TODO Will never be called, remove
+    return *this;
+}
 MapValueUpdate::~MapValueUpdate() = default;
 
 bool

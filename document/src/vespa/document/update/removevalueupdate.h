@@ -35,23 +35,11 @@ public:
      */
     const FieldValue& getKey() const { return *_key; }
 
-    /**
-     * Sets the field value to remove during this update.
-     *
-     * @param The new field value.
-     * @return A pointer to this.
-     */
-    RemoveValueUpdate& setKey(const FieldValue& key) {
-        _key.reset(key.clone());
-        return *this;
-    }
-
     void checkCompatibility(const Field& field) const override;
     bool applyTo(FieldValue& value) const override;
     void printXml(XmlOutputStream& xos) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& buffer) override;
-    RemoveValueUpdate* clone() const override { return new RemoveValueUpdate(*this); }
 
     DECLARE_IDENTIFIABLE(RemoveValueUpdate);
 

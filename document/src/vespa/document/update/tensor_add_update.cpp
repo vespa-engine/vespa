@@ -145,10 +145,4 @@ TensorAddUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &type,
     deserializer.read(*_tensor);
 }
 
-TensorAddUpdate*
-TensorAddUpdate::clone() const
-{
-    return new TensorAddUpdate(*this);
-}
-
 }

@@ -54,9 +54,9 @@ FieldUpdate::operator==(const FieldUpdate& other) const
 
 
 FieldUpdate&
-FieldUpdate::addUpdate(const ValueUpdate& update) {
-    update.checkCompatibility(_field); // May throw exception.
-    _updates.push_back(std::unique_ptr<ValueUpdate>(update.clone()));
+FieldUpdate::addUpdate(std::unique_ptr<ValueUpdate> update) {
+    update->checkCompatibility(_field); // May throw exception.
+    _updates.push_back(std::move(update));
     return *this;
 }
 
