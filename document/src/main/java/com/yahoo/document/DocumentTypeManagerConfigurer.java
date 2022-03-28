@@ -450,8 +450,9 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             void createEmptyStructs() {
                 String docName = docTypeConfig.name();
                 for (var typeconf : docTypeConfig.structtype()) {
-                    if (usev8geopositions && isPositionStruct(typeconf)) {
-                        addNewType(typeconf.idx(), new GeoPosType(8));
+                    if (isPositionStruct(typeconf)) {
+                        int geoVersion = usev8geopositions ? 8 : 7;
+                        addNewType(typeconf.idx(), new GeoPosType(geoVersion));
                     } else {
                         addNewType(typeconf.idx(), new StructDataType(typeconf.name()));
                     }
@@ -526,7 +527,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
             void fillStructs() {
                 for (var structCfg : docTypeConfig.structtype()) {
-                    if (usev8geopositions && isPositionStruct(structCfg)) {
+                    if (isPositionStruct(structCfg)) {
                         continue;
                     }
                     int idx = structCfg.idx();
