@@ -18,7 +18,6 @@ import java.nio.file.LinkOption;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.ProviderMismatchException;
-import java.nio.file.SecureDirectoryStream;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
@@ -29,7 +28,6 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.UserPrincipal;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -80,12 +78,10 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     @Override
     public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
         Path pathOnHost = pathOnHost(path);
-        try (SecureDirectoryStream<Path> sds = leafDirectoryStream(pathOnHost)) {
-            boolean existedBefore = Files.exists(pathOnHost);
-            SeekableByteChannel seekableByteChannel = sds.newByteChannel(pathOnHost.getFileName(), addNoFollow(options), attrs);
-            if (!existedBefore) fixOwnerToContainerRoot(toContainerPath(path));
-            return seekableByteChannel;
-        }
+        boolean existedBefore = Files.exists(pathOnHost);
+        SeekableByteChannel seekableByteChannel = provider(pathOnHost).newByteChannel(pathOnHost, options, attrs);
+        if (!existedBefore) fixOwnerToContainerRoot(toContainerPath(path));
+        return seekableByteChannel;
     }
 
     @Override
@@ -113,16 +109,14 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     public void copy(Path source, Path target, CopyOption... options) throws IOException {
         // Only called when both 'source' and 'target' have 'this' as the FS provider
         Path targetPathOnHost = pathOnHost(target);
-        provider(targetPathOnHost).copy(pathOnHost(source), targetPathOnHost, addNoFollow(options));
+        provider(targetPathOnHost).copy(pathOnHost(source), targetPathOnHost, options);
     }
 
     @Override
     public void move(Path source, Path target, CopyOption... options) throws IOException {
         // Only called when both 'source' and 'target' have 'this' as the FS provider
         Path targetPathOnHost = pathOnHost(target);
-        try (SecureDirectoryStream<Path> sds = leafDirectoryStream(targetPathOnHost)) {
-            sds.move(pathOnHost(source), sds, targetPathOnHost.getFileName());
-        }
+        provider(targetPathOnHost).move(pathOnHost(source), targetPathOnHost, options);
     }
 
     @Override
@@ -173,12 +167,12 @@ class ContainerFileSystemProvider extends FileSystemProvider {
         if (!type.isAssignableFrom(PosixFileAttributeView.class)) return null;
         Path pathOnHost = pathOnHost(path);
         FileSystemProvider provider = pathOnHost.getFileSystem().provider();
-        if (type == BasicFileAttributeView.class) // Basic view doesn't have owner/group fields, forward to base FS provider
-            return provider.getFileAttributeView(pathOnHost, type, addNoFollow(options));
+        if (type == BasicFileAttributeView.class) // Basic view doesnt have owner/group fields, forward to base FS provider
+            return provider.getFileAttributeView(pathOnHost, type, options);
 
-        PosixFileAttributeView view = provider.getFileAttributeView(pathOnHost, PosixFileAttributeView.class, addNoFollow(options));
+        PosixFileAttributeView view = provider.getFileAttributeView(pathOnHost, PosixFileAttributeView.class, options);
         return (V) new ContainerPosixFileAttributeView(view,
-                uncheck(() -> new ContainerPosixFileAttributes(readAttributes(path, "unix:*", addNoFollow(options)))));
+                uncheck(() -> new ContainerPosixFileAttributes(readAttributes(path, "unix:*", options))));
     }
 
     @Override
@@ -187,10 +181,10 @@ class ContainerFileSystemProvider extends FileSystemProvider {
         if (!type.isAssignableFrom(PosixFileAttributes.class)) throw new UnsupportedOperationException();
         Path pathOnHost = pathOnHost(path);
         if (type == BasicFileAttributes.class)
-            return pathOnHost.getFileSystem().provider().readAttributes(pathOnHost, type, addNoFollow(options));
+            return pathOnHost.getFileSystem().provider().readAttributes(pathOnHost, type, options);
 
         // Non-basic requests need to be upgraded to unix:* to get owner,group,uid,gid fields, which are then re-mapped
-        return (A) new ContainerPosixFileAttributes(readAttributes(path, "unix:*", addNoFollow(options)));
+        return (A) new ContainerPosixFileAttributes(readAttributes(path, "unix:*", options));
     }
 
     @Override
@@ -198,9 +192,9 @@ class ContainerFileSystemProvider extends FileSystemProvider {
         Path pathOnHost = pathOnHost(path);
         int index = attributes.indexOf(':');
         if (index < 0 || attributes.startsWith("basic:"))
-            return provider(pathOnHost).readAttributes(pathOnHost, attributes, addNoFollow(options));
+            return provider(pathOnHost).readAttributes(pathOnHost, attributes, options);
 
-        Map<String, Object> attrs = new HashMap<>(provider(pathOnHost).readAttributes(pathOnHost, "unix:*", addNoFollow(options)));
+        Map<String, Object> attrs = new HashMap<>(provider(pathOnHost).readAttributes(pathOnHost, "unix:*", options));
         int uid = userPrincipalLookupService.userIdInContainer((int) attrs.get("uid"));
         int gid = userPrincipalLookupService.groupIdInContainer((int) attrs.get("gid"));
         attrs.put("uid", uid);
@@ -213,7 +207,7 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     @Override
     public void setAttribute(Path path, String attribute, Object value, LinkOption... options) throws IOException {
         Path pathOnHost = pathOnHost(path);
-        provider(pathOnHost).setAttribute(pathOnHost, attribute, fixAttributeValue(attribute, value), addNoFollow(options));
+        provider(pathOnHost).setAttribute(pathOnHost, attribute, fixAttributeValue(attribute, value), options);
     }
 
     private Object fixAttributeValue(String attribute, Object value) {
@@ -242,17 +236,6 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     private void fixOwnerToContainerRoot(ContainerPath path) throws IOException {
         setAttribute(path, "unix:uid", path.user().uid(), LinkOption.NOFOLLOW_LINKS);
         setAttribute(path, "unix:gid", path.user().gid(), LinkOption.NOFOLLOW_LINKS);
-    }
-
-    private SecureDirectoryStream<Path> leafDirectoryStream(Path pathOnHost) throws IOException {
-        Path containerRoot = containerFs.containerRootOnHost();
-        SecureDirectoryStream<Path> sds = ((SecureDirectoryStream<Path>) Files.newDirectoryStream(containerRoot));
-        for (int i = containerRoot.getNameCount(); i < pathOnHost.getNameCount() - 1; i++) {
-            SecureDirectoryStream<Path> next = sds.newDirectoryStream(pathOnHost.getName(i), LinkOption.NOFOLLOW_LINKS);
-            sds.close();
-            sds = next;
-        }
-        return sds;
     }
 
     private class ContainerDirectoryStream implements DirectoryStream<Path> {
@@ -287,6 +270,7 @@ class ContainerFileSystemProvider extends FileSystemProvider {
         }
     }
 
+
     static ContainerPath toContainerPath(Path path) {
         return cast(path, ContainerPath.class);
     }
@@ -302,28 +286,5 @@ class ContainerFileSystemProvider extends FileSystemProvider {
 
     private static FileSystemProvider provider(Path path) {
         return path.getFileSystem().provider();
-    }
-
-    private static Set<? extends OpenOption> addNoFollow(Set<? extends OpenOption> options) {
-        if (options.contains(LinkOption.NOFOLLOW_LINKS)) return options;
-        Set<OpenOption> copy = new HashSet<>(options);
-        copy.add(LinkOption.NOFOLLOW_LINKS);
-        return copy;
-    }
-
-    private static LinkOption[] addNoFollow(LinkOption... options) {
-        if (Set.of(options).contains(LinkOption.NOFOLLOW_LINKS)) return options;
-        LinkOption[] copy = new LinkOption[options.length + 1];
-        System.arraycopy(options, 0, copy, 0, options.length);
-        copy[options.length] = LinkOption.NOFOLLOW_LINKS;
-        return copy;
-    }
-
-    private static CopyOption[] addNoFollow(CopyOption... options) {
-        if (Set.of(options).contains(LinkOption.NOFOLLOW_LINKS)) return options;
-        CopyOption[] copy = new CopyOption[options.length + 1];
-        System.arraycopy(options, 0, copy, 0, options.length);
-        copy[options.length] = LinkOption.NOFOLLOW_LINKS;
-        return copy;
     }
 }

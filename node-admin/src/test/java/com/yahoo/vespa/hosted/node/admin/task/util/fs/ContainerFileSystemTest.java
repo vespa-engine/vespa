@@ -19,8 +19,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author freva
@@ -140,47 +138,6 @@ class ContainerFileSystemTest {
         Files.createSymbolicLink(source, ContainerPath.fromPathInContainer(containerFs, Path.of("/path/in/container"), userScope.root()));
         assertEquals(fileSystem.getPath("/path/in/container"), Files.readSymbolicLink(source));
         assertOwnership(source, 0, 0, 10000, 11000);
-    }
-
-    @Test
-    public void disallow_operations_on_symlink() throws IOException {
-        Path destination = fileSystem.getPath("/dir/file");
-        Files.createDirectories(destination.getParent());
-
-        ContainerPath link = containerFs.getPath("/link");
-        Files.createSymbolicLink(link, destination);
-
-        // Cannot write file via symlink
-        assertThrows(IOException.class, () -> Files.writeString(link, "hello"));
-
-        assertOwnership(link, 0, 0, 10_000, 11_000);
-        Files.setAttribute(link, "unix:uid", 10); // This succeeds because attribute is set on the link (destination does not exist)
-        assertFalse(Files.exists(destination));
-        assertOwnership(link, 10, 0, 10_010, 11_000);
-    }
-
-    @Test
-    public void disallow_operations_on_parent_symlink() throws IOException {
-        Path destination = fileSystem.getPath("/dir/sub/folder");
-        Files.createDirectories(destination.getParent());
-
-        // Create symlink /some/dir/link -> /dir/sub
-        ContainerPath link = containerFs.getPath("/some/dir/link");
-        Files.createDirectories(link.getParent());
-        Files.createSymbolicLink(link, destination.getParent());
-
-        { // Cannot write file via symlink
-            ContainerPath file = link.resolve("file");
-            assertThrows(IOException.class, () -> Files.writeString(file, "hello"));
-            Files.writeString(file.pathOnHost(), "hello"); // Writing through host FS works
-        }
-
-        { // Cannot move via symlink
-            ContainerPath file = containerFs.getPath("/file");
-            Files.writeString(file, "world");
-            assertThrows(IOException.class, () -> Files.move(file, link.resolve("dest")));
-            Files.move(file.pathOnHost(), link.resolve("dest").pathOnHost()); // Moving through host FS works
-        }
     }
 
     private static void assertOwnership(ContainerPath path, int contUid, int contGid, int hostUid, int hostGid) throws IOException {
