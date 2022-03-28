@@ -5224,7 +5224,7 @@
       "public void setType(java.lang.String)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
-      "public java.lang.Object clone()",
+      "public com.yahoo.search.query.Model clone()",
       "public com.yahoo.search.query.Model cloneFor(com.yahoo.search.Query)",
       "public com.yahoo.search.Query getParent()",
       "public void setParent(com.yahoo.search.Query)",
@@ -5238,7 +5238,8 @@
       "public com.yahoo.search.searchchain.Execution getExecution()",
       "public static com.yahoo.search.query.Model getFrom(com.yahoo.search.Query)",
       "public java.lang.String toString()",
-      "public void prepare(com.yahoo.search.query.Ranking)"
+      "public void prepare(com.yahoo.search.query.Ranking)",
+      "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": [
       "public static final java.lang.String MODEL",
@@ -5390,14 +5391,17 @@
       "public com.yahoo.search.query.ranking.MatchPhase getMatchPhase()",
       "public com.yahoo.search.query.ranking.Matching getMatching()",
       "public com.yahoo.search.query.ranking.SoftTimeout getSoftTimeout()",
-      "public java.lang.Object clone()",
-      "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
       "public com.yahoo.search.query.Sorting getSorting()",
       "public void setSorting(com.yahoo.search.query.Sorting)",
       "public void setSorting(java.lang.String)",
       "public static com.yahoo.search.query.Ranking getFrom(com.yahoo.search.Query)",
-      "public void prepare()"
+      "public void prepare()",
+      "public com.yahoo.search.Query getParent()",
+      "public com.yahoo.search.query.Ranking clone()",
+      "public com.yahoo.search.query.Ranking cloneFor(com.yahoo.search.Query)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": [
       "public static final com.yahoo.processing.request.CompoundName RANKFEATURES",
@@ -6853,6 +6857,7 @@
     ],
     "methods": [
       "public void <init>()",
+      "public void <init>(com.yahoo.search.query.Ranking)",
       "public void put(java.lang.String, double)",
       "public void put(java.lang.String, com.yahoo.tensor.Tensor)",
       "public void put(java.lang.String, java.lang.String)",
@@ -6867,6 +6872,7 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public com.yahoo.search.query.ranking.RankFeatures clone()",
+      "public com.yahoo.search.query.ranking.RankFeatures cloneFor(com.yahoo.search.query.Ranking)",
       "public java.lang.String toString()",
       "public bridge synthetic java.lang.Object clone()"
     ],

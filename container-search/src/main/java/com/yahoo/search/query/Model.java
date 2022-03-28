@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
@@ -333,7 +334,7 @@ public class Model implements Cloneable {
     }
 
     @Override
-    public Object clone() {
+    public Model clone() {
         try {
             Model clone = (Model)super.clone();
             if (queryTree != null)
@@ -349,19 +350,18 @@ public class Model implements Cloneable {
         }
     }
 
-    public Model cloneFor(Query q)  {
-        Model model = (Model)this.clone();
-        model.setParent(q);
+    public Model cloneFor(Query query)  {
+        Model model = this.clone();
+        model.setParent(query);
         return model;
     }
 
-    /** returns the query owning this, never null */
+    /** Returns the query owning this, never null */
     public Query getParent() { return parent; }
 
     /** Assigns the query owning this */
     public void setParent(Query parent) {
-        if (parent == null) throw new NullPointerException("A query models owner cannot be null");
-        this.parent = parent;
+        this.parent = Objects.requireNonNull(parent, "A query models parent cannot be null");
     }
 
     /** Sets the set of sources this query will search from a comma-separated string of source names */

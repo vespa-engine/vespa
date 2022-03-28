@@ -20,6 +20,7 @@ import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.URLEncoder;
@@ -421,6 +422,49 @@ public class QueryProfileTypeTestCase {
         assertEquals(0, query.errors().size());
         assertEquals(Tensor.from(tensorString), query.properties().get("ranking.features.query(myTensor1)"));
         assertEquals(Tensor.from(tensorString), query.getRanking().getFeatures().getTensor("query(myTensor1)").get());
+    }
+
+    @Test
+    public void testTensorRankFeatureSetProgrammatically() {
+        QueryProfile profile = new QueryProfile("test");
+        profile.setType(testtype);
+        registry.register(profile);
+
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
+        Query query = new Query(HttpRequest.createTestRequest("?", com.yahoo.jdisc.http.HttpRequest.Method.GET),
+                                cRegistry.getComponent("test"));
+        query.properties().set("ranking.features.query(myTensor1)", Tensor.from(tensorString));
+        assertEquals(Tensor.from(tensorString), query.getRanking().getFeatures().getTensor("query(myTensor1)").get());
+    }
+
+    @Test
+    @Ignore
+    public void testTensorRankFeatureSetProgrammaticallyWithWrongType() {
+        QueryProfile profile = new QueryProfile("test");
+        profile.setType(testtype);
+        registry.register(profile);
+
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        String tensorString = "tensor(x[3]):[0.1, 0.2, 0.3]";
+        Query query = new Query(HttpRequest.createTestRequest("?", com.yahoo.jdisc.http.HttpRequest.Method.GET),
+                                cRegistry.getComponent("test"));
+        try {
+            query.getRanking().getFeatures().put("query(myTensor1)",Tensor.from(tensorString));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("'query(myTensor1)' must be of type tensor(a{},b{}) but was of type tensor(x[3])",
+                         e.getMessage());
+        }
+        try {
+            query.properties().set("ranking.features.query(myTensor1)", Tensor.from(tensorString));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("'query(myTensor1)' must be of type tensor(a{},b{}) but was of type tensor(x[3])",
+                         e.getMessage());
+        }
     }
 
     // Expected to work exactly as testTensorRankFeatureInRequest
