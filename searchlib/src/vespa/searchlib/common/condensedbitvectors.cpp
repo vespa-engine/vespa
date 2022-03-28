@@ -71,7 +71,7 @@ private:
     }
     bool get(Key key, uint32_t index) const override {
         assert(key < getKeyCapacity());
-        return (_v[index] & (B << key)) != 0;
+        return (_v.acquire_elem_ref(index) & (B << key)) != 0;
     }
 
     size_t getKeyCapacity() const override { return sizeof(T)*8; }
@@ -89,7 +89,7 @@ CondensedBitVectorT<T>::computeCountVector(T mask, CountVector & cv, F func) con
     size_t i(0);
     const size_t UNROLL = 2;
     uint8_t *d = &cv[0];
-    const T *v = &_v[0];
+    const T *v = &_v.acquire_elem_ref(0);
     for (const size_t m(cv.size() - (UNROLL - 1)); i < m; i+=UNROLL) {
         for (size_t j(0); j < UNROLL; j++) {
             func(d[i+j], countBits(v[i+j] & mask));
@@ -103,8 +103,9 @@ template <typename F>
 void
 CondensedBitVectorT<T>::computeTail(T mask, CountVector & cv, F func, size_t i) const
 {
+    auto* v = &_v.acquire_elem_ref(0);
     for (; i < cv.size(); i++) {
-        func(cv[i], countBits(_v[i] & mask));
+        func(cv[i], countBits(v[i] & mask));
     }
 }
 
