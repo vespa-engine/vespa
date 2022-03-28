@@ -460,7 +460,7 @@
             </goals>
             <phase>generate-sources</phase>
             <configuration>
-              <executable>make</executable>
+              <executable>./make-xsd-files.sh</executable>
               <workingDirectory>src/main/</workingDirectory>
             </configuration>
           </execution>
