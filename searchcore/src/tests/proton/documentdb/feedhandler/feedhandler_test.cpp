@@ -345,7 +345,7 @@ struct UpdateContext {
         } else {
             fieldValue->assign(document::StringFieldValue("new value"));
         }
-        update->addUpdate(document::FieldUpdate(field).addUpdate(std::make_unique<document::AssignValueUpdate>(*fieldValue)));
+        update->addUpdate(document::FieldUpdate(field).addUpdate(std::make_unique<document::AssignValueUpdate>(std::move(fieldValue))));
     }
 };
 
@@ -774,7 +774,7 @@ TEST_F("require that all value updates will be inspected before rejected", Schem
     EXPECT_FALSE(FeedRejectHelper::mustReject(*docUpdate));
     docUpdate->addUpdate(std::move(FieldUpdate(docType->getField("i1")).addUpdate(std::make_unique<ClearValueUpdate>())));
     EXPECT_FALSE(FeedRejectHelper::mustReject(*docUpdate));
-    docUpdate->addUpdate(std::move(FieldUpdate(docType->getField("i1")).addUpdate(std::make_unique<AssignValueUpdate>(StringFieldValue()))));
+    docUpdate->addUpdate(std::move(FieldUpdate(docType->getField("i1")).addUpdate(std::make_unique<AssignValueUpdate>(std::make_unique<StringFieldValue>()))));
     EXPECT_TRUE(FeedRejectHelper::mustReject(*docUpdate));
 }
 

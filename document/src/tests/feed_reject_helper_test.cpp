@@ -53,22 +53,22 @@ TEST(DocumentRejectTest, requireThatFixedSizeFieldValuesAreDetected) {
 
 TEST(DocumentRejectTest, requireThatClearRemoveTensorRemoveAndArtithmeticUpdatesIgnoreFeedRejection) {
     EXPECT_FALSE(FeedRejectHelper::mustReject(ClearValueUpdate()));
-    EXPECT_FALSE(FeedRejectHelper::mustReject(RemoveValueUpdate(StringFieldValue())));
+    EXPECT_FALSE(FeedRejectHelper::mustReject(RemoveValueUpdate(std::make_unique<StringFieldValue>())));
     EXPECT_FALSE(FeedRejectHelper::mustReject(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 5.0)));
     EXPECT_FALSE(FeedRejectHelper::mustReject(TensorRemoveUpdate(std::make_unique<TensorFieldValue>())));
 }
 
 TEST(DocumentRejectTest, requireThatAddMapTensorModifyAndTensorAddUpdatesWillBeRejected) {
-    EXPECT_TRUE(FeedRejectHelper::mustReject(AddValueUpdate(IntFieldValue())));
-    EXPECT_TRUE(FeedRejectHelper::mustReject(MapValueUpdate(IntFieldValue(), std::make_unique<ClearValueUpdate>())));
+    EXPECT_TRUE(FeedRejectHelper::mustReject(AddValueUpdate(std::make_unique<IntFieldValue>())));
+    EXPECT_TRUE(FeedRejectHelper::mustReject(MapValueUpdate(std::make_unique<IntFieldValue>(), std::make_unique<ClearValueUpdate>())));
     EXPECT_TRUE(FeedRejectHelper::mustReject(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE,
                                                                 std::make_unique<TensorFieldValue>())));
     EXPECT_TRUE(FeedRejectHelper::mustReject(TensorAddUpdate(std::make_unique<TensorFieldValue>())));
 }
 
 TEST(DocumentRejectTest, requireThatAssignUpdatesWillBeRejectedBasedOnTheirContent) {
-    EXPECT_FALSE(FeedRejectHelper::mustReject(AssignValueUpdate(IntFieldValue())));
-    EXPECT_TRUE(FeedRejectHelper::mustReject(AssignValueUpdate(StringFieldValue())));
+    EXPECT_FALSE(FeedRejectHelper::mustReject(AssignValueUpdate(std::make_unique<IntFieldValue>())));
+    EXPECT_TRUE(FeedRejectHelper::mustReject(AssignValueUpdate(std::make_unique<StringFieldValue>())));
 }
 
 }

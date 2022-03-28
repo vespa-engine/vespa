@@ -23,14 +23,13 @@ private:
 
     friend ValueUpdate;
     TensorRemoveUpdate();
-    TensorRemoveUpdate(const TensorRemoveUpdate &rhs);
     ACCEPT_UPDATE_VISITOR;
 
 public:
     TensorRemoveUpdate(std::unique_ptr<TensorFieldValue> tensor);
+    TensorRemoveUpdate(const TensorRemoveUpdate &rhs) = delete;
+    TensorRemoveUpdate &operator=(const TensorRemoveUpdate &rhs) = delete;
     ~TensorRemoveUpdate() override;
-    TensorRemoveUpdate &operator=(const TensorRemoveUpdate &rhs);
-    TensorRemoveUpdate &operator=(TensorRemoveUpdate &&rhs);
     const TensorFieldValue &getTensor() const { return *_tensor; }
     std::unique_ptr<vespalib::eval::Value> applyTo(const vespalib::eval::Value &tensor) const;
     std::unique_ptr<Value> apply_to(const Value &tensor,

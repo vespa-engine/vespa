@@ -17,13 +17,14 @@
 namespace document {
 
 class AssignValueUpdate final : public ValueUpdate {
-    FieldValue::CP _value;
+    std::unique_ptr<FieldValue> _value;
 
     ACCEPT_UPDATE_VISITOR;
 public:
-    typedef std::unique_ptr<AssignValueUpdate> UP;
     AssignValueUpdate();
-    AssignValueUpdate(const FieldValue& value);
+    AssignValueUpdate(std::unique_ptr<FieldValue> value);
+    AssignValueUpdate(const AssignValueUpdate& value) = delete;
+    AssignValueUpdate & operator=(const AssignValueUpdate& value) = delete;
     ~AssignValueUpdate() override;
 
     bool operator==(const ValueUpdate& other) const override;

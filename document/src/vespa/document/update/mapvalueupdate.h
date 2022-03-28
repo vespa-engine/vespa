@@ -26,9 +26,9 @@ public:
      * @param key The identifier of the field value to be updated.
      * @param update The update to map to apply to the field value of this.
      */
-    MapValueUpdate(const FieldValue& key, std::unique_ptr<ValueUpdate> update);
-    MapValueUpdate(const MapValueUpdate &);
-    MapValueUpdate & operator = (const MapValueUpdate &);
+    MapValueUpdate(std::unique_ptr<FieldValue> key, std::unique_ptr<ValueUpdate> update);
+    MapValueUpdate(const MapValueUpdate &) = delete;
+    MapValueUpdate & operator = (const MapValueUpdate &) = delete;
     MapValueUpdate(MapValueUpdate &&) = default;
     MapValueUpdate & operator = (MapValueUpdate &&) = default;
 

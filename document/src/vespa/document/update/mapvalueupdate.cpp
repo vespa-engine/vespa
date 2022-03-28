@@ -16,24 +16,12 @@ using namespace vespalib::xml;
 
 namespace document {
 
-MapValueUpdate::MapValueUpdate(const FieldValue& key, std::unique_ptr<ValueUpdate> update)
+MapValueUpdate::MapValueUpdate(std::unique_ptr<FieldValue> key, std::unique_ptr<ValueUpdate> update)
     : ValueUpdate(Map),
-      _key(key.clone()),
+      _key(std::move(key)),
       _update(std::move(update))
 {}
 
-MapValueUpdate::MapValueUpdate(const MapValueUpdate &)
-    : ValueUpdate(Map),
-      _key(),
-      _update()
-{
-    abort(); // TODO Will never be called, remove
-}
-MapValueUpdate &
-MapValueUpdate::operator = (const MapValueUpdate &) {
-    abort(); // TODO Will never be called, remove
-    return *this;
-}
 MapValueUpdate::~MapValueUpdate() = default;
 
 bool

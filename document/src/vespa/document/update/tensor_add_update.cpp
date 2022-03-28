@@ -29,13 +29,6 @@ TensorAddUpdate::TensorAddUpdate()
 {
 }
 
-TensorAddUpdate::TensorAddUpdate(const TensorAddUpdate &rhs)
-    : ValueUpdate(rhs),
-      TensorUpdate(rhs),
-      _tensor(rhs._tensor->clone())
-{
-}
-
 TensorAddUpdate::TensorAddUpdate(std::unique_ptr<TensorFieldValue> &&tensor)
     : ValueUpdate(TensorAdd),
       TensorUpdate(),
@@ -44,20 +37,6 @@ TensorAddUpdate::TensorAddUpdate(std::unique_ptr<TensorFieldValue> &&tensor)
 }
 
 TensorAddUpdate::~TensorAddUpdate() = default;
-
-TensorAddUpdate &
-TensorAddUpdate::operator=(const TensorAddUpdate &rhs)
-{
-    _tensor.reset(rhs._tensor->clone());
-    return *this;
-}
-
-TensorAddUpdate &
-TensorAddUpdate::operator=(TensorAddUpdate &&rhs)
-{
-    _tensor = std::move(rhs._tensor);
-    return *this;
-}
 
 bool
 TensorAddUpdate::operator==(const ValueUpdate &other) const

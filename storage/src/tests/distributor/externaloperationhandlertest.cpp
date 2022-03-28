@@ -32,28 +32,22 @@ struct ExternalOperationHandlerTest : Test, DistributorStripeTestUtil {
     document::TestDocMan _testDocMan;
 
     document::BucketId findNonOwnedUserBucketInState(vespalib::stringref state);
-    document::BucketId findOwned1stNotOwned2ndInStates(
-            vespalib::stringref state1,
-            vespalib::stringref state2);
+    document::BucketId findOwned1stNotOwned2ndInStates(vespalib::stringref state1, vespalib::stringref state2);
 
     std::shared_ptr<api::GetCommand> makeGetCommandForUser(uint64_t id) const;
     std::shared_ptr<api::GetCommand> makeGetCommand(const vespalib::string& id) const;
-    std::shared_ptr<api::UpdateCommand> makeUpdateCommand(const vespalib::string& doc_type,
-                                                          const vespalib::string& id) const;
+    std::shared_ptr<api::UpdateCommand> makeUpdateCommand(const vespalib::string& doc_type, const vespalib::string& id) const;
     std::shared_ptr<api::UpdateCommand> makeUpdateCommand() const;
     std::shared_ptr<api::UpdateCommand> makeUpdateCommandForUser(uint64_t id) const;
-    std::shared_ptr<api::PutCommand> makePutCommand(const vespalib::string& doc_type,
-                                                    const vespalib::string& id) const;
+    std::shared_ptr<api::PutCommand> makePutCommand(const vespalib::string& doc_type, const vespalib::string& id) const;
     std::shared_ptr<api::RemoveCommand> makeRemoveCommand(const vespalib::string& id) const;
 
     void verify_busy_bounced_due_to_no_active_state(std::shared_ptr<api::StorageCommand> cmd);
 
-    void start_operation_verify_not_rejected(std::shared_ptr<api::StorageCommand> cmd,
-                                             Operation::SP& out_generated);
+    void start_operation_verify_not_rejected(std::shared_ptr<api::StorageCommand> cmd, Operation::SP& out_generated);
     void start_operation_verify_rejected(std::shared_ptr<api::StorageCommand> cmd);
 
-    int64_t safe_time_not_reached_metric_count(
-            const PersistenceOperationMetricSet & metrics) const {
+    int64_t safe_time_not_reached_metric_count(const PersistenceOperationMetricSet & metrics) const {
         return metrics.failures.safe_time_not_reached.getLongValue("count");
     }
 
@@ -61,8 +55,7 @@ struct ExternalOperationHandlerTest : Test, DistributorStripeTestUtil {
         return metrics.failures.safe_time_not_reached.getLongValue("count");
     }
 
-    int64_t concurrent_mutatations_metric_count(
-            const PersistenceOperationMetricSet& metrics) const {
+    int64_t concurrent_mutatations_metric_count(const PersistenceOperationMetricSet& metrics) const {
         return metrics.failures.concurrent_mutations.getLongValue("count");
     }
 
@@ -597,7 +590,7 @@ TEST_F(ExternalOperationHandlerTest, non_trivial_updates_are_rejected_if_feed_is
 
     auto cmd = makeUpdateCommand("testdoctype1", "id:foo:testdoctype1::foo");
     const auto* doc_type = _testDocMan.getTypeRepo().getDocumentType("testdoctype1");
-    cmd->getUpdate()->addUpdate(FieldUpdate(doc_type->getField("title")).addUpdate(std::make_unique<AssignValueUpdate>(StringFieldValue("new value"))));
+    cmd->getUpdate()->addUpdate(FieldUpdate(doc_type->getField("title")).addUpdate(std::make_unique<AssignValueUpdate>(std::make_unique<StringFieldValue>("new value"))));
 
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(std::move(cmd)));
     EXPECT_EQ("ReturnCode(NO_SPACE, External feed is blocked due to resource exhaustion: full disk)",

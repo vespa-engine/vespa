@@ -46,14 +46,6 @@ TensorRemoveUpdate::TensorRemoveUpdate()
 {
 }
 
-TensorRemoveUpdate::TensorRemoveUpdate(const TensorRemoveUpdate &rhs)
-    : ValueUpdate(rhs),
-      TensorUpdate(rhs),
-      _tensorType(std::make_unique<TensorDataType>(*rhs._tensorType)),
-      _tensor(rhs._tensor->clone())
-{
-}
-
 TensorRemoveUpdate::TensorRemoveUpdate(std::unique_ptr<TensorFieldValue> tensor)
     : ValueUpdate(TensorRemove),
       TensorUpdate(),
@@ -64,26 +56,6 @@ TensorRemoveUpdate::TensorRemoveUpdate(std::unique_ptr<TensorFieldValue> tensor)
 }
 
 TensorRemoveUpdate::~TensorRemoveUpdate() = default;
-
-TensorRemoveUpdate &
-TensorRemoveUpdate::operator=(const TensorRemoveUpdate &rhs)
-{
-    if (&rhs != this) {
-        _tensor.reset();
-        _tensorType = std::make_unique<TensorDataType>(*rhs._tensorType);
-        _tensor.reset(static_cast<TensorFieldValue *>(_tensorType->createFieldValue().release()));
-        *_tensor = *rhs._tensor;
-    }
-    return *this;
-}
-
-TensorRemoveUpdate &
-TensorRemoveUpdate::operator=(TensorRemoveUpdate &&rhs)
-{
-    _tensorType = std::move(rhs._tensorType);
-    _tensor = std::move(rhs._tensor);
-    return *this;
-}
 
 bool
 TensorRemoveUpdate::operator==(const ValueUpdate &other) const

@@ -19,13 +19,12 @@ class TensorAddUpdate final : public ValueUpdate, public TensorUpdate {
 
     friend ValueUpdate;
     TensorAddUpdate();
-    TensorAddUpdate(const TensorAddUpdate &rhs);
     ACCEPT_UPDATE_VISITOR;
 public:
     TensorAddUpdate(std::unique_ptr<TensorFieldValue> &&tensor);
+    TensorAddUpdate(const TensorAddUpdate &rhs) = delete;
+    TensorAddUpdate &operator=(const TensorAddUpdate &rhs) = delete;
     ~TensorAddUpdate() override;
-    TensorAddUpdate &operator=(const TensorAddUpdate &rhs);
-    TensorAddUpdate &operator=(TensorAddUpdate &&rhs);
     bool operator==(const ValueUpdate &other) const override;
     const TensorFieldValue &getTensor() const { return *_tensor; }
     void checkCompatibility(const Field &field) const override;

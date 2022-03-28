@@ -1514,11 +1514,11 @@ AttributeTest::testMapValueUpdate(const AttributePtr & ptr, BufferType initValue
     EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 7u);
     EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 0u);
 
-    EXPECT_TRUE(ptr->apply(0, MapVU(initFieldValue, std::make_unique<ArithVU>(ArithVU::Add, 10))));
-    EXPECT_TRUE(ptr->apply(1, MapVU(initFieldValue, std::make_unique<ArithVU>(ArithVU::Sub, 10))));
-    EXPECT_TRUE(ptr->apply(2, MapVU(initFieldValue, std::make_unique<ArithVU>(ArithVU::Mul, 10))));
-    EXPECT_TRUE(ptr->apply(3, MapVU(initFieldValue, std::make_unique<ArithVU>(ArithVU::Div, 10))));
-    EXPECT_TRUE(ptr->apply(6, MapVU(initFieldValue, std::make_unique<AssignValueUpdate>(IntFieldValue(70)))));
+    EXPECT_TRUE(ptr->apply(0, MapVU(std::unique_ptr<FieldValue>(initFieldValue.clone()), std::make_unique<ArithVU>(ArithVU::Add, 10))));
+    EXPECT_TRUE(ptr->apply(1, MapVU(std::unique_ptr<FieldValue>(initFieldValue.clone()), std::make_unique<ArithVU>(ArithVU::Sub, 10))));
+    EXPECT_TRUE(ptr->apply(2, MapVU(std::unique_ptr<FieldValue>(initFieldValue.clone()), std::make_unique<ArithVU>(ArithVU::Mul, 10))));
+    EXPECT_TRUE(ptr->apply(3, MapVU(std::unique_ptr<FieldValue>(initFieldValue.clone()), std::make_unique<ArithVU>(ArithVU::Div, 10))));
+    EXPECT_TRUE(ptr->apply(6, MapVU(std::unique_ptr<FieldValue>(initFieldValue.clone()), std::make_unique<AssignValueUpdate>(std::make_unique<IntFieldValue>(70)))));
     ptr->commit();
     EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 12u);
     EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 5u);
@@ -1536,7 +1536,7 @@ AttributeTest::testMapValueUpdate(const AttributePtr & ptr, BufferType initValue
     EXPECT_EQUAL(buf[0].getWeight(), 70);
 
     // removeifzero
-    EXPECT_TRUE(ptr->apply(4, MapVU(initFieldValue, std::make_unique<ArithVU>(ArithVU::Sub, 100))));
+    EXPECT_TRUE(ptr->apply(4, MapVU(std::unique_ptr<FieldValue>(initFieldValue.clone()), std::make_unique<ArithVU>(ArithVU::Sub, 100))));
     ptr->commit();
     if (removeIfZero) {
         EXPECT_EQUAL(ptr->get(4, &buf[0], 2), uint32_t(0));
@@ -1548,7 +1548,7 @@ AttributeTest::testMapValueUpdate(const AttributePtr & ptr, BufferType initValue
     EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 6u);
 
     // createifnonexistant
-    EXPECT_TRUE(ptr->apply(5, MapVU(nonExistant, std::make_unique<ArithVU>(ArithVU::Add, 10))));
+    EXPECT_TRUE(ptr->apply(5, MapVU(std::unique_ptr<FieldValue>(nonExistant.clone()), std::make_unique<ArithVU>(ArithVU::Add, 10))));
     ptr->commit();
     if (createIfNonExistant) {
         EXPECT_EQUAL(ptr->get(5, &buf[0], 2), uint32_t(2));
@@ -1568,7 +1568,7 @@ AttributeTest::testMapValueUpdate(const AttributePtr & ptr, BufferType initValue
     EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 15u);
     ASSERT_TRUE(vec.append(0, initValue.getValue(), 12345));
     EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 16u);
-    EXPECT_TRUE(ptr->apply(0, MapVU(initFieldValue, std::make_unique<ArithVU>(ArithVU::Div, 0))));
+    EXPECT_TRUE(ptr->apply(0, MapVU(std::unique_ptr<FieldValue>(initFieldValue.clone()), std::make_unique<ArithVU>(ArithVU::Div, 0))));
     EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 16u);
     EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 7u);
     ptr->commit();
@@ -1585,8 +1585,7 @@ AttributeTest::testMapValueUpdate()
             (ptr, AttributeVector::WeightedInt(64, 1), IntFieldValue(64), IntFieldValue(32), false, false);
     }
     { // remove if zero
-        AttributePtr ptr = createAttribute("wsint32", Config(BasicType::INT32,
-                                                             CollectionType(CollectionType::WSET, true, false)));
+        AttributePtr ptr = createAttribute("wsint32", Config(BasicType::INT32, CollectionType(CollectionType::WSET, true, false)));
         testMapValueUpdate<IntegerAttribute, AttributeVector::WeightedInt>
             (ptr, AttributeVector::WeightedInt(64, 1), IntFieldValue(64), IntFieldValue(32), true, false);
     }

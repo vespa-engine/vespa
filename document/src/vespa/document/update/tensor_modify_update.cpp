@@ -91,16 +91,6 @@ TensorModifyUpdate::TensorModifyUpdate()
 {
 }
 
-TensorModifyUpdate::TensorModifyUpdate(const TensorModifyUpdate &rhs)
-    : ValueUpdate(rhs),
-      TensorUpdate(),
-      _operation(rhs._operation),
-      _tensorType(std::make_unique<TensorDataType>(*rhs._tensorType)),
-      _tensor(static_cast<TensorFieldValue *>(_tensorType->createFieldValue().release()))
-{
-    *_tensor = *rhs._tensor;
-}
-
 TensorModifyUpdate::TensorModifyUpdate(Operation operation, std::unique_ptr<TensorFieldValue> tensor)
     : ValueUpdate(TensorModify),
       TensorUpdate(),
@@ -112,28 +102,6 @@ TensorModifyUpdate::TensorModifyUpdate(Operation operation, std::unique_ptr<Tens
 }
 
 TensorModifyUpdate::~TensorModifyUpdate() = default;
-
-TensorModifyUpdate &
-TensorModifyUpdate::operator=(const TensorModifyUpdate &rhs)
-{
-    if (&rhs != this) {
-        _operation = rhs._operation;
-        _tensor.reset();
-        _tensorType = std::make_unique<TensorDataType>(*rhs._tensorType);
-        _tensor.reset(dynamic_cast<TensorFieldValue *>(_tensorType->createFieldValue().release()));
-        *_tensor = *rhs._tensor;
-    }
-    return *this;
-}
-
-TensorModifyUpdate &
-TensorModifyUpdate::operator=(TensorModifyUpdate &&rhs)
-{
-    _operation = rhs._operation;
-    _tensorType = std::move(rhs._tensorType);
-    _tensor = std::move(rhs._tensor);
-    return *this;
-}
 
 bool
 TensorModifyUpdate::operator==(const ValueUpdate &other) const

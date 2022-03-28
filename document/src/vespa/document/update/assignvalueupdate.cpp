@@ -21,9 +21,9 @@ AssignValueUpdate::AssignValueUpdate()
       _value()
 {}
 
-AssignValueUpdate::AssignValueUpdate(const FieldValue& value)
+AssignValueUpdate::AssignValueUpdate(std::unique_ptr<FieldValue> value)
     : ValueUpdate(Assign),
-      _value(value.clone())
+      _value(std::move(value))
 {
 }
 AssignValueUpdate::~AssignValueUpdate() = default;
@@ -36,7 +36,11 @@ AssignValueUpdate::operator==(const ValueUpdate& other) const
 {
     if (other.getType() != Assign) return false;
     const AssignValueUpdate& o(static_cast<const AssignValueUpdate&>(other));
-    return _value == o._value;
+    if (_value && o._value) {
+        return *_value == *o._value;
+    } else {
+        return bool(_value) == bool(o._value);
+    }
 }
 
 // Ensure that this update is compatible with given field.

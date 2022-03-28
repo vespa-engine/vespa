@@ -221,20 +221,20 @@ PersistenceTestUtils::doGetOnDisk(const document::BucketId& bucketId, const docu
 }
 
 document::DocumentUpdate::SP
-PersistenceTestUtils::createBodyUpdate(const document::DocumentId& docId, const document::FieldValue& updateValue)
+PersistenceTestUtils::createBodyUpdate(const document::DocumentId& docId, std::unique_ptr<document::FieldValue> updateValue)
 {
     const DocumentType* docType(getTypeRepo()->getDocumentType("testdoctype1"));
     auto update = std::make_shared<document::DocumentUpdate>(*getTypeRepo(), *docType, docId);
-    update->addUpdate(document::FieldUpdate(docType->getField("content")).addUpdate(std::make_unique<document::AssignValueUpdate>(updateValue)));
+    update->addUpdate(document::FieldUpdate(docType->getField("content")).addUpdate(std::make_unique<document::AssignValueUpdate>(std::move(updateValue))));
     return update;
 }
 
 document::DocumentUpdate::SP
-PersistenceTestUtils::createHeaderUpdate(const document::DocumentId& docId, const document::FieldValue& updateValue)
+PersistenceTestUtils::createHeaderUpdate(const document::DocumentId& docId, std::unique_ptr<document::FieldValue> updateValue)
 {
     const DocumentType* docType(getTypeRepo()->getDocumentType("testdoctype1"));
     auto update = std::make_shared<document::DocumentUpdate>(*getTypeRepo(), *docType, docId);
-    update->addUpdate(document::FieldUpdate(docType->getField("headerval")).addUpdate(std::make_unique<document::AssignValueUpdate>(updateValue)));
+    update->addUpdate(document::FieldUpdate(docType->getField("headerval")).addUpdate(std::make_unique<document::AssignValueUpdate>(std::move(updateValue))));
     return update;
 }
 

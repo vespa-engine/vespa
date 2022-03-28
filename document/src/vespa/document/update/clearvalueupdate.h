@@ -14,10 +14,9 @@ namespace document {
 class ClearValueUpdate final : public ValueUpdate {
     ACCEPT_UPDATE_VISITOR;
 public:
-    typedef std::unique_ptr<ClearValueUpdate> UP;
-    ClearValueUpdate(const ClearValueUpdate& update) = default;
+    ClearValueUpdate(const ClearValueUpdate& update) = delete;
+    ClearValueUpdate &operator=(const ClearValueUpdate &rhs) = delete;
     ClearValueUpdate() : ValueUpdate(Clear) {}
-    ClearValueUpdate &operator=(const ClearValueUpdate &rhs) = default;
     bool operator==(const ValueUpdate& other) const override;
 
     void checkCompatibility(const Field& field) const override;

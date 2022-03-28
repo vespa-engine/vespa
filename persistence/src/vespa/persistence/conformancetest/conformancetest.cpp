@@ -29,6 +29,9 @@
 using document::BucketId;
 using document::BucketSpace;
 using document::test::makeBucketSpace;
+using document::FieldUpdate;
+using document::AssignValueUpdate;
+using document::IntFieldValue;
 using storage::spi::test::makeSpiBucket;
 using storage::spi::test::cloneDocEntry;
 
@@ -92,11 +95,7 @@ createClusterState(const lib::State& nodeState = lib::State::UP)
     storage::lib::ClusterState cstate;
     StorDistributionConfigBuilder dc;
 
-    cstate.setNodeState(Node(NodeType::STORAGE, 0),
-                        NodeState(NodeType::STORAGE,
-                                  nodeState,
-                                  "dummy desc",
-                                  1.0));
+    cstate.setNodeState(Node(NodeType::STORAGE, 0), NodeState(NodeType::STORAGE, nodeState, "dummy desc", 1.0));
     cstate.setClusterState(State::UP);
     dc.redundancy = 1;
     dc.readyCopies = 1;
@@ -120,8 +119,7 @@ struct DocAndTimestamp
 
     DocAndTimestamp(const Document::SP& docptr, spi::Timestamp ts)
         : doc(docptr), timestamp(ts)
-    {
-    }
+    { }
 };
 
 /**
@@ -135,9 +133,7 @@ struct Chunk
 
 struct DocEntryIndirectTimestampComparator
 {
-    bool operator()(const DocEntry::UP& e1,
-                    const DocEntry::UP& e2) const
-    {
+    bool operator()(const DocEntry::UP& e1, const DocEntry::UP& e2) const {
         return e1->getTimestamp() < e2->getTimestamp();
     }
 };
@@ -210,12 +206,7 @@ iterateBucket(PersistenceProvider& spi,
     Selection sel(docSel);
 
     Context context(Priority(0), Trace::TraceLevel(0));
-    CreateIteratorResult iter = spi.createIterator(
-            bucket,
-            std::make_shared<document::AllFields>(),
-            sel,
-            versions,
-            context);
+    CreateIteratorResult iter = spi.createIterator(bucket, std::make_shared<document::AllFields>(), sel, versions, context);
 
     EXPECT_EQ(Result::ErrorType::NONE, iter.getErrorCode());
 
@@ -340,17 +331,9 @@ TEST_F(ConformanceTest, testBasics)
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
     Document::SP doc2 = testDocMan.createRandomDocumentAtLocation(0x01, 2);
     spi->createBucket(bucket, context);
-    EXPECT_EQ(
-            Result(),
-            Result(spi->put(bucket, Timestamp(1), doc1, context)));
-
-    EXPECT_EQ(
-            Result(),
-            Result(spi->put(bucket, Timestamp(2), doc2, context)));
-
-    EXPECT_EQ(
-            Result(),
-            Result(spi->remove(bucket, Timestamp(3), doc1->getId(), context)));
+    EXPECT_EQ(Result(), Result(spi->put(bucket, Timestamp(1), doc1, context)));
+    EXPECT_EQ(Result(), Result(spi->put(bucket, Timestamp(2), doc2, context)));
+    EXPECT_EQ(Result(), Result(spi->remove(bucket, Timestamp(3), doc1->getId(), context)));
 
     // Iterate first without removes, then with.
     for (int iterPass = 0; iterPass < 2; ++iterPass) {
@@ -369,9 +352,7 @@ TEST_F(ConformanceTest, testBasics)
 
         EXPECT_EQ(Result(), Result(iter));
 
-        IterateResult result =
-            spi->iterate(iter.getIteratorId(),
-                         std::numeric_limits<int64_t>().max(), context);
+        IterateResult result = spi->iterate(iter.getIteratorId(), std::numeric_limits<int64_t>().max(), context);
 
         EXPECT_EQ(Result(), Result(result));
         EXPECT_TRUE(result.isCompleted());
@@ -614,8 +595,7 @@ TEST_F(ConformanceTest, testPutNewDocumentVersion)
         EXPECT_TRUE(info.getUsedSize() >= info.getDocumentSize());
     }
 
-    GetResult gr = spi->get(bucket, document::AllFields(), doc1->getId(),
-                            context);
+    GetResult gr = spi->get(bucket, document::AllFields(), doc1->getId(), context);
 
     EXPECT_EQ(Result::ErrorType::NONE, gr.getErrorCode());
     EXPECT_EQ(Timestamp(4), gr.getTimestamp());
@@ -660,8 +640,7 @@ TEST_F(ConformanceTest, testPutOlderDocumentVersion)
         EXPECT_EQ(1, (int)info2.getDocumentCount());
         EXPECT_TRUE(info2.getEntryCount() >= info1.getDocumentCount());
         EXPECT_EQ(info1.getChecksum(), info2.getChecksum());
-        EXPECT_EQ(info1.getDocumentSize(),
-                             info2.getDocumentSize());
+        EXPECT_EQ(info1.getDocumentSize(), info2.getDocumentSize());
         EXPECT_TRUE(info2.getUsedSize() >= info1.getDocumentSize());
     }
 
@@ -907,10 +886,9 @@ TEST_F(ConformanceTest, testUpdate)
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
     spi->createBucket(bucket, context);
 
-    const document::DocumentType *docType(
-            testDocMan.getTypeRepo().getDocumentType("testdoctype1"));
+    const document::DocumentType *docType(testDocMan.getTypeRepo().getDocumentType("testdoctype1"));
     document::DocumentUpdate::SP update(new DocumentUpdate(testDocMan.getTypeRepo(), *docType, doc1->getId()));
-    update->addUpdate(document::FieldUpdate(docType->getField("headerval")).addUpdate(std::make_unique<document::AssignValueUpdate>(document::IntFieldValue(42))));
+    update->addUpdate(FieldUpdate(docType->getField("headerval")).addUpdate(std::make_unique<AssignValueUpdate>(std::make_unique<IntFieldValue>(42))));
 
     {
         UpdateResult result = spi->update(bucket, Timestamp(3), update, context);
@@ -932,9 +910,7 @@ TEST_F(ConformanceTest, testUpdate)
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(4), result.getTimestamp());
         EXPECT_FALSE(result.is_tombstone());
-        EXPECT_EQ(document::IntFieldValue(42),
-                             static_cast<document::IntFieldValue&>(
-                                     *result.getDocument().getValue("headerval")));
+        EXPECT_EQ(IntFieldValue(42), static_cast<IntFieldValue&>(*result.getDocument().getValue("headerval")));
     }
 
     spi->remove(bucket, Timestamp(5), doc1->getId(), context);
@@ -977,9 +953,7 @@ TEST_F(ConformanceTest, testUpdate)
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(7), result.getTimestamp());
         EXPECT_FALSE(result.is_tombstone());
-        EXPECT_EQ(document::IntFieldValue(42),
-                             reinterpret_cast<document::IntFieldValue&>(
-                                     *result.getDocument().getValue("headerval")));
+        EXPECT_EQ(IntFieldValue(42), reinterpret_cast<IntFieldValue&>(*result.getDocument().getValue("headerval")));
     }
 }
 
@@ -995,8 +969,7 @@ TEST_F(ConformanceTest, testGet)
     spi->createBucket(bucket, context);
 
     {
-        GetResult result = spi->get(bucket, document::AllFields(),
-                                    doc1->getId(), context);
+        GetResult result = spi->get(bucket, document::AllFields(), doc1->getId(), context);
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(0), result.getTimestamp());
@@ -1006,8 +979,7 @@ TEST_F(ConformanceTest, testGet)
     spi->put(bucket, Timestamp(3), doc1, context);
 
     {
-        GetResult result = spi->get(bucket, document::AllFields(),
-                                    doc1->getId(), context);
+        GetResult result = spi->get(bucket, document::AllFields(), doc1->getId(), context);
         EXPECT_EQ(*doc1, result.getDocument());
         EXPECT_EQ(Timestamp(3), result.getTimestamp());
         EXPECT_FALSE(result.is_tombstone());
@@ -1016,8 +988,7 @@ TEST_F(ConformanceTest, testGet)
     spi->remove(bucket, Timestamp(4), doc1->getId(), context);
 
     {
-        GetResult result = spi->get(bucket, document::AllFields(),
-                                    doc1->getId(), context);
+        GetResult result = spi->get(bucket, document::AllFields(), doc1->getId(), context);
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(4), result.getTimestamp());
@@ -1035,8 +1006,7 @@ TEST_F(ConformanceTest, testIterateCreateIterator)
     Bucket b(makeSpiBucket(BucketId(8, 0x1)));
     spi->createBucket(b, context);
 
-    spi::CreateIteratorResult result(
-            createIterator(*spi, b, createSelection("")));
+    spi::CreateIteratorResult result(createIterator(*spi, b, createSelection("")));
     EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
     // Iterator ID 0 means invalid iterator, so cannot be returned
     // from a successful createIterator call.
@@ -1075,8 +1045,7 @@ TEST_F(ConformanceTest, testIterateDestroyIterator)
     }
 
     {
-        Result destroyResult(
-                spi->destroyIterator(iter.getIteratorId(), context));
+        Result destroyResult(spi->destroyIterator(iter.getIteratorId(), context));
         EXPECT_TRUE(!destroyResult.hasError());
     }
     // Iteration should now fail
@@ -1085,8 +1054,7 @@ TEST_F(ConformanceTest, testIterateDestroyIterator)
         EXPECT_EQ(Result::ErrorType::PERMANENT_ERROR, result.getErrorCode());
     }
     {
-        Result destroyResult(
-                spi->destroyIterator(iter.getIteratorId(), context));
+        Result destroyResult(spi->destroyIterator(iter.getIteratorId(), context));
         EXPECT_TRUE(!destroyResult.hasError());
     }
 }
@@ -1124,7 +1092,7 @@ TEST_F(ConformanceTest, testIterateAllDocsNewestVersionOnly)
     for (size_t i = 0; i < docs.size(); ++i) {
         Document::SP newDoc(docs[i].doc->clone());
         Timestamp newTimestamp(2000 + i);
-        newDoc->setValue("headerval", document::IntFieldValue(5678 + i));
+        newDoc->setValue("headerval", IntFieldValue(5678 + i));
         spi->put(b, newTimestamp, newDoc, context);
         newDocs.push_back(DocAndTimestamp(newDoc, newTimestamp));
     }
@@ -1166,8 +1134,7 @@ TEST_F(ConformanceTest, testMaxByteSize)
     Bucket b(makeSpiBucket(BucketId(8, 0x1)));
     spi->createBucket(b, context);
 
-    std::vector<DocAndTimestamp> docs(
-            feedDocs(*spi, testDocMan, b, 100, 4_Ki, 4096));
+    std::vector<DocAndTimestamp> docs(feedDocs(*spi, testDocMan, b, 100, 4_Ki, 4096));
 
     Selection sel(createSelection(""));
     CreateIteratorResult iter(createIterator(*spi, b, sel));
@@ -1198,14 +1165,11 @@ TEST_F(ConformanceTest, testIterateMatchTimestampRange)
 
     for (uint32_t i = 0; i < 99; i++) {
         Timestamp timestamp(1000 + i);
-        document::Document::SP doc(
-                testDocMan.createRandomDocumentAtLocation(
-                        1, timestamp, 110, 110));
+        document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(1, timestamp, 110, 110));
 
         spi->put(b, timestamp, doc, context);
         if (timestamp >= fromTimestamp && timestamp <= toTimestamp) {
-            docsToVisit.push_back(
-                    DocAndTimestamp(doc, Timestamp(1000 + i)));
+            docsToVisit.push_back(DocAndTimestamp(doc, Timestamp(1000 + i)));
         }
     }
 
@@ -1236,14 +1200,11 @@ TEST_F(ConformanceTest, testIterateExplicitTimestampSubset)
 
     for (uint32_t i = 0; i < 99; i++) {
         Timestamp timestamp(1000 + i);
-        document::Document::SP doc(
-                testDocMan.createRandomDocumentAtLocation(
-                        1, timestamp, 110, 110));
+        document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(1, timestamp, 110, 110));
 
         spi->put(b, timestamp, doc, context);
         if (timestamp % 3 == 0) {
-            docsToVisit.push_back(
-                    DocAndTimestamp(doc, Timestamp(1000 + i)));
+            docsToVisit.push_back(DocAndTimestamp(doc, Timestamp(1000 + i)));
             timestampsToVisit.push_back(Timestamp(timestamp));
         }
     }
@@ -1332,9 +1293,8 @@ TEST_F(ConformanceTest, testIterateMatchSelection)
     std::vector<DocAndTimestamp> docsToVisit;
 
     for (uint32_t i = 0; i < 99; i++) {
-        document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(
-                                           1, 1000 + i, 110, 110));
-        doc->setValue("headerval", document::IntFieldValue(i));
+        document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(1, 1000 + i, 110, 110));
+        doc->setValue("headerval", IntFieldValue(i));
 
         spi->put(b, Timestamp(1000 + i), doc, context);
         if ((i % 3) == 0) {
@@ -1503,10 +1463,7 @@ testDeleteBucketPostCondition(const PersistenceProvider &spi,
 {
     Context context(Priority(0), Trace::TraceLevel(0));
     {
-        GetResult result = spi.get(bucket,
-                                   document::AllFields(),
-                                   doc1.getId(),
-                                   context);
+        GetResult result = spi.get(bucket, document::AllFields(), doc1.getId(), context);
 
         EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(0), result.getTimestamp());
@@ -1633,31 +1590,23 @@ testSplitTargetExistsPostCondition(const PersistenceProvider &spi,
                                    const Bucket &bucketC,
                                    document::TestDocMan &testDocMan)
 {
-    EXPECT_EQ(10, (int)spi.getBucketInfo(bucketA).getBucketInfo().
-                         getDocumentCount());
-    EXPECT_EQ(15, (int)spi.getBucketInfo(bucketB).getBucketInfo().
-                         getDocumentCount());
+    EXPECT_EQ(10, (int)spi.getBucketInfo(bucketA).getBucketInfo().getDocumentCount());
+    EXPECT_EQ(15, (int)spi.getBucketInfo(bucketB).getBucketInfo().getDocumentCount());
 
     document::AllFields fs;
     Context context(Priority(0), Trace::TraceLevel(0));
     for (uint32_t i = 0; i < 10; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x02, i);
-        EXPECT_TRUE(
-                spi.get(bucketA, fs, doc1->getId(), context).hasDocument());
-        EXPECT_TRUE(
-                !spi.get(bucketC, fs, doc1->getId(), context).hasDocument());
-        EXPECT_TRUE(
-                !spi.get(bucketB, fs, doc1->getId(), context).hasDocument());
+        EXPECT_TRUE(spi.get(bucketA, fs, doc1->getId(), context).hasDocument());
+        EXPECT_FALSE(spi.get(bucketC, fs, doc1->getId(), context).hasDocument());
+        EXPECT_FALSE(spi.get(bucketB, fs, doc1->getId(), context).hasDocument());
     }
 
     for (uint32_t i = 10; i < 25; ++i) {
         Document::UP doc1 = testDocMan.createRandomDocumentAtLocation(0x06, i);
-        EXPECT_TRUE(
-                spi.get(bucketB, fs, doc1->getId(), context).hasDocument());
-        EXPECT_TRUE(
-                !spi.get(bucketA, fs, doc1->getId(), context).hasDocument());
-        EXPECT_TRUE(
-                !spi.get(bucketC, fs, doc1->getId(), context).hasDocument());
+        EXPECT_TRUE(spi.get(bucketB, fs, doc1->getId(), context).hasDocument());
+        EXPECT_FALSE(spi.get(bucketA, fs, doc1->getId(), context).hasDocument());
+        EXPECT_FALSE(spi.get(bucketC, fs, doc1->getId(), context).hasDocument());
     }
 }
 
@@ -1722,16 +1671,12 @@ ConformanceTest::createAndPopulateJoinSourceBuckets(
     spi.createBucket(source2, context);
 
     for (uint32_t i = 0; i < 10; ++i) {
-        Document::SP doc(
-                testDocMan.createRandomDocumentAtLocation(
-                    source1.getBucketId().getId(), i));
+        Document::SP doc(testDocMan.createRandomDocumentAtLocation(source1.getBucketId().getId(), i));
         spi.put(source1, Timestamp(i + 1), doc, context);
     }
 
     for (uint32_t i = 10; i < 20; ++i) {
-        Document::SP doc(
-                testDocMan.createRandomDocumentAtLocation(
-                    source2.getBucketId().getId(), i));
+        Document::SP doc(testDocMan.createRandomDocumentAtLocation(source2.getBucketId().getId(), i));
         spi.put(source2, Timestamp(i + 1), doc, context);
     }
 }
@@ -1788,9 +1733,7 @@ testJoinNormalCasePostCondition(const PersistenceProvider &spi,
     document::AllFields fs;
     Context context(Priority(0), Trace::TraceLevel(0));
     for (uint32_t i = 0; i < 10; ++i) {
-        Document::UP doc(
-                testDocMan.createRandomDocumentAtLocation(
-                    bucketA.getBucketId().getId(), i));
+        Document::UP doc(testDocMan.createRandomDocumentAtLocation(bucketA.getBucketId().getId(), i));
         EXPECT_TRUE(spi.get(bucketC, fs, doc->getId(), context).hasDocument());
         EXPECT_TRUE(!spi.get(bucketA, fs, doc->getId(), context).hasDocument());
     }
@@ -2017,8 +1960,7 @@ TEST_F(ConformanceTest, testJoinSameSourceBucketsTargetExists)
     populateBucket(target, *spi, context, 10, 20, testDocMan);
 
     spi->join(source, source, target, context);
-    testJoinSameSourceBucketsTargetExistsPostCondition(
-            *spi, source, target, testDocMan);
+    testJoinSameSourceBucketsTargetExistsPostCondition(*spi, source, target, testDocMan);
     if (_factory->hasPersistence()) {
         spi.reset();
         document::TestDocMan testDocMan2;
@@ -2057,12 +1999,8 @@ TEST_F(ConformanceTest, testBucketActivation)
         // Add and remove a document, so document goes to zero, to check that
         // active state isn't cleared then.
     Document::SP doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
-    EXPECT_EQ(
-            Result(),
-            Result(spi->put(bucket, Timestamp(1), doc1, context)));
-    EXPECT_EQ(
-            Result(),
-            Result(spi->remove(bucket, Timestamp(5), doc1->getId(), context)));
+    EXPECT_EQ(Result(), Result(spi->put(bucket, Timestamp(1), doc1, context)));
+    EXPECT_EQ(Result(), Result(spi->remove(bucket, Timestamp(5), doc1->getId(), context)));
     EXPECT_TRUE(spi->getBucketInfo(bucket).getBucketInfo().isActive());
 
         // Setting node down should clear active flag.

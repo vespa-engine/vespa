@@ -32,13 +32,13 @@ private:
 
     friend ValueUpdate;
     TensorModifyUpdate();
-    TensorModifyUpdate(const TensorModifyUpdate &rhs);
     ACCEPT_UPDATE_VISITOR;
 public:
     TensorModifyUpdate(Operation operation, std::unique_ptr<TensorFieldValue> tensor);
+    TensorModifyUpdate(const TensorModifyUpdate &rhs) = delete;
+    TensorModifyUpdate &operator=(const TensorModifyUpdate &rhs) = delete;
     ~TensorModifyUpdate() override;
-    TensorModifyUpdate &operator=(const TensorModifyUpdate &rhs);
-    TensorModifyUpdate &operator=(TensorModifyUpdate &&rhs);
+
     bool operator==(const ValueUpdate &other) const override;
     Operation getOperation() const { return _operation; }
     const TensorFieldValue &getTensor() const { return *_tensor; }

@@ -18,9 +18,9 @@ using namespace vespalib::xml;
 namespace document {
 
 
-AddValueUpdate:: AddValueUpdate(const FieldValue& value, int weight)
+AddValueUpdate:: AddValueUpdate(std::unique_ptr<FieldValue> value, int weight)
     : ValueUpdate(Add),
-      _value(value.clone()),
+      _value(std::move(value)),
       _weight(weight)
 {}
 

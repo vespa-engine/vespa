@@ -16,9 +16,9 @@ using namespace vespalib::xml;
 
 namespace document {
 
-RemoveValueUpdate::RemoveValueUpdate(const FieldValue& key)
+RemoveValueUpdate::RemoveValueUpdate(std::unique_ptr<FieldValue> key)
     : ValueUpdate(Remove),
-      _key(key.clone())
+      _key(std::move(key))
 {}
 
 RemoveValueUpdate::~RemoveValueUpdate() = default;

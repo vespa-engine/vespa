@@ -25,7 +25,7 @@ public:
 
 private:
     Operator _operator; // The operator of the arithmetic operation.
-    double _operand; // The operand of the arithmetic operation.
+    double   _operand; // The operand of the arithmetic operation.
 
     // Used by ValueUpdate's static factory function
     // Private because it generates an invalid object.
@@ -50,12 +50,8 @@ public:
           _operator(opt),
           _operand(opn) {}
 
-    ArithmeticValueUpdate(const ArithmeticValueUpdate& update)
-        : ValueUpdate(update),
-          _operator(update._operator),
-          _operand(update._operand) {}
-
-    ArithmeticValueUpdate &operator=(const ArithmeticValueUpdate &rhs) = default;
+    ArithmeticValueUpdate(const ArithmeticValueUpdate& update) = delete;
+    ArithmeticValueUpdate &operator=(const ArithmeticValueUpdate &rhs) = delete;
 
     bool operator==(const ValueUpdate& other) const override;
 
