@@ -88,8 +88,10 @@ public:
     PostingVectorIterator(const PostingVectorIterator&) = default;
     PostingVectorIterator& operator=(const PostingVectorIterator&) = default;
 
-    explicit PostingVectorIterator(const PostingVector & vector, size_t size) :
-            _vector(&vector[0]), _size(size) {
+    explicit PostingVectorIterator(const PostingVector & vector, size_t size)
+        : _vector(&vector.acquire_elem_ref(0)),
+          _size(size)
+    {
         assert(_size <= vector.size());
         linearSeek(1);
     }

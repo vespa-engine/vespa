@@ -63,11 +63,12 @@ public:
      * The pointer is only guaranteed to be valid for as long as you hold the attribute guard.
      **/
     MinFeatureHandle getMinFeatureVector() const {
-        return MinFeatureHandle(&_min_feature[0], getNumDocs());
+        const auto* min_feature_vector = &_min_feature.acquire_elem_ref(0);
+        return MinFeatureHandle(min_feature_vector, getNumDocs());
     }
 
     const IntervalRange * getIntervalRangeVector() const {
-        return &_interval_range_vector[0];
+        return &_interval_range_vector.acquire_elem_ref(0);
     }
 
     IntervalRange getMaxIntervalRange() const {
