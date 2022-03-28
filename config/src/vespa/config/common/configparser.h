@@ -17,14 +17,17 @@ public:
     class Cfg {
     public:
         Cfg(const std::vector<vespalib::string> & v)
-            : _cfg(&v[0]), _sz(v.size())
+            : _cfg(v.empty() ? nullptr : &v[0]),
+              _sz(v.size())
         { }
         Cfg(const std::vector<vespalib::string, vespalib::allocator_large<vespalib::string>> & v) :
-            _cfg(&v[0]),
+            _cfg(v.empty() ? nullptr : &v[0]),
             _sz(v.size())
         { }
-        size_t size() const { return _sz; }
-        const vespalib::string & operator[] (size_t idx) const { return _cfg[idx]; }
+        size_t size() const noexcept { return _sz; }
+        const vespalib::string & operator[] (size_t idx) const noexcept {
+            return _cfg[idx];
+        }
     private:
         const vespalib::string * _cfg;
         size_t                   _sz;
