@@ -8,6 +8,7 @@
 #include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
+#include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/executor.h>
@@ -152,7 +153,7 @@ public:
     LidInfo getLid(const Guard & guard, uint32_t lid) const override {
         (void) guard;
         if (lid < getDocIdLimit()) {
-            return _lidInfo[lid];
+            return vespalib::atomic::load_ref_acquire(_lidInfo.acquire_elem_ref(lid));
         } else {
             return LidInfo();
         }

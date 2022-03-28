@@ -136,7 +136,7 @@ LogDataStore::read(const LidVector & lids, IBufferVisitor & visitor) const
     GenerationHandler::Guard guard(_genHandler.takeGuard());
     for (uint32_t lid : lids) {
         if (lid < getDocIdLimit()) {
-            LidInfo li = _lidInfo[lid];
+            LidInfo li = vespalib::atomic::load_ref_acquire(_lidInfo.acquire_elem_ref(lid));
             if (!li.empty() && li.valid()) {
                 orderedLids.emplace_back(li, lid);
             }
@@ -168,7 +168,7 @@ LogDataStore::read(uint32_t lid, vespalib::DataBuffer& buffer) const
         LidInfo li(0);
         {
             GenerationHandler::Guard guard(_genHandler.takeGuard());
-            li = _lidInfo[lid];
+            li = vespalib::atomic::load_ref_acquire(_lidInfo.acquire_elem_ref(lid));
         }
         if (!li.empty() && li.valid()) {
             const FileChunk & fc(*_fileChunks[li.getFileId()]);
@@ -279,13 +279,13 @@ LogDataStore::remove(uint64_t serialNum, uint32_t lid)
 {
     MonitorGuard guard(_updateLock);
     if (lid < getDocIdLimit()) {
-        LidInfo lm = _lidInfo[lid];
+        LidInfo lm = vespalib::atomic::load_ref_relaxed(_lidInfo[lid]);
         if (lm.valid()) {
             _fileChunks[lm.getFileId()]->remove(lid, lm.size());
         }
         lm = getActive(guard).append(serialNum, lid, nullptr, 0, CpuCategory::WRITE);
         assert( lm.empty() );
-        _lidInfo[lid] = lm;
+        vespalib::atomic::store_ref_release(_lidInfo[lid], lm);
     }
 }
 
@@ -941,7 +941,7 @@ LogDataStore::setLid(const MonitorGuard &guard, uint32_t lid, const LidInfo &met
     if (lid < _lidInfo.size()) {
         _genHandler.updateFirstUsedGeneration();
         _lidInfo.removeOldGenerations(_genHandler.getFirstUsedGeneration());
-        const LidInfo &prev = _lidInfo[lid];
+        const LidInfo prev = vespalib::atomic::load_ref_relaxed(_lidInfo[lid]);
         if (prev.valid()) {
             _fileChunks[prev.getFileId()]->remove(lid, prev.size());
         }
@@ -950,7 +950,7 @@ LogDataStore::setLid(const MonitorGuard &guard, uint32_t lid, const LidInfo &met
         incGeneration();
     }
     updateDocIdLimit(lid + 1);
-    _lidInfo[lid] = meta;
+    vespalib::atomic::store_ref_release(_lidInfo[lid], meta);
 }
 
 void
@@ -972,7 +972,7 @@ LogDataStore::computeNumberOfSignificantBucketIdBits(const IBucketizer & bucketi
     auto bucketizerGuard = bucketizer.getGuard();
     GenerationHandler::Guard lidGuard(_genHandler.takeGuard());
     for (size_t i(0), m(getDocIdLimit()); i < m; i++) {
-        LidInfo lid(_lidInfo[i]);
+        LidInfo lid(vespalib::atomic::load_ref_acquire(_lidInfo.acquire_elem_ref(i)));
         if (lid.valid() && (lid.getFileId() == fileId.getId())) {
             BucketId bucketId = bucketizer.getBucketOf(bucketizerGuard, i);
             size_t msbCount = vespalib::Optimized::msbIdx(bucketId.toKey());
@@ -1194,7 +1194,7 @@ LogDataStore::compactLidSpace(uint32_t wantedDocLidLimit)
     MonitorGuard guard(_updateLock);
     assert(wantedDocLidLimit <= getDocIdLimit());
     for (size_t i = wantedDocLidLimit; i < _lidInfo.size(); ++i) {
-        _lidInfo[i] = LidInfo();
+        vespalib::atomic::store_ref_release(_lidInfo[i], LidInfo());
     }
     setDocIdLimit(wantedDocLidLimit);
     _compactLidSpaceGeneration = _genHandler.getCurrentGeneration();
