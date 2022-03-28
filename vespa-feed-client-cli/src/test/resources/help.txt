@@ -25,6 +25,7 @@ Vespa feed client
                                           streams per HTTP/2 connection
     --private-key <arg>                   Path to PEM/PKCS#8 encoded
                                           private key file
+    --proxy <arg>                         URI to proxy endpoint
     --route <arg>                         Target Vespa route for feed
                                           operations
     --show-all                            Print the result of every feed

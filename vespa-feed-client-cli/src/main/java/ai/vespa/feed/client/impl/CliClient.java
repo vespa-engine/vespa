@@ -138,6 +138,7 @@ public class CliClient {
         builder.setDryrun(cliArgs.dryrunEnabled());
         cliArgs.doomSeconds().ifPresent(doom -> builder.setCircuitBreaker(new GracePeriodCircuitBreaker(Duration.ofSeconds(10),
                                                                                                         Duration.ofSeconds(doom))));
+        cliArgs.proxy().ifPresent(builder::setProxy);
         return builder.build();
     }
 

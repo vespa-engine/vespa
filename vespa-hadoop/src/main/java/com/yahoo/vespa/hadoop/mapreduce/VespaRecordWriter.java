@@ -130,6 +130,12 @@ public class VespaRecordWriter extends RecordWriter<Object, Object> {
                 .setMaxStreamPerConnection(streamsPerConnection)
                 .setDryrun(config.dryrun())
                 .setRetryStrategy(retryStrategy(config));
+        if (config.proxyHost() != null) {
+            URI proxyUri = URI.create(String.format(
+                    "%s://%s:%d", config.proxyScheme(), config.proxyHost(), config.proxyPort()));
+            log.info("Using proxy " + proxyUri);
+            feedClientBuilder.setProxy(proxyUri);
+        }
 
         onFeedClientInitialization(feedClientBuilder);
         return feedClientBuilder.build();

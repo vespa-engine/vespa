@@ -10,15 +10,13 @@ import org.apache.hc.client5.http.impl.async.HttpAsyncClients;
 import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
 import org.apache.hc.core5.concurrent.FutureCallback;
 import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpHost;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.http2.config.H2Config;
 import org.apache.hc.core5.net.URIAuthority;
 import org.apache.hc.core5.reactor.IOReactorConfig;
-import org.apache.hc.core5.util.Timeout;
-
-import org.apache.hc.core5.function.Factory;
 import org.apache.hc.core5.reactor.ssl.TlsDetails;
-import javax.net.ssl.SSLEngine;
+import org.apache.hc.core5.util.Timeout;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -45,11 +43,7 @@ class ApacheCluster implements Cluster {
     private final List<Endpoint> endpoints = new ArrayList<>();
     private final List<BasicHeader> defaultHeaders = Arrays.asList(new BasicHeader("User-Agent", String.format("vespa-feed-client/%s", Vespa.VERSION)),
                                                                    new BasicHeader("Vespa-Client-Version", Vespa.VERSION));
-    private final RequestConfig defaultConfig = RequestConfig.custom()
-                                                             .setConnectTimeout(Timeout.ofSeconds(10))
-                                                             .setConnectionRequestTimeout(Timeout.DISABLED)
-                                                             .setResponseTimeout(Timeout.ofSeconds(190))
-                                                             .build();
+    private final RequestConfig requestConfig;
 
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(t -> new Thread(t, "request-timeout-thread"));
 
@@ -57,6 +51,7 @@ class ApacheCluster implements Cluster {
         for (URI endpoint : builder.endpoints)
             for (int i = 0; i < builder.connectionsPerEndpoint; i++)
                 endpoints.add(new Endpoint(createHttpClient(builder), endpoint));
+        this.requestConfig = createRequestConfig(builder);
     }
 
     @Override
@@ -75,7 +70,7 @@ class ApacheCluster implements Cluster {
             SimpleHttpRequest request = new SimpleHttpRequest(wrapped.method(), wrapped.path());
             request.setScheme(endpoint.url.getScheme());
             request.setAuthority(new URIAuthority(endpoint.url.getHost(), portOf(endpoint.url)));
-            request.setConfig(defaultConfig);
+            request.setConfig(requestConfig);
             defaultHeaders.forEach(request::setHeader);
             wrapped.headers().forEach((name, value) -> request.setHeader(name, value.get()));
             if (wrapped.body() != null)
@@ -160,6 +155,15 @@ class ApacheCluster implements Cluster {
     private static int portOf(URI url) {
         return url.getPort() == -1 ? url.getScheme().equals("http") ? 80 : 443
                                    : url.getPort();
+    }
+
+    private static RequestConfig createRequestConfig(FeedClientBuilderImpl b) {
+        RequestConfig.Builder builder = RequestConfig.custom()
+                .setConnectTimeout(Timeout.ofSeconds(10))
+                .setConnectionRequestTimeout(Timeout.DISABLED)
+                .setResponseTimeout(Timeout.ofSeconds(190));
+        if (b.proxy != null) builder.setProxy(new HttpHost(b.proxy.getScheme(), b.proxy.getHost(), b.proxy.getPort()));
+        return builder.build();
     }
 
     private static class ApacheHttpResponse implements HttpResponse {

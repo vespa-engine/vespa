@@ -19,7 +19,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
@@ -50,7 +49,7 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     Collection<X509Certificate> caCertificates;
     boolean benchmark = true;
     boolean dryrun = false;
-
+    URI proxy;
 
 
     public FeedClientBuilderImpl() {
@@ -187,6 +186,8 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
         this.caCertificates = caCertificates;
         return this;
     }
+
+    @Override public FeedClientBuilder setProxy(URI uri) { this.proxy = uri; return this; }
 
     /** Constructs instance of {@link ai.vespa.feed.client.FeedClient} from builder configuration */
     @Override

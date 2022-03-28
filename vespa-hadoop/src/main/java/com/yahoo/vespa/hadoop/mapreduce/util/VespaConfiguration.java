@@ -16,6 +16,7 @@ public class VespaConfiguration {
     public static final String USE_SSL = "vespa.feed.ssl";
     public static final String PROXY_HOST = "vespa.feed.proxy.host";
     public static final String PROXY_PORT = "vespa.feed.proxy.port";
+    public static final String PROXY_SCHEME = "vespa.feed.proxy.scheme";
     public static final String DRYRUN = "vespa.feed.dryrun";
     public static final String USE_COMPRESSION = "vespa.feed.usecompression";
     public static final String DATA_FORMAT = "vespa.feed.data.format";
@@ -68,6 +69,13 @@ public class VespaConfiguration {
 
     public int proxyPort() {
         return getInt(PROXY_PORT, 4080);
+    }
+
+
+    public String proxyScheme() {
+        String raw = getString(PROXY_SCHEME);
+        if (raw == null) return "http";
+        return raw;
     }
 
 
@@ -186,6 +194,7 @@ public class VespaConfiguration {
         sb.append(USE_SSL + ": " + useSSL().map(Object::toString).orElse("<empty>") + "\n");
         sb.append(PROXY_HOST + ": " + proxyHost() + "\n");
         sb.append(PROXY_PORT + ": " + proxyPort() + "\n");
+        sb.append(PROXY_SCHEME + ": " + proxyScheme() + "\n");
         sb.append(DRYRUN + ": " +  dryrun() +"\n");
         sb.append(USE_COMPRESSION + ": " +  useCompression() +"\n");
         sb.append(DATA_FORMAT + ": " +  dataFormat() +"\n");
