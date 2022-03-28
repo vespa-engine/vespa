@@ -62,8 +62,7 @@ FieldUpdate::addUpdate(std::unique_ptr<ValueUpdate> update) & {
 
 FieldUpdate&&
 FieldUpdate::addUpdate(std::unique_ptr<ValueUpdate> update) && {
-    update->checkCompatibility(_field); // May throw exception.
-    _updates.push_back(std::move(update));
+    addUpdate(std::move(update));
     return std::move(*this);
 }
 
