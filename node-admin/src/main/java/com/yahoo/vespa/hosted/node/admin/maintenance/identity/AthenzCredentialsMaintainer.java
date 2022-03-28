@@ -108,7 +108,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
         try {
             context.log(logger, Level.FINE, "Checking certificate");
-            ContainerPath containerSiaDirectory = context.paths().of(CONTAINER_SIA_DIRECTORY).withUser(context.users().vespa());
+            ContainerPath containerSiaDirectory = context.paths().of(CONTAINER_SIA_DIRECTORY, context.users().vespa());
             ContainerPath privateKeyFile = (ContainerPath) SiaUtils.getPrivateKeyFile(containerSiaDirectory, context.identity());
             ContainerPath certificateFile = (ContainerPath) SiaUtils.getCertificateFile(containerSiaDirectory, context.identity());
             ContainerPath identityDocumentFile = containerSiaDirectory.resolve("vespa-node-identity-document.json");

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 
 import java.nio.file.Path;
@@ -14,6 +15,13 @@ public interface ContainerData {
 
     /** Add or overwrite file in container at path. */
     void addFile(ContainerPath path, String data);
+
+    /**
+     * @param path Container path to write
+     * @param data UTF-8 file content
+     * @param permissions file permissions, see {@link UnixPath#setPermissions(String)} for format.
+     */
+    void addFile(ContainerPath path, String data, String permissions);
 
     /** Add directory in container at path. */
     void addDirectory(ContainerPath path);
