@@ -4,11 +4,11 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/auth/auth0"
 	"github.com/vespa-engine/vespa/client/go/curl"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
@@ -50,10 +50,8 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 			}
 			switch curlService {
 			case vespa.DeployService:
-				if target.Type() == vespa.TargetCloud {
-					if err := addCloudAuth0Authentication(target.Deployment().System, cli.config, c); err != nil {
-						return err
-					}
+				if err := addAccessToken(c, target); err != nil {
+					return err
 				}
 			case vespa.DocumentService, vespa.QueryService:
 				c.PrivateKey = service.TLSOptions.PrivateKeyFile
@@ -77,17 +75,19 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 	return cmd
 }
 
-func addCloudAuth0Authentication(system vespa.System, cfg *Config, c *curl.Command) error {
-	a, err := auth0.GetAuth0(cfg.authConfigPath(), system.Name, system.URL)
-	if err != nil {
+func addAccessToken(cmd *curl.Command, target vespa.Target) error {
+	if target.Type() != vespa.TargetCloud {
+		return nil
+	}
+	req := http.Request{}
+	if err := target.SignRequest(&req, ""); err != nil {
 		return err
 	}
-
-	authSystem, err := a.PrepareSystem(auth0.ContextWithCancel())
-	if err != nil {
-		return err
+	headerValue := req.Header.Get("Authorization")
+	if headerValue == "" {
+		return fmt.Errorf("no authorization header added when signing request")
 	}
-	c.Header("Authorization", "Bearer "+authSystem.AccessToken)
+	cmd.Header("Authorization", headerValue)
 	return nil
 }
 
