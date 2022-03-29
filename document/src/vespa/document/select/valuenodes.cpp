@@ -225,8 +225,8 @@ public:
     IteratorHandler();
     ~IteratorHandler();
     bool hasSingleValue() const;
-    std::unique_ptr<Value> getSingleValue() &&;
-    std::vector<ArrayValue::VariableValue> getValues() &&;
+    std::unique_ptr<Value> stealSingleValue() &&;
+    std::vector<ArrayValue::VariableValue> stealValues() &&;
 private:
     std::unique_ptr<Value> _firstValue;
     std::vector<ArrayValue::VariableValue> _values;
@@ -240,17 +240,17 @@ IteratorHandler::~IteratorHandler() = default;
 
 bool
 IteratorHandler::hasSingleValue() const {
-    return _firstValue.get() && (_values.size() == 0);
+    return _firstValue && _values.empty();
 }
 
 std::unique_ptr<Value>
-IteratorHandler::getSingleValue() && {
+IteratorHandler::stealSingleValue() && {
     return std::move(_firstValue);
 }
 
 std::vector<ArrayValue::VariableValue>
-IteratorHandler::getValues() && {
-    if (_firstValue.get()) {
+IteratorHandler::stealValues() && {
+    if (_firstValue) {
         _values.insert(_values.begin(), ArrayValue::VariableValue(fieldvalue::VariableMap(), Value::SP(_firstValue.release())));
     }
 
@@ -419,9 +419,9 @@ FieldValueNode::getValue(const Context& context) const
         doc.iterateNested(_fieldPath.getFullRange(), handler);
 
         if (handler.hasSingleValue()) {
-            return std::move(handler).getSingleValue();
+            return std::move(handler).stealSingleValue();
         } else {
-            std::vector<ArrayValue::VariableValue> values = std::move(handler).getValues();
+            std::vector<ArrayValue::VariableValue> values = std::move(handler).stealValues();
 
             if (values.empty()) {
                 return std::make_unique<NullValue>();
@@ -480,9 +480,9 @@ FieldValueNode::traceValue(const Context &context, std::ostream& out) const
         doc.iterateNested(_fieldPath.getFullRange(), handler);
 
         if (handler.hasSingleValue()) {
-            return std::move(handler).getSingleValue();
+            return std::move(handler).stealSingleValue();
         } else {
-            std::vector<ArrayValue::VariableValue> values = std::move(handler).getValues();
+            std::vector<ArrayValue::VariableValue> values = std::move(handler).stealValues();
 
             if (values.size() == 0) {
                 return std::make_unique<NullValue>();
