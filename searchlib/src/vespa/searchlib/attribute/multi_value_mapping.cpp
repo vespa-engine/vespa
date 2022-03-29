@@ -4,7 +4,7 @@
 #include "i_enum_store.h"
 #include "multi_value_mapping.h"
 #include "multi_value_mapping.hpp"
-#include "multivalue.h"
+#include <vespa/searchcommon/attribute/multivalue.h>
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/util/array.hpp>

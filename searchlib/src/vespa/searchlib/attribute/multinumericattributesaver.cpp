@@ -2,7 +2,7 @@
 
 #include "multinumericattributesaver.h"
 #include "multivalueattributesaverutils.h"
-#include "multivalue.h"
+#include <vespa/searchcommon/attribute/multivalue.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 
 using vespalib::GenerationHandler;

@@ -3,10 +3,10 @@
 #pragma once
 
 #include "utils.h"
-#include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/searchlib/attribute/multivalue.h>
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchcommon/attribute/multivalue.h>
+#include <vespa/searchlib/fef/blueprint.h>
+#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace search::fef { class Property; }

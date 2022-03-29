@@ -8,7 +8,7 @@
 #include "multienumattribute.h"
 #include "multi_value_mapping.h"
 #include "enumhintsearchcontext.h"
-#include "multivalue.h"
+#include <vespa/searchcommon/attribute/multivalue.h>
 
 namespace search {
 
