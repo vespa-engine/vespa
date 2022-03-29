@@ -225,9 +225,8 @@ public:
     IteratorHandler();
     ~IteratorHandler();
     bool hasSingleValue() const;
-    std::unique_ptr<Value> getSingleValue();
-    const std::vector<ArrayValue::VariableValue> &getValues();
-
+    std::unique_ptr<Value> stealSingleValue() &&;
+    std::vector<ArrayValue::VariableValue> stealValues() &&;
 private:
     std::unique_ptr<Value> _firstValue;
     std::vector<ArrayValue::VariableValue> _values;
@@ -241,21 +240,21 @@ IteratorHandler::~IteratorHandler() = default;
 
 bool
 IteratorHandler::hasSingleValue() const {
-    return _firstValue.get() && (_values.size() == 0);
+    return _firstValue && _values.empty();
 }
 
 std::unique_ptr<Value>
-IteratorHandler::getSingleValue() {
+IteratorHandler::stealSingleValue() && {
     return std::move(_firstValue);
 }
 
-const std::vector<ArrayValue::VariableValue>&
-IteratorHandler::getValues() {
-    if (_firstValue.get()) {
+std::vector<ArrayValue::VariableValue>
+IteratorHandler::stealValues() && {
+    if (_firstValue) {
         _values.insert(_values.begin(), ArrayValue::VariableValue(fieldvalue::VariableMap(), Value::SP(_firstValue.release())));
     }
 
-    return _values;
+    return std::move(_values);
 }
 
 void
@@ -322,9 +321,8 @@ IteratorHandler::getInternalValue(const FieldValue& fval) const
             if (val.size() == 0) {
                 return std::make_unique<NullValue>();
             } else {
-                std::vector<ArrayValue::VariableValue> values;
                 // TODO: Array comparison.
-                return std::make_unique<ArrayValue>(values);
+                return std::make_unique<ArrayValue>(std::vector<ArrayValue::VariableValue>());
             }
         }
         case FieldValue::Type::STRUCT:
@@ -338,7 +336,7 @@ IteratorHandler::getInternalValue(const FieldValue& fval) const
                     FieldValue::UP fv(val.getValue(it.field()));
                     values[it.field().getName()] = Value::SP(getInternalValue(*fv).release());
                 }
-                return std::make_unique<StructValue>(values);
+                return std::make_unique<StructValue>(std::move(values));
             }
         }
         case FieldValue::Type::MAP:
@@ -347,9 +345,8 @@ IteratorHandler::getInternalValue(const FieldValue& fval) const
             if (val.isEmpty()) {
                 return std::make_unique<NullValue>();
             } else {
-                std::vector<ArrayValue::VariableValue> values;
                 // TODO: Map comparison
-                return std::make_unique<ArrayValue>(values);
+                return std::make_unique<ArrayValue>(std::vector<ArrayValue::VariableValue>());
             }
         }
         default:
@@ -422,14 +419,14 @@ FieldValueNode::getValue(const Context& context) const
         doc.iterateNested(_fieldPath.getFullRange(), handler);
 
         if (handler.hasSingleValue()) {
-            return handler.getSingleValue();
+            return std::move(handler).stealSingleValue();
         } else {
-            const std::vector<ArrayValue::VariableValue>& values = handler.getValues();
+            std::vector<ArrayValue::VariableValue> values = std::move(handler).stealValues();
 
             if (values.empty()) {
                 return std::make_unique<NullValue>();
             } else {
-                return std::make_unique<ArrayValue>(handler.getValues());
+                return std::make_unique<ArrayValue>(std::move(values));
             }
         }
     } catch (vespalib::IllegalArgumentException& e) {
@@ -483,14 +480,14 @@ FieldValueNode::traceValue(const Context &context, std::ostream& out) const
         doc.iterateNested(_fieldPath.getFullRange(), handler);
 
         if (handler.hasSingleValue()) {
-            return handler.getSingleValue();
+            return std::move(handler).stealSingleValue();
         } else {
-            const std::vector<ArrayValue::VariableValue>& values = handler.getValues();
+            std::vector<ArrayValue::VariableValue> values = std::move(handler).stealValues();
 
             if (values.size() == 0) {
                 return std::make_unique<NullValue>();
             } else {
-                return std::make_unique<ArrayValue>(handler.getValues());
+                return std::make_unique<ArrayValue>(std::move(values));
             }
         }
     } catch (FieldNotFoundException& e) {

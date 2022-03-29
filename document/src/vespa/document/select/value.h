@@ -33,29 +33,30 @@ public:
     enum Type { Invalid, Null, String, Integer, Float, Array, Struct, Bucket };
 
     Value(Type t) : _type(t) {}
-    virtual ~Value() {}
+    virtual ~Value() = default;
 
     Type getType() const { return _type; }
 
     virtual ResultList operator<(const Value& value) const = 0;
     virtual ResultList operator==(const Value& value) const = 0;
 
-    virtual UP clone() const = 0;
-
-    virtual ResultList operator!=(const Value& value) const
-        { return !(this->operator==(value)); }
-    virtual ResultList operator>(const Value& value) const
-        { return (!(this->operator<(value)) && !(this->operator==(value))); }
-    virtual ResultList operator>=(const Value& value) const
-        { return !(this->operator<(value)); }
-    virtual ResultList operator<=(const Value& value) const
-        { return ((this->operator<(value)) || (this->operator==(value))); }
+    virtual ResultList operator!=(const Value& value) const {
+        return !(this->operator==(value));
+    }
+    virtual ResultList operator>(const Value& value) const {
+        return (!(this->operator<(value)) && !(this->operator==(value)));
+    }
+    virtual ResultList operator>=(const Value& value) const {
+        return !(this->operator<(value));
+    }
+    virtual ResultList operator<=(const Value& value) const {
+        return ((this->operator<(value)) || (this->operator==(value)));
+    }
 
     virtual ResultList globCompare(const Value& value) const;
     virtual ResultList regexCompare(const Value& value) const;
     virtual ResultList globTrace(const Value& value, std::ostream& trace) const;
     virtual ResultList regexTrace(const Value& value, std::ostream& trace) const;
-
 private:
     Type _type;
 };
@@ -68,7 +69,6 @@ public:
     ResultList operator<(const Value&) const override;
     ResultList operator==(const Value&) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    Value::UP clone() const override { return std::make_unique<InvalidValue>(); }
 };
 
 class NullValue : public Value
@@ -82,7 +82,6 @@ public:
     ResultList operator>=(const Value &) const override;
     ResultList operator<=(const Value &) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    Value::UP clone() const override { return std::make_unique<NullValue>(); }
 };
 
 class StringValue : public Value
@@ -96,7 +95,6 @@ public:
     ResultList operator<(const Value& value) const override;
     ResultList operator==(const Value& value) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    Value::UP clone() const override { return std::make_unique<StringValue>(_value); }
 };
 
 class IntegerValue;
@@ -137,10 +135,6 @@ public:
     ResultList operator==(const IntegerValue& value) const override;
     ResultList operator==(const FloatValue& value) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
-    Value::UP clone() const override {
-        return std::make_unique<IntegerValue>(_value, getType() == Value::Bucket);
-    }
 private:
     ValueType _value;
 };
@@ -163,36 +157,45 @@ public:
     ResultList operator==(const IntegerValue& value) const override;
     ResultList operator==(const FloatValue& value) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
-    Value::UP clone() const override { return std::make_unique<FloatValue>(_value); }
 private:
     ValueType _value;
 };
 
-inline ResultList IntegerValue::operator>(const IntegerValue& value) const
-    { return ResultList(Result::get(_value > value.getValue())); }
-inline ResultList IntegerValue::operator>(const FloatValue& value) const
-    { return ResultList(Result::get(_value > value.getValue())); }
-inline ResultList IntegerValue::operator==(const IntegerValue& value) const
-    { return ResultList(Result::get(_value == value.getValue())); }
-inline ResultList IntegerValue::operator==(const FloatValue& value) const
-    { return ResultList(Result::get(_value == value.getValue())); }
+inline ResultList IntegerValue::operator>(const IntegerValue& value) const {
+    return ResultList(Result::get(_value > value.getValue()));
+}
+inline ResultList IntegerValue::operator>(const FloatValue& value) const {
+    return ResultList(Result::get(_value > value.getValue()));
+}
+inline ResultList IntegerValue::operator==(const IntegerValue& value) const {
+    return ResultList(Result::get(_value == value.getValue()));
+}
+inline ResultList IntegerValue::operator==(const FloatValue& value) const {
+    return ResultList(Result::get(_value == value.getValue()));
+}
 
-inline ResultList FloatValue::operator>(const IntegerValue& value) const
-    { return ResultList(Result::get(_value > value.getValue())); }
-inline ResultList FloatValue::operator>(const FloatValue& value) const
-    { return ResultList(Result::get(_value > value.getValue())); }
-inline ResultList FloatValue::operator==(const IntegerValue& value) const
-    { return ResultList(Result::get(_value == value.getValue())); }
-inline ResultList FloatValue::operator==(const FloatValue& value) const
-    { return ResultList(Result::get(_value == value.getValue())); }
+inline ResultList FloatValue::operator>(const IntegerValue& value) const {
+    return ResultList(Result::get(_value > value.getValue()));
+}
+inline ResultList FloatValue::operator>(const FloatValue& value) const {
+    return ResultList(Result::get(_value > value.getValue()));
+}
+inline ResultList FloatValue::operator==(const IntegerValue& value) const {
+    return ResultList(Result::get(_value == value.getValue()));
+}
+inline ResultList FloatValue::operator==(const FloatValue& value) const {
+    return ResultList(Result::get(_value == value.getValue()));
+}
 
 class ArrayValue : public Value
 {
 public:
     using VariableValue = std::pair<fieldvalue::VariableMap, Value::SP>;
 
-    ArrayValue(const std::vector<VariableValue>& values);
+    ArrayValue(std::vector<VariableValue> values);
+    ArrayValue(const ArrayValue &) = delete;
+    ArrayValue & operator =(const ArrayValue &) = delete;
+    ~ArrayValue() override;
 
     ResultList operator<(const Value& value) const override;
     ResultList operator>(const Value& value) const override;
@@ -209,9 +212,6 @@ public:
 
     template <typename Predicate>
     ResultList doCompare(const Value& value, const Predicate& cmp) const;
-
-    Value::UP clone() const override { return std::make_unique<ArrayValue>(_values); }
-
 private:
     struct EqualsComparator;
     struct NotEqualsComparator;
@@ -228,14 +228,15 @@ private:
 class StructValue : public Value
 {
 public:
-    typedef std::map<vespalib::string, Value::SP> ValueMap;
-    StructValue(const ValueMap & values);
+    using ValueMap = std::map<vespalib::string, Value::SP>;
+    StructValue(ValueMap values);
+    StructValue(const StructValue &) = delete;
+    StructValue & operator = (const StructValue &) = delete;
+    ~StructValue() override;
 
     ResultList operator<(const Value& value) const override;
     ResultList operator==(const Value& value) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
-    Value::UP clone() const override { return std::make_unique<StructValue>(_values); }
 private:
     ValueMap _values;
 };

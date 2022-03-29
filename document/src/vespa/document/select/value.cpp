@@ -196,11 +196,12 @@ FloatValue::print(std::ostream& out, bool verbose,
     out << _value << 'f';
 }
 
-ArrayValue::ArrayValue(const std::vector<VariableValue>& values)
+ArrayValue::ArrayValue(std::vector<VariableValue> values)
     : Value(Array),
-      _values(values)
+      _values(std::move(values))
 {
 }
+ArrayValue::~ArrayValue() = default;
 
 struct ArrayValue::EqualsComparator {
     bool operator()(std::size_t lhs, std::size_t rhs) const { return lhs == rhs; }
@@ -318,11 +319,13 @@ ArrayValue::print(std::ostream& out, bool verbose,
     out << "<no array representation in language yet>";
 }
 
-StructValue::StructValue(const ValueMap & values)
+StructValue::StructValue(ValueMap values)
     : Value(Struct),
-      _values(values)
+      _values(std::move(values))
 {
 }
+
+StructValue::~StructValue() = default;
 
 ResultList
 StructValue::operator<(const Value& value) const
