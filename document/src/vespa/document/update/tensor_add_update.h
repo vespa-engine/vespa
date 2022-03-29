@@ -21,7 +21,7 @@ class TensorAddUpdate final : public ValueUpdate, public TensorUpdate {
     TensorAddUpdate();
     ACCEPT_UPDATE_VISITOR;
 public:
-    TensorAddUpdate(std::unique_ptr<TensorFieldValue> &&tensor);
+    explicit TensorAddUpdate(std::unique_ptr<TensorFieldValue> tensor);
     TensorAddUpdate(const TensorAddUpdate &rhs) = delete;
     TensorAddUpdate &operator=(const TensorAddUpdate &rhs) = delete;
     ~TensorAddUpdate() override;

@@ -22,7 +22,7 @@ class AssignValueUpdate final : public ValueUpdate {
     ACCEPT_UPDATE_VISITOR;
 public:
     AssignValueUpdate();
-    AssignValueUpdate(std::unique_ptr<FieldValue> value);
+    explicit AssignValueUpdate(std::unique_ptr<FieldValue> value);
     AssignValueUpdate(const AssignValueUpdate& value) = delete;
     AssignValueUpdate & operator=(const AssignValueUpdate& value) = delete;
     ~AssignValueUpdate() override;

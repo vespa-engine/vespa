@@ -62,7 +62,7 @@ createTestDocumentUpdate(const DocumentTypeRepo& repo)
     up->addUpdate(FieldUpdate(type->getField("intattr"))
 		  .addUpdate(std::make_unique<AssignValueUpdate>(std::make_unique<IntFieldValue>(7))));
     up->addUpdate(FieldUpdate(type->getField("stringattr"))
-		  .addUpdate(std::make_unique<AssignValueUpdate>(std::make_unique<StringFieldValue>("New value"))));
+		  .addUpdate(std::make_unique<AssignValueUpdate>(StringFieldValue::make("New value"))));
     up->addUpdate(FieldUpdate(type->getField("arrayattr"))
 		  .addUpdate(std::make_unique<AddValueUpdate>(std::make_unique<IntFieldValue>(123)))
 		  .addUpdate(std::make_unique<AddValueUpdate>(std::make_unique<IntFieldValue>(456))));

@@ -22,7 +22,7 @@ public:
      *
      * @param value The identifier of the field value to update.
      */
-    RemoveValueUpdate(std::unique_ptr<FieldValue> key);
+    explicit RemoveValueUpdate(std::unique_ptr<FieldValue> key);
     RemoveValueUpdate(const RemoveValueUpdate &) = delete;
     RemoveValueUpdate & operator=(const RemoveValueUpdate &) = delete;
     ~RemoveValueUpdate() override;

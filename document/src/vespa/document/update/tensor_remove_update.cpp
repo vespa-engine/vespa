@@ -50,9 +50,8 @@ TensorRemoveUpdate::TensorRemoveUpdate(std::unique_ptr<TensorFieldValue> tensor)
     : ValueUpdate(TensorRemove),
       TensorUpdate(),
       _tensorType(std::make_unique<TensorDataType>(dynamic_cast<const TensorDataType &>(*tensor->getDataType()))),
-      _tensor(static_cast<TensorFieldValue *>(_tensorType->createFieldValue().release()))
+      _tensor(std::move(tensor))
 {
-    *_tensor = *tensor;
 }
 
 TensorRemoveUpdate::~TensorRemoveUpdate() = default;

@@ -36,8 +36,9 @@ ValueUpdate::className() const noexcept {
             return "TensorModifyUpdate";
         case TensorRemove:
             return "TensorRemoveUpdate";
+        default:
+            abort();
     }
-    abort();
 }
 
 std::unique_ptr<ValueUpdate>
@@ -61,8 +62,9 @@ ValueUpdate::create(ValueUpdateType type) {
             return std::unique_ptr<TensorModifyUpdate>( new TensorModifyUpdate());
         case TensorRemove:
             return std::unique_ptr<TensorRemoveUpdate>( new TensorRemoveUpdate());
+        default:
+            throw std::runtime_error(vespalib::make_string("Could not find a class for classId %d(%x)", type, type));
     }
-    throw std::runtime_error(vespalib::make_string("Could not find a class for classId %d(%x)", type, type));
 }
 
 std::unique_ptr<ValueUpdate>

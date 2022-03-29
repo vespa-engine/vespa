@@ -226,7 +226,7 @@ TEST_F("require that single attributes are updated", Fixture)
     {
         BasicType bt(BasicType::STRING);
         AttributePtr vec = create<std::string, StringAttribute>(3, "first", 0, "in1/string",Config(bt, ct));
-        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(std::make_unique<StringFieldValue>("second")));
+        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(StringFieldValue::make("second")));
         f.applyValueUpdate(*vec, 2, std::make_unique<ClearValueUpdate>());
         EXPECT_EQUAL(3u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedString>{WeightedString("second")}));
@@ -293,8 +293,8 @@ TEST_F("require that array attributes are updated", Fixture)
     {
         BasicType bt(BasicType::STRING);
         AttributePtr vec = create<std::string, StringAttribute>(5, "first", 1, "in1/astring", Config(bt, ct));
-        auto first = std::make_unique<StringFieldValue>("first");
-        auto second = std::make_unique<StringFieldValue>("second");
+        auto first = StringFieldValue::make("first");
+        auto second = StringFieldValue::make("second");
         auto assign = std::make_unique<ArrayFieldValue>(f.docType->getField("astring").getDataType());
         assign->add(*second);
         f.applyArrayUpdates(*vec, std::move(assign), std::move(first), std::move(second));
@@ -348,9 +348,9 @@ TEST_F("require that weighted set attributes are updated", Fixture)
     {
         BasicType bt(BasicType::STRING);
         AttributePtr vec = create<std::string, StringAttribute>(5, "first", 100, "in1/wsstring", Config(bt, ct));
-        auto first = std::make_unique<StringFieldValue>("first");
-        auto copyOfFirst = std::make_unique<StringFieldValue>("first");
-        auto second = std::make_unique<StringFieldValue>("second");
+        auto first = StringFieldValue::make("first");
+        auto copyOfFirst = StringFieldValue::make("first");
+        auto second = StringFieldValue::make("second");
         auto assign = std::make_unique<WeightedSetFieldValue>(f.docType->getField("wsstring").getDataType());
         assign->add(*second, 20);
         f.applyWeightedSetUpdates(*vec, std::move(assign), std::move(first), std::move(copyOfFirst), std::move(second));

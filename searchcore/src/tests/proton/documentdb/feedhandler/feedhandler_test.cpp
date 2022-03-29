@@ -774,7 +774,7 @@ TEST_F("require that all value updates will be inspected before rejected", Schem
     EXPECT_FALSE(FeedRejectHelper::mustReject(*docUpdate));
     docUpdate->addUpdate(std::move(FieldUpdate(docType->getField("i1")).addUpdate(std::make_unique<ClearValueUpdate>())));
     EXPECT_FALSE(FeedRejectHelper::mustReject(*docUpdate));
-    docUpdate->addUpdate(std::move(FieldUpdate(docType->getField("i1")).addUpdate(std::make_unique<AssignValueUpdate>(std::make_unique<StringFieldValue>()))));
+    docUpdate->addUpdate(std::move(FieldUpdate(docType->getField("i1")).addUpdate(std::make_unique<AssignValueUpdate>(StringFieldValue::make()))));
     EXPECT_TRUE(FeedRejectHelper::mustReject(*docUpdate));
 }
 

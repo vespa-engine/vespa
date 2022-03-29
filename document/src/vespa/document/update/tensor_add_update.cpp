@@ -29,7 +29,7 @@ TensorAddUpdate::TensorAddUpdate()
 {
 }
 
-TensorAddUpdate::TensorAddUpdate(std::unique_ptr<TensorFieldValue> &&tensor)
+TensorAddUpdate::TensorAddUpdate(std::unique_ptr<TensorFieldValue> tensor)
     : ValueUpdate(TensorAdd),
       TensorUpdate(),
       _tensor(std::move(tensor))

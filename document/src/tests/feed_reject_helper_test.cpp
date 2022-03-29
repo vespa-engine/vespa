@@ -53,7 +53,7 @@ TEST(DocumentRejectTest, requireThatFixedSizeFieldValuesAreDetected) {
 
 TEST(DocumentRejectTest, requireThatClearRemoveTensorRemoveAndArtithmeticUpdatesIgnoreFeedRejection) {
     EXPECT_FALSE(FeedRejectHelper::mustReject(ClearValueUpdate()));
-    EXPECT_FALSE(FeedRejectHelper::mustReject(RemoveValueUpdate(std::make_unique<StringFieldValue>())));
+    EXPECT_FALSE(FeedRejectHelper::mustReject(RemoveValueUpdate(StringFieldValue::make())));
     EXPECT_FALSE(FeedRejectHelper::mustReject(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 5.0)));
     EXPECT_FALSE(FeedRejectHelper::mustReject(TensorRemoveUpdate(std::make_unique<TensorFieldValue>())));
 }
@@ -68,7 +68,7 @@ TEST(DocumentRejectTest, requireThatAddMapTensorModifyAndTensorAddUpdatesWillBeR
 
 TEST(DocumentRejectTest, requireThatAssignUpdatesWillBeRejectedBasedOnTheirContent) {
     EXPECT_FALSE(FeedRejectHelper::mustReject(AssignValueUpdate(std::make_unique<IntFieldValue>())));
-    EXPECT_TRUE(FeedRejectHelper::mustReject(AssignValueUpdate(std::make_unique<StringFieldValue>())));
+    EXPECT_TRUE(FeedRejectHelper::mustReject(AssignValueUpdate(StringFieldValue::make())));
 }
 
 }

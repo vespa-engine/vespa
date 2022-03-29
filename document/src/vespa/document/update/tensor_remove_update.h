@@ -26,7 +26,7 @@ private:
     ACCEPT_UPDATE_VISITOR;
 
 public:
-    TensorRemoveUpdate(std::unique_ptr<TensorFieldValue> tensor);
+    explicit TensorRemoveUpdate(std::unique_ptr<TensorFieldValue> tensor);
     TensorRemoveUpdate(const TensorRemoveUpdate &rhs) = delete;
     TensorRemoveUpdate &operator=(const TensorRemoveUpdate &rhs) = delete;
     ~TensorRemoveUpdate() override;

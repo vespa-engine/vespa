@@ -141,7 +141,7 @@ DocumentUpdate::SP DocumentSelectParserTest::createUpdate(
     doc->addUpdate(FieldUpdate(doc->getType().getField("headerval"))
                       .addUpdate(std::make_unique<AssignValueUpdate>(std::make_unique<IntFieldValue>(hint))));
     doc->addUpdate(FieldUpdate(doc->getType().getField("hstringval"))
-                      .addUpdate(std::make_unique<AssignValueUpdate>(std::make_unique<StringFieldValue>(hstr))));
+                      .addUpdate(std::make_unique<AssignValueUpdate>(StringFieldValue::make(hstr))));
     return doc;
 }
 
