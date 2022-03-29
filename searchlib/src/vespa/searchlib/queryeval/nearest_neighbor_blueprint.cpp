@@ -69,7 +69,9 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _fallback_dist_fun(),
       _distance_heap(target_num_hits),
       _found_hits(),
-      _global_filter(GlobalFilter::create())
+      _global_filter(GlobalFilter::create()),
+      _global_filter_hits(),
+      _global_filter_hit_ratio()
 {
     CellType attr_ct = _attr_tensor.getTensorType().cell_type();
     _fallback_dist_fun = search::tensor::make_distance_function(_attr_tensor.distance_metric(), attr_ct);
@@ -118,6 +120,8 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter)
             } else {
                 est_hits = std::min(est_hits, max_hits);
             }
+            _global_filter_hits = max_hits;
+            _global_filter_hit_ratio = max_hit_ratio;
         }
         if (_approximate) {
             est_hits = std::min(est_hits, _target_num_hits);
@@ -164,8 +168,21 @@ NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
     visitor.visitString("attribute_tensor", _attr_tensor.getTensorType().to_spec());
     visitor.visitString("query_tensor", _query_tensor->type().to_spec());
     visitor.visitInt("target_num_hits", _target_num_hits);
-    visitor.visitBool("approximate", _approximate);
     visitor.visitInt("explore_additional_hits", _explore_additional_hits);
+    visitor.visitBool("approximate", _approximate);
+    visitor.visitBool("has_index", _attr_tensor.nearest_neighbor_index());
+    visitor.visitInt("top_k_found_hits", _found_hits.size());
+
+    visitor.openStruct("global_filter", "GlobalFilter");
+    visitor.visitBool("exists", (_global_filter && _global_filter->has_filter()));
+    visitor.visitFloat("brute_force_limit", _brute_force_limit);
+    if (_global_filter_hits.has_value()) {
+        visitor.visitInt("hits", _global_filter_hits.value());
+    }
+    if (_global_filter_hit_ratio.has_value()) {
+        visitor.visitFloat("hit_ratio", _global_filter_hit_ratio.value());
+    }
+    visitor.closeStruct();
 }
 
 bool

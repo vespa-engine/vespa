@@ -5,6 +5,7 @@
 #include "nearest_neighbor_distance_heap.h"
 #include <vespa/searchlib/tensor/distance_function.h>
 #include <vespa/searchlib/tensor/nearest_neighbor_index.h>
+#include <optional>
 
 namespace search::tensor { class ITensorAttribute; }
 namespace vespalib::eval { struct Value; }
@@ -31,6 +32,8 @@ private:
     mutable NearestNeighborDistanceHeap _distance_heap;
     std::vector<search::tensor::NearestNeighborIndex::Neighbor> _found_hits;
     std::shared_ptr<const GlobalFilter> _global_filter;
+    std::optional<uint32_t> _global_filter_hits;
+    std::optional<double> _global_filter_hit_ratio;
 
     void perform_top_k();
 public:
