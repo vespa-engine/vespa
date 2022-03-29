@@ -254,7 +254,6 @@
                 jersey-common-${jersey2.version}.jar,
                 jersey-guava-${jersey2.version}.jar,
                 jersey-server-${jersey2.version}.jar,
-                jersey-proxy-client-${jersey2.version}.jar,
                 osgi-resource-locator-1.0.1.jar,
                 validation-api-1.1.0.Final.jar
                 <!-- jersey2 end -->
