@@ -377,7 +377,7 @@ VespaDocumentSerializer::write(const FieldUpdate &value)
 void
 VespaDocumentSerializer::write(const RemoveValueUpdate &value)
 {
-    _stream << ValueUpdate::Remove;
+    _stream << uint32_t(ValueUpdate::Remove);
     write(value.getKey());
 }
 
@@ -385,7 +385,7 @@ VespaDocumentSerializer::write(const RemoveValueUpdate &value)
 void
 VespaDocumentSerializer::write(const AddValueUpdate &value)
 {
-    _stream << ValueUpdate::Add;
+    _stream << uint32_t(ValueUpdate::Add);
     write(value.getValue());
     _stream << static_cast<int32_t>(value.getWeight());
 }
@@ -393,7 +393,7 @@ VespaDocumentSerializer::write(const AddValueUpdate &value)
 void
 VespaDocumentSerializer::write(const ArithmeticValueUpdate &value)
 {
-    _stream << ValueUpdate::Arithmetic;
+    _stream << uint32_t(ValueUpdate::Arithmetic);
     _stream << static_cast<uint32_t>(value.getOperator());
     _stream << static_cast<double>(value.getOperand());
 }
@@ -401,7 +401,7 @@ VespaDocumentSerializer::write(const ArithmeticValueUpdate &value)
 void
 VespaDocumentSerializer::write(const AssignValueUpdate &value)
 {
-    _stream << ValueUpdate::Assign;
+    _stream << uint32_t(ValueUpdate::Assign);
     if (value.hasValue()) {
         _stream << static_cast<uint8_t>(CONTENT_HASVALUE);
         write(value.getValue());
@@ -414,12 +414,12 @@ void
 VespaDocumentSerializer::write(const ClearValueUpdate &value)
 {
     (void) value;
-    _stream << ValueUpdate::Clear;
+    _stream << uint32_t(ValueUpdate::Clear);
 }
 
 void VespaDocumentSerializer::write(const MapValueUpdate &value)
 {
-    _stream << ValueUpdate::Map;
+    _stream << uint32_t(ValueUpdate::Map);
     write(value.getKey());
     write(value.getUpdate());
 }
@@ -479,7 +479,7 @@ VespaDocumentSerializer::write(const RemoveFieldPathUpdate &value)
 void
 VespaDocumentSerializer::write(const TensorModifyUpdate &value)
 {
-    _stream << ValueUpdate::TensorModify;
+    _stream << uint32_t(ValueUpdate::TensorModify);
     _stream << static_cast<uint8_t>(value.getOperation());
     write(value.getTensor());
 }
@@ -493,7 +493,7 @@ VespaDocumentSerializer::visit(const TensorModifyUpdate &value)
 void
 VespaDocumentSerializer::write(const TensorAddUpdate &value)
 {
-    _stream << ValueUpdate::TensorAdd;
+    _stream << uint32_t(ValueUpdate::TensorAdd);
     write(value.getTensor());
 }
 
@@ -506,7 +506,7 @@ VespaDocumentSerializer::visit(const TensorAddUpdate &value)
 void
 VespaDocumentSerializer::write(const TensorRemoveUpdate &value)
 {
-    _stream << ValueUpdate::TensorRemove;
+    _stream << uint32_t(ValueUpdate::TensorRemove);
     write(value.getTensor());
 }
 
