@@ -29,6 +29,8 @@
     </scm>
 
     <dependencyManagement>
+        <!-- TODO Vespa 8: remove all artifacts to parent that are no longer installed in jdisc.
+                           Those used in configserver/controller must be moved to parent/pom.xml  -->
         <dependencies>
             <dependency>
                 <groupId>aopalliance</groupId>
@@ -292,13 +294,13 @@
                 <artifactId>javassist</artifactId>
                 <version>${javassist.version}</version>
             </dependency>
-	        <dependency> <!-- TODO Vespa 8: remove as provided dependency -->
+	        <dependency> <!-- TODO Vespa 8: remove as provided dependency and move to parent -->
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
                 <version>${org.json.version}</version>
             </dependency>
             <dependency>
-                <!-- TODO Vespa 8: remove! No longer installed in jdisc -->
+                <!-- TODO Vespa 8: move to parent! No longer installed in jdisc -->
                 <groupId>org.jvnet.mimepull</groupId>
                 <artifactId>mimepull</artifactId>
                 <version>1.9.6</version>
