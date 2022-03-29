@@ -113,9 +113,9 @@ public:
     DocumenttypesConfigSP getTypeCfg() const { return _typeCfg; }
     DocTypeVector getDocTypes() const {
         DocTypeVector types;
-        _repo->forEachDocumentType(*DocumentTypeRepo::makeLambda([&types](const DocumentType &type) {
+        _repo->forEachDocumentType([&types](const DocumentType &type) {
             types.push_back(DocTypeName(type.getName()));
-        }));
+        });
         return types;
     }
     DocumentDBConfig::SP create(const DocTypeName &docTypeName) const {

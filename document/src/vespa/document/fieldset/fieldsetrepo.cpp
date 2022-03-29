@@ -123,9 +123,9 @@ FieldSetRepo::FieldSetRepo(const DocumentTypeRepo& repo)
     : _doumentTyperepo(repo),
       _configuredFieldSets()
 {
-    repo.forEachDocumentType(*DocumentTypeRepo::makeLambda([&](const DocumentType &type) {
+    repo.forEachDocumentType([&](const DocumentType &type) {
         configureDocumentType(type);
-    }));
+    });
 }
 FieldSetRepo::~FieldSetRepo() = default;
 

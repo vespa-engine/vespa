@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
@@ -19,20 +20,6 @@ class DocumentType;
 
 class DocumentTypeRepo {
 public:
-    struct Handler {
-        virtual ~Handler() = default;
-        virtual void handle(const DocumentType & type) = 0;
-    };
-
-
-    template <class FunctionType>
-    static std::unique_ptr<Handler>
-    makeLambda(FunctionType &&function)
-    {
-        return std::make_unique<LambdaHandler<std::decay_t<FunctionType>>>
-                (std::forward<FunctionType>(function));
-    }
-
     // This one should only be used for testing. If you do not have any config.
     explicit DocumentTypeRepo(const DocumentType & docType);
 
@@ -47,19 +34,9 @@ public:
     const DataType *getDataType(const DocumentType &doc_type, int32_t id) const;
     const DataType *getDataType(const DocumentType &doc_type, vespalib::stringref name) const;
     const AnnotationType *getAnnotationType(const DocumentType &doc_type, int32_t id) const;
-    void forEachDocumentType(Handler & handler) const;
+    void forEachDocumentType(std::function<void(const DocumentType &)> handler) const;
     const DocumentType *getDefaultDocType() const { return _default; }
 private:
-    template <class FunctionType>
-    class LambdaHandler : public Handler {
-        FunctionType _func;
-    public:
-        LambdaHandler(FunctionType &&func) : _func(std::move(func)) {}
-        LambdaHandler(const LambdaHandler &) = delete;
-        LambdaHandler & operator = (const LambdaHandler &) = delete;
-        ~LambdaHandler() override = default;
-        void handle(const DocumentType & type) override { _func(type); }
-    };
 
     std::unique_ptr<internal::DocumentTypeMap> _doc_types;
     const DocumentType * _default;

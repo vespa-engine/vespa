@@ -95,12 +95,12 @@ assertEqualSnapshot(const DocumentDBConfig &exp, const DocumentDBConfig &act)
 
     int expTypeCount = 0;
     int actTypeCount = 0;
-    exp.getDocumentTypeRepoSP()->forEachDocumentType(*DocumentTypeRepo::makeLambda([&expTypeCount](const DocumentType &) {
+    exp.getDocumentTypeRepoSP()->forEachDocumentType([&expTypeCount](const DocumentType &) noexcept {
         expTypeCount++;
-    }));
-    act.getDocumentTypeRepoSP()->forEachDocumentType(*DocumentTypeRepo::makeLambda([&actTypeCount](const DocumentType &) {
+    });
+    act.getDocumentTypeRepoSP()->forEachDocumentType([&actTypeCount](const DocumentType &) noexcept {
         actTypeCount++;
-    }));
+    });
     EXPECT_EQUAL(expTypeCount, actTypeCount);
     EXPECT_TRUE(*exp.getSchemaSP() == *act.getSchemaSP());
     EXPECT_EQUAL(expTypeCount, actTypeCount);
