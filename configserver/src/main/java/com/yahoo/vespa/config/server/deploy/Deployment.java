@@ -26,8 +26,10 @@ import com.yahoo.vespa.config.server.application.ConfigNotConvergedException;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.ReindexActions;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
+import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
+import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 
 import java.time.Clock;
@@ -106,9 +108,15 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         if (prepared) return;
         PrepareParams params = this.params.get();
         ApplicationId applicationId = params.getApplicationId();
+        SessionRepository sessionRepository = tenant.getSessionRepository();
         try (ActionTimer timer = applicationRepository.timerFor(applicationId, "deployment.prepareMillis")) {
-            this.configChangeActions = tenant.getSessionRepository().prepareLocalSession(session, deployLogger, params, clock.instant());
+            this.configChangeActions = sessionRepository.prepareLocalSession(session, deployLogger, params, clock.instant());
             this.prepared = true;
+        } catch (Exception e) {
+            LocalSession localSession = sessionRepository.getLocalSession(session.getSessionId());
+            log.log(Level.FINE, "Preparing session " + session.getSessionId() + " failed, deleting it");
+            sessionRepository.deleteLocalSession(localSession);
+            throw e;
         }
 
         waitForResourcesOrTimeout(params, session, provisioner);
@@ -126,7 +134,16 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             TimeoutBudget timeoutBudget = params.getTimeoutBudget();
             timeoutBudget.assertNotTimedOut(() -> "Timeout exceeded when trying to activate '" + applicationId + "'");
 
-            Activation activation = applicationRepository.activate(session, applicationId, tenant, params.force());
+            Activation activation;
+            try {
+                activation = applicationRepository.activate(session, applicationId, tenant, params.force());
+            } catch (Exception e) {
+                SessionRepository sessionRepository = tenant.getSessionRepository();
+                LocalSession localSession = sessionRepository.getLocalSession(session.getSessionId());
+                log.log(Level.FINE, "Activating session " + session.getSessionId() + " failed, deleting it");
+                sessionRepository.deleteLocalSession(localSession);
+                throw e;
+            }
             activation.awaitCompletion(timeoutBudget.timeLeft());
             logActivatedMessage(applicationId, activation);
 
