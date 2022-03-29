@@ -88,8 +88,10 @@ public:
      * Return whether all capacity has been used.  If true the next
      * call to push_back() will cause an expand of the underlying
      * data.
+     * isFull() should be called from writer only.
+     * Const type qualifier removed to prevent call from readers.
      **/
-    bool isFull() const { return _data.size() == _data.capacity(); }
+    bool isFull() { return _data.size() == _data.capacity(); }
 
     /**
      * Return the combined memory usage for this instance.
@@ -116,9 +118,26 @@ public:
     }
 
     bool empty() const { return _data.empty(); }
-    size_t size() const { return _data.size(); }
-    size_t capacity() const { return _data.capacity(); }
+    /*
+     * size() should be called from writer only.
+     * Const type qualifier removed to prevent call from readers.
+     */
+    size_t size()  { return _data.size(); }
+    /*
+     * get_size() should be called from writer only or with proper lock held.
+     * Used in predicate attribute by reader (causing data race).
+     */
+    size_t get_size() const { return _data.size(); }
+    /*
+     * capacity() should be called from writer only.
+     * Const type qualifier removed to prevent call from readers.
+     */
+    size_t capacity() { return _data.capacity(); }
     void clear() { _data.clear(); }
+    /*
+     * operator[]() should be called from writer only.
+     * Overload with const type qualifier removed to prevent call from readers.
+     */
     T & operator[](size_t i) { return _data[i]; }
     /*
      * Readers holding a generation guard can call acquire_elem_ref(i)

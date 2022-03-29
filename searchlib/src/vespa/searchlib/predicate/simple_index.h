@@ -92,7 +92,7 @@ public:
         : _vector(&vector.acquire_elem_ref(0)),
           _size(size)
     {
-        assert(_size <= vector.size());
+        assert(_size <= vector.get_size()); // Data race: not writer
         linearSeek(1);
     }
 
@@ -165,7 +165,7 @@ private:
     bool shouldCreateVectorPosting(size_t size, double ratio) const;
     bool shouldRemoveVectorPosting(size_t size, double ratio) const;
     size_t getVectorPostingSize(const PostingVector &vector) const {
-        return std::min(vector.size(),
+        return std::min(vector.get_size() /* Data race: not writer */,
                         static_cast<size_t>(_limit_provider.getCommittedDocIdLimit()));
     }
 

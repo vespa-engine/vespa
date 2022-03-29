@@ -1211,7 +1211,8 @@ LogDataStore::canShrinkLidSpace() const
 bool
 LogDataStore::canShrinkLidSpace(const MonitorGuard &) const
 {
-    return getDocIdLimit() < _lidInfo.size() &&
+    // Update lock is held, allowing call to _lidInfo.get_size()
+    return getDocIdLimit() < _lidInfo.get_size() &&
            _compactLidSpaceGeneration < _genHandler.getFirstUsedGeneration();
 }
 
@@ -1222,7 +1223,8 @@ LogDataStore::getEstimatedShrinkLidSpaceGain() const
     if (!canShrinkLidSpace(guard)) {
         return 0;
     }
-    return (_lidInfo.size() - getDocIdLimit()) * sizeof(uint64_t);
+    // Update lock is held, allowing call to _lidInfo.get_size()
+    return (_lidInfo.get_size() - getDocIdLimit()) * sizeof(uint64_t);
 }
 
 void

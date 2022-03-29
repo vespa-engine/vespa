@@ -51,15 +51,31 @@ public:
     size_t getTotalValueCnt() const { return _totalValues; }
     RefCopyVector getRefCopy(uint32_t size) const;
 
-    bool isFull() const { return _indices.isFull(); }
+    /*
+     * isFull() should be called from writer only.
+     * Const type qualifier removed to prevent call from reader.
+     */
+    bool isFull() { return _indices.isFull(); }
     void addDoc(uint32_t &docId);
     void shrink(uint32_t docidLimit);
     void reserve(uint32_t lidLimit);
     void clearDocs(uint32_t lidLow, uint32_t lidLimit, std::function<void(uint32_t)> clearDoc);
-    uint32_t size() const { return _indices.size(); }
+    /*
+     * size() should be called from writer only.
+     * Const type qualifier removed to prevent call from reader.
+     */
+    uint32_t size() { return _indices.size(); }
 
-    uint32_t getNumKeys() const { return _indices.size(); }
-    uint32_t getCapacityKeys() const { return _indices.capacity(); }
+    /*
+     * getNumKeys() should be called from writer only.
+     * Const type qualifier removed to prevent call from reader.
+     */
+    uint32_t getNumKeys() { return _indices.size(); }
+    /*
+     * getCapacityKeys() should be called from writer only.
+     * Const type qualifier removed to prevent call from reader.
+     */
+    uint32_t getCapacityKeys() { return _indices.capacity(); }
     virtual void compactWorst(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy) = 0;
     bool considerCompact(const CompactionStrategy &compactionStrategy);
 };

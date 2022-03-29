@@ -12,7 +12,7 @@ namespace {
 size_t
 count_valid_link_arrays(const HnswGraph & graph) {
     size_t count(0);
-    size_t num_nodes = graph.node_refs.size();
+    size_t num_nodes = graph.node_refs.get_size(); // Called from writer only
     for (size_t i = 0; i < num_nodes; ++i) {
         auto node_ref = graph.get_node_ref(i);
         if (node_ref.valid()) {
@@ -39,7 +39,7 @@ HnswIndexSaver::HnswIndexSaver(const HnswGraph &graph)
     auto entry = graph.get_entry_node();
     _meta_data.entry_docid = entry.docid;
     _meta_data.entry_level = entry.level;
-    size_t num_nodes = graph.node_refs.size();
+    size_t num_nodes = graph.node_refs.get_size(); // Called from writer only
     assert (num_nodes <= (std::numeric_limits<uint32_t>::max() - 1));
     size_t link_array_count = count_valid_link_arrays(graph);
     assert (link_array_count <= std::numeric_limits<uint32_t>::max());
