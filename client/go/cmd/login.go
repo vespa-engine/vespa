@@ -46,7 +46,7 @@ func newLoginCmd(cli *CLI) *cobra.Command {
 
 			log.Printf("Your Device Confirmation code is: %s\n", state.UserCode)
 
-			auto_open := confirm("Allow Vespa CLI to open confirmation page in your default browser?")
+			auto_open := confirm(cli, "Automatically open confirmation page in your default browser?")
 
 			if auto_open {
 				log.Printf("Opened link in your browser: %s\n", state.VerificationURI)
@@ -95,12 +95,12 @@ func newLoginCmd(cli *CLI) *cobra.Command {
 	}
 }
 
-func confirm(question string) bool {
+func confirm(cli *CLI, question string) bool {
 	for {
 		var answer string
 
-		log.Printf("%s [Y/n] ", question)
-		fmt.Scanln(&answer)
+		fmt.Fprintf(cli.Stdout, "%s [Y/n] ", question)
+		fmt.Fscanln(cli.Stdin, &answer)
 
 		answer = strings.TrimSpace(strings.ToLower(answer))
 
