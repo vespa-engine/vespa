@@ -236,13 +236,13 @@ public class ModelsEvaluationHandlerTest {
         properties.put("format.tensors", "string");
         String url = "http://localhost/model-evaluation/v1/vespa_model/";
         handler.assertResponse(url + "test_mapped/eval", properties, 200,
-                "tensor(d0{}):{a:1.0,b:2.0}");
+                "tensor(d0{}):{a:1.0, b:2.0}");
         handler.assertResponse(url + "test_indexed/eval", properties, 200,
                 "tensor(d0[2],d1[3]):[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]");
         handler.assertResponse(url + "test_mixed/eval", properties, 200,
-                "tensor(x{},y[3]):{a:[1.0, 2.0, 3.0],b:[4.0, 5.0, 6.0]}");
+                "tensor(x{},y[3]):{a:[1.0, 2.0, 3.0], b:[4.0, 5.0, 6.0]}");
         handler.assertResponse(url + "test_mixed_2/eval", properties, 200,
-                "tensor(a[2],b[2],c{},d[2]):{a:[[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]],b:[[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]]}");
+                "tensor(a[2],b[2],c{},d[2]):{a:[[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]], b:[[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]]}");
     }
 
     @Test
