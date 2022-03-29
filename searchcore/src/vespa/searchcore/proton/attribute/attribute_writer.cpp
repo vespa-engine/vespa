@@ -459,7 +459,6 @@ private:
     const SerialNum _serial_num;
     const uint32_t _docid;
     AttributeVector& _attr;
-    FieldValue::SP _field_value;
     std::future<FieldValueAndPrepareResult> _result_future;
     std::remove_reference_t<AttributeWriter::OnWriteDoneType> _on_write_done;
 
