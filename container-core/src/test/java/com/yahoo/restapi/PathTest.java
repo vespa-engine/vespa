@@ -15,19 +15,6 @@ import static org.junit.Assert.assertEquals;
 public class PathTest {
 
     @Test
-    public void testWithPrefix() {
-        // Test that a path with a prefix matches spec without the prefix
-        Path path = new Path(URI.create("/ball/a/1/bar/fuz"), "/ball");
-        assertTrue(path.matches("/a/{foo}/bar/{b}"));
-        assertEquals("1", path.get("foo"));
-        assertEquals("fuz", path.get("b"));
-
-        // Also test that prefix does not cause false matches
-        assertFalse(path.matches("/ball/a/{foo}/zoo/{b}"));
-    }
-
-
-    @Test
     public void testPath() {
         assertFalse(new Path(URI.create("")).matches("/a/{foo}/bar/{b}"));
         assertFalse(new Path(URI.create("///")).matches("/a/{foo}/bar/{b}"));
