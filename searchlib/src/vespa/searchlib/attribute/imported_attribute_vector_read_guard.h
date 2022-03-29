@@ -76,6 +76,7 @@ public:
                                                         const SearchContextParams &params) const override;
     const IDocumentWeightAttribute *asDocumentWeightAttribute() const override;
     const tensor::ITensorAttribute *asTensorAttribute() const override;
+    const attribute::IMultiValueAttribute* as_multi_value_attribute() const override;
     BasicType::Type getBasicType() const override;
     size_t getFixedWidth() const override;
     CollectionType::Type getCollectionType() const override;
