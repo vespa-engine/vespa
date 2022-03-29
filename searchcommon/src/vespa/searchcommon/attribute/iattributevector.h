@@ -19,6 +19,7 @@ namespace search::tensor {
 
 namespace search::attribute {
 
+class IMultiValueAttribute;
 class ISearchContext;
 class SearchContextParams;
 
@@ -306,6 +307,13 @@ public:
      * @return tensor attribute or nullptr if not supported.
      */
     virtual const tensor::ITensorAttribute *asTensorAttribute() const = 0;
+
+    /**
+     * Type-safe down-cast to a multi-value attribute.
+     *
+     * @return multi-value attribute or nullptr if not supported.
+     */
+    virtual const IMultiValueAttribute* as_multi_value_attribute() const = 0;
 
     /**
      * Returns the basic type of this attribute vector.

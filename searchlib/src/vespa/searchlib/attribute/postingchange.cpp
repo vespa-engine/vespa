@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "postingchange.h"
-#include "multivalue.h"
 #include "multi_value_mapping.h"
 #include "postinglistattribute.h"
+#include <vespa/searchcommon/attribute/multivalue.h>
 #include <vespa/searchlib/common/growablebitvector.h>
-#include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/array.hpp>
 
 using vespalib::datastore::AtomicEntryRef;
 

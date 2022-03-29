@@ -4,8 +4,8 @@
 #include "load_utils.hpp"
 #include "loadedenumvalue.h"
 #include "multi_value_mapping.h"
-#include "multivalue.h"
 #include <vespa/fastos/file.h>
+#include <vespa/searchcommon/attribute/multivalue.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/array.hpp>

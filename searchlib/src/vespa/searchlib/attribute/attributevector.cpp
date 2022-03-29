@@ -567,6 +567,7 @@ attribute::IPostingListAttributeBase *AttributeVector::getIPostingListAttributeB
 const attribute::IPostingListAttributeBase *AttributeVector::getIPostingListAttributeBase() const { return nullptr; }
 const IDocumentWeightAttribute * AttributeVector::asDocumentWeightAttribute() const { return nullptr; }
 const tensor::ITensorAttribute *AttributeVector::asTensorAttribute() const { return nullptr; }
+const attribute::IMultiValueAttribute* AttributeVector::as_multi_value_attribute() const { return nullptr; }
 bool AttributeVector::hasPostings() { return getIPostingListAttributeBase() != nullptr; }
 uint64_t AttributeVector::getUniqueValueCount() const { return getTotalValueCount(); }
 uint64_t AttributeVector::getTotalValueCount() const { return getNumDocs(); }

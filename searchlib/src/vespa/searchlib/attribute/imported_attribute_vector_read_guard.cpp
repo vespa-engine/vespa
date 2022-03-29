@@ -119,6 +119,10 @@ const tensor::ITensorAttribute *ImportedAttributeVectorReadGuard::asTensorAttrib
     return nullptr;
 }
 
+const attribute::IMultiValueAttribute* ImportedAttributeVectorReadGuard::as_multi_value_attribute() const {
+    return nullptr;
+}
+
 BasicType::Type ImportedAttributeVectorReadGuard::getBasicType() const {
     return _target_attribute.getBasicType();
 }

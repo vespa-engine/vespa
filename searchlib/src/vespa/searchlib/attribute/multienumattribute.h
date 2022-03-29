@@ -4,9 +4,9 @@
 
 #include "i_enum_store.h"
 #include "loadedenumvalue.h"
-#include "multivalue.h"
 #include "multivalueattribute.h"
 #include "no_loaded_vector.h"
+#include <vespa/searchcommon/attribute/multivalue.h>
 
 namespace search {
 

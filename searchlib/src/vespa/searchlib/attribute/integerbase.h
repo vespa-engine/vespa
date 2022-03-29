@@ -2,9 +2,9 @@
 #pragma once
 
 #include "numericbase.h"
-#include "multivalue.h"
 #include "loadednumericvalue.h"
 #include "changevector.h"
+#include <vespa/searchcommon/attribute/multivalue.h>
 
 namespace search {
 

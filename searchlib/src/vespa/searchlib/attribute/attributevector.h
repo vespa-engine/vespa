@@ -497,6 +497,7 @@ public:
     const IDocumentWeightAttribute *asDocumentWeightAttribute() const override;
 
     const tensor::ITensorAttribute *asTensorAttribute() const override;
+    const attribute::IMultiValueAttribute* as_multi_value_attribute() const override;
 
     /**
        - Search for equality

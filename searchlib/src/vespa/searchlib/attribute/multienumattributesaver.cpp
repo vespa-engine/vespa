@@ -2,7 +2,7 @@
 
 #include "multienumattributesaver.h"
 #include "multivalueattributesaverutils.h"
-#include "multivalue.h"
+#include <vespa/searchcommon/attribute/multivalue.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.multi_enum_attribute_saver");
