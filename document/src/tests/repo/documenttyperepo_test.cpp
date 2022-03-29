@@ -376,8 +376,8 @@ TEST("requireThatDocumentTypesCanBeIterated") {
     DocumentTypeRepo repo(builder.config());
 
     set<int> ids;
-    repo.forEachDocumentType(*DocumentTypeRepo::makeLambda(
-            [&ids](const DocumentType &type) { ids.insert(type.getId()); }));
+    repo.forEachDocumentType(
+            [&ids](const DocumentType &type) { ids.insert(type.getId()); });
 
     EXPECT_EQUAL(3u, ids.size());
     ASSERT_TRUE(ids.count(DataType::T_DOCUMENT));

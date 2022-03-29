@@ -28,9 +28,9 @@ BodyFieldDetector::detectFieldType(const FieldValueNode *expr, const DocumentTyp
 void
 BodyFieldDetector::visitFieldValueNode(const FieldValueNode& expr)
 {
-    _repo.forEachDocumentType(*DocumentTypeRepo::makeLambda([&](const DocumentType &type) {
+    _repo.forEachDocumentType([&](const DocumentType &type) {
         detectFieldType(&expr, type);
-    }));
+    });
 }
 
 

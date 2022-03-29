@@ -580,9 +580,9 @@ DocumentTypeRepo::getAnnotationType(const DocumentType &doc_type, int32_t id) co
 }
 
 void
-DocumentTypeRepo::forEachDocumentType(Handler & handler) const {
+DocumentTypeRepo::forEachDocumentType(std::function<void(const DocumentType &)> handler) const {
     for (const auto & entry : *_doc_types) {
-        handler.handle(*entry.second->doc_type);
+        handler(*entry.second->doc_type);
     }
 }
 
