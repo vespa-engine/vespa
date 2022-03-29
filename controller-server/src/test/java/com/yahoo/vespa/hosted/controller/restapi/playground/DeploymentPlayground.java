@@ -5,6 +5,7 @@ import com.yahoo.application.Networking;
 import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
@@ -19,9 +20,11 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
@@ -165,12 +168,18 @@ public class DeploymentPlayground extends ControllerContainerTest {
     }
 
     void run(DeploymentContext instance, BiConsumer<DeploymentContext, JobType> action, List<String> jobs) {
-        for (boolean triggered = true; triggered; ) {
+        Set<JobId> haveRun = new HashSet<>();
+        boolean triggered = true;
+        while (triggered) {
+            List<Run> runs = deploymentTester.jobs().active(instance.instanceId());
             triggered = false;
-            for (Run run : deploymentTester.jobs().active(instance.instanceId()))
+            for (Run run : runs)
                 if (jobs.isEmpty() || jobs.contains(run.id().type().jobName().replace("production-", ""))) {
-                    action.accept(instance, run.id().type());
-                    triggered = true;
+                    if (haveRun.add(run.id().job())) {
+                        action.accept(instance, run.id().type());
+                        deploymentTester.triggerJobs();
+                        triggered = true;
+                    }
                 }
         }
     }
