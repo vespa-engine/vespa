@@ -5325,6 +5325,7 @@
       "public com.yahoo.search.query.Properties clone()",
       "public com.yahoo.search.Query getParentQuery()",
       "public void setParentQuery(com.yahoo.search.Query)",
+      "public void requireSettable(com.yahoo.processing.request.CompoundName, java.lang.Object, java.util.Map)",
       "public bridge synthetic com.yahoo.processing.request.Properties clone()",
       "public bridge synthetic com.yahoo.processing.request.Properties chained()",
       "public bridge synthetic java.lang.Object clone()"
@@ -6030,6 +6031,7 @@
       "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile getQueryProfile()",
       "public java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
       "public void set(com.yahoo.processing.request.CompoundName, java.lang.Object, java.util.Map)",
+      "public void requireSettable(com.yahoo.processing.request.CompoundName, java.lang.Object, java.util.Map)",
       "public void clearAll(com.yahoo.processing.request.CompoundName, java.util.Map)",
       "public java.util.Map listProperties(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
       "public boolean isComplete(java.lang.StringBuilder, java.util.Map)",

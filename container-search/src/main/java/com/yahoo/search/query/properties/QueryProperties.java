@@ -322,6 +322,7 @@ public class QueryProperties extends Properties {
                 }
             }
             else if (key.first().equals("rankfeature") || key.first().equals("featureoverride") ) { // featureoverride is deprecated
+                chained().requireSettable(key, value, context);
                 setRankingFeature(query, key.rest().toString(), toSpecifiedType(key.rest().toString(),
                                                                                 value,
                                                                                 profileRegistry.getTypeRegistry().getComponent("features"),

@@ -20,7 +20,6 @@ import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.URLEncoder;
@@ -439,7 +438,6 @@ public class QueryProfileTypeTestCase {
     }
 
     @Test
-    @Ignore
     public void testTensorRankFeatureSetProgrammaticallyWithWrongType() {
         QueryProfile profile = new QueryProfile("test");
         profile.setType(testtype);
@@ -454,16 +452,18 @@ public class QueryProfileTypeTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("'query(myTensor1)' must be of type tensor(a{},b{}) but was of type tensor(x[3])",
-                         e.getMessage());
+            assertEquals("Could not set 'ranking.features.query(myTensor1)' to 'tensor(x[3]):[0.1, 0.2, 0.3]': " +
+                         "Require a tensor of type tensor(a{},b{})",
+                         Exceptions.toMessageString(e));
         }
         try {
             query.properties().set("ranking.features.query(myTensor1)", Tensor.from(tensorString));
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("'query(myTensor1)' must be of type tensor(a{},b{}) but was of type tensor(x[3])",
-                         e.getMessage());
+            assertEquals("Could not set 'ranking.features.query(myTensor1)' to 'tensor(x[3]):[0.1, 0.2, 0.3]': " +
+                         "Require a tensor of type tensor(a{},b{})",
+                         Exceptions.toMessageString(e));
         }
     }
 

@@ -316,28 +316,41 @@ public interface Tensor {
     @Override
     String toString();
 
+    /** Returns an abbreviated string representation of this tensor suitable for human-readable messages */
+    String toShortString();
+
     /**
      * Call this from toString in implementations to return this tensor on the
      * <a href="https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form">tensor literal form</a>.
      * (toString cannot be a default method because default methods cannot override super methods).
      *
      * @param tensor the tensor to return the standard string format of
+     * @param maxCells the max number of cells to output, after which just , "..." is output to represent the rest
+     *                 of the cells
      * @return the tensor on the standard string format
      */
-    static String toStandardString(Tensor tensor) {
-        return tensor.type() + ":" + contentToString(tensor);
+    static String toStandardString(Tensor tensor, long maxCells) {
+        return tensor.type() + ":" + contentToString(tensor, maxCells);
     }
 
-    static String contentToString(Tensor tensor) {
+    static String contentToString(Tensor tensor, long maxCells) {
         var cellEntries = new ArrayList<>(tensor.cells().entrySet());
+        cellEntries.sort(Map.Entry.comparingByKey());
         if (tensor.type().dimensions().isEmpty()) {
             if (cellEntries.isEmpty()) return "{}";
             return "{" + cellEntries.get(0).getValue() +"}";
         }
-        return "{" + cellEntries.stream().sorted(Map.Entry.comparingByKey())
-                                         .map(cell -> cellToString(cell, tensor.type()))
-                                         .collect(Collectors.joining(",")) +
-               "}";
+        StringBuilder b = new StringBuilder("{");
+        int i = 0;
+        for (; i < cellEntries.size() && i < maxCells; i++) {
+            if (i > 0)
+                b.append(", ");
+            b.append(cellToString(cellEntries.get(i), tensor.type()));
+        }
+        if (i == maxCells && i < tensor.size())
+            b.append(", ...");
+        b.append("}");
+        return b.toString();
     }
 
     private static String cellToString(Map.Entry<TensorAddress, Double> cell, TensorType type) {

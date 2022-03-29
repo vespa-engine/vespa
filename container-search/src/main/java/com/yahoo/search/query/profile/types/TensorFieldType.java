@@ -51,7 +51,15 @@ public class TensorFieldType extends FieldType {
 
     @Override
     public Object convertFrom(Object o, ConversionContext context) {
-        if (o instanceof Tensor) return o;
+        Tensor tensor = toTensor(o, context);
+        if (tensor == null) return null;
+        if (! tensor.type().isAssignableTo(type))
+            throw new IllegalArgumentException("Require a tensor of type " + type);
+        return tensor;
+    }
+
+    private Tensor toTensor(Object o, ConversionContext context) {
+        if (o instanceof Tensor) return (Tensor)o;
         if (o instanceof String && ((String)o).startsWith("embed(")) return encode((String)o, context);
         if (o instanceof String) return Tensor.from(type, (String)o);
         return null;

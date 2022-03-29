@@ -5,6 +5,7 @@ package com.yahoo.tensor;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -116,7 +117,7 @@ public class MixedTensor implements Tensor {
     public Tensor withType(TensorType other) {
         if (!this.type.isRenamableTo(type)) {
             throw new IllegalArgumentException("MixedTensor.withType: types are not compatible. Current type: '" +
-                    this.type.toString() + "', requested type: '" + type.toString() + "'");
+                                               this.type + "', requested type: '" + type + "'");
         }
         return new MixedTensor(other, cells, index);
     }
@@ -144,12 +145,23 @@ public class MixedTensor implements Tensor {
 
     @Override
     public String toString() {
-        if (type.rank() == 0) return Tensor.toStandardString(this);
-        if (type.rank() > 1 && type.dimensions().stream().filter(d -> d.isIndexed()).anyMatch(d -> d.size().isEmpty()))
-            return Tensor.toStandardString(this);
-        if (type.dimensions().stream().filter(d -> d.isMapped()).count() > 1) return Tensor.toStandardString(this);
+        return toString(Long.MAX_VALUE);
+    }
 
-        return type.toString() + ":" + index.contentToString(this);
+    @Override
+    public String toShortString() {
+        return toString(Math.max(2, 10 / (type().dimensions().stream().filter(d -> d.isMapped()).count() + 1)));
+    }
+
+    private String toString(long maxCells) {
+        if (type.rank() == 0)
+            return Tensor.toStandardString(this, maxCells);
+        if (type.rank() > 1 && type.dimensions().stream().filter(d -> d.isIndexed()).anyMatch(d -> d.size().isEmpty()))
+            return Tensor.toStandardString(this, maxCells);
+        if (type.dimensions().stream().filter(d -> d.isMapped()).count() > 1)
+            return Tensor.toStandardString(this, maxCells);
+
+        return type + ":" + index.contentToString(this, maxCells);
     }
 
     @Override
@@ -503,37 +515,50 @@ public class MixedTensor implements Tensor {
             return "index into " + type;
         }
 
-        private String contentToString(MixedTensor tensor) {
+        private String contentToString(MixedTensor tensor, long maxCells) {
             if (mappedDimensions.size() > 1) throw new IllegalStateException("Should be ensured by caller");
             if (mappedDimensions.size() == 0) {
                 StringBuilder b = new StringBuilder();
-                denseSubspaceToString(tensor, 0, b);
+                int cellsWritten = denseSubspaceToString(tensor, 0, maxCells, b);
+                if (cellsWritten == maxCells && cellsWritten < tensor.size())
+                    b.append("...]");
                 return b.toString();
             }
 
             // Exactly 1 mapped dimension
             StringBuilder b = new StringBuilder("{");
-            sparseMap.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
-                b.append(TensorAddress.labelToString(entry.getKey().label(0 )));
+            var cellEntries = new ArrayList<>(sparseMap.entrySet());
+            cellEntries.sort(Map.Entry.comparingByKey());
+            int cellsWritten = 0;
+            for (int index = 0; index < cellEntries.size() && cellsWritten < maxCells; index++) {
+                if (index > 0)
+                    b.append(", ");
+                b.append(TensorAddress.labelToString(cellEntries.get(index).getKey().label(0 )));
                 b.append(":");
-                denseSubspaceToString(tensor, entry.getValue(), b);
-                b.append(",");
-            });
-            if (b.length() > 1)
-                b.setLength(b.length() - 1);
+                cellsWritten += denseSubspaceToString(tensor, cellEntries.get(index).getValue(), maxCells - cellsWritten, b);
+            }
+            if (cellsWritten >= maxCells && cellsWritten < tensor.size())
+                b.append(", ...");
             b.append("}");
             return b.toString();
         }
 
-        private void denseSubspaceToString(MixedTensor tensor, long subspaceIndex, StringBuilder b) {
+        private int denseSubspaceToString(MixedTensor tensor, long subspaceIndex, long maxCells, StringBuilder b) {
+            if (maxCells <= 0) {
+                return 0;
+            }
+
             if (denseSubspaceSize == 1) {
                 b.append(getDouble(subspaceIndex, 0, tensor));
-                return;
+                return 1;
             }
 
             IndexedTensor.Indexes indexes = IndexedTensor.Indexes.of(denseType);
-            for (int index = 0; index < denseSubspaceSize; index++) {
+            int index = 0;
+            for (; index < denseSubspaceSize && index < maxCells; index++) {
                 indexes.next();
+                if (index > 0)
+                    b.append(", ");
 
                 // start brackets
                 for (int i = 0; i < indexes.nextDimensionsAtStart(); i++)
@@ -549,12 +574,11 @@ public class MixedTensor implements Tensor {
                         throw new IllegalStateException("Unexpected value type " + type.valueType());
                 }
 
-                // end bracket and comma
+                // end bracket
                 for (int i = 0; i < indexes.nextDimensionsAtEnd(); i++)
                     b.append("]");
-                if (index < denseSubspaceSize - 1)
-                    b.append(", ");
             }
+            return index;
         }
 
         private double getDouble(long indexedSubspaceIndex, long indexInIndexedSubspace, MixedTensor tensor) {

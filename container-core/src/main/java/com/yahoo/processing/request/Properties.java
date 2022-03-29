@@ -251,7 +251,7 @@ public class Properties implements Cloneable {
      * @throws RuntimeException if no instance in the chain accepted this name-value pair
      */
     public final void set(String name, Object value) {
-        set(new CompoundName(name), value, Collections.<String,String>emptyMap());
+        set(new CompoundName(name), value, Map.of());
     }
 
     /**

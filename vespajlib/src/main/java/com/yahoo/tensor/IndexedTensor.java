@@ -219,21 +219,31 @@ public abstract class IndexedTensor implements Tensor {
     }
 
     @Override
-    public String toString() {
-        if (type.rank() == 0) return Tensor.toStandardString(this);
+    public String toString() { return toString(Long.MAX_VALUE); }
+
+    @Override
+    public String toShortString() {
+        return toString(Math.max(2, 10 / (type().dimensions().stream().filter(d -> d.isMapped()).count() + 1)));
+    }
+
+    private String toString(long maxCells) {
+        if (type.rank() == 0) return Tensor.toStandardString(this, maxCells);
         if (type.dimensions().stream().anyMatch(d -> d.size().isEmpty()))
-            return Tensor.toStandardString(this);
+            return Tensor.toStandardString(this, maxCells);
 
         Indexes indexes = Indexes.of(dimensionSizes);
 
         StringBuilder b = new StringBuilder(type.toString()).append(":");
-        indexedBlockToString(this, indexes, b);
+        indexedBlockToString(this, indexes, maxCells, b);
         return b.toString();
     }
 
-    static void indexedBlockToString(IndexedTensor tensor, Indexes indexes, StringBuilder b) {
-        for (int index = 0; index < tensor.size(); index++) {
+    static void indexedBlockToString(IndexedTensor tensor, Indexes indexes, long maxCells, StringBuilder b) {
+        int index = 0;
+        for (; index < tensor.size() && index < maxCells; index++) {
             indexes.next();
+            if (index > 0)
+                b.append(", ");
 
             // start brackets
             for (int i = 0; i < indexes.nextDimensionsAtStart(); i++)
@@ -252,9 +262,9 @@ public abstract class IndexedTensor implements Tensor {
             // end bracket and comma
             for (int i = 0; i < indexes.nextDimensionsAtEnd(); i++)
                 b.append("]");
-            if (index < tensor.size() - 1)
-                b.append(", ");
         }
+        if (index == maxCells && index < tensor.size())
+            b.append(", ...]");
     }
 
     @Override
