@@ -71,7 +71,7 @@ BmFeed::make_document_update(uint32_t n, uint32_t i) const
 {
     auto id = make_document_id(n, i);
     auto document_update = std::make_unique<DocumentUpdate>(*_repo, *_document_type, id);
-    document_update->addUpdate(FieldUpdate(_field).addUpdate(std::make_unique<AssignValueUpdate>(IntFieldValue(15))));
+    document_update->addUpdate(FieldUpdate(_field).addUpdate(std::make_unique<AssignValueUpdate>(std::make_unique<IntFieldValue>(15))));
     return document_update;
 }
 

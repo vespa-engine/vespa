@@ -38,53 +38,28 @@ convertToCompatibleType(const TensorDataType &tensorType)
 
 }
 
-IMPLEMENT_IDENTIFIABLE(TensorRemoveUpdate, ValueUpdate);
-
 TensorRemoveUpdate::TensorRemoveUpdate()
-    : _tensorType(),
+    : ValueUpdate(TensorRemove),
+      TensorUpdate(),
+      _tensorType(),
       _tensor()
 {
 }
 
-TensorRemoveUpdate::TensorRemoveUpdate(const TensorRemoveUpdate &rhs)
-    : _tensorType(std::make_unique<TensorDataType>(*rhs._tensorType)),
-      _tensor(rhs._tensor->clone())
-{
-}
-
 TensorRemoveUpdate::TensorRemoveUpdate(std::unique_ptr<TensorFieldValue> tensor)
-    : _tensorType(std::make_unique<TensorDataType>(dynamic_cast<const TensorDataType &>(*tensor->getDataType()))),
-      _tensor(static_cast<TensorFieldValue *>(_tensorType->createFieldValue().release()))
+    : ValueUpdate(TensorRemove),
+      TensorUpdate(),
+      _tensorType(std::make_unique<TensorDataType>(dynamic_cast<const TensorDataType &>(*tensor->getDataType()))),
+      _tensor(std::move(tensor))
 {
-    *_tensor = *tensor;
 }
 
 TensorRemoveUpdate::~TensorRemoveUpdate() = default;
 
-TensorRemoveUpdate &
-TensorRemoveUpdate::operator=(const TensorRemoveUpdate &rhs)
-{
-    if (&rhs != this) {
-        _tensor.reset();
-        _tensorType = std::make_unique<TensorDataType>(*rhs._tensorType);
-        _tensor.reset(static_cast<TensorFieldValue *>(_tensorType->createFieldValue().release()));
-        *_tensor = *rhs._tensor;
-    }
-    return *this;
-}
-
-TensorRemoveUpdate &
-TensorRemoveUpdate::operator=(TensorRemoveUpdate &&rhs)
-{
-    _tensorType = std::move(rhs._tensorType);
-    _tensor = std::move(rhs._tensor);
-    return *this;
-}
-
 bool
 TensorRemoveUpdate::operator==(const ValueUpdate &other) const
 {
-    if (other.getClass().id() != TensorRemoveUpdate::classId) {
+    if (other.getType() != TensorRemove) {
         return false;
     }
     const TensorRemoveUpdate& o(static_cast<const TensorRemoveUpdate&>(other));

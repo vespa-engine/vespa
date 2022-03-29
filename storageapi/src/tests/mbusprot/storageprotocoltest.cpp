@@ -248,9 +248,8 @@ TEST_P(StorageProtocolTest, response_metadata_is_propagated) {
 }
 
 TEST_P(StorageProtocolTest, update) {
-    auto update = std::make_shared<document::DocumentUpdate>(
-            _docMan.getTypeRepo(), *_testDoc->getDataType(), _testDoc->getId());
-    update->addUpdate(FieldUpdate(_testDoc->getField("headerval")).addUpdate(std::make_unique<AssignValueUpdate>(IntFieldValue(17))));
+    auto update = std::make_shared<document::DocumentUpdate>(_docMan.getTypeRepo(), *_testDoc->getDataType(), _testDoc->getId());
+    update->addUpdate(FieldUpdate(_testDoc->getField("headerval")).addUpdate(std::make_unique<AssignValueUpdate>(std::make_unique<IntFieldValue>(17))));
 
     update->addFieldPathUpdate(std::make_unique<RemoveFieldPathUpdate>("headerval", "testdoctype1.headerval > 0"));
 

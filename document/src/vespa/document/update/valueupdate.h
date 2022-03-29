@@ -30,7 +30,7 @@ class Field;
 class FieldValue;
 class DataType;
 
-class ValueUpdate : public vespalib::Identifiable
+class ValueUpdate
 {
 protected:
     using nbostream = vespalib::nbostream;
@@ -53,11 +53,12 @@ public:
         Clear      = IDENTIFIABLE_CLASSID(ClearValueUpdate),
         Map        = IDENTIFIABLE_CLASSID(MapValueUpdate),
         Remove     = IDENTIFIABLE_CLASSID(RemoveValueUpdate),
-        TensorModifyUpdate = IDENTIFIABLE_CLASSID(TensorModifyUpdate),
-        TensorAddUpdate = IDENTIFIABLE_CLASSID(TensorAddUpdate),
-        TensorRemoveUpdate = IDENTIFIABLE_CLASSID(TensorRemoveUpdate)
+        TensorModify = IDENTIFIABLE_CLASSID(TensorModifyUpdate),
+        TensorAdd = IDENTIFIABLE_CLASSID(TensorAddUpdate),
+        TensorRemove = IDENTIFIABLE_CLASSID(TensorRemoveUpdate)
     };
 
+    virtual ~ValueUpdate() = default;
     virtual bool operator==(const ValueUpdate&) const = 0;
     bool operator != (const ValueUpdate & rhs) const { return ! (*this == rhs); }
 
@@ -85,10 +86,8 @@ public:
     virtual void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream) = 0;
 
     /** @return The operation type. */
-    ValueUpdateType getType() const {
-        return static_cast<ValueUpdateType>(getClass().id());
-    }
-
+    ValueUpdateType getType() const noexcept { return _type; }
+    const char * className() const noexcept;
     /**
      * Visit this fieldvalue for double dispatch.
      */
@@ -96,8 +95,11 @@ public:
 
     virtual void print(std::ostream& out, bool verbose, const std::string& indent) const = 0;
     virtual void printXml(XmlOutputStream& out) const = 0;
-
-    DECLARE_IDENTIFIABLE_ABSTRACT(ValueUpdate);
+protected:
+    ValueUpdate(ValueUpdateType type) : _type(type) { }
+private:
+    static std::unique_ptr<ValueUpdate> create(ValueUpdateType type);
+    ValueUpdateType _type;
 };
 
 std::ostream& operator<<(std::ostream& out, const ValueUpdate & p);

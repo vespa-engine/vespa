@@ -22,43 +22,26 @@ using vespalib::eval::FastValueBuilderFactory;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE(TensorAddUpdate, ValueUpdate);
-
 TensorAddUpdate::TensorAddUpdate()
-    : _tensor()
+    : ValueUpdate(TensorAdd),
+      TensorUpdate(),
+      _tensor()
 {
 }
 
-TensorAddUpdate::TensorAddUpdate(const TensorAddUpdate &rhs)
-    : _tensor(rhs._tensor->clone())
-{
-}
-
-TensorAddUpdate::TensorAddUpdate(std::unique_ptr<TensorFieldValue> &&tensor)
-    : _tensor(std::move(tensor))
+TensorAddUpdate::TensorAddUpdate(std::unique_ptr<TensorFieldValue> tensor)
+    : ValueUpdate(TensorAdd),
+      TensorUpdate(),
+      _tensor(std::move(tensor))
 {
 }
 
 TensorAddUpdate::~TensorAddUpdate() = default;
 
-TensorAddUpdate &
-TensorAddUpdate::operator=(const TensorAddUpdate &rhs)
-{
-    _tensor.reset(rhs._tensor->clone());
-    return *this;
-}
-
-TensorAddUpdate &
-TensorAddUpdate::operator=(TensorAddUpdate &&rhs)
-{
-    _tensor = std::move(rhs._tensor);
-    return *this;
-}
-
 bool
 TensorAddUpdate::operator==(const ValueUpdate &other) const
 {
-    if (other.getClass().id() != TensorAddUpdate::classId) {
+    if (other.getType() != TensorAdd) {
         return false;
     }
     const TensorAddUpdate& o(static_cast<const TensorAddUpdate&>(other));

@@ -11,13 +11,12 @@
 
 namespace document {
 
-class ClearValueUpdate : public ValueUpdate {
+class ClearValueUpdate final : public ValueUpdate {
     ACCEPT_UPDATE_VISITOR;
 public:
-    typedef std::unique_ptr<ClearValueUpdate> UP;
-    ClearValueUpdate() : ValueUpdate() {}
-    ClearValueUpdate(const ClearValueUpdate& update) : ValueUpdate(update) {}
-    ClearValueUpdate &operator=(const ClearValueUpdate &rhs) = default;
+    ClearValueUpdate(const ClearValueUpdate& update) = delete;
+    ClearValueUpdate &operator=(const ClearValueUpdate &rhs) = delete;
+    ClearValueUpdate() : ValueUpdate(Clear) {}
     bool operator==(const ValueUpdate& other) const override;
 
     void checkCompatibility(const Field& field) const override;
@@ -25,8 +24,6 @@ public:
     void printXml(XmlOutputStream& xos) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream& buffer) override;
-
-    DECLARE_IDENTIFIABLE(ClearValueUpdate);
 };
 
 }

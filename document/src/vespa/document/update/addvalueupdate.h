@@ -12,25 +12,25 @@
 
 namespace document {
 
-class AddValueUpdate : public ValueUpdate {
-    FieldValue::CP _value; // The field value to add by this update.
+class AddValueUpdate final : public ValueUpdate {
+    std::unique_ptr<FieldValue> _value; // The field value to add by this update.
     int _weight; // The weight to assign to the contained value.
 
     // Used by ValueUpdate's static factory function
     // Private because it generates an invalid object.
     friend class ValueUpdate;
-    AddValueUpdate() : ValueUpdate(), _value(0), _weight(1) {}
+    AddValueUpdate() : ValueUpdate(Add), _value(), _weight(1) {}
     ACCEPT_UPDATE_VISITOR;
 public:
-    typedef std::unique_ptr<AddValueUpdate> UP;
-
     /**
      * The default constructor requires initial values for all member variables.
      *
      * @param value The field value to add.
      * @param weight The weight for the field value.
      */
-    AddValueUpdate(const FieldValue& value, int weight = 1);
+    AddValueUpdate(std::unique_ptr<FieldValue> value, int weight = 1);
+    AddValueUpdate(const AddValueUpdate &) = delete;
+    AddValueUpdate & operator =(const AddValueUpdate &) = delete;
     ~AddValueUpdate();
 
     bool operator==(const ValueUpdate& other) const override;
@@ -40,17 +40,6 @@ public:
 
     /** @return The weight to assign to the value of this. */
     int getWeight() const { return _weight; }
-
-    /**
-     * Sets the field value to add during this update.
-     *
-     * @param value The new field value.
-     * @return A reference to this object so you can chain calls.
-     */
-    AddValueUpdate& setValue(const FieldValue& value) {
-        _value.reset(value.clone());
-        return *this;
-    }
 
     /**
      * Sets the weight to assign to the value of this.
@@ -67,8 +56,6 @@ public:
     void printXml(XmlOutputStream& xos) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & buffer) override;
-
-    DECLARE_IDENTIFIABLE(AddValueUpdate);
 };
 
 } // document

@@ -104,21 +104,21 @@ struct Fixture {
         vec.commit();
     }
 
-    void applyArrayUpdates(AttributeVector & vec, const FieldValue & assign,
-                           const FieldValue & first, const FieldValue & second) {
-        applyValueUpdate(vec, 0, std::make_unique<AssignValueUpdate>(assign));
-        applyValueUpdate(vec, 1, std::make_unique<AddValueUpdate>(second));
-        applyValueUpdate(vec, 2, std::make_unique<RemoveValueUpdate>(first));
+    void applyArrayUpdates(AttributeVector & vec, std::unique_ptr<FieldValue> assign,
+                           std::unique_ptr<FieldValue> first, std::unique_ptr<FieldValue> second) {
+        applyValueUpdate(vec, 0, std::make_unique<AssignValueUpdate>(std::move(assign)));
+        applyValueUpdate(vec, 1, std::make_unique<AddValueUpdate>(std::move(second)));
+        applyValueUpdate(vec, 2, std::make_unique<RemoveValueUpdate>(std::move(first)));
         applyValueUpdate(vec, 3, std::make_unique<ClearValueUpdate>());
     }
 
-    void applyWeightedSetUpdates(AttributeVector & vec, const FieldValue & assign,
-                                 const FieldValue & first, const FieldValue & second) {
-        applyValueUpdate(vec, 0, std::make_unique<AssignValueUpdate>(assign));
-        applyValueUpdate(vec, 1, std::make_unique<AddValueUpdate>(second, 20));
-        applyValueUpdate(vec, 2, std::make_unique<RemoveValueUpdate>(first));
+    void applyWeightedSetUpdates(AttributeVector & vec, std::unique_ptr<FieldValue> assign,
+                                 std::unique_ptr<FieldValue> first, std::unique_ptr<FieldValue> copyOfFirst, std::unique_ptr<FieldValue> second) {
+        applyValueUpdate(vec, 0, std::make_unique<AssignValueUpdate>(std::move(assign)));
+        applyValueUpdate(vec, 1, std::make_unique<AddValueUpdate>(std::move(second), 20));
+        applyValueUpdate(vec, 2, std::make_unique<RemoveValueUpdate>(std::move(first)));
         applyValueUpdate(vec, 3, std::make_unique<ClearValueUpdate>());
-        applyValueUpdate(vec, 4, std::make_unique<MapValueUpdate>(first, std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10)));
+        applyValueUpdate(vec, 4, std::make_unique<MapValueUpdate>(std::move(copyOfFirst), std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10)));
     }
 };
 
@@ -203,10 +203,8 @@ TEST_F("require that single attributes are updated", Fixture)
     CollectionType ct(CollectionType::SINGLE);
     {
         BasicType bt(BasicType::INT32);
-        AttributePtr vec = create<int32_t, IntegerAttribute>(3, 32, 0,
-                                                             "in1/int",
-                                                             Config(bt, ct));
-        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(IntFieldValue(64)));
+        AttributePtr vec = create<int32_t, IntegerAttribute>(3, 32, 0, "in1/int", Config(bt, ct));
+        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(std::make_unique<IntFieldValue>(64)));
         f.applyValueUpdate(*vec, 1, std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10));
         f.applyValueUpdate(*vec, 2, std::make_unique<ClearValueUpdate>());
         EXPECT_EQUAL(3u, vec->getNumDocs());
@@ -216,11 +214,8 @@ TEST_F("require that single attributes are updated", Fixture)
     }
     {
         BasicType bt(BasicType::FLOAT);
-        AttributePtr vec = create<float, FloatingPointAttribute>(3, 55.5f, 0,
-                                                                 "in1/float",
-                                                                 Config(bt,
-                                                                        ct));
-        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(FloatFieldValue(77.7f)));
+        AttributePtr vec = create<float, FloatingPointAttribute>(3, 55.5f, 0, "in1/float",Config(bt, ct));
+        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(std::make_unique<FloatFieldValue>(77.7f)));
         f.applyValueUpdate(*vec, 1, std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10));
         f.applyValueUpdate(*vec, 2, std::make_unique<ClearValueUpdate>());
         EXPECT_EQUAL(3u, vec->getNumDocs());
@@ -230,11 +225,8 @@ TEST_F("require that single attributes are updated", Fixture)
     }
     {
         BasicType bt(BasicType::STRING);
-        AttributePtr vec = create<std::string, StringAttribute>(3, "first", 0,
-                                                                "in1/string",
-                                                                Config(bt,
-                                                                       ct));
-        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(StringFieldValue("second")));
+        AttributePtr vec = create<std::string, StringAttribute>(3, "first", 0, "in1/string",Config(bt, ct));
+        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(StringFieldValue::make("second")));
         f.applyValueUpdate(*vec, 2, std::make_unique<ClearValueUpdate>());
         EXPECT_EQUAL(3u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedString>{WeightedString("second")}));
@@ -254,7 +246,7 @@ TEST_F("require that single attributes are updated", Fixture)
             asReferenceAttribute(*vec).update(docId, toGid(doc1));
         }
         vec->commit();
-        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(ReferenceFieldValue(dynamic_cast<const ReferenceDataType &>(f.docType->getField("ref").getDataType()), DocumentId(doc2))));
+        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(std::make_unique<ReferenceFieldValue>(dynamic_cast<const ReferenceDataType &>(f.docType->getField("ref").getDataType()), DocumentId(doc2))));
         f.applyValueUpdate(*vec, 2, std::make_unique<ClearValueUpdate>());
         EXPECT_EQUAL(3u, vec->getNumDocs());
         TEST_DO(assertRef(*vec, doc2, 0));
@@ -268,14 +260,12 @@ TEST_F("require that array attributes are updated", Fixture)
     CollectionType ct(CollectionType::ARRAY);
     {
         BasicType bt(BasicType::INT32);
-        AttributePtr vec = create<int32_t, IntegerAttribute>(5, 32, 1,
-                                                             "in1/aint",
-                                                             Config(bt, ct));
-        IntFieldValue first(32);
-        IntFieldValue second(64);
-        ArrayFieldValue assign(f.docType->getField("aint").getDataType());
-        assign.add(second);
-        f.applyArrayUpdates(*vec, assign, first, second);
+        AttributePtr vec = create<int32_t, IntegerAttribute>(5, 32, 1, "in1/aint", Config(bt, ct));
+        auto first = std::make_unique<IntFieldValue>(32);
+        auto second = std::make_unique<IntFieldValue>(64);
+        auto assign = std::make_unique<ArrayFieldValue>(f.docType->getField("aint").getDataType());
+        assign->add(*second);
+        f.applyArrayUpdates(*vec, std::move(assign), std::move(first), std::move(second));
 
         EXPECT_EQUAL(5u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedInt>{WeightedInt(64)}));
@@ -286,15 +276,12 @@ TEST_F("require that array attributes are updated", Fixture)
     }
     {
         BasicType bt(BasicType::FLOAT);
-        AttributePtr vec = create<float, FloatingPointAttribute>(5, 55.5f, 1,
-                                                                 "in1/afloat",
-                                                                 Config(bt,
-                                                                        ct));
-        FloatFieldValue first(55.5f);
-        FloatFieldValue second(77.7f);
-        ArrayFieldValue assign(f.docType->getField("afloat").getDataType());
-        assign.add(second);
-        f.applyArrayUpdates(*vec, assign, first, second);
+        AttributePtr vec = create<float, FloatingPointAttribute>(5, 55.5f, 1, "in1/afloat", Config(bt, ct));
+        auto first = std::make_unique<FloatFieldValue>(55.5f);
+        auto second = std::make_unique<FloatFieldValue>(77.7f);
+        auto assign = std::make_unique<ArrayFieldValue>(f.docType->getField("afloat").getDataType());
+        assign->add(*second);
+        f.applyArrayUpdates(*vec, std::move(assign), std::move(first), std::move(second));
 
         EXPECT_EQUAL(5u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedFloat>{WeightedFloat(77.7f)}));
@@ -305,14 +292,12 @@ TEST_F("require that array attributes are updated", Fixture)
     }
     {
         BasicType bt(BasicType::STRING);
-        AttributePtr vec = create<std::string, StringAttribute>(5, "first", 1,
-                                                                "in1/astring",
-                                                                Config(bt, ct));
-        StringFieldValue first("first");
-        StringFieldValue second("second");
-        ArrayFieldValue assign(f.docType->getField("astring").getDataType());
-        assign.add(second);
-        f.applyArrayUpdates(*vec, assign, first, second);
+        AttributePtr vec = create<std::string, StringAttribute>(5, "first", 1, "in1/astring", Config(bt, ct));
+        auto first = StringFieldValue::make("first");
+        auto second = StringFieldValue::make("second");
+        auto assign = std::make_unique<ArrayFieldValue>(f.docType->getField("astring").getDataType());
+        assign->add(*second);
+        f.applyArrayUpdates(*vec, std::move(assign), std::move(first), std::move(second));
 
         EXPECT_EQUAL(5u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedString>{WeightedString("second")}));
@@ -328,15 +313,13 @@ TEST_F("require that weighted set attributes are updated", Fixture)
     CollectionType ct(CollectionType::WSET);
     {
         BasicType bt(BasicType::INT32);
-        AttributePtr vec = create<int32_t, IntegerAttribute>(5, 32, 100,
-                                                             "in1/wsint",
-                                                             Config(bt, ct));
-        IntFieldValue first(32);
-        IntFieldValue second(64);
-        WeightedSetFieldValue
-            assign(f.docType->getField("wsint").getDataType());
-        assign.add(second, 20);
-        f.applyWeightedSetUpdates(*vec, assign, first, second);
+        AttributePtr vec = create<int32_t, IntegerAttribute>(5, 32, 100, "in1/wsint", Config(bt, ct));
+        auto first = std::make_unique<IntFieldValue>(32);
+        auto copyOfFirst = std::make_unique<IntFieldValue>(32);
+        auto second = std::make_unique<IntFieldValue>(64);
+        auto assign = std::make_unique<WeightedSetFieldValue>(f.docType->getField("wsint").getDataType());
+        assign->add(*second, 20);
+        f.applyWeightedSetUpdates(*vec, std::move(assign), std::move(first), std::move(copyOfFirst), std::move(second));
 
         EXPECT_EQUAL(5u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedInt>{WeightedInt(64, 20)}));
@@ -347,16 +330,13 @@ TEST_F("require that weighted set attributes are updated", Fixture)
     }
     {
         BasicType bt(BasicType::FLOAT);
-        AttributePtr vec = create<float, FloatingPointAttribute>(5, 55.5f, 100,
-                                                                 "in1/wsfloat",
-                                                                 Config(bt,
-                                                                        ct));
-        FloatFieldValue first(55.5f);
-        FloatFieldValue second(77.7f);
-        WeightedSetFieldValue
-            assign(f.docType->getField("wsfloat").getDataType());
-        assign.add(second, 20);
-        f.applyWeightedSetUpdates(*vec, assign, first, second);
+        AttributePtr vec = create<float, FloatingPointAttribute>(5, 55.5f, 100, "in1/wsfloat", Config(bt, ct));
+        auto first = std::make_unique<FloatFieldValue>(55.5f);
+        auto copyOfFirst = std::make_unique<FloatFieldValue>(55.5f);
+        auto second = std::make_unique<FloatFieldValue>(77.7f);
+        auto assign = std::make_unique<WeightedSetFieldValue>(f.docType->getField("wsfloat").getDataType());
+        assign->add(*second, 20);
+        f.applyWeightedSetUpdates(*vec, std::move(assign), std::move(first), std::move(copyOfFirst), std::move(second));
 
         EXPECT_EQUAL(5u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedFloat>{WeightedFloat(77.7f, 20)}));
@@ -367,17 +347,13 @@ TEST_F("require that weighted set attributes are updated", Fixture)
     }
     {
         BasicType bt(BasicType::STRING);
-        AttributePtr vec = create<std::string, StringAttribute>(5, "first",
-                                                                100,
-                                                                "in1/wsstring",
-                                                                Config(bt,
-                                                                       ct));
-        StringFieldValue first("first");
-        StringFieldValue second("second");
-        WeightedSetFieldValue
-            assign(f.docType->getField("wsstring").getDataType());
-        assign.add(second, 20);
-        f.applyWeightedSetUpdates(*vec, assign, first, second);
+        AttributePtr vec = create<std::string, StringAttribute>(5, "first", 100, "in1/wsstring", Config(bt, ct));
+        auto first = StringFieldValue::make("first");
+        auto copyOfFirst = StringFieldValue::make("first");
+        auto second = StringFieldValue::make("second");
+        auto assign = std::make_unique<WeightedSetFieldValue>(f.docType->getField("wsstring").getDataType());
+        assign->add(*second, 20);
+        f.applyWeightedSetUpdates(*vec, std::move(assign), std::move(first), std::move(copyOfFirst), std::move(second));
 
         EXPECT_EQUAL(5u, vec->getNumDocs());
         EXPECT_TRUE(check(vec, 0, std::vector<WeightedString>{WeightedString("second", 20)}));

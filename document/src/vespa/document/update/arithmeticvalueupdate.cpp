@@ -12,8 +12,6 @@ using namespace vespalib::xml;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE(ArithmeticValueUpdate, ValueUpdate);
-
 // Declare string representations for operator names.
 static const char * operatorName[]  = { "add", "div", "mul", "sub" };
 static const char * operatorNameC[] = { "Add", "Div", "Mul", "Sub" };
@@ -21,7 +19,7 @@ static const char * operatorNameC[] = { "Add", "Div", "Mul", "Sub" };
 bool
 ArithmeticValueUpdate::operator==(const ValueUpdate& other) const
 {
-    if (other.getClass().id() != ArithmeticValueUpdate::classId) return false;
+    if (other.getType() != Arithmetic) return false;
     const ArithmeticValueUpdate& o(static_cast<const ArithmeticValueUpdate&>(other));
     if (_operator != o._operator) return false;
     if (_operand != o._operand) return false;

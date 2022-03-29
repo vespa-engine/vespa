@@ -18,6 +18,7 @@ using std::shared_ptr;
 
 using storage::spi::test::makeSpiBucket;
 using document::test::makeDocumentBucket;
+using document::StringFieldValue;
 using namespace ::testing;
 
 namespace storage {
@@ -28,10 +29,10 @@ struct TestAndSetTest : PersistenceTestUtils {
     static constexpr int RANDOM_SEED = 1234;
 
     const document::BucketId BUCKET_ID{16, 4};
-    const document::StringFieldValue MISMATCHING_HEADER{"Definitely nothing about loud canines"};
-    const document::StringFieldValue MATCHING_HEADER{"Some string with woofy dog as a substring"};
-    const document::StringFieldValue OLD_CONTENT{"Some old content"};
-    const document::StringFieldValue NEW_CONTENT{"Freshly pressed and squeezed content"};
+    const StringFieldValue MISMATCHING_HEADER{"Definitely nothing about loud canines"};
+    const StringFieldValue MATCHING_HEADER{"Some string with woofy dog as a substring"};
+    const StringFieldValue OLD_CONTENT{"Some old content"};
+    const StringFieldValue NEW_CONTENT{"Freshly pressed and squeezed content"};
     const document::Bucket BUCKET = makeDocumentBucket(BUCKET_ID);
 
     unique_ptr<PersistenceHandler> persistenceHandler;
@@ -159,7 +160,7 @@ std::shared_ptr<api::UpdateCommand>
 TestAndSetTest::conditional_update_test(bool createIfMissing, api::Timestamp updateTimestamp)
 {
     auto docUpdate = std::make_shared<document::DocumentUpdate>(_env->_testDocMan.getTypeRepo(), testDoc->getType(), testDocId);
-    docUpdate->addUpdate(document::FieldUpdate(testDoc->getField("content")).addUpdate(std::make_unique<document::AssignValueUpdate>(NEW_CONTENT)));
+    docUpdate->addUpdate(document::FieldUpdate(testDoc->getField("content")).addUpdate(std::make_unique<document::AssignValueUpdate>(std::make_unique<StringFieldValue>(NEW_CONTENT))));
     docUpdate->setCreateIfNonExistent(createIfMissing);
 
     auto updateUp = std::make_unique<api::UpdateCommand>(BUCKET, docUpdate, updateTimestamp);

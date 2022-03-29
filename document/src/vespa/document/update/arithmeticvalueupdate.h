@@ -12,7 +12,7 @@
 
 namespace document {
 
-class ArithmeticValueUpdate : public ValueUpdate {
+class ArithmeticValueUpdate final : public ValueUpdate {
 public:
     /** Declare all types of arithmetic value updates. */
     enum Operator {
@@ -25,13 +25,13 @@ public:
 
 private:
     Operator _operator; // The operator of the arithmetic operation.
-    double _operand; // The operand of the arithmetic operation.
+    double   _operand; // The operand of the arithmetic operation.
 
     // Used by ValueUpdate's static factory function
     // Private because it generates an invalid object.
     friend class ValueUpdate;
     ArithmeticValueUpdate()
-        : ValueUpdate(),
+        : ValueUpdate(Arithmetic),
           _operator(MAX_NUM_OPERATORS),
           _operand(0.0) {}
 
@@ -46,16 +46,12 @@ public:
      * @param opn The operand for the operation.
      */
     ArithmeticValueUpdate(Operator opt, double opn)
-        : ValueUpdate(),
+        : ValueUpdate(Arithmetic),
           _operator(opt),
           _operand(opn) {}
 
-    ArithmeticValueUpdate(const ArithmeticValueUpdate& update)
-        : ValueUpdate(update),
-          _operator(update._operator),
-          _operand(update._operand) {}
-
-    ArithmeticValueUpdate &operator=(const ArithmeticValueUpdate &rhs) = default;
+    ArithmeticValueUpdate(const ArithmeticValueUpdate& update) = delete;
+    ArithmeticValueUpdate &operator=(const ArithmeticValueUpdate &rhs) = delete;
 
     bool operator==(const ValueUpdate& other) const override;
 
@@ -91,8 +87,6 @@ public:
     void printXml(XmlOutputStream& xos) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & buffer) override;
-
-    DECLARE_IDENTIFIABLE(ArithmeticValueUpdate);
 };
 
 } // document

@@ -521,7 +521,7 @@ TEST_F("require that update is rejected if resource limit is reached", SimpleFix
     document::Field field("string", 1, *document::DataType::STRING);
     type.addField(field);
     DocumentUpdate::SP upd = createUpd(type, docId1);
-    upd->addUpdate(std::move(document::FieldUpdate(field).addUpdate(std::make_unique<document::AssignValueUpdate>(document::StringFieldValue("new value")))));
+    upd->addUpdate(std::move(document::FieldUpdate(field).addUpdate(std::make_unique<document::AssignValueUpdate>(std::make_unique<document::StringFieldValue>("new value")))));
 
     EXPECT_EQUAL(
             Result(Result::ErrorType::RESOURCE_EXHAUSTED,

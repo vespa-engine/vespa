@@ -163,44 +163,23 @@ public:
     /**
        Returns the document that was inserted.
     */
-    document::Document::SP doPutOnDisk(
-            uint32_t location,
-            spi::Timestamp timestamp,
-            uint32_t minSize = 0,
-            uint32_t maxSize = 128);
+    document::Document::SP doPutOnDisk(uint32_t location, spi::Timestamp timestamp, uint32_t minSize = 0, uint32_t maxSize = 128);
 
-    document::Document::SP doPut(
-            uint32_t location,
-            spi::Timestamp timestamp,
-            uint32_t minSize = 0,
-            uint32_t maxSize = 128)
-        { return doPutOnDisk(location, timestamp, minSize, maxSize); }
+    document::Document::SP doPut(uint32_t location, spi::Timestamp timestamp, uint32_t minSize = 0, uint32_t maxSize = 128) {
+        return doPutOnDisk(location, timestamp, minSize, maxSize);
+    }
 
     /**
        Returns the new doccount if document was removed, or -1 if not found.
     */
-    bool doRemoveOnDisk(
-            const document::BucketId& bid,
-            const document::DocumentId& id,
-            spi::Timestamp timestamp,
-            bool persistRemove);
-
-    bool doRemove(
-            const document::BucketId& bid,
-            const document::DocumentId& id,
-            spi::Timestamp timestamp,
-            bool persistRemove) {
+    bool doRemoveOnDisk(const document::BucketId& bid, const document::DocumentId& id, spi::Timestamp timestamp, bool persistRemove);
+    bool doRemove(const document::BucketId& bid, const document::DocumentId& id, spi::Timestamp timestamp, bool persistRemove) {
         return doRemoveOnDisk(bid, id, timestamp, persistRemove);
     }
 
-    bool doUnrevertableRemoveOnDisk(const document::BucketId& bid,
-                                    const document::DocumentId& id,
-                                    spi::Timestamp timestamp);
+    bool doUnrevertableRemoveOnDisk(const document::BucketId& bid, const document::DocumentId& id, spi::Timestamp timestamp);
 
-    bool doUnrevertableRemove(const document::BucketId& bid,
-                              const document::DocumentId& id,
-                              spi::Timestamp timestamp)
-    {
+    bool doUnrevertableRemove(const document::BucketId& bid, const document::DocumentId& id, spi::Timestamp timestamp) {
         return doUnrevertableRemoveOnDisk(bid, id, timestamp);
     }
 
@@ -211,25 +190,19 @@ public:
      * @unrevertableRemove If set, instead of adding put, turn put to remove.
      * @usedBits Generate bucket to use from docid using this amount of bits.
      */
-    void doRemove(const document::DocumentId& id, spi::Timestamp,
-                  bool unrevertableRemove = false, uint16_t usedBits = 16);
+    void doRemove(const document::DocumentId& id, spi::Timestamp, bool unrevertableRemove = false, uint16_t usedBits = 16);
 
-    spi::GetResult doGetOnDisk(
-            const document::BucketId& bucketId,
-            const document::DocumentId& docId);
+    spi::GetResult doGetOnDisk(const document::BucketId& bucketId, const document::DocumentId& docId);
 
-    spi::GetResult doGet(
-            const document::BucketId& bucketId,
-            const document::DocumentId& docId)
-        { return doGetOnDisk(bucketId, docId); }
+    spi::GetResult doGet(const document::BucketId& bucketId, const document::DocumentId& docId) {
+        return doGetOnDisk(bucketId, docId);
+    }
 
-    std::shared_ptr<document::DocumentUpdate> createBodyUpdate(
-            const document::DocumentId& id,
-            const document::FieldValue& updateValue);
+    std::shared_ptr<document::DocumentUpdate>
+    createBodyUpdate(const document::DocumentId& id, std::unique_ptr<document::FieldValue> updateValue);
 
-    std::shared_ptr<document::DocumentUpdate> createHeaderUpdate(
-            const document::DocumentId& id,
-            const document::FieldValue& updateValue);
+    std::shared_ptr<document::DocumentUpdate>
+    createHeaderUpdate(const document::DocumentId& id, std::unique_ptr<document::FieldValue> updateValue);
 
     uint16_t getDiskFromBucketDatabaseIfUnset(const document::Bucket &);
 
@@ -241,9 +214,7 @@ public:
      */
     void doPut(const document::Document::SP& doc, spi::Timestamp, uint16_t usedBits = 16);
 
-    void doPut(const document::Document::SP& doc,
-               document::BucketId bid,
-               spi::Timestamp time);
+    void doPut(const document::Document::SP& doc, document::BucketId bid, spi::Timestamp time);
 
     spi::UpdateResult doUpdate(document::BucketId bid,
                                const std::shared_ptr<document::DocumentUpdate>& update,

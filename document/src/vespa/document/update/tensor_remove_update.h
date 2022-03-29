@@ -16,20 +16,20 @@ class TensorFieldValue;
  * The cells to remove are contained in a sparse tensor (with all mapped dimensions) where cell values are set to 1.0.
  * When used on a mixed tensor the entire dense sub-space (pointed to by a cell in the sparse tensor) is removed.
  */
-class TensorRemoveUpdate : public ValueUpdate, public TensorUpdate {
+class TensorRemoveUpdate final : public ValueUpdate, public TensorUpdate {
 private:
     std::unique_ptr<const TensorDataType> _tensorType;
     std::unique_ptr<TensorFieldValue> _tensor;
 
+    friend ValueUpdate;
     TensorRemoveUpdate();
-    TensorRemoveUpdate(const TensorRemoveUpdate &rhs);
     ACCEPT_UPDATE_VISITOR;
 
 public:
-    TensorRemoveUpdate(std::unique_ptr<TensorFieldValue> tensor);
+    explicit TensorRemoveUpdate(std::unique_ptr<TensorFieldValue> tensor);
+    TensorRemoveUpdate(const TensorRemoveUpdate &rhs) = delete;
+    TensorRemoveUpdate &operator=(const TensorRemoveUpdate &rhs) = delete;
     ~TensorRemoveUpdate() override;
-    TensorRemoveUpdate &operator=(const TensorRemoveUpdate &rhs);
-    TensorRemoveUpdate &operator=(TensorRemoveUpdate &&rhs);
     const TensorFieldValue &getTensor() const { return *_tensor; }
     std::unique_ptr<vespalib::eval::Value> applyTo(const vespalib::eval::Value &tensor) const;
     std::unique_ptr<Value> apply_to(const Value &tensor,
@@ -40,8 +40,6 @@ public:
     void printXml(XmlOutputStream &xos) const override;
     void print(std::ostream &out, bool verbose, const std::string &indent) const override;
     void deserialize(const DocumentTypeRepo &repo, const DataType &type, nbostream &stream) override;
-
-    DECLARE_IDENTIFIABLE(TensorRemoveUpdate);
 };
 
 }

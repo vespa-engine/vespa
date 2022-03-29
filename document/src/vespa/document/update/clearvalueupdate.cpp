@@ -8,12 +8,10 @@ using namespace vespalib::xml;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE(ClearValueUpdate, ValueUpdate);
-
 bool
 ClearValueUpdate::operator==(const ValueUpdate& other) const
 {
-    return (other.getClass().id() == ClearValueUpdate::classId);
+    return (other.getType() == Clear);
 }
 
 // Ensure that this update is compatible with given field.
