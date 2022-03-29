@@ -60,6 +60,7 @@ echo "RPMs missing on JFrog Cloud:"
 ls -lh  *.rpm
 echo
 
+UPLOAD_FAILED=false
 if [[ -n $SCREWDRIVER ]] && [[ -z $SD_PULL_REQUEST ]]; then
   for rpm in $(ls *.rpm); do
     echo "Uploading $rpm ..."
@@ -73,7 +74,7 @@ if [[ -n $SCREWDRIVER ]] && [[ -z $SD_PULL_REQUEST ]]; then
   echo
 fi
 
-if [[ -n $UPLOAD_FAILED ]]; then
+if $UPLOAD_FAILED; then
   echo "Some RPMs failed to upload"
   exit 1
 fi
