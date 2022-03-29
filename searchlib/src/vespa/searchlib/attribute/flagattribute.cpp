@@ -53,7 +53,7 @@ FlagAttributeT<B>::FlagAttributeT(const vespalib::string & baseFileName, const A
 }
 
 template <typename B>
-AttributeVector::SearchContext::UP
+std::unique_ptr<attribute::SearchContext>
 FlagAttributeT<B>::getSearch(QueryTermSimple::UP qTerm, const attribute::SearchContextParams &) const
 {
     return std::make_unique<SearchContext>(std::move(qTerm), *this);

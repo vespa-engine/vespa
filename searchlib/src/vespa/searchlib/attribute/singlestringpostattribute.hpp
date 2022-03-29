@@ -135,7 +135,7 @@ SingleValueStringPostingAttributeT<B>::onGenerationChange(generation_t generatio
 }
 
 template <typename B>
-AttributeVector::SearchContext::UP
+std::unique_ptr<attribute::SearchContext>
 SingleValueStringPostingAttributeT<B>::getSearch(QueryTermSimpleUP qTerm,
                                                  const attribute::SearchContextParams & params) const
 {

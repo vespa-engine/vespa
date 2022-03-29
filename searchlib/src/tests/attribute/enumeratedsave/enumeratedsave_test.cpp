@@ -39,10 +39,11 @@ using search::StringAttribute;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
+using search::attribute::SearchContext;
 using search::attribute::SearchContextParams;
 using search::fef::TermFieldMatchData;
 
-typedef std::unique_ptr<AttributeVector::SearchContext> SearchContextPtr;
+using SearchContextPtr = std::unique_ptr<SearchContext>;
 typedef std::unique_ptr<search::queryeval::SearchIterator> SearchBasePtr;
 
 

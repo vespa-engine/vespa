@@ -30,7 +30,7 @@ public:
     void onGenerationChange(generation_t generation) override;
     uint64_t getEstimatedSaveByteSize() const override;
 
-    SearchContext::UP
+    std::unique_ptr<attribute::SearchContext>
     getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams & params) const override;
 
     uint32_t getValueCount(DocId doc) const override {

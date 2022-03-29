@@ -26,7 +26,6 @@ protected:
     using EnumStore = typename SingleValueEnumAttribute<B>::EnumStore;
     using LoadedVector = StringAttribute::LoadedVector;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
-    using SearchContext = StringAttribute::SearchContext;
     using ValueModifier = StringAttribute::ValueModifier;
     using WeightedConstChar = StringAttribute::WeightedConstChar;
     using WeightedEnum = StringAttribute::WeightedEnum;
@@ -78,7 +77,7 @@ public:
         return 1;
     }
 
-    AttributeVector::SearchContext::UP
+    std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
 
     class StringSingleImplSearchContext : public StringAttribute::StringSearchContext {

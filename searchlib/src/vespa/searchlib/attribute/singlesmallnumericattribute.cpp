@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "singlesmallnumericattribute.h"
 #include "attributeiterators.hpp"
 #include "attributevector.hpp"
 #include "iattributesavetarget.h"
 #include "primitivereader.h"
-#include "singlesmallnumericattribute.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/util/file_settings.h>
@@ -168,7 +168,7 @@ SingleValueSmallNumericAttribute::onSave(IAttributeSaveTarget &saveTarget)
     assert(numDocs == getCommittedDocIdLimit());
 }
 
-AttributeVector::SearchContext::UP
+std::unique_ptr<attribute::SearchContext>
 SingleValueSmallNumericAttribute::getSearch(std::unique_ptr<QueryTermSimple> qTerm,
                                             const attribute::SearchContextParams &) const
 {

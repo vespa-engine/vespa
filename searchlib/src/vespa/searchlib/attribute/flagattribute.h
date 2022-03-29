@@ -31,7 +31,7 @@ private:
     };
     bool onLoad(vespalib::Executor *executor) override;
     bool onLoadEnumerated(ReaderBase &attrReader) override;
-    AttributeVector::SearchContext::UP
+    std::unique_ptr<attribute::SearchContext>
     getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams & params) const override;
     void clearOldValues(DocId doc) override;
     void setNewValues(DocId doc, const std::vector<typename B::WType> & values) override;

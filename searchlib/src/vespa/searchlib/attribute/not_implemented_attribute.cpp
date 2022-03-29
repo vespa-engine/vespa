@@ -1,13 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "not_implemented_attribute.h"
+#include "search_context.h"
 #include <vespa/vespalib/util/exceptions.h>
 
 using vespalib::make_string_short::fmt;
 namespace search {
 
 using largeint_t = attribute::IAttributeVector::largeint_t;
-using SearchContext = AttributeVector::SearchContext;
+using attribute::SearchContext;
 
 void
 NotImplementedAttribute::notImplemented() const {
@@ -141,10 +142,10 @@ NotImplementedAttribute::addDoc(DocId &) {
     return false;
 }
 
-SearchContext::UP
+std::unique_ptr<SearchContext>
 NotImplementedAttribute::getSearch(QueryTermSimpleUP, const attribute::SearchContextParams &) const {
     notImplemented();
-    return SearchContext::UP();
+    return {};
 }
 
 void NotImplementedAttribute::onAddDocs(DocId ) { }

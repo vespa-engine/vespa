@@ -361,7 +361,7 @@ public:
     }
 private:
     search::SingleBoolAttribute     _a;
-    search::AttributeVector::SearchContext::UP _sc;
+    std::unique_ptr<search::attribute::SearchContext> _sc;
     mutable TermFieldMatchData _tfmd;
 };
 

@@ -1,10 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "singleboolattribute.h"
 #include "attributevector.hpp"
 #include "iattributesavetarget.h"
 #include "ipostinglistsearchcontext.h"
 #include "primitivereader.h"
-#include "singleboolattribute.h"
+#include "search_context.h"
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
@@ -100,7 +101,7 @@ SingleBoolAttribute::onUpdateStat() {
 
 namespace {
 
-class BitVectorSearchContext : public AttributeVector::SearchContext, public attribute::IPostingListSearchContext
+class BitVectorSearchContext : public attribute::SearchContext, public attribute::IPostingListSearchContext
 {
 private:
     const BitVector & _bv;
@@ -174,7 +175,7 @@ BitVectorSearchContext::approximateHits() const {
 
 }
 
-AttributeVector::SearchContext::UP
+std::unique_ptr<attribute::SearchContext>
 SingleBoolAttribute::getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams &) const {
     return std::make_unique<BitVectorSearchContext>(std::move(term), *this);
 }

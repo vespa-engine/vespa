@@ -39,12 +39,12 @@ class SingleExtAttribute
     using BasicType = typename Super::BasicType;
     using QueryTermSimpleUP = typename Super::QueryTermSimpleUP;
 
-    AttributeVector::SearchContext::UP
+    std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override
     {
         (void) term;
         (void) params;
-        return AttributeVector::SearchContext::UP();
+        return {};
     }
     IExtendAttribute * getExtendInterface() override { return this; }
 public:
@@ -111,12 +111,12 @@ protected:
         : Super(name, Config(BasicType::fromType(T()), ctype))
     { }
 private:
-    AttributeVector::SearchContext::UP
+    std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override
     {
         (void) term;
         (void) params;
-        return AttributeVector::SearchContext::UP();
+        return {};
     }
     IExtendAttribute * getExtendInterface() override { return this; }
 
@@ -203,12 +203,12 @@ protected:
 class WeightedSetIntegerExtAttribute
     : public WeightedSetExtAttributeBase<MultiIntegerExtAttribute>
 {
-    AttributeVector::SearchContext::UP
+    std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override
     {
         (void) term;
         (void) params;
-        return AttributeVector::SearchContext::UP();
+        return {};
     }
 public:
     WeightedSetIntegerExtAttribute(const vespalib::string & name);
@@ -220,12 +220,12 @@ public:
 class WeightedSetFloatExtAttribute
     : public WeightedSetExtAttributeBase<MultiFloatExtAttribute>
 {
-    AttributeVector::SearchContext::UP
+    std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override
     {
         (void) term;
         (void) params;
-        return AttributeVector::SearchContext::UP();
+        return {};
     }
 public:
     WeightedSetFloatExtAttribute(const vespalib::string & name);

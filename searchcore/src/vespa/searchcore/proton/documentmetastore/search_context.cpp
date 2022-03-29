@@ -115,7 +115,7 @@ SearchContext::onFind(DocId, int32_t ) const
 unsigned int
 SearchContext::approximateHits() const
 {
-    return _isWord ? 1 : search::AttributeVector::SearchContext::approximateHits();
+    return _isWord ? 1 : search::attribute::SearchContext::approximateHits();
 }
 
 SearchIterator::UP
@@ -135,7 +135,7 @@ SearchContext::getStore() const
 }
 
 SearchContext::SearchContext(QueryTermSimple::UP qTerm, const DocumentMetaStore &toBeSearched)
-    : search::AttributeVector::SearchContext(toBeSearched),
+    : search::attribute::SearchContext(toBeSearched),
       _isWord(qTerm->isWord())
 {
 }

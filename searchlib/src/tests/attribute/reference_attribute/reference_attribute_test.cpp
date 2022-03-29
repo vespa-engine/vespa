@@ -3,6 +3,7 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
+#include <vespa/searchlib/attribute/search_context.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>

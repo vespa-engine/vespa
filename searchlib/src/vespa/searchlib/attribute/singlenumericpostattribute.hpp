@@ -143,7 +143,7 @@ SingleValueNumericPostingAttribute<B>::onGenerationChange(generation_t generatio
 }
 
 template <typename B>
-AttributeVector::SearchContext::UP
+std::unique_ptr<attribute::SearchContext>
 SingleValueNumericPostingAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
                                                  const attribute::SearchContextParams & params) const
 {

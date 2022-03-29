@@ -85,11 +85,11 @@ MultiValueStringPostingAttributeT<B, T>::onGenerationChange(generation_t generat
 
 
 template <typename B, typename T>
-AttributeVector::SearchContext::UP
+std::unique_ptr<attribute::SearchContext>
 MultiValueStringPostingAttributeT<B, T>::getSearch(QueryTermSimpleUP qTerm,
                                                    const attribute::SearchContextParams & params) const
 {
-    std::unique_ptr<search::AttributeVector::SearchContext> sc;
+    std::unique_ptr<search::attribute::SearchContext> sc;
     sc.reset(new typename std::conditional<T::_hasWeight,
                                            StringSetPostingSearchContext,
                                            StringArrayPostingSearchContext>::

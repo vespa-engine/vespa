@@ -98,7 +98,7 @@ public:
         _referenceMappings.foreach_lid(targetLid, std::forward<FunctionType>(func));
     }
 
-    SearchContext::UP getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams& params) const override;
+    std::unique_ptr<SearchContext> getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams& params) const override;
 };
 
 }

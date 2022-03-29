@@ -37,10 +37,11 @@ using attribute::BasicType;
 using attribute::Config;
 using queryeval::PostingInfo;
 using queryeval::MinMaxPostingInfo;
+using search::attribute::SearchContext;
 using search::fef::TermFieldMatchData;
 using search::queryeval::SearchIterator;
 
-typedef std::unique_ptr<AttributeVector::SearchContext> SearchContextPtr;
+using SearchContextPtr = std::unique_ptr<SearchContext>;
 typedef std::unique_ptr<search::queryeval::SearchIterator> SearchBasePtr;
 
 void

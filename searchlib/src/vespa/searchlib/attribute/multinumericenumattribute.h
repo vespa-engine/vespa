@@ -5,6 +5,7 @@
 #include "multienumattribute.h"
 #include "numericbase.h"
 #include "primitivereader.h"
+#include "search_context.h"
 
 namespace search {
 
@@ -41,7 +42,7 @@ protected:
     /*
      * Specialization of SearchContext for weighted set type
      */
-    class SetSearchContext : public NumericAttribute::Range<T>, public AttributeVector::SearchContext
+    class SetSearchContext : public NumericAttribute::Range<T>, public attribute::SearchContext
     {
     protected:
         const MultiValueNumericEnumAttribute<B, M> & _toBeSearched;
@@ -94,7 +95,7 @@ protected:
     /*
      * Specialization of SearchContext for array type
      */
-    class ArraySearchContext : public NumericAttribute::Range<T>, public AttributeVector::SearchContext
+    class ArraySearchContext : public NumericAttribute::Range<T>, public attribute::SearchContext
     {
     protected:
         const MultiValueNumericEnumAttribute<B, M> & _toBeSearched;
@@ -155,7 +156,7 @@ public:
 
     bool onLoadEnumerated(ReaderBase &attrReader);
 
-    AttributeVector::SearchContext::UP
+    std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
 
     //-------------------------------------------------------------------------

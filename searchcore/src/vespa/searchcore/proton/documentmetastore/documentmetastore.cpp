@@ -40,6 +40,7 @@ using search::GrowStrategy;
 using search::IAttributeSaveTarget;
 using search::LidUsageStats;
 using search::attribute::LoadUtils;
+using search::attribute::SearchContext;
 using search::attribute::SearchContextParams;
 using search::fef::TermFieldMatchData;
 using search::queryeval::Blueprint;
@@ -798,7 +799,7 @@ DocumentMetaStore::createWhiteListBlueprint() const
     return _lidAlloc.createWhiteListBlueprint();
 }
 
-AttributeVector::SearchContext::UP
+std::unique_ptr<SearchContext>
 DocumentMetaStore::getSearch(std::unique_ptr<search::QueryTermSimple> qTerm, const SearchContextParams &) const
 {
     return std::make_unique<documentmetastore::SearchContext>(std::move(qTerm), *this);

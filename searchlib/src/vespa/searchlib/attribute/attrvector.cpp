@@ -22,7 +22,7 @@ StringDirectAttribute(const vespalib::string & baseFileName, const Config & c)
 
 StringDirectAttribute::~StringDirectAttribute() = default;
 
-AttributeVector::SearchContext::UP
+std::unique_ptr<attribute::SearchContext>
 StringDirectAttribute::getSearch(QueryTermSimpleUP, const attribute::SearchContextParams &) const {
     LOG_ABORT("StringDirectAttribute::getSearch is not implemented and should never be called.");
 }

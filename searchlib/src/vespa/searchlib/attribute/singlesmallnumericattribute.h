@@ -4,6 +4,7 @@
 
 #include "integerbase.h"
 #include "floatbase.h"
+#include "search_context.h"
 #include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/rcuvector.h>
 #include <limits>
@@ -13,7 +14,7 @@ namespace search {
 class SingleValueSmallNumericAttribute : public IntegerAttributeTemplate<int8_t>
 {
 private:
-//    friend class AttributeVector::SearchContext;
+//    friend class attribute::SearchContext;
     typedef IntegerAttributeTemplate<int8_t> B;
     typedef B::BaseType      T;
     typedef B::DocId         DocId;
@@ -59,7 +60,7 @@ public:
     /*
      * Specialization of SearchContext
      */
-    class SingleSearchContext : public NumericAttribute::Range<T>, public SearchContext
+    class SingleSearchContext : public NumericAttribute::Range<T>, public attribute::SearchContext
     {
     private:
         const Word *_wordData;
@@ -124,7 +125,7 @@ public:
     bool onLoad(vespalib::Executor *executor) override;
     void onSave(IAttributeSaveTarget &saveTarget) override;
 
-    SearchContext::UP
+    std::unique_ptr<attribute::SearchContext>
     getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams & params) const override;
 
     T getFast(DocId doc) const {

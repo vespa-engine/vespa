@@ -5,6 +5,7 @@
 #include "integerbase.h"
 #include "floatbase.h"
 #include "multivalueattribute.h"
+#include "search_context.h"
 #include <limits>
 
 namespace search {
@@ -59,7 +60,7 @@ public:
     /*
      * Specialization of SearchContext for weighted set type
      */
-    class SetSearchContext final : public NumericAttribute::Range<T>, public AttributeVector::SearchContext
+    class SetSearchContext final : public NumericAttribute::Range<T>, public attribute::SearchContext
     {
     private:
         const MultiValueNumericAttribute<B, M> & _toBeSearched;
@@ -107,7 +108,7 @@ public:
     /*
      * Specialization of SearchContext for array type
      */
-    class ArraySearchContext : public NumericAttribute::Range<T>, public AttributeVector::SearchContext
+    class ArraySearchContext : public NumericAttribute::Range<T>, public attribute::SearchContext
     {
     private:
         const MultiValueNumericAttribute<B, M> & _toBeSearched;
@@ -166,7 +167,7 @@ public:
     bool onLoad(vespalib::Executor *executor) override;
     virtual bool onLoadEnumerated(ReaderBase &attrReader);
 
-    AttributeVector::SearchContext::UP
+    std::unique_ptr<attribute::SearchContext>
     getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams & params) const override;
 
     virtual void clearOldValues(DocId doc);

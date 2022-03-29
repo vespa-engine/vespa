@@ -152,7 +152,7 @@ SingleValueNumericEnumAttribute<B>::onLoad(vespalib::Executor *)
 
 
 template <typename B>
-AttributeVector::SearchContext::UP
+std::unique_ptr<attribute::SearchContext>
 SingleValueNumericEnumAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
                                               const attribute::SearchContextParams & params) const
 {
@@ -175,7 +175,7 @@ SingleValueNumericEnumAttribute<B>::SingleSearchContext::valid() const
 template <typename B>
 SingleValueNumericEnumAttribute<B>::SingleSearchContext::SingleSearchContext(QueryTermSimpleUP qTerm, const NumericAttribute & toBeSearched) :
     NumericAttribute::Range<T>(*qTerm, true),
-    AttributeVector::SearchContext(toBeSearched),
+    attribute::SearchContext(toBeSearched),
     _toBeSearched(static_cast<const SingleValueNumericEnumAttribute<B> &>(toBeSearched))
 { }
 
