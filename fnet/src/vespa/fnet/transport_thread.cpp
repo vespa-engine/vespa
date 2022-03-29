@@ -185,6 +185,22 @@ FNET_TransportThread::handle_close_cmd(FNET_IOComponent *ioc)
 }
 
 
+void
+FNET_TransportThread::handle_detach_server_adapter_cmd(FNET_IServerAdapter *server_adapter)
+{
+    FNET_IOComponent *component = _componentsHead;
+    while (component != nullptr) {
+        FNET_IOComponent *tmp = component;
+        component = component->_ioc_next;
+        if (tmp->server_adapter() == server_adapter) {
+            RemoveComponent(tmp);
+            tmp->Close();
+            AddDeleteComponent(tmp);
+        }
+    }
+}
+
+
 extern "C" {
 
     static void pipehandler(int)
@@ -331,6 +347,11 @@ FNET_TransportThread::Close(FNET_IOComponent *comp, bool needRef)
     PostEvent(&FNET_ControlPacket::IOCClose, FNET_Context(comp));
 }
 
+void
+FNET_TransportThread::detach(FNET_IServerAdapter *server_adapter)
+{
+    PostEvent(&FNET_ControlPacket::DetachServerAdapter, FNET_Context(server_adapter));
+}
 
 bool
 FNET_TransportThread::execute(FNET_IExecutable *exe)
@@ -408,6 +429,11 @@ FNET_TransportThread::handle_wakeup()
 
         if (packet->GetCommand() == FNET_ControlPacket::FNET_CMD_EXECUTE) {
             context._value.EXECUTABLE->execute();
+            continue;
+        }
+
+        if (packet->GetCommand() == FNET_ControlPacket::FNET_CMD_DETACH_SERVER_ADAPTER) {
+            handle_detach_server_adapter_cmd(context._value.SERVER_ADAPTER);
             continue;
         }
 

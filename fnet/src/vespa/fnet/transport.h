@@ -160,6 +160,11 @@ public:
                        vespalib::AsyncResolver::ResultHandler::WP result_handler);
 
     /**
+     * Wait for all pending resolve requests.
+     **/
+    void wait_for_pending_resolves();
+
+    /**
      * Wrap a plain socket endpoint (client side) in a CryptoSocket. The
      * implementation will be determined by the CryptoEngine used by
      * this Transport.
@@ -248,6 +253,18 @@ public:
      * method from a transport thread is not a good idea.
      **/
     void sync();
+
+    /**
+     * Detach a server adapter from this transport.
+     *
+     * This will close all connectors and connections referencing the
+     * server adapter. Note that this is an async
+     * operation. 'wait_for_pending_resolves' should be called before
+     * this to make sure any in-flight connections are added
+     * first. 'sync' should be called after this to drain any pending
+     * call-backs.
+     **/
+    void detach(FNET_IServerAdapter *server_adapter);
 
     /**
      * Obtain a pointer to a transport thread scheduler.

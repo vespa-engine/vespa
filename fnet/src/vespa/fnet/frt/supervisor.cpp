@@ -10,10 +10,16 @@
 #include <vespa/fastos/thread.h>
 #include <vespa/vespalib/util/require.h>
 
+FNET_IPacketStreamer *
+FRT_Supervisor::get_packet_streamer() {
+    static FRT_PacketFactory packet_factory;
+    static FNET_SimplePacketStreamer packet_streamer(&packet_factory);
+    return &packet_streamer;
+}
+
+
 FRT_Supervisor::FRT_Supervisor(FNET_Transport *transport)
     : _transport(transport),
-      _packetFactory(),
-      _packetStreamer(&_packetFactory),
       _connector(nullptr),
       _reflectionManager(),
       _rpcHooks(&_reflectionManager)
@@ -27,6 +33,8 @@ FRT_Supervisor::~FRT_Supervisor()
     if (_connector != nullptr) {
         _connector->Owner()->Close(_connector, /* needref */ false);
     }
+    _transport->wait_for_pending_resolves();
+    _transport->detach(this);
     _transport->sync();
 }
 
@@ -38,7 +46,7 @@ FRT_Supervisor::Listen(const char *spec)
 {
     if (_connector != nullptr)
         return false;
-    _connector = _transport->Listen(spec, &_packetStreamer, this);
+    _connector = _transport->Listen(spec, get_packet_streamer(), this);
     return (_connector != nullptr);
 }
 
@@ -64,7 +72,7 @@ FRT_Supervisor::GetTarget(const char *spec)
 {
     FNET_TransportThread *thread = _transport->select_thread(spec, strlen(spec));
     return new FRT_Target(thread->GetScheduler(),
-                          thread->Connect(spec, &_packetStreamer));
+                          thread->Connect(spec, get_packet_streamer()));
 }
 
 
@@ -73,7 +81,7 @@ FRT_Supervisor::Get2WayTarget(const char *spec, FNET_Context connContext)
 {
     FNET_TransportThread *thread = _transport->select_thread(spec, strlen(spec));
     return new FRT_Target(thread->GetScheduler(),
-                          thread->Connect(spec, &_packetStreamer,
+                          thread->Connect(spec, get_packet_streamer(),
                                           this, connContext));
 }
 

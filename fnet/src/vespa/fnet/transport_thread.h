@@ -143,6 +143,7 @@ private:
 
     void handle_add_cmd(FNET_IOComponent *ioc);
     void handle_close_cmd(FNET_IOComponent *ioc);
+    void handle_detach_server_adapter_cmd(FNET_IServerAdapter *server_adapter);
 
     /**
      * This method is called to initialize the transport thread event
@@ -334,6 +335,17 @@ public:
      **/
     void Close(FNET_IOComponent *comp, bool needRef = true);
 
+    /**
+     * Detach a server adapter from this transport.
+     *
+     * This will close all connectors and connections referencing the
+     * server adapter. Note that this is an async
+     * operation. 'wait_for_pending_resolves' (on the owning
+     * Transport) should be called before this to make sure any
+     * in-flight connections are added first. 'sync' should be called
+     * after this to drain any pending call-backs.
+     **/
+    void detach(FNET_IServerAdapter *server_adapter);
 
     /**
      * Post an execution event on the transport event queue. The return

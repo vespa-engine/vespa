@@ -158,6 +158,11 @@ FNET_Transport::resolve_async(const vespalib::string &spec,
     _async_resolver->resolve_async(spec, std::move(result_handler));
 }
 
+void
+FNET_Transport::wait_for_pending_resolves() {
+    _async_resolver->wait_for_pending_resolves();
+}
+
 vespalib::CryptoSocket::UP
 FNET_Transport::create_client_crypto_socket(vespalib::SocketHandle socket, const vespalib::SocketSpec &spec)
 {
@@ -212,6 +217,14 @@ FNET_Transport::sync()
     }
 }
 
+void
+FNET_Transport::detach(FNET_IServerAdapter *server_adapter)
+{
+    for (const auto &thread: _threads) {
+        thread->detach(server_adapter);
+    }
+}
+
 FNET_Scheduler *
 FNET_Transport::GetScheduler()
 {
@@ -231,7 +244,7 @@ FNET_Transport::ShutDown(bool waitFinished)
         thread->ShutDown(waitFinished);
     }
     if (waitFinished) {
-        _async_resolver->wait_for_pending_resolves();
+        wait_for_pending_resolves();
         _work_pool->shutdown().sync();
     }
 }
@@ -242,7 +255,7 @@ FNET_Transport::WaitFinished()
     for (const auto &thread: _threads) {
         thread->WaitFinished();
     }
-    _async_resolver->wait_for_pending_resolves();
+    wait_for_pending_resolves();
     _work_pool->shutdown().sync();
 }
 
