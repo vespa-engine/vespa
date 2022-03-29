@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/pkg/browser"
@@ -43,18 +44,18 @@ func newLoginCmd(cli *CLI) *cobra.Command {
 				return fmt.Errorf("could not start the authentication process: %w", err)
 			}
 
-			log.Printf("Your Device Confirmation code is: %s\n\n", state.UserCode)
+			log.Printf("Your Device Confirmation code is: %s\n", state.UserCode)
 
-			log.Println("If you prefer, you can open the URL directly for verification")
-			log.Printf("Your Verification URL: %s\n\n", state.VerificationURI)
+			auto_open := confirm("Allow Vespa CLI to open confirmation page in your default browser?")
 
-			log.Println("Press Enter to open the browser to log in or ^C to quit...")
-			fmt.Scanln()
-
-			err = browser.OpenURL(state.VerificationURI)
-
-			if err != nil {
-				log.Printf("Couldn't open the URL, please do it manually: %s.", state.VerificationURI)
+			if auto_open {
+				log.Printf("Opened link in your browser: %s\n", state.VerificationURI)
+				err = browser.OpenURL(state.VerificationURI)
+				if err != nil {
+					log.Println("Couldn't open the URL, please do it manually")
+				}
+			} else {
+				log.Printf("Please open link in your browser: %s\n", state.VerificationURI)
 			}
 
 			var res auth.Result
@@ -91,5 +92,24 @@ func newLoginCmd(cli *CLI) *cobra.Command {
 			}
 			return err
 		},
+	}
+}
+
+func confirm(question string) bool {
+	for {
+		var answer string
+
+		log.Printf("%s [Y/n] ", question)
+		fmt.Scanln(&answer)
+
+		answer = strings.TrimSpace(strings.ToLower(answer))
+
+		if answer == "y" || answer == "" {
+			return true
+		} else if answer == "n" {
+			return false
+		} else {
+			log.Printf("Please answer Y or N.\n")
+		}
 	}
 }
