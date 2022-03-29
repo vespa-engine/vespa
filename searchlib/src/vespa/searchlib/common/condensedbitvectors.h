@@ -24,8 +24,16 @@ public:
     virtual bool get(Key key, uint32_t index) const = 0;
     virtual void clearIndex(uint32_t index) = 0;
     virtual size_t getKeyCapacity() const = 0;
-    virtual size_t getCapacity() const  = 0;
-    virtual size_t getSize() const  = 0;
+    /*
+     * getCapacity() should be called from writer only.
+     * Const type qualifier removed to prevent call from readers.
+     */
+    virtual size_t getCapacity() = 0;
+    /*
+     * getSize() should be called from writer only.
+     * Const type qualifier removed to prevent call from readers.
+     */
+    virtual size_t getSize() = 0;
     virtual void adjustDocIdLimit(uint32_t docId) = 0;
     bool hasKey(Key key) const { return key < getKeyCapacity(); }
     void addKey(Key key) const;

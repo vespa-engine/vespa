@@ -75,8 +75,16 @@ private:
     }
 
     size_t getKeyCapacity() const override { return sizeof(T)*8; }
-    size_t getCapacity() const override { return _v.capacity(); }
-    size_t getSize() const override { return _v.size(); }
+    /*
+     * getCapacity() should be called from writer only.
+     * Const type qualifier removed to prevent call from readers.
+     */
+    size_t getCapacity() override { return _v.capacity(); }
+    /*
+     * getSize() should be called from writer only.
+     * Const type qualifier removed to prevent call from readers.
+     */
+    size_t getSize() override { return _v.size(); }
     void adjustDocIdLimit(uint32_t docId) override;
     vespalib::RcuVectorBase<T> _v;
 };
