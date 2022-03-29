@@ -18,7 +18,7 @@ import java.util.logging.Level;
 public class SDDocumentTypeOrderer {
 
     private final Map<DataTypeName, SDDocumentType> createdSDTypes = new LinkedHashMap<>();
-    private final Set<Integer> seenTypes = new LinkedHashSet<>();
+    private final Set<String> seenTypes = new LinkedHashSet<>();
     List<SDDocumentType> processingOrder = new LinkedList<>();
     private final DeployLogger deployLogger;
 
@@ -27,11 +27,7 @@ public class SDDocumentTypeOrderer {
         for (SDDocumentType type : sdTypes) {
             createdSDTypes.put(type.getDocumentName(), type);
         }
-        DocumentTypeManager dtm = new DocumentTypeManager();
-        for (DataType type : dtm.getDataTypes()) {
-            seenTypes.add(type.getId());
-        }
-
+        seenTypes.add("document");
     }
 
     List<SDDocumentType> getOrdered() { return processingOrder; }
@@ -44,21 +40,14 @@ public class SDDocumentTypeOrderer {
 
     private void process(SDDocumentType docOrStruct, SDDocumentType owningDocument) {
         resolveAndProcessInheritedTemporaryTypes(docOrStruct, owningDocument);
-        int id;
-        if (docOrStruct.isStruct()) {
-            id = new StructDataType(docOrStruct.getName()).getId();
-        } else {
-            id = new DocumentType(docOrStruct.getName()).getId();
-        }
-
-        if (seenTypes.contains(id)) {
+        if (seenTypes.contains(docOrStruct.getName())) {
             return;
-        } else {
-            seenTypes.add((new StructDataType(docOrStruct.getName()).getId()));
         }
-
+        seenTypes.add(docOrStruct.getName());
         for (Field field : docOrStruct.fieldSet()) {
-            if (!seenTypes.contains(field.getDataType().getId())) {
+            String typeName = field.getDataType().getName();
+            if (!seenTypes.contains(typeName)) {
+                seenTypes.add(typeName);
                 //we haven't seen this before, do it
                 visit(field.getDataType(), owningDocument);
             }
