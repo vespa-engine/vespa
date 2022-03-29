@@ -27,7 +27,7 @@ if [[ ! -f /etc/yum.repos.d/vespa.repo ]]; then
   cat << 'EOF' > /etc/yum.repos.d/vespa.repo
 [vespa-release]
 name=Vespa releases
-baseurl=https://artifactory.verizonmedia.com/artifactory/vespa/centos/7/release/$basearch
+baseurl=https://artifactory.yahooinc.com/artifactory/vespa/centos/7/release/$basearch
 gpgcheck=0
 enabled=1
 EOF
@@ -65,6 +65,7 @@ if [[ -n $SCREWDRIVER ]] && [[ -z $SD_PULL_REQUEST ]]; then
     echo "Uploading $rpm ..."
     if ! $MYDIR/upload-rpm-to-artifactory.sh $rpm ; then
       echo "Could not upload $rpm"
+      UPLOAD_FAILED=true
     else
       echo "$rpm uploaded"
     fi
@@ -72,3 +73,7 @@ if [[ -n $SCREWDRIVER ]] && [[ -z $SD_PULL_REQUEST ]]; then
   echo
 fi
 
+if [[ -n $UPLOAD_FAILED ]]; then
+  echo "Some RPMs failed to upload"
+  exit 1
+fi

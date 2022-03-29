@@ -5,7 +5,7 @@
 set -euo pipefail
 
 MAX_NUMBER_OF_RELEASES=200
-ARTIFACTORY_URL="https://artifactory.verizonmedia.com/artifactory"
+ARTIFACTORY_URL="https://artifactory.yahooinc.com/artifactory"
 
 # JFrog Cloud repo file
 if [[ ! -f /etc/yum.repos.d/vespa.repo ]]; then
