@@ -248,7 +248,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_V8_DOC_MANAGER_CFG = defineFeatureFlag(
-            "use-v8-doc-manager-cfg", false,
+            "use-v8-doc-manager-cfg", true,
             List.of("arnej", "baldersheim"), "2021-12-09", "2022-12-31",
             "Use new (preparing for Vespa 8) section in documentmanager.def",
             "Takes effect at redeployment",
