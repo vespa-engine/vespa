@@ -251,37 +251,14 @@ public class DocumentTypeManager {
         }
         if (dataTypes.containsKey(type.getId())) {
             DataType existingType = dataTypes.get(type.getId());
-            if (((type instanceof TemporaryDataType) || (type instanceof TemporaryStructuredDataType))
-                && !((existingType instanceof TemporaryDataType) || (existingType instanceof TemporaryStructuredDataType))) {
-                //we're trying to register a temporary type over a permanent one, don't do that:
-                return;
-            } else if ((existingType == type || existingType.equals(type))
-                    && !(existingType instanceof TemporaryDataType)
-                    && !(type instanceof TemporaryDataType)
-                    && !(existingType instanceof TemporaryStructuredDataType)
-                    && !(type instanceof TemporaryStructuredDataType)) { // Shortcut to improve speed
+            if ((existingType == type) || existingType.equals(type)) {
                 // Oki. Already registered.
                 return;
-            } else if (type instanceof DocumentType && dataTypes.get(type.getId()) instanceof DocumentType) {
-                /*
-                DocumentType newInstance = (DocumentType) type;
-                DocumentType oldInstance = (DocumentType) dataTypes.get(type.getId());
-                TODO fix tests
-                */
-                log.warning("Document type " + existingType + " is not equal to document type attempted registered " + type
-                        + ", but have same name. OVERWRITING TYPE as many tests currently does this. "
-                        + "Fix tests so we can throw exception here.");
-                //throw new IllegalStateException("Datatype " + existingType + " is not equal to datatype attempted registered "
-                //        + type + ", but already uses id " + type.getId());
-            } else if ((existingType instanceof TemporaryDataType) || (existingType instanceof TemporaryStructuredDataType)) {
-                //removing temporary type to be able to register correct type
-                dataTypes.remove(existingType.getId());
             } else {
                 throw new IllegalStateException("Datatype " + existingType + " is not equal to datatype attempted registered "
                                                 + type + ", but already uses id " + type.getId());
             }
         }
-
         if (type instanceof DocumentType) {
             DocumentType docType = (DocumentType) type;
             if (docType.getInheritedTypes().size() == 0) {
