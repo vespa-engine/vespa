@@ -57,6 +57,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Ulf Lilleengen
@@ -195,7 +196,7 @@ public class SessionRepositoryTest {
         assertTrue(sessionRepository.getRemoteSessionsFromZooKeeper().isEmpty());
     }
 
-    @Test(expected = InvalidApplicationException.class)
+    @Test
     public void require_that_new_invalid_application_throws_exception() throws Exception {
         MockModelFactory failingFactory = new MockModelFactory();
         failingFactory.vespaVersion = new Version(1, 2, 0);
@@ -207,7 +208,13 @@ public class SessionRepositoryTest {
 
         setup(new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
 
-        deploy();
+        Collection<LocalSession> sessions = sessionRepository.getLocalSessions();
+        try {
+            deploy();
+            fail("deployment should have failed");
+        } catch (InvalidApplicationException e) {
+            assertEquals(sessions, sessionRepository.getLocalSessions());
+        }
     }
 
     @Test
