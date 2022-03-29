@@ -45,8 +45,9 @@ public class MapConverter {
         }
     }
 
-    public static void convertMultiMap(Map<String, List<Object>> map, Consumer<StringProperty.Builder> stringInserter,
-            Consumer<TensorProperty.Builder> tensorInserter) {
+    public static void convertMultiMap(Map<String, List<Object>> map,
+                                       Consumer<StringProperty.Builder> stringInserter,
+                                       Consumer<TensorProperty.Builder> tensorInserter) {
         for (var entry : map.entrySet()) {
             if (entry.getValue() != null) {
                 var key = entry.getKey();

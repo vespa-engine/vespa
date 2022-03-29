@@ -41,11 +41,10 @@ public class RankFeatures implements Cloneable {
     }
 
     /**
-     * Sets a rank feature to a value represented as a string.
-     *
-     * @deprecated set either a double or a tensor
+     * Sets a rank feature to a string. This will be available as the hash value
+     * of the string in ranking, so it can be used in equality comparisons
+     * with other string, but not for any other purpose.
      */
-    @Deprecated // TODO: Remove on Vespa 8
     public void put(String name, String value) {
         features.put(name, value);
     }
@@ -91,6 +90,21 @@ public class RankFeatures implements Cloneable {
         if (feature instanceof Double) return Optional.of(Tensor.from((Double)feature));
         throw new IllegalArgumentException("Expected a tensor value of '" + name + "' but has " + feature);
     }
+
+    /**
+     * Returns a rank feature as a string, or empty if there is no value with this name.
+     *
+     * @throws IllegalArgumentException if the value is a tensor or double, not a string
+     */
+    public Optional<String> getString(String name) {
+        Object feature = features.get(name);
+        if (feature == null) return Optional.empty();
+        if (feature instanceof String) return Optional.of((String)feature);
+        // TODO: Use toShortString for tensors below
+        throw new IllegalArgumentException("Expected a string value of '" + name + "' but has " +
+                                           (feature instanceof Tensor ? ((Tensor)feature).toString() : feature));
+    }
+
 
     /**
      * Returns the map holding the features of this.

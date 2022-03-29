@@ -185,7 +185,6 @@ public class ProtobufSerialization {
         }
         mergeRankProperties(ranking, builder::addRankProperties, builder::addTensorRankProperties);
     }
-
     static byte[] serializeResult(Result searchResult) {
         return convertFromResult(searchResult).toByteArray();
     }
