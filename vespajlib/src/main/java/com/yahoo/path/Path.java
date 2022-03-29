@@ -2,7 +2,6 @@
 package com.yahoo.path;
 
 import com.yahoo.api.annotations.Beta;
-import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -21,20 +20,11 @@ import java.util.stream.Collectors;
 public final class Path {
 
     private final String delimiter;
-    private final ImmutableList<String> elements;
+    private final List<String> elements;
 
     /** Creates an empty path */
     private Path(String delimiter) {
-        this(new ArrayList<>(), delimiter);
-    }
-
-    /**
-     * Create a new path as a copy of the provided path
-     *
-     * @param path the path to copy
-     */
-    private Path(Path path) {
-        this(path.elements, path.delimiter);
+        this(List.of(), delimiter);
     }
 
     /**
@@ -47,7 +37,7 @@ public final class Path {
             if ("..".equals(element))
                 throw new IllegalArgumentException("'..' is not allowed in path");
 
-        this.elements = ImmutableList.copyOf(elements);
+        this.elements = List.copyOf(elements);
         this.delimiter = delimiter;
     }
 
