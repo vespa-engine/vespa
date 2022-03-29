@@ -899,7 +899,6 @@ fi
 %{_prefix}/lib/jars/alpn-*.jar
 %{_prefix}/lib/jars/http2-*.jar
 %{_prefix}/lib/jars/jetty-*.jar
-%{_prefix}/lib/jars/mimepull-*.jar
 %{_prefix}/lib/jars/model-evaluation-jar-with-dependencies.jar
 %{_prefix}/lib/jars/model-integration-jar-with-dependencies.jar
 %{_prefix}/lib/jars/org.apache.aries.spifly.dynamic.bundle-*.jar
