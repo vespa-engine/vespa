@@ -12,7 +12,7 @@ std::ostream & operator << (std::ostream & os, const Annotation &annotation) {
     return os << annotation.toString();
 }
 
-Annotation::~Annotation() { }
+Annotation::~Annotation() = default;
 
 vespalib::string
 Annotation::toString() const {

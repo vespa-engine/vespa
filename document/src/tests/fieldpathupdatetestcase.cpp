@@ -175,8 +175,8 @@ void testSerialize(const DocumentTypeRepo& repo, const DocumentUpdate& a) {
         }
         EXPECT_EQ(a.getFieldPathUpdates().size(), b->getFieldPathUpdates().size());
         for (size_t i(0); i < a.getFieldPathUpdates().size(); i++) {
-            const FieldPathUpdate::CP& ua = a.getFieldPathUpdates()[i];
-            const FieldPathUpdate::CP& ub = b->getFieldPathUpdates()[i];
+            const auto & ua = a.getFieldPathUpdates()[i];
+            const auto & ub = b->getFieldPathUpdates()[i];
 
             EXPECT_EQ(*ua, *ub);
         }
@@ -317,7 +317,7 @@ TEST_F(FieldPathUpdateTestCase, testRemoveField)
     EXPECT_EQ(vespalib::string("cocacola"), doc->getValue("strfoo")->getAsString());
     //doc->print(std::cerr, true, "");
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new RemoveFieldPathUpdate("strfoo")));
+    docUp.addFieldPathUpdate(std::make_unique<RemoveFieldPathUpdate>("strfoo"));
     docUp.applyTo(*doc);
     EXPECT_TRUE(doc->hasValue("strfoo") == false);
 }
@@ -337,8 +337,7 @@ TEST_F(FieldPathUpdateTestCase, testApplyRemoveMultiList)
     EXPECT_TRUE(doc->hasValue("strarray"));
     //doc->print(std::cerr, true, "");
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new RemoveFieldPathUpdate("strarray[$x]", "foobar.strarray[$x] == \"remove val 1\"")));
+    docUp.addFieldPathUpdate(std::make_unique<RemoveFieldPathUpdate>("strarray[$x]", "foobar.strarray[$x] == \"remove val 1\""));
     docUp.applyTo(*doc);
     {
         std::unique_ptr<ArrayFieldValue> strArray = doc->getAs<ArrayFieldValue>(doc->getField("strarray"));
@@ -363,8 +362,7 @@ TEST_F(FieldPathUpdateTestCase, testApplyRemoveMultiList2)
     EXPECT_TRUE(doc->hasValue("strarray"));
     //doc->print(std::cerr, true, "");
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new RemoveFieldPathUpdate("strarray[$x]", "foobar.strarray[$x] == \"remove val 1\"")));
+    docUp.addFieldPathUpdate(std::make_unique<RemoveFieldPathUpdate>("strarray[$x]", "foobar.strarray[$x] == \"remove val 1\""));
     docUp.applyTo(*doc);
     {
         std::unique_ptr<ArrayFieldValue> strArray = doc->getAs<ArrayFieldValue>(doc->getField("strarray"));
@@ -386,7 +384,7 @@ TEST_F(FieldPathUpdateTestCase, testApplyRemoveEntireListField)
     }
     //doc->print(std::cerr, true, "");
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new RemoveFieldPathUpdate("strarray", "")));
+    docUp.addFieldPathUpdate(std::make_unique<RemoveFieldPathUpdate>("strarray", ""));
     docUp.applyTo(*doc);
     EXPECT_TRUE(!doc->hasValue("strarray"));
 }
@@ -404,7 +402,7 @@ TEST_F(FieldPathUpdateTestCase, testApplyRemoveMultiWset)
     EXPECT_TRUE(doc->hasValue("strwset"));
     //doc->print(std::cerr, true, "");
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new RemoveFieldPathUpdate("strwset{remove val 1}")));
+    docUp.addFieldPathUpdate(std::make_unique<RemoveFieldPathUpdate>("strwset{remove val 1}"));
     docUp.applyTo(*doc);
     {
         std::unique_ptr<WeightedSetFieldValue> strWset = doc->getAs<WeightedSetFieldValue>(doc->getField("strwset"));
@@ -419,15 +417,13 @@ TEST_F(FieldPathUpdateTestCase, testApplyAssignSingle)
     EXPECT_TRUE(doc->hasValue("strfoo") == false);
     // Test assignment of non-existing
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AssignFieldPathUpdate(*doc->getDataType(), "strfoo", std::string(), StringFieldValue("himert"))));
+    docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(), "strfoo", std::string(), StringFieldValue("himert")));
     docUp.applyTo(*doc);
     EXPECT_TRUE(doc->hasValue("strfoo"));
     EXPECT_EQ(vespalib::string("himert"), doc->getValue("strfoo")->getAsString());
     // Test overwriting existing
     DocumentUpdate docUp2(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp2.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AssignFieldPathUpdate(*doc->getDataType(), "strfoo", std::string(), StringFieldValue("wunderbaum"))));
+    docUp2.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(), "strfoo", std::string(), StringFieldValue("wunderbaum")));
     docUp2.applyTo(*doc);
     EXPECT_EQ(vespalib::string("wunderbaum"), doc->getValue("strfoo")->getAsString());
 }
@@ -438,7 +434,7 @@ TEST_F(FieldPathUpdateTestCase, testApplyAssignMath)
     doc->setValue("num", IntFieldValue(34));
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("num", "", "($value * 2) / $value")));
+    docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>("num", "", "($value * 2) / $value"));
     docUp.applyTo(*doc);
     EXPECT_EQ(static_cast<const FieldValue&>(IntFieldValue(2)), *doc->getValue("num"));
 }
@@ -449,7 +445,7 @@ TEST_F(FieldPathUpdateTestCase, testApplyAssignMathByteToZero)
     doc->setValue("byteval", ByteFieldValue(3));
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("byteval", "", "$value - 3")));
+    docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>("byteval", "", "$value - 3"));
     docUp.applyTo(*doc);
     EXPECT_EQ(static_cast<const FieldValue&>(ByteFieldValue(0)), *doc->getValue("byteval"));
 }
@@ -461,7 +457,7 @@ TEST_F(FieldPathUpdateTestCase, testApplyAssignMathNotModifiedOnUnderflow)
     doc->setValue("byteval", ByteFieldValue(low_value));
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("byteval", "", "$value - 4")));
+    docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>("byteval", "", "$value - 4"));
     docUp.applyTo(*doc);
     // Over/underflow will happen. You must have control of your data types.
     EXPECT_EQ(static_cast<const FieldValue&>(ByteFieldValue((char)(low_value - 4))), *doc->getValue("byteval"));
@@ -473,7 +469,7 @@ TEST_F(FieldPathUpdateTestCase, testApplyAssignMathNotModifiedOnOverflow)
     doc->setValue("byteval", ByteFieldValue(127));
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("byteval", "", "$value + 200")));
+    docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>("byteval", "", "$value + 200"));
     docUp.applyTo(*doc);
     // Over/underflow will happen. You must have control of your data types.
     EXPECT_EQ(static_cast<const FieldValue&>(ByteFieldValue(static_cast<char>(static_cast<int>(127+200)))), *doc->getValue("byteval"));
@@ -486,7 +482,7 @@ TEST_F(FieldPathUpdateTestCase, testApplyAssignMathDivZero)
     doc->setValue("num", IntFieldValue(10));
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("num", "", "$value / ($value - 10)")));
+    docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>("num", "", "$value / ($value - 10)"));
     docUp.applyTo(*doc);
     EXPECT_EQ(static_cast<const FieldValue&>(IntFieldValue(10)), *doc->getValue("num"));
 }
@@ -499,7 +495,7 @@ TEST_F(FieldPathUpdateTestCase, testApplyAssignFieldNotExistingInExpression)
     doc->setValue("num", IntFieldValue(10));
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("num", "", "foobar.num2 + $value")));
+    docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>("num", "", "foobar.num2 + $value"));
     docUp.applyTo(*doc);
     EXPECT_EQ(static_cast<const FieldValue&>(IntFieldValue(10)), *doc->getValue("num"));
 }
@@ -511,7 +507,7 @@ TEST_F(FieldPathUpdateTestCase, testApplyAssignFieldNotExistingInPath)
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
     try {
-        docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("nosuchnum", "", "foobar.num + $value")));
+        docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>("nosuchnum", "", "foobar.num + $value"));
         docUp.applyTo(*doc);
         EXPECT_TRUE(false);
     } catch (const FieldNotFoundException&) {
@@ -524,7 +520,7 @@ TEST_F(FieldPathUpdateTestCase, testApplyAssignTargetNotExisting)
     EXPECT_TRUE(doc->hasValue("num") == false);
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("num", "", "$value + 5")));
+    docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>("num", "", "$value + 5"));
     docUp.applyTo(*doc);
     EXPECT_EQ(static_cast<const FieldValue&>(IntFieldValue(5)), *doc->getValue("num"));
 }
@@ -541,9 +537,8 @@ TEST_F(FieldPathUpdateTestCase, testAssignSimpleMapValueWithVariable)
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
     // Select on value, not key
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AssignFieldPathUpdate(*doc->getDataType(),
-                                      "strmap{$x}", "foobar.strmap{$x} == \"bar\"", StringFieldValue("shinyvalue"))));
+    docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(),
+                                      "strmap{$x}", "foobar.strmap{$x} == \"bar\"", StringFieldValue("shinyvalue")));
     docUp.applyTo(*doc);
 
     std::unique_ptr<MapFieldValue> valueNow(doc->getAs<MapFieldValue>(doc->getField("strmap")));
@@ -565,9 +560,9 @@ TEST_F(FieldPathUpdateTestCase, testApplyAssignMathRemoveIfZero)
     EXPECT_TRUE(doc->hasValue("num") == true);
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    FieldPathUpdate::CP up1(new AssignFieldPathUpdate("num", "", "($value * 2) / $value - 2"));
+    auto up1 = std::make_unique<AssignFieldPathUpdate>("num", "", "($value * 2) / $value - 2");
     static_cast<AssignFieldPathUpdate&>(*up1).setRemoveIfZero(true);
-    docUp.addFieldPathUpdate(up1);
+    docUp.addFieldPathUpdate(std::move(up1));
 
     docUp.applyTo(*doc);
     EXPECT_TRUE(doc->hasValue("num") == false);
@@ -591,8 +586,7 @@ TEST_F(FieldPathUpdateTestCase, testApplyAssignMultiList)
     updateArray.add(StringFieldValue("assigned val 1"));
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AssignFieldPathUpdate(*doc->getDataType(), "strarray", std::string(), updateArray)));
+    docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(), "strarray", std::string(), updateArray));
     docUp.applyTo(*doc);
     {
         std::unique_ptr<ArrayFieldValue> strArray =
@@ -622,8 +616,7 @@ TEST_F(FieldPathUpdateTestCase, testApplyAssignMultiWset)
     assignWset.add(StringFieldValue("assigned val 1"), 10);
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AssignFieldPathUpdate(*doc->getDataType(), "strwset", std::string(), assignWset)));
+    docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(), "strwset", std::string(), assignWset));
     //doc->print(std::cerr, true, "");
     docUp.applyTo(*doc);
     //doc->print(std::cerr, true, "");
@@ -651,10 +644,9 @@ TEST_F(FieldPathUpdateTestCase, testAssignWsetRemoveIfZero)
     {
         DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
         IntFieldValue zeroWeight(0);
-        FieldPathUpdate::CP assignUpdate(
-                new AssignFieldPathUpdate(*doc->getDataType(), "strwset{you say goodbye}", std::string(), zeroWeight));
+        auto assignUpdate = std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(), "strwset{you say goodbye}", std::string(), zeroWeight);
         static_cast<AssignFieldPathUpdate&>(*assignUpdate).setRemoveIfZero(true);
-        docUp.addFieldPathUpdate(assignUpdate);
+        docUp.addFieldPathUpdate(std::move(assignUpdate));
         //doc->print(std::cerr, true, "");
         docUp.applyTo(*doc);
         //doc->print(std::cerr, true, "");
@@ -677,8 +669,7 @@ TEST_F(FieldPathUpdateTestCase, testApplyAddMultiList)
     adds.add(StringFieldValue("george is getting upset!"));
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AddFieldPathUpdate(*doc->getDataType(), "strarray", std::string(), adds)));
+    docUp.addFieldPathUpdate(std::make_unique<AddFieldPathUpdate>(*doc->getDataType(), "strarray", std::string(), adds));
     //doc->print(std::cerr, true, "");
     docUp.applyTo(*doc);
     //doc->print(std::cerr, true, "");
@@ -699,15 +690,13 @@ TEST_F(FieldPathUpdateTestCase, testAddAndAssignList)
     }
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AssignFieldPathUpdate(*doc->getDataType(),
-                                      "strarray[1]", std::string(), StringFieldValue("assigned val 1"))));
+    docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(),
+                                      "strarray[1]", std::string(), StringFieldValue("assigned val 1")));
 
     ArrayFieldValue adds(doc->getType().getField("strarray").getDataType());
     adds.add(StringFieldValue("new value"));
 
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AddFieldPathUpdate(*doc->getDataType(), "strarray",
-                                                                        std::string(), adds)));
+    docUp.addFieldPathUpdate(std::make_unique<AddFieldPathUpdate>(*doc->getDataType(), "strarray", std::string(), adds));
     //doc->print(std::cerr, true, "");
     docUp.applyTo(*doc);
     //doc->print(std::cerr, true, "");
@@ -780,8 +769,7 @@ TEST_F(FieldPathUpdateTestCase, testAssignMap)
     Fixture f(*_foobar_type, k);
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AssignFieldPathUpdate(*f.doc->getDataType(), "structmap{" + k.key2 + "}", std::string(), f.fv4)));
+    docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>(*f.doc->getDataType(), "structmap{" + k.key2 + "}", std::string(), f.fv4));
     docUp.applyTo(*f.doc);
 
     std::unique_ptr<MapFieldValue> valueNow = f.doc->getAs<MapFieldValue>(f.doc->getField("structmap"));
@@ -800,9 +788,8 @@ TEST_F(FieldPathUpdateTestCase, testAssignMapStruct)
     Fixture f(*_foobar_type, k);
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AssignFieldPathUpdate(*f.doc->getDataType(), "structmap{" + k.key2 + "}.rating",
-                                      std::string(), IntFieldValue(48))));
+    docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>(*f.doc->getDataType(), "structmap{" + k.key2 + "}.rating",
+                                      std::string(), IntFieldValue(48)));
     docUp.applyTo(*f.doc);
 
     std::unique_ptr<MapFieldValue> valueNow = f.doc->getAs<MapFieldValue>(f.doc->getField("structmap"));
@@ -821,9 +808,8 @@ TEST_F(FieldPathUpdateTestCase, testAssignMapStructVariable)
     Fixture f(*_foobar_type, k);
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AssignFieldPathUpdate(*f.doc->getDataType(), "structmap{$x}.rating",
-                                      "foobar.structmap{$x}.title == \"farnsworth\"", IntFieldValue(48))));
+    docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>(*f.doc->getDataType(), "structmap{$x}.rating",
+                                      "foobar.structmap{$x}.title == \"farnsworth\"", IntFieldValue(48)));
     f.doc->setRepo(*_repo);
     docUp.applyTo(*f.doc);
 
@@ -847,14 +833,12 @@ TEST_F(FieldPathUpdateTestCase, testAssignMapNoExist)
     fv1.setValue("rating", IntFieldValue(30));
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AssignFieldPathUpdate(*doc->getDataType(), "structmap{foo}", std::string(), fv1)));
+    docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(), "structmap{foo}", std::string(), fv1));
     //doc->print(std::cerr, true, "");
     docUp.applyTo(*doc);
     //doc->print(std::cerr, true, "");
 
-    std::unique_ptr<MapFieldValue> valueNow =
-        doc->getAs<MapFieldValue>(doc->getField("structmap"));
+    std::unique_ptr<MapFieldValue> valueNow = doc->getAs<MapFieldValue>(doc->getField("structmap"));
     ASSERT_EQ(std::size_t(1), valueNow->size());
     EXPECT_EQ(static_cast<FieldValue&>(fv1), *valueNow->get(StringFieldValue("foo")));
 }
@@ -869,10 +853,9 @@ TEST_F(FieldPathUpdateTestCase, testAssignMapNoExistNoCreate)
     fv1.setValue("rating", IntFieldValue(30));
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    FieldPathUpdate::CP assignUpdate(
-            new AssignFieldPathUpdate(*doc->getDataType(), "structmap{foo}", std::string(), fv1));
+    auto assignUpdate = std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(), "structmap{foo}", std::string(), fv1);
     static_cast<AssignFieldPathUpdate&>(*assignUpdate).setCreateMissingPath(false);
-    docUp.addFieldPathUpdate(assignUpdate);
+    docUp.addFieldPathUpdate(std::move(assignUpdate));
 
     //doc->print(std::cerr, true, "");
     docUp.applyTo(*doc);
@@ -890,8 +873,7 @@ TEST_F(FieldPathUpdateTestCase, testQuotedStringKey)
     Fixture f(*_foobar_type, k);
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AssignFieldPathUpdate(*f.doc->getDataType(), field_path, std::string(), f.fv4)));
+    docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>(*f.doc->getDataType(), field_path, std::string(), f.fv4));
     docUp.applyTo(*f.doc);
 
     std::unique_ptr<MapFieldValue> valueNow = f.doc->getAs<MapFieldValue>(f.doc->getField("structmap"));
@@ -918,35 +900,26 @@ TEST_F(FieldPathUpdateTestCase, testEqualityComparison)
         DocumentUpdate docUp2(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
         EXPECT_TRUE(docUp1 == docUp2);
 
-        FieldPathUpdate::CP assignUp1(new AssignFieldPathUpdate(*doc->getDataType(),
-                                              "structmap{here be dragons}", std::string(), fv4));
-        docUp1.addFieldPathUpdate(assignUp1);
+        docUp1.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(), "structmap{here be dragons}", std::string(), fv4));
         EXPECT_TRUE(docUp1 != docUp2);
-        docUp2.addFieldPathUpdate(assignUp1);
+        docUp2.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(), "structmap{here be dragons}", std::string(), fv4));
         EXPECT_TRUE(docUp1 == docUp2);
     }
     {
         DocumentUpdate docUp1(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
         DocumentUpdate docUp2(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
         // where-clause diff
-        FieldPathUpdate::CP assignUp1(new AssignFieldPathUpdate(*doc->getDataType(),
-                                              "structmap{here be dragons}", std::string(), fv4));
-        FieldPathUpdate::CP assignUp2(new AssignFieldPathUpdate(*doc->getDataType(),
-                                              "structmap{here be dragons}", "false", fv4));
-        docUp1.addFieldPathUpdate(assignUp1);
-        docUp2.addFieldPathUpdate(assignUp2);
+        docUp1.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(), "structmap{here be dragons}", std::string(), fv4));
+        docUp2.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(), "structmap{here be dragons}", "false", fv4));
         EXPECT_TRUE(docUp1 != docUp2);
     }
     {
         DocumentUpdate docUp1(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
         DocumentUpdate docUp2(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
         // fieldpath diff
-        FieldPathUpdate::CP assignUp1(new AssignFieldPathUpdate(*doc->getDataType(),
-                                              "structmap{here be dragons}", std::string(), fv4));
-        FieldPathUpdate::CP assignUp2(new AssignFieldPathUpdate(*doc->getDataType(),
-                                              "structmap{here be kittens}", std::string(), fv4));
-        docUp1.addFieldPathUpdate(assignUp1);
-        docUp2.addFieldPathUpdate(assignUp2);
+
+        docUp1.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(),"structmap{here be dragons}", std::string(), fv4));
+        docUp2.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(), "structmap{here be kittens}", std::string(), fv4));
         EXPECT_TRUE(docUp1 != docUp2);
     }
 
@@ -965,19 +938,17 @@ TEST_F(FieldPathUpdateTestCase, testAffectsDocumentBody)
     {
         DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
 
-        FieldPathUpdate::CP update1(new AssignFieldPathUpdate(*doc->getDataType(),
-                                                              "structmap{janitor}", std::string(), fv4));
+        auto update1 = std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(), "structmap{janitor}", std::string(), fv4);
         static_cast<AssignFieldPathUpdate&>(*update1).setCreateMissingPath(true);
-        docUp.addFieldPathUpdate(update1);
+        docUp.addFieldPathUpdate(std::move(update1));
     }
 
     // strfoo is header field
     {
         DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-        FieldPathUpdate::CP update1(new AssignFieldPathUpdate(*doc->getDataType(),
-                                            "strfoo", std::string(), StringFieldValue("helloworld")));
+        auto update1 = std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(), "strfoo", std::string(), StringFieldValue("helloworld"));
         static_cast<AssignFieldPathUpdate&>(*update1).setCreateMissingPath(true);
-        docUp.addFieldPathUpdate(update1);
+        docUp.addFieldPathUpdate(std::move(update1));
     }
 
 }
@@ -990,8 +961,7 @@ TEST_F(FieldPathUpdateTestCase, testIncompatibleDataTypeFails)
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
 
     try {
-        FieldPathUpdate::CP update1(new AssignFieldPathUpdate(*doc->getDataType(), "structmap{foo}",
-                                                              std::string(), StringFieldValue("bad things")));
+        auto update1 = std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(), "structmap{foo}", std::string(), StringFieldValue("bad things"));
         EXPECT_TRUE(false);
     } catch (const vespalib::IllegalArgumentException& e) {
         // OK
@@ -1009,9 +979,9 @@ TEST_F(FieldPathUpdateTestCase, testSerializeAssign)
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
 
-    FieldPathUpdate::CP update1(new AssignFieldPathUpdate(*doc->getDataType(), "structmap{ribbit}", "true", val));
+    auto update1 = std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(), "structmap{ribbit}", "true", val);
     static_cast<AssignFieldPathUpdate&>(*update1).setCreateMissingPath(true);
-    docUp.addFieldPathUpdate(update1);
+    docUp.addFieldPathUpdate(std::move(update1));
 
     testSerialize(*_repo, docUp);
 }
@@ -1028,8 +998,7 @@ TEST_F(FieldPathUpdateTestCase, testSerializeAdd)
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
 
-    FieldPathUpdate::CP update1(new AddFieldPathUpdate(*doc->getDataType(), "strarray", std::string(), adds));
-    docUp.addFieldPathUpdate(update1);
+    docUp.addFieldPathUpdate(std::make_unique<AddFieldPathUpdate>(*doc->getDataType(), "strarray", std::string(), adds));
 
     testSerialize(*_repo, docUp);
 }
@@ -1041,8 +1010,7 @@ TEST_F(FieldPathUpdateTestCase, testSerializeRemove)
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
 
-    FieldPathUpdate::CP update1(new RemoveFieldPathUpdate("structmap{ribbit}", std::string()));
-    docUp.addFieldPathUpdate(update1);
+    docUp.addFieldPathUpdate(std::make_unique<RemoveFieldPathUpdate>("structmap{ribbit}", std::string()));
 
     testSerialize(*_repo, docUp);
 }
@@ -1054,7 +1022,7 @@ TEST_F(FieldPathUpdateTestCase, testSerializeAssignMath)
     doc->setValue("num", IntFieldValue(34));
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("num", "", "($value * 2) / $value")));
+    docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>("num", "", "($value * 2) / $value"));
     testSerialize(*_repo, docUp);
 }
 
@@ -1064,17 +1032,17 @@ FieldPathUpdateTestCase::createDocumentUpdateForSerialization(const DocumentType
     const DocumentType *docType(repo.getDocumentType("serializetest"));
     auto docUp = std::make_unique<DocumentUpdate>(repo, *docType, DocumentId("id:ns:serializetest::xlanguage"));
 
-    FieldPathUpdate::CP assign(new AssignFieldPathUpdate("intfield", "", "3"));
+    auto assign = std::make_unique<AssignFieldPathUpdate>("intfield", "", "3");
     static_cast<AssignFieldPathUpdate&>(*assign).setRemoveIfZero(true);
     static_cast<AssignFieldPathUpdate&>(*assign).setCreateMissingPath(false);
-    docUp->addFieldPathUpdate(assign);
+    docUp->addFieldPathUpdate(std::move(assign));
 
     ArrayFieldValue fArray(docType->getField("arrayoffloatfield").getDataType());
     fArray.add(FloatFieldValue(12.0));
     fArray.add(FloatFieldValue(5.0));
 
-    docUp->addFieldPathUpdate(FieldPathUpdate::CP(new AddFieldPathUpdate(*docType, "arrayoffloatfield", "", fArray)));
-    docUp->addFieldPathUpdate(FieldPathUpdate::CP(new RemoveFieldPathUpdate("intfield", "serializetest.intfield > 0")));
+    docUp->addFieldPathUpdate(std::make_unique<AddFieldPathUpdate>(*docType, "arrayoffloatfield", "", fArray));
+    docUp->addFieldPathUpdate(std::make_unique<RemoveFieldPathUpdate>("intfield", "serializetest.intfield > 0"));
 
     return docUp;
 }
@@ -1130,8 +1098,7 @@ TEST_F(FieldPathUpdateTestCase, array_element_update_for_invalid_index_is_ignore
     doc->setValue("strarray", str_array);
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id::foobar::1"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AssignFieldPathUpdate(*doc->getDataType(), "strarray[1]", "", StringFieldValue("george"))));
+    docUp.addFieldPathUpdate(std::make_unique<AssignFieldPathUpdate>(*doc->getDataType(), "strarray[1]", "", StringFieldValue("george")));
     docUp.applyTo(*doc);
 
     // Doc is unmodified.
@@ -1155,8 +1122,8 @@ TEST_F(FieldPathUpdateTestCase, update_can_have_removes_for_both_existent_and_no
     DocumentUpdate update(*_repo, *_foobar_type, doc_id);
     auto update1 = std::make_unique<RemoveFieldPathUpdate>("structmap{coolmovie}", "");
     auto update2 = std::make_unique<RemoveFieldPathUpdate>("structmap{no such key}", "");
-    update.addFieldPathUpdate(FieldPathUpdate::CP(std::move(update1)));
-    update.addFieldPathUpdate(FieldPathUpdate::CP(std::move(update2)));
+    update.addFieldPathUpdate(std::move(update1));
+    update.addFieldPathUpdate(std::move(update2));
     update.applyTo(*doc);
 
     auto new_value = doc->getValue("structmap");

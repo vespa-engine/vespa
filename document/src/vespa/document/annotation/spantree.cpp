@@ -9,31 +9,37 @@ using vespalib::stringref;
 
 namespace document {
 
-SpanTree::~SpanTree() { }
+SpanTree::~SpanTree() = default;
 
-size_t SpanTree::annotate(Annotation::UP annotation_) {
-    _annotations.push_back(*annotation_);
+size_t
+SpanTree::annotate(std::unique_ptr<Annotation> annotation_) {
+    _annotations.push_back(std::move(*annotation_));
     return _annotations.size() - 1;
 }
 
-size_t SpanTree::annotate(const SpanNode &node, Annotation::UP annotation_) {
+size_t
+SpanTree::annotate(const SpanNode &node, std::unique_ptr<Annotation> annotation_) {
     annotation_->setSpanNode(node);
     return annotate(std::move(annotation_));
 }
 
-size_t SpanTree::annotate(const SpanNode &node, const AnnotationType &type) {
-    return annotate(node, Annotation::UP(new Annotation(type)));
+size_t
+SpanTree::annotate(const SpanNode &node, const AnnotationType &type) {
+    return annotate(node, std::make_unique<Annotation>(type));
 }
 
-void SpanTree::accept(SpanTreeVisitor &visitor) const {
+void
+SpanTree::accept(SpanTreeVisitor &visitor) const {
     _root->accept(visitor);
 }
 
-int SpanTree::compare(const SpanTree &other) const {
+int
+SpanTree::compare(const SpanTree &other) const {
     return toString().compare(other.toString());
 }
 
-vespalib::string SpanTree::toString() const {
+vespalib::string
+SpanTree::toString() const {
     vespalib::asciistream os;
     os << "SpanTree(\"" << _name << "\"" << "\n  ";
     os <<_root->toString();

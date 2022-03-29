@@ -25,50 +25,25 @@ public:
     int Main() override;
 };
 
-B* fn(auto_arr<B> param) { return param.get(); }
-auto_arr<B> fn(B *param) { auto_arr<B> bb(param); return bb; }
-
 int
 Test::Main()
 {
     TEST_INIT("memory_test");
     {
-        B* p = new B[5];
-        auto_arr<B> apb(p);
-        EXPECT_TRUE(apb.get() == p);
-        EXPECT_TRUE(fn(apb) == p);
-        EXPECT_TRUE(apb.get() == nullptr);
-    }
-    {
-        A* p = new A[5];
-        auto_arr<A> apa(p);
-        EXPECT_TRUE(apa.get() == p);
-        auto_arr<A> apb = apa;
-        EXPECT_TRUE(apa.get() == nullptr);
-        EXPECT_TRUE(apb.get() == p);
-        A& ref = apb[2];
-        EXPECT_TRUE(&ref == (p+2));
-    }
-    {
-        B* p = new B[5];
-        auto_arr<B> apb = fn(p);
-        EXPECT_TRUE(apb.get() == p);
-    }
-    {
         MallocAutoPtr a(malloc(30));
         EXPECT_TRUE(a.get() != nullptr);
         void * tmp = a.get();
-        MallocAutoPtr b(a);
+        MallocAutoPtr b(std::move(a));
         EXPECT_TRUE(tmp == b.get());
         EXPECT_TRUE(a.get() == nullptr);
         MallocAutoPtr c;
-        c = b;
+        c = std::move(b);
         EXPECT_TRUE(b.get() == nullptr);
         EXPECT_TRUE(tmp == c.get());
         MallocAutoPtr d(malloc(30));
         EXPECT_TRUE(d.get() != nullptr);
         tmp = c.get();
-        d = c;
+        d = std::move(c);
         EXPECT_TRUE(tmp == d.get());
         EXPECT_TRUE(c.get() == nullptr);
     }

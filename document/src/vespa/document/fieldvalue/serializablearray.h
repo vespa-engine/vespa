@@ -17,15 +17,12 @@
 #pragma once
 
 #include <vespa/vespalib/util/buffer.h>
-#include <vespa/vespalib/util/memory.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vector>
 
 #define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
 
 namespace document {
-
-class ByteBuffer;
 
 namespace serializablearray {
     class BufferMap;
@@ -77,7 +74,6 @@ public:
     static const uint32_t ReservedId = 100;
     static const uint32_t ReservedIdUpper = 128;
 
-    using CP = vespalib::CloneablePtr<SerializableArray>;
     using UP = std::unique_ptr<SerializableArray>;
 
     SerializableArray();

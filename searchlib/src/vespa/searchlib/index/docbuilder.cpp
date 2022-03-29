@@ -154,11 +154,10 @@ using namespace docbuilderkludge;
 
 namespace {
 
-Annotation::UP
+std::unique_ptr<Annotation>
 makeTokenType(linguistics::TokenType type)
 {
-    return makeUP(new Annotation(*AnnotationType::TOKEN_TYPE,
-                                 makeUP(new IntFieldValue(type))));
+    return std::make_unique<Annotation>(*AnnotationType::TOKEN_TYPE, std::make_unique<IntFieldValue>(type));
 }
 
 }

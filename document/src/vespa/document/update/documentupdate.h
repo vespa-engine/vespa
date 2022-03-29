@@ -46,7 +46,7 @@ public:
     using UP = std::unique_ptr<DocumentUpdate>;
     using SP = std::shared_ptr<DocumentUpdate>;
     using FieldUpdateV = std::vector<FieldUpdate>;
-    using FieldPathUpdateV = std::vector<FieldPathUpdate::CP>;
+    using FieldPathUpdateV = std::vector<std::unique_ptr<FieldPathUpdate>>;
     using XmlOutputStream = vespalib::xml::XmlOutputStream;
 
     /**
@@ -88,7 +88,7 @@ public:
     void applyTo(Document& doc) const;
 
     DocumentUpdate& addUpdate(FieldUpdate && update);
-    DocumentUpdate& addFieldPathUpdate(const FieldPathUpdate::CP& update);
+    DocumentUpdate& addFieldPathUpdate(std::unique_ptr<FieldPathUpdate> update);
 
     /** @return The list of updates. */
     const FieldUpdateV & getUpdates() const;
