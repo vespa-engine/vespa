@@ -252,7 +252,7 @@ TEST_P(StorageProtocolTest, update) {
             _docMan.getTypeRepo(), *_testDoc->getDataType(), _testDoc->getId());
     update->addUpdate(FieldUpdate(_testDoc->getField("headerval")).addUpdate(std::make_unique<AssignValueUpdate>(IntFieldValue(17))));
 
-    update->addFieldPathUpdate(FieldPathUpdate::CP(new RemoveFieldPathUpdate("headerval", "testdoctype1.headerval > 0")));
+    update->addFieldPathUpdate(std::make_unique<RemoveFieldPathUpdate>("headerval", "testdoctype1.headerval > 0"));
 
     auto cmd = std::make_shared<UpdateCommand>(_bucket, update, 14);
     EXPECT_EQ(Timestamp(0), cmd->getOldTimestamp());

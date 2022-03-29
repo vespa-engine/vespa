@@ -3,7 +3,6 @@
 
 #include "updatevisitor.h"
 #include <vespa/document/base/fieldpath.h>
-#include <vespa/document/util/printable.h>
 #include <vespa/document/util/identifiableid.h>
 
 namespace document {
@@ -18,8 +17,7 @@ class DataType;
 namespace select { class Node; }
 namespace fieldvalue { class IteratorHandler; }
 
-class FieldPathUpdate : public Printable,
-                        public vespalib::Identifiable
+class FieldPathUpdate : public vespalib::Identifiable
 {
 protected:
     using nbostream = vespalib::nbostream;
@@ -31,9 +29,6 @@ protected:
 
    static stringref getString(nbostream & stream);
 public:
-    using SP = std::shared_ptr<FieldPathUpdate>;
-    using CP = vespalib::CloneablePtr<FieldPathUpdate>;
-
     ~FieldPathUpdate() override;
 
     enum FieldPathUpdateType {
@@ -61,7 +56,7 @@ public:
      */
     void checkCompatibility(const FieldValue& fv, const DataType & type) const;
 
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const = 0;
 
     DECLARE_IDENTIFIABLE_ABSTRACT(FieldPathUpdate);
 

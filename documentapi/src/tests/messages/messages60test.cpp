@@ -663,8 +663,7 @@ Messages60Test::testUpdateDocumentMessage()
 
     auto docUpdate = std::make_shared<document::DocumentUpdate>(repo, docType, document::DocumentId("id:ns:testdoc::"));
 
-    docUpdate->addFieldPathUpdate(document::FieldPathUpdate::CP(
-        new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
+    docUpdate->addFieldPathUpdate(std::make_unique<document::RemoveFieldPathUpdate>("intfield", "testdoc.intfield > 0"));
 
     UpdateDocumentMessage msg(docUpdate);
     msg.setOldTimestamp(666u);

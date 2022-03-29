@@ -11,7 +11,7 @@ struct SpanNode;
 struct SpanTreeVisitor;
 
 class SpanTree {
-    typedef std::vector<Annotation> AnnotationVector;
+    using AnnotationVector = std::vector<Annotation>;
     vespalib::string _name;
     std::unique_ptr<SpanNode> _root;
     std::vector<Annotation> _annotations;

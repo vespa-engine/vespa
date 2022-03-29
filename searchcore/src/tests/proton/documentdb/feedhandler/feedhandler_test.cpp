@@ -763,7 +763,7 @@ using namespace document;
 TEST_F("require that update with a fieldpath update will be rejected", SchemaContext) {
     const DocumentType *docType = f.getRepo()->getDocumentType(f.getDocType().getName());
     auto docUpdate = std::make_unique<DocumentUpdate>(*f.getRepo(), *docType, DocumentId("id:ns:" + docType->getName() + "::1"));
-    docUpdate->addFieldPathUpdate(FieldPathUpdate::CP(std::make_unique<RemoveFieldPathUpdate>()));
+    docUpdate->addFieldPathUpdate(std::make_unique<RemoveFieldPathUpdate>());
     EXPECT_TRUE(FeedRejectHelper::mustReject(*docUpdate));
 }
 

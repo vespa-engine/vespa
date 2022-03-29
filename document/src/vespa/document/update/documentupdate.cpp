@@ -130,9 +130,9 @@ DocumentUpdate::addUpdate(FieldUpdate &&update) {
 }
 
 DocumentUpdate&
-DocumentUpdate::addFieldPathUpdate(const FieldPathUpdate::CP& update) {
+DocumentUpdate::addFieldPathUpdate(std::unique_ptr<FieldPathUpdate> update) {
     ensureDeserialized();
-    _fieldPathUpdates.push_back(update);
+    _fieldPathUpdates.push_back(std::move(update));
     reserialize();
     return *this;
 }
