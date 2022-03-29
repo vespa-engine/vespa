@@ -130,7 +130,7 @@ export VESPA_LOG_CONTROL_FILE="${VESPA_HOME}/var/db/vespa/logcontrol/configserve
 export VESPA_SERVICE_NAME=configserver
 export LD_LIBRARY_PATH=${VESPA_HOME}/lib64
 
-#Does not need fast allocation
+# Does not need fast allocation
 export MALLOC_ARENA_MAX=1
 
 vespa-run-as-vespa-user ${VESPA_HOME}/libexec/vespa/start-logd
@@ -157,6 +157,7 @@ jvmargs="$baseuserargs $serveruserargs"
 
 export LD_PRELOAD=${VESPA_HOME}/lib64/vespa/malloc/libvespamalloc.so
 
+rm -f $cfpfile
 vespa-run-as-vespa-user sh -c "printenv > $cfpfile"
 fixddir $bundlecachedir
 
