@@ -2,24 +2,13 @@
 
 #pragma once
 
-#include "numericbase.h"
+#include "numeric_range_matcher.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 
-namespace search {
+namespace search::attribute {
 
 template<typename T>
-NumericAttribute::Equal<T>::Equal(const QueryTermSimple &queryTerm, bool avoidUndefinedInRange)
-    : _value(0),
-      _valid(false)
-{
-    (void) avoidUndefinedInRange;
-    QueryTermSimple::RangeResult<T> res = queryTerm.getRange<T>();
-    _valid = res.valid && res.isEqual() && !res.adjusted;
-    _value = res.high;
-}
-
-template<typename T>
-NumericAttribute::Range<T>::Range(const QueryTermSimple & queryTerm, bool avoidUndefinedInRange)
+NumericRangeMatcher<T>::NumericRangeMatcher(const QueryTermSimple& queryTerm, bool avoidUndefinedInRange)
     : _low(0),
       _high(0),
       _valid(false)

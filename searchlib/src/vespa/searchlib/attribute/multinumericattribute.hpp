@@ -192,7 +192,7 @@ bool MultiValueNumericAttribute<B, M>::SetSearchContext::valid() const { return 
 
 template <typename B, typename M>
 MultiValueNumericAttribute<B, M>::SetSearchContext::SetSearchContext(QueryTermSimple::UP qTerm, const NumericAttribute & toBeSearched) :
-    NumericAttribute::Range<T>(*qTerm),
+    attribute::NumericRangeMatcher<T>(*qTerm),
     attribute::SearchContext(toBeSearched),
     _toBeSearched(static_cast<const MultiValueNumericAttribute<B, M> &>(toBeSearched))
 { }
@@ -224,7 +224,7 @@ bool MultiValueNumericAttribute<B, M>::ArraySearchContext::valid() const { retur
 
 template <typename B, typename M>
 MultiValueNumericAttribute<B, M>::ArraySearchContext::ArraySearchContext(QueryTermSimple::UP qTerm, const NumericAttribute & toBeSearched) :
-    NumericAttribute::Range<T>(*qTerm),
+    attribute::NumericRangeMatcher<T>(*qTerm),
     attribute::SearchContext(toBeSearched),
     _toBeSearched(static_cast<const MultiValueNumericAttribute<B, M> &>(toBeSearched))
 { }

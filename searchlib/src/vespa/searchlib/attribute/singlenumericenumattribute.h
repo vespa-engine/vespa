@@ -4,6 +4,7 @@
 
 #include "singleenumattribute.h"
 #include "numericbase.h"
+#include "numeric_range_matcher.h"
 #include "search_context.h"
 #include <map>
 
@@ -49,7 +50,7 @@ protected:
     /*
      * Specialization of SearchContext
      */
-    class SingleSearchContext : public NumericAttribute::Range<T>, public attribute::SearchContext
+    class SingleSearchContext : public attribute::NumericRangeMatcher<T>, public attribute::SearchContext
     {
     protected:
         const SingleValueNumericEnumAttribute<B> & _toBeSearched;

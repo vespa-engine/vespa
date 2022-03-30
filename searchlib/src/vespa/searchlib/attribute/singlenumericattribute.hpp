@@ -4,6 +4,8 @@
 #include "attributeiterators.hpp"
 #include "attributevector.hpp"
 #include "load_utils.h"
+#include "numeric_matcher.h"
+#include "numeric_range_matcher.h"
 #include "primitivereader.h"
 #include "singlenumericattribute.h"
 #include "singlenumericattributesaver.h"
@@ -158,9 +160,9 @@ SingleValueNumericAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
     (void) params;
     QueryTermSimple::RangeResult<T> res = qTerm->getRange<T>();
     if (res.isEqual()) {
-        return std::make_unique<SingleSearchContext<NumericAttribute::Equal<T>>>(std::move(qTerm), *this);
+        return std::make_unique<SingleSearchContext<attribute::NumericMatcher<T>>>(std::move(qTerm), *this);
     } else {
-        return std::make_unique<SingleSearchContext<NumericAttribute::Range<T>>>(std::move(qTerm), *this);
+        return std::make_unique<SingleSearchContext<attribute::NumericRangeMatcher<T>>>(std::move(qTerm), *this);
     }
 }
 

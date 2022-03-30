@@ -174,7 +174,7 @@ SingleValueNumericEnumAttribute<B>::SingleSearchContext::valid() const
 
 template <typename B>
 SingleValueNumericEnumAttribute<B>::SingleSearchContext::SingleSearchContext(QueryTermSimpleUP qTerm, const NumericAttribute & toBeSearched) :
-    NumericAttribute::Range<T>(*qTerm, true),
+    attribute::NumericRangeMatcher<T>(*qTerm, true),
     attribute::SearchContext(toBeSearched),
     _toBeSearched(static_cast<const SingleValueNumericEnumAttribute<B> &>(toBeSearched))
 { }
