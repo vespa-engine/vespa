@@ -45,6 +45,7 @@ public:
     void consider_clear_bits(const std::vector<uint32_t>& idxs);
     void clear_bits(const std::vector<uint32_t>& idxs);
     bool testBit(unsigned int idx) const { return _bv.testBit(idx); }
+    bool testBitSafe(unsigned int idx) const { return _bv.testBitSafe(idx); }
     unsigned int size() const { return _bv.size(); }
     unsigned int byteSize() const {
         return _bv.extraByteSize() + sizeof(LidStateVector);

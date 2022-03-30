@@ -182,6 +182,7 @@ public:
     void move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num) override;
     bool validButMaybeUnusedLid(DocId lid) const { return _lidAlloc.validButMaybeUnusedLid(lid); }
     bool validLidFast(DocId lid) const { return _lidAlloc.validLid(lid); }
+    bool validLidFastSafe(DocId lid, uint32_t limit) const { return _lidAlloc.validLidSafe(lid, limit); }
     bool validLid(DocId lid) const override { return validLidFast(lid); }
     void removeBatch(const std::vector<DocId> &lidsToRemove, const DocId docIdLimit) override;
     const RawDocumentMetaData & getRawMetaData(DocId lid) const override { return _metaDataStore.acquire_elem_ref(lid); }

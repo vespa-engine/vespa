@@ -5,6 +5,7 @@
 #include "bitword.h"
 #include <memory>
 #include <vespa/vespalib/util/alloc.h>
+#include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/generationholder.h>
 #include <vespa/fastos/types.h>
 
@@ -45,6 +46,11 @@ public:
     Index sizeBytes() const { return numBytes(getActiveSize()); }
     bool testBit(Index idx) const {
         return ((_words[wordNum(idx)] & mask(idx)) != 0);
+    }
+    bool testBitSafe(Index idx) const {
+        auto my_words = vespalib::atomic::load_ref_acquire(_words);
+        auto my_word = vespalib::atomic::load_ref_acquire(my_words[wordNum(idx)]);
+        return (my_word & mask(idx)) != 0;
     }
     bool hasTrueBits() const {
         return isValidCount()
@@ -136,10 +142,10 @@ public:
         _sz = sz;
     }
     void setBit(Index idx) {
-        _words[wordNum(idx)] |= mask(idx);
+        vespalib::atomic::store_ref_relaxed(_words[wordNum(idx)], _words[wordNum(idx)] | mask(idx));
     }
     void clearBit(Index idx) {
-        _words[wordNum(idx)] &= ~ mask(idx);
+        vespalib::atomic::store_ref_relaxed(_words[wordNum(idx)], _words[wordNum(idx)] & ~ mask(idx));
     }
     void flipBit(Index idx) {
         _words[wordNum(idx)] ^= mask(idx);
@@ -200,7 +206,9 @@ public:
     }
 
     void swap(BitVector & rhs) {
-        std::swap(_words, rhs._words);
+        auto my_words = _words;
+        vespalib::atomic::store_ref_release(_words, rhs._words);
+        vespalib::atomic::store_ref_release(rhs._words, my_words);
         std::swap(_startOffset, rhs._startOffset);
         std::swap(_sz, rhs._sz);
         Index tmp = rhs._numTrueBits;
