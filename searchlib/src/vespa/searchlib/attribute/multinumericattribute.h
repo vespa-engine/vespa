@@ -5,7 +5,6 @@
 #include "integerbase.h"
 #include "floatbase.h"
 #include "multivalueattribute.h"
-#include "numeric_range_matcher.h"
 #include "search_context.h"
 #include <limits>
 
@@ -58,103 +57,6 @@ public:
     uint32_t getRawValues(DocId doc, const WType * & values) const final override {
         return get(doc, values);
     }
-    /*
-     * Specialization of SearchContext for weighted set type
-     */
-    class SetSearchContext final : public attribute::NumericRangeMatcher<T>, public attribute::SearchContext
-    {
-    private:
-        const MultiValueNumericAttribute<B, M> & _toBeSearched;
-
-        int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const override {
-            return find(docId, elemId, weight);
-        }
-
-        int32_t onFind(DocId docId, int32_t elemId) const override {
-            return find(docId, elemId);
-        }
-
-        bool valid() const override;
-
-    public:
-        SetSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const NumericAttribute & toBeSearched);
-
-        Int64Range getAsIntegerTerm() const override;
-
-        int32_t find(DocId doc, int32_t elemId, int32_t & weight) const {
-            MultiValueArrayRef values(_toBeSearched._mvMapping.get(doc));
-            for (uint32_t i(elemId); i < values.size(); i++) {
-                if (this->match(values[i].value())) {
-                    weight = values[i].weight();
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        int32_t find(DocId doc, int32_t elemId) const {
-            MultiValueArrayRef values(_toBeSearched._mvMapping.get(doc));
-            for (uint32_t i(elemId); i < values.size(); i++) {
-                if (this->match(values[i].value())) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        std::unique_ptr<queryeval::SearchIterator>
-        createFilterIterator(fef::TermFieldMatchData * matchData, bool strict) override;
-    };
-
-    /*
-     * Specialization of SearchContext for array type
-     */
-    class ArraySearchContext : public attribute::NumericRangeMatcher<T>, public attribute::SearchContext
-    {
-    private:
-        const MultiValueNumericAttribute<B, M> & _toBeSearched;
-
-        int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const override final {
-            return find(docId, elemId, weight);
-        }
-
-        int32_t onFind(DocId docId, int32_t elemId) const override final {
-            return find(docId, elemId);
-        }
-
-    protected:
-        bool valid() const override;
-
-    public:
-        ArraySearchContext(std::unique_ptr<QueryTermSimple> qTerm, const NumericAttribute & toBeSearched);
-        int32_t find(DocId doc, int32_t elemId, int32_t & weight) const {
-            MultiValueArrayRef values(_toBeSearched._mvMapping.get(doc));
-            for (uint32_t i(elemId); i < values.size(); i++) {
-                if (this->match(values[i].value())) {
-                    weight = 1;
-                    return i;
-                }
-            }
-            weight = 0;
-
-            return -1;
-        }
-
-        int32_t find(DocId doc, int32_t elemId) const {
-            MultiValueArrayRef values(_toBeSearched._mvMapping.get(doc));
-            for (uint32_t i(elemId); i < values.size(); i++) {
-                if (this->match(values[i].value())) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        Int64Range getAsIntegerTerm() const override;
-
-        std::unique_ptr<queryeval::SearchIterator>
-        createFilterIterator(fef::TermFieldMatchData * matchData, bool strict) override;
-    };
 
     MultiValueNumericAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & c =
                                AttributeVector::Config(AttributeVector::BasicType::fromType(T()),

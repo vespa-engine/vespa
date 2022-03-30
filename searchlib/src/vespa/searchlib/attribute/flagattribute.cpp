@@ -56,7 +56,7 @@ template <typename B>
 std::unique_ptr<attribute::SearchContext>
 FlagAttributeT<B>::getSearch(QueryTermSimple::UP qTerm, const attribute::SearchContextParams &) const
 {
-    return std::make_unique<SearchContext>(std::move(qTerm), *this);
+    return std::make_unique<SearchContext>(std::move(qTerm), *this, this->_mvMapping);
 }
 
 template <typename B>
@@ -233,9 +233,9 @@ FlagAttributeT<B>::removeOldGenerations(vespalib::GenerationHandler::generation_
 }
 
 template <typename B>
-FlagAttributeT<B>::SearchContext::SearchContext(QueryTermSimple::UP qTerm, const FlagAttributeT<B> & toBeSearched) :
-    BaseSC(std::move(qTerm), toBeSearched),
-    _zeroHits(false)
+FlagAttributeT<B>::SearchContext::SearchContext(QueryTermSimple::UP qTerm, const FlagAttributeT<B> & toBeSearched, const MvMapping& mv_mapping)
+    : BaseSC(std::move(qTerm), toBeSearched, mv_mapping),
+      _zeroHits(false)
 {
 }
 
@@ -243,10 +243,10 @@ template <typename B>
 SearchIterator::UP
 FlagAttributeT<B>::SearchContext::createIterator(fef::TermFieldMatchData * matchData, bool strict)
 {
-    if (valid()) {
-        if (_low == _high) {
-            const Attribute & attr(static_cast<const Attribute &>(attribute()));
-            const BitVector * bv(attr.getBitVector(_low));
+    if (this->valid()) {
+        if (this->_low == this->_high) {
+            const Attribute & attr(static_cast<const Attribute &>(this->attribute()));
+            const BitVector * bv(attr.getBitVector(this->_low));
             if (bv != nullptr) {
                 return BitVectorIterator::create(bv, attr.getCommittedDocIdLimit(), *matchData, strict);
             } else {
