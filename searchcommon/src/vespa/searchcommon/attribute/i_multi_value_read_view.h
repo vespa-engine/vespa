@@ -34,8 +34,13 @@ template <typename T>
 using IWeightedSetReadView = IMultiValueReadView<multivalue::WeightedValue<T>>;
 
 /**
+ * Read view for the raw data stored in an enumerated array attribute.
+ */
+using IArrayEnumReadView = IArrayReadView<vespalib::datastore::AtomicEntryRef>;
+
+/**
  * Read view for the raw data stored in an enumerated weighted set attribute.
  */
-using IWeightedSetEnumReadView = IMultiValueReadView<multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>>;
+using IWeightedSetEnumReadView = IWeightedSetReadView<vespalib::datastore::AtomicEntryRef>;
 
 };

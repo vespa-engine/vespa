@@ -34,6 +34,7 @@ class IEnumStoreDictionary;
  */
 class IEnumStore {
 public:
+    using AtomicIndex = enumstore::AtomicIndex;
     using Index = enumstore::Index;
     using InternalIndex = enumstore::InternalIndex;
     using IndexVector = enumstore::IndexVector;

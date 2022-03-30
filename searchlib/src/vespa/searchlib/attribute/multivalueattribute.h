@@ -2,9 +2,11 @@
 
 #pragma once
 
-#include "multi_value_mapping.h"
-#include "attributevector.h"
 #include "atomic_utils.h"
+#include "attributevector.h"
+#include "multi_value_mapping.h"
+#include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
+#include <vespa/searchcommon/attribute/i_multi_value_read_view.h>
 
 namespace search {
 
@@ -15,7 +17,9 @@ namespace search {
  * M: MultiValueType
  */
 template <typename B, typename M>
-class MultiValueAttribute : public B
+class MultiValueAttribute : public B,
+                            public attribute::IMultiValueAttribute,
+                            public attribute::IMultiValueReadView<M>
 {
 protected:
     typedef typename B::DocId                             DocId;
@@ -74,6 +78,20 @@ public:
     void clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space) override;
     void onShrinkLidSpace() override ;
     void onAddDocs(DocId lidLimit) override;
+
+    const IMultiValueAttribute* as_multi_value_attribute() const override {
+        return this;
+    }
+
+    // Implements attribute::IMultiValueAttribute
+    const attribute::IMultiValueReadView<MultiValueType>* as_read_view(attribute::IMultiValueAttribute::Tag<MultiValueType>) const override {
+        return this;
+    }
+
+    // Implements attribute::IMultiValueReadView
+    vespalib::ConstArrayRef<MultiValueType> get_raw_values(uint32_t docid) const override {
+        return this->_mvMapping.get(docid);
+    }
 };
 
 } // namespace search
