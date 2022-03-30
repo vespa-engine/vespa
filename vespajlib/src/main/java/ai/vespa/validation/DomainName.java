@@ -1,0 +1,34 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package ai.vespa.validation;
+
+import java.util.regex.Pattern;
+
+import static ai.vespa.validation.Validation.requireInRange;
+import static ai.vespa.validation.Validation.requireMatch;
+
+/**
+ * A valid domain name, which can be used in a {@link java.net.URI}.
+ *
+ * @author jonmv
+ */
+public class DomainName extends StringWrapper<DomainName> {
+
+    public static final Pattern labelPattern = Pattern.compile("([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])");
+    public static final Pattern domainNamePattern = Pattern.compile("(" + labelPattern + "\\.)*" + labelPattern);
+
+    public static final DomainName localhost = DomainName.of("localhost");
+
+    private DomainName(String value) {
+        super(value);
+    }
+
+    public static DomainName of(String value) {
+        requireInRange(value.length(), "domain name", 1, 255);
+        return new DomainName(requireMatch(value, "domain name", domainNamePattern));
+   }
+
+    public static String requireLabel(String label) {
+        return requireMatch(label, "domain name label", labelPattern);
+    }
+
+}

@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import ai.vespa.validation.Hostname;
+import ai.vespa.validation.DomainName;
 import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationFile;
@@ -157,7 +157,7 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private HttpResponse logs(ApplicationId applicationId, HttpRequest request) {
-        Optional<Hostname> hostname = Optional.ofNullable(request.getProperty("hostname")).map(Hostname::of);
+        Optional<DomainName> hostname = Optional.ofNullable(request.getProperty("hostname")).map(DomainName::of);
         String apiParams = Optional.ofNullable(request.getUri().getQuery()).map(q -> "?" + q).orElse("");
         return applicationRepository.getLogs(applicationId, hostname, apiParams);
     }
