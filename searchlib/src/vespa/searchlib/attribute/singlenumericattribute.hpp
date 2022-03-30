@@ -9,6 +9,7 @@
 #include "primitivereader.h"
 #include "singlenumericattribute.h"
 #include "singlenumericattributesaver.h"
+#include "single_numeric_search_context.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 
@@ -159,10 +160,11 @@ SingleValueNumericAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
 {
     (void) params;
     QueryTermSimple::RangeResult<T> res = qTerm->getRange<T>();
+    const T* data = &_data.acquire_elem_ref(0);
     if (res.isEqual()) {
-        return std::make_unique<SingleSearchContext<attribute::NumericMatcher<T>>>(std::move(qTerm), *this);
+        return std::make_unique<attribute::SingleNumericSearchContext<T, attribute::NumericMatcher<T>>>(std::move(qTerm), *this, data);
     } else {
-        return std::make_unique<SingleSearchContext<attribute::NumericRangeMatcher<T>>>(std::move(qTerm), *this);
+        return std::make_unique<attribute::SingleNumericSearchContext<T, attribute::NumericRangeMatcher<T>>>(std::move(qTerm), *this, data);
     }
 }
 
@@ -208,44 +210,5 @@ SingleValueNumericAttribute<B>::onInitSave(vespalib::stringref fileName)
         (this->createAttributeHeader(fileName), &_data[0], numDocs * sizeof(T));
 }
 
-template <typename B>
-template <typename M>
-bool SingleValueNumericAttribute<B>::SingleSearchContext<M>::valid() const { return M::isValid(); }
-
-template <typename B>
-template <typename M>
-SingleValueNumericAttribute<B>::SingleSearchContext<M>::SingleSearchContext(QueryTermSimple::UP qTerm,
-                                                                            const NumericAttribute & toBeSearched) :
-    M(*qTerm, true),
-    attribute::SearchContext(toBeSearched),
-    _data(&static_cast<const SingleValueNumericAttribute<B> &>(toBeSearched)._data.acquire_elem_ref(0))
-{ }
-
-
-template <typename B>
-template <typename M>
-Int64Range
-SingleValueNumericAttribute<B>::SingleSearchContext<M>::getAsIntegerTerm() const {
-    return M::getRange();
-}
-
-template <typename B>
-template <typename M>
-std::unique_ptr<queryeval::SearchIterator>
-SingleValueNumericAttribute<B>::SingleSearchContext<M>::
-createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
-{
-    if (!valid()) {
-        return std::make_unique<queryeval::EmptySearch>();
-    }
-    if (getIsFilter()) {
-        return strict
-                 ? std::make_unique<FilterAttributeIteratorStrict<SingleSearchContext<M>>>(*this, matchData)
-                 : std::make_unique<FilterAttributeIteratorT<SingleSearchContext<M>>>(*this, matchData);
-    }
-    return strict
-             ? std::make_unique<AttributeIteratorStrict<SingleSearchContext<M>>>(*this, matchData)
-             : std::make_unique<AttributeIteratorT<SingleSearchContext<M>>>(*this, matchData);
-}
 }
 

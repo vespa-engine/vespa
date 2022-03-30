@@ -34,47 +34,6 @@ private:
         return T();
     }
 
-    /*
-     * Specialization of SearchContext
-     */
-    template <typename M>
-    class SingleSearchContext final : public M, public attribute::SearchContext
-    {
-    private:
-        const T * _data;
-
-        int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const override {
-            return find(docId, elemId, weight);
-        }
-
-        int32_t onFind(DocId docId, int elemId) const override {
-            return find(docId, elemId);
-        }
-
-        bool valid() const override;
-
-    public:
-    SingleSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const NumericAttribute & toBeSearched);
-        int32_t find(DocId docId, int32_t elemId, int32_t & weight) const {
-            if ( elemId != 0) return -1;
-            const T v = vespalib::atomic::load_ref_relaxed(_data[docId]);
-            weight = 1;
-            return this->match(v) ? 0 : -1;
-        }
-
-        int32_t find(DocId docId, int elemId) const {
-            if ( elemId != 0) return -1;
-            const T v = vespalib::atomic::load_ref_relaxed(_data[docId]);
-            return this->match(v) ? 0 : -1;
-        }
-
-        Int64Range getAsIntegerTerm() const override;
-
-        std::unique_ptr<queryeval::SearchIterator>
-        createFilterIterator(fef::TermFieldMatchData * matchData, bool strict) override;
-    };
-
-
 protected:
     bool findEnum(T value, EnumHandle & e) const override {
         (void) value; (void) e;
