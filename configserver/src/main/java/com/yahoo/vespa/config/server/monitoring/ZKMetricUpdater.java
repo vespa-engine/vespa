@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.monitoring;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.net.HostName;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TransportSecurityUtils;
@@ -10,7 +11,6 @@ import com.yahoo.security.tls.TransportSecurityUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -89,7 +89,7 @@ public class ZKMetricUpdater implements Runnable {
             try {
                 socket = createSocket();
                 socket.setSoTimeout(READ_TIMEOUT_MS);
-                socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), zkPort), CONNECTION_TIMEOUT_MS);
+                socket.connect(new InetSocketAddress(HostName.getLocalhost(), zkPort), CONNECTION_TIMEOUT_MS);
                 in = socket.getInputStream();
                 out = socket.getOutputStream();
                 out.write("mntr\n".getBytes(StandardCharsets.UTF_8));
