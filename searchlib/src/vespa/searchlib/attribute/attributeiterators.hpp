@@ -275,7 +275,7 @@ void
 AttributeIteratorT<SC>::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     AttributeIterator::visitMembers(visitor);
-    visit(visitor, "searchcontext.attribute", _concreteSearchCtx.attribute().getName());
+    visit(visitor, "searchcontext.attribute", _concreteSearchCtx.attributeName());
     visit(visitor, "searchcontext.queryterm", _concreteSearchCtx.queryTerm());
 }
 
@@ -284,7 +284,7 @@ void
 FilterAttributeIteratorT<SC>::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     FilterAttributeIterator::visitMembers(visitor);
-    visit(visitor, "searchcontext.attribute", _concreteSearchCtx.attribute().getName());
+    visit(visitor, "searchcontext.attribute", _concreteSearchCtx.attributeName());
     visit(visitor, "searchcontext.queryterm", _concreteSearchCtx.queryTerm());
 }
 
