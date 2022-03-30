@@ -2348,7 +2348,8 @@
       "public static final com.yahoo.processing.request.CompoundName PARAM_TIMEZONE",
       "public static final com.yahoo.processing.request.CompoundName PARAM_DEFAULT_MAX_HITS",
       "public static final com.yahoo.processing.request.CompoundName PARAM_DEFAULT_MAX_GROUPS",
-      "public static final com.yahoo.processing.request.CompoundName PARAM_DEFAULT_PRECISION_FACTOR"
+      "public static final com.yahoo.processing.request.CompoundName PARAM_DEFAULT_PRECISION_FACTOR",
+      "public static final com.yahoo.processing.request.CompoundName GROUPING_GLOBAL_MAX_GROUPS"
     ]
   },
   "com.yahoo.search.grouping.GroupingRequest": {
@@ -6634,7 +6635,6 @@
     "fields": [
       "public static final com.yahoo.processing.request.CompoundName MAX_OFFSET",
       "public static final com.yahoo.processing.request.CompoundName MAX_HITS",
-      "public static final com.yahoo.processing.request.CompoundName GROUPING_GLOBAL_MAX_GROUPS",
       "public static final com.yahoo.search.query.profile.types.QueryProfileType argumentType"
     ]
   },

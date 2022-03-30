@@ -12,7 +12,6 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.query.Select;
-import com.yahoo.search.query.properties.DefaultProperties;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
@@ -21,6 +20,9 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.TimeZone;
 
 /**
@@ -42,13 +44,14 @@ public class GroupingQueryParser extends Searcher {
     @Beta public static final CompoundName PARAM_DEFAULT_MAX_HITS = new CompoundName("grouping.defaultMaxHits");
     @Beta public static final CompoundName PARAM_DEFAULT_MAX_GROUPS = new CompoundName("grouping.defaultMaxGroups");
     @Beta public static final CompoundName PARAM_DEFAULT_PRECISION_FACTOR = new CompoundName("grouping.defaultPrecisionFactor");
+    @Beta public static final CompoundName GROUPING_GLOBAL_MAX_GROUPS = new CompoundName("grouping.globalMaxGroups");
     private static final ThreadLocal<ZoneCache> zoneCache = new ThreadLocal<>();
 
     @Override
     public Result search(Query query, Execution execution) {
         try {
-            if (query.getHttpRequest().getProperty(DefaultProperties.GROUPING_GLOBAL_MAX_GROUPS.toString()) != null) {
-                throw new IllegalInputException(DefaultProperties.GROUPING_GLOBAL_MAX_GROUPS + " must be specified in a query profile.");
+            if (query.getHttpRequest().getProperty(GROUPING_GLOBAL_MAX_GROUPS.toString()) != null) {
+                throw new IllegalInputException(GROUPING_GLOBAL_MAX_GROUPS + " must be specified in a query profile.");
             }
 
             String reqParam = query.properties().getString(PARAM_REQUEST);
@@ -61,10 +64,10 @@ public class GroupingQueryParser extends Searcher {
                 grpRequest.setRootOperation(op);
                 grpRequest.setTimeZone(zone);
                 grpRequest.continuations().addAll(continuations);
-                grpRequest.setDefaultMaxGroups(query.properties().getInteger(PARAM_DEFAULT_MAX_GROUPS, -1));
-                grpRequest.setDefaultMaxHits(query.properties().getInteger(PARAM_DEFAULT_MAX_HITS, -1));
-                grpRequest.setGlobalMaxGroups(query.properties().getLong(DefaultProperties.GROUPING_GLOBAL_MAX_GROUPS));
-                grpRequest.setDefaultPrecisionFactor(query.properties().getDouble(PARAM_DEFAULT_PRECISION_FACTOR, 0.0));
+                intProperty(query, PARAM_DEFAULT_MAX_GROUPS).ifPresent(grpRequest::setDefaultMaxGroups);
+                intProperty(query, PARAM_DEFAULT_MAX_HITS).ifPresent(grpRequest::setDefaultMaxHits);
+                longProperty(query, GROUPING_GLOBAL_MAX_GROUPS).ifPresent(grpRequest::setGlobalMaxGroups);
+                doubleProperty(query, PARAM_DEFAULT_PRECISION_FACTOR).ifPresent(grpRequest::setDefaultPrecisionFactor);
             }
             return execution.search(query);
         }
@@ -96,6 +99,21 @@ public class GroupingQueryParser extends Searcher {
             cache.put(name, timeZone);
         }
         return timeZone;
+    }
+
+    private static OptionalInt intProperty(Query q, CompoundName name) {
+        Integer val = q.properties().getInteger(name);
+        return val != null ? OptionalInt.of(val) : OptionalInt.empty();
+    }
+
+    private static OptionalLong longProperty(Query q, CompoundName name) {
+        Long val = q.properties().getLong(name);
+        return val != null ? OptionalLong.of(val) : OptionalLong.empty();
+    }
+
+    private static OptionalDouble doubleProperty(Query q, CompoundName name) {
+        Double val = q.properties().getDouble(name);
+        return val != null ? OptionalDouble.of(val) : OptionalDouble.empty();
     }
 
     @SuppressWarnings("serial")
