@@ -6867,6 +6867,7 @@
       "public java.lang.Object getObject(java.lang.String)",
       "public java.util.OptionalDouble getDouble(java.lang.String)",
       "public java.util.Optional getTensor(java.lang.String)",
+      "public java.util.Optional getString(java.lang.String)",
       "public java.util.Map asMap()",
       "public boolean isEmpty()",
       "public void prepare(com.yahoo.search.query.ranking.RankProperties)",
