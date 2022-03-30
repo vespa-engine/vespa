@@ -34,6 +34,7 @@ mkdir -p $SD_SOURCE_DIR/screwdriver/deploy
 openssl aes-256-cbc -md md5 -pass pass:$GPG_ENCPHRASE -in $SD_SOURCE_DIR/screwdriver/pubring.gpg.enc -out $SD_SOURCE_DIR/screwdriver/deploy/pubring.gpg -d
 openssl aes-256-cbc -md md5 -pass pass:$GPG_ENCPHRASE -in $SD_SOURCE_DIR/screwdriver/secring.gpg.enc -out $SD_SOURCE_DIR/screwdriver/deploy/secring.gpg -d
 export GPG_TTY=$(tty)
+export TERM=xterm
 
 # Build the Java code with the correct version set
 find . -name "pom.xml" -exec sed -i'' -e "s,<version>.*SNAPSHOT.*</version>,<version>$VESPA_RELEASE</version>," \
