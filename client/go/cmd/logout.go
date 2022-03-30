@@ -24,11 +24,11 @@ func newLogoutCmd(cli *CLI) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			a, err := auth0.GetAuth0(cli.config.authConfigPath(), system.Name, system.URL)
+			a, err := auth0.New(cli.config.authConfigPath(), system.Name, system.URL)
 			if err != nil {
 				return err
 			}
-			if err := a.RemoveSystem(system.Name); err != nil {
+			if err := a.RemoveCredentials(); err != nil {
 				return err
 			}
 

@@ -281,8 +281,8 @@ func (c *Config) useAPIKey(cli *CLI, system vespa.System, tenantName string) boo
 	// If no Auth0 token is created, fall back to tenant api key, but warn that this functionality is deprecated
 	// TODO: Remove this when users have had time to migrate over to Auth0 device flow authentication
 	if !cli.isCI() {
-		a, err := auth0.GetAuth0(c.authConfigPath(), system.Name, system.URL)
-		if err != nil || !a.HasSystem() {
+		a, err := auth0.New(c.authConfigPath(), system.Name, system.URL)
+		if err != nil || !a.HasCredentials() {
 			cli.printWarning("Use of API key is deprecated", "Authenticate with Auth0 instead: 'vespa auth login'")
 			return util.PathExists(c.apiKeyPath(tenantName))
 		}

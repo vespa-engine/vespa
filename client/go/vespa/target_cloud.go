@@ -205,15 +205,18 @@ func (t *cloudTarget) CheckVersion(clientVersion version.Version) error {
 }
 
 func (t *cloudTarget) addAuth0AccessToken(request *http.Request) error {
-	a, err := auth0.GetAuth0(t.apiOptions.AuthConfigPath, t.apiOptions.System.Name, t.apiOptions.System.URL)
+	client, err := auth0.New(t.apiOptions.AuthConfigPath, t.apiOptions.System.Name, t.apiOptions.System.URL)
 	if err != nil {
 		return err
 	}
-	system, err := a.PrepareSystem(auth0.ContextWithCancel())
+	accessToken, err := client.GetAccessToken()
 	if err != nil {
 		return err
 	}
-	request.Header.Set("Authorization", "Bearer "+system.AccessToken)
+	if request.Header == nil {
+		request.Header = make(http.Header)
+	}
+	request.Header.Set("Authorization", "Bearer "+accessToken)
 	return nil
 }
 

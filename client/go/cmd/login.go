@@ -35,7 +35,7 @@ func newLoginCmd(cli *CLI) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			a, err := auth0.GetAuth0(cli.config.authConfigPath(), system.Name, system.URL)
+			a, err := auth0.New(cli.config.authConfigPath(), system.Name, system.URL)
 			if err != nil {
 				return err
 			}
@@ -80,15 +80,13 @@ func newLoginCmd(cli *CLI) *cobra.Command {
 				log.Println("Could not store the refresh token locally, please expect to login again once your access token expired.")
 			}
 
-			s := auth0.System{
-				Name:        system.Name,
+			creds := auth0.Credentials{
 				AccessToken: res.AccessToken,
 				ExpiresAt:   time.Now().Add(time.Duration(res.ExpiresIn) * time.Second),
 				Scopes:      auth.RequiredScopes(),
 			}
-			err = a.AddSystem(&s)
-			if err != nil {
-				return fmt.Errorf("could not add system to config: %w", err)
+			if err := a.WriteCredentials(creds); err != nil {
+				return fmt.Errorf("failed to write credentials: %w", err)
 			}
 			return err
 		},
