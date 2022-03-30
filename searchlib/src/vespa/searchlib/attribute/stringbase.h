@@ -7,6 +7,7 @@
 #include "changevector.h"
 #include "i_enum_store.h"
 #include "loadedenumvalue.h"
+#include "search_context.h"
 #include <vespa/vespalib/regex/regex.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
@@ -120,7 +121,7 @@ private:
     long onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
 
 protected:
-    class StringSearchContext : public SearchContext {
+    class StringSearchContext : public attribute::SearchContext {
     public:
         StringSearchContext(QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched);
         ~StringSearchContext() override;

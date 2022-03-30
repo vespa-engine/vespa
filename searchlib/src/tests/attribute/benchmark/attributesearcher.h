@@ -5,6 +5,7 @@
 #include <vespa/searchlib/util/runnable.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchlib/attribute/search_context.h>
 #include <vespa/searchlib/queryeval/hitcollector.h>
 #include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -130,7 +131,7 @@ AttributeFindSearcher<T>::doRun()
         this->buildTermQuery(_query, _attrPtr->getName(), ss.str().data());
 
         AttributeGuard guard(_attrPtr);
-        std::unique_ptr<AttributeVector::SearchContext> searchContext =
+        std::unique_ptr<attribute::SearchContext> searchContext =
             _attrPtr->getSearch(vespalib::stringref(&_query[0], _query.size()),
                                 attribute::SearchContextParams());
 
@@ -208,7 +209,7 @@ AttributeRangeSearcher::doRun()
         buildTermQuery(_query, _attrPtr->getName(), ss.str().data());
 
         AttributeGuard guard(_attrPtr);
-        std::unique_ptr<AttributeVector::SearchContext> searchContext =
+        std::unique_ptr<attribute::SearchContext> searchContext =
             _attrPtr->getSearch(vespalib::stringref(&_query[0], _query.size()),
                                 attribute::SearchContextParams());
 
@@ -247,7 +248,7 @@ AttributePrefixSearcher::doRun()
         buildTermQuery(_query, _attrPtr->getName(), _values[i % _values.size()].c_str(), true);
 
         AttributeGuard guard(_attrPtr);
-        std::unique_ptr<AttributeVector::SearchContext> searchContext =
+        std::unique_ptr<attribute::SearchContext> searchContext =
             _attrPtr->getSearch(vespalib::stringref(&_query[0], _query.size()),
                                 attribute::SearchContextParams());
 

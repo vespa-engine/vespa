@@ -202,7 +202,7 @@ public:
     /**
      * Implements search::AttributeVector
      */
-    SearchContext::UP
+    std::unique_ptr<search::attribute::SearchContext>
     getSearch(std::unique_ptr<search::QueryTermSimple> qTerm,
               const search::attribute::SearchContextParams &params) const override;
 

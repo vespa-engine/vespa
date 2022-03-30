@@ -47,8 +47,8 @@ isUnsignedSmallIntAttribute(const AttributeVector &a)
 using AttributePtr = AttributeVector::SP;
 using ResultSetPtr = std::unique_ptr<ResultSet>;
 using SearchBasePtr = queryeval::SearchIterator::UP;
-using SearchContext = AttributeVector::SearchContext;
-using SearchContextPtr = std::unique_ptr<AttributeVector::SearchContext>;
+using search::attribute::SearchContext;
+using SearchContextPtr = std::unique_ptr<SearchContext>;
 using largeint_t = AttributeVector::largeint_t;
 
 using attribute::BasicType;
@@ -1910,7 +1910,7 @@ public:
         }
         _attr.commit();
     }
-    search::AttributeVector::SearchContext::UP create_search_context(const std::string& term) const {
+    std::unique_ptr<SearchContext> create_search_context(const std::string& term) const {
         return _attr.getSearch(std::make_unique<search::QueryTermSimple>(term, search::TermType::WORD),
                                SearchContextParams().useBitVector(true));
     }

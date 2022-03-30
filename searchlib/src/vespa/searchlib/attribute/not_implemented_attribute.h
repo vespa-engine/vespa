@@ -35,7 +35,7 @@ struct NotImplementedAttribute : AttributeVector {
     bool addDoc(DocId &) override;
     void onAddDocs(DocId lidLimit) override;
 
-    SearchContext::UP getSearch(QueryTermSimpleUP, const attribute::SearchContextParams &) const override;
+    std::unique_ptr<attribute::SearchContext> getSearch(QueryTermSimpleUP, const attribute::SearchContextParams &) const override;
 };
 
 }  // namespace search

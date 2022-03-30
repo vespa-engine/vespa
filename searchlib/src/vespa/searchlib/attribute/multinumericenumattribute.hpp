@@ -115,7 +115,7 @@ MultiValueNumericEnumAttribute<B, M>::onLoad(vespalib::Executor *)
 }
 
 template <typename B, typename M>
-AttributeVector::SearchContext::UP
+std::unique_ptr<attribute::SearchContext>
 MultiValueNumericEnumAttribute<B, M>::getSearch(QueryTermSimple::UP qTerm,
                                                 const attribute::SearchContextParams & params) const
 {

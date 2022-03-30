@@ -38,7 +38,6 @@ protected:
     using DocId = StringAttribute::DocId;
     using EnumHandle = StringAttribute::EnumHandle;
     using LoadedVector = StringAttribute::LoadedVector;
-    using SearchContext = StringAttribute::SearchContext;
     using ValueModifier = StringAttribute::ValueModifier;
     using WeightedConstChar = StringAttribute::WeightedConstChar;
     using WeightedEnum = StringAttribute::WeightedEnum;
@@ -128,7 +127,7 @@ public:
      */
     class StringSetImplSearchContext : public StringImplSearchContext {
     public:
-        StringSetImplSearchContext(SearchContext::QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched) :
+        StringSetImplSearchContext(attribute::SearchContext::QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched) :
             StringImplSearchContext(std::move(qTerm), toBeSearched)
         { }
     protected:
@@ -140,7 +139,7 @@ public:
      */
     class StringArrayImplSearchContext : public StringImplSearchContext {
     public:
-        StringArrayImplSearchContext(SearchContext::QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched) :
+        StringArrayImplSearchContext(attribute::SearchContext::QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched) :
             StringImplSearchContext(std::move(qTerm), toBeSearched)
         { }
     protected:
@@ -154,10 +153,10 @@ public:
         using BT::queryTerm;
         using AttrType = MultiValueStringAttributeT<B, M>;
     public:
-        StringTemplSearchContext(SearchContext::QueryTermSimpleUP qTerm, const AttrType & toBeSearched);
+        StringTemplSearchContext(attribute::SearchContext::QueryTermSimpleUP qTerm, const AttrType & toBeSearched);
     };
 
-    SearchContext::UP
+    std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
 };
 

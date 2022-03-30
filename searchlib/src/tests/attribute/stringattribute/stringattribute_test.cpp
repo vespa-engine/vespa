@@ -17,6 +17,7 @@ LOG_SETUP("stringattribute_test");
 
 using search::attribute::CollectionType;
 using search::attribute::IAttributeVector;
+using search::attribute::SearchContext;
 using vespalib::datastore::EntryRef;
 using namespace search;
 
@@ -385,7 +386,7 @@ testSingleValue(Attribute & svsa, Config &cfg)
 
 TEST("testSingleValue")
 {
-    EXPECT_EQUAL(24u, sizeof(AttributeVector::SearchContext));
+    EXPECT_EQUAL(24u, sizeof(SearchContext));
     EXPECT_EQUAL(56u, sizeof(StringSearchHelper));
     EXPECT_EQUAL(88u, sizeof(SingleValueStringAttribute::StringSingleImplSearchContext));
     {

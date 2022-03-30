@@ -151,7 +151,7 @@ SingleValueNumericAttribute<B>::onLoad(vespalib::Executor *)
 }
 
 template <typename B>
-AttributeVector::SearchContext::UP
+std::unique_ptr<attribute::SearchContext>
 SingleValueNumericAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
                                           const attribute::SearchContextParams & params) const
 {
@@ -215,7 +215,7 @@ template <typename M>
 SingleValueNumericAttribute<B>::SingleSearchContext<M>::SingleSearchContext(QueryTermSimple::UP qTerm,
                                                                             const NumericAttribute & toBeSearched) :
     M(*qTerm, true),
-    AttributeVector::SearchContext(toBeSearched),
+    attribute::SearchContext(toBeSearched),
     _data(&static_cast<const SingleValueNumericAttribute<B> &>(toBeSearched)._data.acquire_elem_ref(0))
 { }
 

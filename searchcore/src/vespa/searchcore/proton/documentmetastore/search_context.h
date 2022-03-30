@@ -4,6 +4,7 @@
 
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/search_context.h>
 #include "documentmetastore.h"
 
 namespace proton::documentmetastore {
@@ -11,7 +12,7 @@ namespace proton::documentmetastore {
 /**
  * Search context used to search the document meta store for all valid documents.
  */
-class SearchContext : public search::AttributeVector::SearchContext
+class SearchContext : public search::attribute::SearchContext
 {
 private:
     using DocId = search::AttributeVector::DocId;

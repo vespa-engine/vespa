@@ -41,6 +41,7 @@ using search::GrowStrategy;
 using search::LidUsageStats;
 using search::QueryTermSimple;
 using search::TuneFileAttributes;
+using search::attribute::SearchContext;
 using search::attribute::SearchContextParams;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
@@ -197,7 +198,7 @@ assertSearchResult(const SimpleResult &exp, const DocumentMetaStore &dms,
                    const vespalib::string &term, const QueryTermSimple::Type &termType,
                    bool strict, uint32_t docIdLimit = 100)
 {
-    AttributeVector::SearchContext::UP sc =
+    std::unique_ptr<SearchContext> sc =
             dms.getSearch(std::make_unique<QueryTermSimple>(term, termType), SearchContextParams());
     TermFieldMatchData tfmd;
     SearchIterator::UP sb = sc->createIterator(&tfmd, strict);

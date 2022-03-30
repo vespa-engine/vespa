@@ -142,7 +142,7 @@ private:
     bool onLoad(vespalib::Executor *executor) override;
     const char * getFromEnum(EnumHandle e) const override { return &_buffer[e]; }
     const char * getStringFromEnum(EnumHandle e) const override { return &_buffer[e]; }
-    SearchContext::UP getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
+    std::unique_ptr<attribute::SearchContext> getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
 protected:
     StringDirectAttribute(const vespalib::string & baseFileName, const Config & c);
     ~StringDirectAttribute() override;

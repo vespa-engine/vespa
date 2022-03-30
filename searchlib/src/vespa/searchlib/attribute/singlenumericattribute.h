@@ -4,6 +4,7 @@
 
 #include "integerbase.h"
 #include "floatbase.h"
+#include "search_context.h"
 #include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/rcuvector.h>
 #include <limits>
@@ -37,7 +38,7 @@ private:
      * Specialization of SearchContext
      */
     template <typename M>
-    class SingleSearchContext final : public M, public AttributeVector::SearchContext
+    class SingleSearchContext final : public M, public attribute::SearchContext
     {
     private:
         const T * _data;
@@ -106,7 +107,7 @@ public:
 
     bool onLoadEnumerated(ReaderBase &attrReader);
 
-    AttributeVector::SearchContext::UP
+    std::unique_ptr<attribute::SearchContext>
     getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams & params) const override;
 
     void set(DocId doc, T v) {

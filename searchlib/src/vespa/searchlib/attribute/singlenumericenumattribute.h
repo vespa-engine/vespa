@@ -4,6 +4,7 @@
 
 #include "singleenumattribute.h"
 #include "numericbase.h"
+#include "search_context.h"
 #include <map>
 
 namespace search {
@@ -48,7 +49,7 @@ protected:
     /*
      * Specialization of SearchContext
      */
-    class SingleSearchContext : public NumericAttribute::Range<T>, public AttributeVector::SearchContext
+    class SingleSearchContext : public NumericAttribute::Range<T>, public attribute::SearchContext
     {
     protected:
         const SingleValueNumericEnumAttribute<B> & _toBeSearched;
@@ -96,7 +97,7 @@ public:
 
     bool onLoadEnumerated(ReaderBase &attrReader);
 
-    AttributeVector::SearchContext::UP
+    std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
 
     //-------------------------------------------------------------------------
