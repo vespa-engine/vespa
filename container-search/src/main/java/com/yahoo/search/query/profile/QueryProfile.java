@@ -477,22 +477,6 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
         }
     }
 
-    /** Returns this value, or its corresponding substitution string if it contains substitutions */
-    protected Object convertToSubstitutionString(Object value) {
-        if (value == null) return value;
-        if (value.getClass() != String.class) return value;
-        SubstituteString substituteString = SubstituteString.create((String)value);
-        if (substituteString == null) return value;
-        return substituteString;
-    }
-
-    /** Returns the field description of this field, or null if it is not typed */
-    protected FieldDescription getFieldDescription(CompoundName name, DimensionBinding binding) {
-        FieldDescriptionQueryProfileVisitor visitor = new FieldDescriptionQueryProfileVisitor(name.asList());
-        accept(visitor, binding, null);
-        return visitor.result();
-    }
-
     /**
      * Returns true if this value is definitely overridable in this (set and not unoverridable),
      * false if it is declared unoverridable (in instance or type), and null if this profile has no
@@ -620,6 +604,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
         if (parentType != null && type == null && ! isFrozen())
             type = parentType;
 
+        value = convertToSubstitutionString(value);
         value = checkAndConvertAssignment(localName, value, registry);
         localPut(localName, value, dimensionBinding);
         return this;
@@ -841,7 +826,6 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
             localName = type.unalias(localName);
 
         validateName(localName);
-        value = convertToSubstitutionString(value);
 
         if (dimensionBinding.isNull()) {
             Object combinedValue = value instanceof QueryProfile
@@ -855,6 +839,15 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
                 variants = new QueryProfileVariants(dimensionBinding.getDimensions(), this);
             variants.set(localName, dimensionBinding.getValues(), value);
         }
+    }
+
+    /** Returns this value, or its corresponding substitution string if it contains substitutions */
+    static Object convertToSubstitutionString(Object value) {
+        if (value == null) return value;
+        if (value.getClass() != String.class) return value;
+        SubstituteString substituteString = SubstituteString.create((String)value);
+        if (substituteString == null) return value;
+        return substituteString;
     }
 
     private static final Pattern namePattern = Pattern.compile("[$a-zA-Z_/][-$a-zA-Z0-9_/()]*");

@@ -455,7 +455,7 @@ public class QueryProfileVariants implements Freezable, Cloneable {
         public Object getValue() { return value; }
 
         /** Sets the value to use for this set of dimension values */
-        public void setValue(Object value) { this.value=value; }
+        public void setValue(Object value) { this.value = value; }
 
         public boolean matches(DimensionValues givenDimensionValues) {
             return dimensionValues.matches(givenDimensionValues);

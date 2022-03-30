@@ -47,7 +47,7 @@ public class QueryProfileXMLReader {
                 if ( ! file.getName().endsWith(".xml")) continue;
                 queryProfileReaders.add(new NamedReader(file.getName(), new FileReader(file)));
             }
-            File typeDir=new File(dir,"types");
+            File typeDir = new File(dir,"types");
             if (typeDir.isDirectory()) {
                 for (File file : sortFiles(typeDir)) {
                     if ( ! file.getName().endsWith(".xml")) continue;
@@ -106,7 +106,7 @@ public class QueryProfileXMLReader {
             }
 
             String idString = root.getAttribute("id");
-            if (idString == null || idString.equals(""))
+            if (idString.isEmpty())
                 throw new IllegalArgumentException("'" + reader.getName() + "' has no 'id' attribute in the root element");
             ComponentId id = new ComponentId(idString);
             validateFileNameToId(reader.getName(), id,"query profile type");
@@ -129,7 +129,7 @@ public class QueryProfileXMLReader {
             }
 
             String idString = root.getAttribute("id");
-            if (idString == null || idString.equals(""))
+            if (idString.isEmpty())
                 throw new IllegalArgumentException("Query profile '" + reader.getName() +
                                                    "' has no 'id' attribute in the root element");
             ComponentId id = new ComponentId(idString);
@@ -137,7 +137,7 @@ public class QueryProfileXMLReader {
 
             QueryProfile queryProfile = new QueryProfile(id, reader.getName(), registry);
             String typeId = root.getAttribute("type");
-            if (typeId != null && ! typeId.equals("")) {
+            if (! typeId.isEmpty()) {
                 QueryProfileType type = registry.getType(typeId);
                 if (type == null)
                     throw new IllegalArgumentException("Query profile '" + reader.getName() +
@@ -197,7 +197,7 @@ public class QueryProfileXMLReader {
 
     private void readInheritedTypes(Element element,QueryProfileType type, QueryProfileTypeRegistry registry) {
         String inheritedString = element.getAttribute("inherits");
-        if (inheritedString == null || inheritedString.equals("")) return;
+        if (inheritedString.equals("")) return;
         for (String inheritedId : inheritedString.split(" ")) {
             inheritedId = inheritedId.trim();
             if (inheritedId.equals("")) continue;
@@ -211,10 +211,10 @@ public class QueryProfileXMLReader {
     private void readFieldDefinitions(Element element, QueryProfileType type, QueryProfileTypeRegistry registry) {
         for (Element field : XML.getChildren(element,"field")) {
             String name = field.getAttribute("name");
-            if (name == null || name.equals("")) throw new IllegalArgumentException("A field has no 'name' attribute");
+            if (name.isEmpty()) throw new IllegalArgumentException("A field has no 'name' attribute");
             try {
                 String fieldTypeName = field.getAttribute("type");
-                if (fieldTypeName == null) throw new IllegalArgumentException("Field '" + field + "' has no 'type' attribute");
+                if (fieldTypeName.isEmpty()) throw new IllegalArgumentException("Field '" + field + "' has no 'type' attribute");
                 FieldType fieldType = FieldType.fromString(fieldTypeName, registry);
                 type.addField(new FieldDescription(name,
                                                    fieldType,
@@ -247,7 +247,7 @@ public class QueryProfileXMLReader {
     private void readInherited(Element element, QueryProfile profile, QueryProfileRegistry registry,
                                DimensionValues dimensionValues, String sourceDescription) {
         String inheritedString = element.getAttribute("inherits");
-        if (inheritedString == null || inheritedString.equals("")) return;
+        if (inheritedString.isEmpty()) return;
         for (String inheritedId : inheritedString.split(" ")) {
             inheritedId = inheritedId.trim();
             if (inheritedId.equals("")) continue;
@@ -265,7 +265,7 @@ public class QueryProfileXMLReader {
         List<KeyValue> properties = new ArrayList<>();
         for (Element field : XML.getChildren(element,"field")) {
             String name = field.getAttribute("name");
-            if (name == null || name.equals(""))
+            if (name.isEmpty())
                 throw new IllegalArgumentException("A field in " + sourceDescription + " has no 'name' attribute");
             try {
                 Boolean overridable = getBooleanAttribute("overridable", null, field);

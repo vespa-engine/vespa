@@ -1,4 +1,5 @@
 <!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <query-profile-type id="type1">
     <field name="ranking.features.query(tensor_1)" type="tensor&lt;float&gt;(x[1])" />
+    <field name="ranking.features.query(tensor_4)" type="tensor(key{})" />
 </query-profile-type>

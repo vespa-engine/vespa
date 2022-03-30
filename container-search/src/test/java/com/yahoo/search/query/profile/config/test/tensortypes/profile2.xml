@@ -1,3 +1,4 @@
 <!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <query-profile id="profile2" type="type2">
+    <!-- <field name="ranking.features.query(tensor_3)">embed(%{mytext})</field> embed(...) at config time is not supported -->
 </query-profile>

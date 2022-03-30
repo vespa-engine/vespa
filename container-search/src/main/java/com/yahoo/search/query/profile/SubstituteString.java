@@ -68,7 +68,7 @@ public class SubstituteString {
      * @param context the content which is used to resolve profile variants when looking up substitution values
      * @param substitution the properties in which values to be substituted are looked up
      */
-    public String substitute(Map<String, String> context, Properties substitution) {
+    public Object substitute(Map<String, String> context, Properties substitution) {
         StringBuilder b = new StringBuilder();
         for (Component component : components)
             b.append(component.getValue(context, substitution));
