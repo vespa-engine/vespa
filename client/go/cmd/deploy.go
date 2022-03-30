@@ -70,10 +70,10 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 			}
 			if opts.IsCloud() {
 				log.Printf("\nUse %s for deployment status, or follow this deployment at", color.CyanString("vespa status"))
-				log.Print(color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/dev/instance/%s/job/%s-%s/run/%d",
+				log.Print(color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/%s/instance/%s/job/%s-%s/run/%d",
 					opts.Target.Deployment().System.ConsoleURL,
-					opts.Target.Deployment().Application.Tenant, opts.Target.Deployment().Application.Application, opts.Target.Deployment().Application.Instance,
-					opts.Target.Deployment().Zone.Environment, opts.Target.Deployment().Zone.Region,
+					opts.Target.Deployment().Application.Tenant, opts.Target.Deployment().Application.Application, opts.Target.Deployment().Zone.Environment,
+					opts.Target.Deployment().Application.Instance, opts.Target.Deployment().Zone.Environment, opts.Target.Deployment().Zone.Region,
 					result.ID)))
 			}
 			return waitForQueryService(cli, result.ID)
