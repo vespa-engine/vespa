@@ -16,6 +16,8 @@ import com.yahoo.search.query.ranking.RankProperties;
 import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.search.result.ErrorMessage;
 
+import java.util.Objects;
+
 /**
  * The ranking (hit ordering) settings of a query
  *
@@ -69,7 +71,7 @@ public class Ranking implements Cloneable {
     }
     public static QueryProfileType getArgumentType() { return argumentType; }
 
-    private final Query parent;
+    private Query parent;
 
     /** The location of the query is used for distance ranking */
     private Location location = null;
@@ -91,7 +93,7 @@ public class Ranking implements Cloneable {
 
     private RankProperties rankProperties = new RankProperties();
 
-    private RankFeatures rankFeatures = new RankFeatures();
+    private RankFeatures rankFeatures;
 
     private MatchPhase matchPhase = new MatchPhase();
 
@@ -101,6 +103,7 @@ public class Ranking implements Cloneable {
 
     public Ranking(Query parent) {
         this.parent = parent;
+        this.rankFeatures = new RankFeatures(this);
     }
 
     /**
@@ -201,52 +204,6 @@ public class Ranking implements Cloneable {
     /** Returns the soft timeout settings of this. This is never null. */
     public SoftTimeout getSoftTimeout() { return softTimeout; }
 
-    @Override
-    public Object clone() {
-        try {
-            Ranking clone = (Ranking) super.clone();
-
-            if (sorting != null) clone.sorting = this.sorting.clone();
-
-            clone.rankProperties = this.rankProperties.clone();
-            clone.rankFeatures = this.rankFeatures.clone();
-            clone.matchPhase = this.matchPhase.clone();
-            clone.matching = this.matching.clone();
-            clone.softTimeout = this.softTimeout.clone();
-            return clone;
-        }
-        catch (CloneNotSupportedException e) {
-            throw new RuntimeException("Someone inserted a noncloneable superclass",e);
-        }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == this) return true;
-        if( ! (o instanceof Ranking)) return false;
-
-        Ranking other = (Ranking) o;
-
-        if ( ! QueryHelper.equals(rankProperties, other.rankProperties)) return false;
-        if ( ! QueryHelper.equals(rankFeatures, other.rankFeatures)) return false;
-        if ( ! QueryHelper.equals(freshness, other.freshness)) return false;
-        if ( ! QueryHelper.equals(this.sorting, other.sorting)) return false;
-        if ( ! QueryHelper.equals(this.location, other.location)) return false;
-        if ( ! QueryHelper.equals(this.profile, other.profile)) return false;
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 0;
-        hash += 11 * rankFeatures.hashCode();
-        hash += 13 * rankProperties.hashCode();
-        hash += 17 * matchPhase.hashCode();
-        hash += 19 * softTimeout.hashCode();
-        hash += 23 * matching.hashCode();
-        return Ranking.class.hashCode() + QueryHelper.combineHash(sorting,location,profile,hash);
-    }
-
     /** Returns the sorting spec of this query, or null if none is set */
     public Sorting getSorting() { return sorting; }
 
@@ -281,6 +238,60 @@ public class Ranking implements Cloneable {
         if (rankProperties.get("vespa.now") == null || rankProperties.get("vespa.now").isEmpty()) {
             rankProperties.put("vespa.now", "" + freshness.getRefTime());
         }
+    }
+
+    /** Assigns the query owning this */
+    private void setParent(Query parent) {
+        this.parent = Objects.requireNonNull(parent, "A ranking objects parent cannot be null");
+    }
+
+    /** Returns the query owning this, never null */
+    public Query getParent() { return parent; }
+
+    @Override
+    public Ranking clone() {
+        try {
+            Ranking clone = (Ranking) super.clone();
+
+            if (sorting != null) clone.sorting = this.sorting.clone();
+
+            clone.rankProperties = this.rankProperties.clone();
+            clone.rankFeatures = this.rankFeatures.cloneFor(clone);
+            clone.matchPhase = this.matchPhase.clone();
+            clone.matching = this.matching.clone();
+            clone.softTimeout = this.softTimeout.clone();
+            return clone;
+        }
+        catch (CloneNotSupportedException e) {
+            throw new RuntimeException("Someone inserted a noncloneable superclass",e);
+        }
+    }
+
+    public Ranking cloneFor(Query parent) {
+        Ranking ranking = this.clone();
+        ranking.setParent(parent);
+        return ranking;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) return true;
+        if( ! (o instanceof Ranking)) return false;
+
+        Ranking other = (Ranking) o;
+
+        if ( ! QueryHelper.equals(rankProperties, other.rankProperties)) return false;
+        if ( ! QueryHelper.equals(rankFeatures, other.rankFeatures)) return false;
+        if ( ! QueryHelper.equals(freshness, other.freshness)) return false;
+        if ( ! QueryHelper.equals(this.sorting, other.sorting)) return false;
+        if ( ! QueryHelper.equals(this.location, other.location)) return false;
+        if ( ! QueryHelper.equals(this.profile, other.profile)) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(rankFeatures, rankProperties, matchPhase, softTimeout, matching, sorting, location, profile);
     }
 
 }

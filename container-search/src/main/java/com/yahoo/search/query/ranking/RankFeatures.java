@@ -2,6 +2,10 @@
 package com.yahoo.search.query.ranking;
 
 import com.yahoo.fs4.MapEncoder;
+import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.Query;
+import com.yahoo.search.query.Ranking;
+import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.text.JSON;
 
@@ -20,13 +24,21 @@ import java.util.OptionalDouble;
  */
 public class RankFeatures implements Cloneable {
 
+    private final Ranking parent;
     private final Map<String, Object> features;
 
+    /** @deprecated pass a query */
+    @Deprecated // TODO: Remove on Vespa 8
     public RankFeatures() {
-        this(new LinkedHashMap<>());
+        this(new Ranking(new Query()));
     }
 
-    private RankFeatures(Map<String, Object> features) {
+    public RankFeatures(Ranking parent) {
+        this(parent, new LinkedHashMap<>());
+    }
+
+    private RankFeatures(Ranking parent, Map<String, Object> features) {
+        this.parent = parent;
         this.features = features;
     }
 
@@ -37,7 +49,12 @@ public class RankFeatures implements Cloneable {
 
     /** Sets a tensor rank feature */
     public void put(String name, Tensor value) {
+        verifyType(name, value);
         features.put(name, value);
+    }
+
+    private void verifyType(String name, Object value) {
+        parent.getParent().properties().requireSettable(new CompoundName(List.of("ranking", "features", name)), value, Map.of());
     }
 
     /**
@@ -148,7 +165,11 @@ public class RankFeatures implements Cloneable {
 
     @Override
     public RankFeatures clone() {
-        return new RankFeatures(new LinkedHashMap<>(features));
+        return new RankFeatures(parent, new LinkedHashMap<>(features));
+    }
+
+    public RankFeatures cloneFor(Ranking parent) {
+        return new RankFeatures(parent, new LinkedHashMap<>(features));
     }
 
     @Override

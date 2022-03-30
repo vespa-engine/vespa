@@ -31,14 +31,58 @@ import static org.junit.Assert.fail;
 public class TensorTestCase {
 
     @Test
-    public void testStringForm() {
-        assertEquals("tensor():{5.7}", Tensor.from("{5.7}").toString());
+    public void testFactory() {
         assertTrue(Tensor.from("tensor():{5.7}") instanceof IndexedTensor);
-        assertEquals("tensor(d1{},d2{}):{{d1:l1,d2:l1}:5.0,{d1:l1,d2:l2}:6.0}", Tensor.from("{ {d1:l1,d2:l1}: 5,   {d2:l2, d1:l1}:6.0} ").toString());
-        assertEquals("tensor(d1{},d2{}):{{d1:l1,d2:l1}:-5.3,{d1:l1,d2:l2}:0.0}", Tensor.from("{ {d1:l1,d2:l1}:-5.3, {d2:l2, d1:l1}:0}").toString());
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("tensor():{5.7}", Tensor.from("{5.7}").toString());
+        assertEquals("tensor(x[3]):[0.1, 0.2, 0.3]",
+                     Tensor.from("tensor(x[3]):[0.1, 0.2, 0.3]").toString());
+        assertEquals("tensor(d1{},d2{}):{{d1:l1,d2:l1}:5.0, {d1:l1,d2:l2}:6.0}",
+                     Tensor.from("{ {d1:l1,d2:l1}: 5,   {d2:l2, d1:l1}:6.0} ").toString());
+        assertEquals("tensor(d1{},d2{}):{{d1:l1,d2:l1}:-5.3, {d1:l1,d2:l2}:0.0}",
+                     Tensor.from("{ {d1:l1,d2:l1}:-5.3, {d2:l2, d1:l1}:0}").toString());
+        assertEquals("tensor(m{},x[3]):{k1:[0.0, 1.0, 2.0], k2:[0.0, 1.0, 2.0], k3:[0.0, 1.0, 2.0], k4:[0.0, 1.0, 2.0]}",
+                     Tensor.from("tensor(m{},x[3]):{k1:[0,1,2], k2:[0,1,2], k3:[0,1,2], k4:[0,1,2]}").toString());
+        assertEquals("tensor(m{},n{},x[3]):" +
+                     "{{m:k1,n:k1,x:0}:0.0, {m:k1,n:k1,x:1}:1.0, {m:k1,n:k1,x:2}:2.0," +
+                     " {m:k2,n:k1,x:0}:0.0, {m:k2,n:k1,x:1}:1.0, {m:k2,n:k1,x:2}:2.0," +
+                     " {m:k3,n:k1,x:0}:0.0, {m:k3,n:k1,x:1}:1.0, {m:k3,n:k1,x:2}:2.0}",
+                     Tensor.from("tensor(m{},n{},x[3]):" +
+                                 "{{m:k1,n:k1,x:0}:0, {m:k1,n:k1,x:1}:1, {m:k1,n:k1,x:2}:2, " +
+                                 " {m:k2,n:k1,x:0}:0, {m:k2,n:k1,x:1}:1, {m:k2,n:k1,x:2}:2, " +
+                                 " {m:k3,n:k1,x:0}:0, {m:k3,n:k1,x:1}:1, {m:k3,n:k1,x:2}:2}").toString());
+        assertEquals("tensor(m{},x[2],y[2]):" +
+                     "{k1:[[0.0, 1.0], [2.0, 3.0]], k2:[[0.0, 1.0], [2.0, 3.0]], k3:[[0.0, 1.0], [2.0, 3.0]]}",
+                     Tensor.from("tensor(m{},x[2],y[2]):{k1:[[0,1],[2,3]], k2:[[0,1],[2,3]], k3:[[0,1],[2,3]]}").toString());
         assertEquals("Labels are quoted when necessary",
-                     "tensor(d1{}):{\"'''\":6.0,'[[\":\"]]':5.0}",
+                     "tensor(d1{}):{\"'''\":6.0, '[[\":\"]]':5.0}",
                      Tensor.from("{ {d1:'[[\":\"]]'}: 5, {d1:\"'''\"}:6.0 }").toString());
+    }
+
+    @Test
+    public void testToShortString() {
+        assertEquals("tensor(x[10]):[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]",
+                     Tensor.from("tensor(x[10]):[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]").toShortString());
+        assertEquals("tensor(x[14]):[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, ...]",
+                     Tensor.from("tensor(x[14]):[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]").toShortString());
+        assertEquals("tensor(d1{},d2{}):{{d1:l1,d2:l1}:6.0, {d1:l1,d2:l2}:6.0, {d1:l1,d2:l3}:6.0, ...}",
+                     Tensor.from("{{d1:l1,d2:l1}:6, {d2:l2,d1:l1}:6, {d2:l3,d1:l1}:6, {d2:l4,d1:l1}:6, {d2:l5,d1:l1}:6," +
+                                 " {d2:l6,d1:l1}:6, {d2:l7,d1:l1}:6, {d2:l8,d1:l1}:6, {d2:l9,d1:l1}:6, {d2:l2,d1:l2}:6," +
+                                 " {d2:l2,d1:l3}:6, {d2:l2,d1:l4}:6}").toShortString());
+        assertEquals("tensor(m{},x[3]):{k1:[0.0, 1.0, 2.0], k2:[0.0, 1.0, ...}",
+                     Tensor.from("tensor(m{},x[3]):{k1:[0,1,2], k2:[0,1,2], k3:[0,1,2], k4:[0,1,2]}").toShortString());
+        assertEquals("tensor(m{},x[3]):{k1:[0.0, 1.0, 2.0], k2:[0.0, 1.0, ...}",
+                     Tensor.from("tensor(m{},x[3]):{k1:[0,1,2], k2:[0,1,2], k3:[0,1,2], k4:[0,1,2]}").toShortString());
+        assertEquals("tensor(m{},n{},x[3]):{{m:k1,n:k1,x:0}:0.0, {m:k1,n:k1,x:1}:1.0, {m:k1,n:k1,x:2}:2.0, ...}",
+                     Tensor.from("tensor(m{},n{},x[3]):" +
+                                 "{{m:k1,n:k1,x:0}:0, {m:k1,n:k1,x:1}:1, {m:k1,n:k1,x:2}:2, " +
+                                 " {m:k2,n:k1,x:0}:0, {m:k2,n:k1,x:1}:1, {m:k2,n:k1,x:2}:2, " +
+                                 " {m:k3,n:k1,x:0}:0, {m:k3,n:k1,x:1}:1, {m:k3,n:k1,x:2}:2}").toShortString());
+        assertEquals("tensor(m{},x[2],y[2]):{k1:[[0.0, 1.0], [2.0, 3.0]], k2:[[0.0, ...}",
+                     Tensor.from("tensor(m{},x[2],y[2]):{k1:[[0,1],[2,3]], k2:[[0,1],[2,3]], k3:[[0,1],[2,3]]}").toShortString());
     }
 
     @Test
@@ -58,13 +102,6 @@ public class TensorTestCase {
         assertEquals(Tensor.from("tensor<int8>(x[1]):[5]").getClass(), IndexedFloatTensor.class);
         assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor<int8>(x[1])")).cell(5.0, 0).build().getClass(),
                 IndexedFloatTensor.class);
-    }
-
-    private void assertCellTypeResult(TensorType.Value valueType, String type1, String type2) {
-        Tensor t1 = Tensor.from("tensor<" + type1 + ">(x[1]):[3] }");
-        Tensor t2 = Tensor.from("tensor<" + type2 + ">(x[1]):[5] }");
-        assertEquals(valueType, t1.multiply(t2).type().valueType());
-        assertEquals(valueType, t2.multiply(t1).type().valueType());
     }
 
     @Test
@@ -317,6 +354,13 @@ public class TensorTestCase {
                        "tensor(x[2],y[2]):[[1,2],[3,4]]");
         assertSmallest("{x:0,y:1}:2.0",
                        "tensor(x[2],y[2]):[[4,2],[3,4]]");
+    }
+
+    private void assertCellTypeResult(TensorType.Value valueType, String type1, String type2) {
+        Tensor t1 = Tensor.from("tensor<" + type1 + ">(x[1]):[3] }");
+        Tensor t2 = Tensor.from("tensor<" + type2 + ">(x[1]):[5] }");
+        assertEquals(valueType, t1.multiply(t2).type().valueType());
+        assertEquals(valueType, t2.multiply(t1).type().valueType());
     }
 
     private void assertLargest(String expectedCells, String tensorString) {

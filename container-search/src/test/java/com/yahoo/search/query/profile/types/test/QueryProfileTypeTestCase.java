@@ -423,6 +423,50 @@ public class QueryProfileTypeTestCase {
         assertEquals(Tensor.from(tensorString), query.getRanking().getFeatures().getTensor("query(myTensor1)").get());
     }
 
+    @Test
+    public void testTensorRankFeatureSetProgrammatically() {
+        QueryProfile profile = new QueryProfile("test");
+        profile.setType(testtype);
+        registry.register(profile);
+
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
+        Query query = new Query(HttpRequest.createTestRequest("?", com.yahoo.jdisc.http.HttpRequest.Method.GET),
+                                cRegistry.getComponent("test"));
+        query.properties().set("ranking.features.query(myTensor1)", Tensor.from(tensorString));
+        assertEquals(Tensor.from(tensorString), query.getRanking().getFeatures().getTensor("query(myTensor1)").get());
+    }
+
+    @Test
+    public void testTensorRankFeatureSetProgrammaticallyWithWrongType() {
+        QueryProfile profile = new QueryProfile("test");
+        profile.setType(testtype);
+        registry.register(profile);
+
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        String tensorString = "tensor(x[3]):[0.1, 0.2, 0.3]";
+        Query query = new Query(HttpRequest.createTestRequest("?", com.yahoo.jdisc.http.HttpRequest.Method.GET),
+                                cRegistry.getComponent("test"));
+        try {
+            query.getRanking().getFeatures().put("query(myTensor1)",Tensor.from(tensorString));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Could not set 'ranking.features.query(myTensor1)' to 'tensor(x[3]):[0.1, 0.2, 0.3]': " +
+                         "Require a tensor of type tensor(a{},b{})",
+                         Exceptions.toMessageString(e));
+        }
+        try {
+            query.properties().set("ranking.features.query(myTensor1)", Tensor.from(tensorString));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Could not set 'ranking.features.query(myTensor1)' to 'tensor(x[3]):[0.1, 0.2, 0.3]': " +
+                         "Require a tensor of type tensor(a{},b{})",
+                         Exceptions.toMessageString(e));
+        }
+    }
+
     // Expected to work exactly as testTensorRankFeatureInRequest
     @Test
     public void testTensorRankFeatureInRequestWithInheritedQueryProfileType() {

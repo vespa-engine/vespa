@@ -50,7 +50,7 @@ public class MappedTensor implements Tensor {
     public Tensor withType(TensorType other) {
         if (!this.type.isRenamableTo(type)) {
             throw new IllegalArgumentException("MappedTensor.withType: types are not compatible. Current type: '" +
-                    this.type.toString() + "', requested type: '" + type.toString() + "'");
+                    this.type + "', requested type: '" + type.toString() + "'");
         }
         return new MappedTensor(other, cells);
     }
@@ -72,7 +72,12 @@ public class MappedTensor implements Tensor {
     public int hashCode() { return cells.hashCode(); }
 
     @Override
-    public String toString() { return Tensor.toStandardString(this); }
+    public String toString() { return Tensor.toStandardString(this, Long.MAX_VALUE); }
+
+    @Override
+    public String toShortString() {
+        return Tensor.toStandardString(this, Math.max(2, 10 / (type().dimensions().stream().filter(d -> d.isMapped()).count() + 1)));
+    }
 
     @Override
     public boolean equals(Object other) {

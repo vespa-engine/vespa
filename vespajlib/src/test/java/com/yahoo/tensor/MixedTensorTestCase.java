@@ -69,7 +69,7 @@ public class MixedTensorTestCase {
                 cell().label("x", "1").value(2).
                 build();
         assertEquals(Sets.newHashSet("x"), tensor.type().dimensionNames());
-        assertEquals("tensor(x{}):{0:1.0,1:2.0}",
+        assertEquals("tensor(x{}):{0:1.0, 1:2.0}",
                      tensor.toString());
     }
 
@@ -84,7 +84,7 @@ public class MixedTensorTestCase {
                 cell().label("x", "1").label("y", "2").value(6).
                 build();
         assertEquals(Sets.newHashSet("x", "y"), tensor.type().dimensionNames());
-        assertEquals("tensor(x{},y{}):{{x:0,y:0}:1.0,{x:0,y:1}:2.0,{x:1,y:0}:4.0,{x:1,y:1}:5.0,{x:1,y:2}:6.0}",
+        assertEquals("tensor(x{},y{}):{{x:0,y:0}:1.0, {x:0,y:1}:2.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0, {x:1,y:2}:6.0}",
                 tensor.toString());
     }
 
@@ -100,7 +100,7 @@ public class MixedTensorTestCase {
                 cell().label("x", "2").label("y", 2).value(6).
                 build();
         assertEquals(Sets.newHashSet("x", "y"), tensor.type().dimensionNames());
-        assertEquals("tensor(x{},y[3]):{1:[1.0, 2.0, 0.0],2:[4.0, 5.0, 6.0]}",
+        assertEquals("tensor(x{},y[3]):{1:[1.0, 2.0, 0.0], 2:[4.0, 5.0, 6.0]}",
                 tensor.toString());
     }
 
@@ -122,7 +122,9 @@ public class MixedTensorTestCase {
                 cell().label("x", "x2").label("y", 2).label("z","z2").value(16).
                 build();
         assertEquals(Sets.newHashSet("x", "y", "z"), tensor.type().dimensionNames());
-        assertEquals("tensor(x{},y[3],z{}):{{x:x1,y:0,z:z1}:1.0,{x:x1,y:0,z:z2}:2.0,{x:x1,y:1,z:z1}:3.0,{x:x1,y:1,z:z2}:4.0,{x:x1,y:2,z:z1}:5.0,{x:x1,y:2,z:z2}:6.0,{x:x2,y:0,z:z1}:11.0,{x:x2,y:0,z:z2}:12.0,{x:x2,y:1,z:z1}:13.0,{x:x2,y:1,z:z2}:14.0,{x:x2,y:2,z:z1}:15.0,{x:x2,y:2,z:z2}:16.0}",
+        assertEquals("tensor(x{},y[3],z{}):{{x:x1,y:0,z:z1}:1.0, {x:x1,y:0,z:z2}:2.0, {x:x1,y:1,z:z1}:3.0, " +
+                     "{x:x1,y:1,z:z2}:4.0, {x:x1,y:2,z:z1}:5.0, {x:x1,y:2,z:z2}:6.0, {x:x2,y:0,z:z1}:11.0, " +
+                     "{x:x2,y:0,z:z2}:12.0, {x:x2,y:1,z:z1}:13.0, {x:x2,y:1,z:z2}:14.0, {x:x2,y:2,z:z1}:15.0, {x:x2,y:2,z:z2}:16.0}",
                 tensor.toString());
     }
 
@@ -148,7 +150,11 @@ public class MixedTensorTestCase {
                 cell().label("i", "b").label("k","d").label("j",1).label("l",1).value(16).
                 build();
         assertEquals(Sets.newHashSet("i", "j", "k", "l"), tensor.type().dimensionNames());
-        assertEquals("tensor(i{},j[2],k{},l[2]):{{i:a,j:0,k:c,l:0}:1.0,{i:a,j:0,k:c,l:1}:2.0,{i:a,j:0,k:d,l:0}:5.0,{i:a,j:0,k:d,l:1}:6.0,{i:a,j:1,k:c,l:0}:3.0,{i:a,j:1,k:c,l:1}:4.0,{i:a,j:1,k:d,l:0}:7.0,{i:a,j:1,k:d,l:1}:8.0,{i:b,j:0,k:c,l:0}:9.0,{i:b,j:0,k:c,l:1}:10.0,{i:b,j:0,k:d,l:0}:13.0,{i:b,j:0,k:d,l:1}:14.0,{i:b,j:1,k:c,l:0}:11.0,{i:b,j:1,k:c,l:1}:12.0,{i:b,j:1,k:d,l:0}:15.0,{i:b,j:1,k:d,l:1}:16.0}",
+        assertEquals("tensor(i{},j[2],k{},l[2]):{{i:a,j:0,k:c,l:0}:1.0, {i:a,j:0,k:c,l:1}:2.0, " +
+                     "{i:a,j:0,k:d,l:0}:5.0, {i:a,j:0,k:d,l:1}:6.0, {i:a,j:1,k:c,l:0}:3.0, {i:a,j:1,k:c,l:1}:4.0, " +
+                     "{i:a,j:1,k:d,l:0}:7.0, {i:a,j:1,k:d,l:1}:8.0, {i:b,j:0,k:c,l:0}:9.0, {i:b,j:0,k:c,l:1}:10.0, " +
+                     "{i:b,j:0,k:d,l:0}:13.0, {i:b,j:0,k:d,l:1}:14.0, {i:b,j:1,k:c,l:0}:11.0, {i:b,j:1,k:c,l:1}:12.0, "+
+                     "{i:b,j:1,k:d,l:0}:15.0, {i:b,j:1,k:d,l:1}:16.0}",
                 tensor.toString());
     }
 

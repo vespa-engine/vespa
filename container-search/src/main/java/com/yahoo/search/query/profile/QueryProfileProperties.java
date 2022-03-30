@@ -14,6 +14,7 @@ import com.yahoo.search.query.profile.types.ConversionContext;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
+import com.yahoo.tensor.Tensor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -91,6 +92,15 @@ public class QueryProfileProperties extends Properties {
      */
     @Override
     public void set(CompoundName name, Object value, Map<String, String> context) {
+        setOrCheckSettable(name, value, context, true);
+    }
+
+    @Override
+    public void requireSettable(CompoundName name, Object value, Map<String, String> context) {
+        setOrCheckSettable(name, value, context, false);
+    }
+
+    private void setOrCheckSettable(CompoundName name, Object value, Map<String, String> context, boolean set) {
         try {
             name = unalias(name, context);
 
@@ -110,27 +120,34 @@ public class QueryProfileProperties extends Properties {
             if (value instanceof String && value.toString().startsWith("ref:")) {
                 if (profile.getRegistry() == null)
                     throw new IllegalInputException("Runtime query profile references does not work when the " +
-                                                       "QueryProfileProperties are constructed without a registry");
+                                                    "QueryProfileProperties are constructed without a registry");
                 String queryProfileId = value.toString().substring(4);
                 value = profile.getRegistry().findQueryProfile(queryProfileId);
                 if (value == null)
                     throw new IllegalInputException("Query profile '" + queryProfileId + "' is not found");
             }
 
-            if (value instanceof CompiledQueryProfile) { // this will be due to one of the two clauses above
-                if (references == null)
-                    references = new ArrayList<>();
-                references.add(0, new Pair<>(name, (CompiledQueryProfile)value)); // references set later has precedence - put first
-            }
-            else {
-                if (values == null)
-                    values = new HashMap<>();
-                values.put(name, value);
+            if (set) {
+                if (value instanceof CompiledQueryProfile) { // this will be due to one of the two clauses above
+                    if (references == null)
+                        references = new ArrayList<>();
+                    // references set later has precedence - put first
+                    references.add(0, new Pair<>(name, (CompiledQueryProfile) value));
+                } else {
+                    if (values == null)
+                        values = new HashMap<>();
+                    values.put(name, value);
+                }
             }
         }
         catch (IllegalArgumentException e) {
-            throw new IllegalInputException("Could not set '" + name + "' to '" + value + "'", e);
+            throw new IllegalInputException("Could not set '" + name + "' to '" + toShortString(value) + "'", e);
         }
+    }
+
+    private String toShortString(Object value) {
+        if ( ! (value instanceof Tensor)) return value.toString();
+        return ((Tensor)value).toShortString();
     }
 
     private Object convertByType(CompoundName name, Object value, Map<String, String> context) {

@@ -902,6 +902,7 @@
       "public java.util.Map cells()",
       "public com.yahoo.tensor.Tensor remove(java.util.Set)",
       "public java.lang.String toString()",
+      "public java.lang.String toShortString()",
       "public boolean equals(java.lang.Object)",
       "public bridge synthetic com.yahoo.tensor.Tensor withType(com.yahoo.tensor.TensorType)"
     ],
@@ -952,6 +953,7 @@
       "public com.yahoo.tensor.Tensor remove(java.util.Set)",
       "public int hashCode()",
       "public java.lang.String toString()",
+      "public java.lang.String toShortString()",
       "public boolean equals(java.lang.Object)"
     ],
     "fields": []
@@ -1043,6 +1045,7 @@
       "public com.yahoo.tensor.Tensor remove(java.util.Set)",
       "public int hashCode()",
       "public java.lang.String toString()",
+      "public java.lang.String toShortString()",
       "public boolean equals(java.lang.Object)",
       "public long denseSubspaceSize()",
       "public static com.yahoo.tensor.TensorType createPartialType(com.yahoo.tensor.TensorType$Value, java.util.List)"
@@ -1229,8 +1232,9 @@
       "public java.util.List largest()",
       "public java.util.List smallest()",
       "public abstract java.lang.String toString()",
-      "public static java.lang.String toStandardString(com.yahoo.tensor.Tensor)",
-      "public static java.lang.String contentToString(com.yahoo.tensor.Tensor)",
+      "public abstract java.lang.String toShortString()",
+      "public static java.lang.String toStandardString(com.yahoo.tensor.Tensor, long)",
+      "public static java.lang.String contentToString(com.yahoo.tensor.Tensor, long)",
       "public abstract boolean equals(java.lang.Object)",
       "public abstract int hashCode()",
       "public static boolean equals(com.yahoo.tensor.Tensor, com.yahoo.tensor.Tensor)",

@@ -2,6 +2,8 @@
 package com.yahoo.search.query.test;
 
 import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.search.Query;
+import com.yahoo.search.query.Ranking;
 import com.yahoo.search.query.ranking.RankFeatures;
 import com.yahoo.search.query.ranking.RankProperties;
 import com.yahoo.tensor.Tensor;
@@ -36,11 +38,11 @@ public class RankFeaturesTestCase {
     @Test
     @SuppressWarnings("deprecation")
     public void requireThatRankFeaturesUsingDoubleAndDoubleToStringEncodeTheSameWay() {
-        RankFeatures withDouble = new RankFeatures();
+        RankFeatures withDouble = new RankFeatures(new Ranking(new Query()));
         withDouble.put("query(myDouble)", 3.8);
         assertEquals(3.8, withDouble.getDouble("query(myDouble)").getAsDouble(), 0.000001);
 
-        RankFeatures withString = new RankFeatures();
+        RankFeatures withString = new RankFeatures(new Ranking(new Query()));
         withString.put("query(myDouble)", String.valueOf(3.8));
 
         RankProperties withDoubleP = new RankProperties();
@@ -99,7 +101,7 @@ public class RankFeaturesTestCase {
     }
 
     private static RankProperties createRankPropertiesWithTensors(List<Entry> entries) {
-        RankFeatures features = new RankFeatures();
+        RankFeatures features = new RankFeatures(new Ranking(new Query()));
         for (Entry entry : entries) {
             features.put(entry.key, entry.tensor);
         }
