@@ -9,6 +9,10 @@ namespace search { class QueryTermSimple; }
 
 namespace search::attribute {
 
+/*
+ * Class used to determine if an attribute vector value is a match for
+ * the query range.
+ */
 template<typename T>
 class NumericRangeMatcher
 {
