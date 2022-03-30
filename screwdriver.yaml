@@ -183,8 +183,6 @@ jobs:
       - *save-cache
 
   publish-release:
-    image: docker.io/vespaengine/vespa-build-centos-stream8:latest
-
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16

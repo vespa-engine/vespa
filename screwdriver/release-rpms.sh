@@ -12,7 +12,7 @@ fi
 readonly VESPA_RELEASE="$1"
 readonly VESPA_REF="$2"
 
-VESPA_RPM=$(dnf repoquery --repofrompath=vespa,https://copr-be.cloud.fedoraproject.org/results/@vespa/vespa/epel-7-x86_64 --repoid=vespa -q vespa | tail -1 | cut -d: -f2 | cut -d- -f1)
+VESPA_RPM=$(repoquery --repofrompath=vespa,https://copr-be.cloud.fedoraproject.org/results/@vespa/vespa/epel-7-x86_64 --repoid=vespa -q vespa | cut -d: -f2 | cut -d- -f1)
 echo "Latest RPM on Copr: $VESPA_RPM"
 
 if [ "$VESPA_RELEASE" == "$VESPA_RPM" ]; then
@@ -32,7 +32,7 @@ cd vespa
 dist/release-vespa-rpm.sh $VESPA_RELEASE $VESPA_REF
 
 while [ "$VESPA_RELEASE" != "$VESPA_RPM" ]; do
-  VESPA_RPM=$(dnf repoquery --repofrompath=vespa,https://copr-be.cloud.fedoraproject.org/results/@vespa/vespa/epel-7-x86_64 --repoid=vespa -q vespa | tail -1 | cut -d: -f2 | cut -d- -f1)
+  VESPA_RPM=$(repoquery --repofrompath=vespa,https://copr-be.cloud.fedoraproject.org/results/@vespa/vespa/epel-7-x86_64 --repoid=vespa -q vespa | cut -d: -f2 | cut -d- -f1)
   echo "RPM: $VESPA_RPM"
   sleep 150
 done
