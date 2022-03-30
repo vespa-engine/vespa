@@ -4,7 +4,6 @@ package ai.vespa.validation;
 import java.util.regex.Pattern;
 
 import static ai.vespa.validation.Validation.requireMatch;
-import static ai.vespa.validation.Validation.validate;
 
 /**
  * A valid hostname.
@@ -21,11 +20,11 @@ public class Hostname extends StringWrapper<Hostname> {
     }
 
     public static Hostname of(String hostname) {
-        return new Hostname(validate(hostname, "hostname", requireMatch(hostnamePattern)));
-    }
+        return new Hostname(requireMatch(hostname, "hostname", hostnamePattern));
+   }
 
     public static String requireLabel(String label) {
-        return validate(label, "hostname label", requireMatch(hostnameLabel));
+        return requireMatch(label, "hostname label", hostnameLabel);
     }
 
 }

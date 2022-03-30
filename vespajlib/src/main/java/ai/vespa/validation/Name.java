@@ -4,7 +4,6 @@ package ai.vespa.validation;
 import java.util.regex.Pattern;
 
 import static ai.vespa.validation.Validation.requireMatch;
-import static ai.vespa.validation.Validation.validate;
 
 /**
  * A name is a non-null, non-blank {@link String} which starts with a letter, and has up to
@@ -27,7 +26,7 @@ public class Name extends StringWrapper<Name> {
     };
 
     public static Name of(String value, String description) {
-        return new Name(validate(value, description, requireMatch(namePattern)));
+        return new Name(requireMatch(value, description, namePattern));
     };
 
 }
