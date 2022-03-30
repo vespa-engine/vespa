@@ -2347,7 +2347,9 @@
       "public static final com.yahoo.processing.request.CompoundName PARAM_REQUEST",
       "public static final com.yahoo.processing.request.CompoundName PARAM_TIMEZONE",
       "public static final com.yahoo.processing.request.CompoundName PARAM_DEFAULT_MAX_HITS",
-      "public static final com.yahoo.processing.request.CompoundName PARAM_DEFAULT_MAX_GROUPS"
+      "public static final com.yahoo.processing.request.CompoundName PARAM_DEFAULT_MAX_GROUPS",
+      "public static final com.yahoo.processing.request.CompoundName PARAM_DEFAULT_PRECISION_FACTOR",
+      "public static final com.yahoo.processing.request.CompoundName GROUPING_GLOBAL_MAX_GROUPS"
     ]
   },
   "com.yahoo.search.grouping.GroupingRequest": {
@@ -2371,6 +2373,7 @@
       "public void setDefaultMaxGroups(int)",
       "public java.util.OptionalLong globalMaxGroups()",
       "public void setGlobalMaxGroups(long)",
+      "public java.util.OptionalDouble defaultPrecisionFactor()",
       "public static com.yahoo.search.grouping.GroupingRequest newInstance(com.yahoo.search.Query)",
       "public java.lang.String toString()"
     ],
@@ -6632,7 +6635,6 @@
     "fields": [
       "public static final com.yahoo.processing.request.CompoundName MAX_OFFSET",
       "public static final com.yahoo.processing.request.CompoundName MAX_HITS",
-      "public static final com.yahoo.processing.request.CompoundName GROUPING_GLOBAL_MAX_GROUPS",
       "public static final com.yahoo.search.query.profile.types.QueryProfileType argumentType"
     ]
   },

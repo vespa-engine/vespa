@@ -48,6 +48,12 @@ public class GroupingExecutor extends Searcher {
     private final static CompoundName PROP_GROUPINGLIST = newCompoundName(GROUPING_LIST);
     private final static Logger log = Logger.getLogger(GroupingExecutor.class.getName());
 
+    // TODO Vespa 8: Modify defaults
+    private static final double DEFAULT_PRECISION_FACTOR = 1;
+    private static final int DEFAULT_MAX_GROUPS = -1;
+    private static final int DEFAULT_MAX_HITS = -1;
+    private static final long DEFAULT_GLOBAL_MAX_GROUPS = -1;
+
     /**
      * Constructs a new instance of this searcher without configuration.
      * This makes the searcher completely useless for searching purposes,
@@ -150,9 +156,10 @@ public class GroupingExecutor extends Searcher {
         builder.setDefaultSummaryName(query.getPresentation().getSummary());
         builder.setTimeZone(req.getTimeZone());
         builder.addContinuations(req.continuations());
-        req.defaultMaxGroups().ifPresent(builder::setDefaultMaxGroups);
-        req.defaultMaxHits().ifPresent(builder::setDefaultMaxHits);
-        req.globalMaxGroups().ifPresent(builder::setGlobalMaxGroups);
+        builder.setDefaultMaxGroups(req.defaultMaxGroups().orElse(DEFAULT_MAX_GROUPS));
+        builder.setDefaultMaxHits(req.defaultMaxHits().orElse(DEFAULT_MAX_HITS));
+        builder.setGlobalMaxGroups(req.globalMaxGroups().orElse(DEFAULT_GLOBAL_MAX_GROUPS));
+        builder.setDefaultPrecisionFactor(req.defaultPrecisionFactor().orElse(DEFAULT_PRECISION_FACTOR));
         builder.build();
 
         RequestContext ctx = new RequestContext(req, builder.getTransform());
