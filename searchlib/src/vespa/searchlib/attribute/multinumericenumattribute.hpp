@@ -138,7 +138,7 @@ MultiValueNumericEnumAttribute<B, M>::getSearch(QueryTermSimple::UP qTerm,
 
 template <typename B, typename M>
 MultiValueNumericEnumAttribute<B, M>::SetSearchContext::SetSearchContext(QueryTermSimpleUP qTerm, const NumericAttribute & toBeSearched) :
-    NumericAttribute::Range<T>(*qTerm),
+    attribute::NumericRangeMatcher<T>(*qTerm),
     SearchContext(toBeSearched),
     _toBeSearched(static_cast<const MultiValueNumericEnumAttribute<B, M> &>(toBeSearched))
 { }
@@ -186,7 +186,7 @@ MultiValueNumericEnumAttribute<B, M>::ArraySearchContext::createFilterIterator(f
 
 template <typename B, typename M>
 MultiValueNumericEnumAttribute<B, M>::ArraySearchContext::ArraySearchContext(QueryTermSimpleUP qTerm, const NumericAttribute & toBeSearched) :
-    NumericAttribute::Range<T>(*qTerm),
+    attribute::NumericRangeMatcher<T>(*qTerm),
     SearchContext(toBeSearched),
     _toBeSearched(static_cast<const MultiValueNumericEnumAttribute<B, M> &>(toBeSearched))
 { }

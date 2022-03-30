@@ -4,6 +4,7 @@
 
 #include "multienumattribute.h"
 #include "numericbase.h"
+#include "numeric_range_matcher.h"
 #include "primitivereader.h"
 #include "search_context.h"
 
@@ -42,7 +43,7 @@ protected:
     /*
      * Specialization of SearchContext for weighted set type
      */
-    class SetSearchContext : public NumericAttribute::Range<T>, public attribute::SearchContext
+    class SetSearchContext : public attribute::NumericRangeMatcher<T>, public attribute::SearchContext
     {
     protected:
         const MultiValueNumericEnumAttribute<B, M> & _toBeSearched;
@@ -95,7 +96,7 @@ protected:
     /*
      * Specialization of SearchContext for array type
      */
-    class ArraySearchContext : public NumericAttribute::Range<T>, public attribute::SearchContext
+    class ArraySearchContext : public attribute::NumericRangeMatcher<T>, public attribute::SearchContext
     {
     protected:
         const MultiValueNumericEnumAttribute<B, M> & _toBeSearched;

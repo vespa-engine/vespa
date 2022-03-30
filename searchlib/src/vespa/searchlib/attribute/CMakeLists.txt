@@ -79,6 +79,8 @@ vespa_add_library(searchlib_attribute OBJECT
     multivalueattributesaverutils.cpp
     not_implemented_attribute.cpp
     numericbase.cpp
+    numeric_matcher.cpp
+    numeric_range_matcher.cpp
     posting_list_merger.cpp
     postingchange.cpp
     postinglistattribute.cpp

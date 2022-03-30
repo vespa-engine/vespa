@@ -4,6 +4,7 @@
 
 #include "integerbase.h"
 #include "floatbase.h"
+#include "numeric_range_matcher.h"
 #include "search_context.h"
 #include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/rcuvector.h>
@@ -60,7 +61,7 @@ public:
     /*
      * Specialization of SearchContext
      */
-    class SingleSearchContext : public NumericAttribute::Range<T>, public attribute::SearchContext
+    class SingleSearchContext : public attribute::NumericRangeMatcher<T>, public attribute::SearchContext
     {
     private:
         const Word *_wordData;

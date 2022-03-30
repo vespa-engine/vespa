@@ -5,6 +5,7 @@
 #include "integerbase.h"
 #include "floatbase.h"
 #include "multivalueattribute.h"
+#include "numeric_range_matcher.h"
 #include "search_context.h"
 #include <limits>
 
@@ -60,7 +61,7 @@ public:
     /*
      * Specialization of SearchContext for weighted set type
      */
-    class SetSearchContext final : public NumericAttribute::Range<T>, public attribute::SearchContext
+    class SetSearchContext final : public attribute::NumericRangeMatcher<T>, public attribute::SearchContext
     {
     private:
         const MultiValueNumericAttribute<B, M> & _toBeSearched;
@@ -108,7 +109,7 @@ public:
     /*
      * Specialization of SearchContext for array type
      */
-    class ArraySearchContext : public NumericAttribute::Range<T>, public attribute::SearchContext
+    class ArraySearchContext : public attribute::NumericRangeMatcher<T>, public attribute::SearchContext
     {
     private:
         const MultiValueNumericAttribute<B, M> & _toBeSearched;
