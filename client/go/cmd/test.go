@@ -26,7 +26,6 @@ import (
 )
 
 func newTestCmd(cli *CLI) *cobra.Command {
-	var zoneArg string
 	testCmd := &cobra.Command{
 		Use:   "test test-directory-or-file",
 		Short: "Run a test suite, or a single test",
@@ -41,7 +40,7 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			count, failed, err := runTests(cli, zoneArg, args[0], false)
+			count, failed, err := runTests(cli, args[0], false)
 			if err != nil {
 				return err
 			}
@@ -65,11 +64,10 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 			}
 		},
 	}
-	testCmd.PersistentFlags().StringVarP(&zoneArg, "zone", "z", "", "The zone to use for deployment. This defaults to a dev zone")
 	return testCmd
 }
 
-func runTests(cli *CLI, zone, rootPath string, dryRun bool) (int, []string, error) {
+func runTests(cli *CLI, rootPath string, dryRun bool) (int, []string, error) {
 	count := 0
 	failed := make([]string, 0)
 	if stat, err := os.Stat(rootPath); err != nil {
@@ -79,7 +77,7 @@ func runTests(cli *CLI, zone, rootPath string, dryRun bool) (int, []string, erro
 		if err != nil {
 			return 0, nil, errHint(err, "See https://docs.vespa.ai/en/reference/testing")
 		}
-		context := testContext{testsPath: rootPath, dryRun: dryRun, cli: cli, zone: zone}
+		context := testContext{testsPath: rootPath, dryRun: dryRun, cli: cli, zone: cli.flags.zone}
 		previousFailed := false
 		for _, test := range tests {
 			if !test.IsDir() && filepath.Ext(test.Name()) == ".json" {
@@ -479,7 +477,7 @@ type testContext struct {
 
 func (t *testContext) target() (vespa.Target, error) {
 	if t.lazyTarget == nil {
-		target, err := t.cli.target(targetOptions{zone: t.zone})
+		target, err := t.cli.target(targetOptions{})
 		if err != nil {
 			return nil, err
 		}

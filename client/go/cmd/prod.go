@@ -406,6 +406,6 @@ func verifyTest(cli *CLI, testsParent string, suite string, required bool) error
 		}
 		return nil
 	}
-	_, _, err = runTests(cli, "", testDirectory, true)
+	_, _, err = runTests(cli, testDirectory, true)
 	return err
 }

@@ -17,7 +17,6 @@ import (
 
 func newDeployCmd(cli *CLI) *cobra.Command {
 	var (
-		zoneArg     string
 		logLevelArg string
 	)
 	cmd := &cobra.Command{
@@ -46,7 +45,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 			if err != nil {
 				return err
 			}
-			target, err := cli.target(targetOptions{zone: zoneArg, logLevel: logLevelArg})
+			target, err := cli.target(targetOptions{logLevel: logLevelArg})
 			if err != nil {
 				return err
 			}
@@ -79,8 +78,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 			return waitForQueryService(cli, result.ID)
 		},
 	}
-	cmd.PersistentFlags().StringVarP(&zoneArg, "zone", "z", "", "The zone to use for deployment. This defaults to a dev zone")
-	cmd.PersistentFlags().StringVarP(&logLevelArg, "log-level", "l", "error", `Log level for Vespa logs. Must be "error", "warning", "info" or "debug"`)
+	cmd.Flags().StringVarP(&logLevelArg, "log-level", "l", "error", `Log level for Vespa logs. Must be "error", "warning", "info" or "debug"`)
 	return cmd
 }
 
