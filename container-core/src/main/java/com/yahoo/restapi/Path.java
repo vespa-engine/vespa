@@ -3,15 +3,16 @@ package com.yahoo.restapi;
 
 import java.net.URI;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
- * A path which is able to match strings containing bracketed placeholders and return the
+ * A normalized path which is able to match strings containing bracketed placeholders and return the
  * values given at the placeholders. The path is split on '/', and each part is then URL decoded.
  * 
  * E.g a path /a/1/bar/fuz/baz/%62%2f
@@ -23,11 +24,8 @@ import java.util.stream.Stream;
  * If the path spec ends with /{*}, it will match urls with any rest path.
  * The rest path (not including the trailing slash) will be available as getRest().
  * 
- * Note that for convenience in common use this has state which changes as a side effect of each matches
- * invocation. It is therefore for single thread use.
- *
- * An optional prefix can be used to match the path spec against an alternative path. This
- * is used when you have alternative paths mapped to the same resource.
+ * Note that for convenience in common use this has state which changes as a side effect of each
+ * {@link Path#matches(String)} invocation. It is therefore for single thread use.
  *
  * @author bratseth
  */
@@ -35,7 +33,6 @@ public class Path {
 
     // This path
     private final String pathString;
-    private final String optionalPrefix;
     private final String[] elements;
 
     // Info about the last match
@@ -43,21 +40,13 @@ public class Path {
     private String rest = "";
 
     public Path(URI uri) {
-        this(uri, "");
-    }
-
-    // TODO (freva): Remove, used by factory
-    public Path(URI uri, String optionalPrefix) {
-        this.optionalPrefix = optionalPrefix;
-        this.pathString = uri.getRawPath();
-        this.elements = Stream.of(this.pathString.split("/"))
-                              .map(part -> URLDecoder.decode(part, StandardCharsets.UTF_8))
-                              .toArray(String[]::new);
+        this.pathString = requireNormalized(uri).getRawPath();
+        this.elements = splitAbsolutePath(pathString, (part) -> URLDecoder.decode(part, StandardCharsets.UTF_8));
     }
 
     private boolean matchesInner(String pathSpec) {
         values.clear();
-        String[] specElements = pathSpec.split("/");
+        String[] specElements = splitAbsolutePath(pathSpec, Function.identity());
         boolean matchPrefix = false;
         if (specElements.length > 1 && specElements[specElements.length-1].equals("{*}")) {
             matchPrefix = true;
@@ -99,13 +88,11 @@ public class Path {
      *
      * This will NOT match empty path elements.
      *
-     * @param pathSpec the path string to match to this
+     * @param pathSpec the literal path string to match to this
      * @return true if the string matches, false otherwise
      */
     public boolean matches(String pathSpec) {
-        if (matchesInner(pathSpec)) return true;
-        if (optionalPrefix.isEmpty()) return false;
-        return matchesInner(optionalPrefix + pathSpec);
+        return matchesInner(pathSpec);
     }
 
     /**
@@ -129,6 +116,22 @@ public class Path {
     @Override
     public String toString() {
         return "path '" + String.join("/", elements) + "'";
+    }
+
+    private static URI requireNormalized(URI uri) {
+        Objects.requireNonNull(uri);
+        if (!uri.normalize().equals(uri)) throw new IllegalArgumentException("Expected normalized URI, got '" + uri + "'");
+        return uri;
+    }
+
+    private static String[] splitAbsolutePath(String path, Function<String, String> partParser) {
+        String[] parts = Stream.of(path.split("/"))
+                               .map(partParser)
+                               .toArray(String[]::new);
+        for (var part : parts) {
+            if (part.equals("..")) throw new IllegalArgumentException("Expected absolute path, got '" + path + "'");
+        }
+        return parts;
     }
     
 }
