@@ -15,6 +15,8 @@ public class Hostname extends StringWrapper<Hostname> {
     public static final Pattern hostnameLabel = Pattern.compile("([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])");
     public static final Pattern hostnamePattern = Pattern.compile("(?=.{1,255})(" + hostnameLabel + "\\.)*" + hostnameLabel);
 
+    public static final Hostname localhost = Hostname.of("localhost");
+
     private Hostname(String value) {
         super(value);
     }
