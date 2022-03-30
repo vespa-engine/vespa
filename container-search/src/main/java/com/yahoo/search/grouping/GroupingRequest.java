@@ -14,6 +14,7 @@ import com.yahoo.search.result.Hit;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.TimeZone;
@@ -36,6 +37,7 @@ public class GroupingRequest {
     private int defaultMaxHits = -1;
     private int defaultMaxGroups = -1;
     private long globalMaxGroups = -1;
+    private double defaultPrecisionFactor = -1;
 
     private GroupingRequest(Select parent) {
         this.parent = parent;
@@ -163,6 +165,13 @@ public class GroupingRequest {
     }
 
     @Beta public void setGlobalMaxGroups(long v) { this.globalMaxGroups = v; }
+
+    @Beta
+    public OptionalDouble defaultPrecisionFactor() {
+        return defaultPrecisionFactor > 0 ? OptionalDouble.of(defaultPrecisionFactor) : OptionalDouble.empty();
+    }
+
+    @Beta void setDefaultPrecisionFactor(double v) { this.defaultPrecisionFactor = v; }
 
     /**
      * Creates a new grouping request and adds it to the query.getSelect().getGrouping() list

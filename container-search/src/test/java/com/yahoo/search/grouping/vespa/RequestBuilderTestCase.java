@@ -789,6 +789,25 @@ public class RequestBuilderTestCase {
         assertQueryFailsOnGlobalMax(Long.MAX_VALUE, "all(group(a) max(5) each(each(output(summary()))))", "unbounded number of summaries");
     }
 
+    @Test
+    public void require_that_default_precision_factor_overrides_implicit_precision() {
+        int factor = 3;
+        RequestBuilder builder = new RequestBuilder(0)
+                .setDefaultPrecisionFactor(factor)
+                .setRootOperation(GroupingOperation.fromString("all(group(foo)max(5)each(output(count())))"));
+        builder.build();
+        assertEquals(5 * factor, builder.getRequestList().get(0).getLevels().get(0).getPrecision());
+    }
+
+    @Test
+    public void require_that_explicit_precision_has_precedence() {
+        RequestBuilder builder = new RequestBuilder(0)
+                .setDefaultPrecisionFactor(3)
+                .setRootOperation(GroupingOperation.fromString("all(group(foo)max(5)precision(10)each(output(count())))"));
+        builder.build();
+        assertEquals(10, builder.getRequestList().get(0).getLevels().get(0).getPrecision());
+    }
+
     private static void assertTotalGroupsAndSummaries(long expected, String query) {
         RequestBuilder builder = new RequestBuilder(0)
                 .setRootOperation(GroupingOperation.fromString(query)).setGlobalMaxGroups(Long.MAX_VALUE);

@@ -44,6 +44,7 @@ class RequestBuilder {
     private int defaultMaxGroups = -1;
     private long globalMaxGroups = -1;
     private long totalGroupsAndSummaries = -1;
+    private double defaultPrecisionFactor = -1;
 
     /**
      * Constructs a new instance of this class.
@@ -161,6 +162,8 @@ class RequestBuilder {
     public RequestBuilder setDefaultMaxHits(int v) { this.defaultMaxHits = v; return this; }
 
     public RequestBuilder setGlobalMaxGroups(long v) { this.globalMaxGroups = v; return this; }
+
+    public RequestBuilder setDefaultPrecisionFactor(double v) { this.defaultPrecisionFactor = v; return this; }
 
     OptionalLong totalGroupsAndSummaries() {
         return totalGroupsAndSummaries != -1 ? OptionalLong.of(totalGroupsAndSummaries) : OptionalLong.empty();
@@ -337,6 +340,8 @@ class RequestBuilder {
         int precision = frame.astNode.getPrecision();
         if (precision > 0) {
             frame.state.precision = precision;
+        } else if (frame.state.max != null && defaultPrecisionFactor > 0) {
+            frame.state.precision = Math.max(1, (int) Math.ceil(frame.state.max * defaultPrecisionFactor));
         }
     }
 

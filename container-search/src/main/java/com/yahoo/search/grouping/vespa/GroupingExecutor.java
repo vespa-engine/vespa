@@ -153,6 +153,7 @@ public class GroupingExecutor extends Searcher {
         req.defaultMaxGroups().ifPresent(builder::setDefaultMaxGroups);
         req.defaultMaxHits().ifPresent(builder::setDefaultMaxHits);
         req.globalMaxGroups().ifPresent(builder::setGlobalMaxGroups);
+        req.defaultPrecisionFactor().ifPresent(builder::setDefaultPrecisionFactor);
         builder.build();
 
         RequestContext ctx = new RequestContext(req, builder.getTransform());
