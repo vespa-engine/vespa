@@ -9,7 +9,10 @@ package com.yahoo.vespa.hosted.controller.api.integration.organization;
 public interface Mailer {
 
     /** Sends the given mail as the configured user@domain. */
-    void send(Mail mail);
+    void send(TextMail mail);
+
+    /** Sends a templated email as the configured user@domain. */
+    void send(TemplatedMail mail);
 
     /** Returns the user this is configured to use. */
     String user();

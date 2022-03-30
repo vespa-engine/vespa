@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.TextMail;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
@@ -423,10 +424,10 @@ public class InternalStepRunnerTest {
         MockMailer mailer = tester.controllerTester().serviceRegistry().mailer();
         assertEquals(1, mailer.inbox("a@b").size());
         assertEquals("Vespa application tenant.application: System test failing due to system error",
-                     mailer.inbox("a@b").get(0).subject());
+                ((TextMail) mailer.inbox("a@b").get(0)).subject());
         assertEquals(1, mailer.inbox("b@a").size());
         assertEquals("Vespa application tenant.application: System test failing due to system error",
-                     mailer.inbox("b@a").get(0).subject());
+                ((TextMail) mailer.inbox("b@a").get(0)).subject());
 
         // Re-run failing causes no additional email to be sent.
         app.failDeployment(JobType.systemTest);

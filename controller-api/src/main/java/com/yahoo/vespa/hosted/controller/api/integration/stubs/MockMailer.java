@@ -2,7 +2,9 @@
 package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.TextMail;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.TemplatedMail;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,7 +16,16 @@ public class MockMailer implements Mailer {
     public final Map<String, List<Mail>> mails = new HashMap<>();
 
     @Override
-    public void send(Mail mail) {
+    public void send(TextMail mail) {
+        add(mail);
+    }
+
+    @Override
+    public void send(TemplatedMail mail) {
+        add(mail);
+    }
+
+    private void add(Mail mail) {
         for (String recipient : mail.recipients()) {
             mails.putIfAbsent(recipient, new ArrayList<>());
             mails.get(recipient).add(mail);

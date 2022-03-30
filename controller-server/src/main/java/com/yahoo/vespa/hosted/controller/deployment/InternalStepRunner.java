@@ -23,7 +23,6 @@ import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -42,7 +41,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentFailureMails;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.TextMail;
 import com.yahoo.vespa.hosted.controller.application.ActivateResult;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
@@ -844,7 +843,7 @@ public class InternalStepRunner implements StepRunner {
                        "usually transient. Please contact Vespa Cloud support if the problem persists.");
     }
 
-    private Optional<Mail> mailOf(Run run, List<String> recipients) {
+    private Optional<TextMail> mailOf(Run run, List<String> recipients) {
         switch (run.status()) {
             case running:
             case aborted:
