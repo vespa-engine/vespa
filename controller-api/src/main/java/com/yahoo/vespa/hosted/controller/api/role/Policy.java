@@ -190,7 +190,7 @@ enum Policy {
 
     accessRequests(Privilege.grant(Action.all())
             .on(PathGroup.accessRequests, PathGroup.accessRequestApproval)
-            .in(SystemName.PublicCd)),
+            .in(SystemName.PublicCd, SystemName.Public)),
 
     /** Invoice management */
     hostedAccountant(Privilege.grant(Action.all())
