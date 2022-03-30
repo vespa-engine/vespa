@@ -351,7 +351,10 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
              builder.getZoneInfo());
     }
 
-    private Query(HttpRequest request, Map<String, String> requestMap, CompiledQueryProfile queryProfile, Map<String, Embedder> embedders,
+    private Query(HttpRequest request,
+                  Map<String, String> requestMap,
+                  CompiledQueryProfile queryProfile,
+                  Map<String, Embedder> embedders,
                   ZoneInfo zoneInfo) {
         super(new QueryPropertyAliases(propertyAliases));
         this.httpRequest = request;

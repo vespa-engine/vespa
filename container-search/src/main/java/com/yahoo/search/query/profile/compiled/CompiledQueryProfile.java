@@ -191,7 +191,7 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
     private Object substitute(Object value, Map<String, String> context, Properties substitution) {
         if (value == null) return value;
         if (substitution == null) return value;
-        if (value.getClass() != SubstituteString.class) return value;
+        if ( ! (value instanceof SubstituteString)) return value;
         return ((SubstituteString)value).substitute(context, substitution);
     }
 

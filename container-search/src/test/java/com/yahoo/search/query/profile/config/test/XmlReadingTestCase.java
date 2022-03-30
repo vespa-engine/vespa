@@ -3,7 +3,12 @@ package com.yahoo.search.query.profile.config.test;
 
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.language.Language;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.query.profile.types.test.QueryProfileTypeTestCase;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.Properties;
@@ -17,6 +22,7 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import org.junit.Test;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -474,20 +480,64 @@ public class XmlReadingTestCase {
         CompiledQueryProfileRegistry registry = new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/tensortypes").compile();
 
         QueryProfileType type1 = registry.getTypeRegistry().getComponent("type1");
-        assertEquals("tensor<float>(x[1])", type1.getFieldType(new CompoundName("ranking.features.query(tensor_1)")).stringValue());
+        assertEquals(TensorType.fromSpec("tensor<float>(x[1])"),
+                     type1.getFieldType(new CompoundName("ranking.features.query(tensor_1)")).asTensorType());
         assertNull(type1.getFieldType(new CompoundName("ranking.features.query(tensor_2)")));
         assertNull(type1.getFieldType(new CompoundName("ranking.features.query(tensor_3)")));
+        assertEquals(TensorType.fromSpec("tensor(key{})"),
+                     type1.getFieldType(new CompoundName("ranking.features.query(tensor_4)")).asTensorType());
 
         QueryProfileType type2 = registry.getTypeRegistry().getComponent("type2");
         assertNull(type2.getFieldType(new CompoundName("ranking.features.query(tensor_1)")));
-        assertEquals("tensor<float>(x[2])", type2.getFieldType(new CompoundName("ranking.features.query(tensor_2)")).stringValue());
-        assertEquals("tensor<float>(x[3])", type2.getFieldType(new CompoundName("ranking.features.query(tensor_3)")).stringValue());
+        assertEquals(TensorType.fromSpec("tensor<float>(x[2])"),
+                     type2.getFieldType(new CompoundName("ranking.features.query(tensor_2)")).asTensorType());
+        assertEquals(TensorType.fromSpec("tensor<float>(x[3])"),
+                     type2.getFieldType(new CompoundName("ranking.features.query(tensor_3)")).asTensorType());
 
-        Query queryProfile1 = new Query("?query=test&ranking.features.query(tensor_1)=[1.200]", registry.getComponent("profile1"));
-        assertEquals("Is received as a tensor tensor", "tensor<float>(x[1]):[1.2]", queryProfile1.properties().get("ranking.features.query(tensor_1)").toString());
+        Query queryProfile1 = new Query.Builder().setQueryProfile(registry.getComponent("profile1"))
+                                                 .setRequest("?query=test&ranking.features.query(tensor_1)=[1.200]")
+                                                 .build();
+        assertEquals("tensor_1 received as a tensor tensor",
+                     Tensor.from("tensor<float>(x[1]):[1.2]"),
+                     queryProfile1.properties().get("ranking.features.query(tensor_1)"));
+        assertEquals("tensor_4 contained in the profile is a tensor",
+                     Tensor.from("tensor(key{}):{key1:1.0}"),
+                     queryProfile1.properties().get("ranking.features.query(tensor_4)"));
 
-        Query queryProfile2 = new Query("?query=test&ranking.features.query(tensor_1)=[1.200]", registry.getComponent("profile2"));
-        assertEquals("Is received as a string", "[1.200]", queryProfile2.properties().get("ranking.features.query(tensor_1)").toString());
+        Query queryProfile2 = new Query.Builder().setQueryProfile(registry.getComponent("profile2"))
+                                                 .setEmbedder(new MockEmbedder("text-to-embed",
+                                                                               Tensor.from("tensor(x[3]):[1, 2, 3]")))
+                                                 .setRequest("?query=test&ranking.features.query(tensor_1)=[1.200]")
+                                                 .build();
+        assertEquals("tensor_1 received as a string as it is not in type2",
+                     "[1.200]",
+                     queryProfile2.properties().get("ranking.features.query(tensor_1)"));
+        //assertEquals(Tensor.from("tensor(x[3]):[1, 2, 3]"),
+        //             queryProfile2.properties().get("ranking.features.query(tensor_3)"));
     }
 
+    private static final class MockEmbedder implements Embedder {
+
+        private final String expectedText;
+        private final Tensor tensorToReturn;
+
+        public MockEmbedder(String expectedText, Tensor tensorToReturn) {
+            this.expectedText = expectedText;
+            this.tensorToReturn = tensorToReturn;
+        }
+
+        @Override
+        public List<Integer> embed(String text, Embedder.Context context) {
+            fail("Unexpected call");
+            return null;
+        }
+
+        @Override
+        public Tensor embed(String text, Embedder.Context context, TensorType tensorType) {
+            assertEquals(expectedText, text);
+            assertEquals(tensorToReturn.type(), tensorType);
+            return tensorToReturn;
+        }
+
+    }
 }
