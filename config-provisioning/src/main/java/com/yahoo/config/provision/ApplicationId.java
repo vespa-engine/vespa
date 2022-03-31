@@ -12,22 +12,24 @@ import java.util.Objects;
  * @author vegard
  * @author bratseth
  */
-public final class ApplicationId implements Comparable<ApplicationId> {
+public class ApplicationId implements Comparable<ApplicationId> {
 
     private final TenantName tenant;
     private final ApplicationName application;
     private final InstanceName instance;
     private final String serializedForm;
 
-    public ApplicationId(ApplicationIdConfig config) {
-        this(TenantName.from(config.tenant()), ApplicationName.from(config.application()), InstanceName.from(config.instance()));
-    }
-
     private ApplicationId(TenantName tenant, ApplicationName applicationName, InstanceName instanceName) {
         this.tenant = tenant;
         this.application = applicationName;
         this.instance = instanceName;
         this.serializedForm = toSerializedForm();
+    }
+
+    public static ApplicationId from(ApplicationIdConfig config) {
+        return from(TenantName.from(config.tenant()),
+                    ApplicationName.from(config.application()),
+                    InstanceName.from(config.instance()));
     }
 
     public static ApplicationId from(TenantName tenant, ApplicationName application, InstanceName instance) {
