@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.network;
 
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 
 /**
  * This class encapsulates the identity of the application that uses this instance of message bus. This identity
@@ -23,7 +23,7 @@ public class Identity {
      * @param configId The config identifier for the application.
      */
     public Identity(String configId) {
-        hostname = Hostnames.getLocalhost(); // ... but fallback to hostname if we get an IPv6 address
+        hostname = HostName.getLocalhost(); // ... but fallback to hostname if we get an IPv6 address
         servicePrefix = configId;
     }
 

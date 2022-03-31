@@ -2,7 +2,7 @@
 package com.yahoo.vespa.curator;
 
 import com.yahoo.cloud.config.CuratorConfig;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import org.junit.Test;
@@ -19,7 +19,7 @@ import static org.junit.Assert.fail;
  */
 public class CuratorTest {
 
-    private static final String localhost = Hostnames.getLocalhost();
+    private static final String localhost = HostName.getLocalhost();
 
     private static final int port1 = 1;
     private static final int port2 = 2;

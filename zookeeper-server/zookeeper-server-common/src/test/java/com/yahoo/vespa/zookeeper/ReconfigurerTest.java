@@ -2,7 +2,7 @@
 package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -150,7 +150,7 @@ public class ReconfigurerTest {
                 }
             });
             this.zooKeeperAdmin = zooKeeperAdmin;
-            Hostnames.setHostNameForTestingOnly("node1");
+            HostName.setHostNameForTestingOnly("node1");
         }
 
         void startOrReconfigure(ZookeeperServerConfig newConfig) {

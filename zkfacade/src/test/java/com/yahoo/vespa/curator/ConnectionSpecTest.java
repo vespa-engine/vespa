@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator;
 
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import org.junit.Test;
 
 import java.util.List;
@@ -15,7 +15,7 @@ public class ConnectionSpecTest {
 
     @Test
     public void create() {
-        Hostnames.setHostNameForTestingOnly("host2");
+        HostName.setHostNameForTestingOnly("host2");
         Config config = new Config(List.of(new Config.Server("host1", 10001),
                                            new Config.Server("host2", 10002),
                                            new Config.Server("host3", 10003)));

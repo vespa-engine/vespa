@@ -12,7 +12,7 @@ import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.reindexing.ReindexingConfig;
 import com.yahoo.vespa.curator.Curator;
@@ -75,7 +75,7 @@ public class ReindexingMaintainer extends AbstractComponent {
         this.executor = new ScheduledThreadPoolExecutor(reindexingConfig.clusters().size(), new DaemonThreadFactory("reindexer-"));
         if (reindexingConfig.enabled())
             scheduleStaggered((delayMillis, intervalMillis) -> executor.scheduleAtFixedRate(this::maintain, delayMillis, intervalMillis, TimeUnit.MILLISECONDS),
-                              Duration.ofMinutes(1), clock.instant(), Hostnames.getLocalhost(), zookeepersConfig.zookeeperserverlist());
+                              Duration.ofMinutes(1), clock.instant(), HostName.getLocalhost(), zookeepersConfig.zookeeperserverlist());
     }
 
     private void maintain() {

@@ -5,7 +5,7 @@ import ai.vespa.validation.PatternedStringWrapper;
 
 import java.util.regex.Pattern;
 
-import static ai.vespa.validation.Validation.requireInRange;
+import static ai.vespa.validation.Validation.requireLength;
 import static ai.vespa.validation.Validation.requireMatch;
 
 /**
@@ -21,8 +21,7 @@ public class DomainName extends PatternedStringWrapper<DomainName> {
     public static final DomainName localhost = DomainName.of("localhost");
 
     private DomainName(String value) {
-        super(value, domainNamePattern, "domain name");
-        requireInRange(value.length(), "domain name length", 1, 255);
+        super(requireLength(value, "domain name length", 1, 255), domainNamePattern, "domain name");
     }
 
     public static DomainName of(String value) {

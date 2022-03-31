@@ -36,7 +36,7 @@ import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.secretstore.SecretStoreConfig;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
 import com.yahoo.search.config.QrStartConfig;
@@ -645,7 +645,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void qrconfig_is_produced() throws IOException, SAXException {
         QrConfig qr = getQrConfig(new TestProperties());
-        String hostname = Hostnames.getLocalhost();  // Using the same way of getting hostname as filedistribution model
+        String hostname = HostName.getLocalhost();  // Using the same way of getting hostname as filedistribution model
         assertEquals("default.container.0", qr.discriminator());
         assertEquals(19102, qr.rpc().port());
         assertEquals("vespa/service/default/container.0", qr.rpc().slobrokId());

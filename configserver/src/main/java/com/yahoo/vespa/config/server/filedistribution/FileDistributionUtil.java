@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.FileReference;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 
 import java.io.File;
@@ -35,7 +35,7 @@ public class FileDistributionUtil {
     public static List<String> getOtherConfigServersInCluster(ConfigserverConfig configserverConfig) {
         return ConfigServerSpec.fromConfig(configserverConfig)
                                .stream()
-                               .filter(spec -> !spec.getHostName().equals(Hostnames.getLocalhost()))
+                               .filter(spec -> !spec.getHostName().equals(HostName.getLocalhost()))
                                .map(spec -> "tcp/" + spec.getHostName() + ":" + spec.getConfigServerPort())
                                .collect(Collectors.toList());
     }

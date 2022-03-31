@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.util;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.io.HexDump;
 import com.yahoo.io.IOUtils;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.text.AbstractUtf8Array;
 import com.yahoo.text.Utf8;
@@ -351,7 +351,7 @@ public class ConfigUtils {
     }
 
     public static String getCanonicalHostName() {
-        return Hostnames.getLocalhost();
+        return HostName.getLocalhost();
     }
 
     /**

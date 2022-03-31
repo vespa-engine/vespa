@@ -3,7 +3,7 @@ package com.yahoo.config.model.provision;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.model.builder.xml.XmlHelper;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import org.w3c.dom.Document;
@@ -75,7 +75,7 @@ public class Hosts {
                 throw new IllegalArgumentException("Missing 'name' attribute for host.");
             }
             if ("localhost".equals(name)) {
-                name = Hostnames.getLocalhost();
+                name = HostName.getLocalhost();
             }
             List<String> hostAliases = VespaDomBuilder.getHostAliases(hostE.getChildNodes());
             if (hostAliases.isEmpty()) {

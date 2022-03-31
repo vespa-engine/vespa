@@ -13,7 +13,7 @@ import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.Result;
 import com.yahoo.messagebus.shared.SharedSourceSession;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.http.client.core.ErrorCode;
 import com.yahoo.vespa.http.client.core.Headers;
 import com.yahoo.vespa.http.client.core.OperationStatus;
@@ -69,7 +69,7 @@ class ClientFeederV3 {
         this.feedReplyHandler = feedReplyHandler;
         this.metric = metric;
         this.streamReaderV3 = new StreamReaderV3(feedReaderFactory, docTypeManager);
-        this.hostName = Hostnames.getLocalhost();
+        this.hostName = HostName.getLocalhost();
     }
 
     boolean timedOut() {

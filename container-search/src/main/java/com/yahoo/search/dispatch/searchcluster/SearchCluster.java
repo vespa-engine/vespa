@@ -4,7 +4,7 @@ package com.yahoo.search.dispatch.searchcluster;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.math.Quantiles;
 import com.yahoo.container.handler.VipStatus;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import com.yahoo.prelude.Pong;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.cluster.NodeManager;
@@ -70,7 +70,7 @@ public class SearchCluster implements NodeManager<Node> {
         this.orderedGroups = List.copyOf(groupIntroductionOrder.values());
 
         hitEstimator = new TopKEstimator(30.0, dispatchConfig.topKProbability(), SKEW_FACTOR);
-        this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(Hostnames.getLocalhost(), nodes, groups);
+        this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(), nodes, groups);
     }
 
     @Override

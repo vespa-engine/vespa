@@ -9,7 +9,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLogger;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 
 import java.net.UnknownHostException;
 import java.util.LinkedHashMap;
@@ -78,7 +78,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         HostResource hostResource = hostname2host.get(name);
         if (hostResource == null) {
             // Create a new HostResource if this is the host this code is running on (as it is when running tests)
-            if (Hostnames.getLocalhost().equals(name)) {
+            if (HostName.getLocalhost().equals(name)) {
                 if (! getChildren().containsKey(localhost)) {
                     new Host(this, localhost);
                 }

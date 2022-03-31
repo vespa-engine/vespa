@@ -11,7 +11,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.test.MockMetric;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -52,7 +52,7 @@ public class SearchHandlerTest {
 
     private static final String testDir = "src/test/java/com/yahoo/search/handler/test/config";
     private static final String myHostnameHeader = "my-hostname-header";
-    private static final String selfHostname = Hostnames.getLocalhost();
+    private static final String selfHostname = HostName.getLocalhost();
 
     private static String tempDir = "";
 

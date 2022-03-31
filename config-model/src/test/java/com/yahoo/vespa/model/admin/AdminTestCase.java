@@ -16,7 +16,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.StatisticsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.core.StateserverConfig;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
@@ -60,7 +60,7 @@ public class AdminTestCase {
 
         // Verify configIds
         Set<String> configIds = vespaModel.getConfigIds();
-        String localhost = Hostnames.getLocalhost();
+        String localhost = HostName.getLocalhost();
         String localhostConfigId = "hosts/" + localhost;
         assertTrue(configIds.contains(localhostConfigId));
         assertTrue(configIds.contains("admin/logserver"));
@@ -124,7 +124,7 @@ public class AdminTestCase {
 
         // Verify configIds
         Set<String> configIds = vespaModel.getConfigIds();
-        String localhost = Hostnames.getLocalhost();
+        String localhost = HostName.getLocalhost();
         String localhostConfigId = "hosts/" + localhost;
         assertTrue(configIds.contains(localhostConfigId));
         assertTrue(configIds.contains("admin/logserver"));
@@ -164,7 +164,7 @@ public class AdminTestCase {
                                 .build()))
                 .build();
         TestRoot root = new TestDriver().buildModel(state);
-        String localhost = Hostnames.getLocalhost();
+        String localhost = HostName.getLocalhost();
         SentinelConfig config = root.getConfig(SentinelConfig.class, "hosts/" + localhost);
         assertEquals("quux", config.application().tenant());
         assertEquals("foo", config.application().name());
@@ -187,7 +187,7 @@ public class AdminTestCase {
 
         // Verify configIds
         Set<String> configIds = vespaModel.getConfigIds();
-        String localhost = Hostnames.getLocalhost();
+        String localhost = HostName.getLocalhost();
         String localhostConfigId = "hosts/" + localhost;
         assertTrue(configIds.contains(localhostConfigId));
         assertTrue(configIds.contains("admin/logserver"));

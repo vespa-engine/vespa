@@ -9,7 +9,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionLogger;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,12 +29,12 @@ public class SingleNodeProvisioner implements HostProvisioner {
     private int counter = 0;
 
     public SingleNodeProvisioner() {
-        host = new Host(Hostnames.getLocalhost());
+        host = new Host(HostName.getLocalhost());
         this.hostSpec = new HostSpec(host.hostname(), host.aliases(), Optional.empty());
     }
 
     public SingleNodeProvisioner(Flavor flavor) {
-        host = new Host(Hostnames.getLocalhost());
+        host = new Host(HostName.getLocalhost());
         this.hostSpec = new HostSpec(host.hostname(),
                                      flavor.resources(), flavor.resources(), flavor.resources(),
                                      ClusterMembership.from(ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).group(ClusterSpec.Group.from(0)).vespaVersion("1").build(), 0),

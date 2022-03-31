@@ -7,12 +7,11 @@ import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.CloudName;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
@@ -99,7 +98,7 @@ public class Controller extends AbstractComponent {
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, AccessControl accessControl, FlagSource flagSource,
                       MavenRepository mavenRepository, ServiceRegistry serviceRegistry, Metric metric, SecretStore secretStore,
                       ControllerConfig controllerConfig) {
-        this(curator, rotationsConfig, accessControl, Hostnames::getLocalhost, flagSource,
+        this(curator, rotationsConfig, accessControl, HostName::getLocalhost, flagSource,
              mavenRepository, serviceRegistry, metric, secretStore, controllerConfig, Sleeper.DEFAULT);
     }
 
@@ -280,8 +279,8 @@ public class Controller extends AbstractComponent {
     }
 
     /** Returns the hostname of this controller */
-    public HostName hostname() {
-        return HostName.from(hostnameSupplier.get());
+    public com.yahoo.config.provision.HostName hostname() {
+        return com.yahoo.config.provision.HostName.from(hostnameSupplier.get());
     }
 
     public SystemName system() {

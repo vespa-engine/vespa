@@ -16,7 +16,7 @@ import com.yahoo.jrt.slobrok.api.BackOffPolicy;
 import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
 import java.util.logging.Level;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
@@ -111,7 +111,7 @@ public class RpcServer {
         slobroks.append(" )");
         SlobrokList slist = new SlobrokList();
         slist.setup(slobrokConnectionSpecs);
-        Spec spec = new Spec(Hostnames.getLocalhost(), acceptor.port());
+        Spec spec = new Spec(HostName.getLocalhost(), acceptor.port());
         log.log(Level.INFO, "Registering " + spec + " with slobrok at " + slobroks);
         if (slobrokBackOffPolicy != null) {
             register = new Register(supervisor, slist, spec, slobrokBackOffPolicy);

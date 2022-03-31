@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
@@ -33,7 +33,7 @@ public class LocksResponse extends HttpResponse {
     private final Slime slime = new Slime();
 
     public LocksResponse() {
-        this(Hostnames.getLocalhost(),
+        this(HostName.getLocalhost(),
              new TreeMap<>(LockStats.getGlobal().getLockMetricsByPath()),
              LockStats.getGlobal().getThreadLockStats(),
              LockStats.getGlobal().getLockAttemptSamples());

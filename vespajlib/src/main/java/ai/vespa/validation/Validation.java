@@ -29,6 +29,12 @@ public class Validation {
         }
     }
 
+    /** Requires the value to have a length in range lower to upper, inclusive. */
+    public static String requireLength(String value, String description, int lower, int upper) {
+        requireInRange(value.length(), description, lower, upper);
+        return value;
+    }
+
     /** Requires the value to match the given pattern. */
     public static String requireMatch(String value, String description, Pattern pattern) {
         return require(pattern.matcher(value).matches(), value, description, "must match '" + pattern + "'");

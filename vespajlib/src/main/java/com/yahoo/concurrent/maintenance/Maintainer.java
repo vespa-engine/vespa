@@ -2,7 +2,7 @@
 package com.yahoo.concurrent.maintenance;
 
 import com.yahoo.concurrent.UncheckedTimeoutException;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -45,7 +45,7 @@ public abstract class Maintainer implements Runnable {
         this.ignoreCollision = ignoreCollision;
         Objects.requireNonNull(startedAt);
         Objects.requireNonNull(clusterHostnames);
-        Duration initialDelay = staggeredDelay(interval, startedAt, Hostnames.getLocalhost(), clusterHostnames)
+        Duration initialDelay = staggeredDelay(interval, startedAt, HostName.getLocalhost(), clusterHostnames)
                                 .plus(Duration.ofSeconds(30)); // Let the system  stabilize before maintenance
         service = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, name() + "-worker"));
         service.scheduleAtFixedRate(this, initialDelay.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);

@@ -24,7 +24,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.lang.SettableOptional;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -236,7 +236,7 @@ public class SessionPreparer {
                     applicationId + " (" + fileReference + ")");
             properties.configServerSpecs()
                       .stream()
-                      .filter(spec -> !spec.getHostName().equals(Hostnames.getLocalhost()))
+                      .filter(spec -> !spec.getHostName().equals(HostName.getLocalhost()))
                       .forEach(spec -> fileDistribution.startDownload(spec.getHostName(), spec.getConfigServerPort(), Set.of(fileReference)));
 
             checkTimeout("startDistributionOfApplicationPackage");

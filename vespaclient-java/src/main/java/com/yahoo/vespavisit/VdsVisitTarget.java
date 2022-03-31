@@ -12,7 +12,7 @@ import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import java.util.logging.Level;
 import com.yahoo.log.LogSetup;
 import com.yahoo.messagebus.network.Identity;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -201,7 +201,7 @@ public class VdsVisitTarget {
     }
 
     private String getTcpAddress() {
-        String hostname = Hostnames.getLocalhost();
+        String hostname = HostName.getLocalhost();
         return "tcp/" + hostname + ":" + port + "/visit-destination";
     }
 

@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
@@ -63,7 +63,7 @@ public class IdentityDocumentGenerator {
             PrivateKey privateKey = keyProvider.getPrivateKey(athenzProviderServiceConfig.secretVersion());
             AthenzService providerService = new AthenzService(athenzProviderServiceConfig.domain(), athenzProviderServiceConfig.serviceName());
 
-            String configServerHostname = Hostnames.getLocalhost();
+            String configServerHostname = HostName.getLocalhost();
             Instant createdAt = Instant.now();
             String signature = signer.generateSignature(
                     providerUniqueId, providerService, configServerHostname,

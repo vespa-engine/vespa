@@ -9,7 +9,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionLogger;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,7 +26,7 @@ public class HostProvisionerWithCustomRealResource implements HostProvisioner {
 
     @Override
     public HostSpec allocateHost(String alias) {
-        Host host = new Host(Hostnames.getLocalhost());
+        Host host = new Host(HostName.getLocalhost());
         ClusterMembership membership = ClusterMembership.from(
                 ClusterSpec
                         .specification(

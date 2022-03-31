@@ -8,7 +8,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -347,7 +347,7 @@ class NodeAllocation {
         // - cfg1 is starting and redeploys its infrastructure application during bootstrap. A deficit is detected
         //   (itself, because cfg1 is only added to the repository *after* it is up)
         // - cfg1 tries to provision a new host for itself
-        Integer myIndex = parseIndex(Hostnames.getLocalhost());
+        Integer myIndex = parseIndex(HostName.getLocalhost());
         indices.remove(myIndex);
         return indices;
     }

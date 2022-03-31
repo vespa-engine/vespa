@@ -15,7 +15,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.net.Hostnames;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
@@ -503,12 +503,12 @@ public class DynamicProvisioningMaintainerTest {
         assertEquals(2, allNodes.nodeType(hostType.childNodeType()).size());
 
         // Deployment by the removed host has no effect
-        Hostnames.setHostNameForTestingOnly("cfg2.example.com");
+        HostName.setHostNameForTestingOnly("cfg2.example.com");
         tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
         assertEquals(List.of(), dynamicProvisioningTester.hostProvisioner.provisionedHosts());
 
         // Deployment on another config server starts provisioning a new host and child
-        Hostnames.setHostNameForTestingOnly("cfg3.example.com");
+        HostName.setHostNameForTestingOnly("cfg3.example.com");
         assertEquals(0, tester.nodeRepository().nodes().list(Node.State.reserved).nodeType(hostType.childNodeType()).size());
         assertEquals(2, tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType()).size());
         assertEquals(1, tester.nodeRepository().nodes().list(Node.State.reserved).nodeType(hostType.childNodeType()).size());
