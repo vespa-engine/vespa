@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 type TokenResponse struct {
@@ -54,8 +55,13 @@ func (t *TokenRetriever) Refresh(ctx context.Context, system string) (TokenRespo
 	defer r.Body.Close()
 	if r.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(r.Body)
-		bodyStr := string(b)
-		return TokenResponse{}, fmt.Errorf("cannot get a new access token from the refresh token: %s", bodyStr)
+		res := struct {
+			Description string `json:"error_description"`
+		}{}
+		if json.Unmarshal(b, &res) == nil {
+			return TokenResponse{}, errors.New(strings.ToLower(strings.TrimSuffix(res.Description, ".")))
+		}
+		return TokenResponse{}, fmt.Errorf("cannot get a new access token from the refresh token: %s", string(b))
 	}
 
 	var res TokenResponse
