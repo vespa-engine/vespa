@@ -43,8 +43,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.yahoo.stream.CustomCollectors.toLinkedMap;
 import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toMap;
 
 /**
  * Client which reads and writes nodes to a curator database.
@@ -453,7 +453,8 @@ public class CuratorDatabaseClient {
                                           .map(this::readLoadBalancer)
                                           .filter(Optional::isPresent)
                                           .map(Optional::get)
-                                          .collect(collectingAndThen(toMap(LoadBalancer::id, Function.identity()),
+                                          .collect(collectingAndThen(toLinkedMap(LoadBalancer::id,
+                                                                                 Function.identity()),
                                                                      Collections::unmodifiableMap));
     }
 

@@ -36,7 +36,7 @@ public class MockCurator extends Curator {
     /**
      * Creates a mock curator
      *
-     * @param stableOrdering if true children of a node are returned in the same order each time they are queries.
+     * @param stableOrdering if true children of a node are returned in the same order each time they are queried.
      *                       This is not what ZooKeeper does.
      */
     public MockCurator(boolean stableOrdering) {
