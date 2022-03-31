@@ -6,8 +6,7 @@
 #include "attributevector.hpp"
 #include "attributeiterators.hpp"
 #include "multinumericattributesaver.h"
-#include "multi_numeric_array_search_context.h"
-#include "multi_numeric_weighted_set_search_context.h"
+#include "multi_numeric_search_context.h"
 #include "load_utils.h"
 #include "primitivereader.h"
 #include <vespa/searchlib/query/query_term_simple.h>
@@ -172,11 +171,7 @@ MultiValueNumericAttribute<B, M>::getSearch(QueryTermSimple::UP qTerm,
                                             const attribute::SearchContextParams & params) const
 {
     (void) params;
-    if constexpr (!M::_hasWeight) {
-        return std::make_unique<attribute::MultiNumericArraySearchContext<T, M>>(std::move(qTerm), *this, this->_mvMapping);
-    } else {
-        return std::make_unique<attribute::MultiNumericWeightedSetSearchContext<T, M>>(std::move(qTerm), *this, this->_mvMapping);
-    }
+    return std::make_unique<attribute::MultiNumericSearchContext<T, M>>(std::move(qTerm), *this, this->_mvMapping);
 }
 
 

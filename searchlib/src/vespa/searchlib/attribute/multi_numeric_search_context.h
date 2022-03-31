@@ -9,11 +9,11 @@
 namespace search::attribute {
 
 /*
- * MultiNumericArraySearchContext handles the creation of search iterators for
- * a query term on a multi value numeric array attribute vector.
+ * MultiNumericSearchContext handles the creation of search iterators for
+ * a query term on a multi value numeric attribute vector.
  */
 template <typename T, typename M>
-class MultiNumericArraySearchContext : public NumericRangeMatcher<T>, public SearchContext
+class MultiNumericSearchContext : public NumericRangeMatcher<T>, public SearchContext
 {
 private:
     const MultiValueMapping<M>& _mv_mapping;
@@ -30,12 +30,12 @@ protected:
     bool valid() const override;
 
 public:
-    MultiNumericArraySearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, const MultiValueMapping<M>& mv_mapping);
+    MultiNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, const MultiValueMapping<M>& mv_mapping);
     int32_t find(DocId doc, int32_t elemId, int32_t & weight) const {
         auto values(_mv_mapping.get(doc));
         for (uint32_t i(elemId); i < values.size(); i++) {
             if (this->match(values[i].value())) {
-                weight = 1;
+                weight = values[i].weight();
                 return i;
             }
         }

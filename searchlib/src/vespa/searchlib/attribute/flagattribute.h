@@ -2,7 +2,7 @@
 #pragma once
 
 #include "multinumericattribute.h"
-#include "multi_numeric_array_search_context.h"
+#include "multi_numeric_search_context.h"
 
 namespace search {
 
@@ -15,7 +15,7 @@ public:
     FlagAttributeT(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
 private:
     typedef AttributeVector::DocId DocId;
-    using BaseSC = attribute::MultiNumericArraySearchContext<typename B::BaseType, typename B::WType>;
+    using BaseSC = attribute::MultiNumericSearchContext<typename B::BaseType, typename B::WType>;
     class SearchContext : public BaseSC {
     public:
         typedef FlagAttributeT<B> Attribute;
