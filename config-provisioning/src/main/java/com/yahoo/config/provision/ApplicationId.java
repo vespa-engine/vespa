@@ -3,7 +3,9 @@ package com.yahoo.config.provision;
 
 import com.yahoo.cloud.config.ApplicationIdConfig;
 
+import java.util.Comparator;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * A complete, immutable identification of an application instance.
@@ -13,6 +15,20 @@ import java.util.Objects;
  * @author bratseth
  */
 public class ApplicationId implements Comparable<ApplicationId> {
+
+    // TODO: remove '.' and '*' from this pattern.
+    static final Pattern namePattern = Pattern.compile("(?!\\.\\.)[a-zA-Z0-9_.*-]{1,64}");
+
+    private static final ApplicationId global = new ApplicationId(TenantName.from("*"),
+                                                                  ApplicationName.from("*"),
+                                                                  InstanceName.from("*")) {
+        @Override public boolean equals(Object other) { return this == other; }
+    };
+
+    private static final Comparator<ApplicationId> comparator = Comparator.comparing(ApplicationId::tenant)
+                                                                          .thenComparing(ApplicationId::application)
+                                                                          .thenComparing(ApplicationId::instance)
+                                                                          .thenComparing(global::equals, Boolean::compare);
 
     private final TenantName tenant;
     private final ApplicationName application;
@@ -97,18 +113,7 @@ public class ApplicationId implements Comparable<ApplicationId> {
 
     @Override
     public int compareTo(ApplicationId other) {
-        int diff;
-
-        diff = tenant.compareTo(other.tenant);
-        if (diff != 0) { return diff; }
-
-        diff = application.compareTo(other.application);
-        if (diff != 0) { return diff; }
-
-        diff = instance.compareTo(other.instance);
-        if (diff != 0) { return diff; }
-
-        return 0;
+        return comparator.compare(this, other);
     }
 
     /** Returns an application id where all fields are "default" */
@@ -116,12 +121,10 @@ public class ApplicationId implements Comparable<ApplicationId> {
         return new ApplicationId(TenantName.defaultName(), ApplicationName.defaultName(), InstanceName.defaultName());
     }
 
-    /** Returns an application id where all fields are "*" */
+    // TODO: kill this
+    /** Returns a very special application id, which is not equal to any other id. */
     public static ApplicationId global() {
-        return new Builder().tenant("*")
-                            .applicationName("*")
-                            .instanceName("*")
-                            .build();
+        return global;
     }
 
     public static class Builder {
