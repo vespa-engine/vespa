@@ -14,11 +14,12 @@ import java.net.URI;
  */
 public class UriFieldValue extends StringFieldValue {
 
-    public static class Factory extends PrimitiveDataType.Factory {
-        public FieldValue create() {
-            return new UriFieldValue();
-        }
+    private static class Factory extends PrimitiveDataType.Factory {
+        @Override public FieldValue create() { return new UriFieldValue(); }
+        @Override public FieldValue create(String value) { return new UriFieldValue(value); }
     }
+    public static Factory getFactory() { return new Factory(); }
+
     public UriFieldValue() { super(); }
 
     public UriFieldValue(String value) {

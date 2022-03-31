@@ -85,9 +85,7 @@ public class SingleValueReader {
     }
 
     public static FieldValue readAtomic(String field, DataType expectedType) {
-        if (expectedType.equals(DataType.RAW)) {
-            return expectedType.createFieldValue(Base64.getMimeDecoder().decode(field));
-        } else if (expectedType.equals(PositionDataType.INSTANCE)) {
+        if (expectedType.equals(PositionDataType.INSTANCE)) {
             return PositionDataType.fromString(field);
         } else if (expectedType instanceof ReferenceDataType) {
             return readReferenceFieldValue(field, expectedType);

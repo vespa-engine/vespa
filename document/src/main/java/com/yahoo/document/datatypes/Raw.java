@@ -10,9 +10,9 @@ import com.yahoo.document.serialization.XmlSerializationHelper;
 import com.yahoo.document.serialization.XmlStream;
 import com.yahoo.vespa.objects.Ids;
 
-import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Base64;
 
 /**
  * A field value which is an array of byte data
@@ -22,9 +22,8 @@ import java.util.Arrays;
 public final class Raw extends FieldValue {
 
     private static class Factory extends PrimitiveDataType.Factory {
-        public FieldValue create() {
-            return new Raw();
-        }
+        @Override public FieldValue create() { return new Raw(); }
+        @Override public FieldValue create(String value) { return new Raw(Base64.getMimeDecoder().decode(value)); }
     }
 
     public static final int classId = registerClass(Ids.document + 16, Raw.class);

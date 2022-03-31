@@ -18,9 +18,8 @@ import com.yahoo.vespa.objects.Ids;
 public final class LongFieldValue extends NumericFieldValue {
 
     private static class Factory extends PrimitiveDataType.Factory {
-        public FieldValue create() {
-            return new LongFieldValue();
-        }
+        @Override public FieldValue create() { return new LongFieldValue(); }
+        @Override public FieldValue create(String value) { return new LongFieldValue(value); }
     }
     public static PrimitiveDataType.Factory getFactory() { return new Factory(); }
     public static final int classId = registerClass(Ids.document + 12, LongFieldValue.class);

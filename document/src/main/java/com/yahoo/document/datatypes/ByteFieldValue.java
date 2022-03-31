@@ -18,9 +18,8 @@ import com.yahoo.vespa.objects.Ids;
 public class ByteFieldValue extends NumericFieldValue {
 
     private static class Factory extends PrimitiveDataType.Factory {
-        public FieldValue create() {
-            return new ByteFieldValue();
-        }
+        @Override public FieldValue create() { return new ByteFieldValue(); }
+        @Override public FieldValue create(String value) { return new ByteFieldValue(value); }
     }
 
     public static PrimitiveDataType.Factory getFactory() { return new Factory(); }

@@ -50,7 +50,7 @@ public abstract class DataType extends Identifiable implements Serializable, Com
     public final static PrimitiveDataType BOOL = new PrimitiveDataType("bool", 6, BoolFieldValue.class, BoolFieldValue.getFactory());
     public final static NumericDataType FLOAT16 = new NumericDataType("float16", 7, Float16FieldValue.class, Float16FieldValue.getFactory());
     public final static DocumentType DOCUMENT = new DocumentType("document");
-    public final static PrimitiveDataType URI = new PrimitiveDataType("uri", 10, UriFieldValue.class, new UriFieldValue.Factory());
+    public final static PrimitiveDataType URI = new PrimitiveDataType("uri", 10, UriFieldValue.class, UriFieldValue.getFactory());
     public final static NumericDataType BYTE = new NumericDataType("byte", 16, ByteFieldValue.class, ByteFieldValue.getFactory());
     final static int TAG_ID = 18;
     public final static PrimitiveDataType PREDICATE = new PrimitiveDataType("predicate", 20, PredicateFieldValue.class, PredicateFieldValue.getFactory());
