@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.io.File;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author gjoranv
@@ -20,6 +21,10 @@ public class PathNodeTest {
 
         n = new PathNode(new FileReference("foo.txt"));
         assertEquals(new File("foo.txt").toPath(), n.value());
+
+        assertThrows("path may not start with '..', but got: foo/../../boo",
+                     IllegalArgumentException.class,
+                     () -> new PathNode(new FileReference("foo/../../boo")));
     }
 
 }
