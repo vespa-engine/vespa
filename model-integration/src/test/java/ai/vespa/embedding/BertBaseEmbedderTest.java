@@ -1,5 +1,6 @@
 package ai.vespa.embedding;
 
+import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import com.yahoo.config.UrlReference;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -8,11 +9,13 @@ import org.junit.Test;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assume.assumeTrue;
 
 public class BertBaseEmbedderTest {
 
     @Test
     public void testEmbedder() {
+        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
         BertBaseEmbedderConfig.Builder builder = new BertBaseEmbedderConfig.Builder();
         builder.tokenizerVocabUrl(new UrlReference("src/test/models/onnx/transformer/dummy_vocab.txt"));
         builder.transformerModelUrl(new UrlReference("src/test/models/onnx/transformer/dummy_transformer.onnx"));
