@@ -18,9 +18,8 @@ import com.yahoo.vespa.objects.Ids;
 public final class Float16FieldValue extends NumericFieldValue {
 
     private static class Factory extends PrimitiveDataType.Factory {
-        public FieldValue create() {
-            return new Float16FieldValue();
-        }
+        @Override public FieldValue create() { return new Float16FieldValue(); }
+        @Override public FieldValue create(String value) { return new Float16FieldValue(value); }
     }
 
     public static PrimitiveDataType.Factory getFactory() { return new Factory(); }

@@ -14,6 +14,7 @@ public class PrimitiveDataType extends DataType {
 
     public static abstract class Factory {
         public abstract FieldValue create();
+        public abstract FieldValue create(String value);
     }
 
     // The global class identifier shared with C++.
@@ -41,8 +42,15 @@ public class PrimitiveDataType extends DataType {
         return (PrimitiveDataType)super.clone();
     }
 
+    @Override
     public FieldValue createFieldValue() {
         return factory.create();
+    }
+    @Override
+    public FieldValue createFieldValue(Object arg) {
+        if (arg == null) return factory.create();
+        if (arg instanceof String) return factory.create((String)arg);
+        return super.createFieldValue(arg);
     }
 
     @Override

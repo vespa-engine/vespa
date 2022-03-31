@@ -30,9 +30,8 @@ import java.util.OptionalInt;
 public class StringFieldValue extends FieldValue {
 
     private static class Factory extends PrimitiveDataType.Factory {
-        public FieldValue create() {
-            return new StringFieldValue();
-        }
+        @Override public FieldValue create() { return new StringFieldValue(); }
+        @Override public FieldValue create(String value) { return new StringFieldValue(value); }
     }
 
     public static PrimitiveDataType.Factory getFactory() { return new Factory(); }

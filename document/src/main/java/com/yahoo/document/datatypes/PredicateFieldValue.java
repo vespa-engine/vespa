@@ -125,12 +125,10 @@ public class PredicateFieldValue extends FieldValue {
     }
 
     public static PrimitiveDataType.Factory getFactory() {
-        return new PrimitiveDataType.Factory() {
-
-            @Override
-            public FieldValue create() {
-                return new PredicateFieldValue();
-            }
-        };
+        return new Factory();
+    }
+    private static class Factory extends PrimitiveDataType.Factory {
+        @Override public FieldValue create() { return new PredicateFieldValue(); }
+        @Override public FieldValue create(String value) { return new PredicateFieldValue(value); }
     }
 }

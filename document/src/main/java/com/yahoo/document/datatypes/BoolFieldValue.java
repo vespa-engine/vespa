@@ -18,9 +18,8 @@ import com.yahoo.vespa.objects.Ids;
 public class BoolFieldValue extends FieldValue {
 
     private static class Factory extends PrimitiveDataType.Factory {
-        public FieldValue create() {
-            return new BoolFieldValue();
-        }
+        @Override public FieldValue create() { return new BoolFieldValue(); }
+        @Override public FieldValue create(String value) { return new BoolFieldValue(value); }
     }
 
     public static PrimitiveDataType.Factory getFactory() { return new Factory(); }

@@ -95,7 +95,7 @@ public abstract class FieldValue extends Identifiable implements Comparable<Fiel
         return this;
     }
 
-    class RecursiveIteratorHandler extends FieldPathIteratorHandler {
+    static class RecursiveIteratorHandler extends FieldPathIteratorHandler {
         FieldValue retVal = null;
         boolean multiValue = false;
 
@@ -109,9 +109,9 @@ public abstract class FieldValue extends Identifiable implements Comparable<Fiel
         public void onPrimitive(FieldValue fv) {
             if (retVal != null) {
                 if (multiValue) {
-                    ((Array) retVal).add(fv);
+                    ((Array<FieldValue>) retVal).add(fv);
                 } else {
-                    Array afv = new Array(new ArrayDataType(retVal.getDataType()));
+                    Array<FieldValue> afv = new Array<>(new ArrayDataType(retVal.getDataType()));
                     afv.add(retVal);
                     afv.add(fv);
                     retVal = afv;

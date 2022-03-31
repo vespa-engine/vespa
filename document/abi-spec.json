@@ -922,7 +922,8 @@
     ],
     "methods": [
       "public void <init>()",
-      "public abstract com.yahoo.document.datatypes.FieldValue create()"
+      "public abstract com.yahoo.document.datatypes.FieldValue create()",
+      "public abstract com.yahoo.document.datatypes.FieldValue create(java.lang.String)"
     ],
     "fields": []
   },
@@ -936,6 +937,7 @@
       "protected void <init>(java.lang.String, int, java.lang.Class, com.yahoo.document.PrimitiveDataType$Factory)",
       "public com.yahoo.document.PrimitiveDataType clone()",
       "public com.yahoo.document.datatypes.FieldValue createFieldValue()",
+      "public com.yahoo.document.datatypes.FieldValue createFieldValue(java.lang.Object)",
       "public java.lang.Class getValueClass()",
       "public boolean isValueCompatible(com.yahoo.document.datatypes.FieldValue)",
       "public com.yahoo.document.PrimitiveDataType getPrimitiveType()",
@@ -2345,18 +2347,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.document.datatypes.UriFieldValue$Factory": {
-    "superClass": "com.yahoo.document.PrimitiveDataType$Factory",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public com.yahoo.document.datatypes.FieldValue create()"
-    ],
-    "fields": []
-  },
   "com.yahoo.document.datatypes.UriFieldValue": {
     "superClass": "com.yahoo.document.datatypes.StringFieldValue",
     "interfaces": [],
@@ -2364,6 +2354,7 @@
       "public"
     ],
     "methods": [
+      "public static com.yahoo.document.datatypes.UriFieldValue$Factory getFactory()",
       "public void <init>()",
       "public void <init>(java.lang.String)",
       "public void assign(java.lang.Object)",
