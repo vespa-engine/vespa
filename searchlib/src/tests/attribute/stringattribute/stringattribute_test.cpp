@@ -18,6 +18,7 @@ LOG_SETUP("stringattribute_test");
 using search::attribute::CollectionType;
 using search::attribute::IAttributeVector;
 using search::attribute::SearchContext;
+using search::attribute::StringSearchHelper;
 using vespalib::datastore::EntryRef;
 using namespace search;
 

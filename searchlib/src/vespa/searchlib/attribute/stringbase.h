@@ -8,43 +8,9 @@
 #include "i_enum_store.h"
 #include "loadedenumvalue.h"
 #include "search_context.h"
-#include <vespa/vespalib/regex/regex.h>
-#include <vespa/vespalib/text/lowercase.h>
-#include <vespa/vespalib/text/utf8.h>
-#include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
-#include <optional>
+#include "string_search_helper.h"
 
 namespace search {
-
-/**
- * Helper class for search context when scanning string fields
- * It handles different search settings like prefix, regex and cased/uncased.
- */
-class StringSearchHelper {
-public:
-    StringSearchHelper(QueryTermUCS4 & qTerm, bool cased);
-    StringSearchHelper(StringSearchHelper&&) noexcept;
-    ~StringSearchHelper();
-    bool isMatch(const char *src) const;
-    bool isPrefix() const { return _isPrefix; }
-    bool isRegex() const { return _isRegex; }
-    bool isCased() const { return _isCased; }
-    bool isFuzzy() const { return _isFuzzy; }
-    const vespalib::Regex & getRegex() const { return _regex; }
-    const vespalib::FuzzyMatcher & getFuzzyMatcher() const { return _fuzzyMatcher; }
-private:
-    vespalib::Regex                _regex;
-    vespalib::FuzzyMatcher         _fuzzyMatcher;
-    union {
-        const ucs4_t *_ucs4;
-        const char   *_char;
-    }                              _term;
-    uint32_t                       _termLen;
-    bool                           _isPrefix;
-    bool                           _isRegex;
-    bool                           _isCased;
-    bool                           _isFuzzy;
-};
 
 class ReaderBase;
 
@@ -176,7 +142,7 @@ protected:
         }
     private:
         std::unique_ptr<QueryTermUCS4> _queryTerm;
-        StringSearchHelper             _helper;
+        attribute::StringSearchHelper  _helper;
     };
 };
 
