@@ -8,7 +8,7 @@
 #include "i_enum_store.h"
 #include "loadedenumvalue.h"
 #include "search_context.h"
-#include "string_search_helper.h"
+#include "string_matcher.h"
 
 namespace search {
 
@@ -88,7 +88,7 @@ private:
     long onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
 
 protected:
-    class StringSearchContext : public attribute::SearchContext {
+    class StringSearchContext : public attribute::StringMatcher, public attribute::SearchContext {
     public:
         StringSearchContext(QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched);
         StringSearchContext(StringSearchContext&&) noexcept;
@@ -96,13 +96,7 @@ protected:
     protected:
         bool valid() const override;
         const QueryTermUCS4 * queryTerm() const override;
-        bool isMatch(const char *src) const { return _helper.isMatch(src); }
-        bool isPrefix() const { return _helper.isPrefix(); }
-        bool isRegex() const { return _helper.isRegex(); }
-        bool isCased() const { return _helper.isCased(); }
-        bool isFuzzy() const { return _helper.isFuzzy(); }
-        const vespalib::Regex & getRegex() const { return _helper.getRegex(); }
-        const vespalib::FuzzyMatcher & getFuzzyMatcher() const { return _helper.getFuzzyMatcher(); }
+        bool isMatch(const char *src) const { return match(src); }
 
         class CollectHitCount {
         public:
@@ -140,9 +134,6 @@ protected:
             }
             return -1;
         }
-    private:
-        std::unique_ptr<QueryTermUCS4> _queryTerm;
-        attribute::StringSearchHelper  _helper;
     };
 };
 
