@@ -100,8 +100,7 @@ struct FileStorTestBase : Test {
     void TearDown() override;
 
     void createBucket(document::BucketId bid) {
-        spi::Context context(spi::Priority(0), spi::Trace::TraceLevel(0));
-        _node->getPersistenceProvider().createBucket(makeSpiBucket(bid), context);
+        _node->getPersistenceProvider().createBucket(makeSpiBucket(bid));
 
         StorBucketDatabase::WrappedEntry entry(
                 _node->getStorageBucketDatabase().get(bid, "foo", StorBucketDatabase::CREATE_IF_NONEXISTING));
@@ -783,10 +782,7 @@ TEST_F(FileStorManagerTest, priority) {
     // Create buckets in separate, initial pass to avoid races with puts
     for (uint32_t i=0; i<documents.size(); ++i) {
         document::BucketId bucket(16, factory.getBucketId(documents[i]->getId()).getRawId());
-
-        spi::Context context(spi::Priority(0), spi::Trace::TraceLevel(0));
-
-        _node->getPersistenceProvider().createBucket(makeSpiBucket(bucket), context);
+        _node->getPersistenceProvider().createBucket(makeSpiBucket(bucket));
     }
 
     // Populate bucket with the given data
@@ -845,13 +841,12 @@ TEST_F(FileStorManagerTest, split1) {
         documents.push_back(doc);
     }
     document::BucketIdFactory factory;
-    spi::Context context(spi::Priority(0), spi::Trace::TraceLevel(0));
     {
         // Populate bucket with the given data
         for (uint32_t i=0; i<documents.size(); ++i) {
             document::BucketId bucket(16, factory.getBucketId(documents[i]->getId()).getRawId());
 
-            _node->getPersistenceProvider().createBucket(makeSpiBucket(bucket), context);
+            _node->getPersistenceProvider().createBucket(makeSpiBucket(bucket));
 
             auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bucket), documents[i], 100 + i);
             cmd->setAddress(_Storage3);
@@ -950,7 +945,6 @@ TEST_F(FileStorManagerTest, split_single_group) {
     auto& top = c.top;
 
     setClusterState("storage:2 distributor:1");
-    spi::Context context(spi::Priority(0), spi::Trace::TraceLevel(0));
     for (uint32_t j=0; j<1; ++j) {
         // Test this twice, once where all the data ends up in file with
         // splitbit set, and once where all the data ends up in file with
@@ -964,18 +958,16 @@ TEST_F(FileStorManagerTest, split_single_group) {
             std::string content("Here is some content for all documents");
             std::ostringstream uri;
 
-            uri << "id:footype:testdoctype1:n=" << (state ? 0x10001 : 0x0100001)
-                                   << ":mydoc-" << i;
+            uri << "id:footype:testdoctype1:n=" << (state ? 0x10001 : 0x0100001) << ":mydoc-" << i;
             documents.emplace_back(createDocument(content, uri.str()));
         }
         document::BucketIdFactory factory;
 
         // Populate bucket with the given data
         for (uint32_t i=0; i<documents.size(); ++i) {
-            document::BucketId bucket(16, factory.getBucketId(
-                                documents[i]->getId()).getRawId());
+            document::BucketId bucket(16, factory.getBucketId(documents[i]->getId()).getRawId());
 
-            _node->getPersistenceProvider().createBucket(makeSpiBucket(bucket), context);
+            _node->getPersistenceProvider().createBucket(makeSpiBucket(bucket));
 
             auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bucket), documents[i], 100 + i);
             cmd->setAddress(_Storage3);
@@ -1025,12 +1017,11 @@ FileStorTestBase::putDoc(DummyStorageLink& top,
                          const document::BucketId& target,
                          uint32_t docNum)
 {
-    spi::Context context(spi::Priority(0), spi::Trace::TraceLevel(0));
     document::BucketIdFactory factory;
     document::DocumentId docId(vespalib::make_string("id:ns:testdoctype1:n=%" PRIu64 ":%d", target.getId(), docNum));
     document::BucketId bucket(16, factory.getBucketId(docId).getRawId());
     //std::cerr << "doc bucket is " << bucket << " vs source " << source << "\n";
-    _node->getPersistenceProvider().createBucket(makeSpiBucket(target), context);
+    _node->getPersistenceProvider().createBucket(makeSpiBucket(target));
     Document::SP doc(new Document(*_testdoctype1, docId));
     auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(target), doc, docNum+1);
     cmd->setAddress(_Storage3);

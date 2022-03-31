@@ -49,7 +49,7 @@ public:
     {}
 
     void
-    putAsync(const spi::Bucket&, spi::Timestamp, document::Document::SP, spi::Context&, spi::OperationComplete::UP onComplete) override
+    putAsync(const spi::Bucket&, spi::Timestamp, document::Document::SP, spi::OperationComplete::UP onComplete) override
     {
         _queueBarrier.await();
         // message abort stage with active opertion in disk queue
@@ -64,15 +64,15 @@ public:
         return PersistenceProviderWrapper::getBucketInfo(bucket);
     }
 
-    void createBucketAsync(const spi::Bucket& bucket, spi::Context& ctx, spi::OperationComplete::UP onComplete) noexcept override {
+    void createBucketAsync(const spi::Bucket& bucket, spi::OperationComplete::UP onComplete) noexcept override {
         ++_createBucketInvocations;
-        PersistenceProviderWrapper::createBucketAsync(bucket, ctx, std::move(onComplete));
+        PersistenceProviderWrapper::createBucketAsync(bucket, std::move(onComplete));
     }
 
     void
-    deleteBucketAsync(const spi::Bucket& bucket, spi::Context& ctx, spi::OperationComplete::UP onComplete) noexcept override {
+    deleteBucketAsync(const spi::Bucket& bucket, spi::OperationComplete::UP onComplete) noexcept override {
         ++_deleteBucketInvocations;
-        PersistenceProviderWrapper::deleteBucketAsync(bucket, ctx, std::move(onComplete));
+        PersistenceProviderWrapper::deleteBucketAsync(bucket, std::move(onComplete));
     }
 };
 

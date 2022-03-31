@@ -68,8 +68,7 @@ SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracker
     PersistenceUtil::LockResult lock1(_env.lockAndGetDisk(target1));
     PersistenceUtil::LockResult lock2(_env.lockAndGetDisk(target2));
 
-    spi::Result result = _spi.split(spiBucket, spi::Bucket(target1),
-                                    spi::Bucket(target2), tracker->context());
+    spi::Result result = _spi.split(spiBucket, spi::Bucket(target1), spi::Bucket(target2));
     if (result.hasError()) {
         tracker->fail(PersistenceUtil::convertErrorCode(result), result.getErrorMessage());
         return tracker;
@@ -124,7 +123,7 @@ SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracker
                 spi::Bucket createTarget(target.second.bucket);
                 LOG(debug, "Split target %s was empty, but re-creating it since there are remapped operations queued to it",
                     createTarget.toString().c_str());
-                _spi.createBucket(createTarget, tracker->context());
+                _spi.createBucket(createTarget);
             }
             splitReply.getSplitInfo().emplace_back(target.second.bucket.getBucketId(),
                                                    target.first->getBucketInfo());
@@ -203,11 +202,7 @@ SplitJoinHandler::handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracker
         lock2 = _env.lockAndGetDisk(secondBucket);
     }
 
-    spi::Result result =
-            _spi.join(spi::Bucket(firstBucket),
-                      spi::Bucket(secondBucket),
-                      spi::Bucket(destBucket),
-                      tracker->context());
+    spi::Result result = _spi.join(spi::Bucket(firstBucket), spi::Bucket(secondBucket), spi::Bucket(destBucket));
     if (!tracker->checkForError(result)) {
         return tracker;
     }

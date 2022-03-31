@@ -83,7 +83,7 @@ SimpleMessageHandler::handleRevert(api::RevertCommand& cmd, MessageTracker::UP t
     spi::Bucket b = spi::Bucket(cmd.getBucket());
     const std::vector<api::Timestamp> & tokens = cmd.getRevertTokens();
     for (const api::Timestamp & token : tokens) {
-        spi::Result result = _spi.removeEntry(b, spi::Timestamp(token), tracker->context());
+        spi::Result result = _spi.removeEntry(b, spi::Timestamp(token));
     }
     return tracker;
 }
@@ -92,7 +92,7 @@ MessageTracker::UP
 SimpleMessageHandler::handleGetIter(GetIterCommand& cmd, MessageTracker::UP tracker) const
 {
     tracker->setMetric(_env._metrics.visit);
-    spi::IterateResult result(_spi.iterate(cmd.getIteratorId(), cmd.getMaxByteSize(), tracker->context()));
+    spi::IterateResult result(_spi.iterate(cmd.getIteratorId(), cmd.getMaxByteSize()));
     if (tracker->checkForError(result)) {
         auto reply = std::make_shared<GetIterReply>(cmd);
         reply->getEntries() = result.steal_entries();

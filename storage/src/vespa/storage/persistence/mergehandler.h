@@ -116,7 +116,6 @@ private:
     void applyDiffEntry(std::shared_ptr<ApplyBucketDiffState> async_results,
                         const spi::Bucket&,
                         const api::ApplyBucketDiffCommand::Entry&,
-                        spi::Context& context,
                         const document::DocumentTypeRepo& repo) const;
 
     /**

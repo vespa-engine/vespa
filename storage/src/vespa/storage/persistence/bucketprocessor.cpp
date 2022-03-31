@@ -16,20 +16,16 @@ class IteratorGuard
 private:
     spi::PersistenceProvider& _spi;
     spi::IteratorId _iteratorId;
-    spi::Context& _context;
 
 public:
-    IteratorGuard(spi::PersistenceProvider& spi,
-                  spi::IteratorId iteratorId,
-                  spi::Context& context)
+    IteratorGuard(spi::PersistenceProvider& spi, spi::IteratorId iteratorId)
         : _spi(spi),
-          _iteratorId(iteratorId),
-          _context(context)
+          _iteratorId(iteratorId)
     { }
     ~IteratorGuard()
     {
         assert(_iteratorId != 0);
-        _spi.destroyIterator(_iteratorId, _context);
+        _spi.destroyIterator(_iteratorId);
     }
     spi::IteratorId getIteratorId() const { return _iteratorId; }
     spi::PersistenceProvider& getPersistenceProvider() const { return _spi; }
@@ -62,10 +58,10 @@ BucketProcessor::iterateAll(spi::PersistenceProvider& provider,
     }
 
     spi::IteratorId iteratorId(createIterResult.getIteratorId());
-    IteratorGuard iteratorGuard(provider, iteratorId, context);
+    IteratorGuard iteratorGuard(provider, iteratorId);
 
     while (true) {
-        spi::IterateResult result(provider.iterate(iteratorId, UINT64_MAX, context));
+        spi::IterateResult result(provider.iterate(iteratorId, UINT64_MAX));
         if (result.getErrorCode() != spi::Result::ErrorType::NONE) {
             vespalib::asciistream ss;
             ss << "Failed: " << result.getErrorMessage();

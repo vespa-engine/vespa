@@ -2,7 +2,6 @@
 
 #include "persistenceprovider.h"
 #include "catchresult.h"
-#include <vespa/document/base/documentid.h>
 #include <future>
 
 namespace storage::spi {
@@ -18,52 +17,52 @@ PersistenceProvider::setActiveState(const Bucket& bucket, BucketInfo::ActiveStat
 }
 
 Result
-PersistenceProvider::createBucket(const Bucket& bucket, Context& context) {
+PersistenceProvider::createBucket(const Bucket& bucket) {
     auto catcher = std::make_unique<CatchResult>();
     auto future = catcher->future_result();
-    createBucketAsync(bucket, context, std::move(catcher));
+    createBucketAsync(bucket, std::move(catcher));
     return *future.get();
 }
 
 Result
-PersistenceProvider::deleteBucket(const Bucket& bucket, Context& context) {
+PersistenceProvider::deleteBucket(const Bucket& bucket) {
     auto catcher = std::make_unique<CatchResult>();
     auto future = catcher->future_result();
-    deleteBucketAsync(bucket, context, std::move(catcher));
+    deleteBucketAsync(bucket, std::move(catcher));
     return *future.get();
 }
 
 Result
-PersistenceProvider::put(const Bucket& bucket, Timestamp timestamp, DocumentSP doc, Context& context) {
+PersistenceProvider::put(const Bucket& bucket, Timestamp timestamp, DocumentSP doc) {
     auto catcher = std::make_unique<CatchResult>();
     auto future = catcher->future_result();
-    putAsync(bucket, timestamp, std::move(doc), context, std::move(catcher));
+    putAsync(bucket, timestamp, std::move(doc), std::move(catcher));
     return *future.get();
 }
 
 RemoveResult
-PersistenceProvider::remove(const Bucket& bucket, Timestamp timestamp, const DocumentId & docId, Context& context) {
+PersistenceProvider::remove(const Bucket& bucket, Timestamp timestamp, const DocumentId & docId) {
     auto catcher = std::make_unique<CatchResult>();
     auto future = catcher->future_result();
     std::vector<TimeStampAndDocumentId> ids;
     ids.emplace_back(timestamp, docId);
-    removeAsync(bucket, std::move(ids), context, std::move(catcher));
+    removeAsync(bucket, std::move(ids), std::move(catcher));
     return dynamic_cast<const RemoveResult &>(*future.get());
 }
 
 RemoveResult
-PersistenceProvider::removeIfFound(const Bucket& bucket, Timestamp timestamp, const DocumentId & docId, Context& context) {
+PersistenceProvider::removeIfFound(const Bucket& bucket, Timestamp timestamp, const DocumentId & docId) {
     auto catcher = std::make_unique<CatchResult>();
     auto future = catcher->future_result();
-    removeIfFoundAsync(bucket, timestamp, docId, context, std::move(catcher));
+    removeIfFoundAsync(bucket, timestamp, docId, std::move(catcher));
     return dynamic_cast<const RemoveResult &>(*future.get());
 }
 
 UpdateResult
-PersistenceProvider::update(const Bucket& bucket, Timestamp timestamp, DocumentUpdateSP upd, Context& context) {
+PersistenceProvider::update(const Bucket& bucket, Timestamp timestamp, DocumentUpdateSP upd) {
     auto catcher = std::make_unique<CatchResult>();
     auto future = catcher->future_result();
-    updateAsync(bucket, timestamp, std::move(upd), context, std::move(catcher));
+    updateAsync(bucket, timestamp, std::move(upd), std::move(catcher));
     return dynamic_cast<const UpdateResult &>(*future.get());
 }
 

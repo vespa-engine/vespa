@@ -7,12 +7,7 @@
 #include "bm_node_stats.h"
 #include "bm_storage_chain_builder.h"
 #include "bm_storage_link_context.h"
-#include "document_api_message_bus_bm_feed_handler.h"
 #include "i_bm_distribution.h"
-#include "i_bm_feed_handler.h"
-#include "spi_bm_feed_handler.h"
-#include "storage_api_chain_bm_feed_handler.h"
-#include "storage_api_message_bus_bm_feed_handler.h"
 #include "storage_api_rpc_bm_feed_handler.h"
 #include <tests/proton/common/dummydbowner.h>
 #include <vespa/config-attributes.h>
@@ -60,7 +55,6 @@
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/storage/bucketdb/config-stor-bucket-init.h>
 #include <vespa/storage/common/i_storage_chain_builder.h>
-#include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/config/config-stor-bouncer.h>
 #include <vespa/storage/config/config-stor-communicationmanager.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
@@ -154,8 +148,6 @@ int port_number(int base_port, PortBias bias)
 {
     return base_port + static_cast<int>(bias);
 }
-
-storage::spi::Context context(storage::spi::Priority(0), 0);
 
 template <class ChainLink, class Process>
 ChainLink* extract_chain_link(Process &process)
@@ -610,7 +602,7 @@ MyBmNode::initialize_persistence_provider()
 void
 MyBmNode::create_bucket(const document::Bucket& bucket)
 {
-    get_persistence_provider()->createBucket(storage::spi::Bucket(bucket), context);
+    get_persistence_provider()->createBucket(storage::spi::Bucket(bucket));
 }
 
 void

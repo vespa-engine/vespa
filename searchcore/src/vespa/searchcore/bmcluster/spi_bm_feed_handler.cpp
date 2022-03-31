@@ -108,7 +108,7 @@ SpiBmFeedHandler::put(const document::Bucket& bucket, std::unique_ptr<Document> 
     auto provider = get_provider(bucket);
     if (provider) {
         Bucket spi_bucket(bucket);
-        provider->putAsync(spi_bucket, Timestamp(timestamp), std::move(document), context, std::make_unique<MyOperationComplete>(provider, _errors, spi_bucket, tracker));
+        provider->putAsync(spi_bucket, Timestamp(timestamp), std::move(document), std::make_unique<MyOperationComplete>(provider, _errors, spi_bucket, tracker));
     } else {
         ++_errors;
     }
@@ -121,7 +121,7 @@ SpiBmFeedHandler::update(const document::Bucket& bucket, std::unique_ptr<Documen
     auto provider = get_provider(bucket);
     if (provider) {
         Bucket spi_bucket(bucket);
-        provider->updateAsync(spi_bucket, Timestamp(timestamp), std::move(document_update), context, std::make_unique<MyOperationComplete>(provider, _errors, spi_bucket, tracker));
+        provider->updateAsync(spi_bucket, Timestamp(timestamp), std::move(document_update), std::make_unique<MyOperationComplete>(provider, _errors, spi_bucket, tracker));
     } else {
         ++_errors;
     }
@@ -136,7 +136,7 @@ SpiBmFeedHandler::remove(const document::Bucket& bucket, const DocumentId& docum
         Bucket spi_bucket(bucket);
         std::vector<storage::spi::PersistenceProvider::TimeStampAndDocumentId> ids;
         ids.emplace_back(Timestamp(timestamp), document_id);
-        provider->removeAsync(spi_bucket, std::move(ids), context, std::make_unique<MyOperationComplete>(provider, _errors, spi_bucket, tracker));
+        provider->removeAsync(spi_bucket, std::move(ids), std::make_unique<MyOperationComplete>(provider, _errors, spi_bucket, tracker));
     } else {
         ++_errors;
     }

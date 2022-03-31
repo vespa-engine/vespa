@@ -181,11 +181,10 @@ PersistenceThreadSplitTest::doTest(SplitCase splitCase)
 
     uint64_t location = 0;
     uint64_t splitMask = 1ULL << (splitLevelToDivide - 1);
-    spi::Context context(spi::Priority(0), spi::Trace::TraceLevel(0));
     spi::Bucket bucket(makeSpiBucket(document::BucketId(currentSplitLevel, 1)));
     spi::PersistenceProvider& spi(getPersistenceProvider());
-    spi.deleteBucket(bucket, context);
-    spi.createBucket(bucket, context);
+    spi.deleteBucket(bucket);
+    spi.createBucket(bucket);
     document::TestDocMan testDocMan;
     for (uint32_t i=0; i<docCount; ++i) {
         uint64_t docloc;
@@ -197,9 +196,8 @@ PersistenceThreadSplitTest::doTest(SplitCase splitCase)
             docloc = location;
             seed = 0;
         }
-        document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(
-                docloc, seed, docSize, docSize));
-        spi.put(bucket, spi::Timestamp(1000 + i), std::move(doc), context);
+        document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(docloc, seed, docSize, docSize));
+        spi.put(bucket, spi::Timestamp(1000 + i), std::move(doc));
     }
 
     getNode().getStateUpdater().setClusterState(

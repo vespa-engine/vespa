@@ -743,7 +743,7 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     {
         spi::Context context(msg->getPriority(), msg->getTrace().getLevel());
         shared_ptr<DestroyIteratorCommand> cmd(std::static_pointer_cast<DestroyIteratorCommand>(msg));
-        _provider->destroyIterator(cmd->getIteratorId(), context);
+        _provider->destroyIterator(cmd->getIteratorId());
         msg->getTrace().addChild(context.steal_trace());
         return true;
     }

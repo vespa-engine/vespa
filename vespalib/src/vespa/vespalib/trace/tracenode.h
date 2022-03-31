@@ -34,7 +34,7 @@ public:
     /**
      * Create an empty trace tree.
      */
-    TraceNode();
+    TraceNode() noexcept;
 
     /**
      * Create a leaf node with the given note and timestamp.
@@ -47,11 +47,11 @@ public:
      * Create a leaf node with no note and a time stamp.
      * @param timestamp The timestamp to give to node.
      */
-    explicit TraceNode(system_time timestamp);
+    explicit TraceNode(system_time timestamp) noexcept;
 
     TraceNode & operator =(const TraceNode &);
     TraceNode(TraceNode &&) noexcept;
-    TraceNode & operator =(TraceNode &&) = default;
+    TraceNode & operator =(TraceNode &&) noexcept = default;
     ~TraceNode();
 
     /**

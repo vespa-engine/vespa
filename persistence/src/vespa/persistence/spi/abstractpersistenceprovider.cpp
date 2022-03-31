@@ -8,11 +8,11 @@ namespace storage::spi {
 
 void
 AbstractPersistenceProvider::removeIfFoundAsync(const Bucket& b, Timestamp timestamp,
-                                                const DocumentId& id, Context& context, OperationComplete::UP onComplete)
+                                                const DocumentId& id, OperationComplete::UP onComplete)
 {
     std::vector<TimeStampAndDocumentId> ids;
     ids.emplace_back(timestamp, id);
-    removeAsync(b, std::move(ids), context, std::move(onComplete));
+    removeAsync(b, std::move(ids), std::move(onComplete));
 }
 
 BucketIdListResult

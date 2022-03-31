@@ -46,12 +46,12 @@ class Context {
     vespalib::Trace _trace;
     ReadConsistency _readConsistency;
 public:
-    Context(Context &&) = default;
-    Context & operator = (Context &&) = default;
-    Context(Priority pri, int maxTraceLevel);
+    Context(Context &&) noexcept = default;
+    Context & operator = (Context &&) noexcept = default;
+    Context(Priority pri, int maxTraceLevel) noexcept;
     ~Context();
 
-    Priority getPriority() const { return _priority; }
+    Priority getPriority() const noexcept { return _priority; }
 
     /**
      * A read operation might choose to relax its consistency requirements,
@@ -69,11 +69,11 @@ public:
         return _readConsistency;
     }
 
-    vespalib::Trace && steal_trace() { return std::move(_trace); }
-    vespalib::Trace& getTrace() { return _trace; }
-    const vespalib::Trace& getTrace() const { return _trace; }
+    vespalib::Trace && steal_trace() noexcept { return std::move(_trace); }
+    vespalib::Trace& getTrace() noexcept { return _trace; }
+    const vespalib::Trace& getTrace() const noexcept { return _trace; }
 
-    bool shouldTrace(int level) { return _trace.shouldTrace(level); }
+    bool shouldTrace(int level) noexcept { return _trace.shouldTrace(level); }
     void trace(int level, vespalib::stringref msg, bool addTime = true) {
         _trace.trace(level, msg, addTime);
     }

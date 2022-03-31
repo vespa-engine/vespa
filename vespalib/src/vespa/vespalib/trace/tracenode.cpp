@@ -46,7 +46,7 @@ sortChildren(std::vector<TraceNode> & children) {
 } // namespace <unnamed>
 
 
-TraceNode::TraceNode()
+TraceNode::TraceNode() noexcept
     : _note(""),
       _children(),
       _parent(nullptr),
@@ -80,7 +80,7 @@ TraceNode::TraceNode(const string &note, system_time timestamp)
       _hasNote(true)
 { }
 
-TraceNode::TraceNode(system_time timestamp)
+TraceNode::TraceNode(system_time timestamp) noexcept
     : _note(""),
       _children(),
       _parent(nullptr),

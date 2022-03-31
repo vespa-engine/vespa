@@ -4,7 +4,7 @@
 
 namespace storage::spi {
 
-Context::Context(Priority pri, int maxTraceLevel)
+Context::Context(Priority pri, int maxTraceLevel) noexcept
     : _priority(pri),
       _trace(maxTraceLevel),
       _readConsistency(ReadConsistency::STRONG)
