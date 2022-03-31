@@ -139,7 +139,8 @@ std::unique_ptr<attribute::SearchContext>
 SingleValueStringPostingAttributeT<B>::getSearch(QueryTermSimpleUP qTerm,
                                                  const attribute::SearchContextParams & params) const
 {
-    return std::make_unique<StringSinglePostingSearchContext>(std::move(qTerm),
+    StringSingleImplSearchContext base_sc(std::move(qTerm), *this);
+    return std::make_unique<StringSinglePostingSearchContext>(std::move(base_sc),
                                                               params.useBitVector(),
                                                               *this);
 }

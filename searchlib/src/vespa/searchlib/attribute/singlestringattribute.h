@@ -85,6 +85,7 @@ public:
         StringSingleImplSearchContext(QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched) :
             StringSearchContext(std::move(qTerm), toBeSearched)
         { }
+        StringSingleImplSearchContext(StringSingleImplSearchContext&&) noexcept = default;
     protected:
         int32_t onFind(DocId doc, int32_t elemId, int32_t &weight) const override {
             weight = 1;
