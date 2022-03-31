@@ -367,11 +367,10 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
                       ZoneInfo zoneInfo) {
         startTime = httpRequest.getJDiscRequest().creationTime(TimeUnit.MILLISECONDS);
         if (queryProfile != null) {
-            // Move all request parameters to the query profile just to validate that the parameter settings are legal
+            // Move all request parameters to the query profile
             Properties queryProfileProperties = new QueryProfileProperties(queryProfile, embedders);
             properties().chain(queryProfileProperties);
-            // TODO: Just checking legality rather than actually setting would be faster
-            setPropertiesFromRequestMap(requestMap, properties(), true); // Adds errors to the query for illegal set attempts
+            setPropertiesFromRequestMap(requestMap, properties(), true);
 
             // Create the full chain
             properties().chain(new QueryProperties(this, queryProfile.getRegistry(), embedders)).

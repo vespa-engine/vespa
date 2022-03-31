@@ -360,7 +360,7 @@ public class QueryTestCase {
     @Test
     public void testTimeoutInRequestOverridesQueryProfile() {
         QueryProfile profile = new QueryProfile("test");
-        profile.set("timeout", 318, (QueryProfileRegistry)null);
+        profile.set("timeout", 318, null);
         Query q = new Query(QueryTestCase.httpEncode("/search?timeout=500"), profile.compile(null));
         assertEquals(500000L, q.getTimeout());
     }
