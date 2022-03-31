@@ -5,10 +5,6 @@
 #include <memory>
 #include <vector>
 
-int GetOpt (int argc, char *argv[], const char *optionsString,
-            const char* &optionArgument,
-            int &optionIndex);
-
 /**
  * This is a wrapper class for std::ifstream that may be used when
  * reading line based text files. An internal buffer is used to

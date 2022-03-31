@@ -6,6 +6,7 @@
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/fastos/app.h>
 #include <iostream>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-config-status");
@@ -34,24 +35,22 @@ Application::~Application() { }
 
 int Application::parseOpts() {
     int c = '?';
-    const char *optArg = NULL;
-    int optInd = 0;
-    while ((c = GetOpt("c:s:vC:f:", optArg, optInd)) != -1) {
+    while ((c = getopt(_argc, _argv, "c:s:vC:f:")) != -1) {
         switch (c) {
         case 'v':
             _flags.verbose = true;
             break;
         case 'C':
-            _cfgId = optArg;
+            _cfgId = optarg;
             break;
         case 'c':
-            _specString = optArg;
+            _specString = optarg;
             break;
         case 'h':
             usage();
             std::_Exit(0);
         case 'f':
-            _flags.host_filter = parse_host_set(optArg);
+            _flags.host_filter = parse_host_set(optarg);
             break;
         default:
             usage();
@@ -61,7 +60,7 @@ int Application::parseOpts() {
     if (_specString.empty()) {
         _specString = getSources();
     }
-    return optInd;
+    return optind;
 }
 
 HostFilter Application::parse_host_set(vespalib::stringref raw_arg) const {

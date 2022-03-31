@@ -7,6 +7,7 @@
 #include <vespa/fnet/transport.h>
 #include <vespa/fnet/frt/target.h>
 #include <sstream>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("testrpcserver");
@@ -187,19 +188,17 @@ public:
         int myport = 2774;
         const char *rpcsrvname = "testrpcsrv/17";
 
-        int argi = 1;
-        const char* optArg;
         int c;
-        while ((c = GetOpt("n:p:s:", optArg, argi)) != -1) {
+        while ((c = getopt(_argc, _argv, "n:p:s:")) != -1) {
             switch (c) {
             case 'p':
-                myport = atoi(optArg);
+                myport = atoi(optarg);
                 break;
             case 's':
-                sbport = atoi(optArg);
+                sbport = atoi(optarg);
                 break;
             case 'n':
-                rpcsrvname = optArg;
+                rpcsrvname = optarg;
                 break;
             default:
                 LOG(error, "unknown option letter '%c'", c);

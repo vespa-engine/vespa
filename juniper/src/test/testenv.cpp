@@ -5,7 +5,7 @@
 
 #include "testenv.h"
 #include <vespa/juniper/propreader.h>
-
+#include <unistd.h>
 
 namespace juniper
 {
@@ -20,16 +20,14 @@ TestEnv::TestEnv(FastOS_Application* app, const char* propfile) :
     _props(), _config(), _juniper(), _wordFolder()
 {
     int c;
-    const char* oarg = NULL;
-    int oind = 1;
 
-    while ((c = app->GetOpt("d:hcm:", oarg, oind)) != EOF)
+    while ((c = getopt(app->_argc, app->_argv, "d:hcm:")) != EOF)
     {
         switch (c)
         {
 	case 'd':
 #ifdef FASTOS_DEBUG
-            debug_level = strtol(oarg, NULL, 0);
+            debug_level = strtol(optarg, NULL, 0);
 #else
             fprintf(stderr, "This version of Juniper compiled without debug\n");
 #endif
@@ -49,7 +47,7 @@ TestEnv::TestEnv(FastOS_Application* app, const char* propfile) :
 
     int expected_args = 0;
 
-    if (app->_argc - oind < expected_args)
+    if (app->_argc - optind < expected_args)
     {
         Usage(app->_argv[0]);
         return;

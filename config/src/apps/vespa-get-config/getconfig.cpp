@@ -12,6 +12,7 @@
 #include <vespa/config/common/configresponse.h>
 #include <vespa/config/common/trace.h>
 #include <vespa/fastos/app.h>
+#include <unistd.h>
 
 #include <sstream>
 #include <fstream>
@@ -117,24 +118,22 @@ GetConfig::Main()
 
     int serverPort = 19090;
 
-    const char *optArg = nullptr;
-    int optInd = 0;
-    while ((c = GetOpt("a:n:v:g:i:jlm:c:t:V:w:r:s:p:dh", optArg, optInd)) != -1) {
+    while ((c = getopt(_argc, _argv, "a:n:v:g:i:jlm:c:t:V:w:r:s:p:dh")) != -1) {
         int retval = 1;
         switch (c) {
         case 'a':
-            schemaString = optArg;
+            schemaString = optarg;
             break;
         case 'n':
-            defName = optArg;
+            defName = optarg;
             break;
         case 'v':
             break;
         case 'g':
-            generation = atoll(optArg);
+            generation = atoll(optarg);
             break;
         case 'i':
-            configId = optArg;
+            configId = optarg;
             break;
         case 'j':
             printAsJson = true;
@@ -143,25 +142,25 @@ GetConfig::Main()
             printAsJson = false;
             break;
         case 'm':
-            defMD5 = optArg;
+            defMD5 = optarg;
             break;
         case 't':
-            serverTimeout = vespalib::from_s(atof(optArg));
+            serverTimeout = vespalib::from_s(atof(optarg));
             break;
         case 'w':
-            clientTimeout = vespalib::from_s(atof(optArg));
+            clientTimeout = vespalib::from_s(atof(optarg));
             break;
         case 'r':
-            traceLevel = atoi(optArg);
+            traceLevel = atoi(optarg);
             break;
         case 'V':
-            vespaVersionString = optArg;
+            vespaVersionString = optarg;
             break;
         case 's':
-            serverHost = optArg;
+            serverHost = optarg;
             break;
         case 'p':
-            serverPort = atoi(optArg);
+            serverPort = atoi(optarg);
             break;
         case 'd':
             debugging = true;

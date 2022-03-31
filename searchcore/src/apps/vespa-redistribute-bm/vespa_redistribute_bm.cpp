@@ -31,6 +31,7 @@
 #include <getopt.h>
 #include <iostream>
 #include <thread>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-redistribute-bm");
@@ -499,7 +500,6 @@ bool
 App::get_options()
 {
     int c;
-    const char *opt_argument = nullptr;
     int long_opt_index = 0;
     static struct option long_opts[] = {
         { "bucket-db-stripe-bits", 1, nullptr, 0 },
@@ -560,89 +560,88 @@ App::get_options()
         LONGOPT_USE_ASYNC_MESSAGE_HANDLING,
         LONGOPT_USE_FEED_SETTLE
     };
-    int opt_index = 1;
-    resetOptIndex(opt_index);
-    while ((c = GetOptLong("", opt_argument, opt_index, long_opts, &long_opt_index)) != -1) {
+    optind = 1;
+    while ((c = getopt_long(_argc, _argv, "", long_opts, &long_opt_index)) != -1) {
         switch (c) {
         case 0:
             switch(long_opt_index) {
             case LONGOPT_BUCKET_DB_STRIPE_BITS:
-                _bm_params.set_bucket_db_stripe_bits(atoi(opt_argument));
+                _bm_params.set_bucket_db_stripe_bits(atoi(optarg));
                 break;
             case LONGOPT_CLIENT_THREADS:
-                _bm_params.set_client_threads(atoi(opt_argument));
+                _bm_params.set_client_threads(atoi(optarg));
                 break;
             case LONGOPT_DISTRIBUTOR_MERGE_BUSY_WAIT:
-                _bm_params.set_distributor_merge_busy_wait(atoi(opt_argument));
+                _bm_params.set_distributor_merge_busy_wait(atoi(optarg));
                 break;
             case LONGOPT_DISTRIBUTOR_STRIPES:
-                _bm_params.set_distributor_stripes(atoi(opt_argument));
+                _bm_params.set_distributor_stripes(atoi(optarg));
                 break;
             case LONGOPT_DOC_STORE_CHUNK_COMPRESSION_LEVEL:
-                _bm_params.set_doc_store_chunk_compression_level(atoi(opt_argument));
+                _bm_params.set_doc_store_chunk_compression_level(atoi(optarg));
                 break;
             case LONGOPT_DOC_STORE_CHUNK_MAXBYTES:
-                _bm_params.set_doc_store_chunk_maxbytes(atoi(opt_argument));
+                _bm_params.set_doc_store_chunk_maxbytes(atoi(optarg));
                 break;
             case LONGOPT_DOCUMENTS:
-                _bm_params.set_documents(atoi(opt_argument));
+                _bm_params.set_documents(atoi(optarg));
                 break;
             case LONGOPT_FLIP_NODES:
-                _bm_params.set_flip_nodes(atoi(opt_argument));
+                _bm_params.set_flip_nodes(atoi(optarg));
                 break;
             case LONGOPT_GROUPS:
-                _bm_params.set_groups(atoi(opt_argument));
+                _bm_params.set_groups(atoi(optarg));
                 break;
             case LONGOPT_IGNORE_MERGE_QUEUE_LIMIT:
                 _bm_params.set_disable_queue_limits_for_chained_merges(true);
                 break;
             case LONGOPT_INDEXING_SEQUENCER:
-                _bm_params.set_indexing_sequencer(opt_argument);
+                _bm_params.set_indexing_sequencer(optarg);
                 break;
             case LONGOPT_MAX_MERGES_PER_NODE:
-                _bm_params.set_max_merges_per_node(atoi(opt_argument));
+                _bm_params.set_max_merges_per_node(atoi(optarg));
                 break;
             case LONGOPT_MAX_MERGE_QUEUE_SIZE:
-                _bm_params.set_max_merge_queue_size(atoi(opt_argument));
+                _bm_params.set_max_merge_queue_size(atoi(optarg));
                 break;
             case LONGOPT_MAX_PENDING:
-                _bm_params.set_max_pending(atoi(opt_argument));
+                _bm_params.set_max_pending(atoi(optarg));
                 break;
             case LONGOPT_MAX_PENDING_IDEALSTATE_OPERATIONS:
-                _bm_params.set_max_pending_idealstate_operations(atoi(opt_argument));
+                _bm_params.set_max_pending_idealstate_operations(atoi(optarg));
                 break;
             case LONGOPT_MBUS_DISTRIBUTOR_NODE_MAX_PENDING_COUNT:
-                _bm_params.set_mbus_distributor_node_max_pending_count(atoi(opt_argument));
+                _bm_params.set_mbus_distributor_node_max_pending_count(atoi(optarg));
                 break;
             case LONGOPT_MODE:
-                _bm_params.set_mode(get_mode(opt_argument));
+                _bm_params.set_mode(get_mode(optarg));
                 if (_bm_params.get_mode() == Mode::BAD) {
-                    std::cerr << "Unknown mode name " << opt_argument << std::endl;
+                    std::cerr << "Unknown mode name " << optarg << std::endl;
                 }
                 break;
             case LONGOPT_NODES_PER_GROUP:
-                _bm_params.set_nodes_per_group(atoi(opt_argument));
+                _bm_params.set_nodes_per_group(atoi(optarg));
                 break;
             case LONGOPT_REDUNDANCY:
-                _bm_params.set_redundancy(atoi(opt_argument));
+                _bm_params.set_redundancy(atoi(optarg));
                 break;
             case LONGOPT_REFEED:
-                _bm_params.set_refeed_mode(get_refeed_mode(opt_argument));
+                _bm_params.set_refeed_mode(get_refeed_mode(optarg));
                 if (_bm_params.get_refeed_mode() == ReFeedMode::BAD) {
-                    std::cerr << "Unknown refeed-mode name " << opt_argument << std::endl;
+                    std::cerr << "Unknown refeed-mode name " << optarg << std::endl;
                 }
                 break;
             case LONGOPT_RESPONSE_THREADS:
-                _bm_params.set_response_threads(atoi(opt_argument));
+                _bm_params.set_response_threads(atoi(optarg));
                 break;
             case LONGOPT_RPC_EVENTS_BEFORE_WAKEUP:
-                _bm_params.set_rpc_events_before_wakeup(atoi(opt_argument));
+                _bm_params.set_rpc_events_before_wakeup(atoi(optarg));
                 break;
             case LONGOPT_RPC_NETWORK_THREADS:
-                _bm_params.set_rpc_network_threads(atoi(opt_argument));
+                _bm_params.set_rpc_network_threads(atoi(optarg));
                 break;
             case LONGOPT_RPC_TARGETS_PER_NODE:
-                _bm_params.set_rpc_targets_per_node(atoi(opt_argument));
+                _bm_params.set_rpc_targets_per_node(atoi(optarg));
                 break;
             case LONGOPT_SKIP_COMMUNICATIONMANAGER_THREAD:
                 _bm_params.set_skip_communicationmanager_thread(true);

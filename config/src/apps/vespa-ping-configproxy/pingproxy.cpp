@@ -4,6 +4,7 @@
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fastos/app.h>
+#include <unistd.h>
 
 #include <sstream>
 
@@ -76,18 +77,16 @@ PingProxy::Main()
     int clientTimeout = 5;
     int serverPort = 19090;
 
-    const char *optArg = nullptr;
-    int optInd = 0;
-    while ((c = GetOpt("w:s:p:dh", optArg, optInd)) != -1) {
+    while ((c = getopt(_argc, _argv, "w:s:p:dh")) != -1) {
         switch (c) {
         case 'w':
-            clientTimeout = atoi(optArg);
+            clientTimeout = atoi(optarg);
             break;
         case 's':
-            serverHost = optArg;
+            serverHost = optarg;
             break;
         case 'p':
-            serverPort = atoi(optArg);
+            serverPort = atoi(optarg);
             break;
         case 'd':
             debugging = true;

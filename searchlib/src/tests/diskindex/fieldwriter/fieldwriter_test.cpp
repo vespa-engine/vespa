@@ -21,6 +21,7 @@
 #include <openssl/evp.h>
 #include <vespa/fastos/file.h>
 #include <vespa/fastos/app.h>
+#include <unistd.h>
 #include <vespa/log/log.h>
 LOG_SETUP("fieldwriter_test");
 
@@ -665,30 +666,27 @@ testFieldWriterVariantsWithHighLids(FakeWordSet &wordSet, uint32_t docIdLimit,
 int
 FieldWriterTest::Main()
 {
-    int argi;
     int c;
-    const char *optArg;
 
     if (_argc > 0) {
         DummyFileHeaderContext::setCreator(_argv[0]);
     }
-    argi = 1;
 
-    while ((c = GetOpt("c:d:vw:", optArg, argi)) != -1) {
+    while ((c = getopt(_argc, _argv, "c:d:vw:")) != -1) {
         switch(c) {
         case 'c':
-            _commonDocFreq = atoi(optArg);
+            _commonDocFreq = atoi(optarg);
             if (_commonDocFreq == 0)
                 _commonDocFreq = 1;
             break;
         case 'd':
-            _numDocs = atoi(optArg);
+            _numDocs = atoi(optarg);
             break;
         case 'v':
             _verbose = true;
             break;
         case 'w':
-            _numWordsPerClass = atoi(optArg);
+            _numWordsPerClass = atoi(optarg);
             break;
         default:
             Usage();

@@ -14,6 +14,7 @@
 #include <getopt.h>
 #include <vector>
 #include <limits>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-gen-testdocs");
@@ -696,7 +697,6 @@ bool
 GenTestDocsApp::getOptions()
 {
     int c;
-    const char *optArgument = NULL;
     int longopt_index = 0;
     static struct option longopts[] = {
         { "basedir", 1, NULL, 0 },
@@ -729,28 +729,25 @@ GenTestDocsApp::getOptions()
         LONGOPT_HEADERS,
         LONGOPT_JSON
     };
-    int optIndex = 2;
-    _app.resetOptIndex(optIndex);
-    while ((c = _app.GetOptLong("v",
-                                optArgument,
-                                optIndex,
-                                longopts,
-                                &longopt_index)) != -1) {
+    optind = 2;
+    while ((c = getopt_long(_app._argc, _app._argv, "v",
+                            longopts,
+                            &longopt_index)) != -1) {
         FieldGenerator::SP g;
         switch (c) {
         case 0:
             switch (longopt_index) {
             case LONGOPT_BASEDIR:
-                _baseDir = optArgument;
+                _baseDir = optarg;
                 break;
             case LONGOPT_CONSTTEXTFIELD:
-                _fields.emplace_back(std::make_shared<ConstTextFieldGenerator>(splitArg(optArgument)));
+                _fields.emplace_back(std::make_shared<ConstTextFieldGenerator>(splitArg(optarg)));
                 break;
             case LONGOPT_PREFIXTEXTFIELD:
-                _fields.emplace_back(std::make_shared<PrefixTextFieldGenerator>(splitArg(optArgument)));
+                _fields.emplace_back(std::make_shared<PrefixTextFieldGenerator>(splitArg(optarg)));
                 break;
             case LONGOPT_RANDTEXTFIELD:
-                g.reset(new RandTextFieldGenerator(optArgument,
+                g.reset(new RandTextFieldGenerator(optarg,
                                                    _rnd,
                                                    _numWords,
                                                    20,
@@ -758,33 +755,33 @@ GenTestDocsApp::getOptions()
                 _fields.push_back(g);
                 break;
             case LONGOPT_MODTEXTFIELD:
-                g.reset(new ModTextFieldGenerator(optArgument,
+                g.reset(new ModTextFieldGenerator(optarg,
                                                   _rnd,
                                                   _mods));
                 _fields.push_back(g);
                 break;
             case LONGOPT_IDTEXTFIELD:
-                g.reset(new IdTextFieldGenerator(optArgument));
+                g.reset(new IdTextFieldGenerator(optarg));
                 _fields.push_back(g);
                 break;
             case LONGOPT_RANDINTFIELD:
-                g.reset(new RandIntFieldGenerator(optArgument,
+                g.reset(new RandIntFieldGenerator(optarg,
                                                   _rnd,
                                                   0,
                                                   100000));
                 _fields.push_back(g);
                 break;
             case LONGOPT_DOCIDLIMIT:
-                _docIdLimit = atoi(optArgument);
+                _docIdLimit = atoi(optarg);
                 break;
             case LONGOPT_MINDOCID:
-                _minDocId = atoi(optArgument);
+                _minDocId = atoi(optarg);
                 break;
             case LONGOPT_NUMWORDS:
-                _numWords = atoi(optArgument);
+                _numWords = atoi(optarg);
                 break;
             case LONGOPT_DOCTYPE:
-                _docType = optArgument;
+                _docType = optarg;
                 break;
             case LONGOPT_HEADERS:
                 _headers = true;
@@ -793,10 +790,10 @@ GenTestDocsApp::getOptions()
                 _json = true;
                 break;
             default:
-                if (optArgument != NULL) {
+                if (optarg != NULL) {
                     LOG(error,
                         "longopt %s with arg %s",
-                        longopts[longopt_index].name, optArgument);
+                        longopts[longopt_index].name, optarg);
                 } else {
                     LOG(error,
                         "longopt %s",
@@ -811,11 +808,11 @@ GenTestDocsApp::getOptions()
             return false;
         }
     }
-    _optIndex = optIndex;
+    _optIndex = optind;
     if (_optIndex >= _app._argc) {
         return false;
     }
-    _outFile = _app._argv[optIndex];
+    _outFile = _app._argv[optind];
     return true;
 }
 

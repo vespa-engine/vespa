@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <cassert>
+#include <unistd.h>
 
 LOG_SETUP("bitvectorbenchmark");
 
@@ -165,19 +166,17 @@ void BitVectorBenchmark::testOrSpeed2()
 
 int BitVectorBenchmark::Main()
 {
-    int idx = 1;
     std::string operation;
     size_t numBits(8*1000000);
     int opt;
-    const char * arg;
     bool optError = false;
-    while ((opt = GetOpt("n:t:", arg, idx)) != -1) {
+    while ((opt = getopt(_argc, _argv, "n:t:")) != -1) {
         switch (opt) {
         case 'n':
-            numBits = strtoll(arg, NULL, 10);
+            numBits = strtoll(optarg, NULL, 10);
             break;
         case 't':
-            operation = arg;
+            operation = optarg;
             break;
         default:
             optError = true;
@@ -185,7 +184,7 @@ int BitVectorBenchmark::Main()
         }
     }
 
-    if ((_argc != idx ) || optError) {
+    if ((_argc != optind ) || optError) {
         usage();
         return -1;
     }
