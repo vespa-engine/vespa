@@ -23,8 +23,9 @@ private:
     bool _valid;
     int _limit;
     size_t _max_per_group;
-protected:
+public:
     NumericRangeMatcher(const QueryTermSimple& queryTerm, bool avoidUndefinedInRange=false);
+protected:
     Int64Range getRange() const {
         return Int64Range(static_cast<int64_t>(_low), static_cast<int64_t>(_high));
     }
