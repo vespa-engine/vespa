@@ -6,27 +6,23 @@ import java.util.regex.Pattern;
 import static ai.vespa.validation.Validation.requireMatch;
 
 /**
- * A name is a non-null, non-blank {@link String} which starts with a letter, and has up to
- * 254 more characters which may be letters, numbers, dashes or underscores.
+ * A name has from 1 to 64 {@link String} characters which may be letters, numbers,
+ * dashes or underscores, and must start with a letter.
  *
- * Prefer domain-specific wrappers over this class, but prefer this over raw strings when possible. gT
+ * Prefer domain-specific wrappers over this class, but prefer this over raw strings when possible.
  *
  * @author jonmv
  */
-public class Name extends StringWrapper<Name> {
+public class Name extends PatternedStringWrapper<Name> {
 
-    public static final Pattern namePattern = Pattern.compile("[A-Za-z][A-Za-z0-9_-]{0,254}");
+    static final Pattern namePattern = Pattern.compile("[A-Za-z][A-Za-z0-9_-]{0,62}");
 
-    private Name(String value) {
-        super(value);
+    private Name(String name) {
+        super(name, namePattern, "name");
     }
 
     public static Name of(String value) {
-        return of(value, "name");
-    };
-
-    public static Name of(String value, String description) {
-        return new Name(requireMatch(value, description, namePattern));
-    };
+        return new Name(value);
+    }
 
 }

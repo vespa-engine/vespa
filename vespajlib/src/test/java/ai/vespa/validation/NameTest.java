@@ -14,7 +14,7 @@ class NameTest {
     @Test
     void testNames() {
         Name.of("name123-_-");
-        Name.of("O".repeat(255));
+        Name.of("O".repeat(64));
 
         assertThrows(IllegalArgumentException.class, () -> Name.of("0"));
         assertThrows(IllegalArgumentException.class, () -> Name.of("_"));
@@ -22,7 +22,7 @@ class NameTest {
         assertThrows(IllegalArgumentException.class, () -> Name.of("foo."));
         assertThrows(IllegalArgumentException.class, () -> Name.of("foo/"));
         assertThrows(IllegalArgumentException.class, () -> Name.of("foo%"));
-        assertThrows(IllegalArgumentException.class, () -> Name.of("w".repeat(256)));
+        assertThrows(IllegalArgumentException.class, () -> Name.of("w".repeat(65)));
     }
 
 }
