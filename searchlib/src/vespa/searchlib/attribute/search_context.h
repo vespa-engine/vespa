@@ -27,7 +27,7 @@ protected:
     using QueryTermSimpleUP = std::unique_ptr<QueryTermSimple>;
 public:
     SearchContext(const SearchContext&) = delete;
-    SearchContext(SearchContext&&) = default;
+    SearchContext(SearchContext&&) noexcept = default;
     SearchContext& operator=(const SearchContext&) = delete;
     SearchContext& operator=(SearchContext&&) = delete;
     ~SearchContext() override;
