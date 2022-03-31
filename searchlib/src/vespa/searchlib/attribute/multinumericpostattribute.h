@@ -13,7 +13,7 @@ namespace search {
  * multi value mapping uses an underlying posting list to provide faster search.
  * This class is used for both array and weighted set types.
  *
- * B: EnumAttribute<P, BaseClass>
+ * B: EnumAttribute<BaseClass>
  * M: multivalue::Value<IEnumStore::Index> (array) or
  *    multivalue::WeightedValue<IEnumStore::Index> (weighted set)
  * M specifies the type stored in the MultiValueMapping
@@ -52,9 +52,6 @@ private:
     using PostingParent = PostingListAttributeSubBase<AttributeWeightPosting, LoadedVector,
                                                       typename B::LoadedValueType, EnumStore>;
 
-    using ArraySearchContext = typename MultiValueNumericEnumAttribute<B, M>::ArraySearchContext;
-    using ArrayNumericSearchContext = ArraySearchContext;
-    using ArrayPostingSearchContext = attribute::NumericPostingSearchContext<ArrayNumericSearchContext, SelfType, int32_t>;
     using ComparatorType = typename EnumStore::ComparatorType;
     using Dictionary = EnumPostingTree;
     using DictionaryConstIterator = typename Dictionary::ConstIterator;
@@ -65,9 +62,6 @@ private:
     using PostingList = typename PostingParent::PostingList;
     using PostingMap = typename PostingParent::PostingMap;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
-    using SetSearchContext = typename MultiValueNumericEnumAttribute<B, M>::SetSearchContext;
-    using SetNumericSearchContext = SetSearchContext;
-    using SetPostingSearchContext = attribute::NumericPostingSearchContext<SetNumericSearchContext, SelfType, int32_t>;
     using WeightedIndex = typename MultiValueNumericEnumAttribute<B, M>::WeightedIndex;
     using generation_t = typename MultiValueNumericEnumAttribute<B, M>::generation_t;
 
