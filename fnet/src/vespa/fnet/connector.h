@@ -45,6 +45,8 @@ public:
      **/
     uint32_t GetPortNumber() const;
 
+    FNET_IServerAdapter *server_adapter() override;
+
     /**
      * Close this connector. This method must be called in the transport
      * thread in order to avoid race conditions related to socket event

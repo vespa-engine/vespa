@@ -10,6 +10,7 @@ class FNET_IOComponent;
 class FNET_Connector;
 class FNET_Connection;
 class FNET_Channel;
+class FNET_IServerAdapter;
 class FNET_IExecutable;
 /**
  * This class indicates the context of a packet. It is external to the
@@ -30,17 +31,20 @@ public:
     { _value.CONNECTOR = value; }
     FNET_Context(FNET_Connection *value) : _value()
     { _value.CONNECTION = value; }
+    FNET_Context(FNET_IServerAdapter *value) : _value()
+    { _value.SERVER_ADAPTER = value; }
     FNET_Context(FNET_IExecutable *value) : _value()
     { _value.EXECUTABLE = value; }
 
     union {
-        uint32_t          INT;
-        void             *VOIDP;
-        FNET_Channel     *CHANNEL;
-        FNET_IOComponent *IOC;
-        FNET_Connector   *CONNECTOR;
-        FNET_Connection  *CONNECTION;
-        FNET_IExecutable *EXECUTABLE;
+        uint32_t             INT;
+        void                *VOIDP;
+        FNET_Channel        *CHANNEL;
+        FNET_IOComponent    *IOC;
+        FNET_Connector      *CONNECTOR;
+        FNET_Connection     *CONNECTION;
+        FNET_IServerAdapter *SERVER_ADAPTER;
+        FNET_IExecutable    *EXECUTABLE;
     } _value;
 
     void Print(uint32_t indent = 0);

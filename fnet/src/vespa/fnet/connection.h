@@ -348,6 +348,8 @@ public:
      **/
     bool Init();
 
+    FNET_IServerAdapter *server_adapter() override;
+
     /**
      * Called by the transport thread as the initial part of adding
      * this connection to the selection loop. If this is an incoming

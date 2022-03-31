@@ -31,6 +31,13 @@ FNET_Connector::GetPortNumber() const {
 }
 
 
+FNET_IServerAdapter *
+FNET_Connector::server_adapter()
+{
+    return _serverAdapter;
+}
+
+
 void
 FNET_Connector::Close()
 {

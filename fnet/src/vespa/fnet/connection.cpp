@@ -546,6 +546,11 @@ FNET_Connection::Init()
     return true;
 }
 
+FNET_IServerAdapter *
+FNET_Connection::server_adapter()
+{
+    return _serverAdapter;
+}
 
 bool
 FNET_Connection::handle_add_event()

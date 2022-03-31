@@ -8,6 +8,7 @@
 #include <condition_variable>
 #include <chrono>
 
+class FNET_IServerAdapter;
 class FNET_TransportThread;
 class FNET_Config;
 
@@ -183,6 +184,14 @@ public:
 
 
     //----------- virtual methods below ----------------------//
+
+    /**
+     * Used to identify which components are related to a specific
+     * server adapter to be able to perform partial shutdown.
+     *
+     * @return the server adapter attached to this component
+     **/
+    virtual FNET_IServerAdapter *server_adapter() = 0;
 
     /**
      * This function is called as the first step of adding an io
