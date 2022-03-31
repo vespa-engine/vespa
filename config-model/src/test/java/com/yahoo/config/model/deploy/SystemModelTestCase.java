@@ -7,7 +7,7 @@ import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.MapConfigModelRegistry;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
-import com.yahoo.net.HostName;
+import com.yahoo.net.Hostnames;
 import com.yahoo.vespa.model.ConfigProducer;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
@@ -83,7 +83,7 @@ public class SystemModelTestCase {
 
         // Verify configIds from vespaModel
         assertTrue(12 <= vespaModel.getConfigIds().size());
-        String localhost = HostName.getLocalhost();
+        String localhost = Hostnames.getLocalhost();
         String localhostConfigId = "hosts/" + localhost;
         Set<String> configIds = vespaModel.getConfigIds();
         assertTrue(configIds.contains("client"));

@@ -22,7 +22,7 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.messagebus.MessagebusConfig;
-import com.yahoo.net.HostName;
+import com.yahoo.net.Hostnames;
 import com.yahoo.vespa.config.UnknownConfigIdException;
 import com.yahoo.vespa.model.ConfigProducer;
 import com.yahoo.vespa.model.VespaModel;
@@ -87,7 +87,7 @@ public class VespaModelTestCase {
         LogdConfig.Builder b = new LogdConfig.Builder();
         b = (LogdConfig.Builder) model.getConfig(b, "");
         LogdConfig c = new LogdConfig(b);
-        assertEquals(HostName.getLocalhost(), c.logserver().host());
+        assertEquals(Hostnames.getLocalhost(), c.logserver().host());
 
         SlobroksConfig.Builder sb = new SlobroksConfig.Builder();
         sb = (com.yahoo.cloud.config.SlobroksConfig.Builder) model.getConfig(sb, "");
@@ -98,7 +98,7 @@ public class VespaModelTestCase {
         zb = (ZookeepersConfig.Builder) model.getConfig(zb, "");
         ZookeepersConfig zc = new ZookeepersConfig(zb);
         assertEquals(zc.zookeeperserverlist().split(",").length, 2);
-        assertTrue(zc.zookeeperserverlist().startsWith(HostName.getLocalhost()));
+        assertTrue(zc.zookeeperserverlist().startsWith(Hostnames.getLocalhost()));
 
         ApplicationIdConfig.Builder appIdBuilder = new ApplicationIdConfig.Builder();
         appIdBuilder = (ApplicationIdConfig.Builder) model.getConfig(appIdBuilder, "");
@@ -112,11 +112,11 @@ public class VespaModelTestCase {
     public void testHostsConfig() {
         VespaModel model = getVespaModel(TESTDIR + "app_qrserverandgw");
         LogdConfig config = getLogdConfig(model, "");
-        assertEquals(config.logserver().host(), HostName.getLocalhost());
+        assertEquals(config.logserver().host(), Hostnames.getLocalhost());
         assertNotNull(config);
         config = getLogdConfig(model, "hosts");
         assertNotNull(config);
-        assertEquals(config.logserver().host(), HostName.getLocalhost());
+        assertEquals(config.logserver().host(), Hostnames.getLocalhost());
     }
 
     private static LogdConfig getLogdConfig(VespaModel model, String configId) {
@@ -143,7 +143,7 @@ public class VespaModelTestCase {
         LogdConfig config = getLogdConfig(model, "");
         assertNotNull(config);
         assertEquals(config.logserver().host(), "foo");
-        config = getLogdConfig(model, "hosts/" + HostName.getLocalhost() + "/logd");
+        config = getLogdConfig(model, "hosts/" + Hostnames.getLocalhost() + "/logd");
         assertNotNull(config);
         assertEquals(config.logserver().host(), "foo");
     }

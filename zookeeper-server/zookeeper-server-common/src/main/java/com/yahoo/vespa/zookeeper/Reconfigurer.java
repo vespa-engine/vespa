@@ -4,7 +4,7 @@ package com.yahoo.vespa.zookeeper;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.net.HostName;
+import com.yahoo.net.Hostnames;
 import com.yahoo.protect.Process;
 import com.yahoo.yolean.Exceptions;
 
@@ -135,7 +135,7 @@ public class Reconfigurer extends AbstractComponent {
     }
 
     private static String localConnectionSpec(ZookeeperServerConfig config) {
-        return HostName.getLocalhost() + ":" + config.clientPort();
+        return Hostnames.getLocalhost() + ":" + config.clientPort();
     }
 
     private static List<String> servers(ZookeeperServerConfig config) {

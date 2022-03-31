@@ -8,11 +8,11 @@ import static org.junit.Assert.assertFalse;
 /**
  * @author Ulf Lilleengen
  */
-public class HostNameTestCase {
+public class HostnamesTestCase {
 
     @Test
     public void testHostnameIsFound() {
-        assertFalse(HostName.getLocalhost().isEmpty());
+        assertFalse(Hostnames.getLocalhost().isEmpty());
     }
 
 }

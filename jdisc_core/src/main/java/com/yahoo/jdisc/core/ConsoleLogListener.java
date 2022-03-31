@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
-import com.yahoo.net.HostName;
+import com.yahoo.net.Hostnames;
 import org.osgi.service.log.LogEntry;
 import org.osgi.service.log.LogListener;
 
@@ -72,6 +72,6 @@ class ConsoleLogListener implements LogListener {
     }
 
     static String getHostname() {
-        return HostName.getLocalhost();
+        return Hostnames.getLocalhost();
     }
 }

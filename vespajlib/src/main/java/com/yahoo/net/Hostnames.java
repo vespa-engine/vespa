@@ -11,7 +11,7 @@ import java.util.Optional;
  *
  * @author arnej
  */
-public class HostName {
+public class Hostnames {
 
     private static String preferredHostName = null;
 

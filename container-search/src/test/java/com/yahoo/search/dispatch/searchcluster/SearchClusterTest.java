@@ -4,7 +4,7 @@ package com.yahoo.search.dispatch.searchcluster;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.ClustersStatus;
 import com.yahoo.container.handler.VipStatus;
-import com.yahoo.net.HostName;
+import com.yahoo.net.Hostnames;
 import com.yahoo.prelude.Pong;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.MockSearchCluster;
@@ -181,7 +181,7 @@ public class SearchClusterTest {
 
     @Test
     public void requireThatVipStatusIsDefaultDownWithLocalDispatch() {
-        try (State test = new State("cluster.1", 1, HostName.getLocalhost(), "b")) {
+        try (State test = new State("cluster.1", 1, Hostnames.getLocalhost(), "b")) {
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
 
             assertFalse(test.vipStatus.isInRotation());
@@ -192,7 +192,7 @@ public class SearchClusterTest {
 
     @Test
     public void requireThatVipStatusStaysUpWithLocalDispatchAndClusterSize1() {
-        try (State test = new State("cluster.1", 1, HostName.getLocalhost())) {
+        try (State test = new State("cluster.1", 1, Hostnames.getLocalhost())) {
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
 
             assertFalse(test.vipStatus.isInRotation());
@@ -206,7 +206,7 @@ public class SearchClusterTest {
 
     @Test
     public void requireThatVipStatusIsDefaultDownWithLocalDispatchAndClusterSize2() {
-        try (State test = new State("cluster.1", 1, HostName.getLocalhost(), "otherhost")) {
+        try (State test = new State("cluster.1", 1, Hostnames.getLocalhost(), "otherhost")) {
             assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
 
             assertFalse(test.vipStatus.isInRotation());
@@ -220,7 +220,7 @@ public class SearchClusterTest {
 
     @Test
     public void requireThatVipStatusDownWhenLocalIsDown() {
-        try (State test = new State("cluster.1",1,HostName.getLocalhost(), "b")) {
+        try (State test = new State("cluster.1", 1, Hostnames.getLocalhost(), "b")) {
 
             test.waitOneFullPingRound();
             assertTrue(test.vipStatus.isInRotation());

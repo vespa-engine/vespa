@@ -44,7 +44,7 @@ import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
 import com.yahoo.log.LogSetup;
 import com.yahoo.messagebus.network.rpc.SlobrokConfigSubscriber;
-import com.yahoo.net.HostName;
+import com.yahoo.net.Hostnames;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.UncheckedInterruptedException;
@@ -195,7 +195,7 @@ public final class ConfiguredApplication implements Application {
 
     private Register registerInSlobrok(QrConfig qrConfig) {
         SlobrokList slobrokList = getSlobrokList();
-        Spec mySpec = new Spec(HostName.getLocalhost(), acceptor.port());
+        Spec mySpec = new Spec(Hostnames.getLocalhost(), acceptor.port());
         Register slobrokRegistrator = new Register(supervisor, slobrokList, mySpec);
         slobrokRegistrator.registerName(qrConfig.rpc().slobrokId());
         log.log(Level.INFO, "Registered name '" + qrConfig.rpc().slobrokId() +

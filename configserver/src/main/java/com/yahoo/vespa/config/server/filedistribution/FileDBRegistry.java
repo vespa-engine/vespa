@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server.filedistribution;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.net.HostName;
+import com.yahoo.net.Hostnames;
 import com.yahoo.text.Utf8;
 import net.jpountz.xxhash.XXHashFactory;
 
@@ -130,7 +130,7 @@ public class FileDBRegistry implements FileRegistry {
         List<Entry> entries = registry.export();
         StringBuilder builder = new StringBuilder();
 
-        builder.append(HostName.getLocalhost()).append('\n');
+        builder.append(Hostnames.getLocalhost()).append('\n');
         for (FileRegistry.Entry entry : entries) {
             builder.append(entry.relativePath).append(entryDelimiter).append(entry.reference.value()).append('\n');
         }

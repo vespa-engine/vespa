@@ -1,5 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.validation;
+package com.yahoo.net;
+
+import ai.vespa.validation.StringWrapper;
 
 import static ai.vespa.validation.Validation.requireInRange;
 import static ai.vespa.validation.Validation.requireMatch;

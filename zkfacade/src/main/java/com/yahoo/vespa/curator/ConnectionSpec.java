@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator;
 
-import com.yahoo.net.HostName;
+import com.yahoo.net.Hostnames;
 
 import java.util.List;
 import java.util.Objects;
@@ -75,7 +75,7 @@ class ConnectionSpec {
                                          Function<T, String> hostnameGetter,
                                          Function<T, Integer> portGetter,
                                          boolean localhostAffinity) {
-        String thisServer = HostName.getLocalhost();
+        String thisServer = Hostnames.getLocalhost();
         StringBuilder connectionSpec = new StringBuilder();
         for (var server : servers) {
             if (localhostAffinity && !thisServer.equals(hostnameGetter.apply(server))) continue;

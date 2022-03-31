@@ -12,7 +12,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.StatisticsConfig;
 import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
-import com.yahoo.net.HostName;
+import com.yahoo.net.Hostnames;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.configserver.option.CloudConfigOptions;
@@ -66,7 +66,7 @@ public class ConfigserverCluster extends AbstractConfigProducer
                     configServers.length, zookeeperIds.length));
         }
 
-        String myhostname = HostName.getLocalhost();
+        String myhostname = Hostnames.getLocalhost();
         // TODO: Server index should be in interval [1, 254] according to doc,
         // however, we cannot change this id for an existing server
         for (int i = 0; i < configServers.length; i++) {
@@ -120,7 +120,7 @@ public class ConfigserverCluster extends AbstractConfigProducer
             builder.environment(options.system().get());
         }
 
-        builder.serverId(HostName.getLocalhost());
+        builder.serverId(Hostnames.getLocalhost());
         if (!containerCluster.getHttp().getHttpServer().get().getConnectorFactories().isEmpty()) {
             builder.httpport(containerCluster.getHttp().getHttpServer().get().getConnectorFactories().get(0).getListenPort());
         }
@@ -150,7 +150,7 @@ public class ConfigserverCluster extends AbstractConfigProducer
     private ConfigServer[] getConfigServers() {
         return Optional.of(options.allConfigServers())
                 .filter(configServers -> configServers.length > 0)
-                .orElseGet(() -> new ConfigServer[]{new ConfigServer(HostName.getLocalhost(), Optional.empty())});
+                .orElseGet(() -> new ConfigServer[]{new ConfigServer(Hostnames.getLocalhost(), Optional.empty())});
     }
 
     private int[] getConfigServerZookeeperIds() {

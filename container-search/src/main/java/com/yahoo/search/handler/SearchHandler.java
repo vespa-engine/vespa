@@ -26,7 +26,7 @@ import com.yahoo.jdisc.Request;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.provider.DefaultEmbedderProvider;
-import com.yahoo.net.HostName;
+import com.yahoo.net.Hostnames;
 import com.yahoo.net.UriTools;
 import com.yahoo.prelude.query.parser.ParseException;
 import com.yahoo.processing.IllegalInputException;
@@ -105,7 +105,7 @@ public class SearchHandler extends LoggingRequestHandler {
     /** If present, responses from this will set the HTTP response header with this key to the host name of this */
     private final Optional<String> hostResponseHeaderKey;
     
-    private final String selfHostname = HostName.getLocalhost();
+    private final String selfHostname = Hostnames.getLocalhost();
     private final Map<String, Embedder> embedders;
     private final ExecutionFactory executionFactory;
     private final AtomicLong numRequestsLeftToTrace;

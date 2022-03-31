@@ -11,7 +11,7 @@ import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.StatisticsConfig;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
-import com.yahoo.net.HostName;
+import com.yahoo.net.Hostnames;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.HostResource;
@@ -108,7 +108,7 @@ public class ConfigserverClusterTest {
         assertEquals(Defaults.getDefaults().underVespaHome("lib/jars/config-models"), config.configModelPluginDir().get(0));
         assertEquals(12345, config.rpcport());
         assertEquals(1337, config.httpport());
-        assertEquals(HostName.getLocalhost(), config.serverId());
+        assertEquals(Hostnames.getLocalhost(), config.serverId());
         assertTrue(config.useVespaVersionInRequest());
         assertEquals(4, config.numParallelTenantLoaders());
         assertFalse(config.multitenant());

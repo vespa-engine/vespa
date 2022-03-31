@@ -7,7 +7,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.jrt.Request;
-import com.yahoo.net.HostName;
+import com.yahoo.net.Hostnames;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.UnknownConfigIdException;
@@ -32,7 +32,7 @@ import static com.yahoo.vespa.config.protocol.SlimeConfigResponse.fromConfigPayl
 class GetConfigProcessor implements Runnable {
 
     private static final Logger log = Logger.getLogger(GetConfigProcessor.class.getName());
-    private static final String localHostName = HostName.getLocalhost();
+    private static final String localHostName = Hostnames.getLocalhost();
 
     private final JRTServerConfigRequest request;
 

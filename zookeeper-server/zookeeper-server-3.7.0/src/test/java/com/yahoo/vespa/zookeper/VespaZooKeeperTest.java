@@ -2,7 +2,7 @@
 package com.yahoo.vespa.zookeper;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
-import com.yahoo.net.HostName;
+import com.yahoo.net.Hostnames;
 import com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer;
 import com.yahoo.vespa.zookeeper.Reconfigurer;
 import com.yahoo.vespa.zookeeper.VespaZooKeeperAdminImpl;
@@ -147,7 +147,7 @@ public class VespaZooKeeperTest {
     }
 
     static ZooKeeperAdmin createAdmin(ZookeeperServerConfig config) throws IOException {
-        return new ZooKeeperAdmin(HostName.getLocalhost() + ":" + config.clientPort(),
+        return new ZooKeeperAdmin(Hostnames.getLocalhost() + ":" + config.clientPort(),
                                   10_000,
                                   System.err::println,
                                   new ZkClientConfigBuilder().toConfig());

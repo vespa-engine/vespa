@@ -6,7 +6,7 @@ import com.yahoo.config.FileReference;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
-import com.yahoo.net.HostName;
+import com.yahoo.net.Hostnames;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
@@ -91,7 +91,7 @@ public class FileServerTest {
         // Empty connection pool when only one server, no use in downloading from yourself
         List<ConfigserverConfig.Zookeeperserver.Builder> servers = new ArrayList<>();
         ConfigserverConfig.Zookeeperserver.Builder serverBuilder = new ConfigserverConfig.Zookeeperserver.Builder();
-        serverBuilder.hostname(HostName.getLocalhost());
+        serverBuilder.hostname(Hostnames.getLocalhost());
         serverBuilder.port(123456);
         servers.add(serverBuilder);
         builder.zookeeperserver(servers);

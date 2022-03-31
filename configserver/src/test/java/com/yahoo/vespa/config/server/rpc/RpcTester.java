@@ -10,7 +10,7 @@ import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
-import com.yahoo.net.HostName;
+import com.yahoo.net.Hostnames;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MemoryGenerationCounter;
@@ -50,7 +50,7 @@ import static org.junit.Assert.assertTrue;
 public class RpcTester implements AutoCloseable {
 
     private final ManualClock clock = new ManualClock(Instant.ofEpochMilli(100));
-    private final String myHostname = HostName.getLocalhost();
+    private final String myHostname = Hostnames.getLocalhost();
     private final HostLivenessTracker hostLivenessTracker = new ConfigRequestHostLivenessTracker(clock);
     private final Spec spec;
 

@@ -11,7 +11,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.container.protect.Error;
 import com.yahoo.io.IOUtils;
-import com.yahoo.net.HostName;
+import com.yahoo.net.Hostnames;
 import com.yahoo.search.handler.SearchHandler;
 import com.yahoo.search.searchchain.config.test.SearchChainConfigurerTestCase;
 import com.yahoo.slime.Inspector;
@@ -48,7 +48,7 @@ public class JSONSearchHandlerTestCase {
 
     private static final String testDir = "src/test/java/com/yahoo/search/handler/test/config";
     private static final String myHostnameHeader = "my-hostname-header";
-    private static final String selfHostname = HostName.getLocalhost();
+    private static final String selfHostname = Hostnames.getLocalhost();
 
     private static String tempDir = "";
     private static String configId = null;

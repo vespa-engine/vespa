@@ -3,13 +3,12 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.net.HostName;
+import com.yahoo.net.Hostnames;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.athenz.identityprovider.client.IdentityDocumentSigner;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -64,7 +63,7 @@ public class IdentityDocumentGenerator {
             PrivateKey privateKey = keyProvider.getPrivateKey(athenzProviderServiceConfig.secretVersion());
             AthenzService providerService = new AthenzService(athenzProviderServiceConfig.domain(), athenzProviderServiceConfig.serviceName());
 
-            String configServerHostname = HostName.getLocalhost();
+            String configServerHostname = Hostnames.getLocalhost();
             Instant createdAt = Instant.now();
             String signature = signer.generateSignature(
                     providerUniqueId, providerService, configServerHostname,
