@@ -23,7 +23,9 @@ public class PathNode extends LeafNode<Path> {
 
     public PathNode(FileReference fileReference) {
         super(true);
-        this.value = new File(fileReference.value()).toPath();
+        this.value = Path.of(fileReference.value());
+        if (value.normalize().toString().startsWith(".."))
+            throw new IllegalArgumentException("path may not start with '..', but got :" + value);
         this.fileReference = fileReference;
     }
 

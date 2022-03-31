@@ -4,6 +4,7 @@ package com.yahoo.config;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -11,6 +12,7 @@ import static org.junit.Assert.assertTrue;
  * @since 5.1
  */
 public class FileNodeTest {
+
     @Test
     public void testSetValue() {
         FileNode n = new FileNode();
@@ -20,5 +22,10 @@ public class FileNodeTest {
         assertTrue(n.doSetValue("\"foo.txt\""));
         assertEquals("foo.txt", n.value().value());
         assertEquals("\"foo.txt\"", n.toString());
+
+        assertThrows("path may not start with '..', but got: foo/../../boo",
+                     IllegalArgumentException.class,
+                     () -> new FileNode("foo/../../boo"));
     }
+
 }
