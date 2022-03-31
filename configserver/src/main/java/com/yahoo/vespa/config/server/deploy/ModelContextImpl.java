@@ -210,7 +210,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean inhibitDefaultMergesWhenGlobalMergesPending;
         private final boolean useQrserverServiceName;
         private final boolean avoidRenamingSummaryFeatures;
-        private final boolean mergeGroupingResultInSearchInvoker;
         private final boolean experimentalSdParsing;
         private final Architecture adminClusterNodeResourcesArchitecture;
 
@@ -260,7 +259,6 @@ public class ModelContextImpl implements ModelContext {
             this.inhibitDefaultMergesWhenGlobalMergesPending = flagValue(source, appId, version, Flags.INHIBIT_DEFAULT_MERGES_WHEN_GLOBAL_MERGES_PENDING);
             this.useQrserverServiceName = flagValue(source, appId, version, Flags.USE_QRSERVER_SERVICE_NAME);
             this.avoidRenamingSummaryFeatures = flagValue(source, appId, version, Flags.AVOID_RENAMING_SUMMARY_FEATURES);
-            this.mergeGroupingResultInSearchInvoker = flagValue(source, appId, version, Flags.MERGE_GROUPING_RESULT_IN_SEARCH_INVOKER);
             this.experimentalSdParsing = flagValue(source, appId, version, Flags.EXPERIMENTAL_SD_PARSING);
             this.adminClusterNodeResourcesArchitecture = Architecture.valueOf(flagValue(source, appId, version, PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE));
         }
@@ -312,7 +310,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean inhibitDefaultMergesWhenGlobalMergesPending() { return inhibitDefaultMergesWhenGlobalMergesPending; }
         @Override public boolean useQrserverServiceName() { return useQrserverServiceName; }
         @Override public boolean avoidRenamingSummaryFeatures() { return avoidRenamingSummaryFeatures; }
-        @Override public boolean mergeGroupingResultInSearchInvoker() { return mergeGroupingResultInSearchInvoker; }
         @Override public boolean experimentalSdParsing() { return experimentalSdParsing; }
         @Override public String adminClusterNodeArchitecture() { return adminClusterArchitecture().name(); }
         @Override public Architecture adminClusterArchitecture() { return adminClusterNodeResourcesArchitecture; }

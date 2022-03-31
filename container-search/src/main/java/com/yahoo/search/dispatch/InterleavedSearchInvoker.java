@@ -45,7 +45,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private final Group group;
     private final LinkedBlockingQueue<SearchInvoker> availableForProcessing;
     private final Set<Integer> alreadyFailedNodes;
-    private final boolean mergeGroupingResult;
     private Query query;
 
     private boolean adaptiveTimeoutCalculated = false;
@@ -73,7 +72,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         this.group = group;
         this.availableForProcessing = newQueue();
         this.alreadyFailedNodes = alreadyFailedNodes;
-        this.mergeGroupingResult = searchCluster.dispatchConfig().mergeGroupingResultInSearchInvokerEnabled();
     }
 
     /**
@@ -220,9 +218,8 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         List<Hit> partialNonLean = partialResult.getResult().hits().asUnorderedHits();
         for(Hit hit : partialNonLean) {
             if (hit.isAuxiliary()) {
-                if (hit instanceof GroupingListHit && mergeGroupingResult) {
-                    var groupingHit = (GroupingListHit) hit;
-                    groupingResultAggregator.mergeWith(groupingHit);
+                if (hit instanceof GroupingListHit) {
+                    groupingResultAggregator.mergeWith((GroupingListHit) hit);
                 } else {
                     result.hits().add(hit);
                 }

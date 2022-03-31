@@ -72,5 +72,6 @@ node[].host string
 # The rpc port of this search node
 node[].port int
 
+# TODO(bjorncs) Remove after May 2022
 # Temporary feature flag
 mergeGroupingResultInSearchInvokerEnabled bool default=false

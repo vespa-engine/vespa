@@ -33,7 +33,6 @@ public class IndexedSearchCluster extends SearchCluster
         IlscriptsConfig.Producer,
         DispatchConfig.Producer {
 
-    private final boolean mergeGroupingResultInSearchInvoker;
     private String indexingClusterName = null; // The name of the docproc cluster to run indexing, by config.
     private String indexingChainName = null;
 
@@ -63,11 +62,10 @@ public class IndexedSearchCluster extends SearchCluster
         return routingSelector;
     }
 
-    public IndexedSearchCluster(DeployState deployState, AbstractConfigProducer<SearchCluster> parent, String clusterName, int index) {
+    public IndexedSearchCluster(AbstractConfigProducer<SearchCluster> parent, String clusterName, int index) {
         super(parent, clusterName, index);
         unionCfg = new UnionConfiguration(this, documentDbs);
         rootDispatch =  new DispatchGroup(this);
-        mergeGroupingResultInSearchInvoker = deployState.featureFlags().mergeGroupingResultInSearchInvoker();
     }
 
     @Override
@@ -321,7 +319,6 @@ public class IndexedSearchCluster extends SearchCluster
                 builder.maxWaitAfterCoverageFactor(searchCoverage.getMaxWaitAfterCoverageFactor());
         }
         builder.warmuptime(5.0);
-        builder.mergeGroupingResultInSearchInvokerEnabled(mergeGroupingResultInSearchInvoker);
     }
 
     @Override
