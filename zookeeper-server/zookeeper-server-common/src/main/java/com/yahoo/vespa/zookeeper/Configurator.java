@@ -89,7 +89,7 @@ public class Configurator {
         sb.append("reconfigEnabled=true").append("\n");
         sb.append("skipACL=yes").append("\n");
         ensureThisServerIsRepresented(config.myid(), config.server());
-        config.server().forEach(server -> sb.append(serverSpec(server, config.clientPort(), server.joining())).append("\n"));
+        config.server().forEach(server -> sb.append(serverSpec(server, server.joining())).append("\n"));
         sb.append(new TlsQuorumConfig().createConfig(vespaTlsConfig));
         sb.append(new TlsClientServerConfig().createConfig(vespaTlsConfig));
         return sb.toString();
@@ -114,7 +114,7 @@ public class Configurator {
         }
     }
 
-    static String serverSpec(ZookeeperServerConfig.Server server, int clientPort, boolean joining) {
+    static String serverSpec(ZookeeperServerConfig.Server server, boolean joining) {
         StringBuilder sb = new StringBuilder();
         sb.append("server.")
           .append(server.id())
