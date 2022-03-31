@@ -14,9 +14,8 @@ import com.yahoo.document.serialization.XmlStream;
  */
 public class UnresolvedFieldValue extends FieldValue {
     private static class Factory extends PrimitiveDataType.Factory {
-        public FieldValue create() {
-            return new UnresolvedFieldValue();
-        }
+        @Override public FieldValue create() { return new UnresolvedFieldValue(); }
+        @Override public FieldValue create(String value) { throw new UnsupportedOperationException(); }
     }
     public static PrimitiveDataType.Factory getFactory() { return new Factory(); }
     @Override
