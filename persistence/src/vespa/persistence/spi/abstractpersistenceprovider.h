@@ -15,8 +15,8 @@ class AbstractPersistenceProvider : public PersistenceProvider
 {
 public:
     Result initialize() override { return Result(); };
-    Result removeEntry(const Bucket&, Timestamp, Context&) override { return Result(); }
-    void removeIfFoundAsync(const Bucket&, Timestamp, const DocumentId&, Context&, OperationComplete::UP) override;
+    Result removeEntry(const Bucket&, Timestamp) override { return Result(); }
+    void removeIfFoundAsync(const Bucket&, Timestamp, const DocumentId&, OperationComplete::UP) override;
     Result setClusterState(BucketSpace, const ClusterState&) override { return Result(); }
     BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
 };

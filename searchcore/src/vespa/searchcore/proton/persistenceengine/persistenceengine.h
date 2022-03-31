@@ -106,20 +106,20 @@ public:
     Result setClusterState(BucketSpace bucketSpace, const ClusterState& calc) override;
     void setActiveStateAsync(const Bucket&, BucketInfo::ActiveState, OperationComplete::UP) override;
     BucketInfoResult getBucketInfo(const Bucket&) const override;
-    void putAsync(const Bucket &, Timestamp, storage::spi::DocumentSP, Context &context, OperationComplete::UP) override;
-    void removeAsync(const Bucket&, std::vector<TimeStampAndDocumentId> ids, Context&, OperationComplete::UP) override;
-    void updateAsync(const Bucket&, Timestamp, storage::spi::DocumentUpdateSP, Context&, OperationComplete::UP) override;
+    void putAsync(const Bucket &, Timestamp, storage::spi::DocumentSP, OperationComplete::UP) override;
+    void removeAsync(const Bucket&, std::vector<TimeStampAndDocumentId> ids, OperationComplete::UP) override;
+    void updateAsync(const Bucket&, Timestamp, storage::spi::DocumentUpdateSP, OperationComplete::UP) override;
     GetResult get(const Bucket&, const document::FieldSet&, const document::DocumentId&, Context&) const override;
     CreateIteratorResult
     createIterator(const Bucket &bucket, FieldSetSP, const Selection &, IncludedVersions, Context &context) override;
-    IterateResult iterate(IteratorId, uint64_t maxByteSize, Context&) const override;
-    Result destroyIterator(IteratorId, Context&) override;
+    IterateResult iterate(IteratorId, uint64_t maxByteSize) const override;
+    Result destroyIterator(IteratorId) override;
 
-    void createBucketAsync(const Bucket &bucketId, Context &, OperationComplete::UP) noexcept override;
-    void deleteBucketAsync(const Bucket&, Context&, OperationComplete::UP) noexcept override;
+    void createBucketAsync(const Bucket &bucketId, OperationComplete::UP) noexcept override;
+    void deleteBucketAsync(const Bucket&, OperationComplete::UP) noexcept override;
     BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
-    Result split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&) override;
-    Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) override;
+    Result split(const Bucket& source, const Bucket& target1, const Bucket& target2) override;
+    Result join(const Bucket& source1, const Bucket& source2, const Bucket& target) override;
     std::unique_ptr<vespalib::IDestructorCallback> register_resource_usage_listener(IResourceUsageListener& listener) override;
     std::unique_ptr<vespalib::IDestructorCallback> register_executor(std::shared_ptr<BucketExecutor>) override;
     void destroyIterators();

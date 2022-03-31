@@ -39,19 +39,17 @@ struct TestAndSetTest : PersistenceTestUtils {
     const AsyncHandler * asyncHandler;
     shared_ptr<document::Document> testDoc;
     document::DocumentId testDocId;
-    spi::Context context;
 
     TestAndSetTest()
         : persistenceHandler(),
-          asyncHandler(nullptr),
-          context(0, 0)
+          asyncHandler(nullptr)
     {}
 
     void SetUp() override {
         PersistenceTestUtils::SetUp();
 
         createBucket(BUCKET_ID);
-        getPersistenceProvider().createBucket(makeSpiBucket(BUCKET_ID),context);
+        getPersistenceProvider().createBucket(makeSpiBucket(BUCKET_ID));
 
         testDoc = createTestDocument();
         testDocId = testDoc->getId();

@@ -67,7 +67,6 @@ protected:
 
     void populateBucket(const Bucket& b,
                         PersistenceProvider& spi,
-                        Context& context,
                         uint32_t from,
                         uint32_t to,
                         document::TestDocMan& testDocMan);

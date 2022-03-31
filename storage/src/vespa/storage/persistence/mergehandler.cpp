@@ -57,18 +57,14 @@ constexpr int getDeleteFlag() {
 class IteratorGuard {
     spi::PersistenceProvider& _spi;
     spi::IteratorId _iteratorId;
-    spi::Context& _context;
 public:
-    IteratorGuard(spi::PersistenceProvider& spi,
-                  spi::IteratorId iteratorId,
-                  spi::Context& context)
+    IteratorGuard(spi::PersistenceProvider& spi, spi::IteratorId iteratorId)
         : _spi(spi),
-          _iteratorId(iteratorId),
-          _context(context)
+          _iteratorId(iteratorId)
     {}
     ~IteratorGuard() {
         assert(_iteratorId != 0);
-        _spi.destroyIterator(_iteratorId, _context);
+        _spi.destroyIterator(_iteratorId);
     }
 };
 
@@ -152,10 +148,10 @@ MergeHandler::populateMetaData(const spi::Bucket& bucket, Timestamp maxTimestamp
         throw std::runtime_error(ss.str());
     }
     spi::IteratorId iteratorId(createIterResult.getIteratorId());
-    IteratorGuard iteratorGuard(_spi, iteratorId, context);
+    IteratorGuard iteratorGuard(_spi, iteratorId);
 
     while (true) {
-        spi::IterateResult result(_spi.iterate(iteratorId, UINT64_MAX, context));
+        spi::IterateResult result(_spi.iterate(iteratorId, UINT64_MAX));
         if (result.getErrorCode() != spi::Result::ErrorType::NONE) {
             std::ostringstream ss;
             ss << "Failed to iterate for "
@@ -393,7 +389,7 @@ MergeHandler::fetchLocalData(
         throw std::runtime_error(ss.str());
     }
     spi::IteratorId iteratorId(createIterResult.getIteratorId());
-    IteratorGuard iteratorGuard(_spi, iteratorId, context);
+    IteratorGuard iteratorGuard(_spi, iteratorId);
 
     // Fetch all entries
     DocEntryList entries;
@@ -401,7 +397,7 @@ MergeHandler::fetchLocalData(
     bool fetchedAllLocalData = false;
     bool chunkLimitReached = false;
     while (true) {
-        spi::IterateResult result(_spi.iterate(iteratorId, remainingSize, context));
+        spi::IterateResult result(_spi.iterate(iteratorId, remainingSize));
         if (result.getErrorCode() != spi::Result::ErrorType::NONE) {
             std::ostringstream ss;
             ss << "Failed to iterate for "
@@ -512,7 +508,6 @@ void
 MergeHandler::applyDiffEntry(std::shared_ptr<ApplyBucketDiffState> async_results,
                              const spi::Bucket& bucket,
                              const api::ApplyBucketDiffCommand::Entry& e,
-                             spi::Context& context,
                              const document::DocumentTypeRepo& repo) const
 {
     auto throttle_token = throttle_merge_feed_ops() ? _env._fileStorHandler.operation_throttler().blocking_acquire_one()
@@ -525,14 +520,14 @@ MergeHandler::applyDiffEntry(std::shared_ptr<ApplyBucketDiffState> async_results
         auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(async_results), std::move(docId),
                                                                        std::move(throttle_token), "put",
                                                                        _clock, _env._metrics.merge_handler_metrics.put_latency);
-        _spi.putAsync(bucket, timestamp, std::move(doc), context, std::move(complete));
+        _spi.putAsync(bucket, timestamp, std::move(doc), std::move(complete));
     } else {
         std::vector<spi::PersistenceProvider::TimeStampAndDocumentId> ids;
         ids.emplace_back(timestamp, e._docName);
         auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(async_results), ids[0].second,
                                                                        std::move(throttle_token), "remove",
                                                                        _clock, _env._metrics.merge_handler_metrics.remove_latency);
-        _spi.removeAsync(bucket, std::move(ids), context, std::move(complete));
+        _spi.removeAsync(bucket, std::move(ids), std::move(complete));
     }
 }
 
@@ -594,7 +589,7 @@ MergeHandler::applyDiffLocally(
             ++i;
             LOG(spam, "ApplyBucketDiff(%s): Adding slot %s",
                 bucket.toString().c_str(), e.toString().c_str());
-            applyDiffEntry(async_results, bucket, e, context, repo);
+            applyDiffEntry(async_results, bucket, e, repo);
         } else {
             assert(spi::Timestamp(e._entry._timestamp) == existing.getTimestamp());
             // Diffing for existing timestamp; should either both be put
@@ -607,7 +602,7 @@ MergeHandler::applyDiffLocally(
                     "timestamp in %s. Diff slot: %s. Existing slot: %s",
                     bucket.toString().c_str(), e.toString().c_str(),
                     existing.toString().c_str());
-                applyDiffEntry(async_results, bucket, e, context, repo);
+                applyDiffEntry(async_results, bucket, e, repo);
             } else {
                 // Duplicate put, just ignore it.
                 LOG(debug, "During diff apply, attempting to add slot "
@@ -639,7 +634,7 @@ MergeHandler::applyDiffLocally(
         LOG(spam, "ApplyBucketDiff(%s): Adding slot %s",
             bucket.toString().c_str(), e.toString().c_str());
 
-        applyDiffEntry(async_results, bucket, e, context, repo);
+        applyDiffEntry(async_results, bucket, e, repo);
         byteCount += e._headerBlob.size() + e._bodyBlob.size();
     }
     if (byteCount + notNeededByteCount != 0) {

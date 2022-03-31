@@ -343,7 +343,7 @@ PersistenceEngine::getBucketInfo(const Bucket& b) const
 
 
 void
-PersistenceEngine::putAsync(const Bucket &bucket, Timestamp ts, storage::spi::DocumentSP doc, Context &, OperationComplete::UP onComplete)
+PersistenceEngine::putAsync(const Bucket &bucket, Timestamp ts, storage::spi::DocumentSP doc, OperationComplete::UP onComplete)
 {
     if (!_writeFilter.acceptWriteOperation()) {
         IResourceWriteFilter::State state = _writeFilter.getAcceptState();
@@ -370,7 +370,7 @@ PersistenceEngine::putAsync(const Bucket &bucket, Timestamp ts, storage::spi::Do
 }
 
 void
-PersistenceEngine::removeAsync(const Bucket& b, std::vector<TimeStampAndDocumentId> ids, Context&, OperationComplete::UP onComplete)
+PersistenceEngine::removeAsync(const Bucket& b, std::vector<TimeStampAndDocumentId> ids, OperationComplete::UP onComplete)
 {
     if (ids.size() == 1) {
         removeAsyncSingle(b, ids[0].first, ids[0].second, std::move(onComplete));
@@ -429,7 +429,7 @@ PersistenceEngine::removeAsyncSingle(const Bucket& b, Timestamp t, const Documen
 
 
 void
-PersistenceEngine::updateAsync(const Bucket& b, Timestamp t, DocumentUpdate::SP upd, Context&, OperationComplete::UP onComplete)
+PersistenceEngine::updateAsync(const Bucket& b, Timestamp t, DocumentUpdate::SP upd, OperationComplete::UP onComplete)
 {
     if (!_writeFilter.acceptWriteOperation()) {
         IResourceWriteFilter::State state = _writeFilter.getAcceptState();
@@ -534,7 +534,7 @@ PersistenceEngine::createIterator(const Bucket &bucket, FieldSetSP fields, const
 
 
 PersistenceEngine::IterateResult
-PersistenceEngine::iterate(IteratorId id, uint64_t maxByteSize, Context&) const
+PersistenceEngine::iterate(IteratorId id, uint64_t maxByteSize) const
 {
     ReadGuard rguard(_rwMutex);
     IteratorEntry *iteratorEntry;
@@ -568,7 +568,7 @@ PersistenceEngine::iterate(IteratorId id, uint64_t maxByteSize, Context&) const
 
 
 Result
-PersistenceEngine::destroyIterator(IteratorId id, Context&)
+PersistenceEngine::destroyIterator(IteratorId id)
 {
     ReadGuard rguard(_rwMutex);
     std::lock_guard<std::mutex> guard(_iterators_lock);
@@ -586,7 +586,7 @@ PersistenceEngine::destroyIterator(IteratorId id, Context&)
 
 
 void
-PersistenceEngine::createBucketAsync(const Bucket &b, Context &, OperationComplete::UP onComplete) noexcept
+PersistenceEngine::createBucketAsync(const Bucket &b, OperationComplete::UP onComplete) noexcept
 {
     ReadGuard rguard(_rwMutex);
     LOG(spam, "createBucket(%s)", b.toString().c_str());
@@ -606,7 +606,7 @@ PersistenceEngine::createBucketAsync(const Bucket &b, Context &, OperationComple
 
 
 void
-PersistenceEngine::deleteBucketAsync(const Bucket& b, Context&, OperationComplete::UP onComplete) noexcept
+PersistenceEngine::deleteBucketAsync(const Bucket& b, OperationComplete::UP onComplete) noexcept
 {
     ReadGuard rguard(_rwMutex);
     LOG(spam, "deleteBucket(%s)", b.toString().c_str());
@@ -651,7 +651,7 @@ PersistenceEngine::getModifiedBuckets(BucketSpace bucketSpace) const
 
 
 Result
-PersistenceEngine::split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&)
+PersistenceEngine::split(const Bucket& source, const Bucket& target1, const Bucket& target2)
 {
     ReadGuard rguard(_rwMutex);
     LOG(spam, "split(%s, %s, %s)", source.toString().c_str(), target1.toString().c_str(), target2.toString().c_str());
@@ -669,7 +669,7 @@ PersistenceEngine::split(const Bucket& source, const Bucket& target1, const Buck
 
 
 Result
-PersistenceEngine::join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&)
+PersistenceEngine::join(const Bucket& source1, const Bucket& source2, const Bucket& target)
 {
     ReadGuard rguard(_rwMutex);
     LOG(spam, "join(%s, %s, %s)", source1.toString().c_str(), source2.toString().c_str(), target.toString().c_str());
@@ -694,7 +694,6 @@ PersistenceEngine::register_resource_usage_listener(IResourceUsageListener& list
 void
 PersistenceEngine::destroyIterators()
 {
-    Context context(storage::spi::Priority(0x80), 0);
     for (;;) {
         IteratorId id;
         {
@@ -703,7 +702,7 @@ PersistenceEngine::destroyIterators()
                 break;
             id = _iterators.begin()->first;
         }
-        Result res(destroyIterator(id, context));
+        Result res(destroyIterator(id));
         if (res.hasError()) {
             LOG(debug, "%zu iterator left. Can not destroy iterator '%" PRIu64 "'. Reason='%s'", _iterators.size(), id.getValue(), res.toString().c_str());
             std::this_thread::sleep_for(100ms);

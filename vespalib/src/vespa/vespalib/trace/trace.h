@@ -24,10 +24,10 @@ public:
     /**
      * Create an empty Trace with level set to 0 (no tracing)
      */
-    Trace() : Trace(0) {}
-    explicit Trace(uint32_t level) : _root(), _level(level) { }
-    Trace & operator = (Trace &&) = default;
-    Trace(Trace &&) = default;
+    Trace() noexcept : Trace(0) {}
+    explicit Trace(uint32_t level) noexcept : _root(), _level(level) { }
+    Trace & operator = (Trace &&) noexcept = default;
+    Trace(Trace &&) noexcept = default;
     Trace(const Trace &);
     Trace & operator = (const Trace &) = delete;
     ~Trace() = default;
@@ -53,7 +53,7 @@ public:
         _level = std::min(level, 9u);
     }
 
-    uint32_t getLevel() const { return _level; }
+    uint32_t getLevel() const noexcept { return _level; }
 
     /**
      * Check if information with the given level should be traced. This method
@@ -63,7 +63,7 @@ public:
      * @param level The trace level to test.
      * @return True if tracing is enabled for the given level, false otherwise.
      */
-    bool shouldTrace(uint32_t level) const { return level <= _level; }
+    bool shouldTrace(uint32_t level) const noexcept { return level <= _level; }
 
     /**
      * Add the given note to the trace information if tracing is enabled for
@@ -99,7 +99,7 @@ public:
 
     bool isEmpty() const { return !_root || _root->isEmpty(); }
 
-    uint32_t getNumChildren() const { return _root ? _root->getNumChildren() : 0; }
+    uint32_t getNumChildren() const noexcept { return _root ? _root->getNumChildren() : 0; }
     const TraceNode & getChild(uint32_t child) const { return getRoot().getChild(child); }
     string encode() const;
 

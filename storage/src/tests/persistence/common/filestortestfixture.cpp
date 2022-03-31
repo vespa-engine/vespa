@@ -51,12 +51,9 @@ FileStorTestFixture::TearDown()
 void
 FileStorTestFixture::createBucket(const document::BucketId& bid)
 {
-    spi::Context context(spi::Priority(0), spi::Trace::TraceLevel(0));
-    _node->getPersistenceProvider().createBucket(makeSpiBucket(bid), context);
-
+    _node->getPersistenceProvider().createBucket(makeSpiBucket(bid));
     StorBucketDatabase::WrappedEntry entry(
-            _node->getStorageBucketDatabase().get(bid, "foo",
-                    StorBucketDatabase::CREATE_IF_NONEXISTING));
+            _node->getStorageBucketDatabase().get(bid, "foo", StorBucketDatabase::CREATE_IF_NONEXISTING));
     entry->info = api::BucketInfo(0, 0, 0, 0, 0, true, false);
     entry.write();
 }

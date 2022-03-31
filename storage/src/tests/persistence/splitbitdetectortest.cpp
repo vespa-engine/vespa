@@ -30,26 +30,23 @@ struct SplitBitDetectorTest : Test {
           context(spi::Priority(0), spi::Trace::TraceLevel(0))
     {
         provider.initialize();
-        provider.createBucket(bucket, context);
+        provider.createBucket(bucket);
     }
 };
 
 TEST_F(SplitBitDetectorTest, two_users) {
     DocEntryList entries;
     for (uint32_t i = 0; i < 5; ++i) {
-        document::Document::SP doc(
-                testDocMan.createRandomDocumentAtLocation(1, i, 1, 1));
-        provider.put(bucket, spi::Timestamp(1000 + i), doc, context);
+        document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(1, i, 1, 1));
+        provider.put(bucket, spi::Timestamp(1000 + i), doc);
     }
 
     for (uint32_t i = 5; i < 10; ++i) {
-        document::Document::SP doc(
-                testDocMan.createRandomDocumentAtLocation(3, i, 1, 1));
-        provider.put(bucket, spi::Timestamp(1000 + i), doc, context);
+        document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(3, i, 1, 1));
+        provider.put(bucket, spi::Timestamp(1000 + i), doc);
     }
 
-    SplitBitDetector::Result result(
-            SplitBitDetector::detectSplit(provider, bucket, 58, context));
+    SplitBitDetector::Result result(SplitBitDetector::detectSplit(provider, bucket, 58, context));
     EXPECT_EQ("SplitTargets(2: BucketId(0x0800000000000001), "
               "BucketId(0x0800000000000003))",
               result.toString());
@@ -58,13 +55,11 @@ TEST_F(SplitBitDetectorTest, two_users) {
 TEST_F(SplitBitDetectorTest, single_user) {
     DocEntryList entries;
     for (uint32_t i = 0; i < 10; ++i) {
-        document::Document::SP doc(
-                testDocMan.createRandomDocumentAtLocation(1, i, 1, 1));
-        provider.put(bucket, spi::Timestamp(1000 + i), doc, context);
+        document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(1, i, 1, 1));
+        provider.put(bucket, spi::Timestamp(1000 + i), doc);
     }
 
-    SplitBitDetector::Result result(
-            SplitBitDetector::detectSplit(provider, bucket, 58, context));
+    SplitBitDetector::Result result(SplitBitDetector::detectSplit(provider, bucket, 58, context));
     EXPECT_EQ("SplitTargets(33: BucketId(0x8400000000000001), "
               "BucketId(0x8400000100000001))",
               result.toString());
@@ -76,13 +71,11 @@ TEST_F(SplitBitDetectorTest, max_bits) {
     DocEntryList entries;
     for (uint32_t seed = 0; seed < 10; ++seed) {
         int location = 1;
-        document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(
-                location, seed, minContentSize, maxContentSize));
-        provider.put(bucket, spi::Timestamp(1000 + seed), doc, context);
+        document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(location, seed, minContentSize, maxContentSize));
+        provider.put(bucket, spi::Timestamp(1000 + seed), doc);
     }
 
-    SplitBitDetector::Result result(
-            SplitBitDetector::detectSplit(provider, bucket, 3, context));
+    SplitBitDetector::Result result(SplitBitDetector::detectSplit(provider, bucket, 3, context));
     EXPECT_EQ("SplitTargets(3: BucketId(0x0c00000000000001), "
               "[ BucketId(0x0c00000000000005) ])",
               result.toString());
@@ -92,14 +85,13 @@ TEST_F(SplitBitDetectorTest, max_bits_one_below_max) {
     spi::Bucket my_bucket(makeSpiBucket(document::BucketId(15, 1)));
     int minContentSize = 1, maxContentSize = 1;
 
-    provider.createBucket(my_bucket, context);
+    provider.createBucket(my_bucket);
 
     DocEntryList entries;
     for (uint32_t seed = 0; seed < 10; ++seed) {
         int location = 1 | (seed % 2 == 0 ? 0x8000 : 0);
-        document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(
-                location, seed, minContentSize, maxContentSize));
-        provider.put(my_bucket, spi::Timestamp(1000 + seed), doc, context);
+        document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(location, seed, minContentSize, maxContentSize));
+        provider.put(my_bucket, spi::Timestamp(1000 + seed), doc);
     }
 
     SplitBitDetector::Result result(
@@ -119,13 +111,11 @@ TEST_F(SplitBitDetectorTest, unsplittable) {
     DocEntryList entries;
 
     for (uint32_t i = 0; i < 10; ++i) {
-        document::Document::SP doc(
-                testDocMan.createRandomDocumentAtLocation(1, 1, 1, 1));
-        provider.put(bucket, spi::Timestamp(1000 + i), doc, context);
+        document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(1, 1, 1, 1));
+        provider.put(bucket, spi::Timestamp(1000 + i), doc);
     }
 
-    SplitBitDetector::Result result(
-            SplitBitDetector::detectSplit(provider, bucket, 58, context, 100));
+    SplitBitDetector::Result result(SplitBitDetector::detectSplit(provider, bucket, 58, context, 100));
     EXPECT_EQ("SplitTargets(58: BucketId(0xe94c074f00000001), "
               "BucketId(0xeb4c074f00000001))",
               result.toString());
@@ -135,13 +125,11 @@ TEST_F(SplitBitDetectorTest, unsplittable_min_count) {
     DocEntryList entries;
 
     for (uint32_t i = 0; i < 10; ++i) {
-        document::Document::SP doc(
-                testDocMan.createRandomDocumentAtLocation(1, 1, 1, 1));
-        provider.put(bucket, spi::Timestamp(1000 + i), doc, context);
+        document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(1, 1, 1, 1));
+        provider.put(bucket, spi::Timestamp(1000 + i), doc);
     }
 
-    SplitBitDetector::Result result(
-            SplitBitDetector::detectSplit(provider, bucket, 58, context, 5, 0));
+    SplitBitDetector::Result result(SplitBitDetector::detectSplit(provider, bucket, 58, context, 5, 0));
     // Still no other choice than split out to 58 bits regardless of minCount.
     EXPECT_EQ("SplitTargets(58: BucketId(0xe94c074f00000001), "
               "BucketId(0xeb4c074f00000001))",
@@ -149,31 +137,26 @@ TEST_F(SplitBitDetectorTest, unsplittable_min_count) {
 }
 
 TEST_F(SplitBitDetectorTest, empty) {
-    SplitBitDetector::Result result(
-            SplitBitDetector::detectSplit(provider, bucket, 58, context));
+    SplitBitDetector::Result result(SplitBitDetector::detectSplit(provider, bucket, 58, context));
     EXPECT_EQ("SplitTargets(source empty)", result.toString());
 }
 
 TEST_F(SplitBitDetectorTest, zero_doc_limit_falls_back_to_one_bit_increase_with_1_doc) {
-    document::Document::SP doc(
-            testDocMan.createRandomDocumentAtLocation(1, 0, 1, 1));
-    provider.put(bucket, spi::Timestamp(1000), doc, context);
+    document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(1, 0, 1, 1));
+    provider.put(bucket, spi::Timestamp(1000), doc);
 
-    SplitBitDetector::Result result(
-            SplitBitDetector::detectSplit(provider, bucket, 58, context, 0, 0));
+    SplitBitDetector::Result result(SplitBitDetector::detectSplit(provider, bucket, 58, context, 0, 0));
     EXPECT_EQ("SplitTargets(2: BucketId(0x0800000000000001), "
               "BucketId(0x0800000000000003))",
               result.toString());
 }
 
 TEST_F(SplitBitDetectorTest, zero_doc_limit_falls_back_to_one_bit_increase_on_gid_collision) {
-    document::Document::SP doc(
-            testDocMan.createRandomDocumentAtLocation(1, 0, 1, 1));
-    provider.put(bucket, spi::Timestamp(1000), doc, context);
-    provider.put(bucket, spi::Timestamp(2000), doc, context);
+    document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(1, 0, 1, 1));
+    provider.put(bucket, spi::Timestamp(1000), doc);
+    provider.put(bucket, spi::Timestamp(2000), doc);
 
-    SplitBitDetector::Result result(
-            SplitBitDetector::detectSplit(provider, bucket, 58, context, 0, 0));
+    SplitBitDetector::Result result(SplitBitDetector::detectSplit(provider, bucket, 58, context, 0, 0));
     EXPECT_EQ("SplitTargets(2: BucketId(0x0800000000000001), "
               "BucketId(0x0800000000000003))",
               result.toString());
@@ -196,14 +179,11 @@ TEST_F(SplitBitDetectorTest, DISABLED_find_bucket_collision_ids) {
 
     size_t iterations = 0;
     constexpr size_t maxIterations = 100000000;
-    while (std::next_permutation(std::begin(candidateSuffix),
-                                 std::end(candidateSuffix) - 1))
+    while (std::next_permutation(std::begin(candidateSuffix), std::end(candidateSuffix) - 1))
     {
         ++iterations;
 
-        DocumentId candidateId(
-                vespalib::make_string("id:foo:music:n=123456:%s",
-                                      candidateSuffix));
+        DocumentId candidateId(vespalib::make_string("id:foo:music:n=123456:%s",candidateSuffix));
         BucketId candidateBucket(factory.getBucketId(candidateId));
         if (targetBucket == candidateBucket) {
             std::cerr << "\nFound a collision after " << iterations

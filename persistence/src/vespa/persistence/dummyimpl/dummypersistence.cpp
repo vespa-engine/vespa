@@ -413,7 +413,7 @@ DummyPersistence::getBucketInfo(const Bucket& b) const
 }
 
 void
-DummyPersistence::putAsync(const Bucket& b, Timestamp t, Document::SP doc, Context&, OperationComplete::UP onComplete)
+DummyPersistence::putAsync(const Bucket& b, Timestamp t, Document::SP doc, OperationComplete::UP onComplete)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "put(%s, %" PRIu64 ", %s)",
@@ -443,8 +443,9 @@ DummyPersistence::putAsync(const Bucket& b, Timestamp t, Document::SP doc, Conte
 }
 
 void
-DummyPersistence::updateAsync(const Bucket& bucket, Timestamp ts, DocumentUpdateSP upd, Context& context, OperationComplete::UP onComplete)
+DummyPersistence::updateAsync(const Bucket& bucket, Timestamp ts, DocumentUpdateSP upd, OperationComplete::UP onComplete)
 {
+    Context context(0x80, 0);
     GetResult getResult = get(bucket, document::AllFields(), upd->getId(), context);
 
     if (getResult.hasError()) {
@@ -465,7 +466,7 @@ DummyPersistence::updateAsync(const Bucket& bucket, Timestamp ts, DocumentUpdate
 
     upd->applyTo(*docToUpdate);
 
-    Result putResult = put(bucket, ts, std::move(docToUpdate), context);
+    Result putResult = put(bucket, ts, std::move(docToUpdate));
 
     if (putResult.hasError()) {
         onComplete->onComplete(std::make_unique<UpdateResult>(putResult.getErrorCode(), putResult.getErrorMessage()));
@@ -475,7 +476,7 @@ DummyPersistence::updateAsync(const Bucket& bucket, Timestamp ts, DocumentUpdate
 }
 
 void
-DummyPersistence::removeAsync(const Bucket& b, std::vector<TimeStampAndDocumentId> ids, Context &, OperationComplete::UP onComplete)
+DummyPersistence::removeAsync(const Bucket& b, std::vector<TimeStampAndDocumentId> ids, OperationComplete::UP onComplete)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
@@ -619,11 +620,10 @@ DummyPersistence::createIterator(const Bucket &b, FieldSetSP fs, const Selection
 }
 
 IterateResult
-DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) const
+DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize) const
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "iterate(%" PRIu64 ", %" PRIu64 ")", uint64_t(id), maxByteSize);
-    ctx.trace(9, "started iterate()");
     Iterator* it;
     {
         std::lock_guard lock(_monitor);
@@ -637,7 +637,6 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
 
     BucketContentGuard::UP bc(acquireBucketWithLock(it->_bucket, LockMode::Shared));
     if (!bc.get()) {
-        ctx.trace(9, "finished iterate(); bucket not found");
         return IterateResult(std::vector<DocEntry::UP>(), true);
     }
     LOG(debug, "Iterator %" PRIu64 " acquired bucket lock", uint64_t(id));
@@ -668,10 +667,7 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
         }
         it->_leftToIterate.pop_back();
     }
-    if (ctx.shouldTrace(9)) {
-        ctx.trace(9, make_string("finished iterate(), returning %zu documents with %u bytes of data",
-                                 entries.size(), currentSize));
-    }
+
     LOG(debug, "finished iterate(%" PRIu64 ", %" PRIu64 "), returning %zu documents "
         "with %u bytes of data. %u docs cloned in fast path",
         uint64_t(id),
@@ -687,7 +683,7 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
 }
 
 Result
-DummyPersistence::destroyIterator(IteratorId id, Context&)
+DummyPersistence::destroyIterator(IteratorId id)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "destroyIterator(%" PRIu64 ")", uint64_t(id));
@@ -699,7 +695,7 @@ DummyPersistence::destroyIterator(IteratorId id, Context&)
 }
 
 void
-DummyPersistence::createBucketAsync(const Bucket& b, Context&, OperationComplete::UP onComplete) noexcept
+DummyPersistence::createBucketAsync(const Bucket& b, OperationComplete::UP onComplete) noexcept
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "createBucket(%s)", b.toString().c_str());
@@ -715,7 +711,7 @@ DummyPersistence::createBucketAsync(const Bucket& b, Context&, OperationComplete
 }
 
 void
-DummyPersistence::deleteBucketAsync(const Bucket& b, Context&, OperationComplete::UP onComplete) noexcept
+DummyPersistence::deleteBucketAsync(const Bucket& b, OperationComplete::UP onComplete) noexcept
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "deleteBucket(%s)", b.toString().c_str());
@@ -729,10 +725,7 @@ DummyPersistence::deleteBucketAsync(const Bucket& b, Context&, OperationComplete
 }
 
 Result
-DummyPersistence::split(const Bucket& source,
-                        const Bucket& target1,
-                        const Bucket& target2,
-                        Context& context)
+DummyPersistence::split(const Bucket& source, const Bucket& target1, const Bucket& target2)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "split(%s -> %s, %s)",
@@ -742,9 +735,9 @@ DummyPersistence::split(const Bucket& source,
     assert(source.getBucketSpace() == FixedBucketSpaces::default_space());
     assert(target1.getBucketSpace() == FixedBucketSpaces::default_space());
     assert(target2.getBucketSpace() == FixedBucketSpaces::default_space());
-    createBucket(source, context);
-    createBucket(target1, context);
-    createBucket(target2, context);
+    createBucket(source);
+    createBucket(target1);
+    createBucket(target2);
 
     BucketContentGuard::UP sourceGuard(acquireBucketWithLock(source));
     if (!sourceGuard.get()) {
@@ -781,14 +774,13 @@ DummyPersistence::split(const Bucket& source,
     sourceGuard.reset(0);
     LOG(debug, "erasing split source %s",
         source.toString().c_str());
-    deleteBucket(source, context);
+    deleteBucket(source);
 
     return Result();
 }
 
 Result
-DummyPersistence::join(const Bucket& source1, const Bucket& source2,
-                       const Bucket& target, Context& context)
+DummyPersistence::join(const Bucket& source1, const Bucket& source2, const Bucket& target)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "join(%s, %s -> %s)",
@@ -798,7 +790,7 @@ DummyPersistence::join(const Bucket& source1, const Bucket& source2,
     assert(source1.getBucketSpace() == FixedBucketSpaces::default_space());
     assert(source2.getBucketSpace() == FixedBucketSpaces::default_space());
     assert(target.getBucketSpace() == FixedBucketSpaces::default_space());
-    createBucket(target, context);
+    createBucket(target);
     BucketContentGuard::UP targetGuard(acquireBucketWithLock(target));
     assert(targetGuard.get());
 
@@ -818,7 +810,7 @@ DummyPersistence::join(const Bucket& source1, const Bucket& source2,
             (*targetGuard)->insert(std::move(entry));
         }
         sourceGuard.reset(0);
-        deleteBucket(source, context);
+        deleteBucket(source);
     }
     (*targetGuard)->setActive(active);
 
