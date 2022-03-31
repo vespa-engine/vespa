@@ -30,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -132,7 +133,7 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
                                                                             entry -> entry.getValue().instanceJobs().get(entry.getKey())));
             Cursor productionArray = versionObject.setArray("productionApplications");
             statistics.productionSuccesses().stream()
-                      .collect(groupingBy(run -> run.id().application()))
+                      .collect(groupingBy(run -> run.id().application(), TreeMap::new, toList()))
                       .forEach((id, runs) -> {
                           Cursor applicationObject = productionArray.addObject();
                           toSlime(applicationObject, id, request);
