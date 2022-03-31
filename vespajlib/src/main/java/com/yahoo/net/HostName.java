@@ -1,19 +1,34 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.net;
 
+import ai.vespa.validation.PatternedStringWrapper;
+
 import java.util.Optional;
 
+import static ai.vespa.validation.Validation.requireLength;
+
 /**
- * Utilities for getting the hostname of the system running the JVM.
+ * Hostnames match {@link DomainName#domainNamePattern}, but are restricted to 64 characters in length.
+ *
+ * This class also has utilities for getting the hostname of the system running the JVM.
  * Detection of the hostname is now done before starting any Vespa
  * programs and provided in the environment variable VESPA_HOSTNAME;
  * if that variable isn't set a default of "localhost" is always returned.
  *
  * @author arnej
+ * @author jonmv
  */
-public class HostName {
+public class HostName extends PatternedStringWrapper<HostName> {
 
-    private static String preferredHostName = null;
+    private static HostName preferredHostName = null;
+
+    private HostName(String value) {
+        super(requireLength(value, "hostname length", 1, 64), DomainName.domainNamePattern, "hostname");
+    }
+
+    public static HostName of(String value) {
+        return new HostName(value);
+    }
 
     /**
      * Return a public and fully qualified hostname for localhost that
@@ -25,18 +40,19 @@ public class HostName {
         if (preferredHostName == null) {
             preferredHostName = getPreferredHostName();
         }
-        return preferredHostName;
+        return preferredHostName.value();
     }
 
-    static private String getPreferredHostName() {
+    static private HostName getPreferredHostName() {
         Optional<String> vespaHostEnv = Optional.ofNullable(System.getenv("VESPA_HOSTNAME"));
         if (vespaHostEnv.isPresent() && ! vespaHostEnv.get().trim().isEmpty()) {
-            return vespaHostEnv.get().trim();
+            return of(vespaHostEnv.get().trim());
         }
-        return "localhost";
+        return of("localhost");
     }
 
     public static void setHostNameForTestingOnly(String hostName) {
-        preferredHostName = hostName;
+        preferredHostName = HostName.of(hostName);
     }
+
 }

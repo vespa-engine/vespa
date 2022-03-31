@@ -220,7 +220,7 @@ public class SearchClusterTest {
 
     @Test
     public void requireThatVipStatusDownWhenLocalIsDown() {
-        try (State test = new State("cluster.1",1,HostName.getLocalhost(), "b")) {
+        try (State test = new State("cluster.1", 1, HostName.getLocalhost(), "b")) {
 
             test.waitOneFullPingRound();
             assertTrue(test.vipStatus.isInRotation());

@@ -9,7 +9,6 @@ import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.athenz.identityprovider.client.IdentityDocumentSigner;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;

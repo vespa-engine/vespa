@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
+import com.yahoo.net.DomainName;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.ConfigInstance;
@@ -253,7 +254,7 @@ public class ApplicationRepositoryTest {
     public void getLogsForHostname() {
         ApplicationId applicationId = ApplicationId.from("hosted-vespa", "tenant-host", "default");
         deployApp(testAppLogServerWithContainer, new PrepareParams.Builder().applicationId(applicationId).build());
-        HttpResponse response = applicationRepository.getLogs(applicationId, Optional.of("localhost"), "");
+        HttpResponse response = applicationRepository.getLogs(applicationId, Optional.of(DomainName.localhost), "");
         assertEquals(200, response.getStatus());
     }
 
