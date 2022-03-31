@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.application.pkg;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -119,7 +118,7 @@ public class ApplicationPackageTest {
             fail("Should fail on include file outside zip");
         }
         catch (RuntimeException e) {
-            assertEquals(IllegalArgumentException.class, e.getCause().getClass());
+            assertEquals(IllegalArgumentException.class, e.getClass());
         }
     }
 
@@ -130,7 +129,7 @@ public class ApplicationPackageTest {
             fail("Should fail on include file outside zip");
         }
         catch (RuntimeException e) {
-            assertEquals("java.lang.IllegalArgumentException: ./../not_found.xml is not a descendant of .", e.getCause().toString());
+            assertEquals("./../not_found.xml is not a descendant of .", e.getMessage());
         }
     }
 

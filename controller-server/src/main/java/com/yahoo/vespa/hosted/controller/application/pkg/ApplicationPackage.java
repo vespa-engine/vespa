@@ -43,7 +43,6 @@ import java.util.SortedMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toMap;
@@ -192,6 +191,9 @@ public class ApplicationPackage {
                                     Environment.prod,
                                     RegionName.defaultName())
                         .run(); // Populates the zip archive cache with files that would be included.
+            }
+            catch (RuntimeException e) {
+                throw e;
             }
             catch (Exception e) {
                 throw new RuntimeException(e);

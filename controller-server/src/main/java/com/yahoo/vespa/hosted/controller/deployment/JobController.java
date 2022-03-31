@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.yahoo.collections.Iterables;
 import com.yahoo.component.Version;
 import com.yahoo.component.VersionCompatibility;
 import com.yahoo.config.provision.ApplicationId;
@@ -34,11 +33,9 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -545,9 +542,7 @@ public class JobController {
                                                              Optional.empty(), Optional.empty(),
                                                              Optional.empty(), true, Optional.empty());
 
-        byte[] diff = lastRun.map(run -> run.versions().targetApplication())
-                .map(prevVersion -> ApplicationPackageDiff.diff(new ApplicationPackage(controller.applications().applicationStore().get(deploymentId, prevVersion)), applicationPackage))
-                .orElseGet(() -> ApplicationPackageDiff.diffAgainstEmpty(applicationPackage));
+        byte[] diff = getDiff(applicationPackage, deploymentId, lastRun);
 
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             controller.applications().applicationStore().putDev(deploymentId, version, applicationPackage.zippedContent(), diff);
@@ -563,6 +558,21 @@ public class JobController {
         locked(id, type, __ -> {
             runner.get().accept(last(id, type).get());
         });
+    }
+
+    /* Application package diff against previous version, or against empty version if previous does not exist or is invalid */
+    private byte[] getDiff(ApplicationPackage applicationPackage, DeploymentId deploymentId, Optional<Run> lastRun) {
+        return lastRun.map(run -> run.versions().targetApplication())
+                      .map(prevVersion -> {
+                          ApplicationPackage previous;
+                          try {
+                              previous = new ApplicationPackage(controller.applications().applicationStore().get(deploymentId, prevVersion));
+                          } catch (IllegalArgumentException e) {
+                              return ApplicationPackageDiff.diffAgainstEmpty(applicationPackage);
+                          }
+                          return ApplicationPackageDiff.diff(previous, applicationPackage);
+                      })
+                      .orElseGet(() -> ApplicationPackageDiff.diffAgainstEmpty(applicationPackage));
     }
 
     private Version findTargetPlatform(ApplicationPackage applicationPackage, Optional<Run> lastRun, ApplicationId id) {
