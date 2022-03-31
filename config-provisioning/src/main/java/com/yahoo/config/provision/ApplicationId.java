@@ -3,6 +3,8 @@ package com.yahoo.config.provision;
 
 import com.yahoo.cloud.config.ApplicationIdConfig;
 
+import java.util.Objects;
+
 /**
  * A complete, immutable identification of an application instance.
  *
@@ -15,8 +17,6 @@ public final class ApplicationId implements Comparable<ApplicationId> {
     private final TenantName tenant;
     private final ApplicationName application;
     private final InstanceName instance;
-
-    private final String stringValue;
     private final String serializedForm;
 
     public ApplicationId(ApplicationIdConfig config) {
@@ -27,7 +27,6 @@ public final class ApplicationId implements Comparable<ApplicationId> {
         this.tenant = tenant;
         this.application = applicationName;
         this.instance = instanceName;
-        this.stringValue = toStringValue();
         this.serializedForm = toSerializedForm();
     }
 
@@ -44,7 +43,7 @@ public final class ApplicationId implements Comparable<ApplicationId> {
         if (parts.length < 3)
             throw new IllegalArgumentException("Application ids must be on the form tenant:application:instance, but was " + idString);
 
-        return new Builder().tenant(parts[0]).applicationName(parts[1]).instanceName(parts[2]).build();
+        return from(parts[0], parts[1], parts[2]);
     }
 
     public static ApplicationId fromFullString(String idString) {
@@ -52,11 +51,11 @@ public final class ApplicationId implements Comparable<ApplicationId> {
         if (parts.length < 3)
             throw new IllegalArgumentException("Application ids must be on the form tenant.application.instance, but was " + idString);
 
-        return new Builder().tenant(parts[0]).applicationName(parts[1]).instanceName(parts[2]).build();
+        return from(parts[0], parts[1], parts[2]);
     }
 
     @Override
-    public int hashCode() { return stringValue.hashCode(); }
+    public int hashCode() { return Objects.hash(tenant, application, instance); }
 
     @Override
     public boolean equals(Object other) {
@@ -72,10 +71,6 @@ public final class ApplicationId implements Comparable<ApplicationId> {
     /** Returns a serialized form of the content of this: tenant:application:instance */
     public String serializedForm() { return serializedForm; }
 
-    private String toStringValue() {
-        return "tenant '" + tenant + "', application '" + application + "', instance '" + instance + "'";
-    }
-
     /** Returns "dotted" string (tenant.application.instance) with instance name omitted if it is "default" */
     public String toShortString() {
         return tenant().value() + "." + application().value() +
@@ -88,7 +83,7 @@ public final class ApplicationId implements Comparable<ApplicationId> {
     }
 
     private String toSerializedForm() {
-        return tenant + ":" + application + ":" + instance;
+        return tenant.value() + ":" + application.value() + ":" + instance.value();
     }
 
     @Override
