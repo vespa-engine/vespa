@@ -3,6 +3,7 @@
 #pragma once
 
 #include "multinumericpostattribute.h"
+#include "multi_numeric_enum_search_context.h"
 #include <charconv>
 
 namespace search {
@@ -75,9 +76,9 @@ std::unique_ptr<attribute::SearchContext>
 MultiValueNumericPostingAttribute<B, M>::getSearch(QueryTermSimpleUP qTerm,
                                                    const attribute::SearchContextParams & params) const
 {
-    using BaseSC = std::conditional_t<M::_hasWeight, SetNumericSearchContext, ArrayNumericSearchContext>;
-    using SC = std::conditional_t<M::_hasWeight, SetPostingSearchContext, ArrayPostingSearchContext>;
-    BaseSC base_sc(std::move(qTerm), *this);
+    using BaseSC = attribute::MultiNumericEnumSearchContext<typename B::BaseClass::BaseType, M>;
+    using SC = attribute::NumericPostingSearchContext<BaseSC, SelfType, int32_t>;
+    BaseSC base_sc(std::move(qTerm), *this, this->_mvMapping, this->_enumStore);
     return std::make_unique<SC>(std::move(base_sc), params, *this);
 }
 
