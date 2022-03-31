@@ -17,7 +17,6 @@ import (
 
 func newDeployCmd(cli *CLI) *cobra.Command {
 	var (
-		zoneArg     string
 		logLevelArg string
 	)
 	cmd := &cobra.Command{
@@ -46,7 +45,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 			if err != nil {
 				return err
 			}
-			target, err := cli.target(targetOptions{zone: zoneArg, logLevel: logLevelArg})
+			target, err := cli.target(targetOptions{logLevel: logLevelArg})
 			if err != nil {
 				return err
 			}
@@ -70,17 +69,16 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 			}
 			if opts.IsCloud() {
 				log.Printf("\nUse %s for deployment status, or follow this deployment at", color.CyanString("vespa status"))
-				log.Print(color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/dev/instance/%s/job/%s-%s/run/%d",
+				log.Print(color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/%s/instance/%s/job/%s-%s/run/%d",
 					opts.Target.Deployment().System.ConsoleURL,
-					opts.Target.Deployment().Application.Tenant, opts.Target.Deployment().Application.Application, opts.Target.Deployment().Application.Instance,
-					opts.Target.Deployment().Zone.Environment, opts.Target.Deployment().Zone.Region,
+					opts.Target.Deployment().Application.Tenant, opts.Target.Deployment().Application.Application, opts.Target.Deployment().Zone.Environment,
+					opts.Target.Deployment().Application.Instance, opts.Target.Deployment().Zone.Environment, opts.Target.Deployment().Zone.Region,
 					result.ID)))
 			}
 			return waitForQueryService(cli, result.ID)
 		},
 	}
-	cmd.PersistentFlags().StringVarP(&zoneArg, "zone", "z", "", "The zone to use for deployment. This defaults to a dev zone")
-	cmd.PersistentFlags().StringVarP(&logLevelArg, "log-level", "l", "error", `Log level for Vespa logs. Must be "error", "warning", "info" or "debug"`)
+	cmd.Flags().StringVarP(&logLevelArg, "log-level", "l", "error", `Log level for Vespa logs. Must be "error", "warning", "info" or "debug"`)
 	return cmd
 }
 

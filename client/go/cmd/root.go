@@ -28,6 +28,7 @@ import (
 const (
 	applicationFlag = "application"
 	instanceFlag    = "instance"
+	zoneFlag        = "zone"
 	targetFlag      = "target"
 	waitFlag        = "wait"
 	colorFlag       = "color"
@@ -60,6 +61,7 @@ type Flags struct {
 	target      string
 	application string
 	instance    string
+	zone        string
 	waitSecs    int
 	color       string
 	quiet       bool
@@ -76,8 +78,6 @@ type ErrCLI struct {
 }
 
 type targetOptions struct {
-	// zone declares the zone use when using this target. If empty, a default zone for the system is chosen.
-	zone string
 	// logLevel sets the log level to use for this target. If empty, it defaults to "info".
 	logLevel string
 	// noCertificate declares that no client certificate should be required when using this target.
@@ -154,6 +154,7 @@ func (c *CLI) loadConfig() error {
 	bindings.bindFlag(targetFlag, c.cmd)
 	bindings.bindFlag(applicationFlag, c.cmd)
 	bindings.bindFlag(instanceFlag, c.cmd)
+	bindings.bindFlag(zoneFlag, c.cmd)
 	bindings.bindFlag(waitFlag, c.cmd)
 	bindings.bindFlag(colorFlag, c.cmd)
 	bindings.bindFlag(quietFlag, c.cmd)
@@ -201,6 +202,7 @@ func (c *CLI) configureFlags() {
 	c.cmd.PersistentFlags().StringVarP(&flags.target, targetFlag, "t", "local", "The name or URL of the recipient of this command")
 	c.cmd.PersistentFlags().StringVarP(&flags.application, applicationFlag, "a", "", "The application to manage")
 	c.cmd.PersistentFlags().StringVarP(&flags.instance, instanceFlag, "i", "", "The instance of the application to manage")
+	c.cmd.PersistentFlags().StringVarP(&flags.zone, zoneFlag, "z", "", "The zone to use. This defaults to a dev zone")
 	c.cmd.PersistentFlags().IntVarP(&flags.waitSecs, waitFlag, "w", 0, "Number of seconds to wait for a service to become ready")
 	c.cmd.PersistentFlags().StringVarP(&flags.color, colorFlag, "c", "auto", "Whether to use colors in output.")
 	c.cmd.PersistentFlags().BoolVarP(&flags.quiet, quietFlag, "q", false, "Quiet mode. Only errors will be printed")
@@ -318,7 +320,7 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions) (vespa.Ta
 	if err != nil {
 		return nil, err
 	}
-	deployment, err := c.config.deploymentIn(opts.zone, system)
+	deployment, err := c.config.deploymentIn(c.flags.zone, system)
 	if err != nil {
 		return nil, err
 	}
