@@ -75,12 +75,10 @@ std::unique_ptr<attribute::SearchContext>
 MultiValueNumericPostingAttribute<B, M>::getSearch(QueryTermSimpleUP qTerm,
                                                    const attribute::SearchContextParams & params) const
 {
-    std::unique_ptr<search::attribute::SearchContext> sc;
-    sc.reset(new typename std::conditional<M::_hasWeight,
-                                           SetPostingSearchContext,
-                                           ArrayPostingSearchContext>::
-             type(std::move(qTerm), params, *this));
-    return sc;
+    using BaseSC = std::conditional_t<M::_hasWeight, SetNumericSearchContext, ArrayNumericSearchContext>;
+    using SC = std::conditional_t<M::_hasWeight, SetPostingSearchContext, ArrayPostingSearchContext>;
+    BaseSC base_sc(std::move(qTerm), *this);
+    return std::make_unique<SC>(std::move(base_sc), params, *this);
 }
 
 template <typename B, typename M>

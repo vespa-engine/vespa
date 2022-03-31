@@ -42,6 +42,8 @@ StringSearchHelper::StringSearchHelper(QueryTermUCS4 & term, bool cased)
     }
 }
 
+StringSearchHelper::StringSearchHelper(StringSearchHelper&&) noexcept = default;
+
 StringSearchHelper::~StringSearchHelper()
 {
     if (isRegex()) {
@@ -284,6 +286,8 @@ StringAttribute::StringSearchContext::StringSearchContext(QueryTermSimple::UP qT
     _helper(*_queryTerm, toBeSearched.getConfig().get_match() == Config::Match::CASED)
 {
 }
+
+StringAttribute::StringSearchContext::StringSearchContext(StringSearchContext&&) noexcept = default;
 
 StringAttribute::StringSearchContext::~StringSearchContext() = default;
 

@@ -89,12 +89,10 @@ std::unique_ptr<attribute::SearchContext>
 MultiValueStringPostingAttributeT<B, T>::getSearch(QueryTermSimpleUP qTerm,
                                                    const attribute::SearchContextParams & params) const
 {
-    std::unique_ptr<search::attribute::SearchContext> sc;
-    sc.reset(new typename std::conditional<T::_hasWeight,
-                                           StringSetPostingSearchContext,
-                                           StringArrayPostingSearchContext>::
-             type(std::move(qTerm), params.useBitVector(), *this));
-    return sc;
+    using BaseSC = std::conditional_t<T::_hasWeight, StringSetImplSearchContext, StringArrayImplSearchContext>;
+    using SC = std::conditional_t<T::_hasWeight, StringSetPostingSearchContext, StringArrayPostingSearchContext>;
+    BaseSC base_sc(std::move(qTerm), *this);
+    return std::make_unique<SC>(std::move(base_sc), params.useBitVector(), *this);
 }
 
 

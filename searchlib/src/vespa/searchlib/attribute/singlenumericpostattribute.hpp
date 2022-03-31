@@ -147,7 +147,8 @@ std::unique_ptr<attribute::SearchContext>
 SingleValueNumericPostingAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
                                                  const attribute::SearchContextParams & params) const
 {
-    return std::make_unique<SinglePostingSearchContext>(std::move(qTerm), params, *this);
+    SingleNumericSearchContext base_sc(std::move(qTerm), *this);
+    return std::make_unique<SinglePostingSearchContext>(std::move(base_sc), params, *this);
 }
 
 } // namespace search

@@ -168,12 +168,11 @@ class PostingSearchContext: public BaseSC,
 {
 public:
     using EnumStore = typename AttrT::EnumStore;
-    using QueryTermSimpleUP = std::unique_ptr<QueryTermSimple>;
 protected:
     const AttrT           &_toBeSearched;
     const EnumStore       &_enumStore;
 
-    PostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched);
+    PostingSearchContext(BaseSC&& base_sc, bool useBitVector, const AttrT &toBeSearched);
     ~PostingSearchContext();
 };
 
@@ -184,11 +183,10 @@ class StringPostingSearchContext
 private:
     using Parent = PostingSearchContext<BaseSC, PostingListFoldedSearchContextT<DataT>, AttrT>;
     using RegexpUtil = vespalib::RegexpUtil;
-    using QueryTermSimpleUP = typename Parent::QueryTermSimpleUP;
     using Parent::_enumStore;
     bool useThis(const PostingListSearchContext::DictionaryConstIterator & it) const override;
 public:
-    StringPostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched);
+    StringPostingSearchContext(BaseSC&& base_sc, bool useBitVector, const AttrT &toBeSearched);
 };
 
 template <typename BaseSC, typename AttrT, typename DataT>
@@ -199,7 +197,6 @@ private:
     using Parent = PostingSearchContext<BaseSC, PostingListSearchContextT<DataT>, AttrT>;
     typedef typename AttrT::T BaseType;
     using Params = attribute::SearchContextParams;
-    using QueryTermSimpleUP = typename Parent::QueryTermSimpleUP;
     using Parent::_low;
     using Parent::_high;
     using Parent::_toBeSearched;
@@ -234,15 +231,15 @@ private:
     }
 
 public:
-    NumericPostingSearchContext(QueryTermSimpleUP qTerm, const Params & params, const AttrT &toBeSearched);
+    NumericPostingSearchContext(BaseSC&& base_sc, const Params & params, const AttrT &toBeSearched);
     const Params &params() const { return _params; }
 };
 
 
 template <typename BaseSC, typename BaseSC2, typename AttrT>
 PostingSearchContext<BaseSC, BaseSC2, AttrT>::
-PostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched)
-    : BaseSC(std::move(qTerm), toBeSearched),
+PostingSearchContext(BaseSC&& base_sc, bool useBitVector, const AttrT &toBeSearched)
+    : BaseSC(std::move(base_sc)),
       BaseSC2(toBeSearched.getEnumStore().get_dictionary(),
               toBeSearched.getCommittedDocIdLimit(),
               toBeSearched.getStatus().getNumValues(),
@@ -263,8 +260,8 @@ PostingSearchContext<BaseSC, BaseSC2, AttrT>::~PostingSearchContext() = default;
 
 template <typename BaseSC, typename AttrT, typename DataT>
 StringPostingSearchContext<BaseSC, AttrT, DataT>::
-StringPostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched)
-    : Parent(std::move(qTerm), useBitVector, toBeSearched)
+StringPostingSearchContext(BaseSC&& base_sc, bool useBitVector, const AttrT &toBeSearched)
+    : Parent(std::move(base_sc), useBitVector, toBeSearched)
 {
     // after benchmarking prefix search performance on single, array, and weighted set fast-aggregate string attributes
     // with 1M values the following constant has been derived:
@@ -313,8 +310,8 @@ StringPostingSearchContext<BaseSC, AttrT, DataT>::useThis(const PostingListSearc
 
 template <typename BaseSC, typename AttrT, typename DataT>
 NumericPostingSearchContext<BaseSC, AttrT, DataT>::
-NumericPostingSearchContext(QueryTermSimpleUP qTerm, const Params & params_in, const AttrT &toBeSearched)
-    : Parent(std::move(qTerm), params_in.useBitVector(), toBeSearched),
+NumericPostingSearchContext(BaseSC&& base_sc, const Params & params_in, const AttrT &toBeSearched)
+    : Parent(std::move(base_sc), params_in.useBitVector(), toBeSearched),
       _params(params_in)
 {
     // after simplyfying the formula and simple benchmarking and thumbs in the air

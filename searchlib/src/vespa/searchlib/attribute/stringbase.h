@@ -23,6 +23,7 @@ namespace search {
 class StringSearchHelper {
 public:
     StringSearchHelper(QueryTermUCS4 & qTerm, bool cased);
+    StringSearchHelper(StringSearchHelper&&) noexcept;
     ~StringSearchHelper();
     bool isMatch(const char *src) const;
     bool isPrefix() const { return _isPrefix; }
@@ -124,6 +125,7 @@ protected:
     class StringSearchContext : public attribute::SearchContext {
     public:
         StringSearchContext(QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched);
+        StringSearchContext(StringSearchContext&&) noexcept;
         ~StringSearchContext() override;
     protected:
         bool valid() const override;
