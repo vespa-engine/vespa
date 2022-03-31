@@ -22,11 +22,13 @@ import static org.junit.Assert.fail;
 public class GbdtConverterTestCase {
 
     @Before
+    @SuppressWarnings("removal")
     public void enableSecurityManager() {
         System.setSecurityManager(new NoExitSecurityManager());
     }
 
     @After
+    @SuppressWarnings("removal")
     public void disableSecurityManager() {
         System.setSecurityManager(null);
     }
@@ -140,6 +142,7 @@ public class GbdtConverterTestCase {
         }
     }
 
+    @SuppressWarnings("removal")
     private static class NoExitSecurityManager extends SecurityManager {
 
         @Override

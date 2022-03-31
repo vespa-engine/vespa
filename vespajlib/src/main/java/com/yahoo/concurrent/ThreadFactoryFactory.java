@@ -36,6 +36,7 @@ public class ThreadFactoryFactory {
             final String namePrefix;
             final boolean isDaemon;
 
+            @SuppressWarnings("removal")
             Factory(final String name, boolean isDaemon) {
                 this.isDaemon = isDaemon;
                 final SecurityManager s = System.getSecurityManager();

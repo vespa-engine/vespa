@@ -12,9 +12,10 @@ import org.junit.Test;
 /**
  * Just to remove noise from the coverage report.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class FatalErrorHandlerTestCase {
+    @SuppressWarnings("removal")
     private static final class AvoidExiting extends SecurityManager {
 
         @Override
@@ -31,12 +32,14 @@ public class FatalErrorHandlerTestCase {
     private FatalErrorHandler h;
 
     @Before
+    @SuppressWarnings("removal")
     public void setUp() throws Exception {
         h = new FatalErrorHandler();
         System.setSecurityManager(new AvoidExiting());
     }
 
     @After
+    @SuppressWarnings("removal")
     public void tearDown() throws Exception {
         System.setSecurityManager(null);
     }
