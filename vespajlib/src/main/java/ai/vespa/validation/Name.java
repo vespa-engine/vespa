@@ -15,7 +15,7 @@ import static ai.vespa.validation.Validation.requireMatch;
  */
 public class Name extends PatternedStringWrapper<Name> {
 
-    static final Pattern namePattern = Pattern.compile("[A-Za-z][A-Za-z0-9_-]{0,62}");
+    static final Pattern namePattern = Pattern.compile("[A-Za-z][A-Za-z0-9_-]{0,63}");
 
     private Name(String name) {
         super(name, namePattern, "name");

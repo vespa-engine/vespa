@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.net;
 
-import ai.vespa.validation.StringWrapper;
+import ai.vespa.validation.PatternedStringWrapper;
 
 import java.util.regex.Pattern;
 
@@ -13,20 +13,20 @@ import static ai.vespa.validation.Validation.requireMatch;
  *
  * @author jonmv
  */
-public class DomainName extends StringWrapper<DomainName> {
+public class DomainName extends PatternedStringWrapper<DomainName> {
 
-    public static final Pattern labelPattern = Pattern.compile("([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])");
-    public static final Pattern domainNamePattern = Pattern.compile("(" + labelPattern + "\\.)*" + labelPattern);
+    static final Pattern labelPattern = Pattern.compile("([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])");
+    static final Pattern domainNamePattern = Pattern.compile("(" + labelPattern + "\\.)*" + labelPattern);
 
     public static final DomainName localhost = DomainName.of("localhost");
 
     private DomainName(String value) {
-        super(value);
+        super(value, domainNamePattern, "domain name");
+        requireInRange(value.length(), "domain name length", 1, 255);
     }
 
     public static DomainName of(String value) {
-        requireInRange(value.length(), "domain name", 1, 255);
-        return new DomainName(requireMatch(value, "domain name", domainNamePattern));
+        return new DomainName(value);
    }
 
     public static String requireLabel(String label) {

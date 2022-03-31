@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.net;
 
+import ai.vespa.validation.PatternedStringWrapper;
 import ai.vespa.validation.StringWrapper;
 
 import static ai.vespa.validation.Validation.requireInRange;
@@ -11,15 +12,15 @@ import static ai.vespa.validation.Validation.requireMatch;
  *
  * @author jonmv
  */
-public class Hostname extends StringWrapper<Hostname> {
+public class Hostname extends PatternedStringWrapper<Hostname> {
 
     private Hostname(String value) {
-        super(value);
+        super(value, DomainName.domainNamePattern, "hostname");
+        requireInRange(value.length(), "hostname length", 1, 64);
     }
 
     public static Hostname of(String value) {
-        requireInRange(value.length(), "hostname length", 1, 64);
-        return new Hostname(requireMatch(value, "hostname", DomainName.domainNamePattern));
+        return new Hostname(value);
     }
 
 }
