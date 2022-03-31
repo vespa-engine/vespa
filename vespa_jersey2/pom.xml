@@ -11,6 +11,7 @@
     <version>7-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
+  <!-- TODO Vespa 8: Remove this module, or rename to vespa-jackson -->
   <artifactId>vespa_jersey2</artifactId>
   <version>7-SNAPSHOT</version>
   <packaging>pom</packaging>
@@ -33,7 +34,6 @@
     </dependency>
 
     <dependency>
-      <!-- TODO Vespa 8: Remove, contains packages imported by only one user app (March 2022) -->
       <groupId>org.glassfish.jersey.core</groupId>
       <artifactId>jersey-server</artifactId>
       <exclusions>
