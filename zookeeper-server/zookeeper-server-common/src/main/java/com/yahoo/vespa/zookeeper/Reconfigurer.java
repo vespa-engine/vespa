@@ -141,7 +141,7 @@ public class Reconfigurer extends AbstractComponent {
     private static List<String> servers(ZookeeperServerConfig config) {
         return config.server().stream()
                      .filter(server -> ! server.retired())
-                     .map(server -> serverSpec(server, config.clientPort(), false))
+                     .map(server -> serverSpec(server, false))
                      .collect(toList());
     }
 
