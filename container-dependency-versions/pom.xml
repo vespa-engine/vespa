@@ -270,26 +270,6 @@
                 <version>${jersey2.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.glassfish.jersey.ext</groupId>
-                <artifactId>jersey-entity-filtering</artifactId>
-                <version>${jersey2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.ext</groupId>
-                <artifactId>jersey-proxy-client</artifactId>
-                <version>${jersey2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.media</groupId>
-                <artifactId>jersey-media-json-jackson</artifactId>
-                <version>${jersey2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.media</groupId>
-                <artifactId>jersey-media-multipart</artifactId>
-                <version>${jersey2.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
                 <version>${javassist.version}</version>
@@ -298,12 +278,6 @@
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
                 <version>${org.json.version}</version>
-            </dependency>
-            <dependency>
-                <!-- TODO Vespa 8: move to parent! No longer installed in jdisc -->
-                <groupId>org.jvnet.mimepull</groupId>
-                <artifactId>mimepull</artifactId>
-                <version>1.9.6</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
