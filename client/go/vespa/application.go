@@ -64,10 +64,6 @@ func (ap *ApplicationPackage) IsJava() bool {
 func isZip(filename string) bool { return filepath.Ext(filename) == ".zip" }
 
 func zipDir(dir string, destination string) error {
-	if filepath.IsAbs(dir) {
-		message := "Path must be relative, but '" + dir + "'"
-		return errors.New(message)
-	}
 	if !util.PathExists(dir) {
 		message := "'" + dir + "' should be an application package zip or dir, but does not exist"
 		return errors.New(message)
