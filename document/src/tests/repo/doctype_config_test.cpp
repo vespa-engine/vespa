@@ -42,7 +42,6 @@ const string header_name_2 = type_name_2 + ".header";
 const string field_name = "field_name";
 const string derived_name = "derived";
 
-using ::document::config::DocumenttypesConfig;
 using ::document::config::DocumenttypesConfigBuilder;
 
 using BDocType        = DocumenttypesConfigBuilder::Doctype;
@@ -492,6 +491,26 @@ TEST("requireThatBuildFromConfigWorks") {
     DocumentTypeRepo repo(readDocumenttypesConfig(TEST_PATH("types.cfg")));
     ASSERT_TRUE(repo.getDocumentType("document"));
     ASSERT_TRUE(repo.getDocumentType("types"));
+}
+
+TEST("requireThatStructsCanInheritFields") {
+    BuilderHelper builder;
+    auto & doc = builder.document(type_name);
+    auto & st1 = builder.addStruct(doc, "sa");
+    auto & st2 = builder.addStruct(doc, "sb");
+    auto & st3 = builder.addStruct(doc, "sc");
+    builder.addField(st1, "fa").type = builder.builtin(DataType::T_INT);
+    builder.addField(st2, "fb").type = builder.builtin(DataType::T_LONG);
+    builder.addField(st3, "fc").type = builder.builtin(DataType::T_STRING);
+    st1.inherits.emplace_back().type = st2.idx;
+    st2.inherits.emplace_back().type = st3.idx;
+    builder.addField(doc, field_name).type = st1.idx;
+    DocumentTypeRepo repo(builder.config());
+    const StructDataType &s = getFieldDataType<StructDataType>(repo);
+    EXPECT_EQUAL(3u, s.getFieldCount());
+    ASSERT_TRUE(s.hasField("fa"));
+    ASSERT_TRUE(s.hasField("fb"));
+    ASSERT_TRUE(s.hasField("fc"));
 }
 
 TEST("requireThatStructsCanBeRecursive") {
