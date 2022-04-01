@@ -31,10 +31,12 @@ cd $VESPA_DIR
 git checkout $VESPA_REF
 
 mkdir -p $SD_SOURCE_DIR/screwdriver/deploy
+# gpg-agent in RHEL 8 runs out of memory if we use Maven and sign in parallel. Add option to overcome this.
+echo "auto-expand-secmem" >> $SD_SOURCE_DIR/screwdriver/deploy/gpg-agent.conf
 openssl aes-256-cbc -md md5 -pass pass:$GPG_ENCPHRASE -in $SD_SOURCE_DIR/screwdriver/pubring.gpg.enc -out $SD_SOURCE_DIR/screwdriver/deploy/pubring.gpg -d
 openssl aes-256-cbc -md md5 -pass pass:$GPG_ENCPHRASE -in $SD_SOURCE_DIR/screwdriver/secring.gpg.enc -out $SD_SOURCE_DIR/screwdriver/deploy/secring.gpg -d
-export GPG_TTY=$(tty)
-export TERM=xterm
+chmod 700 $SD_SOURCE_DIR/screwdriver/deploy
+chmod 600 $SD_SOURCE_DIR/screwdriver/deploy/*
 
 # Build the Java code with the correct version set
 find . -name "pom.xml" -exec sed -i'' -e "s,<version>.*SNAPSHOT.*</version>,<version>$VESPA_RELEASE</version>," \
@@ -50,9 +52,10 @@ for MODULE in $(comm -2 -3 \
     echo "No javadoc available for module" > $MODULE/src/main/javadoc/README
 done
 
+export VESPA_MAVEN_EXTRA_OPTS="--show-version --batch-mode"
 ./bootstrap.sh
 
-COMMON_MAVEN_OPTS="--batch-mode --no-snapshot-updates --settings $(pwd)/screwdriver/settings-publish.xml --activate-profiles ossrh-deploy-vespa -DskipTests"
+COMMON_MAVEN_OPTS="$VESPA_MAVEN_EXTRA_OPTS --no-snapshot-updates --settings $(pwd)/screwdriver/settings-publish.xml --activate-profiles ossrh-deploy-vespa -DskipTests"
 TMPFILE=$(mktemp)
 mvn $COMMON_MAVEN_OPTS  -pl :container-dependency-versions -DskipStagingRepositoryClose=true deploy 2>&1 | tee $TMPFILE
 
@@ -64,13 +67,21 @@ rm -f $TMPFILE
 mvn $COMMON_MAVEN_OPTS --file ./maven-plugins/pom.xml -DskipStagingRepositoryClose=true -DstagingRepositoryId=$STG_REPO deploy
 
 # Deploy the rest of the artifacts
-mvn $COMMON_MAVEN_OPTS --threads 1C -DskipStagingRepositoryClose=true -DstagingRepositoryId=$STG_REPO deploy
+mvn $COMMON_MAVEN_OPTS --threads 8 -DskipStagingRepositoryClose=true -DstagingRepositoryId=$STG_REPO deploy
+
+# Workaround for nexus-staging-maven-plugin:1.6.12:rc-release not working with maven+jdk17
+SWAP_MAVEN_JAVA_WORKAROUND=false
+if rpm -q maven-openjdk17 &> /dev/null; then SWAP_MAVEN_JAVA_WORKAROUND=true; fi
+if $SWAP_MAVEN_JAVA_WORKAROUND; then dnf swap -y maven-openjdk17 maven-openjdk11; fi
 
 # Close with checks
-mvn $COMMON_MAVEN_OPTS -N org.sonatype.plugins:nexus-staging-maven-plugin:1.6.8:rc-close -DnexusUrl=https://oss.sonatype.org/ -DserverId=ossrh -DstagingRepositoryId=$STG_REPO
+mvn $COMMON_MAVEN_OPTS -N org.sonatype.plugins:nexus-staging-maven-plugin:1.6.12:rc-close -DnexusUrl=https://oss.sonatype.org/ -DserverId=ossrh -DstagingRepositoryId=$STG_REPO
 
 # Release if ok
-mvn $COMMON_MAVEN_OPTS -N org.sonatype.plugins:nexus-staging-maven-plugin:1.6.8:rc-release -DnexusUrl=https://oss.sonatype.org/ -DserverId=ossrh -DstagingRepositoryId=$STG_REPO
+mvn $COMMON_MAVEN_OPTS -N org.sonatype.plugins:nexus-staging-maven-plugin:1.6.12:rc-release -DnexusUrl=https://oss.sonatype.org/ -DserverId=ossrh -DstagingRepositoryId=$STG_REPO
+
+# Swap back if we swapped previously
+if $SWAP_MAVEN_JAVA_WORKAROUND; then dnf swap -y maven-openjdk11 maven-openjdk17; fi
 
 # Delete the GPG rings
 rm -rf $SD_SOURCE_DIR/screwdriver/deploy
