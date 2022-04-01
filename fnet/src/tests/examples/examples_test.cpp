@@ -9,7 +9,6 @@
 
 // reserved in vespa/factory/doc/port-ranges.txt
 static const int PORT0 = 18570;
-static const int PORT1 = 18571;
 
 using vespalib::Process;
 using vespalib::make_string_short::fmt;
