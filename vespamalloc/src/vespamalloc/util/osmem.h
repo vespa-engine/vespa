@@ -1,20 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <cctype>
-#include <cstdlib>
-#include <unistd.h>
-#include <cassert>
 #include <cstring>
-#include <algorithm>
 
 namespace vespamalloc {
 
 class Memory
 {
 public:
-    Memory(size_t blockSize) : _blockSize(std::max(blockSize, size_t(getpagesize()))), _start(nullptr), _end(nullptr) { }
-    virtual ~Memory() { }
+    Memory(size_t blockSize);
+    virtual ~Memory();
     void * getStart() const  { return _start; }
     void * getEnd()   const  { return _end; }
     size_t getMinBlockSize() const { return _blockSize; }

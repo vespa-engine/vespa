@@ -54,9 +54,9 @@ private:
         void init(AllocPool & allocPool, SizeClassT sc) {
             if (_allocFrom == nullptr) {
                 _allocFrom = allocPool.getFree(sc, 1);
-                assert(_allocFrom != nullptr);
+                ASSERT_STACKTRACE(_allocFrom != nullptr);
                 _freeTo = allocPool.getFree(sc, 1);
-                assert(_freeTo != nullptr);
+                ASSERT_STACKTRACE(_freeTo != nullptr);
             }
         }
         void swap() {

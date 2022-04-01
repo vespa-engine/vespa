@@ -158,6 +158,7 @@ template <typename MemBlockPtrT, typename ThreadListT>
 void MemoryManager<MemBlockPtrT, ThreadListT>::crash()
 {
     fprintf(stderr, "vespamalloc detected unrecoverable error.\n");
+    logStackTrace();
     abort();
 }
 
@@ -220,7 +221,6 @@ void MemoryManager<MemBlockPtrT, ThreadListT>::freeSC(void *ptr, SizeClassT sc)
             tp.free(mem, sc);
         } else if (mem.validFree()) {
             fprintf(stderr, "Already deleted %p(%ld).\n", mem.ptr(), mem.size());
-            // MemBlockPtrT::dumpInfo(_doubleDeleteLogLevel);
             crash();
         } else {
             fprintf(stderr, "Someone has tamper with my pre/post signatures of my memoryblock %p(%ld).\n", mem.ptr(), mem.size());

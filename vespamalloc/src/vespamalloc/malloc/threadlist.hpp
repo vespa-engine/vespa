@@ -75,11 +75,11 @@ bool ThreadListT<MemBlockPtrT, ThreadStatT>::initThisThread()
             localId = i;
         }
     }
-    assert(localId >= 0);
-    assert(size_t(localId) < getMaxNumThreads());
+    ASSERT_STACKTRACE(localId >= 0);
+    ASSERT_STACKTRACE(size_t(localId) < getMaxNumThreads());
     _myPool = &_threadVector[localId];
-    assert(getThreadId() == size_t(localId));
-    assert(lidAccum < 0xffffffffu);
+    ASSERT_STACKTRACE(getThreadId() == size_t(localId));
+    ASSERT_STACKTRACE(lidAccum < 0xffffffffu);
     getCurrent().init(lidAccum+1);
 
     return retval;

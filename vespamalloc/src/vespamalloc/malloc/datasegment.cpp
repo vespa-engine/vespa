@@ -60,7 +60,7 @@ void * DataSegment::getBlock(size_t & oldBlockSize, SizeClassT sc)
                     size_t adjustedBlockSize = blockSize - BlockSize*(nextBlock-startBlock);
                     newBlock = _osMemory.get(adjustedBlockSize);
                     if (newBlock != nullptr) {
-                        assert (newBlock == fromBlockId(nextBlock));
+                        ASSERT_STACKTRACE (newBlock == fromBlockId(nextBlock));
                         _freeList.removeLastBlock();
                         newBlock = fromBlockId(startBlock);
                         _partialExtension++;
@@ -70,7 +70,7 @@ void * DataSegment::getBlock(size_t & oldBlockSize, SizeClassT sc)
                 }
             } else {
                 bool result(_osMemory.reclaim(newBlock, blockSize));
-                assert (result);
+                ASSERT_STACKTRACE (result);
                 (void) result;
             }
         } else {
@@ -83,7 +83,7 @@ void * DataSegment::getBlock(size_t & oldBlockSize, SizeClassT sc)
     } else if (newBlock == nullptr) {
         blockSize = 0;
     } else {
-        assert(blockId(newBlock)+numBlocks < BlockCount);
+        ASSERT_STACKTRACE(blockId(newBlock)+numBlocks < BlockCount);
         // assumes _osMemory.get will always return a value that does not make
         // "i" overflow the _blockList array; this will break when hitting the
         // 2T address space boundary.
@@ -98,7 +98,7 @@ void * DataSegment::getBlock(size_t & oldBlockSize, SizeClassT sc)
         static int recurse = 0;
         if (recurse++ == 0) {
             perror("Failed extending datasegment: ");
-            assert(false);
+            ASSERT_STACKTRACE(false);
         }
         return nullptr;
     }
@@ -106,7 +106,8 @@ void * DataSegment::getBlock(size_t & oldBlockSize, SizeClassT sc)
     return newBlock;
 }
 
-void DataSegment::checkAndLogBigSegment()
+void
+DataSegment::checkAndLogBigSegment()
 {
     if (size_t(end()) >= _nextLogLimit) {
         fprintf(stderr, "Datasegment is growing ! Start:%p - End:%p : nextLogLimit = %lx\n", start(), end(), _nextLogLimit);
@@ -121,7 +122,8 @@ void DataSegment::checkAndLogBigSegment()
     }
 }
 
-void DataSegment::returnBlock(void *ptr)
+void
+DataSegment::returnBlock(void *ptr)
 {
     BlockIdT bId(blockId(ptr));
     SizeClassT sc =  _blockList[bId].sizeClass();
@@ -131,7 +133,7 @@ void DataSegment::returnBlock(void *ptr)
         if (numBlocks > _blockList[bId].realNumBlocks()) {
             numBlocks = _blockList[bId].realNumBlocks();
         }
-        assert(_blockList[bId].freeChainLength() >= numBlocks);
+        ASSERT_STACKTRACE(_blockList[bId].freeChainLength() >= numBlocks);
         if ((_unmapSize < bsz) && _osMemory.release(ptr, numBlocks*BlockSize)) {
             for(BlockIdT i=0; i < numBlocks; i++) {
                 BlockT & b = _blockList[bId + i];
