@@ -9,6 +9,7 @@
 #include "loadedenumvalue.h"
 #include "search_context.h"
 #include "string_matcher.h"
+#include "string_search_context.h"
 
 namespace search {
 
@@ -88,14 +89,12 @@ private:
     long onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
 
 protected:
-    class StringSearchContext : public attribute::StringMatcher, public attribute::SearchContext {
+    class StringSearchContext : public attribute::StringSearchContext {
     public:
         StringSearchContext(QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched);
         StringSearchContext(StringSearchContext&&) noexcept;
         ~StringSearchContext() override;
     protected:
-        bool valid() const override;
-        const QueryTermUCS4 * queryTerm() const override;
         bool isMatch(const char *src) const { return match(src); }
 
         class CollectHitCount {

@@ -154,26 +154,13 @@ StringAttribute::onSerializeForDescendingSort(DocId doc, void * serTo, long avai
 
 StringAttribute::StringSearchContext::StringSearchContext(QueryTermSimple::UP qTerm,
                                                           const StringAttribute & toBeSearched)
-    : StringMatcher(std::move(qTerm), toBeSearched.getConfig().get_match() == Config::Match::CASED),
-      SearchContext(toBeSearched)
+    : attribute::StringSearchContext(toBeSearched, std::move(qTerm), toBeSearched.getConfig().get_match() == Config::Match::CASED)
 {
 }
 
 StringAttribute::StringSearchContext::StringSearchContext(StringSearchContext&&) noexcept = default;
 
 StringAttribute::StringSearchContext::~StringSearchContext() = default;
-
-bool
-StringAttribute::StringSearchContext::valid() const
-{
-    return isValid();
-}
-
-const QueryTermUCS4 *
-StringAttribute::StringSearchContext::queryTerm() const
-{
-    return get_query_term_ptr();
-}
 
 uint32_t
 StringAttribute::clearDoc(DocId doc)
