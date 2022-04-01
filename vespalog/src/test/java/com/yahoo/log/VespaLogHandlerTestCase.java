@@ -60,7 +60,7 @@ public class VespaLogHandlerTestCase {
             + "\t"
 	    + pid
             + "/"
-            + record1.getThreadID()
+            + record1.getLongThreadID()
             + "\tmy-test-config-id\tTST\tinfo\tThis is a test";
 
         record2 = new LogRecord(Level.FINE, "This is a test too");
@@ -70,7 +70,7 @@ public class VespaLogHandlerTestCase {
             + hostname
             + "\t"
 	    + pid
-            + "/" + record2.getThreadID() + "\tmy-test-config-id\tTST.com.yahoo.log.test\tdebug\tThis is a test too";
+            + "/" + record2.getLongThreadID() + "\tmy-test-config-id\tTST.com.yahoo.log.test\tdebug\tThis is a test too";
 
         record3 = new LogRecord(Level.WARNING, "another test");
         record3.setLoggerName("com.yahoo.log.test");
@@ -79,7 +79,7 @@ public class VespaLogHandlerTestCase {
             + hostname
             + "\t"
 	    + pid
-            + "/" + record3.getThreadID() + "\tmy-test-config-id\tTST.com.yahoo.log.test"
+            + "/" + record3.getLongThreadID() + "\tmy-test-config-id\tTST.com.yahoo.log.test"
             + "\twarning\tanother test";
 
         record4 = new LogRecord(Level.WARNING, "unicode \u00E6\u00F8\u00E5 test \u7881 unicode");
@@ -89,7 +89,7 @@ public class VespaLogHandlerTestCase {
             + hostname
             + "\t"
 	    + pid
-            + "/" + record4.getThreadID() + "\tmy-test-config-id\tTST.com.yahoo.log.test"
+            + "/" + record4.getLongThreadID() + "\tmy-test-config-id\tTST.com.yahoo.log.test"
             + "\twarning\tunicode \u00E6\u00F8\u00E5 test \u7881 unicode";
     }
 
