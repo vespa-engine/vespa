@@ -165,6 +165,6 @@ func printPrepareLog(stderr io.Writer, result vespa.PrepareResult) {
 		case "WARNING":
 			level = color.YellowString(level)
 		}
-		fmt.Fprintf(stderr, "%s %s", level, entry.Message)
+		fmt.Fprintf(stderr, "%s %s\n", level, entry.Message)
 	}
 }
