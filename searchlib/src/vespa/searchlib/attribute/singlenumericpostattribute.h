@@ -46,9 +46,6 @@ private:
     using PostingMap = typename PostingParent::PostingMap;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
     using SelfType = SingleValueNumericPostingAttribute<B>;
-    using SingleSearchContext = typename SingleValueNumericEnumAttribute<B>::SingleSearchContext;
-    using SingleNumericSearchContext = SingleSearchContext;
-    using SinglePostingSearchContext = attribute::NumericPostingSearchContext<SingleNumericSearchContext, SelfType, vespalib::btree::BTreeNoLeafData>;
     using ValueModifier = typename B::BaseClass::ValueModifier;
     using generation_t = typename SingleValueNumericEnumAttribute<B>::generation_t;
 
