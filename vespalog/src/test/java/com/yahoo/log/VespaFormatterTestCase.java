@@ -41,7 +41,7 @@ public class VespaFormatterTestCase {
 
         testRecord1 = new LogRecord(Level.INFO, "this is a test");
         testRecord1.setInstant(Instant.ofEpochMilli(1098709021843L));
-        testRecord1.setThreadID(123);
+        testRecord1.setLongThreadID(123L);
 
         expected1 = "1098709021.843000\t"
             + hostname + "\t"
@@ -64,7 +64,7 @@ public class VespaFormatterTestCase {
 
         testRecord2 = new LogRecord(Level.INFO, "this is a test");
         testRecord2.setInstant(Instant.ofEpochMilli(1098709021843L));
-        testRecord2.setThreadID(123);
+        testRecord2.setLongThreadID(123L);
         testRecord2.setLoggerName("org.foo");
 
         expected3 = "1098709021.843000\t"
@@ -110,7 +110,7 @@ public class VespaFormatterTestCase {
 
         LogRecord testRecord = new LogRecord(Level.INFO, "this {1} is {0} test");
         testRecord.setInstant(Instant.ofEpochMilli(1098709021843L));
-        testRecord.setThreadID(123);
+        testRecord.setLongThreadID(123L);
         testRecord.setLoggerName("org.foo");
         Object[] params = { "a small", "message" };
         testRecord.setParameters(params);
