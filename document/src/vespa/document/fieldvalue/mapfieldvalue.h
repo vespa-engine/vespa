@@ -30,7 +30,6 @@ private:
     IArray::UP         _values;
     std::vector<bool>  _present;
     mutable HashMapUP  _lookupMap;
-    bool               _altered;
 
     virtual bool addValue(const FieldValue& fv);
     virtual bool containsValue(const FieldValue& fv) const { return contains(fv); }
