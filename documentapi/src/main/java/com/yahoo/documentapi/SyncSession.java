@@ -35,7 +35,10 @@ public interface SyncSession extends Session {
      *
      * @param documentPut the DocumentPut operation
      * @param priority the priority with which to perform this operation
+     * @deprecated specifying explicit operation priority is deprecated
      */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     default void put(DocumentPut documentPut, DocumentProtocol.Priority priority) {
         put(documentPut, parameters().withPriority(priority));
     }
@@ -67,7 +70,10 @@ public interface SyncSession extends Session {
      * @param priority the priority with which to perform this operation
      * @return the document with this id, or null if there is none
      * @throws UnsupportedOperationException thrown if this does not support retrieving
+     * @deprecated specifying explicit operation priority is deprecated. Set fieldSet via
+     *             {@link #get(DocumentId, DocumentOperationParameters, Duration)} instead.
      */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
     default Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority priority) {
         return get(id, fieldSet, priority, null);
     }
@@ -93,7 +99,9 @@ public interface SyncSession extends Session {
      * @return the known document having this id, or null if there is no document having this id
      * @throws UnsupportedOperationException thrown if this access does not support retrieving
      * @throws DocumentAccessException on any messagebus error, including timeout ({@link com.yahoo.messagebus.ErrorCode#TIMEOUT})
+     * @deprecated specifying explicit operation priority is deprecated
      */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
     Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority priority, Duration timeout);
 
     /**
@@ -106,7 +114,7 @@ public interface SyncSession extends Session {
      * @throws UnsupportedOperationException thrown if this access does not support retrieving
      * @throws DocumentAccessException on any messagebus error, including timeout ({@link com.yahoo.messagebus.ErrorCode#TIMEOUT})
      */
-    default Document get(DocumentId id, DocumentOperationParameters parameters,  Duration timeout) {
+    default Document get(DocumentId id, DocumentOperationParameters parameters, Duration timeout) {
         return get(id, timeout);
     }
 
@@ -125,7 +133,9 @@ public interface SyncSession extends Session {
      * @param priority the priority with which to perform this operation
      * @return true if the document with this id was removed, false otherwise.
      * @throws UnsupportedOperationException thrown if this access does not support removal
+     * @deprecated specifying explicit operation priority is deprecated
      */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
     boolean remove(DocumentRemove documentRemove, DocumentProtocol.Priority priority);
 
     /**
@@ -162,7 +172,9 @@ public interface SyncSession extends Session {
      * @throws DocumentAccessException on update error, including but not limited to: 1. timeouts,
      * 2. the document exists but the {@link DocumentUpdate#setCondition(TestAndSetCondition) condition}
      * is not met.
+     * @deprecated specifying explicit operation priority is deprecated
      */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
     boolean update(DocumentUpdate update, DocumentProtocol.Priority priority);
 
     /**

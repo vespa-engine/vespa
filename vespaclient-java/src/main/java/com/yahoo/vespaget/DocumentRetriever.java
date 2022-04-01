@@ -141,9 +141,10 @@ public class DocumentRetriever {
         return messageBusParams;
     }
 
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     private Message createDocumentRequest(String docid, LoadType loadType) {
         GetDocumentMessage msg = new GetDocumentMessage(new DocumentId(docid), params.fieldSet);
-        msg.setPriority(params.priority);
+        msg.setPriority(params.priority); // TODO: Remove on Vespa 8
         msg.setRetryEnabled(!params.noRetry);
 
         if (loadType != null) {
