@@ -5,6 +5,7 @@ import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
@@ -882,10 +883,10 @@ public class RankProfile implements Cloneable {
         if (!expression.startsWith("file:")) return new StringReader(expression);
 
         String fileName = extractFileName(expression);
-        File file = new File(fileName);
-        if (!file.isAbsolute() && file.getPath().contains("/")) // See ticket 4102122
-            throw new IllegalArgumentException("In " + name() + ", " + expName + ", ranking references file '" + file +
-                                               "' in subdirectory, which is not supported.");
+        Path.fromString(fileName); // No ".."
+        if (fileName.contains("/")) // See ticket 4102122
+            throw new IllegalArgumentException("In " + name() + ", " + expName + ", ranking references file '" +
+                                               fileName + "' in a different directory, which is not supported.");
 
         return schema.getRankingExpression(fileName);
     }
