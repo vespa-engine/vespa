@@ -1,14 +1,24 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespamalloc/util/osmem.h>
-#include <stdio.h>
+#include "osmem.h"
+#include <vespamalloc/malloc/common.h>
+#include <cstdio>
+#include <cassert>
+#include <cerrno>
+#include <cstdlib>
+#include <unistd.h>
 #include <fcntl.h>
 #include <sys/statfs.h>
 #include <sys/mman.h>
 #include <linux/mman.h>
-#include <algorithm>
-#include <errno.h>
 
 namespace vespamalloc {
+
+Memory::Memory(size_t blockSize)
+    : _blockSize(std::max(blockSize, size_t(getpagesize()))),
+      _start(nullptr),
+      _end(nullptr)
+{ }
+Memory::~Memory() = default;
 
 void *
 MmapMemory::reserve(size_t & len)
@@ -17,7 +27,7 @@ MmapMemory::reserve(size_t & len)
     const size_t wLen(0x1000);
     void * wanted = get(wLen);
     int test = munmap(wanted, wLen);
-    assert( test == 0 );
+    ASSERT_STACKTRACE( test == 0 );
     (void) test;
     setStart(wanted);
     setEnd(getStart());
@@ -30,10 +40,10 @@ findInMemInfo(const char * wanted)
     size_t value(0);
     char memInfo[8192];
     int fd(open("/proc/meminfo", O_RDONLY));
-    assert(fd >= 0);
+    ASSERT_STACKTRACE(fd >= 0);
     if (fd >= 0) {
         int sz(read(fd, memInfo, sizeof(memInfo)));
-        assert((sz < int(sizeof(memInfo))) && (sz >= 0));
+        ASSERT_STACKTRACE((sz < int(sizeof(memInfo))) && (sz >= 0));
         memInfo[sz] = '\0';
         const char  * found(strstr(memInfo, wanted));
         if (found != nullptr) {
@@ -100,7 +110,7 @@ MmapMemory::setupHugePages()
                 if (fd >= 0) {
                     char mounts[8192];
                     int sz(read(fd, mounts, sizeof(mounts)));
-                    assert((sz < int(sizeof(mounts))) && (sz >= 0));
+                    ASSERT_STACKTRACE((sz < int(sizeof(mounts))) && (sz >= 0));
                     (void) sz;
                     const char * c = mounts;
                     for (size_t lineNo(0); *c; lineNo++) {
@@ -113,7 +123,7 @@ MmapMemory::setupHugePages()
                         const char *fstype = getToken(c, e);
                         if (strstr(fstype, "hugetlbfs") == fstype) {
                             char mountCopy[512];
-                            assert(mountLen < sizeof(mountCopy));
+                            ASSERT_STACKTRACE(mountLen < sizeof(mountCopy));
                             strncpy(mountCopy, mount, mountLen);
                             mountCopy[mountLen] = '\0';
                             if (verifyHugePagesMount(mountCopy)) {
@@ -129,9 +139,9 @@ MmapMemory::setupHugePages()
             if (_hugePagesFileName[0] != '\0') {
                 _blockSize = std::max(_blockSize, _hugePageSize);
                 _hugePagesFd = open(_hugePagesFileName, O_CREAT | O_RDWR, 0755);
-                assert(_hugePagesFd >= 0);
+                ASSERT_STACKTRACE(_hugePagesFd >= 0);
                 int retval(unlink(_hugePagesFileName));
-                assert(retval == 0);
+                ASSERT_STACKTRACE(retval == 0);
                 (void) retval;
             }
         }
@@ -193,7 +203,7 @@ MmapMemory::getBasePages(size_t len, int mmapOpt, int fd, size_t offset)
     for (bool ok(false) ; !ok && (mem != MAP_FAILED); wanted += getBlockAlignment()) {
         if (mem != nullptr) {
             int tmp(munmap(mem, len));
-            assert(tmp == 0);
+            ASSERT_STACKTRACE(tmp == 0);
             (void) tmp;
         }
         // no alignment to _blockSize needed?
@@ -234,7 +244,7 @@ MmapMemory::freeTail(void * mem, size_t len)
     int ret(0);
     if ((_useMAdvLimit <= len) && (static_cast<char *>(mem) + len) == getEnd()) {
         ret = munmap(mem, len);
-        assert(ret == 0);
+        ASSERT_STACKTRACE(ret == 0);
         setEnd(mem);
     }
     return (ret == 0);

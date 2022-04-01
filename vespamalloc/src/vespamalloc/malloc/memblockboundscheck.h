@@ -52,7 +52,7 @@ protected:
     void verifyFill() const __attribute__((noinline));
 
     void setSize(size_t sz) {
-        assert(sz < 0x100000000ul);
+        ASSERT_STACKTRACE(sz < 0x100000000ul);
         static_cast<uint32_t *>(_ptr)[0] = sz;
     }
     void setAlignment(size_t alignment) { static_cast<uint32_t *>(_ptr)[1] = alignment; }

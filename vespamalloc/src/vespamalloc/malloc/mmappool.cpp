@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespamalloc/malloc/mmappool.h>
-#include <vespamalloc/malloc/common.h>
-#include <cassert>
+#include "mmappool.h"
+#include "common.h"
 #include <sys/mman.h>
 
 namespace vespamalloc {
@@ -17,7 +16,7 @@ MMapPool::MMapPool()
 }
 
 MMapPool::~MMapPool() {
-    assert(_mappings.empty());
+    ASSERT_STACKTRACE(_mappings.empty());
 }
 
 size_t
@@ -37,7 +36,7 @@ MMapPool::getMmappedBytes() const {
 void *
 MMapPool::mmap(size_t sz) {
     void * buf(nullptr);
-    assert((sz & (_page_size - 1)) == 0);
+    ASSERT_STACKTRACE((sz & (_page_size - 1)) == 0);
     if (sz > 0) {
         const int flags(MAP_ANON | MAP_PRIVATE);
         const int prot(PROT_READ | PROT_WRITE);
@@ -73,7 +72,7 @@ MMapPool::mmap(size_t sz) {
 #endif
         std::lock_guard guard(_mutex);
         auto [it, inserted] = _mappings.insert(std::make_pair(buf, MMapInfo(mmapId, sz)));
-        assert(inserted);
+        ASSERT_STACKTRACE(inserted);
         if (sz >= _G_bigBlockLimit) {
             size_t sum(0);
             std::for_each(_mappings.begin(), _mappings.end(), [&sum](const auto & e){ sum += e.second._sz; });
@@ -98,14 +97,14 @@ MMapPool::unmap(void * ptr) {
         _mappings.erase(found);
     }
     int munmap_ok = ::munmap(ptr, sz);
-    assert(munmap_ok == 0);
+    ASSERT_STACKTRACE(munmap_ok == 0);
 }
 
 size_t
 MMapPool::get_size(void * ptr) const {
     std::lock_guard guard(_mutex);
     auto found = _mappings.find(ptr);
-    assert(found != _mappings.end());
+    ASSERT_STACKTRACE(found != _mappings.end());
     return found->second._sz;
 }
 

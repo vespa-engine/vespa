@@ -204,7 +204,7 @@ template <typename MemBlockPtrT, typename ThreadStatT >
 void ThreadPoolT<MemBlockPtrT, ThreadStatT>::init(int thrId)
 {
     setThreadId(thrId);
-    assert(_osThreadId.load(std::memory_order_relaxed) == -1);
+    ASSERT_STACKTRACE(_osThreadId.load(std::memory_order_relaxed) == -1);
     _osThreadId = pthread_self();
     for (size_t i=0; (i < NELEMS(_memList)); i++) {
         _memList[i].init(*_allocPool, i);
