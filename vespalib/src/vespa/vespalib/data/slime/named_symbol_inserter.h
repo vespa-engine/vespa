@@ -4,7 +4,7 @@
 
 #include "symbol_inserter.h"
 
-namespace vespalib { class Memory; }
+namespace vespalib { struct Memory; }
 
 namespace vespalib::slime {
 
