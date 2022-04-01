@@ -86,7 +86,7 @@ public class OsgiLogHandlerTestCase {
         record.setSequenceNumber(69);
         record.setSourceClassName("sourceClassName");
         record.setSourceMethodName("sourceMethodName");
-        record.setThreadID(69);
+        record.setLongThreadID(69L);
         Throwable thrown = new Throwable();
         record.setThrown(thrown);
         log.log(record);
@@ -116,7 +116,7 @@ public class OsgiLogHandlerTestCase {
         assertEquals(69L, ref.getProperty("SEQUENCE_NUMBER"));
         assertEquals("sourceClassName", ref.getProperty("SOURCE_CLASS_NAME"));
         assertEquals("sourceMethodName", ref.getProperty("SOURCE_METHOD_NAME"));
-        assertEquals(69, ref.getProperty("THREAD_ID"));
+        assertEquals(69L, ref.getProperty("THREAD_ID"));
         assertSame(thrown, ref.getProperty("THROWN"));
         assertNull(ref.getProperty("unknown"));
     }
