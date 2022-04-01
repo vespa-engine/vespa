@@ -27,7 +27,7 @@ public class FileDBRegistryTestCase {
     private static final String NO_FOO_FILE = "files/no_foo.json";
     private static final String BOO_FILE = "/files/no_foo.json";
     private static final String BAR_FILE = "../files/no_foo.json";
-    private static final String BLOB_NAME = "myblob.name";
+    private static final String BLOB_NAME = "././myblob.name";
     private static final FileReference BLOB_REF = new FileReference("12f292a25163dd9");
     private static final FileReference FOO_REF = new FileReference("b5ce94ca1feae86c");
 

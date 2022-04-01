@@ -42,12 +42,15 @@ public class ApplicationFileManager implements AddFileInterface {
 
     @Override
     public FileReference addUri(String uri, Path path) {
+        throw new UnsupportedOperationException("URI type is not supported");
+        /* TODO: this needs to be super-restricted if the config server should ever do this.
         try (TmpDir tmp = new TmpDir()) {
             return addFile(download(uri, tmp.dir, path.getRelative()));
         }
         catch (IOException e) {
             throw new IllegalArgumentException(e);
         }
+        */
     }
 
     @Override
