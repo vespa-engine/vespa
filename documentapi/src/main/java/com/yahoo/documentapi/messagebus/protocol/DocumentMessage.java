@@ -49,14 +49,18 @@ public abstract class DocumentMessage extends Message {
      * document protocol.
      *
      * @return The priority.
+     * @deprecated explicit operation priority is deprecated
      */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
     public DocumentProtocol.Priority getPriority() { return priority; }
 
     /**
      * Sets the priority tag for this message.
      *
      * @param priority The priority to set.
+     * @deprecated specifying explicit operation priority is deprecated
      */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
     public void setPriority(DocumentProtocol.Priority priority) {
         this.priority = priority;
     }

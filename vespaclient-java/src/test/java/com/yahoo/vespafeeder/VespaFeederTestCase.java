@@ -152,13 +152,14 @@ public class VespaFeederTestCase {
     }
 
     @Test
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public void feedFile() throws Exception {
         FeedFixture f = new FeedFixture();
         Arguments arguments = new Arguments("--file src/test/files/myfeed.xml --priority LOW_1".split(" "), f.sessionFactory);
         new VespaFeeder(arguments, f.typeManager).parseFiles(System.in, f.printStream);
 
         assertEquals(3, f.sessionFactory.messages.size());
-        assertEquals(DocumentProtocol.Priority.LOW_1, ((PutDocumentMessage)f.sessionFactory.messages.get(0)).getPriority());
+        assertEquals(DocumentProtocol.Priority.LOW_1, ((PutDocumentMessage)f.sessionFactory.messages.get(0)).getPriority()); // TODO: Remove on Vespa 8
         assertEquals("id:test:news::foo", ((PutDocumentMessage) f.sessionFactory.messages.get(0)).getDocumentPut().getDocument().getId().toString());
         DocumentUpdate update = ((UpdateDocumentMessage) f.sessionFactory.messages.get(1)).getDocumentUpdate();
         assertEquals("id:test:news::foo", update.getId().toString());
@@ -175,9 +176,10 @@ public class VespaFeederTestCase {
         assertJsonFeedState(feedFixture);
     }
 
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     protected void assertJsonFeedState(FeedFixture feedFixture) {
         assertEquals(3, feedFixture.sessionFactory.messages.size());
-        assertEquals(DocumentProtocol.Priority.LOW_1, ((PutDocumentMessage)feedFixture.sessionFactory.messages.get(0)).getPriority());
+        assertEquals(DocumentProtocol.Priority.LOW_1, ((PutDocumentMessage)feedFixture.sessionFactory.messages.get(0)).getPriority()); // TODO: Remove on Vespa 8
         assertEquals("id:test:news::foo", ((PutDocumentMessage) feedFixture.sessionFactory.messages.get(0)).getDocumentPut().getDocument().getId().toString());
         DocumentUpdate update = ((UpdateDocumentMessage) feedFixture.sessionFactory.messages.get(1)).getDocumentUpdate();
         assertEquals("id:test:news::foo", update.getId().toString());

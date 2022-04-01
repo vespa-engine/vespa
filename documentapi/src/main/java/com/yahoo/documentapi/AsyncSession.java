@@ -47,7 +47,10 @@ public interface AsyncSession extends Session {
      * @param document the Document to put
      * @param priority the priority with which to send the operation
      * @return the synchronous result of this operation
+     * @deprecated specifying explicit operation priority is deprecated
      */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     default Result put(Document document, DocumentProtocol.Priority priority) {
         return put(new DocumentPut(document), parameters().withPriority(priority));
     }
@@ -78,7 +81,10 @@ public interface AsyncSession extends Session {
      * @param documentPut the DocumentPut to perform
      * @param priority the priority with which to send the operation
      * @return the synchronous result of this operation
+     * @deprecated specifying explicit operation priority is deprecated
      */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     default Result put(DocumentPut documentPut, DocumentProtocol.Priority priority) {
         return put(documentPut, parameters().withPriority(priority));
     }
@@ -125,9 +131,9 @@ public interface AsyncSession extends Session {
      * @param priority The priority with which to perform this operation.
      * @return the synchronous result of this operation
      * @throws UnsupportedOperationException if this access implementation does not support retrieving
-     * @deprecated the 'headersonly' flag has no effect
+     * @deprecated The 'headersonly' flag has no effect. Specifying explicit operation priority is deprecated
      */
-    @Deprecated // TODO: Remove on Vespa 8
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
     default Result get(DocumentId id, boolean headersOnly, DocumentProtocol.Priority priority) {
         return get(id);
     }
@@ -144,7 +150,10 @@ public interface AsyncSession extends Session {
      * @param priority The priority with which to perform this operation.
      * @return the synchronous result of this operation
      * @throws UnsupportedOperationException if this access implementation does not support retrieving
+     * @deprecated specifying explicit operation priority is deprecated
      */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     default Result get(DocumentId id, DocumentProtocol.Priority priority) {
         return get(id, parameters().withPriority(priority));
     }
@@ -193,7 +202,10 @@ public interface AsyncSession extends Session {
      * @param priority The priority with which to perform this operation.
      * @return the synchronous result of this operation
      * @throws UnsupportedOperationException if this access implementation does not support removal
+     * @deprecated specifying explicit operation priority is deprecated. Use methods without priority parameter.
      */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     default Result remove(DocumentId id, DocumentProtocol.Priority priority) {
         return remove(id, parameters().withPriority(priority));
     }
@@ -258,7 +270,10 @@ public interface AsyncSession extends Session {
      * @param priority The priority with which to perform this operation.
      * @return the synchronous result of this operation
      * @throws UnsupportedOperationException if this access implementation does not support update
+     * @deprecated specifying explicit operation priority is deprecated
      */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     default Result update(DocumentUpdate update, DocumentProtocol.Priority priority) {
         return update(update, parameters().withPriority(priority));
     }

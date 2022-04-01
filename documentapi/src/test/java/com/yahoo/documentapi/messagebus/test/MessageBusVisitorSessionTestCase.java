@@ -452,6 +452,7 @@ public class MessageBusVisitorSessionTestCase {
         return params;
     }
 
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     private String createVisitorToString(CreateVisitorMessage msg) {
         StringBuilder sb = new StringBuilder();
         sb.append("CreateVisitorMessage(buckets=[\n");
@@ -501,7 +502,7 @@ public class MessageBusVisitorSessionTestCase {
         if (msg.getLoadType() != LoadType.DEFAULT) {
             sb.append("load type=").append(msg.getLoadType().getName()).append("\n");
         }
-        if (msg.getPriority() != DocumentProtocol.Priority.NORMAL_3) {
+        if (msg.getPriority() != DocumentProtocol.Priority.NORMAL_3) { // TODO: remove on Vespa 8
             sb.append("priority=").append(msg.getPriority()).append("\n");
         }
         if (!"DumpVisitor".equals(msg.getLibraryName())) {

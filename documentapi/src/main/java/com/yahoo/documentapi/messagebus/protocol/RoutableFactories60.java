@@ -66,6 +66,7 @@ public abstract class RoutableFactories60 {
          */
         protected abstract DocumentMessage doDecode(DocumentDeserializer deserializer);
 
+        @SuppressWarnings("removal") // TODO: Remove on Vespa 8
         public boolean encode(Routable obj, DocumentSerializer out) {
             if (!(obj instanceof DocumentMessage)) {
                 throw new AssertionError(
@@ -73,13 +74,14 @@ public abstract class RoutableFactories60 {
                         "routable type " + obj.getType() + "(" + obj.getClass().getName() + ").");
             }
             DocumentMessage msg = (DocumentMessage)obj;
-            out.putByte(null, (byte)(msg.getPriority().getValue()));
+            out.putByte(null, (byte)(msg.getPriority().getValue())); // TODO: encode default value on Vespa 8
             out.putInt(null, msg.getLoadType().getId());
             return doEncode(msg, out);
         }
 
+        @SuppressWarnings("removal") // TODO: Remove on Vespa 8
         public Routable decode(DocumentDeserializer in, LoadTypeSet loadTypes) {
-            byte pri = in.getByte(null);
+            byte pri = in.getByte(null); // TODO: ignore on Vespa 8
             int loadType = in.getInt(null);
             DocumentMessage msg = doDecode(in);
             if (msg != null) {

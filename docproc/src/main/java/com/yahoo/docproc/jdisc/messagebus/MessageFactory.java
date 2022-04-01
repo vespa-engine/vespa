@@ -28,23 +28,25 @@ class MessageFactory {
     private final LoadType loadType;
     private final DocumentProtocol.Priority priority;
 
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public MessageFactory(DocumentMessage requestMsg) {
         this.requestMsg = requestMsg;
         loadType = requestMsg.getLoadType();
-        priority = requestMsg.getPriority();
+        priority = requestMsg.getPriority(); // TODO: Remove on Vespa 8
     }
 
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public DocumentMessage fromDocumentOperation(Processing processing, DocumentOperation documentOperation) {
         DocumentMessage message = newMessage(documentOperation);
         message.setLoadType(loadType);
-        message.setPriority(priority);
+        message.setPriority(priority); // TODO: Remove on Vespa 8
         message.setRoute(requestMsg.getRoute());
         message.setTimeReceivedNow();
         message.setTimeRemaining(requestMsg.getTimeRemainingNow());
         message.getTrace().setLevel(requestMsg.getTrace().getLevel());
         log.log(Level.FINE, () -> "Created '" + message.getClass().getName() +
                                   "', route = '" + message.getRoute() +
-                                  "', priority = '" + message.getPriority().name() +
+                                  "', priority = '" + message.getPriority().name() + // TODO: Remove on Vespa 8
                                   "', load type = '" + message.getLoadType() +
                                   "', trace level = '" + message.getTrace().getLevel() +
                                   "', time remaining = '" + message.getTimeRemaining() + "'.");

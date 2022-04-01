@@ -638,6 +638,7 @@ public class MessageBusVisitorSession implements VisitorSession {
             return sb.toString();
         }
 
+        @SuppressWarnings("removal") // TODO: Remove on Vespa 8
         private CreateVisitorMessage createMessage(VisitorIterator.BucketProgress bucket) {
             CreateVisitorMessage msg = new CreateVisitorMessage(
                     params.getVisitorLibrary(),
@@ -660,7 +661,7 @@ public class MessageBusVisitorSession implements VisitorSession {
             msg.setRoute(params.getRoute());
             msg.setMaxBucketsPerVisitor(params.getMaxBucketsPerVisitor());
             msg.setLoadType(params.getLoadType());
-            msg.setPriority(params.getPriority());
+            msg.setPriority(params.getPriority()); // TODO: remove on Vespa 8
 
             msg.setRetryEnabled(false);
 

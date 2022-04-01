@@ -7,7 +7,6 @@ import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.fieldset.AllFields;
-import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.documentapi.AsyncParameters;
 import com.yahoo.documentapi.AsyncSession;
 import com.yahoo.documentapi.DocumentIdResponse;
@@ -109,6 +108,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     }
 
     @Override
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public Result put(DocumentPut documentPut, DocumentOperationParameters parameters) {
         PutDocumentMessage msg = new PutDocumentMessage(documentPut);
         msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_3));
@@ -121,12 +121,14 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     }
 
     @Override
-    @Deprecated // TODO: Remove on Vespa 8
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public Result get(DocumentId id, boolean headersOnly, DocumentProtocol.Priority pri) {
         return get(id, pri);
     }
 
     @Override
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public Result get(DocumentId id, DocumentOperationParameters parameters) {
         // TODO Vespa 8: change to DocumentOnly.NAME
         GetDocumentMessage msg = new GetDocumentMessage(id, parameters.fieldSet().orElse(AllFields.NAME));
@@ -140,6 +142,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     }
 
     @Override
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public Result remove(DocumentRemove remove, DocumentOperationParameters parameters) {
         RemoveDocumentMessage msg = new RemoveDocumentMessage(remove);
         msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_2));
@@ -152,6 +155,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     }
 
     @Override
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public Result update(DocumentUpdate update, DocumentOperationParameters parameters) {
         UpdateDocumentMessage msg = new UpdateDocumentMessage(update);
         msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_2));
