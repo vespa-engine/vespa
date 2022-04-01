@@ -94,8 +94,12 @@ public class OnnxEvaluator {
     }
 
     public static boolean isRuntimeAvailable() {
+        return isRuntimeAvailable("");
+    }
+
+    public static boolean isRuntimeAvailable(String modelPath) {
         try {
-            new OnnxEvaluator("");
+            new OnnxEvaluator(modelPath);
             return true;
         } catch (UnsatisfiedLinkError | RuntimeException | NoClassDefFoundError e) {
             return false;
