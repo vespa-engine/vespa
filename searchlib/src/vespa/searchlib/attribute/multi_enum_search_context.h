@@ -56,6 +56,9 @@ public:
         }
         return -1;
     }
+
+    std::unique_ptr<queryeval::SearchIterator>
+    createFilterIterator(fef::TermFieldMatchData* matchData, bool strict) override;
 };
 
 }
