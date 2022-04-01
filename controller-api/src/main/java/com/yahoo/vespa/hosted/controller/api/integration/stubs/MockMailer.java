@@ -49,7 +49,10 @@ public class MockMailer implements Mailer {
 
     /** Returns the list of mails sent to the given recipient. Modifications affect the set of mails stored in this. */
     public List<Mail> inbox(String recipient) {
-        return mails.get(recipient);
+        return mails.getOrDefault(recipient, List.of());
     }
 
+    public void reset() {
+        mails.clear();
+    }
 }
