@@ -7,7 +7,7 @@
 
 namespace vespalib::slime {
 
-class ExternalMemory;
+struct ExternalMemory;
 
 /**
  * Value factory for data values using external memory.
