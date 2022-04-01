@@ -130,7 +130,7 @@ class OsgiLogHandler extends Handler {
             case SOURCE_METHOD_NAME:
                 return record.getSourceMethodName();
             case THREAD_ID:
-                return record.getThreadID();
+                return record.getLongThreadID();
             case THROWN:
                 return record.getThrown();
             default:
