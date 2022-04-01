@@ -4,6 +4,7 @@
 
 #include "multi_enum_search_context.h"
 #include "numeric_range_matcher.h"
+#include "numeric_search_context.h"
 
 namespace search::attribute {
 
@@ -12,12 +13,10 @@ namespace search::attribute {
  * a query term on a multi value numeric enumerated attribute vector.
  */
 template <typename T, typename M>
-class MultiNumericEnumSearchContext : public MultiEnumSearchContext<T, NumericRangeMatcher<T>, M>
+class MultiNumericEnumSearchContext : public MultiEnumSearchContext<T, NumericSearchContext<NumericRangeMatcher<T>>, M>
 {
 public:
     MultiNumericEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, const MultiValueMapping<M>& mv_mapping, const EnumStoreT<T>& enum_store);
-
-    Int64Range getAsIntegerTerm() const override;
 };
 
 }

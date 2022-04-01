@@ -4,6 +4,7 @@
 
 #include "single_enum_search_context.h"
 #include "numeric_range_matcher.h"
+#include "numeric_search_context.h"
 
 namespace search::attribute {
 
@@ -12,12 +13,10 @@ namespace search::attribute {
  * a query term on a single value numeric enumerated attribute vector.
  */
 template <typename T>
-class SingleNumericEnumSearchContext : public SingleEnumSearchContext<T, NumericRangeMatcher<T>>
+class SingleNumericEnumSearchContext : public SingleEnumSearchContext<T, NumericSearchContext<NumericRangeMatcher<T>>>
 {
 public:
     SingleNumericEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, const vespalib::datastore::AtomicEntryRef* enum_indices, const EnumStoreT<T>& enum_store);
-
-    Int64Range getAsIntegerTerm() const override;
 };
 
 }

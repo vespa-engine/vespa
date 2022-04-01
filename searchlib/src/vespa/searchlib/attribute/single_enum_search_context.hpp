@@ -8,30 +8,22 @@
 
 namespace search::attribute {
 
-template <typename T, typename Matcher>
-SingleEnumSearchContext<T, Matcher>::SingleEnumSearchContext(Matcher&& matcher, const AttributeVector& toBeSearched, const vespalib::datastore::AtomicEntryRef* enum_indices, const EnumStoreT<T>& enum_store)
-    : Matcher(std::move(matcher)),
-      SearchContext(toBeSearched),
+template <typename T, typename BaseSC>
+SingleEnumSearchContext<T, BaseSC>::SingleEnumSearchContext(typename BaseSC::MatcherType&& matcher, const AttributeVector& toBeSearched, const vespalib::datastore::AtomicEntryRef* enum_indices, const EnumStoreT<T>& enum_store)
+    : BaseSC(toBeSearched, std::move(matcher)),
       _enum_indices(enum_indices),
       _enum_store(enum_store)
 {
 }
 
-template <typename T, typename Matcher>
-bool
-SingleEnumSearchContext<T, Matcher>::valid() const
-{
-    return this->isValid();
-}
-
-template <typename T, typename Matcher>
+template <typename T, typename BaseSC>
 std::unique_ptr<queryeval::SearchIterator>
-SingleEnumSearchContext<T, Matcher>::createFilterIterator(fef::TermFieldMatchData* matchData, bool strict)
+SingleEnumSearchContext<T, BaseSC>::createFilterIterator(fef::TermFieldMatchData* matchData, bool strict)
 {
-    if (!valid()) {
+    if (!this->valid()) {
         return std::make_unique<queryeval::EmptySearch>();
     }
-    if (getIsFilter()) {
+    if (this->getIsFilter()) {
         return strict
             ? std::make_unique<FilterAttributeIteratorStrict<SingleEnumSearchContext>>(*this, matchData)
             : std::make_unique<FilterAttributeIteratorT<SingleEnumSearchContext>>(*this, matchData);
