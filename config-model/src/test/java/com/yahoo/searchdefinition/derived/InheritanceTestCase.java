@@ -62,6 +62,16 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     @Test
     public void requireThatStructTypesAreInheritedThroughDiamond() throws IOException, ParseException {
         String dir = "src/test/derived/inheritdiamond/";
+        {
+            ApplicationBuilder builder = new ApplicationBuilder();
+            builder.addSchemaFile(dir + "grandparent.sd");
+            builder.addSchemaFile(dir + "mother.sd");
+            builder.addSchemaFile(dir + "father.sd");
+            builder.addSchemaFile(dir + "child.sd");
+            builder.build(true);
+            derive("inheritdiamond", builder, builder.getSchema("child"));
+            assertCorrectConfigFiles("inheritdiamond");
+        }
         List<String> files = Arrays.asList("grandparent.sd", "mother.sd", "father.sd", "child.sd");
         File outDir = tmpDir.newFolder("out");
         for (int startIdx = 0; startIdx < files.size(); ++startIdx) {
@@ -74,40 +84,43 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
             builder.build(true);
             DocumentmanagerConfig.Builder b = new DocumentmanagerConfig.Builder();
             DerivedConfiguration.exportDocuments(new DocumentManager().
-                                                 useV8DocManagerCfg(false).
                                                  produce(builder.getModel(), b), outDir.getPath());
             DocumentmanagerConfig dc = b.build();
-            assertEquals(13, dc.datatype().size());
+            assertEquals(5, dc.doctype().size());
+
             assertNull(structType("child.body", dc));
-            DocumentmanagerConfig.Datatype.Structtype childHeader = structType("child.header", dc);
+            var childHeader = structType("child.header", dc);
             assertEquals(childHeader.field(0).name(), "foo");
             assertEquals(childHeader.field(1).name(), "bar");
             assertEquals(childHeader.field(2).name(), "baz");
             assertEquals(childHeader.field(3).name(), "cox");
-            DocumentmanagerConfig.Datatype.Documenttype child = documentType("child", dc);
-            assertEquals(child.inherits(0).name(), "document");
-            assertEquals(child.inherits(1).name(), "mother");
-            assertEquals(child.inherits(2).name(), "father");
-            DocumentmanagerConfig.Datatype.Documenttype mother = documentType("mother", dc);
-            assertEquals(mother.inherits(0).name(), "document");
-            assertEquals(mother.inherits(1).name(), "grandparent");
+
+            var root = documentType("document", dc);
+            var child = documentType("child", dc);
+            var mother = documentType("mother", dc);
+            var father = documentType("father", dc);
+            var grandparent = documentType("grandparent", dc);
+
+            assertEquals(child.inherits(0).idx(), root.idx());
+            assertEquals(child.inherits(1).idx(), mother.idx());
+            assertEquals(child.inherits(2).idx(), father.idx());
+            assertEquals(mother.inherits(0).idx(), root.idx());
+            assertEquals(mother.inherits(1).idx(), grandparent.idx());
         }
     }
 
-    private DocumentmanagerConfig.Datatype.Structtype structType(String name, DocumentmanagerConfig dc) {
-        for (DocumentmanagerConfig.Datatype dt : dc.datatype()) {
-            for (DocumentmanagerConfig.Datatype.Structtype st : dt.structtype()) {
+    private DocumentmanagerConfig.Doctype.Structtype structType(String name, DocumentmanagerConfig dc) {
+        for (var dt : dc.doctype()) {
+            for (var st : dt.structtype()) {
                 if (name.equals(st.name())) return st;
             }
         }
         return null;
     }
 
-    private DocumentmanagerConfig.Datatype.Documenttype documentType(String name, DocumentmanagerConfig dc) {
-        for (DocumentmanagerConfig.Datatype dt : dc.datatype()) {
-            for (DocumentmanagerConfig.Datatype.Documenttype dot : dt.documenttype()) {
-                if (name.equals(dot.name())) return dot;
-            }
+    private DocumentmanagerConfig.Doctype documentType(String name, DocumentmanagerConfig dc) {
+        for (var dot : dc.doctype()) {
+            if (name.equals(dot.name())) return dot;
         }
         return null;
     }

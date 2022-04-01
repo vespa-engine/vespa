@@ -66,7 +66,7 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
 
     private DerivedConfiguration export(String name, ApplicationBuilder builder, DerivedConfiguration config) throws IOException {
         String path = exportConfig(name, config);
-        DerivedConfiguration.exportDocuments(new DocumentManager().useV8DocManagerCfg(useV8DocManagerCfg())
+        DerivedConfiguration.exportDocuments(new DocumentManager()
                                              .produce(builder.getModel(), new DocumentmanagerConfig.Builder()), path);
         DerivedConfiguration.exportDocuments(new DocumentTypes().produce(builder.getModel(), new DocumenttypesConfig.Builder()), path);
         DerivedConfiguration.exportQueryProfiles(builder.getQueryProfileRegistry(), path);

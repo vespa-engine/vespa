@@ -162,7 +162,6 @@ public class ApplicationConfigProducerRoot extends AbstractConfigProducer<Abstra
     public void getConfig(DocumentmanagerConfig.Builder builder) {
         new DocumentManager()
             .useV8GeoPositions(this.useV8GeoPositions)
-            .useV8DocManagerCfg(this.useV8DocManagerCfg)
             .produce(documentModel, builder);
     }
 
