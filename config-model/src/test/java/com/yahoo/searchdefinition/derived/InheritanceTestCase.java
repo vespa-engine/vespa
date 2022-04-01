@@ -33,9 +33,6 @@ import static org.junit.Assert.assertNull;
  */
 public class InheritanceTestCase extends AbstractExportingTestCase {
 
-    @Override
-    boolean useV8DocManagerCfg() { return true; }
-
     @Rule
     public TemporaryFolder tmpDir = new TemporaryFolder();
 

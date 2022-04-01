@@ -28,8 +28,6 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
     private static final String tempDir = "temp/";
     private static final String searchDefRoot = "src/test/derived/";
 
-    boolean useV8DocManagerCfg() { return true; }
-
     private DerivedConfiguration derive(String dirName,
                                         String searchDefinitionName,
                                         TestProperties properties,
