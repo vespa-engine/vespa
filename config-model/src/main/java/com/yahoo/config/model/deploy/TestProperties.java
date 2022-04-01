@@ -79,7 +79,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean persistenceThrottlingOfMergeFeedOps = true;
     private boolean inhibitDefaultMergesWhenGlobalMergesPending = false;
     private boolean useV8GeoPositions = false;
-    private boolean useV8DocManagerCfg = true;
     private List<String> environmentVariables = List.of();
     private boolean avoidRenamingSummaryFeatures = false;
     private boolean experimentalSdParsing = false;
@@ -141,7 +140,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean persistenceThrottlingOfMergeFeedOps() { return persistenceThrottlingOfMergeFeedOps; }
     @Override public boolean inhibitDefaultMergesWhenGlobalMergesPending() { return inhibitDefaultMergesWhenGlobalMergesPending; }
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
-    @Override public boolean useV8DocManagerCfg() { return useV8DocManagerCfg; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
     @Override public boolean avoidRenamingSummaryFeatures() { return this.avoidRenamingSummaryFeatures; }
     @Override public boolean experimentalSdParsing() { return this.experimentalSdParsing; }
@@ -370,11 +368,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setUseV8GeoPositions(boolean value) {
         this.useV8GeoPositions = value;
-        return this;
-    }
-
-    public TestProperties setUseV8DocManagerCfg(boolean value) {
-        this.useV8DocManagerCfg = value;
         return this;
     }
 

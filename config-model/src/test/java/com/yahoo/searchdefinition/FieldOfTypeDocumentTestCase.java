@@ -31,10 +31,6 @@ public class FieldOfTypeDocumentTestCase extends AbstractSchemaTestCase {
         assertConfigFile("src/test/examples/fieldoftypedocument.cfg",
                          new DocumentmanagerConfig(value).toString() + "\n");
 
-        value = Deriver.getDocumentManagerConfig(sds, true);
-        assertConfigFile("src/test/examples/fieldoftypedocument-doctypes.cfg",
-                         new DocumentmanagerConfig(value).toString() + "\n");
-
         DocumentTypeManager manager = new DocumentTypeManager();
         DocumentTypeManagerConfigurer.configure(manager, "raw:" + new DocumentmanagerConfig(value).toString());
 

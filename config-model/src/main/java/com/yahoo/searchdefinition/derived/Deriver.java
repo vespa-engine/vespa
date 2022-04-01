@@ -37,12 +37,6 @@ public class Deriver {
         return new DocumentManager().produce(getSchemaBuilder(schemas).getModel(), new DocumentmanagerConfig.Builder());
     }
 
-    public static DocumentmanagerConfig.Builder getDocumentManagerConfig(List<String> schemas, boolean useV8DocManagerCfg) {
-        return new DocumentManager()
-            .useV8DocManagerCfg(useV8DocManagerCfg)
-            .produce(getSchemaBuilder(schemas).getModel(), new DocumentmanagerConfig.Builder());
-    }
-
     public static DocumenttypesConfig.Builder getDocumentTypesConfig(String schema) {
         return getDocumentTypesConfig(Collections.singletonList(schema));
     }

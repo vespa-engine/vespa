@@ -14,13 +14,10 @@ import org.junit.Test;
  */
 public class MultiStructTestCase extends AbstractExportingTestCase {
 
-    @Override
-    boolean useV8DocManagerCfg() { return false; }
-
     @Test
     public void testDocTypeConfigs() throws Exception {
         var logger = new TestableDeployLogger();
-        var props = new TestProperties().setExperimentalSdParsing(false).setUseV8DocManagerCfg(false);
+        var props = new TestProperties().setExperimentalSdParsing(false);
         ApplicationBuilder builder = ApplicationBuilder.createFromDirectory
             ("src/test/derived/multi_struct/", new MockFileRegistry(), logger, props);
         derive("multi_struct", builder, builder.getSchema("shop"));
