@@ -61,7 +61,7 @@ public class LogSetupTestCase {
                 + hostname
                 + "\t"
                 + pid
-                + "/" + zookeeperLogRecord.getThreadID() + "\t-\t.org.apache.zookeeper.server.NIOServerCnxn"
+                + "/" + zookeeperLogRecord.getLongThreadID() + "\t-\t.org.apache.zookeeper.server.NIOServerCnxn"
                 + "\twarning\tzookeeper log record";
 
         zookeeperLogRecordError = new LogRecord(Level.SEVERE, "zookeeper error");
