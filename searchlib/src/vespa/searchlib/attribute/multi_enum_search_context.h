@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "search_context.h"
+#include "numeric_search_context.h"
 #include "enumstore.h"
 #include "multi_value_mapping.h"
 
@@ -13,10 +13,11 @@ namespace search::attribute {
  * a query term on a multi value enumerated attribute vector.
  * This class should be considered to be an abstract class.
  */
-template <typename T, typename Matcher, typename M>
-class MultiEnumSearchContext : public Matcher, public SearchContext
+template <typename T, typename BaseSC, typename M>
+class MultiEnumSearchContext : public BaseSC
 {
 protected:
+    using DocId = ISearchContext::DocId;
     const MultiValueMapping<M>& _mv_mapping;
     const EnumStoreT<T>&        _enum_store;
 
@@ -28,9 +29,7 @@ protected:
         return find(docId, elemId);
     }
 
-    bool valid() const override { return this->isValid(); }
-
-    MultiEnumSearchContext(Matcher&& matcher, const AttributeVector& toBeSearched, const MultiValueMapping<M>& mv_mapping, const EnumStoreT<T>& enum_store);
+    MultiEnumSearchContext(typename BaseSC::MatcherType&& matcher, const AttributeVector& toBeSearched, const MultiValueMapping<M>& mv_mapping, const EnumStoreT<T>& enum_store);
 
 public:
     int32_t find(DocId doc, int32_t elemId, int32_t & weight) const {

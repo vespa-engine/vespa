@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "search_context.h"
+#include "numeric_search_context.h"
 #include <vespa/vespalib/util/atomic.h>
 
 namespace search::attribute {
@@ -12,9 +12,10 @@ namespace search::attribute {
  * a query term on a single value numeric attribute vector.
  */
 template <typename T, typename M>
-class SingleNumericSearchContext final : public M, public SearchContext
+class SingleNumericSearchContext final : public NumericSearchContext<M>
 {
 private:
+    using DocId = ISearchContext::DocId;
     const T* _data;
 
     int32_t onFind(DocId docId, int32_t elemId, int32_t& weight) const override {
@@ -24,8 +25,6 @@ private:
     int32_t onFind(DocId docId, int elemId) const override {
         return find(docId, elemId);
     }
-
-    bool valid() const override;
 
 public:
     SingleNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, const T* data);
@@ -41,8 +40,6 @@ public:
         const T v = vespalib::atomic::load_ref_relaxed(_data[docId]);
         return this->match(v) ? 0 : -1;
     }
-
-    Int64Range getAsIntegerTerm() const override;
 
     std::unique_ptr<queryeval::SearchIterator>
     createFilterIterator(fef::TermFieldMatchData* matchData, bool strict) override;

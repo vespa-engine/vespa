@@ -9,15 +9,8 @@ namespace search::attribute {
 
 template <typename T>
 SingleNumericEnumSearchContext<T>::SingleNumericEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, const vespalib::datastore::AtomicEntryRef* enum_indices, const EnumStoreT<T>& enum_store)
-    : SingleEnumSearchContext<T, NumericRangeMatcher<T>>(NumericRangeMatcher<T>(*qTerm, true), toBeSearched, enum_indices, enum_store)
+    : SingleEnumSearchContext<T, NumericSearchContext<NumericRangeMatcher<T>>>(NumericRangeMatcher<T>(*qTerm, true), toBeSearched, enum_indices, enum_store)
 {
-}
-
-template <typename T>
-Int64Range
-SingleNumericEnumSearchContext<T>::getAsIntegerTerm() const
-{
-    return this->getRange();
 }
 
 }

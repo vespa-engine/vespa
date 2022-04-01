@@ -8,18 +8,17 @@
 
 namespace search::attribute {
 
-template <typename T, typename Matcher, typename M>
-MultiEnumSearchContext<T, Matcher, M>::MultiEnumSearchContext(Matcher&& matcher, const AttributeVector& toBeSearched, const MultiValueMapping<M>& mv_mapping, const EnumStoreT<T>& enum_store)
-    : Matcher(std::move(matcher)),
-      SearchContext(toBeSearched),
+template <typename T, typename BaseSC, typename M>
+MultiEnumSearchContext<T, BaseSC, M>::MultiEnumSearchContext(typename BaseSC::MatcherType&& matcher, const AttributeVector& toBeSearched, const MultiValueMapping<M>& mv_mapping, const EnumStoreT<T>& enum_store)
+    : BaseSC(toBeSearched, std::move(matcher)),
       _mv_mapping(mv_mapping),
       _enum_store(enum_store)
 {
 }
 
-template <typename T, typename Matcher, typename M>
+template <typename T, typename BaseSC, typename M>
 std::unique_ptr<queryeval::SearchIterator>
-MultiEnumSearchContext<T, Matcher, M>::createFilterIterator(fef::TermFieldMatchData* matchData, bool strict)
+MultiEnumSearchContext<T, BaseSC, M>::createFilterIterator(fef::TermFieldMatchData* matchData, bool strict)
 {
     if (!this->valid()) {
         return std::make_unique<queryeval::EmptySearch>();

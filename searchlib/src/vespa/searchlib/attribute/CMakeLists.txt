@@ -83,6 +83,7 @@ vespa_add_library(searchlib_attribute OBJECT
     numericbase.cpp
     numeric_matcher.cpp
     numeric_range_matcher.cpp
+    numeric_search_context.cpp
     posting_list_merger.cpp
     postingchange.cpp
     postinglistattribute.cpp

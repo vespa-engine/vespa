@@ -10,35 +10,20 @@
 namespace search::attribute {
 
 template <typename T, typename M>
-bool
-MultiNumericSearchContext<T, M>::valid() const
-{
-    return this->isValid();
-}
-
-template <typename T, typename M>
 MultiNumericSearchContext<T, M>::MultiNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, const MultiValueMapping<M>& mv_mapping)
-    : attribute::NumericRangeMatcher<T>(*qTerm),
-      attribute::SearchContext(toBeSearched),
+    : NumericSearchContext<NumericRangeMatcher<T>>(toBeSearched, *qTerm, false),
       _mv_mapping(mv_mapping)
 {
-}
-
-template <typename T, typename M>
-Int64Range
-MultiNumericSearchContext<T, M>::getAsIntegerTerm() const
-{
-    return this->getRange();
 }
 
 template <typename T, typename M>
 std::unique_ptr<queryeval::SearchIterator>
 MultiNumericSearchContext<T, M>::createFilterIterator(fef::TermFieldMatchData* matchData, bool strict)
 {
-    if (!valid()) {
+    if (!this->valid()) {
         return std::make_unique<queryeval::EmptySearch>();
     }
-    if (getIsFilter()) {
+    if (this->getIsFilter()) {
         return strict
             ? std::make_unique<FilterAttributeIteratorStrict<MultiNumericSearchContext<T, M>>>(*this, matchData)
             : std::make_unique<FilterAttributeIteratorT<MultiNumericSearchContext<T, M>>>(*this, matchData);
