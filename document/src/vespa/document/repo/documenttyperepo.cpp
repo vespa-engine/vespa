@@ -176,7 +176,7 @@ public:
     ~AnnotationTypeRepo() { DeleteContent(_owned_types); }
 
     void inherit(const AnnotationTypeRepo &parent);
-    void addAnnotationType(AnnotationType::UP annotation_type);
+    AnnotationType * addAnnotationType(AnnotationType::UP annotation_type);
     void setAnnotationDataType(int32_t id, const DataType &datatype);
 
     const AnnotationType *lookup(int32_t id) const;
@@ -186,7 +186,7 @@ void AnnotationTypeRepo::inherit(const AnnotationTypeRepo &parent) {
     _annotation_types.insert(parent._annotation_types.begin(), parent._annotation_types.end());
 }
 
-void AnnotationTypeRepo::addAnnotationType(AnnotationType::UP type) {
+AnnotationType * AnnotationTypeRepo::addAnnotationType(AnnotationType::UP type) {
     AnnotationType *& a_type = _annotation_types[type->getId()];
     if (a_type) {
         if (*type != *a_type) {
@@ -198,6 +198,7 @@ void AnnotationTypeRepo::addAnnotationType(AnnotationType::UP type) {
         a_type = type.get();
         _owned_types.push_back(type.release());
     }
+    return a_type;
 }
 
 void AnnotationTypeRepo::setAnnotationDataType(int32_t id, const DataType &d) {
@@ -508,262 +509,285 @@ void configureAllRepos(const DocumenttypesConfig::DocumenttypeVector &t, Documen
 
 using DataTypesByIdx = hash_map<int, const DataType *>;
 using StructTypesByIdx = hash_map<int, StructDataType *>;
+using DocTypesByIdx = hash_map<int, DocumentType *>;
 
-const StructDataType * performStructInherit(int idx,
-                                            const DocumenttypesConfig::DoctypeVector &t,
-                                            const StructTypesByIdx &structs)
-{
-    for (const auto & docT : t) {
-        for (const auto & structT : docT.structtype) {
-            if (idx == structT.idx) {
-                StructDataType *st = structs[idx];
-                for (const auto & inheritD : structT.inherits) {
-                    const auto * parent = performStructInherit(inheritD.type, t, structs);
-                    if (parent == nullptr) {
-                        LOG(error, "Missing parent type [idx %d] for struct %s",
-                            inheritD.type, structT.name.c_str());
-                        throw IllegalArgumentException("missing parent type");
-                    }
-                    LOG_ASSERT(st != nullptr);
-                    for (const auto & field : parent->getFieldSet()) {
-                        st->addInheritedField(*field);
-                    }
-                }
-                return st;
-            }
-        }
-    }
-    return nullptr;
-}
 
-void configureDocTypes(const DocumenttypesConfig::DoctypeVector &t, DocumentTypeMap &type_map) {
-    hash_map<int, StructDataType *> structs_by_idx;
-    hash_map<int, AnnotationType *> annotations_by_idx;
-    DataTypesByIdx types_by_idx;
-    std::set<int> needed_indexes;
-    for (const auto & docT : t) {
-        for (const auto & structT : docT.structtype) {
-            for (const auto & fieldD : structT.field) {
-                LOG(debug, "doc %s struct %s field %s needs [idx %d]",
-                    docT.name.c_str(), structT.name.c_str(), fieldD.name.c_str(), fieldD.type);
-                needed_indexes.insert(fieldD.type);
-            }
-        }
-        for (const auto & arrT : docT.arraytype) {
-            LOG(debug, "doc %s array needs [idx %d]", docT.name.c_str(),arrT.elementtype);
-            needed_indexes.insert(arrT.elementtype);
-        }
-        for (const auto & wsetT : docT.wsettype) {
-            LOG(debug, "doc %s wset needs [idx %d]", docT.name.c_str(), wsetT.elementtype);
-            needed_indexes.insert(wsetT.elementtype);
-        }
-        for (const auto & mapT : docT.maptype) {
-            LOG(debug, "doc %s wset needs [idx %d] and [idx %d]",
-                docT.name.c_str(), mapT.keytype, mapT.valuetype);
-            needed_indexes.insert(mapT.keytype);
-            needed_indexes.insert(mapT.valuetype);
-        }
-        for (const auto & annT: docT.annotationtype) {
-            if (annT.datatype != -1) {
-                LOG(debug, "doc %s ann needs datatype [idx %d]", docT.name.c_str(), annT.datatype);
-                needed_indexes.insert(annT.datatype);
-            }
-            for (const auto & inheritD : annT.inherits) {
-                LOG(debug, "doc %s ann needs parent [idx %d]", docT.name.c_str(), inheritD.idx);
-                needed_indexes.insert(inheritD.idx);
-            }
-        }
-        for (const auto & aRef : docT.annotationref) {
-            LOG(debug, "doc %s ann ref needs annotation [idx %d]", docT.name.c_str(), aRef.annotationtype);
-            needed_indexes.insert(aRef.annotationtype);
-        }
-        for (const auto & refT : docT.documentref) {
-            LOG(debug, "doc %s doc ref needs target [idx %d]", docT.name.c_str(), refT.targettype);
-            needed_indexes.insert(refT.targettype);
-        }
-    }
-    for (const auto & docT : t) {
-        DataTypeRepo * dtr = FindPtr(type_map, docT.internalid);
-        if (dtr == nullptr) {
-            dtr = new DataTypeRepo();
-            type_map[docT.internalid] = dtr;
-            LOG(debug, "new doct : %s [%d]", docT.name.c_str(), docT.internalid);
-        } else {
-            LOG(debug, "old doct : %s [%d]", docT.name.c_str(), docT.internalid);
-        }
-        auto & repo = dtr->repo;
-        for (const auto & structT : docT.structtype) {
-            if (const auto * dt = repo.lookup(structT.internalid)) {
-                LOG(debug, "already has %s [%d], wanted to add %s [%d]",
-                    dt->getName().c_str(), dt->getId(),
-                    structT.name.c_str(), structT.internalid);
-                types_by_idx[structT.idx] = dt;
-                needed_indexes.erase(structT.idx);
-                continue;
-            }
-            auto st = std::make_unique<StructDataType>(structT.name, structT.internalid);
-            needed_indexes.erase(structT.idx);
-            structs_by_idx[structT.idx] = st.get();
-            types_by_idx[structT.idx] = repo.addDataType(std::move(st));
-            assert(types_by_idx[structT.idx] == structs_by_idx[structT.idx]);
-        }
-        if (dtr->doc_type == nullptr) {
-            const auto * contentStruct = types_by_idx[docT.contentstruct];
-            const auto * fields = dynamic_cast<const StructDataType *>(contentStruct);
-            if (fields != nullptr) {
-                dtr->doc_type = new DocumentType(docT.name, docT.internalid, *fields);
+class ApplyNewDoctypeConfig {
+private:
+    using DTC = ::document::config::DocumenttypesConfig;
+
+    using CDocType        = DTC::Doctype;
+    using CDocInherit     = DTC::Doctype::Inherits;
+    using CDocFieldsets   = DTC::Doctype::Fieldsets;
+    using CDocImportField = DTC::Doctype::Importedfield;
+    using CPrimitiveT     = DTC::Doctype::Primitivetype;
+    using CArrayT         = DTC::Doctype::Arraytype;
+    using CMapT           = DTC::Doctype::Maptype;
+    using CWsetT          = DTC::Doctype::Wsettype;
+    using CTensorT        = DTC::Doctype::Tensortype;
+    using CDocRefT        = DTC::Doctype::Documentref;
+    using CAnnotationT    = DTC::Doctype::Annotationtype;
+    using CAnnRefT        = DTC::Doctype::Annotationref;
+    using CStructT        = DTC::Doctype::Structtype;
+    using CStructField    = DTC::Doctype::Structtype::Field;
+    using CStructInherits = DTC::Doctype::Structtype::Inherits;
+
+    struct DocTypeInProgress {
+        const CDocType & cfg;
+        DataTypeRepo * data_type_repo;
+        DocumentType * dtype = nullptr;
+        bool builtin = false;
+
+        DocTypeInProgress(const CDocType & config, DocumentTypeMap &doc_types)
+            : cfg(config),
+              data_type_repo(doc_types[cfg.internalid])
+        {
+            if (data_type_repo) {
+                LOG(debug, "old doct : %s [%d]", cfg.name.c_str(), cfg.internalid);
+                builtin = true;
             } else {
-                LOG(error, "Missing content struct for '%s' (idx %d not found)",
-                    docT.name.c_str(), docT.contentstruct);
-                throw IllegalArgumentException("missing content struct");
-            }
-            for (const auto & inheritD : docT.inherits) {
-                const DataType *dt = types_by_idx[inheritD.idx];
-                if (dt == nullptr) {
-                    LOG(error, "parent datatype [idx %d] missing for document %s",
-                        inheritD.idx, docT.name.c_str());
-                    throw IllegalArgumentException("Unable to find document for inheritance");
-                    continue;
-                }
-                DataTypeRepo * parentRepo = FindPtr(type_map, dt->getId());
-                if (parentRepo == nullptr) {
-                    LOG(error, "parent repo [id %d] missing for document %s",
-                        dt->getId(), docT.name.c_str());
-                    throw IllegalArgumentException("missing parent repo");
-                    continue;
-                }
-                dtr->annotations.inherit(parentRepo->annotations);
+                LOG(debug, "new doct : %s [%d]", cfg.name.c_str(), cfg.internalid);
+                data_type_repo = new DataTypeRepo();
+                doc_types[cfg.internalid] = data_type_repo;
             }
         }
-        types_by_idx[docT.idx] = dtr->doc_type;
-        needed_indexes.erase(docT.idx);
-        for (const auto & primT : docT.primitivetype) {
+
+        Repo& repo() { return data_type_repo->repo; }
+    };
+
+/* maybe later:
+    struct StructInProgress {
+        std::unique_ptr<StructDataType> stype;
+        const CStructT & cfg;
+        bool finished = false;
+        StructInProgress(const CStructT & config)
+            : stype(std::make_unique<StructDataType>(config.name)),
+              cfg(config)
+        {}
+    };
+    using StructsInProgress = std::map<int, StructInProgress>;
+    StructsInProgress _structs_in_progress;
+*/
+
+    using DocTypesInProgress = std::map<int, DocTypeInProgress>;
+    using MadeTypes = std::map<int, const DataType *>;
+
+    const DocumenttypesConfig::DoctypeVector & _input;
+    DocumentTypeMap & _output;
+
+    DocTypesInProgress _doc_types_in_progress;
+    hash_map<int, StructDataType *> _structs_by_idx;
+    hash_map<int, AnnotationType *> _annotations_by_idx;
+    MadeTypes _made_types;
+    std::set<int> _needed_idx_set;
+
+    void apply() {
+        findNeeded();
+        for (const CDocType & docT : _input) {
+            auto [iter,succ] = _doc_types_in_progress.emplace(docT.idx,
+                                                              DocTypeInProgress(docT, _output));
+            LOG_ASSERT(succ);
+            auto & dtInP = iter->second;
+            createSimpleTypes(dtInP);
+            createEmptyStructs(dtInP);
+            initializeDocTypeAndInheritAnnotations(dtInP);
+            createEmptyAnnotationTypes(dtInP);
+            createReferenceTypes(dtInP);
+        }
+        createComplexTypes();
+        for (const CDocType & docT : _input) {
+            auto iter = _doc_types_in_progress.find(docT.idx);
+            LOG_ASSERT(iter != _doc_types_in_progress.end());
+            auto & dtInP = iter->second;
+            fillStructs(dtInP);
+            fillDocument(dtInP);
+            fillAnnotationTypes(dtInP);
+        }
+        for (const auto & docT : _input) {
+            for (const auto & structT : docT.structtype) {
+                performStructInherit(structT.idx);
+            }
+        }
+    }
+
+    void madeType(const DataType *t, int idx) {
+        _made_types[idx] = t;
+        _needed_idx_set.erase(idx);
+    }
+
+    void createSimpleTypes(DocTypeInProgress & dtInP) {
+        for (const auto & primT : dtInP.cfg.primitivetype) {
             string name = primT.name;
-            const DataType *dt = repo.lookup(name);
-            if (dt == nullptr) {
+            const DataType *t = dtInP.repo().lookup(name);
+            if (t == nullptr) {
                 if (name == "float16") {
+                    // is this even sane?
                     name = "float";
                 }
                 name[0] = (name[0] & 0x5F);
-                dt = repo.lookup(name);
+                t = dtInP.repo().lookup(name);
             }
-            if (dt == nullptr) {
-                LOG(warning, "Missing primitive type '%s'", primT.name.c_str());
+            if (t == nullptr) {
+                LOG(error, "Missing primitive type '%s'", primT.name.c_str());
+                throw IllegalArgumentException("missing primitive type");
             } else {
-                types_by_idx[primT.idx] = dt;
-                needed_indexes.erase(primT.idx);
+                madeType(t, primT.idx);
             }
         }
-        for (const auto & tensorT : docT.tensortype) {
-            const DataType & tt = repo.addTensorType(tensorT.detailedtype);
-            types_by_idx[tensorT.idx] = &tt;
-            needed_indexes.erase(tensorT.idx);
-        }
-        for (const auto & annT: docT.annotationtype) {
-            auto at = std::make_unique<AnnotationType>(annT.internalid, annT.name);
-            annotations_by_idx[annT.idx] = at.get();
-            needed_indexes.erase(annT.idx);
-            dtr->annotations.addAnnotationType(std::move(at));
+        for (const auto & tensorT : dtInP.cfg.tensortype) {
+            const DataType & tt = dtInP.repo().addTensorType(tensorT.detailedtype);
+            madeType(&tt, tensorT.idx);
         }
     }
-    for (const auto & docT : t) {
-        DataTypeRepo * dtr = FindPtr(type_map, docT.internalid);
-        LOG_ASSERT(dtr != nullptr);
-        auto & repo = dtr->repo;
-        for (const auto & refT : docT.documentref) {
-            if (types_by_idx[refT.idx] != nullptr) {
+
+    void createEmptyStructs(DocTypeInProgress & dtInP) {
+        for (const auto & structT : dtInP.cfg.structtype) {
+            if (const auto * t = dtInP.repo().lookup(structT.internalid)) {
+                LOG(debug, "already has %s [%d], wanted to add %s [%d]",
+                    t->getName().c_str(), t->getId(),
+                    structT.name.c_str(), structT.internalid);
+                madeType(t, structT.idx);
                 continue;
             }
-            const auto * target = dynamic_cast<const DocumentType *>(types_by_idx[refT.targettype]);
-            if (target == nullptr) {
-                LOG(error, "Missing target document type for reference (idx %d)", refT.targettype);
-                throw IllegalArgumentException("missing target type");
-            } else {
-                auto rt = std::make_unique<ReferenceDataType>(*target, refT.internalid);
-                needed_indexes.erase(refT.idx);
-                types_by_idx[refT.idx] = repo.addDataType(std::move(rt));
-            }
+            auto st = std::make_unique<StructDataType>(structT.name, structT.internalid);
+            _structs_by_idx[structT.idx] = st.get();
+            const DataType *t = dtInP.repo().addDataType(std::move(st));
+            LOG_ASSERT(t == _structs_by_idx[structT.idx]);
+            madeType(t, structT.idx);
         }
-        for (const auto & aRef : docT.annotationref) {
-            const AnnotationType * target = annotations_by_idx[aRef.annotationtype];
+    }
+
+    void initializeDocTypeAndInheritAnnotations(DocTypeInProgress & dtInP) {
+        if (dtInP.builtin) {
+            madeType(dtInP.data_type_repo->doc_type, dtInP.cfg.idx);
+            return;
+        }
+        LOG_ASSERT(dtInP.data_type_repo->doc_type == nullptr);
+        const auto & docT = dtInP.cfg;
+        const StructDataType * fields = _structs_by_idx[docT.contentstruct];
+        if (fields != nullptr) {
+            dtInP.data_type_repo->doc_type = new DocumentType(docT.name, docT.internalid, *fields);
+            madeType(dtInP.data_type_repo->doc_type, docT.idx);
+        } else {
+            LOG(error, "Missing content struct for '%s' (idx %d not found)",
+                docT.name.c_str(), docT.contentstruct);
+            throw IllegalArgumentException("missing content struct");
+        }
+        // depends on config in inheritance order
+        for (const auto & inheritD : docT.inherits) {
+            const DataType *dt = _made_types[inheritD.idx];
+            if (dt == nullptr) {
+                LOG(error, "parent datatype [idx %d] missing for document %s",
+                    inheritD.idx, docT.name.c_str());
+                throw IllegalArgumentException("Unable to find document for inheritance");
+            }
+            DataTypeRepo * parentRepo = FindPtr(_output, dt->getId());
+            if (parentRepo == nullptr) {
+                LOG(error, "parent repo [id %d] missing for document %s",
+                    dt->getId(), docT.name.c_str());
+                throw IllegalArgumentException("missing parent repo");
+            }
+            dtInP.data_type_repo->annotations.inherit(parentRepo->annotations);
+        }
+    }
+
+    void createEmptyAnnotationTypes(DocTypeInProgress & dtInP) {
+        auto & annRepo = dtInP.data_type_repo->annotations;
+        for (const auto & annT: dtInP.cfg.annotationtype) {
+            if (annRepo.lookup(annT.internalid)) {
+                throw IllegalArgumentException("duplicate annotation type id");
+            }
+            auto at = std::make_unique<AnnotationType>(annT.internalid, annT.name);
+            _annotations_by_idx[annT.idx] = at.get();
+            _needed_idx_set.erase(annT.idx);
+            const auto * t = annRepo.addAnnotationType(std::move(at));
+            LOG_ASSERT(t == _annotations_by_idx[annT.idx]);
+        }
+    }
+
+    void createReferenceTypes(DocTypeInProgress & dtInP) {
+        for (const auto & aRef : dtInP.cfg.annotationref) {
+            const AnnotationType * target = _annotations_by_idx[aRef.annotationtype];
             if (target == nullptr) {
                 LOG(error, "Missing annotation type [idx %d] for annotationref",
                     aRef.annotationtype);
                 throw IllegalArgumentException("missing annotation type");
             } else {
                 auto ar = std::make_unique<AnnotationReferenceDataType>(*target, aRef.internalid);
-                needed_indexes.erase(aRef.idx);
-                types_by_idx[aRef.idx] = repo.addDataType(std::move(ar));
+                madeType(dtInP.repo().addDataType(std::move(ar)), aRef.idx);
+            }
+        }
+        for (const auto & refT : dtInP.cfg.documentref) {
+            const auto * target = dynamic_cast<const DocumentType *>(_made_types[refT.targettype]);
+            if (target == nullptr) {
+                LOG(error, "Missing target document type for reference (idx %d)", refT.targettype);
+                throw IllegalArgumentException("missing target type");
+            } else {
+                auto rt = std::make_unique<ReferenceDataType>(*target, refT.internalid);
+                madeType(dtInP.repo().addDataType(std::move(rt)), refT.idx);
             }
         }
     }
-    while (needed_indexes.size() > 0) {
-        size_t missing_cnt = needed_indexes.size();
-        bool missing = false;
-        for (const auto & docT : t) {
-            DataTypeRepo * dtr = FindPtr(type_map, docT.internalid);
-            LOG_ASSERT(dtr != nullptr);
-            auto & repo = dtr->repo;
-            for (const auto & arrT : docT.arraytype) {
-                if (types_by_idx[arrT.idx] != nullptr) {
-                    continue; // OK already
-                }
-                const DataType * nested = types_by_idx[arrT.elementtype];
-                if (nested == nullptr) {
-                    missing = true;
-                } else {
-                    auto at = std::make_unique<ArrayDataType>(*nested, arrT.internalid);
-                    needed_indexes.erase(arrT.idx);
-                    types_by_idx[arrT.idx] = repo.addDataType(std::move(at));
-                }
+
+    void createComplexTypes() {
+        while (_needed_idx_set.size() > 0) {
+            size_t missing_cnt = _needed_idx_set.size();
+            for (const auto & docT : _input) {
+                auto iter = _doc_types_in_progress.find(docT.idx);
+                LOG_ASSERT(iter != _doc_types_in_progress.end());
+                auto & dtInP = iter->second;
+                createComplexTypesForDocType(dtInP.cfg, dtInP.repo());
             }
-            for (const auto & mapT : docT.maptype) {
-                if (types_by_idx[mapT.idx] != nullptr) {
-                    continue; // OK already
+            if (_needed_idx_set.size() == missing_cnt) {
+                for (int idx : _needed_idx_set) {
+                    LOG(error, "no progress, datatype [idx %d] still missing", idx);
                 }
-                const DataType * kt = types_by_idx[mapT.keytype];
-                const DataType * vt = types_by_idx[mapT.valuetype];
-                if (kt == nullptr || vt == nullptr) {
-                    missing = true;
-                } else {
-                    auto mt = std::make_unique<MapDataType>(*kt, *vt, mapT.internalid);
-                    needed_indexes.erase(mapT.idx);
-                    types_by_idx[mapT.idx] = repo.addDataType(std::move(mt));
-                }
-            }
-            for (const auto & wsetT : docT.wsettype) {
-                if (types_by_idx[wsetT.idx] != nullptr) {
-                    continue; // OK already
-                }
-                const DataType * nested = types_by_idx[wsetT.elementtype];
-                if (nested == nullptr) {
-                    missing = true;
-                } else {
-                    auto wt = std::make_unique<WeightedSetDataType>(*nested,
-                                                                    wsetT.createifnonexistent, wsetT.removeifzero,
-                                                                    wsetT.internalid);
-                    needed_indexes.erase(wsetT.idx);
-                    types_by_idx[wsetT.idx] = repo.addDataType(std::move(wt));
-                }
-            }
-        }
-        if (missing) {
-            LOG(debug, "retry complex types, %zd missing", needed_indexes.size());
-        }
-        if (needed_indexes.size() == missing_cnt) {
-            for (int idx : needed_indexes) {
-                LOG(error, "no progress, datatype [idx %d] still missing", idx);
                 throw IllegalArgumentException("no progress");
             }
-            break;
+            LOG(info, "retry complex types, %zd missing", _needed_idx_set.size());
         }
     }
-    for (const auto & docT : t) {
-        for (const auto & structT : docT.structtype) {
-            auto st = structs_by_idx[structT.idx];
+
+    void createComplexTypesForDocType(const CDocType & docT, Repo& repo) {
+        for (const auto & arrT : docT.arraytype) {
+            if (_made_types[arrT.idx] != nullptr) {
+                continue; // OK already
+            }
+            if (const DataType * nested = _made_types[arrT.elementtype]) {
+                auto at = std::make_unique<ArrayDataType>(*nested, arrT.internalid);
+                madeType(repo.addDataType(std::move(at)), arrT.idx);
+            }
+        }
+        for (const auto & mapT : docT.maptype) {
+            if (_made_types[mapT.idx] != nullptr) {
+                continue; // OK already
+            }
+            const DataType * kt = _made_types[mapT.keytype];
+            const DataType * vt = _made_types[mapT.valuetype];
+            if (kt && vt) {
+                auto mt = std::make_unique<MapDataType>(*kt, *vt, mapT.internalid);
+                madeType(repo.addDataType(std::move(mt)), mapT.idx);
+            }
+        }
+        for (const auto & wsetT : docT.wsettype) {
+            if (_made_types[wsetT.idx] != nullptr) {
+                continue; // OK already
+            }
+            if (const DataType * nested = _made_types[wsetT.elementtype]) {
+                auto wt = std::make_unique<WeightedSetDataType>(*nested,
+                                                                wsetT.createifnonexistent, wsetT.removeifzero,
+                                                                wsetT.internalid);
+                madeType(repo.addDataType(std::move(wt)), wsetT.idx);
+            }
+        }
+    }
+
+    void fillStructs(DocTypeInProgress & dtInP) {
+        for (const auto & structT : dtInP.cfg.structtype) {
+            auto st = _structs_by_idx[structT.idx];
             if (st == nullptr) continue;
             for (const auto & fieldD : structT.field) {
-                const DataType *ft = types_by_idx[fieldD.type];
+                const DataType *ft = _made_types[fieldD.type];
                 if (ft == nullptr) {
                     LOG(error, "Missing type [idx %d] for struct %s field %s",
                         fieldD.type, structT.name.c_str(), fieldD.name.c_str());
@@ -774,28 +798,53 @@ void configureDocTypes(const DocumenttypesConfig::DoctypeVector &t, DocumentType
             }
         }
     }
-    for (const auto & docT : t) {
-        for (const auto & structT : docT.structtype) {
-            performStructInherit(structT.idx, t, structs_by_idx);
+
+    void fillDocument(DocTypeInProgress & dtInP) {
+        if (dtInP.builtin) {
+            return;
+        }
+        const CDocType & docT = dtInP.cfg;
+        auto * doc_type = dtInP.data_type_repo->doc_type;
+        LOG_ASSERT(doc_type != nullptr);
+        for (const auto & importD : docT.importedfield) {
+            doc_type->add_imported_field_name(importD.name);
+        }
+        for (const auto & entry : docT.fieldsets) {
+            DocumentType::FieldSet::Fields fields;
+            for (const auto& f : entry.second.fields) {
+                fields.insert(f);
+            }
+            doc_type->addFieldSet(entry.first, fields);
+        }
+        for (const auto & inheritD : docT.inherits) {
+            const DataType *dt = _made_types[inheritD.idx];
+            const DocumentType * parent = dynamic_cast<const DocumentType *>(dt);
+            if (parent == nullptr) {
+                LOG(error, "missing parent type [idx %d] for document %s",
+                    inheritD.idx, docT.name.c_str());
+                throw IllegalArgumentException("missing parent type");
+            } else {
+                doc_type->inherit(*parent);
+            }
         }
     }
-    for (const auto & docT : t) {
-        for (const auto & annT: docT.annotationtype) {
+
+    void fillAnnotationTypes(DocTypeInProgress & dtInP) {
+        for (const auto & annT: dtInP.cfg.annotationtype) {
+            AnnotationType * at = _annotations_by_idx[annT.idx];
             if (annT.datatype != -1) {
-                const DataType * dt = types_by_idx[annT.datatype];
+                const DataType * dt = _made_types[annT.datatype];
                 if (dt == nullptr) {
                     LOG(error, "Missing datatype [idx %d] for annotation type %s",
                         annT.datatype, annT.name.c_str());
                     throw IllegalArgumentException("missing datatype");
                 } else {
-                    AnnotationType * at = annotations_by_idx[annT.idx];
                     at->setDataType(*dt);
                 }
             }
             for (const auto & inheritD : annT.inherits) {
-                AnnotationType * at = annotations_by_idx[annT.idx];
                 LOG_ASSERT(at != nullptr);
-                const AnnotationType * parent = annotations_by_idx[inheritD.idx];
+                const AnnotationType * parent = _annotations_by_idx[inheritD.idx];
                 if (parent == nullptr) {
                     LOG(error, "missing parent [idx %d] for annotation %s",
                         inheritD.idx, annT.name.c_str());
@@ -803,30 +852,128 @@ void configureDocTypes(const DocumenttypesConfig::DoctypeVector &t, DocumentType
                 }
             }
         }
-        DataTypeRepo * dtr = FindPtr(type_map, docT.internalid);
-        LOG_ASSERT(dtr != nullptr);
-        for (const auto & importD : docT.importedfield) {
-            dtr->doc_type->add_imported_field_name(importD.name);
-        }
-        for (const auto & entry : docT.fieldsets) {
-            DocumentType::FieldSet::Fields fields;
-            for (const auto& f : entry.second.fields) {
-                fields.insert(f);
+    }
+
+    class EnsureIndexes {
+        std::set<int> _set;
+    public:
+        void add(int idx) {
+            auto [iter, succ] = _set.insert(idx);
+            if (! succ) {
+                throw IllegalArgumentException("duplicate type idx");
             }
-            dtr->doc_type->addFieldSet(entry.first, fields);
+            LOG(info, "ensure indexes: add %d", idx);
         }
-        for (const auto & inheritD : docT.inherits) {
-            const DataType *dt = types_by_idx[inheritD.idx];
-            const DocumentType * parent = dynamic_cast<const DocumentType *>(dt);
-            if (parent == nullptr) {
-                LOG(error, "missing parent type [idx %d] for document %s",
-                    inheritD.idx, docT.name.c_str());
-                throw IllegalArgumentException("missing parent type");
-            } else {
-                dtr->doc_type->inherit(*parent);
+        void check(int idx) {
+            if (! _set.contains(idx)) {
+                LOG(error, "ensure indexes: missing %d", idx);
+                throw IllegalArgumentException("needed idx missing");
             }
+        }
+    };
+
+    void findNeeded() {
+        EnsureIndexes idx_set;
+        for (const auto & docT : _input) {
+            LOG(info, "doc %s", docT.name.c_str());
+            idx_set.add(docT.idx);
+            for (const auto & structT : docT.structtype) {
+                idx_set.add(structT.idx);
+                for (const auto & fieldD : structT.field) {
+                    LOG(debug, "doc %s struct %s field %s needs [idx %d]",
+                        docT.name.c_str(), structT.name.c_str(), fieldD.name.c_str(), fieldD.type);
+                    _needed_idx_set.insert(fieldD.type);
+                }
+            }
+            for (const auto & primT : docT.primitivetype) {
+                idx_set.add(primT.idx);
+            }
+            for (const auto & tensorT : docT.tensortype) {
+                idx_set.add(tensorT.idx);
+            }
+            for (const auto & arrT : docT.arraytype) {
+                idx_set.add(arrT.idx);
+                LOG(debug, "doc %s array needs [idx %d]", docT.name.c_str(),arrT.elementtype);
+                _needed_idx_set.insert(arrT.elementtype);
+            }
+            for (const auto & wsetT : docT.wsettype) {
+                idx_set.add(wsetT.idx);
+                LOG(debug, "doc %s wset needs [idx %d]", docT.name.c_str(), wsetT.elementtype);
+                _needed_idx_set.insert(wsetT.elementtype);
+            }
+            for (const auto & mapT : docT.maptype) {
+                idx_set.add(mapT.idx);
+                LOG(debug, "doc %s wset needs [idx %d] and [idx %d]",
+                    docT.name.c_str(), mapT.keytype, mapT.valuetype);
+                _needed_idx_set.insert(mapT.keytype);
+                _needed_idx_set.insert(mapT.valuetype);
+            }
+            for (const auto & annT: docT.annotationtype) {
+                idx_set.add(annT.idx);
+                if (annT.datatype != -1) {
+                    LOG(debug, "doc %s ann needs datatype [idx %d]", docT.name.c_str(), annT.datatype);
+                    _needed_idx_set.insert(annT.datatype);
+                }
+                for (const auto & inheritD : annT.inherits) {
+                    LOG(debug, "doc %s ann needs parent [idx %d]", docT.name.c_str(), inheritD.idx);
+                    _needed_idx_set.insert(inheritD.idx);
+                }
+            }
+            for (const auto & aRef : docT.annotationref) {
+                idx_set.add(aRef.idx);
+                LOG(debug, "doc %s ann ref needs annotation [idx %d]", docT.name.c_str(), aRef.annotationtype);
+                _needed_idx_set.insert(aRef.annotationtype);
+            }
+            for (const auto & refT : docT.documentref) {
+                idx_set.add(refT.idx);
+                LOG(debug, "doc %s doc ref needs target [idx %d]", docT.name.c_str(), refT.targettype);
+                _needed_idx_set.insert(refT.targettype);
+            }
+        }
+        for (int needed : _needed_idx_set) {
+            idx_set.check(needed);
         }
     }
+
+    const StructDataType * performStructInherit(int idx) {
+        for (const auto & docT : _input) {
+            for (const auto & structT : docT.structtype) {
+                if (idx == structT.idx) {
+                    StructDataType *st = _structs_by_idx[idx];
+                    if (st == nullptr) continue;
+                    for (const auto & inheritD : structT.inherits) {
+                        const auto * parent = performStructInherit(inheritD.type);
+                        if (parent == nullptr) {
+                            LOG(error, "Missing parent type [idx %d] for struct %s",
+                                inheritD.type, structT.name.c_str());
+                            throw IllegalArgumentException("missing parent type");
+                        }
+                        for (const auto & field : parent->getFieldSet()) {
+                            st->addInheritedField(*field);
+                        }
+                    }
+                    return st;
+                }
+            }
+        }
+        return nullptr;
+    }
+
+public:
+    ApplyNewDoctypeConfig(const DocumenttypesConfig::DoctypeVector & input,
+                          DocumentTypeMap & output)
+        : _input(input), _output(output)
+    {
+        apply();
+    }
+    ~ApplyNewDoctypeConfig();
+};
+
+ApplyNewDoctypeConfig::~ApplyNewDoctypeConfig() = default;
+
+void configureDocTypes(const DocumenttypesConfig::DoctypeVector &t, DocumentTypeMap &type_map) {
+    LOG(info, "applying new doc type config");
+    ApplyNewDoctypeConfig(t, type_map);
 }
 
 }  // namespace
