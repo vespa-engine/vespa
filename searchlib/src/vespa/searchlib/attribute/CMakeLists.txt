@@ -105,6 +105,7 @@ vespa_add_library(searchlib_attribute OBJECT
     singlesmallnumericattribute.cpp
     singlestringattribute.cpp
     singlestringpostattribute.cpp
+    single_numeric_enum_search_context.cpp
     single_numeric_search_context.cpp
     sourceselector.cpp
     stringattribute.cpp

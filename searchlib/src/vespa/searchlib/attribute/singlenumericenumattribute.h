@@ -47,45 +47,6 @@ protected:
     void considerArithmeticAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter) override;
     void applyArithmeticValueChange(const Change& c, EnumStoreBatchUpdater& updater) override;
 
-    /*
-     * Specialization of SearchContext
-     */
-    class SingleSearchContext : public attribute::NumericRangeMatcher<T>, public attribute::SearchContext
-    {
-    protected:
-        const SingleValueNumericEnumAttribute<B> & _toBeSearched;
-
-        int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const override {
-            return find(docId, elemId, weight);
-        }
-
-        int32_t onFind(DocId docId, int32_t elemId) const override {
-            return find(docId, elemId);
-        }
-        bool valid() const override;
-
-    public:
-        SingleSearchContext(QueryTermSimpleUP qTerm, const NumericAttribute & toBeSearched);
-
-        Int64Range getAsIntegerTerm() const override;
-
-        int32_t find(DocId docId, int32_t elemId, int32_t & weight) const {
-            if ( elemId != 0) return -1;
-            T v = _toBeSearched._enumStore.get_value(_toBeSearched.getEnumIndex(docId));
-            weight = 1;
-            return this->match(v) ? 0 : -1;
-        }
-
-        int32_t find(DocId docId, int32_t elemId) const {
-            if ( elemId != 0) return -1;
-            T v = _toBeSearched._enumStore.get_value(_toBeSearched.getEnumIndex(docId));
-            return this->match(v) ? 0 : -1;
-        }
-
-        std::unique_ptr<queryeval::SearchIterator>
-        createFilterIterator(fef::TermFieldMatchData * matchData, bool strict) override;
-    };
-
 public:
     SingleValueNumericEnumAttribute(const vespalib::string & baseFileName,
                                     const AttributeVector::Config & c =

@@ -147,8 +147,10 @@ std::unique_ptr<attribute::SearchContext>
 SingleValueNumericPostingAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
                                                  const attribute::SearchContextParams & params) const
 {
-    SingleNumericSearchContext base_sc(std::move(qTerm), *this);
-    return std::make_unique<SinglePostingSearchContext>(std::move(base_sc), params, *this);
+    using BaseSC = attribute::SingleNumericEnumSearchContext<T>;
+    using SC = attribute::NumericPostingSearchContext<BaseSC, SelfType, vespalib::btree::BTreeNoLeafData>;
+    BaseSC base_sc(std::move(qTerm), *this, &this->_enumIndices.acquire_elem_ref(0), this->_enumStore);
+    return std::make_unique<SC>(std::move(base_sc), params, *this);
 }
 
 } // namespace search

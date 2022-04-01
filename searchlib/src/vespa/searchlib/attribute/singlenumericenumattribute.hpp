@@ -8,6 +8,7 @@
 #include "primitivereader.h"
 #include "singleenumattribute.hpp"
 #include "singlenumericenumattribute.h"
+#include "single_numeric_enum_search_context.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/util/fileutil.hpp>
@@ -157,51 +158,7 @@ SingleValueNumericEnumAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
                                               const attribute::SearchContextParams & params) const
 {
     (void) params;
-    QueryTermSimple::RangeResult<T> res = qTerm->getRange<T>();
-    if (res.isEqual()) {
-        return std::make_unique<SingleSearchContext>(std::move(qTerm), *this);
-    } else {
-        return std::make_unique<SingleSearchContext>(std::move(qTerm), *this);
-    }
-}
-
-template <typename B>
-bool
-SingleValueNumericEnumAttribute<B>::SingleSearchContext::valid() const
-{
-    return this->isValid();
-}
-
-template <typename B>
-SingleValueNumericEnumAttribute<B>::SingleSearchContext::SingleSearchContext(QueryTermSimpleUP qTerm, const NumericAttribute & toBeSearched) :
-    attribute::NumericRangeMatcher<T>(*qTerm, true),
-    attribute::SearchContext(toBeSearched),
-    _toBeSearched(static_cast<const SingleValueNumericEnumAttribute<B> &>(toBeSearched))
-{ }
-
-template <typename B>
-Int64Range
-SingleValueNumericEnumAttribute<B>::SingleSearchContext::getAsIntegerTerm() const
-{
-    return this->getRange();
-}
-
-template <typename B>
-std::unique_ptr<queryeval::SearchIterator>
-SingleValueNumericEnumAttribute<B>::SingleSearchContext::createFilterIterator(fef::TermFieldMatchData * matchData,
-                                                                              bool strict)
-{
-    if (!valid()) {
-        return std::make_unique<queryeval::EmptySearch>();
-    }
-    if (getIsFilter()) {
-        return strict
-               ? std::make_unique<FilterAttributeIteratorStrict<SingleSearchContext>>(*this, matchData)
-               : std::make_unique<FilterAttributeIteratorT<SingleSearchContext>>(*this, matchData);
-    }
-    return strict
-           ? std::make_unique<AttributeIteratorStrict<SingleSearchContext>>(*this, matchData)
-           : std::make_unique<AttributeIteratorT<SingleSearchContext>>(*this, matchData);
+    return std::make_unique<attribute::SingleNumericEnumSearchContext<T>>(std::move(qTerm), *this, &this->_enumIndices.acquire_elem_ref(0), this->_enumStore);
 }
 
 }
