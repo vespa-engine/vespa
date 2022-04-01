@@ -78,4 +78,5 @@ public class FileDBRegistryTestCase {
     void checkConsistentEntry(FileRegistry.Entry entry, FileRegistry registry) {
         assertEquals(entry.reference, registry.addFile(entry.relativePath));
     }
+    
 }
