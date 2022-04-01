@@ -18,9 +18,6 @@ public:
     MultiNumericEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, const MultiValueMapping<M>& mv_mapping, const EnumStoreT<T>& enum_store);
 
     Int64Range getAsIntegerTerm() const override;
-
-    std::unique_ptr<queryeval::SearchIterator>
-    createFilterIterator(fef::TermFieldMatchData* matchData, bool strict) override;
 };
 
 }

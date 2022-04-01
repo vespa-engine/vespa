@@ -3,6 +3,8 @@
 #pragma once
 
 #include "multi_enum_search_context.h"
+#include "attributeiterators.hpp"
+#include <vespa/searchlib/queryeval/emptysearch.h>
 
 namespace search::attribute {
 
@@ -13,6 +15,23 @@ MultiEnumSearchContext<T, Matcher, M>::MultiEnumSearchContext(Matcher&& matcher,
       _mv_mapping(mv_mapping),
       _enum_store(enum_store)
 {
+}
+
+template <typename T, typename Matcher, typename M>
+std::unique_ptr<queryeval::SearchIterator>
+MultiEnumSearchContext<T, Matcher, M>::createFilterIterator(fef::TermFieldMatchData* matchData, bool strict)
+{
+    if (!this->valid()) {
+        return std::make_unique<queryeval::EmptySearch>();
+    }
+    if (this->getIsFilter()) {
+        return strict
+            ? std::make_unique<FilterAttributeIteratorStrict<MultiEnumSearchContext>>(*this, matchData)
+            : std::make_unique<FilterAttributeIteratorT<MultiEnumSearchContext>>(*this, matchData);
+    }
+    return strict
+        ? std::make_unique<AttributeIteratorStrict<MultiEnumSearchContext>>(*this, matchData)
+        : std::make_unique<AttributeIteratorT<MultiEnumSearchContext>>(*this, matchData);
 }
 
 }
