@@ -183,6 +183,8 @@ jobs:
       - *save-cache
 
   publish-release:
+    image: docker.io/vespaengine/vespa-build-centos-stream8:latest
+
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -216,10 +218,9 @@ jobs:
             exit 1
           fi
       - install-dependencies: |
-          yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-          yum install -y --setopt skip_missing_names_on_install=False docker-ce docker-ce-cli containerd.io rh-git227
+          dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+          dnf install -y docker-ce docker-ce-cli containerd.io
           docker system info
-          source /opt/rh/rh-git227/enable
       - release-rpms: |
           screwdriver/release-rpms.sh $VESPA_VERSION $VESPA_REF
       - release-container-image: |
