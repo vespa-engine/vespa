@@ -18,7 +18,7 @@ Memory::Memory(size_t blockSize)
       _start(nullptr),
       _end(nullptr)
 { }
-Memory::~Memory() { }
+Memory::~Memory() = default;
 
 void *
 MmapMemory::reserve(size_t & len)
