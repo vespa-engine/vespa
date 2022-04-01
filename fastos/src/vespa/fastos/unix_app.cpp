@@ -22,31 +22,6 @@ extern "C"
 extern char **environ;
 };
 
-int
-FastOS_UNIX_Application::GetOpt (const char *optionsString, const char* &optionArgument, int &optionIndex)
-{
-    int rc = getopt(_argc, _argv, optionsString);
-    optionArgument = optarg;
-    optionIndex = optind;
-    return rc;
-}
-
-int
-FastOS_UNIX_Application::GetOptLong(const char *optionsString, const char* &optionArgument, int &optionIndex,
-                                    const struct option *longopts,int *longindex)
-{
-    int rc = getopt_long(_argc, _argv, optionsString, longopts, longindex);
-    optionArgument = optarg;
-    optionIndex = optind;
-    return rc;
-}
-
-void
-FastOS_UNIX_Application::resetOptIndex(int optionIndex)
-{
-    optind = optionIndex;
-}
-
 bool FastOS_UNIX_Application::PreThreadInit ()
 {
     bool rc = true;

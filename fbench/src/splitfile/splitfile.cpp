@@ -3,6 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <memory>
+#include <unistd.h>
 
 /**
  * Split a text file randomly in a number of parts.  Process an input
@@ -19,20 +20,17 @@ main(int argc, char** argv)
     int linebufsize = 10240;
 
     // parse options and override defaults.
-    int         idx;
     int         opt;
-    const char *arg;
     bool        optError;
 
-    idx = 1;
     optError = false;
-    while((opt = GetOpt(argc, argv, "p:m:", arg, idx)) != -1) {
+    while((opt = getopt(argc, argv, "p:m:")) != -1) {
         switch(opt) {
         case 'p':
-            pattern = arg;
+            pattern = optarg;
             break;
         case 'm':
-            linebufsize = atoi(arg);
+            linebufsize = atoi(optarg);
             if (linebufsize < 10240) {
                 linebufsize = 10240;
             }
@@ -43,7 +41,7 @@ main(int argc, char** argv)
         }
     }
 
-    if (argc < (idx + 1) || argc > (idx + 2) || optError) {
+    if (argc < (optind + 1) || argc > (optind + 2) || optError) {
         printf("usage: vespa-fbench-split-file [-p pattern] [-m maxLineSize] <numparts> [<file>]\n\n");
         printf(" -p pattern : output name pattern ['query%%03d.txt']\n");
         printf(" -m <num>   : max line size for input/output lines.\n");
@@ -57,7 +55,7 @@ main(int argc, char** argv)
         return -1;
     }
 
-    int outcnt = atoi(argv[idx]);
+    int outcnt = atoi(argv[optind]);
     if (outcnt < 1) {
         printf("too few output files!\n");
         return -1;
@@ -70,8 +68,8 @@ main(int argc, char** argv)
     std::unique_ptr<FileReader> input = std::make_unique<FileReader>();
     std::vector<std::unique_ptr<std::ostream>> output;
 
-    if (argc > (idx + 1)) {
-        if (!input->Open(argv[idx + 1])) {
+    if (argc > (optind + 1)) {
+        if (!input->Open(argv[optind + 1])) {
             printf("could not open input file!\n");
             return -1;
         }

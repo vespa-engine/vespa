@@ -12,6 +12,7 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 #include <vespa/vespalib/util/time.h>
@@ -642,44 +643,42 @@ TransLogStress::Main()
 
     vespalib::duration sleepTime = 4s;
 
-    int idx = 1;
     int opt;
-    const char * arg;
     bool optError = false;
-    while ((opt = GetOpt("d:p:t:f:s:v:c:e:g:i:a:b:h", arg, idx)) != -1) {
+    while ((opt = getopt(_argc, _argv, "d:p:t:f:s:v:c:e:g:i:a:b:h")) != -1) {
         switch (opt) {
         case 'd':
-            _cfg.domainPartSize = atol(arg);
+            _cfg.domainPartSize = atol(optarg);
             break;
         case 'p':
-            _cfg.packetSize = atol(arg);
+            _cfg.packetSize = atol(optarg);
             break;
         case 't':
-            _cfg.stressTime = std::chrono::milliseconds(1000 * atol(arg));
+            _cfg.stressTime = std::chrono::milliseconds(1000 * atol(optarg));
             break;
         case 'f':
-            _cfg.feedRate = atoi(arg);
+            _cfg.feedRate = atoi(optarg);
             break;
         case 'v':
-            _cfg.numVisitors = atoi(arg);
+            _cfg.numVisitors = atoi(optarg);
             break;
         case 'c':
-            _cfg.visitorInterval = std::chrono::milliseconds(atol(arg));
+            _cfg.visitorInterval = std::chrono::milliseconds(atol(optarg));
             break;
         case 'e':
-            _cfg.pruneInterval = vespalib::from_s(atol(arg));
+            _cfg.pruneInterval = vespalib::from_s(atol(optarg));
             break;
         case 'g':
-            _cfg.numPreGeneratedBuffers = atoi(arg);
+            _cfg.numPreGeneratedBuffers = atoi(optarg);
             break;
         case 'i':
-            _cfg.minStrLen = atoi(arg);
+            _cfg.minStrLen = atoi(optarg);
             break;
         case 'a':
-            _cfg.maxStrLen = atoi(arg);
+            _cfg.maxStrLen = atoi(optarg);
             break;
         case 'b':
-            _cfg.baseSeed = atol(arg);
+            _cfg.baseSeed = atol(optarg);
             break;
         case 'h':
             usage();
@@ -693,7 +692,7 @@ TransLogStress::Main()
     printConfig();
     std::this_thread::sleep_for(sleepTime);
 
-    if (_argc != idx || optError) {
+    if (_argc != optind || optError) {
         usage();
         return -1;
     }

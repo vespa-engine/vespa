@@ -9,6 +9,7 @@
 
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/fastos/app.h>
+#include <unistd.h>
 
 namespace search {
 
@@ -112,11 +113,9 @@ LoadAttribute::Main()
     bool doFastSearch = false;
     bool doHuge = false;
 
-    int idx = 1;
     int opt;
-    const char * arg;
     bool optError = false;
-    while ((opt = GetOpt("pasf:h", arg, idx)) != -1) {
+    while ((opt = getopt(_argc, _argv, "pasf:h")) != -1) {
         switch (opt) {
         case 'p':
             doPrintContent = true;
@@ -128,11 +127,11 @@ LoadAttribute::Main()
             doHuge = true;
             break;
         case 'f':
-            if (strcmp(arg, "search") == 0) {
+            if (strcmp(optarg, "search") == 0) {
                 doFastSearch = true;
             } else {
                 std::cerr << "Expected 'search' or 'aggregate', got '" <<
-                    arg << "'" << std::endl;
+                    optarg << "'" << std::endl;
                 optError = true;
             }
             break;
@@ -145,12 +144,12 @@ LoadAttribute::Main()
         }
     }
 
-    if (_argc != (idx + 1) || optError) {
+    if (_argc != (optind + 1) || optError) {
         usage();
         return -1;
     }
 
-    vespalib::string fileName(_argv[idx]);
+    vespalib::string fileName(_argv[optind]);
     vespalib::FileHeader fh;
     {
         vespalib::string datFileName(fileName + ".dat");

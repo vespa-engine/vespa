@@ -16,6 +16,7 @@
 #include <iostream>
 #include <getopt.h>
 #include <cstdlib>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-index-inspect");
@@ -262,7 +263,6 @@ bool
 ShowPostingListSubApp::getOptions()
 {
     int c;
-    const char *optArgument = NULL;
     int longopt_index = 0;
     static struct option longopts[] = {
         { "indexdir", 1, NULL, 0 },
@@ -279,36 +279,33 @@ ShowPostingListSubApp::getOptions()
         LONGOPT_DOCIDLIMIT,
         LONGOPT_MINDOCID
     };
-    int optIndex = 2;
-    _app.resetOptIndex(optIndex);
-    while ((c = _app.GetOptLong("di:mv",
-                                optArgument,
-                                optIndex,
-                                longopts,
-                                &longopt_index)) != -1) {
+    optind = 2;
+    while ((c = getopt_long(_app._argc, _app._argv, "di:mv",
+                            longopts,
+                            &longopt_index)) != -1) {
         switch (c) {
         case 0:
             switch (longopt_index) {
             case LONGOPT_INDEXDIR:
-                _indexDir = optArgument;
+                _indexDir = optarg;
                 break;
             case LONGOPT_FIELD:
-                _fieldOptions.addField(optArgument);
+                _fieldOptions.addField(optarg);
                 break;
             case LONGOPT_TRANSPOSE:
                 _transpose = true;
                 break;
             case LONGOPT_DOCIDLIMIT:
-                _docIdLimit = atoi(optArgument);
+                _docIdLimit = atoi(optarg);
                 break;
             case LONGOPT_MINDOCID:
-                _minDocId = atoi(optArgument);
+                _minDocId = atoi(optarg);
                 break;
             default:
-                if (optArgument != NULL) {
+                if (optarg != NULL) {
                     LOG(error,
                         "longopt %s with arg %s",
-                        longopts[longopt_index].name, optArgument);
+                        longopts[longopt_index].name, optarg);
                 } else {
                     LOG(error,
                         "longopt %s",
@@ -320,7 +317,7 @@ ShowPostingListSubApp::getOptions()
             _directio = true;
             break;
         case 'i':
-            _indexDir = optArgument;
+            _indexDir = optarg;
             break;
         case 'm':
             _readmmap = true;
@@ -339,13 +336,13 @@ ShowPostingListSubApp::getOptions()
         if (_fieldOptions._fields.size() > 1)
             return false;
     }
-    _optIndex = optIndex;
+    _optIndex = optind;
     if (_transpose) {
     } else {
         if (_optIndex >= _app._argc) {
             return false;
         }
-        _word = _app._argv[optIndex];
+        _word = _app._argv[optind];
     }
     return true;
 }
@@ -719,7 +716,6 @@ bool
 DumpWordsSubApp::getOptions()
 {
     int c;
-    const char *optArgument = NULL;
     int longopt_index = 0;
     static struct option longopts[] = {
         { "indexdir", 1, NULL, 0 },
@@ -736,24 +732,21 @@ DumpWordsSubApp::getOptions()
         LONGOPT_VERBOSE,
         LONGOPT_WORDNUM
     };
-    int optIndex = 2;
-    _app.resetOptIndex(optIndex);
-    while ((c = _app.GetOptLong("i:",
-                                optArgument,
-                                optIndex,
-                                longopts,
-                                &longopt_index)) != -1) {
+    optind = 2;
+    while ((c = getopt_long(_app._argc, _app._argv, "i:",
+                            longopts,
+                            &longopt_index)) != -1) {
         switch (c) {
         case 0:
             switch (longopt_index) {
             case LONGOPT_INDEXDIR:
-                _indexDir = optArgument;
+                _indexDir = optarg;
                 break;
             case LONGOPT_FIELD:
-                _fieldOptions.addField(optArgument);
+                _fieldOptions.addField(optarg);
                 break;
             case LONGOPT_MINNUMDOCS:
-                _minNumDocs = atol(optArgument);
+                _minNumDocs = atol(optarg);
                 break;
             case LONGOPT_VERBOSE:
                 _verbose = true;
@@ -762,10 +755,10 @@ DumpWordsSubApp::getOptions()
                 _showWordNum = true;
                 break;
             default:
-                if (optArgument != NULL) {
+                if (optarg != NULL) {
                     LOG(error,
                         "longopt %s with arg %s",
-                        longopts[longopt_index].name, optArgument);
+                        longopts[longopt_index].name, optarg);
                 } else {
                     LOG(error,
                         "longopt %s",
@@ -774,7 +767,7 @@ DumpWordsSubApp::getOptions()
             }
             break;
         case 'i':
-            _indexDir = optArgument;
+            _indexDir = optarg;
             break;
         default:
             return false;

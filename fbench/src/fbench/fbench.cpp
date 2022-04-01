@@ -18,6 +18,7 @@
 #include <csignal>
 #include <cinttypes>
 #include <cstdlib>
+#include <unistd.h>
 
 namespace {
 
@@ -367,66 +368,63 @@ FBench::Main(int argc, char *argv[])
     int  printInterval = 0;
 
     // parse options and override defaults.
-    int         idx;
     int         opt;
-    const char *arg;
     bool        optError;
 
-    idx = 1;
     optError = false;
-    while((opt = GetOpt(argc, argv, "H:A:T:C:K:Da:n:c:l:i:s:q:o:r:m:p:kdxyzP", arg, idx)) != -1) {
+    while((opt = getopt(argc, argv, "H:A:T:C:K:Da:n:c:l:i:s:q:o:r:m:p:kdxyzP")) != -1) {
         switch(opt) {
         case 'A':
-            authority = arg;
+            authority = optarg;
             break;
         case 'H':
-            extraHeaders += std::string(arg) + "\r\n";
-            if (strncmp(arg, "Host:", 5) == 0) {
+            extraHeaders += std::string(optarg) + "\r\n";
+            if (strncmp(optarg, "Host:", 5) == 0) {
                 fprintf(stderr, "Do not override 'Host:' header, use -A option instead\n");
                 return -1;
             }
             break;
         case 'T':
-            ca_certs_file_name = std::string(arg);
+            ca_certs_file_name = std::string(optarg);
             break;
         case 'C':
-            cert_chain_file_name = std::string(arg);
+            cert_chain_file_name = std::string(optarg);
             break;
         case 'K':
-            private_key_file_name = std::string(arg);
+            private_key_file_name = std::string(optarg);
             break;
         case 'D':
             allow_default_tls = true;
             break;
         case 'a':
-            queryStringToAppend = std::string(arg);
+            queryStringToAppend = std::string(optarg);
             break;
         case 'n':
-            numClients = atoi(arg);
+            numClients = atoi(optarg);
             break;
         case 'c':
-            cycleTime = atoi(arg);
+            cycleTime = atoi(optarg);
             break;
         case 'l':
-            byteLimit = atoi(arg);
+            byteLimit = atoi(optarg);
             break;
         case 'i':
-            ignoreCount = atoi(arg);
+            ignoreCount = atoi(optarg);
             break;
         case 's':
-            seconds = atoi(arg);
+            seconds = atoi(optarg);
             break;
         case 'q':
-            queryFilePattern = arg;
+            queryFilePattern = optarg;
             break;
         case 'o':
-            outputFilePattern = arg;
+            outputFilePattern = optarg;
             break;
         case 'r':
-            restartLimit = atoi(arg);
+            restartLimit = atoi(optarg);
             break;
         case 'm':
-            maxLineSize = atoi(arg);
+            maxLineSize = atoi(optarg);
             if (maxLineSize < minLineSize) {
                 maxLineSize = minLineSize;
             }
@@ -435,7 +433,7 @@ FBench::Main(int argc, char *argv[])
             usePostMode = true;
             break;
         case 'p':
-            printInterval = atoi(arg);
+            printInterval = atoi(optarg);
             if (printInterval < 0)
                 optError = true;
             break;
@@ -461,12 +459,12 @@ FBench::Main(int argc, char *argv[])
         }
     }
 
-    if ( argc < (idx + 2) || optError) {
+    if ( argc < (optind + 2) || optError) {
         Usage();
         return -1;
     }
     // Hostname/port must be in pair
-    int args = (argc - idx);
+    int args = (argc - optind);
     if (args % 2 != 0) {
         fprintf(stderr, "Not equal number of hostnames and ports\n");
         return -1;
@@ -481,10 +479,10 @@ FBench::Main(int argc, char *argv[])
 
     for (int i=0; i<hosts; ++i)
     {
-        _hostnames.push_back(std::string(argv[idx+2*i]));
-        int port = atoi(argv[idx+2*i+1]);
+        _hostnames.push_back(std::string(argv[optind+2*i]));
+        int port = atoi(argv[optind+2*i+1]);
         if (port == 0) {
-            fprintf(stderr, "Not a valid port:\t%s\n", argv[idx+2*i+1]);
+            fprintf(stderr, "Not a valid port:\t%s\n", argv[optind+2*i+1]);
             return -1;
         }
         _ports.push_back(port);

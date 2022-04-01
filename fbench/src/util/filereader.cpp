@@ -4,18 +4,6 @@
 #include <unistd.h>
 #include <vespa/vespalib/util/size_literals.h>
 
-int GetOpt (int argc, char *argv[], const char *optionsString,
-            const char* &optionArgument,
-            int &optionIndex)
-{
-    optind = optionIndex;
-
-    int rc = getopt(argc, argv, optionsString);
-    optionArgument = optarg;
-    optionIndex = optind;
-    return rc;
-}
-
 FileReader::FileReader()
     : _backing(),
       _file(&std::cin),

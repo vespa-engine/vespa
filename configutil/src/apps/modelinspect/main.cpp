@@ -6,6 +6,7 @@
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/fastos/app.h>
 #include <iostream>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-model-inspect");
@@ -33,9 +34,7 @@ int
 Application::parseOpts()
 {
     int c = '?';
-    const char *optArg = NULL;
-    int optInd = 0;
-    while ((c = GetOpt("hvut:c:C:", optArg, optInd)) != -1) {
+    while ((c = getopt(_argc, _argv, "hvut:c:C:")) != -1) {
         switch (c) {
         case 'v':
             _flags.verbose = true;
@@ -44,14 +43,14 @@ Application::parseOpts()
             _flags.makeuri = true;
             break;
         case 't':
-            _flags.tagFilter.push_back(optArg);
+            _flags.tagFilter.push_back(optarg);
             _flags.tagfilt = true;
             break;
         case 'C':
-            _cfgId = optArg;
+            _cfgId = optarg;
             break;
         case 'c':
-            _specString = optArg;
+            _specString = optarg;
             break;
         case 'h':
             return _argc;
@@ -63,7 +62,7 @@ Application::parseOpts()
     if (_specString.empty()) {
         _specString = getSources();
     }
-    return optInd;
+    return optind;
 }
 
 vespalib::string

@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fastos/app.h>
 #include <csignal>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-slobrok");
@@ -51,16 +52,14 @@ App::Main()
     uint32_t portnum = 2773;
     vespalib::string cfgId;
 
-    int argi = 1;
-    const char* optArg;
     int c;
-    while ((c = GetOpt("c:s:p:N", optArg, argi)) != -1) {
+    while ((c = getopt(_argc, _argv, "c:s:p:N")) != -1) {
         switch (c) {
         case 'c':
-            cfgId = std::string(optArg);
+            cfgId = std::string(optarg);
             break;
         case 'p':
-            portnum = atoi(optArg);
+            portnum = atoi(optarg);
             break;
         case 'N':
             // ignored

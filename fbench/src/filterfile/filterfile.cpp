@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string.h>
 #include <cassert>
+#include <unistd.h>
 
 /**
  * Extract query urls from web logs. The filterfile application reads
@@ -20,14 +21,11 @@ main(int argc, char** argv)
     int  bufsize = 10240;
 
     // parse options and override defaults.
-    int         optIdx;
     int         opt;
-    const char *arg;
     bool        optError;
 
-    optIdx = 1;
     optError = false;
-    while((opt = GetOpt(argc, argv, "ahm:", arg, optIdx)) != -1) {
+    while((opt = getopt(argc, argv, "ahm:")) != -1) {
         switch(opt) {
         case 'a':
             allowAllParams = true;
@@ -36,7 +34,7 @@ main(int argc, char** argv)
             showUsage = true;
             break;
         case 'm':
-            bufsize = atoi(arg);
+            bufsize = atoi(optarg);
             if (bufsize < 10240) {
                 bufsize = 10240;
             }

@@ -4,6 +4,7 @@
 #include "methods.h"
 #include <vespa/fastos/app.h>
 #include <iostream>
+#include <unistd.h>
 
 class Application : public FastOS_Application
 {
@@ -20,18 +21,16 @@ bool
 Application::parseOpts()
 {
     int c = '?';
-    const char *optArg = NULL;
-    int optInd = 0;
-    while ((c = GetOpt("m:s:p:h", optArg, optInd)) != -1) {
+    while ((c = getopt(_argc, _argv, "m:s:p:h")) != -1) {
         switch (c) {
         case 'm':
-            _flags.method = optArg;
+            _flags.method = optarg;
             break;
         case 's':
-            _flags.targethost = optArg;
+            _flags.targethost = optarg;
             break;
         case 'p':
-            _flags.portnumber = atoi(optArg);
+            _flags.portnumber = atoi(optarg);
             break;
         case 'h':
         default:
@@ -39,18 +38,18 @@ Application::parseOpts()
         }
     }
     const Method method = methods::find(_flags.method);
-    if (optInd + method.args <= _argc) {
+    if (optind + method.args <= _argc) {
         for (int i = 0; i < method.args; ++i) {
-            vespalib::string arg = _argv[optInd++];
+            vespalib::string arg = _argv[optind++];
             _flags.args.push_back(arg);
         }
     } else {
         std::cerr << "ERROR: method "<< _flags.method << " requires " << method.args
-                  << " arguments, only got " << (_argc - optInd) << std::endl;
+                  << " arguments, only got " << (_argc - optind) << std::endl;
         return false;
     }
-    if (optInd != _argc) {
-        std::cerr << "ERROR: "<<(_argc - optInd)<<" extra arguments\n";
+    if (optind != _argc) {
+        std::cerr << "ERROR: "<<(_argc - optind)<<" extra arguments\n";
         return false;
     }
     _flags.method = method.rpcMethod;

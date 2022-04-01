@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <unistd.h>
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-fileheader-inspect");
 
@@ -58,15 +59,13 @@ int
 Application::parseOpts()
 {
     int c = '?';
-    const char *optArg = NULL;
-    int optInd = 0;
-    while ((c = GetOpt("d:f:qh", optArg, optInd)) != -1) {
+    while ((c = getopt(_argc, _argv, "d:f:qh")) != -1) {
         switch (c) {
         case 'd':
-            _delimiter = optArg[0];
+            _delimiter = optarg[0];
             break;
         case 'f':
-            _fileName = optArg;
+            _fileName = optarg;
             break;
         case 'q':
             _quiet = true;
@@ -79,8 +78,8 @@ Application::parseOpts()
             return EXIT_FAILURE;
         }
     }
-    if (_argc == optInd + 1) {
-        _fileName = _argv[optInd];
+    if (_argc == optind + 1) {
+        _fileName = _argv[optind];
     }
     if (_fileName.empty()) {
         std::cerr << "No filename given." << std::endl;

@@ -18,6 +18,7 @@
 #include <vespa/vespalib/util/time.h>
 
 #include <vespa/fastos/app.h>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("iteratespeed");
@@ -135,25 +136,22 @@ IterateSpeed::usage()
 int
 IterateSpeed::Main()
 {
-    int argi;
     int c;
-    const char *optArg;
-    argi = 1;
     int loops = 1;
     bool backwards = false;
     bool forwards = false;
     bool lambda = false;
     int leafSlots = 0;
-    while ((c = GetOpt("F:bc:fl", optArg, argi)) != -1) {
+    while ((c = getopt(_argc, _argv, "F:bc:fl")) != -1) {
         switch (c) {
         case 'F':
-            leafSlots = atoi(optArg);
+            leafSlots = atoi(optarg);
             break;
         case 'b':
             backwards = true;
             break;
         case 'c':
-            loops = atoi(optArg);
+            loops = atoi(optarg);
             break;
         case 'f':
             forwards = true;
