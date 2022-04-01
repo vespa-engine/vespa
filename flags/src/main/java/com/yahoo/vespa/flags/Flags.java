@@ -202,7 +202,7 @@ public class Flags {
 
     public static final UnboundIntFlag AVAILABLE_PROCESSORS = defineIntFlag(
             "available-processors", 2,
-            List.of("balder"), "2022-01-18", "2022-04-01",
+            List.of("balder"), "2022-01-18", "2022-07-01",
             "Number of processors the jvm sees in non-application clusters",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
