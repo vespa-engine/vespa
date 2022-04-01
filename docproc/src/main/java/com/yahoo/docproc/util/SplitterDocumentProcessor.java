@@ -20,7 +20,9 @@ import java.util.stream.Collectors;
 
 /**
  * @author Einar M R Rosenvinge
+ * @deprecated Will be removed on Vespa 8 without replacement
  */
+@Deprecated(forRemoval = true, since = "7")
 public class SplitterDocumentProcessor extends DocumentProcessor {
 
     private static Logger log = Logger.getLogger(SplitterDocumentProcessor.class.getName());
