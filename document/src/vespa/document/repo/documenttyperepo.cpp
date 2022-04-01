@@ -555,19 +555,15 @@ private:
         Repo& repo() { return data_type_repo->repo; }
     };
 
-/* maybe later:
     struct StructInProgress {
-        std::unique_ptr<StructDataType> stype;
         const CStructT & cfg;
+        StructDataType *stype = nullptr;
+        const StructDataType *oldtype = nullptr;
         bool finished = false;
-        StructInProgress(const CStructT & config)
-            : stype(std::make_unique<StructDataType>(config.name)),
-              cfg(config)
-        {}
+        StructInProgress(const CStructT & config) : cfg(config) {}
     };
     using StructsInProgress = std::map<int, StructInProgress>;
     StructsInProgress _structs_in_progress;
-*/
 
     using DocTypesInProgress = std::map<int, DocTypeInProgress>;
     using MadeTypes = std::map<int, const DataType *>;
@@ -576,7 +572,6 @@ private:
     DocumentTypeMap & _output;
 
     DocTypesInProgress _doc_types_in_progress;
-    hash_map<int, StructDataType *> _structs_by_idx;
     hash_map<int, AnnotationType *> _annotations_by_idx;
     MadeTypes _made_types;
     std::set<int> _needed_idx_set;
@@ -595,11 +590,11 @@ private:
             createReferenceTypes(dtInP);
         }
         createComplexTypes();
+        fillStructs();
         for (const CDocType & docT : _input) {
             auto iter = _doc_types_in_progress.find(docT.idx);
             LOG_ASSERT(iter != _doc_types_in_progress.end());
             auto & dtInP = iter->second;
-            fillStructs(dtInP);
             fillDocument(dtInP);
             fillAnnotationTypes(dtInP);
         }
@@ -642,19 +637,39 @@ private:
 
     void createEmptyStructs(DocTypeInProgress & dtInP) {
         for (const auto & structT : dtInP.cfg.structtype) {
-            if (const auto * t = dtInP.repo().lookup(structT.internalid)) {
-                LOG(debug, "already has %s [%d], wanted to add %s [%d]",
-                    t->getName().c_str(), t->getId(),
-                    structT.name.c_str(), structT.internalid);
+            StructInProgress in_progress(structT);
+            if (const auto * oldt = dtInP.repo().lookup(structT.internalid)) {
+                auto st = dynamic_cast<const StructDataType *>(oldt);
+                if (st) {
+                    LOG(debug, "already has %s [%d], wanted to add %s [%d]",
+                        st->getName().c_str(), st->getId(),
+                        structT.name.c_str(), structT.internalid);
+                    in_progress.oldtype = st;
+                    in_progress.finished = true;
+                    madeType(st, structT.idx);
+                } else {
+                    throw IllegalArgumentException("struct internalid -> not a struct");
+                }
+            } else {
+                auto up = std::make_unique<StructDataType>(structT.name, structT.internalid);
+                in_progress.stype = up.get();
+                const DataType *t = dtInP.repo().addDataType(std::move(up));
+                LOG_ASSERT(t == in_progress.stype);
                 madeType(t, structT.idx);
-                continue;
             }
-            auto st = std::make_unique<StructDataType>(structT.name, structT.internalid);
-            _structs_by_idx[structT.idx] = st.get();
-            const DataType *t = dtInP.repo().addDataType(std::move(st));
-            LOG_ASSERT(t == _structs_by_idx[structT.idx]);
-            madeType(t, structT.idx);
+            auto [iter, succ] = _structs_in_progress.emplace(structT.idx, in_progress);
+            LOG_ASSERT(succ);
         }
+    }
+
+    const StructDataType * findStruct(int idx) {
+        auto iter = _structs_in_progress.find(idx);
+        if (iter == _structs_in_progress.end()) return nullptr;
+        const auto & in_progress = iter->second;
+        if (in_progress.finished) {
+            return in_progress.oldtype;
+        }
+        return in_progress.stype;
     }
 
     void initializeDocTypeAndInheritAnnotations(DocTypeInProgress & dtInP) {
@@ -664,7 +679,7 @@ private:
         }
         LOG_ASSERT(dtInP.data_type_repo->doc_type == nullptr);
         const auto & docT = dtInP.cfg;
-        const StructDataType * fields = _structs_by_idx[docT.contentstruct];
+        const StructDataType * fields = findStruct(docT.contentstruct);
         if (fields != nullptr) {
             dtInP.data_type_repo->doc_type = new DocumentType(docT.name, docT.internalid, *fields);
             madeType(dtInP.data_type_repo->doc_type, docT.idx);
@@ -782,15 +797,18 @@ private:
         }
     }
 
-    void fillStructs(DocTypeInProgress & dtInP) {
-        for (const auto & structT : dtInP.cfg.structtype) {
-            auto st = _structs_by_idx[structT.idx];
-            if (st == nullptr) continue;
-            for (const auto & fieldD : structT.field) {
+    void fillStructs() {
+        for (auto & [idx, in_progress] : _structs_in_progress) {
+            if (in_progress.finished) {
+                continue;
+            }
+            auto st = in_progress.stype;
+            LOG_ASSERT(st);
+            for (const auto & fieldD : in_progress.cfg.field) {
                 const DataType *ft = _made_types[fieldD.type];
                 if (ft == nullptr) {
                     LOG(error, "Missing type [idx %d] for struct %s field %s",
-                        fieldD.type, structT.name.c_str(), fieldD.name.c_str());
+                        fieldD.type, in_progress.cfg.name.c_str(), fieldD.name.c_str());
                     throw IllegalArgumentException("missing datatype");
                 } else {
                     st->addField(Field(fieldD.name, fieldD.internalid, *ft));
@@ -936,27 +954,29 @@ private:
     }
 
     const StructDataType * performStructInherit(int idx) {
-        for (const auto & docT : _input) {
-            for (const auto & structT : docT.structtype) {
-                if (idx == structT.idx) {
-                    StructDataType *st = _structs_by_idx[idx];
-                    if (st == nullptr) continue;
-                    for (const auto & inheritD : structT.inherits) {
-                        const auto * parent = performStructInherit(inheritD.type);
-                        if (parent == nullptr) {
-                            LOG(error, "Missing parent type [idx %d] for struct %s",
-                                inheritD.type, structT.name.c_str());
-                            throw IllegalArgumentException("missing parent type");
-                        }
-                        for (const auto & field : parent->getFieldSet()) {
-                            st->addInheritedField(*field);
-                        }
-                    }
-                    return st;
-                }
+        auto iter = _structs_in_progress.find(idx);
+        if (iter == _structs_in_progress.end()) {
+            throw IllegalArgumentException("inherit from non-struct");
+        }
+        auto & in_progress = iter->second;
+        if (in_progress.finished) {
+            return in_progress.oldtype;
+        }
+        const auto & structT = in_progress.cfg;
+        for (const auto & inheritD : structT.inherits) {
+            const auto * parent = performStructInherit(inheritD.type);
+            if (parent == nullptr) {
+                LOG(error, "Missing parent type [idx %d] for struct %s",
+                    inheritD.type, structT.name.c_str());
+                throw IllegalArgumentException("missing parent type");
+            }
+            for (const auto & field : parent->getFieldSet()) {
+                in_progress.stype->addInheritedField(*field);
             }
         }
-        return nullptr;
+        in_progress.finished = true;
+        in_progress.oldtype = in_progress.stype;
+        return in_progress.oldtype;
     }
 
 public:
