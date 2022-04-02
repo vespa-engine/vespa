@@ -3,11 +3,11 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
+import com.yahoo.path.Path;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,18 +21,15 @@ public class MockFileRegistry implements FileRegistry {
     private final List<Entry> entries = new ArrayList<>();
     private final AddFileInterface addFileInterface;
 
-    public MockFileRegistry(File applicationDir, Path rootPath) {
-        FileDirectory fileDirectory = new FileDirectory(rootPath.toFile());
+    public MockFileRegistry(File applicationDir, File rootPath) {
+        FileDirectory fileDirectory = new FileDirectory(rootPath);
         this.addFileInterface = new ApplicationFileManager(applicationDir, fileDirectory);
     }
 
     public FileReference addFile(String relativePath) {
-        if (relativePath.isEmpty())
-            relativePath = "./";
-
+        if (relativePath.isEmpty()) relativePath = "./";
         try {
-            addFileInterface.addFile(relativePath);
-
+            addFileInterface.addFile(Path.fromString(relativePath));
             FileReference fileReference = new FileReference(relativePath);
             entries.add(new Entry(relativePath, fileReference));
             return fileReference;
@@ -50,10 +47,10 @@ public class MockFileRegistry implements FileRegistry {
 
     @Override
     public FileReference addBlob(String name, ByteBuffer blob) {
-        String relativePath = "./" + name;
-        FileReference fileReference = addFileInterface.addBlob(blob, relativePath);
+        name = "./" + name;
+        FileReference fileReference = addFileInterface.addBlob(blob, Path.fromString(name));
 
-        entries.add(new Entry(relativePath, fileReference));
+        entries.add(new Entry(name, fileReference));
         return fileReference;
     }
 
