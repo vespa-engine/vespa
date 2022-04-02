@@ -17,7 +17,7 @@ public class MockFileDistributionFactory extends FileDistributionFactory {
 
     @Override
     public FileRegistry createFileRegistry(File applicationPackage) {
-        return new MockFileRegistry(applicationPackage, getFileReferencesDir());
+        return new MockFileRegistry(applicationPackage, getFileReferencesDir().toPath());
     }
 
     @Override

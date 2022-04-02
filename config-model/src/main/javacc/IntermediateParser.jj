@@ -1773,7 +1773,7 @@ String fileItem() :
    String path;
 }
 {
-  (<FILE> <COLON> ( <FILE_PATH> | <STRING> | <IDENTIFIER>) { path = com.yahoo.path.Path.fromString(token.image).getRelative(); } { } (<NL>)*) { return path; }
+  (<FILE> <COLON> ( <FILE_PATH> | <STRING> | <IDENTIFIER>) { path = token.image; } { } (<NL>)*) { return path; }
 }
 String uriItem() :
 {

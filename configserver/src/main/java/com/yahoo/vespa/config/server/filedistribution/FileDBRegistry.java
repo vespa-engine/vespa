@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.net.HostName;
-import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import net.jpountz.xxhash.XXHashFactory;
 
@@ -71,13 +70,10 @@ public class FileDBRegistry implements FileRegistry {
 
     @Override
     public synchronized FileReference addFile(String relativePath) {
-        if (relativePath.startsWith("/"))
-            throw new IllegalArgumentException(relativePath + " is not relative");
-
         Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(relativePath));
         return cachedReference.orElseGet(() -> {
             try {
-                FileReference newRef = manager.addFile(Path.fromString(relativePath));
+                FileReference newRef = manager.addFile(relativePath);
                 fileReferenceCache.put(relativePath, newRef);
                 return newRef;
             } catch (FileNotFoundException e) {
@@ -98,7 +94,7 @@ public class FileDBRegistry implements FileRegistry {
         String relativePath = uriToRelativeFile(uri);
         Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(uri));
         return cachedReference.orElseGet(() -> {
-            FileReference newRef = manager.addUri(uri, Path.fromString(relativePath));
+            FileReference newRef = manager.addUri(uri, relativePath);
             fileReferenceCache.put(uri, newRef);
             return newRef;
         });
@@ -110,7 +106,7 @@ public class FileDBRegistry implements FileRegistry {
         synchronized (this) {
             Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(blobName));
             return cachedReference.orElseGet(() -> {
-                FileReference newRef = manager.addBlob(blob, Path.fromString(relativePath));
+                FileReference newRef = manager.addBlob(blob, relativePath);
                 fileReferenceCache.put(blobName, newRef);
                 return newRef;
             });

@@ -6,19 +6,16 @@ import com.yahoo.config.application.api.FileRegistry;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
-import static java.util.Objects.requireNonNull;
-
 public class RankExpressionBody extends DistributableResource {
 
     private final ByteBuffer blob;
 
     public RankExpressionBody(String name, ByteBuffer blob) {
-        super(name, name + ".lz4", PathType.BLOB);
-        this.blob = requireNonNull(blob, "Blob cannot be null");
+        super(name, blob);
+        Objects.requireNonNull(blob, "Blob cannot be null");
+        this.blob = blob;
     }
-
     public ByteBuffer getBlob() { return blob; }
-
     public void validate() {
         // Remove once pathType is final
         if (getPathType() != PathType.BLOB) {
@@ -29,5 +26,4 @@ public class RankExpressionBody extends DistributableResource {
     void register(FileRegistry fileRegistry) {
         register(fileRegistry, blob);
     }
-
 }

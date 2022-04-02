@@ -34,6 +34,11 @@ public class DistributableResource {
         this.path = path;
         this.pathType = type;
     }
+    public DistributableResource(String name, ByteBuffer blob) {
+        this.name = name;
+        path = name + ".lz4";
+        pathType = PathType.BLOB;
+    }
 
     //TODO Remove and make path/pathType final
     public void setFileName(String fileName) {
