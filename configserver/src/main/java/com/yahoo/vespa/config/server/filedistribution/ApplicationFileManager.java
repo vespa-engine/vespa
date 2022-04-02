@@ -16,6 +16,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * @author baldersheim
@@ -96,6 +98,8 @@ public class ApplicationFileManager implements AddFileInterface {
             file = new File(tmpDir, path.getRelative());
             Files.createDirectories(file.getParentFile().toPath());
             URL website = new URL(uri);
+            if ( ! List.of("http", "https").contains(website.getProtocol().toLowerCase(Locale.ROOT)))
+                throw new IllegalArgumentException("only HTTP(S) supported for URI type resources");
             rbc = Channels.newChannel(website.openStream());
             fos = new FileOutputStream(file);
             fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
