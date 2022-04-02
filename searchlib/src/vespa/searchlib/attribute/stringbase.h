@@ -72,6 +72,8 @@ protected:
     bool onAddDoc(DocId doc) override;
 
     vespalib::MemoryUsage getChangeVectorMemoryUsage() const override;
+
+    bool get_match_is_cased() const noexcept { return getConfig().get_match() == attribute::Config::Match::CASED; }
 private:
     virtual void load_posting_lists(LoadedVector& loaded);
     virtual void load_enum_store(LoadedVector& loaded);

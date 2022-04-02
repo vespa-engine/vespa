@@ -3,6 +3,7 @@
 #pragma once
 
 #include "singlestringpostattribute.h"
+#include "single_string_enum_search_context.h"
 #include <vespa/searchlib/query/query_term_ucs4.h>
 
 namespace search {
@@ -139,10 +140,13 @@ std::unique_ptr<attribute::SearchContext>
 SingleValueStringPostingAttributeT<B>::getSearch(QueryTermSimpleUP qTerm,
                                                  const attribute::SearchContextParams & params) const
 {
-    StringSingleImplSearchContext base_sc(std::move(qTerm), *this);
-    return std::make_unique<StringSinglePostingSearchContext>(std::move(base_sc),
-                                                              params.useBitVector(),
-                                                              *this);
+    using BaseSC = attribute::SingleStringEnumSearchContext;
+    using SC = attribute::StringPostingSearchContext<BaseSC, SelfType, vespalib::btree::BTreeNoLeafData>;
+    bool cased = this->get_match_is_cased();
+    BaseSC base_sc(std::move(qTerm), cased, *this, &this->_enumIndices.acquire_elem_ref(0), this->_enumStore);
+    return std::make_unique<SC>(std::move(base_sc),
+                                params.useBitVector(),
+                                *this);
 }
 
 } // namespace search

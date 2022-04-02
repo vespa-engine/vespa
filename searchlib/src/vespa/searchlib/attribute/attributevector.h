@@ -386,7 +386,7 @@ public:
 
     /** Return the fixed length of the attribute. If 0 then you must inquire each document. */
     size_t getFixedWidth() const override { return _config.basicType().fixedSize(); }
-    const Config &getConfig() const { return _config; }
+    const Config &getConfig() const noexcept { return _config; }
     void update_config(const Config& cfg);
     BasicType getInternalBasicType() const { return _config.basicType(); }
     CollectionType getInternalCollectionType() const { return _config.collectionType(); }

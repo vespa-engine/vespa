@@ -389,7 +389,7 @@ TEST("testSingleValue")
 {
     EXPECT_EQUAL(24u, sizeof(SearchContext));
     EXPECT_EQUAL(56u, sizeof(StringSearchHelper));
-    EXPECT_EQUAL(88u, sizeof(SingleValueStringAttribute::StringSingleImplSearchContext));
+    EXPECT_EQUAL(104u, sizeof(attribute::SingleStringEnumSearchContext));
     {
         Config cfg(BasicType::STRING, CollectionType::SINGLE);
         SingleValueStringAttribute svsa("svsa", cfg);
