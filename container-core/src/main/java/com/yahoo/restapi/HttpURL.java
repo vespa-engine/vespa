@@ -172,7 +172,7 @@ public class HttpURL<T> {
             this.inverse = requireNonNull(inverse);
         }
 
-        /** Creates a new, empty path, with a trailing slash. */
+        /** Creates a new, empty path, with a trailing slash, using the indicated string wrapper for segments. */
         public static <T extends StringWrapper<T>> Path<T> empty(Function<String, T> validator) {
             return new Path<>(List.of(), true, validator, T::value);
         }
@@ -182,7 +182,7 @@ public class HttpURL<T> {
             return new Path<>(List.of(), true, identity(), identity());
         }
 
-        /** Parses the given raw, normalized path string; this ignores whether the path is absolute or relative. */
+        /** Parses the given raw, normalized path string; this ignores whether the path is absolute or relative.) */
         public static <T extends StringWrapper<T>> Path<T> parse(String raw, Function<String, T> validator) {
             return parse(raw, validator, T::value);
         }
@@ -198,12 +198,12 @@ public class HttpURL<T> {
             if (raw.isEmpty()) return new Path<>(List.of(), trailingSlash, validator, inverse);
             List<T> segments = new ArrayList<>();
             for (String segment : raw.split("/"))
-                segments.add(validator.apply(requireNormalized(decode(segment, UTF_8))));
-            if (segments.size() == 0) requireNormalized(""); // Raw path was only slashes.
+                segments.add(validator.apply(requireNonNormalizable(decode(segment, UTF_8))));
+            if (segments.size() == 0) requireNonNormalizable(""); // Raw path was only slashes.
             return new Path<>(segments, trailingSlash, validator, inverse);
         }
 
-        private static String requireNormalized(String segment) {
+        private static String requireNonNormalizable(String segment) {
             return require( ! (segment.isEmpty() || segment.equals(".") || segment.equals("..")),
                            segment, "path segments cannot be \"\", \".\", or \"..\"");
         }
@@ -221,7 +221,7 @@ public class HttpURL<T> {
         /** Returns a copy of this with the <em>decoded</em> segment appended at the end; it may not be either of {@code ""}, {@code "."} or {@code ".."}. */
         public Path<T> with(T segment) {
             List<T> copy = new ArrayList<>(segments);
-            copy.add(segment);
+            copy.add(requireNonNull(segment));
             return new Path<>(copy, trailingSlash, validator, inverse);
         }
 
@@ -271,7 +271,7 @@ public class HttpURL<T> {
             this.inverse = requireNonNull(inverse);
         }
 
-        /** Parses the given raw query string. */
+        /** Parses the given raw query string, using the indicated string wrapper to hold keys and non-null values. */
         public static <T extends StringWrapper<T>> Query<T> parse(String raw, Function<String, T> validator) {
             return parse(raw, validator, T::value);
         }
@@ -294,10 +294,12 @@ public class HttpURL<T> {
             return new Query<>(values, validator, inverse);
         }
 
+        /** Creates a new, empty query part, using the indicated string wrappper for keys and non-null values. */
         public static <T extends StringWrapper<T>> Query<T> empty(Function<String, T> validator) {
             return new Query<T>(Map.of(), validator, T::value);
         }
 
+        /** Creates a new, empty query part. */
         public static <T> Query<String> empty() {
             return new Query<>(Map.of(), identity(), identity());
         }
@@ -305,7 +307,7 @@ public class HttpURL<T> {
         /** Returns a copy of this with the <em>decoded</em> non-null key pointing to the <em>decoded</em> non-null value. */
         public Query<T> with(T key, T value) {
             Map<T, T> copy = new LinkedHashMap<>(values);
-            copy.put(requireNonNull(key), value);
+            copy.put(requireNonNull(key), requireNonNull(value));
             return new Query<>(copy, validator, inverse);
         }
 
@@ -319,7 +321,7 @@ public class HttpURL<T> {
         /** Returns a copy of this without any key-value pair with the <em>decoded</em> key. */
         public Query<T> without(T key) {
             Map<T, T> copy = new LinkedHashMap<>(values);
-            copy.remove(key);
+            copy.remove(requireNonNull(key));
             return new Query<>(copy, validator, inverse);
         }
 
