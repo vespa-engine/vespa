@@ -135,7 +135,7 @@ public class FileDirectory  {
         return new FileReference(Long.toHexString(hash));
     }
 
-    FileReference addFile(File source, FileReference reference) {
+    private FileReference addFile(File source, FileReference reference) {
         ensureRootExist();
         try {
             logfileInfo(source);
