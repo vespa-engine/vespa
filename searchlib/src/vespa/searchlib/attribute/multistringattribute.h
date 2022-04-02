@@ -7,7 +7,6 @@
 #include "enumstore.h"
 #include "multienumattribute.h"
 #include "multi_value_mapping.h"
-#include "enumhintsearchcontext.h"
 #include <vespa/searchcommon/attribute/multivalue.h>
 
 namespace search {
@@ -103,58 +102,6 @@ public:
     uint32_t get(DocId doc, WeightedConstChar * v, uint32_t sz) const override {
         return getWeightedHelper(doc, v, sz);
     }
-
-    /*
-     * Specialization of SearchContext for weighted set type
-     */
-    class StringImplSearchContext : public StringAttribute::StringSearchContext {
-    public:
-        StringImplSearchContext(QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched) :
-            StringAttribute::StringSearchContext(std::move(qTerm), toBeSearched)
-        { }
-    protected:
-        const MultiValueStringAttributeT<B, M> & myAttribute() const {
-            return static_cast< const MultiValueStringAttributeT<B, M> & > (attribute());
-        }
-        int32_t onFind(DocId docId, int32_t elemId) const override;
-
-        template <typename Collector>
-        int32_t findNextWeight(DocId doc, int32_t elemId, int32_t & weight, Collector & collector) const;
-    };
-
-    /*
-     * Specialization of SearchContext for weighted set type
-     */
-    class StringSetImplSearchContext : public StringImplSearchContext {
-    public:
-        StringSetImplSearchContext(attribute::SearchContext::QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched) :
-            StringImplSearchContext(std::move(qTerm), toBeSearched)
-        { }
-    protected:
-        int32_t onFind(DocId docId, int32_t elemId, int32_t &weight) const override;
-    };
-
-    /*
-     * Specialization of SearchContext for array type
-     */
-    class StringArrayImplSearchContext : public StringImplSearchContext {
-    public:
-        StringArrayImplSearchContext(attribute::SearchContext::QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched) :
-            StringImplSearchContext(std::move(qTerm), toBeSearched)
-        { }
-    protected:
-        int32_t onFind(DocId docId, int32_t elemId, int32_t &weight) const override;
-    };
-
-    template <typename BT>
-    class StringTemplSearchContext : public BT,
-                                     public attribute::EnumHintSearchContext
-    {
-        using BT::queryTerm;
-        using AttrType = MultiValueStringAttributeT<B, M>;
-    public:
-        StringTemplSearchContext(attribute::SearchContext::QueryTermSimpleUP qTerm, const AttrType & toBeSearched);
-    };
 
     std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;

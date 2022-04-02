@@ -89,53 +89,6 @@ private:
 
     long onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
     long onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
-
-protected:
-    class StringSearchContext : public attribute::StringSearchContext {
-    public:
-        StringSearchContext(QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched);
-        StringSearchContext(StringSearchContext&&) noexcept;
-        ~StringSearchContext() override;
-    protected:
-        bool isMatch(const char *src) const { return match(src); }
-
-        class CollectHitCount {
-        public:
-            CollectHitCount() : _hitCount(0) { }
-            void addWeight(int32_t w) {
-                (void) w;
-                _hitCount++;
-            }
-            int32_t getWeight() const { return _hitCount; }
-            bool hasMatch() const { return _hitCount != 0; }
-        private:
-            uint32_t _hitCount;
-        };
-        class CollectWeight {
-        public:
-            CollectWeight() : _hitCount(0), _weight(0) { }
-            void addWeight(int32_t w) {
-                _weight += w;
-                _hitCount++;
-            }
-            int32_t getWeight() const { return _weight; }
-            bool hasMatch() const { return _hitCount != 0; }
-        private:
-            uint32_t _hitCount;
-            int32_t  _weight;
-        };
-
-        template<typename WeightedT, typename Accessor, typename Collector>
-        int32_t findNextMatch(vespalib::ConstArrayRef<WeightedT> w, int32_t elemId, const Accessor & ac, Collector & collector) const {
-            for (uint32_t i(elemId); i < w.size(); i++) {
-                if (isMatch(ac.get(w[i].value_ref().load_acquire()))) {
-                    collector.addWeight(w[i].weight());
-                    return i;
-                }
-            }
-            return -1;
-        }
-    };
 };
 
 }

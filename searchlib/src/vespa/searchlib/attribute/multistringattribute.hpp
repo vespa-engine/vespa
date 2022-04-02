@@ -6,6 +6,7 @@
 #include "multistringattribute.h"
 #include "enumattribute.hpp"
 #include "multienumattribute.hpp"
+#include "multi_string_enum_hint_search_context.h"
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/searchlib/util/bufferwriter.h>
@@ -41,80 +42,8 @@ std::unique_ptr<attribute::SearchContext>
 MultiValueStringAttributeT<B, M>::getSearch(QueryTermSimpleUP qTerm,
                                             const attribute::SearchContextParams &) const
 {
-    if (this->getCollectionType() == attribute::CollectionType::WSET) {
-        return std::make_unique<StringTemplSearchContext<StringSetImplSearchContext>>(std::move(qTerm), *this);
-    } else {
-        return std::make_unique<StringTemplSearchContext<StringArrayImplSearchContext>>(std::move(qTerm), *this);
-    }
-}
-
-namespace {
-
-template <typename E>
-class EnumAccessor {
-public:
-    EnumAccessor(const E & enumStore) : _enumStore(enumStore) { }
-    const char * get(typename E::Index index) const { return _enumStore.get_value(index); }
-private:
-    const E & _enumStore;
-};
-
-}
-
-template <typename B, typename M>
-int32_t
-MultiValueStringAttributeT<B, M>::StringSetImplSearchContext::onFind(DocId doc, int32_t elemId, int32_t &weight) const
-{
-    StringAttribute::StringSearchContext::CollectWeight collector;
-    return this->findNextWeight(doc, elemId, weight, collector);
-}
-
-template <typename B, typename M>
-int32_t
-MultiValueStringAttributeT<B, M>::StringArrayImplSearchContext::onFind(DocId doc, int32_t elemId, int32_t &weight) const
-{
-    StringAttribute::StringSearchContext::CollectHitCount collector;
-    return this->findNextWeight(doc, elemId, weight, collector);
-}
-
-template <typename B, typename M>
-template <typename Collector>
-int32_t
-MultiValueStringAttributeT<B, M>::StringImplSearchContext::findNextWeight(DocId doc, int32_t elemId, int32_t & weight, Collector & collector) const
-{
-    WeightedIndexArrayRef indices(myAttribute()._mvMapping.get(doc));
-
-    EnumAccessor<typename B::EnumStore> accessor(myAttribute()._enumStore);
-    int32_t foundElem = findNextMatch(indices, elemId, accessor, collector);
-    weight = collector.getWeight();
-    return foundElem;
-}
-
-template <typename B, typename M>
-int32_t
-MultiValueStringAttributeT<B, M>::StringImplSearchContext::onFind(DocId doc, int32_t elemId) const
-{
-    const auto& attr = static_cast<const MultiValueStringAttributeT<B, M>&>(attribute());
-    WeightedIndexArrayRef indices(attr._mvMapping.get(doc));
-    for (uint32_t i(elemId); i < indices.size(); i++) {
-        if (isMatch(attr._enumStore.get_value(indices[i].value_ref().load_acquire()))) {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
-template <typename B, typename M>
-template <typename BT>
-MultiValueStringAttributeT<B, M>::StringTemplSearchContext<BT>::
-StringTemplSearchContext(QueryTermSimpleUP qTerm, const AttrType & toBeSearched) :
-    BT(std::move(qTerm), toBeSearched),
-    EnumHintSearchContext(toBeSearched.getEnumStore().get_dictionary(),
-                          toBeSearched.getCommittedDocIdLimit(),
-                          toBeSearched.getStatus().getNumValues())
-{
-    this->setup_enum_hint_sc(toBeSearched.getEnumStore(), *this);
+    bool cased = this->get_match_is_cased();
+    return std::make_unique<attribute::MultiStringEnumHintSearchContext<M>>(std::move(qTerm), cased, *this, this->_mvMapping, this->_enumStore, this->getCommittedDocIdLimit(), this->getStatus().getNumValues());
 }
 
 } // namespace search
