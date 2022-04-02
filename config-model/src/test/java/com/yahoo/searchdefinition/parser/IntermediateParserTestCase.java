@@ -62,25 +62,14 @@ public class IntermediateParserTestCase {
     @Test
     public void multiple_documents_disallowed() throws Exception {
         String input = joinLines
-                ("schema foo {",
-                 "  document foo {",
-                 "  }",
-                 "  document foo2 {",
-                 "  }",
-                 "}");
+            ("schema foo {",
+             "  document foo {",
+             "  }",
+             "  document foo2 {",
+             "  }",
+             "}");
         var e = assertThrows(IllegalArgumentException.class, () -> parseString(input));
         assertEquals("schema 'foo' error: already has document 'foo' so cannot add document 'foo2'", e.getMessage());
-    }
-
-    @Test
-    public void backwards_path_is_disallowed() {
-        assertThrows("'..' is not allowed in path", IllegalArgumentException.class,
-                     () -> parseString("schema foo {\n" +
-                                       "  constant my_constant_tensor {\n" +
-                                       "    file: foo/../bar\n" +
-                                       "    type: tensor<float>(x{},y{})\n" +
-                                       "  }\n" +
-                                       "}\n"));
     }
 
     void checkFileParses(String fileName) throws Exception {

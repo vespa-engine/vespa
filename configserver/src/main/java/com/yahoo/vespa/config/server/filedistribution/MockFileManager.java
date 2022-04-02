@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
-import com.yahoo.path.Path;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -13,17 +12,22 @@ import java.nio.ByteBuffer;
 public class MockFileManager implements AddFileInterface {
 
     @Override
-    public FileReference addUri(String uri, Path path) {
+    public FileReference addUri(String uri, String relativePath) {
         return null;
     }
 
     @Override
-    public FileReference addFile(Path path) {
+    public FileReference addFile(String relativePath) {
         return null;
     }
 
     @Override
-    public FileReference addBlob(ByteBuffer blob, Path path) {
+    public FileReference addFile(File file) {
+        return null;
+    }
+
+    @Override
+    public FileReference addBlob(ByteBuffer blob, String relativePath) {
         return null;
     }
 
