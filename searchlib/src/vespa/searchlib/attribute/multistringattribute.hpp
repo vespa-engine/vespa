@@ -114,26 +114,7 @@ StringTemplSearchContext(QueryTermSimpleUP qTerm, const AttrType & toBeSearched)
                           toBeSearched.getCommittedDocIdLimit(),
                           toBeSearched.getStatus().getNumValues())
 {
-    const EnumStore &enumStore(toBeSearched.getEnumStore());
-
-    this->_plsc = static_cast<attribute::IPostingListSearchContext *>(this);
-    if (this->valid()) {
-        if (this->isPrefix()) {
-            auto comp = enumStore.make_folded_comparator_prefix(queryTerm()->getTerm());
-            lookupRange(comp, comp);
-        } else if (this->isRegex()) {
-            vespalib::string prefix(vespalib::RegexpUtil::get_prefix(this->queryTerm()->getTerm()));
-            auto comp = enumStore.make_folded_comparator_prefix(prefix.c_str());
-            lookupRange(comp, comp);
-        } else if (this->isFuzzy()) {
-            vespalib::string prefix(this->getFuzzyMatcher().getPrefix());
-            auto comp = enumStore.make_folded_comparator_prefix(prefix.c_str());
-            lookupRange(comp, comp);
-        } else {
-            auto comp = enumStore.make_folded_comparator(queryTerm()->getTerm());
-            lookupTerm(comp);
-        }
-    }
+    this->setup_enum_hint_sc(toBeSearched.getEnumStore(), *this);
 }
 
 } // namespace search

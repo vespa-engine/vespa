@@ -31,9 +31,11 @@ protected:
                           uint64_t numValues);
     ~EnumHintSearchContext() override;
 
+public:
     void lookupTerm(const vespalib::datastore::EntryComparator &comp);
     void lookupRange(const vespalib::datastore::EntryComparator &low, const vespalib::datastore::EntryComparator &high);
 
+protected:
     std::unique_ptr<queryeval::SearchIterator>
     createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) override;
 

@@ -112,6 +112,7 @@ vespa_add_library(searchlib_attribute OBJECT
     stringattribute.cpp
     stringbase.cpp
     string_matcher.cpp
+    string_search_context.cpp
     string_search_helper.cpp
     DEPENDS
 )
