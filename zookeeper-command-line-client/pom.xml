@@ -61,6 +61,11 @@
       <artifactId>log4j-over-slf4j</artifactId>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>org.xerial.snappy</groupId>
+      <artifactId>snappy-java</artifactId>
+      <scope>compile</scope>
+    </dependency>
 
   </dependencies>
   <build>
