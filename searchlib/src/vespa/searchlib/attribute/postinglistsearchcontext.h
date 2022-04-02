@@ -301,7 +301,7 @@ StringPostingSearchContext<BaseSC, AttrT, DataT>::useThis(const PostingListSearc
             ? this->getRegex().partial_match(_enumStore.get_value(it.getKey().load_acquire()))
             : false;
     } else if ( this->isCased() ) {
-        return this->isMatch(_enumStore.get_value(it.getKey().load_acquire()));
+        return this->match(_enumStore.get_value(it.getKey().load_acquire()));
     } else if (this->isFuzzy()) {
         return this->getFuzzyMatcher().isMatch(_enumStore.get_value(it.getKey().load_acquire()));
     }

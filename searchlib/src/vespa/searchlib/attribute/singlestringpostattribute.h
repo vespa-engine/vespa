@@ -40,10 +40,6 @@ private:
     using PostingMap = typename PostingParent::PostingMap;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
     using SelfType = SingleValueStringPostingAttributeT<B>;
-    using StringSingleImplSearchContext = typename SingleValueStringAttributeT<B>::StringSingleImplSearchContext;
-    using StringSinglePostingSearchContext = attribute::StringPostingSearchContext<StringSingleImplSearchContext,
-                                                                                   SelfType,
-                                                                                   vespalib::btree::BTreeNoLeafData>;
     using ValueModifier = typename SingleValueStringAttributeT<B>::ValueModifier;
     using generation_t = typename SingleValueStringAttributeT<B>::generation_t;
 

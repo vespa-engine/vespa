@@ -17,10 +17,11 @@ class StringMatcher
 private:
     std::unique_ptr<QueryTermUCS4> _query_term;
     attribute::StringSearchHelper  _helper;
-protected:
+public:
     StringMatcher(std::unique_ptr<QueryTermSimple> qTerm, bool cased);
     StringMatcher(StringMatcher&&) noexcept;
     ~StringMatcher();
+protected:
     bool isValid() const;
     bool match(const char *src) const { return _helper.isMatch(src); }
     bool isPrefix() const { return _helper.isPrefix(); }

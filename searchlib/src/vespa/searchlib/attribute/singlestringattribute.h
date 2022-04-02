@@ -5,7 +5,6 @@
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/attribute/enumattribute.h>
 #include <vespa/searchlib/attribute/singleenumattribute.h>
-#include "enumhintsearchcontext.h"
 
 namespace search {
 
@@ -79,35 +78,6 @@ public:
 
     std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
-
-    class StringSingleImplSearchContext : public StringAttribute::StringSearchContext {
-    public:
-        StringSingleImplSearchContext(QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched) :
-            StringSearchContext(std::move(qTerm), toBeSearched)
-        { }
-        StringSingleImplSearchContext(StringSingleImplSearchContext&&) noexcept = default;
-    protected:
-        int32_t onFind(DocId doc, int32_t elemId, int32_t &weight) const override {
-            weight = 1;
-            return onFind(doc, elemId);
-        }
-
-        int32_t onFind(DocId doc, int32_t elemId) const override {
-            if ( elemId != 0) return -1;
-            const SingleValueStringAttributeT<B> & attr(static_cast<const SingleValueStringAttributeT<B> &>(attribute()));
-            return isMatch(attr._enumStore.get_value(attr.acquire_enum_entry_ref(doc))) ? 0 : -1;
-        }
-
-    };
-
-    class StringTemplSearchContext : public StringSingleImplSearchContext,
-                                     public attribute::EnumHintSearchContext
-    {
-        using AttrType = SingleValueStringAttributeT<B>;
-        using StringSingleImplSearchContext::queryTerm;
-    public:
-        StringTemplSearchContext(QueryTermSimpleUP qTerm, const AttrType & toBeSearched);
-    };
 };
 
 using SingleValueStringAttribute = SingleValueStringAttributeT<EnumAttribute<StringAttribute> >;

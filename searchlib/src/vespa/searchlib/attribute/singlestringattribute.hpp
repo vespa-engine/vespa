@@ -6,6 +6,7 @@
 #include "stringattribute.h"
 #include "singleenumattribute.hpp"
 #include "attributevector.hpp"
+#include "single_string_enum_hint_search_context.h"
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/searchlib/util/bufferwriter.h>
@@ -40,17 +41,8 @@ std::unique_ptr<attribute::SearchContext>
 SingleValueStringAttributeT<B>::getSearch(QueryTermSimpleUP qTerm,
                                           const attribute::SearchContextParams &) const
 {
-    return std::make_unique<StringTemplSearchContext>(std::move(qTerm), *this);
-}
-
-template <typename B>
-SingleValueStringAttributeT<B>::StringTemplSearchContext::StringTemplSearchContext(QueryTermSimple::UP qTerm, const AttrType & toBeSearched) :
-    StringSingleImplSearchContext(std::move(qTerm), toBeSearched),
-    EnumHintSearchContext(toBeSearched.getEnumStore().get_dictionary(),
-                          toBeSearched.getCommittedDocIdLimit(),
-                          toBeSearched.getStatus().getNumValues())
-{
-    this->setup_enum_hint_sc(toBeSearched.getEnumStore(), *this);
+    bool cased = this->get_match_is_cased();
+    return std::make_unique<attribute::SingleStringEnumHintSearchContext>(std::move(qTerm), cased, *this, &this->_enumIndices.acquire_elem_ref(0), this->_enumStore, this->getCommittedDocIdLimit(), this->getStatus().getNumValues());
 }
 
 }
