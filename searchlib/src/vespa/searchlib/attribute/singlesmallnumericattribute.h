@@ -3,8 +3,6 @@
 #pragma once
 
 #include "integerbase.h"
-#include "floatbase.h"
-#include "numeric_range_matcher.h"
 #include "search_context.h"
 #include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/rcuvector.h>
@@ -15,7 +13,6 @@ namespace search {
 class SingleValueSmallNumericAttribute : public IntegerAttributeTemplate<int8_t>
 {
 private:
-//    friend class attribute::SearchContext;
     typedef IntegerAttributeTemplate<int8_t> B;
     typedef B::BaseType      T;
     typedef B::DocId         DocId;
@@ -58,53 +55,6 @@ protected:
 
 
 public:
-    /*
-     * Specialization of SearchContext
-     */
-    class SingleSearchContext : public attribute::NumericRangeMatcher<T>, public attribute::SearchContext
-    {
-    private:
-        const Word *_wordData;
-        Word _valueMask;
-        uint32_t _valueShiftShift;
-        uint32_t _valueShiftMask;
-        uint32_t _wordShift;
-
-        int32_t onFind(DocId docId, int32_t elementId, int32_t & weight) const override {
-            return find(docId, elementId, weight);
-        }
-
-        int32_t onFind(DocId docId, int32_t elementId) const override {
-            return find(docId, elementId);
-        }
-
-        bool valid() const override;
-
-    public:
-        SingleSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const SingleValueSmallNumericAttribute & toBeSearched);
-
-        int32_t find(DocId docId, int32_t elemId, int32_t & weight) const {
-            if ( elemId != 0) return -1;
-            const Word &word = _wordData[docId >> _wordShift];
-            uint32_t valueShift = (docId & _valueShiftMask) << _valueShiftShift;
-            T v = (vespalib::atomic::load_ref_relaxed(word) >> valueShift) & _valueMask;
-            weight = 1;
-            return match(v) ? 0 : -1;
-        }
-
-        int32_t find(DocId docId, int32_t elemId) const {
-            if ( elemId != 0) return -1;
-            const Word &word = _wordData[docId >> _wordShift];
-            uint32_t valueShift = (docId & _valueShiftMask) << _valueShiftShift;
-            T v = (vespalib::atomic::load_ref_relaxed(word) >> valueShift) & _valueMask;
-            return match(v) ? 0 : -1;
-        }
-
-        Int64Range getAsIntegerTerm() const override;
-
-        std::unique_ptr<queryeval::SearchIterator>
-        createFilterIterator(fef::TermFieldMatchData * matchData, bool strict) override;
-    };
 
     SingleValueSmallNumericAttribute(const vespalib::string & baseFileName, const Config &c, Word valueMask,
                                      uint32_t valueShiftShift, uint32_t valueShiftMask, uint32_t wordShift);
