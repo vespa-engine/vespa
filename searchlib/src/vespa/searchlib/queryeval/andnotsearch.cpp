@@ -105,41 +105,11 @@ AndNotSearchStrict::internalSeek(uint32_t docid)
 
 }  // namespace
 
-OptimizedAndNotForBlackListing::OptimizedAndNotForBlackListing(MultiSearch::Children children) :
-    AndNotSearchStrictBase(std::move(children))
-{   
-}
-    
-void OptimizedAndNotForBlackListing::initRange(uint32_t beginid, uint32_t endid)
-{
-    AndNotSearch::initRange(beginid, endid);
-    setDocId(internalSeek<false>(beginid));
-}
-
-bool OptimizedAndNotForBlackListing::isBlackListIterator(const SearchIterator * iterator)
-{
-    return dynamic_cast<const BlackListIterator *>(iterator) != 0;
-}
-
-void OptimizedAndNotForBlackListing::doSeek(uint32_t docid)
-{
-    setDocId(internalSeek<true>(docid));
-}   
-
-void OptimizedAndNotForBlackListing::doUnpack(uint32_t docid)
-{
-    positive()->doUnpack(docid);
-} 
-
 std::unique_ptr<SearchIterator>
 AndNotSearch::create(ChildrenIterators children_in, bool strict) {
     MultiSearch::Children children = std::move(children_in);
     if (strict) {
-        if ((children.size() == 2) && OptimizedAndNotForBlackListing::isBlackListIterator(children[1].get())) {
-            return std::make_unique<OptimizedAndNotForBlackListing>(std::move(children));
-        } else {
-            return std::make_unique<AndNotSearchStrict>(std::move(children));
-        }
+        return std::make_unique<AndNotSearchStrict>(std::move(children));
     } else {
         return SearchIterator::UP(new AndNotSearch(std::move(children)));
     }

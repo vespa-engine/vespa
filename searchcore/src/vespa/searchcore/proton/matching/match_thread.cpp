@@ -18,7 +18,6 @@ LOG_SETUP(".proton.matching.match_thread");
 
 namespace proton::matching {
 
-using search::queryeval::OptimizedAndNotForBlackListing;
 using search::queryeval::SearchIterator;
 using search::fef::MatchData;
 using search::fef::RankProgram;
@@ -45,17 +44,6 @@ struct WaitTimer {
 struct SimpleStrategy {
     static uint32_t seek_next(SearchIterator &search, uint32_t docid) {
         return search.seekNext(docid);
-    }
-};
-
-// seek_next maps to OptimizedAndNotForBlackListing::seekFast
-struct FastBlackListingStrategy {
-    static bool can_use(bool do_rank, bool do_limit, SearchIterator &search) {
-        return (!do_rank && !do_limit &&
-                (dynamic_cast<OptimizedAndNotForBlackListing *>(&search) != nullptr));
-    }
-    static uint32_t seek_next(SearchIterator &search, uint32_t docid) {
-        return static_cast<OptimizedAndNotForBlackListing &>(search).seekFast(docid);
     }
 };
 
@@ -222,11 +210,7 @@ template <bool do_rank, bool do_limit, bool do_share, bool use_rank_drop_limit>
 void
 MatchThread::match_loop_helper_rank_limit_share_drop(MatchTools &tools, HitCollector &hits)
 {
-    if (FastBlackListingStrategy::can_use(do_rank, do_limit, tools.search())) {
-        match_loop<FastBlackListingStrategy, do_rank, do_limit, do_share, use_rank_drop_limit>(tools, hits);
-    } else {
-        match_loop<SimpleStrategy, do_rank, do_limit, do_share, use_rank_drop_limit>(tools, hits);
-    }
+    match_loop<SimpleStrategy, do_rank, do_limit, do_share, use_rank_drop_limit>(tools, hits);
 }
 
 template <bool do_rank, bool do_limit, bool do_share>
