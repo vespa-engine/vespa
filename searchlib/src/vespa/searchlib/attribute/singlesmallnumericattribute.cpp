@@ -1,12 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "singlesmallnumericattribute.h"
-#include "attributeiterators.hpp"
 #include "attributevector.hpp"
 #include "iattributesavetarget.h"
 #include "primitivereader.h"
+#include "single_small_numeric_search_context.h"
 #include <vespa/searchlib/query/query_term_simple.h>
-#include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -172,7 +171,7 @@ std::unique_ptr<attribute::SearchContext>
 SingleValueSmallNumericAttribute::getSearch(std::unique_ptr<QueryTermSimple> qTerm,
                                             const attribute::SearchContextParams &) const
 {
-    return std::make_unique<SingleSearchContext>(std::move(qTerm), *this);
+    return std::make_unique<attribute::SingleSmallNumericSearchContext>(std::move(qTerm), *this, &_wordData.acquire_elem_ref(0), _valueMask, _valueShiftShift, _valueShiftMask, _wordShift);
 }
 
 void
@@ -206,40 +205,6 @@ SingleValueSmallNumericAttribute::getEstimatedSaveByteSize() const
     const size_t numDataWords((numDocs + _valueShiftMask) >> _wordShift);
     const size_t sz((numDataWords + 1) * sizeof(Word));
     return headerSize + sz;
-}
-
-bool SingleValueSmallNumericAttribute::SingleSearchContext::valid() const { return this->isValid(); }
-
-
-SingleValueSmallNumericAttribute::SingleSearchContext::SingleSearchContext(std::unique_ptr<QueryTermSimple> qTerm,
-                                                                           const SingleValueSmallNumericAttribute & toBeSearched)
-    : attribute::NumericRangeMatcher<T>(*qTerm),
-      SearchContext(toBeSearched), _wordData(&toBeSearched._wordData.acquire_elem_ref(0)),
-      _valueMask(toBeSearched._valueMask),
-      _valueShiftShift(toBeSearched._valueShiftShift),
-      _valueShiftMask(toBeSearched._valueShiftMask),
-      _wordShift(toBeSearched._wordShift)
-{ }
-
-Int64Range
-SingleValueSmallNumericAttribute::SingleSearchContext::getAsIntegerTerm() const {
-    return this->getRange();
-}
-
-std::unique_ptr<queryeval::SearchIterator>
-SingleValueSmallNumericAttribute::SingleSearchContext::createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
-{
-    if (!valid()) {
-        return std::make_unique<queryeval::EmptySearch>();
-    }
-    if (getIsFilter()) {
-        return strict
-                 ? std::make_unique<FilterAttributeIteratorStrict<SingleSearchContext>>(*this, matchData)
-                 : std::make_unique<FilterAttributeIteratorT<SingleSearchContext>>(*this, matchData);
-    }
-    return strict
-             ? std::make_unique<AttributeIteratorStrict<SingleSearchContext>>(*this, matchData)
-             : std::make_unique<AttributeIteratorT<SingleSearchContext>>(*this, matchData);
 }
 
 namespace {
