@@ -54,10 +54,6 @@ private:
     using PostingMap = typename PostingParent::PostingMap;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
     using SelfType = MultiValueStringPostingAttributeT<B, T>;
-    using StringArrayImplSearchContext = typename MultiValueStringAttributeT<B, T>::StringArrayImplSearchContext;
-    using StringArrayPostingSearchContext = attribute::StringPostingSearchContext<StringArrayImplSearchContext, SelfType, int32_t>;
-    using StringSetImplSearchContext = typename MultiValueStringAttributeT<B, T>::StringSetImplSearchContext;
-    using StringSetPostingSearchContext = attribute::StringPostingSearchContext<StringSetImplSearchContext, SelfType, int32_t>;
     using WeightedIndex = typename MultiValueStringAttributeT<B, T>::WeightedIndex;
     using generation_t = typename MultiValueStringAttributeT<B, T>::generation_t;
 

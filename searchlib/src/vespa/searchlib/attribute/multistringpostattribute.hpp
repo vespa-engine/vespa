@@ -5,6 +5,7 @@
 #include "stringattribute.h"
 #include "multistringpostattribute.h"
 #include "multistringattribute.hpp"
+#include "multi_string_enum_search_context.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 
 namespace search {
@@ -89,9 +90,10 @@ std::unique_ptr<attribute::SearchContext>
 MultiValueStringPostingAttributeT<B, T>::getSearch(QueryTermSimpleUP qTerm,
                                                    const attribute::SearchContextParams & params) const
 {
-    using BaseSC = std::conditional_t<T::_hasWeight, StringSetImplSearchContext, StringArrayImplSearchContext>;
-    using SC = std::conditional_t<T::_hasWeight, StringSetPostingSearchContext, StringArrayPostingSearchContext>;
-    BaseSC base_sc(std::move(qTerm), *this);
+    using BaseSC = attribute::MultiStringEnumSearchContext<T>;
+    using SC = attribute::StringPostingSearchContext<BaseSC, SelfType, int32_t>;
+    bool cased = this->get_match_is_cased();
+    BaseSC base_sc(std::move(qTerm), cased, *this, this->_mvMapping, this->_enumStore);
     return std::make_unique<SC>(std::move(base_sc), params.useBitVector(), *this);
 }
 

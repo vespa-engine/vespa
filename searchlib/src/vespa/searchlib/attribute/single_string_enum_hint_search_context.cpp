@@ -2,7 +2,6 @@
 
 #include "single_string_enum_hint_search_context.h"
 #include <vespa/searchlib/query/query_term_ucs4.h>
-#include <vespa/vespalib/util/regexp.h>
 
 namespace search::attribute {
 
