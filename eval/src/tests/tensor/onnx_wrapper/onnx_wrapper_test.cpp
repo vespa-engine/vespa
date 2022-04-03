@@ -482,7 +482,11 @@ TEST(OnnxTest, inspect_float_to_int8_conversion) {
 
 TEST(OnnxTest, default_allocator_type) {
     Ort::AllocatorWithDefaultOptions default_alloc;
+#if ORT_API_VERSION >= 10
+    OrtAllocatorType res = OrtInvalidAllocator;
+#else
     OrtAllocatorType res = Invalid;
+#endif
     Ort::ThrowOnError(Ort::GetApi().MemoryInfoGetType(default_alloc.GetInfo(), &res));
     fprintf(stderr, "default allocator type: %d\n", int(res));
 }
