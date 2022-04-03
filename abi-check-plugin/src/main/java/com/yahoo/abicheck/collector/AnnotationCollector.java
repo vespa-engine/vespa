@@ -13,7 +13,7 @@ public class AnnotationCollector extends ClassVisitor {
   private final Set<String> annotations = new HashSet<>();
 
   public AnnotationCollector() {
-    super(Opcodes.ASM7);
+    super(Opcodes.ASM9);
   }
 
   @Override
