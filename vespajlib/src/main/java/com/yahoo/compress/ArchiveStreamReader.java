@@ -56,6 +56,7 @@ public class ArchiveStreamReader implements AutoCloseable {
             while ((entry = archiveInputStream.getNextEntry()) != null) {
                 Path path = Path.fromString(requireNormalized(entry.getName()));
                 if (isSymlink(entry)) throw new IllegalArgumentException("Archive entry " + path + " is a symbolic link, which is disallowed");
+                if (entry.isDirectory()) continue;
                 if (!options.pathPredicate.test(path.toString())) continue;
 
                 long size = 0;
@@ -140,7 +141,7 @@ public class ArchiveStreamReader implements AutoCloseable {
 
     private static String requireNormalized(String name) {
         for (var part : name.split("/")) {
-            if (part.equals(".") || part.equals("..") || part.isEmpty()) {
+            if (part.isEmpty() || part.equals(".") || part.equals("..")) {
                 throw new IllegalArgumentException("Unexpected non-normalized path found in zip content: '" + name + "'");
             }
         }

@@ -27,11 +27,13 @@ class ArchiveStreamReaderTest {
 
     @Test
     void reading() {
-        Map<String, String> zipContents = Map.of("foo", "contents of foo",
-                                                 "bar", "contents of bar",
-                                                 "baz", "0".repeat(2049));
+        Map<String, String> zipFiles = Map.of("foo", "contents of foo",
+                                              "bar", "contents of bar",
+                                              "baz", "0".repeat(2049));
+        Map<String, String> zipContents = new HashMap<>(zipFiles);
+        zipContents.put("dir/", ""); // Directories are always ignored
         Map<String, String> extracted = readAll(zip(zipContents), Options.standard());
-        assertEquals(zipContents, extracted);
+        assertEquals(zipFiles, extracted);
     }
 
     @Test
