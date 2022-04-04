@@ -5,9 +5,9 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.container.image.ContainerImageDownloader;
 import com.yahoo.vespa.hosted.node.admin.container.image.ContainerImagePruner;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
+import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandLine;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 
@@ -41,8 +41,8 @@ public class ContainerOperations {
         this.containerStatsCollector = new ContainerStatsCollector(cgroup, fileSystem);
     }
 
-    public void createContainer(NodeAgentContext context, ContainerData containerData, ContainerResources containerResources) {
-        containerEngine.createContainer(context, containerData, containerResources);
+    public ContainerPath createContainer(NodeAgentContext context, ContainerResources containerResources) {
+        return containerEngine.createContainer(context, containerResources);
     }
 
     public void startContainer(NodeAgentContext context) {

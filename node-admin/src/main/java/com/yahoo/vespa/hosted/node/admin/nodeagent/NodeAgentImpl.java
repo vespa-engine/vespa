@@ -236,7 +236,7 @@ public class NodeAgentImpl implements NodeAgent {
         ContainerData containerData = createContainerData(context);
         ContainerResources wantedResources = warmUpDuration(context).isNegative() ?
                 getContainerResources(context) : getContainerResources(context).withUnlimitedCpus();
-        containerOperations.createContainer(context, containerData, wantedResources);
+        ContainerPath containerOverlayFsRoot = containerOperations.createContainer(context, wantedResources);
         containerOperations.startContainer(context);
 
         currentRebootGeneration = context.node().wantedRebootGeneration();

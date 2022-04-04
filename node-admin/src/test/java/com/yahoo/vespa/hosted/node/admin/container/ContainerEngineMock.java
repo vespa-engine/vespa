@@ -4,9 +4,9 @@ package com.yahoo.vespa.hosted.node.admin.container;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.container.image.Image;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
+import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 
 import java.time.Duration;
@@ -66,8 +66,9 @@ public class ContainerEngineMock implements ContainerEngine {
     }
 
     @Override
-    public void createContainer(NodeAgentContext context, ContainerData containerData, ContainerResources containerResources) {
+    public ContainerPath createContainer(NodeAgentContext context, ContainerResources containerResources) {
         addContainer(createContainer(context, PartialContainer.State.created, containerResources));
+        return context.paths().of("/");
     }
 
     @Override

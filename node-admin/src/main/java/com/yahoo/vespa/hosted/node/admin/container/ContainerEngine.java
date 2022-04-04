@@ -4,9 +4,9 @@ package com.yahoo.vespa.hosted.node.admin.container;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.container.image.Image;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
+import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 
 import java.time.Duration;
@@ -20,8 +20,11 @@ import java.util.Optional;
  */
 public interface ContainerEngine {
 
-    /** Create a new container */
-    void createContainer(NodeAgentContext context, ContainerData containerData, ContainerResources containerResources);
+    /**
+     * Create a new container
+     * @return returns path to root of container's overlay FS
+     */
+    ContainerPath createContainer(NodeAgentContext context, ContainerResources containerResources);
 
     /** Start a created container */
     void startContainer(NodeAgentContext context);
