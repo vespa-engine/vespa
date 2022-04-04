@@ -52,6 +52,8 @@ for MODULE in $(comm -2 -3 \
     echo "No javadoc available for module" > $MODULE/src/main/javadoc/README
 done
 
+# Workaround for broken nexus-staging-maven-plugin instead of swapping JDK
+export MAVEN_OPTS="--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.text=ALL-UNNAMED --add-opens=java.desktop/java.awt.font=ALL-UNNAMED"
 export VESPA_MAVEN_EXTRA_OPTS="--show-version --batch-mode"
 ./bootstrap.sh
 
@@ -69,19 +71,11 @@ mvn $COMMON_MAVEN_OPTS --file ./maven-plugins/pom.xml -DskipStagingRepositoryClo
 # Deploy the rest of the artifacts
 mvn $COMMON_MAVEN_OPTS --threads 8 -DskipStagingRepositoryClose=true -DstagingRepositoryId=$STG_REPO deploy
 
-# Workaround for nexus-staging-maven-plugin:1.6.12:rc-release not working with maven+jdk17
-SWAP_MAVEN_JAVA_WORKAROUND=false
-if rpm -q maven-openjdk17 &> /dev/null; then SWAP_MAVEN_JAVA_WORKAROUND=true; fi
-if $SWAP_MAVEN_JAVA_WORKAROUND; then dnf swap -y maven-openjdk17 maven-openjdk11; fi
-
 # Close with checks
 mvn $COMMON_MAVEN_OPTS -N org.sonatype.plugins:nexus-staging-maven-plugin:1.6.12:rc-close -DnexusUrl=https://oss.sonatype.org/ -DserverId=ossrh -DstagingRepositoryId=$STG_REPO
 
 # Release if ok
 mvn $COMMON_MAVEN_OPTS -N org.sonatype.plugins:nexus-staging-maven-plugin:1.6.12:rc-release -DnexusUrl=https://oss.sonatype.org/ -DserverId=ossrh -DstagingRepositoryId=$STG_REPO
-
-# Swap back if we swapped previously
-if $SWAP_MAVEN_JAVA_WORKAROUND; then dnf swap -y maven-openjdk11 maven-openjdk17; fi
 
 # Delete the GPG rings
 rm -rf $SD_SOURCE_DIR/screwdriver/deploy
