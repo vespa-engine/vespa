@@ -99,7 +99,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     @SuppressWarnings("deprecation") // not redundant
     @Override
     public String getApplicationName() {
-        return "mock application";
+        return "mock-application";
     }
 
     @Override

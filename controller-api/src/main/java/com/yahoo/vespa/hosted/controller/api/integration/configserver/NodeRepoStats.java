@@ -20,6 +20,6 @@ public class NodeRepoStats {
 
     public Load load() { return load; }
     public Load activeLoad() { return activeLoad; }
-    public List<ApplicationStats> applicationStats() { return  applicationStats; }
+    public List<ApplicationStats> applicationStats() { return applicationStats; }
 
 }

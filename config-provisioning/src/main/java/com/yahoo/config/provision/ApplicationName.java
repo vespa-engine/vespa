@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import java.util.Objects;
+import ai.vespa.validation.PatternedStringWrapper;
 
 /**
  * Represents an applications name, which may be any kind of string or default. This type is defined
@@ -10,28 +10,12 @@ import java.util.Objects;
  * @author Ulf Lilleengen
  * @since 5.25
  */
-public class ApplicationName implements Comparable<ApplicationName> {
+public class ApplicationName extends PatternedStringWrapper<ApplicationName> {
 
-    private final String applicationName;
+    private static final ApplicationName defaultName = new ApplicationName("default");
 
-    private ApplicationName(String applicationName) {
-        this.applicationName = applicationName;
-    }
-
-    @Override
-    public int hashCode() {
-        return applicationName.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof ApplicationName)) return false;
-        return Objects.equals(((ApplicationName) obj).applicationName, applicationName);
-    }
-
-    @Override
-    public String toString() {
-        return applicationName;
+    private ApplicationName(String name) {
+        super(name, ApplicationId.namePattern, "application name");
     }
 
     public static ApplicationName from(String name) {
@@ -39,20 +23,11 @@ public class ApplicationName implements Comparable<ApplicationName> {
     }
 
     public static ApplicationName defaultName() {
-        return new ApplicationName("default");
+        return defaultName;
     }
 
     public boolean isDefault() {
-        return equals(ApplicationName.defaultName());
-    }
-
-    public String value() {
-        return applicationName;
-    }
-
-    @Override
-    public int compareTo(ApplicationName name) {
-        return this.applicationName.compareTo(name.applicationName);
+        return equals(defaultName);
     }
 
 }
