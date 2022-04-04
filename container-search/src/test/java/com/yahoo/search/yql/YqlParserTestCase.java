@@ -47,9 +47,7 @@ import com.yahoo.search.searchchain.Execution;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
@@ -389,6 +387,21 @@ public class YqlParserTestCase {
         assertSame(FuzzyItem.class, root.getClass());
         assertEquals("baz", ((FuzzyItem) root).getIndexName());
         assertEquals("a b", ((FuzzyItem) root).stringValue());
+        assertEquals(FuzzyItem.DefaultMaxEditDistance, ((FuzzyItem) root).getMaxEditDistance());
+        assertEquals(FuzzyItem.DefaultPrefixLength, ((FuzzyItem) root).getPrefixLength());
+    }
+
+    @Test
+    public void testFuzzyAnnotations() {
+        QueryTree x = parse(
+                "select foo from bar where baz contains ({maxEditDistance: 3, prefixLength: 10}fuzzy(\"a b\"))"
+        );
+        Item root = x.getRoot();
+        assertSame(FuzzyItem.class, root.getClass());
+        assertEquals("baz", ((FuzzyItem) root).getIndexName());
+        assertEquals("a b", ((FuzzyItem) root).stringValue());
+        assertEquals(3, ((FuzzyItem) root).getMaxEditDistance());
+        assertEquals(10, ((FuzzyItem) root).getPrefixLength());
     }
 
     @Test

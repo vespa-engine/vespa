@@ -402,7 +402,8 @@ SearchContextTest::buildTermQuery(std::vector<char> & buffer, const vespalib::st
 {
     uint32_t indexLen = index.size();
     uint32_t termLen = term.size();
-    uint32_t queryPacketSize = 1 + 2 * 4 + indexLen + termLen;
+    uint32_t fuzzyParametersSize = (termType == TermType::FUZZYTERM) ? 8 : 0;
+    uint32_t queryPacketSize = 1 + 2 * 4 + indexLen + termLen + fuzzyParametersSize;
     uint32_t p = 0;
     buffer.resize(queryPacketSize);
     switch (termType) {
@@ -419,6 +420,12 @@ SearchContextTest::buildTermQuery(std::vector<char> & buffer, const vespalib::st
     p += vespalib::compress::Integer::compressPositive(termLen, &buffer[p]);
     memcpy(&buffer[p], term.c_str(), termLen);
     p += termLen;
+
+    if (termType == TermType::FUZZYTERM) {
+        p += vespalib::compress::Integer::compressPositive(2, &buffer[p]);  // max edit distance
+        p += vespalib::compress::Integer::compressPositive(0, &buffer[p]);  // prefix length
+    }
+
     buffer.resize(p);
 }
 

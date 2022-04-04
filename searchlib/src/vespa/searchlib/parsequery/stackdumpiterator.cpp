@@ -170,7 +170,6 @@ bool SimpleQueryStackDumpIterator::readNext() {
     case ParseItem::ITEM_EXACTSTRINGTERM:
     case ParseItem::ITEM_SUFFIXTERM:
     case ParseItem::ITEM_REGEXP:
-    case ParseItem::ITEM_FUZZY:
         _curr_index_name = read_stringref(p);
         _curr_term = read_stringref(p);
         _currArity = 0;
@@ -187,6 +186,9 @@ bool SimpleQueryStackDumpIterator::readNext() {
         break;
     case ParseItem::ITEM_NEAREST_NEIGHBOR:
         if ( ! readNN(p)) return false;
+        break;
+    case ParseItem::ITEM_FUZZY:
+        if (!readFuzzy(p)) return false;
         break;
     case ParseItem::ITEM_TRUE:
     case ParseItem::ITEM_FALSE:
@@ -253,6 +255,16 @@ SimpleQueryStackDumpIterator::readComplexTerm(const char *& p) {
         _extraDoubleArg5 = read_double(p); // thresholdBoostFactor
     }
     _curr_term = vespalib::stringref();
+    return true;
+}
+
+bool
+SimpleQueryStackDumpIterator::readFuzzy(const char *&p) {
+    _curr_index_name = read_stringref(p);
+    _curr_term = read_stringref(p); // fuzzy term
+    _extraIntArg1 = readCompressedPositiveInt(p); // maxEditDistance
+    _extraIntArg2 = readCompressedPositiveInt(p); // prefixLength
+    _currArity = 0;
     return true;
 }
 

@@ -21,6 +21,7 @@ import static com.yahoo.search.yql.YqlParser.GEO_LOCATION;
 import static com.yahoo.search.yql.YqlParser.HIT_LIMIT;
 import static com.yahoo.search.yql.YqlParser.IMPLICIT_TRANSFORMS;
 import static com.yahoo.search.yql.YqlParser.LABEL;
+import static com.yahoo.search.yql.YqlParser.MAX_EDIT_DISTANCE;
 import static com.yahoo.search.yql.YqlParser.NEAR;
 import static com.yahoo.search.yql.YqlParser.NEAREST_NEIGHBOR;
 import static com.yahoo.search.yql.YqlParser.NORMALIZE_CASE;
@@ -31,6 +32,7 @@ import static com.yahoo.search.yql.YqlParser.ORIGIN_OFFSET;
 import static com.yahoo.search.yql.YqlParser.ORIGIN_ORIGINAL;
 import static com.yahoo.search.yql.YqlParser.PHRASE;
 import static com.yahoo.search.yql.YqlParser.PREFIX;
+import static com.yahoo.search.yql.YqlParser.PREFIX_LENGTH;
 import static com.yahoo.search.yql.YqlParser.RANGE;
 import static com.yahoo.search.yql.YqlParser.RANK;
 import static com.yahoo.search.yql.YqlParser.RANKED;
@@ -526,7 +528,8 @@ public class VespaSerializer {
 
         @Override
         boolean serialize(StringBuilder destination, FuzzyItem fuzzy) {
-            String annotations = leafAnnotations(fuzzy);
+            String annotations = fuzzyAnnotations(fuzzy);
+
             destination.append(normalizeIndexName(fuzzy.getIndexName())).append(" contains ");
 
             if (annotations.length() > 0) {
@@ -542,6 +545,30 @@ public class VespaSerializer {
                 destination.append(')');
             }
             return false;
+        }
+
+        static String fuzzyAnnotations(FuzzyItem fuzzyItem) {
+            boolean isMaxEditDistanceSet = fuzzyItem.getMaxEditDistance() != FuzzyItem.DefaultMaxEditDistance;
+            boolean isPrefixLengthSet = fuzzyItem.getPrefixLength() != FuzzyItem.DefaultPrefixLength;
+            boolean anyAnnotationSet = isMaxEditDistanceSet || isPrefixLengthSet;
+
+            StringBuilder builder = new StringBuilder();
+            if (anyAnnotationSet) {
+                builder.append("[{");
+            }
+            if (isMaxEditDistanceSet) {
+                builder.append(MAX_EDIT_DISTANCE + ":").append(fuzzyItem.getMaxEditDistance());
+            }
+            if (isMaxEditDistanceSet && isPrefixLengthSet) {
+                builder.append(",");
+            }
+            if (isPrefixLengthSet) {
+                builder.append(PREFIX_LENGTH + ":").append(fuzzyItem.getPrefixLength());
+            }
+            if (anyAnnotationSet) {
+                builder.append("}]");
+            }
+            return builder.toString();
         }
     }
 
