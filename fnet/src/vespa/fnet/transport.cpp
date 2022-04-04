@@ -125,6 +125,11 @@ TransportConfig::time_tools() const {
 
 } // fnet
 
+void
+FNET_Transport::wait_for_pending_resolves() {
+    _async_resolver->wait_for_pending_resolves();
+}
+
 FNET_Transport::FNET_Transport(const fnet::TransportConfig &cfg)
     : _async_resolver(cfg.resolver()),
       _crypto_engine(cfg.crypto()),
@@ -156,11 +161,6 @@ FNET_Transport::resolve_async(const vespalib::string &spec,
                               vespalib::AsyncResolver::ResultHandler::WP result_handler)
 {
     _async_resolver->resolve_async(spec, std::move(result_handler));
-}
-
-void
-FNET_Transport::wait_for_pending_resolves() {
-    _async_resolver->wait_for_pending_resolves();
 }
 
 vespalib::CryptoSocket::UP
@@ -221,8 +221,13 @@ void
 FNET_Transport::detach(FNET_IServerAdapter *server_adapter)
 {
     for (const auto &thread: _threads) {
-        thread->detach(server_adapter);
+        thread->init_detach(server_adapter);
     }
+    wait_for_pending_resolves();
+    for (const auto &thread: _threads) {
+        thread->fini_detach(server_adapter);
+    }
+    sync();
 }
 
 FNET_Scheduler *

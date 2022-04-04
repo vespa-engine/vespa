@@ -162,7 +162,7 @@ FNET_TransportThread::SafeDiscardEvent(FNET_ControlPacket *cpacket,
 void
 FNET_TransportThread::handle_add_cmd(FNET_IOComponent *ioc)
 {
-    if (ioc->handle_add_event()) {
+    if ((_detaching.count(ioc->server_adapter()) == 0) && ioc->handle_add_event()) {
         AddComponent(ioc);
         ioc->_flags._ioc_added = true;
         ioc->attach_selector(_selector);
@@ -186,8 +186,9 @@ FNET_TransportThread::handle_close_cmd(FNET_IOComponent *ioc)
 
 
 void
-FNET_TransportThread::handle_detach_server_adapter_cmd(FNET_IServerAdapter *server_adapter)
+FNET_TransportThread::handle_detach_server_adapter_init_cmd(FNET_IServerAdapter *server_adapter)
 {
+    _detaching.insert(server_adapter);
     FNET_IOComponent *component = _componentsHead;
     while (component != nullptr) {
         FNET_IOComponent *tmp = component;
@@ -200,6 +201,12 @@ FNET_TransportThread::handle_detach_server_adapter_cmd(FNET_IServerAdapter *serv
     }
 }
 
+
+void
+FNET_TransportThread::handle_detach_server_adapter_fini_cmd(FNET_IServerAdapter *server_adapter)
+{
+    _detaching.erase(server_adapter);
+}
 
 extern "C" {
 
@@ -241,7 +248,8 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
       _pseudo_thread(),
       _started(false),
       _shutdown(false),
-      _finished(false)
+      _finished(false),
+      _detaching()
 {
     trapsigpipe();
 }
@@ -348,9 +356,15 @@ FNET_TransportThread::Close(FNET_IOComponent *comp, bool needRef)
 }
 
 void
-FNET_TransportThread::detach(FNET_IServerAdapter *server_adapter)
+FNET_TransportThread::init_detach(FNET_IServerAdapter *server_adapter)
 {
-    PostEvent(&FNET_ControlPacket::DetachServerAdapter, FNET_Context(server_adapter));
+    PostEvent(&FNET_ControlPacket::DetachServerAdapterInit, FNET_Context(server_adapter));
+}
+
+void
+FNET_TransportThread::fini_detach(FNET_IServerAdapter *server_adapter)
+{
+    PostEvent(&FNET_ControlPacket::DetachServerAdapterFini, FNET_Context(server_adapter));
 }
 
 bool
@@ -432,8 +446,13 @@ FNET_TransportThread::handle_wakeup()
             continue;
         }
 
-        if (packet->GetCommand() == FNET_ControlPacket::FNET_CMD_DETACH_SERVER_ADAPTER) {
-            handle_detach_server_adapter_cmd(context._value.SERVER_ADAPTER);
+        if (packet->GetCommand() == FNET_ControlPacket::FNET_CMD_DETACH_SERVER_ADAPTER_INIT) {
+            handle_detach_server_adapter_init_cmd(context._value.SERVER_ADAPTER);
+            continue;
+        }
+
+        if (packet->GetCommand() == FNET_ControlPacket::FNET_CMD_DETACH_SERVER_ADAPTER_FINI) {
+            handle_detach_server_adapter_fini_cmd(context._value.SERVER_ADAPTER);
             continue;
         }
 

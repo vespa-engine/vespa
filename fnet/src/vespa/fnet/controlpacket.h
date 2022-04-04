@@ -38,7 +38,8 @@ public:
         FNET_CMD_IOC_ENABLE_WRITE,
         FNET_CMD_IOC_HANDSHAKE_ACT,
         FNET_CMD_IOC_CLOSE,
-        FNET_CMD_DETACH_SERVER_ADAPTER,
+        FNET_CMD_DETACH_SERVER_ADAPTER_INIT,
+        FNET_CMD_DETACH_SERVER_ADAPTER_FINI,
         FNET_CMD_EXECUTE,
         FNET_CMD_TIMEOUT,
         FNET_CMD_BAD_PACKET,
@@ -51,7 +52,8 @@ public:
     static FNET_ControlPacket IOCEnableWrite;
     static FNET_ControlPacket IOCHandshakeACT;
     static FNET_ControlPacket IOCClose;
-    static FNET_ControlPacket DetachServerAdapter;
+    static FNET_ControlPacket DetachServerAdapterInit;
+    static FNET_ControlPacket DetachServerAdapterFini;
     static FNET_ControlPacket Execute;
     static FNET_ControlPacket Timeout;
     static FNET_ControlPacket BadPacket;
