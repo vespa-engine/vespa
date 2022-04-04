@@ -120,7 +120,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default boolean avoidRenamingSummaryFeatures() { return false; }
         @ModelFeatureFlag(owners = {"bjorncs", "baldersheim"}, removeAfter = "7.569") default boolean mergeGroupingResultInSearchInvoker() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean experimentalSdParsing() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "7.564") default String adminClusterNodeArchitecture() { return adminClusterArchitecture().name(); }
+        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "7.571") default String adminClusterNodeArchitecture() { return adminClusterArchitecture().name(); }
         @ModelFeatureFlag(owners = {"hmusum"}) default Architecture adminClusterArchitecture() { return Architecture.getDefault(); }
     }
 
