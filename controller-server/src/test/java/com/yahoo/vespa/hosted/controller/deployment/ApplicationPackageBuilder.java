@@ -264,38 +264,36 @@ public class ApplicationPackageBuilder {
             xml.append(athenzIdentityAttributes);
         }
         xml.append(">\n");
-        for (String instance : instances.split(",")) {
-            xml.append("  <instance id='").append(instance).append("'>\n");
-            if (upgradePolicy != null || revisionTarget != null || revisionChange != null || upgradeRollout != null) {
-                xml.append("    <upgrade ");
-                if (upgradePolicy != null) xml.append("policy='").append(upgradePolicy).append("' ");
-                if (revisionTarget != null) xml.append("revision-target='").append(revisionTarget).append("' ");
-                if (revisionChange != null) xml.append("revision-change='").append(revisionChange).append("' ");
-                if (upgradeRollout != null) xml.append("rollout='").append(upgradeRollout).append("' ");
-                xml.append("/>\n");
-            }
-            xml.append(notifications);
-            if (explicitSystemTest)
-                xml.append("    <test />\n");
-            if (explicitStagingTest)
-                xml.append("    <staging />\n");
-            xml.append(blockChange);
-            xml.append("    <prod");
-            if (globalServiceId != null) {
-                xml.append(" global-service-id='");
-                xml.append(globalServiceId);
-                xml.append("'");
-            }
-            xml.append(">\n");
-            xml.append(prodBody);
-            xml.append("    </prod>\n");
-            if (endpointsBody.length() > 0) {
-                xml.append("    <endpoints>\n");
-                xml.append(endpointsBody);
-                xml.append("    </endpoints>\n");
-            }
-            xml.append("  </instance>\n");
+        xml.append("  <instance id='").append(instances).append("'>\n");
+        if (upgradePolicy != null || revisionTarget != null || revisionChange != null || upgradeRollout != null) {
+            xml.append("    <upgrade ");
+            if (upgradePolicy != null) xml.append("policy='").append(upgradePolicy).append("' ");
+            if (revisionTarget != null) xml.append("revision-target='").append(revisionTarget).append("' ");
+            if (revisionChange != null) xml.append("revision-change='").append(revisionChange).append("' ");
+            if (upgradeRollout != null) xml.append("rollout='").append(upgradeRollout).append("' ");
+            xml.append("/>\n");
         }
+        xml.append(notifications);
+        if (explicitSystemTest)
+            xml.append("    <test />\n");
+        if (explicitStagingTest)
+            xml.append("    <staging />\n");
+        xml.append(blockChange);
+        xml.append("    <prod");
+        if (globalServiceId != null) {
+            xml.append(" global-service-id='");
+            xml.append(globalServiceId);
+            xml.append("'");
+        }
+        xml.append(">\n");
+        xml.append(prodBody);
+        xml.append("    </prod>\n");
+        if (endpointsBody.length() > 0 ) {
+            xml.append("    <endpoints>\n");
+            xml.append(endpointsBody);
+            xml.append("    </endpoints>\n");
+        }
+        xml.append("  </instance>\n");
         if (applicationEndpointsBody.length() > 0) {
             xml.append("  <endpoints>\n");
             xml.append(applicationEndpointsBody);
