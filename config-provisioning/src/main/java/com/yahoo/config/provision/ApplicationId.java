@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 public class ApplicationId implements Comparable<ApplicationId> {
 
     // TODO: remove '.' and '*' from this pattern.
-    static final Pattern namePattern = Pattern.compile("(?!\\.\\.)[a-zA-Z0-9_.*-]{1,64}");
+    static final Pattern namePattern = Pattern.compile("(?!\\.\\.)[a-zA-Z0-9_.*-]{1,256}");
 
     private static final ApplicationId global = new ApplicationId(TenantName.from("*"),
                                                                   ApplicationName.from("*"),
