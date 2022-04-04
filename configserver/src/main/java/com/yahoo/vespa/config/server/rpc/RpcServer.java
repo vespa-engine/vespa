@@ -243,9 +243,13 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     private ApplicationState getState(ApplicationId id) {
-        return applicationStateMap.computeIfAbsent(id, __ -> new ApplicationState(0));
+        ApplicationState state = applicationStateMap.get(id);
+        if (state == null) {
+            applicationStateMap.putIfAbsent(id, new ApplicationState(0));
+            state = applicationStateMap.get(id);
+        }
+        return state;
     }
-
     boolean hasNewerGeneration(ApplicationId id, long generation) {
         return getState(id).getActiveGeneration() > generation;
     }

@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
@@ -225,7 +224,7 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     public void putApplication(ZoneId zone, Application application) {
-        applications.computeIfAbsent(zone, (k) -> new TreeMap<>())
+        applications.computeIfAbsent(zone, (k) -> new HashMap<>())
                     .put(application.id(), application);
     }
 

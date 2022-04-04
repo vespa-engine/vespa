@@ -31,6 +31,8 @@ public class TenantId {
         return id;
     }
 
+    public TenantName toName() { return TenantName.from(id); }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

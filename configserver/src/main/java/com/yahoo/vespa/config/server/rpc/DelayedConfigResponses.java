@@ -193,9 +193,10 @@ public class DelayedConfigResponses {
     }
 
     private synchronized void metricDelayedResponses(ApplicationId app, int elems) {
-        metrics.computeIfAbsent(app, key -> rpcServer.metricUpdaterFactory()
-                                                     .getOrCreateMetricUpdater(Metrics.createDimensions(key)))
-               .setDelayedResponses(elems);
+        if ( ! metrics.containsKey(app)) {
+            metrics.put(app, rpcServer.metricUpdaterFactory().getOrCreateMetricUpdater(Metrics.createDimensions(app)));
+        }
+        metrics.get(app).setDelayedResponses(elems);
     }
 
     private synchronized void createQueueIfNotExists(GetConfigContext context) {
