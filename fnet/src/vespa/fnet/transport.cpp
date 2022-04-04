@@ -224,6 +224,7 @@ FNET_Transport::detach(FNET_IServerAdapter *server_adapter)
         thread->init_detach(server_adapter);
     }
     wait_for_pending_resolves();
+    sync();
     for (const auto &thread: _threads) {
         thread->fini_detach(server_adapter);
     }
