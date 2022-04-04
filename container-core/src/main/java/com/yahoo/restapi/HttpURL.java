@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.StringJoiner;
 import java.util.function.Function;
@@ -105,7 +106,7 @@ public class HttpURL<T> {
             throw new IllegalArgumentException("uri should be normalized, but got: " + uri);
 
         return create(Scheme.of(uri.getScheme()),
-                      DomainName.of(uri.getHost()),
+                      DomainName.of(requireNonNull(uri.getHost(), "URI must specify a host")),
                       uri.getPort(),
                       Path.parse(uri.getRawPath(), validator, inverse),
                       Query.parse(uri.getRawQuery(), validator, inverse));
@@ -117,6 +118,14 @@ public class HttpURL<T> {
 
     public HttpURL<T> withDomain(DomainName domain) {
         return create(scheme, domain, port, path, query);
+    }
+
+    public HttpURL<T> withPort(int port) {
+        return create(scheme, domain, port, path, query);
+    }
+
+    public HttpURL<T> withoutPort() {
+        return create(scheme, domain, -1, path, query);
     }
 
     public HttpURL<T> withPath(Path<T> path) {
@@ -172,14 +181,23 @@ public class HttpURL<T> {
             this.inverse = requireNonNull(inverse);
         }
 
+        /** Creates a new, empty path, with a trailing slash. */
+        public static Path<String> empty() {
+            return new Path<>(List.of(), true, identity(), identity());
+        }
+
         /** Creates a new, empty path, with a trailing slash, using the indicated string wrapper for segments. */
         public static <T extends StringWrapper<T>> Path<T> empty(Function<String, T> validator) {
             return new Path<>(List.of(), true, validator, T::value);
         }
+        /** Creates a new path with the given <em>decoded</em> segments. */
+        public static Path<String> from(List<String> segments) {
+            return empty().append(segments);
+        }
 
-        /** Creates a new, empty path, with a trailing slash. */
-        public static Path<String> empty() {
-            return new Path<>(List.of(), true, identity(), identity());
+        /** Creates a new path with the given <em>decoded</em> segments, and the validator applied to each segment. */
+        public static <T extends StringWrapper<T>> Path<T> from(List<String> segments, Function<String, T> validator) {
+            return empty(validator).append(segments, identity(), true);
         }
 
         /** Parses the given raw, normalized path string; this ignores whether the path is absolute or relative.) */
@@ -208,29 +226,35 @@ public class HttpURL<T> {
                            segment, "path segments cannot be \"\", \".\", or \"..\"");
         }
 
-        /** Returns a copy of this which eliminates the given number of segments, from the root down. */
-        public Path<T> tailPath(int offset) {
-            return new Path<>(segments.subList(offset, segments.size()), trailingSlash, validator, inverse);
+        /** Returns a copy of this where the first segments are skipped. */
+        public Path<T> skip(int count) {
+            return new Path<>(segments.subList(count, segments.size()), trailingSlash, validator, inverse);
         }
 
-        /** Returns a copy of this which eliminates the given number of segments, from the end up. */
-        public Path<T> headPath(int offset) {
-            return new Path<>(segments.subList(0, segments.size() - offset), trailingSlash, validator, inverse);
+        /** Returns a copy of this where the last segments are cut off. */
+        public Path<T> cut(int count) {
+            return new Path<>(segments.subList(0, segments.size() - count), trailingSlash, validator, inverse);
         }
 
         /** Returns a copy of this with the <em>decoded</em> segment appended at the end; it may not be either of {@code ""}, {@code "."} or {@code ".."}. */
-        public Path<T> with(T segment) {
-            List<T> copy = new ArrayList<>(segments);
-            copy.add(requireNonNull(segment));
-            return new Path<>(copy, trailingSlash, validator, inverse);
+        public Path<T> append(String segment) {
+            return append(List.of(segment), identity(), trailingSlash);
         }
 
         /** Returns a copy of this all segments of the other path appended, with a trailing slash as per the appendage. */
-        public <U> Path<T> with(Path<U> other) {
-            List<T> copy = new ArrayList<>(segments);
-            for (U segment : other.segments)
-                copy.add(validator.apply(other.inverse.apply(segment)));
-            return new Path<>(copy, other.trailingSlash, validator, inverse);
+        public <U> Path<T> append(Path<U> other) {
+            return append(other.segments, other.inverse, other.trailingSlash);
+        }
+
+        /** Returns a copy of this all given segments appended, with a trailing slash as per this path. */
+        public Path<T> append(List<T> segments) {
+            return append(segments, inverse, trailingSlash);
+        }
+
+        private <U> Path<T> append(List<U> segments, Function<U, String> inverse, boolean trailingSlash) {
+            List<T> copy = new ArrayList<>(this.segments);
+            for (U segment : segments) copy.add(validator.apply(requireNonNormalizable(inverse.apply(segment))));
+            return new Path<>(copy, trailingSlash, validator, this.inverse);
         }
 
         /** Returns a copy of this which encodes a trailing slash. */
@@ -243,8 +267,8 @@ public class HttpURL<T> {
             return new Path<>(segments, false, validator, inverse);
         }
 
-        /** The URL decoded segments that make up this path; never {@code ""}, {@code "."} or {@code ".."}. */
-        public List<T> decoded() {
+        /** The <em>URL decoded</em> segments that make up this path; never {@code null}, {@code ""}, {@code "."} or {@code ".."}. */
+        public List<T> segments() {
             return Collections.unmodifiableList(segments);
         }
 
@@ -254,6 +278,25 @@ public class HttpURL<T> {
             for (T segment : segments)
                 joiner.add(encode(inverse.apply(segment), UTF_8));
             return joiner.toString();
+        }
+
+        /** Intentionally not usable for constructing new URIs. Use {@link HttpURL} for that instead. */
+        @Override
+        public String toString() {
+            return "path '" + raw() + "'";
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Path<?> path = (Path<?>) o;
+            return trailingSlash == path.trailingSlash && segments.equals(path.segments);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(segments, trailingSlash);
         }
 
     }
@@ -269,6 +312,25 @@ public class HttpURL<T> {
             this.values = requireNonNull(values);
             this.validator = requireNonNull(validator);
             this.inverse = requireNonNull(inverse);
+        }
+
+        /** Creates a new, empty query part. */
+        public static Query<String> empty() {
+            return new Query<>(Map.of(), identity(), identity());
+        }
+
+        /** Creates a new, empty query part, using the indicated string wrapper for keys and non-null values. */
+        public static <T extends StringWrapper<T>> Query<T> empty(Function<String, T> validator) {
+            return new Query<>(Map.of(), validator, T::value);
+        }
+        /** Creates a new query part with the given <em>decoded</em> values. */
+        public static Query<String> from(Map<String, String> values) {
+            return empty().merge(values);
+        }
+
+        /** Creates a new query part with the given <em>decoded</em> values, and the validator applied to each pair. */
+        public static <T extends StringWrapper<T>> Query<T> from(Map<String, String> values, Function<String, T> validator) {
+            return empty(validator).merge(values, identity());
         }
 
         /** Parses the given raw query string, using the indicated string wrapper to hold keys and non-null values. */
@@ -294,39 +356,46 @@ public class HttpURL<T> {
             return new Query<>(values, validator, inverse);
         }
 
-        /** Creates a new, empty query part, using the indicated string wrappper for keys and non-null values. */
-        public static <T extends StringWrapper<T>> Query<T> empty(Function<String, T> validator) {
-            return new Query<T>(Map.of(), validator, T::value);
-        }
-
-        /** Creates a new, empty query part. */
-        public static <T> Query<String> empty() {
-            return new Query<>(Map.of(), identity(), identity());
-        }
-
         /** Returns a copy of this with the <em>decoded</em> non-null key pointing to the <em>decoded</em> non-null value. */
-        public Query<T> with(T key, T value) {
+        public Query<T> put(String key, String value) {
             Map<T, T> copy = new LinkedHashMap<>(values);
-            copy.put(requireNonNull(key), requireNonNull(value));
+            copy.put(requireNonNull(validator.apply(key)), requireNonNull(validator.apply(value)));
             return new Query<>(copy, validator, inverse);
         }
 
         /** Returns a copy of this with the <em>decoded</em> non-null key pointing to "nothing". */
-        public Query<T> with(T key) {
+        public Query<T> add(String key) {
             Map<T, T> copy = new LinkedHashMap<>(values);
-            copy.put(requireNonNull(key), null);
+            copy.put(requireNonNull(validator.apply(key)), null);
             return new Query<>(copy, validator, inverse);
         }
 
         /** Returns a copy of this without any key-value pair with the <em>decoded</em> key. */
-        public Query<T> without(T key) {
+        public Query<T> remove(String key) {
             Map<T, T> copy = new LinkedHashMap<>(values);
-            copy.remove(requireNonNull(key));
+            copy.remove(requireNonNull(validator.apply(key)));
             return new Query<>(copy, validator, inverse);
         }
 
-        /** The URL decoded key-value pairs that make up this query; keys and values may be {@code ""}, and values are {@code} null if only key was specified. */
-        public Map<T, T> decoded() {
+        /** Returns a copy of this with all mappings from the other query added to this, possibly overwriting existing mappings. */
+        public <U> Query<T> merge(Query<U> other) {
+            return merge(other.values, other.inverse);
+        }
+
+        /** Returns a copy of this with all given mappings added to this, possibly overwriting existing mappings. */
+        public Query<T> merge(Map<T, T> values) {
+            return merge(values, inverse);
+        }
+
+        private <U> Query<T> merge(Map<U, U> values, Function<U, String> inverse) {
+            Map<T, T> copy = new LinkedHashMap<>(this.values);
+            values.forEach((key, value) -> copy.put(validator.apply(inverse.apply(requireNonNull(key, "keys cannot be null"))),
+                                                    value == null ? null : validator.apply(inverse.apply(value))));
+            return new Query<>(copy, validator, this.inverse);
+        }
+
+        /** The <em>URL decoded</em> key-value pairs that make up this query; keys and values may be {@code ""}, and values are {@code null} when only key was specified. */
+        public Map<T, T> entries() {
             return unmodifiableMap(values);
         }
 
@@ -336,6 +405,25 @@ public class HttpURL<T> {
             values.forEach((key, value) -> joiner.add(encode(inverse.apply(key), UTF_8) +
                                                       (value == null ? "" : "=" + encode(inverse.apply(value), UTF_8))));
             return joiner.toString();
+        }
+
+        /** Intentionally not usable for constructing new URIs. Use {@link HttpURL} for that instead. */
+        @Override
+        public String toString() {
+            return "query '" + raw() + "'";
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Query<?> query = (Query<?>) o;
+            return values.equals(query.values);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(values);
         }
 
     }
