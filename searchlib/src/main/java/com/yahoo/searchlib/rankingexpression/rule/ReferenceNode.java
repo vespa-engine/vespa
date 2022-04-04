@@ -42,11 +42,6 @@ public final class ReferenceNode extends CompositeNode {
         return reference.name();
     }
 
-    @Override
-    public int hashCode() {
-        return reference.hashCode();
-    }
-
     /** Returns the arguments, never null */
     public Arguments getArguments() { return reference.arguments(); }
 
@@ -136,6 +131,11 @@ public final class ReferenceNode extends CompositeNode {
     @Override
     public CompositeNode setChildren(List<ExpressionNode> newChildren) {
         return setArguments(newChildren);
+    }
+
+    @Override
+    public int hashCode() {
+        return reference.hashCode();
     }
 
 }

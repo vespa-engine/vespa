@@ -7,6 +7,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.compress.Compressor;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.searchdefinition.FeatureNames;
 import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.LargeRankExpressions;
 import com.yahoo.searchdefinition.RankExpressionBody;
@@ -15,6 +16,7 @@ import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.expressiontransforms.OnnxModelTransformer;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
@@ -149,7 +151,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
          */
         private final NativeRankTypeDefinitionSet nativeRankTypeDefinitions = new NativeRankTypeDefinitionSet("default");
         private final Map<String, String> attributeTypes;
-        private final Map<String, String> queryFeatureTypes;
+        private final Map<Reference, TensorType> inputs;
         private final Set<String> filterFields = new java.util.LinkedHashSet<>();
         private final String rankprofileName;
 
@@ -165,7 +167,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 QueryProfileRegistry queryProfiles) {
             rankprofileName = compiled.name();
             attributeTypes = compiled.getAttributeTypes();
-            queryFeatureTypes = compiled.getQueryFeatureTypes();
+            inputs = compiled.inputs();
             firstPhaseRanking = compiled.getFirstPhaseRanking();
             secondPhaseRanking = compiled.getSecondPhaseRanking();
             summaryFeatures = new LinkedHashSet<>(compiled.getSummaryFeatures());
@@ -277,11 +279,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private void deriveWeightProperties(RankProfile rankProfile) {
 
             for (RankProfile.RankSetting setting : rankProfile.rankSettings()) {
-                if (!setting.getType().equals(RankProfile.RankSetting.Type.WEIGHT)) {
-                    continue;
-                }
+                if (setting.getType() != RankProfile.RankSetting.Type.WEIGHT) continue;
                 boostAndWeightRankProperties.add(new RankProfile.RankProperty("vespa.fieldweight." + setting.getFieldName(),
-                        String.valueOf(setting.getIntValue())));
+                                                                              String.valueOf(setting.getIntValue())));
             }
         }
 
@@ -424,8 +424,10 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             for (Map.Entry<String, String> attributeType : attributeTypes.entrySet()) {
                 properties.add(new Pair<>("vespa.type.attribute." + attributeType.getKey(), attributeType.getValue()));
             }
-            for (Map.Entry<String, String> queryFeatureType : queryFeatureTypes.entrySet()) {
-                properties.add(new Pair<>("vespa.type.query." + queryFeatureType.getKey(), queryFeatureType.getValue()));
+            for (Map.Entry<Reference, TensorType> input : inputs.entrySet()) {
+                if (FeatureNames.isQueryFeature(input.getKey()))
+                    properties.add(new Pair<>("vespa.type.query." + input.getKey().arguments().expressions().get(0),
+                                              input.getValue().toString()));
             }
             if (properties.size() >= 1000000) throw new IllegalArgumentException("Too many rank properties");
             distributeLargeExpressionsAsFiles(properties, largeRankExpressions);

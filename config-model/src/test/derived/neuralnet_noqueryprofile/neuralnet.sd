@@ -71,6 +71,15 @@ search neuralnet {
 
     rank-profile defaultRankProfile inherits default {
 
+        inputs {
+            query(W_0):   tensor(x[9],hidden[9])
+            query(b_0):   tensor(hidden[9])
+            query(W_1):   tensor(hidden[9],out[9])
+            query(b_1):   tensor(out[9])
+            query(W_out): tensor(out[9])
+            query(b_out): tensor(out[1])
+        }
+
         constants {
             maxSignedSixtyFourBitInteger: 9223372036854775807
         }

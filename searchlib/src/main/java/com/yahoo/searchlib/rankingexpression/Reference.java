@@ -12,6 +12,7 @@ import com.yahoo.tensor.evaluation.Name;
 import java.util.Deque;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * A reference to a feature, function, or value in ranking expressions
@@ -30,7 +31,11 @@ public class Reference extends Name implements Comparable<Reference> {
     /** True if this was created by the "fromIdentifier" method. This lets us separate 'foo()' and 'foo' */
     private final boolean isIdentifier;
 
+    private final static Pattern identifierPattern = Pattern.compile("[A-Za-z0-9_@.\"-]+");
+
     public static Reference fromIdentifier(String identifier) {
+        if ( ! identifierPattern.matcher(identifier).matches())
+            throw new IllegalArgumentException("Identifiers can only contain [A-Za-z0-9_]+, but was '" + identifier + "'");
         return new Reference(identifier, Arguments.EMPTY, null, true);
     }
 
@@ -47,7 +52,6 @@ public class Reference extends Name implements Comparable<Reference> {
         this.hashCode = Objects.hash(name(), arguments, output, isIdentifier);
         this.isIdentifier = isIdentifier;
     }
-
 
     public Arguments arguments() { return arguments; }
 

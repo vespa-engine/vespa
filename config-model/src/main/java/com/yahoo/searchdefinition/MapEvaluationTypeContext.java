@@ -86,6 +86,8 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         queryFeaturesNotDeclared.remove(reference);
     }
 
+    public Map<Reference, TensorType> featureTypes() { return Collections.unmodifiableMap(featureTypes); }
+
     @Override
     public TensorType getType(String reference) {
         throw new UnsupportedOperationException("Not able to parse general references from string form");

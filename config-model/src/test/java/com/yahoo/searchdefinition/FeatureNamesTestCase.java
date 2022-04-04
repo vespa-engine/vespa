@@ -32,8 +32,8 @@ public class FeatureNamesTestCase {
 
     @Test
     public void testConstantFeature() {
-        assertEquals("constant(\"foo/bar\")",
-                     FeatureNames.asConstantFeature("foo/bar").toString());
+        assertEquals("constant(foo)",
+                     FeatureNames.asConstantFeature("foo").toString());
     }
 
     @Test

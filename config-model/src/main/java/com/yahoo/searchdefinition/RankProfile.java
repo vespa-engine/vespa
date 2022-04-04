@@ -47,7 +47,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -62,21 +61,19 @@ public class RankProfile implements Cloneable {
     public final static String FIRST_PHASE = "firstphase";
     public final static String SECOND_PHASE = "secondphase";
 
-    /** The search definition-unique name of this rank profile */
+    /** The schema-unique name of this rank profile */
     private final String name;
 
     /** The schema owning this profile, or null if global (owned by a model) */
     private final ImmutableSchema schema;
 
-    /** The name of the rank profile inherited by this */
     private final List<String> inheritedNames = new ArrayList<>();
-    /** Stores the resolved inherited profiles, or null when not resolved. */
+
+    /** The resolved inherited profiles, or null when not resolved. */
     private List<RankProfile> inherited;
 
-    /** The match settings of this profile */
     private MatchPhaseSettings matchPhaseSettings = null;
 
-    /** The rank settings of this profile */
     protected Set<RankSetting> rankSettings = new java.util.LinkedHashSet<>();
 
     /** The ranking expression to be used for first phase */
@@ -117,7 +114,7 @@ public class RankProfile implements Cloneable {
     // This cache must be invalidated every time modifications are done to 'functions'.
     private CachedFunctions allFunctionsCached = null;
 
-    private Map<Reference, TensorType> inputFeatures = new LinkedHashMap<>();
+    private Map<Reference, TensorType> inputs = new LinkedHashMap<>();
 
     private Set<String> filterFields = new HashSet<>();
 
@@ -461,14 +458,6 @@ public class RankProfile implements Cloneable {
         return attributeTypes.getTypes();
     }
 
-    public void addQueryFeatureType(String queryFeature, String queryFeatureType) {
-        queryFeatureTypes.addType(queryFeature, queryFeatureType);
-    }
-
-    public Map<String, String> getQueryFeatureTypes() {
-        return queryFeatureTypes.getTypes();
-    }
-
     /**
      * Returns the ranking expression to use by this. This expression must not be edited.
      * Returns null if no expression is set.
@@ -755,20 +744,42 @@ public class RankProfile implements Cloneable {
     }
 
     /**
-     * Use for rank profiles representing a model evaluation; it will assume
-     * that a input is provided with the declared type (for the purpose of
-     * type resolving).
-     **/
-    public void addInputFeature(String name, TensorType declaredType) {
-        Reference ref = Reference.fromIdentifier(name);
-        if (inputFeatures.containsKey(ref)) {
-            TensorType hadType = inputFeatures.get(ref);
-            if (! declaredType.equals(hadType)) {
-                throw new IllegalArgumentException("Tried to replace input feature "+name+" with different type: "+
-                                                   hadType+" -> "+declaredType);
+     * Adds the type of an input feature consumed by this profile.
+     * All inputs must either be declared through this or in query profile types,
+     * otherwise they are assumes to be scalars.
+     */
+    public void addInput(Reference reference, TensorType declaredType) {
+        if (inputs.containsKey(reference)) {
+            TensorType hadType = inputs().get(reference);
+            if (! declaredType.equals(hadType))
+                throw new IllegalArgumentException("Duplicate input '" + name + "' declared with both type " +
+                                                   hadType + " and " + declaredType);
+        }
+        inputs.put(reference, declaredType);
+    }
+
+    /** Returns the inputs of this, which also includes all inputs of the parents of this. */
+    // This is less restrictive than most other constructs in allowing inputs to be defined in all parent profiles
+    // because inputs are tied closer to functions than the profile itself.
+    public Map<Reference, TensorType> inputs() {
+        if (inputs.isEmpty() && inherited().isEmpty()) return Map.of();
+        if (inherited().isEmpty()) return Collections.unmodifiableMap(inputs);
+
+        // Combine
+        Map<Reference, TensorType> allInputs = new LinkedHashMap<>();
+        for (var inheritedProfile : inherited()) {
+            for (var input : inheritedProfile.inputs().entrySet()) {
+                TensorType existingType = allInputs.get(input.getKey());
+                if (existingType != null && ! existingType.equals(input.getValue()))
+                    throw new IllegalArgumentException(this + " inherits " + inheritedProfile + " which contains " +
+                                                       input.getValue() + ", with type " + input.getValue() + "" +
+                                                       " but this input is already defined with type " + existingType +
+                                                       " in another profile this inherits");
+                inputs.put(input.getKey(), input.getValue());
             }
         }
-        inputFeatures.put(ref, declaredType);
+        allInputs.putAll(inputs);
+        return Collections.unmodifiableMap(allInputs);
     }
 
     public static class MutateOperation {
@@ -902,7 +913,7 @@ public class RankProfile implements Cloneable {
             clone.matchFeatures = matchFeatures != null ? new LinkedHashSet<>(this.matchFeatures) : null;
             clone.rankFeatures = rankFeatures != null ? new LinkedHashSet<>(this.rankFeatures) : null;
             clone.rankProperties = new LinkedHashMap<>(this.rankProperties);
-            clone.inputFeatures = new LinkedHashMap<>(this.inputFeatures);
+            clone.inputs = new LinkedHashMap<>(this.inputs);
             clone.functions = new LinkedHashMap<>(this.functions);
             clone.allFunctionsCached = null;
             clone.filterFields = new HashSet<>(this.filterFields);
@@ -933,7 +944,7 @@ public class RankProfile implements Cloneable {
         checkNameCollisions(getFunctions(), getConstants());
         ExpressionTransforms expressionTransforms = new ExpressionTransforms();
 
-        Map<Reference, TensorType> featureTypes = collectFeatureTypes();
+        Map<Reference, TensorType> featureTypes = featureTypes();
         // Function compiling first pass: compile inline functions without resolving other functions
         Map<String, RankingExpressionFunction> inlineFunctions =
                 compileFunctions(this::getInlineFunctions, queryProfiles, featureTypes, importedModels, Collections.emptyMap(), expressionTransforms);
@@ -1017,16 +1028,13 @@ public class RankProfile implements Cloneable {
      * referable from this rank profile.
      */
     public MapEvaluationTypeContext typeContext(QueryProfileRegistry queryProfiles) {
-        return typeContext(queryProfiles, collectFeatureTypes());
+        return typeContext(queryProfiles, featureTypes());
     }
 
     public MapEvaluationTypeContext typeContext() { return typeContext(new QueryProfileRegistry()); }
 
-    private Map<Reference, TensorType> collectFeatureTypes() {
-        Map<Reference, TensorType> featureTypes = new HashMap<>();
-        // Add input features
-        inputFeatures.forEach((k, v) -> featureTypes.put(k, v));
-        // Add attributes
+    private Map<Reference, TensorType> featureTypes() {
+        Map<Reference, TensorType> featureTypes = new HashMap<>(inputs());
         allFields().forEach(field -> addAttributeFeatureTypes(field, featureTypes));
         allImportedFields().forEach(field -> addAttributeFeatureTypes(field, featureTypes));
         return featureTypes;
@@ -1046,6 +1054,7 @@ public class RankProfile implements Cloneable {
                 TensorType type = field.getType().asTensorType();
                 Optional<Reference> feature = Reference.simple(field.getName());
                 if ( feature.isEmpty() || ! feature.get().name().equals("query")) continue;
+                if (featureTypes.containsKey(feature)) continue; // Explicit feature types (from inputs) overrides
 
                 TensorType existingType = context.getType(feature.get());
                 if ( ! Objects.equals(existingType, context.defaultTypeOf(feature.get())))

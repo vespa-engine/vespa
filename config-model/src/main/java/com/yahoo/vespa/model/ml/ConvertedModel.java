@@ -215,7 +215,7 @@ public class ConvertedModel {
         for (ImportedMlFunction outputFunction : model.outputExpressions()) {
             ExpressionFunction expression = asExpressionFunction(outputFunction);
             for (Map.Entry<String, TensorType> input : expression.argumentTypes().entrySet()) {
-                profile.addInputFeature(input.getKey(), input.getValue());
+                profile.addInput(Reference.fromIdentifier(input.getKey()), input.getValue());
             }
             addExpression(expression, expression.getName(), constantsReplacedByFunctions,
                           store, profile, queryProfiles, expressions);
@@ -283,7 +283,7 @@ public class ConvertedModel {
             String name = output.getFirst();
             ExpressionFunction expression = output.getSecond();
             for (Map.Entry<String, TensorType> input : expression.argumentTypes().entrySet()) {
-                profile.addInputFeature(input.getKey(), input.getValue());
+                profile.addInput(Reference.fromIdentifier(input.getKey()), input.getValue());
             }
             TensorType type = expression.getBody().type(profile.typeContext());
             if (type != null) {

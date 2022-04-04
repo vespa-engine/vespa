@@ -228,8 +228,10 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
         if (stringValue!=null) refB.value(stringValue);
     }
 
-    private QueryProfilesConfig.Queryprofile.Property.Builder createPropertyFieldConfig(
-            QueryProfile profile, String fullName, String localName, Object value) {
+    private QueryProfilesConfig.Queryprofile.Property.Builder createPropertyFieldConfig(QueryProfile profile,
+                                                                                        String fullName,
+                                                                                        String localName,
+                                                                                        Object value) {
         QueryProfilesConfig.Queryprofile.Property.Builder propB = new QueryProfilesConfig.Queryprofile.Property.Builder();
         Boolean overridable=null;
         if (value instanceof SubstituteString)
@@ -287,7 +289,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
         return fB;
     }
 
-    public String toSpaceSeparatedString(List<String> list) {
+    private String toSpaceSeparatedString(List<String> list) {
         StringBuilder b = new StringBuilder();
         for (Iterator<String> i = list.iterator(); i.hasNext(); ) {
             b.append(i.next());

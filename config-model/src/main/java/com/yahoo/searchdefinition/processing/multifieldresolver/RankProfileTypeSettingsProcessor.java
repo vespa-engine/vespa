@@ -15,13 +15,15 @@ import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.ImportedField;
 import com.yahoo.searchdefinition.document.ImportedFields;
 import com.yahoo.searchdefinition.processing.Processor;
+import com.yahoo.searchlib.rankingexpression.Reference;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.util.Map;
 import java.util.Optional;
 
 /**
- * This processes a search instance and sets type settings on all rank profiles.
+ * This processes a schema and adds input type settings on all rank profiles.
  *
  * Currently, type settings are limited to the type of tensor attribute fields and tensor query features.
  *
@@ -83,18 +85,19 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     }
 
     private void processFieldDescription(FieldDescription fieldDescription) {
-        String fieldName = fieldDescription.getName();
         FieldType fieldType = fieldDescription.getType();
         if (fieldType instanceof TensorFieldType) {
             TensorFieldType tensorFieldType = (TensorFieldType)fieldType;
-            FeatureNames.argumentOf(fieldName).ifPresent(argument ->
-                addQueryFeatureTypeToRankProfiles(argument, tensorFieldType.asTensorType().toString()));
+            Optional<Reference> reference = Reference.simple(fieldDescription.getName());
+            if (reference.isPresent() && FeatureNames.isQueryFeature(reference.get()))
+                addQueryFeatureTypeToRankProfiles(reference.get(), tensorFieldType.asTensorType());
         }
     }
 
-    private void addQueryFeatureTypeToRankProfiles(String queryFeature, String queryFeatureType) {
+    private void addQueryFeatureTypeToRankProfiles(Reference queryFeature, TensorType queryFeatureType) {
         for (RankProfile profile : rankProfileRegistry.all()) {
-            profile.addQueryFeatureType(queryFeature, queryFeatureType);
+            if (! profile.inputs().containsKey(queryFeature)) // declared inputs have precedence
+                profile.addInput(queryFeature, queryFeatureType);
         }
     }
 
