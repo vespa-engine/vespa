@@ -31,8 +31,9 @@ import static org.junit.Assert.*;
 /**
  * @author <a href="mailto:ulf@yahoo-inc.com">Ulf Carlin</a>
  */
+@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 public class VdsVisitorTestCase {
-    private LoadTypeSet loadTypeSet = new LoadTypeSet();
+    private LoadTypeSet loadTypeSet = new LoadTypeSet(); // TODO remove on Vespa 8
 
     public VdsVisitorTestCase() {
         loadTypeSet.addLoadType(1, "low", DocumentProtocol.Priority.LOW_1);
@@ -489,7 +490,7 @@ public class VdsVisitorTestCase {
 
     private static class MockVisitorSessionFactory implements VdsVisitor.VisitorSessionFactory {
         private VisitorParameters params;
-        private LoadTypeSet loadTypeSet;
+        private LoadTypeSet loadTypeSet; // TODO remove on Vespa 8
         private boolean timeoutQuery = false;
         private boolean failQuery = false;
 
@@ -504,6 +505,7 @@ public class VdsVisitorTestCase {
         }
 
         @Override
+        // TODO: Remove on Vespa 8
         public LoadTypeSet getLoadTypeSet() {
             return loadTypeSet;
         }

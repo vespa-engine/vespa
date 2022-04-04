@@ -4,8 +4,10 @@ package com.yahoo.documentapi.messagebus.loadtypes;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 
 /**
+ * @deprecated load types are deprecated
  * @author thomasg
  */
+@Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
 public class LoadType {
     private int id;
     private String name;

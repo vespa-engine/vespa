@@ -69,14 +69,18 @@ public final class SessionCache extends AbstractComponent {
     @Inject
     public SessionCache(NetworkMultiplexerProvider nets, ContainerMbusConfig containerMbusConfig,
                         DocumentTypeManager documentTypeManager,
-                        LoadTypeConfig loadTypeConfig, MessagebusConfig messagebusConfig,
+                        MessagebusConfig messagebusConfig,
                         DocumentProtocolPoliciesConfig policiesConfig,
                         DistributionConfig distributionConfig) {
         this(nets::net, containerMbusConfig, documentTypeManager,
-             loadTypeConfig, messagebusConfig, policiesConfig, distributionConfig);
+             null/*TODO: Remove on Vespa 8*/, messagebusConfig, policiesConfig, distributionConfig);
 
     }
 
+    /**
+     * @deprecated load types are deprecated. Use constructor without LoadTypeSet instead.
+     */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
     public SessionCache(Supplier<NetworkMultiplexer> net, ContainerMbusConfig containerMbusConfig,
                         DocumentTypeManager documentTypeManager,
                         LoadTypeConfig loadTypeConfig, MessagebusConfig messagebusConfig,
@@ -86,7 +90,6 @@ public final class SessionCache extends AbstractComponent {
              containerMbusConfig,
              messagebusConfig,
              new DocumentProtocol(documentTypeManager,
-                                  new LoadTypeSet(loadTypeConfig),
                                   policiesConfig,
                                   distributionConfig));
     }

@@ -10,7 +10,6 @@ import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.log.LogSetup;
 import com.yahoo.messagebus.StaticThrottlePolicy;
@@ -36,7 +35,7 @@ import java.util.stream.Collectors;
 public class VdsVisit {
 
     private VdsVisitParameters params;
-    private MessageBusParams mbparams = new MessageBusParams(new LoadTypeSet());
+    private MessageBusParams mbparams = new MessageBusParams();
     private VisitorSession session;
 
     private final VisitorSessionAccessorFactory sessionAccessorFactory;
