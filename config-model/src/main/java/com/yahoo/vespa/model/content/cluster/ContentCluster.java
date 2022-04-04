@@ -62,7 +62,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 
-import static com.yahoo.config.provision.NodeResources.Architecture;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed;
 import static com.yahoo.config.provision.NodeResources.StorageType;
 import static java.util.stream.Collectors.toList;
@@ -337,8 +336,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
                                                                                 DeployState deployState,
                                                                                 String clusterName) {
             if (admin.getClusterControllers() == null) {
-                NodeResources nodeResources = clusterControllerResources
-                        .with(Architecture.valueOf(deployState.featureFlags().adminClusterNodeArchitecture()));
+                NodeResources nodeResources = clusterControllerResources.with(deployState.featureFlags().adminClusterArchitecture());
                 NodesSpecification spec = NodesSpecification.requiredFromSharedParents(deployState.zone().environment().isProduction() ? 3 : 1,
                                                                                        nodeResources,
                                                                                        contentElement,
