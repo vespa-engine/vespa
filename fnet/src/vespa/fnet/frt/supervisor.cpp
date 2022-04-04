@@ -30,12 +30,10 @@ FRT_Supervisor::FRT_Supervisor(FNET_Transport *transport)
 
 FRT_Supervisor::~FRT_Supervisor()
 {
-    if (_connector != nullptr) {
-        _connector->Owner()->Close(_connector, /* needref */ false);
-    }
-    _transport->wait_for_pending_resolves();
     _transport->detach(this);
-    _transport->sync();
+    if (_connector != nullptr) {
+        _connector->SubRef();
+    }
 }
 
 FNET_Scheduler *

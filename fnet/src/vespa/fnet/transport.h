@@ -113,6 +113,11 @@ private:
     Threads            _threads;
     const FNET_Config  _config;
 
+    /**
+     * Wait for all pending resolve requests.
+     **/
+    void wait_for_pending_resolves();
+
 public:
     FNET_Transport(const FNET_Transport &) = delete;
     FNET_Transport & operator = (const FNET_Transport &) = delete;
@@ -158,11 +163,6 @@ public:
      **/
     void resolve_async(const vespalib::string &spec,
                        vespalib::AsyncResolver::ResultHandler::WP result_handler);
-
-    /**
-     * Wait for all pending resolve requests.
-     **/
-    void wait_for_pending_resolves();
 
     /**
      * Wrap a plain socket endpoint (client side) in a CryptoSocket. The
@@ -258,11 +258,8 @@ public:
      * Detach a server adapter from this transport.
      *
      * This will close all connectors and connections referencing the
-     * server adapter. Note that this is an async
-     * operation. 'wait_for_pending_resolves' should be called before
-     * this to make sure any in-flight connections are added
-     * first. 'sync' should be called after this to drain any pending
-     * call-backs.
+     * server adapter. Note that this function will also synchronize
+     * with async address resolving and underlying transport threads.
      **/
     void detach(FNET_IServerAdapter *server_adapter);
 

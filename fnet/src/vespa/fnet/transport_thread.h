@@ -13,6 +13,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
+#include <set>
 
 namespace fnet { struct TimeTools; }
 class FNET_Transport;
@@ -51,6 +52,7 @@ private:
     std::atomic<bool>        _started;        // event loop started ?
     std::atomic<bool>        _shutdown;       // should stop event loop ?
     std::atomic<bool>        _finished;       // event loop stopped ?
+    std::set<FNET_IServerAdapter*> _detaching; // server adapters being detached
 
     /**
      * Add an IOComponent to the list of components. This operation is
@@ -143,7 +145,8 @@ private:
 
     void handle_add_cmd(FNET_IOComponent *ioc);
     void handle_close_cmd(FNET_IOComponent *ioc);
-    void handle_detach_server_adapter_cmd(FNET_IServerAdapter *server_adapter);
+    void handle_detach_server_adapter_init_cmd(FNET_IServerAdapter *server_adapter);
+    void handle_detach_server_adapter_fini_cmd(FNET_IServerAdapter *server_adapter);
 
     /**
      * This method is called to initialize the transport thread event
@@ -336,16 +339,16 @@ public:
     void Close(FNET_IOComponent *comp, bool needRef = true);
 
     /**
-     * Detach a server adapter from this transport.
-     *
-     * This will close all connectors and connections referencing the
-     * server adapter. Note that this is an async
-     * operation. 'wait_for_pending_resolves' (on the owning
-     * Transport) should be called before this to make sure any
-     * in-flight connections are added first. 'sync' should be called
-     * after this to drain any pending call-backs.
+     * Start the operation of detaching a server adapter from this
+     * transport.
      **/
-    void detach(FNET_IServerAdapter *server_adapter);
+    void init_detach(FNET_IServerAdapter *server_adapter);
+
+    /**
+     * Complete the operation of detaching a server adapter from this
+     * transport.
+     **/
+    void fini_detach(FNET_IServerAdapter *server_adapter);
 
     /**
      * Post an execution event on the transport event queue. The return
