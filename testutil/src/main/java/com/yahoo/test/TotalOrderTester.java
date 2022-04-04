@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
  * @author Vegard Sjonfjell
  */
 
-public class TotalOrderTester<T extends Comparable<T>> extends OrderTester<T> {
+public class TotalOrderTester<T extends Comparable<? super T>> extends OrderTester<T> {
     protected void lessTest(T a, T b) throws AssertionError {
         assertTrue(a + " must be less than " + b, a.compareTo(b) <= -1);
     }
