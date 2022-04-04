@@ -58,7 +58,7 @@ public class NginxMetricsReporter extends AbstractComponent implements Runnable 
 
     @Inject
     public NginxMetricsReporter(ApplicationIdConfig applicationId, Metric metric, HealthStatus healthStatus, RoutingGenerator routingGenerator) {
-        this(ApplicationId.from(applicationId), metric, healthStatus, FileSystems.getDefault(), interval, routingGenerator::routingTable);
+        this(new ApplicationId(applicationId), metric, healthStatus, FileSystems.getDefault(), interval, routingGenerator::routingTable);
     }
 
     NginxMetricsReporter(ApplicationId application, Metric metric, HealthStatus healthStatus, FileSystem fileSystem, Duration interval,

@@ -3,10 +3,6 @@ package com.yahoo.config.provision;
 
 import com.yahoo.cloud.config.ApplicationIdConfig;
 
-import java.util.Comparator;
-import java.util.Objects;
-import java.util.regex.Pattern;
-
 /**
  * A complete, immutable identification of an application instance.
  *
@@ -14,38 +10,25 @@ import java.util.regex.Pattern;
  * @author vegard
  * @author bratseth
  */
-public class ApplicationId implements Comparable<ApplicationId> {
-
-    // TODO: remove '.' and '*' from this pattern.
-    static final Pattern namePattern = Pattern.compile("(?!\\.\\.)[a-zA-Z0-9_.*-]{1,64}");
-
-    private static final ApplicationId global = new ApplicationId(TenantName.from("*"),
-                                                                  ApplicationName.from("*"),
-                                                                  InstanceName.from("*")) {
-        @Override public boolean equals(Object other) { return this == other; }
-    };
-
-    private static final Comparator<ApplicationId> comparator = Comparator.comparing(ApplicationId::tenant)
-                                                                          .thenComparing(ApplicationId::application)
-                                                                          .thenComparing(ApplicationId::instance)
-                                                                          .thenComparing(global::equals, Boolean::compare);
+public final class ApplicationId implements Comparable<ApplicationId> {
 
     private final TenantName tenant;
     private final ApplicationName application;
     private final InstanceName instance;
+
+    private final String stringValue;
     private final String serializedForm;
+
+    public ApplicationId(ApplicationIdConfig config) {
+        this(TenantName.from(config.tenant()), ApplicationName.from(config.application()), InstanceName.from(config.instance()));
+    }
 
     private ApplicationId(TenantName tenant, ApplicationName applicationName, InstanceName instanceName) {
         this.tenant = tenant;
         this.application = applicationName;
         this.instance = instanceName;
+        this.stringValue = toStringValue();
         this.serializedForm = toSerializedForm();
-    }
-
-    public static ApplicationId from(ApplicationIdConfig config) {
-        return from(TenantName.from(config.tenant()),
-                    ApplicationName.from(config.application()),
-                    InstanceName.from(config.instance()));
     }
 
     public static ApplicationId from(TenantName tenant, ApplicationName application, InstanceName instance) {
@@ -61,7 +44,7 @@ public class ApplicationId implements Comparable<ApplicationId> {
         if (parts.length < 3)
             throw new IllegalArgumentException("Application ids must be on the form tenant:application:instance, but was " + idString);
 
-        return from(parts[0], parts[1], parts[2]);
+        return new Builder().tenant(parts[0]).applicationName(parts[1]).instanceName(parts[2]).build();
     }
 
     public static ApplicationId fromFullString(String idString) {
@@ -69,11 +52,11 @@ public class ApplicationId implements Comparable<ApplicationId> {
         if (parts.length < 3)
             throw new IllegalArgumentException("Application ids must be on the form tenant.application.instance, but was " + idString);
 
-        return from(parts[0], parts[1], parts[2]);
+        return new Builder().tenant(parts[0]).applicationName(parts[1]).instanceName(parts[2]).build();
     }
 
     @Override
-    public int hashCode() { return Objects.hash(tenant, application, instance); }
+    public int hashCode() { return stringValue.hashCode(); }
 
     @Override
     public boolean equals(Object other) {
@@ -89,6 +72,10 @@ public class ApplicationId implements Comparable<ApplicationId> {
     /** Returns a serialized form of the content of this: tenant:application:instance */
     public String serializedForm() { return serializedForm; }
 
+    private String toStringValue() {
+        return "tenant '" + tenant + "', application '" + application + "', instance '" + instance + "'";
+    }
+
     /** Returns "dotted" string (tenant.application.instance) with instance name omitted if it is "default" */
     public String toShortString() {
         return tenant().value() + "." + application().value() +
@@ -101,7 +88,7 @@ public class ApplicationId implements Comparable<ApplicationId> {
     }
 
     private String toSerializedForm() {
-        return tenant.value() + ":" + application.value() + ":" + instance.value();
+        return tenant + ":" + application + ":" + instance;
     }
 
     @Override
@@ -113,7 +100,18 @@ public class ApplicationId implements Comparable<ApplicationId> {
 
     @Override
     public int compareTo(ApplicationId other) {
-        return comparator.compare(this, other);
+        int diff;
+
+        diff = tenant.compareTo(other.tenant);
+        if (diff != 0) { return diff; }
+
+        diff = application.compareTo(other.application);
+        if (diff != 0) { return diff; }
+
+        diff = instance.compareTo(other.instance);
+        if (diff != 0) { return diff; }
+
+        return 0;
     }
 
     /** Returns an application id where all fields are "default" */
@@ -121,10 +119,12 @@ public class ApplicationId implements Comparable<ApplicationId> {
         return new ApplicationId(TenantName.defaultName(), ApplicationName.defaultName(), InstanceName.defaultName());
     }
 
-    // TODO: kill this
-    /** Returns a very special application id, which is not equal to any other id. */
+    /** Returns an application id where all fields are "*" */
     public static ApplicationId global() {
-        return global;
+        return new Builder().tenant("*")
+                            .applicationName("*")
+                            .instanceName("*")
+                            .build();
     }
 
     public static class Builder {
