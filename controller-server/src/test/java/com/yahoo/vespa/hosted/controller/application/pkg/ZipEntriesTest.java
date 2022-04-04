@@ -8,7 +8,6 @@ import com.yahoo.security.X509CertificateBuilder;
 import org.junit.Test;
 
 import javax.security.auth.x500.X500Principal;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -32,21 +31,21 @@ import static org.junit.Assert.fail;
 /**
  * @author mpolden
  */
-public class ZipStreamReaderTest {
+public class ZipEntriesTest {
 
     @Test
     public void test_size_limit() {
         Map<String, String> entries = Map.of("foo.xml", "foobar");
         try {
-            new ZipStreamReader(new ByteArrayInputStream(zip(entries)), "foo.xml"::equals, 1, true);
+            ZipEntries.from(zip(entries), "foo.xml"::equals, 1, true);
             fail("Expected exception");
         } catch (IllegalArgumentException ignored) {}
 
         entries = Map.of("foo.xml", "foobar",
                          "foo.jar", "0".repeat(100) // File not extracted and thus not subject to size limit
         );
-        ZipStreamReader reader = new ZipStreamReader(new ByteArrayInputStream(zip(entries)), "foo.xml"::equals, 10, true);
-        byte[] extracted = reader.entries().get(0).contentOrThrow();
+        ZipEntries reader = ZipEntries.from(zip(entries), "foo.xml"::equals, 10, true);
+        byte[] extracted = reader.asList().get(0).contentOrThrow();
         assertEquals("foobar", new String(extracted, StandardCharsets.UTF_8));
     }
 
@@ -65,7 +64,7 @@ public class ZipStreamReaderTest {
         );
         tests.forEach((name, expectException) -> {
             try {
-                new ZipStreamReader(new ByteArrayInputStream(zip(Map.of(name, "foo"))), name::equals, 1024, true);
+                ZipEntries.from(zip(Map.of(name, "foo")), name::equals, 1024, true);
                 assertFalse("Expected exception for '" + name + "'", expectException);
             } catch (IllegalArgumentException ignored) {
                 assertTrue("Unexpected exception for '" + name + "'", expectException);
