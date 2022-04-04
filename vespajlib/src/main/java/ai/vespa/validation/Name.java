@@ -3,8 +3,6 @@ package ai.vespa.validation;
 
 import java.util.regex.Pattern;
 
-import static ai.vespa.validation.Validation.requireMatch;
-
 /**
  * A name has from 1 to 64 {@link String} characters which may be letters, numbers,
  * dashes or underscores, and must start with a letter.
