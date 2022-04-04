@@ -158,7 +158,7 @@ public class CompressedApplicationInputStreamTest {
 
     private static File createTarGz(String appDir) throws IOException, InterruptedException {
         File tmpTar = File.createTempFile("myapp", ".tar");
-        Process p = new ProcessBuilder("tar", "-C", appDir, "--exclude=.svn", "--strip-components=1", "-cvf", tmpTar.getAbsolutePath(), ".").start();
+        Process p = new ProcessBuilder("tar", "-C", appDir, "-cvf", tmpTar.getAbsolutePath(), ".").start();
         p.waitFor();
         p = new ProcessBuilder("gzip", tmpTar.getAbsolutePath()).start();
         p.waitFor();

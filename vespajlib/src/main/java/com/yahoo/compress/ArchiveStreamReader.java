@@ -54,7 +54,7 @@ public class ArchiveStreamReader implements AutoCloseable {
         ArchiveEntry entry;
         try {
             while ((entry = archiveInputStream.getNextEntry()) != null) {
-                Path path = Path.fromString(requireNormalized(entry.getName()));
+                Path path = Path.fromString(requireNormalized(entry.getName(), options.allowDotSegment));
                 if (isSymlink(entry)) throw new IllegalArgumentException("Archive entry " + path + " is a symbolic link, which is disallowed");
                 if (entry.isDirectory()) continue;
                 if (!options.pathPredicate.test(path.toString())) continue;
@@ -144,9 +144,9 @@ public class ArchiveStreamReader implements AutoCloseable {
         throw new IllegalArgumentException("Unsupported archive entry " + entry.getClass().getSimpleName() + ", cannot check for symbolic link");
     }
 
-    private static String requireNormalized(String name) {
+    private static String requireNormalized(String name, boolean allowDotSegment) {
         for (var part : name.split("/")) {
-            if (part.isEmpty() || part.equals(".") || part.equals("..")) {
+            if (part.isEmpty() || (!allowDotSegment && part.equals(".")) || part.equals("..")) {
                 throw new IllegalArgumentException("Unexpected non-normalized path found in zip content: '" + name + "'");
             }
         }
@@ -159,6 +159,7 @@ public class ArchiveStreamReader implements AutoCloseable {
         private long sizeLimit = 8 * (long) Math.pow(1024, 3); // 8 GB
         private long entrySizeLimit = Long.MAX_VALUE;
         private boolean truncateEntry = false;
+        private boolean allowDotSegment = false;
         private Predicate<String> pathPredicate = (path) -> true;
 
         private Options() {}
@@ -189,9 +190,15 @@ public class ArchiveStreamReader implements AutoCloseable {
             return this;
         }
 
-        /** Set a predicate that an archive file path must match in order to be extracted. Default is to extract all files */
+        /** Set a predicate that an entry path must match in order to be extracted. Default is to extract all entries */
         public Options pathPredicate(Predicate<String> predicate) {
             this.pathPredicate = predicate;
+            return this;
+        }
+
+        /** Set whether to allow single-dot segments in entry paths. Default is false */
+        public Options allowDotSegment(boolean allow) {
+            this.allowDotSegment = allow;
             return this;
         }
 

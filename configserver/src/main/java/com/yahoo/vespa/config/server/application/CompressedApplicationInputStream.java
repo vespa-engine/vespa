@@ -43,11 +43,12 @@ public class CompressedApplicationInputStream implements AutoCloseable {
      */
     public static CompressedApplicationInputStream createFromCompressedStream(InputStream is, String contentType) {
         try {
+            Options options = Options.standard().allowDotSegment(true);
             switch (contentType) {
                 case ApplicationApiHandler.APPLICATION_X_GZIP:
-                    return new CompressedApplicationInputStream(ArchiveStreamReader.ofTarGzip(is, Options.standard()));
+                    return new CompressedApplicationInputStream(ArchiveStreamReader.ofTarGzip(is, options));
                 case ApplicationApiHandler.APPLICATION_ZIP:
-                    return new CompressedApplicationInputStream(ArchiveStreamReader.ofZip(is, Options.standard()));
+                    return new CompressedApplicationInputStream(ArchiveStreamReader.ofZip(is, options));
                 default:
                     throw new BadRequestException("Unable to decompress");
             }
@@ -87,7 +88,7 @@ public class CompressedApplicationInputStream implements AutoCloseable {
             while ((file = reader.readNextTo(tmpStream)) != null) {
                 tmpStream.close();
                 log.log(Level.FINE, "Creating output file: " + file.path());
-                Path dstFile = dir.resolve(file.path().toString());
+                Path dstFile = dir.resolve(file.path().toString()).normalize();
                 Files.createDirectories(dstFile.getParent());
                 Files.move(tmpFile, dstFile);
                 tmpFile = createTempFile(dir);
