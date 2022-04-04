@@ -106,7 +106,7 @@ public class ApplicationIdTest {
         builder.tenant("a");
         builder.application("b");
         builder.instance("c");
-        ApplicationId applicationId = ApplicationId.from(new ApplicationIdConfig(builder));
+        ApplicationId applicationId = new ApplicationId(new ApplicationIdConfig(builder));
         assertEquals("a", applicationId.tenant().value());
         assertEquals("b", applicationId.application().value());
         assertEquals("c", applicationId.instance().value());

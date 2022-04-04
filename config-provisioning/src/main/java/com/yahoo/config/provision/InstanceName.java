@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import ai.vespa.validation.PatternedStringWrapper;
+import java.util.Objects;
 
 /**
  * Represents an applications instance name, which may be any kind of string or default. This type is defined
@@ -9,12 +9,30 @@ import ai.vespa.validation.PatternedStringWrapper;
  *
  * @author Ulf Lilleengen
  */
-public class InstanceName extends PatternedStringWrapper<InstanceName> {
+public class InstanceName implements Comparable<InstanceName> {
 
-    private static final InstanceName defaultName = new InstanceName("default");
+    private static final InstanceName defaultInstance = new InstanceName("default");
 
-    private InstanceName(String name) {
-        super(name, ApplicationId.namePattern, "instance name");
+    private final String instanceName;
+
+    private InstanceName(String instanceName) {
+        this.instanceName = instanceName;
+    }
+
+    @Override
+    public int hashCode() {
+        return instanceName.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof InstanceName)) return false;
+        return Objects.equals(((InstanceName) obj).instanceName, instanceName);
+    }
+
+    @Override
+    public String toString() {
+        return instanceName;
     }
 
     public static InstanceName from(String name) {
@@ -22,15 +40,22 @@ public class InstanceName extends PatternedStringWrapper<InstanceName> {
     }
 
     public static InstanceName defaultName() {
-        return defaultName;
+        return defaultInstance;
     }
 
     public boolean isDefault() {
-        return equals(defaultName);
+        return equals(InstanceName.defaultName());
     }
 
     public boolean isTester() {
         return value().endsWith("-t");
+    }
+
+    public String value() { return instanceName; }
+
+    @Override
+    public int compareTo(InstanceName instance) {
+        return instanceName.compareTo(instance.instanceName);
     }
 
 }
