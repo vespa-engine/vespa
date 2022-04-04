@@ -37,7 +37,7 @@ namespace document {
 
 namespace internal {
 
-using DocumentTypeMapT = vespalib::hash_map<int32_t, DataTypeRepo *>;
+using DocumentTypeMapT = std::map<int32_t, std::unique_ptr<DataTypeRepo>>;
 
 class DocumentTypeMap : public DocumentTypeMapT
 {
@@ -50,28 +50,16 @@ public:
 using DocumentTypeMap = internal::DocumentTypeMap;
 
 namespace {
-template <typename Container>
-void DeleteContent(Container &c) {
-    for (auto ptr : c) {
-        delete ptr;
-    }
-}
-template <typename Map>
-void DeleteMapContent(Map &m) {
-    for (auto & entry : m) {
-        delete entry.second;
-    }
-}
 
 // A collection of data types.
 class Repo {
-    vector<const DataType *> _owned_types;
-    hash_map<int32_t, const DataType *> _types;
+    vector<std::unique_ptr<const DataType>> _owned_types;
+    hash_map<int32_t, const DataType *> _id_map;
     hash_map<string, const DataType *> _tensorTypes;
     hash_map<string, const DataType *> _name_map;
 
 public:
-    ~Repo() { DeleteContent(_owned_types); }
+    ~Repo() {}
 
     void inherit(const Repo &parent);
     bool addDataType(const DataType &type);
@@ -85,14 +73,14 @@ public:
 };
 
 void Repo::inherit(const Repo &parent) {
-    _types.insert(parent._types.begin(), parent._types.end());
+    _id_map.insert(parent._id_map.begin(), parent._id_map.end());
     _tensorTypes.insert(parent._tensorTypes.begin(), parent._tensorTypes.end());
     _name_map.insert(parent._name_map.begin(), parent._name_map.end());
 }
 
 // Returns true if a reference to type is stored.
 bool Repo::addDataType(const DataType &type) {
-    const DataType *& data_type = _types[type.getId()];
+    const DataType *& data_type = _id_map[type.getId()];
     if (data_type) {
         if (data_type->equals(type) && (data_type->getName() == type.getName())) {
             return false;  // Redefinition of identical type is ok.
@@ -117,9 +105,9 @@ template <typename T>
 const DataType* Repo::addDataType(unique_ptr<T> type) {
     int id = type->getId();
     if (addDataType(*type)) {
-        _owned_types.push_back(type.release());
+        _owned_types.emplace_back(std::move(type));
     }
-    return _types[id];
+    return _id_map[id];
 }
 
 
@@ -127,28 +115,21 @@ const DataType &
 Repo::addTensorType(const string &spec)
 {
     auto type = TensorDataType::fromSpec(spec);
-    auto insres = _tensorTypes.insert(std::make_pair(spec, type.get()));
-    if (insres.second) {
-        _owned_types.push_back(type.release());
+    auto [ iter, inserted ] = _tensorTypes.insert(std::make_pair(spec, type.get()));
+    if (inserted) {
+        _owned_types.emplace_back(std::move(type));
     }
-    return *insres.first->second;
-}
-
-template <typename Map>
-typename Map::mapped_type FindPtr(const Map &m, typename Map::key_type key) {
-    typename Map::const_iterator it = m.find(key);
-    if (it != m.end()) {
-        return it->second;
-    }
-    return typename Map::mapped_type();
+    return *iter->second;
 }
 
 const DataType *Repo::lookup(int32_t id) const {
-    return FindPtr(_types, id);
+    auto iter = _id_map.find(id);
+    return (iter == _id_map.end()) ? nullptr : iter->second;
 }
 
 const DataType *Repo::lookup(stringref n) const {
-    return FindPtr(_name_map, n);
+    auto iter = _name_map.find(n);
+    return (iter == _name_map.end()) ? nullptr : iter->second;
 }
 
 const DataType &Repo::findOrThrow(int32_t id) const {
@@ -169,11 +150,11 @@ Repo::findOrThrowOrCreate(int32_t id, const string &detailedType)
 }
 
 class AnnotationTypeRepo {
-    vector<const AnnotationType *> _owned_types;
+    vector<std::unique_ptr<const AnnotationType>> _owned_types;
     hash_map<int32_t, AnnotationType *> _annotation_types;
 
 public:
-    ~AnnotationTypeRepo() { DeleteContent(_owned_types); }
+    ~AnnotationTypeRepo() {}
 
     void inherit(const AnnotationTypeRepo &parent);
     AnnotationType * addAnnotationType(AnnotationType::UP annotation_type);
@@ -196,7 +177,7 @@ AnnotationType * AnnotationTypeRepo::addAnnotationType(AnnotationType::UP type) 
         }
     } else {
         a_type = type.get();
-        _owned_types.push_back(type.release());
+        _owned_types.emplace_back(std::move(type));
     }
     return a_type;
 }
@@ -215,7 +196,8 @@ void AnnotationTypeRepo::setAnnotationDataType(int32_t id, const DataType &d) {
 }
 
 const AnnotationType *AnnotationTypeRepo::lookup(int32_t id) const {
-    return FindPtr(_annotation_types, id);
+    auto iter = _annotation_types.find(id);
+    return (iter == _annotation_types.end()) ? nullptr : iter->second;
 }
 
 }  // namespace
@@ -225,12 +207,12 @@ const AnnotationType *AnnotationTypeRepo::lookup(int32_t id) const {
 struct DataTypeRepo {
     typedef unique_ptr<DataTypeRepo> UP;
 
-    DocumentType *doc_type;
+    std::unique_ptr<DocumentType> doc_type;
     Repo repo;
     AnnotationTypeRepo annotations;
 
-    DataTypeRepo() : doc_type(nullptr) {}
-    ~DataTypeRepo() { delete doc_type; }
+    DataTypeRepo() : doc_type() {}
+    ~DataTypeRepo() {}
 };
 
 namespace {
@@ -363,13 +345,15 @@ void addDataTypes(const vector<Datatype> &types, Repo &repo, const AnnotationTyp
 }
 
 void addDocumentTypes(const DocumentTypeMap &type_map, Repo &repo) {
-    for (const auto & entry : type_map) {
-        repo.addDataType(*entry.second->doc_type);
+    for (const auto & [ key, data_type_repo ] : type_map) {
+        repo.addDataType(*data_type_repo->doc_type);
     }
 }
 
 const DocumentType *
 addDefaultDocument(DocumentTypeMap &type_map) {
+    const uint32_t typeId = DataType::T_DOCUMENT;
+
     auto data_types = std::make_unique<DataTypeRepo>();
     vector<const DataType *> default_types = DataType::getDefaultDataTypes();
     for (size_t i = 0; i < default_types.size(); ++i) {
@@ -377,16 +361,14 @@ addDefaultDocument(DocumentTypeMap &type_map) {
     }
     data_types->repo.addDataType(UrlDataType::getInstance());
     data_types->repo.addDataType(PositionDataType::getInstance());
-    data_types->doc_type = new DocumentType("document", 8);
+    data_types->doc_type = std::make_unique<DocumentType>("document", typeId);
 
     vector<const AnnotationType *> annotation_types(AnnotationType::getDefaultAnnotationTypes());
     for(size_t i(0); i < annotation_types.size(); ++i) {
         data_types->annotations.addAnnotationType(std::make_unique<AnnotationType>(*annotation_types[i]));
     }
-
-    uint32_t typeId = data_types->doc_type->getId();
-    const DocumentType * docType = data_types->doc_type;
-    type_map[typeId] = data_types.release();
+    const DocumentType * docType = data_types->doc_type.get();
+    type_map[typeId] = std::move(data_types);
     return docType;
 }
 
@@ -427,7 +409,7 @@ makeDataTypeRepo(const DocumentType &doc_type, const DocumentTypeMap &type_map) 
     auto data_types = std::make_unique<DataTypeRepo>();
     data_types->repo.inherit(lookupRepo(DataType::T_DOCUMENT, type_map).repo);
     data_types->annotations.inherit(lookupRepo(DataType::T_DOCUMENT, type_map).annotations);
-    data_types->doc_type = new DocumentType(doc_type);
+    data_types->doc_type = std::make_unique<DocumentType>(doc_type);
     return data_types;
 }
 
@@ -446,8 +428,8 @@ void addReferenceTypes(const vector<DocumenttypesConfig::Documenttype::Reference
                        Repo& data_type_repo, const DocumentTypeMap& doc_type_map)
 {
     for (const auto& ref_type : ref_types) {
-        const auto* target_doc_type = lookupRepo(ref_type.targetTypeId, doc_type_map).doc_type;
-        data_type_repo.addDataType(std::make_unique<ReferenceDataType>(*target_doc_type, ref_type.id));
+        const auto & repo = lookupRepo(ref_type.targetTypeId, doc_type_map);
+        data_type_repo.addDataType(std::make_unique<ReferenceDataType>(*repo.doc_type, ref_type.id));
     }
 }
 
@@ -460,7 +442,7 @@ void add_imported_fields(const DocumenttypesConfig::Documenttype::ImportedfieldV
 }
 
 void configureDataTypeRepo(const DocumenttypesConfig::Documenttype &doc_type, DocumentTypeMap &type_map) {
-    DataTypeRepo *data_types = type_map[doc_type.id];
+    const auto & data_types = type_map[doc_type.id];
     inheritAnnotationTypes(doc_type.inherits, type_map, data_types->annotations);
     addAnnotationTypes(doc_type.annotationtype, data_types->annotations);
     inheritDataTypes(doc_type.inherits, type_map, data_types->repo);
@@ -473,18 +455,18 @@ void configureDataTypeRepo(const DocumenttypesConfig::Documenttype &doc_type, Do
 }
 
 void addDataTypeRepo(DataTypeRepo::UP data_types, DocumentTypeMap &doc_types) {
-    DataTypeRepo *& p = doc_types[data_types->doc_type->getId()];
+    auto & p = doc_types[data_types->doc_type->getId()];
     if (p) {
         LOG(warning, "Type repo already exists for id %d.", data_types->doc_type->getId());
         throw IllegalArgumentException("Trying to redefine a document type.");
     }
-    p = data_types.release();
+    p = std::move(data_types);
 }
 
 DataTypeRepo::UP makeSkeletonDataTypeRepo(const DocumenttypesConfig::Documenttype &type) {
     auto data_types = std::make_unique<DataTypeRepo>();
     auto type_ap = std::make_unique<StructDataType>(type.name + ".header", type.headerstruct);
-    data_types->doc_type = new DocumentType(type.name, type.id, *type_ap);
+    data_types->doc_type = std::make_unique<DocumentType>(type.name, type.id, *type_ap);
     data_types->repo.addDataType(std::move(type_ap));
     return data_types;
 }
@@ -534,22 +516,24 @@ private:
 
     struct DocTypeInProgress {
         const CDocType & cfg;
-        DataTypeRepo * data_type_repo;
+        DataTypeRepo * data_type_repo = nullptr;
         DocumentType * dtype = nullptr;
         bool builtin = false;
 
         DocTypeInProgress(const CDocType & config, DocumentTypeMap &doc_types)
-            : cfg(config),
-              data_type_repo(doc_types[cfg.internalid])
+            : cfg(config)
         {
-            if (data_type_repo) {
+            auto iter = doc_types.find(cfg.internalid);
+            if (iter != doc_types.end()) {
                 LOG(debug, "old doct : %s [%d]", cfg.name.c_str(), cfg.internalid);
                 builtin = true;
             } else {
                 LOG(debug, "new doct : %s [%d]", cfg.name.c_str(), cfg.internalid);
-                data_type_repo = new DataTypeRepo();
-                doc_types[cfg.internalid] = data_type_repo;
+                doc_types.emplace(cfg.internalid, std::make_unique<DataTypeRepo>());
             }
+            iter = doc_types.find(cfg.internalid);
+            LOG_ASSERT(iter != doc_types.end());
+            data_type_repo = iter->second.get();
         }
 
         Repo& repo() { return data_type_repo->repo; }
@@ -674,15 +658,15 @@ private:
 
     void initializeDocTypeAndInheritAnnotations(DocTypeInProgress & dtInP) {
         if (dtInP.builtin) {
-            madeType(dtInP.data_type_repo->doc_type, dtInP.cfg.idx);
+            madeType(dtInP.data_type_repo->doc_type.get(), dtInP.cfg.idx);
             return;
         }
         LOG_ASSERT(dtInP.data_type_repo->doc_type == nullptr);
         const auto & docT = dtInP.cfg;
         const StructDataType * fields = findStruct(docT.contentstruct);
         if (fields != nullptr) {
-            dtInP.data_type_repo->doc_type = new DocumentType(docT.name, docT.internalid, *fields);
-            madeType(dtInP.data_type_repo->doc_type, docT.idx);
+            dtInP.data_type_repo->doc_type = std::make_unique<DocumentType>(docT.name, docT.internalid, *fields);
+            madeType(dtInP.data_type_repo->doc_type.get(), docT.idx);
         } else {
             LOG(error, "Missing content struct for '%s' (idx %d not found)",
                 docT.name.c_str(), docT.contentstruct);
@@ -696,7 +680,7 @@ private:
                     inheritD.idx, docT.name.c_str());
                 throw IllegalArgumentException("Unable to find document for inheritance");
             }
-            DataTypeRepo * parentRepo = FindPtr(_output, dt->getId());
+            DataTypeRepo * parentRepo = _output[dt->getId()].get();
             if (parentRepo == nullptr) {
                 LOG(error, "parent repo [id %d] missing for document %s",
                     dt->getId(), docT.name.c_str());
@@ -822,7 +806,7 @@ private:
             return;
         }
         const CDocType & docT = dtInP.cfg;
-        auto * doc_type = dtInP.data_type_repo->doc_type;
+        auto * doc_type = dtInP.data_type_repo->doc_type.get();
         LOG_ASSERT(doc_type != nullptr);
         for (const auto & importD : docT.importedfield) {
             doc_type->add_imported_field_name(importD.name);
@@ -1011,7 +995,6 @@ DocumentTypeRepo::DocumentTypeRepo(const DocumentType & type) :
     try {
         addDataTypeRepo(makeDataTypeRepo(type, *_doc_types), *_doc_types);
     } catch (...) {
-        DeleteMapContent(*_doc_types);
         throw;
     }
 }
@@ -1029,19 +1012,26 @@ DocumentTypeRepo::DocumentTypeRepo(const DocumenttypesConfig &config) :
         configureAllRepos(config.documenttype, *_doc_types);
         }
     } catch (...) {
-        DeleteMapContent(*_doc_types);
         throw;
     }
 }
 
 DocumentTypeRepo::~DocumentTypeRepo() {
-    DeleteMapContent(*_doc_types);
+}
+
+DataTypeRepo *DocumentTypeRepo::findRepo(int32_t doc_type_id) const {
+    auto iter = _doc_types->find(doc_type_id);
+    if (iter == _doc_types->end()) {
+        return nullptr;
+    } else {
+        return iter->second.get();
+    }
 }
 
 const DocumentType *
 DocumentTypeRepo::getDocumentType(int32_t type_id) const noexcept {
-    const DataTypeRepo *repo = FindPtr(*_doc_types, type_id);
-    return repo ? repo->doc_type : nullptr;
+    const DataTypeRepo *repo = findRepo(type_id);
+    return repo ? repo->doc_type.get() : nullptr;
 }
 
 const DocumentType *
@@ -1049,11 +1039,11 @@ DocumentTypeRepo::getDocumentType(stringref name) const noexcept {
     DocumentTypeMap::const_iterator it = _doc_types->find(DocumentType::createId(name));
 
     if (it != _doc_types->end() && it->second->doc_type->getName() == name) {
-        return it->second->doc_type;
+        return it->second->doc_type.get();
     }
     for (it = _doc_types->begin(); it != _doc_types->end(); ++it) {
         if (it->second->doc_type->getName() == name) {
-            return it->second->doc_type;
+            return it->second->doc_type.get();
         }
     }
     return nullptr;
@@ -1061,19 +1051,19 @@ DocumentTypeRepo::getDocumentType(stringref name) const noexcept {
 
 const DataType *
 DocumentTypeRepo::getDataType(const DocumentType &doc_type, int32_t id) const {
-    const DataTypeRepo *dt_repo = FindPtr(*_doc_types, doc_type.getId());
+    const DataTypeRepo *dt_repo = findRepo(doc_type.getId());
     return dt_repo ? dt_repo->repo.lookup(id) : nullptr;
 }
 
 const DataType *
 DocumentTypeRepo::getDataType(const DocumentType &doc_type, stringref name) const {
-    const DataTypeRepo *dt_repo = FindPtr(*_doc_types, doc_type.getId());
+    const DataTypeRepo *dt_repo = findRepo(doc_type.getId());
     return dt_repo ? dt_repo->repo.lookup(name) : nullptr;
 }
 
 const AnnotationType *
 DocumentTypeRepo::getAnnotationType(const DocumentType &doc_type, int32_t id) const {
-    const DataTypeRepo *dt_repo = FindPtr(*_doc_types, doc_type.getId());
+    const DataTypeRepo *dt_repo = findRepo(doc_type.getId());
     return dt_repo ? dt_repo->annotations.lookup(id) : nullptr;
 }
 
