@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.controller.config.ControllerConfig;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceForwarder;
 import com.yahoo.vespa.hosted.controller.notification.NotificationsDb;
+import com.yahoo.vespa.hosted.controller.notify.Notifier;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.JobControlFlags;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
@@ -88,6 +89,7 @@ public class Controller extends AbstractComponent {
     private final CuratorArchiveBucketDb archiveBucketDb;
     private final NotificationsDb notificationsDb;
     private final SupportAccessControl supportAccessControl;
+    private final Notifier notifier;
 
     /**
      * Creates a controller 
@@ -126,6 +128,7 @@ public class Controller extends AbstractComponent {
         auditLogger = new AuditLogger(curator, clock);
         jobControl = new JobControl(new JobControlFlags(curator, flagSource));
         archiveBucketDb = new CuratorArchiveBucketDb(this);
+        notifier = new Notifier(curator, serviceRegistry.mailer());
         notificationsDb = new NotificationsDb(this);
         supportAccessControl = new SupportAccessControl(this);
 
@@ -330,4 +333,7 @@ public class Controller extends AbstractComponent {
         return supportAccessControl;
     }
 
+    public Notifier notifier() {
+        return notifier;
+    }
 }

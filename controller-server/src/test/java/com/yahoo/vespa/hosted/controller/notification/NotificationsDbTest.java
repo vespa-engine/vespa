@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.notification;
 
+import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.TenantName;
@@ -11,8 +12,14 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.notify.Notifier;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
+import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
+import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
+import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,6 +29,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.notification.Notification.Level;
@@ -36,6 +44,19 @@ import static org.junit.Assert.assertTrue;
 public class NotificationsDbTest {
 
     private static final TenantName tenant = TenantName.from("tenant1");
+    private static final String email = "user1@example.com";
+    private static final CloudTenant cloudTenant = new CloudTenant(tenant,
+            Instant.now(),
+            LastLoginInfo.EMPTY,
+            Optional.empty(),
+            ImmutableBiMap.of(),
+            TenantInfo.empty()
+                    .withContacts(new TenantContacts(
+                            List.of(new TenantContacts.EmailContact(
+                                List.of(TenantContacts.Audience.NOTIFICATIONS),
+                            email)))),
+            List.of(),
+            Optional.empty());
     private static final List<Notification> notifications = List.of(
             notification(1001, Type.deployment, Level.error, NotificationSource.from(tenant), "tenant msg"),
             notification(1101, Type.applicationPackage, Level.warning, NotificationSource.from(TenantAndApplicationId.from(tenant.value(), "app1")), "app msg"),
@@ -46,7 +67,8 @@ public class NotificationsDbTest {
 
     private final ManualClock clock = new ManualClock(Instant.ofEpochSecond(12345));
     private final MockCuratorDb curatorDb = new MockCuratorDb();
-    private final NotificationsDb notificationsDb = new NotificationsDb(clock, curatorDb);
+    private final MockMailer mailer = new MockMailer();
+    private final NotificationsDb notificationsDb = new NotificationsDb(clock, curatorDb, new Notifier(curatorDb, mailer));
 
     @Test
     public void list_test() {
@@ -72,6 +94,29 @@ public class NotificationsDbTest {
         List<Notification> expected = notificationIndices(0, 1, 3, 4, 5);
         expected.addAll(List.of(notification1, notification2));
         assertEquals(expected, curatorDb.readNotifications(tenant));
+    }
+
+    @Test
+    public void notifier_test() {
+        Notification notification1 = notification(12345, Type.deployment, Level.warning, NotificationSource.from(ApplicationId.from(tenant.value(), "app2", "instance2")), "instance msg #2");
+        Notification notification2 = notification(12345, Type.deployment, Level.error,   NotificationSource.from(ApplicationId.from(tenant.value(), "app3", "instance2")), "instance msg #3");
+        Notification notification3 = notification(12345, Type.reindex, Level.warning, NotificationSource.from(ApplicationId.from(tenant.value(), "app2", "instance2")), "instance msg #2");
+
+        var a = notifications.get(0);
+        notificationsDb.setNotification(a.source(), a.type(), a.level(), a.messages());
+        assertEquals(0, mailer.inbox(email).size());
+
+        // Replace the 3rd notification. but don't change source or type
+        notificationsDb.setNotification(notification1.source(), notification1.type(), notification1.level(), notification1.messages());
+        assertEquals(0, mailer.inbox(email).size());
+
+        // Notification for a new app, add without replacement
+        notificationsDb.setNotification(notification2.source(), notification2.type(), notification2.level(), notification2.messages());
+        assertEquals(1, mailer.inbox(email).size());
+
+        // Notification for new type on existing app
+        notificationsDb.setNotification(notification3.source(), notification3.type(), notification3.level(), notification3.messages());
+        assertEquals(2, mailer.inbox(email).size());
     }
 
     @Test
@@ -160,6 +205,8 @@ public class NotificationsDbTest {
     @Before
     public void init() {
         curatorDb.writeNotifications(tenant, notifications);
+        curatorDb.writeTenant(cloudTenant);
+        mailer.reset();
     }
 
     private static List<Notification> notificationIndices(int... indices) {
