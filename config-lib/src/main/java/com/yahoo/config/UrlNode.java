@@ -28,6 +28,10 @@ public class UrlNode extends LeafNode<File> {
         this.value = new File(url.value());
     }
 
+    public UrlNode(String url) {
+        this(new UrlReference(url));
+    }
+
     public File value() {
         return value;
     }

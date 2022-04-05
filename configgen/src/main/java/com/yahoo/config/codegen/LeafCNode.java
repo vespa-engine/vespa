@@ -218,7 +218,7 @@ public abstract class LeafCNode extends CNode {
         }
     }
 
-    public static class UrlLeaf extends NoClassNoDefaultLeafCNode {
+    public static class UrlLeaf extends NoClassLeafCNode {
         UrlLeaf(InnerCNode parent, String name) {
             super(parent, name);
         }

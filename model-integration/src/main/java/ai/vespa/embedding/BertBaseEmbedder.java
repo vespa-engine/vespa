@@ -2,6 +2,7 @@ package ai.vespa.embedding;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
+import com.yahoo.embedding.BertBaseEmbedderConfig;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.wordpiece.WordPieceEmbedder;
