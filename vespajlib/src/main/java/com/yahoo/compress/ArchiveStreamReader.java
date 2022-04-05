@@ -30,6 +30,7 @@ public class ArchiveStreamReader implements AutoCloseable {
     private final Options options;
 
     private long totalRead = 0;
+    private long entriesRead = 0;
 
     private ArchiveStreamReader(ArchiveInputStream archiveInputStream, Options options) {
         this.archiveInputStream = Objects.requireNonNull(archiveInputStream);
@@ -55,9 +56,10 @@ public class ArchiveStreamReader implements AutoCloseable {
         try {
             while ((entry = archiveInputStream.getNextEntry()) != null) {
                 Path path = Path.fromString(requireNormalized(entry.getName(), options.allowDotSegment));
-                if (isSymlink(entry)) throw new IllegalArgumentException("Archive entry " + path + " is a symbolic link, which is disallowed");
+                if (isSymlink(entry)) throw new IllegalArgumentException("Archive entry " + path + " is a symbolic link, which is unsupported");
                 if (entry.isDirectory()) continue;
                 if (!options.pathPredicate.test(path.toString())) continue;
+                if (++entriesRead > options.maxEntries) throw new IllegalArgumentException("Attempted to read more entries entry limit of " + options.maxEntries);
 
                 long size = 0;
                 byte[] buffer = new byte[2048];
@@ -65,9 +67,9 @@ public class ArchiveStreamReader implements AutoCloseable {
                 while ((read = archiveInputStream.read(buffer)) != -1) {
                     totalRead += read;
                     size += read;
-                    if (totalRead > options.maxSize) throw new IllegalArgumentException("Total size of archive exceeds size limit");
+                    if (totalRead > options.maxSize) throw new IllegalArgumentException("Total size of archive exceeds size limit of " + options.maxSize + " bytes");
                     if (read > options.maxEntrySize) {
-                        if (!options.truncateEntry) throw new IllegalArgumentException("Size of entry " + path + " exceeded entry size limit");
+                        if (!options.truncateEntry) throw new IllegalArgumentException("Size of entry " + path + " exceeded entry size limit of " + options.maxEntrySize + " bytes");
                     } else {
                         outputStream.write(buffer, 0, read);
                     }
@@ -116,11 +118,6 @@ public class ArchiveStreamReader implements AutoCloseable {
             return size;
         }
 
-        private static long requireNonNegative(String field, long n) {
-            if (n < 0) throw new IllegalArgumentException(field + " cannot be negative, got " + n);
-            return n;
-        }
-
     }
 
     /** Get the CRC-32 checksum of given archive entry, if any */
@@ -153,11 +150,17 @@ public class ArchiveStreamReader implements AutoCloseable {
         return name;
     }
 
+    private static long requireNonNegative(String field, long n) {
+        if (n < 0) throw new IllegalArgumentException(field + " cannot be negative, got " + n);
+        return n;
+    }
+
     /** Options for reading entries of an archive */
     public static class Options {
 
         private long maxSize = 8 * (long) Math.pow(1024, 3); // 8 GB
         private long maxEntrySize = Long.MAX_VALUE;
+        private long maxEntries = Long.MAX_VALUE;
         private boolean truncateEntry = false;
         private boolean allowDotSegment = false;
         private Predicate<String> pathPredicate = (path) -> true;
@@ -171,13 +174,19 @@ public class ArchiveStreamReader implements AutoCloseable {
 
         /** Set the maximum total size of decompressed entries. Default is 8 GB */
         public Options maxSize(long size) {
-            this.maxSize = size;
+            this.maxSize = requireNonNegative("size", size);
             return this;
         }
 
         /** Set the maximum size a decompressed entry. Default is no limit */
         public Options maxEntrySize(long size) {
-            this.maxEntrySize = size;
+            this.maxEntrySize = requireNonNegative("size", size);
+            return this;
+        }
+
+        /** Set the maximum number of entries to decompress. Default is no limit */
+        public Options maxEntries(long count) {
+            this.maxEntries = requireNonNegative("count", count);
             return this;
         }
 

@@ -62,6 +62,15 @@ class ArchiveStreamReaderTest {
     }
 
     @Test
+    void entry_limit() {
+        Map<String, String> entries = Map.of("foo.xml", "foo", "bar.xml", "bar");
+        try {
+            readAll(zip(entries), Options.standard().maxEntries(1));
+            fail("Expected exception");
+        } catch (IllegalArgumentException ignored) {}
+    }
+
+    @Test
     void paths() {
         Map<String, Boolean> tests = Map.of(
                 "../../services.xml", true,

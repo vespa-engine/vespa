@@ -60,6 +60,7 @@ public class ZipEntries {
                                  .pathPredicate(entryNameMatcher)
                                  .maxSize(2 * (long) Math.pow(1024, 3)) // 2 GB
                                  .maxEntrySize(maxEntrySizeInBytes)
+                                 .maxEntries(1024)
                                  .truncateEntry(!throwIfEntryExceedsMaxSize);
         List<ZipEntryWithContent> entries = new ArrayList<>();
         try (ArchiveStreamReader reader = ArchiveStreamReader.ofZip(new ByteArrayInputStream(zip), options)) {
