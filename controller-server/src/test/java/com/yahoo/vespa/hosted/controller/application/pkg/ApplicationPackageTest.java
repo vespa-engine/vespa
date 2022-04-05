@@ -5,7 +5,6 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -154,9 +153,9 @@ public class ApplicationPackageTest {
     }
 
     private static Map<String, String> unzip(byte[] zip) {
-        return new ZipStreamReader(new ByteArrayInputStream(zip), __ -> true, 1 << 10, true)
-                .entries().stream()
-                .collect(Collectors.toMap(entry -> entry.zipEntry().getName(),
+        return ZipEntries.from(zip, __ -> true, 1 << 10, true)
+                         .asList().stream()
+                         .collect(Collectors.toMap(ZipEntries.ZipEntryWithContent::name,
                                           entry -> new String(entry.contentOrThrow(), UTF_8)));
     }
 

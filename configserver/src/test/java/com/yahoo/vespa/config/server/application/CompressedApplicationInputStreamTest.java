@@ -2,10 +2,10 @@
 package com.yahoo.vespa.config.server.application;
 
 import com.google.common.io.ByteStreams;
+import com.yahoo.vespa.config.server.http.InternalServerException;
+import com.yahoo.yolean.Exceptions;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.junit.Test;
 
@@ -15,11 +15,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -64,9 +63,10 @@ public class CompressedApplicationInputStreamTest {
     @Test
     public void require_that_valid_tar_application_can_be_unpacked() throws IOException {
         File outFile = createTarFile();
-        CompressedApplicationInputStream unpacked = CompressedApplicationInputStream.createFromCompressedStream(new TarArchiveInputStream(new GZIPInputStream(new FileInputStream(outFile))));
-        File outApp = unpacked.decompress();
-        assertTestApp(outApp);
+        try (CompressedApplicationInputStream unpacked = streamFromTarGz(outFile)) {
+            File outApp = unpacked.decompress();
+            assertTestApp(outApp);
+        }
     }
 
     @Test
@@ -91,48 +91,39 @@ public class CompressedApplicationInputStreamTest {
 
         archiveOutputStream.close();
 
-        CompressedApplicationInputStream unpacked = CompressedApplicationInputStream.createFromCompressedStream(new TarArchiveInputStream(new GZIPInputStream(new FileInputStream(outFile))));
-        File outApp = unpacked.decompress();
-        assertEquals("application", outApp.getName()); // gets the name of the subdir
-        assertTestApp(outApp);
+        try (CompressedApplicationInputStream unpacked = streamFromTarGz(outFile)) {
+            File outApp = unpacked.decompress();
+            assertEquals("application", outApp.getName()); // gets the name of the subdir
+            assertTestApp(outApp);
+        }
     }
 
     @Test
     public void require_that_valid_zip_application_can_be_unpacked() throws IOException {
         File outFile = createZipFile();
-        CompressedApplicationInputStream unpacked = CompressedApplicationInputStream.createFromCompressedStream(
-                new ZipArchiveInputStream(new FileInputStream(outFile)));
-        File outApp = unpacked.decompress();
-        assertTestApp(outApp);
+        try (CompressedApplicationInputStream unpacked = streamFromZip(outFile)) {
+            File outApp = unpacked.decompress();
+            assertTestApp(outApp);
+        }
     }
 
     @Test
     public void require_that_gnu_tared_file_can_be_unpacked() throws IOException, InterruptedException {
-        File tmpTar = File.createTempFile("myapp", ".tar");
-        Process p = new ProcessBuilder("tar", "-C", "src/test/resources/deploy/validapp", "--exclude=.svn", "-cvf", tmpTar.getAbsolutePath(), ".").start();
-        p.waitFor();
-        p = new ProcessBuilder("gzip", tmpTar.getAbsolutePath()).start();
-        p.waitFor();
-        File gzFile = new File(tmpTar.getAbsolutePath() + ".gz");
+        File gzFile = createTarGz("src/test/resources/deploy/validapp");
         assertTrue(gzFile.exists());
-        CompressedApplicationInputStream unpacked = CompressedApplicationInputStream.createFromCompressedStream(
-                new TarArchiveInputStream(new GZIPInputStream(new FileInputStream(gzFile))));
+        CompressedApplicationInputStream unpacked = CompressedApplicationInputStream.createFromCompressedStream(new FileInputStream(gzFile), "application/x-gzip", Long.MAX_VALUE);
         File outApp = unpacked.decompress();
         assertTestApp(outApp);
     }
 
     @Test
     public void require_that_nested_app_can_be_unpacked() throws IOException, InterruptedException {
-        File tmpTar = File.createTempFile("myapp", ".tar");
-        Process p = new ProcessBuilder("tar", "-C", "src/test/resources/deploy/advancedapp", "--exclude=.svn", "-cvf", tmpTar.getAbsolutePath(), ".").start();
-        p.waitFor();
-        p = new ProcessBuilder("gzip", tmpTar.getAbsolutePath()).start();
-        p.waitFor();
-        File gzFile = new File(tmpTar.getAbsolutePath() + ".gz");
+        File gzFile = createTarGz("src/test/resources/deploy/advancedapp");
         assertTrue(gzFile.exists());
-        CompressedApplicationInputStream unpacked = CompressedApplicationInputStream.createFromCompressedStream(
-                new TarArchiveInputStream(new GZIPInputStream(new FileInputStream(gzFile))));
-        File outApp = unpacked.decompress();
+        File outApp;
+        try (CompressedApplicationInputStream unpacked = streamFromTarGz(gzFile)) {
+            outApp = unpacked.decompress();
+        }
         List<File> files = Arrays.asList(outApp.listFiles());
         assertEquals(5, files.size());
         assertTrue(files.contains(new File(outApp, "services.xml")));
@@ -164,11 +155,29 @@ public class CompressedApplicationInputStreamTest {
         assertEquals(new File(bar, "lol").getAbsolutePath(), bar.listFiles()[0].getAbsolutePath());
     }
 
-
-    @Test(expected = IOException.class)
-    public void require_that_invalid_application_returns_error_when_unpacked() throws IOException {
+    @Test(expected = InternalServerException.class)
+    public void require_that_invalid_application_returns_error_when_unpacked() throws Exception {
         File app = new File("src/test/resources/deploy/validapp/services.xml");
-        CompressedApplicationInputStream.createFromCompressedStream(
-                new TarArchiveInputStream(new GZIPInputStream(new FileInputStream(app))));
+        streamFromTarGz(app).close();
     }
+
+    private static File createTarGz(String appDir) throws IOException, InterruptedException {
+        File tmpTar = File.createTempFile("myapp", ".tar");
+        Process p = new ProcessBuilder("tar", "-C", appDir, "-cvf", tmpTar.getAbsolutePath(), ".").start();
+        p.waitFor();
+        p = new ProcessBuilder("gzip", tmpTar.getAbsolutePath()).start();
+        p.waitFor();
+        File gzFile = new File(tmpTar.getAbsolutePath() + ".gz");
+        assertTrue(gzFile.exists());
+        return gzFile;
+    }
+
+    private static CompressedApplicationInputStream streamFromZip(File zipFile) {
+        return Exceptions.uncheck(() -> CompressedApplicationInputStream.createFromCompressedStream(new FileInputStream(zipFile), "application/zip", Long.MAX_VALUE));
+    }
+
+    private static CompressedApplicationInputStream streamFromTarGz(File tarFile) {
+        return Exceptions.uncheck(() -> CompressedApplicationInputStream.createFromCompressedStream(new FileInputStream(tarFile), "application/x-gzip", Long.MAX_VALUE));
+    }
+
 }
