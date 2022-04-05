@@ -580,14 +580,13 @@ private:
             createEmptyStructs(dtInP);
             initializeDocTypeAndInheritAnnotations(dtInP);
             createEmptyAnnotationTypes(dtInP);
+        }
+        for (auto & [id, dtInP] : _doc_types_in_progress) {
             createReferenceTypes(dtInP);
         }
         createComplexTypes();
         fillStructs();
-        for (const CDocType & docT : _input) {
-            auto iter = _doc_types_in_progress.find(docT.idx);
-            LOG_ASSERT(iter != _doc_types_in_progress.end());
-            auto & dtInP = iter->second;
+        for (auto & [id, dtInP] : _doc_types_in_progress) {
             fillDocument(dtInP);
             fillAnnotationTypes(dtInP);
         }
