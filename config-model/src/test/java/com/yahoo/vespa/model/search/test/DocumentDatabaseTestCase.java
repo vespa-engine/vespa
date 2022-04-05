@@ -229,7 +229,7 @@ public class DocumentDatabaseTestCase {
         assertEquals(attributeField, acfg.attribute(0).name());
         assertEquals(attributeField+"_nfa", acfg.attribute(1).name());
         RankProfilesConfig rcfg = model.getConfig(RankProfilesConfig.class, configId);
-        assertEquals(6, rcfg.rankprofile().size());
+        assertEquals(7, rcfg.rankprofile().size());
     }
 
     @Test
