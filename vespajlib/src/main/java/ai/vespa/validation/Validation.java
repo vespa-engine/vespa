@@ -37,36 +37,36 @@ public class Validation {
 
     /** Requires the value to match the given pattern. */
     public static String requireMatch(String value, String description, Pattern pattern) {
-        return require(pattern.matcher(value).matches(), value, description, "must match '" + pattern + "'");
+        return require(pattern.matcher(value).matches(), value, description + " must match '" + pattern + "'");
     }
 
     /** Requires the value to be non-blank. */
     public static String requireNonBlank(String value, String description) {
-        return require( ! value.isBlank(), value, description, "cannot be blank");
+        return require( ! value.isBlank(), value, description + " cannot be blank");
     }
 
     /** Requires the value to be at least the lower bound. */
     public static <T extends Comparable<? super T>> T requireAtLeast(T value, String description, T lower) {
-        return require(lower.compareTo(value) <= 0, value, description, "must be at least '" + lower + "'");
+        return require(lower.compareTo(value) <= 0, value, description + " must be at least '" + lower + "'");
     }
 
     /** Requires the value to be at most the upper bound. */
     public static <T extends Comparable<? super T>> T requireAtMost(T value, String description, T upper) {
-        return require(upper.compareTo(value) >= 0, value, description, "must be at most '" + upper + "'");
+        return require(upper.compareTo(value) >= 0, value, description + " must be at most '" + upper + "'");
     }
 
     /** Requires the value to be at least the lower bound, and at most the upper bound. */
     public static <T extends Comparable<? super T>> T requireInRange(T value, String description, T lower, T upper) {
         if (lower.compareTo(upper) > 0) throw new IllegalArgumentException("lower bound cannot be greater than upper bound, " +
                                                                            "but got '" + lower + "' > '" + upper + "'");
-        return require(lower.compareTo(value) <= 0 && upper.compareTo(value) >= 0, value, description,
-                       "must be at least '" + lower + "' and at most '" + upper + "'");
+        return require(lower.compareTo(value) <= 0 && upper.compareTo(value) >= 0, value,
+                       description + " must be at least '" + lower + "' and at most '" + upper + "'");
     }
 
     /** Returns the argument if the condition is true, otherwise throws. */
-    public static <T> T require(boolean condition, T value, String description, String requirement) {
+    public static <T> T require(boolean condition, T value, String description) {
         if (condition) return value;
-        throw new IllegalArgumentException(description + " " + requirement + ", but got: '" + value + "'");
+        throw new IllegalArgumentException(description + ", but got: '" + value + "'");
     }
 
 }

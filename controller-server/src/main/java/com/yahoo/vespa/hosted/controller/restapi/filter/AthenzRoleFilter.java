@@ -104,7 +104,7 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
         Optional<ApplicationName> application = Optional.ofNullable(path.get("application")).map(ApplicationName::from);
 
         final Optional<ZoneId> zone;
-        if(path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/{*}")) {
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/{*}")) {
             zone = Optional.of(ZoneId.from(path.get("environment"), path.get("region")));
         } else if(path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/{*}")) {
             zone = Optional.of(ZoneId.from(path.get("environment"), path.get("region")));
