@@ -115,8 +115,8 @@ public class LocalProvider extends Provider implements
     public List<String> getDocumentTypes() {
         List<String> documentTypes = new ArrayList<>();
 
-        for (SearchCluster.SchemaSpec spec : searchCluster.schemas()) {
-            documentTypes.add(spec.getSchema().getDocument().getName());
+        for (SearchCluster.SchemaInfo spec : searchCluster.schemas()) {
+            documentTypes.add(spec.fullSchema().getDocument().getName());
         }
 
         return documentTypes;

@@ -34,12 +34,12 @@ public class SearchDataTypeValidator extends Validator {
             if (cluster.isStreaming()) {
                 continue;
             }
-            for (SearchCluster.SchemaSpec spec : cluster.schemas()) {
-                SDDocumentType docType = spec.getSchema().getDocument();
+            for (SearchCluster.SchemaInfo spec : cluster.schemas()) {
+                SDDocumentType docType = spec.fullSchema().getDocument();
                 if (docType == null) {
                     continue;
                 }
-                validateDocument(cluster, spec.getSchema(), docType);
+                validateDocument(cluster, spec.fullSchema(), docType);
             }
         }
     }

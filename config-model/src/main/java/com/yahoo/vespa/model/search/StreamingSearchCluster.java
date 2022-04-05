@@ -13,7 +13,6 @@ import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.vespa.config.search.SummarymapConfig;
 import com.yahoo.vespa.config.search.vsm.VsmfieldsConfig;
 import com.yahoo.vespa.config.search.vsm.VsmsummaryConfig;
-import java.util.List;
 
 /**
  * A search cluster of type streaming.
@@ -73,20 +72,17 @@ public class StreamingSearchCluster extends SearchCluster implements
     }
 
     @Override
-    protected void deriveAllSchemas(List<SchemaSpec> local, DeployState deployState) {
-        if (local.size() == 1) {
-            deriveSingleSearchDefinition(local.get(0).getSchema(), deployState);
-        } else if (local.size() > 1) {
-            throw new IllegalArgumentException("Only a single schema is supported, got " + local.size());
-        }
-    }
+    public void deriveSchemas(DeployState deployState) {
+        super.deriveSchemas(deployState);
+        if (schemas().isEmpty()) return;
+        if (schemas().size() > 1) throw new IllegalArgumentException("Only a single schema is supported, got " + schemas().size());
 
-    private void deriveSingleSearchDefinition(Schema localSchema, DeployState deployState) {
-        if (!localSchema.getName().equals(docTypeName)) {
+        Schema schema = schemas().get(0).fullSchema();
+        if ( ! schema.getName().equals(docTypeName))
             throw new IllegalArgumentException("Document type name '" + docTypeName +
-                                               "' must be the same as the schema name '" + localSchema.getName() + "'");
-        }
-        this.sdConfig = new DerivedConfiguration(localSchema, deployState.getDeployLogger(),
+                                               "' must be the same as the schema name '" + schema.getName() + "'");
+        this.sdConfig = new DerivedConfiguration(schema,
+                                                 deployState.getDeployLogger(),
                                                  deployState.getProperties(),
                                                  deployState.rankProfileRegistry(),
                                                  deployState.getQueryProfiles().getRegistry(),

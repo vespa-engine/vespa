@@ -36,9 +36,6 @@ public class MockSearchClusters {
         }
 
         @Override
-        protected void deriveAllSchemas(List<SchemaSpec> localSchemas, DeployState deployState) {}
-
-        @Override
         public void defaultDocumentsConfig() {}
 
         @Override

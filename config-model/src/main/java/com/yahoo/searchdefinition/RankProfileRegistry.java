@@ -21,7 +21,6 @@ import java.util.Set;
  *
  * @author Ulf Lilleengen
  */
-// TODO: These should be stored in each schema as everything else
 public class RankProfileRegistry {
 
     private final Map<String, Map<String, RankProfile>> rankProfiles = new LinkedHashMap<>();

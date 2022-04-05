@@ -29,8 +29,8 @@ public class ComplexAttributeFieldsValidator extends Validator {
         for (SearchCluster cluster : searchClusters) {
             if (cluster.isStreaming()) continue;
 
-            for (SearchCluster.SchemaSpec spec : cluster.schemas()) {
-                validateComplexFields(cluster.getClusterName(), spec.getSchema());
+            for (SearchCluster.SchemaInfo spec : cluster.schemas()) {
+                validateComplexFields(cluster.getClusterName(), spec.fullSchema());
             }
         }
     }

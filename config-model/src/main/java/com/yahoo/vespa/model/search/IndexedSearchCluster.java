@@ -6,7 +6,6 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.searchdefinition.DocumentOnlySchema;
-import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.DispatchConfig;
@@ -194,21 +193,21 @@ public class IndexedSearchCluster extends SearchCluster
     }
 
     @Override
-    protected void deriveAllSchemas(List<SchemaSpec> localSchemas, DeployState deployState) {
-        for (SchemaSpec spec : localSchemas) {
-            if ( ! (spec.getSchema() instanceof DocumentOnlySchema)) {
-                DocumentDatabase db = new DocumentDatabase(this, spec.getSchema().getName(),
-                                                           new DerivedConfiguration(spec.getSchema(),
-                                                                                    deployState.getDeployLogger(),
-                                                                                    deployState.getProperties(),
-                                                                                    deployState.rankProfileRegistry(),
-                                                                                    deployState.getQueryProfiles().getRegistry(),
-                                                                                    deployState.getImportedModels(),
-                                                                                    deployState.getExecutor()));
-                // TODO: remove explicit adding of user configs when the complete content model is built using builders.
-                db.mergeUserConfigs(spec.getUserConfigs());
-                documentDbs.add(db);
-            }
+    public void deriveSchemas(DeployState deployState) {
+        super.deriveSchemas(deployState);
+        for (SchemaInfo spec : schemas()) {
+            if (spec.fullSchema() instanceof DocumentOnlySchema) continue;
+            DocumentDatabase db = new DocumentDatabase(this, spec.fullSchema().getName(),
+                                                       new DerivedConfiguration(spec.fullSchema(),
+                                                                                deployState.getDeployLogger(),
+                                                                                deployState.getProperties(),
+                                                                                deployState.rankProfileRegistry(),
+                                                                                deployState.getQueryProfiles().getRegistry(),
+                                                                                deployState.getImportedModels(),
+                                                                                deployState.getExecutor()));
+            // TODO: remove explicit adding of user configs when the complete content model is built using builders.
+            db.mergeUserConfigs(spec.userConfigs());
+            documentDbs.add(db);
         }
     }
 

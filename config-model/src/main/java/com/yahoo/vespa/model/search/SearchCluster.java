@@ -3,9 +3,13 @@ package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.UserConfigRepo;
+import com.yahoo.searchdefinition.RankProfile;
+import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.derived.SummaryMap;
+import com.yahoo.searchlib.rankingexpression.Reference;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
@@ -17,7 +21,10 @@ import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Represents a search cluster.
@@ -35,7 +42,7 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
     private Double queryTimeout;
     private Double visibilityDelay = 0.0;
     private final List<String> documentNames = new ArrayList<>();
-    private final List<SchemaSpec> schemas = new ArrayList<>();
+    private final List<SchemaInfo> schemas = new ArrayList<>();
 
     public SearchCluster(AbstractConfigProducer<?> parent, String clusterName, int index) {
         super(parent, "cluster." + clusterName);
@@ -43,14 +50,15 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
         this.index = index;
     }
 
+    /** Returns the writable list of schemas that should be active in this cluster. */
+    public List<SchemaInfo> schemas() { return schemas; }
+
     /**
      * Must be called after cluster is built, to derive schema configs
-     * Derives the search definitions from the application package.
-     * Also stores the document names contained in the search
-     * definitions.
+     * Derives the schemas from the application package.
+     * Also stores the document names contained in the schemas.
      */
     public void deriveSchemas(DeployState deployState) {
-        deriveAllSchemas(schemas(), deployState);
     }
 
     /**
@@ -127,9 +135,6 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
     /** Returns a List with document names used in this search cluster */
     public List<String> getDocumentNames() { return documentNames; }
 
-    /** Returns the schemas active in this cluster. */
-    public List<SchemaSpec> schemas() { return schemas; }
-
     public String getClusterName()              { return clusterName; }
     public final String getIndexingModeName()   { return getIndexingMode().getName(); }
     public final boolean isStreaming()          { return getIndexingMode() == IndexingMode.STREAMING; }
@@ -150,8 +155,6 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
     public abstract int getRowBits();
     public final void setClusterIndex(int index) { this.index = index; }
     public final int getClusterIndex() { return index; }
-
-    protected abstract void deriveAllSchemas(List<SchemaSpec> localSchemas, DeployState deployState);
 
     public abstract void defaultDocumentsConfig();
     public abstract DerivedConfiguration getSchemaConfig();
@@ -200,23 +203,45 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
         }
     }
 
-    public static final class SchemaSpec {
+    public static final class SchemaInfo {
 
         private final Schema schema;
         private final UserConfigRepo userConfigRepo;
 
-        public SchemaSpec(Schema schema, UserConfigRepo userConfigRepo) {
+        // Info about profiles needed in memory after build.
+        // The rank profile registry itself is not kept around due to its size.
+        private final Map<String, RankProfileInfo> rankProfiles;
+
+        public SchemaInfo(Schema schema, UserConfigRepo userConfigRepo, RankProfileRegistry rankProfileRegistry) {
             this.schema = schema;
             this.userConfigRepo = userConfigRepo;
+
+            rankProfiles = rankProfileRegistry.rankProfilesOf(schema)
+                                              .stream()
+                                              .map(p -> new RankProfileInfo(p))
+                                              .collect(Collectors.toUnmodifiableMap(p -> p.name(), p -> p) );
         }
 
-        public Schema getSchema() {
-            return schema;
+        public Schema fullSchema() { return schema; }
+        public UserConfigRepo userConfigs() { return userConfigRepo; }
+
+    }
+
+    /** A store of a *small* (in memory) amount of rank profile info. */
+    public static final class RankProfileInfo {
+
+        private final String name;
+        private final Map<Reference, TensorType> inputs;
+
+        public RankProfileInfo(RankProfile profile) {
+            this.name = profile.name();
+            this.inputs = profile.inputs();
         }
 
-        public UserConfigRepo getUserConfigs() {
-            return userConfigRepo;
-        }
+        public String name() { return name; }
+
+        public Map<Reference, TensorType> inputs() { return inputs; }
+
     }
 
 }
