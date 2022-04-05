@@ -248,9 +248,9 @@ TEST("testCmprUlong") {
     for (uint32_t n = 1; n <= MAX_CMPR_SIZE; ++n) {
         TEST_STATE(vespalib::make_string("n = %d", n).c_str());
         uint64_t min = (n == 1) ? 0x00
-                       : (1L << ((n - 1) * 7));
+                       : (1ULL << ((n - 1) * 7));
         uint64_t max = (n == MAX_CMPR_SIZE) ? 0xffffffffffffffff
-                       : (1L << (n * 7)) - 1;
+                       : (1ULL << (n * 7)) - 1;
         SimpleBuffer expect_min;
         SimpleBuffer expect_max;
         for (uint32_t i = 0; i < n; ++i) {
