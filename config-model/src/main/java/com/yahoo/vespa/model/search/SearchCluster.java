@@ -2,6 +2,8 @@
 package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.UserConfigRepo;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.derived.SummaryMap;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
@@ -14,8 +16,7 @@ import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 
-import java.io.File;
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -23,44 +24,33 @@ import java.util.List;
  *
  * @author arnej27959
  */
-public abstract class SearchCluster extends AbstractSearchCluster
+public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster>
         implements
         DocumentdbInfoConfig.Producer,
         IndexInfoConfig.Producer,
         IlscriptsConfig.Producer {
 
-    protected SearchCluster(AbstractConfigProducer<SearchCluster> parent, String clusterName, int index) {
-        super(parent, clusterName, index);
+    private final String clusterName;
+    private int index;
+    private Double queryTimeout;
+    private Double visibilityDelay = 0.0;
+    private final List<String> documentNames = new ArrayList<>();
+    private final List<SchemaSpec> schemas = new ArrayList<>();
+
+    public SearchCluster(AbstractConfigProducer<?> parent, String clusterName, int index) {
+        super(parent, "cluster." + clusterName);
+        this.clusterName = clusterName;
+        this.index = index;
     }
 
-   /**
-     * Must be called after cluster is built, to derive SD configs
-     * Derives the search definitions from the application package..
+    /**
+     * Must be called after cluster is built, to derive schema configs
+     * Derives the search definitions from the application package.
      * Also stores the document names contained in the search
      * definitions.
      */
     public void deriveSchemas(DeployState deployState) {
-        deriveAllSchemas(getLocalSDS(), deployState);
-    }
-
-    @Override
-    public void getConfig(IndexInfoConfig.Builder builder) {
-        if (getSdConfig()!=null) getSdConfig().getIndexInfo().getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(IlscriptsConfig.Builder builder) {
-        if (getSdConfig()!=null) getSdConfig().getIndexingScript().getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(AttributesConfig.Builder builder) {
-        if (getSdConfig()!=null) getSdConfig().getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(RankProfilesConfig.Builder builder) {
-        if (getSdConfig()!=null) getSdConfig().getRankProfileList().getConfig(builder);
+        deriveAllSchemas(schemas(), deployState);
     }
 
     /**
@@ -130,9 +120,103 @@ public abstract class SearchCluster extends AbstractSearchCluster
         return false;
     }
 
-    protected abstract void deriveAllSchemas(List<SchemaSpec> localSearches, DeployState deployState);
+    public void addDocumentNames(Schema schema) {
+        documentNames.add(schema.getDocument().getDocumentName().getName());
+    }
+
+    /** Returns a List with document names used in this search cluster */
+    public List<String> getDocumentNames() { return documentNames; }
+
+    /** Returns the schemas active in this cluster. */
+    public List<SchemaSpec> schemas() { return schemas; }
+
+    public String getClusterName()              { return clusterName; }
+    public final String getIndexingModeName()   { return getIndexingMode().getName(); }
+    public final boolean isStreaming()          { return getIndexingMode() == IndexingMode.STREAMING; }
+
+    public final SearchCluster setQueryTimeout(Double to) {
+        this.queryTimeout = to;
+        return this;
+    }
+
+    public final SearchCluster setVisibilityDelay(double delay) {
+        this.visibilityDelay = delay;
+        return this;
+    }
+
+    protected abstract IndexingMode getIndexingMode();
+    public final Double getVisibilityDelay() { return visibilityDelay; }
+    public final Double getQueryTimeout() { return queryTimeout; }
+    public abstract int getRowBits();
+    public final void setClusterIndex(int index) { this.index = index; }
+    public final int getClusterIndex() { return index; }
+
+    protected abstract void deriveAllSchemas(List<SchemaSpec> localSchemas, DeployState deployState);
 
     public abstract void defaultDocumentsConfig();
-    public abstract DerivedConfiguration getSdConfig();
+    public abstract DerivedConfiguration getSchemaConfig();
+
+    @Override
+    public void getConfig(IndexInfoConfig.Builder builder) {
+        if (getSchemaConfig() != null) getSchemaConfig().getIndexInfo().getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(IlscriptsConfig.Builder builder) {
+        if (getSchemaConfig() != null) getSchemaConfig().getIndexingScript().getConfig(builder);
+    }
+
+    // TODO: Remove?
+    public void getConfig(AttributesConfig.Builder builder) {
+        if (getSchemaConfig() != null) getSchemaConfig().getConfig(builder);
+    }
+
+    // TODO: Remove?
+    public void getConfig(RankProfilesConfig.Builder builder) {
+        if (getSchemaConfig() != null) getSchemaConfig().getRankProfileList().getConfig(builder);
+    }
+
+    @Override
+    public abstract void getConfig(DocumentdbInfoConfig.Builder builder);
+
+    @Override
+    public String toString() { return "search-capable cluster '" + clusterName + "'"; }
+
+    public static final class IndexingMode {
+
+        public static final IndexingMode REALTIME  = new IndexingMode("REALTIME");
+        public static final IndexingMode STREAMING = new IndexingMode("STREAMING");
+
+        private final String name;
+
+        private IndexingMode(String name) {
+            this.name = name;
+        }
+
+        public String getName() { return name; }
+
+        public String toString() {
+            return "indexingmode: " + name;
+        }
+    }
+
+    public static final class SchemaSpec {
+
+        private final Schema schema;
+        private final UserConfigRepo userConfigRepo;
+
+        public SchemaSpec(Schema schema, UserConfigRepo userConfigRepo) {
+            this.schema = schema;
+            this.userConfigRepo = userConfigRepo;
+        }
+
+        public Schema getSchema() {
+            return schema;
+        }
+
+        public UserConfigRepo getUserConfigs() {
+            return userConfigRepo;
+        }
+    }
 
 }

@@ -12,7 +12,7 @@ import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import com.yahoo.search.searchchain.model.federation.LocalProviderSpec;
-import com.yahoo.vespa.model.search.AbstractSearchCluster;
+import com.yahoo.vespa.model.search.SearchCluster;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -32,7 +32,7 @@ public class LocalProvider extends Provider implements
         RankProfilesConfig.Producer {
 
     private final LocalProviderSpec providerSpec;
-    private volatile AbstractSearchCluster searchCluster;
+    private volatile SearchCluster searchCluster;
 
 
     @Override
@@ -99,7 +99,7 @@ public class LocalProvider extends Provider implements
         return providerSpec.clusterName;
     }
 
-    void setSearchCluster(AbstractSearchCluster searchCluster) {
+    void setSearchCluster(SearchCluster searchCluster) {
         this.searchCluster = searchCluster;
     }
 
@@ -115,7 +115,7 @@ public class LocalProvider extends Provider implements
     public List<String> getDocumentTypes() {
         List<String> documentTypes = new ArrayList<>();
 
-        for (AbstractSearchCluster.SchemaSpec spec : searchCluster.getLocalSDS()) {
+        for (SearchCluster.SchemaSpec spec : searchCluster.schemas()) {
             documentTypes.add(spec.getSchema().getDocument().getName());
         }
 

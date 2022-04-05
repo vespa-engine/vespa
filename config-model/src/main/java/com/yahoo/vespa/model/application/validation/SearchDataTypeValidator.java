@@ -15,7 +15,7 @@ import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.search.AbstractSearchCluster;
+import com.yahoo.vespa.model.search.SearchCluster;
 
 import java.util.List;
 
@@ -29,12 +29,12 @@ public class SearchDataTypeValidator extends Validator {
 
     @Override
     public void validate(VespaModel model, DeployState deployState) {
-        List<AbstractSearchCluster> clusters = model.getSearchClusters();
-        for (AbstractSearchCluster cluster : clusters) {
+        List<SearchCluster> clusters = model.getSearchClusters();
+        for (SearchCluster cluster : clusters) {
             if (cluster.isStreaming()) {
                 continue;
             }
-            for (AbstractSearchCluster.SchemaSpec spec : cluster.getLocalSDS()) {
+            for (SearchCluster.SchemaSpec spec : cluster.schemas()) {
                 SDDocumentType docType = spec.getSchema().getDocument();
                 if (docType == null) {
                     continue;
@@ -44,7 +44,7 @@ public class SearchDataTypeValidator extends Validator {
         }
     }
 
-    private void validateDocument(AbstractSearchCluster cluster, Schema schema, SDDocumentType doc) {
+    private void validateDocument(SearchCluster cluster, Schema schema, SDDocumentType doc) {
         for (SDDocumentType child : doc.getTypes()) {
             validateDocument(cluster, schema, child);
         }
@@ -84,7 +84,7 @@ public class SearchDataTypeValidator extends Validator {
         }
     }
 
-    private void disallowIndexingOfMaps(AbstractSearchCluster cluster, Schema schema, Field field) {
+    private void disallowIndexingOfMaps(SearchCluster cluster, Schema schema, Field field) {
         DataType fieldType = field.getDataType();
         if ((fieldType instanceof MapDataType) && (((SDField) field).doesIndexing())) {
             throw new IllegalArgumentException("Field type '" + fieldType.getName() + "' cannot be indexed for search " +

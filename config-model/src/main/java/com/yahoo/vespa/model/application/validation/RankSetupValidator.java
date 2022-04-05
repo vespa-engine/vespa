@@ -24,7 +24,7 @@ import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.search.AbstractSearchCluster;
+import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.search.DocumentDatabase;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.SearchCluster;
@@ -68,7 +68,7 @@ public class RankSetupValidator extends Validator {
                                                ".")
                     .toFile();
 
-            for (AbstractSearchCluster cluster : model.getSearchClusters()) {
+            for (SearchCluster cluster : model.getSearchClusters()) {
                 // Skipping rank expression checking for streaming clusters, not implemented yet
                 if (cluster.isStreaming()) continue;
 

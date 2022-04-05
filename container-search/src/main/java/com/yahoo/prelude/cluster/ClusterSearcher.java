@@ -203,7 +203,7 @@ public class ClusterSearcher extends Searcher {
         Set<String> rankDocTypes = rankProfiles.get(rankProfile);
 
         if (rankDocTypes == null) {
-            // ranking profile does not exist in any document type
+            // rank profile does not exist in any document type
             invalidInDocTypes = docTypes;
         }
         else if (docTypes.size() == 1) {

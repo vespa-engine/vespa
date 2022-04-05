@@ -27,28 +27,18 @@ public class StreamingSearchCluster extends SearchCluster implements
         VsmsummaryConfig.Producer,
         VsmfieldsConfig.Producer,
         SummarymapConfig.Producer,
-        SummaryConfig.Producer
-{
-
-    private class AttributesProducer extends AbstractConfigProducer<AttributesProducer> implements AttributesConfig.Producer {
-        AttributesProducer(AbstractConfigProducer<?> parent, String docType) {
-            super(parent, docType);
-        }
-
-        @Override
-        public void getConfig(AttributesConfig.Builder builder) {
-            if (getSdConfig() != null) {
-                getSdConfig().getConfig(builder, AttributeFields.FieldSet.FAST_ACCESS);
-            }
-        }
-    }
+        SummaryConfig.Producer {
 
     private final String storageRouteSpec;
     private final AttributesProducer attributesConfig;
     private final String docTypeName;
     private DerivedConfiguration sdConfig = null;
 
-    public StreamingSearchCluster(AbstractConfigProducer<SearchCluster> parent, String clusterName, int index, String docTypeName, String storageRouteSpec) {
+    public StreamingSearchCluster(AbstractConfigProducer<SearchCluster> parent,
+                                  String clusterName,
+                                  int index,
+                                  String docTypeName,
+                                  String storageRouteSpec) {
         super(parent, clusterName, index);
         attributesConfig = new AttributesProducer(parent, docTypeName);
         this.docTypeName = docTypeName;
@@ -86,10 +76,11 @@ public class StreamingSearchCluster extends SearchCluster implements
     protected void deriveAllSchemas(List<SchemaSpec> local, DeployState deployState) {
         if (local.size() == 1) {
             deriveSingleSearchDefinition(local.get(0).getSchema(), deployState);
-        } else if (local.size() > 1){
+        } else if (local.size() > 1) {
             throw new IllegalArgumentException("Only a single schema is supported, got " + local.size());
         }
     }
+
     private void deriveSingleSearchDefinition(Schema localSchema, DeployState deployState) {
         if (!localSchema.getName().equals(docTypeName)) {
             throw new IllegalArgumentException("Document type name '" + docTypeName +
@@ -102,8 +93,9 @@ public class StreamingSearchCluster extends SearchCluster implements
                                                  deployState.getImportedModels(),
                                                  deployState.getExecutor());
     }
+
     @Override
-    public DerivedConfiguration getSdConfig() {
+    public DerivedConfiguration getSchemaConfig() {
         return sdConfig;
     }
 
@@ -112,35 +104,49 @@ public class StreamingSearchCluster extends SearchCluster implements
 
     @Override
     public void getConfig(AttributesConfig.Builder builder) {
-        if (getSdConfig()!=null) getSdConfig().getConfig(builder);
+        if (getSchemaConfig() != null) getSchemaConfig().getConfig(builder);
     }
     
     @Override
     public void getConfig(VsmsummaryConfig.Builder builder) {
-        if (getSdConfig()!=null) 
-            if (getSdConfig().getVsmSummary()!=null)
-                getSdConfig().getVsmSummary().getConfig(builder);
+        if (getSchemaConfig() != null)
+            if (getSchemaConfig().getVsmSummary() != null)
+                getSchemaConfig().getVsmSummary().getConfig(builder);
     }
     
     @Override
     public void getConfig(VsmfieldsConfig.Builder builder) {
-        if (getSdConfig()!=null)
-            if (getSdConfig().getVsmFields()!=null)
-                getSdConfig().getVsmFields().getConfig(builder);
+        if (getSchemaConfig() != null)
+            if (getSchemaConfig().getVsmFields() != null)
+                getSchemaConfig().getVsmFields().getConfig(builder);
     }
     
     @Override
     public void getConfig(SummarymapConfig.Builder builder) {
-        if (getSdConfig()!=null)
-            if (getSdConfig().getSummaryMap()!=null)
-                getSdConfig().getSummaryMap().getConfig(builder);
+        if (getSchemaConfig() != null)
+            if (getSchemaConfig().getSummaryMap() != null)
+                getSchemaConfig().getSummaryMap().getConfig(builder);
     }
 
     @Override
     public void getConfig(SummaryConfig.Builder builder) {
-        if (getSdConfig()!=null)
-            if (getSdConfig().getSummaries()!=null)
-                getSdConfig().getSummaries().getConfig(builder);        
+        if (getSchemaConfig() != null)
+            if (getSchemaConfig().getSummaries() != null)
+                getSchemaConfig().getSummaries().getConfig(builder);
+    }
+
+    private class AttributesProducer extends AbstractConfigProducer<AttributesProducer> implements AttributesConfig.Producer {
+
+        AttributesProducer(AbstractConfigProducer<?> parent, String docType) {
+            super(parent, docType);
+        }
+
+        @Override
+        public void getConfig(AttributesConfig.Builder builder) {
+            if (getSchemaConfig() != null) {
+                getSchemaConfig().getConfig(builder, AttributeFields.FieldSet.FAST_ACCESS);
+            }
+        }
     }
 
 }

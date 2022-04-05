@@ -2,13 +2,11 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils;
 import com.yahoo.searchdefinition.document.GeoPos;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.SearchCluster;
 
 import java.util.ArrayList;
@@ -27,14 +25,12 @@ public class ComplexAttributeFieldsValidator extends Validator {
 
     @Override
     public void validate(VespaModel model, DeployState deployState) {
-        List<AbstractSearchCluster> searchClusters = model.getSearchClusters();
-        for (AbstractSearchCluster cluster : searchClusters) {
-            if (cluster.isStreaming()) {
-                continue;
-            }
-            SearchCluster searchCluster = (SearchCluster) cluster;
-            for (AbstractSearchCluster.SchemaSpec spec : searchCluster.getLocalSDS()) {
-                validateComplexFields(searchCluster.getClusterName(), spec.getSchema());
+        List<SearchCluster> searchClusters = model.getSearchClusters();
+        for (SearchCluster cluster : searchClusters) {
+            if (cluster.isStreaming()) continue;
+
+            for (SearchCluster.SchemaSpec spec : cluster.schemas()) {
+                validateComplexFields(cluster.getClusterName(), spec.getSchema());
             }
         }
     }

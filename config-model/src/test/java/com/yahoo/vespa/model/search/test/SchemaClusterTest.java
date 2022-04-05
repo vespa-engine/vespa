@@ -18,7 +18,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
-import com.yahoo.vespa.model.search.AbstractSearchCluster;
+import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Test;
@@ -158,10 +158,10 @@ public class SchemaClusterTest {
         assertEquals(xbulkIndex, clusterConfig2.clusterId());
         assertEquals("xbulk", clusterConfig2.clusterName());
 
-        AbstractSearchCluster searchCluster1 = model.getSearchClusters().get(normalIndex);
+        SearchCluster searchCluster1 = model.getSearchClusters().get(normalIndex);
         assertEquals("normal", searchCluster1.getClusterName());
         assertEquals("normal/search/cluster.normal", searchCluster1.getConfigId());
-        AbstractSearchCluster searchCluster2 = model.getSearchClusters().get(xbulkIndex);
+        SearchCluster searchCluster2 = model.getSearchClusters().get(xbulkIndex);
         assertEquals("xbulk", searchCluster2.getClusterName());
 
         verifyDispatch(model, containerCluster1, "normal", "node2host");

@@ -6,6 +6,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.searchdefinition.DocumentOnlySchema;
+import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.DispatchConfig;
@@ -56,7 +57,7 @@ public class IndexedSearchCluster extends SearchCluster
      * Returns the document selector that is able to resolve what documents are to be routed to this search cluster.
      * This string uses the document selector language as defined in the "document" module.
      *
-     * @return The document selector.
+     * @return the document selector
      */
     public String getRoutingSelector() {
         return routingSelector;
@@ -119,7 +120,7 @@ public class IndexedSearchCluster extends SearchCluster
      * @param chain the chain that is to run indexing for this cluster
      * @return this, to allow chaining
      */
-    public AbstractSearchCluster setIndexingChain(DocprocChain chain) {
+    public SearchCluster setIndexingChain(DocprocChain chain) {
         indexingChain = chain;
         return this;
     }
@@ -166,8 +167,8 @@ public class IndexedSearchCluster extends SearchCluster
         }
     }
 
-    public void setRoutingSelector(String sel) {
-        this.routingSelector=sel;
+    public void setRoutingSelector(String selector) {
+        this.routingSelector = selector;
         if (this.routingSelector != null) {
             try {
                 new DocumentSelectionConverter(this.routingSelector);
@@ -193,8 +194,8 @@ public class IndexedSearchCluster extends SearchCluster
     }
 
     @Override
-    protected void deriveAllSchemas(List<SchemaSpec> localSearches, DeployState deployState) {
-        for (SchemaSpec spec : localSearches) {
+    protected void deriveAllSchemas(List<SchemaSpec> localSchemas, DeployState deployState) {
+        for (SchemaSpec spec : localSchemas) {
             if ( ! (spec.getSchema() instanceof DocumentOnlySchema)) {
                 DocumentDatabase db = new DocumentDatabase(this, spec.getSchema().getName(),
                                                            new DerivedConfiguration(spec.getSchema(),
@@ -228,7 +229,7 @@ public class IndexedSearchCluster extends SearchCluster
     }
 
     @Override
-    public DerivedConfiguration getSdConfig() { return null; }
+    public DerivedConfiguration getSchemaConfig() { return null; }
 
     @Override
     public void getConfig(IndexInfoConfig.Builder builder) {

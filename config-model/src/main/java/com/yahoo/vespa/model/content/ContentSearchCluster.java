@@ -13,7 +13,6 @@ import com.yahoo.vespa.model.builder.xml.dom.DomSearchTuningBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
-import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.NodeSpec;
 import com.yahoo.vespa.model.search.SchemaDefinitionXMLHandler;
@@ -50,7 +49,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private final Boolean syncTransactionLog;
 
     /** If this is set up for streaming search, it is modelled as one search cluster per search definition */
-    private final Map<String, AbstractSearchCluster> clusters = new TreeMap<>();
+    private final Map<String, SearchCluster> clusters = new TreeMap<>();
 
     /** The single, indexed search cluster this sets up (supporting multiple document types), or null if none */
     private IndexedSearchCluster indexedCluster;
@@ -150,7 +149,11 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         private void buildStreamingSearchCluster(DeployState deployState, ModelElement clusterElem, String clusterName,
                                                  ContentSearchCluster search, ModelElement docType) {
             String docTypeName = docType.stringAttribute("type");
-            StreamingSearchCluster cluster = new StreamingSearchCluster(search, clusterName + "." + docTypeName, 0, docTypeName, clusterName);
+            StreamingSearchCluster cluster = new StreamingSearchCluster(search,
+                                                                        clusterName + "." + docTypeName,
+                                                                        0,
+                                                                        docTypeName,
+                                                                        clusterName);
             search.addSearchCluster(deployState, cluster, getQueryTimeout(clusterElem), Arrays.asList(docType));
         }
 
@@ -256,7 +259,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         addCluster(cluster);
     }
 
-    private void addSchemas(DeployState deployState, List<ModelElement> searchDefs, AbstractSearchCluster sc) {
+    private void addSchemas(DeployState deployState, List<ModelElement> searchDefs, SearchCluster sc) {
         for (ModelElement e : searchDefs) {
             SchemaDefinitionXMLHandler schemaDefinitionXMLHandler = new SchemaDefinitionXMLHandler(e);
             Schema schema = schemaDefinitionXMLHandler.findResponsibleSchema(deployState.getSchemas());
@@ -265,13 +268,13 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
                                                    this + " does not exist");
 
             // TODO: remove explicit building of user configs when the complete content model is built using builders.
-            sc.getLocalSDS().add(new AbstractSearchCluster.SchemaSpec(schema,
-                                                                      UserConfigBuilder.build(e.getXml(), deployState, deployState.getDeployLogger())));
+            sc.schemas().add(new SearchCluster.SchemaSpec(schema,
+                                                          UserConfigBuilder.build(e.getXml(), deployState, deployState.getDeployLogger())));
             sc.addDocumentNames(schema);
         }
     }
 
-    private void addCluster(AbstractSearchCluster sc) {
+    private void addCluster(SearchCluster sc) {
         if (clusters.containsKey(sc.getClusterName())) {
             throw new IllegalArgumentException("Duplicate cluster '" + sc.getClusterName() + "'");
         }
@@ -353,7 +356,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         return getClusters().values().stream()
                 .filter(StreamingSearchCluster.class::isInstance)
                 .map(StreamingSearchCluster.class::cast)
-                .filter(ssc -> ssc.getSdConfig().getSearch().getName().equals(docType))
+                .filter(ssc -> ssc.getSchemaConfig().getSearch().getName().equals(docType))
                 .findFirst();
     }
 
@@ -466,7 +469,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         }
     }
 
-    public Map<String, AbstractSearchCluster> getClusters() { return clusters; }
+    public Map<String, SearchCluster> getClusters() { return clusters; }
     public IndexedSearchCluster getIndexed() { return indexedCluster; }
     public boolean hasIndexedCluster()       { return indexedCluster != null; }
     public String getClusterName() { return clusterName; }

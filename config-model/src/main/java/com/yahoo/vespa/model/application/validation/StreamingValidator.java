@@ -8,15 +8,12 @@ import com.yahoo.document.NumericDataType;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
-import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.document.MatchType;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.SearchCluster;
 
 import java.util.List;
 import java.util.logging.Level;
-
 
 /**
  * Validates streaming mode
@@ -25,24 +22,23 @@ public class StreamingValidator extends Validator {
 
     @Override
     public void validate(VespaModel model, DeployState deployState) {
-        List<AbstractSearchCluster> searchClusters = model.getSearchClusters();
-        for (AbstractSearchCluster cluster : searchClusters) {
-            if (!cluster.isStreaming()) {
-                continue;
-            }
-            SearchCluster sc = (SearchCluster) cluster;
-            warnStreamingAttributes(sc, deployState.getDeployLogger());
-            warnStreamingGramMatching(sc, deployState.getDeployLogger());
-            failStreamingDocumentReferences(sc);
+        List<SearchCluster> searchClusters = model.getSearchClusters();
+        for (SearchCluster cluster : searchClusters) {
+            if ( ! cluster.isStreaming()) continue;
+            warnStreamingAttributes(cluster, deployState.getDeployLogger());
+            warnStreamingGramMatching(cluster, deployState.getDeployLogger());
+            failStreamingDocumentReferences(cluster);
         }
     }
 
     private static void warnStreamingGramMatching(SearchCluster sc, DeployLogger logger) {
-        if (sc.getSdConfig() != null) {
-            for (ImmutableSDField sd : sc.getSdConfig().getSearch().allConcreteFields()) {
-                if (sd.getMatching().getType().equals(MatchType.GRAM)) {
-                    logger.logApplicationPackage(Level.WARNING, "For streaming search cluster '" + sc.getClusterName() +
-                            "', SD field '" + sd.getName() + "': n-gram matching is not supported for streaming search.");
+        if (sc.getSchemaConfig() != null) {
+            for (ImmutableSDField sd : sc.getSchemaConfig().getSearch().allConcreteFields()) {
+                if (sd.getMatching().getType() == MatchType.GRAM) {
+                    logger.logApplicationPackage(Level.WARNING, "For streaming search cluster '" +
+                                                                sc.getClusterName() +
+                                                                "', SD field '" + sd.getName() +
+                                                                "': n-gram matching is not supported for streaming search.");
                 }
             }
         }
@@ -55,8 +51,8 @@ public class StreamingValidator extends Validator {
      * @param logger a DeployLogger
      */
     private static void warnStreamingAttributes(SearchCluster sc, DeployLogger logger) {
-        if (sc.getSdConfig() != null) {
-            for (ImmutableSDField sd : sc.getSdConfig().getSearch().allConcreteFields()) {
+        if (sc.getSchemaConfig() != null) {
+            for (ImmutableSDField sd : sc.getSchemaConfig().getSearch().allConcreteFields()) {
                 if (sd.doesAttributing()) {
                     warnStreamingAttribute(sc, sd, logger);
                 }
@@ -69,19 +65,20 @@ public class StreamingValidator extends Validator {
         // attribute indexing ourselves (IntegerIndex2Attribute)
         if (sd.getDataType() instanceof NumericDataType) return;
         logger.logApplicationPackage(Level.WARNING, "For streaming search cluster '" + sc.getClusterName() +
-                "', SD field '" + sd.getName() + "': 'attribute' has same match semantics as 'index'.");
+                                                    "', SD field '" + sd.getName() +
+                                                    "': 'attribute' has same match semantics as 'index'.");
     }
 
     private static void failStreamingDocumentReferences(SearchCluster sc) {
-        for (Attribute attribute : sc.getSdConfig().getAttributeFields().attributes()) {
+        for (Attribute attribute : sc.getSchemaConfig().getAttributeFields().attributes()) {
             DataType dataType = attribute.getDataType();
             if (dataType instanceof NewDocumentReferenceDataType) {
-                String errorMessage = String.format(
-                        "For streaming search cluster '%s': Attribute '%s' has type '%s'. " +
-                                "Document references and imported fields are not allowed in streaming search.",
-                        sc.getClusterName(), attribute.getName(), dataType.getName());
+                String errorMessage = String.format("For streaming search cluster '%s': Attribute '%s' has type '%s'. " +
+                                                    "Document references and imported fields are not allowed in streaming search.",
+                                                    sc.getClusterName(), attribute.getName(), dataType.getName());
                 throw new IllegalArgumentException(errorMessage);
             }
         }
     }
+
 }

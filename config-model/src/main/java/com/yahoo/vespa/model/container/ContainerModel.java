@@ -6,7 +6,7 @@ import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.content.Content;
-import com.yahoo.vespa.model.search.AbstractSearchCluster;
+import com.yahoo.vespa.model.search.SearchCluster;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,10 +45,10 @@ public class ContainerModel extends ConfigModel {
 
     @Override
     public void initialize(ConfigModelRepo configModelRepo) {
-        List<AbstractSearchCluster> searchClusters = Content.getSearchClusters(configModelRepo);
+        List<SearchCluster> searchClusters = Content.getSearchClusters(configModelRepo);
 
-        Map<String, AbstractSearchCluster> searchClustersByName = new TreeMap<>();
-        for (AbstractSearchCluster c : searchClusters)
+        Map<String, SearchCluster> searchClustersByName = new TreeMap<>();
+        for (SearchCluster c : searchClusters)
             searchClustersByName.put(c.getClusterName(), c);
 
         getCluster().initialize(searchClustersByName);
