@@ -27,9 +27,7 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.VespaServiceDumper;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
-import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 
-import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -233,10 +231,10 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private Container startContainer(NodeAgentContext context) {
-        ContainerData containerData = createContainerData(context);
         ContainerResources wantedResources = warmUpDuration(context).isNegative() ?
                 getContainerResources(context) : getContainerResources(context).withUnlimitedCpus();
-        containerOperations.createContainer(context, containerData, wantedResources);
+        ContainerData containerData = containerOperations.createContainer(context, wantedResources);
+        writeContainerData(context, containerData);
         containerOperations.startContainer(context);
 
         currentRebootGeneration = context.node().wantedRebootGeneration();
@@ -598,29 +596,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    protected ContainerData createContainerData(NodeAgentContext context) {
-        return new ContainerData() {
-            @Override
-            public void addFile(ContainerPath path, String data) {
-                throw new UnsupportedOperationException("addFile not implemented");
-            }
-
-            @Override
-            public void addFile(ContainerPath path, String data, String permissions) {
-                throw new UnsupportedOperationException("addFile not implemented");
-            }
-
-            @Override
-            public void addDirectory(ContainerPath path) {
-                throw new UnsupportedOperationException("addDirectory not implemented");
-            }
-
-            @Override
-            public void createSymlink(ContainerPath symlink, Path target) {
-                throw new UnsupportedOperationException("createSymlink not implemented");
-            }
-        };
-    }
+    protected void writeContainerData(NodeAgentContext context, ContainerData containerData) { }
 
     protected List<CredentialsMaintainer> credentialsMaintainers() {
         return credentialsMaintainers;

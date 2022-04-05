@@ -23,8 +23,11 @@ public interface ContainerData {
      */
     void addFile(ContainerPath path, String data, String permissions);
 
-    /** Add directory in container at path. */
-    void addDirectory(ContainerPath path);
+    /**
+     * @param path Container path to create directory at
+     * @param permissions optional file permissions, see {@link UnixPath#setPermissions(String)} for format.
+     */
+    void addDirectory(ContainerPath path, String... permissions);
 
     /**
      * Symlink to a file in container at path.
