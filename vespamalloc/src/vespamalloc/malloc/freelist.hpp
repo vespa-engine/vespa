@@ -2,6 +2,7 @@
 #pragma once
 
 #include "freelist.h"
+#include <climits>
 
 namespace vespamalloc::segment {
 

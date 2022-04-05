@@ -11,6 +11,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/fastos/thread.h>
+#include <thread>
 
 using namespace vespalib;
 using vespalib::make_string_short::fmt;
