@@ -48,7 +48,11 @@ public final class Text {
         // The link above notes that 0x7F-0x84 and 0x86-0x9F are discouraged, but they are still allowed -
         // see http://www.w3.org/International/questions/qa-controls
 
-        if (codepoint <  0x80)     return allowedAsciiChars[codepoint];
+        return (codepoint < 0x80)
+                ? allowedAsciiChars[codepoint]
+                : isTextCharAboveUsAscii(codepoint);
+    }
+    private static boolean isTextCharAboveUsAscii(int codepoint) {
         if (codepoint <  0xFDD0)   return true;
         if (codepoint <= 0xFDDF)   return false;
         if (codepoint <  0x1FFFE)  return true;
