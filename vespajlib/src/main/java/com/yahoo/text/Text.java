@@ -110,6 +110,23 @@ public final class Text {
         return OptionalInt.empty();
     }
 
+    /**
+     * Validates that the given string value only contains text characters.
+     */
+    public static boolean isValidTextString(String string) {
+        for (int i = 0; i < string.length(); ) {
+            int codePoint = string.codePointAt(i);
+            if ( ! Text.isTextCharacter(codePoint)) return false;
+
+            int charCount = Character.charCount(codePoint);
+            if (Character.isHighSurrogate(string.charAt(i))) {
+                if ( (charCount == 1) || !Character.isLowSurrogate(string.charAt(i+1))) return false;
+            }
+            i += charCount;
+        }
+        return true;
+    }
+
     /** Returns whether the given code point is displayable. */
     public static boolean isDisplayable(int codePoint) {
         switch (Character.getType(codePoint)) {
