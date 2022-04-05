@@ -12,9 +12,25 @@ import java.util.Map;
 public class MockMailer implements Mailer {
 
     public final Map<String, List<Mail>> mails = new HashMap<>();
+    public final boolean blackhole;
+
+    public MockMailer() {
+        this(false);
+    }
+
+    MockMailer(boolean blackhole) {
+        this.blackhole = blackhole;
+    }
+
+    public static MockMailer blackhole() {
+        return new MockMailer(true);
+    }
 
     @Override
     public void send(Mail mail) {
+        if (blackhole) {
+            return;
+        }
         for (String recipient : mail.recipients()) {
             mails.putIfAbsent(recipient, new ArrayList<>());
             mails.get(recipient).add(mail);
