@@ -50,21 +50,17 @@ public class MakeDirectory {
                 throw new UncheckedIOException(new NotDirectoryException(path.toString()));
             }
         } else {
+            Optional<String> permissions = attributeSync.getPermissions();
             if (createParents) {
                 // We'll skip logging system modification here, as we'll log about the creation
                 // of the directory next.
-                path.createParents();
+                permissions.ifPresentOrElse(path::createParents, path::createParents);
             }
 
             context.recordSystemModification(logger, "Creating directory " + path);
             systemModified = true;
 
-            Optional<String> permissions = attributeSync.getPermissions();
-            if (permissions.isPresent()) {
-                path.createDirectory(permissions.get());
-            } else {
-                path.createDirectory();
-            }
+            permissions.ifPresentOrElse(path::createDirectory, path::createDirectory);
         }
 
         systemModified |= attributeSync.converge(context, attributesCache);
