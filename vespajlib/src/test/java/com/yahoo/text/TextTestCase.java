@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.OptionalInt;
@@ -75,5 +76,48 @@ public class TextTestCase {
     @Test
     public void testFormat() {
 	assertEquals("foo 3.14", Text.format("%s %.2f", "foo", 3.1415926536));
+    }
+
+    private static long isValid(String [] strings, int num) {
+        long sum = 0;
+        for (int i=0; i < num; i++) {
+            if (Text.isValidTextString(strings[i%strings.length])) {
+                sum++;
+            }
+        }
+        return sum;
+    }
+    private static long validate(String [] strings, int num) {
+        long sum = 0;
+        for (int i=0; i < num; i++) {
+            if (Text.validateTextString(strings[i%strings.length]).isEmpty()) {
+                sum++;
+            }
+        }
+        return sum;
+    }
+
+    @Ignore
+    @Test
+    public void benchmarkValidate() {
+        String [] strings = new String[100];
+        for (int i=0; i < strings.length; i++) {
+            strings[i] = new StringBuilder("some text ").append(i).append("of mine.").appendCodePoint(0xDFFFC).append("foo").toString();
+        }
+        long sum = validate(strings, 1000000);
+        System.out.println("Warmup num validate = " + sum);
+        sum = isValid(strings, 1000000);
+        System.out.println("Warmup num isValid = " + sum);
+
+        long start = System.nanoTime();
+        sum = validate(strings, 100000000);
+        long diff = System.nanoTime() - start;
+        System.out.println("Validation num validate = " + sum + ". Took " + diff + "ns");
+
+        start = System.nanoTime();
+        sum = isValid(strings, 100000000);
+        diff = System.nanoTime() - start;
+        System.out.println("Validation num isValid = " + sum + ". Took " + diff + "ns");
+
     }
 }
