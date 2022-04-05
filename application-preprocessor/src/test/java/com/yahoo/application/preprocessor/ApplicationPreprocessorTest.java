@@ -2,17 +2,15 @@
 package com.yahoo.application.preprocessor;
 
 import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Optional;
-
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
+import java.io.File;
+import java.io.IOException;
+import java.util.Optional;
 
 public class ApplicationPreprocessorTest {
 
