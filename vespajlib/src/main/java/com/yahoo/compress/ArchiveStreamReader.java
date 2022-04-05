@@ -59,7 +59,7 @@ public class ArchiveStreamReader implements AutoCloseable {
                 if (isSymlink(entry)) throw new IllegalArgumentException("Archive entry " + path + " is a symbolic link, which is unsupported");
                 if (entry.isDirectory()) continue;
                 if (!options.pathPredicate.test(path.toString())) continue;
-                if (++entriesRead > options.maxEntries) throw new IllegalArgumentException("Attempted to read more entries entry limit of " + options.maxEntries);
+                if (++entriesRead > options.maxEntries) throw new IllegalArgumentException("Attempted to read more entries than entry limit of " + options.maxEntries);
 
                 long size = 0;
                 byte[] buffer = new byte[2048];
