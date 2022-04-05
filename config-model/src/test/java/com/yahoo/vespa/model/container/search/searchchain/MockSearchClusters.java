@@ -11,17 +11,21 @@ import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.search.SearchCluster;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class MockSearchClusters {
 
     private static class MockSearchCluster extends SearchCluster {
+
         public MockSearchCluster(AbstractConfigProducerRoot root, String clusterName, int clusterIndex, boolean isStreaming) {
             super(root, clusterName, clusterIndex);
             streaming = isStreaming;
         }
+
         private final boolean streaming;
+
+        @Override
+        public void deriveFromSchemas(DeployState deployState) { }
 
         @Override
         public int getRowBits() {

@@ -69,8 +69,7 @@ public class StreamingSearchCluster extends SearchCluster implements
     }
 
     @Override
-    public void deriveSchemas(DeployState deployState) {
-        super.deriveSchemas(deployState);
+    public void deriveFromSchemas(DeployState deployState) {
         if (schemas().isEmpty()) return;
         if (schemas().size() > 1) throw new IllegalArgumentException("Only a single schema is supported, got " + schemas().size());
 

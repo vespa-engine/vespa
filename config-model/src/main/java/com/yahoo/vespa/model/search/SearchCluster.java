@@ -6,7 +6,6 @@ import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.derived.SummaryMap;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.TensorType;
@@ -20,7 +19,6 @@ import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -51,20 +49,19 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
         this.index = index;
     }
 
-    /** Returns the writable map of schemas (indexed by schema name) that should be active in this cluster. */
-    public Map<String, SchemaInfo> schemas() { return schemas; }
-
     public void add(SchemaInfo schema) {
         schemas.put(schema.name(), schema);
     }
 
+    /** Returns the schemas that should be active in this cluster. Note: These are added during processing. */
+    public Map<String, SchemaInfo> schemas() { return Collections.unmodifiableMap(schemas); }
+
     /**
-     * Must be called after cluster is built, to derive schema configs
+     * Must be called after cluster is built, to derive schema configs.
      * Derives the schemas from the application package.
      * Also stores the document names contained in the schemas.
      */
-    public void deriveSchemas(DeployState deployState) {
-    }
+    public abstract void deriveFromSchemas(DeployState deployState);
 
     /**
      * Converts summary and summary map config to the appropriate information in documentdb

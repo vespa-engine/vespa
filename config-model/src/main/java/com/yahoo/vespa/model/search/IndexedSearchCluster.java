@@ -180,8 +180,7 @@ public class IndexedSearchCluster extends SearchCluster
     }
 
     @Override
-    public void deriveSchemas(DeployState deployState) {
-        super.deriveSchemas(deployState);
+    public void deriveFromSchemas(DeployState deployState) {
         for (SchemaInfo spec : schemas().values()) {
             if (spec.fullSchema() instanceof DocumentOnlySchema) continue;
             DocumentDatabase db = new DocumentDatabase(this, spec.fullSchema().getName(),

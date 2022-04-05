@@ -298,8 +298,6 @@ public class DocumentDatabaseTestCase {
                 assertEquals("type1", db.name());
                 assertEquals(6, db.rankprofile().size());
 
-
-
                 assertRankProfile(db, 0, "default", false, false);
                 assertRankProfile(db, 1, "unranked", false, false);
                 assertRankProfile(db, 2, "staticrank", false, false);

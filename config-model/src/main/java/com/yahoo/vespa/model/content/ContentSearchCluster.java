@@ -255,7 +255,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
             cluster.setQueryTimeout(queryTimeout);
         }
         cluster.defaultDocumentsConfig();
-        cluster.deriveSchemas(deployState);
+        cluster.deriveFromSchemas(deployState);
         addCluster(cluster);
     }
 
