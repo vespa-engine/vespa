@@ -38,11 +38,12 @@ public class Main {
         Runtime.getRuntime().addShutdownHook(new Thread(documentRetriever::shutdown));
     }
 
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     private static DocumentRetriever createDocumentRetriever(ClientParameters params) {
         return new DocumentRetriever(
                 new ClusterList("client"),
                 new DocumentAccessFactory(),
-                new LoadTypeSet(params.configId),
+                new LoadTypeSet(params.configId), // TODO: Remove on Vespa 8
                 params
         );
     }

@@ -697,6 +697,7 @@ public class MessageBusVisitorSessionTestCase {
     }
 
     @Test
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public void testMessageParameters() {
         MockSender sender = new MockSender();
         MockReceiver receiver = new MockReceiver();
@@ -716,7 +717,7 @@ public class MessageBusVisitorSessionTestCase {
         params.setTimeoutMs(1337);
         params.setMaxPending(111);
         params.setFieldSet(DocIdOnly.NAME);
-        params.setLoadType(new LoadType(3, "samnmax", DocumentProtocol.Priority.HIGH_3));
+        params.setLoadType(new LoadType(3, "samnmax", DocumentProtocol.Priority.HIGH_3)); // TODO: Remove on Vespa 8
         params.setVisitRemoves(true);
         params.setVisitInconsistentBuckets(true);
         params.setTraceLevel(9);

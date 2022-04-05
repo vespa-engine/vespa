@@ -9,6 +9,8 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author thomasg
  */
+@SuppressWarnings("removal") // TODO: Remove on Vespa 8
+// TODO Vespa 8: remove test case once load types are gone
 public class LoadTypesTestCase {
 
     @Test

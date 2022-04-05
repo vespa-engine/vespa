@@ -21,12 +21,13 @@ import java.util.logging.Logger;
 /**
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 class MessageFactory {
 
     private final static Logger log = Logger.getLogger(MessageFactory.class.getName());
     private final Message requestMsg;
-    private final LoadType loadType;
-    private final DocumentProtocol.Priority priority;
+    private final LoadType loadType; // TODO: Remove on Vespa 8
+    private final DocumentProtocol.Priority priority; // TODO: Remove on Vespa 8
 
     @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public MessageFactory(DocumentMessage requestMsg) {

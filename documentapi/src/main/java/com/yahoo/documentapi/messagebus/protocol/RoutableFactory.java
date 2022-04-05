@@ -22,7 +22,7 @@ public interface RoutableFactory {
 
     /**
      * <p>This method encodes the content of the given routable into a byte buffer that can later be decoded using the
-     * {@link #decode(DocumentDeserializer, com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet)} method.</p> <p>Return false to signal failure.</p>
+     * {@link #decode(DocumentDeserializer)} method.</p> <p>Return false to signal failure.</p>
      * <p>This method is NOT exception safe.</p>
      *
      * @param obj The routable to encode.
@@ -38,7 +38,15 @@ public interface RoutableFactory {
      * @param in        The buffer to read from.
      * @param loadTypes The LoadTypeSet to inject into the Routable.
      * @return The decoded routable.
+     * @deprecated load types are deprecated. Use method without LoadTypeSet instead
      */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     Routable decode(DocumentDeserializer in, LoadTypeSet loadTypes);
+
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
+    default Routable decode(DocumentDeserializer in) {
+        return decode(in, LoadTypeSet.EMPTY);
+    }
 
 }

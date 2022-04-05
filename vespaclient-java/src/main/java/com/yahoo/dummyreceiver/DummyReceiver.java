@@ -4,7 +4,6 @@ package com.yahoo.dummyreceiver;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
@@ -68,7 +67,7 @@ public class DummyReceiver implements MessageHandler {
     }
 
     private void init() {
-        MessageBusParams params = new MessageBusParams(new LoadTypeSet());
+        MessageBusParams params = new MessageBusParams();
         params.setRPCNetworkParams(new RPCNetworkParams().setIdentity(new Identity(name)));
         params.setDocumentManagerConfigId("client");
         params.getMessageBusParams().setMaxPendingCount(0);

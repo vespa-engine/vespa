@@ -28,13 +28,21 @@ import java.util.logging.Logger;
  *
  * @author Simon Thoresen Hult
  */
+@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 final class RoutableRepository {
 
     private static final Logger log = Logger.getLogger(RoutableRepository.class.getName());
     private final CopyOnWriteHashMap<Integer, VersionMap> factoryTypes = new CopyOnWriteHashMap<>();
     private final CopyOnWriteHashMap<CacheKey, RoutableFactory> cache = new CopyOnWriteHashMap<>();
-    private LoadTypeSet loadTypes;
+    private LoadTypeSet loadTypes; // TODO remove on Vespa 8
 
+    public RoutableRepository() {}
+
+    /**
+     * @deprecated load types are deprecated. Use default constructor instead.
+     */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public RoutableRepository(LoadTypeSet set) {
         loadTypes = set;
     }

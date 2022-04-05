@@ -76,6 +76,12 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
 
     public interface VisitorSessionFactory {
         VisitorSession createVisitorSession(VisitorParameters params) throws ParseException;
+
+        /**
+         * @deprecated load types are deprecated
+         */
+        @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
+        @SuppressWarnings("removal") // TODO: Remove on Vespa 8
         LoadTypeSet getLoadTypeSet();
     }
 
@@ -119,6 +125,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         return query.properties().getString(streamingSelection);
     }
 
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     private void setVisitorParameters(String searchCluster, Route route, String documentType) {
         params.setDocumentSelection(createSelectionString(documentType, createQuerySelectionString()));
         params.setTimeoutMs(query.getTimeout()); // Per bucket visitor timeout
@@ -134,6 +141,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         params.visitInconsistentBuckets(true);
         params.setPriority(DocumentProtocol.Priority.VERY_HIGH);
 
+        // TODO remove on Vespa 8
         if (query.properties().getString(streamingLoadtype) != null) {
             LoadType loadType = visitorSessionFactory.getLoadTypeSet().getNameMap().get(query.properties().getString(streamingLoadtype));
             if (loadType != null) {

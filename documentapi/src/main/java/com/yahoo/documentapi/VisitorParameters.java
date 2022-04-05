@@ -20,6 +20,7 @@ import java.util.TreeMap;
  *
  * @author Håkon Humberset
  */
+@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 public class VisitorParameters extends Parameters {
 
     private String documentSelection;
@@ -47,7 +48,7 @@ public class VisitorParameters extends Parameters {
     private int maxBucketsPerVisitor = 1;
     private boolean dynamicallyIncreaseMaxBucketsPerVisitor = false;
     private float dynamicMaxBucketsIncreaseFactor = 2;
-    private LoadType loadType = LoadType.DEFAULT;
+    private LoadType loadType = LoadType.DEFAULT; // TODO: Remove on Vespa 8
     private DocumentProtocol.Priority priority = null;
     private int traceLevel = 0;
     private ThrottlePolicy throttlePolicy = null;
@@ -332,10 +333,18 @@ public class VisitorParameters extends Parameters {
         throttlePolicy = policy;
     }
 
+    /**
+     * @deprecated load types are deprecated
+     */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
     public void setLoadType(LoadType loadType) {
         this.loadType = loadType;
     }
 
+    /**
+     * @deprecated load types are deprecated
+     */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
     public LoadType getLoadType() {
         return loadType;
     }

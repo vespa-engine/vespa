@@ -43,13 +43,12 @@ public class VespaDocumentAccess extends DocumentAccess {
     private boolean shutDown = false;
 
     VespaDocumentAccess(DocumentmanagerConfig documentmanagerConfig,
-                        LoadTypeConfig loadTypeConfig,
                         String slobroksConfigId,
                         MessagebusConfig messagebusConfig,
                         DocumentProtocolPoliciesConfig policiesConfig,
                         DistributionConfig distributionConfig) {
         super(new DocumentAccessParams().setDocumentmanagerConfig(documentmanagerConfig));
-        this.parameters = new MessageBusParams(new LoadTypeSet(loadTypeConfig))
+        this.parameters = new MessageBusParams()
                 .setDocumentProtocolPoliciesConfig(policiesConfig, distributionConfig);
         this.parameters.setDocumentmanagerConfig(documentmanagerConfig);
         this.parameters.getRPCNetworkParams().setSlobrokConfigId(slobroksConfigId);
