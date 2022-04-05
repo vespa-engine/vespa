@@ -659,4 +659,14 @@ TEST("Tensor fields have tensor types") {
     EXPECT_TRUE(&tensorField1.getDataType() == tensorFieldValue1->getDataType());
 }
 
+TEST("requireThatImportedFieldsWorks") {
+    DocumentTypeRepo repo(readDocumenttypesConfig(TEST_PATH("import-dt.cfg")));
+    ASSERT_TRUE(repo.getDocumentType("document"));
+    ASSERT_TRUE(repo.getDocumentType("grandparent"));
+    ASSERT_TRUE(repo.getDocumentType("parent_a"));
+    ASSERT_TRUE(repo.getDocumentType("parent_b"));
+    ASSERT_TRUE(repo.getDocumentType("child"));
+}
+
+
 TEST_MAIN() { TEST_RUN_ALL(); }
