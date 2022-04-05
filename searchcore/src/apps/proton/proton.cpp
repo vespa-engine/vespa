@@ -12,9 +12,11 @@
 #include <vespa/config/common/configcontext.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fastos/thread.h>
+#include <vespa/fastos/file.h>
 #include <vespa/fastos/app.h>
 #include <iostream>
 #include <thread>
+#include <fcntl.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("proton");
@@ -42,6 +44,7 @@ class App : public FastOS_Application
 {
 private:
     static void setupSignals();
+    static void setup_fadvise();
     Params parseParams();
     void startAndRun(FastOS_ThreadPool & threadPool, FNET_Transport & transport);
 public:
@@ -54,6 +57,23 @@ App::setupSignals()
     SIG::PIPE.ignore();
     SIG::INT.hook();
     SIG::TERM.hook();
+}
+
+void
+App::setup_fadvise()
+{
+#ifdef __linux__
+    char * fadvise = getenv("VESPA_FADVISE_OPTIONS");
+    if (fadvise != nullptr) {
+        int fadviseOptions(0);
+        if (strstr(fadvise, "SEQUENTIAL")) { fadviseOptions |= POSIX_FADV_SEQUENTIAL; }
+        if (strstr(fadvise, "RANDOM"))     { fadviseOptions |= POSIX_FADV_RANDOM; }
+        if (strstr(fadvise, "WILLNEED"))   { fadviseOptions |= POSIX_FADV_WILLNEED; }
+        if (strstr(fadvise, "DONTNEED"))   { fadviseOptions |= POSIX_FADV_DONTNEED; }
+        if (strstr(fadvise, "NOREUSE"))    { fadviseOptions |= POSIX_FADV_NOREUSE; }
+        FastOS_FileInterface::setDefaultFAdviseOptions(fadviseOptions);
+    }
+#endif
 }
 
 Params
@@ -247,6 +267,7 @@ App::Main()
 {
     try {
         setupSignals();
+        setup_fadvise();
         FastOS_ThreadPool threadPool(128_Ki);
         FNET_Transport transport(buildTransportConfig());
         transport.Start(&threadPool);
