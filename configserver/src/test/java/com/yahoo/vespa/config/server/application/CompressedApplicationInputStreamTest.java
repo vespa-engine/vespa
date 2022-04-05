@@ -63,9 +63,10 @@ public class CompressedApplicationInputStreamTest {
     @Test
     public void require_that_valid_tar_application_can_be_unpacked() throws IOException {
         File outFile = createTarFile();
-        CompressedApplicationInputStream unpacked = streamFromTarGz(outFile);
-        File outApp = unpacked.decompress();
-        assertTestApp(outApp);
+        try (CompressedApplicationInputStream unpacked = streamFromTarGz(outFile)) {
+            File outApp = unpacked.decompress();
+            assertTestApp(outApp);
+        }
     }
 
     @Test
@@ -90,18 +91,20 @@ public class CompressedApplicationInputStreamTest {
 
         archiveOutputStream.close();
 
-        CompressedApplicationInputStream unpacked = streamFromTarGz(outFile);
-        File outApp = unpacked.decompress();
-        assertEquals("application", outApp.getName()); // gets the name of the subdir
-        assertTestApp(outApp);
+        try (CompressedApplicationInputStream unpacked = streamFromTarGz(outFile)) {
+            File outApp = unpacked.decompress();
+            assertEquals("application", outApp.getName()); // gets the name of the subdir
+            assertTestApp(outApp);
+        }
     }
 
     @Test
     public void require_that_valid_zip_application_can_be_unpacked() throws IOException {
         File outFile = createZipFile();
-        CompressedApplicationInputStream unpacked = streamFromZip(outFile);
-        File outApp = unpacked.decompress();
-        assertTestApp(outApp);
+        try (CompressedApplicationInputStream unpacked = streamFromZip(outFile)) {
+            File outApp = unpacked.decompress();
+            assertTestApp(outApp);
+        }
     }
 
     @Test
@@ -117,8 +120,10 @@ public class CompressedApplicationInputStreamTest {
     public void require_that_nested_app_can_be_unpacked() throws IOException, InterruptedException {
         File gzFile = createTarGz("src/test/resources/deploy/advancedapp");
         assertTrue(gzFile.exists());
-        CompressedApplicationInputStream unpacked = streamFromTarGz(gzFile);
-        File outApp = unpacked.decompress();
+        File outApp;
+        try (CompressedApplicationInputStream unpacked = streamFromTarGz(gzFile)) {
+            outApp = unpacked.decompress();
+        }
         List<File> files = Arrays.asList(outApp.listFiles());
         assertEquals(5, files.size());
         assertTrue(files.contains(new File(outApp, "services.xml")));
@@ -151,9 +156,9 @@ public class CompressedApplicationInputStreamTest {
     }
 
     @Test(expected = InternalServerException.class)
-    public void require_that_invalid_application_returns_error_when_unpacked() {
+    public void require_that_invalid_application_returns_error_when_unpacked() throws Exception {
         File app = new File("src/test/resources/deploy/validapp/services.xml");
-        streamFromTarGz(app);
+        streamFromTarGz(app).close();
     }
 
     private static File createTarGz(String appDir) throws IOException, InterruptedException {
