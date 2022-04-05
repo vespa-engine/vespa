@@ -58,8 +58,8 @@ public class ZipEntries {
     public static ZipEntries from(byte[] zip, Predicate<String> entryNameMatcher, int maxEntrySizeInBytes, boolean throwIfEntryExceedsMaxSize) {
         Options options = Options.standard()
                                  .pathPredicate(entryNameMatcher)
-                                 .sizeLimit(2 * (long) Math.pow(1024, 3)) // 2 GB
-                                 .entrySizeLimit(maxEntrySizeInBytes)
+                                 .maxSize(2 * (long) Math.pow(1024, 3)) // 2 GB
+                                 .maxEntrySize(maxEntrySizeInBytes)
                                  .truncateEntry(!throwIfEntryExceedsMaxSize);
         List<ZipEntryWithContent> entries = new ArrayList<>();
         try (ArchiveStreamReader reader = ArchiveStreamReader.ofZip(new ByteArrayInputStream(zip), options)) {

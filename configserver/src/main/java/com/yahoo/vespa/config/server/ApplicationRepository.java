@@ -1053,7 +1053,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private File decompressApplication(InputStream in, String contentType, File tempDir) {
         try (CompressedApplicationInputStream application =
-                     CompressedApplicationInputStream.createFromCompressedStream(in, contentType)) {
+                     CompressedApplicationInputStream.createFromCompressedStream(in, contentType, configserverConfig.maxApplicationPackageSize())) {
             return decompressApplication(application, tempDir);
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to decompress data in body", e);

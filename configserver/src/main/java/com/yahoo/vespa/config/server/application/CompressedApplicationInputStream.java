@@ -39,11 +39,12 @@ public class CompressedApplicationInputStream implements AutoCloseable {
      *
      * @param is   the input stream containing the compressed files.
      * @param contentType the content type for determining what kind of compressed stream should be used.
+     * @param maxSizeInBytes the maximum allowed size of the decompressed content
      * @return An instance of an unpacked application.
      */
-    public static CompressedApplicationInputStream createFromCompressedStream(InputStream is, String contentType) {
+    public static CompressedApplicationInputStream createFromCompressedStream(InputStream is, String contentType, long maxSizeInBytes) {
         try {
-            Options options = Options.standard().allowDotSegment(true);
+            Options options = Options.standard().maxSize(maxSizeInBytes).allowDotSegment(true);
             switch (contentType) {
                 case ApplicationApiHandler.APPLICATION_X_GZIP:
                     return new CompressedApplicationInputStream(ArchiveStreamReader.ofTarGzip(is, options));

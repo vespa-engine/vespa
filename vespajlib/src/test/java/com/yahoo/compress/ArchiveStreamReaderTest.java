@@ -39,7 +39,7 @@ class ArchiveStreamReaderTest {
     @Test
     void entry_size_limit() {
         Map<String, String> entries = Map.of("foo.xml", "foobar");
-        Options options = Options.standard().pathPredicate("foo.xml"::equals).entrySizeLimit(1);
+        Options options = Options.standard().pathPredicate("foo.xml"::equals).maxEntrySize(1);
         try {
             readAll(zip(entries), options);
             fail("Expected exception");
@@ -48,7 +48,7 @@ class ArchiveStreamReaderTest {
         entries = Map.of("foo.xml", "foobar",
                          "foo.jar", "0".repeat(100) // File not extracted and thus not subject to size limit
         );
-        Map<String, String> extracted = readAll(zip(entries), options.entrySizeLimit(10));
+        Map<String, String> extracted = readAll(zip(entries), options.maxEntrySize(10));
         assertEquals(Map.of("foo.xml", "foobar"), extracted);
     }
 
@@ -56,7 +56,7 @@ class ArchiveStreamReaderTest {
     void size_limit() {
         Map<String, String> entries = Map.of("foo.xml", "foo", "bar.xml", "bar");
         try {
-            readAll(zip(entries), Options.standard().sizeLimit(4));
+            readAll(zip(entries), Options.standard().maxSize(4));
             fail("Expected exception");
         } catch (IllegalArgumentException ignored) {}
     }
@@ -75,7 +75,7 @@ class ArchiveStreamReaderTest {
                 "services.xml", false
         );
 
-        Options options = Options.standard().entrySizeLimit(1024);
+        Options options = Options.standard().maxEntrySize(1024);
         tests.forEach((name, expectException) -> {
             try {
                 readAll(zip(Map.of(name, "foo")), options.pathPredicate(name::equals));

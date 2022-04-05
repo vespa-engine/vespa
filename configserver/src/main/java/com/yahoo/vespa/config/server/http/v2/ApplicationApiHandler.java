@@ -49,9 +49,11 @@ public class ApplicationApiHandler extends SessionHandler {
     public final static String MULTIPART_PARAMS = "prepareParams";
     public final static String MULTIPART_APPLICATION_PACKAGE = "applicationPackage";
     public final static String contentTypeHeader = "Content-Type";
+
     private final TenantRepository tenantRepository;
     private final Duration zookeeperBarrierTimeout;
     private final Zone zone;
+    private final long maxApplicationPackageSize;
 
     @Inject
     public ApplicationApiHandler(Context ctx,
@@ -61,6 +63,7 @@ public class ApplicationApiHandler extends SessionHandler {
         super(ctx, applicationRepository);
         this.tenantRepository = applicationRepository.tenantRepository();
         this.zookeeperBarrierTimeout = Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout());
+        this.maxApplicationPackageSize = configserverConfig.maxApplicationPackageSize();
         this.zone = zone;
     }
 
@@ -85,14 +88,14 @@ public class ApplicationApiHandler extends SessionHandler {
                 log.log(Level.FINE, "Deploy parameters: [{0}]", new String(params, StandardCharsets.UTF_8));
                 prepareParams = PrepareParams.fromJson(params, tenantName, zookeeperBarrierTimeout);
                 Part appPackagePart = parts.get(MULTIPART_APPLICATION_PACKAGE);
-                compressedStream = createFromCompressedStream(appPackagePart.getInputStream(), appPackagePart.getContentType());
+                compressedStream = createFromCompressedStream(appPackagePart.getInputStream(), appPackagePart.getContentType(), maxApplicationPackageSize);
             } catch (IOException e) {
                 log.log(Level.WARNING, "Unable to parse multipart in deploy", e);
                 throw new BadRequestException("Request contains invalid data");
             }
         } else {
             prepareParams = PrepareParams.fromHttpRequest(request, tenantName, zookeeperBarrierTimeout);
-            compressedStream = createFromCompressedStream(request.getData(), request.getHeader(contentTypeHeader));
+            compressedStream = createFromCompressedStream(request.getData(), request.getHeader(contentTypeHeader), maxApplicationPackageSize);
         }
 
         PrepareResult result = applicationRepository.deploy(compressedStream, prepareParams);

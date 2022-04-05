@@ -65,8 +65,8 @@ public class ArchiveStreamReader implements AutoCloseable {
                 while ((read = archiveInputStream.read(buffer)) != -1) {
                     totalRead += read;
                     size += read;
-                    if (totalRead > options.sizeLimit) throw new IllegalArgumentException("Total size of archive exceeds size limit");
-                    if (read > options.entrySizeLimit) {
+                    if (totalRead > options.maxSize) throw new IllegalArgumentException("Total size of archive exceeds size limit");
+                    if (read > options.maxEntrySize) {
                         if (!options.truncateEntry) throw new IllegalArgumentException("Size of entry " + path + " exceeded entry size limit");
                     } else {
                         outputStream.write(buffer, 0, read);
@@ -156,8 +156,8 @@ public class ArchiveStreamReader implements AutoCloseable {
     /** Options for reading entries of an archive */
     public static class Options {
 
-        private long sizeLimit = 8 * (long) Math.pow(1024, 3); // 8 GB
-        private long entrySizeLimit = Long.MAX_VALUE;
+        private long maxSize = 8 * (long) Math.pow(1024, 3); // 8 GB
+        private long maxEntrySize = Long.MAX_VALUE;
         private boolean truncateEntry = false;
         private boolean allowDotSegment = false;
         private Predicate<String> pathPredicate = (path) -> true;
@@ -169,15 +169,15 @@ public class ArchiveStreamReader implements AutoCloseable {
             return new Options();
         }
 
-        /** Set the total size limit when decompressing entries. Default is 8 GB */
-        public Options sizeLimit(long limit) {
-            this.sizeLimit = limit;
+        /** Set the maximum total size of decompressed entries. Default is 8 GB */
+        public Options maxSize(long size) {
+            this.maxSize = size;
             return this;
         }
 
-        /** Set the size limit of a decompressed entry. Default is no limit */
-        public Options entrySizeLimit(long limit) {
-            this.entrySizeLimit = limit;
+        /** Set the maximum size a decompressed entry. Default is no limit */
+        public Options maxEntrySize(long size) {
+            this.maxEntrySize = size;
             return this;
         }
 

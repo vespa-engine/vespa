@@ -108,7 +108,7 @@ public class CompressedApplicationInputStreamTest {
     public void require_that_gnu_tared_file_can_be_unpacked() throws IOException, InterruptedException {
         File gzFile = createTarGz("src/test/resources/deploy/validapp");
         assertTrue(gzFile.exists());
-        CompressedApplicationInputStream unpacked = CompressedApplicationInputStream.createFromCompressedStream(new FileInputStream(gzFile), "application/x-gzip");
+        CompressedApplicationInputStream unpacked = CompressedApplicationInputStream.createFromCompressedStream(new FileInputStream(gzFile), "application/x-gzip", Long.MAX_VALUE);
         File outApp = unpacked.decompress();
         assertTestApp(outApp);
     }
@@ -168,11 +168,11 @@ public class CompressedApplicationInputStreamTest {
     }
 
     private static CompressedApplicationInputStream streamFromZip(File zipFile) {
-        return Exceptions.uncheck(() -> CompressedApplicationInputStream.createFromCompressedStream(new FileInputStream(zipFile), "application/zip"));
+        return Exceptions.uncheck(() -> CompressedApplicationInputStream.createFromCompressedStream(new FileInputStream(zipFile), "application/zip", Long.MAX_VALUE));
     }
 
     private static CompressedApplicationInputStream streamFromTarGz(File tarFile) {
-        return Exceptions.uncheck(() -> CompressedApplicationInputStream.createFromCompressedStream(new FileInputStream(tarFile), "application/x-gzip"));
+        return Exceptions.uncheck(() -> CompressedApplicationInputStream.createFromCompressedStream(new FileInputStream(tarFile), "application/x-gzip", Long.MAX_VALUE));
     }
 
 }
