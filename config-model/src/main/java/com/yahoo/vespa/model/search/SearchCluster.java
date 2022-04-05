@@ -21,6 +21,8 @@ import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,8 +43,7 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
     private int index;
     private Double queryTimeout;
     private Double visibilityDelay = 0.0;
-    private final List<String> documentNames = new ArrayList<>();
-    private final List<SchemaInfo> schemas = new ArrayList<>();
+    private final Map<String, SchemaInfo> schemas = new LinkedHashMap<>();
 
     public SearchCluster(AbstractConfigProducer<?> parent, String clusterName, int index) {
         super(parent, "cluster." + clusterName);
@@ -50,8 +51,12 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
         this.index = index;
     }
 
-    /** Returns the writable list of schemas that should be active in this cluster. */
-    public List<SchemaInfo> schemas() { return schemas; }
+    /** Returns the writable map of schemas (indexed by schema name) that should be active in this cluster. */
+    public Map<String, SchemaInfo> schemas() { return schemas; }
+
+    public void add(SchemaInfo schema) {
+        schemas.put(schema.name(), schema);
+    }
 
     /**
      * Must be called after cluster is built, to derive schema configs
@@ -110,44 +115,30 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
         return false;
     }
 
-    protected void addRankProfilesConfig(DocumentdbInfoConfig.Documentdb.Builder docDbBuilder, RankProfilesConfig rankProfilesCfg) {
-        for (RankProfilesConfig.Rankprofile rankProfile : rankProfilesCfg.rankprofile()) {
+    protected void addRankProfilesConfig(String schemaName, DocumentdbInfoConfig.Documentdb.Builder docDbBuilder) {
+        for (RankProfileInfo rankProfile : schemas().get(schemaName).rankProfiles().values()) {
             DocumentdbInfoConfig.Documentdb.Rankprofile.Builder rpB = new DocumentdbInfoConfig.Documentdb.Rankprofile.Builder();
             rpB.name(rankProfile.name());
-            rpB.hasSummaryFeatures(containsPropertiesWithPrefix(RawRankProfile.summaryFeatureFefPropertyPrefix, rankProfile.fef()));
-            rpB.hasRankFeatures(containsPropertiesWithPrefix(RawRankProfile.rankFeatureFefPropertyPrefix, rankProfile.fef()));
+            rpB.hasSummaryFeatures(rankProfile.hasSummaryFeatures());
+            rpB.hasRankFeatures(rankProfile.hasRankFeatures());
             docDbBuilder.rankprofile(rpB);
         }
     }
 
-    private boolean containsPropertiesWithPrefix(String prefix, RankProfilesConfig.Rankprofile.Fef fef) {
-        for (RankProfilesConfig.Rankprofile.Fef.Property p : fef.property()) {
-            if (p.name().startsWith(prefix))
-                return true;
-        }
-        return false;
+    /** Returns a list of the document type names used in this search cluster */
+    public List<String> getDocumentNames() {
+        return schemas.values()
+                      .stream()
+                      .map(schema -> schema.fullSchema().getDocument().getDocumentName().getName())
+                      .collect(Collectors.toList());
     }
-
-    public void addDocumentNames(Schema schema) {
-        documentNames.add(schema.getDocument().getDocumentName().getName());
-    }
-
-    /** Returns a List with document names used in this search cluster */
-    public List<String> getDocumentNames() { return documentNames; }
 
     public String getClusterName()              { return clusterName; }
     public final String getIndexingModeName()   { return getIndexingMode().getName(); }
     public final boolean isStreaming()          { return getIndexingMode() == IndexingMode.STREAMING; }
 
-    public final SearchCluster setQueryTimeout(Double to) {
-        this.queryTimeout = to;
-        return this;
-    }
-
-    public final SearchCluster setVisibilityDelay(double delay) {
-        this.visibilityDelay = delay;
-        return this;
-    }
+    public final void setQueryTimeout(Double to) { this.queryTimeout = to; }
+    public final void setVisibilityDelay(double delay) { this.visibilityDelay = delay; }
 
     protected abstract IndexingMode getIndexingMode();
     public final Double getVisibilityDelay() { return visibilityDelay; }
@@ -215,15 +206,19 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
         public SchemaInfo(Schema schema, UserConfigRepo userConfigRepo, RankProfileRegistry rankProfileRegistry) {
             this.schema = schema;
             this.userConfigRepo = userConfigRepo;
-
-            rankProfiles = rankProfileRegistry.rankProfilesOf(schema)
-                                              .stream()
-                                              .map(p -> new RankProfileInfo(p))
-                                              .collect(Collectors.toUnmodifiableMap(p -> p.name(), p -> p) );
+            this.rankProfiles = Collections.unmodifiableMap(toRankProfiles(rankProfileRegistry.rankProfilesOf(schema)));
         }
 
+        public String name() { return schema.getName(); }
         public Schema fullSchema() { return schema; }
         public UserConfigRepo userConfigs() { return userConfigRepo; }
+        public Map<String, RankProfileInfo> rankProfiles() { return rankProfiles; }
+
+        private Map<String, RankProfileInfo> toRankProfiles(Collection<RankProfile> rankProfiles) {
+            Map<String, RankProfileInfo> rankProfileInfos = new LinkedHashMap<>();
+            rankProfiles.forEach(profile -> rankProfileInfos.put(profile.name(), new RankProfileInfo(profile)));
+            return rankProfileInfos;
+        }
 
     }
 
@@ -231,15 +226,20 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
     public static final class RankProfileInfo {
 
         private final String name;
+        private final boolean hasSummaryFeatures;
+        private final boolean hasRankFeatures;
         private final Map<Reference, TensorType> inputs;
 
         public RankProfileInfo(RankProfile profile) {
             this.name = profile.name();
+            this.hasSummaryFeatures =  ! profile.getSummaryFeatures().isEmpty();
+            this.hasRankFeatures =  ! profile.getRankFeatures().isEmpty();
             this.inputs = profile.inputs();
         }
 
         public String name() { return name; }
-
+        public boolean hasSummaryFeatures() { return hasSummaryFeatures; }
+        public boolean hasRankFeatures() { return hasRankFeatures; }
         public Map<Reference, TensorType> inputs() { return inputs; }
 
     }

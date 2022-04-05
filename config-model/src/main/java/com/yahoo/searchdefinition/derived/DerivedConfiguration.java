@@ -183,9 +183,7 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
         this.indexingScript = script;
     }
 
-    public Schema getSearch() {
-        return schema;
-    }
+    public Schema getSchema() { return schema; }
 
     public RankProfileList getRankProfileList() {
         return rankProfileList;

@@ -149,21 +149,8 @@ public class IndexedSearchCluster extends SearchCluster
     }
 
     private void fillDocumentDBConfig(DocumentDatabase sdoc, ProtonConfig.Documentdb.Builder ddbB) {
-        ddbB.inputdoctypename(sdoc.getInputDocType())
+        ddbB.inputdoctypename(sdoc.getSchemaName())
             .configid(sdoc.getConfigId());
-    }
-
-    @Override
-    public void getConfig(DocumentdbInfoConfig.Builder builder) {
-        for (DocumentDatabase db : documentDbs) {
-            DocumentdbInfoConfig.Documentdb.Builder docDb = new DocumentdbInfoConfig.Documentdb.Builder();
-            docDb.name(db.getName());
-            convertSummaryConfig(db, db, docDb);
-            RankProfilesConfig.Builder rpb = new RankProfilesConfig.Builder();
-            db.getConfig(rpb);
-            addRankProfilesConfig(docDb, new RankProfilesConfig(rpb));
-            builder.documentdb(docDb);
-        }
     }
 
     public void setRoutingSelector(String selector) {
@@ -195,7 +182,7 @@ public class IndexedSearchCluster extends SearchCluster
     @Override
     public void deriveSchemas(DeployState deployState) {
         super.deriveSchemas(deployState);
-        for (SchemaInfo spec : schemas()) {
+        for (SchemaInfo spec : schemas().values()) {
             if (spec.fullSchema() instanceof DocumentOnlySchema) continue;
             DocumentDatabase db = new DocumentDatabase(this, spec.fullSchema().getName(),
                                                        new DerivedConfiguration(spec.fullSchema(),
@@ -225,6 +212,17 @@ public class IndexedSearchCluster extends SearchCluster
 
     public void setSearchCoverage(SearchCoverage searchCoverage) {
         this.searchCoverage = searchCoverage;
+    }
+
+    @Override
+    public void getConfig(DocumentdbInfoConfig.Builder builder) {
+        for (DocumentDatabase db : documentDbs) {
+            DocumentdbInfoConfig.Documentdb.Builder docDb = new DocumentdbInfoConfig.Documentdb.Builder();
+            docDb.name(db.getName());
+            convertSummaryConfig(db, db, docDb);
+            addRankProfilesConfig(db.getSchemaName(), docDb);
+            builder.documentdb(docDb);
+        }
     }
 
     @Override

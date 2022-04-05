@@ -28,7 +28,7 @@ public class NoPrefixForIndexes extends Validator {
                 IndexedSearchCluster sc = (IndexedSearchCluster) cluster;
                 for (DocumentDatabase docDb : sc.getDocumentDbs()) {
                     DerivedConfiguration sdConfig = docDb.getDerivedConfiguration();
-                    Schema schema = sdConfig.getSearch();
+                    Schema schema = sdConfig.getSchema();
                     for (ImmutableSDField field : schema.allConcreteFields()) {
                         if (field.doesIndexing()) {
                             //if (!field.getIndexTo().isEmpty() && !field.getIndexTo().contains(field.getName())) continue;

@@ -49,19 +49,10 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
     private static final String keyEndMarker = "\r=";
     private static final String valueEndMarker = "\r\n";
 
-    // TODO: These are to expose coupling between the strings used here and elsewhere
-    public static final String summaryFeatureFefPropertyPrefix = "vespa.summary.feature";
-    public static final String matchFeatureFefPropertyPrefix = "vespa.match.feature";
-    public static final String rankFeatureFefPropertyPrefix = "vespa.dump.feature";
-    public static final String featureRenameFefPropertyPrefix = "vespa.feature.rename";
-
     private final String name;
-
     private final Compressor.Compression compressedProperties;
 
-    /**
-     * Creates a raw rank profile from the given rank profile
-     */
+    /** Creates a raw rank profile from the given rank profile. */
     public RawRankProfile(RankProfile rankProfile, LargeRankExpressions largeExpressions,
                           QueryProfileRegistry queryProfiles, ImportedMlModels importedModels,
                           AttributeFields attributeFields, ModelContext.Properties deployProperties) {
@@ -96,18 +87,6 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
 
     public String getName() { return name; }
 
-    @Override
-    public String toString() {
-        return " rank profile " + name;
-    }
-
-    @Override
-    public void getConfig(RankProfilesConfig.Builder builder) {
-        RankProfilesConfig.Rankprofile.Builder b = new RankProfilesConfig.Rankprofile.Builder().name(getName());
-        getRankProperties(b);
-        builder.rankprofile(b);
-    }
-
     private void getRankProperties(RankProfilesConfig.Rankprofile.Builder b) {
         RankProfilesConfig.Rankprofile.Fef.Builder fefB = new RankProfilesConfig.Rankprofile.Fef.Builder();
         for (Pair<String, String> p : decompress(compressedProperties))
@@ -120,6 +99,18 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
      * Note: This method is expensive.
      */
     public List<Pair<String, String>> configProperties() { return decompress(compressedProperties); }
+
+    @Override
+    public void getConfig(RankProfilesConfig.Builder builder) {
+        RankProfilesConfig.Rankprofile.Builder b = new RankProfilesConfig.Rankprofile.Builder().name(getName());
+        getRankProperties(b);
+        builder.rankprofile(b);
+    }
+
+    @Override
+    public String toString() {
+        return " rank profile " + name;
+    }
 
     private static class Deriver {
 
@@ -367,17 +358,17 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 properties.add(new Pair<>(property.getName(), property.getValue()));
             }
             for (ReferenceNode feature : summaryFeatures) {
-                properties.add(new Pair<>(summaryFeatureFefPropertyPrefix, feature.toString()));
+                properties.add(new Pair<>("vespa.summary.feature", feature.toString()));
             }
             for (ReferenceNode feature : matchFeatures) {
-                properties.add(new Pair<>(matchFeatureFefPropertyPrefix, feature.toString()));
+                properties.add(new Pair<>("vespa.match.feature", feature.toString()));
             }
             for (ReferenceNode feature : rankFeatures) {
-                properties.add(new Pair<>(rankFeatureFefPropertyPrefix, feature.toString()));
+                properties.add(new Pair<>("vespa.dump.feature", feature.toString()));
             }
             for (var entry : featureRenames.entrySet()) {
-                properties.add(new Pair<>(featureRenameFefPropertyPrefix, entry.getKey()));
-                properties.add(new Pair<>(featureRenameFefPropertyPrefix, entry.getValue()));
+                properties.add(new Pair<>("vespa.feature.rename", entry.getKey()));
+                properties.add(new Pair<>("vespa.feature.rename", entry.getValue()));
             }
             if (numThreadsPerSearch > 0) {
                 properties.add(new Pair<>("vespa.matching.numthreadspersearch", numThreadsPerSearch + ""));

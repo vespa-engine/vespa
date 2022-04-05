@@ -33,7 +33,7 @@ public class StreamingValidator extends Validator {
 
     private static void warnStreamingGramMatching(SearchCluster sc, DeployLogger logger) {
         if (sc.getSchemaConfig() != null) {
-            for (ImmutableSDField sd : sc.getSchemaConfig().getSearch().allConcreteFields()) {
+            for (ImmutableSDField sd : sc.getSchemaConfig().getSchema().allConcreteFields()) {
                 if (sd.getMatching().getType() == MatchType.GRAM) {
                     logger.logApplicationPackage(Level.WARNING, "For streaming search cluster '" +
                                                                 sc.getClusterName() +
@@ -52,7 +52,7 @@ public class StreamingValidator extends Validator {
      */
     private static void warnStreamingAttributes(SearchCluster sc, DeployLogger logger) {
         if (sc.getSchemaConfig() != null) {
-            for (ImmutableSDField sd : sc.getSchemaConfig().getSearch().allConcreteFields()) {
+            for (ImmutableSDField sd : sc.getSchemaConfig().getSchema().allConcreteFields()) {
                 if (sd.doesAttributing()) {
                     warnStreamingAttribute(sc, sd, logger);
                 }

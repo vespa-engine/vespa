@@ -9,9 +9,7 @@ package com.yahoo.prelude.fastsearch;
 class RankProfile {
 
     private final String name;
-
     private final boolean hasSummaryFeatures;
-
     private final boolean hasRankFeatures;
 
     public RankProfile(String name, boolean hasSummaryFeatures, boolean hasRankFeatures) {

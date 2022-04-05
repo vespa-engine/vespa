@@ -31,7 +31,7 @@ public class StreamingSearchCluster extends SearchCluster implements
     private final String storageRouteSpec;
     private final AttributesProducer attributesConfig;
     private final String docTypeName;
-    private DerivedConfiguration sdConfig = null;
+    private DerivedConfiguration schemaConfig = null;
 
     public StreamingSearchCluster(AbstractConfigProducer<SearchCluster> parent,
                                   String clusterName,
@@ -61,13 +61,10 @@ public class StreamingSearchCluster extends SearchCluster implements
     @Override
     public void getConfig(DocumentdbInfoConfig.Builder builder) {
         DocumentdbInfoConfig.Documentdb.Builder docDb = new DocumentdbInfoConfig.Documentdb.Builder();
-        String searchName = sdConfig.getSearch().getName();
-        docDb.name(searchName);
-        SummaryConfig.Producer prod = sdConfig.getSummaries();
+        docDb.name(schemaConfig.getSchema().getName());
+        SummaryConfig.Producer prod = schemaConfig.getSummaries();
         convertSummaryConfig(prod, null, docDb);
-        RankProfilesConfig.Builder rpb = new RankProfilesConfig.Builder();
-        sdConfig.getRankProfileList().getConfig(rpb);
-        addRankProfilesConfig(docDb, new RankProfilesConfig(rpb));
+        addRankProfilesConfig(schemaConfig.getSchema().getName(), docDb);
         builder.documentdb(docDb);
     }
 
@@ -77,22 +74,22 @@ public class StreamingSearchCluster extends SearchCluster implements
         if (schemas().isEmpty()) return;
         if (schemas().size() > 1) throw new IllegalArgumentException("Only a single schema is supported, got " + schemas().size());
 
-        Schema schema = schemas().get(0).fullSchema();
+        Schema schema = schemas().values().stream().findAny().get().fullSchema();
         if ( ! schema.getName().equals(docTypeName))
             throw new IllegalArgumentException("Document type name '" + docTypeName +
                                                "' must be the same as the schema name '" + schema.getName() + "'");
-        this.sdConfig = new DerivedConfiguration(schema,
-                                                 deployState.getDeployLogger(),
-                                                 deployState.getProperties(),
-                                                 deployState.rankProfileRegistry(),
-                                                 deployState.getQueryProfiles().getRegistry(),
-                                                 deployState.getImportedModels(),
-                                                 deployState.getExecutor());
+        this.schemaConfig = new DerivedConfiguration(schema,
+                                                     deployState.getDeployLogger(),
+                                                     deployState.getProperties(),
+                                                     deployState.rankProfileRegistry(),
+                                                     deployState.getQueryProfiles().getRegistry(),
+                                                     deployState.getImportedModels(),
+                                                     deployState.getExecutor());
     }
 
     @Override
     public DerivedConfiguration getSchemaConfig() {
-        return sdConfig;
+        return schemaConfig;
     }
 
     @Override

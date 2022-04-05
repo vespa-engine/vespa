@@ -24,15 +24,15 @@ public class IndexingScriptChangeValidatorTest {
         public Fixture(String currentSd, String nextSd) throws Exception {
             super(currentSd, nextSd);
             validator = new IndexingScriptChangeValidator(ClusterSpec.Id.from("test"),
-                                                          currentDb().getDerivedConfiguration().getSearch(),
-                                                          nextDb().getDerivedConfiguration().getSearch());
+                                                          currentDb().getDerivedConfiguration().getSchema(),
+                                                          nextDb().getDerivedConfiguration().getSchema());
         }
 
         public Fixture(String entireSd) throws Exception {
             super(entireSd);
             validator = new IndexingScriptChangeValidator(ClusterSpec.Id.from("test"),
-                                                          currentDb().getDerivedConfiguration().getSearch(),
-                                                          nextDb().getDerivedConfiguration().getSearch());
+                                                          currentDb().getDerivedConfiguration().getSchema(),
+                                                          nextDb().getDerivedConfiguration().getSchema());
         }
 
         @Override

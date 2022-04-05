@@ -235,10 +235,10 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                              ? Set.of()
                                              : content.getSearch().getIndexed().getDocumentDbs().stream()
                                                       .filter(database -> database.getDerivedConfiguration()
-                                                                                  .getSearch()
+                                                                                  .getSchema()
                                                                                   .allConcreteFields()
                                                                                   .stream().anyMatch(SDField::doesIndexing))
-                                                      .map(database -> database.getInputDocType())
+                                                      .map(database -> database.getSchemaName())
                                                       .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
 
         return typesWithIndexMode.stream().filter(typesWithIndexedFields::contains)

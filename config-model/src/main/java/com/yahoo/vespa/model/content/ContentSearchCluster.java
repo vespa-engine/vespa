@@ -268,10 +268,9 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
                                                    this + " does not exist");
 
             // TODO: remove explicit building of user configs when the complete content model is built using builders.
-            sc.schemas().add(new SearchCluster.SchemaInfo(schema,
-                                                          UserConfigBuilder.build(e.getXml(), deployState, deployState.getDeployLogger()),
-                                                          deployState.rankProfileRegistry()));
-            sc.addDocumentNames(schema);
+            sc.add(new SearchCluster.SchemaInfo(schema,
+                                                UserConfigBuilder.build(e.getXml(), deployState, deployState.getDeployLogger()),
+                                                deployState.rankProfileRegistry()));
         }
     }
 
@@ -357,7 +356,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         return getClusters().values().stream()
                 .filter(StreamingSearchCluster.class::isInstance)
                 .map(StreamingSearchCluster.class::cast)
-                .filter(ssc -> ssc.getSchemaConfig().getSearch().getName().equals(docType))
+                .filter(ssc -> ssc.getSchemaConfig().getSchema().getName().equals(docType))
                 .findFirst();
     }
 

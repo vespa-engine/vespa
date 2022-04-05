@@ -34,7 +34,7 @@ public class SearchDataTypeValidator extends Validator {
             if (cluster.isStreaming()) {
                 continue;
             }
-            for (SearchCluster.SchemaInfo spec : cluster.schemas()) {
+            for (SearchCluster.SchemaInfo spec : cluster.schemas().values()) {
                 SDDocumentType docType = spec.fullSchema().getDocument();
                 if (docType == null) {
                     continue;
