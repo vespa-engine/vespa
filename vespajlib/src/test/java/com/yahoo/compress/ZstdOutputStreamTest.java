@@ -12,13 +12,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author bjorncs
  */
-class ZstdOuputStreamTest {
+class ZstdOutputStreamTest {
 
     @Test
     void output_stream_compresses_input() throws IOException {
         byte[] inputData = "The quick brown fox jumps over the lazy dog".getBytes();
         ByteArrayOutputStream arrayOut = new ByteArrayOutputStream();
-        try (ZstdOuputStream zstdOut = new ZstdOuputStream(arrayOut, 12)) {
+        try (ZstdOutputStream zstdOut = new ZstdOutputStream(arrayOut, 12)) {
             zstdOut.write(inputData[0]);
             zstdOut.write(inputData, 1, inputData.length - 1);
         }
@@ -37,7 +37,7 @@ class ZstdOuputStreamTest {
         }
         byte[] inputData = builder.toString().getBytes();
         ByteArrayOutputStream arrayOut = new ByteArrayOutputStream();
-        try (ZstdOuputStream zstdOut = new ZstdOuputStream(arrayOut)) {
+        try (ZstdOutputStream zstdOut = new ZstdOutputStream(arrayOut)) {
             zstdOut.write(inputData);
         }
         int compressedSize = arrayOut.toByteArray().length;
