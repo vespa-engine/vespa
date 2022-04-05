@@ -33,7 +33,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 import java.util.logging.Level;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -152,15 +154,8 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                 .filter(this::isClusterTypeMeterable)
                 // Grouping by ApplicationId -> Architecture -> ResourceSnapshot
                 .collect(Collectors.groupingBy(node ->
-                                node.owner().get(),
-                                Collectors.collectingAndThen(Collectors.groupingBy(node -> node.resources().architecture()),
-                                        nodeList -> nodeList.entrySet()
-                                                .stream()
-                                                .collect(Collectors.toMap(
-                                                        Map.Entry::getKey,
-                                                        entry -> ResourceSnapshot.from(entry.getValue(), clock.instant(), zoneId))
-                                                ))
-                                ))
+                        node.owner().get(),
+                        groupSnapshotsByArchitecture(zoneId)))
                 .values()
                 .stream()
                 .flatMap(list -> list.values().stream())
@@ -237,5 +232,21 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                 "zoneId", snapshot.getZoneId().value(),
                 "architecture", snapshot.getArchitecture()
         ));
+    }
+
+    private Collector<Node, ?, Map<NodeResources.Architecture, ResourceSnapshot>> groupSnapshotsByArchitecture(ZoneId zoneId) {
+        return Collectors.collectingAndThen(
+                Collectors.groupingBy(node -> node.resources().architecture()),
+                convertNodeListToResourceSnapshot(zoneId)
+        );
+    }
+
+    private Function<Map<NodeResources.Architecture, List<Node>>, Map<NodeResources.Architecture, ResourceSnapshot>> convertNodeListToResourceSnapshot(ZoneId zoneId) {
+        return nodeMap -> nodeMap.entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> ResourceSnapshot.from(entry.getValue(), clock.instant(), zoneId))
+                );
     }
 }
