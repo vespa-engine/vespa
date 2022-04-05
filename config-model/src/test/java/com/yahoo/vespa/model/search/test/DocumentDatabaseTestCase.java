@@ -284,9 +284,9 @@ public class DocumentDatabaseTestCase {
 
     @Test
     public void requireThatRelevantConfigIsAvailableForClusterSearcher() {
-        final List<String> sds = Arrays.asList("type1", "type2");
-        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, "index"),
-                ApplicationPackageUtils.generateSchemas(sds)).create();
+        List<String> schemas = Arrays.asList("type1", "type2");
+        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(schemas, "index"),
+                ApplicationPackageUtils.generateSchemas(schemas)).create();
         String searcherId = "container/searchchains/chain/test/component/com.yahoo.prelude.cluster.ClusterSearcher";
 
         { // documentdb-info config
@@ -296,15 +296,21 @@ public class DocumentDatabaseTestCase {
             { // type1
                 DocumentdbInfoConfig.Documentdb db = dcfg.documentdb(0);
                 assertEquals("type1", db.name());
-                assertEquals(6, db.rankprofile().size());
 
+                assertEquals(7, db.rankprofile().size());
                 assertRankProfile(db, 0, "default", false, false);
                 assertRankProfile(db, 1, "unranked", false, false);
                 assertRankProfile(db, 2, "staticrank", false, false);
                 assertRankProfile(db, 3, "summaryfeatures", true, false);
                 assertRankProfile(db, 4, "inheritedsummaryfeatures", true, false);
                 assertRankProfile(db, 5, "rankfeatures", false, true);
+                var inputs = assertRankProfile(db, 6, "inputs", false, false);
 
+                assertEquals(2, inputs.input().size());
+                assertEquals("query(foo)", inputs.input(0).name());
+                assertEquals("tensor<float>(x[10])", inputs.input(0).type());
+                assertEquals("query(bar)", inputs.input(1).name());
+                assertEquals("tensor(key{},x[1000])", inputs.input(1).type());
 
                 assertEquals(2, db.summaryclass().size());
                 assertEquals("default", db.summaryclass(0).name());
@@ -328,12 +334,16 @@ public class DocumentDatabaseTestCase {
         }
     }
 
-    private void assertRankProfile(DocumentdbInfoConfig.Documentdb db, int index, String name,
-                                   boolean hasSummaryFeatures, boolean hasRankFeatures) {
-        DocumentdbInfoConfig.Documentdb.Rankprofile rankProfile0 = db.rankprofile(index);
-        assertEquals(name, rankProfile0.name());
-        assertEquals(hasSummaryFeatures, rankProfile0.hasSummaryFeatures());
-        assertEquals(hasRankFeatures, rankProfile0.hasRankFeatures());
+    private DocumentdbInfoConfig.Documentdb.Rankprofile assertRankProfile(DocumentdbInfoConfig.Documentdb db,
+                                                                          int index,
+                                                                          String name,
+                                                                          boolean hasSummaryFeatures,
+                                                                          boolean hasRankFeatures) {
+        DocumentdbInfoConfig.Documentdb.Rankprofile rankProfile = db.rankprofile(index);
+        assertEquals(name, rankProfile.name());
+        assertEquals(hasSummaryFeatures, rankProfile.hasSummaryFeatures());
+        assertEquals(hasRankFeatures, rankProfile.hasRankFeatures());
+        return rankProfile;
     }
 
     private void assertSummaryField(DocumentdbInfoConfig.Documentdb db, int summaryClassIndex, int fieldIndex,

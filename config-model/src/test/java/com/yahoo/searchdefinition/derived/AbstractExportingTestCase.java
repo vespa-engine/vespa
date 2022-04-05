@@ -26,26 +26,29 @@ import java.io.IOException;
 public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
 
     private static final String tempDir = "temp/";
-    private static final String searchDefRoot = "src/test/derived/";
+    private static final String schemaRoot = "src/test/derived/";
 
     private DerivedConfiguration derive(String dirName,
-                                        String searchDefinitionName,
+                                        String schemaName,
                                         TestProperties properties,
                                         DeployLogger logger) throws IOException, ParseException {
         File toDir = new File(tempDir + dirName);
         toDir.mkdirs();
         deleteContent(toDir);
 
-        ApplicationBuilder builder = ApplicationBuilder.createFromDirectory(searchDefRoot + dirName + "/", new MockFileRegistry(), logger, properties);
-        return derive(dirName, searchDefinitionName, properties, builder, logger);
+        ApplicationBuilder builder = ApplicationBuilder.createFromDirectory(schemaRoot + dirName + "/",
+                                                                            new MockFileRegistry(),
+                                                                            logger,
+                                                                            properties);
+        return derive(dirName, schemaName, properties, builder, logger);
     }
 
     private DerivedConfiguration derive(String dirName,
-                                        String searchDefinitionName,
+                                        String schemaName,
                                         TestProperties properties,
                                         ApplicationBuilder builder,
                                         DeployLogger logger) throws IOException {
-        DerivedConfiguration config = new DerivedConfiguration(builder.getSchema(searchDefinitionName),
+        DerivedConfiguration config = new DerivedConfiguration(builder.getSchema(schemaName),
                                                                logger,
                                                                properties,
                                                                builder.getRankProfileRegistry(),
@@ -82,9 +85,9 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
      * corresponding file with the same content in temp/name. Versions can and should be omitted from the .cfg file
      * names. This will fail if the search definition dir has multiple search definitions.
      *
-     * @param dirName the name of the directory containing the searchdef file to verify.
-     * @throws ParseException if the .sd file could not be parsed.
-     * @throws IOException    if file access failed.
+     * @param dirName the name of the directory containing the searchdef file to verify
+     * @throws ParseException if the .sd file could not be parsed
+     * @throws IOException    if file access failed
      */
     protected DerivedConfiguration assertCorrectDeriving(String dirName) throws IOException, ParseException {
         return assertCorrectDeriving(dirName, new TestableDeployLogger());
@@ -100,8 +103,7 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
     }
 
     protected DerivedConfiguration assertCorrectDeriving(String dirName,
-                                                         TestProperties properties) throws IOException, ParseException
-    {
+                                                         TestProperties properties) throws IOException, ParseException {
         return assertCorrectDeriving(dirName, null, properties, new TestableDeployLogger());
     }
 
@@ -135,10 +137,10 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
      * Assert that search is derived into the files in the directory given by name.
      *
      * @param name the local name of the directory containing the files to check
-     * @throws IOException If file access failed.
+     * @throws IOException if file access failed
      */
     void assertCorrectConfigFiles(String name) throws IOException {
-        File[] files = new File(searchDefRoot, name).listFiles();
+        File[] files = new File(schemaRoot, name).listFiles();
         if (files == null) return;
         for (File file : files) {
             if ( ! file.getName().endsWith(".cfg")) continue;

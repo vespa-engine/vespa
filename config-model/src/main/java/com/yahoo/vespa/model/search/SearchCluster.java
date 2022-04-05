@@ -101,7 +101,7 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
         }
     }
 
-    /** Returns true if this is a dynamic summary field */
+    /** Returns whether the given field is a dynamic summary field. */
     private boolean isDynamic(String fieldName, SummarymapConfig summarymapConfig) {
         if (summarymapConfig == null) return false; // not know for streaming, but also not used
 
@@ -114,11 +114,17 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
 
     protected void addRankProfilesConfig(String schemaName, DocumentdbInfoConfig.Documentdb.Builder docDbBuilder) {
         for (RankProfileInfo rankProfile : schemas().get(schemaName).rankProfiles().values()) {
-            DocumentdbInfoConfig.Documentdb.Rankprofile.Builder rpB = new DocumentdbInfoConfig.Documentdb.Rankprofile.Builder();
-            rpB.name(rankProfile.name());
-            rpB.hasSummaryFeatures(rankProfile.hasSummaryFeatures());
-            rpB.hasRankFeatures(rankProfile.hasRankFeatures());
-            docDbBuilder.rankprofile(rpB);
+            var rankProfileConfig = new DocumentdbInfoConfig.Documentdb.Rankprofile.Builder();
+            rankProfileConfig.name(rankProfile.name());
+            rankProfileConfig.hasSummaryFeatures(rankProfile.hasSummaryFeatures());
+            rankProfileConfig.hasRankFeatures(rankProfile.hasRankFeatures());
+            for (var input : rankProfile.inputs().entrySet()) {
+                var inputConfig = new DocumentdbInfoConfig.Documentdb.Rankprofile.Input.Builder();
+                inputConfig.name(input.getKey().toString());
+                inputConfig.type(input.getValue().toString());
+                rankProfileConfig.input(inputConfig);
+            }
+            docDbBuilder.rankprofile(rankProfileConfig);
         }
     }
 
@@ -157,12 +163,10 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
         if (getSchemaConfig() != null) getSchemaConfig().getIndexingScript().getConfig(builder);
     }
 
-    // TODO: Remove?
     public void getConfig(AttributesConfig.Builder builder) {
         if (getSchemaConfig() != null) getSchemaConfig().getConfig(builder);
     }
 
-    // TODO: Remove?
     public void getConfig(RankProfilesConfig.Builder builder) {
         if (getSchemaConfig() != null) getSchemaConfig().getRankProfileList().getConfig(builder);
     }
