@@ -228,8 +228,8 @@ enum PathGroup {
     hostedAccountant("/billing/v1/invoice/{*}",
                      "/billing/v1/billing"),
 
-    /** Path used for listing endpoint certificate request info */
-    endpointCertificateRequestInfo("/certificateRequests/"),
+    /** Path used for listing endpoint certificate request and re-requesting endpoint certificates */
+    endpointCertificates("/endpointcertificates/"),
 
     /** Path used for secret store management */
     secretStore(Matcher.tenant, "/application/v4/tenant/{tenant}/secret-store/{*}"),
