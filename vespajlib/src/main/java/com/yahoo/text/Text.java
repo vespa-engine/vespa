@@ -50,9 +50,10 @@ public final class Text {
 
         return (codepoint < 0x80)
                 ? allowedAsciiChars[codepoint]
-                : isTextCharAboveUsAscii(codepoint);
+                : (codepoint <  Character.MIN_SURROGATE) || isTextCharAboveUsAscii(codepoint);
     }
     private static boolean isTextCharAboveUsAscii(int codepoint) {
+        if (codepoint <= Character.MAX_HIGH_SURROGATE) return false;
         if (codepoint <  0xFDD0)   return true;
         if (codepoint <= 0xFDDF)   return false;
         if (codepoint <  0x1FFFE)  return true;
@@ -121,20 +122,14 @@ public final class Text {
             int codePoint = string.codePointAt(i);
             if (codePoint < 0x80) {
                 if ( ! allowedAsciiChars[codePoint]) return false;
-                i++;
             } else if (codePoint < Character.MIN_SURROGATE) {
-                i++;
             } else {
                 if ( ! isTextCharAboveUsAscii(codePoint)) return false;
-                if ( ! Character.isSupplementaryCodePoint(codePoint)) {
-                    if (Character.isHighSurrogate((char)codePoint)) return false;
+                if ( ! Character.isBmpCodePoint(codePoint)) {
                     i++;
-                } else {
-                    if (Character.isHighSurrogate(Character.highSurrogate(codePoint))
-                        && ! Character.isLowSurrogate(Character.lowSurrogate(codePoint))) return false;
-                    i += 2;
                 }
             }
+            i++;
         }
         return true;
     }
