@@ -19,8 +19,8 @@ private:
     class SearchContext : public BaseSC {
     public:
         typedef FlagAttributeT<B> Attribute;
-        using MvMapping = attribute::MultiValueMapping<typename B::WType>;
-        SearchContext(std::unique_ptr<QueryTermSimple> qTerm, const FlagAttributeT<B> & toBeSearched, const MvMapping& mv_mapping);
+        using MvMappingReadView = attribute::MultiValueMappingReadView<typename B::WType>;
+        SearchContext(std::unique_ptr<QueryTermSimple> qTerm, const FlagAttributeT<B> & toBeSearched, MvMappingReadView mv_mapping_read_view);
 
         std::unique_ptr<queryeval::SearchIterator>
         createIterator(fef::TermFieldMatchData * matchData, bool strict) override;

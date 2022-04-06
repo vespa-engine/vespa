@@ -10,9 +10,9 @@
 namespace search::attribute {
 
 template <typename T, typename M>
-MultiNumericSearchContext<T, M>::MultiNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, const MultiValueMapping<M>& mv_mapping)
+MultiNumericSearchContext<T, M>::MultiNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view)
     : NumericSearchContext<NumericRangeMatcher<T>>(toBeSearched, *qTerm, false),
-      _mv_mapping(mv_mapping)
+      _mv_mapping_read_view(mv_mapping_read_view)
 {
 }
 

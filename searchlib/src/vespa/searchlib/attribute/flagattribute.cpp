@@ -56,7 +56,7 @@ template <typename B>
 std::unique_ptr<attribute::SearchContext>
 FlagAttributeT<B>::getSearch(QueryTermSimple::UP qTerm, const attribute::SearchContextParams &) const
 {
-    return std::make_unique<SearchContext>(std::move(qTerm), *this, this->_mvMapping);
+    return std::make_unique<SearchContext>(std::move(qTerm), *this, this->_mvMapping.get_read_view(this->getCommittedDocIdLimit()));
 }
 
 template <typename B>
@@ -233,8 +233,8 @@ FlagAttributeT<B>::removeOldGenerations(vespalib::GenerationHandler::generation_
 }
 
 template <typename B>
-FlagAttributeT<B>::SearchContext::SearchContext(QueryTermSimple::UP qTerm, const FlagAttributeT<B> & toBeSearched, const MvMapping& mv_mapping)
-    : BaseSC(std::move(qTerm), toBeSearched, mv_mapping),
+FlagAttributeT<B>::SearchContext::SearchContext(QueryTermSimple::UP qTerm, const FlagAttributeT<B> & toBeSearched, MvMappingReadView mv_mapping_read_view)
+    : BaseSC(std::move(qTerm), toBeSearched, mv_mapping_read_view),
       _zeroHits(false)
 {
 }
