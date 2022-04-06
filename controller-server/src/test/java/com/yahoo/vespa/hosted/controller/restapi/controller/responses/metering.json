@@ -5,7 +5,8 @@
     "zoneId": "prod.default",
     "cpu": 12.0,
     "memory": 48.0,
-    "disk": 1200.0
+    "disk": 1200.0,
+    "architecture":"arm64"
   },
   {
     "applicationId": "tenant.app.instance",
@@ -13,6 +14,7 @@
     "zoneId": "prod.default",
     "cpu": 24.0,
     "memory": 96.0,
-    "disk": 2400.0
+    "disk": 2400.0,
+    "architecture":"x86_64"
   }
 ]

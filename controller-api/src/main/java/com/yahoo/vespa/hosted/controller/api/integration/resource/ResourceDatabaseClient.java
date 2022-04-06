@@ -18,8 +18,6 @@ public interface ResourceDatabaseClient {
 
     void writeResourceSnapshots(Collection<ResourceSnapshot> snapshots);
 
-    List<ResourceSnapshot> getResourceSnapshotsForMonth(TenantName tenantName, ApplicationName applicationName, YearMonth month);
-
     List<ResourceUsage> getResourceSnapshotsForPeriod(TenantName tenantName, long startTimestamp, long endTimestamp);
 
     void refreshMaterializedView();

@@ -45,19 +45,6 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
     }
 
     @Override
-    public List<ResourceSnapshot> getResourceSnapshotsForMonth(TenantName tenantName, ApplicationName applicationName, YearMonth month) {
-        return resourceSnapshots.stream()
-                .filter(resourceSnapshot -> {
-                    LocalDate snapshotDate = LocalDate.ofInstant(resourceSnapshot.getTimestamp(), ZoneId.of("UTC"));
-                    return YearMonth.from(snapshotDate).equals(month) &&
-                            snapshotDate.getYear() == month.getYear() &&
-                            resourceSnapshot.getApplicationId().tenant().equals(tenantName) &&
-                            resourceSnapshot.getApplicationId().application().equals(applicationName);
-                })
-                .collect(Collectors.toList());
-    }
-
-    @Override
     public Set<YearMonth> getMonthsWithSnapshotsForTenant(TenantName tenantName) {
         return Collections.emptySet();
     }
@@ -88,6 +75,7 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
                             a.getApplicationId(),
                             a.getZoneId(),
                             plan,
+                            a.getArchitecture(),
                             BigDecimal.valueOf(a.getCpuCores()).multiply(d),
                             BigDecimal.valueOf(a.getMemoryGb()).multiply(d),
                             BigDecimal.valueOf(a.getDiskGb()).multiply(d)
@@ -100,10 +88,12 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
         assert a.getApplicationId().equals(b.getApplicationId());
         assert a.getZoneId().equals(b.getZoneId());
         assert a.getPlan().equals(b.getPlan());
+        assert a.getArchitecture().equals(b.getArchitecture());
         return new ResourceUsage(
                 a.getApplicationId(),
                 a.getZoneId(),
                 a.getPlan(),
+                a.getArchitecture(),
                 a.getCpuMillis().add(b.getCpuMillis()),
                 a.getMemoryMillis().add(b.getMemoryMillis()),
                 a.getDiskMillis().add(b.getDiskMillis())

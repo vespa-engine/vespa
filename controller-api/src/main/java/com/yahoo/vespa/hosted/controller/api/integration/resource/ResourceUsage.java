@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.resource;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 
@@ -15,8 +16,9 @@ public class ResourceUsage {
     private final BigDecimal cpuMillis;
     private final BigDecimal memoryMillis;
     private final BigDecimal diskMillis;
+    private final NodeResources.Architecture architecture;
 
-    public ResourceUsage(ApplicationId applicationId, ZoneId zoneId, Plan plan,
+    public ResourceUsage(ApplicationId applicationId, ZoneId zoneId, Plan plan, NodeResources.Architecture architecture,
                          BigDecimal cpuMillis, BigDecimal memoryMillis, BigDecimal diskMillis) {
         this.applicationId = applicationId;
         this.zoneId = zoneId;
@@ -24,6 +26,7 @@ public class ResourceUsage {
         this.memoryMillis = memoryMillis;
         this.diskMillis = diskMillis;
         this.plan = plan;
+        this.architecture = architecture;
     }
 
     public ApplicationId getApplicationId() {
@@ -50,4 +53,7 @@ public class ResourceUsage {
         return plan;
     }
 
+    public NodeResources.Architecture getArchitecture() {
+        return architecture;
+    }
 }
