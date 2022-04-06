@@ -122,4 +122,15 @@ public class TextTestCase {
         System.out.println("Validation num isValid = " + sum + ". Took " + diff + "ns");
 
     }
+
+    @Ignore
+    @Test
+    public void testValid() {
+        int sum = 0;
+        for (int i = 0; i < Character.MAX_CODE_POINT; i++)
+            sum += Text.isValidTextString(new String(new int[]{i}, 0, 1)) ? 1 : 0;
+
+        System.err.println(sum);
+    }
+
 }
