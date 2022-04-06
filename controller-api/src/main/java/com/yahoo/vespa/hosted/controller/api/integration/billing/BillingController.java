@@ -109,9 +109,6 @@ public interface BillingController {
     /** Get all bills from the system */
     List<Bill> getBills();
 
-    /** Delete billing contact information from the tenant */
-    void deleteBillingInfo(TenantName tenant, Set<User> users, boolean isPrivileged);
-
     /** Get the bill collection method for the given tenant */
     default CollectionMethod getCollectionMethod(TenantName tenant) {
         return CollectionMethod.NONE;
