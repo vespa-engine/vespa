@@ -14,7 +14,10 @@ schema test {
         field people type array<person> {
             indexing: summary
             struct-field first_name { indexing: attribute }
-            struct-field last_name  { indexing: attribute }
+            struct-field last_name  {
+                indexing: attribute
+                rank: filter
+            }
         }
 
     }
