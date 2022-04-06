@@ -28,6 +28,10 @@ constexpr int TRACE_SKIP_POS = 10;
 
 using Accept = Blueprint::AcceptInput;
 
+vespalib::string describe(const vespalib::string &feature_name) {
+    return BlueprintResolver::describe_feature(feature_name);
+}
+
 bool is_compatible(bool is_object, Accept accept_type) {
     return ((accept_type == Accept::ANY) ||
             ((accept_type == Accept::OBJECT) == (is_object)));
@@ -122,7 +126,7 @@ struct Compiler : public Blueprint::DependencyHandler {
             should_trace |= (i < TRACE_SKIP_POS);
             should_trace |= ((end - pos) < (MAX_TRACE_SIZE - TRACE_SKIP_POS));
             if (should_trace) {
-                trace += fmt("  ... needed by rank feature '%s'\n", pos->parser.featureName().c_str());
+                trace += fmt("  ... needed by %s\n", describe(pos->parser.featureName()).c_str());
             } else if (i == TRACE_SKIP_POS) {
                 trace += fmt("  (skipped %zu entries)\n", (n - MAX_TRACE_SIZE) + 1);
             }
@@ -135,9 +139,9 @@ struct Compiler : public Blueprint::DependencyHandler {
             failed_set.insert(feature_name);
             auto trace = make_trace(skip_self);
             if (trace.empty()) {
-                LOG(warning, "invalid rank feature '%s': %s", feature_name.c_str(), reason.c_str());
+                LOG(warning, "invalid %s: %s", describe(feature_name).c_str(), reason.c_str());
             } else {
-                LOG(warning, "invalid rank feature '%s': %s\n%s", feature_name.c_str(), reason.c_str(), trace.c_str());
+                LOG(warning, "invalid %s: %s\n%s", describe(feature_name).c_str(), reason.c_str(), trace.c_str());
             }
         }
         probe_stack();
@@ -262,6 +266,22 @@ BlueprintResolver::BlueprintResolver(const BlueprintFactory &factory,
       _featureMap(),
       _seedMap()
 {
+}
+
+vespalib::string
+BlueprintResolver::describe_feature(const vespalib::string &name)
+{
+    auto parser = std::make_unique<FeatureNameParser>(name);
+    if (parser->valid() &&
+        (parser->baseName() == "rankingExpression") &&
+        (parser->parameters().size() == 1) &&
+        parser->output().empty())
+    {
+        auto param = parser->parameters()[0];
+        param = param.substr(0, param.find("@"));
+        return fmt("function '%s'", param.c_str());
+    }
+    return fmt("rank feature '%s'", name.c_str());
 }
 
 void

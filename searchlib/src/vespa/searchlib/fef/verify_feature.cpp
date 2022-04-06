@@ -19,8 +19,8 @@ bool verifyFeature(const BlueprintFactory &factory,
     resolver.addSeed(featureName);
     bool result = resolver.compile();
     if (!result) {
-        LOG(error, "rank feature verification failed: %s (%s)",
-            featureName.c_str(), desc.c_str());
+        LOG(error, "verification failed: %s (%s)",
+            BlueprintResolver::describe_feature(featureName).c_str(), desc.c_str());
     }
     return result;
 }

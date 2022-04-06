@@ -220,7 +220,11 @@ struct Setup {
     }
     bool verify() {
         generate();
-        return vespalib::Process::run(fmt("%s dir:%s", prog, gen_dir.c_str()));
+        vespalib::Process process(fmt("%s dir:%s", prog, gen_dir.c_str()), true);
+        for (auto line = process.read_line(); !line.empty(); line = process.read_line()) {
+            fprintf(stderr, "> %s\n", line.c_str());
+        }
+        return (process.join() == 0);
     }
     void verify_valid(std::initializer_list<std::string> features) {
         for (const std::string &f: features) {
