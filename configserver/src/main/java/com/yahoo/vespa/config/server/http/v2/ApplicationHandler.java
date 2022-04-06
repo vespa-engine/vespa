@@ -16,6 +16,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Response;
 import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.restapi.HttpURL;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.slime.Cursor;
@@ -132,23 +133,23 @@ public class ApplicationHandler extends HttpHandler {
         return HttpServiceResponse.createResponse(response, hostAndPort, request.getUri());
     }
 
-    private HttpResponse serviceStatusPage(ApplicationId applicationId, String service, String hostname, String pathSuffix) {
+    private HttpResponse serviceStatusPage(ApplicationId applicationId, String service, String hostname, HttpURL.Path pathSuffix) {
         return applicationRepository.serviceStatusPage(applicationId, hostname, service, pathSuffix);
     }
 
-    private HttpResponse content(ApplicationId applicationId, String contentPath, HttpRequest request) {
+    private HttpResponse content(ApplicationId applicationId, HttpURL.Path contentPath, HttpRequest request) {
         long sessionId = applicationRepository.getSessionIdForApplication(applicationId);
         ApplicationFile applicationFile =
                 applicationRepository.getApplicationFileFromSession(applicationId.tenant(),
-                        sessionId,
-                        contentPath,
-                        ContentRequest.getApplicationFileMode(request.getMethod()));
+                                                                    sessionId,
+                                                                    contentPath,
+                                                                    ContentRequest.getApplicationFileMode(request.getMethod()));
         ApplicationContentRequest contentRequest = new ApplicationContentRequest(request,
-                sessionId,
-                applicationId,
-                zone,
-                contentPath,
-                applicationFile);
+                                                                                 sessionId,
+                                                                                 applicationId,
+                                                                                 zone,
+                                                                                 contentPath,
+                                                                                 applicationFile);
         return new ContentHandler().get(contentRequest);
     }
 

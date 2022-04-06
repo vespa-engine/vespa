@@ -34,7 +34,7 @@ public class HandlerTest {
         if (contentType != null) {
             assertEquals(renderedString, contentType, response.getContentType());
         }
-        assertTrue(renderedString.contains(message));
+        assertTrue("\n" + renderedString + "\n should contain \n" + message, renderedString.contains(message));
     }
 
     public static void assertHttpStatusCodeErrorCodeAndMessage(HttpResponse response, int statusCode, HttpErrorResponse.ErrorCode errorCode, String message) throws IOException {

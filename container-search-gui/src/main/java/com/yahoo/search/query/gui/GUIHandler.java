@@ -28,6 +28,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.logging.Level;
 
 
@@ -71,24 +72,23 @@ public class GUIHandler extends ThreadedHttpRequestHandler {
         if (path.matches("/querybuilder/")) {
             return new FileResponse("_includes/index.html", null, null);
         }
-        if (!path.matches("/querybuilder/{*}") ) {
+        if ( ! path.matches("/querybuilder/{*}") ) {
             return ErrorResponse.notFoundError("Nothing at path:" + path);
         }
-        String filepath = path.getRest();
-        if (!isValidPath(filepath) && !filepath.equals("config.json")){
+        String filepath = String.join("/", path.getRest().segments());
+        if ( ! filepath.equals("config.json") && ! isValidPath(filepath)){
             return ErrorResponse.notFoundError("Nothing at path:" + filepath);
         }
         return new FileResponse(filepath, indexModel, rankProfilesConfig);
     }
 
     private static boolean isValidPath(String path) {
-        InputStream in = GUIHandler.class.getClassLoader().getResourceAsStream("gui/"+path);
-        boolean isValid = (in != null);
-        if(isValid){
-            try { in.close(); } catch (IOException e) {/* Problem with closing inputstream */}
+        InputStream in = GUIHandler.class.getClassLoader().getResourceAsStream("gui/" + path);
+        if (in != null){
+            try { in.close(); } catch (IOException e) { throw new UncheckedIOException(e); }
+            return true;
         }
-
-        return isValid;
+        return false;
     }
 
     private static class FileResponse extends HttpResponse {
@@ -112,12 +112,12 @@ public class GUIHandler extends ThreadedHttpRequestHandler {
                 String json = "{}";
                 try { json = getGUIConfig(); } catch (IOException e) { /*Something happened while parsing JSON */ }
                 is = new ByteArrayInputStream(json.getBytes());
-            } else{
-                is = GUIHandler.class.getClassLoader().getResourceAsStream("gui/"+this.path);
+            } else {
+                is = GUIHandler.class.getClassLoader().getResourceAsStream("gui/" + this.path);
             }
             byte[] buf = new byte[1024];
             int numRead;
-            while ( (numRead = is.read(buf) ) >= 0) {
+            while ((numRead = is.read(buf)) >= 0) {
                 out.write(buf, 0, numRead);
             }
         }
@@ -152,8 +152,6 @@ public class GUIHandler extends ThreadedHttpRequestHandler {
                 return "image/x-icon";
             } else if (path.endsWith(".json")) {
                 return "application/json";
-            } else if (path.endsWith(".ttf")) {
-                return "font/ttf";
             }
             return "text/html";
         }

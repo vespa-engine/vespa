@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.controller.proxy;
 
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.restapi.HttpURL;
+import com.yahoo.restapi.HttpURL.Path;
 import org.apache.http.client.utils.URIBuilder;
 
 import java.io.IOException;
@@ -29,19 +31,8 @@ public class ProxyResponse extends HttpResponse {
         super(statusResponse);
         this.contentType = contentType;
 
-        final String configServerPrefix;
-        final String controllerRequestPrefix;
-        try {
-            configServerPrefix = new URIBuilder()
-                    .setScheme(configServer.getScheme())
-                    .setHost(configServer.getHost())
-                    .setPort(configServer.getPort())
-                    .setPath("/")
-                    .build().toString();
-            controllerRequestPrefix = controllerRequest.getControllerPrefixUri().toString();
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
+        String configServerPrefix = HttpURL.from(configServer).withPath(Path.empty()).asURI().toString();
+        String controllerRequestPrefix = controllerRequest.getControllerPrefixUri().toString();
         bodyResponseRewritten = bodyResponse.replace(configServerPrefix, controllerRequestPrefix);
     }
 

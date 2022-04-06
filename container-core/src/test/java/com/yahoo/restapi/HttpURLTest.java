@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
+import java.util.function.Consumer;
 
 import static com.yahoo.net.DomainName.localhost;
 import static com.yahoo.restapi.HttpURL.Scheme.http;
@@ -33,14 +34,16 @@ class HttpURLTest {
                                   "https://strange/queries?=&foo",
                                   "https://weirdness?=foo",
                                   "https://encoded/%3F%3D%26%2F?%3F%3D%26%2F=%3F%3D%26%2F",
-                                  "https://host.at.domain:123/one/two/?three=four&five"))
-            assertEquals(uri, HttpURL.from(URI.create(uri)).asURI().toString(),
+                                  "https://host.at.domain:123/one/two/?three=four&five")) {
+            Consumer<String> pathValidator = __ -> { };
+            assertEquals(uri, HttpURL.from(URI.create(uri), pathValidator, pathValidator).asURI().toString(),
                          "uri '" + uri + "' should be returned unchanged");
+        }
     }
 
     @Test
     void testModification() {
-        HttpURL<Name> url = HttpURL.create(http, localhost, Name::of);
+        HttpURL url = HttpURL.create(http, localhost).withPath(HttpURL.Path.empty(Name::of));
         assertEquals(http, url.scheme());
         assertEquals(localhost, url.domain());
         assertEquals(OptionalInt.empty(), url.port());
@@ -91,21 +94,21 @@ class HttpURLTest {
 
         assertEquals("name must match '[A-Za-z][A-Za-z0-9_-]{0,63}', but got: '/'",
                      assertThrows(IllegalArgumentException.class,
-                                  () -> HttpURL.from(URI.create("http://foo/%2F"), Name::of)).getMessage());
+                                  () -> HttpURL.from(URI.create("http://foo/%2F"), Name::of, Name::of)).getMessage());
 
         assertEquals("name must match '[A-Za-z][A-Za-z0-9_-]{0,63}', but got: '/'",
                      assertThrows(IllegalArgumentException.class,
-                                  () -> HttpURL.from(URI.create("http://foo?%2F"), Name::of)).getMessage());
+                                  () -> HttpURL.from(URI.create("http://foo?%2F"), Name::of, Name::of)).getMessage());
 
         assertEquals("name must match '[A-Za-z][A-Za-z0-9_-]{0,63}', but got: ''",
                      assertThrows(IllegalArgumentException.class,
-                                  () -> HttpURL.from(URI.create("http://foo?"), Name::of)).getMessage());
+                                  () -> HttpURL.from(URI.create("http://foo?"), Name::of, Name::of)).getMessage());
     }
 
     @Test
     void testPath() {
-        HttpURL.Path<Name> path = HttpURL.Path.parse("foo/bar/baz", Name::of);
-        List<Name> expected = List.of(Name.of("foo"), Name.of("bar"), Name.of("baz"));
+        HttpURL.Path path = HttpURL.Path.parse("foo/bar/baz", Name::of);
+        List<String> expected = List.of("foo", "bar", "baz");
         assertEquals(expected, path.segments());
 
         assertEquals(expected.subList(1, 3), path.skip(1).segments());
@@ -121,10 +124,15 @@ class HttpURLTest {
         assertEquals(List.of(expected.get(2), expected.get(0)),
                      path.append(path).cut(2).skip(2).segments());
 
+        for (int i = 0; i < 3; i++) {
+            assertEquals(path.head(i), path.cut(3 - i));
+            assertEquals(path.tail(i), path.skip(3 - i));
+        }
+
         assertThrows(NullPointerException.class,
                      () -> path.append((String) null));
 
-        List<Name> names = new ArrayList<>();
+        List<String> names = new ArrayList<>();
         names.add(null);
         assertThrows(NullPointerException.class,
                      () -> path.append(names));
@@ -136,21 +144,37 @@ class HttpURLTest {
         assertEquals("fromIndex(2) > toIndex(1)",
                      assertThrows(IllegalArgumentException.class,
                                   () -> path.cut(2).skip(2)).getMessage());
+
+        assertEquals("path segment decoded cannot contain '/', but got: '/'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> HttpURL.Path.empty().append("%2525252525252525%2525252525253%25252532%252525%252534%36")).getMessage());
+
+        assertEquals("path segment decoded cannot contain '?', but got: '?'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> HttpURL.Path.empty().append("?")).getMessage());
+
+        assertEquals("path segment decoded cannot contain '#', but got: '#'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> HttpURL.Path.empty().append("#")).getMessage());
+
+        assertEquals("path segments cannot be \"\", \".\", or \"..\", but got: '..'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> HttpURL.Path.empty().append("%2E%25252E")).getMessage());
     }
 
     @Test
     void testQuery() {
-        Query<Name> query = Query.parse("foo=bar&baz", Name::of);
-        Map<Name, Name> expected = new LinkedHashMap<>();
-        expected.put(Name.of("foo"), Name.of("bar"));
-        expected.put(Name.of("baz"), null);
+        Query query = Query.parse("foo=bar&baz", Name::of);
+        Map<String, String> expected = new LinkedHashMap<>();
+        expected.put("foo", "bar");
+        expected.put("baz", null);
         assertEquals(expected, query.entries());
 
-        expected.remove(Name.of("baz"));
+        expected.remove("baz");
         assertEquals(expected, query.remove("baz").entries());
 
-        expected.put(Name.of("baz"), null);
-        expected.remove(Name.of("foo"));
+        expected.put("baz", null);
+        expected.remove("foo");
         assertEquals(expected, query.remove("foo").entries());
         assertEquals(expected, Query.empty(Name::of).add("baz").entries());
 
@@ -169,8 +193,8 @@ class HttpURLTest {
         assertThrows(NullPointerException.class,
                      () -> query.put("hax", null));
 
-        Map<Name, Name> names = new LinkedHashMap<>();
-        names.put(null, Name.of("hax"));
+        Map<String, String> names = new LinkedHashMap<>();
+        names.put(null, "hax");
         assertThrows(NullPointerException.class,
                      () -> query.merge(names));
     }

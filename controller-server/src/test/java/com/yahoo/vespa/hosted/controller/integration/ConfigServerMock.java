@@ -13,6 +13,8 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.net.DomainName;
+import com.yahoo.restapi.HttpURL.Path;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
@@ -521,7 +523,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     // Returns a canned example response
     @Override
-    public Map<?,?> getServiceApiResponse(DeploymentId deployment, String serviceName, String restPath) {
+    public Map<?,?> getServiceApiResponse(DeploymentId deployment, String serviceName, Path restPath) {
         Map<String,List<?>> root = new HashMap<>();
         List<Map<?,?>> resources = new ArrayList<>();
         Map<String,String> resource = new HashMap<>();
@@ -532,7 +534,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public String getServiceStatusPage(DeploymentId deployment, String serviceName, String node, String subPath) {
+    public String getServiceStatusPage(DeploymentId deployment, String serviceName, DomainName node, Path subPath) {
         return "<h1>OK</h1>";
     }
 
@@ -567,8 +569,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public ProxyResponse getApplicationPackageContent(DeploymentId deployment, String path, URI requestUri) {
-        return new ProxyResponse(("{\"path\":\"" + path + "\"}").getBytes(StandardCharsets.UTF_8), "application/json", 200);
+    public ProxyResponse getApplicationPackageContent(DeploymentId deployment, Path path, URI requestUri) {
+        return new ProxyResponse(("{\"path\":\"/" + String.join("/", path.segments()) + "\"}").getBytes(StandardCharsets.UTF_8), "application/json", 200);
     }
 
     public void setLogStream(Supplier<String> log) {

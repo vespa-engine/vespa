@@ -7,6 +7,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.restapi.HttpURL;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
@@ -107,7 +108,7 @@ public class ZoneApiHandler extends AuditLoggingRequestHandler {
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
-    private ProxyRequest proxyRequest(ZoneId zoneId, String path, HttpRequest request) {
+    private ProxyRequest proxyRequest(ZoneId zoneId, HttpURL.Path path, HttpRequest request) {
         return ProxyRequest.tryOne(zoneRegistry.getConfigServerVipUri(zoneId), path, request);
     }
 

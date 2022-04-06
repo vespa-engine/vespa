@@ -5,6 +5,11 @@ import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
+import com.yahoo.net.DomainName;
+import com.yahoo.restapi.HttpURL;
+import com.yahoo.restapi.HttpURL.Path;
+import com.yahoo.restapi.HttpURL.Query;
+import com.yahoo.restapi.HttpURL.Scheme;
 import com.yahoo.restapi.RestApi;
 import com.yahoo.restapi.RestApiRequestHandler;
 import com.yahoo.restapi.UriBuilder;
@@ -106,7 +111,7 @@ public class StateRequestHandler extends RestApiRequestHandler<StateRequestHandl
         String regionName = context.pathParameters().getStringOrThrow("regionName");
         String instanceName = context.pathParameters().getStringOrThrow("instanceName");
         String identifier = context.pathParameters().getStringOrThrow("serviceIdentifier");
-        String apiParams = context.pathParameters().getString("*").orElse("");
+        Path apiParams = context.pathParameters().getRest().orElse(Path.empty());
         return singleService(context.uriBuilder(), context.request().getUri(), tenantName, applicationName, environmentName, regionName, instanceName, identifier, apiParams);
     }
 
@@ -125,7 +130,7 @@ public class StateRequestHandler extends RestApiRequestHandler<StateRequestHandl
     }
 
     protected HashMap<?, ?> singleService(
-            UriBuilder uriBuilder, URI requestUri, String tenantName, String applicationName, String environmentName, String regionName, String instanceName, String identifier, String apiParams) {
+            UriBuilder uriBuilder, URI requestUri, String tenantName, String applicationName, String environmentName, String regionName, String instanceName, String identifier, Path apiParams) {
         ServiceModel model = new ServiceModel(getModelConfig(tenantName, applicationName, environmentName, regionName, instanceName));
         Service s = model.getService(identifier);
         int requestedPort = s.matchIdentifierWithPort(identifier);
@@ -135,11 +140,9 @@ public class StateRequestHandler extends RestApiRequestHandler<StateRequestHandl
         return apiResult;
     }
 
-    protected HealthClient getHealthClient(String apiParams, Service s, int requestedPort, String uriQuery, Client client) {
-        final StringBuilder uriBuffer = new StringBuilder("http://").append(s.host).append(':').append(requestedPort).append('/')
-                .append(apiParams);
-        addQuery(uriQuery, uriBuffer);
-        WebTarget target = client.target(uriBuffer.toString());
+    protected HealthClient getHealthClient(Path apiParams, Service s, int requestedPort, String uriQuery, Client client) {
+        URI uri = HttpURL.create(Scheme.http, DomainName.of(s.host), requestedPort, apiParams, Query.parse(uriQuery)).asURI();
+        WebTarget target = client.target(uri);
         return WebResourceFactory.newResource(HealthClient.class, target);
     }
 
