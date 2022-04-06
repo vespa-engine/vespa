@@ -12,12 +12,14 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/client/go/version"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 func newDeployCmd(cli *CLI) *cobra.Command {
 	var (
 		logLevelArg string
+		versionArg  string
 	)
 	cmd := &cobra.Command{
 		Use:   "deploy [application-directory]",
@@ -32,7 +34,12 @@ If application directory is not specified, it defaults to working directory.
 
 When deploying to Vespa Cloud the system can be overridden by setting the
 environment variable VESPA_CLI_CLOUD_SYSTEM. This is intended for internal use
-only.`,
+only.
+
+In Vespa Cloud you may override the Vespa runtime version for your deployment.
+This option should only be used if you have a reason for using a specific
+version. By default Vespa Cloud chooses a suitable version for you.
+`,
 		Example: `$ vespa deploy .
 $ vespa deploy -t cloud
 $ vespa deploy -t cloud -z dev.aws-us-east-1c  # -z can be omitted here as this zone is the default
@@ -50,6 +57,13 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 				return err
 			}
 			opts := cli.createDeploymentOptions(pkg, target)
+			if versionArg != "" {
+				version, err := version.Parse(versionArg)
+				if err != nil {
+					return err
+				}
+				opts.Version = version
+			}
 
 			var result vespa.PrepareResult
 			err = cli.spinner(cli.Stderr, "Uploading application package ...", func() error {
@@ -79,6 +93,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 		},
 	}
 	cmd.Flags().StringVarP(&logLevelArg, "log-level", "l", "error", `Log level for Vespa logs. Must be "error", "warning", "info" or "debug"`)
+	cmd.Flags().StringVarP(&versionArg, "version", "V", "", `Override the Vespa runtime version to use in Vespa Cloud`)
 	return cmd
 }
 

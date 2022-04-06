@@ -12,11 +12,13 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/util"
+	"github.com/vespa-engine/vespa/client/go/version"
 )
 
 var DefaultApplication = ApplicationID{Tenant: "default", Application: "application", Instance: "default"}
@@ -42,6 +44,7 @@ type DeploymentOptions struct {
 	Target             Target
 	ApplicationPackage ApplicationPackage
 	Timeout            time.Duration
+	Version            version.Version
 	HTTPClient         util.HTTPClient
 }
 
@@ -259,21 +262,56 @@ func checkDeploymentOpts(opts DeploymentOptions) error {
 	if opts.Target.Type() == TargetCloud && !opts.ApplicationPackage.HasCertificate() {
 		return fmt.Errorf("%s: missing certificate in package", opts)
 	}
+	if !opts.IsCloud() && !opts.Version.IsZero() {
+		return fmt.Errorf("%s: custom runtime version is not supported by %s target", opts, opts.Target.Type())
+	}
 	return nil
 }
 
-func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (PrepareResult, error) {
+func newDeploymentRequest(url *url.URL, opts DeploymentOptions) (*http.Request, error) {
 	zipReader, err := opts.ApplicationPackage.zipReader(false)
 	if err != nil {
-		return PrepareResult{}, err
+		return nil, err
 	}
+	var body io.Reader
 	header := http.Header{}
-	header.Add("Content-Type", "application/zip")
-	request := &http.Request{
+	if opts.IsCloud() {
+		var buf bytes.Buffer
+		form := multipart.NewWriter(&buf)
+		formFile, err := form.CreateFormFile("applicationZip", filepath.Base(opts.ApplicationPackage.Path))
+		if err != nil {
+			return nil, err
+		}
+		if _, err := io.Copy(formFile, zipReader); err != nil {
+			return nil, err
+		}
+		if !opts.Version.IsZero() {
+			deployOptions := fmt.Sprintf(`{"vespaVersion":"%s"}`, opts.Version.String())
+			if err := form.WriteField("deployOptions", deployOptions); err != nil {
+				return nil, err
+			}
+		}
+		if err := form.Close(); err != nil {
+			return nil, err
+		}
+		header.Set("Content-Type", form.FormDataContentType())
+		body = &buf
+	} else {
+		header.Set("Content-Type", "application/zip")
+		body = zipReader
+	}
+	return &http.Request{
 		URL:    url,
 		Method: "POST",
 		Header: header,
-		Body:   io.NopCloser(zipReader),
+		Body:   io.NopCloser(body),
+	}, nil
+}
+
+func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (PrepareResult, error) {
+	request, err := newDeploymentRequest(url, opts)
+	if err != nil {
+		return PrepareResult{}, err
 	}
 	service, err := opts.Target.Service(DeployService, opts.Timeout, 0, "")
 	if err != nil {
