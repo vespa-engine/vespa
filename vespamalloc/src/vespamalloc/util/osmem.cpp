@@ -2,6 +2,7 @@
 #include "osmem.h"
 #include <vespamalloc/malloc/common.h>
 #include <cstdio>
+#include <cctype>
 #include <cassert>
 #include <cerrno>
 #include <cstdlib>
@@ -10,6 +11,7 @@
 #include <sys/statfs.h>
 #include <sys/mman.h>
 #include <linux/mman.h>
+#include <functional>
 
 namespace vespamalloc {
 
