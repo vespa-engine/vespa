@@ -391,7 +391,7 @@ public class Flags {
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag EXPERIMENTAL_SD_PARSING = defineFeatureFlag(
-            "experimental-sd-parsing", false,
+            "experimental-sd-parsing", true,
             List.of("arnej"), "2022-03-04", "2022-12-31",
             "Parsed schema files via intermediate format",
             "Takes effect at redeployment",

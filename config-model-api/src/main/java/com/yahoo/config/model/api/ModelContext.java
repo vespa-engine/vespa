@@ -119,7 +119,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"bjorncs", "baldersheim"}) default boolean enableJdiscPreshutdownCommand() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean avoidRenamingSummaryFeatures() { return false; }
         @ModelFeatureFlag(owners = {"bjorncs", "baldersheim"}, removeAfter = "7.569") default boolean mergeGroupingResultInSearchInvoker() { return true; }
-        @ModelFeatureFlag(owners = {"arnej"}) default boolean experimentalSdParsing() { return false; }
+        @ModelFeatureFlag(owners = {"arnej"}) default boolean experimentalSdParsing() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "7.571") default String adminClusterNodeArchitecture() { return adminClusterArchitecture().name(); }
         @ModelFeatureFlag(owners = {"hmusum"}) default Architecture adminClusterArchitecture() { return Architecture.getDefault(); }
     }
