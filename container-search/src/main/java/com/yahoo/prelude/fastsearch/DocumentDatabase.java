@@ -2,6 +2,7 @@
 package com.yahoo.prelude.fastsearch;
 
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -56,8 +57,12 @@ public class DocumentDatabase {
     private static Collection<RankProfile> toRankProfiles(Collection<DocumentdbInfoConfig.Documentdb.Rankprofile> rankProfileConfigList) {
         List<RankProfile> rankProfiles = new ArrayList<>();
         for (DocumentdbInfoConfig.Documentdb.Rankprofile c : rankProfileConfigList)
-            rankProfiles.add(new RankProfile(c.name(), c.hasSummaryFeatures(), c.hasRankFeatures()));
+            rankProfiles.add(new RankProfile(c.name(), c.hasSummaryFeatures(), c.hasRankFeatures(), inputs(c)));
         return rankProfiles;
+    }
+
+    private static Map<String, TensorType> inputs(DocumentdbInfoConfig.Documentdb.Rankprofile c) {
+        return c.input().stream().collect(Collectors.toMap(i -> i.name(), i -> TensorType.fromSpec(i.type())));
     }
 
 }
