@@ -44,7 +44,7 @@ public class CloudTrialExpirer extends ControllerMaintainer {
             tombstoneNonePlanTenants();
         }
         moveInactiveTenantsToNonePlan();
-        return 1;
+        return 1.0;
     }
 
     private void moveInactiveTenantsToNonePlan() {
