@@ -236,7 +236,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                + handlerTimeout.toMillis(),
                                MILLISECONDS);
 
-            Path requestPath = new Path(request.getUri());
+            Path requestPath = new Path(request.getUri(), __ -> { }); // No segment validation here, as document IDs can be anything.
             for (String path : handlers.keySet())
                 if (requestPath.matches(path)) {
                     Map<Method, Handler> methods = handlers.get(path);
