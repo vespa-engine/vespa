@@ -143,6 +143,29 @@ public class NotificationsDbTest {
     }
 
     @Test
+    public void deployment_metrics_notify_test() {
+        DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenant.value(), "app1", "instance1"), ZoneId.from("prod", "us-south-3"));
+        NotificationSource sourceCluster1 = NotificationSource.from(deploymentId, ClusterSpec.Id.from("cluster1"));
+        List<Notification> expected = new ArrayList<>(notifications);
+
+        // No metrics, no new notification
+        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of());
+        assertEquals(0, mailer.inbox(email).size());
+
+        // Metrics that contain none of the feed block metrics does not create new notification
+        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", null, null, null, null, Map.of())));
+        assertEquals(0, mailer.inbox(email).size());
+
+        // One resource is at warning
+        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.88, 0.9, 0.3, 0.5, Map.of())));
+        assertEquals(1, mailer.inbox(email).size());
+
+        // One resource over the limit
+        notificationsDb.setDeploymentMetricsNotifications(deploymentId, List.of(clusterMetrics("cluster1", 0.95, 0.9, 0.3, 0.5, Map.of())));
+        assertEquals(2, mailer.inbox(email).size());
+    }
+
+    @Test
     public void feed_blocked_single_cluster_test() {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenant.value(), "app1", "instance1"), ZoneId.from("prod", "us-south-3"));
         NotificationSource sourceCluster1 = NotificationSource.from(deploymentId, ClusterSpec.Id.from("cluster1"));

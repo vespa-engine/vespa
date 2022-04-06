@@ -71,17 +71,13 @@ public class NotificationsDb {
                     .filter(notification -> !source.equals(notification.source()) || type != notification.type())
                     .collect(Collectors.toCollection(ArrayList::new));
             var notification = new Notification(clock.instant(), type, level, source, messages);
-            // Be conservative for now, only dispatch notifications if they are from new source or with new type.
-            // the message content and level is ignored for now
-            if (!existingNotifications.stream().anyMatch(n -> source.contains(n.source()) && n.type().equals(type))) {
+            if (!notificationExists(notification, existingNotifications, false)) {
                 changed = Optional.of(notification);
             }
             notifications.add(notification);
             curatorDb.writeNotifications(source.tenant(), notifications);
         }
-        if (changed.isPresent()) {
-           notifier.dispatch(changed.get());
-        }
+        changed.ifPresent(notifier::dispatch);
     }
 
     /** Remove the notification with the given source and type */
@@ -123,6 +119,7 @@ public class NotificationsDb {
      */
     public void setDeploymentMetricsNotifications(DeploymentId deploymentId, List<ClusterMetrics> clusterMetrics) {
         Instant now = clock.instant();
+        List<Notification> changed = List.of();
         List<Notification> newNotifications = clusterMetrics.stream()
                 .flatMap(metric -> {
                     NotificationSource source = NotificationSource.from(deploymentId, ClusterSpec.Id.from(metric.getClusterId()));
@@ -144,11 +141,20 @@ public class NotificationsDb {
                     // ... and add the new notifications for this deployment
                     newNotifications.stream())
                     .collect(Collectors.toUnmodifiableList());
-
             if (!initial.equals(updated)) {
                 curatorDb.writeNotifications(deploymentSource.tenant(), updated);
             }
+            changed = newNotifications.stream().filter(n -> !notificationExists(n, initial, true)).collect(Collectors.toList());
         }
+        notifier.dispatch(changed, deploymentSource);
+    }
+
+    private boolean notificationExists(Notification notification, List<Notification> existing, boolean mindHigherLevel) {
+        // Be conservative for now, only dispatch notifications if they are from new source or with new type.
+        // the message content and level is ignored for now
+        return existing.stream().anyMatch(e ->
+                notification.source().contains(e.source()) && notification.type().equals(e.type()) &&
+                        (!mindHigherLevel || notification.level().ordinal() <= e.level().ordinal()));
     }
 
     private static Optional<Notification> createFeedBlockNotification(NotificationSource source, Instant at, ClusterMetrics metric) {
