@@ -100,17 +100,21 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         }
     }
 
+    private void applyRanking(ImmutableSDField field, Attribute attribute) {
+        Ranking ranking = field.getRanking();
+        if (ranking != null && ranking.isFilter()) {
+            attribute.setEnableBitVectors(true);
+            attribute.setEnableOnlyBitVector(true);
+        }
+    }
+
     private void deriveAttribute(ImmutableSDField field, Attribute fieldAttribute) {
         Attribute attribute = getAttribute(fieldAttribute.getName());
         if (attribute == null) {
             attributes.put(fieldAttribute.getName(), fieldAttribute);
             attribute = getAttribute(fieldAttribute.getName());
         }
-        Ranking ranking = field.getRanking();
-        if (ranking != null && ranking.isFilter()) {
-            attribute.setEnableBitVectors(true);
-            attribute.setEnableOnlyBitVector(true);
-        }
+        applyRanking(field, attribute);
     }
 
     private void deriveImportedAttributes(ImmutableSDField field) {
@@ -134,11 +138,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         }
         Attribute attribute = field.getAttributes().get(field.getName());
         if (attribute != null) {
-            Ranking ranking = field.getRanking();
-            if (ranking != null && ranking.isFilter()) {
-                attribute.setEnableBitVectors(true);
-                attribute.setEnableOnlyBitVector(true);
-            }
+            applyRanking(field, attribute);
             attributes.put(attribute.getName(), attribute.convertToArray());
         }
     }
