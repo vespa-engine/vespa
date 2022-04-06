@@ -490,6 +490,7 @@
     "methods": [
       "public void <init>(java.lang.String)",
       "public java.lang.String value()",
+      "public static com.yahoo.config.UrlReference valueOf(java.lang.String)",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"

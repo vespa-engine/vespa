@@ -64,4 +64,14 @@ public class UrlNode extends LeafNode<File> {
                 Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getUrlReference()));
     }
 
+    @Override
+    void serialize(String name, Serializer serializer) {
+        serializer.serialize(name, url.value());
+    }
+
+    @Override
+    void serialize(Serializer serializer) {
+        serializer.serialize(url.value());
+    }
+
 }
