@@ -7,12 +7,16 @@ import com.yahoo.yolean.Exceptions;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
@@ -25,6 +29,9 @@ import static org.junit.Assert.assertTrue;
  * @author Ulf Lilleengen
  */
 public class CompressedApplicationInputStreamTest {
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     private static void writeFileToTar(ArchiveOutputStream taos, File file) throws IOException {
         taos.putArchiveEntry(taos.createArchiveEntry(file, file.getName()));
@@ -41,14 +48,14 @@ public class CompressedApplicationInputStreamTest {
         return outFile;
     }
 
-    public static File createTarFile() throws IOException {
-        File outFile = File.createTempFile("testapp", ".tar.gz");
+    public static File createTarFile(Path dir) throws IOException {
+        File outFile = Files.createTempFile(dir, "testapp", ".tar.gz").toFile();
         ArchiveOutputStream archiveOutputStream = new TarArchiveOutputStream(new GZIPOutputStream(new FileOutputStream(outFile)));
         return createArchiveFile(archiveOutputStream, outFile);
     }
 
-    private static File createZipFile() throws IOException {
-        File outFile = File.createTempFile("testapp", ".tar.gz");
+    private File createZipFile(Path dir) throws IOException {
+        File outFile = Files.createTempFile(dir, "testapp", ".tar.gz").toFile();
         ArchiveOutputStream archiveOutputStream = new ZipArchiveOutputStream(new FileOutputStream(outFile));
         return createArchiveFile(archiveOutputStream, outFile);
     }
@@ -62,7 +69,7 @@ public class CompressedApplicationInputStreamTest {
 
     @Test
     public void require_that_valid_tar_application_can_be_unpacked() throws IOException {
-        File outFile = createTarFile();
+        File outFile = createTarFile(temporaryFolder.getRoot().toPath());
         try (CompressedApplicationInputStream unpacked = streamFromTarGz(outFile)) {
             File outApp = unpacked.decompress();
             assertTestApp(outApp);
@@ -71,7 +78,7 @@ public class CompressedApplicationInputStreamTest {
 
     @Test
     public void require_that_valid_tar_application_in_subdir_can_be_unpacked() throws IOException {
-        File outFile = File.createTempFile("testapp", ".tar.gz");
+        File outFile = Files.createTempFile(temporaryFolder.getRoot().toPath(), "testapp", ".tar.gz").toFile();
         ArchiveOutputStream archiveOutputStream = new TarArchiveOutputStream(new GZIPOutputStream(new FileOutputStream(outFile)));
 
         File app = new File("src/test/resources/deploy/validapp");
@@ -100,7 +107,7 @@ public class CompressedApplicationInputStreamTest {
 
     @Test
     public void require_that_valid_zip_application_can_be_unpacked() throws IOException {
-        File outFile = createZipFile();
+        File outFile = createZipFile(temporaryFolder.getRoot().toPath());
         try (CompressedApplicationInputStream unpacked = streamFromZip(outFile)) {
             File outApp = unpacked.decompress();
             assertTestApp(outApp);
@@ -161,8 +168,8 @@ public class CompressedApplicationInputStreamTest {
         streamFromTarGz(app).close();
     }
 
-    private static File createTarGz(String appDir) throws IOException, InterruptedException {
-        File tmpTar = File.createTempFile("myapp", ".tar");
+    private File createTarGz(String appDir) throws IOException, InterruptedException {
+        File tmpTar = Files.createTempFile(temporaryFolder.getRoot().toPath(), "myapp", ".tar").toFile();
         Process p = new ProcessBuilder("tar", "-C", appDir, "-cvf", tmpTar.getAbsolutePath(), ".").start();
         p.waitFor();
         p = new ProcessBuilder("gzip", tmpTar.getAbsolutePath()).start();
