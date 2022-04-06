@@ -24,6 +24,11 @@ public:
     public:
         FieldIdentifier();
         FieldIdentifier(FieldIdT id, FieldPath path);
+        FieldIdentifier(FieldIdentifier &&) noexcept;
+        FieldIdentifier & operator=(FieldIdentifier &&) noexcept;
+        FieldIdentifier(const FieldIdentifier &) = delete;
+        FieldIdentifier & operator=(const FieldIdentifier &) = delete;
+        ~FieldIdentifier();
         FieldIdT getId() const { return _id; }
         const FieldPath & getPath() const { return _path; }
     };
@@ -58,7 +63,7 @@ public:
     }
 
     const FieldIdentifier & getOutputField() const { return _outputField; }
-    void setOutputField(const FieldIdentifier & outputField) { _outputField = outputField; }
+    void setOutputField(FieldIdentifier outputField) { _outputField = std::move(outputField); }
     const FieldIdentifierVector & getInputFields() const { return _inputFields; }
     FieldIdentifierVector & getInputFields() { return _inputFields; }
 };

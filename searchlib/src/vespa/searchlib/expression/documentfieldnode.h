@@ -32,11 +32,13 @@ public:
     DECLARE_NBO_SERIALIZE;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     DECLARE_EXPRESSIONNODE(DocumentFieldNode);
-    DocumentFieldNode() : _fieldPath(), _value(), _fieldName(), _doc(NULL) { }
-    ~DocumentFieldNode();
-    DocumentFieldNode(vespalib::stringref name) : _fieldPath(), _value(), _fieldName(name), _doc(NULL) { }
+    DocumentFieldNode() : _fieldPath(), _value(), _fieldName(), _doc(nullptr) { }
+    ~DocumentFieldNode() override;
+    DocumentFieldNode(vespalib::stringref name) : _fieldPath(), _value(), _fieldName(name), _doc(nullptr) { }
     DocumentFieldNode(const DocumentFieldNode & rhs);
     DocumentFieldNode & operator = (const DocumentFieldNode & rhs);
+    DocumentFieldNode(DocumentFieldNode && rhs) noexcept = default;
+    DocumentFieldNode & operator = (DocumentFieldNode && rhs) noexcept = default;
     const vespalib::string & getFieldName() const override { return _fieldName; }
 private:
     class Handler : public document::fieldvalue::IteratorHandler {

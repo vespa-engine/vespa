@@ -421,9 +421,9 @@ MapFieldValue::iterateNestedImpl(PathRange nested,
         case FieldPathEntry::MAP_KEY:
         {
             LOG(spam, "MAP_KEY");
-            const_iterator iter = find(*fpe.getLookupKey());
+            const_iterator iter = find(fpe.getLookupKey());
             if (iter != end()) {
-                wasModified = checkAndRemove(*fpe.getLookupKey(),
+                wasModified = checkAndRemove(fpe.getLookupKey(),
                         iter->second->iterateNested(nested.next(), handler),
                         wasModified, keysToRemove);
             } else if (handler.createMissingPath()) {
@@ -431,7 +431,7 @@ MapFieldValue::iterateNestedImpl(PathRange nested,
                 FieldValue::UP val = getMapType().getValueType().createFieldValue();
                 ModificationStatus status = val->iterateNested(nested.next(), handler);
                 if (status == ModificationStatus::MODIFIED) {
-                    const_cast<MapFieldValue&>(*this).put(FieldValue::UP(fpe.getLookupKey()->clone()), std::move(val));
+                    const_cast<MapFieldValue&>(*this).put(FieldValue::UP(fpe.getLookupKey().clone()), std::move(val));
                     return status;
                 }
             }
