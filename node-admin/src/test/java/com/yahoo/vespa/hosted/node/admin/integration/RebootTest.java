@@ -2,8 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.integration;
 
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import org.junit.Test;
 
@@ -31,7 +31,7 @@ public class RebootTest {
             tester.addChildNodeRepositoryNode(NodeSpec.Builder.testSpec(hostname).wantedDockerImage(dockerImage).build());
 
             ContainerName host1 = new ContainerName("host1");
-            tester.inOrder(tester.containerOperations).createContainer(containerMatcher(host1), any(), any());
+            tester.inOrder(tester.containerOperations).createContainer(containerMatcher(host1), any());
 
             tester.setWantedState(NodeAdminStateUpdater.State.SUSPENDED);
 

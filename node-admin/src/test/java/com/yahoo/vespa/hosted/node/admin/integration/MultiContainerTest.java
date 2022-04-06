@@ -48,7 +48,7 @@ public class MultiContainerTest {
         tester.addChildNodeRepositoryNode(nodeSpec);
 
         ContainerName containerName = ContainerName.fromHostname(hostName);
-        tester.inOrder(tester.containerOperations).createContainer(containerMatcher(containerName), any(), any());
+        tester.inOrder(tester.containerOperations).createContainer(containerMatcher(containerName), any());
         tester.inOrder(tester.containerOperations).resumeNode(containerMatcher(containerName));
         tester.inOrder(tester.nodeRepository).updateNodeAttributes(eq(hostName), any());
 

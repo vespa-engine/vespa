@@ -20,8 +20,11 @@ import java.util.Optional;
  */
 public interface ContainerEngine {
 
-    /** Create a new container */
-    void createContainer(NodeAgentContext context, ContainerData containerData, ContainerResources containerResources);
+    /**
+     * Create a new container
+     * @return ContainerData that can be used to write files inside container
+     */
+    ContainerData createContainer(NodeAgentContext context, ContainerResources containerResources);
 
     /** Start a created container */
     void startContainer(NodeAgentContext context);
