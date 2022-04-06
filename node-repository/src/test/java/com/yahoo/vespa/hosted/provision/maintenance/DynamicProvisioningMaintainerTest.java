@@ -53,6 +53,7 @@ import static com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner.Beh
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author freva
@@ -495,6 +496,12 @@ public class DynamicProvisioningMaintainerTest {
         // ... same for host
         tester.nodeRepository().nodes().deallocate(hostToRemove.get(), Agent.system, getClass().getSimpleName());
         assertSame("Host moves to parked", Node.State.parked, hostToRemove.get().state());
+
+        // deprovisioning host cannot be unparked
+        try {
+            tester.nodeRepository().nodes().deallocate(hostToRemove.get(), Agent.operator, getClass().getSimpleName());
+            fail("Expected exception");
+        } catch (IllegalArgumentException ignored) {}
 
         // Host and child is removed
         dynamicProvisioningTester.maintainer.maintain();
