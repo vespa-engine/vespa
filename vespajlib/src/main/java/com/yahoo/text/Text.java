@@ -86,9 +86,7 @@ public final class Text {
         if (codepoint <  0xFFFFE)  return true;
         if (codepoint <= 0xFFFFF)  return false;
         if (codepoint <  0x10FFFE) return true;
-        if (codepoint <= 0x10FFFF) return false;
-
-        return true;
+        return false;
     }
 
     /**
@@ -128,7 +126,6 @@ public final class Text {
                 i++;
             } else {
                 if ( ! isTextCharAboveUsAscii(codePoint)) return false;
-                if ( ! Character.isValidCodePoint(codePoint)) return false;
                 if ( ! Character.isSupplementaryCodePoint(codePoint)) {
                     if (Character.isHighSurrogate((char)codePoint)) return false;
                     i++;
