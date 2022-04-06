@@ -935,6 +935,7 @@ void structFieldBody(ParsedField field) : { }
       attribute(field) |
       matchSettings(field.matchSettings()) |
       queryCommand(field) |
+      rank(field) |
       structField(field) |
       summaryTo(field) )
 }
