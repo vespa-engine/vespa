@@ -51,8 +51,9 @@ void
 BufferType<EntryType, EmptyType>::initializeReservedElements(void *buffer, ElemCount reservedElems)
 {
     EntryType *e = static_cast<EntryType *>(buffer);
+    const auto& empty = empty_entry();
     for (size_t j = reservedElems; j != 0; --j) {
-        new (static_cast<void *>(e)) EntryType(_emptyEntry);
+        new (static_cast<void *>(e)) EntryType(empty);
         ++e;
     }
 }
@@ -62,13 +63,22 @@ void
 BufferType<EntryType, EmptyType>::cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext)
 {
     EntryType *e = static_cast<EntryType *>(buffer) + offset;
+    const auto& empty = empty_entry();
     for (size_t j = numElems; j != 0; --j) {
-        *e = _emptyEntry;
+        *e = empty;
         ++e;
     }
 }
 
 template <typename EntryType, typename EmptyType>
-EntryType BufferType<EntryType, EmptyType>::_emptyEntry = EmptyType();
+const EntryType&
+BufferType<EntryType, EmptyType>::empty_entry() noexcept
+{
+    // It's possible for EntryType to wrap e.g. an Alloc instance, which has a transitive
+    // dependency on globally constructed allocator object(s). To avoid issues with global
+    // construction order, initialize the sentinel on the first access.
+    static EntryType empty = EmptyType();
+    return empty;
+}
 
 }

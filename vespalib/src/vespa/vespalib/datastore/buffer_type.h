@@ -133,7 +133,7 @@ template <typename EntryType, typename EmptyType = EntryType>
 class BufferType : public BufferTypeBase
 {
 protected:
-    static EntryType _emptyEntry;
+    static const EntryType& empty_entry() noexcept;
 
 public:
     BufferType() noexcept : BufferType(1,1,1) {}

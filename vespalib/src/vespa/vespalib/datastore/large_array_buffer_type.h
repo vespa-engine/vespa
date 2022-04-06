@@ -20,7 +20,7 @@ class LargeArrayBufferType : public BufferType<Array<EntryT>>
     using AllocSpec = ArrayStoreConfig::AllocSpec;
     using ArrayType = Array<EntryT>;
     using ParentType = BufferType<ArrayType>;
-    using ParentType::_emptyEntry;
+    using ParentType::empty_entry;
     using CleanContext = typename ParentType::CleanContext;
     std::shared_ptr<alloc::MemoryAllocator> _memory_allocator;
 public:
