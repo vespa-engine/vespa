@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 /**
  * Looks up stored endpoint certificate metadata, provisions new certificates if none is found,
- * and re-provisions the certificate if the deploying-to zone is not covered.
+ * re-provisions if zone is not covered, and uses refreshed certificates if a newer version is available.
  *
  * See also {@link com.yahoo.vespa.hosted.controller.maintenance.EndpointCertificateMaintainer}, which handles
  * refreshes, deletions and triggers deployments.
