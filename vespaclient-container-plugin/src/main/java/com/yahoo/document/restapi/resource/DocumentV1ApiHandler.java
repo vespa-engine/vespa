@@ -241,7 +241,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 if (requestPath.matches(path)) {
                     Map<Method, Handler> methods = handlers.get(path);
                     if (methods.containsKey(request.getMethod()))
-                        return methods.get(request.getMethod()).handle(request, new DocumentPath(requestPath), responseHandler);
+                        return methods.get(request.getMethod()).handle(request, new DocumentPath(requestPath, request.getUri().getRawPath()), responseHandler);
 
                     if (request.getMethod() == OPTIONS)
                         options(methods.keySet(), responseHandler);
@@ -1458,10 +1458,12 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static class DocumentPath {
 
         private final Path path;
+        private final String rawPath;
         private final Optional<Group> group;
 
-        DocumentPath(Path path) {
+        DocumentPath(Path path, String rawPath) {
             this.path = requireNonNull(path);
+            this.rawPath = requireNonNull(rawPath);
             this.group = Optional.ofNullable(path.get("number")).map(unsignedLongParser::parse).map(Group::of)
                                  .or(() -> Optional.ofNullable(path.get("group")).map(Group::of));
         }
@@ -1473,7 +1475,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                   ":" + requireNonNull(path.getRest()));
         }
 
-        String rawPath() { return path.asString(); }
+        String rawPath() { return rawPath; }
         Optional<String> documentType() { return Optional.ofNullable(path.get("documentType")); }
         Optional<String> namespace() { return Optional.ofNullable(path.get("namespace")); }
         Optional<Group> group() { return group; }
