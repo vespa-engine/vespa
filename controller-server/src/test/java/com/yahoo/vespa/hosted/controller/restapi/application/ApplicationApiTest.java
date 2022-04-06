@@ -502,7 +502,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Get content/../foo
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-east-1/content/%2E%2E%2Ffoo", GET).userIdentity(USER_ID),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Access denied\"}", 403);
+                              accessDenied, 403);
         // Get content - root
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-east-1/content/", GET).userIdentity(USER_ID),
                 "{\"path\":\"/\"}");
@@ -1671,7 +1671,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request(serviceApi + "/storagenode-awe3slno6mmq2fye191y324jl/state%2Fv1%2F..%2F..%2Fdocument%2Fv1%2F", GET)
                                       .userIdentity(USER_ID)
                                       .oAuthCredentials(OKTA_CREDENTIALS),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Access denied\"}",
+                              accessDenied,
                               403);
     }
 

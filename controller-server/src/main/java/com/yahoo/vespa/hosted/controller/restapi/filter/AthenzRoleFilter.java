@@ -4,12 +4,10 @@ package com.yahoo.vespa.hosted.controller.restapi.filter;
 import com.auth0.jwt.JWT;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
 import com.yahoo.restapi.Path;
@@ -90,6 +88,7 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
         }
         catch (Exception e) {
             logger.log(Level.INFO, () -> "Exception mapping Athenz principal to roles: " + Exceptions.toMessageString(e));
+            return Optional.of(new ErrorResponse(Response.Status.FORBIDDEN, "Access denied"));
         }
         return Optional.empty();
     }

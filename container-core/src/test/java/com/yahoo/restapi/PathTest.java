@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.net.URI;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -65,10 +66,12 @@ public class PathTest {
     @Test
     public void testUrlEncodedPath() {
         assertTrue(new Path(URI.create("/a/%62/c")).matches("/a/b/c"));
-        assertFalse(new Path(URI.create("/a/b%2fc")).matches("/a/b/c"));
-        assertFalse(new Path(URI.create("/foo")).matches("/foo/bar/%2e%2e"));
+        assertFalse(new Path(URI.create("/a/b%2fc"), __ -> { }).matches("/a/b/c"));
+        assertThrows("path segments cannot be \"\", \".\", or \"..\", but got: '..'",
+                     IllegalArgumentException.class,
+                     () -> new Path(URI.create("/foo")).matches("/foo/bar/%2e%2e"));
 
-        Path path = new Path(URI.create("/%61/%2f/%63"));
+        Path path = new Path(URI.create("/%61/%2f/%63"), __ -> { });
         assertTrue(path.matches("/a/{slash}/{c}"));
         assertEquals("/", path.get("slash"));
         assertEquals("c", path.get("c"));
