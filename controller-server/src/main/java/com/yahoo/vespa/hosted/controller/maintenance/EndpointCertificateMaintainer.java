@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 /**
  * Updates refreshed endpoint certificates and triggers redeployment, and deletes unused certificates.
  * <p>
- * See also class EndpointCertificates, which provisions, reprovisions and validates certificates on deploy
+ * See also EndpointCertificateManager, which provisions, reprovisions and validates certificates on deploy
  *
  * @author andreer
  */
