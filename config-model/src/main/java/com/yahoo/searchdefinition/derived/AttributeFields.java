@@ -134,6 +134,11 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         }
         Attribute attribute = field.getAttributes().get(field.getName());
         if (attribute != null) {
+            Ranking ranking = field.getRanking();
+            if (ranking != null && ranking.isFilter()) {
+                attribute.setEnableBitVectors(true);
+                attribute.setEnableOnlyBitVector(true);
+            }
             attributes.put(attribute.getName(), attribute.convertToArray());
         }
     }

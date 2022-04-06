@@ -159,6 +159,15 @@ public class ConvertParsedFields {
         for (var structField : parsed.getStructFields()) {
             convertStructField(field, structField);
         }
+        if (parsed.hasLiteral()) {
+            field.getRanking().setLiteral(true);
+        }
+        if (parsed.hasFilter()) {
+            field.getRanking().setFilter(true);
+        }
+        if (parsed.hasNormal()) {
+            field.getRanking().setNormal(true);
+        }
     }
 
     private void convertStructField(SDField field, ParsedField parsed) {
@@ -195,15 +204,6 @@ public class ConvertParsedFields {
             summaryField.addSource(name);
             summaryField.addDestination("default");
             summaryField.setTransform(summaryField.getTransform().bold());
-        }
-        if (parsed.hasLiteral()) {
-            field.getRanking().setLiteral(true);
-        }
-        if (parsed.hasFilter()) {
-            field.getRanking().setFilter(true);
-        }
-        if (parsed.hasNormal()) {
-            field.getRanking().setNormal(true);
         }
     }
 
