@@ -2,8 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.integration;
 
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.test.file.TestFileSystem;
@@ -36,13 +36,13 @@ public class ContainerFailTest {
 
             NodeAgentContext context = NodeAgentContextImpl.builder(nodeSpec).fileSystem(TestFileSystem.create()).build();
 
-            tester.inOrder(tester.containerOperations).createContainer(containerMatcher(containerName), any(), any());
+            tester.inOrder(tester.containerOperations).createContainer(containerMatcher(containerName), any());
             tester.inOrder(tester.containerOperations).resumeNode(containerMatcher(containerName));
 
             tester.containerOperations.removeContainer(context, tester.containerOperations.getContainer(context).get());
 
             tester.inOrder(tester.containerOperations).removeContainer(containerMatcher(containerName), any());
-            tester.inOrder(tester.containerOperations).createContainer(containerMatcher(containerName), any(), any());
+            tester.inOrder(tester.containerOperations).createContainer(containerMatcher(containerName), any());
             tester.inOrder(tester.containerOperations).resumeNode(containerMatcher(containerName));
 
             verify(tester.nodeRepository, never()).updateNodeAttributes(any(), any());

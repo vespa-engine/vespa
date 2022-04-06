@@ -17,8 +17,6 @@ public interface MeteringClient {
 
     void consume(Collection<ResourceSnapshot> resources);
 
-    MeteringData getMeteringData(TenantName tenantName, ApplicationName applicationName);
-
     List<ResourceSnapshot> getSnapshotHistoryForTenant(TenantName tenantName, YearMonth yearMonth);
 
     void refresh();

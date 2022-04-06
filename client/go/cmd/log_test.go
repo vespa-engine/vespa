@@ -10,7 +10,7 @@ import (
 )
 
 func TestLog(t *testing.T) {
-	pkgDir := mockApplicationPackage(t, false)
+	_, pkgDir := mock.ApplicationPackageDir(t, false, false)
 	httpClient := &mock.HTTPClient{}
 	httpClient.NextResponseString(200, `1632738690.905535	host1a.dev.aws-us-east-1c	806/53	logserver-container	Container.com.yahoo.container.jdisc.ConfiguredApplication	info	Switching to the latest deployed set of configurations and components. Application config generation: 52532`)
 	cli, stdout, stderr := newTestCLI(t)
@@ -34,7 +34,7 @@ func TestLogOldClient(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
 	cli.version = version.MustParse("7.0.0")
 
-	pkgDir := mockApplicationPackage(t, false)
+	_, pkgDir := mock.ApplicationPackageDir(t, false, false)
 	httpClient := &mock.HTTPClient{}
 	httpClient.NextResponseString(200, `{"minVersion": "8.0.0"}`)
 	httpClient.NextResponseString(200, `1632738690.905535	host1a.dev.aws-us-east-1c	806/53	logserver-container	Container.com.yahoo.container.jdisc.ConfiguredApplication	info	Switching to the latest deployed set of configurations and components. Application config generation: 52532`)

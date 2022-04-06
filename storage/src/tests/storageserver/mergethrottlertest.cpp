@@ -16,6 +16,7 @@
 #include <iterator>
 #include <vector>
 #include <chrono>
+#include <climits>
 #include <thread>
 
 using namespace document;

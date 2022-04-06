@@ -26,7 +26,7 @@ DocumentFieldNode::~DocumentFieldNode() = default;
 
 DocumentFieldNode::DocumentFieldNode(const DocumentFieldNode & rhs) :
     DocumentAccessorNode(rhs),
-    _fieldPath(rhs._fieldPath),
+    _fieldPath(),
     _value(rhs._value),
     _fieldName(rhs._fieldName),
     _doc(nullptr)
@@ -38,7 +38,7 @@ DocumentFieldNode::operator = (const DocumentFieldNode & rhs)
 {
     if (this != &rhs) {
         DocumentAccessorNode::operator=(rhs);
-        _fieldPath = rhs._fieldPath;
+        _fieldPath.clear();
         _value = rhs._value;
         _fieldName = rhs._fieldName;
         _doc = nullptr;
@@ -146,7 +146,7 @@ void DocumentFieldNode::onDocType(const DocumentType & docType)
     _fieldPath.clear();
     docType.buildFieldPath(_fieldPath, _fieldName);
     if (_fieldPath.empty()) {
-        throw std::runtime_error(make_string("Field %s could not be loacated in documenttype %s", _fieldName.c_str(), docType.getName().c_str()));
+        throw std::runtime_error(make_string("Field %s could not be located in documenttype %s", _fieldName.c_str(), docType.getName().c_str()));
     }
 }
 

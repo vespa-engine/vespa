@@ -212,8 +212,9 @@ public class StorageGroup {
 
             if (group.isPresent() && nodes.isPresent())
                 throw new IllegalArgumentException("Both <group> and <nodes> is specified: Only one of these tags can be used in the same configuration");
-            if (group.isPresent() && (group.get().stringAttribute("name") != null || group.get().integerAttribute("distribution-key") != null))
-                    deployState.getDeployLogger().logApplicationPackage(Level.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
+            if (group.isPresent() && (group.get().integerAttribute("distribution-key") != null)) {
+                deployState.getDeployLogger().logApplicationPackage(Level.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
+            }
 
             GroupBuilder groupBuilder = collectGroup(owner.isHosted(), group, nodes, null, null);
             StorageGroup storageGroup = owner.isHosted()

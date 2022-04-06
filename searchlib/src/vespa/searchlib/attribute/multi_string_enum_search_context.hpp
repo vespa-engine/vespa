@@ -9,8 +9,8 @@
 namespace search::attribute {
 
 template <typename M>
-MultiStringEnumSearchContext<M>::MultiStringEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, bool cased, const AttributeVector& toBeSearched, const MultiValueMapping<M>& mv_mapping, const EnumStoreT<const char*>& enum_store)
-    : MultiEnumSearchContext<const char*, StringSearchContext, M>(StringMatcher(std::move(qTerm), cased), toBeSearched, mv_mapping, enum_store)
+MultiStringEnumSearchContext<M>::MultiStringEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, bool cased, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view, const EnumStoreT<const char*>& enum_store)
+    : MultiEnumSearchContext<const char*, StringSearchContext, M>(StringMatcher(std::move(qTerm), cased), toBeSearched, mv_mapping_read_view, enum_store)
 {
 }
 

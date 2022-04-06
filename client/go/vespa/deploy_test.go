@@ -2,13 +2,74 @@
 package vespa
 
 import (
+	"io"
+	"mime"
+	"mime/multipart"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/vespa-engine/vespa/client/go/mock"
+	"github.com/vespa-engine/vespa/client/go/version"
 )
+
+func TestDeploy(t *testing.T) {
+	httpClient := mock.HTTPClient{}
+	target := LocalTarget(&httpClient)
+	appDir, _ := mock.ApplicationPackageDir(t, false, false)
+	opts := DeploymentOptions{
+		Target:             target,
+		ApplicationPackage: ApplicationPackage{Path: appDir},
+		HTTPClient:         &httpClient,
+	}
+	_, err := Deploy(opts)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(httpClient.Requests))
+	req := httpClient.LastRequest
+	assert.Equal(t, "http://127.0.0.1:19071/application/v2/tenant/default/prepareandactivate", req.URL.String())
+	assert.Equal(t, "application/zip", req.Header.Get("content-type"))
+	buf := make([]byte, 5)
+	req.Body.Read(buf)
+	assert.Equal(t, "PK\x03\x04\x14", string(buf))
+}
+
+func TestDeployCloud(t *testing.T) {
+	httpClient := mock.HTTPClient{}
+	target := createCloudTarget(t, "http://vespacloud", io.Discard)
+	cloudTarget, ok := target.(*cloudTarget)
+	require.True(t, ok)
+	cloudTarget.httpClient = &httpClient
+	appDir, _ := mock.ApplicationPackageDir(t, false, true)
+	opts := DeploymentOptions{
+		Target:             target,
+		ApplicationPackage: ApplicationPackage{Path: appDir},
+		HTTPClient:         &httpClient,
+	}
+	_, err := Deploy(opts)
+	require.Nil(t, err)
+	assert.Equal(t, 1, len(httpClient.Requests))
+	req := httpClient.LastRequest
+	assert.Equal(t, "http://vespacloud/application/v4/tenant/t1/application/a1/instance/i1/deploy/dev-us-north-1", req.URL.String())
+
+	values := parseMultiPart(t, req)
+	zipData := values["applicationZip"]
+	assert.Equal(t, "PK\x03\x04\x14", string(zipData[:5]))
+	_, hasDeployOptions := values["deployOptions"]
+	assert.False(t, hasDeployOptions)
+
+	opts.Version = version.MustParse("1.2.3")
+	_, err = Deploy(opts)
+	require.Nil(t, err)
+	req = httpClient.LastRequest
+	values = parseMultiPart(t, req)
+	zipData = values["applicationZip"]
+	assert.Equal(t, "PK\x03\x04\x14", string(zipData[:5]))
+	assert.Equal(t, string(values["deployOptions"]), `{"vespaVersion":"1.2.3"}`)
+}
 
 func TestApplicationFromString(t *testing.T) {
 	app, err := ApplicationFromString("t1.a1.i1")
@@ -65,6 +126,7 @@ type pkgFixture struct {
 }
 
 func assertFindApplicationPackage(t *testing.T, zipOrDir string, fixture pkgFixture) {
+	t.Helper()
 	if fixture.existingFile != "" {
 		writeFile(t, fixture.existingFile)
 	}
@@ -77,10 +139,37 @@ func assertFindApplicationPackage(t *testing.T, zipOrDir string, fixture pkgFixt
 }
 
 func writeFile(t *testing.T, name string) {
+	t.Helper()
 	err := os.MkdirAll(filepath.Dir(name), 0755)
 	assert.Nil(t, err)
 	if !strings.HasSuffix(name, string(os.PathSeparator)) {
 		err = os.WriteFile(name, []byte{0}, 0644)
 		assert.Nil(t, err)
 	}
+}
+
+func parseMultiPart(t *testing.T, req *http.Request) map[string][]byte {
+	t.Helper()
+
+	mediaType, params, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
+	require.Nil(t, err)
+	assert.Equal(t, mediaType, "multipart/form-data")
+
+	values := make(map[string][]byte)
+	mr := multipart.NewReader(req.Body, params["boundary"])
+	for {
+		p, err := mr.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		data, err := io.ReadAll(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		values[p.FormName()] = data
+	}
+	return values
 }

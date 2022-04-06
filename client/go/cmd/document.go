@@ -174,7 +174,11 @@ func newDocumentGetCmd(cli *CLI) *cobra.Command {
 }
 
 func documentService(cli *CLI) (*vespa.Service, error) {
-	return cli.service(vespa.DocumentService, 0, "")
+	target, err := cli.target(targetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return cli.service(target, vespa.DocumentService, 0, "")
 }
 
 func operationOptions(stderr io.Writer, printCurl bool, timeoutSecs int) vespa.OperationOptions {

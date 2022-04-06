@@ -12,18 +12,18 @@ import static org.junit.Assert.assertTrue;
 
 public class TextTestCase {
 
+    private static void validateText(OptionalInt expect, String text) {
+        assertEquals(expect, Text.validateTextString(text));
+        assertEquals(expect.isEmpty(), Text.isValidTextString(text));
+    }
     @Test
     public void testValidateTextString() {
-        assertFalse(Text.validateTextString("valid").isPresent());
-        assertEquals(OptionalInt.of(1), Text.validateTextString("text\u0001text\u0003"));
-        assertEquals(OptionalInt.of(0xDFFFF),
-                     Text.validateTextString(new StringBuilder().appendCodePoint(0xDFFFF).toString()));
-        assertEquals(OptionalInt.of(0xDFFFF),
-                     Text.validateTextString(new StringBuilder("foo").appendCodePoint(0xDFFFF).toString()));
-        assertEquals(OptionalInt.of(0xDFFFF),
-                     Text.validateTextString(new StringBuilder().appendCodePoint(0xDFFFF).append("foo").toString()));
-        assertEquals(OptionalInt.of(0xDFFFF),
-                     Text.validateTextString(new StringBuilder("foo").appendCodePoint(0xDFFFF).append("foo").toString()));
+        validateText(OptionalInt.empty(), "valid");
+        validateText(OptionalInt.of(1), "text\u0001text\u0003");
+        validateText(OptionalInt.of(0xDFFFF), new StringBuilder().appendCodePoint(0xDFFFF).toString());
+        validateText(OptionalInt.of(0xDFFFF), new StringBuilder("foo").appendCodePoint(0xDFFFF).toString());
+        validateText(OptionalInt.of(0xDFFFF), new StringBuilder().appendCodePoint(0xDFFFF).append("foo").toString());
+        validateText(OptionalInt.of(0xDFFFF), new StringBuilder("foo").appendCodePoint(0xDFFFF).append("foo").toString());
     }
 
     @Test
@@ -45,8 +45,9 @@ public class TextTestCase {
 
     @Test
     public void testThatHighSurrogateRequireLowSurrogate() {
-        assertEquals(OptionalInt.of(0xD800), Text.validateTextString(new StringBuilder().appendCodePoint(0xD800).toString()));
-        assertEquals(OptionalInt.of(0xD800), Text.validateTextString(new StringBuilder().appendCodePoint(0xD800).append(0x0000).toString()));
+        validateText(OptionalInt.of(0xD800), new StringBuilder().appendCodePoint(0xD800).toString());
+        validateText(OptionalInt.of(0xD800), new StringBuilder().appendCodePoint(0xD800).append(0x0000).toString());
+        validateText(OptionalInt.empty(), new StringBuilder().appendCodePoint(0xD800).appendCodePoint(0xDC00).toString());
     }
 
     @Test
@@ -78,7 +79,7 @@ public class TextTestCase {
 	assertEquals("foo 3.14", Text.format("%s %.2f", "foo", 3.1415926536));
     }
 
-    private static long isValid(String [] strings, int num) {
+    private static long benchmarkIsValid(String [] strings, int num) {
         long sum = 0;
         for (int i=0; i < num; i++) {
             if (Text.isValidTextString(strings[i%strings.length])) {
@@ -87,7 +88,8 @@ public class TextTestCase {
         }
         return sum;
     }
-    private static long validate(String [] strings, int num) {
+
+    private static long benchmarkValidate(String [] strings, int num) {
         long sum = 0;
         for (int i=0; i < num; i++) {
             if (Text.validateTextString(strings[i%strings.length]).isEmpty()) {
@@ -99,23 +101,23 @@ public class TextTestCase {
 
     @Ignore
     @Test
-    public void benchmarkValidate() {
+    public void benchmarkTextValidation() {
         String [] strings = new String[100];
         for (int i=0; i < strings.length; i++) {
             strings[i] = new StringBuilder("some text ").append(i).append("of mine.").appendCodePoint(0xDFFFC).append("foo").toString();
         }
-        long sum = validate(strings, 1000000);
+        long sum = benchmarkValidate(strings, 1000000);
         System.out.println("Warmup num validate = " + sum);
-        sum = isValid(strings, 1000000);
+        sum = benchmarkIsValid(strings, 1000000);
         System.out.println("Warmup num isValid = " + sum);
 
         long start = System.nanoTime();
-        sum = validate(strings, 100000000);
+        sum = benchmarkValidate(strings, 100000000);
         long diff = System.nanoTime() - start;
         System.out.println("Validation num validate = " + sum + ". Took " + diff + "ns");
 
         start = System.nanoTime();
-        sum = isValid(strings, 100000000);
+        sum = benchmarkIsValid(strings, 100000000);
         diff = System.nanoTime() - start;
         System.out.println("Validation num isValid = " + sum + ". Took " + diff + "ns");
 

@@ -45,13 +45,13 @@ bool DocumentTypeMapping::prepareBaseDoc(SharedFieldPathMap & map) const
 {
     FieldPathMapMapT::const_iterator found = _fieldMap.find(_defaultDocumentTypeName);
     if (found != _fieldMap.end()) {
-        map.reset(new FieldPathMapT(found->second));
+        map = std::make_shared<FieldPathMapT>(found->second);
         LOG(debug, "Found FieldPathMap for default document type '%s' with %zd elements",
             _defaultDocumentTypeName.c_str(), map->size());
     } else {
         LOG(warning, "No FieldPathMap found for default document type '%s'. Using empty one",
             _defaultDocumentTypeName.c_str());
-        map.reset(new FieldPathMapT());
+        map = std::make_shared<FieldPathMapT>();
     }
     return true;
 }
@@ -70,7 +70,7 @@ void DocumentTypeMapping::buildFieldMap(
     highestFNo++;
     FieldPathMapT & fieldMap = _fieldMap[typeId];
 
-    fieldMap.assign(highestFNo, FieldPath());
+    fieldMap.resize(highestFNo);
 
     size_t validCount(0);
     for (StringFieldIdTMapT::const_iterator it = fieldList.begin(), mt = fieldList.end(); it != mt; it++) {

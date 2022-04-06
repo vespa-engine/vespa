@@ -11,7 +11,6 @@ using vespalib::make_string;
 
 namespace document {
 
-FieldPathEntry::FieldPathEntry(const FieldPathEntry &) = default;
 FieldPathEntry::~FieldPathEntry() = default;
 
 FieldPathEntry::FieldPathEntry() :
@@ -46,7 +45,7 @@ FieldPathEntry::FieldPathEntry(const Field &fieldRef) :
     _lookupIndex(0),
     _lookupKey(),
     _variableName(),
-    _fillInVal(fieldRef.createValue().release())
+    _fillInVal(fieldRef.createValue())
 { }
 
 FieldPathEntry::FieldPathEntry(const DataType & dataType, const DataType& fillType,
@@ -56,12 +55,23 @@ FieldPathEntry::FieldPathEntry(const DataType & dataType, const DataType& fillTy
     _field(),
     _dataType(&dataType),
     _lookupIndex(0),
-    _lookupKey(lookupKey.release()),
+    _lookupKey(std::move(lookupKey)),
     _variableName(),
     _fillInVal()
 {
     setFillValue(fillType);
 }
+
+FieldPathEntry::FieldPathEntry(const FieldPathEntry &rhs)
+    : _type(rhs._type),
+      _name(rhs._name),
+      _field(rhs._field),
+      _dataType(rhs._dataType),
+      _lookupIndex(rhs._lookupIndex),
+      _lookupKey(rhs._lookupKey ? rhs._lookupKey->clone() : nullptr),
+      _variableName(rhs._variableName),
+      _fillInVal(rhs._fillInVal ? rhs._fillInVal->clone() : nullptr)
+{}
 
 void
 FieldPathEntry::setFillValue(const DataType & dataType)
@@ -82,7 +92,7 @@ FieldPathEntry::setFillValue(const DataType & dataType)
         }
     }
     if (dt->isPrimitive()) {
-        _fillInVal.reset(dt->createFieldValue().release());
+        _fillInVal = dt->createFieldValue();
     }
 }
 
@@ -123,7 +133,7 @@ FieldPathEntry::getDataType() const
 FieldValue::UP
 FieldPathEntry::stealFieldValueToSet() const
 {
-    return FieldValue::UP(_fillInVal.release());
+    return std::move(_fillInVal);
 }
 
 vespalib::string
@@ -171,17 +181,20 @@ FieldPathEntry::parseKey(vespalib::stringref & key)
     return v;
 }
 
-FieldPath::FieldPath()
-    : _path()
-{ }
-
-FieldPath::FieldPath(const FieldPath &) = default;
-FieldPath & FieldPath::operator=(const FieldPath &) = default;
+FieldPath::FieldPath() = default;
 FieldPath::~FieldPath() = default;
 
+FieldPath::FieldPath(const FieldPath & rhs)
+    : _path()
+{
+    _path.reserve(rhs.size());
+    for (const auto & e : rhs._path) {
+        _path.emplace_back(std::make_unique<FieldPathEntry>(*e));
+    }
+}
 FieldPath::iterator
 FieldPath::insert(iterator pos, std::unique_ptr<FieldPathEntry> entry) {
-    return _path.insert(pos, vespalib::CloneablePtr<FieldPathEntry>(entry.release()));
+    return _path.insert(pos, std::move(entry));
 }
 void FieldPath::push_back(std::unique_ptr<FieldPathEntry> entry) { _path.emplace_back(entry.release()); }
 void FieldPath::pop_back() { _path.pop_back(); }

@@ -259,7 +259,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/diff/{number}")) return applicationPackageDiff(path.get("tenant"), path.get("application"), path.get("number"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploying(path.get("tenant"), path.get("application"), "default", request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), "default", request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/metering")) return metering(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance")) return applications(path.get("tenant"), Optional.of(path.get("application")), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return instance(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying")) return deploying(path.get("tenant"), path.get("application"), path.get("instance"), request);
@@ -1765,68 +1764,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Slime slime = new Slime();
         Cursor response = slime.setObject();
         toSlime(instance.rotationStatus().of(rotation, deployment), response);
-        return new SlimeJsonResponse(slime);
-    }
-
-    private HttpResponse metering(String tenant, String application, HttpRequest request) {
-
-        Slime slime = new Slime();
-        Cursor root = slime.setObject();
-
-        MeteringData meteringData = controller.serviceRegistry()
-                .meteringService()
-                .getMeteringData(TenantName.from(tenant), ApplicationName.from(application));
-
-        ResourceAllocation currentSnapshot = meteringData.getCurrentSnapshot();
-        Cursor currentRate = root.setObject("currentrate");
-        currentRate.setDouble("cpu", currentSnapshot.getCpuCores());
-        currentRate.setDouble("mem", currentSnapshot.getMemoryGb());
-        currentRate.setDouble("disk", currentSnapshot.getDiskGb());
-
-        ResourceAllocation thisMonth = meteringData.getThisMonth();
-        Cursor thismonth = root.setObject("thismonth");
-        thismonth.setDouble("cpu", thisMonth.getCpuCores());
-        thismonth.setDouble("mem", thisMonth.getMemoryGb());
-        thismonth.setDouble("disk", thisMonth.getDiskGb());
-
-        ResourceAllocation lastMonth = meteringData.getLastMonth();
-        Cursor lastmonth = root.setObject("lastmonth");
-        lastmonth.setDouble("cpu", lastMonth.getCpuCores());
-        lastmonth.setDouble("mem", lastMonth.getMemoryGb());
-        lastmonth.setDouble("disk", lastMonth.getDiskGb());
-
-
-        Map<ApplicationId, List<ResourceSnapshot>> history = meteringData.getSnapshotHistory();
-        Cursor details = root.setObject("details");
-
-        Cursor detailsCpu = details.setObject("cpu");
-        Cursor detailsMem = details.setObject("mem");
-        Cursor detailsDisk = details.setObject("disk");
-
-        history.forEach((applicationId, resources) -> {
-            String instanceName = applicationId.instance().value();
-            Cursor detailsCpuApp = detailsCpu.setObject(instanceName);
-            Cursor detailsMemApp = detailsMem.setObject(instanceName);
-            Cursor detailsDiskApp = detailsDisk.setObject(instanceName);
-            Cursor detailsCpuData = detailsCpuApp.setArray("data");
-            Cursor detailsMemData = detailsMemApp.setArray("data");
-            Cursor detailsDiskData = detailsDiskApp.setArray("data");
-
-            resources.forEach(resourceSnapshot -> {
-                Cursor cpu = detailsCpuData.addObject();
-                cpu.setLong("unixms", resourceSnapshot.getTimestamp().toEpochMilli());
-                cpu.setDouble("value", resourceSnapshot.getCpuCores());
-
-                Cursor mem = detailsMemData.addObject();
-                mem.setLong("unixms", resourceSnapshot.getTimestamp().toEpochMilli());
-                mem.setDouble("value", resourceSnapshot.getMemoryGb());
-
-                Cursor disk = detailsDiskData.addObject();
-                disk.setLong("unixms", resourceSnapshot.getTimestamp().toEpochMilli());
-                disk.setDouble("value", resourceSnapshot.getDiskGb());
-            });
-        });
-
         return new SlimeJsonResponse(slime);
     }
 

@@ -58,7 +58,11 @@ func printCurl(stderr io.Writer, url string, service *vespa.Service) error {
 }
 
 func query(cli *CLI, arguments []string, timeoutSecs int, curl bool) error {
-	service, err := cli.service(vespa.QueryService, 0, "")
+	target, err := cli.target(targetOptions{})
+	if err != nil {
+		return err
+	}
+	service, err := cli.service(target, vespa.QueryService, 0, "")
 	if err != nil {
 		return err
 	}

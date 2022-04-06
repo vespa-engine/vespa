@@ -277,7 +277,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_DATA_HIGHWAY_IN_AWS = defineFeatureFlag(
             "enable-data-highway-in-aws", false,
-            List.of("hmusum"), "2022-01-06", "2022-04-06",
+            List.of("hmusum"), "2022-01-06", "2022-06-01",
             "Enable Data Highway in AWS",
             "Takes effect on restart of Docker container",
             ZONE_ID, APPLICATION_ID);

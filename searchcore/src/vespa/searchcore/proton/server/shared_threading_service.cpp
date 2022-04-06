@@ -2,6 +2,7 @@
 
 #include "shared_threading_service.h"
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -21,9 +22,11 @@ SharedThreadingService::SharedThreadingService(const SharedThreadingServiceConfi
                                                FNET_Transport& transport,
                                                storage::spi::BucketExecutor& bucket_executor)
     : _transport(transport),
-      _warmup(cfg.warmup_threads(), 128_Ki, CpuUsage::wrap(proton_warmup_executor, CpuUsage::Category::COMPACT)),
+      _warmup(std::make_unique<vespalib::ThreadStackExecutor>(cfg.warmup_threads(), 128_Ki,
+                                                              CpuUsage::wrap(proton_warmup_executor, CpuUsage::Category::COMPACT),
+                                                              cfg.shared_task_limit())),
       _shared(std::make_shared<vespalib::BlockingThreadStackExecutor>(cfg.shared_threads(), 128_Ki,
-                                                                        cfg.shared_task_limit(), proton_shared_executor)),
+                                                                      cfg.shared_task_limit(), proton_shared_executor)),
       _field_writer(),
       _invokeService(std::max(vespalib::adjustTimeoutByDetectedHz(1ms),
                               cfg.field_writer_config().reactionTime())),
@@ -51,7 +54,7 @@ SharedThreadingService::~SharedThreadingService() = default;
 
 void
 SharedThreadingService::sync_all_executors() {
-    _warmup.sync();
+    _warmup->sync();
     _shared->sync();
     if (_field_writer) {
         _field_writer->sync_all();

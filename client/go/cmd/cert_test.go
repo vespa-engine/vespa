@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vespa-engine/vespa/client/go/mock"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
@@ -25,7 +26,7 @@ func TestCert(t *testing.T) {
 }
 
 func testCert(t *testing.T, subcommand []string) {
-	pkgDir := mockApplicationPackage(t, false)
+	appDir, pkgDir := mock.ApplicationPackageDir(t, false, false)
 
 	cli, stdout, stderr := newTestCLI(t)
 	args := append(subcommand, "-a", "t1.a1.i1", pkgDir)
@@ -35,7 +36,6 @@ func testCert(t *testing.T, subcommand []string) {
 	app, err := vespa.ApplicationFromString("t1.a1.i1")
 	assert.Nil(t, err)
 
-	appDir := filepath.Join(pkgDir, "src", "main", "application")
 	pkgCertificate := filepath.Join(appDir, "security", "clients.pem")
 	homeDir := cli.config.homeDir
 	certificate := filepath.Join(homeDir, app.String(), "data-plane-public-cert.pem")
@@ -59,7 +59,7 @@ func TestCertCompressedPackage(t *testing.T) {
 }
 
 func testCertCompressedPackage(t *testing.T, subcommand []string) {
-	pkgDir := mockApplicationPackage(t, true)
+	_, pkgDir := mock.ApplicationPackageDir(t, true, false)
 	zipFile := filepath.Join(pkgDir, "target", "application.zip")
 	err := os.MkdirAll(filepath.Dir(zipFile), 0755)
 	assert.Nil(t, err)
@@ -88,11 +88,10 @@ func TestCertAdd(t *testing.T) {
 	err := cli.Run("auth", "cert", "-N", "-a", "t1.a1.i1")
 	assert.Nil(t, err)
 
-	pkgDir := mockApplicationPackage(t, false)
+	appDir, pkgDir := mock.ApplicationPackageDir(t, false, false)
 	stdout.Reset()
 	err = cli.Run("auth", "cert", "add", "-a", "t1.a1.i1", pkgDir)
 	assert.Nil(t, err)
-	appDir := filepath.Join(pkgDir, "src", "main", "application")
 	pkgCertificate := filepath.Join(appDir, "security", "clients.pem")
 	assert.Equal(t, fmt.Sprintf("Success: Certificate written to %s\n", pkgCertificate), stdout.String())
 

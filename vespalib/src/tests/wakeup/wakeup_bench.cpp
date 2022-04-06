@@ -137,6 +137,7 @@ struct UsePipe : State {
     }
 };
 
+#if __cpp_lib_atomic_wait
 struct UseAtomic : State {
     void wakeup() {
         set_wakeup();
@@ -151,6 +152,7 @@ struct UseAtomic : State {
         // assert(!is_ready());
     }
 };
+#endif
 
 #ifdef __linux__
 struct UseFutex : State {
@@ -284,7 +286,9 @@ TEST(WakeupBench, using_spin_yield) { benchmark<Wakeup<UseSpinYield>>(); }
 TEST(WakeupBench, using_cond) { benchmark<Wakeup<UseCond>>(); }
 TEST(WakeupBench, using_cond_nolock) { benchmark<Wakeup<UseCondNolock>>(); }
 TEST(WakeupBench, using_pipe) { benchmark<Wakeup<UsePipe>>(); }
+#if __cpp_lib_atomic_wait
 TEST(WakeupBench, using_atomic) { benchmark<Wakeup<UseAtomic>>(); }
+#endif
 
 #ifdef __linux__
 TEST(WakeupBench, using_futex) { benchmark<Wakeup<UseFutex>>(); }

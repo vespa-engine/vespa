@@ -114,9 +114,7 @@ public class UnixPath {
 
     public UnixPath writeBytes(byte[] content, String permissions, OpenOption... options) {
         FileAttribute<?>[] attributes = Optional.ofNullable(permissions)
-                .map(this::getPosixFilePermissionsFromString)
-                .map(PosixFilePermissions::asFileAttribute)
-                .map(attribute -> new FileAttribute<?>[]{attribute})
+                .map(this::permissionsAsFileAttributes)
                 .orElseGet(() -> new FileAttribute<?>[0]);
 
         Set<OpenOption> optionsSet = options.length == 0 ? DEFAULT_OPEN_OPTIONS : Set.of(options);
@@ -202,27 +200,20 @@ public class UnixPath {
         return ifExists(this::getAttributes);
     }
 
-    public UnixPath createNewFile() {
-        uncheck(() -> Files.createFile(path));
+    public UnixPath createNewFile(String... permissions) {
+        uncheck(() -> Files.createFile(path, permissionsAsFileAttributes(permissions)));
         return this;
     }
 
-    public UnixPath createParents() {
-        uncheck(() -> Files.createDirectories(path.getParent()));
+    public UnixPath createParents(String... permissions) {
+        getParent().createDirectories(permissions);
         return this;
     }
 
-    public UnixPath createDirectory(String permissions) {
-        Set<PosixFilePermission> set = getPosixFilePermissionsFromString(permissions);
-        FileAttribute<Set<PosixFilePermission>> attribute = PosixFilePermissions.asFileAttribute(set);
-        uncheck(() -> Files.createDirectory(path, attribute));
-        return this;
-    }
-
-    /** Create directory unless it already exists, and return this. */
-    public UnixPath createDirectory() {
+    /** Create directory with given permissions, unless it already exists, and return this. */
+    public UnixPath createDirectory(String... permissions) {
         try {
-            Files.createDirectory(path);
+            Files.createDirectory(path, permissionsAsFileAttributes(permissions));
         } catch (FileAlreadyExistsException ignore) {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -230,8 +221,8 @@ public class UnixPath {
         return this;
     }
 
-    public UnixPath createDirectories() {
-        uncheck(() -> Files.createDirectories(path));
+    public UnixPath createDirectories(String... permissions) {
+        uncheck(() -> Files.createDirectories(path, permissionsAsFileAttributes(permissions)));
         return this;
     }
 
@@ -318,11 +309,17 @@ public class UnixPath {
         return new UnixPath(link);
     }
 
-    public FileSnapshot getFileSnapshot() { return FileSnapshot.forPath(path); }
-
     @Override
     public String toString() {
         return path.toString();
+    }
+
+    private FileAttribute<?>[] permissionsAsFileAttributes(String... permissions) {
+        if (permissions.length == 0) return new FileAttribute<?>[0];
+        if (permissions.length > 1)
+            throw new IllegalArgumentException("Expected permissions to not be set or be a single string");
+
+       return new FileAttribute<?>[]{PosixFilePermissions.asFileAttribute(getPosixFilePermissionsFromString(permissions[0]))};
     }
 
     private Set<PosixFilePermission> getPosixFilePermissionsFromString(String permissions) {

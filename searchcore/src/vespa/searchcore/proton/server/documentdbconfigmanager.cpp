@@ -24,6 +24,7 @@
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/time/time_box.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/config/retriever/configsnapshot.hpp>
 #include <thread>
 #include <cassert>
@@ -318,6 +319,7 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
     MaintenanceConfigSP newMaintenanceConfig;
     std::shared_ptr<const ThreadingServiceConfig> old_threading_service_config;
     std::shared_ptr<const AllocConfig> old_alloc_config;
+    constexpr vespalib::duration file_resolve_timeout = 60s * 10;
 
     if (!_ignoreForwardedConfig) {
         if (!(_bootstrapConfig->getDocumenttypesConfigSP() &&
@@ -357,7 +359,7 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
         RankingConstants::Vector constants;
         if (spec != "") {
             config::RpcFileAcquirer fileAcquirer(transport, spec);
-            vespalib::TimeBox timeBox(5*60, 5);
+            vespalib::TimeBox timeBox(vespalib::to_s(file_resolve_timeout), 5);
             for (const RankingConstantsConfig::Constant &rc : newRankingConstantsConfig->constant) {
                 auto desc = fmt("name='%s', type='%s'", rc.name.c_str(), rc.type.c_str());
                 vespalib::string filePath = resolve_file(fileAcquirer, timeBox, desc, rc.fileref);
@@ -373,7 +375,7 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
         RankingExpressions expressions;
         if (spec != "") {
             config::RpcFileAcquirer fileAcquirer(transport, spec);
-            vespalib::TimeBox timeBox(5*60, 5);
+            vespalib::TimeBox timeBox(vespalib::to_s(file_resolve_timeout), 5);
             for (const RankingExpressionsConfig::Expression &rc : newRankingExpressionsConfig->expression) {
                 auto desc = fmt("name='%s'", rc.name.c_str());
                 vespalib::string filePath = resolve_file(fileAcquirer, timeBox, desc, rc.fileref);
@@ -389,7 +391,7 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
         OnnxModels::Vector models;
         if (spec != "") {
             config::RpcFileAcquirer fileAcquirer(transport, spec);
-            vespalib::TimeBox timeBox(5*60, 5);
+            vespalib::TimeBox timeBox(vespalib::to_s(file_resolve_timeout), 5);
             for (const OnnxModelsConfig::Model &rc : newOnnxModelsConfig->model) {
                 auto desc = fmt("name='%s'", rc.name.c_str());
                 vespalib::string filePath = resolve_file(fileAcquirer, timeBox, desc, rc.fileref);

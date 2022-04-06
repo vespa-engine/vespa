@@ -22,9 +22,10 @@ void
 LargeArrayBufferType<EntryT>::cleanHold(void* buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx)
 {
     ArrayType* elem = static_cast<ArrayType*>(buffer) + offset;
+    const auto& empty = empty_entry();
     for (size_t i = 0; i < numElems; ++i) {
         cleanCtx.extraBytesCleaned(sizeof(EntryT) * elem->size());
-        *elem = _emptyEntry;
+        *elem = empty;
         ++elem;
     }
 }
