@@ -50,9 +50,10 @@ public final class Text {
 
         return (codepoint < 0x80)
                 ? allowedAsciiChars[codepoint]
-                : isTextCharAboveUsAscii(codepoint);
+                : (codepoint <  Character.MIN_SURROGATE) || isTextCharAboveMinSurrogate(codepoint);
     }
-    private static boolean isTextCharAboveUsAscii(int codepoint) {
+    private static boolean isTextCharAboveMinSurrogate(int codepoint) {
+        if (codepoint <= Character.MAX_HIGH_SURROGATE) return false;
         if (codepoint <  0xFDD0)   return true;
         if (codepoint <= 0xFDDF)   return false;
         if (codepoint <  0x1FFFE)  return true;
@@ -86,9 +87,7 @@ public final class Text {
         if (codepoint <  0xFFFFE)  return true;
         if (codepoint <= 0xFFFFF)  return false;
         if (codepoint <  0x10FFFE) return true;
-        if (codepoint <= 0x10FFFF) return false;
-
-        return true;
+        return false;
     }
 
     /**
@@ -118,18 +117,22 @@ public final class Text {
      * Validates that the given string value only contains text characters.
      */
     public static boolean isValidTextString(String string) {
-        for (int i = 0; i < string.length(); ) {
+        int length = string.length();
+        for (int i = 0; i < length; ) {
             int codePoint = string.codePointAt(i);
-            if ( ! Text.isTextCharacter(codePoint)) return false;
-
-            int charCount = Character.charCount(codePoint);
-            if (Character.isHighSurrogate(string.charAt(i))) {
-                if ( (charCount == 1) || !Character.isLowSurrogate(string.charAt(i+1))) return false;
+            if (codePoint < 0x80) {
+                if ( ! allowedAsciiChars[codePoint]) return false;
+            } else if (codePoint >= Character.MIN_SURROGATE) {
+                if ( ! isTextCharAboveMinSurrogate(codePoint)) return false;
+                if ( ! Character.isBmpCodePoint(codePoint)) {
+                    i++;
+                }
             }
-            i += charCount;
+            i++;
         }
         return true;
     }
+
 
     /** Returns whether the given code point is displayable. */
     public static boolean isDisplayable(int codePoint) {
