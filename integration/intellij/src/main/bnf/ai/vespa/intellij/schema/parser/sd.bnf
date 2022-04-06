@@ -165,7 +165,8 @@ private RankProfileBodyOptions ::= MatchPhaseDefinition | NumThreadsDefinition |
                            ignore-default-rank-features | RankPropertiesDefinition | FirstPhaseDefinition | 
                            SummaryFeaturesDefinition | MatchFeaturesDefinition | RankFeaturesDefinition | 
                            SecondPhaseDefinition | ConstantsDefinition | RankDefinition | RankTypeDefinition | 
-                           MinHitsDefinition | NumSearchPartitionDefinition | FieldWeightDefinition | StrictDefinition
+                           MinHitsDefinition | NumSearchPartitionDefinition | FieldWeightDefinition | StrictDefinition |
+                           InputsDefinition
 
 MatchPhaseDefinition ::= match-phase '{' MatchPhaseBody '}'
 MatchPhaseBody ::= MatchPhaseBodyOptions+
@@ -183,6 +184,9 @@ private MinHitsDefinition ::= min-hits-per-thread ':' ('-')? INTEGER_REG
 private NumSearchPartitionDefinition ::= num-search-partition ':' INTEGER_REG
 FieldWeightDefinition ::= weight DottedIdentifiers ':' INTEGER_REG
 StrictDefinition ::= strict ':' (true | false)
+InputsDefinition ::= inputs '{' InputsBody '}'
+InputsBody ::= (QueryDefinition ':' TensorType)*
+
 FirstPhaseDefinition ::= first-phase '{' FirstPhaseBody '}'  { mixin="ai.vespa.intellij.schema.psi.impl.SdFirstPhaseDefinitionMixin" }
 FirstPhaseBody ::= FirstPhaseBodyOptions* // Does not support zero-or-one occurrences
 private FirstPhaseBodyOptions ::= (keep-rank-count ':' INTEGER_REG) | (rank-score-drop-limit ':' ('-')? (FLOAT_REG | INTEGER_REG)) | ExpressionDefinition

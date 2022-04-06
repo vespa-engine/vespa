@@ -146,6 +146,7 @@ WORD = \w+
   "loose"                    { return LOOSE; }
   "strict"                   { return STRICT; }
   "rank-properties"          { return RANK_PROPERTIES; }
+  "inputs"                   { return INPUTS; }
   
   "first-phase"              { return FIRST_PHASE; }
   "keep-rank-count"          { return KEEP_RANK_COUNT; }
