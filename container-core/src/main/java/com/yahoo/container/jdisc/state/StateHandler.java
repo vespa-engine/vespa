@@ -167,7 +167,7 @@ public class StateHandler extends AbstractRequestHandler {
                                     .set("container", jsonMapper.createObjectNode()
                                             .put("generation", config.generation()))));
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Bad JSON construction.", e);
+            throw new RuntimeException("Bad JSON construction", e);
         }
     }
 
@@ -177,7 +177,7 @@ public class StateHandler extends AbstractRequestHandler {
                     jsonMapper.createObjectNode()
                             .put("version", Vtag.currentVersion.toString()));
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Bad JSON construction.", e);
+            throw new RuntimeException("Bad JSON construction", e);
         }
     }
 
@@ -185,7 +185,7 @@ public class StateHandler extends AbstractRequestHandler {
         try {
             return toPrettyString(buildJsonForConsumer(consumer));
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Bad JSON construction.", e);
+            throw new RuntimeException("Bad JSON construction", e);
         }
     }
 
