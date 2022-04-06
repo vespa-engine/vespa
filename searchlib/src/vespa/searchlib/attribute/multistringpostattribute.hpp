@@ -94,7 +94,7 @@ MultiValueStringPostingAttributeT<B, T>::getSearch(QueryTermSimpleUP qTerm,
     using SC = attribute::StringPostingSearchContext<BaseSC, SelfType, int32_t>;
     bool cased = this->get_match_is_cased();
     auto doc_id_limit = this->getCommittedDocIdLimit();
-    BaseSC base_sc(std::move(qTerm), cased, *this, this->_mvMapping.get_read_view(doc_id_limit), this->_enumStore);
+    BaseSC base_sc(std::move(qTerm), cased, *this, this->_mvMapping.make_read_view(doc_id_limit), this->_enumStore);
     return std::make_unique<SC>(std::move(base_sc), params.useBitVector(), *this);
 }
 

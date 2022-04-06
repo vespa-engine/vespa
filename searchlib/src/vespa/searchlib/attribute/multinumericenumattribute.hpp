@@ -122,7 +122,7 @@ MultiValueNumericEnumAttribute<B, M>::getSearch(QueryTermSimple::UP qTerm,
 {
     (void) params;
     auto doc_id_limit = this->getCommittedDocIdLimit();
-    return std::make_unique<attribute::MultiNumericEnumSearchContext<T, M>>(std::move(qTerm), *this, this->_mvMapping.get_read_view(doc_id_limit), this->_enumStore);
+    return std::make_unique<attribute::MultiNumericEnumSearchContext<T, M>>(std::move(qTerm), *this, this->_mvMapping.make_read_view(doc_id_limit), this->_enumStore);
 }
 
 } // namespace search

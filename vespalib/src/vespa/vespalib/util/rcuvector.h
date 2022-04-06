@@ -150,11 +150,11 @@ public:
     const T& get_elem_ref(size_t i) const noexcept { return _data[i]; } // Called from writer only
 
     /*
-     * Readers holding a generation guard can call get_read_view() to
+     * Readers holding a generation guard can call make_read_view() to
      * get a read view to the rcu vector. Array bound (read_size) must
      * be specified by reader, cf. committed docid limit in attribute vectors.
      */
-    ConstArrayRef<T> get_read_view(size_t read_size) const noexcept {
+    ConstArrayRef<T> make_read_view(size_t read_size) const noexcept {
         return ConstArrayRef<T>(&acquire_elem_ref(0), read_size);
     }
 

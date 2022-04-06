@@ -9,7 +9,7 @@
 namespace search::attribute {
 
 /**
- * Class for mapping from from document id to an array of values as reader.
+ * Class for mapping from document id to an array of values as reader.
  */
 template <typename EntryT, typename RefT = vespalib::datastore::EntryRefT<19> >
 class MultiValueMappingReadView

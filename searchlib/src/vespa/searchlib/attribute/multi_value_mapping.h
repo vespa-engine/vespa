@@ -10,7 +10,7 @@
 namespace search::attribute {
 
 /**
- * Class for mapping from from document id to an array of values.
+ * Class for mapping from document id to an array of values.
  */
 template <typename EntryT, typename RefT = vespalib::datastore::EntryRefT<19> >
 class MultiValueMapping : public MultiValueMappingBase
@@ -42,11 +42,11 @@ public:
     ArrayRef get_writable(uint32_t docId) { return _store.get_writable(_indices[docId].load_relaxed()); }
 
     /*
-     * Readers holding a generation guard can call get_read_view() to
+     * Readers holding a generation guard can call make_read_view() to
      * get a read view to the multi value mapping. Array bound (read_size) must
      * be specified by reader, cf. committed docid limit in attribute vectors.
      */
-    ReadView get_read_view(size_t read_size) const { return ReadView(_indices.get_read_view(read_size), &_store); }
+    ReadView make_read_view(size_t read_size) const { return ReadView(_indices.make_read_view(read_size), &_store); }
     // Pass on hold list management to underlying store
     void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }
     void trimHoldLists(generation_t firstUsed) { _store.trimHoldLists(firstUsed); }

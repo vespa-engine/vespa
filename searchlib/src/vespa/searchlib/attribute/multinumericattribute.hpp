@@ -171,7 +171,7 @@ MultiValueNumericAttribute<B, M>::getSearch(QueryTermSimple::UP qTerm,
                                             const attribute::SearchContextParams & params) const
 {
     (void) params;
-    return std::make_unique<attribute::MultiNumericSearchContext<T, M>>(std::move(qTerm), *this, this->_mvMapping.get_read_view(this->getCommittedDocIdLimit()));
+    return std::make_unique<attribute::MultiNumericSearchContext<T, M>>(std::move(qTerm), *this, this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()));
 }
 
 

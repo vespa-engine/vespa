@@ -79,7 +79,7 @@ MultiValueNumericPostingAttribute<B, M>::getSearch(QueryTermSimpleUP qTerm,
     using BaseSC = attribute::MultiNumericEnumSearchContext<typename B::BaseClass::BaseType, M>;
     using SC = attribute::NumericPostingSearchContext<BaseSC, SelfType, int32_t>;
     auto doc_id_limit = this->getCommittedDocIdLimit();
-    BaseSC base_sc(std::move(qTerm), *this, this->_mvMapping.get_read_view(doc_id_limit), this->_enumStore);
+    BaseSC base_sc(std::move(qTerm), *this, this->_mvMapping.make_read_view(doc_id_limit), this->_enumStore);
     return std::make_unique<SC>(std::move(base_sc), params, *this);
 }
 

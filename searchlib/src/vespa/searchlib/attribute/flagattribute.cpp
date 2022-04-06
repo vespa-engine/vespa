@@ -56,7 +56,7 @@ template <typename B>
 std::unique_ptr<attribute::SearchContext>
 FlagAttributeT<B>::getSearch(QueryTermSimple::UP qTerm, const attribute::SearchContextParams &) const
 {
-    return std::make_unique<SearchContext>(std::move(qTerm), *this, this->_mvMapping.get_read_view(this->getCommittedDocIdLimit()));
+    return std::make_unique<SearchContext>(std::move(qTerm), *this, this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()));
 }
 
 template <typename B>
