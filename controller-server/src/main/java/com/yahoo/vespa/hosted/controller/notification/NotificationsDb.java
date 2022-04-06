@@ -73,7 +73,7 @@ public class NotificationsDb {
             var notification = new Notification(clock.instant(), type, level, source, messages);
             // Be conservative for now, only dispatch notifications if they are from new source or with new type.
             // the message content and level is ignored for now
-            if (!existingNotifications.stream().anyMatch(n -> n.source().equals(source) && n.type().equals(type))) {
+            if (!existingNotifications.stream().anyMatch(n -> source.contains(n.source()) && n.type().equals(type))) {
                 changed = Optional.of(notification);
             }
             notifications.add(notification);
