@@ -406,19 +406,15 @@ func (c *CLI) system(targetType string) (vespa.System, error) {
 	return vespa.System{}, fmt.Errorf("no default system found for %s target", targetType)
 }
 
-// service returns the service identified by given name and optionally cluster. This function blocks according to the
-// wait period configured in this CLI. The parameter sessionOrRunID specifies either the session ID (local target) or
-// run ID (cloud target) to wait for.
-func (c *CLI) service(name string, sessionOrRunID int64, cluster string) (*vespa.Service, error) {
-	t, err := c.target(targetOptions{})
-	if err != nil {
-		return nil, err
-	}
+// service returns the service of given name located at target. If non-empty, cluster specifies a cluster to query. This
+// function blocks according to the wait period configured in this CLI. The parameter sessionOrRunID specifies either
+// the session ID (local target) or run ID (cloud target) to wait for.
+func (c *CLI) service(target vespa.Target, name string, sessionOrRunID int64, cluster string) (*vespa.Service, error) {
 	timeout := time.Duration(c.flags.waitSecs) * time.Second
 	if timeout > 0 {
 		log.Printf("Waiting up to %s %s for %s service to become available ...", color.CyanString(strconv.Itoa(c.flags.waitSecs)), color.CyanString("seconds"), color.CyanString(name))
 	}
-	s, err := t.Service(name, timeout, sessionOrRunID, cluster)
+	s, err := target.Service(name, timeout, sessionOrRunID, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("service '%s' is unavailable: %w", name, err)
 	}
