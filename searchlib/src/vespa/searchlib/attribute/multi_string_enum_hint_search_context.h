@@ -17,7 +17,7 @@ class MultiStringEnumHintSearchContext : public MultiStringEnumSearchContext<M>,
                                          public EnumHintSearchContext
 {
 public:
-    MultiStringEnumHintSearchContext(std::unique_ptr<QueryTermSimple> qTerm, bool cased, const AttributeVector& toBeSearched, const MultiValueMapping<M>& mv_mapping, const EnumStoreT<const char*>& enum_store, uint32_t doc_id_limit, uint64_t num_values);
+    MultiStringEnumHintSearchContext(std::unique_ptr<QueryTermSimple> qTerm, bool cased, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view, const EnumStoreT<const char*>& enum_store, uint32_t doc_id_limit, uint64_t num_values);
     ~MultiStringEnumHintSearchContext() override;
 };
 

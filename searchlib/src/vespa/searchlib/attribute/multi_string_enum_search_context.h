@@ -15,7 +15,7 @@ template <typename M>
 class MultiStringEnumSearchContext : public MultiEnumSearchContext<const char*, StringSearchContext, M>
 {
 public:
-    MultiStringEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, bool cased, const AttributeVector& toBeSearched, const MultiValueMapping<M>& mv_mapping, const EnumStoreT<const char*>& enum_store);
+    MultiStringEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, bool cased, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view, const EnumStoreT<const char*>& enum_store);
 };
 
 }

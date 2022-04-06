@@ -9,9 +9,9 @@
 namespace search::attribute {
 
 template <typename T, typename BaseSC, typename M>
-MultiEnumSearchContext<T, BaseSC, M>::MultiEnumSearchContext(typename BaseSC::MatcherType&& matcher, const AttributeVector& toBeSearched, const MultiValueMapping<M>& mv_mapping, const EnumStoreT<T>& enum_store)
+MultiEnumSearchContext<T, BaseSC, M>::MultiEnumSearchContext(typename BaseSC::MatcherType&& matcher, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view, const EnumStoreT<T>& enum_store)
     : BaseSC(toBeSearched, std::move(matcher)),
-      _mv_mapping(mv_mapping),
+      _mv_mapping_read_view(mv_mapping_read_view),
       _enum_store(enum_store)
 {
 }

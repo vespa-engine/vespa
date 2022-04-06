@@ -4,6 +4,7 @@
 
 #include "alloc.h"
 #include "array.h"
+#include "arrayref.h"
 #include "generationholder.h"
 #include "growstrategy.h"
 #include "memoryusage.h"
@@ -147,6 +148,15 @@ public:
     const T& acquire_elem_ref(size_t i) const noexcept { return *(_vector_start.load(std::memory_order_acquire) + i); }
 
     const T& get_elem_ref(size_t i) const noexcept { return _data[i]; } // Called from writer only
+
+    /*
+     * Readers holding a generation guard can call make_read_view() to
+     * get a read view to the rcu vector. Array bound (read_size) must
+     * be specified by reader, cf. committed docid limit in attribute vectors.
+     */
+    ConstArrayRef<T> make_read_view(size_t read_size) const noexcept {
+        return ConstArrayRef<T>(&acquire_elem_ref(0), read_size);
+    }
 
     void reset();
     void shrink(size_t newSize) __attribute__((noinline));
