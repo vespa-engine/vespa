@@ -6,11 +6,13 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MailerException;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
+import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,8 +34,11 @@ public class Notifier {
         this.mailer = Objects.requireNonNull(mailer);
     }
 
-    public void dispatch(Notification notification) {
-        var tenant = curatorDb.readTenant(notification.source().tenant());
+    public void dispatch(List<Notification> notifications, NotificationSource source) {
+        if (notifications.isEmpty()) {
+            return;
+        }
+        var tenant = curatorDb.readTenant(source.tenant());
         tenant.stream().forEach(t -> {
             if (t instanceof CloudTenant) {
                 var ct = (CloudTenant) t;
@@ -41,9 +46,13 @@ public class Notifier {
                         .filter(c -> c.audiences().contains(TenantContacts.Audience.NOTIFICATIONS))
                         .collect(Collectors.groupingBy(TenantContacts.Contact::type, Collectors.toList()))
                         .entrySet()
-                        .forEach(e -> dispatch(notification, e.getKey(), e.getValue()));
+                        .forEach(e -> notifications.forEach(n -> dispatch(n, e.getKey(), e.getValue())));
             }
         });
+    }
+
+    public void dispatch(Notification notification) {
+        dispatch(List.of(notification), notification.source());
     }
 
     private void dispatch(Notification notification, TenantContacts.Type type, Collection<? extends TenantContacts.Contact> contacts) {
