@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/frt/rpcrequest.h>
@@ -9,7 +9,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-slobrok-cmd");
 
-class Slobrok_CMD : public FastOS_Application
+class Slobrok_CMD
 {
 private:
     std::unique_ptr<fnet::frt::StandaloneFRT> _server;
@@ -20,11 +20,11 @@ private:
 
 public:
     Slobrok_CMD() : _server(), _target(nullptr) {}
-    virtual ~Slobrok_CMD();
-    int usage();
+    ~Slobrok_CMD();
+    int usage(const char *self);
     void initRPC(const char *spec);
     void finiRPC();
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 Slobrok_CMD::~Slobrok_CMD()
@@ -34,9 +34,9 @@ Slobrok_CMD::~Slobrok_CMD()
 }
 
 int
-Slobrok_CMD::usage()
+Slobrok_CMD::usage(const char *self)
 {
-    fprintf(stderr, "usage: %s <port|spec> <cmd> [args]\n", _argv[0]);
+    fprintf(stderr, "usage: %s <port|spec> <cmd> [args]\n", self);
     fprintf(stderr, "with cmd one of:\n");
     fprintf(stderr, "  slobrok.callback.listNamesServed\n");
     fprintf(stderr, "  slobrok.internal.listManagedRpcServers\n");
@@ -75,14 +75,14 @@ Slobrok_CMD::finiRPC()
 
 
 int
-Slobrok_CMD::Main()
+Slobrok_CMD::main(int argc, char **argv)
 {
-    if (_argc < 3) {
-        return usage();
+    if (argc < 3) {
+        return usage(argv[0]);
     }
-    int port = atoi(_argv[1]);
+    int port = atoi(argv[1]);
     if (port == 0) {
-        initRPC(_argv[1]);
+        initRPC(argv[1]);
     } else {
         std::ostringstream tmp;
         tmp << "tcp/localhost:";
@@ -95,39 +95,39 @@ Slobrok_CMD::Main()
 
     FRT_RPCRequest *req = _server->supervisor().AllocRPCRequest();
 
-    req->SetMethodName(_argv[2]);
-    if (strcmp(_argv[2], "slobrok.admin.listAllRpcServers") == 0) {
+    req->SetMethodName(argv[2]);
+    if (strcmp(argv[2], "slobrok.admin.listAllRpcServers") == 0) {
         threeTables = true;
         // no params
-    } else if (strcmp(_argv[2],  "slobrok.internal.listManagedRpcServers") == 0) {
+    } else if (strcmp(argv[2],  "slobrok.internal.listManagedRpcServers") == 0) {
         twoTables = true;
         // no params
-    } else if (strcmp(_argv[2], "slobrok.callback.listNamesServed") == 0
-               || strcmp(_argv[2], "slobrok.internal.listManagedRpcServers") == 0
-               || strcmp(_argv[2], "slobrok.admin.listAllRpcServers") == 0
-               || strcmp(_argv[2], "slobrok.system.stop") == 0
-               || strcmp(_argv[2], "slobrok.system.version") == 0
-               || strcmp(_argv[2], "system.stop") == 0)
+    } else if (strcmp(argv[2], "slobrok.callback.listNamesServed") == 0
+               || strcmp(argv[2], "slobrok.internal.listManagedRpcServers") == 0
+               || strcmp(argv[2], "slobrok.admin.listAllRpcServers") == 0
+               || strcmp(argv[2], "slobrok.system.stop") == 0
+               || strcmp(argv[2], "slobrok.system.version") == 0
+               || strcmp(argv[2], "system.stop") == 0)
     {
         // no params
-    } else if (strcmp(_argv[2], "slobrok.lookupRpcServer") == 0
-               && _argc == 4)
+    } else if (strcmp(argv[2], "slobrok.lookupRpcServer") == 0
+               && argc == 4)
     {
         twoTables = true;
         // one param
-        req->GetParams()->AddString(_argv[3]);
-    } else if ((strcmp(_argv[2], "slobrok.registerRpcServer") == 0
-                || strcmp(_argv[2], "slobrok.unregisterRpcServer") == 0
-                || strcmp(_argv[2], "slobrok.admin.addPeer") == 0
-                || strcmp(_argv[2], "slobrok.admin.removePeer") == 0)
-               && _argc == 5)
+        req->GetParams()->AddString(argv[3]);
+    } else if ((strcmp(argv[2], "slobrok.registerRpcServer") == 0
+                || strcmp(argv[2], "slobrok.unregisterRpcServer") == 0
+                || strcmp(argv[2], "slobrok.admin.addPeer") == 0
+                || strcmp(argv[2], "slobrok.admin.removePeer") == 0)
+               && argc == 5)
     {
         // two params
-        req->GetParams()->AddString(_argv[3]);
-        req->GetParams()->AddString(_argv[4]);
+        req->GetParams()->AddString(argv[3]);
+        req->GetParams()->AddString(argv[4]);
     } else {
         finiRPC();
-        return usage();
+        return usage(argv[0]);
     }
     _target->InvokeSync(req, 5.0);
 
@@ -186,8 +186,8 @@ Slobrok_CMD::Main()
     return 0;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     Slobrok_CMD sb_cmd;
-    return sb_cmd.Entry(argc, argv);
+    return sb_cmd.main(argc, argv);
 }

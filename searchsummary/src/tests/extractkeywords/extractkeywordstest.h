@@ -2,11 +2,9 @@
 
 #pragma once
 
-#include <vespa/fastos/app.h>
-
 namespace search::docsummary { class KeywordExtractor; }
 
-class ExtractKeywordsTest : public FastOS_Application
+class ExtractKeywordsTest
 {
 private:
     ExtractKeywordsTest(const ExtractKeywordsTest &);
@@ -14,7 +12,6 @@ private:
 
     search::docsummary::KeywordExtractor *_extractor;
 
-    int Main() override;
     int Usage(char *progname);
     bool ShowResult(int testNo, const char *actual, const char *correct);
     bool RunTest(int i, bool verify);
@@ -23,5 +20,6 @@ public:
     ExtractKeywordsTest()
         : _extractor(nullptr)
     {}
+    int main(int argc, char **argv);
 };
 

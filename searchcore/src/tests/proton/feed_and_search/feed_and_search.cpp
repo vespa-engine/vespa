@@ -71,7 +71,7 @@ void commit_memory_index_and_wait(MemoryIndex &memory_index)
 class Test : public vespalib::TestApp {
     const char *current_state;
     void DumpState(bool) {
-      fprintf(stderr, "%s: ERROR: in %s\n", GetName(), current_state);
+      fprintf(stderr, "%s: ERROR: in %s\n", __FILE__, current_state);
     }
 
     void requireThatMemoryIndexCanBeDumpedAndSearched();

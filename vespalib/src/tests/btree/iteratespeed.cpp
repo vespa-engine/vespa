@@ -17,7 +17,6 @@
 #include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/util/time.h>
 
-#include <vespa/fastos/app.h>
 #include <unistd.h>
 
 #include <vespa/log/log.h>
@@ -32,14 +31,15 @@ enum class IterateMethod
     LAMBDA
 };
 
-class IterateSpeed : public FastOS_Application
+class IterateSpeed
 {
     template <typename Traits, IterateMethod iterateMethod>
     void
     workLoop(int loops, bool enableForward, bool enableBackwards,
              bool enableLambda, int leafSlots);
     void usage();
-    int Main() override;
+public:
+    int main(int argc, char **argv);
 };
 
 
@@ -134,7 +134,7 @@ IterateSpeed::usage()
 }
 
 int
-IterateSpeed::Main()
+IterateSpeed::main(int argc, char **argv)
 {
     int c;
     int loops = 1;
@@ -142,7 +142,7 @@ IterateSpeed::Main()
     bool forwards = false;
     bool lambda = false;
     int leafSlots = 0;
-    while ((c = getopt(_argc, _argv, "F:bc:fl")) != -1) {
+    while ((c = getopt(argc, argv, "F:bc:fl")) != -1) {
         switch (c) {
         case 'F':
             leafSlots = atoi(optarg);
@@ -203,6 +203,7 @@ IterateSpeed::Main()
 
 }
 
-FASTOS_MAIN(vespalib::btree::IterateSpeed);
-
-
+int main(int argc, char **argv) {
+    vespalib::btree::IterateSpeed app;
+    return app.main(argc, argv);
+}

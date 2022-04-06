@@ -17,8 +17,6 @@
 #include <vespa/vespalib/util/time.h>
 #include <vector>
 
-#include <vespa/fastos/app.h>
-
 using vespalib::btree::BTree;
 using vespalib::btree::BTreeNode;
 using vespalib::btree::BTreeTraits;
@@ -29,11 +27,12 @@ enum class ScanMethod
     FUNCTOR
 };
 
-class ScanSpeed : public FastOS_Application
+class ScanSpeed
 {
     template <typename Traits>
     void work_loop(ScanMethod scan_method);
-    int Main() override;
+public:
+    int main();
 };
 
 
@@ -162,7 +161,7 @@ ScanSpeed::work_loop(ScanMethod scan_method)
 
 
 int
-ScanSpeed::Main()
+ScanSpeed::main()
 {
     using SmallTraits = BTreeTraits<4, 4, 31, false>;
     using DefTraits = vespalib::btree::BTreeDefaultTraits;
@@ -179,4 +178,7 @@ ScanSpeed::Main()
     return 0;
 }
 
-FASTOS_MAIN(ScanSpeed);
+int main(int, char **) {
+    ScanSpeed app;
+    return app.main();
+}

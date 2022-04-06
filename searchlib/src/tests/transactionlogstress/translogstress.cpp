@@ -8,7 +8,7 @@
 #include <vespa/searchlib/util/runnable.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <iostream>
 #include <sstream>
 #include <thread>
@@ -563,7 +563,7 @@ ControllerThread::doRun()
 //-----------------------------------------------------------------------------
 // TransLogStress
 //-----------------------------------------------------------------------------
-class TransLogStress : public FastOS_Application
+class TransLogStress
 {
 private:
     class Config {
@@ -593,7 +593,7 @@ private:
     void usage();
 
 public:
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 void
@@ -623,7 +623,7 @@ TransLogStress::usage()
 }
 
 int
-TransLogStress::Main()
+TransLogStress::main(int argc, char **argv)
 {
     std::string tlsSpec("tcp/localhost:17897");
     std::string domain("translogstress");
@@ -645,7 +645,7 @@ TransLogStress::Main()
 
     int opt;
     bool optError = false;
-    while ((opt = getopt(_argc, _argv, "d:p:t:f:s:v:c:e:g:i:a:b:h")) != -1) {
+    while ((opt = getopt(argc, argv, "d:p:t:f:s:v:c:e:g:i:a:b:h")) != -1) {
         switch (opt) {
         case 'd':
             _cfg.domainPartSize = atol(optarg);
@@ -692,7 +692,7 @@ TransLogStress::Main()
     printConfig();
     std::this_thread::sleep_for(sleepTime);
 
-    if (_argc != optind || optError) {
+    if (argc != optind || optError) {
         usage();
         return -1;
     }
@@ -758,8 +758,8 @@ TransLogStress::Main()
 
 }
 
-int main(int argc, char ** argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     search::transactionlog::TransLogStress myApp;
-    return myApp.Entry(argc, argv);
+    return myApp.main(argc, argv);
 }

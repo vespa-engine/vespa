@@ -21,7 +21,7 @@
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/config/subscription/configsubscriber.hpp>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <optional>
 
 #include <vespa/log/log.h>
@@ -88,7 +88,7 @@ OnnxModels make_models(const OnnxModelsConfig &modelsCfg, const VerifyRanksetupC
     return OnnxModels(model_list);
 }
 
-class App : public FastOS_Application
+class App
 {
 public:
     bool verify(const search::index::Schema &schema,
@@ -106,7 +106,7 @@ public:
                       const OnnxModelsConfig &modelsCfg);
 
     int usage();
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 struct DummyConstantValueRepo : IConstantValueRepo {
@@ -201,13 +201,13 @@ App::usage()
 }
 
 int
-App::Main()
+App::main(int argc, char **argv)
 {
-    if (_argc != 2) {
+    if (argc != 2) {
         return usage();
     }
 
-    const std::string configid = _argv[1];
+    const std::string configid = argv[1];
     LOG(debug, "verifying rank setup for config id '%s' ...",
         configid.c_str());
 
@@ -244,6 +244,7 @@ App::Main()
 }
 
 int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     App app;
-    return app.Entry(argc, argv);
+    return app.main(argc, argv);
 }

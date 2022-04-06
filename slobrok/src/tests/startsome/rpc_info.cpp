@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/target.h>
 
 
-class RPCInfo : public FastOS_Application
+class RPCInfo
 {
 public:
 
@@ -67,17 +67,17 @@ public:
   }
 
 
-  int Main() override
+  int main(int argc, char **argv)
   {
-    if (_argc < 2) {
+    if (argc < 2) {
       printf("usage : rpc_info <connectspec> [verbose]\n");
       return 1;
     }
 
-    bool verbose = (_argc > 2 && strcmp(_argv[2], "verbose") == 0);
+    bool verbose = (argc > 2 && strcmp(argv[2], "verbose") == 0);
     fnet::frt::StandaloneFRT server;
     FRT_Supervisor & supervisor = server.supervisor();
-    FRT_Target     *target = supervisor.GetTarget(_argv[1]);
+    FRT_Target     *target = supervisor.GetTarget(argv[1]);
     FRT_RPCRequest *m_list = nullptr;
     FRT_RPCRequest *info   = nullptr;
 
@@ -85,7 +85,7 @@ public:
     info->SetMethodName("frt.rpc.ping");
     target->InvokeSync(info, 5.0);
     if (info->IsError()) {
-      fprintf(stderr, "Error talking to %s\n", _argv[1]);
+      fprintf(stderr, "Error talking to %s\n", argv[1]);
       FreeReqs(m_list, info);
       return 1;
     }
@@ -129,9 +129,8 @@ public:
 };
 
 
-int
-main(int argc, char **argv)
-{
-  RPCInfo myapp;
-  return myapp.Entry(argc, argv);
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
+    RPCInfo myapp;
+    return myapp.main(argc, argv);
 }

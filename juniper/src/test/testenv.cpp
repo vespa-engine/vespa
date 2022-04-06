@@ -16,12 +16,12 @@ Config* TestConfig;
 Juniper * _Juniper;
 
 
-TestEnv::TestEnv(FastOS_Application* app, const char* propfile) :
+TestEnv::TestEnv(int argc, char **argv, const char* propfile) :
     _props(), _config(), _juniper(), _wordFolder()
 {
     int c;
 
-    while ((c = getopt(app->_argc, app->_argv, "d:hcm:")) != EOF)
+    while ((c = getopt(argc, argv, "d:hcm:")) != EOF)
     {
         switch (c)
         {
@@ -40,16 +40,16 @@ TestEnv::TestEnv(FastOS_Application* app, const char* propfile) :
             break;
 	case 'h':
 	default:
-            Usage(app->_argv[0]);
+            Usage(argv[0]);
             return;
         }
     }
 
     int expected_args = 0;
 
-    if (app->_argc - optind < expected_args)
+    if (argc - optind < expected_args)
     {
-        Usage(app->_argv[0]);
+        Usage(argv[0]);
         return;
     }
 

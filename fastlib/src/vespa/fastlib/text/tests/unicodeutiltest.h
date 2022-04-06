@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastlib/testsuite/test.h>
 #include <vespa/fastlib/text/unicodeutil.h>
-#include <vespa/fastos/app.h>
 
 class UnicodeUtilTest : public Test
 {
@@ -45,10 +44,4 @@ public:
         _test(GetUTF8Char_WrongInput());
         _test(IsTerminalPunctuationChar());
     }
-};
-
-class UnicodeUtilTestApp : public FastOS_Application
-{
-public:
-    int Main() override;
 };

@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/app.h>
 #include <vespa/fastos/thread.h>
 #include <cstring>
+#include <csignal>
 
-class BaseTest : public FastOS_Application
+class BaseTest
 {
 private:
    BaseTest(const BaseTest&);
@@ -13,15 +13,28 @@ private:
    int totallen;
    bool _allOkFlag;
 public:
+   int _argc;
+   char **_argv;
+
    const char *okString;
    const char *failString;
 
    BaseTest ()
      : totallen(70),
        _allOkFlag(true),
+       _argc(0),
+       _argv(nullptr),
        okString("SUCCESS"),
        failString("FAILURE")
    {
+   }
+
+   virtual int Main() = 0;
+
+   int Entry(int argc, char **argv) {
+     _argc = argc;
+     _argv = argv;
+     return Main();
    }
 
    virtual ~BaseTest() {};

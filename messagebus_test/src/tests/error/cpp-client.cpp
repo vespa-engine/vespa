@@ -8,19 +8,19 @@
 #include <vespa/messagebus/network/rpcnetworkparams.h>
 #include <vespa/messagebus/testlib/receptor.h>
 #include <thread>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 
 using namespace mbus;
 using namespace std::chrono_literals;
 
-class App : public FastOS_Application
+class App
 {
 public:
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 int
-App::Main()
+App::main(int, char **)
 {
     RPCMessageBus mb(ProtocolSet().add(std::make_shared<SimpleProtocol>()),
                      RPCNetworkParams(config::ConfigUri("file:slobrok.cfg"))
@@ -65,6 +65,7 @@ App::Main()
 }
 
 int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     App app;
-    return app.Entry(argc, argv);
+    return app.main(argc, argv);
 }

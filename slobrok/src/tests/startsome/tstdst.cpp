@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/host_name.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/invoker.h>
 #include <vespa/fnet/transport.h>
@@ -180,16 +180,16 @@ TstEnv::MainLoop()
 }
 
 
-class App : public FastOS_Application
+class App
 {
 public:
-    int Main() override {
+    int main(int argc, char **argv) {
         int sbport = 2773;
         int myport = 2774;
         const char *rpcsrvname = "testrpcsrv/17";
 
         int c;
-        while ((c = getopt(_argc, _argv, "n:p:s:")) != -1) {
+        while ((c = getopt(argc, argv, "n:p:s:")) != -1) {
             switch (c) {
             case 'p':
                 myport = atoi(optarg);
@@ -215,9 +215,8 @@ public:
 
 } // namespace testrpcserver
 
-int
-main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     testrpcserver::App tstdst;
-    return tstdst.Entry(argc, argv);
+    return tstdst.main(argc, argv);
 }

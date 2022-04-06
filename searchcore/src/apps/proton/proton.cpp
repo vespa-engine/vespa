@@ -13,7 +13,6 @@
 #include <vespa/fnet/transport.h>
 #include <vespa/fastos/thread.h>
 #include <vespa/fastos/file.h>
-#include <vespa/fastos/app.h>
 #include <iostream>
 #include <thread>
 #include <fcntl.h>
@@ -40,15 +39,15 @@ Params::Params()
 {}
 Params::~Params() = default;
 
-class App : public FastOS_Application
+class App
 {
 private:
     static void setupSignals();
     static void setup_fadvise();
-    Params parseParams();
-    void startAndRun(FastOS_ThreadPool & threadPool, FNET_Transport & transport);
+    Params parseParams(int argc, char **argv);
+    void startAndRun(FastOS_ThreadPool & threadPool, FNET_Transport & transport, int argc, char **argv);
 public:
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 void
@@ -77,10 +76,10 @@ App::setup_fadvise()
 }
 
 Params
-App::parseParams()
+App::parseParams(int argc, char **argv)
 {
     Params params;
-    vespalib::ProgramOptions parser(_argc, _argv);
+    vespalib::ProgramOptions parser(argc, argv);
     parser.setSyntaxMessage("proton -- the nextgen search core");
     parser.addOption("identity", params.identity, "Node identity and config id");
     std::string empty;
@@ -207,8 +206,8 @@ buildTransportConfig() {
 }
 
 void
-App::startAndRun(FastOS_ThreadPool & threadPool, FNET_Transport & transport) {
-    Params params = parseParams();
+App::startAndRun(FastOS_ThreadPool & threadPool, FNET_Transport & transport, int argc, char **argv) {
+    Params params = parseParams(argc, argv);
     LOG(debug, "identity: '%s'", params.identity.c_str());
     LOG(debug, "serviceidentity: '%s'", params.serviceidentity.c_str());
     LOG(debug, "subscribeTimeout: '%" PRIu64 "'", params.subscribeTimeout);
@@ -217,7 +216,7 @@ App::startAndRun(FastOS_ThreadPool & threadPool, FNET_Transport & transport) {
     config::ConfigServerSpec configServerSpec(transport);
     config::ConfigUri identityUri(params.identity, std::make_shared<config::ConfigContext>(configServerSpec));
     auto protonUP = std::make_unique<proton::Proton>(threadPool, transport, identityUri,
-                                                _argc > 0 ? _argv[0] : "proton", subscribeTimeout);
+                                                     (argc > 0) ? argv[0] : "proton", subscribeTimeout);
     proton::Proton & proton = *protonUP;
     proton::BootstrapConfig::SP configSnapshot = proton.init();
     if (proton.hasAbortedInit()) {
@@ -263,7 +262,7 @@ App::startAndRun(FastOS_ThreadPool & threadPool, FNET_Transport & transport) {
 }
 
 int
-App::Main()
+App::main(int argc, char **argv)
 {
     try {
         setupSignals();
@@ -271,7 +270,7 @@ App::Main()
         FastOS_ThreadPool threadPool(128_Ki);
         FNET_Transport transport(buildTransportConfig());
         transport.Start(&threadPool);
-        startAndRun(threadPool, transport);
+        startAndRun(threadPool, transport, argc, argv);
         transport.ShutDown(true);
     } catch (const vespalib::InvalidCommandLineArgumentsException &e) {
         LOG(warning, "Invalid commandline arguments: '%s'", e.what());
@@ -299,5 +298,5 @@ App::Main()
 
 int main(int argc, char **argv) {
     App app;
-    return app.Entry(argc, argv);
+    return app.main(argc, argv);
 }

@@ -3,7 +3,7 @@
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/slobrok/sbmirror.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/util/time.h>
 #include <thread>
@@ -11,7 +11,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-storage-cmd");
 
-class RPCClient : public FastOS_Application
+class RPCClient
 {
 private:
     static bool addArg(FRT_RPCRequest *req, const char *param) {
@@ -49,8 +49,8 @@ private:
     }
 
 public:
-    int Main() override {
-        if (_argc < 3) {
+    int main(int argc, char **argv) {
+        if (argc < 3) {
             fprintf(stderr, "usage: vespa-storage-cmd <connectspec> <method> [args]\n");
             fprintf(stderr, "Calls RPC method on a storage/distributor process\n");
             fprintf(stderr, "Call frt.rpc.getMethodList to get available RPC methods\n");
@@ -68,20 +68,20 @@ public:
             std::this_thread::sleep_for(10ms);
         }
 
-        slobrok::api::MirrorAPI::SpecList list = mirror.lookup(_argv[1]);
+        slobrok::api::MirrorAPI::SpecList list = mirror.lookup(argv[1]);
 
         if (list.size() == 0) {
-            fprintf(stderr, "No servers found matching %s\n", _argv[1]);
+            fprintf(stderr, "No servers found matching %s\n", argv[1]);
         }
 
         for (size_t j = 0; j < list.size(); j++) {
             FRT_Target *target = supervisor.supervisor().GetTarget(list[j].second.c_str());
 
             // If not fleet controller, need to connect first.
-            if (strstr(_argv[1], "fleetcontroller") == nullptr) {
+            if (strstr(argv[1], "fleetcontroller") == nullptr) {
                 FRT_RPCRequest *req = supervisor.supervisor().AllocRPCRequest();
                 req->SetMethodName("vespa.storage.connect");
-                req->GetParams()->AddString(_argv[1]);
+                req->GetParams()->AddString(argv[1]);
                 target->InvokeSync(req, 10.0);
 
                 if (req->GetErrorCode() != FRTE_NO_ERROR) {
@@ -94,11 +94,11 @@ public:
             }
 
             FRT_RPCRequest *req = supervisor.supervisor().AllocRPCRequest();
-            req->SetMethodName(_argv[2]);
+            req->SetMethodName(argv[2]);
 
-            for (int i = 3; i < _argc; ++i) {
-                if (!addArg(req, _argv[i])) {
-                    fprintf(stderr, "could not parse parameter: '%s'\n", _argv[i]);
+            for (int i = 3; i < argc; ++i) {
+                if (!addArg(req, argv[i])) {
+                    fprintf(stderr, "could not parse parameter: '%s'\n", argv[i]);
                     retCode = 2;
                     break;
                 }
@@ -122,9 +122,8 @@ public:
     }
 };
 
-int
-main(int argc, char **argv)
-{
-  RPCClient myapp;
-  return myapp.Entry(argc, argv);
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
+    RPCClient myapp;
+    return myapp.main(argc, argv);
 }

@@ -13,9 +13,9 @@ namespace {
 
 /**
  * Convert input line of form eg.
- *   ./exception_test(_ZN27FastOS_ApplicationInterface5EntryEiPPc+0x0) [0x1234]
+ *   ./exception_test(_ZN11Application5entryEiPPc+0x0) [0x1234]
  * to its demangled form
- *   ./exception_test(FastOS_ApplicationInterface::Entry(int, char**)+0x0) [0x1234]
+ *   ./exception_test(Application::entry(int, char**)+0x0) [0x1234]
  *
  * Assumes everything between '(' and '+' is a mangled function signature.
  *

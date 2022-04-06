@@ -4,21 +4,21 @@
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 
-class EchoClient : public FastOS_Application
+class EchoClient
 {
 public:
-  int Main() override
+  int main(int argc, char **argv)
   {
-    if (_argc < 2) {
+    if (argc < 2) {
       printf("usage  : echo_client <connectspec>\n");
       return 1;
     }
     fnet::frt::StandaloneFRT server;
     FRT_Supervisor & supervisor = server.supervisor();
 
-    FRT_Target *target = supervisor.GetTarget(_argv[1]);
+    FRT_Target *target = supervisor.GetTarget(argv[1]);
     FRT_RPCRequest *req = supervisor.AllocRPCRequest();
     FRT_Values *args = req->GetParams();
     req->SetMethodName("echo");
@@ -85,9 +85,8 @@ public:
   }
 };
 
-int
-main(int argc, char **argv)
-{
-  EchoClient myapp;
-  return myapp.Entry(argc, argv);
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
+    EchoClient myapp;
+    return myapp.main(argc, argv);
 }
