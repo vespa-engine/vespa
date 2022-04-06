@@ -150,9 +150,11 @@ public class HttpURL {
         }
     }
 
-    /** Require that the given string contains no {@code '/'}, or anything that could be URL-decoded to one. */
+    /** Require that the given string (possibly decoded multiple times) contains no {@code '/'}, and isn't either of {@code "", ".", ".."}. */
     public static void requirePathSegment(String value) {
-        require( ! value.contains("/") && ! value.matches(".*%(25)*(%(25)*32|2)(%(25)*([46])6|F|f).*"), value, "path segment cannot contain '/'");
+        while ( ! value.equals(value = decode(value, UTF_8)));
+        require( ! value.contains("/"), value, "path segment decoded cannot contain '/'");
+        Path.requireNonNormalizable(value);
     }
 
     private static void requireNothing(String value) { }
