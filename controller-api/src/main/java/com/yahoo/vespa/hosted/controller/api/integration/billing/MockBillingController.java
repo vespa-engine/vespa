@@ -162,9 +162,6 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public void deleteBillingInfo(TenantName tenant, Set<User> users, boolean isPrivileged) {}
-
-    @Override
     public CollectionMethod getCollectionMethod(TenantName tenant) {
         return collectionMethod.getOrDefault(tenant, CollectionMethod.AUTO);
     }

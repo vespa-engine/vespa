@@ -7,16 +7,23 @@ import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * Expires unused tenants from Vespa Cloud.
+ *
+ * TODO: Should support sending notifications some time before the various expiry events happen.
  *
  * @author ogronnesby
  */
@@ -33,44 +40,66 @@ public class CloudTrialExpirer extends ControllerMaintainer {
 
     @Override
     protected double maintain() {
-        var expiredTenants = controller().tenants().asList().stream()
-                .filter(this::tenantIsCloudTenant)           // only valid for cloud tenants
-                .filter(this::tenantHasTrialPlan)            // only valid to expire actual trial tenants
-                .filter(this::tenantIsNotExemptFromExpiry)   // feature flag might exempt tenant from expiry
-                .filter(this::tenantReadersNotLoggedIn)      // no user logged in last 14 days
-                .filter(this::tenantHasNoDeployments)        // no running deployments active
+        if (controller().system().equals(SystemName.PublicCd)) {
+            tombstoneNonePlanTenants();
+        }
+        moveInactiveTenantsToNonePlan();
+        return 1;
+    }
+
+    private void moveInactiveTenantsToNonePlan() {
+        var predicate = tenantReadersNotLoggedIn(loginExpiry)
+                .and(this::tenantHasTrialPlan)
+                .and(this::tenantHasNoDeployments);
+
+        forTenant("'none' plan", predicate, this::setPlanNone);
+    }
+
+    private void tombstoneNonePlanTenants() {
+        // tombstone tenants that are inactive 14 days after being set as 'none'
+        var expiry = loginExpiry.plus(loginExpiry);
+        var predicate = tenantReadersNotLoggedIn(expiry).and(this::tenantHasNonePlan);
+        forTenant("tombstoned", predicate, this::tombstoneTenants);
+    }
+
+    private void forTenant(String name, Predicate<Tenant> p, Consumer<List<Tenant>> c) {
+        var predicate = ((Predicate<Tenant>) this::tenantIsCloudTenant)
+                .and(this::tenantIsNotExemptFromExpiry);
+
+        var tenants = controller().tenants().asList().stream()
+                .filter(predicate.and(p))
                 .collect(Collectors.toList());
 
-        if (! expiredTenants.isEmpty()) {
-            var expiredTenantNames = expiredTenants.stream()
-                    .map(Tenant::name)
-                    .map(TenantName::value)
-                    .collect(Collectors.joining(", "));
-
-            log.info("Moving expired tenants to 'none' plan: " + expiredTenantNames);
+        if (! tenants.isEmpty()) {
+            var tenantNames = tenants.stream().map(Tenant::name).map(TenantName::value).collect(Collectors.joining(", "));
+            log.info("Setting tenants as " + name + ": " + tenantNames);
         }
 
-        expireTenants(expiredTenants);
-
-        return 1;
+        c.accept(tenants);
     }
 
     private boolean tenantIsCloudTenant(Tenant tenant) {
         return tenant.type() == Tenant.Type.cloud;
     }
 
-    private boolean tenantReadersNotLoggedIn(Tenant tenant) {
-        return tenant.lastLoginInfo().get(LastLoginInfo.UserLevel.user)
-                .map(instant -> {
-                    var sinceLastLogin = Duration.between(instant, controller().clock().instant());
-                    return sinceLastLogin.compareTo(loginExpiry) > 0;
-                })
-                .orElse(false);
+    private Predicate<Tenant> tenantReadersNotLoggedIn(Duration duration) {
+        // returns true if no user has logged in to the tenant after (now - duration)
+        return (Tenant tenant) -> {
+            var timeLimit = controller().clock().instant().minus(duration);
+            return tenant.lastLoginInfo().get(LastLoginInfo.UserLevel.user)
+                    .map(instant -> instant.isBefore(timeLimit))
+                    .orElse(false);
+        };
     }
 
     private boolean tenantHasTrialPlan(Tenant tenant) {
         var planId = controller().serviceRegistry().billingController().getPlan(tenant.name());
         return "trial".equals(planId.value());
+    }
+
+    private boolean tenantHasNonePlan(Tenant tenant) {
+        var planId = controller().serviceRegistry().billingController().getPlan(tenant.name());
+        return "none".equals(planId.value());
     }
 
     private boolean tenantIsNotExemptFromExpiry(Tenant tenant) {
@@ -84,9 +113,15 @@ public class CloudTrialExpirer extends ControllerMaintainer {
                 .sum() == 0;
     }
 
-    private void expireTenants(List<Tenant> tenants) {
+    private void setPlanNone(List<Tenant> tenants) {
         tenants.forEach(tenant -> {
             controller().serviceRegistry().billingController().setPlan(tenant.name(), PlanId.from("none"), false);
+        });
+    }
+
+    private void tombstoneTenants(List<Tenant> tenants) {
+        tenants.forEach(tenant -> {
+            controller().tenants().delete(tenant.name(), Optional.empty(), false);
         });
     }
 }

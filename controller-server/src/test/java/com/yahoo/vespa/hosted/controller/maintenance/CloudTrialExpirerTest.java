@@ -18,12 +18,13 @@ import java.time.Duration;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ogronnesby
  */
 public class CloudTrialExpirerTest {
-    private final ControllerTester tester = new ControllerTester(SystemName.Public);
+    private final ControllerTester tester = new ControllerTester(SystemName.PublicCd);
     private final DeploymentTester deploymentTester = new DeploymentTester(tester);
     private final CloudTrialExpirer expirer = new CloudTrialExpirer(tester.controller(), Duration.ofMinutes(5));
 
@@ -32,6 +33,13 @@ public class CloudTrialExpirerTest {
         registerTenant("trial-tenant", "trial", Duration.ofDays(14).plusMillis(1));
         expirer.maintain();
         assertPlan("trial-tenant", "none");
+    }
+
+    @Test
+    public void tombstone_inactive_none() {
+        registerTenant("none-tenant", "none", Duration.ofDays(28).plusMillis(1));
+        expirer.maintain();
+        assertEquals(Tenant.Type.deleted, tester.controller().tenants().get(TenantName.from("none-tenant"), true).get().type());
     }
 
     @Test
