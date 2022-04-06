@@ -66,7 +66,7 @@ public:
 
     uint32_t getIndex() const { return _lookupIndex; }
 
-    FieldValue & getLookupKey() const { return *_lookupKey; }
+    const FieldValue & getLookupKey() const { return *_lookupKey; }
 
     const vespalib::string& getVariableName() const { return _variableName; }
 

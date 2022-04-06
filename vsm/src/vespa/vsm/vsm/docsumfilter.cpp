@@ -123,7 +123,7 @@ copyPathButFirst(const FieldPath & rhs) {
     // skip the element that correspond to the start field value
     FieldPath path;
     if ( ! rhs.empty()) {
-        for (auto it = rhs.begin() + 1; it != rhs.end(); it++) {
+        for (auto it = rhs.begin() + 1; it != rhs.end(); ++it) {
             path.push_back(std::make_unique<document::FieldPathEntry>(**it));
         }
     }
