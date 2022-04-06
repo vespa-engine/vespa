@@ -89,7 +89,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 					opts.Target.Deployment().Application.Instance, opts.Target.Deployment().Zone.Environment, opts.Target.Deployment().Zone.Region,
 					result.ID)))
 			}
-			return waitForQueryService(cli, result.ID)
+			return waitForQueryService(cli, target, result.ID)
 		},
 	}
 	cmd.Flags().StringVarP(&logLevelArg, "log-level", "l", "error", `Log level for Vespa logs. Must be "error", "warning", "info" or "debug"`)
@@ -157,15 +157,15 @@ func newActivateCmd(cli *CLI) *cobra.Command {
 				return err
 			}
 			cli.printSuccess("Activated ", color.CyanString(pkg.Path), " with session ", sessionID)
-			return waitForQueryService(cli, sessionID)
+			return waitForQueryService(cli, target, sessionID)
 		},
 	}
 }
 
-func waitForQueryService(cli *CLI, sessionOrRunID int64) error {
+func waitForQueryService(cli *CLI, target vespa.Target, sessionOrRunID int64) error {
 	if cli.flags.waitSecs > 0 {
 		log.Println()
-		_, err := cli.service(vespa.QueryService, sessionOrRunID, "")
+		_, err := cli.service(target, vespa.QueryService, sessionOrRunID, "")
 		return err
 	}
 	return nil
