@@ -118,18 +118,30 @@ public final class Text {
      * Validates that the given string value only contains text characters.
      */
     public static boolean isValidTextString(String string) {
-        for (int i = 0; i < string.length(); ) {
+        int length = string.length();
+        for (int i = 0; i < length; ) {
             int codePoint = string.codePointAt(i);
-            if ( ! Text.isTextCharacter(codePoint)) return false;
-
-            int charCount = Character.charCount(codePoint);
-            if (Character.isHighSurrogate(string.charAt(i))) {
-                if ( (charCount == 1) || !Character.isLowSurrogate(string.charAt(i+1))) return false;
+            if (codePoint < 0x80) {
+                if ( ! allowedAsciiChars[codePoint]) return false;
+                i++;
+            } else if (codePoint < Character.MIN_SURROGATE) {
+                i++;
+            } else {
+                if ( ! isTextCharAboveUsAscii(codePoint)) return false;
+                if ( ! Character.isValidCodePoint(codePoint)) return false;
+                if ( ! Character.isSupplementaryCodePoint(codePoint)) {
+                    if (Character.isHighSurrogate((char)codePoint)) return false;
+                    i++;
+                } else {
+                    if (Character.isHighSurrogate(Character.highSurrogate(codePoint))
+                        && ! Character.isLowSurrogate(Character.lowSurrogate(codePoint))) return false;
+                    i += 2;
+                }
             }
-            i += charCount;
         }
         return true;
     }
+
 
     /** Returns whether the given code point is displayable. */
     public static boolean isDisplayable(int codePoint) {
