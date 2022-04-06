@@ -56,38 +56,8 @@ public final class Text {
         if (codepoint <= Character.MAX_HIGH_SURROGATE) return false;
         if (codepoint <  0xFDD0)   return true;
         if (codepoint <= 0xFDDF)   return false;
-        if (codepoint <  0x1FFFE)  return true;
-        if (codepoint <= 0x1FFFF)  return false;
-        if (codepoint <  0x2FFFE)  return true;
-        if (codepoint <= 0x2FFFF)  return false;
-        if (codepoint <  0x3FFFE)  return true;
-        if (codepoint <= 0x3FFFF)  return false;
-        if (codepoint <  0x4FFFE)  return true;
-        if (codepoint <= 0x4FFFF)  return false;
-        if (codepoint <  0x5FFFE)  return true;
-        if (codepoint <= 0x5FFFF)  return false;
-        if (codepoint <  0x6FFFE)  return true;
-        if (codepoint <= 0x6FFFF)  return false;
-        if (codepoint <  0x7FFFE)  return true;
-        if (codepoint <= 0x7FFFF)  return false;
-        if (codepoint <  0x8FFFE)  return true;
-        if (codepoint <= 0x8FFFF)  return false;
-        if (codepoint <  0x9FFFE)  return true;
-        if (codepoint <= 0x9FFFF)  return false;
-        if (codepoint <  0xAFFFE)  return true;
-        if (codepoint <= 0xAFFFF)  return false;
-        if (codepoint <  0xBFFFE)  return true;
-        if (codepoint <= 0xBFFFF)  return false;
-        if (codepoint <  0xCFFFE)  return true;
-        if (codepoint <= 0xCFFFF)  return false;
-        if (codepoint <  0xDFFFE)  return true;
-        if (codepoint <= 0xDFFFF)  return false;
-        if (codepoint <  0xEFFFE)  return true;
-        if (codepoint <= 0xEFFFF)  return false;
-        if (codepoint <  0xFFFFE)  return true;
-        if (codepoint <= 0xFFFFF)  return false;
-        if (codepoint <  0x10FFFE) return true;
-        return false;
+        if (codepoint >= 0x10FFFE) return false;
+        return (codepoint & 0xffff) < 0xFFFE;
     }
 
     /**
