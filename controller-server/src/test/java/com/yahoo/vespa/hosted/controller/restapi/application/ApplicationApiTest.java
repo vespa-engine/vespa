@@ -11,7 +11,6 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
@@ -1070,6 +1069,27 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("deploy-result.json"));
     }
 
+    @Test
+    public void testMeteringResponses() {
+        MockMeteringClient mockMeteringClient = tester.serviceRegistry().meteringService();
+
+        // Mock response for MeteringClient
+        ResourceAllocation currentSnapshot = new ResourceAllocation(1, 2, 3);
+        ResourceAllocation thisMonth = new ResourceAllocation(12, 24, 1000);
+        ResourceAllocation lastMonth = new ResourceAllocation(24, 48, 2000);
+        ApplicationId applicationId = ApplicationId.from("doesnotexist", "doesnotexist", "default");
+        Map<ApplicationId, List<ResourceSnapshot>> snapshotHistory = Map.of(applicationId, List.of(
+                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(123), ZoneId.defaultId()),
+                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(246), ZoneId.defaultId()),
+                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(492), ZoneId.defaultId())));
+
+        mockMeteringClient.setMeteringData(new MeteringData(thisMonth, lastMonth, currentSnapshot, snapshotHistory));
+
+        tester.assertResponse(request("/application/v4/tenant/doesnotexist/application/doesnotexist/metering", GET)
+                                      .userIdentity(USER_ID)
+                                      .oAuthCredentials(OKTA_CREDENTIALS),
+                              new File("instance1-metering.json"));
+    }
 
     @Test
     public void testRemovingAllDeployments() {

@@ -32,7 +32,6 @@ public class MeteringResponse extends SlimeJsonResponse {
             object.setDouble("cpu", snapshot.getCpuCores());
             object.setDouble("memory", snapshot.getMemoryGb());
             object.setDouble("disk", snapshot.getDiskGb());
-            object.setString("architecture", snapshot.getArchitecture().name());
         });
         return slime;
     }

@@ -33,9 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
 import java.util.logging.Level;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -152,14 +150,14 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                 .filter(this::unlessNodeOwnerIsSystemApplication)
                 .filter(this::isNodeStateMeterable)
                 .filter(this::isClusterTypeMeterable)
-                // Grouping by ApplicationId -> Architecture -> ResourceSnapshot
                 .collect(Collectors.groupingBy(node ->
-                        node.owner().get(),
-                        groupSnapshotsByArchitecture(zoneId)))
-                .values()
-                .stream()
-                .flatMap(list -> list.values().stream())
-                .collect(Collectors.toList());
+                                node.owner().get(),
+                                Collectors.collectingAndThen(Collectors.toList(),
+                                        nodeList -> ResourceSnapshot.from(
+                                                nodeList,
+                                                clock.instant(),
+                                                zoneId))
+                                )).values();
     }
 
     private boolean unlessNodeOwnerIsSystemApplication(Node node) {
@@ -184,7 +182,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
 
     public static double cost(ClusterResources clusterResources, SystemName systemName) {
         NodeResources nr = clusterResources.nodeResources();
-        return cost(new ResourceAllocation(nr.vcpu(), nr.memoryGb(), nr.diskGb(), nr.architecture()).multiply(clusterResources.nodes()), systemName);
+        return cost(new ResourceAllocation(nr.vcpu(), nr.memoryGb(), nr.diskGb()).multiply(clusterResources.nodes()), systemName);
     }
 
     private static double cost(ResourceAllocation allocation, SystemName systemName) {
@@ -203,7 +201,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                 metric.createContext(Collections.emptyMap()));
 
         resourceSnapshots.forEach(snapshot -> {
-            var context = getMetricContext(snapshot);
+            var context = getMetricContext(snapshot.getApplicationId(), snapshot.getZoneId());
             metric.set("metering.vcpu", snapshot.getCpuCores(), context);
             metric.set("metering.memoryGB", snapshot.getMemoryGb(), context);
             metric.set("metering.diskGB", snapshot.getDiskGb(), context);
@@ -223,30 +221,5 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                 "applicationId", applicationId.toFullString(),
                 "zoneId", zoneId.value()
         ));
-    }
-
-    private Metric.Context getMetricContext(ResourceSnapshot snapshot) {
-        return metric.createContext(Map.of(
-                "tenant", snapshot.getApplicationId().tenant().value(),
-                "applicationId", snapshot.getApplicationId().toFullString(),
-                "zoneId", snapshot.getZoneId().value(),
-                "architecture", snapshot.getArchitecture()
-        ));
-    }
-
-    private Collector<Node, ?, Map<NodeResources.Architecture, ResourceSnapshot>> groupSnapshotsByArchitecture(ZoneId zoneId) {
-        return Collectors.collectingAndThen(
-                Collectors.groupingBy(node -> node.resources().architecture()),
-                convertNodeListToResourceSnapshot(zoneId)
-        );
-    }
-
-    private Function<Map<NodeResources.Architecture, List<Node>>, Map<NodeResources.Architecture, ResourceSnapshot>> convertNodeListToResourceSnapshot(ZoneId zoneId) {
-        return nodeMap -> nodeMap.entrySet()
-                .stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        entry -> ResourceSnapshot.from(entry.getValue(), clock.instant(), zoneId))
-                );
     }
 }

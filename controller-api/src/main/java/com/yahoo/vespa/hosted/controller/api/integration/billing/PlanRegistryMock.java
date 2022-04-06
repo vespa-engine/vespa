@@ -117,8 +117,7 @@ public class PlanRegistryMock implements PlanRegistry {
                     usage.getDiskMillis().divide(millisPerHour, RoundingMode.HALF_UP),
                     cpuCost,
                     memCost,
-                    dgbCost,
-                    usage.getArchitecture()
+                    dgbCost
             );
         }
 

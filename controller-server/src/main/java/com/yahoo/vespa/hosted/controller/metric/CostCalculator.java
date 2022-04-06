@@ -57,7 +57,7 @@ public class CostCalculator {
             Property property = propertyByTenantName.get(node.owner().get().tenant());
             if (property == null) continue;
             var allocation = allocationByProperty.getOrDefault(property, ResourceAllocation.ZERO);
-            var nodeAllocation = new ResourceAllocation(node.resources().vcpu(), node.resources().memoryGb(), node.resources().diskGb(), node.resources().architecture());
+            var nodeAllocation = new ResourceAllocation(node.resources().vcpu(), node.resources().memoryGb(), node.resources().diskGb());
             allocationByProperty.put(property, allocation.plus(nodeAllocation));
             totalAllocation = totalAllocation.plus(nodeAllocation);
         }

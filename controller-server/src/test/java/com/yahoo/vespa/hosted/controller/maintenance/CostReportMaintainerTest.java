@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
@@ -39,7 +38,7 @@ public class CostReportMaintainerTest {
                         "1970-01-01,Property3,128.0,96.0,2000.0,0.3333333333333333\n" +
                         "1970-01-01,Property2,160.0,96.0,2000.0,0.3611111111111111",
                         csv),
-                Map.of(new Property("Property3"), new ResourceAllocation(256, 192, 4000, NodeResources.Architecture.getDefault()))
+                Map.of(new Property("Property3"), new ResourceAllocation(256, 192, 4000))
         );
 
 
