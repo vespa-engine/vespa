@@ -2,7 +2,6 @@
 #pragma once
 
 #include "field.h"
-#include <vespa/vespalib/util/memory.h>
 
 namespace document {
 
@@ -23,13 +22,12 @@ public:
         VARIABLE,
         NONE
     };
-    using FieldValueCP = vespalib::CloneablePtr<FieldValue>;
-
     FieldPathEntry();
 
-    FieldPathEntry(FieldPathEntry &&) = default;
-    FieldPathEntry & operator=(FieldPathEntry &&) = default;
+    FieldPathEntry(FieldPathEntry &&) noexcept = default;
+    FieldPathEntry & operator=(FieldPathEntry &&) noexcept = default;
     FieldPathEntry(const FieldPathEntry &);
+    FieldPathEntry & operator=(const FieldPathEntry &) = delete;
 
     /**
        Creates a field path entry for a struct field lookup.
@@ -58,8 +56,6 @@ public:
     */
     FieldPathEntry(const DataType & dataType, vespalib::stringref variableName);
 
-    FieldPathEntry * clone() const { return new FieldPathEntry(*this); }
-
     Type getType() const { return _type; }
     const vespalib::string & getName() const { return _name; }
 
@@ -70,7 +66,7 @@ public:
 
     uint32_t getIndex() const { return _lookupIndex; }
 
-    const FieldValueCP & getLookupKey() const { return _lookupKey; }
+    FieldValue & getLookupKey() const { return *_lookupKey; }
 
     const vespalib::string& getVariableName() const { return _variableName; }
 
@@ -85,20 +81,20 @@ public:
     static vespalib::string parseKey(vespalib::stringref & key);
 private:
     void setFillValue(const DataType & dataType);
-    Type                 _type;
-    vespalib::string     _name;
-    Field                _field;
-    const DataType     * _dataType;
-    uint32_t             _lookupIndex;
-    FieldValueCP         _lookupKey;
-    vespalib::string     _variableName;
-    mutable FieldValueCP _fillInVal;
+    Type                                _type;
+    vespalib::string                    _name;
+    Field                               _field;
+    const DataType                    * _dataType;
+    uint32_t                            _lookupIndex;
+    std::unique_ptr<FieldValue>         _lookupKey;
+    vespalib::string                    _variableName;
+    mutable std::unique_ptr<FieldValue> _fillInVal;
 };
 
 //typedef std::deque<FieldPathEntry> FieldPath;
 // Facade over FieldPathEntry container that exposes cloneability
 class FieldPath {
-    typedef std::vector<vespalib::CloneablePtr<FieldPathEntry>> Container;
+    typedef std::vector<std::unique_ptr<FieldPathEntry>> Container;
 public:
     typedef Container::reference reference;
     typedef Container::const_reference const_reference;
@@ -110,15 +106,10 @@ public:
 
     FieldPath();
     FieldPath(const FieldPath &);
-    FieldPath & operator=(const FieldPath &);
+    FieldPath & operator=(const FieldPath &) = delete;
     FieldPath(FieldPath &&) noexcept = default;
     FieldPath & operator=(FieldPath &&) noexcept = default;
     ~FieldPath();
-
-    template <typename InputIterator>
-    FieldPath(InputIterator first, InputIterator last)
-        : _path(first, last)
-    { }
 
     iterator insert(iterator pos, std::unique_ptr<FieldPathEntry> entry);
     void push_back(std::unique_ptr<FieldPathEntry> entry);

@@ -10,9 +10,12 @@ DocsumFieldSpec::FieldIdentifier::FieldIdentifier() :
 
 DocsumFieldSpec::FieldIdentifier::FieldIdentifier(FieldIdT id, FieldPath path) :
     _id(id),
-    _path(path)
+    _path(std::move(path))
 { }
 
+DocsumFieldSpec::FieldIdentifier::FieldIdentifier(FieldIdentifier &&) noexcept = default;
+DocsumFieldSpec::FieldIdentifier & DocsumFieldSpec::FieldIdentifier::operator=(FieldIdentifier &&) noexcept = default;
+DocsumFieldSpec::FieldIdentifier::~FieldIdentifier() = default;
 
 DocsumFieldSpec::DocsumFieldSpec() :
     _resultType(search::docsummary::RES_INT),

@@ -204,12 +204,12 @@ DocsumTest::testSlimeFieldWriter()
             {
                 FieldPath path;
                 type.buildFieldPath(path, "a");
-                fields.push_back(DocsumFieldSpec::FieldIdentifier(0, path));
+                fields.push_back(DocsumFieldSpec::FieldIdentifier(0, std::move(path)));
             }
             {
                 FieldPath path;
                 type.buildFieldPath(path, "c.e");
-                fields.push_back(DocsumFieldSpec::FieldIdentifier(0, path));
+                fields.push_back(DocsumFieldSpec::FieldIdentifier(0, std::move(path)));
             }
             sfw.setInputFields(fields);
             TEST_DO(assertSlimeFieldWriter(sfw, value, "{\"a\":\"foo\",\"c\":{\"e\":\"qux\"}}"));
@@ -257,14 +257,14 @@ DocsumTest::requireThatSlimeFieldWriterHandlesMap()
             {
                 FieldPath path;
                 mapType.buildFieldPath(path, "value.b");
-                fields.push_back(DocsumFieldSpec::FieldIdentifier(0, path));
+                fields.push_back(DocsumFieldSpec::FieldIdentifier(0, std::move(path)));
             }
             sfw.setInputFields(fields);
             TEST_DO(assertSlimeFieldWriter(sfw, mapfv, "[{\"key\":\"k1\",\"value\":{\"b\":\"bar\"}}]"));
             {
                 FieldPath path;
                 mapType.buildFieldPath(path, "{k1}.a");
-                fields[0] = DocsumFieldSpec::FieldIdentifier(0, path);
+                fields[0] = DocsumFieldSpec::FieldIdentifier(0, std::move(path));
             }
             sfw.clear();
             sfw.setInputFields(fields);

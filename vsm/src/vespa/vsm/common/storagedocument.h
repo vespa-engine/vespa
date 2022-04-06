@@ -17,7 +17,7 @@ public:
 
     class SubDocument {
     public:
-        SubDocument() : _fieldValue(NULL) {}
+        SubDocument() : _fieldValue(nullptr) {}
         SubDocument(document::FieldValue *fv, document::FieldValue::PathRange nested) :
                 _fieldValue(fv),
                 _range(nested)
@@ -43,7 +43,7 @@ public:
     ~StorageDocument();
 
     const document::Document &docDoc() const { return *_doc; }
-    bool valid() const { return _doc.get() != NULL; }
+    bool valid() const { return _doc.get() != nullptr; }
     const SubDocument &getComplexField(FieldIdT fId) const;
     const document::FieldValue *getField(FieldIdT fId) const override;
     bool setField(FieldIdT fId, document::FieldValue::UP fv) override ;
