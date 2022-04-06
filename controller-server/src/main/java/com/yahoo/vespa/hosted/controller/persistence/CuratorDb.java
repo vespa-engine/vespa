@@ -713,7 +713,7 @@ public class CuratorDb {
     }
 
     private Path lockPath(ApplicationId instance, ZoneId zone) {
-        return lockRoot.append(instance.serializedForm() + ":" + zone.region().value());
+        return lockRoot.append(instance.serializedForm() + ":" + zone.environment().value() + ":" + zone.region().value());
     }
 
     private Path lockPath(ApplicationId instance, JobType type) {
