@@ -6,6 +6,7 @@ import com.yahoo.config.provision.zone.ZoneList;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.restapi.HttpURL;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
@@ -21,7 +22,10 @@ import com.yahoo.yolean.Exceptions;
 import java.net.URI;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.yahoo.restapi.HttpURL.Path.parse;
 
 /**
  * REST API for proxying operator APIs to config servers in a given zone.
@@ -32,7 +36,9 @@ import java.util.stream.Stream;
 public class ConfigServerApiHandler extends AuditLoggingRequestHandler {
 
     private static final URI CONTROLLER_URI = URI.create("https://localhost:4443/");
-    private static final List<String> WHITELISTED_APIS = List.of("/flags/v1/", "/nodes/v2/", "/orchestrator/v1/");
+    private static final List<HttpURL.Path> WHITELISTED_APIS = List.of(parse("/flags/v1/"),
+                                                                       parse("/nodes/v2/"),
+                                                                       parse("/orchestrator/v1/"));
 
     private final ZoneRegistry zoneRegistry;
     private final ConfigServerRestExecutor proxy;
@@ -84,17 +90,18 @@ public class ConfigServerApiHandler extends AuditLoggingRequestHandler {
         }
 
         ZoneId zoneId = ZoneId.from(path.get("environment"), path.get("region"));
-        if (! zoneRegistry.hasZone(zoneId) && ! controllerZone.equals(zoneId)) {
+        if ( ! zoneRegistry.hasZone(zoneId) && ! controllerZone.equals(zoneId)) {
             throw new IllegalArgumentException("No such zone: " + zoneId.value());
         }
 
-        String cfgPath = "/" + path.getRest();
-        if (WHITELISTED_APIS.stream().noneMatch(cfgPath::startsWith)) {
-            return ErrorResponse.forbidden("Cannot access '" + cfgPath +
-                    "' through /configserver/v1, following APIs are permitted: " + String.join(", ", WHITELISTED_APIS));
+        if (path.getRest().segments().size() < 2 || ! WHITELISTED_APIS.contains(path.getRest().head(2).withTrailingSlash())) {
+            return ErrorResponse.forbidden("Cannot access " + path.getRest() +
+                    " through /configserver/v1, following APIs are permitted: " + WHITELISTED_APIS.stream()
+                                                                                                  .map(p -> "/" + String.join("/", p.segments()) + "/")
+                                                                                                  .collect(Collectors.joining(", ")));
         }
 
-        return proxy.handle(ProxyRequest.tryOne(getEndpoint(zoneId), cfgPath, request));
+        return proxy.handle(ProxyRequest.tryOne(getEndpoint(zoneId), path.getRest(), request));
     }
 
     private HttpResponse root(HttpRequest request) {

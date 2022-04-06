@@ -10,8 +10,14 @@ import com.yahoo.container.jdisc.HttpResponse;
 import java.util.HashSet;
 import java.util.List;
 import java.util.logging.Level;
+
+import com.yahoo.net.DomainName;
+import com.yahoo.restapi.HttpURL;
+import com.yahoo.restapi.HttpURL.Path;
+import com.yahoo.restapi.HttpURL.Scheme;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpFetcher;
+import com.yahoo.vespa.config.server.http.HttpFetcher.Params;
 import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 
@@ -33,7 +39,7 @@ public class HttpProxy {
         this.fetcher = fetcher;
     }
 
-    public HttpResponse get(Application application, String hostName, String serviceType, String relativePath) {
+    public HttpResponse get(Application application, String hostName, String serviceType, Path relativePath) {
         HostInfo host = application.getModel().getHosts().stream()
                 .filter(hostInfo -> hostInfo.getHostname().equals(hostName))
                 .findFirst()
@@ -54,18 +60,15 @@ public class HttpProxy {
         return internalGet(host.getHostname(), port.getPort(), relativePath);
     }
 
-    private HttpResponse internalGet(String hostname, int port, String relativePath) {
-        String urlString = "http://" + hostname + ":" + port + "/" + relativePath;
-        URL url;
+    private HttpResponse internalGet(String hostname, int port, Path relativePath) {
+        HttpURL url = HttpURL.create(Scheme.http, DomainName.of(hostname), port, relativePath);
         try {
-            url = new URL(urlString);
+            return fetcher.get(new Params(2000), // 2_000 ms read timeout
+                               url.asURI().toURL());
         } catch (MalformedURLException e) {
-            logger.log(Level.WARNING, "Badly formed url: " + urlString, e);
+            logger.log(Level.WARNING, "Badly formed url: " + url, e);
             return HttpErrorResponse.internalServerError("Failed to construct URL for backend");
         }
-
-        HttpFetcher.Params params = new HttpFetcher.Params(2000); // 2_000 ms read timeout
-        return fetcher.get(params, url);
     }
 
 }

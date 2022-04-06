@@ -1657,15 +1657,15 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request(serviceApi + "/storagenode-awe3slno6mmq2fye191y324jl/document/v1/", GET)
                                       .userIdentity(USER_ID)
                                       .oAuthCredentials(OKTA_CREDENTIALS),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Access denied\"}",
-                              403);
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"Nothing at path '/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/service/storagenode-awe3slno6mmq2fye191y324jl/document/v1/'\"}",
+                              404);
 
         // Test path traversal
         tester.assertResponse(request(serviceApi + "/storagenode-awe3slno6mmq2fye191y324jl/state/v1/../../document/v1/", GET)
                                       .userIdentity(USER_ID)
                                       .oAuthCredentials(OKTA_CREDENTIALS),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Access denied\"}",
-                              403);
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"Nothing at path '/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/service/storagenode-awe3slno6mmq2fye191y324jl/document/v1/'\"}",
+                              404);
 
         // Test urlencoded path traversal
         tester.assertResponse(request(serviceApi + "/storagenode-awe3slno6mmq2fye191y324jl/state%2Fv1%2F..%2F..%2Fdocument%2Fv1%2F", GET)

@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.restapi.HttpURL.Path;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.application.CompressedApplicationInputStreamTest;
@@ -155,7 +156,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     public void require_that_handler_unpacks_application() throws IOException {
         File outFile = CompressedApplicationInputStreamTest.createTarFile();
         createHandler().handle(post(outFile));
-        ApplicationFile applicationFile = applicationRepository.getApplicationFileFromSession(tenant, 2, "services.xml", Session.Mode.READ);
+        ApplicationFile applicationFile = applicationRepository.getApplicationFileFromSession(tenant, 2, Path.parse("services.xml"), Session.Mode.READ);
         assertTrue(applicationFile.exists());
     }
 

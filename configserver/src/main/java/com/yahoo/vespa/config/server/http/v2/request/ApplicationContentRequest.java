@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.restapi.HttpURL.Path;
 import com.yahoo.vespa.config.server.http.ContentRequest;
 
 /**
@@ -22,7 +23,7 @@ public class ApplicationContentRequest extends ContentRequest {
                                      long sessionId,
                                      ApplicationId applicationId,
                                      Zone zone,
-                                     String contentPath,
+                                     Path contentPath,
                                      ApplicationFile applicationFile) {
         super(request, sessionId, contentPath, applicationFile);
         this.applicationId = applicationId;

@@ -223,14 +223,24 @@ public class HttpURL {
                            segment, "path segments cannot be \"\", \".\", or \"..\"");
         }
 
-        /** Returns a copy of this where the first segments are skipped. */
-        public Path skip(int count) {
-            return new Path(segments.subList(count, segments.size()), trailingSlash, validator);
+        /** Returns a copy of this where only the first segments are retained, and with a trailing slash. */
+        public Path head(int count) {
+            return count == segments.size() ? this : new Path(segments.subList(0, count), true, validator);
         }
 
-        /** Returns a copy of this where the last segments are cut off. */
+        /** Returns a copy of this where only the last segments are retained. */
+        public Path tail(int count) {
+            return count == segments.size() ? this : new Path(segments.subList(segments.size() - count, segments.size()), trailingSlash, validator);
+        }
+
+        /** Returns a copy of this where the first segments are skipped. */
+        public Path skip(int count) {
+            return count == 0 ? this : new Path(segments.subList(count, segments.size()), trailingSlash, validator);
+        }
+
+        /** Returns a copy of this where the last segments are cut off, and with a trailing slash. */
         public Path cut(int count) {
-            return new Path(segments.subList(0, segments.size() - count), trailingSlash, validator);
+            return count == 0 ? this : new Path(segments.subList(0, segments.size() - count), true, validator);
         }
 
         /** Returns a copy of this with the <em>decoded</em> segment appended at the end; it may not be either of {@code ""}, {@code "."} or {@code ".."}. */
@@ -252,6 +262,11 @@ public class HttpURL {
             List<String> copy = new ArrayList<>(this.segments);
             for (String segment : segments) copy.add(validator.apply(segment));
             return new Path(copy, trailingSlash, validator);
+        }
+
+        /** Whether this path has a trailing slash. */
+        public boolean hasTrailingSlash() {
+            return trailingSlash;
         }
 
         /** Returns a copy of this which encodes a trailing slash. */

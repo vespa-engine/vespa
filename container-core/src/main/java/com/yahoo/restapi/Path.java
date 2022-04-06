@@ -66,11 +66,9 @@ public class Path {
             else if ( ! specElements.get(i).equals(path.segments().get(i)))
                 return false;
         }
-        
-        if (matchPrefix) {
-            this.rest = path.skip(specElements.size());
-        }
-        
+
+        rest = matchPrefix ? path.skip(specElements.size()) : null;
+
         return true;
     }
 
@@ -99,12 +97,10 @@ public class Path {
     }
 
     /**
-     * Returns the rest of the last matched path.
-     * This is always the empty string (never null) unless the path spec ends with {*}
+     * Returns the rest of the last matched path, or {@code null} if the path spec didn't end with {*}.
      */
-    public String getRest() {
-        String raw = rest.raw();
-        return raw.isEmpty() ? raw : raw.substring(1);
+    public HttpURL.Path getRest() {
+        return rest;
     }
 
     @Override

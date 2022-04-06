@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.proxy;
 
 import com.yahoo.jdisc.http.HttpRequest;
+import com.yahoo.restapi.HttpURL.Path;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -11,20 +12,18 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author Haakon Dybdahl
  */
 public class ProxyRequestTest {
 
-    @SuppressWarnings("deprecation")
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
-
     @Test
     public void testBadUri() {
-        exception.expectMessage("Request path '/path' does not end with proxy path '/zone/v2/'");
-        testRequest("http://domain.tld/path", "/zone/v2/");
+        assertThrows("Request path '/path' does not end with proxy path '/zone/v2/'",
+                     IllegalArgumentException.class,
+                     () -> testRequest("http://domain.tld/path", "/zone/v2/"));
     }
 
     @Test
@@ -33,7 +32,7 @@ public class ProxyRequestTest {
             // Root request
             ProxyRequest request = testRequest("http://controller.domain.tld/my/path", "");
             assertEquals(URI.create("http://controller.domain.tld/my/path/"), request.getControllerPrefixUri());
-            assertEquals(URI.create("https://cfg.prod.us-north-1.domain.tld:1234/"),
+            assertEquals(URI.create("https://cfg.prod.us-north-1.domain.tld:1234"),
                     request.createConfigServerRequestUri(URI.create("https://cfg.prod.us-north-1.domain.tld:1234/")));
         }
 
@@ -64,7 +63,7 @@ public class ProxyRequestTest {
 
     private static ProxyRequest testRequest(String url, String pathPrefix) {
         return new ProxyRequest(HttpRequest.Method.GET, URI.create(url), Map.of(), null,
-                                List.of(URI.create("http://example.com")), pathPrefix);
+                                List.of(URI.create("http://example.com")), Path.parse(pathPrefix));
     }
 
 }

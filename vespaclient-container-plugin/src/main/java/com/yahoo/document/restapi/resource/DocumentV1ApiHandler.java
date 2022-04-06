@@ -1472,7 +1472,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             return new DocumentId("id:" + requireNonNull(path.get("namespace")) +
                                   ":" + requireNonNull(path.get("documentType")) +
                                   ":" + group.map(Group::docIdPart).orElse("") +
-                                  ":" + requireNonNull(path.getRest()));
+                                  ":" + String.join("/", requireNonNull(path.getRest()).segments())); // :'(
         }
 
         String rawPath() { return rawPath; }

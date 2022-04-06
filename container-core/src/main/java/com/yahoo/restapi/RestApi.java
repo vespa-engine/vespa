@@ -153,7 +153,9 @@ public interface RestApi {
             default double getDoubleOrThrow(String name) { return Double.parseDouble(getStringOrThrow(name)); }
         }
 
-        interface PathParameters extends Parameters {}
+        interface PathParameters extends Parameters {
+            Optional<HttpURL.Path> getRest();
+        }
         interface QueryParameters extends Parameters {
             List<String> getStringList(String name);
         }

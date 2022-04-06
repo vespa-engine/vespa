@@ -53,6 +53,7 @@ public final class Text {
                 : isTextCharAboveUsAscii(codepoint);
     }
     private static boolean isTextCharAboveUsAscii(int codepoint) {
+        // TODO jonmv: compute modulo?
         if (codepoint <  0xFDD0)   return true;
         if (codepoint <= 0xFDDF)   return false;
         if (codepoint <  0x1FFFE)  return true;

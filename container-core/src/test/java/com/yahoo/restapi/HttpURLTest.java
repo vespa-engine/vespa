@@ -124,6 +124,11 @@ class HttpURLTest {
         assertEquals(List.of(expected.get(2), expected.get(0)),
                      path.append(path).cut(2).skip(2).segments());
 
+        for (int i = 0; i < 3; i++) {
+            assertEquals(path.head(i), path.cut(3 - i));
+            assertEquals(path.tail(i), path.skip(3 - i));
+        }
+
         assertThrows(NullPointerException.class,
                      () -> path.append((String) null));
 

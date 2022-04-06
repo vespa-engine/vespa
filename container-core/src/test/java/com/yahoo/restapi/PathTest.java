@@ -35,7 +35,7 @@ public class PathTest {
             assertTrue(path.matches("/a/{foo}/bar/{b}/{*}"));
             assertEquals("1", path.get("foo"));
             assertEquals("fuz", path.get("b"));
-            assertEquals("", path.getRest());
+            assertEquals("/", path.getRest().raw());
         }
 
         {
@@ -43,7 +43,7 @@ public class PathTest {
             assertTrue(path.matches("/a/{foo}/bar/{b}/{*}"));
             assertEquals("1", path.get("foo"));
             assertEquals("fuz", path.get("b"));
-            assertEquals("kanoo", path.getRest());
+            assertEquals("/kanoo", path.getRest().raw());
         }
 
         {
@@ -51,7 +51,7 @@ public class PathTest {
             assertTrue(path.matches("/a/{foo}/bar/{b}/{*}"));
             assertEquals("1", path.get("foo"));
             assertEquals("fuz", path.get("b"));
-            assertEquals("kanoo/trips", path.getRest());
+            assertEquals("/kanoo/trips", path.getRest().raw());
         }
 
         {
@@ -59,7 +59,7 @@ public class PathTest {
             assertTrue(path.matches("/a/{foo}/bar/{b}/{*}"));
             assertEquals("1", path.get("foo"));
             assertEquals("fuz", path.get("b"));
-            assertEquals("kanoo/trips/", path.getRest());
+            assertEquals("/kanoo/trips/", path.getRest().raw());
         }
     }
 

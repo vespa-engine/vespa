@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.http;
 
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.restapi.HttpURL.Path;
 
 import java.io.InputStream;
 
@@ -20,11 +21,11 @@ public abstract class ContentRequest {
     enum ReturnType {CONTENT, STATUS}
 
     private final long sessionId;
-    private final String path;
+    private final Path path;
     private final ApplicationFile file;
     private final HttpRequest request;
 
-    protected ContentRequest(HttpRequest request, long sessionId, String path, ApplicationFile applicationFile) {
+    protected ContentRequest(HttpRequest request, long sessionId, Path path, ApplicationFile applicationFile) {
         this.request = request;
         this.sessionId = sessionId;
         this.path = path;
@@ -77,7 +78,7 @@ public abstract class ContentRequest {
     }
 
 
-    String getPath() {
+    Path getPath() {
         return path;
     }
 
@@ -86,8 +87,8 @@ public abstract class ContentRequest {
     }
 
     ApplicationFile getExistingFile() {
-        if (!file.exists()) {
-            throw new NotFoundException("Session " + sessionId + " does not contain a file '" + path + "'");
+        if ( ! file.exists()) {
+            throw new NotFoundException("Session " + sessionId + " does not contain a file at " + path);
         }
         return file;
     }

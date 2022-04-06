@@ -4,6 +4,9 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.restapi.HttpURL;
+import com.yahoo.restapi.HttpURL.Path;
+import com.yahoo.restapi.HttpURL.Query;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
@@ -34,11 +37,11 @@ class ServiceApiResponse extends HttpResponse {
     private final ApplicationId application;
     private final List<URI> configServerURIs;
     private final Slime slime;
-    private final UriBuilder requestUri;
+    private final HttpURL requestUri;
 
     // Only set for one of the setResponse calls
     private String serviceName = null;
-    private String restPath = null;
+    private Path restPath = null;
     
     public ServiceApiResponse(ZoneId zone, ApplicationId application, List<URI> configServerURIs, URI requestUri) {
         super(200);
@@ -46,7 +49,7 @@ class ServiceApiResponse extends HttpResponse {
         this.application = application;
         this.configServerURIs = configServerURIs;
         this.slime = new Slime();
-        this.requestUri = new UriBuilder(requestUri).withoutParameters();
+        this.requestUri = HttpURL.from(requestUri).withQuery(Query.empty());
     }
     
     public void setResponse(ApplicationView applicationView) {
@@ -68,7 +71,7 @@ class ServiceApiResponse extends HttpResponse {
         }
     }
     
-    public void setResponse(Map<?,?> responseData, String serviceName, String restPath) {
+    public void setResponse(Map<?,?> responseData, String serviceName, Path restPath) {
         this.serviceName = serviceName;
         this.restPath = restPath;
         mapToSlime(responseData, slime.setObject());
@@ -138,7 +141,7 @@ class ServiceApiResponse extends HttpResponse {
             mapToSlime((Map)entry, array.addObject());
     }
 
-    private String rewriteIfUrl(String urlOrAnyString, UriBuilder requestUri) {
+    private String rewriteIfUrl(String urlOrAnyString, HttpURL requestUri) {
         if (urlOrAnyString == null) return null;
 
         String hostPattern = "(" +
@@ -163,19 +166,18 @@ class ServiceApiResponse extends HttpResponse {
 
         if (matcher.find()) {
             String proxiedPath = urlOrAnyString.substring(matcher.group().length());
-            return requestUri.append(proxiedPath).toString();
+            return requestUri.withPath(requestUri.path().append(Path.parse(proxiedPath))).asURI().toString();
         } else {
             return urlOrAnyString; // not a service url
         }
     }
 
-    private UriBuilder generateLocalLinkPrefix(String identifier, String restPath) {
-        String proxiedPath = identifier + "/" + restPath;
-
-        if (this.requestUri.toString().endsWith(proxiedPath)) {
-            return new UriBuilder(this.requestUri.toString().substring(0, this.requestUri.toString().length() - proxiedPath.length()));
+    private HttpURL generateLocalLinkPrefix(String identifier, Path restPath) {
+        Path proxiedPath = Path.parse(identifier).append(restPath);
+        if (requestUri.path().tail(proxiedPath.segments().size()).equals(proxiedPath)) {
+            return requestUri.withPath(requestUri.path().cut(proxiedPath.segments().size()));
         } else {
-            throw new IllegalStateException("Expected the resource path '" + this.requestUri + "' to end with '" + proxiedPath + "'");
+            throw new IllegalStateException("Expected the resource " + requestUri.path() + " to end with " + proxiedPath);
         }
     }
 

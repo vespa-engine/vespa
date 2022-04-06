@@ -6,6 +6,7 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.restapi.HttpURL.Path;
 import com.yahoo.vespa.config.server.http.HttpFetcher;
 import com.yahoo.vespa.config.server.http.RequestTimeoutException;
 import com.yahoo.vespa.config.server.http.StaticResponse;
@@ -48,7 +49,7 @@ public class HttpProxyTest {
         when(fetcher.get(actualParams.capture(), actualUrl.capture())).thenReturn(response);
 
         HttpResponse actualResponse = proxy.get(applicationMock, hostname, CLUSTERCONTROLLER_CONTAINER.serviceName,
-                                                "clustercontroller-status/v1/clusterName");
+                                                Path.parse("clustercontroller-status/v1/clusterName"));
 
         assertEquals(1, actualParams.getAllValues().size());
         assertEquals(2000, actualParams.getValue().readTimeoutMs);
@@ -67,7 +68,7 @@ public class HttpProxyTest {
         when(fetcher.get(any(), any())).thenThrow(new RequestTimeoutException("timed out"));
 
         proxy.get(applicationMock, hostname, CLUSTERCONTROLLER_CONTAINER.serviceName,
-                  "clustercontroller-status/v1/clusterName");
+                  Path.parse("clustercontroller-status/v1/clusterName"));
     }
 
     private static MockModel createClusterController() {

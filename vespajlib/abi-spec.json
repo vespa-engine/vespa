@@ -583,6 +583,7 @@
       "final"
     ],
     "methods": [
+      "public static com.yahoo.path.Path from(java.util.List)",
       "public boolean isChildOf(com.yahoo.path.Path)",
       "public com.yahoo.path.Path append(java.lang.String)",
       "public com.yahoo.path.Path append(com.yahoo.path.Path)",

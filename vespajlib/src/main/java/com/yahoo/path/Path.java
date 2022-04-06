@@ -41,6 +41,11 @@ public final class Path {
         this.delimiter = delimiter;
     }
 
+    /** Creates a new path with the given segments. */
+    public static Path from(List<String> segments) {
+        return new Path(segments, "/");
+    }
+
     /** Returns whether this path is an immediate child of the given path */
     public boolean isChildOf(Path parent) {
         return toString().startsWith(parent.toString()) && this.elements.size() -1 == parent.elements.size();

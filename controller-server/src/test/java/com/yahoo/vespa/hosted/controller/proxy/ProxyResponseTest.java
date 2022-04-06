@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.proxy;
 
 import com.yahoo.jdisc.http.HttpRequest;
+import com.yahoo.restapi.HttpURL.Path;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -20,7 +21,7 @@ public class ProxyResponseTest {
     @Test
     public void testRewriteUrl() throws Exception {
         ProxyRequest request = new ProxyRequest(HttpRequest.Method.GET, URI.create("http://domain.tld/zone/v2/dev/us-north-1/configserver"),
-                Map.of(), null, List.of(URI.create("http://example.com")), "configserver");
+                Map.of(), null, List.of(URI.create("http://example.com")), Path.parse("configserver"));
         ProxyResponse proxyResponse = new ProxyResponse(
                 request,
                 "response link is http://configserver:1234/bla/bla/",
@@ -31,14 +32,14 @@ public class ProxyResponseTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
         proxyResponse.render(outputStream);
-        String document = new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
+        String document = outputStream.toString(StandardCharsets.UTF_8);
         assertEquals("response link is http://domain.tld/zone/v2/dev/us-north-1/bla/bla/", document);
     }
 
     @Test
     public void testRewriteSecureUrl() throws Exception {
         ProxyRequest request = new ProxyRequest(HttpRequest.Method.GET, URI.create("https://domain.tld/zone/v2/prod/eu-south-3/configserver"),
-                Map.of(), null, List.of(URI.create("http://example.com")), "configserver");
+                                                Map.of(), null, List.of(URI.create("http://example.com")), Path.parse("configserver"));
         ProxyResponse proxyResponse = new ProxyResponse(
                 request,
                 "response link is http://configserver:1234/bla/bla/",
@@ -49,7 +50,7 @@ public class ProxyResponseTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
         proxyResponse.render(outputStream);
-        String document = new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
+        String document = outputStream.toString(StandardCharsets.UTF_8);
         assertEquals("response link is https://domain.tld/zone/v2/prod/eu-south-3/bla/bla/", document);
     }
 

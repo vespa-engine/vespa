@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.net.DomainName;
+import com.yahoo.restapi.HttpURL.Path;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
@@ -52,9 +54,9 @@ public interface ConfigServer {
 
     ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName, String environment, String region);
 
-    Map<?,?> getServiceApiResponse(DeploymentId deployment, String serviceName, String restPath);
+    Map<?,?> getServiceApiResponse(DeploymentId deployment, String serviceName, Path restPath);
 
-    String getServiceStatusPage(DeploymentId deployment, String serviceName, String node, String subPath);
+    String getServiceStatusPage(DeploymentId deployment, String serviceName, DomainName node, Path subPath);
 
     /**
      * Gets the Vespa logs of the given deployment.
@@ -73,7 +75,7 @@ public interface ConfigServer {
      * @param path path within package to get
      * @param requestUri request URI on the controller, used to rewrite paths in response from config server
      */
-    ProxyResponse getApplicationPackageContent(DeploymentId deployment, String path, URI requestUri);
+    ProxyResponse getApplicationPackageContent(DeploymentId deployment, Path path, URI requestUri);
 
     List<ClusterMetrics> getDeploymentMetrics(DeploymentId deployment);
 
