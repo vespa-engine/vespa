@@ -139,6 +139,22 @@ class HttpURLTest {
         assertEquals("fromIndex(2) > toIndex(1)",
                      assertThrows(IllegalArgumentException.class,
                                   () -> path.cut(2).skip(2)).getMessage());
+
+        assertEquals("path segment decoded cannot contain '/', but got: '/'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> HttpURL.Path.empty().append("%2525252525252525%2525252525253%25252532%252525%252534%36")).getMessage());
+
+        assertEquals("path segment decoded cannot contain '?', but got: '?'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> HttpURL.Path.empty().append("?")).getMessage());
+
+        assertEquals("path segment decoded cannot contain '#', but got: '#'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> HttpURL.Path.empty().append("#")).getMessage());
+
+        assertEquals("path segments cannot be \"\", \".\", or \"..\", but got: '..'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> HttpURL.Path.empty().append("%2E%25252E")).getMessage());
     }
 
     @Test

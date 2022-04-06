@@ -150,10 +150,12 @@ public class HttpURL {
         }
     }
 
-    /** Require that the given string (possibly decoded multiple times) contains no {@code '/'}, and isn't either of {@code "", ".", ".."}. */
+    /** Require that the given string (possibly decoded multiple times) contains none of {@code '/', '?', '#'}, and isn't either of {@code "", ".", ".."}. */
     public static String requirePathSegment(String value) {
         while ( ! value.equals(value = decode(value, UTF_8)));
         require( ! value.contains("/"), value, "path segment decoded cannot contain '/'");
+        require( ! value.contains("?"), value, "path segment decoded cannot contain '?'");
+        require( ! value.contains("#"), value, "path segment decoded cannot contain '#'");
         return Path.requireNonNormalizable(value);
     }
 
@@ -171,9 +173,9 @@ public class HttpURL {
             this.validator = requireNonNull(validator);
         }
 
-        /** Creates a new, empty path, with a trailing slash. */
+        /** Creates a new, empty path, with a trailing slash, using {@link HttpURL#requirePathSegment} for segment validation. */
         public static Path empty() {
-            return empty(__ -> { });
+            return empty(HttpURL::requirePathSegment);
         }
 
         /** Creates a new, empty path, with a trailing slash, using the indicated validator for segments. */
