@@ -7,7 +7,8 @@
 namespace document::select {
 
 ResultList::ResultList() = default;
-
+ResultList::ResultList(ResultList &&) noexcept = default;
+ResultList & ResultList::operator = (ResultList &&) noexcept = default;
 ResultList::~ResultList() = default;
 
 ResultList::ResultList(const Result& result) {
@@ -15,9 +16,9 @@ ResultList::ResultList(const Result& result) {
 }
 
 void
-ResultList::add(const fieldvalue::VariableMap& variables, const Result& result)
+ResultList::add(fieldvalue::VariableMap variables, const Result& result)
 {
-    _results.push_back(ResultPair(variables, &result));
+    _results.emplace_back(std::move(variables), &result);
 }
 
 void
@@ -109,7 +110,7 @@ ResultList::operator&&(const ResultList& other) const
                 if (vars.empty()) {
                     resultForNoVariables.set(result.toEnum());
                 } else {
-                    results.add(vars, result);
+                    results.add(std::move(vars), result);
                 }
             }
         }
@@ -137,7 +138,7 @@ ResultList::operator||(const ResultList& other) const
                 if (vars.empty()) {
                     resultForNoVariables.set(result.toEnum());
                 } else {
-                    results.add(vars, result);
+                    results.add(std::move(vars), result);
                 }
             }
         }
