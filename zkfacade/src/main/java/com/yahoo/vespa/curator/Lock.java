@@ -69,6 +69,9 @@ public class Lock implements Mutex {
             throw new RuntimeException("Exception releasing lock '" + lockPath + "'");
         }
     }
+
+    protected String lockPath() { return lockPath; }
+
 }
 
 
