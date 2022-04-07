@@ -397,6 +397,13 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_NEW_CONTROLLER_LOCKS = defineFeatureFlag(
+            "transition-to-new-controller-locks", false,
+            List.of("hmusum"), "2022-04-07", "2022-05-07",
+            "Use two locks in transition period to new lock schema for application-related controller locks",
+            "Takes effect immediately",
+            ZONE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
