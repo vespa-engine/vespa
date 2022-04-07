@@ -1,39 +1,39 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator;
 
-import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.path.Path;
 
 import java.time.Duration;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Class that holds two locks, originally used for transitioning from one lock to
  * another, where you need to hold both the old lock and the new lock in the
- * transition period.
+ * transition period. Locks are acquired in constructor.
  *
  * @author hmusum
  */
 public class MultiplePathsLock extends Lock {
 
+    private static final Logger log = Logger.getLogger(MultiplePathsLock.class.getName());
+
     private final Lock oldLock;
-    private final Lock newLock;
 
     public MultiplePathsLock(Path newLockPath, Path oldLockPath, Duration timeout, Curator curator) {
         super(newLockPath.getAbsolute(), curator);
-        this.newLock = curator.lock(newLockPath, timeout);
+        log.log(Level.INFO, "Acquiring lock " + oldLockPath);
         this.oldLock = curator.lock(oldLockPath, timeout);;
-    }
-
-    @Override
-    public void acquire(Duration timeout) throws UncheckedTimeoutException {
-        oldLock.acquire(timeout);
-        newLock.acquire(timeout);
+        log.log(Level.INFO, "Acquiring lock " + lockPath());
+        super.acquire(timeout);
     }
 
     @Override
     public void close() {
+        log.log(Level.INFO, "Closing lock " + oldLock.lockPath());
         oldLock.close();
-        newLock.close();
+        log.log(Level.INFO, "Closing lock " + lockPath());
+        super.close();
     }
 
 }
