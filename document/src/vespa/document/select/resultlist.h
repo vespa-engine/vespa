@@ -14,7 +14,7 @@ public:
     typedef std::vector<ResultPair> Results;
     typedef Results::iterator iterator;
     typedef Results::const_iterator const_iterator;
-    using reverse_iterator = Results::const_reverse_iterator;
+    using reverse_iterator = Results::reverse_iterator;
 
     ResultList();
     ResultList(ResultList &&) noexcept;
