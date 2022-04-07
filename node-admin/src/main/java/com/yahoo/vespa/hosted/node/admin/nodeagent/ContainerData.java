@@ -34,6 +34,9 @@ public interface ContainerData {
      * @param symlink The path to the symlink inside the container
      * @param target The path to the target file for the symbolic link inside the container
      */
-    void createSymlink(ContainerPath symlink, Path target);
+    void addSymlink(ContainerPath symlink, Path target);
+
+    /** Writes all the files, directories and symlinks that were previously added */
+    void converge(NodeAgentContext context);
 }
 
