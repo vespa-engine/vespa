@@ -274,6 +274,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
         }
 
+        @SuppressWarnings("deprecation")
         private void apply(DocumentmanagerConfig config) {
             splitConfig(config);
             setupAnnotationTypesWithoutPayloads(config);
@@ -453,10 +454,8 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                     if (isPositionStruct(typeconf)) {
                         int geoVersion = usev8geopositions ? 8 : 7;
                         addNewType(typeconf.idx(), new GeoPosType(geoVersion));
-                    } else if (typeconf.name().equals(docName + ".header")) {
-                        addNewType(typeconf.idx(), new StructDataType(typeconf.name()));
                     } else {
-                        addNewType(typeconf.idx(), new StructDataType(typeconf.name() + "@" + docName));
+                        addNewType(typeconf.idx(), new StructDataType(typeconf.name()));
                     }
                 }
             }
@@ -606,8 +605,8 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             for (int idx : proxyRefs) {
                 typesByIdx.remove(idx);
             }
-            for (DataType type : typesByIdx.values()) {
-                manager.register(type);
+            for (var docTypeData : inProgressByName.values()) {
+                manager.registerSingleType(docTypeData.docType);
             }
         }
 

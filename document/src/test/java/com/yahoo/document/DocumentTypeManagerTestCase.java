@@ -665,12 +665,16 @@ search annotationsimplicitstruct {
         assertNotNull(struct);
         assertNotNull(struct.getField("f0"));
 
-        assertNotNull(manager.getDataTypeInternal("mystruct@common"));
-        assertNotNull(manager.getDataTypeInternal("mystructinfoo@foo"));
-        assertNotNull(manager.getDataTypeInternal("mystructinbar@bar"));
-        assertNotNull(manager.getDataTypeInternal("mystructinfoobar@foobar"));
-        assertNotNull(manager.getDataTypeInternal("foo.header"));
-        assertNotNull(manager.getDataTypeInternal("position"));
+        assertNull(manager.getDataTypeInternal("mystruct@common"));
+        assertNull(manager.getDataTypeInternal("mystructinfoo@foo"));
+        assertNull(manager.getDataTypeInternal("mystructinbar@bar"));
+        assertNull(manager.getDataTypeInternal("mystructinfoobar@foobar"));
+        assertNull(manager.getDataTypeInternal("mystruct"));
+        assertNull(manager.getDataTypeInternal("mystructinfoo"));
+        assertNull(manager.getDataTypeInternal("mystructinbar"));
+        assertNull(manager.getDataTypeInternal("mystructinfoobar"));
+        assertNull(manager.getDataTypeInternal("foo.header"));
+        assertNull(manager.getDataTypeInternal("position"));
     }
 
     // TODO test clone(). Also fieldSets not part of clone()..!
