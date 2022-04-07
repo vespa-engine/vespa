@@ -36,6 +36,7 @@ public class QueryProperties extends Properties {
     private final CompiledQueryProfileRegistry profileRegistry;
     private final Map<String, Embedder> embedders;
 
+    @Deprecated  // TODO: Remove on Vespa 8
     public QueryProperties(Query query, CompiledQueryProfileRegistry profileRegistry, Embedder embedder) {
         this(query, profileRegistry, Map.of(Embedder.defaultEmbedderId, embedder));
     }
@@ -321,20 +322,6 @@ public class QueryProperties extends Properties {
                 else {
                     throwIllegalParameter(key.last(), Select.SELECT);
                 }
-            }
-            else if (key.first().equals("rankfeature") || key.first().equals("featureoverride") ) { // featureoverride is deprecated
-                chained().requireSettable(key, value, context);
-                setRankFeature(query, key.rest().toString(), toSpecifiedType(key.rest().toString(),
-                                                                             value,
-                                                                             profileRegistry.getTypeRegistry().getComponent("features"),
-                                                                             context));
-            }
-            else if (key.first().equals("rankproperty")) {
-                chained().requireSettable(key, value, context);
-                query.getRanking().getProperties().put(key.rest().toString(), toSpecifiedType(key.rest().toString(),
-                                                                                              value,
-                                                                                              profileRegistry.getTypeRegistry().getComponent("properties"),
-                                                                                              context));
             }
             else if (key.size() == 1) {
                 if (key.equals(Query.HITS))

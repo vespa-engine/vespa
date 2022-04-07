@@ -3,7 +3,6 @@ package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.tensor.TensorType;
 
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -25,7 +24,7 @@ class RankProfile {
         this.name = name;
         this.hasSummaryFeatures = hasSummaryFeatures;
         this.hasRankFeatures = hasRankFeatures;
-        this.inputs = Collections.unmodifiableMap(inputs);
+        this.inputs = Map.copyOf(inputs);
     }
 
     public String getName() { return name; }
