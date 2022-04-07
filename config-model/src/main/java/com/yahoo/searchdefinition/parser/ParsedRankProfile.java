@@ -10,6 +10,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,7 +78,7 @@ class ParsedRankProfile extends ParsedBlock {
     Map<String, String> getFieldsWithRankType() { return Map.copyOf(fieldsRankType); }
     Map<String, List<String>> getRankProperties() { return Map.copyOf(rankProperties); }
     Map<String, Value> getConstants() { return Map.copyOf(constants); }
-    Map<Reference, TensorType> getInputs() { return Map.copyOf(inputs); }
+    Map<Reference, TensorType> getInputs() { return Collections.unmodifiableMap(inputs); }
     Optional<String> getInheritedSummaryFeatures() { return Optional.ofNullable(this.inheritedSummaryFeatures); }
     Optional<String> getSecondPhaseExpression() { return Optional.ofNullable(this.secondPhaseExpression); }
     Optional<Boolean> isStrict() { return Optional.ofNullable(this.strict); }

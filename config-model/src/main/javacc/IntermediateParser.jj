@@ -2583,6 +2583,7 @@ String identifier() : { }
       | <PRIMARY>
       | <PROPERTIES>
       | <QUATERNARY>
+      | <QUERY>
       | <QUERYCOMMAND>
       | <RANK>
       | <MODEL>
