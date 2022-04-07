@@ -56,6 +56,7 @@ public final class Text {
         if (codepoint <= Character.MAX_HIGH_SURROGATE) return false;
         if (codepoint <  0xFDD0)   return true;
         if (codepoint <= 0xFDDF)   return false;
+        if (codepoint <  0x10000)  return true;
         if (codepoint >= 0x10FFFE) return false;
         return (codepoint & 0xffff) < 0xFFFE;
     }
