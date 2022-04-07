@@ -153,11 +153,11 @@ ResultList::operator||(const ResultList& other) const
 }
 
 ResultList
-ResultList::operator!() const {
+ResultList::operator!() && {
     ResultList result;
 
-    for (const auto & it : _results) {
-        result.add(it.first, !*it.second);
+    for (auto & it : _results) {
+        result.add(std::move(it.first), !*it.second);
     }
 
     return result;

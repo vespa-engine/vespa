@@ -111,7 +111,7 @@ class RestApiImplTest {
     @Test
     void uri_builder_creates_valid_uri_prefix() {
         RestApi restApi = RestApi.builder()
-                .addRoute(route("/test").get(ctx -> new MessageResponse(ctx.uriBuilder().toString())))
+                .addRoute(route("/test").get(ctx -> new MessageResponse(ctx.baseRequestURL().toString())))
                 .build();
         verifyJsonResponse(restApi, Method.GET, "/test", null, 200, "{\"message\":\"http://localhost\"}");
         verifyJsonResponse(restApi, Method.GET, "/test", null, 200, "{\"message\":\"http://mydomain:81\"}", Map.of("Host", "mydomain:81"));

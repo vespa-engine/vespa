@@ -37,7 +37,6 @@ import static com.yahoo.jdisc.http.server.jetty.CompletionHandlerUtils.NOOP_COMP
  * parsed the form parameters and merged them into the request's parameters.
  *
  * @author bakksjo
- * $Id$
  */
 class FormPostRequestHandler extends AbstractRequestHandler implements ContentChannel, DelegatedRequestHandler {
 
@@ -84,7 +83,6 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
         completionHandler.completed();
     }
 
-    @SuppressWarnings("try")
     @Override
     public void close(final CompletionHandler completionHandler) {
         try (final ResourceReference ref = requestReference) {

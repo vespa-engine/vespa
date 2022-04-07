@@ -1,12 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import ai.vespa.http.HttpURL.Query;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.restapi.HttpURL.Path;
+import ai.vespa.http.HttpURL.Path;
 import com.yahoo.vespa.config.server.http.HttpFetcher;
 import com.yahoo.vespa.config.server.http.RequestTimeoutException;
 import com.yahoo.vespa.config.server.http.StaticResponse;
@@ -49,13 +50,14 @@ public class HttpProxyTest {
         when(fetcher.get(actualParams.capture(), actualUrl.capture())).thenReturn(response);
 
         HttpResponse actualResponse = proxy.get(applicationMock, hostname, CLUSTERCONTROLLER_CONTAINER.serviceName,
-                                                Path.parse("clustercontroller-status/v1/clusterName"));
+                                                Path.parse("clustercontroller-status/v1/clusterName"),
+                                                Query.parse("foo=bar"));
 
         assertEquals(1, actualParams.getAllValues().size());
         assertEquals(2000, actualParams.getValue().readTimeoutMs);
 
         assertEquals(1, actualUrl.getAllValues().size());
-        assertEquals(new URL("http://" + hostname + ":" + port + "/clustercontroller-status/v1/clusterName"),
+        assertEquals(new URL("http://" + hostname + ":" + port + "/clustercontroller-status/v1/clusterName?foo=bar"),
                 actualUrl.getValue());
 
         // The HttpResponse returned by the fetcher IS the same object as the one returned by the proxy,
@@ -68,7 +70,8 @@ public class HttpProxyTest {
         when(fetcher.get(any(), any())).thenThrow(new RequestTimeoutException("timed out"));
 
         proxy.get(applicationMock, hostname, CLUSTERCONTROLLER_CONTAINER.serviceName,
-                  Path.parse("clustercontroller-status/v1/clusterName"));
+                  Path.parse("clustercontroller-status/v1/clusterName"),
+                  Query.empty());
     }
 
     private static MockModel createClusterController() {

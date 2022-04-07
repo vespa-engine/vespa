@@ -6,7 +6,7 @@ import com.yahoo.config.provision.zone.ZoneList;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.ErrorResponse;
-import com.yahoo.restapi.HttpURL;
+import ai.vespa.http.HttpURL;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
@@ -25,7 +25,7 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.restapi.HttpURL.Path.parse;
+import static ai.vespa.http.HttpURL.Path.parse;
 
 /**
  * REST API for proxying operator APIs to config servers in a given zone.

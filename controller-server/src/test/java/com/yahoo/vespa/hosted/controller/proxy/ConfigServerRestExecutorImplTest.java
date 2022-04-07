@@ -6,7 +6,7 @@ import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.restapi.HttpURL.Path;
+import ai.vespa.http.HttpURL.Path;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.yolean.concurrent.Sleeper;
 import org.apache.http.protocol.HttpContext;

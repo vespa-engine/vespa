@@ -2,10 +2,8 @@
 package com.yahoo.vespa.hosted.controller.proxy;
 
 import com.yahoo.jdisc.http.HttpRequest;
-import com.yahoo.restapi.HttpURL.Path;
-import org.junit.Rule;
+import ai.vespa.http.HttpURL.Path;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.net.URI;
 import java.util.List;

@@ -61,8 +61,6 @@ using search::attribute::IAttributeContext;
 using search::attribute::test::MockAttributeManager;
 using vespalib::string;
 
-using namespace search::index;
-
 using IATint32 = IntegerAttributeTemplate<int32_t>;
 using IntEnumAttribute = EnumAttribute<IATint32>;
 using NodeUP = Node::UP;

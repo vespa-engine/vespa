@@ -4,11 +4,9 @@ package com.yahoo.vespa.config.server.http.v2.request;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.jdisc.application.BindingMatch;
-import com.yahoo.restapi.HttpURL;
+import ai.vespa.http.HttpURL;
 import com.yahoo.restapi.Path;
 import com.yahoo.vespa.config.server.http.ContentRequest;
-import com.yahoo.vespa.config.server.http.Utils;
 
 /**
  * Requests for content and content status (v2)

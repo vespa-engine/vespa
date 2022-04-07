@@ -152,6 +152,16 @@ struct StringAttributeFiller {
     }
 };
 
+struct WsetStringAttributeFiller {
+    using ValueType = vespalib::string;
+    static void add(AttributeVector& attr, const vespalib::string& value) {
+        auto& real = downcast<StringAttribute>(attr);
+        uint32_t docid = attr.getNumDocs() - 1;
+        real.append(docid, value, 1);
+        real.commit();
+    }
+};
+
 struct IntegerAttributeFiller {
     using ValueType = int64_t;
     static void add(AttributeVector& attr, int64_t value) {
@@ -179,6 +189,17 @@ make_string_attribute(const std::string& value)
     Config cfg(BasicType::STRING, CollectionType::SINGLE);
     auto attr = AttributeFactory::createAttribute(field, cfg);
     fill<StringAttributeFiller>(*attr, value);
+    return attr;
+}
+
+AttributeVector::SP
+make_wset_string_attribute(const std::string& value)
+{
+    Config cfg(BasicType::STRING, CollectionType::WSET);
+    // fast-search is needed to trigger use of DirectAttributeBlueprint.
+    cfg.setFastSearch(true);
+    auto attr = AttributeFactory::createAttribute(field, cfg);
+    fill<WsetStringAttributeFiller>(*attr, value);
     return attr;
 }
 
@@ -403,6 +424,19 @@ TEST(AttributeBlueprintTest, empty_blueprint_is_created_when_nearest_neighbor_te
 TEST(AttributeBlueprintTest, attribute_field_blueprint_wraps_filter_search_iterator)
 {
     BlueprintFactoryFixture f(make_string_attribute("foo"));
+    SimpleStringTerm term("foo", field, 0, Weight(0));
+    auto blueprint = f.create_blueprint(term);
+
+    auto itr = blueprint->createFilterSearch(true, Blueprint::FilterConstraint::UPPER_BOUND);
+    auto& wrapper = downcast<FilterWrapper>(*itr);
+    wrapper.initRange(1, 3);
+    EXPECT_FALSE(wrapper.seek(1));
+    EXPECT_TRUE(wrapper.seek(2));
+}
+
+TEST(AttributeBlueprintTest, direct_attribute_blueprint_wraps_filter_search_iterator)
+{
+    BlueprintFactoryFixture f(make_wset_string_attribute("foo"));
     SimpleStringTerm term("foo", field, 0, Weight(0));
     auto blueprint = f.create_blueprint(term);
 

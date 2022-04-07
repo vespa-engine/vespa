@@ -14,6 +14,10 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.curator.MultiplePathsLock;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
@@ -111,6 +115,7 @@ public class CuratorDb {
 
     private final Curator curator;
     private final Duration tryLockTimeout;
+    private final StringFlag lockScheme;
 
     // For each application id (path), store the ZK node version and its deserialised data - update when version changes.
     // This will grow to keep all applications in memory, but this should be OK
@@ -120,13 +125,14 @@ public class CuratorDb {
     private final Map<Path, Pair<Integer, NavigableMap<RunId, Run>>> cachedHistoricRuns = new ConcurrentHashMap<>();
 
     @Inject
-    public CuratorDb(Curator curator) {
-        this(curator, defaultTryLockTimeout);
+    public CuratorDb(Curator curator, FlagSource flagSource) {
+        this(curator, defaultTryLockTimeout, flagSource);
     }
 
-    CuratorDb(Curator curator, Duration tryLockTimeout) {
+    CuratorDb(Curator curator, Duration tryLockTimeout, FlagSource flagSource) {
         this.curator = curator;
         this.tryLockTimeout = tryLockTimeout;
+        this.lockScheme = Flags.CONTROLLER_LOCK_SCHEME.bindTo(flagSource);
     }
 
     /** Returns all hostnames configured to be part of this ZooKeeper cluster */
@@ -144,19 +150,55 @@ public class CuratorDb {
     }
 
     public Lock lock(TenantAndApplicationId id) {
-        return curator.lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
+        switch (lockScheme.value()) {
+            case "BOTH":
+                return new MultiplePathsLock(lockPath(id), legacyLockPath(id), defaultLockTimeout.multipliedBy(2), curator);
+            case "OLD":
+                return curator.lock(legacyLockPath(id), defaultLockTimeout.multipliedBy(2));
+            case "NEW":
+                return curator.lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
+            default:
+                throw new IllegalArgumentException("Unknown lock scheme " + lockScheme.value());
+        }
     }
 
     public Lock lockForDeployment(ApplicationId id, ZoneId zone) {
-        return curator.lock(lockPath(id, zone), deployLockTimeout);
+        switch (lockScheme.value()) {
+            case "BOTH":
+                return new MultiplePathsLock(lockPath(id, zone), legacyLockPath(id, zone), deployLockTimeout, curator);
+            case "OLD":
+                return curator.lock(legacyLockPath(id, zone), deployLockTimeout);
+            case "NEW":
+                return curator.lock(lockPath(id, zone), deployLockTimeout);
+            default:
+                throw new IllegalArgumentException("Unknown lock scheme " + lockScheme.value());
+        }
     }
 
     public Lock lock(ApplicationId id, JobType type) {
-        return curator.lock(lockPath(id, type), defaultLockTimeout);
+        switch (lockScheme.value()) {
+            case "BOTH":
+                return new MultiplePathsLock(lockPath(id, type), legacyLockPath(id, type), defaultLockTimeout, curator);
+            case "OLD":
+                return curator.lock(legacyLockPath(id, type), defaultLockTimeout);
+            case "NEW":
+                return curator.lock(lockPath(id, type), defaultLockTimeout);
+            default:
+                throw new IllegalArgumentException("Unknown lock scheme " + lockScheme.value());
+        }
     }
 
     public Lock lock(ApplicationId id, JobType type, Step step) throws TimeoutException {
-        return tryLock(lockPath(id, type, step));
+        switch (lockScheme.value()) {
+            case "BOTH":
+                return tryLock(lockPath(id, type, step), legacyLockPath(id, type, step));
+            case "OLD":
+                return tryLock(legacyLockPath(id, type, step));
+            case "NEW":
+                return tryLock(lockPath(id, type, step));
+            default:
+        throw new IllegalArgumentException("Unknown lock scheme " + lockScheme.value());
+        }
     }
 
     public Lock lockRotations() {
@@ -233,6 +275,19 @@ public class CuratorDb {
     private Lock tryLock(Path path) throws TimeoutException {
         try {
             return curator.lock(path, tryLockTimeout);
+        }
+        catch (UncheckedTimeoutException e) {
+            throw new TimeoutException(e.getMessage());
+        }
+    }
+
+    /** Try locking with a low timeout, meaning it is OK to fail lock acquisition.
+     *
+     * Useful for maintenance jobs, where there is no point in running the jobs back to back.
+     */
+    private Lock tryLock(Path path, Path path2) throws TimeoutException {
+        try {
+            return new MultiplePathsLock(path, path2, tryLockTimeout, curator);
         }
         catch (UncheckedTimeoutException e) {
             throw new TimeoutException(e.getMessage());
@@ -667,30 +722,46 @@ public class CuratorDb {
                 .append(tenant.value());
     }
 
-    private Path lockPath(TenantAndApplicationId application) {
+    private Path legacyLockPath(TenantAndApplicationId application) {
         return lockPath(application.tenant())
                 .append(application.application().value());
     }
 
-    private Path lockPath(ApplicationId instance) {
-        return lockPath(TenantAndApplicationId.from(instance))
+    private Path legacyLockPath(ApplicationId instance) {
+        return legacyLockPath(TenantAndApplicationId.from(instance))
                 .append(instance.instance().value());
     }
 
-    private Path lockPath(ApplicationId instance, ZoneId zone) {
-        return lockPath(instance)
+    private Path legacyLockPath(ApplicationId instance, ZoneId zone) {
+        return legacyLockPath(instance)
                 .append(zone.environment().value())
                 .append(zone.region().value());
     }
 
-    private Path lockPath(ApplicationId instance, JobType type) {
-        return lockPath(instance)
+    private Path legacyLockPath(ApplicationId instance, JobType type) {
+        return legacyLockPath(instance)
                 .append(type.jobName());
     }
 
-    private Path lockPath(ApplicationId instance, JobType type, Step step) {
-        return lockPath(instance, type)
+    private Path legacyLockPath(ApplicationId instance, JobType type, Step step) {
+        return legacyLockPath(instance, type)
                 .append(step.name());
+    }
+
+    private Path lockPath(TenantAndApplicationId application) {
+        return lockRoot.append(application.tenant().value() + ":" + application.application().value());
+    }
+
+    private Path lockPath(ApplicationId instance, ZoneId zone) {
+        return lockRoot.append(instance.serializedForm() + ":" + zone.environment().value() + ":" + zone.region().value());
+    }
+
+    private Path lockPath(ApplicationId instance, JobType type) {
+        return lockRoot.append(instance.serializedForm() + ":" + type.jobName());
+    }
+
+    private Path lockPath(ApplicationId instance, JobType type, Step step) {
+        return lockRoot.append(instance.serializedForm() + ":" + type.jobName() + ":" + step.name());
     }
 
     private Path lockPath(String provisionId) {

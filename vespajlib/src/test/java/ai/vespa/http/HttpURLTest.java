@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.restapi;
+package ai.vespa.http;
 
+import ai.vespa.http.HttpURL.Path;
 import ai.vespa.validation.Name;
-import com.yahoo.net.DomainName;
-import com.yahoo.restapi.HttpURL.Query;
+import ai.vespa.http.HttpURL.Query;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -14,9 +14,9 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
 
-import static com.yahoo.net.DomainName.localhost;
-import static com.yahoo.restapi.HttpURL.Scheme.http;
-import static com.yahoo.restapi.HttpURL.Scheme.https;
+import static ai.vespa.http.DomainName.localhost;
+import static ai.vespa.http.HttpURL.Scheme.http;
+import static ai.vespa.http.HttpURL.Scheme.https;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -43,22 +43,22 @@ class HttpURLTest {
 
     @Test
     void testModification() {
-        HttpURL url = HttpURL.create(http, localhost).withPath(HttpURL.Path.empty(Name::of));
+        HttpURL url = HttpURL.create(http, localhost).withPath(Path.empty(Name::of));
         assertEquals(http, url.scheme());
         assertEquals(localhost, url.domain());
         assertEquals(OptionalInt.empty(), url.port());
-        assertEquals(HttpURL.Path.empty(Name::of), url.path());
+        assertEquals(Path.empty(Name::of), url.path());
         assertEquals(HttpURL.Query.empty(Name::of), url.query());
 
         url = url.withScheme(https)
                  .withDomain(DomainName.of("domain"))
                  .withPort(0)
                  .withPath(url.path().append("foo").withoutTrailingSlash())
-                 .withQuery(url.query().put("boo", "bar").add("baz"));
+                 .withQuery(url.query().add("boo", "bar").add("baz"));
         assertEquals(https, url.scheme());
         assertEquals(DomainName.of("domain"), url.domain());
         assertEquals(OptionalInt.of(0), url.port());
-        assertEquals(HttpURL.Path.parse("/foo", Name::of), url.path());
+        assertEquals(Path.parse("/foo", Name::of), url.path());
         assertEquals(HttpURL.Query.parse("boo=bar&baz", Name::of), url.query());
     }
 
@@ -107,7 +107,7 @@ class HttpURLTest {
 
     @Test
     void testPath() {
-        HttpURL.Path path = HttpURL.Path.parse("foo/bar/baz", Name::of);
+        Path path = Path.parse("foo/bar/baz", Name::of);
         List<String> expected = List.of("foo", "bar", "baz");
         assertEquals(expected, path.segments());
 
@@ -119,7 +119,7 @@ class HttpURLTest {
         assertEquals(path, path.withoutTrailingSlash().withoutTrailingSlash());
 
         assertEquals(List.of("one", "foo", "bar", "baz", "two"),
-                     HttpURL.Path.from(List.of("one")).append(path).append("two").segments());
+                     Path.empty().append(List.of("one")).append(path).append("two").segments());
 
         assertEquals(List.of(expected.get(2), expected.get(0)),
                      path.append(path).cut(2).skip(2).segments());
@@ -147,19 +147,19 @@ class HttpURLTest {
 
         assertEquals("path segment decoded cannot contain '/', but got: '/'",
                      assertThrows(IllegalArgumentException.class,
-                                  () -> HttpURL.Path.empty().append("%2525252525252525%2525252525253%25252532%252525%252534%36")).getMessage());
+                                  () -> Path.empty().append("%2525252525252525%2525252525253%25252532%252525%252534%36")).getMessage());
 
         assertEquals("path segment decoded cannot contain '?', but got: '?'",
                      assertThrows(IllegalArgumentException.class,
-                                  () -> HttpURL.Path.empty().append("?")).getMessage());
+                                  () -> Path.empty().append("?")).getMessage());
 
         assertEquals("path segment decoded cannot contain '#', but got: '#'",
                      assertThrows(IllegalArgumentException.class,
-                                  () -> HttpURL.Path.empty().append("#")).getMessage());
+                                  () -> Path.empty().append("#")).getMessage());
 
         assertEquals("path segments cannot be \"\", \".\", or \"..\", but got: '..'",
                      assertThrows(IllegalArgumentException.class,
-                                  () -> HttpURL.Path.empty().append("%2E%25252E")).getMessage());
+                                  () -> Path.empty().append("%2E%25252E")).getMessage());
     }
 
     @Test
@@ -168,35 +168,51 @@ class HttpURLTest {
         Map<String, String> expected = new LinkedHashMap<>();
         expected.put("foo", "bar");
         expected.put("baz", null);
-        assertEquals(expected, query.entries());
+        assertEquals(expected, query.lastEntries());
 
         expected.remove("baz");
-        assertEquals(expected, query.remove("baz").entries());
+        assertEquals(expected, query.remove("baz").lastEntries());
 
         expected.put("baz", null);
         expected.remove("foo");
-        assertEquals(expected, query.remove("foo").entries());
-        assertEquals(expected, Query.empty(Name::of).add("baz").entries());
+        assertEquals(expected, query.remove("foo").lastEntries());
+        assertEquals(expected, Query.empty(Name::of).set("baz").lastEntries());
 
-        assertEquals("query '?foo=bar&baz=bax&quu=fez&moo'",
-                     query.put("baz", "bax").merge(Query.from(Map.of("quu", "fez"))).add("moo").toString());
+        assertEquals("query 'foo=bar&baz=bax&quu=fez&moo'",
+                     query.set("baz", "bax").set(Map.of("quu", "fez")).set("moo").toString());
+
+        Query bloated = query.add("baz", "bax").add(Map.of("quu", List.of("fez", "pop"))).add("moo").add("moo").add("foo", "bar");
+        assertEquals("query 'foo=bar&baz&baz=bax&quu=fez&quu=pop&moo&moo&foo=bar'",
+                     bloated.toString());
+
+        assertEquals("query 'foo=bar&quu=fez&quu=pop&moo&moo&foo=bar'",
+                     bloated.remove("baz").toString());
+
+        assertEquals("query 'baz&baz=bax&quu=fez&quu=pop&moo&moo'",
+                     bloated.remove("foo").toString());
+
+        assertEquals("query 'foo=bar&baz&baz=bax&quu=fez&quu=pop&foo=bar&moo'",
+                     bloated.set("moo").toString());
+
+        assertEquals("no query",
+                     bloated.remove("foo").remove("baz").remove("quu").remove("moo").toString());
 
         assertThrows(NullPointerException.class,
                      () -> query.remove(null));
 
         assertThrows(NullPointerException.class,
-                     () -> query.add(null));
+                     () -> query.add((String) null));
 
         assertThrows(NullPointerException.class,
-                     () -> query.put(null, "hax"));
+                     () -> query.add(null, "hax"));
 
         assertThrows(NullPointerException.class,
-                     () -> query.put("hax", null));
+                     () -> query.add("hax", null));
 
         Map<String, String> names = new LinkedHashMap<>();
         names.put(null, "hax");
         assertThrows(NullPointerException.class,
-                     () -> query.merge(names));
+                     () -> query.set(names));
     }
 
 }

@@ -55,7 +55,7 @@ class HttpConfigServerClientTest {
         server.resetRequests();
 
         // Two attempts on a different IOException.
-        server.stubFor(post("/prefix/%2Froot"))
+        server.stubFor(post("/prefix/root"))
               .setResponse(okJson("{}").withFault(Fault.EMPTY_RESPONSE)
                                        .build());
         assertThrows(UncheckedIOException.class,
@@ -63,9 +63,9 @@ class HttpConfigServerClientTest {
                                                                       URI.create("http://localhost:" + server.port() + "/prefix/"))),
                                        Method.POST)
                                  .body("hello".getBytes(UTF_8))
-                                 .at("/root")
+                                 .at("root")
                                  .stream());
-        server.verify(2, postRequestedFor(urlEqualTo("/prefix/%2Froot")).withRequestBody(equalTo("hello")));
+        server.verify(2, postRequestedFor(urlEqualTo("/prefix/root")).withRequestBody(equalTo("hello")));
         server.verify(2, anyRequestedFor(anyUrl()));
         server.resetRequests();
 

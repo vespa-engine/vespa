@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.restapi;
 
+import ai.vespa.http.HttpURL;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.container.jdisc.AclMapping;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -128,12 +129,9 @@ public interface RestApi {
         Optional<RequestContent> requestContent();
         RequestContent requestContentOrThrow();
         ObjectMapper jacksonJsonMapper();
-        /**
-         * Creates a URI builder pre-initialized with scheme, host and port.
-         * Intended for response generation (e.g for interactive REST APIs).
-         * DO NOT USE FOR CUSTOM ROUTING.
-         */
-        UriBuilder uriBuilder();
+        /** Scheme, domain and port, for the original request. <em>Use this only for generating resources links, not for custom routing!</em> */
+        // TODO: this needs to include path and query as well, to be useful for generating resource links that need not be rewritten.
+        HttpURL baseRequestURL();
         AclMapping.Action aclAction();
         Optional<Principal> userPrincipal();
         Principal userPrincipalOrThrow();
@@ -154,9 +152,11 @@ public interface RestApi {
         }
 
         interface PathParameters extends Parameters {
+            HttpURL.Path getFullPath();
             Optional<HttpURL.Path> getRest();
         }
         interface QueryParameters extends Parameters {
+            HttpURL.Query getFullQuery();
             List<String> getStringList(String name);
         }
         interface Headers extends Parameters {}

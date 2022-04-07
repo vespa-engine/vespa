@@ -1,6 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.client;
 
+import ai.vespa.http.HttpURL;
+import ai.vespa.http.HttpURL.Path;
+import ai.vespa.http.HttpURL.Query;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ClassicHttpResponse;
@@ -60,11 +63,14 @@ public interface ConfigServerClient extends Closeable {
     /** Builder for a request against a given set of hosts, using this config server client. */
     interface RequestBuilder {
 
-        /** Appends to the request path. */
+        /** Appends to the request path, with no trailing slash. */
         default RequestBuilder at(String... pathSegments) { return at(List.of(pathSegments)); }
 
+        /** Appends to the request path, with no trailing slash. */
+        default RequestBuilder at(List<String> pathSegments) { return at(Path.empty().append(pathSegments).withoutTrailingSlash()); }
+
         /** Appends to the request path. */
-        RequestBuilder at(List<String> pathSegments);
+        RequestBuilder at(HttpURL.Path path);
 
         /** Sets the request body as UTF-8 application/json. */
         RequestBuilder body(byte[] json);
@@ -85,8 +91,11 @@ public interface ConfigServerClient extends Closeable {
             return parameters(Arrays.asList(pairs));
         }
 
-        /** Sets the parameter key/values for the request. Number of arguments must be even. Null values are omitted. */
+        /** Sets the parameter key/values for the request. Number of arguments must be even. Pairs with {@code null} values are omitted. */
         RequestBuilder parameters(List<String> pairs);
+
+        /** Appends all parameters from the given query. */
+        RequestBuilder parameters(Query query);
 
         /** Overrides the default socket read timeout of the request. {@code Duration.ZERO} gives infinite timeout. */
         RequestBuilder timeout(Duration timeout);

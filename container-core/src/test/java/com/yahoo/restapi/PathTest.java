@@ -4,6 +4,7 @@ package com.yahoo.restapi;
 import org.junit.Test;
 
 import java.net.URI;
+import java.util.List;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
@@ -35,7 +36,7 @@ public class PathTest {
             assertTrue(path.matches("/a/{foo}/bar/{b}/{*}"));
             assertEquals("1", path.get("foo"));
             assertEquals("fuz", path.get("b"));
-            assertEquals("/", path.getRest().raw());
+            assertEquals(List.of(), path.getRest().segments());
         }
 
         {
@@ -43,7 +44,7 @@ public class PathTest {
             assertTrue(path.matches("/a/{foo}/bar/{b}/{*}"));
             assertEquals("1", path.get("foo"));
             assertEquals("fuz", path.get("b"));
-            assertEquals("/kanoo", path.getRest().raw());
+            assertEquals(List.of("kanoo"), path.getRest().segments());
         }
 
         {
@@ -51,7 +52,7 @@ public class PathTest {
             assertTrue(path.matches("/a/{foo}/bar/{b}/{*}"));
             assertEquals("1", path.get("foo"));
             assertEquals("fuz", path.get("b"));
-            assertEquals("/kanoo/trips", path.getRest().raw());
+            assertEquals(List.of("kanoo", "trips"), path.getRest().segments());
         }
 
         {
@@ -59,7 +60,7 @@ public class PathTest {
             assertTrue(path.matches("/a/{foo}/bar/{b}/{*}"));
             assertEquals("1", path.get("foo"));
             assertEquals("fuz", path.get("b"));
-            assertEquals("/kanoo/trips/", path.getRest().raw());
+            assertEquals(List.of("kanoo", "trips"), path.getRest().segments());
         }
     }
 

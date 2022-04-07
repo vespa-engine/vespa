@@ -2,14 +2,12 @@
 package com.yahoo.vespa.hosted.controller.proxy;
 
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.restapi.HttpURL;
-import com.yahoo.restapi.HttpURL.Path;
-import org.apache.http.client.utils.URIBuilder;
+import ai.vespa.http.HttpURL;
+import ai.vespa.http.HttpURL.Path;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 
 /**

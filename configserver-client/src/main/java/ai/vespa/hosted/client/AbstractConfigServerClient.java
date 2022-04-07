@@ -1,6 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.client;
 
+import ai.vespa.hosted.client.ConfigServerClient.RequestBuilder;
+import ai.vespa.http.HttpURL;
+import ai.vespa.http.HttpURL.Path;
+import ai.vespa.http.HttpURL.Query;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.core5.http.ClassicHttpRequest;
@@ -12,14 +16,11 @@ import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
 import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
-import org.apache.hc.core5.net.URIBuilder;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
@@ -50,8 +51,11 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         Throwable thrown = null;
         for (URI host : builder.hosts) {
             ClassicHttpRequest request = ClassicRequestBuilder.create(builder.method.name())
-                    .setUri(concat(host, builder.uriBuilder))
-                    .build();
+                                                              .setUri(HttpURL.from(host)
+                                                                             .appendPath(builder.path)
+                                                                             .appendQuery(builder.query)
+                                                                             .asURI())
+                                                              .build();
             request.setEntity(builder.entity);
             try {
                 try {
@@ -87,23 +91,6 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         throw new IllegalStateException("No hosts to perform the request against");
     }
 
-    /** Append path to the given host, which may already contain a root path. */
-    static URI concat(URI host, URIBuilder pathAndQuery) {
-        URIBuilder builder = new URIBuilder(host);
-        List<String> pathSegments = new ArrayList<>(builder.getPathSegments());
-        if ( ! pathSegments.isEmpty() && pathSegments.get(pathSegments.size() - 1).isEmpty())
-            pathSegments.remove(pathSegments.size() - 1);
-        pathSegments.addAll(pathAndQuery.getPathSegments());
-        try {
-            return builder.setPathSegments(pathSegments)
-                          .setParameters(pathAndQuery.getQueryParams())
-                          .build();
-        }
-        catch (URISyntaxException e) {
-            throw new IllegalArgumentException("URISyntaxException should not be possible here", e);
-        }
-    }
-
     @Override
     public ConfigServerClient.RequestBuilder send(HostStrategy hosts, Method method) {
         return new RequestBuilder(hosts, method);
@@ -114,8 +101,8 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
 
         private final Method method;
         private final HostStrategy hosts;
-        private final URIBuilder uriBuilder = new URIBuilder();
-        private final List<String> pathSegments = new ArrayList<>();
+        private HttpURL.Path path = Path.empty();
+        private HttpURL.Query query = Query.empty();
         private HttpEntity entity;
         private RequestConfig config = ConfigServerClient.defaultRequestConfig;
         private ResponseVerifier verifier = ConfigServerClient.throwOnError;
@@ -130,8 +117,8 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         }
 
         @Override
-        public RequestBuilder at(List<String> pathSegments) {
-            this.pathSegments.addAll(pathSegments);
+        public RequestBuilder at(Path subPath) {
+            path = path.append(subPath);
             return this;
         }
 
@@ -149,7 +136,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         @Override
         public ConfigServerClient.RequestBuilder emptyParameters(List<String> keys) {
             for (String key : keys)
-                uriBuilder.setParameter(key, null);
+                query = query.add(key);
 
             return this;
         }
@@ -162,9 +149,15 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
             for (int i = 0; i < pairs.size(); ) {
                 String key = pairs.get(i++), value = pairs.get(i++);
                 if (value != null)
-                    uriBuilder.setParameter(key, value);
+                    query = query.add(key, value);
             }
 
+            return this;
+        }
+
+        @Override
+        public ConfigServerClient.RequestBuilder parameters(Query query) {
+            this.query = this.query.add(query.entries());
             return this;
         }
 
@@ -230,7 +223,6 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
 
         @Override
         public <T> T handle(ResponseHandler<T> handler) {
-            uriBuilder.setPathSegments(pathSegments);
             return execute(this,
                            (response, request) -> {
                                try {

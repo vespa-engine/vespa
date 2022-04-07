@@ -73,12 +73,14 @@ class ParsedRankProfile extends ParsedBlock {
     List<ParsedRankFunction> getFunctions() { return List.copyOf(functions.values()); }
     List<MutateOperation> getMutateOperations() { return List.copyOf(mutateOperations); }
     List<String> getInherited() { return List.copyOf(inherited); }
-    Map<String, Boolean> getFieldsWithRankFilter() { return Map.copyOf(fieldsRankFilter); }
-    Map<String, Integer> getFieldsWithRankWeight() { return Map.copyOf(fieldsRankWeight); }
-    Map<String, String> getFieldsWithRankType() { return Map.copyOf(fieldsRankType); }
-    Map<String, List<String>> getRankProperties() { return Map.copyOf(rankProperties); }
-    Map<String, Value> getConstants() { return Map.copyOf(constants); }
+
+    Map<String, Boolean> getFieldsWithRankFilter() { return Collections.unmodifiableMap(fieldsRankFilter); }
+    Map<String, Integer> getFieldsWithRankWeight() { return Collections.unmodifiableMap(fieldsRankWeight); }
+    Map<String, String> getFieldsWithRankType() { return Collections.unmodifiableMap(fieldsRankType); }
+    Map<String, List<String>> getRankProperties() { return Collections.unmodifiableMap(rankProperties); }
+    Map<String, Value> getConstants() { return Collections.unmodifiableMap(constants); }
     Map<Reference, TensorType> getInputs() { return Collections.unmodifiableMap(inputs); }
+
     Optional<String> getInheritedSummaryFeatures() { return Optional.ofNullable(this.inheritedSummaryFeatures); }
     Optional<String> getSecondPhaseExpression() { return Optional.ofNullable(this.secondPhaseExpression); }
     Optional<Boolean> isStrict() { return Optional.ofNullable(this.strict); }

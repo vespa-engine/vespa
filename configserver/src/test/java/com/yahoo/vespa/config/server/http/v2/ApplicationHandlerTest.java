@@ -15,7 +15,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest.Method;
-import com.yahoo.restapi.HttpURL;
+import ai.vespa.http.HttpURL;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockLogRetriever;
@@ -362,17 +362,18 @@ public class ApplicationHandlerTest {
                                              "<html>" +
                                              "host=" + invoc.getArgument(1, String.class) + "," +
                                              "service=" + invoc.getArgument(2, String.class) + "," +
-                                             "path=" + invoc.getArgument(3, HttpURL.Path.class) +
+                                             "path=" + invoc.getArgument(3, HttpURL.Path.class) + "," +
+                                             "query=" + invoc.getArgument(4, HttpURL.Query.class) +
                                              "</html>"))
-                .when(mockHttpProxy).get(any(), any(), any(), any());
+                .when(mockHttpProxy).get(any(), any(), any(), any(), any());
 
-        HttpResponse response = mockHandler.handle(createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/service/container-clustercontroller/" + host + "/status/some/path/clusterName1", GET));
-        assertHttpStatusCodeAndMessage(response, 200, "text/html", "<html>host=foo.yahoo.com,service=container-clustercontroller,path=path '/clustercontroller-status/v1/some/path/clusterName1'</html>");
+        HttpResponse response = mockHandler.handle(createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/service/container-clustercontroller/" + host + "/status/some/path/clusterName1?foo=bar", GET));
+        assertHttpStatusCodeAndMessage(response, 200, "text/html", "<html>host=foo.yahoo.com,service=container-clustercontroller,path=path '/clustercontroller-status/v1/some/path/clusterName1',query=query 'foo=bar'</html>");
 
-        response = mockHandler.handle(createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/service/distributor/" + host + "/status/something", GET));
-        assertHttpStatusCodeAndMessage(response, 200, "text/html", "<html>host=foo.yahoo.com,service=distributor,path=path '/something'</html>");
+        response = mockHandler.handle(createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/service/distributor/" + host + "/status/something?foo=bar", GET));
+        assertHttpStatusCodeAndMessage(response, 200, "text/html", "<html>host=foo.yahoo.com,service=distributor,path=path '/something',query=query 'foo=bar'</html>");
 
-        response = mockHandler.handle(createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/service/fake-service/" + host + "/status/something", GET));
+        response = mockHandler.handle(createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/service/fake-service/" + host + "/status/something?foo=bar", GET));
         assertHttpStatusCodeAndMessage(response, 404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No status page for service: fake-service\"}");
     }
 

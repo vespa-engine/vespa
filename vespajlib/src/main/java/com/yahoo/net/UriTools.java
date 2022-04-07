@@ -6,7 +6,7 @@ import java.net.URI;
 /**
  * Utility methods for working with URIs.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public final class UriTools {
     private UriTools() {

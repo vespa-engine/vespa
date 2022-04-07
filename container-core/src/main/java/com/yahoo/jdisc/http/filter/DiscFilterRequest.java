@@ -52,7 +52,7 @@ public class DiscFilterRequest {
         untreatedHeaders = new HeaderFields();
         parent.copyHeaders(untreatedHeaders);
 
-        untreatedParams = new HashMap<>(parent.parameters());
+        untreatedParams = new HashMap<>(parent.parameters()); // TODO jonmv: probably a bug that this is not deep-copied
     }
 
     public String getMethod() { return parent.getMethod().name(); }
