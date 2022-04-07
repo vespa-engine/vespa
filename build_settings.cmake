@@ -138,6 +138,14 @@ if(VALGRIND_EXECUTABLE)
     set(VALGRIND_OPTIONS "--leak-check=yes --error-exitcode=1 --run-libc-freeres=no --track-origins=yes --suppressions=${VALGRIND_SUPPRESSIONS_FILE}")
     set(VALGRIND_COMMAND "${VALGRIND_EXECUTABLE} ${VALGRIND_OPTIONS}")
 endif()
+# Automatically set sanitizer suppressions file and arguments for unit tests
+if(VESPA_USE_SANITIZER)
+    if(VESPA_USE_SANITIZER STREQUAL "thread")
+        set(VESPA_SANITIZER_SUPPRESSIONS_FILE "${PROJECT_SOURCE_DIR}/tsan-suppressions.txt")
+        # Maximize the amount of history we can track, including mutex order inversion histories
+        set(VESPA_SANITIZER_ENV "TSAN_OPTIONS=suppressions=${VESPA_SANITIZER_SUPPRESSIONS_FILE} history_size=7 detect_deadlocks=1 second_deadlock_stack=1")
+    endif()
+endif()
 
 if(VESPA_LLVM_VERSION)
 else()
