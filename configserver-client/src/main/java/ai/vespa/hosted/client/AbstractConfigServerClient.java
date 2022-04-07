@@ -52,7 +52,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
             ClassicHttpRequest request = ClassicRequestBuilder.create(builder.method.name())
                                                               .setUri(HttpURL.from(host)
                                                                              .appendPath(builder.path)
-                                                                             .mergeQuery(builder.query)
+                                                                             .appendQuery(builder.query)
                                                                              .asURI())
                                                               .build();
             request.setEntity(builder.entity);
@@ -148,7 +148,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
             for (int i = 0; i < pairs.size(); ) {
                 String key = pairs.get(i++), value = pairs.get(i++);
                 if (value != null)
-                    query = query.put(key, value);
+                    query = query.add(key, value);
             }
 
             return this;

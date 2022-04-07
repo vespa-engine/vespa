@@ -3,6 +3,7 @@ package ai.vespa.hosted.client;
 
 import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Path;
+import ai.vespa.http.HttpURL.Query;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ClassicHttpResponse;
@@ -66,7 +67,7 @@ public interface ConfigServerClient extends Closeable {
         default RequestBuilder at(String... pathSegments) { return at(List.of(pathSegments)); }
 
         /** Appends to the request path, with no trailing slash. */
-        default RequestBuilder at(List<String> pathSegments) { return at(Path.from(pathSegments).withoutTrailingSlash()); }
+        default RequestBuilder at(List<String> pathSegments) { return at(Path.empty().append(pathSegments).withoutTrailingSlash()); }
 
         /** Appends to the request path. */
         RequestBuilder at(HttpURL.Path path);
