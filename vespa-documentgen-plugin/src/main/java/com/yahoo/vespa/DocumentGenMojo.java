@@ -8,14 +8,15 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.PositionDataType;
-import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.StructuredDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.documentmodel.NewDocumentType;
+import com.yahoo.documentmodel.OwnedStructDataType;
 import com.yahoo.documentmodel.VespaDocumentType;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.ApplicationBuilder;
@@ -481,7 +482,12 @@ public class DocumentGenMojo extends AbstractMojo {
         }
         docTypes.put(docType.getName(), packageName+"."+className);
         for (DataType exportedStruct : exportedStructs) {
-            structTypes.put(exportedStruct.getName(), packageName+"."+className+"."+className(exportedStruct.getName()));
+            String fullName = packageName+"."+className+"."+className(exportedStruct.getName());
+            structTypes.put(exportedStruct.getName(), fullName);
+            if (exportedStruct instanceof OwnedStructDataType) {
+                var owned = (OwnedStructDataType) exportedStruct;
+                structTypes.put(owned.getUniqueName(), fullName);
+            }
         }
         out.write("}\n");
     }
