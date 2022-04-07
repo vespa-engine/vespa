@@ -333,7 +333,6 @@ template <typename SC>
 class FlagAttributeIteratorT : public FlagAttributeIterator
 {
 private:
-    using Attribute = typename SC::Attribute;
     void doSeek(uint32_t docId) override;
 
 protected:
@@ -366,7 +365,6 @@ private:
     using FlagAttributeIteratorT<SC>::setDocId;
     using FlagAttributeIteratorT<SC>::setAtEnd;
     using FlagAttributeIteratorT<SC>::isAtEnd;
-    using Attribute = typename SC::Attribute;
     using Trinary=vespalib::Trinary;
     void doSeek(uint32_t docId) override;
     Trinary is_strict() const override { return Trinary::True; }

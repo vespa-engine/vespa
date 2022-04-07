@@ -7,7 +7,6 @@
 namespace search {
 
 typedef MultiValueNumericAttribute< IntegerAttributeTemplate<int8_t>, multivalue::Value<int8_t> > FlagBaseImpl;
-typedef MultiValueNumericAttribute< IntegerAttributeTemplate<int8_t>, multivalue::Value<int8_t> > HugeFlagBaseImpl;
 
 template <typename B>
 class FlagAttributeT : public B {
@@ -15,22 +14,6 @@ public:
     FlagAttributeT(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
 private:
     typedef AttributeVector::DocId DocId;
-    using BaseSC = attribute::MultiNumericSearchContext<typename B::BaseType, typename B::WType>;
-    class SearchContext : public BaseSC {
-    public:
-        typedef FlagAttributeT<B> Attribute;
-        using MvMappingReadView = attribute::MultiValueMappingReadView<typename B::WType>;
-        SearchContext(std::unique_ptr<QueryTermSimple> qTerm, const FlagAttributeT<B> & toBeSearched, MvMappingReadView mv_mapping_read_view);
-
-        std::unique_ptr<queryeval::SearchIterator>
-        createIterator(fef::TermFieldMatchData * matchData, bool strict) override;
-
-    private:
-        bool _zeroHits;
-
-        template <class SC> friend class FlagAttributeIteratorT;
-        template <class SC> friend class FlagAttributeIteratorStrict;
-    };
     bool onLoad(vespalib::Executor *executor) override;
     bool onLoadEnumerated(ReaderBase &attrReader) override;
     std::unique_ptr<attribute::SearchContext>
@@ -50,20 +33,14 @@ private:
     void resizeBitVectors(uint32_t neededSize);
     void removeOldGenerations(vespalib::GenerationHandler::generation_t firstUsed) override;
     uint32_t getOffset(int8_t value) const { return value + 128; }
-    BitVector * getBitVector(typename B::BaseType value) const {
-        return _bitVectors[value + 128];
-    }
 
     vespalib::GenerationHolder               _bitVectorHolder;
     std::vector<std::shared_ptr<BitVector> > _bitVectorStore;
     std::vector<BitVector *>                 _bitVectors;
     uint32_t                                 _bitVectorSize;
-    template <class SC> friend class FlagAttributeIteratorT;
-    template <class SC> friend class FlagAttributeIteratorStrict;
 };
 
 typedef FlagAttributeT<FlagBaseImpl> FlagAttribute;
-typedef FlagAttributeT<HugeFlagBaseImpl> HugeFlagAttribute;
 
 } // namespace search
 
