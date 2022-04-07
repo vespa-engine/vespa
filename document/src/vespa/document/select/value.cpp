@@ -380,11 +380,27 @@ StructValue::operator==(const Value& value) const
 }
 
 void
-StructValue::print(std::ostream& out, bool verbose,
-                    const std::string& indent) const
+StructValue::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     (void) verbose; (void) indent;
     out << "<no struct representation in language yet>";
+}
+
+namespace {
+
+fieldvalue::VariableMap
+cloneMap(const fieldvalue::VariableMap &map) {
+    fieldvalue::VariableMap m;
+    for (const auto & item : map) {
+        if (item.second.key) {
+            m.emplace(item.first, fieldvalue::IndexValue(*item.second.key));
+        } else {
+            m.emplace(item.first, fieldvalue::IndexValue(item.second.index));
+        }
+    }
+    return m;
+}
+
 }
 
 template <typename Predicate>
@@ -415,7 +431,7 @@ ArrayValue::doCompare(const Value& value, const Predicate& cmp) const
             if (item.first.empty()) {
                 resultForNoVariables.set(result.toEnum());
             } else {
-                results.add(item.first, result);
+                results.add(cloneMap(item.first), result);
             }
         }
         for (uint32_t i(0); i < resultForNoVariables.size(); i++) {
