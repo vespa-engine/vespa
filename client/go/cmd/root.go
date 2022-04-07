@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -19,6 +18,7 @@ import (
 	"github.com/mattn/go-colorable"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/vespa-engine/vespa/client/go/build"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/version"
@@ -44,7 +44,6 @@ type CLI struct {
 	Stderr      io.Writer
 
 	cmd     *cobra.Command
-	flags   *Flags
 	config  *Config
 	version version.Version
 
@@ -52,17 +51,6 @@ type CLI struct {
 	exec       executor
 	isTerminal func() bool
 	spinner    func(w io.Writer, message string, fn func() error) error
-}
-
-// Flags holds the global Flags of Vespa CLI.
-type Flags struct {
-	target      string
-	application string
-	instance    string
-	zone        string
-	waitSecs    int
-	color       string
-	quiet       bool
 }
 
 // ErrCLI is an error returned to the user. It wraps an exit status, a regular error and optional hints for resolving
@@ -136,7 +124,6 @@ Vespa documentation: https://docs.vespa.ai`,
 		exec:       &execSubprocess{},
 	}
 	cli.isTerminal = func() bool { return isTerminal(cli.Stdout) && isTerminal(cli.Stderr) }
-	cli.configureFlags()
 	if err := cli.loadConfig(); err != nil {
 		return nil, err
 	}
@@ -147,15 +134,7 @@ Vespa documentation: https://docs.vespa.ai`,
 }
 
 func (c *CLI) loadConfig() error {
-	bindings := NewConfigBindings()
-	bindings.bindFlag(targetFlag, c.cmd)
-	bindings.bindFlag(applicationFlag, c.cmd)
-	bindings.bindFlag(instanceFlag, c.cmd)
-	bindings.bindFlag(zoneFlag, c.cmd)
-	bindings.bindFlag(waitFlag, c.cmd)
-	bindings.bindFlag(colorFlag, c.cmd)
-	bindings.bindFlag(quietFlag, c.cmd)
-	config, err := loadConfig(c.Environment, bindings)
+	config, err := loadConfig(c.Environment, c.configureFlags())
 	if err != nil {
 		return err
 	}
@@ -170,7 +149,7 @@ func (c *CLI) configureOutput(cmd *cobra.Command, args []string) error {
 	if f, ok := c.Stderr.(*os.File); ok {
 		c.Stderr = colorable.NewColorable(f)
 	}
-	if quiet, _ := c.config.get(quietFlag); quiet == "true" {
+	if c.config.isQuiet() {
 		c.Stdout = io.Discard
 	}
 	log.SetFlags(0) // No timestamps
@@ -185,29 +164,37 @@ func (c *CLI) configureOutput(cmd *cobra.Command, args []string) error {
 		colorize = true
 	case "never":
 	default:
-		return errHint(fmt.Errorf("invalid value for %s option", colorFlag), "Must be \"auto\", \"never\" or \"always\"")
+		return errHint(fmt.Errorf("invalid value for option %s: %q", colorFlag, colorValue), "Must be \"auto\", \"never\" or \"always\"")
 	}
 	color.NoColor = !colorize
 	return nil
 }
 
-func (c *CLI) configureFlags() {
-	flags := Flags{}
-	c.cmd.PersistentFlags().StringVarP(&flags.target, targetFlag, "t", "local", "The name or URL of the recipient of this command")
-	c.cmd.PersistentFlags().StringVarP(&flags.application, applicationFlag, "a", "", "The application to manage")
-	c.cmd.PersistentFlags().StringVarP(&flags.instance, instanceFlag, "i", "", "The instance of the application to manage")
-	c.cmd.PersistentFlags().StringVarP(&flags.zone, zoneFlag, "z", "", "The zone to use. This defaults to a dev zone")
-	c.cmd.PersistentFlags().IntVarP(&flags.waitSecs, waitFlag, "w", 0, "Number of seconds to wait for a service to become ready")
-	c.cmd.PersistentFlags().StringVarP(&flags.color, colorFlag, "c", "auto", "Whether to use colors in output.")
-	c.cmd.PersistentFlags().BoolVarP(&flags.quiet, quietFlag, "q", false, "Quiet mode. Only errors will be printed")
-	c.flags = &flags
+func (c *CLI) configureFlags() *pflag.FlagSet {
+	var (
+		target      string
+		application string
+		instance    string
+		zone        string
+		waitSecs    int
+		color       string
+		quiet       bool
+	)
+	c.cmd.PersistentFlags().StringVarP(&target, targetFlag, "t", "local", "The name or URL of the recipient of this command")
+	c.cmd.PersistentFlags().StringVarP(&application, applicationFlag, "a", "", "The application to manage")
+	c.cmd.PersistentFlags().StringVarP(&instance, instanceFlag, "i", "", "The instance of the application to manage")
+	c.cmd.PersistentFlags().StringVarP(&zone, zoneFlag, "z", "", "The zone to use. This defaults to a dev zone")
+	c.cmd.PersistentFlags().IntVarP(&waitSecs, waitFlag, "w", 0, "Number of seconds to wait for a service to become ready")
+	c.cmd.PersistentFlags().StringVarP(&color, colorFlag, "c", "auto", "Whether to use colors in output.")
+	c.cmd.PersistentFlags().BoolVarP(&quiet, quietFlag, "q", false, "Quiet mode. Only errors will be printed")
+	return c.cmd.PersistentFlags()
 }
 
 func (c *CLI) configureSpinner() {
 	// Explicitly disable spinner for Screwdriver. It emulates a tty but
 	// \r result in a newline, and output gets truncated.
 	_, screwdriver := c.Environment["SCREWDRIVER"]
-	if c.flags.quiet || !c.isTerminal() || screwdriver {
+	if c.config.isQuiet() || !c.isTerminal() || screwdriver {
 		c.spinner = func(w io.Writer, message string, fn func() error) error {
 			return fn()
 		}
@@ -313,7 +300,7 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions) (vespa.Ta
 	if err != nil {
 		return nil, err
 	}
-	deployment, err := c.config.deploymentIn(c.flags.zone, system)
+	deployment, err := c.config.deploymentIn(system)
 	if err != nil {
 		return nil, err
 	}
@@ -403,9 +390,12 @@ func (c *CLI) system(targetType string) (vespa.System, error) {
 // function blocks according to the wait period configured in this CLI. The parameter sessionOrRunID specifies either
 // the session ID (local target) or run ID (cloud target) to wait for.
 func (c *CLI) service(target vespa.Target, name string, sessionOrRunID int64, cluster string) (*vespa.Service, error) {
-	timeout := time.Duration(c.flags.waitSecs) * time.Second
+	timeout, err := c.config.timeout()
+	if err != nil {
+		return nil, err
+	}
 	if timeout > 0 {
-		log.Printf("Waiting up to %s %s for %s service to become available ...", color.CyanString(strconv.Itoa(c.flags.waitSecs)), color.CyanString("seconds"), color.CyanString(name))
+		log.Printf("Waiting up to %s for %s service to become available ...", color.CyanString(timeout.String()), color.CyanString(name))
 	}
 	s, err := target.Service(name, timeout, sessionOrRunID, cluster)
 	if err != nil {
@@ -414,13 +404,17 @@ func (c *CLI) service(target vespa.Target, name string, sessionOrRunID int64, cl
 	return s, nil
 }
 
-func (c *CLI) createDeploymentOptions(pkg vespa.ApplicationPackage, target vespa.Target) vespa.DeploymentOptions {
+func (c *CLI) createDeploymentOptions(pkg vespa.ApplicationPackage, target vespa.Target) (vespa.DeploymentOptions, error) {
+	timeout, err := c.config.timeout()
+	if err != nil {
+		return vespa.DeploymentOptions{}, err
+	}
 	return vespa.DeploymentOptions{
 		ApplicationPackage: pkg,
 		Target:             target,
-		Timeout:            time.Duration(c.flags.waitSecs) * time.Second,
+		Timeout:            timeout,
 		HTTPClient:         c.httpClient,
-	}
+	}, nil
 }
 
 // isCI returns true if running inside a continuous integration environment.
@@ -520,9 +514,25 @@ func athenzKeyPair() (KeyPair, error) {
 	return KeyPair{KeyPair: kp, CertificateFile: certFile, PrivateKeyFile: keyFile}, nil
 }
 
-func applicationSource(args []string) string {
-	if len(args) > 0 {
-		return args[0]
+// applicationPackageFrom returns an application loaded from args. If args is empty, the application package is loaded
+// from the working directory. If requirePackaging is true, the application package is required to be packaged with mvn
+// package.
+func (c *CLI) applicationPackageFrom(args []string, requirePackaging bool) (vespa.ApplicationPackage, error) {
+	path := "."
+	if len(args) == 1 {
+		path = args[0]
+		stat, err := os.Stat(path)
+		if err != nil {
+			return vespa.ApplicationPackage{}, err
+		}
+		if stat.IsDir() {
+			// Using an explicit application directory, look for local config in that directory too
+			if err := c.config.loadLocalConfigFrom(path, false, false); err != nil {
+				return vespa.ApplicationPackage{}, err
+			}
+		}
+	} else if len(args) > 1 {
+		return vespa.ApplicationPackage{}, fmt.Errorf("expected 0 or 1 arguments, got %d", len(args))
 	}
-	return "."
+	return vespa.FindApplicationPackage(path, requirePackaging)
 }

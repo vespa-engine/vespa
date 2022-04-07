@@ -8,52 +8,87 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vespa-engine/vespa/client/go/mock"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 func TestConfig(t *testing.T) {
-	assertConfigCommandErr(t, "Error: invalid option or value: \"foo\": \"bar\"\n", "config", "set", "foo", "bar")
-	assertConfigCommand(t, "foo = <unset>\n", "config", "get", "foo")
-	assertConfigCommand(t, "target = local\n", "config", "get", "target")
-	assertConfigCommand(t, "", "config", "set", "target", "hosted")
-	assertConfigCommand(t, "target = hosted\n", "config", "get", "target")
-	assertConfigCommand(t, "", "config", "set", "target", "cloud")
-	assertConfigCommand(t, "target = cloud\n", "config", "get", "target")
-	assertConfigCommand(t, "", "config", "set", "target", "http://127.0.0.1:8080")
-	assertConfigCommand(t, "", "config", "set", "target", "https://127.0.0.1")
-	assertConfigCommand(t, "target = https://127.0.0.1\n", "config", "get", "target")
+	configHome := t.TempDir()
+	assertConfigCommandErr(t, configHome, "Error: invalid option or value: foo = bar\n", "config", "set", "foo", "bar")
+	assertConfigCommand(t, configHome, "foo = <unset>\n", "config", "get", "foo")
+	assertConfigCommand(t, configHome, "target = local\n", "config", "get", "target")
+	assertConfigCommand(t, configHome, "", "config", "set", "target", "hosted")
+	assertConfigCommand(t, configHome, "target = hosted\n", "config", "get", "target")
+	assertConfigCommand(t, configHome, "", "config", "set", "target", "cloud")
+	assertConfigCommand(t, configHome, "target = cloud\n", "config", "get", "target")
+	assertConfigCommand(t, configHome, "", "config", "set", "target", "http://127.0.0.1:8080")
+	assertConfigCommand(t, configHome, "", "config", "set", "target", "https://127.0.0.1")
+	assertConfigCommand(t, configHome, "target = https://127.0.0.1\n", "config", "get", "target")
 
-	assertConfigCommandErr(t, "Error: invalid application: \"foo\"\n", "config", "set", "application", "foo")
-	assertConfigCommand(t, "application = <unset>\n", "config", "get", "application")
-	assertConfigCommand(t, "", "config", "set", "application", "t1.a1.i1")
-	assertConfigCommand(t, "application = t1.a1.i1\n", "config", "get", "application")
+	assertConfigCommandErr(t, configHome, "Error: invalid application: \"foo\"\n", "config", "set", "application", "foo")
+	assertConfigCommand(t, configHome, "application = <unset>\n", "config", "get", "application")
+	assertConfigCommand(t, configHome, "", "config", "set", "application", "t1.a1.i1")
+	assertConfigCommand(t, configHome, "application = t1.a1.i1\n", "config", "get", "application")
 
-	assertConfigCommand(t, "", "config", "set", "wait", "60")
-	assertConfigCommandErr(t, "Error: wait option must be an integer >= 0, got \"foo\"\n", "config", "set", "wait", "foo")
-	assertConfigCommand(t, "wait = 60\n", "config", "get", "wait")
+	assertConfigCommand(t, configHome, "", "config", "set", "wait", "60")
+	assertConfigCommandErr(t, configHome, "Error: wait option must be an integer >= 0, got \"foo\"\n", "config", "set", "wait", "foo")
+	assertConfigCommand(t, configHome, "wait = 60\n", "config", "get", "wait")
+	assertConfigCommand(t, configHome, "wait = 30\n", "config", "get", "--wait", "30", "wait") // flag overrides global config
 
-	assertConfigCommand(t, "", "config", "set", "quiet", "true")
-	assertConfigCommand(t, "", "config", "set", "quiet", "false")
+	assertConfigCommand(t, configHome, "", "config", "set", "quiet", "true")
+	assertConfigCommand(t, configHome, "", "config", "set", "quiet", "false")
 
-	assertConfigCommand(t, "", "config", "set", "instance", "i2")
-	assertConfigCommand(t, "instance = i2\n", "config", "get", "instance")
+	assertConfigCommand(t, configHome, "", "config", "set", "instance", "i2")
+	assertConfigCommand(t, configHome, "instance = i2\n", "config", "get", "instance")
 
-	assertConfigCommand(t, "", "config", "set", "application", "t1.a1")
-	assertConfigCommand(t, "application = t1.a1.default\n", "config", "get", "application")
+	assertConfigCommand(t, configHome, "", "config", "set", "application", "t1.a1")
+	assertConfigCommand(t, configHome, "application = t1.a1.default\n", "config", "get", "application")
 }
 
-func assertConfigCommand(t *testing.T, expected string, args ...string) {
-	assertEnvConfigCommand(t, expected, nil, args...)
+func TestLocalConfig(t *testing.T) {
+	configHome := t.TempDir()
+	assertConfigCommand(t, configHome, "", "config", "set", "instance", "main")
+
+	// Change directory to an application package and write local configuration
+	_, rootDir := mock.ApplicationPackageDir(t, false, false)
+	wd, err := os.Getwd()
+	require.Nil(t, err)
+	t.Cleanup(func() { os.Chdir(wd) })
+	require.Nil(t, os.Chdir(rootDir))
+	assertConfigCommand(t, configHome, "", "config", "set", "--local", "instance", "foo")
+	assertConfigCommand(t, configHome, "instance = foo\n", "config", "get", "instance")
+	assertConfigCommand(t, configHome, "instance = bar\n", "config", "get", "--instance", "bar", "instance") // flag overrides local config
+
+	// get --local prints only options set in local config
+	assertConfigCommand(t, configHome, "", "config", "set", "--local", "target", "hosted")
+	assertConfigCommand(t, configHome, "instance = foo\ntarget = hosted\n", "config", "get", "--local")
+
+	// only locally set options are written
+	localConfig, err := os.ReadFile(filepath.Join(rootDir, ".vespa", "config.yaml"))
+	require.Nil(t, err)
+	assert.Equal(t, "instance: foo\ntarget: hosted\n", string(localConfig))
+
+	// Changing back to original directory reads from global config
+	require.Nil(t, os.Chdir(wd))
+	assertConfigCommand(t, configHome, "instance = main\n", "config", "get", "instance")
 }
 
-func assertEnvConfigCommand(t *testing.T, expected string, env []string, args ...string) {
+func assertConfigCommand(t *testing.T, configHome, expected string, args ...string) {
+	t.Helper()
+	assertEnvConfigCommand(t, configHome, expected, nil, args...)
+}
+
+func assertEnvConfigCommand(t *testing.T, configHome, expected string, env []string, args ...string) {
+	t.Helper()
+	env = append(env, "VESPA_CLI_HOME="+configHome)
 	cli, stdout, _ := newTestCLI(t, env...)
 	err := cli.Run(args...)
 	assert.Nil(t, err)
 	assert.Equal(t, expected, stdout.String())
 }
 
-func assertConfigCommandErr(t *testing.T, expected string, args ...string) {
+func assertConfigCommandErr(t *testing.T, configHome, expected string, args ...string) {
+	t.Helper()
 	cli, _, stderr := newTestCLI(t)
 	err := cli.Run(args...)
 	assert.NotNil(t, err)

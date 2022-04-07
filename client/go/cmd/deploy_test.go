@@ -66,7 +66,7 @@ func TestDeployApplicationDirectoryWithPomAndEmptyTarget(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
 	assert.NotNil(t, cli.Run("deploy", "testdata/applications/withEmptyTarget"))
 	assert.Equal(t,
-		"Error: pom.xml exists but no target/application.zip. Run mvn package first\n",
+		"Error: found pom.xml, but target/application.zip does not exist: run 'mvn package' first\n",
 		stderr.String())
 }
 

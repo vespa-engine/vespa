@@ -196,7 +196,8 @@ func copyFile(src *zip.File, dst string) error {
 	return err
 }
 
-// FindApplicationPackage finds the path to an application package from the zip file or directory zipOrDir.
+// FindApplicationPackage finds the path to an application package from the zip file or directory zipOrDir. If
+// requirePackaging is true, the application package is required to be packaged with mvn package.
 func FindApplicationPackage(zipOrDir string, requirePackaging bool) (ApplicationPackage, error) {
 	if isZip(zipOrDir) {
 		return ApplicationPackage{Path: zipOrDir}, nil
@@ -210,7 +211,7 @@ func FindApplicationPackage(zipOrDir string, requirePackaging bool) (Application
 			return ApplicationPackage{Path: zip}, nil
 		}
 		if requirePackaging {
-			return ApplicationPackage{}, errors.New("pom.xml exists but no target/application.zip. Run mvn package first")
+			return ApplicationPackage{}, errors.New("found pom.xml, but target/application.zip does not exist: run 'mvn package' first")
 		}
 	}
 	if path := filepath.Join(zipOrDir, "src", "main", "application"); util.PathExists(path) {

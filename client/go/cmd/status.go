@@ -7,8 +7,6 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"strconv"
-	"time"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -76,9 +74,12 @@ func printServiceStatus(cli *CLI, name string) error {
 	if err != nil {
 		return err
 	}
-	timeout := time.Duration(cli.flags.waitSecs) * time.Second
+	timeout, err := cli.config.timeout()
+	if err != nil {
+		return err
+	}
 	if timeout > 0 {
-		log.Printf("Waiting up to %s %s for service to become ready ...", color.CyanString(strconv.Itoa(cli.flags.waitSecs)), color.CyanString("seconds"))
+		log.Printf("Waiting up to %s for service to become ready ...", color.CyanString(timeout.String()))
 	}
 	s, err := t.Service(name, timeout, 0, "")
 	if err != nil {

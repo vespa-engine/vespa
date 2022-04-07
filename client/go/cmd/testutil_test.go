@@ -6,12 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/spf13/viper"
 	"github.com/vespa-engine/vespa/client/go/mock"
 )
 
 func newTestCLI(t *testing.T, envVars ...string) (*CLI, *bytes.Buffer, *bytes.Buffer) {
-	t.Cleanup(viper.Reset)
 	homeDir := filepath.Join(t.TempDir(), ".vespa")
 	cacheDir := filepath.Join(t.TempDir(), ".cache", "vespa")
 	env := []string{"VESPA_CLI_HOME=" + homeDir, "VESPA_CLI_CACHE_DIR=" + cacheDir}

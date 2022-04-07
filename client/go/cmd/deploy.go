@@ -48,7 +48,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			pkg, err := vespa.FindApplicationPackage(applicationSource(args), true)
+			pkg, err := cli.applicationPackageFrom(args, true)
 			if err != nil {
 				return err
 			}
@@ -56,7 +56,10 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 			if err != nil {
 				return err
 			}
-			opts := cli.createDeploymentOptions(pkg, target)
+			opts, err := cli.createDeploymentOptions(pkg, target)
+			if err != nil {
+				return err
+			}
 			if versionArg != "" {
 				version, err := version.Parse(versionArg)
 				if err != nil {
@@ -105,7 +108,7 @@ func newPrepareCmd(cli *CLI) *cobra.Command {
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			pkg, err := vespa.FindApplicationPackage(applicationSource(args), true)
+			pkg, err := cli.applicationPackageFrom(args, true)
 			if err != nil {
 				return fmt.Errorf("could not find application package: %w", err)
 			}
@@ -113,7 +116,10 @@ func newPrepareCmd(cli *CLI) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			opts := cli.createDeploymentOptions(pkg, target)
+			opts, err := cli.createDeploymentOptions(pkg, target)
+			if err != nil {
+				return err
+			}
 			var result vespa.PrepareResult
 			err = cli.spinner(cli.Stderr, "Uploading application package ...", func() error {
 				result, err = vespa.Prepare(opts)
@@ -139,7 +145,7 @@ func newActivateCmd(cli *CLI) *cobra.Command {
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			pkg, err := vespa.FindApplicationPackage(applicationSource(args), true)
+			pkg, err := cli.applicationPackageFrom(args, true)
 			if err != nil {
 				return fmt.Errorf("could not find application package: %w", err)
 			}
@@ -151,7 +157,10 @@ func newActivateCmd(cli *CLI) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			opts := cli.createDeploymentOptions(pkg, target)
+			opts, err := cli.createDeploymentOptions(pkg, target)
+			if err != nil {
+				return err
+			}
 			err = vespa.Activate(sessionID, opts)
 			if err != nil {
 				return err
@@ -163,7 +172,11 @@ func newActivateCmd(cli *CLI) *cobra.Command {
 }
 
 func waitForQueryService(cli *CLI, target vespa.Target, sessionOrRunID int64) error {
-	if cli.flags.waitSecs > 0 {
+	timeout, err := cli.config.timeout()
+	if err != nil {
+		return err
+	}
+	if timeout > 0 {
 		log.Println()
 		_, err := cli.service(target, vespa.QueryService, sessionOrRunID, "")
 		return err

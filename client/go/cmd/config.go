@@ -13,9 +13,11 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/vespa-engine/vespa/client/go/auth/auth0"
 	"github.com/vespa-engine/vespa/client/go/util"
@@ -38,7 +40,21 @@ future invocations the flag can then be omitted as it is read from the config
 file instead.
 
 Configuration is written to $HOME/.vespa by default. This path can be
-overridden by setting the VESPA_CLI_HOME environment variable.`,
+overridden by setting the VESPA_CLI_HOME environment variable.
+
+When configuring a local option, the configuration is written to
+[working-directory]/.vespa, where working directory is assumed to be Vespa
+application directory. This allows you have separate configuration options per
+application.
+
+Vespa CLI chooses the value for a given option in the following order, from
+most to least preferred:
+
+1. flag value specified on the command line
+2. local config value
+3. global config value
+4. default value
+`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      false,
 		Args:              cobra.MinimumNArgs(1),
@@ -49,7 +65,8 @@ overridden by setting the VESPA_CLI_HOME environment variable.`,
 }
 
 func newConfigSetCmd(cli *CLI) *cobra.Command {
-	return &cobra.Command{
+	var localArg bool
+	cmd := &cobra.Command{
 		Use:   "set option-name value",
 		Short: "Set a configuration option.",
 		Example: `# Set the target to Vespa Cloud
@@ -62,57 +79,88 @@ $ vespa config set application my-tenant.my-application
 $ vespa config set application my-tenant.my-application.my-instance
 
 # Set the instance explicitly. This will take precedence over an instance specified as part of the application option.
-$ vespa config set instance other-instance`,
+$ vespa config set instance other-instance
+
+# Set an option in local configuration, for the current application only
+$ vespa config set --local wait 600
+`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := cli.config.set(args[0], args[1]); err != nil {
+			config := cli.config
+			if localArg {
+				// Need an application package in working directory to allow local configuration
+				if _, err := cli.applicationPackageFrom(nil, false); err != nil {
+					return fmt.Errorf("failed to write local configuration: %w", err)
+				}
+				if err := cli.config.loadLocalConfigFrom(".", true, true); err != nil {
+					return fmt.Errorf("failed to create local configuration: %w", err)
+				}
+				config = cli.config.local
+			}
+			if err := config.set(args[0], args[1]); err != nil {
 				return err
 			}
-			return cli.config.write()
+			return config.write()
 		},
 	}
+	cmd.Flags().BoolVarP(&localArg, "local", "l", false, "Write option to local configuration, i.e. for the current application")
+	return cmd
 }
 
 func newConfigGetCmd(cli *CLI) *cobra.Command {
-	return &cobra.Command{
+	var localArg bool
+	cmd := &cobra.Command{
 		Use:   "get [option-name]",
 		Short: "Show given configuration option, or all configuration options",
+		Long: `Show given configuration option, or all configuration options.
+
+By default this command prints the effective configuration for the current
+application, i.e. it takes into account any local configuration located in
+[working-directory]/.vespa.
+`,
 		Example: `$ vespa config get
-$ vespa config get target`,
+$ vespa config get target
+$ vespa config get --local
+`,
 		Args:              cobra.MaximumNArgs(1),
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 { // Print all values
-				var flags []string
-				for flag := range cli.config.bindings.flag {
-					flags = append(flags, flag)
+			config := cli.config
+			if localArg {
+				if err := cli.config.loadLocalConfigFrom(".", false, true); err != nil {
+					return fmt.Errorf("failed to load local configuration: %w", err)
 				}
-				sort.Strings(flags)
-				for _, flag := range flags {
-					cli.config.printOption(flag)
+				config = cli.config.local
+				if config == nil {
+					cli.printWarning("no local configuration present")
+					return nil
+				}
+			}
+			if len(args) == 0 { // Print all values
+				for _, option := range config.list() {
+					config.printOption(option)
 				}
 			} else {
-				cli.config.printOption(args[0])
+				config.printOption(args[0])
 			}
 			return nil
 		},
 	}
+	cmd.Flags().BoolVarP(&localArg, "local", "l", false, "Show only local configuration, if any")
+	return cmd
 }
 
 type Config struct {
 	homeDir     string
 	cacheDir    string
 	environment map[string]string
-	bindings    ConfigBindings
-	createDirs  bool
-}
+	local       *Config
 
-type ConfigBindings struct {
-	flag        map[string]*cobra.Command
-	environment map[string]string
+	flags *pflag.FlagSet
+	viper *viper.Viper
 }
 
 type KeyPair struct {
@@ -121,41 +169,68 @@ type KeyPair struct {
 	PrivateKeyFile  string
 }
 
-func NewConfigBindings() ConfigBindings {
-	return ConfigBindings{
-		flag:        make(map[string]*cobra.Command),
-		environment: make(map[string]string),
-	}
-}
-
-func (b *ConfigBindings) bindFlag(name string, command *cobra.Command) {
-	b.flag[name] = command
-}
-
-func (b *ConfigBindings) bindEnvironment(flagName string, variable string) {
-	b.environment[flagName] = variable
-}
-
-func loadConfig(environment map[string]string, bindings ConfigBindings) (*Config, error) {
+func loadConfig(environment map[string]string, globalFlags *pflag.FlagSet) (*Config, error) {
 	home, err := vespaCliHome(environment)
 	if err != nil {
 		return nil, fmt.Errorf("could not detect config directory: %w", err)
 	}
+	config, err := loadConfigFrom(home, environment, globalFlags)
+	if err != nil {
+		return nil, err
+	}
+	// Load local config from working directory by default, if any
+	if err := config.loadLocalConfigFrom(".", false, false); err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+func loadConfigFrom(dir string, environment map[string]string, globalFlags *pflag.FlagSet) (*Config, error) {
 	cacheDir, err := vespaCliCacheDir(environment)
 	if err != nil {
 		return nil, fmt.Errorf("could not detect cache directory: %w", err)
 	}
 	c := &Config{
-		homeDir:     home,
+		homeDir:     dir,
 		cacheDir:    cacheDir,
 		environment: environment,
-		bindings:    bindings,
-		createDirs:  true,
+		flags:       globalFlags,
 	}
-	if err := c.load(); err != nil {
-		return nil, fmt.Errorf("could not load config: %w", err)
+	v := viper.New()
+	v.SetConfigName(configName)
+	v.SetConfigType(configType)
+	v.AddConfigPath(c.homeDir)
+	v.BindPFlags(globalFlags)
+	c.viper = v
+	if err := v.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return nil, err
+		}
 	}
 	return c, nil
+}
+
+func (c *Config) loadLocalConfigFrom(parent string, create, noFlags bool) error {
+	home := filepath.Join(parent, ".vespa")
+	_, err := os.Stat(home)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		}
+		if !create {
+			return nil
+		}
+	}
+	flags := c.flags
+	if noFlags {
+		flags = &pflag.FlagSet{}
+	}
+	config, err := loadConfigFrom(home, c.environment, flags)
+	if err != nil {
+		return err
+	}
+	c.local = config
+	return nil
 }
 
 func (c *Config) write() error {
@@ -168,7 +243,8 @@ func (c *Config) write() error {
 			return err
 		}
 	}
-	return viper.WriteConfig()
+	err := c.viper.WriteConfig()
+	return err
 }
 
 func (c *Config) targetType() (string, error) {
@@ -177,6 +253,23 @@ func (c *Config) targetType() (string, error) {
 		return "", fmt.Errorf("target is unset")
 	}
 	return targetType, nil
+}
+
+func (c *Config) timeout() (time.Duration, error) {
+	wait, ok := c.get(waitFlag)
+	if !ok {
+		return 0, nil
+	}
+	secs, err := strconv.Atoi(wait)
+	if err != nil {
+		return 0, err
+	}
+	return time.Duration(secs) * time.Second, nil
+}
+
+func (c *Config) isQuiet() bool {
+	quiet, _ := c.get(quietFlag)
+	return quiet == "true"
 }
 
 func (c *Config) application() (vespa.ApplicationID, error) {
@@ -195,10 +288,11 @@ func (c *Config) application() (vespa.ApplicationID, error) {
 	return application, nil
 }
 
-func (c *Config) deploymentIn(zoneName string, system vespa.System) (vespa.Deployment, error) {
+func (c *Config) deploymentIn(system vespa.System) (vespa.Deployment, error) {
 	zone := system.DefaultZone
-	var err error
-	if zoneName != "" {
+	zoneName, ok := c.get(zoneFlag)
+	if ok {
+		var err error
 		zone, err = vespa.ZoneFromString(zoneName)
 		if err != nil {
 			return vespa.Deployment{}, err
@@ -321,35 +415,25 @@ func (c *Config) writeSessionID(app vespa.ApplicationID, sessionID int64) error 
 
 func (c *Config) applicationFilePath(app vespa.ApplicationID, name string) (string, error) {
 	appDir := filepath.Join(c.homeDir, app.String())
-	if c.createDirs {
-		if err := os.MkdirAll(appDir, 0700); err != nil {
-			return "", err
-		}
+	if err := os.MkdirAll(appDir, 0700); err != nil {
+		return "", err
 	}
 	return filepath.Join(appDir, name), nil
 }
 
-func (c *Config) load() error {
-	viper.SetConfigName(configName)
-	viper.SetConfigType(configType)
-	viper.AddConfigPath(c.homeDir)
-	for option, command := range c.bindings.flag {
-		viper.BindPFlag(option, command.PersistentFlags().Lookup(option))
-	}
-	err := viper.ReadInConfig()
-	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-		return nil
-	}
-	return err
+func (c *Config) list() []string {
+	options := c.viper.AllKeys()
+	sort.Strings(options)
+	return options
 }
 
 func (c *Config) get(option string) (string, bool) {
-	if envVar, ok := c.bindings.environment[option]; ok {
-		if value, ok := c.environment[envVar]; ok {
-			return value, true
+	if c.local != nil {
+		if value, ok := c.local.get(option); ok {
+			return value, ok
 		}
 	}
-	value := viper.GetString(option)
+	value := c.viper.GetString(option)
 	if value == "" {
 		return "", false
 	}
@@ -361,11 +445,11 @@ func (c *Config) set(option, value string) error {
 	case targetFlag:
 		switch value {
 		case vespa.TargetLocal, vespa.TargetCloud, vespa.TargetHosted:
-			viper.Set(option, value)
+			c.viper.Set(option, value)
 			return nil
 		}
 		if strings.HasPrefix(value, "http://") || strings.HasPrefix(value, "https://") {
-			viper.Set(option, value)
+			c.viper.Set(option, value)
 			return nil
 		}
 	case applicationFlag:
@@ -373,31 +457,31 @@ func (c *Config) set(option, value string) error {
 		if err != nil {
 			return err
 		}
-		viper.Set(option, app.String())
+		c.viper.Set(option, app.String())
 		return nil
 	case instanceFlag:
-		viper.Set(option, value)
+		c.viper.Set(option, value)
 		return nil
 	case waitFlag:
 		if n, err := strconv.Atoi(value); err != nil || n < 0 {
 			return fmt.Errorf("%s option must be an integer >= 0, got %q", option, value)
 		}
-		viper.Set(option, value)
+		c.viper.Set(option, value)
 		return nil
 	case colorFlag:
 		switch value {
 		case "auto", "never", "always":
-			viper.Set(option, value)
+			c.viper.Set(option, value)
 			return nil
 		}
 	case quietFlag:
 		switch value {
 		case "true", "false":
-			viper.Set(option, value)
+			c.viper.Set(option, value)
 			return nil
 		}
 	}
-	return fmt.Errorf("invalid option or value: %q: %q", option, value)
+	return fmt.Errorf("invalid option or value: %s = %s", option, value)
 }
 
 func (c *Config) printOption(option string) {
