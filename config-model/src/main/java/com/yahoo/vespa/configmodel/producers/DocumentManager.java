@@ -74,13 +74,14 @@ public class DocumentManager {
 
     static private class IdxMap {
         private Map<Integer, Boolean> doneMap = new HashMap<>();
-        private Map<Object, Integer> map = new IdentityHashMap<>();
-        void add(Object someType) {
-            assert(someType != null);
+        private Map<String, Integer> map = new HashMap<>();
+        private DataTypeRecognizer recognizer = new DataTypeRecognizer();
+
+        private void add(String name) {
             // the adding of "10000" here is mostly to make it more
             // unique to grep for when debugging
             int nextIdx = 10000 + map.size();
-            map.computeIfAbsent(someType, k -> nextIdx);
+            map.computeIfAbsent(name, k -> nextIdx);
         }
         int idxOf(Object someType) {
             if (someType instanceof DocumentType) {
@@ -89,11 +90,15 @@ public class DocumentManager {
                     return idxOf(VespaDocumentType.INSTANCE);
                 }
             }
-            add(someType);
-            return map.get(someType);
+            String name = recognizer.nameOf(someType);
+            add(name);
+            return map.get(name);
+        }
+        private boolean isDoneIdx(int idx) {
+            return doneMap.computeIfAbsent(idx, k -> false);
         }
         boolean isDone(Object someType) {
-            return doneMap.computeIfAbsent(idxOf(someType), k -> false);
+            return isDoneIdx(idxOf(someType));
         }
         void setDone(Object someType) {
             assert(! isDone(someType));
@@ -101,10 +106,10 @@ public class DocumentManager {
         }
         void verifyAllDone() {
             for (var entry : map.entrySet()) {
-                Object needed = entry.getKey();
-                if (! isDone(needed)) {
-                    throw new IllegalArgumentException("Could not generate config for all needed types, missing: " +
-                                                       needed + " of class " + needed.getClass());
+                String needed = entry.getKey();
+                int idxOfNeed = entry.getValue();
+                if (! isDoneIdx(idxOfNeed)) {
+                    throw new IllegalArgumentException("Could not generate config for all needed types, missing: " + needed);
                 }
             }
         }
