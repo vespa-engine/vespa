@@ -4,6 +4,7 @@
 #include "load_utils.hpp"
 #include "multinumericattribute.hpp"
 #include "multi_numeric_flag_search_context.h"
+#include <vespa/searchlib/common/bitvector.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.flag_attribute");

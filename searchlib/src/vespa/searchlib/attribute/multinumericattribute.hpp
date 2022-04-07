@@ -4,13 +4,11 @@
 #include "multinumericattribute.h"
 #include "multivalueattribute.hpp"
 #include "attributevector.hpp"
-#include "attributeiterators.hpp"
 #include "multinumericattributesaver.h"
 #include "multi_numeric_search_context.h"
 #include "load_utils.h"
 #include "primitivereader.h"
 #include <vespa/searchlib/query/query_term_simple.h>
-#include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/util/fileutil.h>
 
 namespace search {
