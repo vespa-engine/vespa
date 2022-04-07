@@ -160,8 +160,8 @@ abstract class StructuredParser extends AbstractParser {
                 firstWord.add(tokens.next());
             }
 
-            if (tokens.currentIsNoIgnore(DOT)) {
-                tokens.skip();
+            while (tokens.currentIsNoIgnore(DOT)) {
+                secondWord.add(tokens.next());
                 if (tokens.currentIsNoIgnore(WORD) || tokens.currentIsNoIgnore(NUMBER)) {
                     secondWord.add(tokens.next());
                 } else {
@@ -177,11 +177,7 @@ abstract class StructuredParser extends AbstractParser {
             if ( ! tokens.skipNoIgnore(COLON))
                 return null;
 
-            if (secondWord.size() == 0) {
-                item = concatenate(firstWord);
-            } else {
-                item = concatenate(firstWord) + "." + concatenate(secondWord);
-            }
+            item = concatenate(firstWord) + concatenate(secondWord);
 
             item = indexFacts.getCanonicName(item);
 
@@ -395,7 +391,7 @@ abstract class StructuredParser extends AbstractParser {
             if ( ! tokens.currentIs(NUMBER)) return null;
 
             item = new IntItem(">" + (negative ? "-" : "") + tokens.next() + decimalPart(), true);
-            item.setOrigin(new Substring(initial.substring.start, tokens.currentNoIgnore().substring.start, 
+            item.setOrigin(new Substring(initial.substring.start, tokens.currentNoIgnore().substring.start,
                                          initial.getSubstring().getSuperstring())); // XXX: Unsafe end?
             return item;
         } finally {
