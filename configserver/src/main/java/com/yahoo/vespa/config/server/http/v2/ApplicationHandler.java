@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import com.yahoo.net.DomainName;
 import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationFile;
@@ -15,6 +14,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Response;
+import com.yahoo.net.DomainName;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.HttpURL;
 import com.yahoo.restapi.MessageResponse;
@@ -86,6 +86,7 @@ public class ApplicationHandler extends HttpHandler {
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/metrics/proton")) return protonMetrics(applicationId(path));
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/reindexing")) return getReindexingStatus(applicationId(path));
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/service/{service}/{hostname}/status/{*}")) return serviceStatusPage(applicationId(path), path.get("service"), path.get("hostname"), path.getRest());
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/service/{service}/{hostname}/state/v1/metrics")) return serviceStateV1metrics(applicationId(path), path.get("service"), path.get("hostname"));
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/serviceconverge")) return listServiceConverge(applicationId(path), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/serviceconverge/{hostAndPort}")) return checkServiceConverge(applicationId(path), path.get("hostAndPort"), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/suspended")) return isSuspended(applicationId(path));
@@ -134,7 +135,22 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private HttpResponse serviceStatusPage(ApplicationId applicationId, String service, String hostname, HttpURL.Path pathSuffix) {
-        return applicationRepository.serviceStatusPage(applicationId, hostname, service, pathSuffix);
+        HttpURL.Path pathPrefix = HttpURL.Path.empty();
+        switch (service) {
+            case "container-clustercontroller":
+                pathPrefix = pathPrefix.append("clustercontroller-status").append("v1");
+                break;
+            case "distributor":
+            case "storagenode":
+                break;
+            default:
+                throw new com.yahoo.vespa.config.server.NotFoundException("No status page for service: " + service);
+        }
+        return applicationRepository.proxyServiceHostnameRequest(applicationId, hostname, service, pathPrefix.append(pathSuffix));
+    }
+
+    private HttpResponse serviceStateV1metrics(ApplicationId applicationId, String service, String hostname) {
+        return applicationRepository.proxyServiceHostnameRequest(applicationId, hostname, service, HttpURL.Path.parse("/state/v1/metrics"));
     }
 
     private HttpResponse content(ApplicationId applicationId, HttpURL.Path contentPath, HttpRequest request) {

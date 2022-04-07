@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import com.yahoo.net.DomainName;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
@@ -30,6 +29,7 @@ import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.net.DomainName;
 import com.yahoo.path.Path;
 import com.yahoo.restapi.HttpURL;
 import com.yahoo.slime.Slime;
@@ -559,24 +559,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    public HttpResponse serviceStatusPage(ApplicationId applicationId, String hostName, String serviceName, HttpURL.Path pathSuffix) {
-        // WARNING: pathSuffix may be given by the external user. Make sure no security issues arise...
-        // We should be OK here, because at most, pathSuffix may change the parent path, but cannot otherwise
-        // change the hostname and port. Exposing other paths on the cluster controller should be fine.
-        // TODO: It would be nice to have a simple check to verify pathSuffix doesn't contain /../ components.
-        HttpURL.Path pathPrefix = HttpURL.Path.empty();
-        switch (serviceName) {
-            case "container-clustercontroller":
-                pathPrefix = pathPrefix.append("clustercontroller-status").append("v1");
-                break;
-            case "distributor":
-            case "storagenode":
-                break;
-            default:
-                throw new NotFoundException("No status page for service: " + serviceName);
-        }
-
-        return httpProxy.get(getApplication(applicationId), hostName, serviceName, pathPrefix.append(pathSuffix));
+    public HttpResponse proxyServiceHostnameRequest(ApplicationId applicationId, String hostName, String serviceName, HttpURL.Path path) {
+        return httpProxy.get(getApplication(applicationId), hostName, serviceName, path);
     }
 
     public Map<String, ClusterReindexing> getClusterReindexingStatus(ApplicationId applicationId) {
