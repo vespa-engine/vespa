@@ -178,23 +178,23 @@ class HttpURLTest {
         assertEquals(expected, query.remove("foo").lastEntries());
         assertEquals(expected, Query.empty(Name::of).set("baz").lastEntries());
 
-        assertEquals("query '?foo=bar&baz=bax&quu=fez&moo'",
+        assertEquals("query 'foo=bar&baz=bax&quu=fez&moo'",
                      query.set("baz", "bax").set(Map.of("quu", "fez")).set("moo").toString());
 
         Query bloated = query.add("baz", "bax").add(Map.of("quu", List.of("fez", "pop"))).add("moo").add("moo").add("foo", "bar");
-        assertEquals("query '?foo=bar&baz&baz=bax&quu=fez&quu=pop&moo&moo&foo=bar'",
+        assertEquals("query 'foo=bar&baz&baz=bax&quu=fez&quu=pop&moo&moo&foo=bar'",
                      bloated.toString());
 
-        assertEquals("query '?foo=bar&quu=fez&quu=pop&moo&moo&foo=bar'",
+        assertEquals("query 'foo=bar&quu=fez&quu=pop&moo&moo&foo=bar'",
                      bloated.remove("baz").toString());
 
-        assertEquals("query '?baz&baz=bax&quu=fez&quu=pop&moo&moo'",
+        assertEquals("query 'baz&baz=bax&quu=fez&quu=pop&moo&moo'",
                      bloated.remove("foo").toString());
 
-        assertEquals("query '?foo=bar&baz&baz=bax&quu=fez&quu=pop&foo=bar&moo'",
+        assertEquals("query 'foo=bar&baz&baz=bax&quu=fez&quu=pop&foo=bar&moo'",
                      bloated.set("moo").toString());
 
-        assertEquals("query ''",
+        assertEquals("no query",
                      bloated.remove("foo").remove("baz").remove("quu").remove("moo").toString());
 
         assertThrows(NullPointerException.class,

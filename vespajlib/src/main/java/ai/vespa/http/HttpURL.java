@@ -503,7 +503,7 @@ public class HttpURL {
         /** Intentionally not usable for constructing new URIs. Use {@link HttpURL} for that instead. */
         @Override
         public String toString() {
-            return "query '" + raw() + "'";
+            return head == null ? "no query" : "query '" + raw().substring(1) + "'";
         }
 
         @Override
