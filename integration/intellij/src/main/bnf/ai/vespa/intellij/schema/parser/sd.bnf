@@ -185,7 +185,7 @@ private NumSearchPartitionDefinition ::= num-search-partition ':' INTEGER_REG
 FieldWeightDefinition ::= weight DottedIdentifiers ':' INTEGER_REG
 StrictDefinition ::= strict ':' (true | false)
 InputsDefinition ::= inputs '{' InputsBody '}'
-InputsBody ::= (QueryDefinition ':' TensorType)*
+InputsBody ::= (QueryDefinition TensorType)*
 
 FirstPhaseDefinition ::= first-phase '{' FirstPhaseBody '}'  { mixin="ai.vespa.intellij.schema.psi.impl.SdFirstPhaseDefinitionMixin" }
 FirstPhaseBody ::= FirstPhaseBodyOptions* // Does not support zero-or-one occurrences

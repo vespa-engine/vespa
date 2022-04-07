@@ -2199,7 +2199,7 @@ void inputs(RankProfile profile) :
 }
 {
     <INPUTS> <LBRACE> (<NL>)*
-      ( reference = queryFeature() <COLON> type = tensorType("Type of " + reference) { profile.addInput(reference, type); } (<NL>)*) *
+      ( reference = queryFeature() type = tensorType("Type of " + reference) { profile.addInput(reference, type); } (<NL>)*) *
     <RBRACE>
 }
 
