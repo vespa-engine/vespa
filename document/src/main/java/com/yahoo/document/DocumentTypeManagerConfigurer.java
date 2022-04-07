@@ -453,8 +453,10 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                     if (isPositionStruct(typeconf)) {
                         int geoVersion = usev8geopositions ? 8 : 7;
                         addNewType(typeconf.idx(), new GeoPosType(geoVersion));
-                    } else {
+                    } else if (typeconf.name().equals(docName + ".header")) {
                         addNewType(typeconf.idx(), new StructDataType(typeconf.name()));
+                    } else {
+                        addNewType(typeconf.idx(), new StructDataType(typeconf.name() + "@" + docName));
                     }
                 }
             }
