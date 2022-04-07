@@ -38,6 +38,9 @@ public class Notifier {
         if (notifications.isEmpty()) {
             return;
         }
+        if (skipSource(source)) {
+            return;
+        }
         var tenant = curatorDb.readTenant(source.tenant());
         tenant.stream().forEach(t -> {
             if (t instanceof CloudTenant) {
@@ -49,6 +52,11 @@ public class Notifier {
                         .forEach(e -> notifications.forEach(n -> dispatch(n, e.getKey(), e.getValue())));
             }
         });
+    }
+
+    private boolean skipSource(NotificationSource source) {
+        // Limit sources to production systems only. Dev and test systems cause too much noise at the moment.
+        return source.jobType().map(t -> !t.isProduction()).orElse(false);
     }
 
     public void dispatch(Notification notification) {
