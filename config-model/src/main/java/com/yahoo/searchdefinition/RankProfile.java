@@ -763,7 +763,7 @@ public class RankProfile implements Cloneable {
     // because inputs are tied closer to functions than the profile itself.
     public Map<Reference, TensorType> inputs() {
         if (inputs.isEmpty() && inherited().isEmpty()) return Map.of();
-        if (inherited().isEmpty()) return Collections.unmodifiableMap(inputs);
+        if (inherited().isEmpty()) return new LinkedHashMap<>(inputs);
 
         // Combine
         Map<Reference, TensorType> allInputs = new LinkedHashMap<>();
@@ -779,7 +779,7 @@ public class RankProfile implements Cloneable {
             }
         }
         allInputs.putAll(inputs);
-        return Collections.unmodifiableMap(allInputs);
+        return allInputs;
     }
 
     public static class MutateOperation {

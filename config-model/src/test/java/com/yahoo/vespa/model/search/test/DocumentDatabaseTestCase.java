@@ -102,6 +102,7 @@ public class DocumentDatabaseTestCase {
         assertEquals("type1", proton.documentdb(0).inputdoctypename());
         assertEquals(type1Id, proton.documentdb(0).configid());
     }
+
     @Test
     public void requireThatWeCanHaveOneSDForIndexedMode() {
         assertSingleSD("index");
@@ -110,6 +111,7 @@ public class DocumentDatabaseTestCase {
     private VespaModel createModel(List<DocType> nameAndModes, String xmlTuning) {
         return createModel(nameAndModes, xmlTuning, null);
     }
+
     private VespaModel createModel(List<DocType> nameAndModes, String xmlTuning, DeployState.Builder builder) {
         List<String> sds = new ArrayList<>(nameAndModes.size());
         for (DocType nameAndMode : nameAndModes) {
@@ -126,16 +128,19 @@ public class DocumentDatabaseTestCase {
         verifyConcurrency("streaming", "", 1.0, 0.0);
         verifyConcurrency("store-only", "", 1.0, 0.0);
     }
+
     @Test
     public void requireThatFeatureFlagConcurrencyIsReflectedCorrectlyForDefault() {
         verifyConcurrency("index", "", 0.30, 0.30, 0.3);
         verifyConcurrency("streaming", "", 0.6, 0.0, 0.3);
         verifyConcurrency("store-only", "", 0.8, 0.0, 0.4);
     }
+
     @Test
     public void requireThatMixedModeConcurrencyIsReflectedCorrectlyForDefault() {
         verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), "", 1.0, Arrays.asList(0.50, 0.0));
     }
+
     @Test
     public void requireThatMixedModeConcurrencyIsReflected() {
         String feedTuning = "<feeding>" +
@@ -143,6 +148,7 @@ public class DocumentDatabaseTestCase {
                 "</feeding>\n";
         verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), feedTuning, 0.7, Arrays.asList(0.7, 0.0));
     }
+
     @Test
     public void requireThatConcurrencyIsReflected() {
         String feedTuning = "<feeding>" +
@@ -152,15 +158,19 @@ public class DocumentDatabaseTestCase {
         verifyConcurrency("streaming", feedTuning, 0.7, 0.0);
         verifyConcurrency("store-only", feedTuning, 0.7, 0.0);
     }
+
     private void verifyConcurrency(String mode, String xmlTuning, double global, double local, double featureFlagConcurrency) {
         verifyConcurrency(Arrays.asList(DocType.create("a", mode)), xmlTuning, global, Arrays.asList(local), featureFlagConcurrency);
     }
+
     private void verifyConcurrency(String mode, String xmlTuning, double global, double local) {
         verifyConcurrency(Arrays.asList(DocType.create("a", mode)), xmlTuning, global, Arrays.asList(local), null);
     }
+
     private void verifyConcurrency(List<DocType> nameAndModes, String xmlTuning, double global, List<Double> local) {
         verifyConcurrency(nameAndModes, xmlTuning, global, local, null);
     }
+
     private void verifyConcurrency(List<DocType> nameAndModes, String xmlTuning, double global, List<Double> local, Double featureFlagConcurrency) {
         assertEquals(nameAndModes.size(), local.size());
         TestProperties properties = new TestProperties();
