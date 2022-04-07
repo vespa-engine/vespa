@@ -2,6 +2,7 @@
 package com.yahoo.search.grouping.result;
 
 import com.yahoo.component.chain.dependencies.Before;
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -21,8 +22,11 @@ import java.util.Iterator;
 @Before(GroupingExecutor.COMPONENT_NAME)
 public class FlatteningSearcher extends Searcher {
 
+    private final CompoundName flatten = CompoundName.fromComponents("grouping", "flatten");
+
     @Override
     public Result search(Query query, Execution execution) {
+        if ( ! query.properties().getBoolean(flatten, true)) return execution.search(query);
         if ( ! query.properties().getBoolean("flatten", true)) return execution.search(query);
 
         query.trace("Flattening groups", 2);
@@ -30,16 +34,23 @@ public class FlatteningSearcher extends Searcher {
         query.setHits(0);
         Result result = execution.search(query);
         query.setHits(originalHits);
-        flatten(result.hits(), result);
+        flatten(result.hits(), 0, result);
         return result;
     }
 
-    public void flatten(HitGroup hits, Result result) {
+    public void flatten(HitGroup hits, int level, Result result) {
         int hitsLeft = hits.size(); // Iterate only through the initial size
         for (Iterator<Hit> i = hits.iterator(); i.hasNext() && hitsLeft-- > 0;) {
             Hit hit = i.next();
+
+            // If we count the number of unique groups, use that as total hit count.
+            if (level == 0 && (hit instanceof RootGroup)) {
+                if (hit.fields().get("count()") != null)
+                    result.setTotalHitCount((long)hit.fields().get("count()"));
+            }
+
             if (hit instanceof HitGroup) {
-                flatten((HitGroup)hit, result);
+                flatten((HitGroup)hit, level++, result);
                 i.remove();
             } else {
                 result.hits().add(hit);

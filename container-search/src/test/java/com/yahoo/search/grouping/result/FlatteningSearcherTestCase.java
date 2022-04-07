@@ -16,10 +16,12 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.SearchChain;
+import com.yahoo.searchlib.aggregation.ExpressionCountAggregationResult;
 import com.yahoo.searchlib.aggregation.FS4Hit;
 import com.yahoo.searchlib.aggregation.Group;
 import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.searchlib.aggregation.HitsAggregationResult;
+import com.yahoo.searchlib.aggregation.hll.SparseSketch;
 import com.yahoo.searchlib.expression.StringResultNode;
 import org.junit.Test;
 
@@ -40,10 +42,11 @@ public class FlatteningSearcherTestCase {
     public void testFlatteningSearcher() {
         Query query = new Query("?query=test");
         GroupingRequest req = GroupingRequest.newInstance(query);
-        req.setRootOperation(GroupingOperation.fromString("all(group(foo) each(each(output(summary(bar)))))"));
+        req.setRootOperation(GroupingOperation.fromString("all(group(foo) output(count()) each(each(output(summary(bar)))))"));
 
         Grouping group0 = new Grouping(0);
-        group0.setRoot(new com.yahoo.searchlib.aggregation.Group()
+        group0.setRoot(new Group()
+                               .addAggregationResult(new ExpressionCountAggregationResult(new SparseSketch(), sketch -> 69))
                                .addChild(new Group().setId(new StringResultNode("unique1"))
                                                     .addAggregationResult(new HitsAggregationResult(3, "bar")
                                                     )
@@ -53,7 +56,7 @@ public class FlatteningSearcherTestCase {
                                                     )
                                ));
         Grouping group1 = new Grouping(0);
-        group1.setRoot(new com.yahoo.searchlib.aggregation.Group()
+        group1.setRoot(new Group()
                                .addChild(new Group().setId(new StringResultNode("unique1"))
                                                     .addAggregationResult(new HitsAggregationResult(3, "bar")
                                                                                   .addHit(fs4Hit(0.7))
@@ -75,6 +78,7 @@ public class FlatteningSearcherTestCase {
         Result result = execution.search(query);
         assertEquals(5, result.hits().size());
         assertFlat(result);
+        assertEquals(2, result.getTotalHitCount());
     }
 
     private void assertFlat(Result result) {
@@ -87,7 +91,7 @@ public class FlatteningSearcherTestCase {
     }
 
     private void dump(Hit hit, String indent) {
-        System.out.println(indent + hit);
+        System.out.println(indent + hit + " (class " + hit.getClass() + ")");
         if (hit instanceof HitGroup) {
             for (var child : (HitGroup)hit)
                 dump(child, indent + "    ");
