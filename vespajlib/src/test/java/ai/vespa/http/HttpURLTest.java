@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.restapi;
+package ai.vespa.http;
 
+import ai.vespa.http.HttpURL.Path;
 import ai.vespa.validation.Name;
-import com.yahoo.net.DomainName;
-import com.yahoo.restapi.HttpURL.Query;
+import ai.vespa.http.HttpURL.Query;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -14,9 +14,9 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
 
-import static com.yahoo.net.DomainName.localhost;
-import static com.yahoo.restapi.HttpURL.Scheme.http;
-import static com.yahoo.restapi.HttpURL.Scheme.https;
+import static ai.vespa.http.DomainName.localhost;
+import static ai.vespa.http.HttpURL.Scheme.http;
+import static ai.vespa.http.HttpURL.Scheme.https;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -43,11 +43,11 @@ class HttpURLTest {
 
     @Test
     void testModification() {
-        HttpURL url = HttpURL.create(http, localhost).withPath(HttpURL.Path.empty(Name::of));
+        HttpURL url = HttpURL.create(http, localhost).withPath(Path.empty(Name::of));
         assertEquals(http, url.scheme());
         assertEquals(localhost, url.domain());
         assertEquals(OptionalInt.empty(), url.port());
-        assertEquals(HttpURL.Path.empty(Name::of), url.path());
+        assertEquals(Path.empty(Name::of), url.path());
         assertEquals(HttpURL.Query.empty(Name::of), url.query());
 
         url = url.withScheme(https)
@@ -58,7 +58,7 @@ class HttpURLTest {
         assertEquals(https, url.scheme());
         assertEquals(DomainName.of("domain"), url.domain());
         assertEquals(OptionalInt.of(0), url.port());
-        assertEquals(HttpURL.Path.parse("/foo", Name::of), url.path());
+        assertEquals(Path.parse("/foo", Name::of), url.path());
         assertEquals(HttpURL.Query.parse("boo=bar&baz", Name::of), url.query());
     }
 
@@ -107,7 +107,7 @@ class HttpURLTest {
 
     @Test
     void testPath() {
-        HttpURL.Path path = HttpURL.Path.parse("foo/bar/baz", Name::of);
+        Path path = Path.parse("foo/bar/baz", Name::of);
         List<String> expected = List.of("foo", "bar", "baz");
         assertEquals(expected, path.segments());
 
@@ -119,7 +119,7 @@ class HttpURLTest {
         assertEquals(path, path.withoutTrailingSlash().withoutTrailingSlash());
 
         assertEquals(List.of("one", "foo", "bar", "baz", "two"),
-                     HttpURL.Path.from(List.of("one")).append(path).append("two").segments());
+                     Path.from(List.of("one")).append(path).append("two").segments());
 
         assertEquals(List.of(expected.get(2), expected.get(0)),
                      path.append(path).cut(2).skip(2).segments());
@@ -147,19 +147,19 @@ class HttpURLTest {
 
         assertEquals("path segment decoded cannot contain '/', but got: '/'",
                      assertThrows(IllegalArgumentException.class,
-                                  () -> HttpURL.Path.empty().append("%2525252525252525%2525252525253%25252532%252525%252534%36")).getMessage());
+                                  () -> Path.empty().append("%2525252525252525%2525252525253%25252532%252525%252534%36")).getMessage());
 
         assertEquals("path segment decoded cannot contain '?', but got: '?'",
                      assertThrows(IllegalArgumentException.class,
-                                  () -> HttpURL.Path.empty().append("?")).getMessage());
+                                  () -> Path.empty().append("?")).getMessage());
 
         assertEquals("path segment decoded cannot contain '#', but got: '#'",
                      assertThrows(IllegalArgumentException.class,
-                                  () -> HttpURL.Path.empty().append("#")).getMessage());
+                                  () -> Path.empty().append("#")).getMessage());
 
         assertEquals("path segments cannot be \"\", \".\", or \"..\", but got: '..'",
                      assertThrows(IllegalArgumentException.class,
-                                  () -> HttpURL.Path.empty().append("%2E%25252E")).getMessage());
+                                  () -> Path.empty().append("%2E%25252E")).getMessage());
     }
 
     @Test

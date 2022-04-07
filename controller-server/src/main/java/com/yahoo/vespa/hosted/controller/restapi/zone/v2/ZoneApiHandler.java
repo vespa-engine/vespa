@@ -7,7 +7,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.restapi.ErrorResponse;
-import com.yahoo.restapi.HttpURL;
+import ai.vespa.http.HttpURL;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;

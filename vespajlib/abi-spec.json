@@ -349,20 +349,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.net.DomainName": {
-    "superClass": "ai.vespa.validation.PatternedStringWrapper",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public static com.yahoo.net.DomainName of(java.lang.String)",
-      "public static java.lang.String requireLabel(java.lang.String)"
-    ],
-    "fields": [
-      "public static final com.yahoo.net.DomainName localhost"
-    ]
-  },
   "com.yahoo.net.HostName": {
     "superClass": "ai.vespa.validation.PatternedStringWrapper",
     "interfaces": [],

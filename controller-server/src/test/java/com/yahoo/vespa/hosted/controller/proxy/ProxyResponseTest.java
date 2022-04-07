@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.proxy;
 
 import com.yahoo.jdisc.http.HttpRequest;
-import com.yahoo.restapi.HttpURL.Path;
+import ai.vespa.http.HttpURL.Path;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;

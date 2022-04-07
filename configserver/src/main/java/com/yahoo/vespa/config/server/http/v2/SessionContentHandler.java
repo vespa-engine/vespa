@@ -6,7 +6,7 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.restapi.HttpURL.Path;
+import ai.vespa.http.HttpURL.Path;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.http.ContentRequest;
 import com.yahoo.vespa.config.server.http.ContentHandler;

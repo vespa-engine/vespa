@@ -3,7 +3,7 @@ package com.yahoo.vespa.serviceview;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.jdisc.test.MockMetric;
-import com.yahoo.restapi.HttpURL.Path;
+import ai.vespa.http.HttpURL.Path;
 import com.yahoo.restapi.UriBuilder;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.HealthClient;

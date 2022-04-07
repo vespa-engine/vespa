@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.net;
+package ai.vespa.http;
 
 import ai.vespa.validation.PatternedStringWrapper;
 
@@ -15,8 +15,8 @@ import static ai.vespa.validation.Validation.requireMatch;
  */
 public class DomainName extends PatternedStringWrapper<DomainName> {
 
-    static final Pattern labelPattern = Pattern.compile("([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])");
-    static final Pattern domainNamePattern = Pattern.compile("(" + labelPattern + "\\.)*" + labelPattern);
+    public static final Pattern labelPattern = Pattern.compile("([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])");
+    public static final Pattern domainNamePattern = Pattern.compile("(" + labelPattern + "\\.)*" + labelPattern);
 
     public static final DomainName localhost = DomainName.of("localhost");
 

@@ -1,8 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.restapi;
+package ai.vespa.http;
 
 import ai.vespa.validation.StringWrapper;
-import com.yahoo.net.DomainName;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -116,8 +115,16 @@ public class HttpURL {
         return create(scheme, domain, port, path, query);
     }
 
+    public HttpURL appendPath(Path path) {
+        return create(scheme, domain, port, this.path.append(path), query);
+    }
+
     public HttpURL withQuery(Query query) {
         return create(scheme, domain, port, path, query);
+    }
+
+    public HttpURL mergeQuery(Query query) {
+        return create(scheme, domain, port, path, this.query.merge(query));
     }
 
     public Scheme scheme() {
@@ -285,7 +292,7 @@ public class HttpURL {
         }
 
         /** A raw path string which parses to this, by splitting on {@code "/"}, and then URL decoding. */
-        String raw() {
+        private String raw() {
             StringJoiner joiner = new StringJoiner("/", "/", trailingSlash ? "/" : "").setEmptyValue(trailingSlash ? "/" : "");
             for (String segment : segments) joiner.add(encode(segment, UTF_8));
             return joiner.toString();

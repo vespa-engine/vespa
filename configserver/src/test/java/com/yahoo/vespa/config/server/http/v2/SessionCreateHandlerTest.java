@@ -7,7 +7,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.restapi.HttpURL.Path;
+import ai.vespa.http.HttpURL.Path;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.application.CompressedApplicationInputStreamTest;

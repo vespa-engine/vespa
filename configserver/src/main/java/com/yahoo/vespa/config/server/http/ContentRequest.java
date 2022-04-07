@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.http;
 
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.restapi.HttpURL.Path;
+import ai.vespa.http.HttpURL.Path;
 
 import java.io.InputStream;
 

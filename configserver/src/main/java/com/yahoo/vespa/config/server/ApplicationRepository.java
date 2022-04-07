@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
+import ai.vespa.http.DomainName;
+import ai.vespa.http.HttpURL;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
@@ -29,9 +31,7 @@ import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.net.DomainName;
 import com.yahoo.path.Path;
-import com.yahoo.restapi.HttpURL;
 import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
