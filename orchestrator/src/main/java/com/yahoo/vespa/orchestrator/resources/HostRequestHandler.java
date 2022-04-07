@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.resources;
 
+import ai.vespa.http.HttpURL.Path;
 import com.google.inject.Inject;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
@@ -71,9 +72,9 @@ public class HostRequestHandler extends RestApiRequestHandler<HostRequestHandler
         try {
             Host host = orchestrator.getHost(hostName);
 
-            URI applicationUri = context.uriBuilder()
-                    .withPath("/orchestrator/v1/instances/" + host.getApplicationInstanceReference().asString())
-                    .toURI();
+            URI applicationUri = context.baseRequestURL()
+                    .withPath(Path.parse( "/orchestrator/v1/instances/" + host.getApplicationInstanceReference().asString()))
+                    .asURI();
 
             List<HostService> hostServices = host.getServiceInstances().stream()
                     .map(serviceInstance -> new HostService(
