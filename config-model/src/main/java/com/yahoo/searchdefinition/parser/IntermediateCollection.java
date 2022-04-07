@@ -12,6 +12,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +40,7 @@ public class IntermediateCollection {
         this.modelProperties = properties;
     }
 
-    public Map<String, ParsedSchema> getParsedSchemas() { return Map.copyOf(parsedSchemas); }
+    public Map<String, ParsedSchema> getParsedSchemas() { return Collections.unmodifiableMap(parsedSchemas); }
 
     public ParsedSchema getParsedSchema(String name) { return parsedSchemas.get(name); }
 
