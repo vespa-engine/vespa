@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.documentmodel;
 
-import com.yahoo.document.DataType;
+import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
 
 import java.util.HashMap;
@@ -47,8 +47,8 @@ public class SearchDef {
      * @param source A document that can be mapped to this search.
      * @return Itself for chaining.
      */
-    public SearchDef add(DataType source) {
-        sources.register(source);
+    public SearchDef add(DocumentType source) {
+        sources.registerDocumentType(source);
         return this;
     }
 
