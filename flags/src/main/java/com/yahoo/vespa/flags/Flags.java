@@ -404,6 +404,13 @@ public class Flags {
             "Takes effect immediately",
             ZONE_ID);
 
+    public static final UnboundBooleanFlag USE_ZSTD_IN_FILE_DISTRIBUTION = defineFeatureFlag(
+            "use-zstd-in-file-distribution", false,
+            List.of("hmusum"), "2022-04-07", "2022-05-07",
+            "Whether to use zstd compression for data sent with file distribution",
+            "Takes effect immediately",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
