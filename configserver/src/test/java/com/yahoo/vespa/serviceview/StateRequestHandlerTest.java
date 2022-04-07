@@ -1,10 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.serviceview;
 
+import ai.vespa.http.HttpURL;
+import ai.vespa.http.HttpURL.Query;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.jdisc.test.MockMetric;
 import ai.vespa.http.HttpURL.Path;
-import com.yahoo.restapi.UriBuilder;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.HealthClient;
 import com.yahoo.vespa.serviceview.bindings.ModelResponse;
@@ -46,7 +47,7 @@ public class StateRequestHandlerTest {
         }
 
         @Override
-        protected HealthClient getHealthClient(Path apiParams, Service s, int requestedPort, String uriQuery, Client client) {
+        protected HealthClient getHealthClient(Path apiParams, Service s, int requestedPort, Query query, Client client) {
             HealthClient healthClient = Mockito.mock(HealthClient.class);
             HashMap<Object, Object> dummyHealthData = new HashMap<>();
             HashMap<String, String> dummyLink = new HashMap<>();
@@ -76,14 +77,14 @@ public class StateRequestHandlerTest {
     public final void test() {
         Service s = correspondingModel.resolve("vespa.yahoo.com", 8080, null);
         String api = "/state/v1";
-        HashMap<?, ?> boom = testHandler.singleService(new UriBuilder("http://someserver:8080"), URI.create(EXTERNAL_BASE_URI), "default", "default", "default", "default", "default", s.getIdentifier(8080), Path.parse(api));
+        HashMap<?, ?> boom = testHandler.singleService(HttpURL.from(URI.create("http://someserver:8080")), "default", "default", "default", "default", "default", s.getIdentifier(8080), Path.parse(api), Query.empty().add("foo", "bar"));
         assertEquals(EXTERNAL_BASE_URI + "tenant/default/application/default/environment/default/region/default/instance/default/service/" + s.getIdentifier(8080) + api,
                      ((Map<?, ?>) ((List<?>) boom.get("resources")).get(0)).get("url"));
     }
 
     @Test
     public final void testLinkEquality() {
-        ApplicationView explicitParameters = testHandler.getUserInfo(new UriBuilder("http://someserver:8080"), "default", "default", "default", "default", "default");
+        ApplicationView explicitParameters = testHandler.getUserInfo(HttpURL.from(URI.create("http://someserver:8080")), "default", "default", "default", "default", "default");
         assertEquals(EXTERNAL_BASE_URI + "tenant/default/application/default/environment/default/region/default/instance" +
                         "/default/service/container-clustercontroller-2ul67p8psr451t3w8kdd0qwgg/state/v1/",
                 explicitParameters.clusters.get(0).services.get(0).url);

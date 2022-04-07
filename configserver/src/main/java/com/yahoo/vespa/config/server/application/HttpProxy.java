@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.application;
 import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Path;
+import ai.vespa.http.HttpURL.Query;
 import ai.vespa.http.HttpURL.Scheme;
 import com.google.inject.Inject;
 import com.yahoo.config.model.api.HostInfo;
@@ -33,7 +34,7 @@ public class HttpProxy {
         this.fetcher = fetcher;
     }
 
-    public HttpResponse get(Application application, String hostName, String serviceType, Path relativePath) {
+    public HttpResponse get(Application application, String hostName, String serviceType, Path path, Query query) {
         HostInfo host = application.getModel().getHosts().stream()
                 .filter(hostInfo -> hostInfo.getHostname().equals(hostName))
                 .findFirst()
@@ -51,11 +52,11 @@ public class HttpProxy {
                                .findFirst()
                                .orElseThrow(() -> new NotFoundException("Failed to find HTTP state port"));
 
-        return internalGet(host.getHostname(), port.getPort(), relativePath);
+        return internalGet(host.getHostname(), port.getPort(), path, query);
     }
 
-    private HttpResponse internalGet(String hostname, int port, Path relativePath) {
-        HttpURL url = HttpURL.create(Scheme.http, DomainName.of(hostname), port, relativePath);
+    private HttpResponse internalGet(String hostname, int port, Path path, Query query) {
+        HttpURL url = HttpURL.create(Scheme.http, DomainName.of(hostname), port, path, query);
         try {
             return fetcher.get(new Params(2000), // 2_000 ms read timeout
                                url.asURI().toURL());

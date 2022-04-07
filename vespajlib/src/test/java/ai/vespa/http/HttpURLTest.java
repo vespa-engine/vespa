@@ -54,7 +54,7 @@ class HttpURLTest {
                  .withDomain(DomainName.of("domain"))
                  .withPort(0)
                  .withPath(url.path().append("foo").withoutTrailingSlash())
-                 .withQuery(url.query().put("boo", "bar").add("baz"));
+                 .withQuery(url.query().add("boo", "bar").add("baz"));
         assertEquals(https, url.scheme());
         assertEquals(DomainName.of("domain"), url.domain());
         assertEquals(OptionalInt.of(0), url.port());
@@ -119,7 +119,7 @@ class HttpURLTest {
         assertEquals(path, path.withoutTrailingSlash().withoutTrailingSlash());
 
         assertEquals(List.of("one", "foo", "bar", "baz", "two"),
-                     Path.from(List.of("one")).append(path).append("two").segments());
+                     Path.empty().append(List.of("one")).append(path).append("two").segments());
 
         assertEquals(List.of(expected.get(2), expected.get(0)),
                      path.append(path).cut(2).skip(2).segments());
@@ -168,35 +168,51 @@ class HttpURLTest {
         Map<String, String> expected = new LinkedHashMap<>();
         expected.put("foo", "bar");
         expected.put("baz", null);
-        assertEquals(expected, query.entries());
+        assertEquals(expected, query.lastEntries());
 
         expected.remove("baz");
-        assertEquals(expected, query.remove("baz").entries());
+        assertEquals(expected, query.remove("baz").lastEntries());
 
         expected.put("baz", null);
         expected.remove("foo");
-        assertEquals(expected, query.remove("foo").entries());
-        assertEquals(expected, Query.empty(Name::of).add("baz").entries());
+        assertEquals(expected, query.remove("foo").lastEntries());
+        assertEquals(expected, Query.empty(Name::of).set("baz").lastEntries());
 
-        assertEquals("query '?foo=bar&baz=bax&quu=fez&moo'",
-                     query.put("baz", "bax").merge(Query.from(Map.of("quu", "fez"))).add("moo").toString());
+        assertEquals("query 'foo=bar&baz=bax&quu=fez&moo'",
+                     query.set("baz", "bax").set(Map.of("quu", "fez")).set("moo").toString());
+
+        Query bloated = query.add("baz", "bax").add(Map.of("quu", List.of("fez", "pop"))).add("moo").add("moo").add("foo", "bar");
+        assertEquals("query 'foo=bar&baz&baz=bax&quu=fez&quu=pop&moo&moo&foo=bar'",
+                     bloated.toString());
+
+        assertEquals("query 'foo=bar&quu=fez&quu=pop&moo&moo&foo=bar'",
+                     bloated.remove("baz").toString());
+
+        assertEquals("query 'baz&baz=bax&quu=fez&quu=pop&moo&moo'",
+                     bloated.remove("foo").toString());
+
+        assertEquals("query 'foo=bar&baz&baz=bax&quu=fez&quu=pop&foo=bar&moo'",
+                     bloated.set("moo").toString());
+
+        assertEquals("no query",
+                     bloated.remove("foo").remove("baz").remove("quu").remove("moo").toString());
 
         assertThrows(NullPointerException.class,
                      () -> query.remove(null));
 
         assertThrows(NullPointerException.class,
-                     () -> query.add(null));
+                     () -> query.add((String) null));
 
         assertThrows(NullPointerException.class,
-                     () -> query.put(null, "hax"));
+                     () -> query.add(null, "hax"));
 
         assertThrows(NullPointerException.class,
-                     () -> query.put("hax", null));
+                     () -> query.add("hax", null));
 
         Map<String, String> names = new LinkedHashMap<>();
         names.put(null, "hax");
         assertThrows(NullPointerException.class,
-                     () -> query.merge(names));
+                     () -> query.set(names));
     }
 
 }

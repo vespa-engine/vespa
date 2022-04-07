@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
+import ai.vespa.http.HttpURL.Query;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -57,7 +58,7 @@ public interface ConfigServer {
     Map<?,?> getServiceApiResponse(DeploymentId deployment, String serviceName, Path restPath);
 
     /** Returns a proxied response from a given path running on a given service and node */
-    ProxyResponse getServiceNodePage(DeploymentId deployment, String serviceName, DomainName node, Path subPath);
+    ProxyResponse getServiceNodePage(DeploymentId deployment, String serviceName, DomainName node, Path subPath, Query query);
 
     /**
      * Gets the Vespa logs of the given deployment.

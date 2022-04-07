@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
+import ai.vespa.http.HttpURL.Query;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
@@ -534,7 +535,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public ProxyResponse getServiceNodePage(DeploymentId deployment, String serviceName, DomainName node, Path subPath) {
+    public ProxyResponse getServiceNodePage(DeploymentId deployment, String serviceName, DomainName node, Path subPath, Query query) {
         return new ProxyResponse("<h1>OK</h1>".getBytes(StandardCharsets.UTF_8), "text/html", 200);
     }
 

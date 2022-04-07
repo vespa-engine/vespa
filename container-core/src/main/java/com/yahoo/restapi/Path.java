@@ -105,6 +105,13 @@ public class Path {
         return rest;
     }
 
+    /**
+     * The path this holds.
+     */
+    public HttpURL.Path getPath() {
+        return path;
+    }
+
     @Override
     public String toString() {
         return path.toString();

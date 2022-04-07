@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server;
 
 import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL;
+import ai.vespa.http.HttpURL.Query;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
@@ -559,8 +560,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    public HttpResponse proxyServiceHostnameRequest(ApplicationId applicationId, String hostName, String serviceName, HttpURL.Path path) {
-        return httpProxy.get(getApplication(applicationId), hostName, serviceName, path);
+    public HttpResponse proxyServiceHostnameRequest(ApplicationId applicationId, String hostName, String serviceName, HttpURL.Path path, Query query) {
+        return httpProxy.get(getApplication(applicationId), hostName, serviceName, path, query);
     }
 
     public Map<String, ClusterReindexing> getClusterReindexingStatus(ApplicationId applicationId) {

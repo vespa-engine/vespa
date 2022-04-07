@@ -5,8 +5,10 @@ import ai.vespa.validation.StringWrapper;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +23,6 @@ import static ai.vespa.validation.Validation.requireInRange;
 import static java.net.URLDecoder.decode;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -95,36 +96,44 @@ public class HttpURL {
                       Query.parse(uri.getRawQuery(), queryValidator));
     }
 
+    /** Returns a copy of this with the given scheme. */
     public HttpURL withScheme(Scheme scheme) {
         return create(scheme, domain, port, path, query);
     }
 
+    /** Returns a copy of this with the given domain. */
     public HttpURL withDomain(DomainName domain) {
         return create(scheme, domain, port, path, query);
     }
 
+    /** Returns a copy of this with the given non-negative port. */
     public HttpURL withPort(int port) {
         return create(scheme, domain, port, path, query);
     }
 
+    /** Returns a copy of this with no port specified. */
     public HttpURL withoutPort() {
         return create(scheme, domain, -1, path, query);
     }
 
+    /** Returns a copy of this with only the given path. */
     public HttpURL withPath(Path path) {
         return create(scheme, domain, port, path, query);
     }
 
+    /** Returns a copy of this with the given path appended. */
     public HttpURL appendPath(Path path) {
         return create(scheme, domain, port, this.path.append(path), query);
     }
 
+    /** Returns a copy of this with only the given query. */
     public HttpURL withQuery(Query query) {
         return create(scheme, domain, port, path, query);
     }
 
-    public HttpURL mergeQuery(Query query) {
-        return create(scheme, domain, port, path, this.query.merge(query));
+    /** Returns a copy of this with all entries of the query appended. */
+    public HttpURL appendQuery(Query query) {
+        return create(scheme, domain, port, path, this.query.add(query.entries()));
     }
 
     public Scheme scheme() {
@@ -157,6 +166,24 @@ public class HttpURL {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        HttpURL httpURL = (HttpURL) o;
+        return port == httpURL.port && scheme == httpURL.scheme && domain.equals(httpURL.domain) && path.equals(httpURL.path) && query.equals(httpURL.query);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(scheme, domain, port, path, query);
+    }
+
+    @Override
+    public String toString() {
+        return asURI().toString();
+    }
+
     /** Require that the given string (possibly decoded multiple times) contains none of {@code '/', '?', '#'}, and isn't either of {@code "", ".", ".."}. */
     public static String requirePathSegment(String value) {
         while ( ! value.equals(value = decode(value, UTF_8)));
@@ -170,6 +197,8 @@ public class HttpURL {
 
     public static class Path {
 
+        private static final Path empty = empty(HttpURL::requirePathSegment);
+
         private final List<String> segments;
         private final boolean trailingSlash;
         private final UnaryOperator<String> validator;
@@ -182,22 +211,12 @@ public class HttpURL {
 
         /** Creates a new, empty path, with a trailing slash, using {@link HttpURL#requirePathSegment} for segment validation. */
         public static Path empty() {
-            return empty(HttpURL::requirePathSegment);
+            return empty;
         }
 
         /** Creates a new, empty path, with a trailing slash, using the indicated validator for segments. */
         public static Path empty(Consumer<String> validator) {
             return new Path(List.of(), true, segmentValidator(validator));
-        }
-
-        /** Creates a new path with the given <em>decoded</em> segments. */
-        public static Path from(List<String> segments) {
-            return from(segments, __ -> { });
-        }
-
-        /** Creates a new path with the given <em>decoded</em> segments, and the validator applied to each segment. */
-        public static Path from(List<String> segments, Consumer<String> validator) {
-            return empty(validator).append(segments, true);
         }
 
         /** Parses the given raw, normalized path string; this ignores whether the path is absolute or relative. */
@@ -322,50 +341,57 @@ public class HttpURL {
 
     public static class Query {
 
-        private final Map<String, String> values;
+        private static final Query empty = empty(__ -> { });
+
+        private static class Node {
+
+            final Node next;
+            final String key;
+            final String value;
+
+            public Node(Node next, String key, String value) {
+                this.next = next;
+                this.key = key;
+                this.value = value;
+            }
+
+        }
+
+        private final Node head;
         private final UnaryOperator<String> validator;
 
-        private Query(Map<String, String> values, UnaryOperator<String> validator) {
-            this.values = requireNonNull(values);
+        private Query(Node head, UnaryOperator<String> validator) {
+            this.head = head;
             this.validator = requireNonNull(validator);
         }
 
         /** Creates a new, empty query part. */
         public static Query empty() {
-            return empty(__ -> { });
+            return empty;
         }
 
         /** Creates a new, empty query part, using the indicated string wrapper for keys and non-null values. */
         public static Query empty(Consumer<String> validator) {
-            return new Query(Map.of(), entryValidator(validator));
-        }
-
-        /** Creates a new query part with the given <em>decoded</em> values. */
-        public static Query from(Map<String, String> values) {
-            return from(values, __ -> { });
-        }
-
-        /** Creates a new query part with the given <em>decoded</em> values, and the validator applied to each pair. */
-        public static Query from(Map<String, String> values, Consumer<String> validator) {
-            return empty(validator).merge(values);
+            return new Query(null, entryValidator(validator));
         }
 
         /** Parses the given raw query string. */
         public static Query parse(String raw) {
+            if (raw == null) return empty();
             return parse(raw, __-> { });
         }
-        /** Parses the given raw query string, using the indicated string wrapper to hold keys and non-null values. */
+
+        /** Parses the given raw query string, using the validator on all keys and non-null values. */
         public static Query parse(String raw, Consumer<String> validator) {
             if (raw == null) return empty(validator);
-            Map<String, String> values = new LinkedHashMap<>();
+            Query query = empty(validator);
             for (String pair : raw.split("&")) {
                 int split = pair.indexOf("=");
-                String key, value;
-                if (split == -1) { key = pair; value = null; }
-                else { key = pair.substring(0, split); value = pair.substring(split + 1); }
-                values.put(decode(key, UTF_8), value == null ? null : decode(value, UTF_8));
+                if (split == -1) query = query.add(decode(pair, UTF_8));
+                else query = query.add(decode(pair.substring(0, split), UTF_8),
+                                       decode(pair.substring(split + 1), UTF_8)); // any additional '=' become part of the value
             }
-            return empty(validator).merge(values);
+            return query;
         }
 
         private static UnaryOperator<String> entryValidator(Consumer<String> validator) {
@@ -377,56 +403,107 @@ public class HttpURL {
         }
 
         /** Returns a copy of this with the <em>decoded</em> non-null key pointing to the <em>decoded</em> non-null value. */
-        public Query put(String key, String value) {
-            Map<String, String> copy = new LinkedHashMap<>(values);
-            copy.put(validator.apply(requireNonNull(key)), validator.apply(requireNonNull(value)));
-            return new Query(copy, validator);
+        public Query add(String key, String value) {
+            return new Query(new Node(head, validator.apply(requireNonNull(key)), validator.apply(requireNonNull(value))), validator);
         }
 
         /** Returns a copy of this with the <em>decoded</em> non-null key pointing to "nothing". */
         public Query add(String key) {
-            Map<String, String> copy = new LinkedHashMap<>(values);
-            copy.put(validator.apply(requireNonNull(key)), null);
-            return new Query(copy, validator);
+            return new Query(new Node(head, validator.apply(requireNonNull(key)), null), validator);
+        }
+
+        /** Returns a copy of this with the <em>decoded</em> non-null key pointing <em>only</em> to the <em>decoded</em> non-null value. */
+        public Query set(String key, String value) {
+            return remove(key).add(key, value);
+        }
+
+        /** Returns a copy of this with the <em>decoded</em> non-null key <em>only</em> pointing to "nothing". */
+        public Query set(String key) {
+            return remove(key).add(key);
         }
 
         /** Returns a copy of this without any key-value pair with the <em>decoded</em> key. */
         public Query remove(String key) {
-            Map<String, String> copy = new LinkedHashMap<>(values);
-            copy.remove(validator.apply(requireNonNull(key)));
-            return new Query(copy, validator);
+            return new Query(without(validator.apply(requireNonNull(key)), head), validator);
         }
 
-        /** Returns a copy of this with all mappings from the other query added to this, possibly overwriting existing mappings. */
-        public Query merge(Query other) {
-            return merge(other.values);
+        private static Node without(String key, Node node) {
+            if (node == null) return node;                  // null does not contain the key
+            Node child = without(key, node.next);           // get a child that does not contain the key
+            if (node.key.equals(key)) return child;         // if we have the key, unlink us
+            if (child == node.next) return node;            // if our next didn't have the key, return unchanged
+            return new Node(child, node.key, node.value);   // if our next has changed, we must change too
         }
 
-        /** Returns a copy of this with all given mappings added to this, possibly overwriting existing mappings. */
-        public Query merge(Map<String, String> values) {
-            Map<String, String> copy = new LinkedHashMap<>(this.values);
-            values.forEach((key, value) -> copy.put(validator.apply(requireNonNull(key, "keys cannot be null")),
-                                                    value == null ? null : validator.apply(value)));
-            return new Query(copy, validator);
+        /** Returns a copy of this with all given mappings appended to this. {@code null} values, but not lists of values, are allowed. */
+        public Query add(Map<String, ? extends Iterable<String>> values) {
+            Query query = this;
+            for (Map.Entry<String, ? extends Iterable<String>> entry : values.entrySet())
+                for (String value : entry.getValue())
+                    query = value == null ? query.add(entry.getKey())
+                                          : query.add(entry.getKey(), value);
+
+            return query;
         }
 
-        /** The <em>URL decoded</em> key-value pairs that make up this query; keys and values may be {@code ""}, and values are {@code null} when only key was specified. */
-        public Map<String, String> entries() {
-            return unmodifiableMap(values);
+        /** Returns a copy of this with all given mappings added to this, possibly replacing existing mappings. */
+        public Query set(Map<String, String> values) {
+            Query query = this;
+            for (Map.Entry<String, String> entry : values.entrySet())
+                query = entry.getValue() == null ? query.set(entry.getKey())
+                        : query.set(entry.getKey(), entry.getValue());
+
+            return query;
+        }
+
+        /**
+         * The <em>URL decoded</em> key-value pairs that make up this query;
+         * keys and values may be {@code ""}, and values are {@code null} when only key was specified.
+         * When a key was used multiple times, this map contains only the last value associated with the key.
+         */
+        public Map<String, String> lastEntries() {
+            Map<String, String> entries = new LinkedHashMap<>();
+            for (Node node : nodes())
+                entries.put(node.key, node.value);
+
+            return entries;
+        }
+
+        /**
+         * The <em>URL decoded</em> key-value pairs that make up this query;
+         * keys and values may be {@code ""}, and values (not lists of values) are {@code null} when only key was specified.
+         * When a key was used multiple times, this map lists the values in the same order as they were given.
+         */
+        public Map<String, List<String>> entries() {
+            Map<String, List<String>> entries = new LinkedHashMap<>();
+            for (Node node : nodes())
+                entries.computeIfAbsent(node.key, __ -> new ArrayList<>(2)).add(node.value);
+
+            return entries;
         }
 
         /** A raw query string, with {@code '?'} prepended, that parses to this, by splitting on {@code "&"}, then on {@code "="}, and then URL decoding; or the empty string if this is empty. */
         private String raw() {
             StringJoiner joiner = new StringJoiner("&", "?", "").setEmptyValue("");
-            values.forEach((key, value) -> joiner.add(encode(key, UTF_8) +
-                                                      (value == null ? "" : "=" + encode(value, UTF_8))));
+            for (Node node : nodes())
+                joiner.add(encode(node.key, UTF_8) +
+                           (node.value == null ? "" : "=" + encode(node.value, UTF_8)));
+
             return joiner.toString();
         }
 
+        /** Nodes in insertion order. */
+        private Iterable<Node> nodes() {
+            Deque<Node> nodes = new ArrayDeque<>();
+            for (Node node = head; node != null; node = node.next)
+                nodes.push(node);
+
+            return nodes;
+        }
         /** Intentionally not usable for constructing new URIs. Use {@link HttpURL} for that instead. */
         @Override
         public String toString() {
-            return "query '" + raw() + "'";
+            return head == null ? "no query" : "query '" + raw().substring(1) + "'";
         }
 
         @Override
@@ -434,12 +511,12 @@ public class HttpURL {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Query query = (Query) o;
-            return values.equals(query.values);
+            return entries().equals(query.entries());
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(values);
+            return Objects.hash(entries());
         }
 
     }
