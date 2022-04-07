@@ -5,7 +5,19 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Abstract wrapper for glorified strings, to ease adding new such wrappers.
- *
+ * <p>
+ * <br>
+ * What's in a name?<br>
+ * That which we call a String<br>
+ * by any other name would smell as foul.<br>
+ * No? 'Tis not soft?<br>
+ * No ... I see it now!<br>
+ * Baptiz'd a-new, the String—<br>
+ * no more a String,<br>
+ * no less a {@link #value}—<br>
+ * it bringeth counsel<br>
+ * and is proof against their enmity.<br>
+ * </p>
  * @param <T> child type
  *
  * @author jonmv
