@@ -11,8 +11,8 @@ IndexValue::IndexValue(int index_) : index(index_), key() {}
 
 bool
 IndexValue::operator==(const IndexValue& other) const {
-    if (key.get() != NULL) {
-        if (other.key.get() != NULL && *key == *other.key) {
+    if (key) {
+        if (other.key && *key == *other.key) {
             return true;
         }
         return false;
