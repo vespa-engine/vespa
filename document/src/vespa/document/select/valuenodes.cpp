@@ -223,7 +223,7 @@ namespace {
 class IteratorHandler : public fieldvalue::IteratorHandler {
 public:
     IteratorHandler();
-    ~IteratorHandler();
+    ~IteratorHandler() override;
     bool hasSingleValue() const;
     std::unique_ptr<Value> stealSingleValue() &&;
     std::vector<ArrayValue::VariableValue> stealValues() &&;

@@ -12,8 +12,8 @@ And::And(std::unique_ptr<Node> left, std::unique_ptr<Node> right, const char* na
       _left(std::move(left)),
       _right(std::move(right))
 {
-    assert(_left.get());
-    assert(_right.get());
+    assert(_left);
+    assert(_right);
 }
 
 
@@ -39,11 +39,9 @@ namespace {
     ResultList traceAndValue(const T& value, std::ostream& out,
                          const Node& leftNode, const Node& rightNode)
     {
-        ResultList left = leftNode.contains(value);
-        out << "And - Left branch returned " << left << ".\n";
-        ResultList right = rightNode.contains(value);
-        out << "And - Right branch returned " << right << ".\n";
-        return left && right;
+        out << "And - Left branch returned " << leftNode.contains(value) << ".\n";
+        out << "And - Right branch returned " << rightNode.contains(value) << ".\n";
+        return leftNode.contains(value) && rightNode.contains(value);
     }
 }
 
@@ -85,11 +83,9 @@ namespace {
     ResultList traceOrValue(const T& value, std::ostream& out,
                          const Node& leftNode, const Node& rightNode)
     {
-        ResultList left = leftNode.contains(value);
-        out << "Or - Left branch returned " << left << ".\n";
-        ResultList right = rightNode.contains(value);
-        out << "Or - Right branch returned " << right << ".\n";
-        return left || right;
+        out << "Or - Left branch returned " << leftNode.contains(value) << ".\n";
+        out << "Or - Right branch returned " << rightNode.contains(value) << ".\n";
+        return leftNode.contains(value) || rightNode.contains(value);
     }
 }
 
@@ -124,13 +120,11 @@ Not::print(std::ostream& out, bool verbose, const std::string& indent) const
 
 namespace {
     template<typename T>
-    ResultList traceNotValue(const T& value, std::ostream& out,
-                         const Node& node)
+    ResultList traceNotValue(const T& value, std::ostream& out, const Node& node)
     {
-        ResultList result = node.contains(value);
-        out << "Not - Child returned " << result
+        out << "Not - Child returned " << node.contains(value)
             << ". Returning opposite.\n";
-        return !result;
+        return !node.contains(value);
     }
 }
 
