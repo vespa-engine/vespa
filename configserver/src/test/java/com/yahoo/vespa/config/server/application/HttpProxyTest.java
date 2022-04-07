@@ -6,7 +6,7 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.restapi.HttpURL.Path;
+import ai.vespa.http.HttpURL.Path;
 import com.yahoo.vespa.config.server.http.HttpFetcher;
 import com.yahoo.vespa.config.server.http.RequestTimeoutException;
 import com.yahoo.vespa.config.server.http.StaticResponse;

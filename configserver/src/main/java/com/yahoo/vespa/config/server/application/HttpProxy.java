@@ -1,15 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import ai.vespa.http.DomainName;
+import ai.vespa.http.HttpURL;
+import ai.vespa.http.HttpURL.Path;
+import ai.vespa.http.HttpURL.Scheme;
 import com.google.inject.Inject;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.net.DomainName;
-import com.yahoo.restapi.HttpURL;
-import com.yahoo.restapi.HttpURL.Path;
-import com.yahoo.restapi.HttpURL.Scheme;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpFetcher;
 import com.yahoo.vespa.config.server.http.HttpFetcher.Params;

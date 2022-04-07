@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import ai.vespa.http.DomainName;
+import ai.vespa.http.HttpURL;
 import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationFile;
@@ -14,9 +16,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Response;
-import com.yahoo.net.DomainName;
 import com.yahoo.restapi.ErrorResponse;
-import com.yahoo.restapi.HttpURL;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.slime.Cursor;
