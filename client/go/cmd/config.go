@@ -252,8 +252,18 @@ func (c *Config) x509KeyPair(app vespa.ApplicationID) (KeyPair, error) {
 	}, nil
 }
 
+func (c *Config) apiKeyFileFromEnv() (string, bool) {
+	override, ok := c.environment["VESPA_CLI_API_KEY_FILE"]
+	return override, ok
+}
+
+func (c *Config) apiKeyFromEnv() ([]byte, bool) {
+	override, ok := c.environment["VESPA_CLI_API_KEY"]
+	return []byte(override), ok
+}
+
 func (c *Config) apiKeyPath(tenantName string) string {
-	if override, ok := c.get(apiKeyFileFlag); ok {
+	if override, ok := c.apiKeyFileFromEnv(); ok {
 		return override
 	}
 	return filepath.Join(c.homeDir, tenantName+".api-key.pem")
@@ -264,26 +274,25 @@ func (c *Config) authConfigPath() string {
 }
 
 func (c *Config) readAPIKey(tenantName string) ([]byte, error) {
-	if override, ok := c.get(apiKeyFlag); ok {
-		return []byte(override), nil
+	if override, ok := c.apiKeyFromEnv(); ok {
+		return override, nil
 	}
 	return os.ReadFile(c.apiKeyPath(tenantName))
 }
 
 // useAPIKey returns true if an API key should be used when authenticating with system.
 func (c *Config) useAPIKey(cli *CLI, system vespa.System, tenantName string) bool {
-	if _, ok := c.get(apiKeyFlag); ok {
+	if _, ok := c.apiKeyFromEnv(); ok {
 		return true
 	}
-	if _, ok := c.get(apiKeyFileFlag); ok {
+	if _, ok := c.apiKeyFileFromEnv(); ok {
 		return true
 	}
-	// If no Auth0 token is created, fall back to tenant api key, but warn that this functionality is deprecated
-	// TODO: Remove this when users have had time to migrate over to Auth0 device flow authentication
 	if !cli.isCI() {
-		a, err := auth0.New(c.authConfigPath(), system.Name, system.URL)
-		if err != nil || !a.HasCredentials() {
-			cli.printWarning("Use of API key is deprecated", "Authenticate with Auth0 instead: 'vespa auth login'")
+		// Fall back to API key, if present and Auth0 has not been configured
+		client, err := auth0.New(c.authConfigPath(), system.Name, system.URL)
+		if err != nil || !client.HasCredentials() {
+			cli.printWarning("Regular authentication is preferred over API key in a non-CI context", "Authenticate with 'vespa auth login'")
 			return util.PathExists(c.apiKeyPath(tenantName))
 		}
 	}
@@ -387,9 +396,6 @@ func (c *Config) set(option, value string) error {
 			viper.Set(option, value)
 			return nil
 		}
-	case apiKeyFileFlag:
-		viper.Set(option, value)
-		return nil
 	}
 	return fmt.Errorf("invalid option or value: %q: %q", option, value)
 }

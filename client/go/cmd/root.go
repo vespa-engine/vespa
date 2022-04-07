@@ -33,8 +33,6 @@ const (
 	waitFlag        = "wait"
 	colorFlag       = "color"
 	quietFlag       = "quiet"
-	apiKeyFileFlag  = "api-key-file"
-	apiKeyFlag      = "api-key"
 )
 
 // CLI holds the Vespa CLI command tree, configuration and dependencies.
@@ -65,7 +63,6 @@ type Flags struct {
 	waitSecs    int
 	color       string
 	quiet       bool
-	apiKeyFile  string
 }
 
 // ErrCLI is an error returned to the user. It wraps an exit status, a regular error and optional hints for resolving
@@ -158,9 +155,6 @@ func (c *CLI) loadConfig() error {
 	bindings.bindFlag(waitFlag, c.cmd)
 	bindings.bindFlag(colorFlag, c.cmd)
 	bindings.bindFlag(quietFlag, c.cmd)
-	bindings.bindFlag(apiKeyFileFlag, c.cmd)
-	bindings.bindEnvironment(apiKeyFlag, "VESPA_CLI_API_KEY") // not bound to a flag because we don't want secrets in argv
-	bindings.bindEnvironment(apiKeyFileFlag, "VESPA_CLI_API_KEY_FILE")
 	config, err := loadConfig(c.Environment, bindings)
 	if err != nil {
 		return err
@@ -206,7 +200,6 @@ func (c *CLI) configureFlags() {
 	c.cmd.PersistentFlags().IntVarP(&flags.waitSecs, waitFlag, "w", 0, "Number of seconds to wait for a service to become ready")
 	c.cmd.PersistentFlags().StringVarP(&flags.color, colorFlag, "c", "auto", "Whether to use colors in output.")
 	c.cmd.PersistentFlags().BoolVarP(&flags.quiet, quietFlag, "q", false, "Quiet mode. Only errors will be printed")
-	c.cmd.PersistentFlags().StringVarP(&flags.apiKeyFile, apiKeyFileFlag, "k", "", "Path to API key used for cloud authentication")
 	c.flags = &flags
 }
 

@@ -22,16 +22,11 @@ func TestConfig(t *testing.T) {
 	assertConfigCommand(t, "", "config", "set", "target", "http://127.0.0.1:8080")
 	assertConfigCommand(t, "", "config", "set", "target", "https://127.0.0.1")
 	assertConfigCommand(t, "target = https://127.0.0.1\n", "config", "get", "target")
-	assertEnvConfigCommand(t, "api-key-file = /tmp/private.key\n", []string{"VESPA_CLI_API_KEY_FILE=/tmp/private.key"}, "config", "get", "api-key-file")
-	assertConfigCommand(t, "", "config", "set", "api-key-file", "/tmp/private.key")
-	assertConfigCommand(t, "api-key-file = /tmp/private.key\n", "config", "get", "api-key-file")
 
 	assertConfigCommandErr(t, "Error: invalid application: \"foo\"\n", "config", "set", "application", "foo")
 	assertConfigCommand(t, "application = <unset>\n", "config", "get", "application")
 	assertConfigCommand(t, "", "config", "set", "application", "t1.a1.i1")
 	assertConfigCommand(t, "application = t1.a1.i1\n", "config", "get", "application")
-
-	assertConfigCommand(t, "api-key-file = /tmp/private.key\napplication = t1.a1.i1\ncolor = auto\ninstance = <unset>\nquiet = false\ntarget = https://127.0.0.1\nwait = 0\nzone = <unset>\n", "config", "get")
 
 	assertConfigCommand(t, "", "config", "set", "wait", "60")
 	assertConfigCommandErr(t, "Error: wait option must be an integer >= 0, got \"foo\"\n", "config", "set", "wait", "foo")
@@ -67,17 +62,15 @@ func assertConfigCommandErr(t *testing.T, expected string, args ...string) {
 
 func TestUseAPIKey(t *testing.T) {
 	cli, _, _ := newTestCLI(t)
-
 	assert.False(t, cli.config.useAPIKey(cli, vespa.PublicSystem, "t1"))
 
-	cli.config.set(apiKeyFileFlag, "/tmp/foo")
+	cli, _, _ = newTestCLI(t, "VESPA_CLI_API_KEY_FILE=/tmp/foo")
 	assert.True(t, cli.config.useAPIKey(cli, vespa.PublicSystem, "t1"))
-	cli.config.set(apiKeyFileFlag, "")
 
 	cli, _, _ = newTestCLI(t, "VESPA_CLI_API_KEY=foo")
 	assert.True(t, cli.config.useAPIKey(cli, vespa.PublicSystem, "t1"))
 
-	// Test deprecated functionality
+	// Prefer Auth0, if configured
 	authContent := `
 {
     "version": 1,
