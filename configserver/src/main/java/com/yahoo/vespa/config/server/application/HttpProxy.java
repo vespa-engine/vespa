@@ -6,11 +6,6 @@ import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.container.jdisc.HttpResponse;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.logging.Level;
-
 import com.yahoo.net.DomainName;
 import com.yahoo.restapi.HttpURL;
 import com.yahoo.restapi.HttpURL.Path;
@@ -22,10 +17,9 @@ import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class HttpProxy {
 

@@ -56,7 +56,8 @@ public interface ConfigServer {
 
     Map<?,?> getServiceApiResponse(DeploymentId deployment, String serviceName, Path restPath);
 
-    String getServiceStatusPage(DeploymentId deployment, String serviceName, DomainName node, Path subPath);
+    /** Returns a proxied response from a given path running on a given service and node */
+    ProxyResponse getServiceNodePage(DeploymentId deployment, String serviceName, DomainName node, Path subPath);
 
     /**
      * Gets the Vespa logs of the given deployment.
