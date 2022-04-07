@@ -10,23 +10,25 @@ if [[ $# -ne 1 ]]; then
 fi
 
 readonly VESPA_RELEASE="$1"
-readonly TRUE="true"
-readonly FALSE="false"
-
 export JAVA_HOME=$(dirname $(dirname $(readlink -f /usr/bin/java)))
 
 function is_published {
-    BUNDLE_PLUGIN_HTTP_CODE=$(curl --write-out %{http_code} --silent --location --output /dev/null https://repo.maven.apache.org/maven2/com/yahoo/vespa/bundle-plugin/${VESPA_RELEASE}/)
-    if [ $BUNDLE_PLUGIN_HTTP_CODE = "200" ] ; then
-        echo "$TRUE"
+    local TMP_MVN_REPO=/tmp/maven-repo
+    echo $TMP_MVN_REPO
+    mkdir -p $TMP_MVN_REPO
+    rm -rf $TMP_MVN_REPO/com/yahoo/vespa
+    # Because the transfer of artifacts to Maven Central is not atomic we can't just check a simple pom or jar to be available. Because of this we 
+    # check that the publication is complete enough to compile a Java sample app
+    if mvn -V -B -pl ai.vespa.example:albums -Dmaven.repo.local=$TMP_MVN_REPO -Dmaven.javadoc.skip=true -Dmaven.source.skip=true -DskipTests clean package; then
+        return 0
     else
-        echo "$FALSE"
+        return 1
     fi
 }
 
 function wait_until_published {
     cnt=0
-    until [[ $(is_published) = "$TRUE" ]]; do
+    until is_published; do
         ((cnt+=1))
         # Wait max 60 minutes
         if (( $cnt > 60 )); then
@@ -38,8 +40,6 @@ function wait_until_published {
     done
 }
 
-wait_until_published
-
 ssh-add -D
 set +x
 ssh-add <(echo $SAMPLE_APPS_DEPLOY_KEY | base64 -d)
@@ -49,7 +49,9 @@ git clone git@github.com:vespa-engine/sample-apps.git
 cd sample-apps
 
 # Update Vespa version property in pom.xml
-mvn versions:set-property -Dproperty=vespa_version -DnewVersion=${VESPA_RELEASE}
+mvn -V -B versions:set-property -Dproperty=vespa_version -DnewVersion=${VESPA_RELEASE}
+
+wait_until_published
 
 changes=$(git status --porcelain | wc -l)
 
