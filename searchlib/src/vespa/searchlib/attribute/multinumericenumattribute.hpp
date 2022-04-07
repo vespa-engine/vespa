@@ -2,13 +2,11 @@
 
 #pragma once
 
-#include "attributeiterators.hpp"
 #include "load_utils.h"
 #include "loadednumericvalue.h"
 #include "multinumericenumattribute.h"
 #include "multi_numeric_enum_search_context.h"
 #include <vespa/searchlib/query/query_term_simple.h>
-#include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/util/fileutil.hpp>
 
 namespace search {

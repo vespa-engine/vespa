@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "attributeiterators.hpp"
 #include "attributevector.hpp"
 #include "load_utils.h"
 #include "numeric_matcher.h"
@@ -11,7 +10,6 @@
 #include "singlenumericattributesaver.h"
 #include "single_numeric_search_context.h"
 #include <vespa/searchlib/query/query_term_simple.h>
-#include <vespa/searchlib/queryeval/emptysearch.h>
 
 namespace search {
 
