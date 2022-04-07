@@ -119,16 +119,6 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <!-- Illegal reflective access by com.yahoo.io.NativeIO -->
-          <argLine>
-            --add-opens=java.base/java.io=ALL-UNNAMED
-          </argLine>
-        </configuration>
-      </plugin>
-      <plugin>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>abi-check-plugin</artifactId>
       </plugin>

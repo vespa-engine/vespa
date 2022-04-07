@@ -157,10 +157,6 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <forkCount>2</forkCount>
-          <!-- Illegal reflective access by LogFileHandler via com.yahoo.io.NativeIO -->
-          <argLine>
-            --add-opens=java.base/java.io=ALL-UNNAMED
-          </argLine>
         </configuration>
       </plugin>
       <plugin>
