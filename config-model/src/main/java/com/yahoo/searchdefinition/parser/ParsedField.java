@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition.parser;
 import com.yahoo.searchdefinition.document.Stemming;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,7 +65,7 @@ class ParsedField extends ParsedBlock {
     Optional<String> getNormalizing() { return Optional.ofNullable(normalizing); }
     Optional<ParsedIndexingOp> getIndexing() { return Optional.ofNullable(indexingOp); }
     Optional<ParsedSorting> getSorting() { return Optional.ofNullable(sortSettings); }
-    Map<String, String> getRankTypes() { return Map.copyOf(rankTypes); }
+    Map<String, String> getRankTypes() { return Collections.unmodifiableMap(rankTypes); }
 
     /** get an existing summary field for modification, or create it */
     ParsedSummaryField summaryFieldFor(String name) {
