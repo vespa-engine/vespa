@@ -323,6 +323,11 @@ public class DocumentType extends StructuredDataType {
         }
 
         inherits.add(type);
+        for (var field : type.getAllUniqueFields()) {
+            if (! headerType.hasField(field)) {
+                headerType.addField(field);
+            }
+        }
     }
 
     /**
