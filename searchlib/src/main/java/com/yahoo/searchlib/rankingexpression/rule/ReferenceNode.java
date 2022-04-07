@@ -23,9 +23,9 @@ public final class ReferenceNode extends CompositeNode {
 
     private final Reference reference;
 
-    /* Creates a node with a simple identifier reference */
+    /* Parses this string into a reference */
     public ReferenceNode(String name) {
-        this.reference = Reference.fromIdentifier(name);
+        this.reference = Reference.simple(name).orElseGet(() -> Reference.fromIdentifier(name));
     }
 
     public ReferenceNode(String name, List<? extends ExpressionNode> arguments, String output) {

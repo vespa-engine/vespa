@@ -280,13 +280,13 @@ public abstract class IntermediateOperation {
     public void insert(IntermediateOperation operationToInsert, int inputNumber) {
         if ( operationToInsert.inputs.size() > 0 ) {
             throw new IllegalArgumentException("Operation to insert to '" + name + "' has " +
-                    "existing inputs which is not supported.");
+                                               "existing inputs which is not supported.");
         }
         IntermediateOperation previousInputOperation = inputs.get(inputNumber);
         int outputNumber = findOutputNumber(previousInputOperation, this);
         if (outputNumber == -1) {
             throw new IllegalArgumentException("Input '" + previousInputOperation.name + "' to '" +
-                    name + "' does not have '" + name + "' as output.");
+                                               name + "' does not have '" + name + "' as output.");
         }
         previousInputOperation.outputs.set(outputNumber, operationToInsert);
         operationToInsert.inputs.add(previousInputOperation);
