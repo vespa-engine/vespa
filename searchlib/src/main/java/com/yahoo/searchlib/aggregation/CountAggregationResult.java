@@ -18,9 +18,7 @@ public class CountAggregationResult extends AggregationResult {
     public static final int classId = registerClass(0x4000 + 81, CountAggregationResult.class);
     private long count = 0;
 
-    /**
-     * Constructs an empty result node. <b>NOTE:</b> This instance is broken until non-optional member data is set.
-     */
+    /** Constructs an empty result node. <b>NOTE:</b> This instance is broken until non-optional member data is set. */
     public CountAggregationResult() {
 
     }
@@ -28,17 +26,13 @@ public class CountAggregationResult extends AggregationResult {
     /**
      * Constructs an instance of this class with given count value.
      *
-     * @param count The initial number of hits.
+     * @param count the initial number of hits
      */
     public CountAggregationResult(long count) {
         setCount(count);
     }
 
-    /**
-     * Returns the number of aggregated hits.
-     *
-     * @return The count.
-     */
+    /** Returns the number of aggregated hits. */
     public final long getCount() {
         return count;
     }
@@ -46,8 +40,8 @@ public class CountAggregationResult extends AggregationResult {
     /**
      * Sets the number of aggregated hits.
      *
-     * @param count The count.
-     * @return This, to allow chaining.
+     * @param count the count
+     * @return this, to allow chaining
      */
     public final CountAggregationResult setCount(long count) {
         this.count = count;
@@ -96,4 +90,5 @@ public class CountAggregationResult extends AggregationResult {
         super.visitMembers(visitor);
         visitor.visit("count", count);
     }
+
 }

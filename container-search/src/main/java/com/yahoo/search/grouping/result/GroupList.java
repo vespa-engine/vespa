@@ -5,7 +5,7 @@ import com.yahoo.search.Result;
 import com.yahoo.search.grouping.GroupingRequest;
 
 /**
- * This class represents a labeled group list in the grouping result model. It is contained in {@link Group}, and
+ * A labeled group list in the grouping result model. It is contained in {@link Group}, and
  * contains one or more {@link Group groups} itself, allowing for a hierarchy of grouping results. Use the {@link
  * GroupingRequest#getResultGroup(Result)} to retrieve grouping results.
  *
