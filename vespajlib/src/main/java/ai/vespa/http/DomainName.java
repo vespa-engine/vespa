@@ -15,8 +15,8 @@ import static ai.vespa.validation.Validation.requireMatch;
  */
 public class DomainName extends PatternedStringWrapper<DomainName> {
 
-    public static final Pattern labelPattern = Pattern.compile("([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])");
-    public static final Pattern domainNamePattern = Pattern.compile("(" + labelPattern + "\\.)*" + labelPattern);
+    static final Pattern labelPattern = Pattern.compile("([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])");
+    static final Pattern domainNamePattern = Pattern.compile("(" + labelPattern + "\\.)*" + labelPattern);
 
     public static final DomainName localhost = DomainName.of("localhost");
 
