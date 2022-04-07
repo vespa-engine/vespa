@@ -125,8 +125,6 @@ public class RankProfile implements Cloneable {
 
     private final TypeSettings attributeTypes = new TypeSettings();
 
-    private final TypeSettings queryFeatureTypes = new TypeSettings();
-
     private List<ImmutableSDField> allFieldsList;
 
     private Boolean strict;
@@ -763,7 +761,7 @@ public class RankProfile implements Cloneable {
     // because inputs are tied closer to functions than the profile itself.
     public Map<Reference, TensorType> inputs() {
         if (inputs.isEmpty() && inherited().isEmpty()) return Map.of();
-        if (inherited().isEmpty()) return new LinkedHashMap<>(inputs);
+        if (inherited().isEmpty()) return Collections.unmodifiableMap(inputs);
 
         // Combine
         Map<Reference, TensorType> allInputs = new LinkedHashMap<>();
@@ -779,7 +777,7 @@ public class RankProfile implements Cloneable {
             }
         }
         allInputs.putAll(inputs);
-        return allInputs;
+        return Collections.unmodifiableMap(allInputs);
     }
 
     public static class MutateOperation {
