@@ -87,8 +87,13 @@ public class ContainerEngineMock implements ContainerEngine {
             }
 
             @Override
-            public void createSymlink(ContainerPath symlink, Path target) {
-                throw new UnsupportedOperationException("createSymlink not implemented");
+            public void addSymlink(ContainerPath symlink, Path target) {
+                throw new UnsupportedOperationException("addSymlink not implemented");
+            }
+
+            @Override
+            public void converge(NodeAgentContext context) {
+                throw new UnsupportedOperationException("converge not implemented");
             }
         };
     }
