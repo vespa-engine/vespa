@@ -269,13 +269,16 @@ public class DeploymentStatus {
     public Change outstandingChange(InstanceName instance) {
         StepStatus status = instanceSteps().get(instance);
         if (status == null) return Change.empty();
-        for (ApplicationVersion version : application.deployableVersions(application.deploymentSpec().requireInstance(instance).revisionTarget() == next)) {
+        boolean ascending = next == application.deploymentSpec().requireInstance(instance).revisionTarget();
+        for (ApplicationVersion version : application.deployableVersions(ascending)) {
             if (status.dependenciesCompletedAt(Change.of(version), Optional.empty()).map(now::isBefore).orElse(true)) continue;
             Change change = Change.of(version);
             if (application.productionDeployments().getOrDefault(instance, List.of()).stream()
                            .anyMatch(deployment -> change.downgrades(deployment.applicationVersion()))) continue;
             if ( ! application.require(instance).change().application().map(change::upgrades).orElse(true)) continue;
-            if (hasCompleted(instance, change)) continue;
+            if (hasCompleted(instance, change))
+                if (ascending) continue;
+                else break;
             return change;
         }
         return Change.empty();

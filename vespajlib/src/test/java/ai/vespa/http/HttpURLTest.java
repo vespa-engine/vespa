@@ -182,6 +182,21 @@ class HttpURLTest {
                      query.set("baz", "bax").set(Map.of("quu", "fez")).set("moo").toString());
 
         Query bloated = query.add("baz", "bax").add(Map.of("quu", List.of("fez", "pop"))).add("moo").add("moo").add("foo", "bar");
+
+        List<String> foos = new ArrayList<>(); foos.add("bar"); foos.add("bar");
+        List<String> bazs = new ArrayList<>(); bazs.add(null);  bazs.add("bax");
+        List<String> quus = new ArrayList<>(); quus.add("fez"); quus.add("pop");
+        List<String> moos = new ArrayList<>(); moos.add(null);  moos.add(null);
+        assertEquals(List.of(Map.entry("foo", foos), Map.entry("baz", bazs), Map.entry("quu", quus), Map.entry("moo", moos)),
+                     new ArrayList<>(bloated.entries().entrySet()));
+
+        Map<String, String> last = new LinkedHashMap<>();
+        last.put("foo", "bar");
+        last.put("baz", "bax");
+        last.put("quu", "pop");
+        last.put("moo", null);
+        assertEquals(new ArrayList<>(last.entrySet()), new ArrayList<>(bloated.lastEntries().entrySet()));
+
         assertEquals("query 'foo=bar&baz&baz=bax&quu=fez&quu=pop&moo&moo&foo=bar'",
                      bloated.toString());
 

@@ -500,6 +500,7 @@ public class HttpURL {
 
             return nodes;
         }
+
         /** Intentionally not usable for constructing new URIs. Use {@link HttpURL} for that instead. */
         @Override
         public String toString() {
