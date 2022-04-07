@@ -864,8 +864,6 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.distributor.visitor.sum.failures.busy.rate"));
         metrics.add(new Metric("vds.distributor.visitor.sum.failures.inconsistent_bucket.rate"));
         metrics.add(new Metric("vds.distributor.visitor.sum.failures.notfound.rate"));
-        metrics.add(new Metric("vds.distributor.visitor.sum.failures.concurrent_mutations.rate"));
-        metrics.add(new Metric("vds.distributor.visitor.sum.failures.test_and_set_failed.rate"));
 
         metrics.add(new Metric("vds.distributor.docsstored.average"));
         metrics.add(new Metric("vds.distributor.bytesstored.average"));
