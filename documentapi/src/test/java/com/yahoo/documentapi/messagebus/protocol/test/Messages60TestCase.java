@@ -143,6 +143,7 @@ public class Messages60TestCase extends MessagesTestBase {
         private static final String BUCKET_SPACE = "beartato";
 
         @Override
+        @SuppressWarnings("removal") // TODO: Remove on Vespa 8
         public void run() {
             GetBucketListMessage msg = new GetBucketListMessage(new BucketId(16, 123));
             msg.setBucketSpace(BUCKET_SPACE);
@@ -151,7 +152,7 @@ public class Messages60TestCase extends MessagesTestBase {
             for (Language lang : LANGUAGES) {
                 msg = (GetBucketListMessage)deserialize("GetBucketListMessage", DocumentProtocol.MESSAGE_GETBUCKETLIST, lang);
                 assertEquals(new BucketId(16, 123), msg.getBucketId());
-                assertEquals("default", msg.getLoadType().getName());
+                assertEquals("default", msg.getLoadType().getName()); // TODO: Remove on Vespa 8
                 assertEquals(BUCKET_SPACE, msg.getBucketSpace());
             }
         }
@@ -162,9 +163,10 @@ public class Messages60TestCase extends MessagesTestBase {
         private static final String BUCKET_SPACE = "andrei";
 
         @Override
+        @SuppressWarnings("removal") // TODO: Remove on Vespa 8
         public void run() {
             StatBucketMessage msg = new StatBucketMessage(new BucketId(16, 123), "id.user=123");
-            msg.setLoadType(null);
+            msg.setLoadType(null); // TODO: Remove on Vespa 8
             msg.setBucketSpace(BUCKET_SPACE);
             assertEquals(BASE_MESSAGE_LENGTH + 27 + serializedLength(BUCKET_SPACE), serialize("StatBucketMessage", msg));
 
@@ -172,7 +174,7 @@ public class Messages60TestCase extends MessagesTestBase {
                 msg = (StatBucketMessage)deserialize("StatBucketMessage", DocumentProtocol.MESSAGE_STATBUCKET, lang);
                 assertEquals(new BucketId(16, 123), msg.getBucketId());
                 assertEquals("id.user=123", msg.getDocumentSelection());
-                assertEquals("default", msg.getLoadType().getName());
+                assertEquals("default", msg.getLoadType().getName()); // TODO: Remove on Vespa 8
                 assertEquals(BUCKET_SPACE, msg.getBucketSpace());
             }
         }

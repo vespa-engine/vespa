@@ -2,9 +2,9 @@
 package com.yahoo.vespa.hosted.node.admin.integration;
 
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import org.junit.Test;
 
 import java.util.List;
@@ -29,7 +29,7 @@ public class RestartTest {
             tester.addChildNodeRepositoryNode(nodeSpec);
 
             ContainerName host1 = new ContainerName("host1");
-            tester.inOrder(tester.containerOperations).createContainer(containerMatcher(host1), any(), any());
+            tester.inOrder(tester.containerOperations).createContainer(containerMatcher(host1), any());
             tester.inOrder(tester.nodeRepository).updateNodeAttributes(
                     eq(hostname), eq(new NodeAttributes().withDockerImage(dockerImage).withVespaVersion(dockerImage.tagAsVersion())));
 

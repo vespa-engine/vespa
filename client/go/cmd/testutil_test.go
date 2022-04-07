@@ -3,7 +3,6 @@ package cmd
 
 import (
 	"bytes"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -28,22 +27,4 @@ func newTestCLI(t *testing.T, envVars ...string) (*CLI, *bytes.Buffer, *bytes.Bu
 	cli.httpClient = &mock.HTTPClient{}
 	cli.exec = &mock.Exec{}
 	return cli, &stdout, &stderr
-}
-
-func mockApplicationPackage(t *testing.T, java bool) string {
-	dir := t.TempDir()
-	appDir := filepath.Join(dir, "src", "main", "application")
-	if err := os.MkdirAll(appDir, 0755); err != nil {
-		t.Fatal(err)
-	}
-	servicesXML := filepath.Join(appDir, "services.xml")
-	if _, err := os.Create(servicesXML); err != nil {
-		t.Fatal(err)
-	}
-	if java {
-		if _, err := os.Create(filepath.Join(dir, "pom.xml")); err != nil {
-			t.Fatal(err)
-		}
-	}
-	return dir
 }

@@ -35,7 +35,10 @@ public class TestBundleDependencyScopeTranslator implements Artifacts.ScopeTrans
         this.dependencyScopes = dependencyScopes;
     }
 
-    @Override public String scopeOf(Artifact artifact) { return Objects.requireNonNull(dependencyScopes.get(artifact)); }
+    @Override
+    public String scopeOf(Artifact artifact) {
+        return Objects.requireNonNull(dependencyScopes.get(artifact), () -> "Could not lookup scope for " + artifact);
+    }
 
     public static TestBundleDependencyScopeTranslator from(Map<String, Artifact> dependencies, String rawConfig) {
         List<DependencyOverride> dependencyOverrides = toDependencyOverrides(rawConfig);

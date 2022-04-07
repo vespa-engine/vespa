@@ -86,13 +86,12 @@
       </exclusions>
     </dependency>
     <!-- snappy-java and metrics-core are included here
-     to be able to work with ZooKeeper 3.6.2 due to
+     to be able to work with ZooKeeper >= 3.6.2 due to
      class loading issues -->
     <dependency>
       <groupId>io.dropwizard.metrics</groupId>
       <artifactId>metrics-core</artifactId>
       <scope>compile</scope>
-      <version>3.2.5</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -104,7 +103,6 @@
       <groupId>org.xerial.snappy</groupId>
       <artifactId>snappy-java</artifactId>
       <scope>compile</scope>
-      <version>1.1.7</version>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>

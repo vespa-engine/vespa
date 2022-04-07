@@ -18,7 +18,8 @@ public class MessageBusSessionFactory implements SessionFactory {
     public MessageBusSessionFactory(MessagePropertyProcessor processor) {
         this(processor, null, null);
     }
-    
+
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     private MessageBusSessionFactory(MessagePropertyProcessor processor,
                                     DocumentmanagerConfig documentmanagerConfig,
                                     SlobroksConfig slobroksConfig) {

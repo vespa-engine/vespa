@@ -236,12 +236,12 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                + handlerTimeout.toMillis(),
                                MILLISECONDS);
 
-            Path requestPath = new Path(request.getUri());
+            Path requestPath = new Path(request.getUri(), __ -> { }); // No segment validation here, as document IDs can be anything.
             for (String path : handlers.keySet())
                 if (requestPath.matches(path)) {
                     Map<Method, Handler> methods = handlers.get(path);
                     if (methods.containsKey(request.getMethod()))
-                        return methods.get(request.getMethod()).handle(request, new DocumentPath(requestPath), responseHandler);
+                        return methods.get(request.getMethod()).handle(request, new DocumentPath(requestPath, request.getUri().getRawPath()), responseHandler);
 
                     if (request.getMethod() == OPTIONS)
                         options(methods.keySet(), responseHandler);
@@ -1458,10 +1458,12 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static class DocumentPath {
 
         private final Path path;
+        private final String rawPath;
         private final Optional<Group> group;
 
-        DocumentPath(Path path) {
+        DocumentPath(Path path, String rawPath) {
             this.path = requireNonNull(path);
+            this.rawPath = requireNonNull(rawPath);
             this.group = Optional.ofNullable(path.get("number")).map(unsignedLongParser::parse).map(Group::of)
                                  .or(() -> Optional.ofNullable(path.get("group")).map(Group::of));
         }
@@ -1470,10 +1472,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             return new DocumentId("id:" + requireNonNull(path.get("namespace")) +
                                   ":" + requireNonNull(path.get("documentType")) +
                                   ":" + group.map(Group::docIdPart).orElse("") +
-                                  ":" + requireNonNull(path.getRest()));
+                                  ":" + String.join("/", requireNonNull(path.getRest()).segments())); // :'(
         }
 
-        String rawPath() { return path.asString(); }
+        String rawPath() { return rawPath; }
         Optional<String> documentType() { return Optional.ofNullable(path.get("documentType")); }
         Optional<String> namespace() { return Optional.ofNullable(path.get("namespace")); }
         Optional<Group> group() { return group; }

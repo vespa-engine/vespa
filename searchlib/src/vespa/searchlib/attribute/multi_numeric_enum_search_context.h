@@ -16,7 +16,7 @@ template <typename T, typename M>
 class MultiNumericEnumSearchContext : public MultiEnumSearchContext<T, NumericSearchContext<NumericRangeMatcher<T>>, M>
 {
 public:
-    MultiNumericEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, const MultiValueMapping<M>& mv_mapping, const EnumStoreT<T>& enum_store);
+    MultiNumericEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view, const EnumStoreT<T>& enum_store);
 };
 
 }

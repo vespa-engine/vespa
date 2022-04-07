@@ -33,10 +33,18 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
     private String defaultDocprocChain = null;
     private boolean defaultAbortOnDocumentError = true;
     private boolean defaultAbortOnSendError = true;
-    private final LoadTypeSet loadTypes;
+    private final LoadTypeSet loadTypes; // TODO remove on Vespa 8
     private boolean configChanged = false;
 
+    public MessagePropertyProcessor(FeederConfig config) {
+        loadTypes = new LoadTypeSet();
+        configure(config);
+    }
 
+    /**
+     * @deprecated load types are deprecated. Use constructor without LoadTypeConfig instead.
+     */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
     public MessagePropertyProcessor(FeederConfig config, LoadTypeConfig loadTypeCfg) {
         loadTypes = new LoadTypeSet();
         configure(config, loadTypeCfg);
@@ -127,11 +135,19 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         return feederOptions;
     }
 
+    /**
+     * @deprecated load types are deprecated. configure without LoadTypeConfig instead.
+     */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
     public synchronized void configure(FeederConfig config, LoadTypeConfig loadTypeConfig) {
         loadTypes.configure(loadTypeConfig);
         configure(config);
     }
 
+    /**
+     * @deprecated load types are deprecated
+     */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
     LoadTypeSet getLoadTypes() {
         return loadTypes;
     }
@@ -175,7 +191,7 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         private boolean abortOnDocumentError;
         private boolean abortOnFeedError;
         private boolean createIfNonExistent;
-        private LoadType loadType;
+        private LoadType loadType; // TODO remove on Vespa 8
         private int traceLevel;
 
         PropertySetter(Route route, long timeout, long totalTimeout, DocumentProtocol.Priority priority, LoadType loadType,

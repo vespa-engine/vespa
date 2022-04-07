@@ -81,7 +81,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useV8GeoPositions = false;
     private List<String> environmentVariables = List.of();
     private boolean avoidRenamingSummaryFeatures = false;
-    private boolean experimentalSdParsing = false;
+    private boolean experimentalSdParsing = true;
     private Architecture adminClusterNodeResourcesArchitecture = Architecture.getDefault();
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }

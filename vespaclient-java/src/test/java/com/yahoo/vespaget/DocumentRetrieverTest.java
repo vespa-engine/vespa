@@ -129,7 +129,6 @@ public class DocumentRetrieverTest {
         return new DocumentRetriever(
                 clusterList,
                 mockedFactory,
-                new LoadTypeSet(),
                 params);
     }
 
@@ -145,7 +144,7 @@ public class DocumentRetrieverTest {
 
         when(mockedSession.syncSend(any())).thenReturn(createDocumentReply(DOC_ID_1));
 
-        LoadTypeSet loadTypeSet = new LoadTypeSet();
+        LoadTypeSet loadTypeSet = new LoadTypeSet(); // TODO remove on Vespa 8
         loadTypeSet.addLoadType(1, "loadtype", DocumentProtocol.Priority.HIGH_1);
         DocumentRetriever documentRetriever = new DocumentRetriever(
                 new ClusterList(),

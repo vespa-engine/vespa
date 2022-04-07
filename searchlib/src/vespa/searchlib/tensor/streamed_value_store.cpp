@@ -166,9 +166,10 @@ void
 StreamedValueStore::TensorBufferType::cleanHold(void* buffer, size_t offset, ElemCount num_elems, CleanContext clean_ctx)
 {
     TensorEntry::SP* elem = static_cast<TensorEntry::SP*>(buffer) + offset;
+    const auto& empty = empty_entry();
     for (size_t i = 0; i < num_elems; ++i) {
         clean_ctx.extraBytesCleaned((*elem)->get_memory_usage().allocatedBytes());
-        *elem = _emptyEntry;
+        *elem = empty;
         ++elem;
     }
 }

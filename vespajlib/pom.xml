@@ -36,6 +36,11 @@
       <artifactId>aircompressor</artifactId>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-compress</artifactId>
+      <scope>compile</scope>
+    </dependency>
 
     <!-- provided scope -->
     <dependency>

@@ -13,6 +13,7 @@ import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
  *
  * @author Gunnar Gauslaa Bergem
  */
+@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 public class Clients extends ConfigModel {
 
     private static final long serialVersionUID = 1L;

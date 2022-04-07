@@ -17,7 +17,7 @@ import com.yahoo.vespa.objects.Ids;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.OptionalInt;
+import java.util.Objects;
 
 /**
  * A StringFieldValue is a wrapper class that holds a String in {@link com.yahoo.document.Document}s and
@@ -57,10 +57,9 @@ public class StringFieldValue extends FieldValue {
     }
 
     private static void validateTextString(String value) {
-        OptionalInt illegalCodePoint = Text.validateTextString(value);
-        if (illegalCodePoint.isPresent()) {
+        if ( ! Text.isValidTextString(value)) {
             throw new IllegalArgumentException("The string field value contains illegal code point 0x" +
-                                               Integer.toHexString(illegalCodePoint.getAsInt()).toUpperCase());
+                                               Integer.toHexString(Text.validateTextString(value).getAsInt()).toUpperCase());
         }
     }
 
@@ -88,7 +87,7 @@ public class StringFieldValue extends FieldValue {
     public StringFieldValue clone() {
         StringFieldValue strfval = (StringFieldValue) super.clone();
         if (spanTrees != null) {
-            strfval.spanTrees = new HashMap<String, SpanTree>(spanTrees.size());
+            strfval.spanTrees = new HashMap<>(spanTrees.size());
             for (Map.Entry<String, SpanTree> entry : spanTrees.entrySet()) {
                 strfval.spanTrees.put(entry.getKey(), new SpanTree(entry.getValue()));
             }
@@ -240,8 +239,8 @@ public class StringFieldValue extends FieldValue {
         if (!(o instanceof StringFieldValue)) return false;
         if (!super.equals(o)) return false;
         StringFieldValue that = (StringFieldValue) o;
-        if ((spanTrees != null) ? !spanTrees.equals(that.spanTrees) : that.spanTrees != null) return false;
-        if ((value != null) ? !value.equals(that.value) : that.value != null) return false;
+        if (!Objects.equals(spanTrees, that.spanTrees)) return false;
+        if (!Objects.equals(value, that.value)) return false;
         return true;
     }
 

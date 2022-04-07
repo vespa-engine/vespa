@@ -121,13 +121,13 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
 
     @Test
     public void require_that_nonexistent_file_returns_not_found_when_deleted() throws IOException {
-        assertDeleteFile(Response.Status.NOT_FOUND, "/test2.txt", "{\"error-code\":\"NOT_FOUND\",\"message\":\"Session " + sessionId + " does not contain a file 'test2.txt'\"}");
+        assertDeleteFile(Response.Status.NOT_FOUND, "/test2.txt", "{\"error-code\":\"NOT_FOUND\",\"message\":\"Session " + sessionId + " does not contain a file at path '/test2.txt'\"}");
     }
 
     @Test
     public void require_that_files_can_be_deleted() throws IOException {
         assertDeleteFile(Response.Status.OK, "/test.txt");
-        assertDeleteFile(Response.Status.NOT_FOUND, "/test.txt", "{\"error-code\":\"NOT_FOUND\",\"message\":\"Session "  + sessionId + " does not contain a file 'test.txt'\"}");
+        assertDeleteFile(Response.Status.NOT_FOUND, "/test.txt", "{\"error-code\":\"NOT_FOUND\",\"message\":\"Session "  + sessionId + " does not contain a file at path '/test.txt'\"}");
         assertDeleteFile(Response.Status.BAD_REQUEST, "/newtest", "{\"error-code\":\"BAD_REQUEST\",\"message\":\"File 'newtest' is not an empty directory\"}");
         assertDeleteFile(Response.Status.OK, "/newtest/testfile.txt");
         assertDeleteFile(Response.Status.OK, "/newtest");

@@ -31,6 +31,7 @@ import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
+import com.yahoo.restapi.HttpURL;
 import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
@@ -558,27 +559,24 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    public HttpResponse serviceStatusPage(ApplicationId applicationId, String hostName, String serviceName, String pathSuffix) {
+    public HttpResponse serviceStatusPage(ApplicationId applicationId, String hostName, String serviceName, HttpURL.Path pathSuffix) {
         // WARNING: pathSuffix may be given by the external user. Make sure no security issues arise...
         // We should be OK here, because at most, pathSuffix may change the parent path, but cannot otherwise
         // change the hostname and port. Exposing other paths on the cluster controller should be fine.
         // TODO: It would be nice to have a simple check to verify pathSuffix doesn't contain /../ components.
-        String pathPrefix;
+        HttpURL.Path pathPrefix = HttpURL.Path.empty();
         switch (serviceName) {
-            case "container-clustercontroller": {
-                pathPrefix = "clustercontroller-status/v1/";
+            case "container-clustercontroller":
+                pathPrefix = pathPrefix.append("clustercontroller-status").append("v1");
                 break;
-            }
             case "distributor":
-            case "storagenode": {
-                pathPrefix = "";
+            case "storagenode":
                 break;
-            }
             default:
                 throw new NotFoundException("No status page for service: " + serviceName);
         }
 
-        return httpProxy.get(getApplication(applicationId), hostName, serviceName, pathPrefix + pathSuffix);
+        return httpProxy.get(getApplication(applicationId), hostName, serviceName, pathPrefix.append(pathSuffix));
     }
 
     public Map<String, ClusterReindexing> getClusterReindexingStatus(ApplicationId applicationId) {
@@ -659,9 +657,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return getOptionalApplication(applicationId).map(app -> app.getModel().fileReferences()).orElse(Set.of());
     }
 
-    public ApplicationFile getApplicationFileFromSession(TenantName tenantName, long sessionId, String path, Session.Mode mode) {
+    public ApplicationFile getApplicationFileFromSession(TenantName tenantName, long sessionId, HttpURL.Path path, Session.Mode mode) {
         Tenant tenant = tenantRepository.getTenant(tenantName);
-        return getLocalSession(tenant, sessionId).getApplicationFile(Path.fromString(path), mode);
+        return getLocalSession(tenant, sessionId).getApplicationFile(Path.from(path.segments()), mode);
     }
 
     public Tenant getTenant(ApplicationId applicationId) {
@@ -1053,7 +1051,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private File decompressApplication(InputStream in, String contentType, File tempDir) {
         try (CompressedApplicationInputStream application =
-                     CompressedApplicationInputStream.createFromCompressedStream(in, contentType)) {
+                     CompressedApplicationInputStream.createFromCompressedStream(in, contentType, configserverConfig.maxApplicationPackageSize())) {
             return decompressApplication(application, tempDir);
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to decompress data in body", e);

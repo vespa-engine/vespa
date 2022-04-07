@@ -17,8 +17,10 @@ public:
     using const_reverse_iterator = Results::const_reverse_iterator;
 
     ResultList();
-    ResultList(ResultList &&) = default;
-    ResultList & operator = (ResultList &&) = default;
+    ResultList(ResultList &&) noexcept;
+    ResultList & operator = (ResultList &&) noexcept;
+    ResultList(const ResultList &) = delete;
+    ResultList & operator = (const ResultList &) = delete;
     ~ResultList();
 
     /**
@@ -26,7 +28,7 @@ public:
     */
     explicit ResultList(const Result& result);
 
-    void add(const VariableMap& variables, const Result& result);
+    void add(VariableMap variables, const Result& result);
 
     ResultList operator&&(const ResultList& other) const;
     ResultList operator||(const ResultList& other) const;

@@ -6,22 +6,17 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentUpdate;
-import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.serialization.DocumentDeserializer;
 import com.yahoo.document.serialization.DocumentSerializer;
-import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
-import java.util.logging.Level;
 import com.yahoo.messagebus.Routable;
 import com.yahoo.vdslib.DocumentSummary;
 import com.yahoo.vdslib.SearchResult;
 import com.yahoo.vdslib.VisitorStatistics;
 import com.yahoo.vespa.objects.Deserializer;
-import com.yahoo.vespa.objects.Serializer;
 
 import java.util.Map;
-import java.util.logging.Logger;
 
 import static com.yahoo.documentapi.messagebus.protocol.AbstractRoutableFactory.decodeString;
 import static com.yahoo.documentapi.messagebus.protocol.AbstractRoutableFactory.encodeString;
@@ -86,7 +81,7 @@ public abstract class RoutableFactories60 {
             DocumentMessage msg = doDecode(in);
             if (msg != null) {
                 msg.setPriority(DocumentProtocol.getPriority(pri));
-                msg.setLoadType(loadTypes.getIdMap().get(loadType));
+                msg.setLoadType(loadTypes.getIdMap().get(loadType)); // TODO: ignore on Vespa 8
             }
             return msg;
         }
@@ -136,6 +131,7 @@ public abstract class RoutableFactories60 {
             return doEncode(reply, out);
         }
 
+        @SuppressWarnings("removal") // TODO: Remove on Vespa 8
         public Routable decode(DocumentDeserializer in, LoadTypeSet loadTypes) {
             byte pri = in.getByte(null);
             DocumentReply reply = doDecode(in);

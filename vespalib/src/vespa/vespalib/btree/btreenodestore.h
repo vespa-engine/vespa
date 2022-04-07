@@ -25,7 +25,7 @@ template <typename EntryType>
 class BTreeNodeBufferType : public datastore::BufferType<EntryType, FrozenBtreeNode<EntryType>>
 {
     using ParentType = datastore::BufferType<EntryType, FrozenBtreeNode<EntryType>>;
-    using ParentType::_emptyEntry;
+    using ParentType::empty_entry;
     using ParentType::_arraySize;
     using ElemCount = typename ParentType::ElemCount;
     using CleanContext = typename ParentType::CleanContext;

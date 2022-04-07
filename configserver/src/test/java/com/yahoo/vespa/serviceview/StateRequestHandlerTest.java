@@ -3,6 +3,7 @@ package com.yahoo.vespa.serviceview;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.jdisc.test.MockMetric;
+import com.yahoo.restapi.HttpURL.Path;
 import com.yahoo.restapi.UriBuilder;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.HealthClient;
@@ -45,7 +46,7 @@ public class StateRequestHandlerTest {
         }
 
         @Override
-        protected HealthClient getHealthClient(String apiParams, Service s, int requestedPort, String uriQuery, Client client) {
+        protected HealthClient getHealthClient(Path apiParams, Service s, int requestedPort, String uriQuery, Client client) {
             HealthClient healthClient = Mockito.mock(HealthClient.class);
             HashMap<Object, Object> dummyHealthData = new HashMap<>();
             HashMap<String, String> dummyLink = new HashMap<>();
@@ -75,7 +76,7 @@ public class StateRequestHandlerTest {
     public final void test() {
         Service s = correspondingModel.resolve("vespa.yahoo.com", 8080, null);
         String api = "/state/v1";
-        HashMap<?, ?> boom = testHandler.singleService(new UriBuilder("http://someserver:8080"), URI.create(EXTERNAL_BASE_URI), "default", "default", "default", "default", "default", s.getIdentifier(8080), api);
+        HashMap<?, ?> boom = testHandler.singleService(new UriBuilder("http://someserver:8080"), URI.create(EXTERNAL_BASE_URI), "default", "default", "default", "default", "default", s.getIdentifier(8080), Path.parse(api));
         assertEquals(EXTERNAL_BASE_URI + "tenant/default/application/default/environment/default/region/default/instance/default/service/" + s.getIdentifier(8080) + api,
                      ((Map<?, ?>) ((List<?>) boom.get("resources")).get(0)).get("url"));
     }

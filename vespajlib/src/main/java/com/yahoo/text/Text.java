@@ -48,43 +48,17 @@ public final class Text {
         // The link above notes that 0x7F-0x84 and 0x86-0x9F are discouraged, but they are still allowed -
         // see http://www.w3.org/International/questions/qa-controls
 
-        if (codepoint <  0x80)     return allowedAsciiChars[codepoint];
+        return (codepoint < 0x80)
+                ? allowedAsciiChars[codepoint]
+                : (codepoint <  Character.MIN_SURROGATE) || isTextCharAboveMinSurrogate(codepoint);
+    }
+    private static boolean isTextCharAboveMinSurrogate(int codepoint) {
+        if (codepoint <= Character.MAX_HIGH_SURROGATE) return false;
         if (codepoint <  0xFDD0)   return true;
         if (codepoint <= 0xFDDF)   return false;
-        if (codepoint <  0x1FFFE)  return true;
-        if (codepoint <= 0x1FFFF)  return false;
-        if (codepoint <  0x2FFFE)  return true;
-        if (codepoint <= 0x2FFFF)  return false;
-        if (codepoint <  0x3FFFE)  return true;
-        if (codepoint <= 0x3FFFF)  return false;
-        if (codepoint <  0x4FFFE)  return true;
-        if (codepoint <= 0x4FFFF)  return false;
-        if (codepoint <  0x5FFFE)  return true;
-        if (codepoint <= 0x5FFFF)  return false;
-        if (codepoint <  0x6FFFE)  return true;
-        if (codepoint <= 0x6FFFF)  return false;
-        if (codepoint <  0x7FFFE)  return true;
-        if (codepoint <= 0x7FFFF)  return false;
-        if (codepoint <  0x8FFFE)  return true;
-        if (codepoint <= 0x8FFFF)  return false;
-        if (codepoint <  0x9FFFE)  return true;
-        if (codepoint <= 0x9FFFF)  return false;
-        if (codepoint <  0xAFFFE)  return true;
-        if (codepoint <= 0xAFFFF)  return false;
-        if (codepoint <  0xBFFFE)  return true;
-        if (codepoint <= 0xBFFFF)  return false;
-        if (codepoint <  0xCFFFE)  return true;
-        if (codepoint <= 0xCFFFF)  return false;
-        if (codepoint <  0xDFFFE)  return true;
-        if (codepoint <= 0xDFFFF)  return false;
-        if (codepoint <  0xEFFFE)  return true;
-        if (codepoint <= 0xEFFFF)  return false;
-        if (codepoint <  0xFFFFE)  return true;
-        if (codepoint <= 0xFFFFF)  return false;
-        if (codepoint <  0x10FFFE) return true;
-        if (codepoint <= 0x10FFFF) return false;
-
-        return true;
+        if (codepoint <  0x10000)  return true;
+        if (codepoint >= 0x10FFFE) return false;
+        return (codepoint & 0xffff) < 0xFFFE;
     }
 
     /**
@@ -109,6 +83,27 @@ public final class Text {
         }
         return OptionalInt.empty();
     }
+
+    /**
+     * Validates that the given string value only contains text characters.
+     */
+    public static boolean isValidTextString(String string) {
+        int length = string.length();
+        for (int i = 0; i < length; ) {
+            int codePoint = string.codePointAt(i);
+            if (codePoint < 0x80) {
+                if ( ! allowedAsciiChars[codePoint]) return false;
+            } else if (codePoint >= Character.MIN_SURROGATE) {
+                if ( ! isTextCharAboveMinSurrogate(codePoint)) return false;
+                if ( ! Character.isBmpCodePoint(codePoint)) {
+                    i++;
+                }
+            }
+            i++;
+        }
+        return true;
+    }
+
 
     /** Returns whether the given code point is displayable. */
     public static boolean isDisplayable(int codePoint) {

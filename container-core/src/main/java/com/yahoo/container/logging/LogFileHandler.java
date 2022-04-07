@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.logging;
 
-import com.yahoo.compress.ZstdOuputStream;
+import com.yahoo.compress.ZstdOutputStream;
 import com.yahoo.io.NativeIO;
 import com.yahoo.log.LogFileDb;
 import com.yahoo.protect.Process;
@@ -401,7 +401,7 @@ class LogFileHandler <LOGTYPE> {
                 Path compressedFile = Paths.get(oldFile.toString() + ".zst");
                 int bufferSize = 2*1024*1024;
                 try (FileOutputStream fileOut = AtomicFileOutputStream.create(compressedFile);
-                     ZstdOuputStream out = new ZstdOuputStream(fileOut, bufferSize);
+                     ZstdOutputStream out = new ZstdOutputStream(fileOut, bufferSize);
                      FileInputStream in = new FileInputStream(oldFile.toFile())) {
                     pageFriendlyTransfer(nativeIO, out, fileOut.getFD(), in, bufferSize);
                     out.flush();

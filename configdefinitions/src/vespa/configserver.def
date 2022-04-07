@@ -20,6 +20,10 @@ configServerDBDir string default="var/db/vespa/config_server/serverdb/"
 configDefinitionsDir string default="share/vespa/configdefinitions/"
 fileReferencesDir string default="var/db/vespa/filedistribution/"
 
+# Application package
+# The maximum decompressed size of an application package, in bytes. Defaults to 8 GB
+maxApplicationPackageSize long default=8589934592
+
 # Misc
 sessionLifetime long default=3600 # in seconds
 masterGeneration long default=0

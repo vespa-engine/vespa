@@ -30,7 +30,7 @@
                 <gpg.publickeyring>pubring.gpg</gpg.publickeyring>
                 <gpg.secretkeyring>secring.gpg</gpg.secretkeyring>
                 <maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
-                <nexus.staging.maven.plugin.version>1.6.7</nexus.staging.maven.plugin.version>
+                <nexus.staging.maven.plugin.version>1.6.12</nexus.staging.maven.plugin.version>
             </properties>
         </profile>
     </profiles>

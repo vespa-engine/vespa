@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.hosted.controller.application.pkg.ZipStreamReader.ZipEntryWithContent;
+import static com.yahoo.vespa.hosted.controller.application.pkg.ZipEntries.ZipEntryWithContent;
 
 /**
  * @author freva
@@ -75,8 +75,8 @@ public class ApplicationPackageDiff {
     }
 
     private static Map<String, ZipEntryWithContent> readContents(ApplicationPackage app, int maxFileSizeToDiff) {
-        return new ZipStreamReader(new ByteArrayInputStream(app.zippedContent()), entry -> true, maxFileSizeToDiff, false).entries().stream()
-                .collect(Collectors.toMap(entry -> entry.zipEntry().getName(), e -> e));
+        return ZipEntries.from(app.zippedContent(), entry -> true, maxFileSizeToDiff, false).asList().stream()
+                         .collect(Collectors.toMap(ZipEntryWithContent::name, e -> e));
     }
 
     private static List<String> lines(byte[] data) {

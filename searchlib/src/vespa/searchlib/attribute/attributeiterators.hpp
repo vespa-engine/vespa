@@ -307,9 +307,8 @@ void
 FlagAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
 {
     const SC & sc(_concreteSearchCtx);
-    const Attribute &attr = static_cast<const Attribute &>(sc.attribute());
     for (int i = sc._low; (i <= sc._high); ++i) {
-        const BitVector * bv = attr.getBitVector(i);
+        const BitVector * bv = sc.get_bit_vector(i);
         if ((bv != nullptr) && !isAtEnd(docId) && bv->testBit(docId)) {
             setDocId(docId);
             return;
@@ -318,7 +317,7 @@ FlagAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
 
     uint32_t minNextBit(search::endDocId);
     for (int i = sc._low; (i <= sc._high); ++i) {
-        const BitVector * bv = attr.getBitVector(i);
+        const BitVector * bv = sc.get_bit_vector(i);
         if (bv != nullptr && !isAtEnd(docId)) {
             uint32_t nextBit = bv->getNextTrueBit(docId);
             minNextBit = std::min(nextBit, minNextBit);
@@ -336,9 +335,8 @@ void
 FlagAttributeIteratorT<SC>::doSeek(uint32_t docId)
 {
     const SC & sc(_concreteSearchCtx);
-    const Attribute &attr = static_cast<const Attribute &>(sc.attribute());
     for (int i = sc._low; (i <= sc._high); ++i) {
-        const BitVector * bv = attr.getBitVector(i);
+        const BitVector * bv = sc.get_bit_vector(i);
         if ((bv != nullptr) && !isAtEnd(docId) && bv->testBit(docId)) {
             setDocId(docId);
             return;
@@ -351,9 +349,8 @@ void
 FlagAttributeIteratorT<SC>::or_hits_into(BitVector &result, uint32_t begin_id) {
     (void) begin_id;
     const SC & sc(_concreteSearchCtx);
-    const Attribute &attr = static_cast<const Attribute &>(sc.attribute());
     for (int i = sc._low; (i <= sc._high); ++i) {
-        const BitVector * bv = attr.getBitVector(i);
+        const BitVector * bv = sc.get_bit_vector(i);
         if (bv != nullptr) {
             result.orWith(*bv);
         }
@@ -364,9 +361,8 @@ template <typename SC>
 void
 FlagAttributeIteratorT<SC>::and_hits_into(BitVector &result, uint32_t begin_id) {
     const SC & sc(_concreteSearchCtx);
-    const Attribute &attr = static_cast<const Attribute &>(sc.attribute());
     if (sc._low == sc._high) {
-        const BitVector * bv = attr.getBitVector(sc._low);
+        const BitVector * bv = sc.get_bit_vector(sc._low);
         if (bv != nullptr) {
             result.andWith(*bv);
         } else {
@@ -383,18 +379,17 @@ template <typename SC>
 std::unique_ptr<BitVector>
 FlagAttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
     const SC & sc(_concreteSearchCtx);
-    const Attribute &attr = static_cast<const Attribute &>(sc.attribute());
     int i = sc._low;
     BitVector::UP result;
     for (;!result && i < sc._high; ++i) {
-        const BitVector * bv = attr.getBitVector(i);
+        const BitVector * bv = sc.get_bit_vector(i);
         if (bv != nullptr) {
             result = BitVector::create(*bv, begin_id, getEndId());
         }
     }
 
     for (; i <= sc._high; ++i) {
-        const BitVector * bv = attr.getBitVector(i);
+        const BitVector * bv = sc.get_bit_vector(i);
         if (bv != nullptr) {
             result->orWith(*bv);
         }

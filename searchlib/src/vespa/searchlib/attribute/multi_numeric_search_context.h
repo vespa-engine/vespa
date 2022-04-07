@@ -3,7 +3,7 @@
 #pragma once
 
 #include "numeric_search_context.h"
-#include "multi_value_mapping.h"
+#include "multi_value_mapping_read_view.h"
 #include "numeric_range_matcher.h"
 
 namespace search::attribute {
@@ -17,7 +17,7 @@ class MultiNumericSearchContext : public NumericSearchContext<NumericRangeMatche
 {
 private:
     using DocId = ISearchContext::DocId;
-    const MultiValueMapping<M>& _mv_mapping;
+    MultiValueMappingReadView<M> _mv_mapping_read_view;
 
     int32_t onFind(DocId docId, int32_t elemId, int32_t& weight) const override final {
         return find(docId, elemId, weight);
@@ -28,9 +28,9 @@ private:
     }
 
 public:
-    MultiNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, const MultiValueMapping<M>& mv_mapping);
+    MultiNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view);
     int32_t find(DocId doc, int32_t elemId, int32_t & weight) const {
-        auto values(_mv_mapping.get(doc));
+        auto values(_mv_mapping_read_view.get(doc));
         for (uint32_t i(elemId); i < values.size(); i++) {
             if (this->match(values[i].value())) {
                 weight = values[i].weight();
@@ -42,7 +42,7 @@ public:
     }
 
     int32_t find(DocId doc, int32_t elemId) const {
-        auto values(_mv_mapping.get(doc));
+        auto values(_mv_mapping_read_view.get(doc));
         for (uint32_t i(elemId); i < values.size(); i++) {
             if (this->match(values[i].value())) {
                 return i;

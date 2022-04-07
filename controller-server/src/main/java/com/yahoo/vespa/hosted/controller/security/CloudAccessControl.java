@@ -117,7 +117,6 @@ public class CloudAccessControl implements AccessControl {
 
     @Override
     public void deleteTenant(TenantName tenant, Credentials credentials) {
-        deleteBillingInfo(tenant, credentials);
         for (TenantRole role : Roles.tenantRoles(tenant))
             userManagement.deleteRole(role);
     }
@@ -132,15 +131,6 @@ public class CloudAccessControl implements AccessControl {
     public void deleteApplication(TenantAndApplicationId id, Credentials credentials) {
         for (ApplicationRole role : Roles.applicationRoles(id.tenant(), id.application()))
             userManagement.deleteRole(role);
-    }
-
-    private void deleteBillingInfo(TenantName tenant, Credentials credentials) {
-        var users = Roles.tenantRoles(tenant)
-                .stream()
-                .flatMap(role -> userManagement.listUsers(role).stream())
-                .collect(Collectors.toSet());
-        var isPrivileged = allowedByPrivilegedRole((Auth0Credentials) credentials);
-        billingController.deleteBillingInfo(tenant, users, isPrivileged);
     }
 
 }

@@ -54,12 +54,10 @@ namespace {
                 document::BucketId b( static_cast<IntegerValue&>(bVal).getValue());
                 document::BucketId s( static_cast<IntegerValue&>(nVal).getValue());
 
-                ResultList resultList(Result::get(s.contains(b)));
-
                 if (op == FunctionOperator::NE) {
-                    return !resultList;
+                    return ! ResultList(Result::get(s.contains(b)));
                 }
-                return resultList;
+                return ResultList(Result::get(s.contains(b)));
             } else {
                 return ResultList(Result::Invalid);
             }
@@ -87,11 +85,9 @@ namespace {
                 document::BucketId s(
                         static_cast<IntegerValue&>(nVal).getValue());
 
-                ResultList resultList(Result::get(s.contains(b)));
-
-                if (op == FunctionOperator::NE) {
-                    resultList = !resultList;
-                }
+                ResultList resultList = (op == FunctionOperator::NE)
+                        ? !ResultList(Result::get(s.contains(b)))
+                        : ResultList(Result::get(s.contains(b)));
 
                 out << "Checked if " << b.toString() << " is ";
                 if (op == FunctionOperator::NE) { out << "not "; }

@@ -41,8 +41,8 @@ public class ContainerOperations {
         this.containerStatsCollector = new ContainerStatsCollector(cgroup, fileSystem);
     }
 
-    public void createContainer(NodeAgentContext context, ContainerData containerData, ContainerResources containerResources) {
-        containerEngine.createContainer(context, containerData, containerResources);
+    public ContainerData createContainer(NodeAgentContext context, ContainerResources containerResources) {
+        return containerEngine.createContainer(context, containerResources);
     }
 
     public void startContainer(NodeAgentContext context) {

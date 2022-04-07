@@ -334,6 +334,9 @@ public class NodeSerializerTest {
                         "   \"hostname\" : \"myHostname\",\n" +
                         "   \"ipAddresses\" : [\"127.0.0.1\"],\n" +
                         "   \"instance\": {\n" +
+                        "     \"tenantId\":\"t\",\n" +
+                        "     \"applicationId\":\"a\",\n" +
+                        "     \"instanceId\":\"i\",\n" +
                         "     \"serviceId\": \"content/myId/0/0/stateful\",\n" +
                         "     \"wantedVespaVersion\": \"6.42.2\"\n" +
                         "   }\n" +

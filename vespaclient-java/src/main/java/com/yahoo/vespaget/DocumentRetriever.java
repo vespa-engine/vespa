@@ -27,16 +27,30 @@ import java.util.Map;
  *
  * @author bjorncs
  */
+@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 public class DocumentRetriever {
 
     private final ClusterList clusterList;
     private final DocumentAccessFactory documentAccessFactory;
     private final ClientParameters params;
-    private final LoadTypeSet loadTypeSet;
+    private final LoadTypeSet loadTypeSet; // TODO remove on Vespa 8
 
     private MessageBusSyncSession session;
     private MessageBusDocumentAccess documentAccess;
 
+    public DocumentRetriever(ClusterList clusterList,
+                             DocumentAccessFactory documentAccessFactory,
+                             ClientParameters params) {
+        this.clusterList = clusterList;
+        this.documentAccessFactory = documentAccessFactory;
+        this.loadTypeSet = new LoadTypeSet(); // TODO remove on Vespa 8
+        this.params = params;
+    }
+
+    /**
+     * @deprecated load types are deprecated. Use constructor without LoadTypeSet instead.
+     */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
     public DocumentRetriever(ClusterList clusterList,
                              DocumentAccessFactory documentAccessFactory,
                              LoadTypeSet loadTypeSet,

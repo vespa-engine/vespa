@@ -21,12 +21,12 @@
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
-            <version>3.5.0</version>
+            <version>3.8.5</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-archiver</artifactId>
-            <version>3.5.0</version>
+            <version>3.5.2</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>

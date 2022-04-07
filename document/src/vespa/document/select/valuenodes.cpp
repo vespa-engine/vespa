@@ -223,7 +223,7 @@ namespace {
 class IteratorHandler : public fieldvalue::IteratorHandler {
 public:
     IteratorHandler();
-    ~IteratorHandler();
+    ~IteratorHandler() override;
     bool hasSingleValue() const;
     std::unique_ptr<Value> stealSingleValue() &&;
     std::vector<ArrayValue::VariableValue> stealValues() &&;
@@ -263,7 +263,7 @@ IteratorHandler::onPrimitive(uint32_t fid, const Content& fv) {
     if (!_firstValue && getVariables().empty()) {
         _firstValue = getInternalValue(fv.getValue());
     } else {
-        _values.emplace_back(getVariables(), Value::SP(getInternalValue(fv.getValue()).release()));
+        _values.emplace_back(std::move(getVariables()), Value::SP(getInternalValue(fv.getValue()).release()));
     }
 }
 

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.restapi.controller;
 
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.test.ManualClock;
@@ -158,8 +159,8 @@ public class ControllerApiTest extends ControllerContainerTest {
         Instant timestamp = Instant.ofEpochMilli(123456789);
         ZoneId zoneId = ZoneId.defaultId();
         List<ResourceSnapshot> snapshots = List.of(
-                new ResourceSnapshot(applicationId, 12,48,1200, timestamp, zoneId),
-                new ResourceSnapshot(applicationId, 24, 96,2400, timestamp, zoneId)
+                new ResourceSnapshot(applicationId, 12,48,1200, NodeResources.Architecture.arm64, timestamp, zoneId),
+                new ResourceSnapshot(applicationId, 24, 96,2400,  NodeResources.Architecture.x86_64, timestamp, zoneId)
         );
         tester.controller().serviceRegistry().meteringService().consume(snapshots);
         tester.assertResponse(

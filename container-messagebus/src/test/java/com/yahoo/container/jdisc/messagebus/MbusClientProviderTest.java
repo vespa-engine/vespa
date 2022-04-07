@@ -36,6 +36,7 @@ public class MbusClientProviderTest {
         testClient(new SessionConfig(builder));
     }
 
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     private void testClient(SessionConfig config) {
         SessionCache cache = new SessionCache(() -> NetworkMultiplexer.dedicated(new NullNetwork()),
                                               new ContainerMbusConfig.Builder().build(),

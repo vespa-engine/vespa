@@ -9,10 +9,11 @@ import com.yahoo.text.Utf8String;
 /**
  * @author Simon Thoresen Hult
  */
+@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 public abstract class DocumentMessage extends Message {
 
     private DocumentProtocol.Priority priority = DocumentProtocol.Priority.NORMAL_3;
-    private LoadType loadType = LoadType.DEFAULT;
+    private LoadType loadType = LoadType.DEFAULT; // TODO: Remove on Vespa 8
 
     /**
      * Constructs a new message with no content.
@@ -65,10 +66,20 @@ public abstract class DocumentMessage extends Message {
         this.priority = priority;
     }
 
+    /**
+     * @deprecated load types are deprecated
+     */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public LoadType getLoadType() {
         return loadType;
     }
 
+    /**
+     * @deprecated load types are deprecated
+     */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public void setLoadType(LoadType loadType) {
         if (loadType != null) {
             this.loadType = loadType;
@@ -79,7 +90,7 @@ public abstract class DocumentMessage extends Message {
 
     @Override
     public int getApproxSize() {
-        return 4 + 1; // type + priority
+        return 4 + 1; // type + priority // TODO update on Vespa 8 to not include deprecated fields
     }
 
     @Override

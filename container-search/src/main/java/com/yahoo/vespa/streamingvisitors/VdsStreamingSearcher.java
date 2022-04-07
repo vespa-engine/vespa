@@ -90,6 +90,7 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
         }
 
         @Override
+        @SuppressWarnings("removal") // TODO: Remove on Vespa 8
         public LoadTypeSet getLoadTypeSet() {
             return ((MessageBusDocumentAccess) access.delegate()).getParams().getLoadTypes();
         }

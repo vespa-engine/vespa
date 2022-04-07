@@ -171,7 +171,15 @@ public class TenantController {
                     throw new IllegalArgumentException("Could not delete tenant '" + tenant.value()
                             + "': This tenant has active applications");
 
-                credentials.ifPresent(creds -> accessControl.deleteTenant(tenant, creds));
+                if (oldTenant.type() == Tenant.Type.athenz) {
+                    credentials.ifPresent(creds -> accessControl.deleteTenant(tenant, creds));
+                } else if (oldTenant.type() == Tenant.Type.cloud) {
+                    accessControl.deleteTenant(tenant, null);
+                } else {
+                    throw new IllegalArgumentException("Could not delete tenant '" + tenant.value()
+                            + ": This tenant is of unhandled type " + oldTenant.type());
+                }
+
                 controller.notificationsDb().removeNotifications(NotificationSource.from(tenant));
             }
 

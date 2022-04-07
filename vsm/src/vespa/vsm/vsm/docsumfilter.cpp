@@ -118,6 +118,18 @@ public:
 
 namespace vsm {
 
+FieldPath
+copyPathButFirst(const FieldPath & rhs) {
+    // skip the element that correspond to the start field value
+    FieldPath path;
+    if ( ! rhs.empty()) {
+        for (auto it = rhs.begin() + 1; it != rhs.end(); ++it) {
+            path.push_back(std::make_unique<document::FieldPathEntry>(**it));
+        }
+    }
+    return path;
+}
+
 void
 DocsumFilter::prepareFieldSpec(DocsumFieldSpec & spec, const DocsumTools::FieldSpec & toolsSpec,
                                const FieldMap & fieldMap, const FieldPathMapT & fieldPathMap)
@@ -128,14 +140,7 @@ DocsumFilter::prepareFieldSpec(DocsumFieldSpec & spec, const DocsumTools::FieldS
         FieldIdT field = fieldMap.fieldNo(name);
         if (field != FieldMap::npos) {
             if (field < fieldPathMap.size()) {
-               if (!fieldPathMap[field].empty()) {
-                   // skip the element that correspond to the start field value
-                   spec.setOutputField(DocsumFieldSpec::FieldIdentifier
-                                       (field, FieldPath(fieldPathMap[field].begin() + 1,
-                                                         fieldPathMap[field].end())));
-               } else {
-                   spec.setOutputField(DocsumFieldSpec::FieldIdentifier(field, FieldPath()));
-               }
+                spec.setOutputField(DocsumFieldSpec::FieldIdentifier(field, copyPathButFirst(fieldPathMap[field])));
             } else {
                 LOG(warning, "Could not find a field path for field '%s' with id '%d'", name.c_str(), field);
                 spec.setOutputField(DocsumFieldSpec::FieldIdentifier(field, FieldPath()));
@@ -152,18 +157,7 @@ DocsumFilter::prepareFieldSpec(DocsumFieldSpec & spec, const DocsumTools::FieldS
         if (field != FieldMap::npos) {
             if (field < fieldPathMap.size()) {
                 LOG(debug, "field %u < map size %zu", field, fieldPathMap.size());
-                if (!fieldPathMap[field].empty()) {
-                    FieldPath relPath(fieldPathMap[field].begin() + 1,
-                                      fieldPathMap[field].end());
-                    LOG(debug, "map[%u] -> %zu elements", field, fieldPathMap[field].end() - fieldPathMap[field].begin());
-                    // skip the element that correspond to the start field value
-                    spec.getInputFields().push_back(DocsumFieldSpec::FieldIdentifier
-                                                    (field, FieldPath(fieldPathMap[field].begin() + 1,
-                                                                      fieldPathMap[field].end())));
-                } else {
-                    LOG(debug, "map[%u] empty", field);
-                    spec.getInputFields().push_back(DocsumFieldSpec::FieldIdentifier(field, FieldPath()));
-                }
+                spec.getInputFields().push_back(DocsumFieldSpec::FieldIdentifier(field, copyPathButFirst(fieldPathMap[field])));
             } else {
                 LOG(warning, "Could not find a field path for field '%s' with id '%d'", name.c_str(), field);
                 spec.getInputFields().push_back(DocsumFieldSpec::FieldIdentifier(field, FieldPath()));

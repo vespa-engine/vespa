@@ -7,7 +7,7 @@ import java.io.OutputStream;
 /**
  * @author bjorncs
  */
-public class ZstdOuputStream extends OutputStream {
+public class ZstdOutputStream extends OutputStream {
 
     private final ZstdCompressor compressor = new ZstdCompressor();
 
@@ -19,13 +19,13 @@ public class ZstdOuputStream extends OutputStream {
     private int inputPosition = 0;
     private boolean isClosed = false;
 
-    public ZstdOuputStream(OutputStream out, int inputBufferSize) {
+    public ZstdOutputStream(OutputStream out, int inputBufferSize) {
         this.out = out;
         this.inputBuffer = new byte[inputBufferSize];
         this.outputBuffer = new byte[ZstdCompressor.getMaxCompressedLength(inputBufferSize)];
     }
 
-    public ZstdOuputStream(OutputStream out) {
+    public ZstdOutputStream(OutputStream out) {
         this(out, DEFAULT_INPUT_BUFFER_SIZE);
     }
 

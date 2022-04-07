@@ -14,6 +14,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 public class MessageBusParams extends DocumentAccessParams {
 
     private String routingConfigId = null;
@@ -26,12 +27,16 @@ public class MessageBusParams extends DocumentAccessParams {
     private RPCNetworkParams rpcNetworkParams = new RPCNetworkParams();
     private com.yahoo.messagebus.MessageBusParams mbusParams = new com.yahoo.messagebus.MessageBusParams();
     private SourceSessionParams sourceSessionParams = new SourceSessionParams();
-    private LoadTypeSet loadTypes;
+    private LoadTypeSet loadTypes; // TODO remove on Vespa 8
 
     public MessageBusParams() {
         this(new LoadTypeSet());
     }
 
+    /**
+     * @deprecated load types are deprecated. Use default constructor instead
+     */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
     public MessageBusParams(LoadTypeSet loadTypes) {
         this.loadTypes = loadTypes;
     }
@@ -39,7 +44,9 @@ public class MessageBusParams extends DocumentAccessParams {
     /**
      *
      * @return Returns the set of load types accepted by this Vespa installation
+     * @deprecated load types are deprecated
      */
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
     public LoadTypeSet getLoadTypes() {
         return loadTypes;
     }

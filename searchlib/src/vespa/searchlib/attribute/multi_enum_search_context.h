@@ -4,7 +4,7 @@
 
 #include "numeric_search_context.h"
 #include "enumstore.h"
-#include "multi_value_mapping.h"
+#include "multi_value_mapping_read_view.h"
 
 namespace search::attribute {
 
@@ -18,8 +18,8 @@ class MultiEnumSearchContext : public BaseSC
 {
 protected:
     using DocId = ISearchContext::DocId;
-    const MultiValueMapping<M>& _mv_mapping;
-    const EnumStoreT<T>&        _enum_store;
+    MultiValueMappingReadView<M> _mv_mapping_read_view;
+    const EnumStoreT<T>&         _enum_store;
 
     int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const override {
         return find(docId, elemId, weight);
@@ -29,11 +29,11 @@ protected:
         return find(docId, elemId);
     }
 
-    MultiEnumSearchContext(typename BaseSC::MatcherType&& matcher, const AttributeVector& toBeSearched, const MultiValueMapping<M>& mv_mapping, const EnumStoreT<T>& enum_store);
+    MultiEnumSearchContext(typename BaseSC::MatcherType&& matcher, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view, const EnumStoreT<T>& enum_store);
 
 public:
     int32_t find(DocId doc, int32_t elemId, int32_t & weight) const {
-        auto indices(_mv_mapping.get(doc));
+        auto indices(_mv_mapping_read_view.get(doc));
         for (uint32_t i(elemId); i < indices.size(); i++) {
             T v = _enum_store.get_value(indices[i].value_ref().load_acquire());
             if (this->match(v)) {
@@ -46,7 +46,7 @@ public:
     }
 
     int32_t find(DocId doc, int32_t elemId) const {
-        auto indices(_mv_mapping.get(doc));
+        auto indices(_mv_mapping_read_view.get(doc));
         for (uint32_t i(elemId); i < indices.size(); i++) {
             T v = _enum_store.get_value(indices[i].value_ref().load_acquire());
             if (this->match(v)) {

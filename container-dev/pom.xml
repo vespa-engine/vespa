@@ -121,6 +121,10 @@
           <groupId>io.airlift</groupId>
           <artifactId>aircompressor</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-compress</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>

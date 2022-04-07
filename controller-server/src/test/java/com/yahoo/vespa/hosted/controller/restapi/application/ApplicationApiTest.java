@@ -11,6 +11,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
@@ -502,7 +503,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Get content/../foo
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-east-1/content/%2E%2E%2Ffoo", GET).userIdentity(USER_ID),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Access denied\"}", 403);
+                              accessDenied, 403);
         // Get content - root
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-east-1/content/", GET).userIdentity(USER_ID),
                 "{\"path\":\"/\"}");
@@ -1069,27 +1070,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("deploy-result.json"));
     }
 
-    @Test
-    public void testMeteringResponses() {
-        MockMeteringClient mockMeteringClient = tester.serviceRegistry().meteringService();
-
-        // Mock response for MeteringClient
-        ResourceAllocation currentSnapshot = new ResourceAllocation(1, 2, 3);
-        ResourceAllocation thisMonth = new ResourceAllocation(12, 24, 1000);
-        ResourceAllocation lastMonth = new ResourceAllocation(24, 48, 2000);
-        ApplicationId applicationId = ApplicationId.from("doesnotexist", "doesnotexist", "default");
-        Map<ApplicationId, List<ResourceSnapshot>> snapshotHistory = Map.of(applicationId, List.of(
-                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(123), ZoneId.defaultId()),
-                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(246), ZoneId.defaultId()),
-                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(492), ZoneId.defaultId())));
-
-        mockMeteringClient.setMeteringData(new MeteringData(thisMonth, lastMonth, currentSnapshot, snapshotHistory));
-
-        tester.assertResponse(request("/application/v4/tenant/doesnotexist/application/doesnotexist/metering", GET)
-                                      .userIdentity(USER_ID)
-                                      .oAuthCredentials(OKTA_CREDENTIALS),
-                              new File("instance1-metering.json"));
-    }
 
     @Test
     public void testRemovingAllDeployments() {
@@ -1657,21 +1637,21 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request(serviceApi + "/storagenode-awe3slno6mmq2fye191y324jl/document/v1/", GET)
                                       .userIdentity(USER_ID)
                                       .oAuthCredentials(OKTA_CREDENTIALS),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Access denied\"}",
-                              403);
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"Nothing at path '/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/service/storagenode-awe3slno6mmq2fye191y324jl/document/v1/'\"}",
+                              404);
 
         // Test path traversal
         tester.assertResponse(request(serviceApi + "/storagenode-awe3slno6mmq2fye191y324jl/state/v1/../../document/v1/", GET)
                                       .userIdentity(USER_ID)
                                       .oAuthCredentials(OKTA_CREDENTIALS),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Access denied\"}",
-                              403);
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"Nothing at path '/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/service/storagenode-awe3slno6mmq2fye191y324jl/document/v1/'\"}",
+                              404);
 
         // Test urlencoded path traversal
         tester.assertResponse(request(serviceApi + "/storagenode-awe3slno6mmq2fye191y324jl/state%2Fv1%2F..%2F..%2Fdocument%2Fv1%2F", GET)
                                       .userIdentity(USER_ID)
                                       .oAuthCredentials(OKTA_CREDENTIALS),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Access denied\"}",
+                              accessDenied,
                               403);
     }
 

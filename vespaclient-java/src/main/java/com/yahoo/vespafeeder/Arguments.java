@@ -153,7 +153,7 @@ public class Arguments {
             }
         }
 
-        propertyProcessor = new MessagePropertyProcessor(getFeederConfig(), new LoadTypeConfig(new LoadTypeConfig.Builder()));
+        propertyProcessor = new MessagePropertyProcessor(getFeederConfig());
     }
 
     private String getParam(List<String> args, String arg) throws IllegalArgumentException {

@@ -20,8 +20,14 @@ import java.util.TreeMap;
  *
  * For testing, you may want to use the empty constructor and add
  * load types yourself with addType().
+ *
+ * @deprecated load types are deprecated
  */
+@Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
+@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 public class LoadTypeSet {
+
+    public static final LoadTypeSet EMPTY = new LoadTypeSet();
 
     class DualMap {
         Map<String, LoadType> nameMap = new TreeMap<String, LoadType>();

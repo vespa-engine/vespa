@@ -7,7 +7,9 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 public class VisitorParametersTestCase {
+    // TODO: Remove on Vespa 8
     private LoadType loadType = new LoadType(3, "samnmax", DocumentProtocol.Priority.HIGH_3);
 
     @SuppressWarnings("removal")// TODO: Vespa 8: remove
@@ -21,12 +23,12 @@ public class VisitorParametersTestCase {
         params.setLibraryParameter("groovy", "dudes");
         params.setLibraryParameter("ninja", "turtles");
         params.setMaxBucketsPerVisitor(55);
-        params.setPriority(DocumentProtocol.Priority.HIGHEST);
+        params.setPriority(DocumentProtocol.Priority.HIGHEST); // TODO: Remove on Vespa 8
         params.setRoute("extraterrestrial/highway");
         params.setTimeoutMs(1337);
         params.setMaxPending(111);
         params.setFieldSet(AllFields.NAME);
-        params.setLoadType(loadType);
+        params.setLoadType(loadType); // TODO: Remove on Vespa 8
         params.setVisitRemoves(true);
         params.setVisitInconsistentBuckets(true);
         params.setTraceLevel(9);

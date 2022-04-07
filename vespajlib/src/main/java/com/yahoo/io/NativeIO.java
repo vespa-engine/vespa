@@ -18,49 +18,70 @@ import com.sun.jna.Platform;
  * Provides functionality only possible through native C library.
  */
 public class NativeIO {
-    private final static Logger logger = Logger.getLogger(NativeIO.class.getName());
-    private final static String DISABLE_NATIVE_IO = "DISABLE_NATIVE_IO";
+    private static final Logger logger = Logger.getLogger(NativeIO.class.getName());
+    private static final String DISABLE_NATIVE_IO = "DISABLE_NATIVE_IO";
     private static final int POSIX_FADV_DONTNEED = 4; // See /usr/include/linux/fadvise.h
-    private static boolean initialized = false;
-    private static boolean disabled = false;
-    private static Throwable initError = null;
-    static {
-        try {
-            if (Platform.isLinux()) {
-                disabled = System.getenv().containsKey(DISABLE_NATIVE_IO);
-                if (!disabled) {
-                    Native.register(Platform.C_LIBRARY_NAME);
-                    initialized = true;
+    private static final InitResult fdField = new InitResult();
+    private static class InitResult {
+        private final boolean initialized;
+        private final boolean enabled;
+        private final Field fdField;
+        private final Throwable initError;
+        InitResult() {
+            boolean initComplete = false;
+            boolean disabled = true;
+            Field field = null;
+            Throwable exception = null;
+            try {
+                if (Platform.isLinux()) {
+                    disabled = System.getenv().containsKey(DISABLE_NATIVE_IO);
+                    if (!disabled) {
+                        Native.register(Platform.C_LIBRARY_NAME);
+                        field = getField(FileDescriptor.class, "fd");
+                        initComplete = true;
+                    }
+                } else {
+                    exception = new RuntimeException("Platform is unsúpported. Only supported on linux.");
                 }
+            } catch (Throwable throwable) {
+                exception = throwable;
             }
-        } catch (Throwable throwable) {
-            initError = throwable;
+            initialized = initComplete;
+            enabled = ! disabled;
+            initError = exception;
+            fdField = field;
+        }
+        private static Field getField(Class<?> clazz, String fieldName) throws NoSuchFieldException {
+            Field field = clazz.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field;
+        }
+        boolean isInitialized() { return initialized; }
+        boolean isEnabled() { return enabled; }
+        Throwable getError() { return initError; }
+        int getNativeFD(FileDescriptor fd) {
+            try {
+                return fdField.getInt(fd);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
-
-    private static final Field fieldFD = getField(FileDescriptor.class, "fd");
-
 
     private static native int posix_fadvise(int fd, long offset, long len, int flag) throws LastErrorException;
 
     public NativeIO() {
-        if (!initialized) {
-            if (disabled) {
-                logger.info("Native IO has been disable explicit via system property " + DISABLE_NATIVE_IO);
-            } else {
+        if ( ! fdField.isInitialized()) {
+            if (fdField.isEnabled()) {
                 logger.warning("Native IO not possible due to " + getError().getMessage());
+            } else {
+                logger.info("Native IO has been disable explicit via system property " + DISABLE_NATIVE_IO);
             }
         }
     }
 
-    public boolean valid() { return initialized; }
-    public Throwable getError() {
-        if (initError != null) {
-            return initError;
-        } else {
-            return new RuntimeException("Platform is unsúpported. Only supported on linux.");
-        }
-    }
+    public boolean valid() { return fdField.isInitialized(); }
+    public Throwable getError() { return fdField.getError(); }
 
     /**
      * Will hint the OS that data read so far will not be accessed again and should hence be dropped from the buffer cache.
@@ -74,8 +95,8 @@ public class NativeIO {
                 logger.warning("Sync failed while dropping cache: " + e.getMessage());
             }
         }
-        if (initialized) {
-            posix_fadvise(getNativeFD(fd), offset, len, POSIX_FADV_DONTNEED);
+        if (valid()) {
+            posix_fadvise(fdField.getNativeFD(fd), offset, len, POSIX_FADV_DONTNEED);
         }
     }
     /**
@@ -96,26 +117,6 @@ public class NativeIO {
         } catch (FileNotFoundException e) {
             logger.fine("No point in dropping a non-existing file from the buffer cache: " + e.getMessage());
         } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-    private static Field getField(Class<?> clazz, String fieldName) {
-        Field field;
-        try {
-            field = clazz.getDeclaredField(fieldName);
-        } catch (NoSuchFieldException e) {
-            throw new RuntimeException(e);
-        }
-        field.setAccessible(true);
-        return field;
-    }
-
-    private static int getNativeFD(FileDescriptor fd) {
-        try {
-            return fieldFD.getInt(fd);
-        } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }

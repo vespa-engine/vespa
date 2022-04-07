@@ -37,9 +37,10 @@ public:
     void forEachDocumentType(std::function<void(const DocumentType &)> handler) const;
     const DocumentType *getDefaultDocType() const { return _default; }
 private:
-
     std::unique_ptr<internal::DocumentTypeMap> _doc_types;
     const DocumentType * _default;
+
+    DataTypeRepo * findRepo(int32_t doc_type_id) const;
 };
 
 }  // namespace document

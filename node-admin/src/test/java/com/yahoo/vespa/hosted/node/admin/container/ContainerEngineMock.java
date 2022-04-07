@@ -7,8 +7,10 @@ import com.yahoo.vespa.hosted.node.admin.container.image.Image;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
+import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -66,8 +68,34 @@ public class ContainerEngineMock implements ContainerEngine {
     }
 
     @Override
-    public void createContainer(NodeAgentContext context, ContainerData containerData, ContainerResources containerResources) {
+    public ContainerData createContainer(NodeAgentContext context, ContainerResources containerResources) {
         addContainer(createContainer(context, PartialContainer.State.created, containerResources));
+        return new ContainerData() {
+            @Override
+            public void addFile(ContainerPath path, String data) {
+                throw new UnsupportedOperationException("addFile not implemented");
+            }
+
+            @Override
+            public void addFile(ContainerPath path, String data, String permissions) {
+                throw new UnsupportedOperationException("addFile not implemented");
+            }
+
+            @Override
+            public void addDirectory(ContainerPath path, String... permissions) {
+                throw new UnsupportedOperationException("addDirectory not implemented");
+            }
+
+            @Override
+            public void addSymlink(ContainerPath symlink, Path target) {
+                throw new UnsupportedOperationException("addSymlink not implemented");
+            }
+
+            @Override
+            public void converge(NodeAgentContext context) {
+                throw new UnsupportedOperationException("converge not implemented");
+            }
+        };
     }
 
     @Override

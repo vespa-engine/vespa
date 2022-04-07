@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.restapi.HttpURL.Path;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.application.CompressedApplicationInputStreamTest;
@@ -109,20 +110,20 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     @Test
     public void require_that_post_request_must_have_correct_content_type() throws IOException {
         HashMap<String, String> headers = new HashMap<>(); // no Content-Type header
-        File outFile = CompressedApplicationInputStreamTest.createTarFile();
+        File outFile = CompressedApplicationInputStreamTest.createTarFile(temporaryFolder.getRoot().toPath());
         HttpResponse response = createHandler().handle(post(outFile, headers, null));
         assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST, HttpErrorResponse.ErrorCode.BAD_REQUEST, "Request contains no Content-Type header");
     }
 
     private void assertIllegalFromParameter(String fromValue) throws IOException {
-        File outFile = CompressedApplicationInputStreamTest.createTarFile();
+        File outFile = CompressedApplicationInputStreamTest.createTarFile(temporaryFolder.getRoot().toPath());
         HttpRequest request = post(outFile, postHeaders, Collections.singletonMap("from", fromValue));
         assertHttpStatusCodeErrorCodeAndMessage(createHandler().handle(request), BAD_REQUEST, HttpErrorResponse.ErrorCode.BAD_REQUEST, "Parameter 'from' has illegal value '" + fromValue + "'");
     }
 
     @Test
     public void require_that_prepare_url_is_returned_on_success() throws IOException {
-        File outFile = CompressedApplicationInputStreamTest.createTarFile();
+        File outFile = CompressedApplicationInputStreamTest.createTarFile(temporaryFolder.getRoot().toPath());
         Map<String, String> parameters = Collections.singletonMap("name", "foo");
         HttpResponse response = createHandler().handle(post(outFile, postHeaders, parameters));
         assertNotNull(response);
@@ -143,7 +144,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
 
     @Test
     public void require_internal_error_when_exception() throws IOException {
-        File outFile = CompressedApplicationInputStreamTest.createTarFile();
+        File outFile = CompressedApplicationInputStreamTest.createTarFile(temporaryFolder.getRoot().toPath());
         new FileWriter(outFile).write("rubbish");
         HttpResponse response = createHandler().handle(post(outFile));
         assertHttpStatusCodeErrorCodeAndMessage(response, INTERNAL_SERVER_ERROR,
@@ -153,9 +154,9 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
 
     @Test
     public void require_that_handler_unpacks_application() throws IOException {
-        File outFile = CompressedApplicationInputStreamTest.createTarFile();
+        File outFile = CompressedApplicationInputStreamTest.createTarFile(temporaryFolder.getRoot().toPath());
         createHandler().handle(post(outFile));
-        ApplicationFile applicationFile = applicationRepository.getApplicationFileFromSession(tenant, 2, "services.xml", Session.Mode.READ);
+        ApplicationFile applicationFile = applicationRepository.getApplicationFileFromSession(tenant, 2, Path.parse("services.xml"), Session.Mode.READ);
         assertTrue(applicationFile.exists());
     }
 

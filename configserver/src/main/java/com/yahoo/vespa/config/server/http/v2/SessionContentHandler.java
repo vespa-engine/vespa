@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.restapi.HttpURL.Path;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.http.ContentRequest;
 import com.yahoo.vespa.config.server.http.ContentHandler;
@@ -52,7 +53,7 @@ public class SessionContentHandler extends SessionHandler {
         TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
         validateRequest(tenantName);
         long sessionId = getSessionIdV2(request);
-        String contentPath = SessionContentRequestV2.getContentPath(request);
+        Path contentPath = SessionContentRequestV2.getContentPath(request);
         ApplicationFile applicationFile =
                 applicationRepository.getApplicationFileFromSession(tenantName,
                                                                     sessionId,

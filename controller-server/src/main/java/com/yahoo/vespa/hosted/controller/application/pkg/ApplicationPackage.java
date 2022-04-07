@@ -4,6 +4,9 @@ package com.yahoo.vespa.hosted.controller.application.pkg;
 import com.google.common.hash.Funnel;
 import com.google.common.hash.Hashing;
 import com.yahoo.component.Version;
+import com.yahoo.compress.ArchiveStreamReader;
+import com.yahoo.compress.ArchiveStreamReader.ArchiveFile;
+import com.yahoo.compress.ArchiveStreamReader.Options;
 import com.yahoo.config.application.FileSystemWrapper;
 import com.yahoo.config.application.FileSystemWrapper.FileWrapper;
 import com.yahoo.config.application.XmlPreProcessor;
@@ -24,6 +27,7 @@ import com.yahoo.yolean.Exceptions;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,6 +44,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -108,7 +113,7 @@ public class ApplicationPackage {
 
         this.trustedCertificates = files.get(trustedCertificatesFile).map(bytes -> X509CertificateUtils.certificateListFromPem(new String(bytes, UTF_8))).orElse(List.of());
 
-        this.bundleHash = calculateBundleHash();
+        this.bundleHash = calculateBundleHash(zippedContent);
 
         preProcessAndPopulateCache();
     }
@@ -120,7 +125,7 @@ public class ApplicationPackage {
         byte[] certificatesBytes = X509CertificateUtils.toPem(trustedCertificates).getBytes(UTF_8);
 
         ByteArrayOutputStream modified = new ByteArrayOutputStream(zippedContent.length + certificatesBytes.length);
-        ZipStreamReader.transferAndWrite(modified, new ByteArrayInputStream(zippedContent), trustedCertificatesFile, certificatesBytes);
+        ZipEntries.transferAndWrite(modified, new ByteArrayInputStream(zippedContent), trustedCertificatesFile, certificatesBytes);
         return new ApplicationPackage(modified.toByteArray());
     }
 
@@ -227,15 +232,23 @@ public class ApplicationPackage {
     }
 
     // Hashes all files and settings that require a deployment to be forwarded to configservers
-    private String calculateBundleHash() {
+    private String calculateBundleHash(byte[] zippedContent) {
         Predicate<String> entryMatcher = name -> ! name.endsWith(deploymentFile) && ! name.endsWith(buildMetaFile);
-        SortedMap<String, Long> entryCRCs = ZipStreamReader.getEntryCRCs(new ByteArrayInputStream(zippedContent), entryMatcher);
-        Funnel<SortedMap<String, Long>> funnel = (from, into) -> from.entrySet().forEach(entry -> {
-            into.putBytes(entry.getKey().getBytes());
-            into.putLong(entry.getValue());
+        SortedMap<String, Long> crcByEntry = new TreeMap<>();
+        Options options = Options.standard().pathPredicate(entryMatcher);
+        ArchiveFile file;
+        try (ArchiveStreamReader reader = ArchiveStreamReader.ofZip(new ByteArrayInputStream(zippedContent), options)) {
+            OutputStream discard = OutputStream.nullOutputStream();
+            while ((file = reader.readNextTo(discard)) != null) {
+                crcByEntry.put(file.path().toString(), file.crc32().orElse(-1));
+            }
+        }
+        Funnel<SortedMap<String, Long>> funnel = (from, into) -> from.forEach((key, value) -> {
+            into.putBytes(key.getBytes());
+            into.putLong(value);
         });
         return Hashing.sha1().newHasher()
-                      .putObject(entryCRCs, funnel)
+                      .putObject(crcByEntry, funnel)
                       .putInt(deploymentSpec.deployableHashCode())
                       .hash().toString();
     }
@@ -285,13 +298,13 @@ public class ApplicationPackage {
         }
 
         private Map<Path, Optional<byte[]>> read(Collection<String> names) {
-            var entries = new ZipStreamReader(new ByteArrayInputStream(zip),
-                                              name -> names.contains(withoutLegacyDir(name)),
-                                              maxSize,
-                                              true)
-                    .entries().stream()
-                    .collect(toMap(entry -> Paths.get(withoutLegacyDir(entry.zipEntry().getName())).normalize(),
-                             ZipStreamReader.ZipEntryWithContent::content));
+            var entries = ZipEntries.from(zip,
+                                          name -> names.contains(withoutLegacyDir(name)),
+                                          maxSize,
+                                          true)
+                                    .asList().stream()
+                                    .collect(toMap(entry -> Paths.get(withoutLegacyDir(entry.name())).normalize(),
+                                                   ZipEntries.ZipEntryWithContent::content));
             names.stream().map(Paths::get).forEach(path -> entries.putIfAbsent(path.normalize(), Optional.empty()));
             return entries;
         }

@@ -2,14 +2,10 @@
 package com.yahoo.restapi;
 
 import java.net.URI;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Stream;
+import java.util.function.Consumer;
 
 /**
  * A normalized path which is able to match strings containing bracketed placeholders and return the
@@ -32,50 +28,47 @@ import java.util.stream.Stream;
 public class Path {
 
     // This path
-    private final String pathString;
-    private final String[] elements;
+    private final HttpURL.Path path;
 
     // Info about the last match
     private final Map<String, String> values = new HashMap<>();
-    private String rest = "";
+    private HttpURL.Path rest;
 
+    /** Creates a new Path for matching the given URI against patterns, which uses {@link HttpURL#requirePathSegment} as a segment validator. */
     public Path(URI uri) {
-        this.pathString = requireNormalized(uri).getRawPath();
-        this.elements = splitAbsolutePath(pathString, (part) -> URLDecoder.decode(part, StandardCharsets.UTF_8));
+        this.path = HttpURL.Path.parse(uri.getRawPath());
+    }
+
+    /** Creates a new Path for matching the given URI against patterns, with the given path segment validator. */
+    public Path(URI uri, Consumer<String> validator) {
+        this.path = HttpURL.Path.parse(uri.getRawPath(), validator);
     }
 
     private boolean matchesInner(String pathSpec) {
         values.clear();
-        String[] specElements = splitAbsolutePath(pathSpec, Function.identity());
+        List<String> specElements = HttpURL.Path.parse(pathSpec).segments();
         boolean matchPrefix = false;
-        if (specElements.length > 1 && specElements[specElements.length-1].equals("{*}")) {
+        if (specElements.size() > 1 && specElements.get(specElements.size() - 1).equals("{*}")) {
             matchPrefix = true;
-            specElements = Arrays.copyOf(specElements, specElements.length-1);
+            specElements = specElements.subList(0, specElements.size() - 1);
         }
 
         if (matchPrefix) {
-            if (this.elements.length < specElements.length) return false;
+            if (path.segments().size() < specElements.size()) return false;
         }
         else { // match exact
-            if (this.elements.length != specElements.length) return false;
+            if (path.segments().size() != specElements.size()) return false;
         }
         
-        for (int i = 0; i < specElements.length; i++) {
-            if (specElements[i].startsWith("{") && specElements[i].endsWith("}")) // placeholder
-                values.put(specElements[i].substring(1, specElements[i].length()-1), elements[i]);
-            else if ( ! specElements[i].equals(this.elements[i]))
+        for (int i = 0; i < specElements.size(); i++) {
+            if (specElements.get(i).startsWith("{") && specElements.get(i).endsWith("}")) // placeholder
+                values.put(specElements.get(i).substring(1, specElements.get(i).length() - 1), path.segments().get(i));
+            else if ( ! specElements.get(i).equals(path.segments().get(i)))
                 return false;
         }
-        
-        if (matchPrefix) {
-            StringBuilder rest = new StringBuilder();
-            for (int i = specElements.length; i < this.elements.length; i++)
-                rest.append(elements[i]).append("/");
-            if ( ! pathString.endsWith("/") && rest.length() > 0)
-                rest.setLength(rest.length() - 1);
-            this.rest = rest.toString();
-        }
-        
+
+        rest = matchPrefix ? path.skip(specElements.size()) : null;
+
         return true;
     }
 
@@ -104,34 +97,15 @@ public class Path {
     }
 
     /**
-     * Returns the rest of the last matched path.
-     * This is always the empty string (never null) unless the path spec ends with {*}
+     * Returns the rest of the last matched path, or {@code null} if the path spec didn't end with {*}.
      */
-    public String getRest() { return rest; }
-
-    public String asString() {
-        return pathString;
+    public HttpURL.Path getRest() {
+        return rest;
     }
 
     @Override
     public String toString() {
-        return "path '" + String.join("/", elements) + "'";
+        return path.toString();
     }
 
-    private static URI requireNormalized(URI uri) {
-        Objects.requireNonNull(uri);
-        if (!uri.normalize().equals(uri)) throw new IllegalArgumentException("Expected normalized URI, got '" + uri + "'");
-        return uri;
-    }
-
-    private static String[] splitAbsolutePath(String path, Function<String, String> partParser) {
-        String[] parts = Stream.of(path.split("/"))
-                               .map(partParser)
-                               .toArray(String[]::new);
-        for (var part : parts) {
-            if (part.equals("..")) throw new IllegalArgumentException("Expected absolute path, got '" + path + "'");
-        }
-        return parts;
-    }
-    
 }

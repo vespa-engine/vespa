@@ -4,7 +4,9 @@
 #include <new>
 #include <atomic>
 #include <cassert>
+#include <cstdio>
 #include <vespamalloc/util/osmem.h>
+#include <thread>
 
 extern "C" void MallocRecurseOnSuspend(bool recurse) __attribute__ ((noinline));
 
