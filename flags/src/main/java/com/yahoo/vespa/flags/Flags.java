@@ -397,10 +397,10 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_NEW_CONTROLLER_LOCKS = defineFeatureFlag(
-            "transition-to-new-controller-locks", false,
+    public static final UnboundStringFlag CONTROLLER_LOCK_SCHEME = defineStringFlag(
+            "new-controller-lock-scheme", "OLD",
             List.of("hmusum"), "2022-04-07", "2022-05-07",
-            "Use two locks in transition period to new lock schema for application-related controller locks",
+            "Lock scheme to application-related controller locks (valid values: OLD, BOTH, NEW)",
             "Takes effect immediately",
             ZONE_ID);
 
