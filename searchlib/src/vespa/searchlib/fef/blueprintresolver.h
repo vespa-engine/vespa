@@ -100,6 +100,12 @@ public:
     BlueprintResolver(const BlueprintFactory &factory,
                       const IIndexEnvironment &indexEnv);
 
+    // Describe a feature based on its name (intended for log messages)
+    //
+    // rankingExpression(foo@hash) -> function 'foo'
+    // feature -> rank feature 'feature'
+    static vespalib::string describe_feature(const vespalib::string &name);
+
     /**
      * Add a feature name to the list of seeds. During compilation,
      * blueprints for all seeds and dependencies will be instantiated

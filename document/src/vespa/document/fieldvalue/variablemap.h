@@ -17,8 +17,8 @@ public:
     IndexValue();
     IndexValue(int index_);
     IndexValue(const FieldValue& key_);
-    IndexValue(IndexValue && rhs) = default;
-    IndexValue & operator = (IndexValue && rhs) = default;
+    IndexValue(IndexValue && rhs) noexcept;
+    IndexValue & operator = (IndexValue && rhs) noexcept;
     IndexValue(const IndexValue & rhs);
     IndexValue & operator = (const IndexValue & rhs);
 
@@ -36,8 +36,8 @@ using VariableMapT = std::map<vespalib::string, IndexValue>;
 class VariableMap : public VariableMapT {
 public:
     VariableMap();
-    VariableMap(VariableMap && rhs) = default;
-    VariableMap & operator = (VariableMap && rhs) = default;
+    VariableMap(VariableMap && rhs) noexcept;
+    VariableMap & operator = (VariableMap && rhs) noexcept;
     VariableMap(const VariableMap & rhs);
     VariableMap & operator = (const VariableMap & rhs);
     ~VariableMap();

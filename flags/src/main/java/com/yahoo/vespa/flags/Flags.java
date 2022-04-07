@@ -397,6 +397,13 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundStringFlag CONTROLLER_LOCK_SCHEME = defineStringFlag(
+            "new-controller-lock-scheme", "OLD",
+            List.of("hmusum"), "2022-04-07", "2022-05-07",
+            "Lock scheme to application-related controller locks (valid values: OLD, BOTH, NEW)",
+            "Takes effect immediately",
+            ZONE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

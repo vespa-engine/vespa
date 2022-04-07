@@ -11,8 +11,8 @@ IndexValue::IndexValue(int index_) : index(index_), key() {}
 
 bool
 IndexValue::operator==(const IndexValue& other) const {
-    if (key.get() != NULL) {
-        if (other.key.get() != NULL && *key == *other.key) {
+    if (key) {
+        if (other.key && *key == *other.key) {
             return true;
         }
         return false;
@@ -22,28 +22,32 @@ IndexValue::operator==(const IndexValue& other) const {
 }
 
 IndexValue::IndexValue(const FieldValue& key_)
-        : index(-1),
-          key(FieldValue::CP(key_.clone()))
+    : index(-1),
+      key(key_.clone())
 { }
 
+IndexValue::IndexValue(IndexValue && rhs) noexcept = default;
+IndexValue & IndexValue::operator = (IndexValue && rhs) noexcept = default;
 IndexValue::IndexValue(const IndexValue & rhs) = default;
 IndexValue & IndexValue::operator = (const IndexValue & rhs) = default;
 
-IndexValue::~IndexValue() { }
+IndexValue::~IndexValue() = default;
 
 vespalib::string
 IndexValue::toString() const {
-    if (key.get() != NULL) {
+    if (key) {
         return key->toString();
     } else {
         return vespalib::make_string("%d", index);
     }
 }
 
-VariableMap::VariableMap() {}
-VariableMap::~VariableMap() {}
+VariableMap::VariableMap(VariableMap && rhs) noexcept = default;
+VariableMap & VariableMap::operator = (VariableMap && rhs) noexcept = default;
 VariableMap::VariableMap(const VariableMap & rhs) = default;
 VariableMap & VariableMap::operator = (const VariableMap & rhs) = default;
+VariableMap::VariableMap() = default;
+VariableMap::~VariableMap() = default;
 
 vespalib::string
 VariableMap::toString() const {

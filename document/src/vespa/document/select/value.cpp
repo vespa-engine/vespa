@@ -2,6 +2,7 @@
 
 #include "value.h"
 #include "operator.h"
+#include "variablemap.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <bitset>
 #include <ostream>
@@ -45,8 +46,7 @@ InvalidValue::operator==(const Value&) const
 }
 
 void
-InvalidValue::print(std::ostream& out, bool verbose,
-                    const std::string& indent) const
+InvalidValue::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     (void) verbose; (void) indent;
     out << "invalid";
@@ -123,8 +123,7 @@ StringValue::operator==(const Value& value) const
 }
 
 void
-StringValue::print(std::ostream& out, bool verbose,
-                    const std::string& indent) const
+StringValue::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     (void) verbose; (void) indent;
     out << "\"" << _value << "\"";
@@ -156,8 +155,7 @@ IntegerValue::operator==(const Value& value) const
 }
 
 void
-IntegerValue::print(std::ostream& out, bool verbose,
-                    const std::string& indent) const
+IntegerValue::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     (void) verbose; (void) indent;
     out << _value << 'i';
@@ -189,8 +187,7 @@ FloatValue::operator==(const Value& value) const
 }
 
 void
-FloatValue::print(std::ostream& out, bool verbose,
-                    const std::string& indent) const
+FloatValue::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     (void) verbose; (void) indent;
     out << _value << 'f';
@@ -312,8 +309,7 @@ ArrayValue::regexTrace(const Value& value, std::ostream& trace) const
 }
 
 void
-ArrayValue::print(std::ostream& out, bool verbose,
-                    const std::string& indent) const
+ArrayValue::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     (void) verbose; (void) indent;
     out << "<no array representation in language yet>";
