@@ -107,6 +107,7 @@ func TestDeployError(t *testing.T) {
 }
 
 func assertDeploy(applicationPackage string, arguments []string, t *testing.T) {
+	t.Helper()
 	cli, stdout, _ := newTestCLI(t)
 	client := &mock.HTTPClient{}
 	cli.httpClient = client
@@ -118,6 +119,7 @@ func assertDeploy(applicationPackage string, arguments []string, t *testing.T) {
 }
 
 func assertPrepare(applicationPackage string, arguments []string, t *testing.T) {
+	t.Helper()
 	client := &mock.HTTPClient{}
 	client.NextResponseString(200, `{"session-id":"42"}`)
 	cli, stdout, _ := newTestCLI(t)
@@ -134,6 +136,7 @@ func assertPrepare(applicationPackage string, arguments []string, t *testing.T) 
 }
 
 func assertActivate(applicationPackage string, arguments []string, t *testing.T) {
+	t.Helper()
 	client := &mock.HTTPClient{}
 	cli, stdout, _ := newTestCLI(t)
 	cli.httpClient = client
@@ -150,6 +153,7 @@ func assertActivate(applicationPackage string, arguments []string, t *testing.T)
 }
 
 func assertPackageUpload(requestNumber int, url string, client *mock.HTTPClient, t *testing.T) {
+	t.Helper()
 	req := client.LastRequest
 	if requestNumber >= 0 {
 		req = client.Requests[requestNumber]
@@ -165,10 +169,12 @@ func assertPackageUpload(requestNumber int, url string, client *mock.HTTPClient,
 }
 
 func assertDeployRequestMade(target string, client *mock.HTTPClient, t *testing.T) {
+	t.Helper()
 	assertPackageUpload(-1, target+"/application/v2/tenant/default/prepareandactivate", client, t)
 }
 
 func assertApplicationPackageError(t *testing.T, cmd string, status int, expectedMessage string, returnBody string) {
+	t.Helper()
 	client := &mock.HTTPClient{}
 	client.NextResponseString(status, returnBody)
 	cli, _, stderr := newTestCLI(t)
@@ -180,6 +186,7 @@ func assertApplicationPackageError(t *testing.T, cmd string, status int, expecte
 }
 
 func assertDeployServerError(t *testing.T, status int, errorMessage string) {
+	t.Helper()
 	client := &mock.HTTPClient{}
 	client.NextResponseString(status, errorMessage)
 	cli, _, stderr := newTestCLI(t)
