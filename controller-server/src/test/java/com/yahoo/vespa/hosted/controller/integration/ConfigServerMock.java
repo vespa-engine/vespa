@@ -534,8 +534,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public String getServiceStatusPage(DeploymentId deployment, String serviceName, DomainName node, Path subPath) {
-        return "<h1>OK</h1>";
+    public ProxyResponse getServiceNodePage(DeploymentId deployment, String serviceName, DomainName node, Path subPath) {
+        return new ProxyResponse("<h1>OK</h1>".getBytes(StandardCharsets.UTF_8), "text/html", 200);
     }
 
     @Override

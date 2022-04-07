@@ -269,8 +269,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/suspended")) return suspended(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/service")) return services(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/service/{service}/state/v1/{*}")) return service(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.getRest(), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/service/{service}/{host}/status/{*}")) return status(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.get("host"), path.getRest(), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/service/{service}/{host}/state/v1/metrics")) return status(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.get("host"), path.getRest(), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/service/{service}/{host}/status/{*}")) return status(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.get("host"), path.getRest());
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/service/{service}/{host}/state/v1/metrics")) return stateV1Metrics(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.get("host"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/nodes")) return nodes(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/clusters")) return clusters(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/content/{*}")) return content(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.getRest(), request);
@@ -285,7 +285,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/suspended")) return suspended(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/service")) return services(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/service/{service}/state/v1/{*}")) return service(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.getRest(), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/service/{service}/{host}/status/{*}")) return status(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.get("host"), path.getRest(), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/service/{service}/{host}/status/{*}")) return status(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.get("host"), path.getRest());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/nodes")) return nodes(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/clusters")) return clusters(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.propertyMap());
@@ -1796,13 +1796,16 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return response;
     }
 
-    private HttpResponse status(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String host, HttpURL.Path restPath, HttpRequest request) {
+    private HttpResponse status(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String host, HttpURL.Path restPath) {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
-        String result = controller.serviceRegistry().configServer().getServiceStatusPage(deploymentId,
-                                                                                         serviceName,
-                                                                                         DomainName.of(host),
-                                                                                         restPath); // TODO: add query
-        return new HtmlResponse(result);
+        return controller.serviceRegistry().configServer().getServiceNodePage(
+                deploymentId, serviceName, DomainName.of(host), HttpURL.Path.parse("/status").append(restPath)); // TODO: add query
+    }
+
+    private HttpResponse stateV1Metrics(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String host) {
+        DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
+        return controller.serviceRegistry().configServer().getServiceNodePage(
+                deploymentId, serviceName, DomainName.of(host), HttpURL.Path.parse("/state/v1/metrics"));
     }
 
     private HttpResponse service(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, HttpURL.Path restPath, HttpRequest request) {
