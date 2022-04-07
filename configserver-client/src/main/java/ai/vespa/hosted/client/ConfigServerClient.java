@@ -94,6 +94,9 @@ public interface ConfigServerClient extends Closeable {
         /** Sets the parameter key/values for the request. Number of arguments must be even. Pairs with {@code null} values are omitted. */
         RequestBuilder parameters(List<String> pairs);
 
+        /** Appends all parameters from the given query. */
+        RequestBuilder parameters(Query query);
+
         /** Overrides the default socket read timeout of the request. {@code Duration.ZERO} gives infinite timeout. */
         RequestBuilder timeout(Duration timeout);
 

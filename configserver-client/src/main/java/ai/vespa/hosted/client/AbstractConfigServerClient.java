@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.client;
 
+import ai.vespa.hosted.client.ConfigServerClient.RequestBuilder;
 import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Path;
 import ai.vespa.http.HttpURL.Query;
@@ -151,6 +152,12 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
                     query = query.add(key, value);
             }
 
+            return this;
+        }
+
+        @Override
+        public ConfigServerClient.RequestBuilder parameters(Query query) {
+            this.query = this.query.add(query.entries());
             return this;
         }
 
