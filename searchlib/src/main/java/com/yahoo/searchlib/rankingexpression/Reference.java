@@ -31,11 +31,11 @@ public class Reference extends Name implements Comparable<Reference> {
     /** True if this was created by the "fromIdentifier" method. This lets us separate 'foo()' and 'foo' */
     private final boolean isIdentifier;
 
-    private final static Pattern identifierPattern = Pattern.compile("[A-Za-z0-9_@.\"-]+");
+    private final static Pattern identifierPattern = Pattern.compile("[A-Za-z0-9_@.\"-$]+");
 
     public static Reference fromIdentifier(String identifier) {
         if ( ! identifierPattern.matcher(identifier).matches())
-            throw new IllegalArgumentException("Identifiers can only contain [A-Za-z0-9_]+, but was '" + identifier + "'");
+            throw new IllegalArgumentException("Identifiers can only contain [A-Za-z0-9_@.\"-$]+, but was '" + identifier + "'");
         return new Reference(identifier, Arguments.EMPTY, null, true);
     }
 
