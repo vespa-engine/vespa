@@ -33,9 +33,11 @@ IndexValue::IndexValue(const IndexValue & rhs) :
     key(rhs.key ? rhs.key->clone() : nullptr)
 {}
 IndexValue & IndexValue::operator = (const IndexValue & rhs) {
-    IndexValue tmp(rhs);
-    std::swap(index, tmp.index);
-    std::swap(key, tmp.key);
+    if (this != & rhs) {
+        IndexValue tmp(rhs);
+        std::swap(index, tmp.index);
+        std::swap(key, tmp.key);
+    }
     return *this;
 }
 
