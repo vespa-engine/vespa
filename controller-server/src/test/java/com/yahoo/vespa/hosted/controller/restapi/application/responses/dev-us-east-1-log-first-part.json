@@ -28,7 +28,7 @@
       {
         "at": 0,
         "type": "info",
-        "message": "host-tenant:application:default-dev.us-east-1: unorchestrated"
+        "message": "host-tenant.application.default-dev.us-east-1: unorchestrated"
       },
       {
         "at": 0,

@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.lb;
 
+import ai.vespa.http.DomainName;
 import com.google.common.net.InetAddresses;
-import com.yahoo.config.provision.HostName;
 
 import java.util.Objects;
 
@@ -15,15 +15,15 @@ public class Real implements Comparable<Real> {
 
     public static final int defaultPort = 4443;
 
-    private final HostName hostname;
+    private final DomainName hostname;
     private final String ipAddress;
     private final int port;
 
-    public Real(HostName hostname, String ipAddress) {
+    public Real(DomainName hostname, String ipAddress) {
         this(hostname, ipAddress, defaultPort);
     }
 
-    public Real(HostName hostname, String ipAddress, int port) {
+    public Real(DomainName hostname, String ipAddress, int port) {
         this.hostname = hostname;
         this.ipAddress = requireIpAddress(ipAddress);
         if (port < 1 || port > 65535) {
@@ -33,7 +33,7 @@ public class Real implements Comparable<Real> {
     }
 
     /** The hostname of this real */
-    public HostName hostname() {
+    public DomainName hostname() {
         return hostname;
     }
 

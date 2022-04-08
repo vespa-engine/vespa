@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -55,7 +55,7 @@ public class VersionStatusSerializerTest {
     private static List<NodeVersion> nodeVersions(Version version, Version wantedVersion, String... hostnames) {
         var nodeVersions = new ArrayList<NodeVersion>();
         for (var hostname : hostnames) {
-            nodeVersions.add(new NodeVersion(HostName.from(hostname), ZoneId.from("prod", "us-north-1"), version, wantedVersion, Optional.empty()));
+            nodeVersions.add(new NodeVersion(HostName.of(hostname), ZoneId.from("prod", "us-north-1"), version, wantedVersion, Optional.empty()));
         }
         return nodeVersions;
     }

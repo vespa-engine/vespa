@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identity.ServiceIdentitySslSocketFactory;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;

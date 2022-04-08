@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.LatencyAliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -32,11 +32,11 @@ public class NameServiceQueueSerializerTest {
                 new CreateRecord(record1),
                 new CreateRecords(List.of(record2)),
                 new CreateRecords(List.of(new Record(Record.Type.ALIAS, RecordName.from("alias.example.com"),
-                                                     new LatencyAliasTarget(HostName.from("alias1"),
+                                                     new LatencyAliasTarget(HostName.of("alias1"),
                                                                             "dns-zone-01",
                                                                             ZoneId.from("prod", "us-north-1")).pack()),
                                           new Record(Record.Type.ALIAS, RecordName.from("alias.example.com"),
-                                                     new LatencyAliasTarget(HostName.from("alias2"),
+                                                     new LatencyAliasTarget(HostName.of("alias2"),
                                                                             "dns-zone-02",
                                                                             ZoneId.from("prod", "us-north-2")).pack()))
                 ),
