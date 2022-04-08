@@ -210,10 +210,10 @@ class HttpURLTest {
                      bloated.set("moo").toString());
 
         assertEquals("no query",
-                     bloated.remove("foo").remove("baz").remove("quu").remove("moo").toString());
+                     bloated.remove(last.keySet()).toString());
 
         assertThrows(NullPointerException.class,
-                     () -> query.remove(null));
+                     () -> query.remove((String) null));
 
         assertThrows(NullPointerException.class,
                      () -> query.add((String) null));

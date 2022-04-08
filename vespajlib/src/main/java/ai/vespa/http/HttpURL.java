@@ -7,6 +7,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedHashMap;
@@ -16,6 +17,7 @@ import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.StringJoiner;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 import static ai.vespa.validation.Validation.require;
@@ -424,14 +426,15 @@ public class HttpURL {
 
         /** Returns a copy of this without any key-value pair with the <em>decoded</em> key. */
         public Query remove(String key) {
-            return new Query(without(validator.apply(requireNonNull(key)), head), validator);
+            Node node = without(key::equals, head);
+            return node == head ? this : new Query(node, validator);
         }
 
-        private static Node without(String key, Node node) {
-            if (node == null) return node;                  // null does not contain the key
-            Node child = without(key, node.next);           // get a child that does not contain the key
-            if (node.key.equals(key)) return child;         // if we have the key, unlink us
-            if (child == node.next) return node;            // if our next didn't have the key, return unchanged
+        private static Node without(Predicate<String> filter, Node node) {
+            if (node == null) return node;                  // null does not contain match filter
+            Node child = without(filter, node.next);        // get a child that does not match filter
+            if (filter.test(node.key)) return child;        // if we match the filter, unlink us
+            if (child == node.next) return node;            // if our next didn't change, return unchanged
             return new Node(child, node.key, node.value);   // if our next has changed, we must change too
         }
 
@@ -448,12 +451,18 @@ public class HttpURL {
 
         /** Returns a copy of this with all given mappings added to this, possibly replacing existing mappings. */
         public Query set(Map<String, String> values) {
-            Query query = this;
+            Query query = remove(values.keySet());
             for (Map.Entry<String, String> entry : values.entrySet())
-                query = entry.getValue() == null ? query.set(entry.getKey())
-                        : query.set(entry.getKey(), entry.getValue());
+                query = entry.getValue() == null ? query.add(entry.getKey())
+                                                 : query.add(entry.getKey(), entry.getValue());
 
             return query;
+        }
+
+        /** Returns a copy of this with all given keys removed. */
+        public Query remove(Collection<String> keys) {
+            Node node = without(keys::contains, head);
+            return node == head ? this : new Query(node, validator);
         }
 
         /**

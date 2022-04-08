@@ -10,7 +10,7 @@ import static java.util.Objects.requireNonNull;
  * What's in a name?<br>
  * That which we call a String<br>
  * by any other name would smell as foul.<br>
- * No? 'Tis not soft?<br>
+ * No? 'Tis not sooth?<br>
  * No ... I see it now!<br>
  * Baptiz'd a-new, the String—<br>
  * no more a String,<br>
