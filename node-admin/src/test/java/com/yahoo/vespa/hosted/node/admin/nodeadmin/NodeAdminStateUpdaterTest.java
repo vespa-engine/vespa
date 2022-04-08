@@ -47,7 +47,7 @@ public class NodeAdminStateUpdaterTest {
     private final NodeRepoMock nodeRepository = spy(new NodeRepoMock());
     private final Orchestrator orchestrator = mock(Orchestrator.class);
     private final NodeAdmin nodeAdmin = mock(NodeAdmin.class);
-    private final HostName hostHostname = HostName.from("basehost1.test.yahoo.com");
+    private final HostName hostHostname = HostName.of("basehost1.test.yahoo.com");
 
     private final NodeAdminStateUpdater updater = spy(new NodeAdminStateUpdater(
             nodeAgentContextFactory, nodeRepository, orchestrator, nodeAdmin, hostHostname));

@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
-import com.yahoo.config.provision.HostName;
+import ai.vespa.http.DomainName;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
@@ -10,7 +10,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 
+import java.net.InetAddress;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -57,15 +59,20 @@ public class MockTesterCloud implements TesterCloud {
     }
 
     @Override
-    public Optional<String> resolveHostName(HostName hostname) {
-        return Optional.of("1.2.3.4");
+    public Optional<InetAddress> resolveHostName(DomainName hostname) {
+        try {
+            return Optional.of(InetAddress.getByAddress(new byte[]{ 1, 2, 3, 4 }));
+        }
+        catch (UnknownHostException e) {
+            throw new IllegalStateException("should not happen");
+        }
     }
 
     @Override
-    public Optional<HostName> resolveCname(HostName hostName) {
+    public Optional<DomainName> resolveCname(DomainName hostName) {
         return nameService.findRecords(Record.Type.CNAME, RecordName.from(hostName.value())).stream()
                           .findFirst()
-                          .map(record -> HostName.from(record.data().asString().substring(0, record.data().asString().length() - 1)));
+                          .map(record -> DomainName.of(record.data().asString().substring(0, record.data().asString().length() - 1)));
     }
 
     @Override

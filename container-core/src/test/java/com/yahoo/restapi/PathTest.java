@@ -68,9 +68,9 @@ public class PathTest {
     public void testUrlEncodedPath() {
         assertTrue(new Path(URI.create("/a/%62/c")).matches("/a/b/c"));
         assertFalse(new Path(URI.create("/a/b%2fc"), __ -> { }).matches("/a/b/c"));
-        assertThrows("path segments cannot be \"\", \".\", or \"..\", but got: '..'",
-                     IllegalArgumentException.class,
-                     () -> new Path(URI.create("/foo")).matches("/foo/bar/%2e%2e"));
+        assertEquals("path segments cannot be \"\", \".\", or \"..\", but got: '..'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> new Path(URI.create("/foo")).matches("/foo/bar/%2e%2e")).getMessage());
 
         Path path = new Path(URI.create("/%61/%2f/%63"), __ -> { });
         assertTrue(path.matches("/a/{slash}/{c}"));

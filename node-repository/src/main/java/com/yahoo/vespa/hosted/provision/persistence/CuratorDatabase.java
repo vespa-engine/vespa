@@ -63,7 +63,7 @@ public class CuratorDatabase {
         return Arrays.stream(curator.zooKeeperEnsembleConnectionSpec().split(","))
                 .filter(hostAndPort -> !hostAndPort.isEmpty())
                 .map(hostAndPort -> hostAndPort.split(":")[0])
-                .map(HostName::from)
+                .map(HostName::of)
                 .collect(Collectors.toList());
     }
 

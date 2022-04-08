@@ -83,7 +83,7 @@ public class RoutingPolicySerializer {
                                                      ClusterSpec.Id.from(inspect.field(clusterField).asString()),
                                                      ZoneId.from(inspect.field(zoneField).asString()));
             policies.add(new RoutingPolicy(id,
-                                           HostName.from(inspect.field(canonicalNameField).asString()),
+                                           HostName.of(inspect.field(canonicalNameField).asString()),
                                            SlimeUtils.optionalString(inspect.field(dnsZoneField)),
                                            instanceEndpoints,
                                            applicationEndpoints,

@@ -254,7 +254,7 @@ public class LoadBalancerProvisioner {
         Set<Real> reals = new LinkedHashSet<>();
         for (var node : nodes) {
             for (var ip : reachableIpAddresses(node)) {
-                reals.add(new Real(HostName.from(node.hostname()), ip));
+                reals.add(new Real(HostName.of(node.hostname()), ip));
             }
         }
         return reals;

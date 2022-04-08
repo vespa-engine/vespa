@@ -37,9 +37,9 @@ public class VcmrMaintainerTest {
     private NodeRepositoryMock nodeRepo;
     private final ZoneId zoneId = ZoneId.from("prod.us-east-3");
     private final ZoneId zone2 = ZoneId.from("prod.us-west-1");
-    private final HostName host1 = HostName.from("host1");
-    private final HostName host2 = HostName.from("host2");
-    private final HostName host3 = HostName.from("host3");
+    private final HostName host1 = HostName.of("host1");
+    private final HostName host2 = HostName.of("host2");
+    private final HostName host3 = HostName.of("host3");
     private final String changeRequestId = "id123";
 
     @Before
