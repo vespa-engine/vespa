@@ -17,19 +17,11 @@ class DataType;
 namespace select { class Node; }
 namespace fieldvalue { class IteratorHandler; }
 
-class FieldPathUpdate : public vespalib::Identifiable
+class FieldPathUpdate
 {
-protected:
+public:
     using nbostream = vespalib::nbostream;
     using stringref = vespalib::stringref;
-    /** To be used for deserialization */
-    FieldPathUpdate();
-    FieldPathUpdate(const FieldPathUpdate &);
-    FieldPathUpdate & operator =(const FieldPathUpdate &);
-
-   static stringref getString(nbostream & stream);
-public:
-    ~FieldPathUpdate() override;
 
     enum FieldPathUpdateType {
         Add    = IDENTIFIABLE_CLASSID(AddFieldPathUpdate),
@@ -37,9 +29,10 @@ public:
         Remove = IDENTIFIABLE_CLASSID(RemoveFieldPathUpdate)
     };
 
-    void applyTo(Document& doc) const;
+    virtual ~FieldPathUpdate();
 
-    virtual FieldPathUpdate* clone() const = 0;
+    FieldPathUpdateType type() const { return _type; }
+    void applyTo(Document& doc) const;
 
     virtual bool operator==(const FieldPathUpdate& other) const;
     bool operator!=(const FieldPathUpdate& other) const {
@@ -58,8 +51,6 @@ public:
 
     virtual void print(std::ostream& out, bool verbose, const std::string& indent) const = 0;
 
-    DECLARE_IDENTIFIABLE_ABSTRACT(FieldPathUpdate);
-
     virtual void accept(UpdateVisitor &visitor) const = 0;
     virtual uint8_t getSerializedType() const = 0;
 
@@ -69,7 +60,13 @@ public:
     static std::unique_ptr<FieldPathUpdate> createInstance(const DocumentTypeRepo& repo, const DataType &type, nbostream & stream);
 
 protected:
-    FieldPathUpdate(stringref fieldPath, stringref whereClause = stringref());
+    /** To be used for deserialization */
+    FieldPathUpdate(FieldPathUpdateType type);
+    FieldPathUpdate(const FieldPathUpdate &);
+    FieldPathUpdate & operator =(const FieldPathUpdate &);
+
+    static stringref getString(nbostream & stream);
+    FieldPathUpdate(FieldPathUpdateType type, stringref fieldPath, stringref whereClause = stringref());
 
     virtual void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & stream);
 
@@ -80,8 +77,9 @@ private:
     // TODO: rename to createIteratorHandler?
     virtual std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document& doc, const DocumentTypeRepo & repo) const = 0;
 
-    vespalib::string _originalFieldPath;
-    vespalib::string _originalWhereClause;
+    FieldPathUpdateType _type;
+    vespalib::string    _originalFieldPath;
+    vespalib::string    _originalWhereClause;
 };
 
 }

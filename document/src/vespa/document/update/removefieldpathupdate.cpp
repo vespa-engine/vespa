@@ -8,23 +8,14 @@ namespace document {
 
 using namespace fieldvalue;
 
-IMPLEMENT_IDENTIFIABLE(RemoveFieldPathUpdate, FieldPathUpdate);
-
 RemoveFieldPathUpdate::RemoveFieldPathUpdate()
-    : FieldPathUpdate()
+    : FieldPathUpdate(Remove)
 {
 }
 
 RemoveFieldPathUpdate::RemoveFieldPathUpdate(stringref fieldPath, stringref whereClause)
-    : FieldPathUpdate(fieldPath, whereClause)
+    : FieldPathUpdate(Remove, fieldPath, whereClause)
 {
-}
-
-bool
-RemoveFieldPathUpdate::operator==(const FieldPathUpdate& other) const
-{
-    if (other.getClass().id() != RemoveFieldPathUpdate::classId) return false;
-    return FieldPathUpdate::operator==(other);
 }
 
 void
