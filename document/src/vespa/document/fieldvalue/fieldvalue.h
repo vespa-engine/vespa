@@ -37,8 +37,6 @@ public:
     };
     using PathRange = FieldPath::Range<FieldPath::const_iterator>;
     using UP = std::unique_ptr<FieldValue>;
-    using SP = std::shared_ptr<FieldValue>;
-    using CP = vespalib::CloneablePtr<FieldValue>;
     using XmlOutputStream = vespalib::xml::XmlOutputStream;
 
     virtual ~FieldValue() = default;
