@@ -10,9 +10,10 @@ import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.Query;
 import com.yahoo.search.dispatch.InvokerResult;
 import com.yahoo.search.dispatch.LeanHit;
+import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
+import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
@@ -24,10 +25,42 @@ import static org.junit.Assert.assertTrue;
  * @author ollivir
  */
 public class ProtobufSerializationTest {
+
     static final double DELTA = 0.000000000001;
 
     @Test
-    public void testDocsumSerialization() throws IOException {
+    public void testQuerySerialization() {
+        CompiledQueryProfileRegistry registry = new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/tensortypes").compile();
+        Query query = new Query.Builder().setQueryProfile(registry.getComponent("profile1"))
+                                         .setRequest("?query=test&ranking.features.query(tensor_1)=[1.200]")
+                                         .build();
+
+        SearchProtocol.SearchRequest request1 = ProtobufSerialization.convertFromQuery(query, 9,"serverId");
+        assertEquals(9, request1.getHits());
+        assertEquals(0, request1.getRankPropertiesCount());
+        assertEquals(0, request1.getTensorRankPropertiesCount());
+        assertEquals(0, request1.getFeatureOverridesCount());
+        assertEquals(2, request1.getTensorFeatureOverridesCount());
+        assertEquals("\"\\001\\001\\003key\\001\\rpre_key1_post?\\360\\000\\000\\000\\000\\000\\000\"",
+                     contentsOf(request1.getTensorFeatureOverrides(0).getValue()));
+        assertEquals("\"\\006\\001\\001\\001x\\001?\\231\\231\\232\"",
+                     contentsOf(request1.getTensorFeatureOverrides(1).getValue()));
+
+        query.prepare(); // calling prepare() moves "overrides" to "features" - content stays the same
+        SearchProtocol.SearchRequest request2 = ProtobufSerialization.convertFromQuery(query, 9,"serverId");
+        assertEquals(9, request2.getHits());
+        assertEquals(0, request2.getRankPropertiesCount());
+        assertEquals(2, request2.getTensorRankPropertiesCount());
+        assertEquals("\"\\001\\001\\003key\\001\\rpre_key1_post?\\360\\000\\000\\000\\000\\000\\000\"",
+                     contentsOf(request2.getTensorRankProperties(0).getValue()));
+        assertEquals("\"\\006\\001\\001\\001x\\001?\\231\\231\\232\"",
+                     contentsOf(request2.getTensorRankProperties(1).getValue()));
+        assertEquals(0, request2.getFeatureOverridesCount());
+        assertEquals(0, request2.getTensorFeatureOverridesCount());
+    }
+
+    @Test
+    public void testDocsumSerialization() {
         Query q = new Query("search/?query=test&hits=10&offset=3");
         var builder = ProtobufSerialization.createDocsumRequestBuilder(q, "server", "summary", true);
         builder.setTimeout(0);
@@ -36,6 +69,12 @@ public class ProtobufSerializationTest {
         var bytes = ProtobufSerialization.serializeDocsumRequest(builder, Collections.singletonList(hit));
 
         assertEquals(41, bytes.length);
+    }
+
+    private String contentsOf(ByteString property) {
+        String string = property.toString();
+        int contentIndex = string.indexOf("contents=");
+        return string.substring(contentIndex + "contents=".length(), string.length() - 1);
     }
 
     SearchProtocol.SearchReply createSearchReply(int numHits, boolean useSorting) {
@@ -57,7 +96,7 @@ public class ProtobufSerializationTest {
         return reply.build();
     }
     @Test
-    public void testSearhReplyDecodingWithRelevance() {
+    public void testSearchReplyDecodingWithRelevance() {
         Query q = new Query("search/?query=test");
         InvokerResult result = ProtobufSerialization.convertToResult(q, createSearchReply(5, false), null, 1, 2);
         assertEquals(result.getResult().getTotalHitCount(), 7);
@@ -76,7 +115,7 @@ public class ProtobufSerializationTest {
         }
     }
     @Test
-    public void testSearhReplyDecodingWithSortData() {
+    public void testSearchReplyDecodingWithSortData() {
         Query q = new Query("search/?query=test");
         InvokerResult result = ProtobufSerialization.convertToResult(q, createSearchReply(5, true), null, 1, 2);
         assertEquals(result.getResult().getTotalHitCount(), 7);
@@ -95,4 +134,5 @@ public class ProtobufSerializationTest {
             hitNum++;
         }
     }
+
 }

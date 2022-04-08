@@ -501,7 +501,7 @@ public class XmlReadingTestCase {
                      Tensor.from("tensor<float>(x[1]):[1.2]"),
                      queryProfile1.properties().get("ranking.features.query(tensor_1)"));
         assertEquals("tensor_4 contained in the profile is a tensor",
-                     Tensor.from("tensor(key{}):{key1:1.0}"),
+                     Tensor.from("tensor(key{}):{pre_key1_post:1.0}"),
                      queryProfile1.properties().get("ranking.features.query(tensor_4)"));
 
         Query queryProfile2 = new Query.Builder().setQueryProfile(registry.getComponent("profile2"))
