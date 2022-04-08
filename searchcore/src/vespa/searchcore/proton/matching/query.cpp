@@ -244,33 +244,46 @@ Query::fetchPostings()
 }
 
 void
-Query::handle_global_filters(uint32_t docid_limit, double global_filter_lower_limit, double global_filter_upper_limit)
+Query::handle_global_filter(uint32_t docid_limit, double global_filter_lower_limit, double global_filter_upper_limit)
+{
+    if (!handle_global_filter(*_blueprint, docid_limit, global_filter_lower_limit, global_filter_upper_limit)) {
+        return;
+    }
+    // optimized order may change after accounting for global filter:
+    _blueprint = Blueprint::optimize(std::move(_blueprint));
+    LOG(debug, "blueprint after handle_global_filter:\n%s\n", _blueprint->asString().c_str());
+    // strictness may change if optimized order changed:
+    fetchPostings();
+}
+
+bool
+Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit, double global_filter_lower_limit, double global_filter_upper_limit)
 {
     using search::queryeval::GlobalFilter;
-    double estimated_hit_ratio = _blueprint->getState().hit_ratio(docid_limit);
-    if ( ! _blueprint->getState().want_global_filter()) return;
+    double estimated_hit_ratio = blueprint.getState().hit_ratio(docid_limit);
+    if (!blueprint.getState().want_global_filter()) {
+        return false;
+    }
 
     LOG(debug, "docid_limit=%d, estimated_hit_ratio=%1.2f, global_filter_lower_limit=%1.2f, global_filter_upper_limit=%1.2f",
         docid_limit, estimated_hit_ratio, global_filter_lower_limit, global_filter_upper_limit);
-    if (estimated_hit_ratio < global_filter_lower_limit) return;
+    if (estimated_hit_ratio < global_filter_lower_limit) {
+        return false;
+    }
 
     if (estimated_hit_ratio <= global_filter_upper_limit) {
         auto constraint = Blueprint::FilterConstraint::UPPER_BOUND;
         bool strict = true;
-        auto filter_iterator = _blueprint->createFilterSearch(strict, constraint);
+        auto filter_iterator = blueprint.createFilterSearch(strict, constraint);
         filter_iterator->initRange(1, docid_limit);
         auto white_list = filter_iterator->get_hits(1);
         auto global_filter = GlobalFilter::create(std::move(white_list));
-        _blueprint->set_global_filter(*global_filter);
+        blueprint.set_global_filter(*global_filter);
     } else {
         auto no_filter = GlobalFilter::create();
-        _blueprint->set_global_filter(*no_filter);
+        blueprint.set_global_filter(*no_filter);
     }
-    // optimized order may change after accounting for global filter:
-    _blueprint = Blueprint::optimize(std::move(_blueprint));
-    LOG(debug, "blueprint after handle_global_filters:\n%s\n", _blueprint->asString().c_str());
-    // strictness may change if optimized order changed:
-    fetchPostings();
+    return true;
 }
 
 void
