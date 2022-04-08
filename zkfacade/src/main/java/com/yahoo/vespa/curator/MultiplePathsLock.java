@@ -30,10 +30,10 @@ public class MultiplePathsLock extends Lock {
 
     @Override
     public void close() {
-        log.log(Level.INFO, "Closing lock " + oldLock.lockPath());
-        oldLock.close();
         log.log(Level.INFO, "Closing lock " + lockPath());
         super.close();
+        log.log(Level.INFO, "Closing lock " + oldLock.lockPath());
+        oldLock.close();
     }
 
 }
