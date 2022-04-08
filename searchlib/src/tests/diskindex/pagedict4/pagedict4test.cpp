@@ -14,7 +14,7 @@
 #include <vespa/searchlib/diskindex/pagedict4file.h>
 #include <vespa/searchlib/diskindex/pagedict4randread.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -51,7 +51,7 @@ using Writer = search::diskindex::test::PageDict4MemWriter;
 using SeqReader = search::diskindex::test::PageDict4MemSeqReader;
 using RandReader = search::diskindex::test::PageDict4MemRandReader;
 
-class PageDict4TestApp : public FastOS_Application
+class PageDict4TestApp
 {
 public:
     vespalib::Rand48 _rnd;
@@ -61,7 +61,7 @@ public:
     bool _lastWordForcedCommon;
 
     void usage();
-    int Main() override;
+    int main(int argc, char **argv);
     void testWords();
     PageDict4TestApp()
         : _rnd(),
@@ -83,20 +83,20 @@ PageDict4TestApp::usage()
 
 
 int
-PageDict4TestApp::Main()
+PageDict4TestApp::main(int argc, char **argv)
 {
-    if (_argc > 0) {
-        DummyFileHeaderContext::setCreator(_argv[0]);
+    if (argc > 0) {
+        DummyFileHeaderContext::setCreator(argv[0]);
     }
     _rnd.srand48(32);
-    for (int32_t i = 1; i < _argc; ++i) {
-        if (strcmp(_argv[i], "stress") == 0)
+    for (int32_t i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "stress") == 0)
             _stress = true;
-        if (strcmp(_argv[i], "emptyword") == 0)
+        if (strcmp(argv[i], "emptyword") == 0)
             _emptyWord = true;
-        if (strcmp(_argv[i], "firstwordforcedcommon") == 0)
+        if (strcmp(argv[i], "firstwordforcedcommon") == 0)
             _firstWordForcedCommon = true;
-        if (strcmp(_argv[i], "lastwordforcedcommon") == 0)
+        if (strcmp(argv[i], "lastwordforcedcommon") == 0)
             _lastWordForcedCommon = true;
     }
     testWords();
@@ -690,4 +690,8 @@ PageDict4TestApp::testWords()
 #endif
 }
 
-FASTOS_MAIN(PageDict4TestApp);
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
+    PageDict4TestApp app;
+    return app.main(argc, argv);
+}

@@ -33,14 +33,14 @@ Application::Application() :
 Application::~Application() = default;
 
 
-    int
-Application::Main()
+int
+Application::main(int argc, char **argv)
 {
     try {
-        if (_argc == 1) {
+        if (argc == 1) {
             _params.setListRoutes(true);
             _params.setListHops(true);
-        } else if (!parseArgs()) {
+        } else if (!parseArgs(argc, argv)) {
             return EXIT_SUCCESS;
         }
 
@@ -102,73 +102,73 @@ Application::Main()
 }
 
 bool
-Application::parseArgs()
+Application::parseArgs(int argc, char **argv)
 {
-    for (int arg = 1; arg < _argc; arg++) {
-        if (strcasecmp(_argv[arg], "--documenttypesconfigid") == 0) {
-            if (++arg < _argc) {
-                _params.setDocumentTypesConfigId(_argv[arg]);
+    for (int arg = 1; arg < argc; arg++) {
+        if (strcasecmp(argv[arg], "--documenttypesconfigid") == 0) {
+            if (++arg < argc) {
+                _params.setDocumentTypesConfigId(argv[arg]);
             } else {
                 throw config::InvalidConfigException("Missing value for parameter 'documenttypesconfigid'.");
             }
-        } else if (strcasecmp(_argv[arg], "--dump") == 0) {
+        } else if (strcasecmp(argv[arg], "--dump") == 0) {
             _params.setDump(true);
-        } else if (strcasecmp(_argv[arg], "--help") == 0 ||
-                   strcasecmp(_argv[arg], "-h") == 0) {
+        } else if (strcasecmp(argv[arg], "--help") == 0 ||
+                   strcasecmp(argv[arg], "-h") == 0) {
             printHelp();
             return false;
-        } else if (strcasecmp(_argv[arg], "--hop") == 0) {
-            if (++arg < _argc) {
-                _params.getHops().push_back(_argv[arg]);
+        } else if (strcasecmp(argv[arg], "--hop") == 0) {
+            if (++arg < argc) {
+                _params.getHops().push_back(argv[arg]);
             } else {
                 throw config::InvalidConfigException("Missing value for parameter 'hop'.");
             }
-        } else if (strcasecmp(_argv[arg], "--hops") == 0) {
+        } else if (strcasecmp(argv[arg], "--hops") == 0) {
             _params.setListHops(true);
-        } else if (strcasecmp(_argv[arg], "--identity") == 0) {
-            if (++arg < _argc) {
-                _params.getRPCNetworkParams().setIdentity(mbus::Identity(_argv[arg]));
+        } else if (strcasecmp(argv[arg], "--identity") == 0) {
+            if (++arg < argc) {
+                _params.getRPCNetworkParams().setIdentity(mbus::Identity(argv[arg]));
             } else {
                 throw config::InvalidConfigException("Missing value for parameter 'identity'.");
             }
-        } else if (strcasecmp(_argv[arg], "--listenport") == 0) {
-            if (++arg < _argc) {
-                _params.getRPCNetworkParams().setListenPort(atoi(_argv[arg]));
+        } else if (strcasecmp(argv[arg], "--listenport") == 0) {
+            if (++arg < argc) {
+                _params.getRPCNetworkParams().setListenPort(atoi(argv[arg]));
             } else {
                 throw config::InvalidConfigException("Missing value for parameter 'listenport'.");
             }
-        } else if (strcasecmp(_argv[arg], "--protocol") == 0) {
-            if (++arg < _argc) {
-                _params.setProtocol(_argv[arg]);
+        } else if (strcasecmp(argv[arg], "--protocol") == 0) {
+            if (++arg < argc) {
+                _params.setProtocol(argv[arg]);
             } else {
                 throw config::InvalidConfigException("Missing value for parameter 'protocol'.");
             }
-        } else if (strcasecmp(_argv[arg], "--route") == 0) {
-            if (++arg < _argc) {
-                _params.getRoutes().push_back(_argv[arg]);
+        } else if (strcasecmp(argv[arg], "--route") == 0) {
+            if (++arg < argc) {
+                _params.getRoutes().push_back(argv[arg]);
             } else {
                 throw config::InvalidConfigException("Missing value for parameter 'route'.");
             }
-        } else if (strcasecmp(_argv[arg], "--routes") == 0) {
+        } else if (strcasecmp(argv[arg], "--routes") == 0) {
             _params.setListRoutes(true);
-        } else if (strcasecmp(_argv[arg], "--routingconfigid") == 0) {
-            if (++arg < _argc) {
-                _params.setRoutingConfigId(_argv[arg]);
+        } else if (strcasecmp(argv[arg], "--routingconfigid") == 0) {
+            if (++arg < argc) {
+                _params.setRoutingConfigId(argv[arg]);
             } else {
                 throw config::InvalidConfigException("Missing value for parameter 'routingconfigid'.");
             }
-        } else if (strcasecmp(_argv[arg], "--services") == 0) {
+        } else if (strcasecmp(argv[arg], "--services") == 0) {
             _params.setListServices(true);
-        } else if (strcasecmp(_argv[arg], "--slobrokconfigid") == 0) {
-            if (++arg < _argc) {
-                _params.setSlobrokId(_argv[arg]);
+        } else if (strcasecmp(argv[arg], "--slobrokconfigid") == 0) {
+            if (++arg < argc) {
+                _params.setSlobrokId(argv[arg]);
             } else {
                 throw config::InvalidConfigException("Missing value for parameter 'slobrokconfigid'.");
             }
-        } else if (strcasecmp(_argv[arg], "--verify") == 0) {
+        } else if (strcasecmp(argv[arg], "--verify") == 0) {
             _params.setVerify(true);
         } else {
-            throw config::InvalidConfigException(vespalib::make_string("Unknown option '%s'.", _argv[arg]));
+            throw config::InvalidConfigException(vespalib::make_string("Unknown option '%s'.", argv[arg]));
         }
     }
     return true;

@@ -2,26 +2,26 @@
 
 #include "proxycmd.h"
 #include "methods.h"
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <iostream>
 #include <unistd.h>
 
-class Application : public FastOS_Application
+class Application
 {
     Flags _flags;
-    bool parseOpts();
+    bool parseOpts(int argc, char **argv);
 public:
     void usage();
-    int Main() override;
+    int main(int argc, char **argv);
 
     Application() : _flags() {}
 };
 
 bool
-Application::parseOpts()
+Application::parseOpts(int argc, char **argv)
 {
     int c = '?';
-    while ((c = getopt(_argc, _argv, "m:s:p:h")) != -1) {
+    while ((c = getopt(argc, argv, "m:s:p:h")) != -1) {
         switch (c) {
         case 'm':
             _flags.method = optarg;
@@ -38,18 +38,18 @@ Application::parseOpts()
         }
     }
     const Method method = methods::find(_flags.method);
-    if (optind + method.args <= _argc) {
+    if (optind + method.args <= argc) {
         for (int i = 0; i < method.args; ++i) {
-            vespalib::string arg = _argv[optind++];
+            vespalib::string arg = argv[optind++];
             _flags.args.push_back(arg);
         }
     } else {
         std::cerr << "ERROR: method "<< _flags.method << " requires " << method.args
-                  << " arguments, only got " << (_argc - optind) << std::endl;
+                  << " arguments, only got " << (argc - optind) << std::endl;
         return false;
     }
-    if (optind != _argc) {
-        std::cerr << "ERROR: "<<(_argc - optind)<<" extra arguments\n";
+    if (optind != argc) {
+        std::cerr << "ERROR: "<<(argc - optind)<<" extra arguments\n";
         return false;
     }
     _flags.method = method.rpcMethod;
@@ -69,9 +69,9 @@ Application::usage(void)
 }
 
 int
-Application::Main(void)
+Application::main(int argc, char **argv)
 {
-    if (! parseOpts()) {
+    if (! parseOpts(argc, argv)) {
         usage();
         return 1;
     }
@@ -79,9 +79,8 @@ Application::Main(void)
     return client.action();
 }
 
-int
-main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     Application app;
-    return app.Entry(argc, argv);
+    return app.main(argc, argv);
 }

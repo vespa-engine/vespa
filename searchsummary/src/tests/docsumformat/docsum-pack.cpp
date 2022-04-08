@@ -5,7 +5,7 @@
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/searchsummary/docsummary/resultpacker.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/log/log.h>
 LOG_SETUP("docsum-pack");
 
@@ -15,7 +15,7 @@ using namespace search::docsummary;
 void FastS_block_usr2() {}
 
 
-class MyApp : public FastOS_Application
+class MyApp
 {
 private:
     bool               _rc;
@@ -47,7 +47,7 @@ public:
     void TestFailOrder();
     void TestBasicInplace();
 
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 MyApp::MyApp()
@@ -337,7 +337,7 @@ MyApp::TestBasicInplace()
 }
 
 int
-MyApp::Main()
+MyApp::main(int, char **)
 {
     _rc  = true;
     _cnt = 0;
@@ -373,9 +373,8 @@ MyApp::Main()
     return (_rc ? 0 : 1);
 }
 
-int
-main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     MyApp myapp;
-    return myapp.Entry(argc, argv);
+    return myapp.main(argc, argv);
 }

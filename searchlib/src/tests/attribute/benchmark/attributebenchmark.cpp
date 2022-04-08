@@ -5,7 +5,7 @@
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/fastos/thread.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <iostream>
 #include <fstream>
 #include "attributesearcher.h"
@@ -29,7 +29,7 @@ namespace search {
 using AttributePtr = AttributeVector::SP;
 using DocId = AttributeVector::DocId;
 
-class AttributeBenchmark : public FastOS_Application
+class AttributeBenchmark
 {
 private:
     class Config {
@@ -135,7 +135,7 @@ public:
             delete _threadPool;
         }
     }
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 
@@ -460,7 +460,7 @@ AttributeBenchmark::usage()
 }
 
 int
-AttributeBenchmark::Main()
+AttributeBenchmark::main(int argc, char **argv)
 {
     Config dc;
     dc._numDocs = 50000;
@@ -488,7 +488,7 @@ AttributeBenchmark::Main()
 
     int opt;
     bool optError = false;
-    while ((opt = getopt(_argc, _argv, "n:u:v:s:q:p:r:c:l:h:i:a:e:S:E:D:L:bRPtw")) != -1) {
+    while ((opt = getopt(argc, argv, "n:u:v:s:q:p:r:c:l:h:i:a:e:S:E:D:L:bRPtw")) != -1) {
         switch (opt) {
         case 'n':
             dc._numDocs = atoi(optarg);
@@ -562,12 +562,12 @@ AttributeBenchmark::Main()
         }
     }
 
-    if (_argc != (optind + 1) || optError) {
+    if (argc != (optind + 1) || optError) {
         usage();
         return -1;
     }
 
-    dc._attribute = vespalib::string(_argv[optind]);
+    dc._attribute = vespalib::string(argv[optind]);
 
     _threadPool = new FastOS_ThreadPool(256000);
 
@@ -662,9 +662,9 @@ AttributeBenchmark::Main()
 }
 }
 
-int main(int argc, char ** argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     search::AttributeBenchmark myapp;
-    return myapp.Entry(argc, argv);
+    return myapp.main(argc, argv);
 }
 

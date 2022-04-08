@@ -3,7 +3,7 @@
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/frt/rpcrequest.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("rpc_callback_client");
@@ -34,16 +34,16 @@ RPC::Init(FRT_Supervisor *s)
 }
 
 
-class MyApp : public FastOS_Application
+class MyApp
 {
 public:
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 int
-MyApp::Main()
+MyApp::main(int argc, char **argv)
 {
-    if (_argc < 2) {
+    if (argc < 2) {
         printf("usage  : rpc_server <connectspec>\n");
         return 1;
     }
@@ -53,7 +53,7 @@ MyApp::Main()
     FRT_Supervisor & orb = server.supervisor();
     rpc.Init(&orb);
 
-    FRT_Target *target = orb.Get2WayTarget(_argv[1]);
+    FRT_Target *target = orb.Get2WayTarget(argv[1]);
     FRT_RPCRequest *req = orb.AllocRPCRequest();
 
     printf("invokeCnt: %d\n", rpc.invokeCnt);
@@ -108,9 +108,8 @@ MyApp::Main()
 }
 
 
-int
-main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     MyApp myapp;
-    return myapp.Entry(argc, argv);
+    return myapp.main(argc, argv);
 }

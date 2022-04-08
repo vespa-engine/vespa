@@ -7,14 +7,13 @@
 #include <vespa/fnet/iserveradapter.h>
 #include <vespa/fnet/connector.h>
 #include <examples/ping/packets.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("pingserver");
 
 class PingServer : public FNET_IServerAdapter,
-                   public FNET_IPacketHandler,
-                   public FastOS_Application
+                   public FNET_IPacketHandler
 {
 public:
     bool InitChannel(FNET_Channel *channel, uint32_t) override {
@@ -31,16 +30,16 @@ public:
         packet->Free();
         return FNET_FREE_CHANNEL;
     }
-    
-    int Main() override;
+
+    int main(int argc, char **argv);
 };
 
 
 int
-PingServer::Main()
+PingServer::main(int argc, char **argv)
 {
     FNET_SignalShutDown::hookSignals();
-    if (_argc < 2) {
+    if (argc < 2) {
         printf("usage  : pingserver <listenspec>\n");
         printf("example: pingserver 'tcp/8000'\n");
         return 1;
@@ -50,7 +49,7 @@ PingServer::Main()
     PingPacketFactory          factory;
     FNET_SimplePacketStreamer  streamer(&factory);
     FNET_Connector *listener =
-        transport.Listen(_argv[1], &streamer, this);
+        transport.Listen(argv[1], &streamer, this);
     if (listener != nullptr)
         listener->SubRef();
 
@@ -60,9 +59,8 @@ PingServer::Main()
 }
 
 
-int
-main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     PingServer myapp;
-    return myapp.Entry(argc, argv);
+    return myapp.main(argc, argv);
 }

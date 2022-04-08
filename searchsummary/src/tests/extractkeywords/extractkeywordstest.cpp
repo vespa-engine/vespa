@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "extractkeywordstest.h"
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/searchsummary/docsummary/keywordextractor.h>
 #include "simplequerystack.h"
 #include <vespa/vespalib/util/size_literals.h>
@@ -9,7 +10,7 @@
 #define NUMTESTS 5
 
 int
-ExtractKeywordsTest::Main()
+ExtractKeywordsTest::main(int argc, char **argv)
 {
     int doTest[NUMTESTS];
     int low, high, accnum, num;
@@ -18,18 +19,18 @@ ExtractKeywordsTest::Main()
     int multiplier = 1;
     bool failed = false;
 
-    if (_argc == 1)
-        return Usage(_argv[0]);
+    if (argc == 1)
+        return Usage(argv[0]);
 
     // default initialize to not run any tests.
     for (int n = 0; n < NUMTESTS; n++)
         doTest[n] = 0;
 
     // parse the command line arguments
-    for (int i = 1; i < _argc; i++) {
+    for (int i = 1; i < argc; i++) {
         low = 0;
         high = NUMTESTS - 1;
-        char *p = _argv[i];
+        char *p = argv[i];
 
         // Check if a multiplier is specified
         if (*p == '*') {
@@ -287,10 +288,8 @@ ExtractKeywordsTest::Usage(char *progname)
     return EXIT_FAILURE;
 }
 
-int
-main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     ExtractKeywordsTest tester;
-    return tester.Entry(argc, argv);
+    return tester.main(argc, argv);
 }
-

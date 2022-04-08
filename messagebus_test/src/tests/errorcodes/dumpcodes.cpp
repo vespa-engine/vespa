@@ -1,15 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/messagebus/errorcode.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 
 using namespace mbus;
 
-class App : public FastOS_Application
+class App
 {
 public:
     void dump(const std::string &desc, uint32_t value);
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 void
@@ -20,7 +20,7 @@ App::dump(const std::string &desc, uint32_t value)
 }
 
 int
-App::Main()
+App::main(int, char **)
 {
     dump("NONE", ErrorCode::NONE);
 
@@ -62,6 +62,7 @@ App::Main()
 }
 
 int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     App app;
-    return app.Entry(argc, argv);
+    return app.main(argc, argv);
 }

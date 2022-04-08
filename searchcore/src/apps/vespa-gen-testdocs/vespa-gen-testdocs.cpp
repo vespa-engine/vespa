@@ -6,7 +6,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fastlib/io/bufferedfile.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <iostream>
 #include <sstream>
 #include <openssl/evp.h>
@@ -588,28 +588,11 @@ DocumentGenerator::generate(uint32_t docMin, uint32_t docIdLimit,
 
 class SubApp
 {
-protected:
-    FastOS_Application &_app;
-
 public:
-    SubApp(FastOS_Application &app)
-        : _app(app)
-    {
-    }
-
-    virtual
-    ~SubApp()
-    {
-    }
-
-    virtual void
-    usage(bool showHeader) = 0;
-
-    virtual bool
-    getOptions() = 0;
-
-    virtual int
-    run() = 0;
+    virtual void usage(bool showHeader) = 0;
+    virtual bool getOptions(int argc, char **argv) = 0;
+    virtual int run() = 0;
+    virtual ~SubApp() = default;
 };
 
 class GenTestDocsApp : public SubApp
@@ -629,9 +612,8 @@ class GenTestDocsApp : public SubApp
     bool _json;
     
 public:
-    GenTestDocsApp(FastOS_Application &app)
-        : SubApp(app),
-          _baseDir(""),
+    GenTestDocsApp()
+        : _baseDir(""),
           _docType("testdoc"),
           _minDocId(0u),
           _docIdLimit(5u),
@@ -653,19 +635,13 @@ public:
         _rnd.srand48(42);
     }
 
-    virtual
-    ~GenTestDocsApp()
+    ~GenTestDocsApp() override
     {
     }
 
-    virtual void
-    usage(bool showHeader) override;
-
-    virtual bool
-    getOptions() override;
-
-    virtual int
-    run() override;
+    virtual void usage(bool showHeader) override;
+    virtual bool getOptions(int argc, char **argv) override;
+    virtual int run() override;
 };
 
 
@@ -694,7 +670,7 @@ GenTestDocsApp::usage(bool showHeader)
 }
 
 bool
-GenTestDocsApp::getOptions()
+GenTestDocsApp::getOptions(int argc, char **argv)
 {
     int c;
     int longopt_index = 0;
@@ -730,7 +706,7 @@ GenTestDocsApp::getOptions()
         LONGOPT_JSON
     };
     optind = 2;
-    while ((c = getopt_long(_app._argc, _app._argv, "v",
+    while ((c = getopt_long(argc, argv, "v",
                             longopts,
                             &longopt_index)) != -1) {
         FieldGenerator::SP g;
@@ -809,10 +785,10 @@ GenTestDocsApp::getOptions()
         }
     }
     _optIndex = optind;
-    if (_optIndex >= _app._argc) {
+    if (_optIndex >= argc) {
         return false;
     }
-    _outFile = _app._argv[optind];
+    _outFile = argv[optind];
     return true;
 }
 
@@ -834,35 +810,32 @@ GenTestDocsApp::run()
 }
 
 
-class App : public FastOS_Application
+class App
 {
 public:
-    void
-    usage();
-
-    int
-    Main() override;
+    void usage();
+    int main(int argc, char **argv);
 };
 
 
 void
 App::usage()
 {
-    GenTestDocsApp(*this).usage(true);
+    GenTestDocsApp().usage(true);
 }
 
 int
-App::Main()
+App::main(int argc, char **argv)
 {
-    if (_argc < 2) {
+    if (argc < 2) {
         usage();
         return 1;
     }
     std::unique_ptr<SubApp> subApp;
-    if (strcmp(_argv[1], "gentestdocs") == 0)
-        subApp.reset(new GenTestDocsApp(*this));
-    if (subApp.get() != NULL) {
-        if (!subApp->getOptions()) {
+    if (strcmp(argv[1], "gentestdocs") == 0)
+        subApp = std::make_unique<GenTestDocsApp>();
+    if (subApp.get() != nullptr) {
+        if (!subApp->getOptions(argc, argv)) {
             subApp->usage(true);
             return 1;
         }
@@ -873,9 +846,8 @@ App::Main()
 }
 
 
-int
-main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     App app;
-    return app.Entry(argc, argv);
+    return app.main(argc, argv);
 }

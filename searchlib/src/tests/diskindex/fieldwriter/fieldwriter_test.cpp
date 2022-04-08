@@ -20,7 +20,7 @@
 #include <vespa/vespalib/util/time.h>
 #include <openssl/evp.h>
 #include <vespa/fastos/file.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <unistd.h>
 #include <vespa/log/log.h>
 LOG_SETUP("fieldwriter_test");
@@ -104,7 +104,7 @@ makeWordString(uint64_t wordNum)
 }
 
 
-class FieldWriterTest : public FastOS_Application
+class FieldWriterTest
 {
 private:
     bool _verbose;
@@ -122,7 +122,7 @@ private:
 public:
     FieldWriterTest();
     ~FieldWriterTest();
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 
@@ -664,15 +664,15 @@ testFieldWriterVariantsWithHighLids(FakeWordSet &wordSet, uint32_t docIdLimit,
 }
 
 int
-FieldWriterTest::Main()
+FieldWriterTest::main(int argc, char **argv)
 {
     int c;
 
-    if (_argc > 0) {
-        DummyFileHeaderContext::setCreator(_argv[0]);
+    if (argc > 0) {
+        DummyFileHeaderContext::setCreator(argv[0]);
     }
 
-    while ((c = getopt(_argc, _argv, "c:d:vw:")) != -1) {
+    while ((c = getopt(argc, argv, "c:d:vw:")) != -1) {
         switch(c) {
         case 'c':
             _commonDocFreq = atoi(optarg);
@@ -718,11 +718,11 @@ FieldWriterTest::Main()
 } // namespace fieldwriter
 
 int
-main(int argc, char **argv)
-{
+main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     fieldwriter::FieldWriterTest app;
 
     setvbuf(stdout, nullptr, _IOLBF, 32_Ki);
     app._rnd.srand48(32);
-    return app.Entry(argc, argv);
+    return app.main(argc, argv);
 }

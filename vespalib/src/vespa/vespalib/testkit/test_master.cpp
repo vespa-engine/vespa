@@ -2,6 +2,7 @@
 
 #include "test_master.h"
 #include <vespa/vespalib/util/barrier.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <cstring>
 #include <cassert>
 
@@ -176,6 +177,7 @@ void
 TestMaster::init(const char *name)
 {
     lock_guard guard(_lock);
+    SignalHandler::PIPE.ignore();
     _name = skip_path(name);
     fprintf(stderr, "%s: info:  running test suite '%s'\n", _name.c_str(), _name.c_str());
 }

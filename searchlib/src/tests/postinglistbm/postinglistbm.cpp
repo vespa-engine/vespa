@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "stress_runner.h"
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
@@ -28,7 +28,7 @@ using namespace search::fakedata;
 
 namespace postinglistbm {
 
-class PostingListBM : public FastOS_Application {
+class PostingListBM {
 private:
     uint32_t _numDocs;
     uint32_t _commonDocFreq;
@@ -49,7 +49,7 @@ public:
 public:
     PostingListBM();
     ~PostingListBM();
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 void
@@ -108,14 +108,14 @@ PostingListBM::PostingListBM()
 PostingListBM::~PostingListBM() = default;
 
 int
-PostingListBM::Main()
+PostingListBM::main(int argc, char **argv)
 {
     int c;
 
     bool hasElements = false;
     bool hasElementWeights = false;
 
-    while ((c = getopt(_argc, _argv, "C:c:m:r:d:l:s:t:o:uw:T:q")) != -1) {
+    while ((c = getopt(argc, argv, "C:c:m:r:d:l:s:t:o:uw:T:q")) != -1) {
         switch(c) {
         case 'C':
             _skipCommonPairsRate = atoi(optarg);
@@ -226,12 +226,11 @@ PostingListBM::Main()
 
 }
 
-int
-main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     postinglistbm::PostingListBM app;
 
     setvbuf(stdout, nullptr, _IOLBF, 32_Ki);
     app._rnd.srand48(32);
-    return app.Entry(argc, argv);
+    return app.main(argc, argv);
 }

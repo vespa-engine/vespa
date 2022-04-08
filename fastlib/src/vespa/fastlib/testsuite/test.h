@@ -22,10 +22,10 @@
  *
  * };
  *
- * class MyTestApp : public FastOS_Application
+ * class MyTestApp
  * {
  * public:
- *   virtual int Main();
+ *   int Main();
  * };
  *
  *
@@ -46,7 +46,6 @@
  *   return 0;
  * }
  *
- * FASTOS_MAIN(MyTestApp)
  *
  * ----
  *

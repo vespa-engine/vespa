@@ -19,7 +19,7 @@
 #include <vespa/vespalib/util/shutdownguard.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/config/helper/configgetter.hpp>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <iostream>
 #include <csignal>
 #include <cstdlib>
@@ -49,8 +49,7 @@ Process::UP createProcess(vespalib::stringref configId) {
 
 } // End of anonymous namespace
 
-class StorageApp : public FastOS_Application,
-                   private vespalib::ProgramOptions
+class StorageApp : private vespalib::ProgramOptions
 {
     std::string             _configId;
     bool                    _showSyntax;
@@ -69,11 +68,11 @@ public:
         _signalCond.notify_one();
     }
     void handleSignals();
+    int main(int argc, char **argv);
 
 private:
     vespalib::duration getMaxShutDownTime() { return std::chrono::milliseconds(_maxShutdownTime); }
-    bool Init() override;
-    int Main() override;
+    bool init(int argc, char **argv);
     bool gotSignal() { return _lastSignal != 0; }
 };
 
@@ -98,10 +97,9 @@ StorageApp::StorageApp()
 
 StorageApp::~StorageApp() = default;
 
-bool StorageApp::Init()
+bool StorageApp::init(int argc, char **argv)
 {
-    FastOS_Application::Init();
-    setCommandLineArguments(FastOS_Application::_argc, FastOS_Application::_argv);
+    setCommandLineArguments(argc, argv);
     try{
         parse();
     } catch (vespalib::InvalidCommandLineArgumentsException& e) {
@@ -157,8 +155,11 @@ void StorageApp::handleSignals()
     }
 }
 
-int StorageApp::Main()
+int StorageApp::main(int argc, char **argv)
 {
+    if (!init(argc, argv)) {
+        return 255;
+    }
     try{
         _process = createProcess(_configId);
         _process->setupConfig(600000ms);
@@ -206,11 +207,11 @@ int StorageApp::Main()
 
 } // storage
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     storage::StorageApp app;
     storage::sigtramp = &app;
-    int retval = app.Entry(argc,argv);
+    int retval = app.main(argc,argv);
     storage::sigtramp = nullptr;
     LOG(debug, "Exiting");
     return retval;

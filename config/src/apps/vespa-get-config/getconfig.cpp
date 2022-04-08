@@ -11,7 +11,7 @@
 #include <vespa/config/common/configstate.h>
 #include <vespa/config/common/configresponse.h>
 #include <vespa/config/common/trace.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <unistd.h>
 
 #include <sstream>
@@ -22,7 +22,7 @@ LOG_SETUP("vespa-get-config");
 
 using namespace config;
 
-class GetConfig : public FastOS_Application
+class GetConfig
 {
 private:
     std::unique_ptr<fnet::frt::StandaloneFRT> _server;
@@ -33,11 +33,11 @@ private:
 
 public:
     GetConfig() : _server(), _target(nullptr) {}
-    ~GetConfig() override;
-    int usage();
+    ~GetConfig();
+    int usage(const char *self);
     void initRPC(const char *spec);
     void finiRPC();
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 
@@ -49,9 +49,9 @@ GetConfig::~GetConfig()
 
 
 int
-GetConfig::usage()
+GetConfig::usage(const char *self)
 {
-    fprintf(stderr, "usage: %s -n name -i configId\n", _argv[0]);
+    fprintf(stderr, "usage: %s -n name -i configId\n", self);
     fprintf(stderr, "-n name           (config name, including namespace, on the form <namespace>.<name>)\n");
     fprintf(stderr, "-i configId       (config id, optional)\n");
     fprintf(stderr, "-j                (output config as json, optional)\n");
@@ -92,7 +92,7 @@ GetConfig::finiRPC()
 
 
 int
-GetConfig::Main()
+GetConfig::main(int argc, char **argv)
 {
     bool debugging = false;
     int c = -1;
@@ -118,7 +118,7 @@ GetConfig::Main()
 
     int serverPort = 19090;
 
-    while ((c = getopt(_argc, _argv, "a:n:v:g:i:jlm:c:t:V:w:r:s:p:dh")) != -1) {
+    while ((c = getopt(argc, argv, "a:n:v:g:i:jlm:c:t:V:w:r:s:p:dh")) != -1) {
         int retval = 1;
         switch (c) {
         case 'a':
@@ -170,13 +170,13 @@ GetConfig::Main()
             [[fallthrough]];
         case '?':
         default:
-            usage();
+            usage(argv[0]);
             return retval;
         }
     }
 
     if (defName == nullptr || serverPort == 0) {
-        usage();
+        usage(argv[0]);
         return 1;
     }
 
@@ -275,8 +275,8 @@ GetConfig::Main()
     return 0;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     GetConfig app;
-    return app.Entry(argc, argv);
+    return app.main(argc, argv);
 }

@@ -4,24 +4,25 @@
 #include <vespa/searchlib/docstore/randreaders.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/exception.h>
 #include <cinttypes>
 #include <cassert>
 
 using namespace search;
 
-class CreateIdxFileFromDatApp : public FastOS_Application
+class CreateIdxFileFromDatApp
 {
-    void usage();
+    void usage(const char *self);
     int createIdxFile(const vespalib::string & datFileName, const vespalib::string & idxFileName);
-    int Main() override;
+public:
+    int main(int argc, char **argv);
 };
 
 void
-CreateIdxFileFromDatApp::usage()
+CreateIdxFileFromDatApp::usage(const char *self)
 {
-    printf("Usage: %s <datfile> <idxfile>\n", _argv[0]);
+    printf("Usage: %s <datfile> <idxfile>\n", self);
     fflush(stdout);
 }
 
@@ -152,19 +153,23 @@ int CreateIdxFileFromDatApp::createIdxFile(const vespalib::string & datFileName,
 }
 
 int
-CreateIdxFileFromDatApp::Main()
+CreateIdxFileFromDatApp::main(int argc, char **argv)
 {
     vespalib::string cmd;
-    if (_argc == 3) {
-        vespalib::string datFile(_argv[1]);
-        vespalib::string idxfile(_argv[2]);
+    if (argc == 3) {
+        vespalib::string datFile(argv[1]);
+        vespalib::string idxfile(argv[2]);
         createIdxFile(datFile, idxfile);
     } else {
         fprintf(stderr, "Too few arguments\n");
-        usage();
+        usage(argv[0]);
         return 1;
     }
     return 0;
 }
 
-FASTOS_MAIN(CreateIdxFileFromDatApp);
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
+    CreateIdxFileFromDatApp app;
+    return app.main(argc, argv);
+}

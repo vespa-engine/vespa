@@ -7,7 +7,7 @@
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/vespalib/util/time.h>
 #include <thread>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 
 using namespace mbus;
 
@@ -56,24 +56,24 @@ Server::handleReply(Reply::UP reply) {
     _session->forward(std::move(reply));
 }
 
-class App : public FastOS_Application
+class App
 {
 public:
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 int
-App::Main()
+App::main(int argc, char **argv)
 {
-    if (_argc != 2) {
-        fprintf(stderr, "usage: %s <service-prefix>\n", _argv[0]);
+    if (argc != 2) {
+        fprintf(stderr, "usage: %s <service-prefix>\n", argv[0]);
         return 1;
     }
     RPCMessageBus mb(ProtocolSet().add(std::make_shared<SimpleProtocol>()),
                      RPCNetworkParams(config::ConfigUri("file:slobrok.cfg"))
-                     .setIdentity(Identity(_argv[1])),
+                     .setIdentity(Identity(argv[1])),
                      config::ConfigUri("file:routing.cfg"));
-    Server server(mb.getMessageBus(), _argv[1]);
+    Server server(mb.getMessageBus(), argv[1]);
     while (true) {
         std::this_thread::sleep_for(1s);
     }
@@ -81,6 +81,7 @@ App::Main()
 }
 
 int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     App app;
-    return app.Entry(argc, argv);
+    return app.main(argc, argv);
 }

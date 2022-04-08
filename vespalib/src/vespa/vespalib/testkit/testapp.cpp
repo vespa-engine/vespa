@@ -4,25 +4,14 @@
 
 namespace vespalib {
 
-TestMaster &TestApp::master(TestMaster::master);
-
-TestApp::TestApp()
-    : FastOS_Application(),
-      _name("<unnamed>")
-{ }
-
-TestApp::~TestApp() { }
-
-void
-TestApp::ReportInit(const char *name)
+int
+TestApp::Entry(int argc, char **argv)
 {
-    _name = name;
+    _argc = argc;
+    _argv = argv;
+    return Main();
 }
 
-bool
-TestApp::ReportConclusion()
-{
-    return true;
-}
+TestApp::~TestApp() = default;
 
 } // namespace vespalib

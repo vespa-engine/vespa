@@ -4,23 +4,23 @@
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include "lib/configstatus.h"
 #include <vespa/config/subscription/sourcespec.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <iostream>
 #include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-config-status");
 
-class Application : public FastOS_Application {
+class Application {
     ConfigStatus::Flags _flags;
     vespalib::string _cfgId;
     vespalib::string _specString;
-    int parseOpts();
+    int parseOpts(int argc, char **argv);
     vespalib::string getSources();
     HostFilter parse_host_set(vespalib::stringref raw_arg) const;
 public:
-    void usage();
-    int Main() override;
+    void usage(const char *self);
+    int main(int argc, char **argv);
 
     Application();
     ~Application();
@@ -33,9 +33,9 @@ Application::Application()
 {}
 Application::~Application() { }
 
-int Application::parseOpts() {
+int Application::parseOpts(int argc, char **argv) {
     int c = '?';
-    while ((c = getopt(_argc, _argv, "c:s:vC:f:")) != -1) {
+    while ((c = getopt(argc, argv, "c:s:vC:f:")) != -1) {
         switch (c) {
         case 'v':
             _flags.verbose = true;
@@ -47,13 +47,13 @@ int Application::parseOpts() {
             _specString = optarg;
             break;
         case 'h':
-            usage();
+            usage(argv[0]);
             std::_Exit(0);
         case 'f':
             _flags.host_filter = parse_host_set(optarg);
             break;
         default:
-            usage();
+            usage(argv[0]);
             std::_Exit(1);
         }
     }
@@ -74,9 +74,9 @@ HostFilter Application::parse_host_set(vespalib::stringref raw_arg) const {
     return HostFilter(std::move(hosts));
 }
 
-void Application::usage() {
+void Application::usage(const char *self) {
     std::cerr << "vespa-config-status version 1.0\n"
-              << "Usage: " << _argv[0] << " [options]\n"
+              << "Usage: " << self << " [options]\n"
               << "options: [-v] for verbose\n"
               << "         [-c host] or [-c host:port] to specify config server\n"
               << "         [-f host0,...,hostN] filter to only query config\n"
@@ -84,8 +84,8 @@ void Application::usage() {
               << std::endl;
 }
 
-int Application::Main() {
-    parseOpts();
+int Application::main(int argc, char **argv) {
+    parseOpts(argc, argv);
     fprintf(stderr, "Getting config from: %s\n", _specString.c_str());
     config::ServerSpec spec(_specString);
     config::ConfigUri uri = config::ConfigUri::createFromSpec(_cfgId, spec);
@@ -104,6 +104,7 @@ vespalib::string Application::getSources() {
 }
 
 int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     Application app;
-    return app.Entry(argc, argv);
+    return app.main(argc, argv);
 }

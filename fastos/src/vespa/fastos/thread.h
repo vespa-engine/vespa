@@ -318,20 +318,6 @@ protected:
 
 public:
     /**
-     * Initialize the thread class. This is invoked by
-     * @ref FastOS_Application::Init().
-     * @return Boolean success/failure
-     */
-    static bool InitializeClass () {return true;};
-
-    /**
-     * Cleanup the thread class. This is invoked by
-     * @ref FastOS_Application::Cleanup().
-     * @return Boolean success/failure
-     */
-    static bool CleanupClass () {return true;};
-
-    /**
      * Constructor. Resets internal attributes.
      */
     FastOS_ThreadInterface (FastOS_ThreadPool *pool)

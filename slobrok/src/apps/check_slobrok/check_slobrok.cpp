@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/frt/rpcrequest.h>
@@ -10,7 +10,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("check_slobrok");
 
-class Slobrok_Checker : public FastOS_Application
+class Slobrok_Checker
 {
 private:
     std::unique_ptr<fnet::frt::StandaloneFRT>  _server;
@@ -21,11 +21,11 @@ private:
 
 public:
     Slobrok_Checker() : _server(), _target(nullptr) {}
-    virtual ~Slobrok_Checker();
-    int usage();
+    ~Slobrok_Checker();
+    int usage(const char *self);
     void initRPC(const char *spec);
     void finiRPC();
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 Slobrok_Checker::~Slobrok_Checker()
@@ -36,9 +36,9 @@ Slobrok_Checker::~Slobrok_Checker()
 
 
 int
-Slobrok_Checker::usage()
+Slobrok_Checker::usage(const char *self)
 {
-    fprintf(stderr, "usage: %s <port>\n", _argv[0]);
+    fprintf(stderr, "usage: %s <port>\n", self);
     return 1;
 }
 
@@ -65,14 +65,14 @@ Slobrok_Checker::finiRPC()
 
 
 int
-Slobrok_Checker::Main()
+Slobrok_Checker::main(int argc, char **argv)
 {
-    if (_argc != 2) {
-        return usage();
+    if (argc != 2) {
+        return usage(argv[0]);
     }
-    int port = atoi(_argv[1]);
+    int port = atoi(argv[1]);
     if (port == 0) {
-        initRPC(_argv[1]);
+        initRPC(argv[1]);
     } else {
         std::ostringstream tmp;
         tmp << "tcp/localhost:";
@@ -104,8 +104,8 @@ Slobrok_Checker::Main()
     return failed;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     Slobrok_Checker sb_checker;
-    return sb_checker.Entry(argc, argv);
+    return sb_checker.main(argc, argv);
 }

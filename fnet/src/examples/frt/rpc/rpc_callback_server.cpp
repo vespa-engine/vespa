@@ -5,7 +5,7 @@
 #include <vespa/fnet/signalshutdown.h>
 #include <vespa/fnet/transport.h>
 
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -49,17 +49,17 @@ RPC::Init(FRT_Supervisor *s)
 }
 
 
-class MyApp : public FastOS_Application
+class MyApp
 {
 public:
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 int
-MyApp::Main()
+MyApp::main(int argc, char **argv)
 {
     FNET_SignalShutDown::hookSignals();
-    if (_argc < 2) {
+    if (argc < 2) {
         printf("usage  : rpc_server <listenspec>\n");
         return 1;
     }
@@ -67,16 +67,15 @@ MyApp::Main()
     fnet::frt::StandaloneFRT server;
     FRT_Supervisor & supervisor = server.supervisor();
     rpc.Init(&supervisor);
-    supervisor.Listen(_argv[1]);
+    supervisor.Listen(argv[1]);
     FNET_SignalShutDown ssd(*supervisor.GetTransport());
     server.supervisor().GetTransport()->WaitFinished();
     return 0;
 }
 
 
-int
-main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     MyApp myapp;
-    return myapp.Entry(argc, argv);
+    return myapp.main(argc, argv);
 }

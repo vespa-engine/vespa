@@ -13,7 +13,7 @@
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config/helper/configgetter.hpp>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <sstream>
 #include <iostream>
 #include <thread>
@@ -221,13 +221,13 @@ Options::Options(Mode mode)
 Options::~Options() {}
 
 
-struct StateApp : public FastOS_Application {
+struct StateApp {
     Options _options;
 
     StateApp(std::string calledAs) : _options(getMode(calledAs)) {}
 
-    int Main() override {
-        _options.setCommandLineArguments(_argc, _argv);
+    int main(int argc, char **argv) {
+        _options.setCommandLineArguments(argc, argv);
         try{
             _options.parse();
         } catch (vespalib::InvalidCommandLineArgumentsException& e) {
@@ -455,11 +455,9 @@ struct StateApp : public FastOS_Application {
 
 } // storage
 
-int
-main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     assert(argc > 0);
     storage::StateApp client(argv[0]);
-    return client.Entry(argc, argv);
+    return client.main(argc, argv);
 }
-

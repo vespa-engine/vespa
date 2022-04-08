@@ -5,23 +5,23 @@
 #include <vespa/fnet/channel.h>
 #include <vespa/fnet/connection.h>
 #include <examples/ping/packets.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/fastos/thread.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("pingclient");
 
-class PingClient : public FastOS_Application
+class PingClient
 {
 public:
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 
 int
-PingClient::Main()
+PingClient::main(int argc, char **argv)
 {
-    if (_argc < 2) {
+    if (argc < 2) {
         printf("usage  : pingclient <connectspec> <timeout>\n");
         printf("example: pingclient 'tcp/localhost:8000'\n");
         return 1;
@@ -32,12 +32,12 @@ PingClient::Main()
     PingPacketFactory          factory;
     FNET_SimplePacketStreamer  streamer(&factory);
     FNET_Transport             transport;
-    FNET_Connection           *conn = transport.Connect(_argv[1], &streamer);
+    FNET_Connection           *conn = transport.Connect(argv[1], &streamer);
     uint32_t                   timeout_ms=5000;
     FNET_Channel              *channels[10];
 
-    if (_argc == 3) {
-        timeout_ms = atof(_argv[2]) * 1000;
+    if (argc == 3) {
+        timeout_ms = atof(argv[2]) * 1000;
     }
     transport.Start(&pool);
 
@@ -45,7 +45,7 @@ PingClient::Main()
     for (uint32_t i = 0; i < 10; i++) {
         channels[i] = (conn == nullptr) ? nullptr : conn->OpenChannel(&queue, FNET_Context(i));
         if (channels[i] == 0) {
-            fprintf(stderr, "Could not make channel[%d] to %s\n", i, _argv[1]);
+            fprintf(stderr, "Could not make channel[%d] to %s\n", i, argv[1]);
             break;
         }
         channelCnt++;
@@ -95,9 +95,8 @@ PingClient::Main()
 }
 
 
-int
-main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     PingClient myapp;
-    return myapp.Entry(argc, argv);
+    return myapp.main(argc, argv);
 }

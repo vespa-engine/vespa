@@ -4,7 +4,7 @@
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/signalshutdown.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("rpc_server");
@@ -23,7 +23,7 @@ public:
     void RPC_concat(FRT_RPCRequest *req);
     void RPC_addFloat(FRT_RPCRequest *req);
     void RPC_addDouble(FRT_RPCRequest *req);
-    int Main(int argc, char **argv);
+    int main(int argc, char **argv);
 };
 
 void
@@ -86,7 +86,7 @@ RPCServer::RPC_addDouble(FRT_RPCRequest *req)
 }
 
 int
-RPCServer::Main(int argc, char **argv)
+RPCServer::main(int argc, char **argv)
 {
     FNET_SignalShutDown::hookSignals();
     if (argc < 2) {
@@ -104,26 +104,8 @@ RPCServer::Main(int argc, char **argv)
 }
 
 
-class App : public FastOS_Application
-{
-private:
-    RPCServer _server;
-
-public:
-    App() : _server() {}
-    int Main() override;
-};
-
-int
-App::Main()
-{
-    return _server.Main(_argc, _argv);
-}
-
-
-int
-main(int argc, char **argv)
-{
-    App myapp;
-    return myapp.Entry(argc, argv);
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
+    RPCServer server;
+    return server.main(argc, argv);
 }

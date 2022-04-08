@@ -3,13 +3,13 @@
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/frt/rpcrequest.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/locale/c.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-rpc-invoke");
 
-class RPCClient : public FastOS_Application
+class RPCClient
 {
 private:
     static bool addArg(FRT_RPCRequest *req, const char *param) {
@@ -45,16 +45,16 @@ private:
         }
         return true;
     }
-    int run();
+    int run(int argc, char **argv);
 
 public:
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 int
-RPCClient::Main()
+RPCClient::main(int argc, char **argv)
 {
-    if (_argc < 3) {
+    if (argc < 3) {
         fprintf(stderr, "usage: vespa-rpc-invoke [-t timeout] <connectspec> <method> [args]\n");
         fprintf(stderr, "    -t timeout in seconds\n");
         fprintf(stderr, "    Each arg must be on the form <type>:<value>\n");
@@ -62,7 +62,7 @@ RPCClient::Main()
         return 1;
     }
     try {
-        return run();
+        return run(argc, argv);
     } catch (const std::exception & e) {
         fprintf(stderr, "Caught exception : '%s'", e.what());
         return 2;
@@ -70,7 +70,7 @@ RPCClient::Main()
 }
 
 int
-RPCClient::run()
+RPCClient::run(int argc, char **argv)
 {
     int retCode = 0;
     fnet::frt::StandaloneFRT server;
@@ -79,18 +79,18 @@ RPCClient::run()
     int methNameArg = 2;
     int startOfArgs = 3;
     int timeOut = 10;
-    if (strcmp(_argv[1], "-t") == 0) {
-      timeOut = atoi(_argv[2]);
+    if (strcmp(argv[1], "-t") == 0) {
+      timeOut = atoi(argv[2]);
       targetArg = 3;
       methNameArg = 4;
       startOfArgs = 5;
     }
-    FRT_Target *target = supervisor.GetTarget(_argv[targetArg]);
+    FRT_Target *target = supervisor.GetTarget(argv[targetArg]);
     FRT_RPCRequest *req = supervisor.AllocRPCRequest();
-    req->SetMethodName(_argv[methNameArg]);
-    for (int i = startOfArgs; i < _argc; ++i) {
-        if (!addArg(req, _argv[i])) {
-            fprintf(stderr, "could not parse parameter: '%s'\n", _argv[i]);
+    req->SetMethodName(argv[methNameArg]);
+    for (int i = startOfArgs; i < argc; ++i) {
+        if (!addArg(req, argv[i])) {
+            fprintf(stderr, "could not parse parameter: '%s'\n", argv[i]);
             retCode = 2;
             break;
         }
@@ -115,9 +115,8 @@ RPCClient::run()
 }
 
 
-int
-main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     RPCClient myapp;
-    return myapp.Entry(argc, argv);
+    return myapp.main(argc, argv);
 }

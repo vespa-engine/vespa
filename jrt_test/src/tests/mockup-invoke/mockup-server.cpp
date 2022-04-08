@@ -3,7 +3,7 @@
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 
 class MockupServer : public FRT_Invokable
 {
@@ -37,31 +37,15 @@ public:
 };
 
 
-class App : public FastOS_Application
-{
-public:
-    int Main() override;
-};
-
-
-int
-App::Main()
-{
-    if (_argc < 2) {
-        printf("usage: %s <listenspec>\n", _argv[0]);
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
+    if (argc < 2) {
+        printf("usage: %s <listenspec>\n", argv[0]);
         return 1;
     }
     fnet::frt::StandaloneFRT frt;
     MockupServer server(&frt.supervisor());
-    frt.supervisor().Listen(_argv[1]);
+    frt.supervisor().Listen(argv[1]);
     frt.supervisor().GetTransport()->WaitFinished();
     return 0;
-}
-
-
-int
-main(int argc, char **argv)
-{
-  App myapp;
-  return myapp.Entry(argc, argv);
 }

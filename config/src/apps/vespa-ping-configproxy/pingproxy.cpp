@@ -3,7 +3,7 @@
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/frt/rpcrequest.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <unistd.h>
 
 #include <sstream>
@@ -12,7 +12,7 @@
 LOG_SETUP("vespa-ping-configproxy");
 
 
-class PingProxy : public FastOS_Application
+class PingProxy
 {
 private:
     std::unique_ptr<fnet::frt::StandaloneFRT> _server;
@@ -22,11 +22,11 @@ public:
     PingProxy(const PingProxy &) = delete;
     PingProxy &operator=(const PingProxy &) = delete;
     PingProxy() : _server(), _target(nullptr) {}
-    ~PingProxy() override ;
-    int usage();
+    ~PingProxy();
+    int usage(const char *self);
     void initRPC(const char *spec);
     void finiRPC();
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 
@@ -38,9 +38,9 @@ PingProxy::~PingProxy()
 
 
 int
-PingProxy::usage()
+PingProxy::usage(const char *self)
 {
-    fprintf(stderr, "usage: %s\n", _argv[0]);
+    fprintf(stderr, "usage: %s\n", self);
     fprintf(stderr, "-s [server]        (server hostname, default localhost)\n");
     fprintf(stderr, "-p [port]          (server port number, default 19090)\n");
     return 1;
@@ -67,7 +67,7 @@ PingProxy::finiRPC()
 
 
 int
-PingProxy::Main()
+PingProxy::main(int argc, char **argv)
 {
     int retval = 0;
     bool debugging = false;
@@ -77,7 +77,7 @@ PingProxy::Main()
     int clientTimeout = 5;
     int serverPort = 19090;
 
-    while ((c = getopt(_argc, _argv, "w:s:p:dh")) != -1) {
+    while ((c = getopt(argc, argv, "w:s:p:dh")) != -1) {
         switch (c) {
         case 'w':
             clientTimeout = atoi(optarg);
@@ -96,13 +96,13 @@ PingProxy::Main()
             retval = 1;
             [[fallthrough]];
         case 'h':
-            usage();
+            usage(argv[0]);
             return retval;
         }
     }
 
     if (serverPort == 0) {
-        usage();
+        usage(argv[0]);
         return 1;
     }
 
@@ -151,8 +151,8 @@ PingProxy::Main()
     return retval;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     PingProxy app;
-    return app.Entry(argc, argv);
+    return app.main(argc, argv);
 }

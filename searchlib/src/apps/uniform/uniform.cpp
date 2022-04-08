@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/log/log.h>
 
@@ -13,7 +13,7 @@ maxExpGolombVal(uint64_t kValue, uint64_t maxBits)
          (UINT64_C(1) << kValue));
 }
 
-class UniformApp : public FastOS_Application
+class UniformApp
 {
     typedef search::bitcompression::EncodeContext64BE EC64;
 
@@ -27,7 +27,8 @@ class UniformApp : public FastOS_Application
     static uint32_t encodeSpace(uint64_t x, uint32_t k) { return EC64::encodeExpGolombSpace(x, k); }
     void clearBits();
     void reportBits();
-    int Main() override;
+public:
+    int main(int argc, char **argv);
 };
 
 
@@ -55,7 +56,7 @@ UniformApp::reportBits()
 
 
 int
-UniformApp::Main()
+UniformApp::main(int, char **)
 {
     int k, l, m, bestmask, oldbestmask;
     printf("Hello world\n");
@@ -139,6 +140,10 @@ UniformApp::Main()
         return 0;
 }
 
-FASTOS_MAIN(UniformApp);
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
+    UniformApp app;
+    return app.main(argc, argv);
+}
 
 
