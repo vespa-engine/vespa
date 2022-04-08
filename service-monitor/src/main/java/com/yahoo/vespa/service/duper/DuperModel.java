@@ -121,7 +121,7 @@ public class DuperModel {
 
         applicationInfo.getModel().getHosts().stream()
                 .map(HostInfo::getHostname)
-                .map(HostName::of)
+                .map(HostName::from)
                 .forEach(hostname -> {
                     if (!removedHosts.remove(hostname)) {
                         // hostname has been added

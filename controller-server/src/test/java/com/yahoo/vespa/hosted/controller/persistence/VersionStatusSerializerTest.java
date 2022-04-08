@@ -55,7 +55,7 @@ public class VersionStatusSerializerTest {
     private static List<NodeVersion> nodeVersions(Version version, Version wantedVersion, String... hostnames) {
         var nodeVersions = new ArrayList<NodeVersion>();
         for (var hostname : hostnames) {
-            nodeVersions.add(new NodeVersion(HostName.of(hostname), ZoneId.from("prod", "us-north-1"), version, wantedVersion, Optional.empty()));
+            nodeVersions.add(new NodeVersion(HostName.from(hostname), ZoneId.from("prod", "us-north-1"), version, wantedVersion, Optional.empty()));
         }
         return nodeVersions;
     }

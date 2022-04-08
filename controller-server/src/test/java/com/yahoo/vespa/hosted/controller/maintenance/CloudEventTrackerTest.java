@@ -122,7 +122,7 @@ public class CloudEventTrackerTest {
 
     private Node createNode(String hostname, NodeType nodeType) {
         return Node.builder()
-                   .hostname(HostName.of(hostname))
+                   .hostname(HostName.from(hostname))
                    .type(nodeType)
                    .build();
     }

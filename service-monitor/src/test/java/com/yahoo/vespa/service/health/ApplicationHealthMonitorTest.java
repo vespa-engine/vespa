@@ -87,7 +87,7 @@ public class ApplicationHealthMonitorTest {
         return new ServiceId(configServerApplication.getApplicationId(),
                 configServerApplication.getClusterId(),
                 configServerApplication.getServiceType(),
-                configServerApplication.configIdFor(HostName.of(hostname)));
+                configServerApplication.configIdFor(HostName.from(hostname)));
     }
 
     private ServiceStatus getStatus(ApplicationHealthMonitor monitor, String hostname) {
@@ -95,7 +95,7 @@ public class ApplicationHealthMonitorTest {
                 configServerApplication.getApplicationId(),
                 configServerApplication.getClusterId(),
                 configServerApplication.getServiceType(),
-                configServerApplication.configIdFor(HostName.of(hostname)))
+                configServerApplication.configIdFor(HostName.from(hostname)))
                 .serviceStatus();
     }
 }

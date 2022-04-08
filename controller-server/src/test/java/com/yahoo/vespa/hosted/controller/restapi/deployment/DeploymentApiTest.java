@@ -97,8 +97,8 @@ public class DeploymentApiTest extends ControllerContainerTest {
                                            version.isControllerVersion(),
                                            version.isSystemVersion(),
                                            version.isReleased(),
-                                           List.of(new NodeVersion(HostName.of("config1.test"), ZoneId.defaultId(), version.versionNumber(), version.versionNumber(), Optional.empty()),
-                                                   new NodeVersion(HostName.of("config2.test"), ZoneId.defaultId(), version.versionNumber(), version.versionNumber(), Optional.empty())),
+                                           List.of(new NodeVersion(HostName.from("config1.test"), ZoneId.defaultId(), version.versionNumber(), version.versionNumber(), Optional.empty()),
+                                                   new NodeVersion(HostName.from("config2.test"), ZoneId.defaultId(), version.versionNumber(), version.versionNumber(), Optional.empty())),
                                            version.confidence()
                 );
             }

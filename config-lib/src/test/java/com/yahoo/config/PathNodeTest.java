@@ -22,8 +22,9 @@ public class PathNodeTest {
         n = new PathNode(new FileReference("foo.txt"));
         assertEquals(new File("foo.txt").toPath(), n.value());
 
-        assertEquals("path may not start with '..', but got: foo/../../boo",
-                     assertThrows(IllegalArgumentException.class, () -> new PathNode(new FileReference("foo/../../boo"))).getMessage());
+        assertThrows("path may not start with '..', but got: foo/../../boo",
+                     IllegalArgumentException.class,
+                     () -> new PathNode(new FileReference("foo/../../boo")));
     }
 
 }

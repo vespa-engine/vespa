@@ -118,6 +118,6 @@ public class ServiceMonitorImpl implements ServiceMonitor, AntiServiceMonitor {
 
     /** The duper model uses HostName from config.provision. */
     private static com.yahoo.config.provision.HostName toConfigProvisionHostName(HostName hostname) {
-        return com.yahoo.config.provision.HostName.of(hostname.s());
+        return com.yahoo.config.provision.HostName.from(hostname.s());
     }
 }

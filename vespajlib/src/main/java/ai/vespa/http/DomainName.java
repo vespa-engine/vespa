@@ -15,12 +15,12 @@ import static ai.vespa.validation.Validation.requireMatch;
  */
 public class DomainName extends PatternedStringWrapper<DomainName> {
 
-    protected static final Pattern labelPattern = Pattern.compile("([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])");
-    protected static final Pattern domainNamePattern = Pattern.compile("(" + labelPattern + "\\.)*" + labelPattern);
+    static final Pattern labelPattern = Pattern.compile("([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])");
+    static final Pattern domainNamePattern = Pattern.compile("(" + labelPattern + "\\.)*" + labelPattern);
 
     public static final DomainName localhost = DomainName.of("localhost");
 
-    protected DomainName(String value) {
+    private DomainName(String value) {
         super(requireLength(value, "domain name length", 1, 255), domainNamePattern, "domain name");
     }
 

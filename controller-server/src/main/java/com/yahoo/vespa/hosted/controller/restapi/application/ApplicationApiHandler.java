@@ -53,6 +53,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.TenantRoles;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
@@ -2052,7 +2053,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
                                                      requireZone(environment, region));
         RestartFilter restartFilter = new RestartFilter()
-                .withHostName(Optional.ofNullable(request.getProperty("hostname")).map(HostName::of))
+                .withHostName(Optional.ofNullable(request.getProperty("hostname")).map(HostName::from))
                 .withClusterType(Optional.ofNullable(request.getProperty("clusterType")).map(ClusterSpec.Type::from))
                 .withClusterId(Optional.ofNullable(request.getProperty("clusterId")).map(ClusterSpec.Id::from));
 
@@ -2294,7 +2295,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         try {
             node = nodeRepository.getNode(zone, hostname);
         } catch (IllegalArgumentException e) {
-            throw new NotExistsException(hostname);
+            throw new NotExistsException(new Hostname(hostname));
         }
         ApplicationId app = ApplicationId.from(tenant, application, instance);
         ApplicationId owner = node.owner().orElseThrow(() -> new IllegalArgumentException("Node has no owner"));

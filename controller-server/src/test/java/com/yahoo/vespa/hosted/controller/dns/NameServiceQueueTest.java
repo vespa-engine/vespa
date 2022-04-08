@@ -28,11 +28,11 @@ public class NameServiceQueueTest {
         var r1 = new Record(Record.Type.CNAME, RecordName.from("cname.vespa.oath.cloud"), RecordData.from("example.com"));
         var r2 = new Record(Record.Type.TXT, RecordName.from("txt.example.com"), RecordData.from("text"));
         var r3 = List.of(new Record(Record.Type.ALIAS, RecordName.from("alias.example.com"),
-                                    new LatencyAliasTarget(HostName.of("alias1"),
+                                    new LatencyAliasTarget(HostName.from("alias1"),
                                                            "dns-zone-01",
                                                            ZoneId.from("prod", "us-north-1")).pack()),
                          new Record(Record.Type.ALIAS, RecordName.from("alias.example.com"),
-                                    new LatencyAliasTarget(HostName.of("alias2"),
+                                    new LatencyAliasTarget(HostName.from("alias2"),
                                                            "dns-zone-02",
                                                            ZoneId.from("prod", "us-north-2")).pack()));
         var req1 = new CreateRecord(r1);

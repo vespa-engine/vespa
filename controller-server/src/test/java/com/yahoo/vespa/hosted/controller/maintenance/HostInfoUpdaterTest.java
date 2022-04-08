@@ -84,10 +84,10 @@ public class HostInfoUpdaterTest {
         // Updates node registered under a different hostname
         ZoneId zone = tester.zoneRegistry().zones().controllerUpgraded().all().ids().get(0);
         String hostnameSuffix = ".prod." + zone.value();
-        Node configNode = Node.builder().hostname(HostName.of("cfg3" + hostnameSuffix))
+        Node configNode = Node.builder().hostname(HostName.from("cfg3" + hostnameSuffix))
                               .type(NodeType.config)
                               .build();
-        Node configHost = Node.builder().hostname(HostName.of("cfghost3" + hostnameSuffix))
+        Node configHost = Node.builder().hostname(HostName.from("cfghost3" + hostnameSuffix))
                               .type(NodeType.confighost)
                               .build();
         tester.serviceRegistry().configServer().nodeRepository().putNodes(zone, List.of(configNode, configHost));

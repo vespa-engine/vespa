@@ -18,8 +18,8 @@ public class AliasTargetTest {
     @Test
     public void packing() {
         List<AliasTarget> tests = List.of(
-                new LatencyAliasTarget(HostName.of("foo.example.com"), "dns-zone-1", ZoneId.from("prod.us-north-1")),
-                new WeightedAliasTarget(HostName.of("bar.example.com"), "dns-zone-2", ZoneId.from("prod.us-north-2"), 50)
+                new LatencyAliasTarget(HostName.from("foo.example.com"), "dns-zone-1", ZoneId.from("prod.us-north-1")),
+                new WeightedAliasTarget(HostName.from("bar.example.com"), "dns-zone-2", ZoneId.from("prod.us-north-2"), 50)
         );
         for (var target : tests) {
             AliasTarget unpacked = AliasTarget.unpack(target.pack());
