@@ -124,7 +124,7 @@ public:
 private:
     const V                                    & _queryVector;
     const typename V::HashMap::const_iterator    _end;
-    virtual size_t getAttributeValues(uint32_t docid, const AT * & count) = 0;
+    virtual vespalib::ConstArrayRef<AT> getAttributeValues(uint32_t docid) = 0;
 public:
     DotProductExecutorBase(const V & queryVector);
     ~DotProductExecutorBase() override;
@@ -140,7 +140,7 @@ protected:
     const A * _attribute;
 private:
     std::unique_ptr<V> _backing;
-    size_t getAttributeValues(uint32_t docid, const AT * & count) override;
+    vespalib::ConstArrayRef<AT> getAttributeValues(uint32_t docid) override;
 public:
     DotProductExecutor(const A * attribute, const V & queryVector);
     DotProductExecutor(const A * attribute, std::unique_ptr<V> queryVector);
@@ -183,7 +183,7 @@ public:
 private:
     const vespalib::hwaccelrated::IAccelrated   & _multiplier;
     V                                             _queryVector;
-    virtual size_t getAttributeValues(uint32_t docid, const AT * & count) = 0;
+    virtual vespalib::ConstArrayRef<AT> getAttributeValues(uint32_t docid) = 0;
 public:
     DotProductExecutorBase(const V & queryVector);
     ~DotProductExecutorBase() override;
@@ -201,7 +201,7 @@ public:
 protected:
     const A * _attribute;
 private:
-    size_t getAttributeValues(uint32_t docid, const AT * & count) override;
+    vespalib::ConstArrayRef<AT> getAttributeValues(uint32_t docid) override;
 public:
     DotProductExecutor(const A * attribute, const V & queryVector);
     ~DotProductExecutor();
@@ -215,7 +215,7 @@ public:
     ~DotProductByCopyExecutor();
 private:
     typedef typename DotProductExecutor<A>::AT AT;
-    size_t getAttributeValues(uint32_t docid, const AT * & count) final override;
+    vespalib::ConstArrayRef<AT> getAttributeValues(uint32_t docid) final override;
     std::vector<typename A::BaseType> _copy;
 };
 
@@ -240,7 +240,7 @@ public:
     DotProductByContentFillExecutor(const attribute::IAttributeVector * attribute, const V & queryVector);
     ~DotProductByContentFillExecutor();
 private:
-    size_t getAttributeValues(uint32_t docid, const AT * & values) final override;
+    vespalib::ConstArrayRef<AT> getAttributeValues(uint32_t docid) final override;
 
     const attribute::IAttributeVector* _attribute;
     ValueFiller _filler;
@@ -255,7 +255,7 @@ public:
     ~SparseDotProductExecutor();
 private:
     typedef typename DotProductExecutor<A>::AT AT;
-    size_t getAttributeValues(uint32_t docid, const AT * & count) override;
+    vespalib::ConstArrayRef<AT> getAttributeValues(uint32_t docid) override;
 protected:
     IV              _queryIndexes;
     std::vector<AT> _scratch;
@@ -270,7 +270,7 @@ public:
     ~SparseDotProductByCopyExecutor();
 private:
     typedef typename DotProductExecutor<A>::AT AT;
-    size_t getAttributeValues(uint32_t docid, const AT * & count) final override;
+    vespalib::ConstArrayRef<AT> getAttributeValues(uint32_t docid) final override;
     std::vector<typename A::BaseType> _copy;
 };
 
@@ -291,7 +291,7 @@ public:
                                           const IV & queryIndexes);
     ~SparseDotProductByContentFillExecutor() override;
 private:
-    size_t getAttributeValues(uint32_t docid, const AT * & values) final override;
+    vespalib::ConstArrayRef<AT> getAttributeValues(uint32_t docid) final override;
 
     const attribute::IAttributeVector* _attribute;
     IV          _queryIndexes;
