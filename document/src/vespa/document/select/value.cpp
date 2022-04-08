@@ -392,11 +392,7 @@ fieldvalue::VariableMap
 cloneMap(const fieldvalue::VariableMap &map) {
     fieldvalue::VariableMap m;
     for (const auto & item : map) {
-        if (item.second.key) {
-            m.emplace(item.first, fieldvalue::IndexValue(*item.second.key));
-        } else {
-            m.emplace(item.first, fieldvalue::IndexValue(item.second.index));
-        }
+        m.emplace(item.first, item.second);
     }
     return m;
 }

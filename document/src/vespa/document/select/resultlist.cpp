@@ -16,7 +16,7 @@ ResultList::ResultList(const Result& result) {
 }
 
 void
-ResultList::add(fieldvalue::VariableMap variables, const Result& result)
+ResultList::add(VariableMap variables, const Result& result)
 {
     _results.emplace_back(std::move(variables), &result);
 }
@@ -64,32 +64,33 @@ ResultList::combineResults() const {
 }
 
 bool
-ResultList::combineVariables(
-        fieldvalue::VariableMap& output,
-        const fieldvalue::VariableMap& input) const
+ResultList::combineVariables(VariableMap& combination, const VariableMap& a, const VariableMap& b) const
 {
     // First, verify that all variables are overlapping
-    for (const auto & ovar : output) {
-        auto found(input.find(ovar.first));
+    for (const auto & ovar : a) {
+        auto found(b.find(ovar.first));
 
-        if (found != input.end()) {
+        if (found != b.end()) {
             if (!(found->second == ovar.second)) {
                 return false;
             }
         }
     }
 
-    for (const auto & ivar : input) {
-        auto found(output.find(ivar.first));
-        if (found != output.end()) {
+    for (const auto & ivar : b) {
+        auto found(a.find(ivar.first));
+        if (found != a.end()) {
             if (!(found->second == ivar.second)) {
                 return false;
             }
         }
     }
     // Ok, variables are overlapping. Add all variables from input to output.
-    for (const auto & ivar : input) {
-        output[ivar.first] = ivar.second;
+    for (const auto & var : a) {
+        combination[var.first] = var.second;
+    }
+    for (const auto & var : b) {
+        combination[var.first] = var.second;
     }
 
     return true;
@@ -103,9 +104,8 @@ ResultList::operator&&(const ResultList& other) const
     std::bitset<3> resultForNoVariables;
     for (const auto & it : _results) {
         for (const auto & it2 : other._results) {
-            fieldvalue::VariableMap vars = it.first;
-
-            if (combineVariables(vars, it2.first)) {
+            VariableMap vars;
+            if ( combineVariables(vars, it.first, it2.first) ) {
                 const Result & result = *it.second && *it2.second;
                 if (vars.empty()) {
                     resultForNoVariables.set(result.toEnum());
@@ -117,7 +117,7 @@ ResultList::operator&&(const ResultList& other) const
     }
     for (uint32_t i(0); i < resultForNoVariables.size(); i++) {
         if (resultForNoVariables[i]) {
-            results.add(fieldvalue::VariableMap(), Result::fromEnum(i));
+            results.add(VariableMap(), Result::fromEnum(i));
         }
     }
 
@@ -132,8 +132,8 @@ ResultList::operator||(const ResultList& other) const
     std::bitset<3> resultForNoVariables;
     for (const auto & it : _results) {
         for (const auto & it2 : other._results) {
-            fieldvalue::VariableMap vars = it.first;
-            if (combineVariables(vars, it2.first)) {
+            VariableMap vars;
+            if (combineVariables(vars, it.first, it2.first)) {
                 const Result & result = *it.second || *it2.second;
                 if (vars.empty()) {
                     resultForNoVariables.set(result.toEnum());
@@ -145,7 +145,7 @@ ResultList::operator||(const ResultList& other) const
     }
     for (uint32_t i(0); i < resultForNoVariables.size(); i++) {
         if (resultForNoVariables[i]) {
-            results.add(fieldvalue::VariableMap(), Result::fromEnum(i));
+            results.add(VariableMap(), Result::fromEnum(i));
         }
     }
 
