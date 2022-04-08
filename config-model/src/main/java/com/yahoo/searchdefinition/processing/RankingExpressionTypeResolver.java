@@ -106,12 +106,12 @@ public class RankingExpressionTypeResolver extends Processor {
         return function.arguments().size() > function.argumentTypes().size();
     }
 
-    private TensorType resolveType(RankingExpression expression, String expressionDescription, TypeContext context) {
+    private TensorType resolveType(RankingExpression expression, String expressionDescription, TypeContext<Reference> context) {
         if (expression == null) return null;
         return resolveType(expression.getRoot(), expressionDescription, context);
     }
 
-    private TensorType resolveType(ExpressionNode expression, String expressionDescription, TypeContext context) {
+    private TensorType resolveType(ExpressionNode expression, String expressionDescription, TypeContext<Reference> context) {
         TensorType type;
         try {
             type = expression.type(context);
@@ -124,7 +124,7 @@ public class RankingExpressionTypeResolver extends Processor {
         return type;
     }
 
-    private void ensureValidDouble(RankingExpression expression, String expressionDescription, TypeContext context) {
+    private void ensureValidDouble(RankingExpression expression, String expressionDescription, TypeContext<Reference> context) {
         if (expression == null) return;
         TensorType type = resolveType(expression, expressionDescription, context);
         if ( ! type.equals(TensorType.empty))

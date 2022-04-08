@@ -12,6 +12,7 @@ import com.yahoo.tensor.evaluation.Name;
 import java.util.Deque;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * A reference to a feature, function, or value in ranking expressions
@@ -30,9 +31,7 @@ public class Reference extends Name implements Comparable<Reference> {
     /** True if this was created by the "fromIdentifier" method. This lets us separate 'foo()' and 'foo' */
     private final boolean isIdentifier;
 
-    public static Reference fromIdentifier(String identifier) {
-        return new Reference(identifier, Arguments.EMPTY, null, true);
-    }
+    private final static Pattern identifierPattern = Pattern.compile("[A-Za-z0-9_@.\"$-]+");
 
     public Reference(String name, Arguments arguments, String output) {
         this(name, arguments, output, false);
@@ -48,36 +47,9 @@ public class Reference extends Name implements Comparable<Reference> {
         this.isIdentifier = isIdentifier;
     }
 
-
     public Arguments arguments() { return arguments; }
 
     public String output() { return output; }
-
-    /**
-     * Creates a reference to a simple feature consisting of a name and a single argument
-     */
-    public static Reference simple(String name, String argumentValue) {
-        return new Reference(name, new Arguments(new ReferenceNode(argumentValue)), null);
-    }
-
-    /**
-     * Returns the given simple feature as a reference, or empty if it is not a valid simple
-     * feature string on the form name(argument).
-     */
-    public static Optional<Reference> simple(String feature) {
-        int startParenthesis = feature.indexOf('(');
-        if (startParenthesis < 0)
-            return Optional.empty();
-        int endParenthesis = feature.lastIndexOf(')');
-        String featureName = feature.substring(0, startParenthesis);
-        if (startParenthesis < 1 || endParenthesis < startParenthesis) return Optional.empty();
-        String argument = feature.substring(startParenthesis + 1, endParenthesis);
-        if (argument.startsWith("'") || argument.startsWith("\""))
-            argument = argument.substring(1);
-        if (argument.endsWith("'") || argument.endsWith("\""))
-            argument = argument.substring(0, argument.length() - 1);
-        return Optional.of(simple(featureName, argument));
-    }
 
     /** Returns true if this was created by fromIdentifier. Identifiers have no arguments or outputs. */
     public boolean isIdentifier() { return isIdentifier; }
@@ -166,6 +138,39 @@ public class Reference extends Name implements Comparable<Reference> {
     @Override
     public int compareTo(Reference o) {
         return this.toString().compareTo(o.toString());
+    }
+
+    /** Creates a reference from a simple identifier. */
+    public static Reference fromIdentifier(String identifier) {
+        if ( ! identifierPattern.matcher(identifier).matches())
+            throw new IllegalArgumentException("Identifiers can only contain [A-Za-z0-9_@.\"$-]+, but was '" + identifier + "'");
+        return new Reference(identifier, Arguments.EMPTY, null, true);
+    }
+
+    /**
+     * Creates a reference to a simple feature consisting of a name and a single argument
+     */
+    public static Reference simple(String name, String argumentValue) {
+        return new Reference(name, new Arguments(new ReferenceNode(argumentValue)), null);
+    }
+
+    /**
+     * Returns the given simple feature as a reference, or empty if it is not a valid simple
+     * feature string on the form name(argument).
+     */
+    public static Optional<Reference> simple(String feature) {
+        int startParenthesis = feature.indexOf('(');
+        if (startParenthesis < 0)
+            return Optional.empty();
+        int endParenthesis = feature.lastIndexOf(')');
+        String featureName = feature.substring(0, startParenthesis);
+        if (startParenthesis < 1 || endParenthesis < startParenthesis) return Optional.empty();
+        String argument = feature.substring(startParenthesis + 1, endParenthesis);
+        if (argument.startsWith("'") || argument.startsWith("\""))
+            argument = argument.substring(1);
+        if (argument.endsWith("'") || argument.endsWith("\""))
+            argument = argument.substring(0, argument.length() - 1);
+        return Optional.of(simple(featureName, argument));
     }
 
 }

@@ -16,7 +16,10 @@ import com.yahoo.search.query.ranking.RankProperties;
 import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.search.result.ErrorMessage;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * The ranking (hit ordering) settings of a query
@@ -49,12 +52,17 @@ public class Ranking implements Cloneable {
     public static final String FEATURES = "features";
     public static final String PROPERTIES = "properties";
 
+    /** For internal use only. */
+    public static String lookupRankProfileIn(Map<String, String> properties) {
+        return Optional.ofNullable(properties.get(RANKING + "." + PROFILE)).orElse(properties.get("ranking"));
+    }
+
     static {
         argumentType = new QueryProfileType(RANKING);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(LOCATION, "string", "location"));
-        argumentType.addField(new FieldDescription(PROFILE, "string", "ranking"));
+        argumentType.addField(new FieldDescription(PROFILE, "string", "ranking")); // Alias repeated in lookupRankProfileIn
         argumentType.addField(new FieldDescription(SORTING, "string", "sorting sortspec"));
         argumentType.addField(new FieldDescription(LIST_FEATURES, "string", RANKFEATURES.toString()));
         argumentType.addField(new FieldDescription(FRESHNESS, "string", "datetime"));

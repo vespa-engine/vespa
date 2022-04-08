@@ -7,6 +7,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.compress.Compressor;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.searchdefinition.FeatureNames;
 import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.LargeRankExpressions;
 import com.yahoo.searchdefinition.RankExpressionBody;
@@ -15,6 +16,7 @@ import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.expressiontransforms.OnnxModelTransformer;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
@@ -47,19 +49,10 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
     private static final String keyEndMarker = "\r=";
     private static final String valueEndMarker = "\r\n";
 
-    // TODO: These are to expose coupling between the strings used here and elsewhere
-    public static final String summaryFeatureFefPropertyPrefix = "vespa.summary.feature";
-    public static final String matchFeatureFefPropertyPrefix = "vespa.match.feature";
-    public static final String rankFeatureFefPropertyPrefix = "vespa.dump.feature";
-    public static final String featureRenameFefPropertyPrefix = "vespa.feature.rename";
-
     private final String name;
-
     private final Compressor.Compression compressedProperties;
 
-    /**
-     * Creates a raw rank profile from the given rank profile
-     */
+    /** Creates a raw rank profile from the given rank profile. */
     public RawRankProfile(RankProfile rankProfile, LargeRankExpressions largeExpressions,
                           QueryProfileRegistry queryProfiles, ImportedMlModels importedModels,
                           AttributeFields attributeFields, ModelContext.Properties deployProperties) {
@@ -94,18 +87,6 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
 
     public String getName() { return name; }
 
-    @Override
-    public String toString() {
-        return " rank profile " + name;
-    }
-
-    @Override
-    public void getConfig(RankProfilesConfig.Builder builder) {
-        RankProfilesConfig.Rankprofile.Builder b = new RankProfilesConfig.Rankprofile.Builder().name(getName());
-        getRankProperties(b);
-        builder.rankprofile(b);
-    }
-
     private void getRankProperties(RankProfilesConfig.Rankprofile.Builder b) {
         RankProfilesConfig.Rankprofile.Fef.Builder fefB = new RankProfilesConfig.Rankprofile.Fef.Builder();
         for (Pair<String, String> p : decompress(compressedProperties))
@@ -118,6 +99,18 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
      * Note: This method is expensive.
      */
     public List<Pair<String, String>> configProperties() { return decompress(compressedProperties); }
+
+    @Override
+    public void getConfig(RankProfilesConfig.Builder builder) {
+        RankProfilesConfig.Rankprofile.Builder b = new RankProfilesConfig.Rankprofile.Builder().name(getName());
+        getRankProperties(b);
+        builder.rankprofile(b);
+    }
+
+    @Override
+    public String toString() {
+        return " rank profile " + name;
+    }
 
     private static class Deriver {
 
@@ -149,7 +142,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
          */
         private final NativeRankTypeDefinitionSet nativeRankTypeDefinitions = new NativeRankTypeDefinitionSet("default");
         private final Map<String, String> attributeTypes;
-        private final Map<String, String> queryFeatureTypes;
+        private final Map<Reference, TensorType> inputs;
         private final Set<String> filterFields = new java.util.LinkedHashSet<>();
         private final String rankprofileName;
 
@@ -165,7 +158,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 QueryProfileRegistry queryProfiles) {
             rankprofileName = compiled.name();
             attributeTypes = compiled.getAttributeTypes();
-            queryFeatureTypes = compiled.getQueryFeatureTypes();
+            inputs = compiled.inputs();
             firstPhaseRanking = compiled.getFirstPhaseRanking();
             secondPhaseRanking = compiled.getSecondPhaseRanking();
             summaryFeatures = new LinkedHashSet<>(compiled.getSummaryFeatures());
@@ -277,11 +270,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private void deriveWeightProperties(RankProfile rankProfile) {
 
             for (RankProfile.RankSetting setting : rankProfile.rankSettings()) {
-                if (!setting.getType().equals(RankProfile.RankSetting.Type.WEIGHT)) {
-                    continue;
-                }
+                if (setting.getType() != RankProfile.RankSetting.Type.WEIGHT) continue;
                 boostAndWeightRankProperties.add(new RankProfile.RankProperty("vespa.fieldweight." + setting.getFieldName(),
-                        String.valueOf(setting.getIntValue())));
+                                                                              String.valueOf(setting.getIntValue())));
             }
         }
 
@@ -367,17 +358,17 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 properties.add(new Pair<>(property.getName(), property.getValue()));
             }
             for (ReferenceNode feature : summaryFeatures) {
-                properties.add(new Pair<>(summaryFeatureFefPropertyPrefix, feature.toString()));
+                properties.add(new Pair<>("vespa.summary.feature", feature.toString()));
             }
             for (ReferenceNode feature : matchFeatures) {
-                properties.add(new Pair<>(matchFeatureFefPropertyPrefix, feature.toString()));
+                properties.add(new Pair<>("vespa.match.feature", feature.toString()));
             }
             for (ReferenceNode feature : rankFeatures) {
-                properties.add(new Pair<>(rankFeatureFefPropertyPrefix, feature.toString()));
+                properties.add(new Pair<>("vespa.dump.feature", feature.toString()));
             }
             for (var entry : featureRenames.entrySet()) {
-                properties.add(new Pair<>(featureRenameFefPropertyPrefix, entry.getKey()));
-                properties.add(new Pair<>(featureRenameFefPropertyPrefix, entry.getValue()));
+                properties.add(new Pair<>("vespa.feature.rename", entry.getKey()));
+                properties.add(new Pair<>("vespa.feature.rename", entry.getValue()));
             }
             if (numThreadsPerSearch > 0) {
                 properties.add(new Pair<>("vespa.matching.numthreadspersearch", numThreadsPerSearch + ""));
@@ -424,8 +415,10 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             for (Map.Entry<String, String> attributeType : attributeTypes.entrySet()) {
                 properties.add(new Pair<>("vespa.type.attribute." + attributeType.getKey(), attributeType.getValue()));
             }
-            for (Map.Entry<String, String> queryFeatureType : queryFeatureTypes.entrySet()) {
-                properties.add(new Pair<>("vespa.type.query." + queryFeatureType.getKey(), queryFeatureType.getValue()));
+            for (Map.Entry<Reference, TensorType> input : inputs.entrySet()) {
+                if (FeatureNames.isQueryFeature(input.getKey()))
+                    properties.add(new Pair<>("vespa.type.query." + input.getKey().arguments().expressions().get(0),
+                                              input.getValue().toString()));
             }
             if (properties.size() >= 1000000) throw new IllegalArgumentException("Too many rank properties");
             distributeLargeExpressionsAsFiles(properties, largeRankExpressions);

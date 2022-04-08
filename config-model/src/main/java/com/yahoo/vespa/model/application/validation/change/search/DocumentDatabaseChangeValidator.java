@@ -72,8 +72,8 @@ public class DocumentDatabaseChangeValidator {
 
     private List<VespaConfigChangeAction> validateIndexingScriptChanges() {
         return new IndexingScriptChangeValidator(id,
-                                                 currentDatabase.getDerivedConfiguration().getSearch(),
-                                                 nextDatabase.getDerivedConfiguration().getSearch())
+                                                 currentDatabase.getDerivedConfiguration().getSchema(),
+                                                 nextDatabase.getDerivedConfiguration().getSchema())
                        .validate();
     }
 

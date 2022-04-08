@@ -56,7 +56,7 @@ public class IndexedSearchCluster extends SearchCluster
      * Returns the document selector that is able to resolve what documents are to be routed to this search cluster.
      * This string uses the document selector language as defined in the "document" module.
      *
-     * @return The document selector.
+     * @return the document selector
      */
     public String getRoutingSelector() {
         return routingSelector;
@@ -119,7 +119,7 @@ public class IndexedSearchCluster extends SearchCluster
      * @param chain the chain that is to run indexing for this cluster
      * @return this, to allow chaining
      */
-    public AbstractSearchCluster setIndexingChain(DocprocChain chain) {
+    public SearchCluster setIndexingChain(DocprocChain chain) {
         indexingChain = chain;
         return this;
     }
@@ -149,25 +149,12 @@ public class IndexedSearchCluster extends SearchCluster
     }
 
     private void fillDocumentDBConfig(DocumentDatabase sdoc, ProtonConfig.Documentdb.Builder ddbB) {
-        ddbB.inputdoctypename(sdoc.getInputDocType())
+        ddbB.inputdoctypename(sdoc.getSchemaName())
             .configid(sdoc.getConfigId());
     }
 
-    @Override
-    public void getConfig(DocumentdbInfoConfig.Builder builder) {
-        for (DocumentDatabase db : documentDbs) {
-            DocumentdbInfoConfig.Documentdb.Builder docDb = new DocumentdbInfoConfig.Documentdb.Builder();
-            docDb.name(db.getName());
-            convertSummaryConfig(db, db, docDb);
-            RankProfilesConfig.Builder rpb = new RankProfilesConfig.Builder();
-            db.getConfig(rpb);
-            addRankProfilesConfig(docDb, new RankProfilesConfig(rpb));
-            builder.documentdb(docDb);
-        }
-    }
-
-    public void setRoutingSelector(String sel) {
-        this.routingSelector=sel;
+    public void setRoutingSelector(String selector) {
+        this.routingSelector = selector;
         if (this.routingSelector != null) {
             try {
                 new DocumentSelectionConverter(this.routingSelector);
@@ -193,21 +180,20 @@ public class IndexedSearchCluster extends SearchCluster
     }
 
     @Override
-    protected void deriveAllSchemas(List<SchemaSpec> localSearches, DeployState deployState) {
-        for (SchemaSpec spec : localSearches) {
-            if ( ! (spec.getSchema() instanceof DocumentOnlySchema)) {
-                DocumentDatabase db = new DocumentDatabase(this, spec.getSchema().getName(),
-                                                           new DerivedConfiguration(spec.getSchema(),
-                                                                                    deployState.getDeployLogger(),
-                                                                                    deployState.getProperties(),
-                                                                                    deployState.rankProfileRegistry(),
-                                                                                    deployState.getQueryProfiles().getRegistry(),
-                                                                                    deployState.getImportedModels(),
-                                                                                    deployState.getExecutor()));
-                // TODO: remove explicit adding of user configs when the complete content model is built using builders.
-                db.mergeUserConfigs(spec.getUserConfigs());
-                documentDbs.add(db);
-            }
+    public void deriveFromSchemas(DeployState deployState) {
+        for (SchemaInfo spec : schemas().values()) {
+            if (spec.fullSchema() instanceof DocumentOnlySchema) continue;
+            DocumentDatabase db = new DocumentDatabase(this, spec.fullSchema().getName(),
+                                                       new DerivedConfiguration(spec.fullSchema(),
+                                                                                deployState.getDeployLogger(),
+                                                                                deployState.getProperties(),
+                                                                                deployState.rankProfileRegistry(),
+                                                                                deployState.getQueryProfiles().getRegistry(),
+                                                                                deployState.getImportedModels(),
+                                                                                deployState.getExecutor()));
+            // TODO: remove explicit adding of user configs when the complete content model is built using builders.
+            db.mergeUserConfigs(spec.userConfigs());
+            documentDbs.add(db);
         }
     }
 
@@ -228,7 +214,18 @@ public class IndexedSearchCluster extends SearchCluster
     }
 
     @Override
-    public DerivedConfiguration getSdConfig() { return null; }
+    public void getConfig(DocumentdbInfoConfig.Builder builder) {
+        for (DocumentDatabase db : documentDbs) {
+            DocumentdbInfoConfig.Documentdb.Builder docDb = new DocumentdbInfoConfig.Documentdb.Builder();
+            docDb.name(db.getName());
+            convertSummaryConfig(db, db, docDb);
+            addRankProfilesConfig(db.getSchemaName(), docDb);
+            builder.documentdb(docDb);
+        }
+    }
+
+    @Override
+    public DerivedConfiguration getSchemaConfig() { return null; }
 
     @Override
     public void getConfig(IndexInfoConfig.Builder builder) {

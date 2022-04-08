@@ -23,7 +23,7 @@ import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.generic.builder.DomServiceClusterBuilder;
 import com.yahoo.vespa.model.generic.service.ServiceCluster;
-import com.yahoo.vespa.model.search.AbstractSearchCluster;
+import com.yahoo.vespa.model.search.SearchCluster;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -295,7 +295,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
      */
     private void setContentSearchClusterIndexes(ConfigModelRepo configModelRepo) {
         int index = 0;
-        for (AbstractSearchCluster sc : Content.getSearchClusters(configModelRepo)) {
+        for (SearchCluster sc : Content.getSearchClusters(configModelRepo)) {
             sc.setClusterIndex(index++);
         }
     }

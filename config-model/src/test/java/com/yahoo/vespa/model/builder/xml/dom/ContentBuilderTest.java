@@ -20,7 +20,7 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.engines.ProtonEngine;
-import com.yahoo.vespa.model.search.AbstractSearchCluster;
+import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.search.StreamingSearchCluster;
@@ -206,7 +206,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertFalse(s.hasIndexedCluster());
         assertEquals(1, s.getClusters().size());
         assertNull(s.getIndexed());
-        AbstractSearchCluster sc = s.getClusters().get(musicClusterId + ".music");
+        SearchCluster sc = s.getClusters().get(musicClusterId + ".music");
         assertEquals(musicClusterId + ".music", sc.getClusterName());
         assertEquals(musicClusterId, ((StreamingSearchCluster)sc).getStorageRouteSpec());
 
@@ -257,13 +257,13 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertNull(s.getIndexed());
         {
             String id = musicClusterId + ".book";
-            AbstractSearchCluster sc = s.getClusters().get(id);
+            SearchCluster sc = s.getClusters().get(id);
             assertEquals(id, sc.getClusterName());
             assertEquals(musicClusterId, ((StreamingSearchCluster) sc).getStorageRouteSpec());
         }
         {
             String id = musicClusterId + ".music";
-            AbstractSearchCluster sc = s.getClusters().get(id);
+            SearchCluster sc = s.getClusters().get(id);
             assertEquals(id, sc.getClusterName());
             assertEquals(musicClusterId, ((StreamingSearchCluster) sc).getStorageRouteSpec());
         }

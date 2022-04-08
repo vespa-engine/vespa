@@ -19,3 +19,8 @@ documentdb[].summaryclass[].fields[].dynamic bool default=false
 documentdb[].rankprofile[].name string
 documentdb[].rankprofile[].hasSummaryFeatures bool default=true
 documentdb[].rankprofile[].hasRankFeatures bool default=true
+
+# The name of an input (query rank feature) accepted by this profile
+documentdb[].rankprofile[].input[].name string
+# The tensor type of an input (query rank feature) accepted by this profile
+documentdb[].rankprofile[].input[].type string

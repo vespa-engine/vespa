@@ -44,6 +44,7 @@ import com.yahoo.searchdefinition.DocumentOnlySchema;
 import com.yahoo.searchdefinition.UnrankedRankProfile;
 import com.yahoo.searchdefinition.fieldoperation.*;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.tensor.Tensor;
@@ -137,9 +138,9 @@ public class SDParser {
     /**
      * Parses the given token image as a ranking expression feature list.
      *
-     * @param image The token image to parse.
-     * @return The consumed feature list.
-     * @throws ParseException Thrown if the image could not be parsed.
+     * @param image the token image to parse
+     * @return the consumed feature list
+     * @throws ParseException thrown if the image could not be parsed.
      */
     private FeatureList getFeatureList(String image) throws ParseException {
         try {
@@ -205,6 +206,7 @@ TOKEN :
 | < WEIGHT: "weight" >
 | < TYPE: "type" >
 | < INDEX: "index" >
+| < INPUTS: "inputs">
 | < MTOKEN: "token" >
 | < TEXT: "text" >
 | < WORD: "word" >
@@ -218,6 +220,7 @@ TOKEN :
 | < ONNXMODEL: "onnx-model">
 | < MODEL: "model" >
 | < MUTATE: "mutate" >
+| < QUERY: "query" >
 | < RANKPROFILE: "rank-profile" >
 | < RANKDEGRADATIONFREQ: "rank-degradation-frequency" >
 | < RANKDEGRADATION: "rank-degradation" >
@@ -1975,6 +1978,7 @@ void rankProfileItem(RankProfile profile) : { }
       | rankProperties(profile)
       | secondPhase(profile)
       | rankDegradation(profile)
+      | inputs(profile)
       | constants(profile)
       | matchFeatures(profile)
       | summaryFeatures(profile)
@@ -2187,11 +2191,28 @@ void secondPhaseItem(RankProfile profile) :
     )
 }
 
-/**
- * This rule consumes a summary-features block of a rank profile.
- *
- * @param profile The rank profile to modify.
- */
+/** Consumes an inputs block of a rank profile. */
+void inputs(RankProfile profile) :
+{
+    Reference reference;
+    TensorType type;
+}
+{
+    <INPUTS> <LBRACE> (<NL>)*
+      ( reference = queryFeature() type = tensorType("Type of " + reference) { profile.addInput(reference, type); } (<NL>)*) *
+    <RBRACE>
+}
+
+Reference queryFeature() :
+{
+    String argument;
+}
+{
+    <QUERY> "(" argument = identifier() ")"
+    { return Reference.simple("query", argument); }
+}
+
+/** Consumes a summary-features block of a rank profile. */
 void summaryFeatures(RankProfile profile) :
 {
     String features;
@@ -2476,9 +2497,7 @@ void rankDegradation(RankProfile profile) :
     )
 }
 
-/**
- * Consumes a set of constants available in ranking expressions in the enclosing profile.
- */
+/** Consumes a set of constants available in ranking expressions in the enclosing profile. */
 void constants(RankProfile profile) :
 {
     String name;
@@ -2633,6 +2652,8 @@ String identifier() : { }
       | <COMPRESSION>
       | <COMPRESSIONLEVEL>
       | <COMPRESSIONTHRESHOLD>
+      | <CONSTANT>
+      | <CONSTANTS>
       | <CONTEXT>
       | <CREATEIFNONEXISTENT>
       | <DENSEPOSTINGLISTTHRESHOLD>
@@ -2671,6 +2692,8 @@ String identifier() : { }
       | <INDEXING>
       | <INDEXINGREWRITE>
       | <INHERITS>
+      | <INLINE>
+      | <INPUTS>
       | <INTEGER>
       | <KEEPRANKCOUNT>
       | <LITERAL>
@@ -2699,6 +2722,7 @@ String identifier() : { }
       | <PRIMARY>
       | <PROPERTIES>
       | <QUATERNARY>
+      | <QUERY>
       | <QUERYCOMMAND>
       | <RANK>
       | <MODEL>
@@ -2746,8 +2770,6 @@ String identifier() : { }
       | <WEIGHT>
       | <WEIGHTEDSET>
       | <WORD>
-      | <INLINE>
-      | <CONSTANTS>
     )
     { return token.image; }
 }

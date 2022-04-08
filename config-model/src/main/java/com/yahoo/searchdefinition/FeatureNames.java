@@ -11,6 +11,7 @@ import java.util.Optional;
  * @author bratseth
  */
 public class FeatureNames {
+
     public static Reference asConstantFeature(String constantName) {
         return Reference.simple("constant", quoteIfNecessary(constantName));
     }
@@ -34,6 +35,18 @@ public class FeatureNames {
     public static boolean isConstantFeature(Reference reference) {
         if ( ! isSimpleFeature(reference)) return false;
         return reference.name().equals("constant");
+    }
+
+    /** Returns true if this is a query feature */
+    public static boolean isQueryFeature(Reference reference) {
+        if ( ! isSimpleFeature(reference)) return false;
+        return reference.name().equals("query");
+    }
+
+    /** Returns true if this is an attribute feature */
+    public static boolean isAttributeFeature(Reference reference) {
+        if ( ! isSimpleFeature(reference)) return false;
+        return reference.name().equals("attribute");
     }
 
     /**

@@ -23,9 +23,9 @@ public final class ReferenceNode extends CompositeNode {
 
     private final Reference reference;
 
-    /* Creates a node with a simple identifier reference */
+    /* Parses this string into a reference */
     public ReferenceNode(String name) {
-        this.reference = Reference.fromIdentifier(name);
+        this.reference = Reference.simple(name).orElseGet(() -> Reference.fromIdentifier(name));
     }
 
     public ReferenceNode(String name, List<? extends ExpressionNode> arguments, String output) {
@@ -40,11 +40,6 @@ public final class ReferenceNode extends CompositeNode {
 
     public String getName() {
         return reference.name();
-    }
-
-    @Override
-    public int hashCode() {
-        return reference.hashCode();
     }
 
     /** Returns the arguments, never null */
@@ -136,6 +131,11 @@ public final class ReferenceNode extends CompositeNode {
     @Override
     public CompositeNode setChildren(List<ExpressionNode> newChildren) {
         return setArguments(newChildren);
+    }
+
+    @Override
+    public int hashCode() {
+        return reference.hashCode();
     }
 
 }

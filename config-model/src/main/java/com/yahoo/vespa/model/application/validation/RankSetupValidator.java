@@ -11,8 +11,6 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.log.InvalidLogFormatException;
 import com.yahoo.log.LogMessage;
 import com.yahoo.searchdefinition.DistributableResource;
-import com.yahoo.searchdefinition.OnnxModel;
-import com.yahoo.searchdefinition.RankExpressionBody;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.search.AttributesConfig;
@@ -24,10 +22,9 @@ import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.search.AbstractSearchCluster;
+import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.search.DocumentDatabase;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
-import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
@@ -68,14 +65,14 @@ public class RankSetupValidator extends Validator {
                                                ".")
                     .toFile();
 
-            for (AbstractSearchCluster cluster : model.getSearchClusters()) {
+            for (SearchCluster cluster : model.getSearchClusters()) {
                 // Skipping rank expression checking for streaming clusters, not implemented yet
                 if (cluster.isStreaming()) continue;
 
                 IndexedSearchCluster sc = (IndexedSearchCluster) cluster;
                 String clusterDir = cfgDir.getAbsolutePath() + "/" + sc.getClusterName() + "/";
                 for (DocumentDatabase docDb : sc.getDocumentDbs()) {
-                    final String name = docDb.getDerivedConfiguration().getSearch().getName();
+                    final String name = docDb.getDerivedConfiguration().getSchema().getName();
                     String searchDir = clusterDir + name + "/";
                     writeConfigs(searchDir, docDb);
                     writeExtraVerifyRanksetupConfig(searchDir, docDb);
@@ -158,8 +155,8 @@ public class RankSetupValidator extends Validator {
         List<String> config = new ArrayList<>();
 
         // Assist verify-ranksetup in finding the actual ONNX model files
-        writeExtraVerifyRanksetupConfig(config, db.getDerivedConfiguration().getSearch().onnxModels().asMap().values());
-        writeExtraVerifyRanksetupConfig(config, db.getDerivedConfiguration().getSearch().rankExpressionFiles().asMap().values());
+        writeExtraVerifyRanksetupConfig(config, db.getDerivedConfiguration().getSchema().onnxModels().asMap().values());
+        writeExtraVerifyRanksetupConfig(config, db.getDerivedConfiguration().getSchema().rankExpressionFiles().asMap().values());
 
         String configContent = config.isEmpty() ? "" : StringUtilities.implodeMultiline(config);
         IOUtils.writeFile(dir + "verify-ranksetup.cfg", configContent, false);

@@ -54,6 +54,10 @@ public class ConvertParsedRanking {
             }
         }
 
+        for (var input : parsed.getInputs().entrySet()) {
+            profile.addInput(input.getKey(), input.getValue());
+        }
+
         for (var func : parsed.getFunctions()) {
             String name = func.name();
             List<String> parameters = func.getParameters();

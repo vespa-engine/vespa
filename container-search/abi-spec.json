@@ -5373,6 +5373,7 @@
       "public"
     ],
     "methods": [
+      "public static java.lang.String lookupRankProfileIn(java.util.Map)",
       "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
       "public void <init>(com.yahoo.search.Query)",
       "public boolean hasRankProfile()",
@@ -6698,6 +6699,18 @@
     "methods": [
       "public void <init>(java.util.Map)",
       "protected com.yahoo.processing.request.CompoundName unalias(com.yahoo.processing.request.CompoundName)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.query.properties.RankProfileInputProperties": {
+    "superClass": "com.yahoo.search.query.Properties",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.search.Query)",
+      "public void requireSettable(com.yahoo.processing.request.CompoundName, java.lang.Object, java.util.Map)"
     ],
     "fields": []
   },

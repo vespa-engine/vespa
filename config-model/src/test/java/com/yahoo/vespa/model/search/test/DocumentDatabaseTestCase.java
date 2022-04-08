@@ -102,6 +102,7 @@ public class DocumentDatabaseTestCase {
         assertEquals("type1", proton.documentdb(0).inputdoctypename());
         assertEquals(type1Id, proton.documentdb(0).configid());
     }
+
     @Test
     public void requireThatWeCanHaveOneSDForIndexedMode() {
         assertSingleSD("index");
@@ -110,6 +111,7 @@ public class DocumentDatabaseTestCase {
     private VespaModel createModel(List<DocType> nameAndModes, String xmlTuning) {
         return createModel(nameAndModes, xmlTuning, null);
     }
+
     private VespaModel createModel(List<DocType> nameAndModes, String xmlTuning, DeployState.Builder builder) {
         List<String> sds = new ArrayList<>(nameAndModes.size());
         for (DocType nameAndMode : nameAndModes) {
@@ -126,16 +128,19 @@ public class DocumentDatabaseTestCase {
         verifyConcurrency("streaming", "", 1.0, 0.0);
         verifyConcurrency("store-only", "", 1.0, 0.0);
     }
+
     @Test
     public void requireThatFeatureFlagConcurrencyIsReflectedCorrectlyForDefault() {
         verifyConcurrency("index", "", 0.30, 0.30, 0.3);
         verifyConcurrency("streaming", "", 0.6, 0.0, 0.3);
         verifyConcurrency("store-only", "", 0.8, 0.0, 0.4);
     }
+
     @Test
     public void requireThatMixedModeConcurrencyIsReflectedCorrectlyForDefault() {
         verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), "", 1.0, Arrays.asList(0.50, 0.0));
     }
+
     @Test
     public void requireThatMixedModeConcurrencyIsReflected() {
         String feedTuning = "<feeding>" +
@@ -143,6 +148,7 @@ public class DocumentDatabaseTestCase {
                 "</feeding>\n";
         verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), feedTuning, 0.7, Arrays.asList(0.7, 0.0));
     }
+
     @Test
     public void requireThatConcurrencyIsReflected() {
         String feedTuning = "<feeding>" +
@@ -152,15 +158,19 @@ public class DocumentDatabaseTestCase {
         verifyConcurrency("streaming", feedTuning, 0.7, 0.0);
         verifyConcurrency("store-only", feedTuning, 0.7, 0.0);
     }
+
     private void verifyConcurrency(String mode, String xmlTuning, double global, double local, double featureFlagConcurrency) {
         verifyConcurrency(Arrays.asList(DocType.create("a", mode)), xmlTuning, global, Arrays.asList(local), featureFlagConcurrency);
     }
+
     private void verifyConcurrency(String mode, String xmlTuning, double global, double local) {
         verifyConcurrency(Arrays.asList(DocType.create("a", mode)), xmlTuning, global, Arrays.asList(local), null);
     }
+
     private void verifyConcurrency(List<DocType> nameAndModes, String xmlTuning, double global, List<Double> local) {
         verifyConcurrency(nameAndModes, xmlTuning, global, local, null);
     }
+
     private void verifyConcurrency(List<DocType> nameAndModes, String xmlTuning, double global, List<Double> local, Double featureFlagConcurrency) {
         assertEquals(nameAndModes.size(), local.size());
         TestProperties properties = new TestProperties();
@@ -229,7 +239,7 @@ public class DocumentDatabaseTestCase {
         assertEquals(attributeField, acfg.attribute(0).name());
         assertEquals(attributeField+"_nfa", acfg.attribute(1).name());
         RankProfilesConfig rcfg = model.getConfig(RankProfilesConfig.class, configId);
-        assertEquals(6, rcfg.rankprofile().size());
+        assertEquals(7, rcfg.rankprofile().size());
     }
 
     @Test
@@ -284,9 +294,9 @@ public class DocumentDatabaseTestCase {
 
     @Test
     public void requireThatRelevantConfigIsAvailableForClusterSearcher() {
-        final List<String> sds = Arrays.asList("type1", "type2");
-        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, "index"),
-                ApplicationPackageUtils.generateSchemas(sds)).create();
+        List<String> schemas = Arrays.asList("type1", "type2");
+        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(schemas, "index"),
+                ApplicationPackageUtils.generateSchemas(schemas)).create();
         String searcherId = "container/searchchains/chain/test/component/com.yahoo.prelude.cluster.ClusterSearcher";
 
         { // documentdb-info config
@@ -296,15 +306,21 @@ public class DocumentDatabaseTestCase {
             { // type1
                 DocumentdbInfoConfig.Documentdb db = dcfg.documentdb(0);
                 assertEquals("type1", db.name());
-                assertEquals(6, db.rankprofile().size());
 
+                assertEquals(7, db.rankprofile().size());
                 assertRankProfile(db, 0, "default", false, false);
                 assertRankProfile(db, 1, "unranked", false, false);
                 assertRankProfile(db, 2, "staticrank", false, false);
                 assertRankProfile(db, 3, "summaryfeatures", true, false);
                 assertRankProfile(db, 4, "inheritedsummaryfeatures", true, false);
                 assertRankProfile(db, 5, "rankfeatures", false, true);
+                var inputs = assertRankProfile(db, 6, "inputs", false, false);
 
+                assertEquals(2, inputs.input().size());
+                assertEquals("query(foo)", inputs.input(0).name());
+                assertEquals("tensor<float>(x[10])", inputs.input(0).type());
+                assertEquals("query(bar)", inputs.input(1).name());
+                assertEquals("tensor(key{},x[1000])", inputs.input(1).type());
 
                 assertEquals(2, db.summaryclass().size());
                 assertEquals("default", db.summaryclass(0).name());
@@ -328,12 +344,16 @@ public class DocumentDatabaseTestCase {
         }
     }
 
-    private void assertRankProfile(DocumentdbInfoConfig.Documentdb db, int index, String name,
-                                   boolean hasSummaryFeatures, boolean hasRankFeatures) {
-        DocumentdbInfoConfig.Documentdb.Rankprofile rankProfile0 = db.rankprofile(index);
-        assertEquals(name, rankProfile0.name());
-        assertEquals(hasSummaryFeatures, rankProfile0.hasSummaryFeatures());
-        assertEquals(hasRankFeatures, rankProfile0.hasRankFeatures());
+    private DocumentdbInfoConfig.Documentdb.Rankprofile assertRankProfile(DocumentdbInfoConfig.Documentdb db,
+                                                                          int index,
+                                                                          String name,
+                                                                          boolean hasSummaryFeatures,
+                                                                          boolean hasRankFeatures) {
+        DocumentdbInfoConfig.Documentdb.Rankprofile rankProfile = db.rankprofile(index);
+        assertEquals(name, rankProfile.name());
+        assertEquals(hasSummaryFeatures, rankProfile.hasSummaryFeatures());
+        assertEquals(hasRankFeatures, rankProfile.hasRankFeatures());
+        return rankProfile;
     }
 
     private void assertSummaryField(DocumentdbInfoConfig.Documentdb db, int summaryClassIndex, int fieldIndex,

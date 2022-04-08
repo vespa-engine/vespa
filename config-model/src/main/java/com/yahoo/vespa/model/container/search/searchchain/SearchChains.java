@@ -5,7 +5,7 @@ import com.yahoo.collections.CollectionUtil;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.container.component.chain.Chains;
-import com.yahoo.vespa.model.search.AbstractSearchCluster;
+import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.container.search.searchchain.defaultsearchchains.LocalClustersCreator;
 import com.yahoo.vespa.model.container.search.searchchain.defaultsearchchains.VespaSearchChainsCreator;
 
@@ -25,7 +25,7 @@ public class SearchChains extends Chains<SearchChain> {
         super(parent, subId);
     }
 
-    public void initialize(Map<String, ? extends AbstractSearchCluster> searchClustersByName) {
+    public void initialize(Map<String, ? extends SearchCluster> searchClustersByName) {
         LocalClustersCreator.addDefaultLocalProviders(this, searchClustersByName.keySet());
         VespaSearchChainsCreator.addVespaSearchChains(this);
 
@@ -33,14 +33,14 @@ public class SearchChains extends Chains<SearchChain> {
         initializeComponents(searchClustersByName);
     }
 
-    private void initializeComponents(Map<String, ? extends AbstractSearchCluster> searchClustersByName) {
+    private void initializeComponents(Map<String, ? extends SearchCluster> searchClustersByName) {
         setSearchClusterForLocalProvider(searchClustersByName);
         initializeComponents();
     }
 
-    private void setSearchClusterForLocalProvider(Map<String, ? extends AbstractSearchCluster> clusterIndexByName) {
+    private void setSearchClusterForLocalProvider(Map<String, ? extends SearchCluster> clusterIndexByName) {
         for (LocalProvider provider : localProviders()) {
-            AbstractSearchCluster cluster = clusterIndexByName.get(provider.getClusterName());
+            SearchCluster cluster = clusterIndexByName.get(provider.getClusterName());
             if (cluster == null)
                 throw new IllegalArgumentException("No searchable content cluster with id '" + provider.getClusterName() + "'");
             provider.setSearchCluster(cluster);

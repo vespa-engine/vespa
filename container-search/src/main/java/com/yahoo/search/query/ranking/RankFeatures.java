@@ -27,7 +27,7 @@ public class RankFeatures implements Cloneable {
     private final Ranking parent;
     private final Map<String, Object> features;
 
-    /** @deprecated pass a query */
+    /** @deprecated pass the parent */
     @Deprecated // TODO: Remove on Vespa 8
     public RankFeatures() {
         this(new Ranking(new Query()));

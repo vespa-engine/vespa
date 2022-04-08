@@ -43,6 +43,7 @@ import com.yahoo.search.query.properties.DefaultProperties;
 import com.yahoo.search.query.properties.PropertyMap;
 import com.yahoo.search.query.properties.QueryProperties;
 import com.yahoo.search.query.properties.QueryPropertyAliases;
+import com.yahoo.search.query.properties.RankProfileInputProperties;
 import com.yahoo.search.query.properties.RequestContextProperties;
 import com.yahoo.search.yql.NullItemException;
 import com.yahoo.search.yql.VespaSerializer;
@@ -234,7 +235,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     /** The aliases of query properties */
     private static final Map<String, CompoundName> propertyAliases;
     static {
-        Map<String,CompoundName> propertyAliasesBuilder = new HashMap<>();
+        Map<String, CompoundName> propertyAliasesBuilder = new HashMap<>();
         addAliases(Query.getArgumentType(), CompoundName.empty, propertyAliasesBuilder);
         propertyAliases = ImmutableMap.copyOf(propertyAliasesBuilder);
     }
@@ -373,11 +374,12 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             setPropertiesFromRequestMap(requestMap, properties(), true);
 
             // Create the full chain
-            properties().chain(new QueryProperties(this, queryProfile.getRegistry(), embedders)).
-                         chain(new ModelObjectMap()).
-                         chain(new RequestContextProperties(requestMap, zoneInfo)).
-                         chain(queryProfileProperties).
-                         chain(new DefaultProperties());
+            properties().chain(new RankProfileInputProperties(this))
+                        .chain(new QueryProperties(this, queryProfile.getRegistry(), embedders))
+                        .chain(new ModelObjectMap())
+                        .chain(new RequestContextProperties(requestMap, zoneInfo))
+                        .chain(queryProfileProperties)
+                        .chain(new DefaultProperties());
 
             // Pass the values from the query profile which maps through a field in the Query object model
             // through the property chain to cause those values to be set in the Query object model
@@ -392,6 +394,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         }
         else { // bypass these complications if there is no query profile to get values from and validate against
             properties().
+                    chain(new RankProfileInputProperties(this)).
                     chain(new QueryProperties(this, CompiledQueryProfileRegistry.empty, embedders)).
                     chain(new PropertyMap()).
                     chain(new DefaultProperties());
@@ -458,6 +461,11 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /** Calls properties.set on all entries in requestMap */
     private void setPropertiesFromRequestMap(Map<String, String> requestMap, Properties properties, boolean ignoreSelect) {
+        // Set rank profile first because it contains type information in inputs which impacts other values set
+        String rankProfile = Ranking.lookupRankProfileIn(requestMap);
+        if (rankProfile != null)
+            properties.set(Ranking.RANKING + "." + Ranking.PROFILE, rankProfile, requestMap);
+
         for (var entry : requestMap.entrySet()) {
             if (ignoreSelect && entry.getKey().equals(Select.SELECT)) continue;
             properties.set(entry.getKey(), entry.getValue(), requestMap);

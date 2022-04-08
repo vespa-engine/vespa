@@ -11,7 +11,7 @@ import java.util.List;
 public abstract class CompositeNode extends ExpressionNode {
 
     /**
-     * <p>Returns a read-only list containing the immediate children of this composite</p>
+     * Returns a read-only list containing the immediate children of this composite.
      *
      * @return The children of this.
      */

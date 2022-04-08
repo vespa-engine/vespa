@@ -39,6 +39,7 @@ import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.fieldoperation.IndexingOperation;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.Tensor;
@@ -174,6 +175,7 @@ TOKEN :
 | < WEIGHT: "weight" >
 | < TYPE: "type" >
 | < INDEX: "index" >
+| < INPUTS: "inputs">
 | < MTOKEN: "token" >
 | < TEXT: "text" >
 | < WORD: "word" >
@@ -187,6 +189,7 @@ TOKEN :
 | < ONNXMODEL: "onnx-model">
 | < MODEL: "model" >
 | < MUTATE: "mutate" >
+| < QUERY: "query" >
 | < RANKPROFILE: "rank-profile" >
 | < RANKDEGRADATIONFREQ: "rank-degradation-frequency" >
 | < RANKDEGRADATION: "rank-degradation" >
@@ -1833,6 +1836,7 @@ void rankProfileItem(ParsedRankProfile profile) : { }
       | rankProperties(profile)
       | secondPhase(profile)
       | rankDegradation()
+      | inputs(profile)
       | constants(profile)
       | matchFeatures(profile)
       | summaryFeatures(profile)
@@ -2049,6 +2053,26 @@ void secondPhaseItem(ParsedRankProfile profile) :
     )
 }
 
+/** Consumes an inputs block of a rank profile. */
+void inputs(ParsedRankProfile profile) :
+{
+    Reference reference;
+    TensorType type;
+}
+{
+    <INPUTS> <LBRACE> (<NL>)*
+      ( reference = queryFeature() type = tensorType("Type of " + reference) { profile.addInput(reference, type); } (<NL>)*) *
+    <RBRACE>
+}
+
+Reference queryFeature() :
+{
+    String argument;
+}
+{
+    <QUERY> "(" argument = identifier() ")"
+    { return Reference.simple("query", argument); }
+}
 
 /**
  * This rule consumes a summary-features block of a rank profile.
@@ -2489,6 +2513,8 @@ String identifier() : { }
       | <COMPRESSION>
       | <COMPRESSIONLEVEL>
       | <COMPRESSIONTHRESHOLD>
+      | <CONSTANT>
+      | <CONSTANTS>
       | <CONTEXT>
       | <CREATEIFNONEXISTENT>
       | <DENSEPOSTINGLISTTHRESHOLD>
@@ -2527,6 +2553,8 @@ String identifier() : { }
       | <INDEXING>
       | <INDEXINGREWRITE>
       | <INHERITS>
+      | <INLINE>
+      | <INPUTS>
       | <INTEGER>
       | <KEEPRANKCOUNT>
       | <LITERAL>
@@ -2555,6 +2583,7 @@ String identifier() : { }
       | <PRIMARY>
       | <PROPERTIES>
       | <QUATERNARY>
+      | <QUERY>
       | <QUERYCOMMAND>
       | <RANK>
       | <MODEL>
@@ -2602,8 +2631,6 @@ String identifier() : { }
       | <WEIGHT>
       | <WEIGHTEDSET>
       | <WORD>
-      | <INLINE>
-      | <CONSTANTS>
     )
     { return token.image; }
 }

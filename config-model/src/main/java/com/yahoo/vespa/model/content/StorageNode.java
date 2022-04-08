@@ -30,11 +30,13 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
     private final StorageCluster cluster;
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<StorageNode> {
+
         @Override
-        protected StorageNode doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
+        protected StorageNode doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
             ModelElement e = new ModelElement(producerSpec);
             return new StorageNode(deployState.getProperties(), (StorageCluster)ancestor, e.doubleAttribute("capacity"), e.integerAttribute("distribution-key"), false);
         }
+
     }
 
     StorageNode(ModelContext.Properties properties, StorageCluster cluster, Double capacity, int distributionKey, boolean retired) {

@@ -57,7 +57,7 @@ import com.yahoo.vespa.model.container.processing.ProcessingChains;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.content.Content;
-import com.yahoo.vespa.model.search.AbstractSearchCluster;
+import com.yahoo.vespa.model.search.SearchCluster;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -537,7 +537,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         if (containerSearch != null) containerSearch.getConfig(builder);
     }
 
-    public void initialize(Map<String, AbstractSearchCluster> clusterMap) {
+    public void initialize(Map<String, SearchCluster> clusterMap) {
         if (containerSearch != null) containerSearch.connectSearchClusters(clusterMap);
     }
 
@@ -548,9 +548,9 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     @Override
     public void getConfig(IlscriptsConfig.Builder builder) {
-        List<AbstractSearchCluster> searchClusters = new ArrayList<>();
+        List<SearchCluster> searchClusters = new ArrayList<>();
         searchClusters.addAll(Content.getSearchClusters(getRoot().configModelRepo()));
-        for (AbstractSearchCluster searchCluster : searchClusters) {
+        for (SearchCluster searchCluster : searchClusters) {
             searchCluster.getConfig(builder);
         }
     }

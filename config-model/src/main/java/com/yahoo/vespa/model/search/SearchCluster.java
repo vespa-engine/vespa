@@ -2,8 +2,13 @@
 package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.searchdefinition.derived.RawRankProfile;
+import com.yahoo.config.model.producer.UserConfigRepo;
+import com.yahoo.searchdefinition.RankProfile;
+import com.yahoo.searchdefinition.RankProfileRegistry;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.derived.SummaryMap;
+import com.yahoo.searchlib.rankingexpression.Reference;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
@@ -14,54 +19,49 @@ import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 
-import java.io.File;
-import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Represents a search cluster.
  *
  * @author arnej27959
  */
-public abstract class SearchCluster extends AbstractSearchCluster
+public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster>
         implements
         DocumentdbInfoConfig.Producer,
         IndexInfoConfig.Producer,
         IlscriptsConfig.Producer {
 
-    protected SearchCluster(AbstractConfigProducer<SearchCluster> parent, String clusterName, int index) {
-        super(parent, clusterName, index);
+    private final String clusterName;
+    private int index;
+    private Double queryTimeout;
+    private Double visibilityDelay = 0.0;
+    private final Map<String, SchemaInfo> schemas = new LinkedHashMap<>();
+
+    public SearchCluster(AbstractConfigProducer<?> parent, String clusterName, int index) {
+        super(parent, "cluster." + clusterName);
+        this.clusterName = clusterName;
+        this.index = index;
     }
 
-   /**
-     * Must be called after cluster is built, to derive SD configs
-     * Derives the search definitions from the application package..
-     * Also stores the document names contained in the search
-     * definitions.
+    public void add(SchemaInfo schema) {
+        schemas.put(schema.name(), schema);
+    }
+
+    /** Returns the schemas that should be active in this cluster. Note: These are added during processing. */
+    public Map<String, SchemaInfo> schemas() { return Collections.unmodifiableMap(schemas); }
+
+    /**
+     * Must be called after cluster is built, to derive schema configs.
+     * Derives the schemas from the application package.
+     * Also stores the document names contained in the schemas.
      */
-    public void deriveSchemas(DeployState deployState) {
-        deriveAllSchemas(getLocalSDS(), deployState);
-    }
-
-    @Override
-    public void getConfig(IndexInfoConfig.Builder builder) {
-        if (getSdConfig()!=null) getSdConfig().getIndexInfo().getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(IlscriptsConfig.Builder builder) {
-        if (getSdConfig()!=null) getSdConfig().getIndexingScript().getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(AttributesConfig.Builder builder) {
-        if (getSdConfig()!=null) getSdConfig().getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(RankProfilesConfig.Builder builder) {
-        if (getSdConfig()!=null) getSdConfig().getRankProfileList().getConfig(builder);
-    }
+    public abstract void deriveFromSchemas(DeployState deployState);
 
     /**
      * Converts summary and summary map config to the appropriate information in documentdb
@@ -101,7 +101,7 @@ public abstract class SearchCluster extends AbstractSearchCluster
         }
     }
 
-    /** Returns true if this is a dynamic summary field */
+    /** Returns whether the given field is a dynamic summary field. */
     private boolean isDynamic(String fieldName, SummarymapConfig summarymapConfig) {
         if (summarymapConfig == null) return false; // not know for streaming, but also not used
 
@@ -112,27 +112,137 @@ public abstract class SearchCluster extends AbstractSearchCluster
         return false;
     }
 
-    protected void addRankProfilesConfig(DocumentdbInfoConfig.Documentdb.Builder docDbBuilder, RankProfilesConfig rankProfilesCfg) {
-        for (RankProfilesConfig.Rankprofile rankProfile : rankProfilesCfg.rankprofile()) {
-            DocumentdbInfoConfig.Documentdb.Rankprofile.Builder rpB = new DocumentdbInfoConfig.Documentdb.Rankprofile.Builder();
-            rpB.name(rankProfile.name());
-            rpB.hasSummaryFeatures(containsPropertiesWithPrefix(RawRankProfile.summaryFeatureFefPropertyPrefix, rankProfile.fef()));
-            rpB.hasRankFeatures(containsPropertiesWithPrefix(RawRankProfile.rankFeatureFefPropertyPrefix, rankProfile.fef()));
-            docDbBuilder.rankprofile(rpB);
+    protected void addRankProfilesConfig(String schemaName, DocumentdbInfoConfig.Documentdb.Builder docDbBuilder) {
+        for (RankProfileInfo rankProfile : schemas().get(schemaName).rankProfiles().values()) {
+            var rankProfileConfig = new DocumentdbInfoConfig.Documentdb.Rankprofile.Builder();
+            rankProfileConfig.name(rankProfile.name());
+            rankProfileConfig.hasSummaryFeatures(rankProfile.hasSummaryFeatures());
+            rankProfileConfig.hasRankFeatures(rankProfile.hasRankFeatures());
+            for (var input : rankProfile.inputs().entrySet()) {
+                var inputConfig = new DocumentdbInfoConfig.Documentdb.Rankprofile.Input.Builder();
+                inputConfig.name(input.getKey().toString());
+                inputConfig.type(input.getValue().toString());
+                rankProfileConfig.input(inputConfig);
+            }
+            docDbBuilder.rankprofile(rankProfileConfig);
         }
     }
 
-    private boolean containsPropertiesWithPrefix(String prefix, RankProfilesConfig.Rankprofile.Fef fef) {
-        for (RankProfilesConfig.Rankprofile.Fef.Property p : fef.property()) {
-            if (p.name().startsWith(prefix))
-                return true;
-        }
-        return false;
+    /** Returns a list of the document type names used in this search cluster */
+    public List<String> getDocumentNames() {
+        return schemas.values()
+                      .stream()
+                      .map(schema -> schema.fullSchema().getDocument().getDocumentName().getName())
+                      .collect(Collectors.toList());
     }
 
-    protected abstract void deriveAllSchemas(List<SchemaSpec> localSearches, DeployState deployState);
+    public String getClusterName()              { return clusterName; }
+    public final String getIndexingModeName()   { return getIndexingMode().getName(); }
+    public final boolean isStreaming()          { return getIndexingMode() == IndexingMode.STREAMING; }
+
+    public final void setQueryTimeout(Double to) { this.queryTimeout = to; }
+    public final void setVisibilityDelay(double delay) { this.visibilityDelay = delay; }
+
+    protected abstract IndexingMode getIndexingMode();
+    public final Double getVisibilityDelay() { return visibilityDelay; }
+    public final Double getQueryTimeout() { return queryTimeout; }
+    public abstract int getRowBits();
+    public final void setClusterIndex(int index) { this.index = index; }
+    public final int getClusterIndex() { return index; }
 
     public abstract void defaultDocumentsConfig();
-    public abstract DerivedConfiguration getSdConfig();
+    public abstract DerivedConfiguration getSchemaConfig();
+
+    @Override
+    public void getConfig(IndexInfoConfig.Builder builder) {
+        if (getSchemaConfig() != null) getSchemaConfig().getIndexInfo().getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(IlscriptsConfig.Builder builder) {
+        if (getSchemaConfig() != null) getSchemaConfig().getIndexingScript().getConfig(builder);
+    }
+
+    public void getConfig(AttributesConfig.Builder builder) {
+        if (getSchemaConfig() != null) getSchemaConfig().getConfig(builder);
+    }
+
+    public void getConfig(RankProfilesConfig.Builder builder) {
+        if (getSchemaConfig() != null) getSchemaConfig().getRankProfileList().getConfig(builder);
+    }
+
+    @Override
+    public abstract void getConfig(DocumentdbInfoConfig.Builder builder);
+
+    @Override
+    public String toString() { return "search-capable cluster '" + clusterName + "'"; }
+
+    public static final class IndexingMode {
+
+        public static final IndexingMode REALTIME  = new IndexingMode("REALTIME");
+        public static final IndexingMode STREAMING = new IndexingMode("STREAMING");
+
+        private final String name;
+
+        private IndexingMode(String name) {
+            this.name = name;
+        }
+
+        public String getName() { return name; }
+
+        public String toString() {
+            return "indexingmode: " + name;
+        }
+    }
+
+    public static final class SchemaInfo {
+
+        private final Schema schema;
+        private final UserConfigRepo userConfigRepo;
+
+        // Info about profiles needed in memory after build.
+        // The rank profile registry itself is not kept around due to its size.
+        private final Map<String, RankProfileInfo> rankProfiles;
+
+        public SchemaInfo(Schema schema, UserConfigRepo userConfigRepo, RankProfileRegistry rankProfileRegistry) {
+            this.schema = schema;
+            this.userConfigRepo = userConfigRepo;
+            this.rankProfiles = Collections.unmodifiableMap(toRankProfiles(rankProfileRegistry.rankProfilesOf(schema)));
+        }
+
+        public String name() { return schema.getName(); }
+        public Schema fullSchema() { return schema; }
+        public UserConfigRepo userConfigs() { return userConfigRepo; }
+        public Map<String, RankProfileInfo> rankProfiles() { return rankProfiles; }
+
+        private Map<String, RankProfileInfo> toRankProfiles(Collection<RankProfile> rankProfiles) {
+            Map<String, RankProfileInfo> rankProfileInfos = new LinkedHashMap<>();
+            rankProfiles.forEach(profile -> rankProfileInfos.put(profile.name(), new RankProfileInfo(profile)));
+            return rankProfileInfos;
+        }
+
+    }
+
+    /** A store of a *small* (in memory) amount of rank profile info. */
+    public static final class RankProfileInfo {
+
+        private final String name;
+        private final boolean hasSummaryFeatures;
+        private final boolean hasRankFeatures;
+        private final Map<Reference, TensorType> inputs;
+
+        public RankProfileInfo(RankProfile profile) {
+            this.name = profile.name();
+            this.hasSummaryFeatures =  ! profile.getSummaryFeatures().isEmpty();
+            this.hasRankFeatures =  ! profile.getRankFeatures().isEmpty();
+            this.inputs = profile.inputs();
+        }
+
+        public String name() { return name; }
+        public boolean hasSummaryFeatures() { return hasSummaryFeatures; }
+        public boolean hasRankFeatures() { return hasRankFeatures; }
+        public Map<Reference, TensorType> inputs() { return inputs; }
+
+    }
 
 }

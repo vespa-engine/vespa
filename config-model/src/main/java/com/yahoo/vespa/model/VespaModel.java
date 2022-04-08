@@ -61,7 +61,7 @@ import com.yahoo.vespa.model.ml.ConvertedModel;
 import com.yahoo.vespa.model.ml.ModelName;
 import com.yahoo.vespa.model.ml.OnnxModelInfo;
 import com.yahoo.vespa.model.routing.Routing;
-import com.yahoo.vespa.model.search.AbstractSearchCluster;
+import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.utils.internal.ReflectionUtil;
 import org.xml.sax.SAXException;
 
@@ -235,10 +235,10 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                              ? Set.of()
                                              : content.getSearch().getIndexed().getDocumentDbs().stream()
                                                       .filter(database -> database.getDerivedConfiguration()
-                                                                                  .getSearch()
+                                                                                  .getSchema()
                                                                                   .allConcreteFields()
                                                                                   .stream().anyMatch(SDField::doesIndexing))
-                                                      .map(database -> database.getInputDocType())
+                                                      .map(database -> database.getSchemaName())
                                                       .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
 
         return typesWithIndexMode.stream().filter(typesWithIndexedFields::contains)
@@ -644,7 +644,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     }
 
     /** Returns all search clusters, both in Search and Content */
-    public List<AbstractSearchCluster> getSearchClusters() {
+    public List<SearchCluster> getSearchClusters() {
         return Content.getSearchClusters(configModelRepo());
     }
 

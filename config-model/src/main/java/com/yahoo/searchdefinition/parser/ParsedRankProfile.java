@@ -4,8 +4,10 @@ package com.yahoo.searchdefinition.parser;
 import com.yahoo.searchdefinition.RankProfile.MatchPhaseSettings;
 import com.yahoo.searchdefinition.RankProfile.MutateOperation;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,9 +28,9 @@ class ParsedRankProfile extends ParsedBlock {
     private boolean ignoreDefaultRankFeatures = false;
     private Double rankScoreDropLimit = null;
     private Double termwiseLimit = null;
-    private List<FeatureList> matchFeatures = new ArrayList<>();
-    private List<FeatureList> rankFeatures = new ArrayList<>();
-    private List<FeatureList> summaryFeatures = new ArrayList<>();
+    private final List<FeatureList> matchFeatures = new ArrayList<>();
+    private final List<FeatureList> rankFeatures = new ArrayList<>();
+    private final List<FeatureList> summaryFeatures = new ArrayList<>();
     private Integer keepRankCount = null;
     private Integer minHitsPerThread = null;
     private Integer numSearchPartitions = null;
@@ -48,6 +50,7 @@ class ParsedRankProfile extends ParsedBlock {
     private final Map<String, String> fieldsRankType = new LinkedHashMap<>();
     private final Map<String, List<String>> rankProperties = new LinkedHashMap<>();
     private final Map<String, Value> constants = new LinkedHashMap<>();
+    private final Map<Reference, TensorType> inputs = new LinkedHashMap<>();
 
     ParsedRankProfile(String name) {
         super(name, "rank-profile");
@@ -70,11 +73,14 @@ class ParsedRankProfile extends ParsedBlock {
     List<ParsedRankFunction> getFunctions() { return List.copyOf(functions.values()); }
     List<MutateOperation> getMutateOperations() { return List.copyOf(mutateOperations); }
     List<String> getInherited() { return List.copyOf(inherited); }
+
     Map<String, Boolean> getFieldsWithRankFilter() { return Collections.unmodifiableMap(fieldsRankFilter); }
     Map<String, Integer> getFieldsWithRankWeight() { return Collections.unmodifiableMap(fieldsRankWeight); }
     Map<String, String> getFieldsWithRankType() { return Collections.unmodifiableMap(fieldsRankType); }
     Map<String, List<String>> getRankProperties() { return Collections.unmodifiableMap(rankProperties); }
     Map<String, Value> getConstants() { return Collections.unmodifiableMap(constants); }
+    Map<Reference, TensorType> getInputs() { return Collections.unmodifiableMap(inputs); }
+
     Optional<String> getInheritedSummaryFeatures() { return Optional.ofNullable(this.inheritedSummaryFeatures); }
     Optional<String> getSecondPhaseExpression() { return Optional.ofNullable(this.secondPhaseExpression); }
     Optional<Boolean> isStrict() { return Optional.ofNullable(this.strict); }
@@ -98,6 +104,11 @@ class ParsedRankProfile extends ParsedBlock {
     void addConstantTensor(String name, TensorValue value) {
         verifyThat(! constants.containsKey(name), "already has constant", name);
         constants.put(name, value);
+    }
+
+    void addInput(Reference name, TensorType type) {
+        verifyThat(! inputs.containsKey(name), "already has input", name);
+        inputs.put(name, type);
     }
 
     void addFieldRankFilter(String field, boolean filter) {

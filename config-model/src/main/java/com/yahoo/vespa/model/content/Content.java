@@ -26,9 +26,9 @@ import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChain;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
-import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.IndexingDocprocChain;
+import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.search.SearchNode;
 import org.w3c.dom.Element;
 
@@ -130,8 +130,8 @@ public class Content extends ConfigModel {
         return contents;
     }
 
-    public static List<AbstractSearchCluster> getSearchClusters(ConfigModelRepo pc) {
-        List<AbstractSearchCluster> clusters = new ArrayList<>();
+    public static List<SearchCluster> getSearchClusters(ConfigModelRepo pc) {
+        List<SearchCluster> clusters = new ArrayList<>();
         for (ContentCluster c : getContentClusters(pc))
             clusters.addAll(c.getSearch().getClusters().values());
         return clusters;
