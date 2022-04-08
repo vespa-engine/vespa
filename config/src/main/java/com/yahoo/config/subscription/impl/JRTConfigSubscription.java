@@ -68,7 +68,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         return newConfigOrException();
     }
 
-    private JRTClientConfigRequest pollForNewConfig(long timeoutMillis) {
+    private synchronized JRTClientConfigRequest pollForNewConfig(long timeoutMillis) {
         JRTClientConfigRequest response = pollQueue(timeoutMillis);
         // There might be more than one response on the queue, so empty queue by polling with
         // 0 timeout until queue is empty (returned value is null)
