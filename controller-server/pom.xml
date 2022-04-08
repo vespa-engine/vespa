@@ -246,17 +246,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <!-- Illegal reflective access by LogFileHandler via com.yahoo.io.NativeIO -->
-                    <argLine>
-                        --add-opens=java.base/java.io=ALL-UNNAMED
-                    </argLine>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 </project>
