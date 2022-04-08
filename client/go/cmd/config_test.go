@@ -47,9 +47,11 @@ func TestConfig(t *testing.T) {
 
 func TestLocalConfig(t *testing.T) {
 	configHome := t.TempDir()
+	// Write a few global options
 	assertConfigCommand(t, configHome, "", "config", "set", "instance", "main")
+	assertConfigCommand(t, configHome, "", "config", "set", "target", "cloud")
 
-	// Change directory to an application package and write local configuration
+	// Change directory to an application package and write local options
 	_, rootDir := mock.ApplicationPackageDir(t, false, false)
 	wd, err := os.Getwd()
 	require.Nil(t, err)
@@ -60,17 +62,20 @@ func TestLocalConfig(t *testing.T) {
 	assertConfigCommand(t, configHome, "instance = bar\n", "config", "get", "--instance", "bar", "instance") // flag overrides local config
 
 	// get --local prints only options set in local config
-	assertConfigCommand(t, configHome, "", "config", "set", "--local", "target", "hosted")
-	assertConfigCommand(t, configHome, "instance = foo\ntarget = hosted\n", "config", "get", "--local")
+	assertConfigCommand(t, configHome, "instance = foo\n", "config", "get", "--local")
 
-	// only locally set options are written
+	// get reads global option if unset locally
+	assertConfigCommand(t, configHome, "target = cloud\n", "config", "get", "target")
+
+	// Only locally set options are written
 	localConfig, err := os.ReadFile(filepath.Join(rootDir, ".vespa", "config.yaml"))
 	require.Nil(t, err)
-	assert.Equal(t, "instance: foo\ntarget: hosted\n", string(localConfig))
+	assert.Equal(t, "instance: foo\n", string(localConfig))
 
 	// Changing back to original directory reads from global config
 	require.Nil(t, os.Chdir(wd))
 	assertConfigCommand(t, configHome, "instance = main\n", "config", "get", "instance")
+	assertConfigCommand(t, configHome, "target = cloud\n", "config", "get", "target")
 }
 
 func assertConfigCommand(t *testing.T, configHome, expected string, args ...string) {

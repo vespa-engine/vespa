@@ -476,10 +476,15 @@ func (c *Config) list() []string {
 	return options
 }
 
+func (c *Config) isSet(option string) bool { return c.viper.IsSet(option) }
+
 func (c *Config) get(option string) (string, bool) {
 	if c.local != nil {
-		if value, ok := c.local.get(option); ok {
-			return value, ok
+		// when reading from local config, the option must be explicitly set to be considered
+		if c.local.isSet(option) {
+			if value, ok := c.local.get(option); ok {
+				return value, ok
+			}
 		}
 	}
 	value := c.viper.GetString(option)
