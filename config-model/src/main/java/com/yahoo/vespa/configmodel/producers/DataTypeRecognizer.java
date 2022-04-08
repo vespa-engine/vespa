@@ -110,7 +110,8 @@ public class DataTypeRecognizer {
             return "{struct "+t.getName()+"}";
         }
         if (typeClass == TensorDataType.class) {
-            return "{tensor}";
+            var t = (TensorDataType) type;
+            return "{tensor" + t.getTensorType() + "}";
         }
         if (typeClass == WeightedSetDataType.class) {
             var t = (WeightedSetDataType) type;
