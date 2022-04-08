@@ -161,8 +161,8 @@ class ServletRequestReader {
                         }
                         @Override
                         public void failed(final Throwable t) {
-                            decreaseOutstandingUserCallsAndCloseRequestContentChannelConditionally();
                             finishedFuture.completeExceptionally(t);
+                            decreaseOutstandingUserCallsAndCloseRequestContentChannelConditionally();
                         }
                     });
                     metricReporter.successfulRead(numBytesRead);
