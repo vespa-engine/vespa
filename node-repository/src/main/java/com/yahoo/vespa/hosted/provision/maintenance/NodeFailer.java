@@ -309,7 +309,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
     public enum ThrottlePolicy {
 
-        hosted(Duration.ofDays(1), 0.02, 2),
+        hosted(Duration.ofDays(1), 0.03, 2),
         disabled(Duration.ZERO, 0, 0);
 
         private final Duration throttleWindow;
