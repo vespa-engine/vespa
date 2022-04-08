@@ -32,6 +32,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -179,8 +180,8 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     private Slime tenantUsage(RestApi.RequestContext requestContext) {
         var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
         var tenant = tenants.require(tenantName, CloudTenant.class);
-        var untilAt = untilParameter(requestContext).orElseGet(clock::instant);
-        var usage = billing.createUncommittedBill(tenant.name(), untilAt.atZone(ZoneOffset.UTC).toLocalDate());
+        var untilAt = untilParameter(requestContext);
+        var usage = billing.createUncommittedBill(tenant.name(), untilAt);
 
         var slime = new Slime();
         usageToSlime(slime.setObject(), usage);
@@ -190,8 +191,8 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     // --------- ACCOUNTANT API ----------
 
     private Slime accountant(RestApi.RequestContext requestContext) {
-        var untilAt = untilParameter(requestContext).orElseGet(clock::instant);
-        var usagePerTenant = billing.createUncommittedBills(untilAt.atZone(ZoneOffset.UTC).toLocalDate());
+        var untilAt = untilParameter(requestContext);
+        var usagePerTenant = billing.createUncommittedBills(untilAt);
 
         var response = new Slime();
         var tenantsResponse = response.setObject().setArray("tenants");
@@ -211,9 +212,9 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     private Slime previewBill(RestApi.RequestContext requestContext) {
         var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
         var tenant = tenants.require(tenantName, CloudTenant.class);
-        var untilAt = untilParameter(requestContext).orElseGet(this::startOfDayTodayUTC);
+        var untilAt = untilParameter(requestContext);
 
-        var usage = billing.createUncommittedBill(tenant.name(), untilAt.atZone(ZoneOffset.UTC).toLocalDate());
+        var usage = billing.createUncommittedBill(tenant.name(), untilAt);
 
         var slime = new Slime();
         toSlime(slime.setObject(), usage);
@@ -319,14 +320,20 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
 
     // ---------- END INVOICE RENDERING ----------
 
-    private Optional<Instant> untilParameter(RestApi.RequestContext ctx) {
+    private LocalDate untilParameter(RestApi.RequestContext ctx) {
         return ctx.queryParameters().getString("until")
-                .map(LocalDate::parse)
-                .map(date -> date.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant());
+                .map(this::parseLocalDate)
+                .orElseGet(this::tomorrow);
     }
 
-    private Instant startOfDayTodayUTC() {
-        return LocalDate.now(clock.withZone(ZoneOffset.UTC)).atStartOfDay(ZoneOffset.UTC).toInstant();
+    private LocalDate tomorrow() {
+        return LocalDate.now(clock).plusDays(1);
+    }
+
+    private LocalDate parseLocalDate(String until) {
+        if (until.isEmpty() || until.isBlank())
+            return tomorrow();
+        else return LocalDate.parse(until);
     }
 
     private static String getInspectorFieldOrThrow(Inspector inspector, String field) {
