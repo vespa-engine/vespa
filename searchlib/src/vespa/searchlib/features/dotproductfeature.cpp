@@ -276,7 +276,7 @@ void DotProductExecutorBase<BaseType>::execute(uint32_t docId) {
     size_t commonRange = std::min(values.size(), _queryVector.size());
     static_assert(std::is_same<typename AT::ValueType, BaseType>::value);
     outputs().set_number(0, _multiplier.dotProduct(
-            &_queryVector[0], reinterpret_cast<const typename AT::ValueType *>(&values[0]), commonRange));
+            &_queryVector[0], reinterpret_cast<const typename AT::ValueType *>(values.data()), commonRange));
 }
 
 template <typename A>
@@ -319,7 +319,7 @@ SparseDotProductExecutor<A>::getAttributeValues(uint32_t docId)
     for (; (i < _queryIndexes.size()) && (_queryIndexes[i] < count); i++) {
         _scratch[i] = allValues[_queryIndexes[i]];
     }
-    return vespalib::ConstArrayRef(&_scratch[0], i);
+    return vespalib::ConstArrayRef(_scratch.data(), i);
 }
 
 template <typename A>
@@ -341,7 +341,7 @@ DotProductByCopyExecutor<A>::getAttributeValues(uint32_t docId)
         _copy.resize(count);
         count = this->_attribute->getAll(docId, &_copy[0], _copy.size());
     }
-    return vespalib::ConstArrayRef(reinterpret_cast<const AT *>(&_copy[0]), count);
+    return vespalib::ConstArrayRef(reinterpret_cast<const AT *>(_copy.data()), count);
 }
 
 template <typename A>
@@ -367,7 +367,7 @@ SparseDotProductByCopyExecutor<A>::getAttributeValues(uint32_t docId)
     for (const IV & iv(this->_queryIndexes); (i < iv.size()) && (iv[i] < count); i++) {
         _copy[i] = _copy[iv[i]];
     }
-    return vespalib::ConstArrayRef(reinterpret_cast<const AT *>(&_copy[0]), i);
+    return vespalib::ConstArrayRef(reinterpret_cast<const AT *>(_copy.data()), i);
 }
 
 template <typename BaseType>
