@@ -783,6 +783,7 @@ fi
 %dir %{_prefix}/conf
 %dir %{_prefix}/conf/vespa
 %config(noreplace) %{_prefix}/conf/vespa/default-env.txt
+%config(noreplace) %{_prefix}/conf/vespa/java.security.override
 %{_prefix}/jdk
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
