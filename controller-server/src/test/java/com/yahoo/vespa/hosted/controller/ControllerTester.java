@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
@@ -239,7 +239,7 @@ public final class ControllerTester {
     /** Upgrade controller to given version */
     public void upgradeController(Version version, String commitSha, Instant commitDate) {
         for (var hostname : controller().curator().cluster()) {
-            upgradeController(HostName.of(hostname), version, commitSha, commitDate);
+            upgradeController(HostName.from(hostname), version, commitSha, commitDate);
         }
     }
 

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -36,8 +36,8 @@ public class ResourceTagMaintainerTest {
         resourceTagMaintainer.maintain();
         assertEquals(2, mockResourceTagger.getValues().size());
         Map<HostName, ApplicationId> applicationForHost = mockResourceTagger.getValues().get(ZoneId.from("prod.region-2"));
-        assertEquals(ApplicationId.from("t1", "a1", "i1"), applicationForHost.get(HostName.of("parentHostA.prod.region-2")));
-        assertEquals(SHARED_HOST_APPLICATION, applicationForHost.get(HostName.of("parentHostB.prod.region-2")));
+        assertEquals(ApplicationId.from("t1", "a1", "i1"), applicationForHost.get(HostName.from("parentHostA.prod.region-2")));
+        assertEquals(SHARED_HOST_APPLICATION, applicationForHost.get(HostName.from("parentHostB.prod.region-2")));
     }
 
     private void setUpZones() {
@@ -51,19 +51,19 @@ public class ResourceTagMaintainerTest {
 
     public void setNodes(ZoneId zone) {
         var hostA = Node.builder()
-                        .hostname(HostName.of("parentHostA." + zone.value()))
+                        .hostname(HostName.from("parentHostA." + zone.value()))
                         .type(NodeType.host)
                         .owner(ApplicationId.from(SystemApplication.TENANT.value(), "tenant-host", "default"))
                         .exclusiveTo(ApplicationId.from("t1", "a1", "i1"))
                         .build();
         var nodeA = Node.builder()
-                        .hostname(HostName.of("hostA." + zone.value()))
+                        .hostname(HostName.from("hostA." + zone.value()))
                         .type(NodeType.tenant)
-                        .parentHostname(HostName.of("parentHostA." + zone.value()))
+                        .parentHostname(HostName.from("parentHostA." + zone.value()))
                         .owner(ApplicationId.from("tenant1", "app1", "default"))
                         .build();
         var hostB = Node.builder()
-                        .hostname(HostName.of("parentHostB." + zone.value()))
+                        .hostname(HostName.from("parentHostB." + zone.value()))
                         .type(NodeType.host)
                         .owner(ApplicationId.from(SystemApplication.TENANT.value(), "tenant-host", "default"))
                         .build();

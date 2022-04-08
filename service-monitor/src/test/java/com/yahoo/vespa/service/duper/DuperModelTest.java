@@ -5,7 +5,7 @@ import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.service.monitor.DuperModelListener;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,12 +34,12 @@ public class DuperModelTest {
 
     private final ApplicationId id1 = ApplicationId.fromSerializedForm("tenant:app1:default");
     private final ApplicationInfo application1 = mock(ApplicationInfo.class);
-    private final HostName hostname1_1 = HostName.of("hostname1-1");
-    private final HostName hostname1_2 = HostName.of("hostname1-2");
+    private final HostName hostname1_1 = HostName.from("hostname1-1");
+    private final HostName hostname1_2 = HostName.from("hostname1-2");
 
     private final ApplicationId id2 = ApplicationId.fromSerializedForm("tenant:app2:default");
     private final ApplicationInfo application2 = mock(ApplicationInfo.class);
-    private final HostName hostname2_1 = HostName.of("hostname2-1");
+    private final HostName hostname2_1 = HostName.from("hostname2-1");
 
     private final DuperModelListener listener1 = mock(DuperModelListener.class);
 
@@ -129,7 +129,7 @@ public class DuperModelTest {
         addAndVerifyApplication1("host1");
         addAndVerifyApplication1("host1", "host2");
         addAndVerifyApplication1("host2", "host3");
-        assertEquals(Optional.empty(), duperModel.getApplicationId(HostName.of("host1")));
+        assertEquals(Optional.empty(), duperModel.getApplicationId(HostName.from("host1")));
 
         duperModel.remove(id1);
         assertEquals(0, duperModel.numberOfApplications());
@@ -138,7 +138,7 @@ public class DuperModelTest {
     }
 
     private void addAndVerifyApplication1(String... hostnameStrings) {
-        HostName[] hostnameArray = Stream.of(hostnameStrings).map(HostName::of).toArray(HostName[]::new);
+        HostName[] hostnameArray = Stream.of(hostnameStrings).map(HostName::from).toArray(HostName[]::new);
         setUpApplication(id1, application1, hostnameArray);
         duperModel.add(application1);
 

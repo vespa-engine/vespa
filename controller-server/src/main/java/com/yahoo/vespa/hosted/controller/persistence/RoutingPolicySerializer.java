@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
@@ -83,7 +83,7 @@ public class RoutingPolicySerializer {
                                                      ClusterSpec.Id.from(inspect.field(clusterField).asString()),
                                                      ZoneId.from(inspect.field(zoneField).asString()));
             policies.add(new RoutingPolicy(id,
-                                           HostName.of(inspect.field(canonicalNameField).asString()),
+                                           HostName.from(inspect.field(canonicalNameField).asString()),
                                            SlimeUtils.optionalString(inspect.field(dnsZoneField)),
                                            instanceEndpoints,
                                            applicationEndpoints,

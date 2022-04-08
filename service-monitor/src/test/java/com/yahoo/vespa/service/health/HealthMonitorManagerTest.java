@@ -2,7 +2,7 @@
 package com.yahoo.vespa.service.health;
 
 import com.yahoo.config.model.api.ApplicationInfo;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.service.duper.ControllerHostApplication;
@@ -48,7 +48,7 @@ public class HealthMonitorManagerTest {
     public void infrastructureApplication() {
         ProxyHostApplication proxyHostApplication = new ProxyHostApplication();
         when(duperModel.isSupportedInfraApplication(proxyHostApplication.getApplicationId())).thenReturn(true);
-        List<HostName> hostnames = Stream.of("proxyhost1", "proxyhost2").map(HostName::of).collect(Collectors.toList());
+        List<HostName> hostnames = Stream.of("proxyhost1", "proxyhost2").map(HostName::from).collect(Collectors.toList());
         ApplicationInfo proxyHostApplicationInfo = proxyHostApplication.makeApplicationInfo(hostnames);
 
         manager.applicationActivated(proxyHostApplicationInfo);
@@ -77,7 +77,7 @@ public class HealthMonitorManagerTest {
                 infraApplication.getApplicationId(),
                 infraApplication.getClusterId(),
                 infraApplication.getServiceType(),
-                infraApplication.configIdFor(HostName.of(hostname))).serviceStatus();
+                infraApplication.configIdFor(HostName.from(hostname))).serviceStatus();
 
         assertEquals(expected, actual);
 
@@ -85,7 +85,7 @@ public class HealthMonitorManagerTest {
                 infraApplication.getApplicationId(),
                 infraApplication.getClusterId(),
                 infraApplication.getServiceType(),
-                infraApplication.configIdFor(HostName.of(hostname)));
+                infraApplication.configIdFor(HostName.from(hostname)));
 
     }
 }

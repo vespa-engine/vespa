@@ -12,7 +12,7 @@ import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
@@ -940,19 +940,19 @@ public class ControllerTest {
                 // The weighted record for zone 2's region
                 new Record(Record.Type.ALIAS,
                            RecordName.from("application.tenant.us-east-3-w.vespa.oath.cloud"),
-                           new WeightedAliasTarget(HostName.of("lb-0--tenant.application.default--prod.us-east-3"),
+                           new WeightedAliasTarget(HostName.from("lb-0--tenant:application:default--prod.us-east-3"),
                                                    "dns-zone-1", ZoneId.from("prod.us-east-3"), 1).pack()),
 
                 // The 'east' global endpoint, pointing to the weighted record for zone 2's region
                 new Record(Record.Type.ALIAS,
                            RecordName.from("east.application.tenant.global.vespa.oath.cloud"),
-                           new LatencyAliasTarget(HostName.of("application.tenant.us-east-3-w.vespa.oath.cloud"),
+                           new LatencyAliasTarget(HostName.from("application.tenant.us-east-3-w.vespa.oath.cloud"),
                                                   "dns-zone-1", ZoneId.from("prod.us-east-3")).pack()),
 
                 // The zone-scoped endpoint pointing to zone 2 with exclusive routing
                 new Record(Record.Type.CNAME,
                            RecordName.from("application.tenant.us-east-3.vespa.oath.cloud"),
-                           RecordData.from("lb-0--tenant.application.default--prod.us-east-3.")));
+                           RecordData.from("lb-0--tenant:application:default--prod.us-east-3.")));
         assertEquals(expectedRecords, List.copyOf(tester.controllerTester().nameService().records()));
     }
 

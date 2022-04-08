@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -27,7 +27,7 @@ public interface NodeAgentContext extends TaskContext {
 
     /** @return hostname of the linux container this context applies to */
     default HostName hostname() {
-        return HostName.of(node().hostname());
+        return HostName.from(node().hostname());
     }
 
     default NodeType nodeType() {

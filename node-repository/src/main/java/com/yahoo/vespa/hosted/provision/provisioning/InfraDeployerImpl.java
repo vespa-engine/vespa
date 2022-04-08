@@ -8,7 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.HostFilter;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.NodeType;
@@ -116,7 +116,7 @@ public class InfraDeployerImpl implements InfraDeployer {
 
                     duperModel.infraApplicationActivated(
                             application.getApplicationId(),
-                            hostSpecs.stream().map(HostSpec::hostname).map(HostName::of).collect(Collectors.toList()));
+                            hostSpecs.stream().map(HostSpec::hostname).map(HostName::from).collect(Collectors.toList()));
 
                     logger.log(Level.FINE, () -> generateActivationLogMessage(hostSpecs, application.getApplicationId()));
                 }

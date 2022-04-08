@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.versions;
 
 import com.yahoo.component.Version;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
@@ -197,7 +197,7 @@ public class VersionStatus {
                     .add(controller.hostname());
         } else {
             for (String host : controller.curator().cluster()) {
-                HostName hostname = HostName.of(host);
+                HostName hostname = HostName.from(host);
                 versions.computeIfAbsent(controller.curator().readControllerVersion(hostname), (k) -> new ArrayList<>())
                         .add(hostname);
             }

@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.integration;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
@@ -60,7 +60,7 @@ public class NodeRepositoryMock implements NodeRepository {
     @Override
     public void deleteNode(ZoneId zone, String hostname) {
         require(zone, hostname);
-        nodeRepository.get(zone).remove(HostName.of(hostname));
+        nodeRepository.get(zone).remove(HostName.from(hostname));
     }
 
     @Override
@@ -246,8 +246,8 @@ public class NodeRepositoryMock implements NodeRepository {
     /** Add a fixed set of nodes to given zone */
     public void addFixedNodes(ZoneId zone) {
         var nodeA = Node.builder()
-                        .hostname(HostName.of("hostA"))
-                        .parentHostname(HostName.of("parentHostA"))
+                        .hostname(HostName.from("hostA"))
+                        .parentHostname(HostName.from("parentHostA"))
                         .state(Node.State.active)
                         .type(NodeType.tenant)
                         .owner(ApplicationId.from("tenant1", "app1", "default"))
@@ -262,8 +262,8 @@ public class NodeRepositoryMock implements NodeRepository {
                         .exclusiveTo(ApplicationId.from("t1", "a1", "i1"))
                         .build();
         var nodeB = Node.builder()
-                        .hostname(HostName.of("hostB"))
-                        .parentHostname(HostName.of("parentHostB"))
+                        .hostname(HostName.from("hostB"))
+                        .parentHostname(HostName.from("parentHostB"))
                         .state(Node.State.active)
                         .type(NodeType.tenant)
                         .owner(ApplicationId.from("tenant2", "app2", "default"))
@@ -319,7 +319,7 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     private Node require(ZoneId zone, String hostname) {
-        return require(zone, HostName.of(hostname));
+        return require(zone, HostName.from(hostname));
     }
 
     private Node require(ZoneId zone, HostName hostname) {
@@ -329,7 +329,7 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     private void patchNodes(ZoneId zone, String hostname, UnaryOperator<Node> patcher) {
-        patchNodes(zone, Optional.of(HostName.of(hostname)), patcher);
+        patchNodes(zone, Optional.of(HostName.from(hostname)), patcher);
     }
 
     private void patchNodes(DeploymentId deployment, Optional<HostName> hostname, UnaryOperator<Node> patcher) {

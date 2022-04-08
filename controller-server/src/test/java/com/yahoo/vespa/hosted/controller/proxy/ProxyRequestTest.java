@@ -19,9 +19,9 @@ public class ProxyRequestTest {
 
     @Test
     public void testBadUri() {
-        assertEquals("Request path '/path' does not end with proxy path '/zone/v2/'",
-                     assertThrows(IllegalArgumentException.class,
-                                  () -> testRequest("http://domain.tld/path", "/zone/v2/")).getMessage());
+        assertThrows("Request path '/path' does not end with proxy path '/zone/v2/'",
+                     IllegalArgumentException.class,
+                     () -> testRequest("http://domain.tld/path", "/zone/v2/"));
     }
 
     @Test
