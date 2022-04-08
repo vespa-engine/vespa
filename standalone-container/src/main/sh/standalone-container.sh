@@ -176,6 +176,7 @@ StartCommand() {
         --add-opens=java.base/jdk.internal.loader=ALL-UNNAMED \
         --add-opens=java.base/sun.security.ssl=ALL-UNNAMED  \
         -Djava.library.path="$VESPA_HOME/lib64" \
+        -Djava.security.properties=${VESPA_HOME}/conf/vespa/java.security.override \
         -Djava.awt.headless=true \
         -Dsun.rmi.dgc.client.gcInterval=3600000 \
         -Dsun.net.client.defaultConnectTimeout=5000 \
