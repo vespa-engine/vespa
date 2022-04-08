@@ -350,7 +350,7 @@
     "fields": []
   },
   "com.yahoo.net.HostName": {
-    "superClass": "ai.vespa.validation.PatternedStringWrapper",
+    "superClass": "ai.vespa.http.DomainName",
     "interfaces": [],
     "attributes": [
       "public"
