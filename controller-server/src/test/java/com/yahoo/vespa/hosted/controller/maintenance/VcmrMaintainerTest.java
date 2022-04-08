@@ -227,6 +227,23 @@ public class VcmrMaintainerTest {
         assertEquals(State.PENDING_RETIREMENT, tenantAction2.getState());
     }
 
+    @Test
+    public void out_of_sync_when_manual_reactivation() {
+        var nonRetiringNode = createNode(host1, NodeType.host, Node.State.active, false);
+        nodeRepo.putNodes(zoneId, nonRetiringNode);
+
+        tester.curator().writeChangeRequest(inProgressChangeRequest());
+        maintainer.maintain();
+
+        var writtenChangeRequest = tester.curator().readChangeRequest(changeRequestId).get();
+        var actionPlan = writtenChangeRequest.getHostActionPlan();
+
+        var action = findHostAction(actionPlan, nonRetiringNode);
+
+        assertEquals(State.OUT_OF_SYNC, action.getState());
+        assertEquals(Status.OUT_OF_SYNC, writtenChangeRequest.getStatus());
+    }
+
     private VespaChangeRequest canceledChangeRequest() {
         return newChangeRequest(ChangeRequestSource.Status.CANCELED, State.RETIRED, State.RETIRING, ZonedDateTime.now());
     }

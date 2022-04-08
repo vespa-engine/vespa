@@ -94,6 +94,7 @@ public class VespaChangeRequest extends ChangeRequest {
         PENDING_ACTION,
         PENDING_ASSESSMENT,
         REQUIRES_OPERATOR_ACTION,
+        OUT_OF_SYNC,
         NOOP
     }
 }

@@ -106,6 +106,10 @@ public class VcmrMaintainer extends ControllerMaintainer {
             return Status.REQUIRES_OPERATOR_ACTION;
         }
 
+        if (byActionState.getOrDefault(State.OUT_OF_SYNC, 0L) > 0) {
+            return Status.OUT_OF_SYNC;
+        }
+
         if (byActionState.getOrDefault(State.RETIRING, 0L) > 0) {
             return Status.IN_PROGRESS;
         }
@@ -169,6 +173,9 @@ public class VcmrMaintainer extends ControllerMaintainer {
             return hostAction;
 
         addReport(zoneId, changeRequest, node);
+
+        if (isOutOfSync(node, hostAction))
+            return hostAction.withState(State.OUT_OF_SYNC);
 
         if (isPostponed(changeRequest, hostAction)) {
             LOG.fine(() -> changeRequest.getChangeRequestSource().getId() + " is postponed, recycling " + node.hostname());
@@ -246,6 +253,12 @@ public class VcmrMaintainer extends ControllerMaintainer {
     private boolean pendingRetirement(Node node, HostAction action) {
         return List.of(State.NONE, State.REQUIRES_OPERATOR_ACTION).contains(action.getState())
                 && node.state() == Node.State.active;
+    }
+
+    // Determines if node state is unexpected based on previous action taken
+    private boolean isOutOfSync(Node node, HostAction action) {
+        return action.getState() == State.RETIRED && node.state() != Node.State.parked ||
+                action.getState() == State.RETIRING && !node.wantToRetire();
     }
 
     private Map<ZoneId, List<Node>> nodesByZone() {
