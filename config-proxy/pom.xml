@@ -91,6 +91,7 @@
         <artifactId>maven-shade-plugin</artifactId>
         <configuration>
           <finalName>${project.artifactId}-jar-with-dependencies</finalName>
+          <createDependencyReducedPom>false</createDependencyReducedPom>
         </configuration>
         <executions>
           <execution>
