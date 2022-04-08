@@ -173,7 +173,7 @@ func (c *CLI) configureOutput(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (c *CLI) configureFlags() *pflag.FlagSet {
+func (c *CLI) configureFlags() map[string]*pflag.Flag {
 	var (
 		target      string
 		application string
@@ -190,7 +190,11 @@ func (c *CLI) configureFlags() *pflag.FlagSet {
 	c.cmd.PersistentFlags().IntVarP(&waitSecs, waitFlag, "w", 0, "Number of seconds to wait for a service to become ready")
 	c.cmd.PersistentFlags().StringVarP(&color, colorFlag, "c", "auto", `Whether to use colors in output. Must be "auto", "never", or "always"`)
 	c.cmd.PersistentFlags().BoolVarP(&quiet, quietFlag, "q", false, "Print only errors")
-	return c.cmd.PersistentFlags()
+	flags := make(map[string]*pflag.Flag)
+	c.cmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
+		flags[flag.Name] = flag
+	})
+	return flags
 }
 
 func (c *CLI) configureSpinner() {
@@ -530,7 +534,7 @@ func (c *CLI) applicationPackageFrom(args []string, requirePackaging bool) (vesp
 		}
 		if stat.IsDir() {
 			// Using an explicit application directory, look for local config in that directory too
-			if err := c.config.loadLocalConfigFrom(path, false, false); err != nil {
+			if err := c.config.loadLocalConfigFrom(path); err != nil {
 				return vespa.ApplicationPackage{}, err
 			}
 		}
