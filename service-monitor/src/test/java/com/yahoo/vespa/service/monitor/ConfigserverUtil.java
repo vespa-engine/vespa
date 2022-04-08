@@ -3,7 +3,7 @@ package com.yahoo.vespa.service.monitor;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.ApplicationInfo;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
 
 import java.util.stream.Collectors;
@@ -37,7 +37,7 @@ public class ConfigserverUtil {
             String configServerHostname3) {
         return new ConfigServerApplication().makeApplicationInfo(
                 Stream.of(configServerHostname1, configServerHostname2, configServerHostname3)
-                        .map(HostName::from).collect(Collectors.toList()));
+                      .map(HostName::of).collect(Collectors.toList()));
     }
 
     public static ApplicationInfo makeExampleConfigServer() {

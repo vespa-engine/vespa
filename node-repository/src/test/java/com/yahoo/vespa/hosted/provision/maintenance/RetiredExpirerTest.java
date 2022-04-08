@@ -260,7 +260,7 @@ public class RetiredExpirerTest {
 
     private Set<String> configServerHostnames(MockDuperModel duperModel) {
         return duperModel.hostnamesOf(new ConfigServerApplication().getApplicationId()).stream()
-                .map(com.yahoo.config.provision.HostName::value)
+                .map(com.yahoo.net.HostName::value)
                 .collect(Collectors.toSet());
     }
 

@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -97,8 +97,8 @@ public class DeploymentApiTest extends ControllerContainerTest {
                                            version.isControllerVersion(),
                                            version.isSystemVersion(),
                                            version.isReleased(),
-                                           List.of(new NodeVersion(HostName.from("config1.test"), ZoneId.defaultId(), version.versionNumber(), version.versionNumber(), Optional.empty()),
-                                                   new NodeVersion(HostName.from("config2.test"), ZoneId.defaultId(), version.versionNumber(), version.versionNumber(), Optional.empty())),
+                                           List.of(new NodeVersion(HostName.of("config1.test"), ZoneId.defaultId(), version.versionNumber(), version.versionNumber(), Optional.empty()),
+                                                   new NodeVersion(HostName.of("config2.test"), ZoneId.defaultId(), version.versionNumber(), version.versionNumber(), Optional.empty())),
                                            version.confidence()
                 );
             }

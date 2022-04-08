@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
@@ -530,7 +530,7 @@ public class Node {
         }
 
         public Builder hostname(String hostname) {
-            return hostname(HostName.from(hostname));
+            return hostname(HostName.of(hostname));
         }
 
         public Builder hostname(HostName hostname) {
@@ -539,7 +539,7 @@ public class Node {
         }
 
         public Builder parentHostname(String parentHostname) {
-            return parentHostname(HostName.from(parentHostname));
+            return parentHostname(HostName.of(parentHostname));
         }
 
         public Builder parentHostname(HostName parentHostname) {

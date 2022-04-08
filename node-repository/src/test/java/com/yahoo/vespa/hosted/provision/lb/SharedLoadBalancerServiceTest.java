@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import org.junit.Test;
 
 import java.util.Optional;
@@ -20,15 +20,15 @@ public class SharedLoadBalancerServiceTest {
     private final ApplicationId applicationId = ApplicationId.from("tenant1", "application1", "default");
     private final ClusterSpec.Id clusterId = ClusterSpec.Id.from("qrs1");
     private final Set<Real> reals = Set.of(
-            new Real(HostName.from("some.nice.host"), "10.23.56.102"),
-            new Real(HostName.from("some.awful.host"), "10.23.56.103")
+            new Real(HostName.of("some.nice.host"), "10.23.56.102"),
+            new Real(HostName.of("some.awful.host"), "10.23.56.103")
     );
 
     @Test
     public void test_create_lb() {
         var lb = loadBalancerService.create(new LoadBalancerSpec(applicationId, clusterId, reals), false);
 
-        assertEquals(HostName.from("vip.example.com"), lb.hostname());
+        assertEquals(HostName.of("vip.example.com"), lb.hostname());
         assertEquals(Optional.empty(), lb.dnsZone());
         assertEquals(Set.of(), lb.networks());
         assertEquals(Set.of(4443), lb.ports());

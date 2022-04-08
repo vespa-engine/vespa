@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
@@ -65,7 +65,7 @@ public class MockTesterCloud implements TesterCloud {
     public Optional<HostName> resolveCname(HostName hostName) {
         return nameService.findRecords(Record.Type.CNAME, RecordName.from(hostName.value())).stream()
                           .findFirst()
-                          .map(record -> HostName.from(record.data().asString().substring(0, record.data().asString().length() - 1)));
+                          .map(record -> HostName.of(record.data().asString().substring(0, record.data().asString().length() - 1)));
     }
 
     @Override

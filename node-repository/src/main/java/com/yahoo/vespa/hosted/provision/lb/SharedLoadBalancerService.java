@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.NodeType;
 
 import java.util.Objects;
@@ -29,7 +29,7 @@ public class SharedLoadBalancerService implements LoadBalancerService {
 
     @Override
     public LoadBalancerInstance create(LoadBalancerSpec spec, boolean force) {
-        return new LoadBalancerInstance(HostName.from(vipHostname),
+        return new LoadBalancerInstance(HostName.of(vipHostname),
                                         Optional.empty(),
                                         Set.of(4443),
                                         Set.of(),

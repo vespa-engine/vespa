@@ -2,7 +2,7 @@
 package com.yahoo.vespa.service.health;
 
 import com.yahoo.config.model.api.ApplicationInfo;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
@@ -87,7 +87,7 @@ public class ApplicationHealthMonitorTest {
         return new ServiceId(configServerApplication.getApplicationId(),
                 configServerApplication.getClusterId(),
                 configServerApplication.getServiceType(),
-                configServerApplication.configIdFor(HostName.from(hostname)));
+                configServerApplication.configIdFor(HostName.of(hostname)));
     }
 
     private ServiceStatus getStatus(ApplicationHealthMonitor monitor, String hostname) {
@@ -95,7 +95,7 @@ public class ApplicationHealthMonitorTest {
                 configServerApplication.getApplicationId(),
                 configServerApplication.getClusterId(),
                 configServerApplication.getServiceType(),
-                configServerApplication.configIdFor(HostName.from(hostname)))
+                configServerApplication.configIdFor(HostName.of(hostname)))
                 .serviceStatus();
     }
 }

@@ -10,7 +10,7 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
@@ -453,7 +453,7 @@ public class RoutingPoliciesTest {
         tester.controllerTester().configServer().removeLoadBalancers(context.instanceId(), zone1);
 
         // Load balancer for the same application is provisioned again, but with a different hostname
-        var newHostname = HostName.from("new-hostname");
+        var newHostname = HostName.of("new-hostname");
         var loadBalancer = new LoadBalancer("LB-0-Z-" + zone1.value(),
                                             context.instanceId(),
                                             ClusterSpec.Id.from("c0"),
@@ -859,10 +859,10 @@ public class RoutingPoliciesTest {
         for (int i = 0; i < count; i++) {
             HostName lbHostname;
             if (shared) {
-                lbHostname = HostName.from("shared-lb--" + zone.value());
+                lbHostname = HostName.of("shared-lb--" + zone.value());
             } else {
-                lbHostname = HostName.from("lb-" + i + "--" + application.serializedForm() +
-                                           "--" + zone.value());
+                lbHostname = HostName.of("lb-" + i + "--" + application.serializedForm() +
+                                         "--" + zone.value());
             }
             loadBalancers.add(
                     new LoadBalancer("LB-" + i + "-Z-" + zone.value(),

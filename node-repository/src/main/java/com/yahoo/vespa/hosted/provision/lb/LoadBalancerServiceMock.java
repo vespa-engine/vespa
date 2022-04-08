@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.provision.lb;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.NodeType;
 
 import java.util.Collections;
@@ -56,7 +56,7 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
             throw new IllegalArgumentException("Refusing to remove all reals from load balancer " + id);
         }
         var instance = new LoadBalancerInstance(
-                HostName.from("lb-" + spec.application().toShortString() + "-" + spec.cluster().value()),
+                HostName.of("lb-" + spec.application().toShortString() + "-" + spec.cluster().value()),
                 Optional.of(new DnsZone("zone-id-1")),
                 Collections.singleton(4443),
                 ImmutableSet.of("10.2.3.0/24", "10.4.5.0/24"),

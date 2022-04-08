@@ -10,7 +10,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
@@ -23,7 +23,6 @@ import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -512,7 +511,7 @@ public class InternalStepRunner implements StepRunner {
             return false;
         }
         for (var endpoint : endpoints.get(zone)) {
-            HostName endpointName = HostName.from(endpoint.dnsName());
+            HostName endpointName = HostName.of(endpoint.dnsName());
             var ipAddress = controller.jobController().cloud().resolveHostName(endpointName);
             if (ipAddress.isEmpty()) {
                 logger.log(INFO, "DNS lookup yielded no IP address for '" + endpointName + "'.");

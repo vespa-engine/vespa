@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -122,7 +122,7 @@ public class CloudEventTrackerTest {
 
     private Node createNode(String hostname, NodeType nodeType) {
         return Node.builder()
-                   .hostname(HostName.from(hostname))
+                   .hostname(HostName.of(hostname))
                    .type(nodeType)
                    .build();
     }

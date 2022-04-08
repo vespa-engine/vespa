@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.provision.persistence;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.provision.lb.DnsZone;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
@@ -31,14 +31,14 @@ public class LoadBalancerSerializerTest {
                                                                                   "default"),
                                                                ClusterSpec.Id.from("qrs")),
                                             Optional.of(new LoadBalancerInstance(
-                                                    HostName.from("lb-host"),
+                                                    HostName.of("lb-host"),
                                                     Optional.of(new DnsZone("zone-id-1")),
                                                     ImmutableSet.of(4080, 4443),
                                                     ImmutableSet.of("10.2.3.4/24"),
-                                                    ImmutableSet.of(new Real(HostName.from("real-1"),
+                                                    ImmutableSet.of(new Real(HostName.of("real-1"),
                                                                              "127.0.0.1",
                                                                              4080),
-                                                                    new Real(HostName.from("real-2"),
+                                                                    new Real(HostName.of("real-2"),
                                                                              "127.0.0.2",
                                                                              4080)))),
                                             LoadBalancer.State.active,

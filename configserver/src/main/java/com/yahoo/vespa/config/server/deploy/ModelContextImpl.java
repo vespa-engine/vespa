@@ -21,7 +21,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
@@ -398,7 +398,7 @@ public class ModelContextImpl implements ModelContext {
             this.applicationId = applicationId;
             this.multitenant = configserverConfig.multitenant() || configserverConfig.hostedVespa() || Boolean.getBoolean("multitenant");
             this.configServerSpecs = fromConfig(configserverConfig);
-            this.loadBalancerName = HostName.from(configserverConfig.loadBalancerAddress());
+            this.loadBalancerName = HostName.of(configserverConfig.loadBalancerAddress());
             this.ztsUrl = configserverConfig.ztsUrl() != null ? URI.create(configserverConfig.ztsUrl()) : null;
             this.athenzDnsSuffix = configserverConfig.athenzDnsSuffix();
             this.hostedVespa = configserverConfig.hostedVespa();

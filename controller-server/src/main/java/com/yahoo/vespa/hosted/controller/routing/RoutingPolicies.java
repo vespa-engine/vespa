@@ -3,9 +3,9 @@ package com.yahoo.vespa.hosted.controller.routing;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -215,7 +215,7 @@ public class RoutingPolicies {
             }
             var weightedTarget = new WeightedAliasTarget(policy.canonicalName(), policy.dnsZone().get(),
                                                          policy.id().zone(), weight);
-            endpoints.computeIfAbsent(regionEndpoint, (k) -> new RegionEndpoint(new LatencyAliasTarget(HostName.from(regionEndpoint.dnsName()),
+            endpoints.computeIfAbsent(regionEndpoint, (k) -> new RegionEndpoint(new LatencyAliasTarget(HostName.of(regionEndpoint.dnsName()),
                                                                                                        policy.dnsZone().get(),
                                                                                                        policy.id().zone())))
                      .zoneTargets()

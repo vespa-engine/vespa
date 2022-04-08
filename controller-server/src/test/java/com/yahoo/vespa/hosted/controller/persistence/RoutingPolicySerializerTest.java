@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
@@ -38,13 +38,13 @@ public class RoutingPolicySerializerTest {
                                       ClusterSpec.Id.from("my-cluster2"),
                                       ZoneId.from("prod", "us-north-2"));
         var policies = List.of(new RoutingPolicy(id1,
-                                                 HostName.from("long-and-ugly-name"),
+                                                 HostName.of("long-and-ugly-name"),
                                                  Optional.of("zone1"),
                                                  instanceEndpoints,
                                                  applicationEndpoints,
                                                  new RoutingPolicy.Status(true, RoutingStatus.DEFAULT)),
                                new RoutingPolicy(id2,
-                                                 HostName.from("long-and-ugly-name-2"),
+                                                 HostName.of("long-and-ugly-name-2"),
                                                  Optional.empty(),
                                                  instanceEndpoints,
                                                  Set.of(),

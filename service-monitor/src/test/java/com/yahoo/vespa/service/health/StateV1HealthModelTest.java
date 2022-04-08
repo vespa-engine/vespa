@@ -4,7 +4,7 @@ package com.yahoo.vespa.service.health;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
@@ -38,7 +38,7 @@ public class StateV1HealthModelTest {
     private final Duration requestTimeout = Duration.ofSeconds(2);
     private final Duration keepAlive = Duration.ofSeconds(3);
     private final ProxyHostApplication proxyHostApplication = new ProxyHostApplication();
-    private final List<HostName> hostnames = Stream.of("host1", "host2").map(HostName::from).collect(Collectors.toList());
+    private final List<HostName> hostnames = Stream.of("host1", "host2").map(HostName::of).collect(Collectors.toList());
     private final ApplicationInfo proxyHostApplicationInfo = proxyHostApplication.makeApplicationInfo(hostnames);
 
     private final StateV1HealthModel model = new StateV1HealthModel(healthStaleness, requestTimeout, keepAlive, executor);

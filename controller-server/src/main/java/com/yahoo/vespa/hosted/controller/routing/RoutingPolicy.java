@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.routing;
 
 import com.google.common.collect.ImmutableSortedSet;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.text.Text;

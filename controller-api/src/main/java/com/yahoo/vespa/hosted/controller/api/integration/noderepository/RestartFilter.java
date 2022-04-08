@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.noderepository;
 
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 

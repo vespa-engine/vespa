@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -37,9 +37,9 @@ public class VcmrMaintainerTest {
     private NodeRepositoryMock nodeRepo;
     private final ZoneId zoneId = ZoneId.from("prod.us-east-3");
     private final ZoneId zone2 = ZoneId.from("prod.us-west-1");
-    private final HostName host1 = HostName.from("host1");
-    private final HostName host2 = HostName.from("host2");
-    private final HostName host3 = HostName.from("host3");
+    private final HostName host1 = HostName.of("host1");
+    private final HostName host2 = HostName.of("host2");
+    private final HostName host3 = HostName.of("host3");
     private final String changeRequestId = "id123";
 
     @Before

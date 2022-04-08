@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.provision.lb;
 
 import com.google.common.net.InetAddresses;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 
 import java.util.Objects;
 
