@@ -160,7 +160,7 @@ public class DocumentModelBuilder {
     private static void addSearchField(SDField field, SearchDef searchDef) {
         SearchField searchField =
             new SearchField(field,
-                            field.getIndices().containsKey(field.getName()) && field.getIndices().get(field.getName()).getType().equals(Index.Type.VESPA), 
+                            field.getIndices().containsKey(field.getName()) && field.getIndices().get(field.getName()).getType().equals(Index.Type.VESPA),
                             field.getAttributes().containsKey(field.getName()));
         searchDef.add(searchField);
 
@@ -485,7 +485,27 @@ public class DocumentModelBuilder {
                     targetDt.add(type);
                 }
                 return true;
-            } else if ((type instanceof StructDataType) && (oldType instanceof StructDataType)) {
+            }
+            if (oldType == type) {
+                return false;
+            }
+            if (targetDt.getDataType(type.getId()) == null) {
+                if ((oldType instanceof OwnedStructDataType)
+                    && (type instanceof OwnedStructDataType))
+                {
+                    var oldOwned = (OwnedStructDataType) oldType;
+                    var newOwned = (OwnedStructDataType) type;
+                    if (newOwned.getOwnerName().equals(targetDt.getName()) &&
+                        ! oldOwned.getOwnerName().equals(targetDt.getName()))
+                    {
+                        if ( ! dryRun) {
+                            targetDt.add(type);
+                        }
+                        return true;
+                    }
+                }
+            }
+            if ((type instanceof StructDataType) && (oldType instanceof StructDataType)) {
                 StructDataType s = (StructDataType) type;
                 StructDataType os = (StructDataType) oldType;
                 if ((os.getFieldCount() == 0) && (s.getFieldCount() > os.getFieldCount())) {
@@ -561,7 +581,6 @@ public class DocumentModelBuilder {
 
         @SuppressWarnings("deprecation")
         private StructDataType handleStruct(SDDocumentType type) {
-            // System.err.println("handle struct " + type + " for doc " + targetDt.getName());
             if (type.isStruct()) {
                 var st = type.getStruct();
                 if (st.getName().equals(type.getName()) &&
@@ -593,7 +612,7 @@ public class DocumentModelBuilder {
             addType(s);
             return s;
         }
-        
+
     }
 
     private static Set<NewDocumentType.Name> convertDocumentReferencesToNames(Optional<DocumentReferences> documentReferences) {

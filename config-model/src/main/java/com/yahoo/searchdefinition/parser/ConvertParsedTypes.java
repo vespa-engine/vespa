@@ -297,12 +297,13 @@ public class ConvertParsedTypes {
         throw new IllegalArgumentException("unknown type named '" + name + "' in context "+context);
     }
 
+    @SuppressWarnings("deprecation")
     private void registerDataTypes() {
         for (DataType t : structsFromSchemas.values()) {
             docMan.register(t);
         }
         for (DocumentType t : documentsFromSchemas.values()) {
-            docMan.register(t);
+            docMan.registerDocumentType(t);
         }
         for (SDAnnotationType t : annotationsFromSchemas.values()) {
             docMan.getAnnotationTypeRegistry().register(t);

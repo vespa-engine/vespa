@@ -24,5 +24,4 @@ public class DuplicateStructTestCase extends AbstractExportingTestCase {
                               .setExperimentalSdParsing(true),
                               new TestableDeployLogger());
     }
-
 }
