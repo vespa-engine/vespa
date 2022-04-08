@@ -164,7 +164,7 @@ func (c *CLI) configureOutput(cmd *cobra.Command, args []string) error {
 		colorize = true
 	case "never":
 	default:
-		return errHint(fmt.Errorf("invalid value for option %s: %q", colorFlag, colorValue), "Must be \"auto\", \"never\" or \"always\"")
+		return fmt.Errorf("invalid color option: %s", colorValue)
 	}
 	color.NoColor = !colorize
 	return nil
@@ -180,13 +180,13 @@ func (c *CLI) configureFlags() *pflag.FlagSet {
 		color       string
 		quiet       bool
 	)
-	c.cmd.PersistentFlags().StringVarP(&target, targetFlag, "t", "local", "The name or URL of the recipient of this command")
+	c.cmd.PersistentFlags().StringVarP(&target, targetFlag, "t", "local", `The target platform to use. Must be "local", "cloud", "hosted" or an URL`)
 	c.cmd.PersistentFlags().StringVarP(&application, applicationFlag, "a", "", "The application to manage")
 	c.cmd.PersistentFlags().StringVarP(&instance, instanceFlag, "i", "", "The instance of the application to manage")
 	c.cmd.PersistentFlags().StringVarP(&zone, zoneFlag, "z", "", "The zone to use. This defaults to a dev zone")
 	c.cmd.PersistentFlags().IntVarP(&waitSecs, waitFlag, "w", 0, "Number of seconds to wait for a service to become ready")
-	c.cmd.PersistentFlags().StringVarP(&color, colorFlag, "c", "auto", "Whether to use colors in output.")
-	c.cmd.PersistentFlags().BoolVarP(&quiet, quietFlag, "q", false, "Quiet mode. Only errors will be printed")
+	c.cmd.PersistentFlags().StringVarP(&color, colorFlag, "c", "auto", `Whether to use colors in output. Must be "auto", "never", or "always"`)
+	c.cmd.PersistentFlags().BoolVarP(&quiet, quietFlag, "q", false, "Print only errors")
 	return c.cmd.PersistentFlags()
 }
 
