@@ -8,7 +8,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -466,16 +465,19 @@ public class HttpURL {
 
         /** Returns a copy of this without any key-value pair with the <em>decoded</em> key. */
         public Query remove(String key) {
-            Node node = without(key::equals, head);
+            Node node = without(key::equals);
             return node == head ? this : new Query(node, validator);
         }
 
-        private static Node without(Predicate<String> filter, Node node) {
-            if (node == null) return node;                  // null does not contain match filter
-            Node child = without(filter, node.next);        // get a child that does not match filter
-            if (filter.test(node.key)) return child;        // if we match the filter, unlink us
-            if (child == node.next) return node;            // if our next didn't change, return unchanged
-            return new Node(child, node.key, node.value);   // if our next has changed, we must change too
+        private Node without(Predicate<String> filter) {
+            Node head = null;
+            boolean changed = false;
+            for (Node node : nodes()) {
+                if (filter.test(node.key)) changed = true;                  // skip node if filter applies
+                else head = changed ? new Node(head, node.key, node.value)  // if our tail has changed, so must we
+                                    : node;                                 // otherwise, return us unchanged
+            }
+            return head;
         }
 
         /** Returns a copy of this with all given mappings appended to this. {@code null} values, but not lists of values, are allowed. */
@@ -501,7 +503,7 @@ public class HttpURL {
 
         /** Returns a copy of this with all given keys removed. */
         public Query remove(Collection<String> keys) {
-            Node node = without(keys::contains, head);
+            Node node = without(keys::contains);
             return node == head ? this : new Query(node, validator);
         }
 
