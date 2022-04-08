@@ -426,7 +426,8 @@ public class HttpURL {
 
         /** Returns a copy of this without any key-value pair with the <em>decoded</em> key. */
         public Query remove(String key) {
-            return new Query(without(key::equals, head), validator);
+            Node node = without(key::equals, head);
+            return node == head ? this : new Query(node, validator);
         }
 
         private static Node without(Predicate<String> filter, Node node) {
@@ -460,7 +461,8 @@ public class HttpURL {
 
         /** Returns a copy of this with all given keys removed. */
         public Query remove(Collection<String> keys) {
-            return new Query(without(keys::contains, head), validator);
+            Node node = without(keys::contains, head);
+            return node == head ? this : new Query(node, validator);
         }
 
         /**
