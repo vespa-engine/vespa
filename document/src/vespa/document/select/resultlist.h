@@ -50,7 +50,7 @@ public:
 
 private:
     Results _results;
-    bool combineVariables(VariableMap & combination, const VariableMap& output, const VariableMap& input) const;
+    static bool combineVariables(VariableMap & combination, const VariableMap& output, const VariableMap& input);
 };
 
 inline bool operator==(const ResultList& list, const Result& other) {

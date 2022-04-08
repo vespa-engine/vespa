@@ -64,7 +64,7 @@ ResultList::combineResults() const {
 }
 
 bool
-ResultList::combineVariables(VariableMap& combination, const VariableMap& a, const VariableMap& b) const
+ResultList::combineVariables(VariableMap& combination, const VariableMap& a, const VariableMap& b)
 {
     // First, verify that all variables are overlapping
     for (const auto & ovar : a) {
