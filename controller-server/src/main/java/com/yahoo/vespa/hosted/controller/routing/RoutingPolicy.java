@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.routing;
 
+import ai.vespa.http.DomainName;
 import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.net.HostName;
 import com.yahoo.config.provision.SystemName;
@@ -27,14 +28,14 @@ import java.util.Set;
 public class RoutingPolicy {
 
     private final RoutingPolicyId id;
-    private final HostName canonicalName;
+    private final DomainName canonicalName;
     private final Optional<String> dnsZone;
     private final Set<EndpointId> instanceEndpoints;
     private final Set<EndpointId> applicationEndpoints;
     private final Status status;
 
     /** DO NOT USE. Public for serialization purposes */
-    public RoutingPolicy(RoutingPolicyId id, HostName canonicalName, Optional<String> dnsZone,
+    public RoutingPolicy(RoutingPolicyId id, DomainName canonicalName, Optional<String> dnsZone,
                          Set<EndpointId> instanceEndpoints, Set<EndpointId> applicationEndpoints, Status status) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
@@ -50,7 +51,7 @@ public class RoutingPolicy {
     }
 
     /** The canonical name for the load balancer this applies to (rhs of a CNAME or ALIAS record) */
-    public HostName canonicalName() {
+    public DomainName canonicalName() {
         return canonicalName;
     }
 

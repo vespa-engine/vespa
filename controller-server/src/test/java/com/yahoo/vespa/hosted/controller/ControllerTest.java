@@ -940,7 +940,7 @@ public class ControllerTest {
                 // The weighted record for zone 2's region
                 new Record(Record.Type.ALIAS,
                            RecordName.from("application.tenant.us-east-3-w.vespa.oath.cloud"),
-                           new WeightedAliasTarget(HostName.of("lb-0--tenant:application:default--prod.us-east-3"),
+                           new WeightedAliasTarget(HostName.of("lb-0--tenant.application.default--prod.us-east-3"),
                                                    "dns-zone-1", ZoneId.from("prod.us-east-3"), 1).pack()),
 
                 // The 'east' global endpoint, pointing to the weighted record for zone 2's region
@@ -952,7 +952,7 @@ public class ControllerTest {
                 // The zone-scoped endpoint pointing to zone 2 with exclusive routing
                 new Record(Record.Type.CNAME,
                            RecordName.from("application.tenant.us-east-3.vespa.oath.cloud"),
-                           RecordData.from("lb-0--tenant:application:default--prod.us-east-3.")));
+                           RecordData.from("lb-0--tenant.application.default--prod.us-east-3.")));
         assertEquals(expectedRecords, List.copyOf(tester.controllerTester().nameService().records()));
     }
 

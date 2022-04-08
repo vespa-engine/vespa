@@ -159,7 +159,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     public HostName hostFor(ApplicationId application, ZoneId zone) {
-        return HostName.of("host-" + application.serializedForm() + "-" + zone.value());
+        return HostName.of("host-" + application.toFullString() + "-" + zone.value());
     }
 
     public void bootstrap(List<ZoneId> zones, SystemApplication... applications) {
@@ -402,7 +402,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
             putLoadBalancers(id.zoneId(), List.of(new LoadBalancer(UUID.randomUUID().toString(),
                                                                    id.applicationId(),
                                                                    cluster,
-                                                                   Optional.of(HostName.of("lb-0--" + id.applicationId().serializedForm() + "--" + id.zoneId().toString())),
+                                                                   Optional.of(HostName.of("lb-0--" + id.applicationId().toFullString() + "--" + id.zoneId().toString())),
                                                                    LoadBalancer.State.active,
                                                                    Optional.of("dns-zone-1"))));
         }

@@ -1,10 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 
+import java.net.InetAddress;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -32,10 +34,10 @@ public interface TesterCloud {
     boolean testerReady(DeploymentId deploymentId);
 
     /** Returns the IP address of the given host name, if any. */
-    Optional<String> resolveHostName(HostName hostname);
+    Optional<InetAddress> resolveHostName(DomainName hostname);
 
     /** Returns the host name of the given CNAME, if any. */
-    Optional<HostName> resolveCname(HostName hostName);
+    Optional<DomainName> resolveCname(DomainName hostName);
 
     /** Returns the test report as JSON if available */
     Optional<TestReport> getTestReport(DeploymentId deploymentId);

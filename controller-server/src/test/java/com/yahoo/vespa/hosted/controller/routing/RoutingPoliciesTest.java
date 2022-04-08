@@ -708,7 +708,7 @@ public class RoutingPoliciesTest {
 
         List<Record> records = tester.controllerTester().nameService().findRecords(Record.Type.CNAME, name);
         assertEquals(1, records.size());
-        assertEquals(RecordData.from("lb-0--hosted-vespa:zone-config-servers:default--prod.us-west-1."),
+        assertEquals(RecordData.from("lb-0--hosted-vespa.zone-config-servers.default--prod.us-west-1."),
                      records.get(0).data());
     }
 
@@ -861,7 +861,7 @@ public class RoutingPoliciesTest {
             if (shared) {
                 lbHostname = HostName.of("shared-lb--" + zone.value());
             } else {
-                lbHostname = HostName.of("lb-" + i + "--" + application.serializedForm() +
+                lbHostname = HostName.of("lb-" + i + "--" + application.toFullString() +
                                          "--" + zone.value());
             }
             loadBalancers.add(
@@ -985,7 +985,7 @@ public class RoutingPoliciesTest {
             deploymentsByDnsName.forEach((dnsName, deployments) -> {
                 Set<String> weightedTargets = deployments.stream()
                                                            .map(d -> "weighted/lb-" + loadBalancerId + "--" +
-                                                                     d.applicationId().serializedForm() + "--" + d.zoneId().value() +
+                                                                     d.applicationId().toFullString() + "--" + d.zoneId().value() +
                                                                      "/dns-zone-1/" + d.zoneId().value() + "/" + deploymentWeights.get(d))
                                                            .collect(Collectors.toSet());
                 assertEquals(dnsName + " has expected targets", weightedTargets, aliasDataOf(dnsName));
@@ -1009,7 +1009,7 @@ public class RoutingPoliciesTest {
             zonesByRegionEndpoint.forEach((regionEndpoint, zonesInRegion) -> {
                 Set<String> weightedTargets = zonesInRegion.stream()
                                                            .map(z -> "weighted/lb-" + loadBalancerId + "--" +
-                                                                     instance.serializedForm() + "--" + z.value() +
+                                                                     instance.toFullString() + "--" + z.value() +
                                                                      "/dns-zone-1/" + z.value() + "/" + zoneWeights.get(z))
                                                            .collect(Collectors.toSet());
                 assertEquals("Region endpoint " + regionEndpoint + " points to load balancer",

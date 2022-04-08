@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
@@ -511,7 +512,7 @@ public class InternalStepRunner implements StepRunner {
             return false;
         }
         for (var endpoint : endpoints.get(zone)) {
-            HostName endpointName = HostName.of(endpoint.dnsName());
+            DomainName endpointName = DomainName.of(endpoint.dnsName());
             var ipAddress = controller.jobController().cloud().resolveHostName(endpointName);
             if (ipAddress.isEmpty()) {
                 logger.log(INFO, "DNS lookup yielded no IP address for '" + endpointName + "'.");
@@ -532,7 +533,7 @@ public class InternalStepRunner implements StepRunner {
                 var loadBalancerAddress = controller.jobController().cloud().resolveHostName(policy.canonicalName());
                 if ( ! loadBalancerAddress.equals(ipAddress)) {
                     logger.log(INFO, "IP address of CNAME '" + endpointName + "' (" + ipAddress.get() + ") and load balancer '" +
-                                     policy.canonicalName() + "' (" + loadBalancerAddress.orElse("empty") + ") are not equal");
+                                     policy.canonicalName() + "' (" + loadBalancerAddress.orElse(null) + ") are not equal");
                     return false;
                 }
             }

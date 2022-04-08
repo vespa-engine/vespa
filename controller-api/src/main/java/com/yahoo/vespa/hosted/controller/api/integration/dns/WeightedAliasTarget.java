@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.dns;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.net.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 
@@ -18,7 +19,7 @@ public class WeightedAliasTarget extends AliasTarget {
 
     private final long weight;
 
-    public WeightedAliasTarget(HostName name, String dnsZone, ZoneId zone, long weight) {
+    public WeightedAliasTarget(DomainName name, String dnsZone, ZoneId zone, long weight) {
         super(name, dnsZone, zone.value());
         this.weight = weight;
         if (weight < 0) throw new IllegalArgumentException("Weight cannot be negative");
