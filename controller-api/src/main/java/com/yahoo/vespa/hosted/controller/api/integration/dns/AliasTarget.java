@@ -1,8 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.dns;
 
-import ai.vespa.http.DomainName;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 
 import java.util.Objects;
 
@@ -13,11 +12,11 @@ import java.util.Objects;
  */
 public abstract class AliasTarget {
 
-    private final DomainName name;
+    private final HostName name;
     private final String dnsZone;
     private final String id;
 
-    public AliasTarget(DomainName name, String dnsZone, String id) {
+    public AliasTarget(HostName name, String dnsZone, String id) {
         this.name = Objects.requireNonNull(name, "name must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
         this.id = Objects.requireNonNull(id, "id must be non-null");
@@ -29,7 +28,7 @@ public abstract class AliasTarget {
     }
 
     /** DNS name this points to */
-    public final DomainName name() {
+    public final HostName name() {
         return name;
     }
 

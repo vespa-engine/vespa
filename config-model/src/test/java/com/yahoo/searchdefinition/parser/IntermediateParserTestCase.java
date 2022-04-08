@@ -74,14 +74,13 @@ public class IntermediateParserTestCase {
 
     @Test
     public void backwards_path_is_disallowed() {
-        assertEquals("'..' is not allowed in path",
-                     assertThrows(IllegalArgumentException.class,
-                                  () -> parseString("schema foo {\n" +
-                                                    "  constant my_constant_tensor {\n" +
-                                                    "    file: foo/../bar\n" +
-                                                    "    type: tensor<float>(x{},y{})\n" +
-                                                    "  }\n" +
-                                                    "}\n")).getMessage());
+        assertThrows("'..' is not allowed in path", IllegalArgumentException.class,
+                     () -> parseString("schema foo {\n" +
+                                       "  constant my_constant_tensor {\n" +
+                                       "    file: foo/../bar\n" +
+                                       "    type: tensor<float>(x{},y{})\n" +
+                                       "  }\n" +
+                                       "}\n"));
     }
 
     void checkFileParses(String fileName) throws Exception {

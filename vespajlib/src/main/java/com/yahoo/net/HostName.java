@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 import static ai.vespa.validation.Validation.requireLength;
 
 /**
- * Hostnames match {@link #domainNamePattern}, and are restricted to 64 characters in length.
+ * Hostnames match {@link #hostNamePattern}, and are restricted to 64 characters in length.
  *
  * This class also has utilities for getting the hostname of the system running the JVM.
  * Detection of the hostname is now done before starting any Vespa
@@ -20,12 +20,15 @@ import static ai.vespa.validation.Validation.requireLength;
  * @author arnej
  * @author jonmv
  */
-public class HostName extends DomainName {
+public class HostName extends PatternedStringWrapper<HostName> {
+
+    static final Pattern labelPattern = Pattern.compile("([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])");
+    static final Pattern hostNamePattern = Pattern.compile("(" + labelPattern + "\\.)*" + labelPattern);
 
     private static HostName preferredHostName = null;
 
     private HostName(String value) {
-        super(requireLength(value, "hostname length", 1, 64));
+        super(requireLength(value, "hostname length", 1, 64), hostNamePattern, "hostname");
     }
 
     public static HostName of(String value) {

@@ -6,7 +6,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;

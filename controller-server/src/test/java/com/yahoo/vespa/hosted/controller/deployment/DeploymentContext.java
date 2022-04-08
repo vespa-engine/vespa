@@ -9,7 +9,7 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
@@ -247,7 +247,7 @@ public class DeploymentContext {
         var clusterId = "default-inactive";
         var id = new RoutingPolicyId(instanceId, ClusterSpec.Id.from(clusterId), zone);
         var policies = new LinkedHashMap<>(tester.controller().routing().policies().read(instanceId).asMap());
-        policies.put(id, new RoutingPolicy(id, HostName.of("lb-host"),
+        policies.put(id, new RoutingPolicy(id, HostName.from("lb-host"),
                                            Optional.empty(),
                                            Set.of(EndpointId.of("default")),
                                            Set.of(),

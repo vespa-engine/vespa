@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.integration;
 
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -51,7 +51,7 @@ import static org.mockito.Mockito.when;
 public class ContainerTester implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger(ContainerTester.class.getName());
-    static final HostName HOST_HOSTNAME = HostName.of("host.test.yahoo.com");
+    static final HostName HOST_HOSTNAME = HostName.from("host.test.yahoo.com");
 
     private final Thread loopThread;
     private final Phaser phaser = new Phaser(1);

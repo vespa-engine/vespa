@@ -8,7 +8,7 @@ import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.service.monitor.CriticalRegion;
 import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
 import com.yahoo.vespa.service.monitor.DuperModelListener;

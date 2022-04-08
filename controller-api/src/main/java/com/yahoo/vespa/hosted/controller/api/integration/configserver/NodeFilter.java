@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 
 import java.util.Objects;
 import java.util.Set;

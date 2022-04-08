@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.provision.testutils;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
 import com.yahoo.vespa.service.monitor.InfraApplicationApi;
 

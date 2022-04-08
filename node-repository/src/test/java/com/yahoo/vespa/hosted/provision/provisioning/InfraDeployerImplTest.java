@@ -5,7 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Provisioner;
@@ -14,6 +14,7 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
+import com.yahoo.vespa.hosted.provision.autoscale.MemoryMetricsDb;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -136,7 +137,7 @@ public class InfraDeployerImplTest {
     @SuppressWarnings("unchecked")
     private void verifyActivated(String... hostnames) {
         verify(duperModelInfraApi).infraApplicationActivated(
-                eq(application.getApplicationId()), eq(Stream.of(hostnames).map(HostName::of).collect(Collectors.toList())));
+                eq(application.getApplicationId()), eq(Stream.of(hostnames).map(HostName::from).collect(Collectors.toList())));
         ArgumentMatcher<ApplicationTransaction> transactionMatcher = t -> {
             assertEquals(application.getApplicationId(), t.application());
             return true;
