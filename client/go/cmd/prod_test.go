@@ -184,7 +184,8 @@ func TestProdSubmit(t *testing.T) {
 	}
 
 	stdout.Reset()
-	assert.Nil(t, cli.Run("prod", "submit", "-k", filepath.Join(cli.config.homeDir, "t1.api-key.pem")))
+	cli.Environment["VESPA_CLI_API_KEY_FILE"] = filepath.Join(cli.config.homeDir, "t1.api-key.pem")
+	assert.Nil(t, cli.Run("prod", "submit"))
 	assert.Contains(t, stdout.String(), "Success: Submitted")
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
@@ -210,7 +211,8 @@ func TestProdSubmitWithJava(t *testing.T) {
 	copyFile(t, filepath.Join(pkgDir, "target", "application-test.zip"), testZipFile)
 
 	stdout.Reset()
-	assert.Nil(t, cli.Run("prod", "submit", "-k", filepath.Join(cli.config.homeDir, "t1.api-key.pem"), pkgDir))
+	cli.Environment["VESPA_CLI_API_KEY_FILE"] = filepath.Join(cli.config.homeDir, "t1.api-key.pem")
+	assert.Nil(t, cli.Run("prod", "submit", pkgDir))
 	assert.Contains(t, stdout.String(), "Success: Submitted")
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }

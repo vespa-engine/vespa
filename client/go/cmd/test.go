@@ -77,7 +77,7 @@ func runTests(cli *CLI, rootPath string, dryRun bool) (int, []string, error) {
 		if err != nil {
 			return 0, nil, errHint(err, "See https://docs.vespa.ai/en/reference/testing")
 		}
-		context := testContext{testsPath: rootPath, dryRun: dryRun, cli: cli, zone: cli.flags.zone}
+		context := testContext{testsPath: rootPath, dryRun: dryRun, cli: cli}
 		previousFailed := false
 		for _, test := range tests {
 			if !test.IsDir() && filepath.Ext(test.Name()) == ".json" {
@@ -469,7 +469,6 @@ type response struct {
 
 type testContext struct {
 	cli        *CLI
-	zone       string
 	lazyTarget vespa.Target
 	testsPath  string
 	dryRun     bool

@@ -100,7 +100,7 @@ func doCert(cli *CLI, overwriteCertificate, noApplicationPackage bool, args []st
 	}
 	var pkg vespa.ApplicationPackage
 	if !noApplicationPackage {
-		pkg, err = vespa.FindApplicationPackage(applicationSource(args), false)
+		pkg, err = cli.applicationPackageFrom(args, false)
 		if err != nil {
 			return err
 		}
@@ -168,7 +168,7 @@ func doCertAdd(cli *CLI, overwriteCertificate bool, args []string) error {
 	if err != nil {
 		return err
 	}
-	pkg, err := vespa.FindApplicationPackage(applicationSource(args), false)
+	pkg, err := cli.applicationPackageFrom(args, false)
 	if err != nil {
 		return err
 	}

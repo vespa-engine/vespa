@@ -53,8 +53,7 @@ https://cloud.vespa.ai/en/reference/deployment`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			appSource := applicationSource(args)
-			pkg, err := vespa.FindApplicationPackage(appSource, false)
+			pkg, err := cli.applicationPackageFrom(args, false)
 			if err != nil {
 				return err
 			}
@@ -135,8 +134,7 @@ $ vespa prod submit`,
 				// TODO: Add support for hosted
 				return fmt.Errorf("prod submit does not support %s target", target.Type())
 			}
-			appSource := applicationSource(args)
-			pkg, err := vespa.FindApplicationPackage(appSource, true)
+			pkg, err := cli.applicationPackageFrom(args, true)
 			if err != nil {
 				return err
 			}
@@ -154,7 +152,10 @@ $ vespa prod submit`,
 			if !cli.isCI() {
 				cli.printWarning("We recommend doing this only from a CD job", "See https://cloud.vespa.ai/en/getting-to-production")
 			}
-			opts := cli.createDeploymentOptions(pkg, target)
+			opts, err := cli.createDeploymentOptions(pkg, target)
+			if err != nil {
+				return err
+			}
 			if err := vespa.Submit(opts); err != nil {
 				return fmt.Errorf("could not submit application for deployment: %w", err)
 			} else {
