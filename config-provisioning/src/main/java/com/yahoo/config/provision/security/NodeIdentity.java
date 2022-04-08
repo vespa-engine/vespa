@@ -2,7 +2,7 @@
 package com.yahoo.config.provision.security;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 
 import java.util.Objects;

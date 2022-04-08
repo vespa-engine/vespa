@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
 import ai.vespa.http.DomainName;
-import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;

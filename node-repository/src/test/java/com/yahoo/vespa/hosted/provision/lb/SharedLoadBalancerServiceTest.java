@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import org.junit.Test;
 
 import java.util.Optional;

@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;

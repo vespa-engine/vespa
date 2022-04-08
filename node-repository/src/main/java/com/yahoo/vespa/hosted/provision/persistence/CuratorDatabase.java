@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.cache.AbstractCache;
 import com.google.common.collect.ImmutableList;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;

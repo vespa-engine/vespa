@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.routing;
 
 import ai.vespa.http.DomainName;
 import com.google.common.collect.ImmutableSortedSet;
-import com.yahoo.net.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.text.Text;

@@ -5,7 +5,7 @@ import com.yahoo.cloud.config.LbServicesConfig;
 import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.security.NodeIdentifier;
 import com.yahoo.config.provision.security.NodeIdentifierException;

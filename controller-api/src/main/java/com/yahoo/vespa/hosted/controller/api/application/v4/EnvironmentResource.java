@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.application.v4;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.InstanceInformation;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.EnvironmentId;

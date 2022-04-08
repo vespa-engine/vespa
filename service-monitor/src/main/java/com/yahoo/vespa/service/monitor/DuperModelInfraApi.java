@@ -2,7 +2,7 @@
 package com.yahoo.vespa.service.monitor;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 
 import java.util.List;
 import java.util.Optional;

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.dns;
 
 import ai.vespa.http.DomainName;
-import com.yahoo.net.HostName;
 
 import java.util.Objects;
 

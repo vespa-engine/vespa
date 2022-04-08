@@ -2,7 +2,7 @@
 package com.yahoo.vespa.service.model;
 
 import com.yahoo.config.model.api.ApplicationInfo;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;

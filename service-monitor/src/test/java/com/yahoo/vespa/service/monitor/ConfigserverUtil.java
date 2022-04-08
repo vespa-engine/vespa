@@ -3,7 +3,7 @@ package com.yahoo.vespa.service.monitor;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.ApplicationInfo;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
 
 import java.util.stream.Collectors;

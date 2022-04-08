@@ -4,7 +4,7 @@ package com.yahoo.vespa.service.health;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.net.HostName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
