@@ -94,7 +94,10 @@ func New(stdout, stderr io.Writer, environment []string) (*CLI, error) {
 Use it on Vespa instances running locally, remotely or in the cloud.
 Prefer web service API's to this in production.
 
-Vespa documentation: https://docs.vespa.ai`,
+Vespa documentation: https://docs.vespa.ai
+
+For detailed description of flags and configuration, see 'vespa help config'.
+`,
 		DisableAutoGenTag: true,
 		SilenceErrors:     true, // We have our own error printing
 		SilenceUsage:      false,

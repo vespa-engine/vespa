@@ -35,25 +35,74 @@ func newConfigCmd() *cobra.Command {
 		Short: "Configure persistent values for global flags",
 		Long: `Configure persistent values for global flags.
 
-This command allows setting a persistent value for a given global flag. On
-future invocations the flag can then be omitted as it is read from the config
-file instead.
+This command allows setting persistent values for global flags. On future
+invocations the flag can then be omitted as it is read from the config file
+instead.
 
 Configuration is written to $HOME/.vespa by default. This path can be
 overridden by setting the VESPA_CLI_HOME environment variable.
 
-When configuring a local option, the configuration is written to
-[working-directory]/.vespa, where working directory is assumed to be Vespa
-application directory. This allows you have separate configuration options per
-application.
+When setting an option locally, the configuration is written to .vespa in the
+working directory, where that directory is assumed to be a Vespa application
+directory. This allows you have separate configuration options per application.
 
 Vespa CLI chooses the value for a given option in the following order, from
 most to least preferred:
 
-1. flag value specified on the command line
-2. local config value
-3. global config value
-4. default value
+1. Flag value specified on the command line
+2. Local config value
+3. Global config value
+4. Default value
+
+The following flags/options can be configured:
+
+application
+
+Specifies the application ID to manage. It has three parts, separated by
+dots, with the third part being optional. This is only relevant for the "cloud"
+and "hosted" targets. See https://cloud.vespa.ai/en/tenant-apps-instances for
+more details. This has no default value. Examples: tenant1.app1,
+tenant1.app1.instance1
+
+color
+
+Controls how Vespa CLI uses colors. Setting this to "auto" (default) enables
+colors if supported by the terminal, "never" completely disables colors and
+"always" enables colors unilaterally.
+
+instance
+
+Specifies the instance of the application to manage. When specified, this takes
+precedence over the instance specified as part of application. This has no
+default value. Example: instance2
+
+quiet
+
+Print only errors.
+
+target
+
+Specifies the target to use for commands that interact with a Vespa platform,
+e.g. vespa deploy or vespa query. Possible values are:
+
+- local: (default) Connect to a Vespa platform running at localhost
+- cloud: Connect to Vespa Cloud
+- hosted: Connect to hosted Vespa (internal platform)
+- *url*: Connect to a platform running at given URL.
+
+wait
+
+Specifies the number of seconds to wait for a service to become ready or
+deployment to complete. Use this to have a potentially long-running command
+block until the operation is complete, e.g. with vespa deploy. Defaults to 0
+(no waiting)
+
+zone
+
+Specifies a custom dev or perf zone to use when connecting to a Vespa platform.
+This is only relevant for cloud and hosted targets. By default, a zone is
+chosen automatically. See https://cloud.vespa.ai/en/reference/zones for
+available zones. Examples: dev.aws-us-east-1c, perf.aws-us-east-1c
 `,
 		DisableAutoGenTag: true,
 		SilenceUsage:      false,
