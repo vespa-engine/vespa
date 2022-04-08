@@ -38,7 +38,7 @@ public class FlatteningSearcher extends Searcher {
         return result;
     }
 
-    public void flatten(HitGroup hits, int level, Result result) {
+    private void flatten(HitGroup hits, int level, Result result) {
         int hitsLeft = hits.size(); // Iterate only through the initial size
         for (Iterator<Hit> i = hits.iterator(); i.hasNext() && hitsLeft-- > 0;) {
             Hit hit = i.next();

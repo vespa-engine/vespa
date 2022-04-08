@@ -4171,8 +4171,7 @@
     ],
     "methods": [
       "public void <init>()",
-      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)",
-      "public void flatten(com.yahoo.search.result.HitGroup, int, com.yahoo.search.Result)"
+      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)"
     ],
     "fields": []
   },
