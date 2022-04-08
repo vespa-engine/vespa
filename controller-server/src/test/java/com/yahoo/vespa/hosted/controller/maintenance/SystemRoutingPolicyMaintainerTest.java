@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
@@ -35,7 +35,7 @@ public class SystemRoutingPolicyMaintainerTest {
         tester.configServer().putLoadBalancers(zone, List.of(new LoadBalancer("lb1",
                                                                               SystemApplication.configServer.id(),
                                                                               ClusterSpec.Id.from("config"),
-                                                                              Optional.of(HostName.from("lb1.example.com")),
+                                                                              Optional.of(HostName.of("lb1.example.com")),
                                                                               LoadBalancer.State.active,
                                                                               Optional.of("dns-zone-1"))));
 

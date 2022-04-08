@@ -40,7 +40,7 @@ public abstract class StringWrapper<T extends StringWrapper<T>> implements Compa
     @Override
     public final boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if ( ! (o instanceof StringWrapper<?>)) return false;
         return value.equals(((StringWrapper<?>) o).value);
     }
 

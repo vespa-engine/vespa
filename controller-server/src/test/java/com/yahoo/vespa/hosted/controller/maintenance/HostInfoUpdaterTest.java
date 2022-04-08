@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -84,10 +84,10 @@ public class HostInfoUpdaterTest {
         // Updates node registered under a different hostname
         ZoneId zone = tester.zoneRegistry().zones().controllerUpgraded().all().ids().get(0);
         String hostnameSuffix = ".prod." + zone.value();
-        Node configNode = Node.builder().hostname(HostName.from("cfg3" + hostnameSuffix))
+        Node configNode = Node.builder().hostname(HostName.of("cfg3" + hostnameSuffix))
                               .type(NodeType.config)
                               .build();
-        Node configHost = Node.builder().hostname(HostName.from("cfghost3" + hostnameSuffix))
+        Node configHost = Node.builder().hostname(HostName.of("cfghost3" + hostnameSuffix))
                               .type(NodeType.confighost)
                               .build();
         tester.serviceRegistry().configServer().nodeRepository().putNodes(zone, List.of(configNode, configHost));

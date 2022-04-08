@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
@@ -135,8 +135,8 @@ public class ResourceMeterMaintainerTest {
                          Node.State.parked,
                          Node.State.active)
                      .map(state -> Node.builder()
-                                       .hostname(HostName.from("host" + state))
-                                       .parentHostname(HostName.from("parenthost" + state))
+                                       .hostname(HostName.of("host" + state))
+                                       .parentHostname(HostName.of("parenthost" + state))
                                        .state(state)
                                        .type(NodeType.tenant)
                                        .owner(ApplicationId.from("tenant1", "app1", "default"))

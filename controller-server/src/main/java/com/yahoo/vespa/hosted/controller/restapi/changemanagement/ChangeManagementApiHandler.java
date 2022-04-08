@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.changemanagement;
 
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -280,7 +280,7 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
 
     private Optional<ZoneId> affectedZone(List<String> hosts) {
         NodeFilter affectedHosts = NodeFilter.all().hostnames(hosts.stream()
-                                                                   .map(HostName::from)
+                                                                   .map(HostName::of)
                                                                    .collect(Collectors.toSet()));
         for (var zone : getProdZones()) {
             var affectedHostsInZone = controller.serviceRegistry().configServer().nodeRepository().list(zone, affectedHosts);

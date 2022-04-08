@@ -1,7 +1,7 @@
 {
   "nodes": [
     {
-      "hostname": "host-tenant1:application1:instance1-prod.us-central-1",
+      "hostname": "host-tenant1.application1.instance1-prod.us-central-1",
       "state": "active",
       "orchestration": "unorchestrated",
       "version": "6.1",

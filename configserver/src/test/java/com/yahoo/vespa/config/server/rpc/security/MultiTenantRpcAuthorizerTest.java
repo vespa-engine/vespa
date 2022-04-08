@@ -5,7 +5,7 @@ import com.yahoo.cloud.config.LbServicesConfig;
 import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.security.NodeIdentifier;
 import com.yahoo.config.provision.security.NodeIdentifierException;
@@ -56,7 +56,7 @@ public class MultiTenantRpcAuthorizerTest {
     private static final List<X509Certificate> PEER_CERTIFICATE_CHAIN = List.of(createDummyCertificate());
     private static final ApplicationId APPLICATION_ID = ApplicationId.from("mytenant", "myapplication", "default");
     private static final ApplicationId EVIL_APP_ID = ApplicationId.from("malice", "malice-app", "default");
-    private static final HostName HOSTNAME = HostName.from("myhostname");
+    private static final HostName HOSTNAME = HostName.of("myhostname");
     private static final FileReference FILE_REFERENCE = new FileReference("myfilereference");
 
     @SuppressWarnings("deprecation")

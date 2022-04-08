@@ -5,7 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
@@ -254,7 +254,7 @@ public class LoadBalancerProvisioner {
         Set<Real> reals = new LinkedHashSet<>();
         for (var node : nodes) {
             for (var ip : reachableIpAddresses(node)) {
-                reals.add(new Real(HostName.from(node.hostname()), ip));
+                reals.add(new Real(HostName.of(node.hostname()), ip));
             }
         }
         return reals;

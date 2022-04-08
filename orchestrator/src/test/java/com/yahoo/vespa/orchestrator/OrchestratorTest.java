@@ -86,9 +86,9 @@ public class OrchestratorTest {
 
         // There is one config server application with 3 nodes
         ApplicationId applicationId = new ConfigServerApplication().getApplicationId();
-        var cfg1 = com.yahoo.config.provision.HostName.from("cfg1");
-        var cfg2 = com.yahoo.config.provision.HostName.from("cfg2");
-        var cfg3 = com.yahoo.config.provision.HostName.from("cfg3");
+        var cfg1 = com.yahoo.net.HostName.of("cfg1");
+        var cfg2 = com.yahoo.net.HostName.of("cfg2");
+        var cfg3 = com.yahoo.net.HostName.of("cfg3");
         duperModelManager.infraApplicationActivated(applicationId, List.of(cfg1, cfg2, cfg3));
         duperModelManager.infraApplicationsIsNowComplete();
 
@@ -134,7 +134,7 @@ public class OrchestratorTest {
         // etc (should be the same as for cfg1)
     }
 
-    private HostName toApplicationModelHostName(com.yahoo.config.provision.HostName hostname) {
+    private HostName toApplicationModelHostName(com.yahoo.net.HostName hostname) {
         return new HostName(hostname.value());
     }
 

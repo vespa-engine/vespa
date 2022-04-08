@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.versions;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.net.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.time.Duration;

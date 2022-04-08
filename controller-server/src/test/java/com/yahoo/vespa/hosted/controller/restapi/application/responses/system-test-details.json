@@ -23,7 +23,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "host-tenant1:application1:instance1-t-test.us-east-1: unorchestrated"
+        "message": "host-tenant1.application1.instance1-t-test.us-east-1: unorchestrated"
       },
       {
         "at": "(ignore)",
@@ -38,7 +38,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "host-tenant1:application1:instance1-t-test.us-east-1: unorchestrated"
+        "message": "host-tenant1.application1.instance1-t-test.us-east-1: unorchestrated"
       },
       {
         "at": "(ignore)",
@@ -53,7 +53,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "host-tenant1:application1:instance1-t-test.us-east-1: unorchestrated"
+        "message": "host-tenant1.application1.instance1-t-test.us-east-1: unorchestrated"
       },
       {
         "at": "(ignore)",
@@ -68,7 +68,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "host-tenant1:application1:instance1-t-test.us-east-1: unorchestrated"
+        "message": "host-tenant1.application1.instance1-t-test.us-east-1: unorchestrated"
       },
       {
         "at": "(ignore)",
@@ -83,7 +83,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "host-tenant1:application1:instance1-t-test.us-east-1: unorchestrated"
+        "message": "host-tenant1.application1.instance1-t-test.us-east-1: unorchestrated"
       },
       {
         "at": "(ignore)",
@@ -122,7 +122,7 @@
       {
         "at": "(ignore)",
         "type": "info",
-        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+        "message": "host-tenant1.application1.instance1-test.us-east-1: unorchestrated"
       },
       {
         "at": "(ignore)",
@@ -147,7 +147,7 @@
       {
         "at": "(ignore)",
         "type": "debug",
-        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+        "message": "host-tenant1.application1.instance1-test.us-east-1: unorchestrated"
       },
       {
         "at": "(ignore)",
@@ -172,7 +172,7 @@
       {
         "at": "(ignore)",
         "type": "debug",
-        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+        "message": "host-tenant1.application1.instance1-test.us-east-1: unorchestrated"
       },
       {
         "at": "(ignore)",
@@ -197,7 +197,7 @@
       {
         "at": "(ignore)",
         "type": "debug",
-        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+        "message": "host-tenant1.application1.instance1-test.us-east-1: unorchestrated"
       },
       {
         "at": "(ignore)",
@@ -222,7 +222,7 @@
       {
         "at": "(ignore)",
         "type": "debug",
-        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+        "message": "host-tenant1.application1.instance1-test.us-east-1: unorchestrated"
       },
       {
         "at": "(ignore)",
@@ -247,7 +247,7 @@
       {
         "at": "(ignore)",
         "type": "debug",
-        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+        "message": "host-tenant1.application1.instance1-test.us-east-1: unorchestrated"
       },
       {
         "at": "(ignore)",
@@ -272,7 +272,7 @@
       {
         "at": "(ignore)",
         "type": "debug",
-        "message": "host-tenant1:application1:instance1-test.us-east-1: unorchestrated"
+        "message": "host-tenant1.application1.instance1-test.us-east-1: unorchestrated"
       },
       {
         "at": "(ignore)",
