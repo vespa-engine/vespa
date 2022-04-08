@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.lb;
 
+import ai.vespa.http.DomainName;
 import com.google.common.collect.ImmutableSortedSet;
-import com.yahoo.net.HostName;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -16,13 +16,13 @@ import java.util.Set;
  */
 public class LoadBalancerInstance {
 
-    private final HostName hostname;
+    private final DomainName hostname;
     private final Optional<DnsZone> dnsZone;
     private final Set<Integer> ports;
     private final Set<String> networks;
     private final Set<Real> reals;
 
-    public LoadBalancerInstance(HostName hostname, Optional<DnsZone> dnsZone, Set<Integer> ports, Set<String> networks,
+    public LoadBalancerInstance(DomainName hostname, Optional<DnsZone> dnsZone, Set<Integer> ports, Set<String> networks,
                                 Set<Real> reals) {
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
@@ -32,7 +32,7 @@ public class LoadBalancerInstance {
     }
 
     /** Fully-qualified domain name of this load balancer. This hostname can be used for query and feed */
-    public HostName hostname() {
+    public DomainName hostname() {
         return hostname;
     }
 
