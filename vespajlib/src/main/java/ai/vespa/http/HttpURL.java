@@ -199,14 +199,28 @@ public class HttpURL {
 
     public static class Path {
 
+        private static class Node {
+
+            final Node next;
+            final String value;
+
+            Node(Node next, String value) {
+                this.next = next;
+                this.value = value;
+            }
+
+        }
+
         private static final Path empty = empty(HttpURL::requirePathSegment);
 
-        private final List<String> segments;
+        private final Node head;
+        private final int length;
         private final boolean trailingSlash;
         private final UnaryOperator<String> validator;
 
-        private Path(List<String> segments, boolean trailingSlash, UnaryOperator<String> validator) {
-            this.segments = requireNonNull(segments);
+        private Path(Node head, int length, boolean trailingSlash, UnaryOperator<String> validator) {
+            this.head = head;
+            this.length = length;
             this.trailingSlash = trailingSlash;
             this.validator = requireNonNull(validator);
         }
@@ -218,7 +232,7 @@ public class HttpURL {
 
         /** Creates a new, empty path, with a trailing slash, using the indicated validator for segments. */
         public static Path empty(Consumer<String> validator) {
-            return new Path(List.of(), true, segmentValidator(validator));
+            return new Path(null, 0, true, segmentValidator(validator));
         }
 
         /** Parses the given raw, normalized path string; this ignores whether the path is absolute or relative. */
@@ -228,13 +242,12 @@ public class HttpURL {
 
         /** Parses the given raw, normalized path string; this ignores whether the path is absolute or relative.) */
         public static Path parse(String raw, Consumer<String> validator) {
-            Path base = new Path(List.of(), raw.endsWith("/"), segmentValidator(validator));
+            Path path = new Path(null, 0, raw.endsWith("/"), segmentValidator(validator));
             if (raw.startsWith("/")) raw = raw.substring(1);
-            if (raw.isEmpty()) return base;
-            List<String> segments = new ArrayList<>();
-            for (String segment : raw.split("/")) segments.add(decode(segment, UTF_8));
-            if (segments.isEmpty()) requireNonNormalizable(""); // Raw path was only slashes.
-            return base.append(segments);
+            if (raw.isEmpty()) return path;
+            for (String segment : raw.split("/")) path = path.append(decode(segment, UTF_8));
+            if (path.length == 0) requireNonNormalizable(""); // Raw path was only slashes.
+            return path;
         }
 
         private static UnaryOperator<String> segmentValidator(Consumer<String> validator) {
@@ -253,22 +266,34 @@ public class HttpURL {
 
         /** Returns a copy of this where only the first segments are retained, and with a trailing slash. */
         public Path head(int count) {
-            return count == segments.size() ? this : new Path(segments.subList(0, count), true, validator);
+            requireInRange(count, "head count", 0, length);
+            Node node = head;
+            for (int i = count; i < length; i++)
+                node = node.next;
+
+            return new Path(node, count, true, validator);
         }
 
         /** Returns a copy of this where only the last segments are retained. */
         public Path tail(int count) {
-            return count == segments.size() ? this : new Path(segments.subList(segments.size() - count, segments.size()), trailingSlash, validator);
+            requireInRange(count, "tail count", 0, length);
+            return count == length ? this : new Path(head, count, trailingSlash, validator);
         }
 
         /** Returns a copy of this where the first segments are skipped. */
         public Path skip(int count) {
-            return count == 0 ? this : new Path(segments.subList(count, segments.size()), trailingSlash, validator);
+            requireInRange(count, "skip count", 0, length);
+            return count == 0 ? this : new Path(head, length - count, trailingSlash, validator);
         }
 
         /** Returns a copy of this where the last segments are cut off, and with a trailing slash. */
         public Path cut(int count) {
-            return count == 0 ? this : new Path(segments.subList(0, segments.size() - count), true, validator);
+            requireInRange(count, "cut count", 0, length);
+            Node node = head;
+            for (int i = 0; i < count; i++)
+                node = node.next;
+
+            return new Path(node, length - count, true, validator);
         }
 
         /** Returns a copy of this with the <em>decoded</em> segment appended at the end; it may not be either of {@code ""}, {@code "."} or {@code ".."}. */
@@ -278,7 +303,7 @@ public class HttpURL {
 
         /** Returns a copy of this all segments of the other path appended, with a trailing slash as per the appendage. */
         public Path append(Path other) {
-            return append(other.segments, other.trailingSlash);
+            return append(other.segments(), other.trailingSlash);
         }
 
         /** Returns a copy of this all given segments appended, with a trailing slash as per this path. */
@@ -286,10 +311,14 @@ public class HttpURL {
             return append(segments, trailingSlash);
         }
 
-        private Path append(List<String> segments, boolean trailingSlash) {
-            List<String> copy = new ArrayList<>(this.segments);
-            for (String segment : segments) copy.add(validator.apply(segment));
-            return new Path(copy, trailingSlash, validator);
+        private Path append(Iterable<String> segments, boolean trailingSlash) {
+            Node node = head;
+            int count = 0;
+            for (String segment : segments) {
+                node = new Node(node, validator.apply(segment));
+                count++;
+            }
+            return new Path(node, length + count, trailingSlash, validator);
         }
 
         /** Whether this path has a trailing slash. */
@@ -299,23 +328,34 @@ public class HttpURL {
 
         /** Returns a copy of this which encodes a trailing slash. */
         public Path withTrailingSlash() {
-            return new Path(segments, true, validator);
+            return new Path(head, length, true, validator);
         }
 
         /** Returns a copy of this which does not encode a trailing slash. */
         public Path withoutTrailingSlash() {
-            return new Path(segments, false, validator);
+            return new Path(head, length, false, validator);
         }
 
-        /** The <em>URL decoded</em> segments that make up this path; never {@code null}, {@code ""}, {@code "."} or {@code ".."}. */
+        /** A mutable copy of the <em>URL decoded</em> segments that make up this path; never {@code null}, {@code ""}, {@code "."} or {@code ".."}. */
         public List<String> segments() {
-            return Collections.unmodifiableList(segments);
+            ArrayList<String> list = new ArrayList<>(length);
+            for (int i = 0; i < length; i++) list.add(null);
+            Node node = head;
+            for (int i = length; i-- > 0; node = node.next)
+                list.set(i, node.value);
+
+            return list;
+        }
+
+        /** The number of segments in this path. */
+        public int length() {
+            return length;
         }
 
         /** A raw path string which parses to this, by splitting on {@code "/"}, and then URL decoding. */
         private String raw() {
             StringJoiner joiner = new StringJoiner("/", "/", trailingSlash ? "/" : "").setEmptyValue(trailingSlash ? "/" : "");
-            for (String segment : segments) joiner.add(encode(segment, UTF_8));
+            for (String segment : segments()) joiner.add(encode(segment, UTF_8));
             return joiner.toString();
         }
 
@@ -330,12 +370,12 @@ public class HttpURL {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Path path = (Path) o;
-            return trailingSlash == path.trailingSlash && segments.equals(path.segments);
+            return trailingSlash == path.trailingSlash && segments().equals(path.segments());
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(segments, trailingSlash);
+            return Objects.hash(segments(), trailingSlash);
         }
 
     }
@@ -466,8 +506,8 @@ public class HttpURL {
         }
 
         /**
-         * The <em>URL decoded</em> key-value pairs that make up this query;
-         * keys and values may be {@code ""}, and values are {@code null} when only key was specified.
+         * A mutable copy of the <em>URL decoded</em> key-value pairs that make up this query.
+         * Keys and values may be {@code ""}, and values are {@code null} when only key was specified.
          * When a key was used multiple times, this map contains only the last value associated with the key.
          */
         public Map<String, String> lastEntries() {
@@ -479,8 +519,8 @@ public class HttpURL {
         }
 
         /**
-         * The <em>URL decoded</em> key-value pairs that make up this query;
-         * keys and values may be {@code ""}, and values (not lists of values) are {@code null} when only key was specified.
+         * A mutable copy of the <em>URL decoded</em> key-value pairs that make up this query.
+         * Keys and values may be {@code ""}, and values (not lists of values) are {@code null} when only key was specified.
          * When a key was used multiple times, this map lists the values in the same order as they were given.
          */
         public Map<String, List<String>> entries() {

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -141,7 +142,7 @@ class HttpURLTest {
                      assertThrows(IllegalArgumentException.class,
                                   () -> path.append("???")).getMessage());
 
-        assertEquals("fromIndex(2) > toIndex(1)",
+        assertEquals("skip count must be at least '0' and at most '1', but got: '2'",
                      assertThrows(IllegalArgumentException.class,
                                   () -> path.cut(2).skip(2)).getMessage());
 

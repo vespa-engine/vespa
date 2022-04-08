@@ -56,16 +56,17 @@ public class Path {
         }
 
         if (matchPrefix) {
-            if (path.segments().size() < specElements.size()) return false;
+            if (path.length() < specElements.size()) return false;
         }
         else { // match exact
-            if (path.segments().size() != specElements.size()) return false;
+            if (path.length() != specElements.size()) return false;
         }
-        
+
+        List<String> segments = path.segments();
         for (int i = 0; i < specElements.size(); i++) {
             if (specElements.get(i).startsWith("{") && specElements.get(i).endsWith("}")) // placeholder
-                values.put(specElements.get(i).substring(1, specElements.get(i).length() - 1), path.segments().get(i));
-            else if ( ! specElements.get(i).equals(path.segments().get(i)))
+                values.put(specElements.get(i).substring(1, specElements.get(i).length() - 1), segments.get(i));
+            else if ( ! specElements.get(i).equals(segments.get(i)))
                 return false;
         }
 
