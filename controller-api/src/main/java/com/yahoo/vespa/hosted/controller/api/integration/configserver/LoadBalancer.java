@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
-import ai.vespa.http.DomainName;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostName;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -18,11 +18,11 @@ public class LoadBalancer {
     private final String id;
     private final ApplicationId application;
     private final ClusterSpec.Id cluster;
-    private final Optional<DomainName> hostname;
+    private final Optional<HostName> hostname;
     private final State state;
     private final Optional<String> dnsZone;
 
-    public LoadBalancer(String id, ApplicationId application, ClusterSpec.Id cluster, Optional<DomainName> hostname, State state,
+    public LoadBalancer(String id, ApplicationId application, ClusterSpec.Id cluster, Optional<HostName> hostname, State state,
                         Optional<String> dnsZone) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.application = Objects.requireNonNull(application, "application must be non-null");
@@ -44,7 +44,7 @@ public class LoadBalancer {
         return cluster;
     }
 
-    public Optional<DomainName> hostname() {
+    public Optional<HostName> hostname() {
         return hostname;
     }
 

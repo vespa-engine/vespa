@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
-import ai.vespa.http.DomainName;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
@@ -83,7 +83,7 @@ public class RoutingPolicySerializer {
                                                      ClusterSpec.Id.from(inspect.field(clusterField).asString()),
                                                      ZoneId.from(inspect.field(zoneField).asString()));
             policies.add(new RoutingPolicy(id,
-                                           DomainName.of(inspect.field(canonicalNameField).asString()),
+                                           HostName.of(inspect.field(canonicalNameField).asString()),
                                            SlimeUtils.optionalString(inspect.field(dnsZoneField)),
                                            instanceEndpoints,
                                            applicationEndpoints,
