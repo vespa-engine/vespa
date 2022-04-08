@@ -638,33 +638,33 @@ public class NodeFailerTest {
             NodeList allNodes = tester.nodeRepository.nodes().list();
             assertEquals(500, allNodes.size());
 
-            // 2 hours pass, 15 nodes (3%) die
+            // 2 hours pass, 20 nodes (4%) die
             tester.runMaintainers();
             allNodes.state(Node.State.active)
                     .nodeType(NodeType.tenant)
                     .stream()
-                    .limit(15)
+                    .limit(20)
                     .forEach(host -> tester.serviceMonitor.setHostDown(host.hostname()));
             tester.runMaintainers();
             tester.clock.advance(Duration.ofHours(2));
             tester.runMaintainers();
 
-            // 2% are allowed to fail
-            assertEquals(10, tester.nodeRepository.nodes().list(Node.State.failed).size());
+            // 3% are allowed to fail
+            assertEquals(15, tester.nodeRepository.nodes().list(Node.State.failed).size());
             assertEquals("Throttling is indicated by the metric.", 1, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
             assertEquals("Throttled node failures", 5, tester.metric.values.get(NodeFailer.throttledNodeFailuresMetric));
 
             // 6 more hours pass, no more nodes are failed
             tester.clock.advance(Duration.ofHours(6));
             tester.runMaintainers();
-            assertEquals(10, tester.nodeRepository.nodes().list(Node.State.failed).size());
+            assertEquals(15, tester.nodeRepository.nodes().list(Node.State.failed).size());
             assertEquals("Throttling is indicated by the metric.", 1, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
             assertEquals("Throttled node failures", 5, tester.metric.values.get(NodeFailer.throttledNodeFailuresMetric));
 
             // 18 more hours pass, 24 hours since the first 10 nodes were failed. The remaining 5 are failed
             tester.clock.advance(Duration.ofHours(18));
             tester.runMaintainers();
-            assertEquals(15, tester.nodeRepository.nodes().list(Node.State.failed).size());
+            assertEquals(20, tester.nodeRepository.nodes().list(Node.State.failed).size());
             assertEquals("Throttling is not indicated by the metric, as no throttled attempt is made.", 0, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
             assertEquals("No throttled node failures", 0, tester.metric.values.get(NodeFailer.throttledNodeFailuresMetric));
         }
