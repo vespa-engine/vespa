@@ -173,8 +173,8 @@ class ServiceApiResponse extends HttpResponse {
 
     private HttpURL generateLocalLinkPrefix(String identifier, Path restPath) {
         Path proxiedPath = Path.parse(identifier).append(restPath);
-        if (requestUri.path().tail(proxiedPath.segments().size()).equals(proxiedPath)) {
-            return requestUri.withPath(requestUri.path().cut(proxiedPath.segments().size()));
+        if (requestUri.path().tail(proxiedPath.length()).equals(proxiedPath)) {
+            return requestUri.withPath(requestUri.path().cut(proxiedPath.length()));
         } else {
             throw new IllegalStateException("Expected the resource " + requestUri.path() + " to end with " + proxiedPath);
         }

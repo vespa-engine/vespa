@@ -94,7 +94,7 @@ public class ConfigServerApiHandler extends AuditLoggingRequestHandler {
             throw new IllegalArgumentException("No such zone: " + zoneId.value());
         }
 
-        if (path.getRest().segments().size() < 2 || ! WHITELISTED_APIS.contains(path.getRest().head(2).withTrailingSlash())) {
+        if (path.getRest().length() < 2 || ! WHITELISTED_APIS.contains(path.getRest().head(2).withTrailingSlash())) {
             return ErrorResponse.forbidden("Cannot access " + path.getRest() +
                     " through /configserver/v1, following APIs are permitted: " + WHITELISTED_APIS.stream()
                                                                                                   .map(p -> "/" + String.join("/", p.segments()) + "/")

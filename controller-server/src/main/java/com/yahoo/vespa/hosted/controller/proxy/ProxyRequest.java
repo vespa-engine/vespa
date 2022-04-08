@@ -33,8 +33,8 @@ public class ProxyRequest {
 
     ProxyRequest(Method method, URI uri, Map<String, List<String>> headers, InputStream body, List<URI> targets, Path path) {
         this.requestUri = HttpURL.from(uri);
-        if (     requestUri.path().segments().size() < path.segments().size()
-            || ! requestUri.path().tail(path.segments().size()).equals(path)) {
+        if (     requestUri.path().length() < path.length()
+            || ! requestUri.path().tail(path.length()).equals(path)) {
             throw new IllegalArgumentException(Text.format("Request %s does not end with proxy %s", requestUri.path(), path));
         }
         if (targets.isEmpty()) {
@@ -69,7 +69,7 @@ public class ProxyRequest {
     }
 
     public URI getControllerPrefixUri() {
-        Path prefixPath = requestUri.path().cut(targetPath.segments().size()).withTrailingSlash();
+        Path prefixPath = requestUri.path().cut(targetPath.length()).withTrailingSlash();
         return requestUri.withPath(prefixPath).withQuery(Query.empty()).asURI();
     }
 
