@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.dns;
 
 import ai.vespa.http.DomainName;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.util.Objects;
@@ -64,7 +63,7 @@ public class WeightedAliasTarget extends AliasTarget {
         if (!"weighted".equals(parts[0])) {
             throw new IllegalArgumentException("Unexpected type '" + parts[0] + "'");
         }
-        return new WeightedAliasTarget(HostName.of(parts[1]), parts[2], ZoneId.from(parts[3]),
+        return new WeightedAliasTarget(DomainName.of(parts[1]), parts[2], ZoneId.from(parts[3]),
                                        Long.parseLong(parts[4]));
     }
 

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.dns;
 
 import ai.vespa.http.DomainName;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.util.Objects;
@@ -60,7 +59,7 @@ public class LatencyAliasTarget extends AliasTarget {
         if (!"latency".equals(parts[0])) {
             throw new IllegalArgumentException("Unexpected type '" + parts[0] + "'");
         }
-        return new LatencyAliasTarget(HostName.of(parts[1]), parts[2], ZoneId.from(parts[3]));
+        return new LatencyAliasTarget(DomainName.of(parts[1]), parts[2], ZoneId.from(parts[3]));
     }
 
 }
