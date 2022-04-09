@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -42,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -454,10 +456,11 @@ public class JobController {
     public ApplicationVersion submit(TenantAndApplicationId id, Optional<SourceRevision> revision, Optional<String> authorEmail,
                                      Optional<String> sourceUrl, long projectId, ApplicationPackage applicationPackage,
                                      byte[] testPackageBytes) {
+        ApplicationController applications = controller.applications();
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
-        controller.applications().lockApplicationOrThrow(id, application -> {
+        applications.lockApplicationOrThrow(id, application -> {
             Optional<ApplicationVersion> previousVersion = application.get().latestVersion();
-            Optional<ApplicationPackage> previousPackage = previousVersion.flatMap(previous -> controller.applications().applicationStore().find(id.tenant(), id.application(), previous.buildNumber().getAsLong()))
+            Optional<ApplicationPackage> previousPackage = previousVersion.flatMap(previous -> applications.applicationStore().find(id.tenant(), id.application(), previous.buildNumber().getAsLong()))
                                                                           .map(ApplicationPackage::new);
             long previousBuild = previousVersion.map(latestVersion -> latestVersion.buildNumber().getAsLong()).orElse(0L);
             String packageHash = applicationPackage.bundleHash() + ApplicationPackage.calculateHash(testPackageBytes);
@@ -471,24 +474,30 @@ public class JobController {
 
             byte[] diff = previousPackage.map(previous -> ApplicationPackageDiff.diff(previous, applicationPackage))
                                          .orElseGet(() -> ApplicationPackageDiff.diffAgainstEmpty(applicationPackage));
-            controller.applications().applicationStore().put(id.tenant(),
+            applications.applicationStore().put(id.tenant(),
                                                              id.application(),
                                                              version.get(),
                                                              applicationPackage.zippedContent(),
                                                              diff);
-            controller.applications().applicationStore().putTester(id.tenant(),
+            applications.applicationStore().putTester(id.tenant(),
                                                                    id.application(),
                                                                    version.get(),
                                                                    testPackageBytes);
-            controller.applications().applicationStore().putMeta(id.tenant(),
+            applications.applicationStore().putMeta(id.tenant(),
                                                                  id.application(),
                                                                  controller.clock().instant(),
                                                                  applicationPackage.metaDataZip());
 
-            prunePackages(id);
-            controller.applications().storeWithUpdatedConfig(application, applicationPackage);
+            application = application.withProjectId(OptionalLong.of(projectId));
+            application = application.withNewSubmission(version.get());
 
-            controller.applications().deploymentTrigger().notifyOfSubmission(id, version.get(), projectId);
+            application.get().oldestDeployedApplication().ifPresent(oldestDeployed -> {
+                applications.applicationStore().prune(id.tenant(), id.application(), oldestDeployed);
+                applications.applicationStore().pruneTesters(id.tenant(), id.application(), oldestDeployed);
+            });
+
+            applications.storeWithUpdatedConfig(application, applicationPackage);
+            applications.deploymentTrigger().triggerNewRevision(id);
         });
         return version.get();
     }
@@ -647,16 +656,6 @@ public class JobController {
 
     public void deactivateTester(TesterId id, JobType type) {
         controller.serviceRegistry().configServer().deactivate(new DeploymentId(id.id(), type.zone(controller.system())));
-    }
-
-    private void prunePackages(TenantAndApplicationId id) {
-        controller.applications().lockApplicationIfPresent(id, application -> {
-            application.get().oldestDeployedApplication()
-                       .ifPresent(oldestDeployed -> {
-                           controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed);
-                           controller.applications().applicationStore().pruneTesters(id.tenant(), id.application(), oldestDeployed);
-                       });
-        });
     }
 
     /** Locks all runs and modifies the list of historic runs for the given application and job type. */

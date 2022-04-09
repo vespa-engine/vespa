@@ -88,7 +88,7 @@ public class Application {
                 Collectors.collectingAndThen(Collectors.toMap(Instance::name,
                                                               Function.identity(),
                                                               (i1, i2) -> {
-                                                                  throw new IllegalArgumentException("Duplicate key " + i1);
+                                                                  throw new IllegalArgumentException("Duplicate instance " + i1.id());
                                                               },
                                                               TreeMap::new),
                                              Collections::unmodifiableMap)

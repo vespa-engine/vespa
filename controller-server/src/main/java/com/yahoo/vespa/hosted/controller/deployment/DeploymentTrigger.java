@@ -76,18 +76,6 @@ public class DeploymentTrigger {
     }
 
     public void notifyOfSubmission(TenantAndApplicationId id, ApplicationVersion version, long projectId) {
-        if (applications().getApplication(id).isEmpty()) {
-            log.log(Level.WARNING, "Ignoring submission from project '" + projectId +
-                                      "': Unknown application '" + id + "'");
-            return;
-        }
-
-        applications().lockApplicationOrThrow(id, application -> {
-            application = application.withProjectId(OptionalLong.of(projectId));
-            application = application.withNewSubmission(version);
-            applications().store(application);
-        });
-        triggerNewRevision(id);
     }
 
     /**
