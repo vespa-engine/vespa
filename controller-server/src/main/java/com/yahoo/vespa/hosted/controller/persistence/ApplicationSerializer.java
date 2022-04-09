@@ -343,6 +343,7 @@ public class ApplicationSerializer {
 
     // TODO jonmv: read only from prodVersionsArray, once data is migrated.
     private RevisionHistory revisionsFromSlime(Inspector versionsArray, Inspector prodVersionsArray, Inspector devVersionsArray, TenantAndApplicationId id) {
+        // Once last controller updates storage after upgrade, these should be in sync.
         List<ApplicationVersion> revisions = prodVersionsArray.valid() ? revisionsFromSlime(prodVersionsArray)
                                                                        : revisionsFromSlime(versionsArray);
         Map<JobId, List<ApplicationVersion>> devRevisions = new HashMap<>();
@@ -466,7 +467,7 @@ public class ApplicationSerializer {
         Optional<String> sourceUrl = SlimeUtils.optionalString(object.field(sourceUrlField));
         Optional<String> commit = SlimeUtils.optionalString(object.field(commitField));
         boolean deployedDirectly = object.field(deployedDirectlyField).asBool();
-        boolean hasPackage = object.field(hasPackageField).asBool();
+        boolean hasPackage = ! object.field(hasPackageField).valid() || object.field(hasPackageField).asBool(); // TODO jonmv: remove default
         boolean shouldSkip = object.field(shouldSkipField).asBool();
         Optional<String> bundleHash = SlimeUtils.optionalString(object.field(bundleHashField));
 
