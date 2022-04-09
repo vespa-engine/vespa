@@ -17,7 +17,7 @@ import java.util.OptionalLong;
  */
 public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
-    /** Should not be used, but may still exist in serialized data :< */
+    /** Should not be used, but may still exist in serialized data :S */
     public static final ApplicationVersion unknown = new ApplicationVersion(Optional.empty(), OptionalLong.empty(), Optional.empty(),
                                                                             Optional.empty(), Optional.empty(), Optional.empty(),
                                                                             Optional.empty(), true, Optional.empty(), false, true);
