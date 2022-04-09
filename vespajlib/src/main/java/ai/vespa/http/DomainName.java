@@ -16,16 +16,16 @@ import static ai.vespa.validation.Validation.requireMatch;
 public class DomainName extends PatternedStringWrapper<DomainName> {
 
     protected static final Pattern labelPattern = Pattern.compile("([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])");
-    protected static final Pattern domainNamePattern = Pattern.compile("(" + labelPattern + "\\.)*" + labelPattern);
+    protected static final Pattern domainNamePattern = Pattern.compile("(" + labelPattern + "\\.)*" + labelPattern + "\\.?");
 
     public static final DomainName localhost = DomainName.of("localhost");
 
-    protected DomainName(String value) {
-        super(requireLength(value, "domain name length", 1, 255), domainNamePattern, "domain name");
+    protected DomainName(String value, String description) {
+        super(requireLength(value, "domain name length", 1, 255), domainNamePattern, description);
     }
 
     public static DomainName of(String value) {
-        return new DomainName(value);
+        return new DomainName(value, "domain name");
    }
 
     public static String requireLabel(String label) {
