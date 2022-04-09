@@ -41,6 +41,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationS
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
@@ -58,6 +59,7 @@ import com.yahoo.vespa.hosted.controller.certificate.EndpointCertificates;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
+import com.yahoo.vespa.hosted.controller.deployment.RevisionHistory;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
@@ -82,6 +84,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -160,12 +163,31 @@ public class ApplicationController {
                     for (InstanceName instance : application.get().deploymentSpec().instanceNames())
                         if ( ! application.get().instances().containsKey(instance))
                             application = withNewInstance(application, id.instance(instance));
+                    // TODO jonmv: remove when data is migrated
+                    // Each controller will know only about the revisions which we have packages for when they upgrade.
+                    // The last controller will populate any missing, historic data after it upgrades.
+                    // When all controllers are upgraded, we can start using the data, and remove this.
+                    Set<ApplicationVersion> production = new HashSet<>();
+                    Map<JobId, Set<ApplicationVersion>> development = new HashMap<>();
+                    for (InstanceName instance : application.get().instances().keySet()) {
+                        for (JobType type : JobType.allIn(controller.system())) {
+                            for (Run run : controller.jobController().runs(id.instance(instance), type).values()) {
+                                ApplicationVersion revision = run.versions().targetApplication();
+                                if ( ! revision.isDeployedDirectly()) production.add(revision);
+                                else development.computeIfAbsent(run.id().job(), __ -> new HashSet<>()).add(revision);
+                            }
+                        }
+                    }
+                    application = application.withRevisions(revisions -> {
+                        production.addAll(revisions.production()); // These are already properly set, and we want ot keep their hasPackage status.
+                        return RevisionHistory.ofRevisions(production, development); // All the added data is just written for now. We'll use it later.
+                    });
                     store(application);
                 });
                 count++;
             }
             log.log(Level.INFO, Text.format("Wrote %d applications in %s", count,
-                                              Duration.between(start, clock.instant())));
+                                            Duration.between(start, clock.instant())));
         });
     }
 
@@ -175,7 +197,6 @@ public class ApplicationController {
     }
 
     /** Returns the instance with the given id, or null if it is not present */
-    // TODO jonmv: remove or inline
     public Optional<Instance> getInstance(ApplicationId id) {
         return getApplication(TenantAndApplicationId.from(id)).flatMap(application -> application.get(id.instance()));
     }

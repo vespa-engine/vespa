@@ -422,6 +422,7 @@ public class JobController {
                 logs.flush(id);
                 metric.jobFinished(run.id().job(), finishedRun.status());
 
+                // TODO: update RevisionHistory, which should track all known revisions.
                 controller.jobController().runs(id.job()).values().stream()
                           .mapToLong(r -> r.versions().targetApplication().buildNumber().orElse(Integer.MAX_VALUE))
                           .min()
@@ -487,7 +488,7 @@ public class JobController {
                                                                  applicationPackage.metaDataZip());
 
             application = application.withProjectId(OptionalLong.of(projectId));
-            application = application.withNewSubmission(version.get());
+            application = application.withRevisions(revisions -> revisions.with(version.get()));
             application = withPrunedRevisions(application);
 
             applications.storeWithUpdatedConfig(application, applicationPackage);
@@ -505,7 +506,7 @@ public class JobController {
 
             for (ApplicationVersion version : application.get().versions())
                 if (version.compareTo(oldestDeployed.get()) < 0)
-                    application = application.withoutVersion(version);
+                    application = application.withRevisions(revisions -> revisions.with(version.withoutPackage()));
         }
         return application;
     }
@@ -570,6 +571,7 @@ public class JobController {
                   false,
                   dryRun ? JobProfile.developmentDryRun : JobProfile.development,
                   Optional.empty());
+            controller.applications().store(application.withRevisions(revisions -> revisions.with(version, new JobId(id, type))));
         });
 
         locked(id, type, __ -> {

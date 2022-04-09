@@ -817,7 +817,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse applicationPackage(String tenantName, String applicationName, HttpRequest request) {
         var tenantAndApplication = TenantAndApplicationId.from(tenantName, applicationName);
-        SortedSet<ApplicationVersion> versions = controller.applications().requireApplication(tenantAndApplication).versions();
+        List<ApplicationVersion> versions = controller.applications().requireApplication(tenantAndApplication).versions();
         if (versions.isEmpty())
             throw new NotExistsException("No application package has been submitted for '" + tenantAndApplication + "'");
 
@@ -833,7 +833,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                         .filter(ver -> ver.buildNumber().orElse(-1) == build)
                         .findFirst()
                         .orElseThrow(() -> new NotExistsException("No application package found for '" + tenantAndApplication + "' with build number " + build)))
-                .orElseGet(versions::last);
+                .orElseGet(() -> versions.get(versions.size() - 1));
 
         boolean tests = request.getBooleanProperty("tests");
         byte[] applicationPackage = tests ?

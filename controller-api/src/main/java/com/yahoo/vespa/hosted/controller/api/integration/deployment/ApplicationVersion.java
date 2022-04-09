@@ -17,14 +17,10 @@ import java.util.OptionalLong;
  */
 public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
-    /**
-     * Used in cases where application version cannot be determined, such as manual deployments (e.g. in dev
-     * environment)
-     */
-    public static final ApplicationVersion unknown = new ApplicationVersion(Optional.empty(), OptionalLong.empty(),
+    /** Should not be used, but may still exist in serialized data :< */
+    public static final ApplicationVersion unknown = new ApplicationVersion(Optional.empty(), OptionalLong.empty(), Optional.empty(),
                                                                             Optional.empty(), Optional.empty(), Optional.empty(),
-                                                                            Optional.empty(), Optional.empty(), true,
-                                                                            Optional.empty());
+                                                                            Optional.empty(), true, Optional.empty(), false, true);
 
     // This never changes and is only used to create a valid semantic version number, as required by application bundles
     private static final String majorVersion = "1.0";
@@ -38,11 +34,14 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
     private final Optional<String> commit;
     private final boolean deployedDirectly;
     private final Optional<String> bundleHash;
+    private final boolean hasPackage;
+    private final boolean shouldSkip;
 
     /** Public for serialisation only. */
     public ApplicationVersion(Optional<SourceRevision> source, OptionalLong buildNumber, Optional<String> authorEmail,
                               Optional<Version> compileVersion, Optional<Instant> buildTime, Optional<String> sourceUrl,
-                              Optional<String> commit, boolean deployedDirectly, Optional<String> bundleHash) {
+                              Optional<String> commit, boolean deployedDirectly, Optional<String> bundleHash,
+                              boolean hasPackage, boolean shouldSkip) {
         if (buildNumber.isEmpty() && (   source.isPresent() || authorEmail.isPresent() || compileVersion.isPresent()
                                       || buildTime.isPresent() || sourceUrl.isPresent() || commit.isPresent()))
             throw new IllegalArgumentException("Build number must be present if any other attribute is");
@@ -68,13 +67,20 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
         this.commit = Objects.requireNonNull(commit, "commit cannot be null");
         this.deployedDirectly = deployedDirectly;
         this.bundleHash = bundleHash;
+        this.hasPackage = hasPackage;
+        this.shouldSkip = shouldSkip;
+    }
+
+    public RevisionId id() {
+        return isDeployedDirectly() ? RevisionId.forDevelopment(buildNumber().orElse(0))
+                                    : RevisionId.forProduction(buildNumber().orElseThrow());
     }
 
     /** Create an application package version from a completed build, without an author email */
     public static ApplicationVersion from(SourceRevision source, long buildNumber) {
         return new ApplicationVersion(Optional.of(source), OptionalLong.of(buildNumber), Optional.empty(),
                                       Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), false,
-                                      Optional.empty());
+                                      Optional.empty(), true, false);
     }
 
     /** Creates a version from a completed build, an author email, and build meta data. */
@@ -82,7 +88,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
                                           Version compileVersion, Instant buildTime) {
         return new ApplicationVersion(Optional.of(source), OptionalLong.of(buildNumber), Optional.of(authorEmail),
                                       Optional.of(compileVersion), Optional.of(buildTime), Optional.empty(), Optional.empty(), false,
-                                      Optional.empty());
+                                      Optional.empty(), true, false);
     }
 
     /** Creates a version from a completed build, an author email, and build meta data. */
@@ -90,7 +96,8 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
                                           Optional<Version> compileVersion, Optional<Instant> buildTime,
                                           Optional<String> sourceUrl, Optional<String> commit, boolean deployedDirectly,
                                           Optional<String> bundleHash) {
-        return new ApplicationVersion(source, OptionalLong.of(buildNumber), authorEmail, compileVersion, buildTime, sourceUrl, commit, deployedDirectly, bundleHash);
+        return new ApplicationVersion(source, OptionalLong.of(buildNumber), authorEmail, compileVersion,
+                                      buildTime, sourceUrl, commit, deployedDirectly, bundleHash, true, false);
     }
 
     /** Returns a unique identifier for this version or "unknown" if version is not known */
@@ -150,6 +157,31 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
     /** Returns whether the application package for this version was deployed directly to zone */
     public boolean isDeployedDirectly() {
         return deployedDirectly;
+    }
+
+    /** Returns a copy of this without a package stored. */
+    public ApplicationVersion withoutPackage() {
+        return new ApplicationVersion(source, buildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit, deployedDirectly, bundleHash, false, shouldSkip);
+    }
+
+    /** Whether we still have the package for this revision. */
+    public boolean hasPackage() {
+        return hasPackage;
+    }
+
+    /** Returns a copy of this which will not be rolled out to production. */
+    public ApplicationVersion skipped() {
+        return new ApplicationVersion(source, buildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit, deployedDirectly, bundleHash, hasPackage, true);
+    }
+
+    /** Whether we still have the package for this revision. */
+    public boolean shouldSkip() {
+        return shouldSkip;
+    }
+
+    /** Whether this revision should be deployed. */
+    public boolean isDeployable() {
+        return hasPackage && ! shouldSkip;
     }
 
     @Override

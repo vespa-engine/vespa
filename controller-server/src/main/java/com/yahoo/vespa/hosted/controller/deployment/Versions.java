@@ -145,7 +145,7 @@ public class Versions {
     private static ApplicationVersion defaultApplicationVersion(Application application) {
         return application.oldestDeployedApplication()
                           .or(application::latestVersion)
-                          .orElse(ApplicationVersion.unknown);
+                          .orElseThrow(() -> new IllegalStateException("no known prod revisions, but asked for one, for " + application));
     }
 
     private static <T extends Comparable<T>> Optional<T> max(Optional<T> o1, Optional<T> o2) {

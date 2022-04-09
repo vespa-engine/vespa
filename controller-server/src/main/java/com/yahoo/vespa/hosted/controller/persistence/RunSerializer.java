@@ -187,8 +187,8 @@ class RunSerializer {
         boolean deployedDirectly = versionObject.field(deployedDirectlyField).asBool();
         Optional<String> bundleHash = SlimeUtils.optionalString(versionObject.field(bundleHashField));
 
-        return new ApplicationVersion(source, OptionalLong.of(buildNumber), authorEmail,
-                                      compileVersion, buildTime, sourceUrl, commit, deployedDirectly, bundleHash);
+        return new ApplicationVersion(source, OptionalLong.of(buildNumber), authorEmail, compileVersion,
+                                      buildTime, sourceUrl, commit, deployedDirectly, bundleHash, false, false);
     }
 
     // Don't change this — introduce a separate array instead.
