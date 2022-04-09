@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
@@ -52,6 +53,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.collections.Iterables.reversed;
@@ -490,16 +492,26 @@ public class JobController {
 
             application = application.withProjectId(OptionalLong.of(projectId));
             application = application.withNewSubmission(version.get());
-
-            application.get().oldestDeployedApplication().ifPresent(oldestDeployed -> {
-                applications.applicationStore().prune(id.tenant(), id.application(), oldestDeployed);
-                applications.applicationStore().pruneTesters(id.tenant(), id.application(), oldestDeployed);
-            });
+            application = withPrunedRevisions(application);
 
             applications.storeWithUpdatedConfig(application, applicationPackage);
             applications.deploymentTrigger().triggerNewRevision(id);
         });
         return version.get();
+    }
+
+    private LockedApplication withPrunedRevisions(LockedApplication application){
+        TenantAndApplicationId id = application.get().id();
+        Optional<ApplicationVersion> oldestDeployed = application.get().oldestDeployedApplication();
+        if (oldestDeployed.isPresent()) {
+            controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed.get());
+            controller.applications().applicationStore().pruneTesters(id.tenant(), id.application(), oldestDeployed.get());
+
+            for (ApplicationVersion version : application.get().versions())
+                if (version.compareTo(oldestDeployed.get()) < 0)
+                    application = application.withoutVersion(version);
+        }
+        return application;
     }
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
