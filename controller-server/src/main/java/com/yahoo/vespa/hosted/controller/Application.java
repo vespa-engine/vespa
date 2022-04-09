@@ -50,7 +50,6 @@ public class Application {
     private final Instant createdAt;
     private final DeploymentSpec deploymentSpec;
     private final ValidationOverrides validationOverrides;
-    private final Optional<ApplicationVersion> latestVersion;
     private final SortedSet<ApplicationVersion> versions;
     private final OptionalLong projectId;
     private final Optional<IssueId> deploymentIssueId;
@@ -65,14 +64,14 @@ public class Application {
     public Application(TenantAndApplicationId id, Instant now) {
         this(id, now, DeploymentSpec.empty, ValidationOverrides.empty,
              Optional.empty(), Optional.empty(), Optional.empty(), OptionalInt.empty(),
-             new ApplicationMetrics(0, 0), Set.of(), OptionalLong.empty(), Optional.empty(), new TreeSet<>(), List.of());
+             new ApplicationMetrics(0, 0), Set.of(), OptionalLong.empty(), new TreeSet<>(), List.of());
     }
 
     // DO NOT USE! For serialization purposes, only.
     public Application(TenantAndApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                        Optional<IssueId> deploymentIssueId, Optional<IssueId> ownershipIssueId, Optional<User> owner,
                        OptionalInt majorVersion, ApplicationMetrics metrics, Set<PublicKey> deployKeys, OptionalLong projectId,
-                       Optional<ApplicationVersion> latestVersion, SortedSet<ApplicationVersion> versions, Collection<Instance> instances) {
+                       SortedSet<ApplicationVersion> versions, Collection<Instance> instances) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.createdAt = Objects.requireNonNull(createdAt, "instant of creation cannot be null");
         this.deploymentSpec = Objects.requireNonNull(deploymentSpec, "deploymentSpec cannot be null");
@@ -84,7 +83,6 @@ public class Application {
         this.metrics = Objects.requireNonNull(metrics, "metrics cannot be null");
         this.deployKeys = Objects.requireNonNull(deployKeys, "deployKeys cannot be null");
         this.projectId = Objects.requireNonNull(projectId, "projectId cannot be null");
-        this.latestVersion = requireNotUnknown(latestVersion);
         this.versions = versions;
         this.instances = instances.stream().collect(
                 Collectors.collectingAndThen(Collectors.toMap(Instance::name,

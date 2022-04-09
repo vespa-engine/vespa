@@ -124,15 +124,13 @@ public class ApplicationSerializerTest {
                                                         Map.of(JobType.systemTest, Instant.ofEpochMilli(333)),
                                                         List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of("us-west-1"))),
                                                         rotationStatus,
-                                                        Change.of(new Version("6.1")),
-                                                        Optional.of(applicationVersion2)),
+                                                        Change.of(new Version("6.1"))),
                                            new Instance(id3,
                                                         List.of(),
                                                         Map.of(),
                                                         List.of(),
                                                         RotationStatus.EMPTY,
-                                                        Change.of(Version.fromString("6.7")).withPin(),
-                                                        Optional.empty()));
+                                                        Change.of(Version.fromString("6.7")).withPin()));
 
         Application original = new Application(TenantAndApplicationId.from(id1),
                                                Instant.now().truncatedTo(ChronoUnit.MILLIS),
@@ -145,7 +143,6 @@ public class ApplicationSerializerTest {
                                                new ApplicationMetrics(0.5, 0.9),
                                                Set.of(publicKey, otherPublicKey),
                                                projectId,
-                                               Optional.of(applicationVersion1),
                                                versions,
                                                instances);
 
@@ -192,9 +189,6 @@ public class ApplicationSerializerTest {
 
         assertEquals(original.require(id1.instance()).change(), serialized.require(id1.instance()).change());
         assertEquals(original.require(id3.instance()).change(), serialized.require(id3.instance()).change());
-
-        assertEquals(original.require(id1.instance()).latestDeployed(), serialized.require(id1.instance()).latestDeployed());
-        assertEquals(original.require(id3.instance()).latestDeployed(), serialized.require(id3.instance()).latestDeployed());
 
         // Test metrics
         assertEquals(original.metrics().queryServiceQuality(), serialized.metrics().queryServiceQuality(), Double.MIN_VALUE);

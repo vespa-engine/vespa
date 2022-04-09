@@ -464,11 +464,8 @@ public class DeploymentTrigger {
         Change remaining = change;
         if (status.hasCompleted(instance.name(), change.withoutApplication()))
             remaining = remaining.withoutPlatform();
-        if (status.hasCompleted(instance.name(), change.withoutPlatform())) {
+        if (status.hasCompleted(instance.name(), change.withoutPlatform()))
             remaining = remaining.withoutApplication();
-            if (change.application().isPresent())
-                instance = instance.withLatestDeployed(change.application().get());
-        }
         return instance.withChange(remaining);
     }
 

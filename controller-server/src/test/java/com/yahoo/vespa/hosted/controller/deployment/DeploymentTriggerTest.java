@@ -7,11 +7,13 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Assert;
 import org.junit.Test;
@@ -26,6 +28,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
+import static ai.vespa.validation.Validation.require;
 import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionApNortheast1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionApNortheast2;
@@ -608,15 +611,22 @@ public class DeploymentTriggerTest {
         assertEquals(appVersion1, app.deployment(ZoneId.from("prod.us-central-1")).applicationVersion());
     }
 
+    ApplicationVersion latestDeployed(Instance instance) {
+        return instance.productionDeployments().values().stream()
+                       .map(Deployment::applicationVersion)
+                       .reduce((o, n) -> require(o.equals(n), n, "all versions should be equal, but got " + o + " and " + n))
+                       .orElseThrow(() -> new AssertionError("no versions deployed"));
+    }
+
     @Test
     public void downgradingApplicationVersionWorks() {
         var app = tester.newDeploymentContext().submit().deploy();
         ApplicationVersion appVersion0 = app.lastSubmission().get();
-        assertEquals(Optional.of(appVersion0), app.instance().latestDeployed());
+        assertEquals(appVersion0, latestDeployed(app.instance()));
 
         app.submit().deploy();
         ApplicationVersion appVersion1 = app.lastSubmission().get();
-        assertEquals(Optional.of(appVersion1), app.instance().latestDeployed());
+        assertEquals(appVersion1, latestDeployed(app.instance()));
 
         // Downgrading application version.
         tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(appVersion0));
@@ -627,27 +637,26 @@ public class DeploymentTriggerTest {
            .runJob(productionUsWest1);
         assertEquals(Change.empty(), app.instance().change());
         assertEquals(appVersion0, app.instance().deployments().get(productionUsEast3.zone(tester.controller().system())).applicationVersion());
-        assertEquals(Optional.of(appVersion0), app.instance().latestDeployed());
+        assertEquals(appVersion0, latestDeployed(app.instance()));
     }
 
     @Test
     public void settingANoOpChangeIsANoOp() {
         var app = tester.newDeploymentContext().submit();
-        assertEquals(Optional.empty(), app.instance().latestDeployed());
 
         app.deploy();
         ApplicationVersion appVersion0 = app.lastSubmission().get();
-        assertEquals(Optional.of(appVersion0), app.instance().latestDeployed());
+        assertEquals(appVersion0, latestDeployed(app.instance()));
 
         app.submit().deploy();
         ApplicationVersion appVersion1 = app.lastSubmission().get();
-        assertEquals(Optional.of(appVersion1), app.instance().latestDeployed());
+        assertEquals(appVersion1, latestDeployed(app.instance()));
 
         // Triggering a roll-out of an already deployed application is a no-op.
         assertEquals(Change.empty(), app.instance().change());
         tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(appVersion1));
         assertEquals(Change.empty(), app.instance().change());
-        assertEquals(Optional.of(appVersion1), app.instance().latestDeployed());
+        assertEquals(appVersion1, latestDeployed(app.instance()));
     }
 
     @Test
@@ -1021,8 +1030,8 @@ public class DeploymentTriggerTest {
 
         // Since the post-deployment delay of i1 is incomplete, i3 doesn't yet get the change.
         tester.outstandingChangeDeployer().run();
-        assertEquals(v0, i1.instance().latestDeployed());
-        assertEquals(v0, i2.instance().latestDeployed());
+        assertEquals(v0, Optional.of(latestDeployed(i1.instance())));
+        assertEquals(v0, Optional.of(latestDeployed(i2.instance())));
         assertEquals(Optional.empty(), i1.instance().change().application());
         assertEquals(Optional.empty(), i2.instance().change().application());
         assertEquals(Optional.empty(), i3.instance().change().application());
@@ -1044,8 +1053,8 @@ public class DeploymentTriggerTest {
         i4.runJob(systemTest).runJob(stagingTest);
         i1.runJob(productionUsEast3); // v1
         i2.runJob(productionUsEast3); // v1
-        assertEquals(v1, i1.instance().latestDeployed());
-        assertEquals(v1, i2.instance().latestDeployed());
+        assertEquals(v1, Optional.of(latestDeployed(i1.instance())));
+        assertEquals(v1, Optional.of(latestDeployed(i2.instance())));
         assertEquals(Optional.empty(), i1.instance().change().application());
         assertEquals(Optional.empty(), i2.instance().change().application());
         assertEquals(v0, i3.instance().change().application());
@@ -1067,9 +1076,9 @@ public class DeploymentTriggerTest {
         i3.runJob(testUsEast3);
         assertEquals(Optional.empty(), i3.instance().change().application());
         tester.outstandingChangeDeployer().run();
-        assertEquals(v2, i1.instance().latestDeployed());
-        assertEquals(v1, i2.instance().latestDeployed());
-        assertEquals(v0, i3.instance().latestDeployed());
+        assertEquals(v2, Optional.of(latestDeployed(i1.instance())));
+        assertEquals(v1, Optional.of(latestDeployed(i2.instance())));
+        assertEquals(v0, Optional.of(latestDeployed(i3.instance())));
         assertEquals(Optional.empty(), i1.instance().change().application());
         assertEquals(v2, i2.instance().change().application());
         assertEquals(v1, i3.instance().change().application());

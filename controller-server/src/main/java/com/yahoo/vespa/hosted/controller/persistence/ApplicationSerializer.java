@@ -76,7 +76,6 @@ public class ApplicationSerializer {
     private static final String instancesField = "instances";
     private static final String deployingField = "deployingField";
     private static final String projectIdField = "projectId";
-    private static final String latestVersionField = "latestVersion";
     private static final String versionsField = "versions";
     private static final String pinnedField = "pinned";
     private static final String deploymentIssueField = "deploymentIssueId";
@@ -97,7 +96,6 @@ public class ApplicationSerializer {
     private static final String deploymentJobsField = "deploymentJobs"; // TODO jonmv: clean up serialisation format
     private static final String assignedRotationsField = "assignedRotations";
     private static final String assignedRotationEndpointField = "endpointId";
-    private static final String latestDeployedField = "latestDeployed";
 
     // Deployment fields
     private static final String zoneField = "zone";
@@ -167,7 +165,6 @@ public class ApplicationSerializer {
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
         deployKeysToSlime(application.deployKeys(), root.setArray(pemDeployKeysField));
-        application.latestVersion().ifPresent(version -> toSlime(version, root.setObject(latestVersionField)));
         versionsToSlime(application, root.setArray(versionsField));
         instancesToSlime(application, root.setArray(instancesField));
         return slime;
@@ -182,7 +179,6 @@ public class ApplicationSerializer {
             assignedRotationsToSlime(instance.rotations(), instanceObject);
             toSlime(instance.rotationStatus(), instanceObject.setArray(rotationStatusField));
             toSlime(instance.change(), instanceObject, deployingField);
-            instance.latestDeployed().ifPresent(version -> toSlime(version, instanceObject.setObject(latestDeployedField)));
         }
     }
 
@@ -321,17 +317,11 @@ public class ApplicationSerializer {
         Set<PublicKey> deployKeys = deployKeysFromSlime(root.field(pemDeployKeysField));
         List<Instance> instances = instancesFromSlime(id, root.field(instancesField));
         OptionalLong projectId = SlimeUtils.optionalLong(root.field(projectIdField));
-        Optional<ApplicationVersion> latestVersion = latestVersionFromSlime(root.field(latestVersionField));
         SortedSet<ApplicationVersion> versions = versionsFromSlime(root.field(versionsField));
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides,
                                deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics,
-                               deployKeys, projectId, latestVersion, versions, instances);
-    }
-
-    private Optional<ApplicationVersion> latestVersionFromSlime(Inspector latestVersionObject) {
-        return Optional.of(applicationVersionFromSlime(latestVersionObject))
-                       .filter(version -> ! version.isUnknown());
+                               deployKeys, projectId, versions, instances);
     }
 
     private SortedSet<ApplicationVersion> versionsFromSlime(Inspector versionsObject) {
@@ -349,14 +339,12 @@ public class ApplicationSerializer {
             List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(object);
             RotationStatus rotationStatus = rotationStatusFromSlime(object);
             Change change = changeFromSlime(object.field(deployingField));
-            Optional<ApplicationVersion> latestDeployed = latestVersionFromSlime(object.field(latestDeployedField));
             instances.add(new Instance(id.instance(instanceName),
                                        deployments,
                                        jobPauses,
                                        assignedRotations,
                                        rotationStatus,
-                                       change,
-                                       latestDeployed));
+                                       change));
         });
         return instances;
     }
