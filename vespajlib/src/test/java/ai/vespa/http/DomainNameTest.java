@@ -15,6 +15,7 @@ class DomainNameTest {
         DomainName.of("name-123.0.321-eman");
         DomainName.of(("." + "a".repeat(63)).repeat(4).substring(1));
         DomainName.of("123");
+        DomainName.of("foo.");
 
         assertThrows(IllegalArgumentException.class, () -> DomainName.of("_"));
         assertThrows(IllegalArgumentException.class, () -> DomainName.of("-"));
@@ -22,7 +23,6 @@ class DomainNameTest {
         assertThrows(IllegalArgumentException.class, () -> DomainName.of("-foo"));
         assertThrows(IllegalArgumentException.class, () -> DomainName.of("foo-"));
         assertThrows(IllegalArgumentException.class, () -> DomainName.of(".foo"));
-        assertThrows(IllegalArgumentException.class, () -> DomainName.of("foo."));
         assertThrows(IllegalArgumentException.class, () -> DomainName.of("foo..bar"));
         assertThrows(IllegalArgumentException.class, () -> DomainName.of("foo.-.bar"));
         assertThrows(IllegalArgumentException.class, () -> DomainName.of("foo/"));

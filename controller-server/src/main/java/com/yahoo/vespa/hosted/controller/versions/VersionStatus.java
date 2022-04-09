@@ -197,7 +197,7 @@ public class VersionStatus {
                     .add(controller.hostname());
         } else {
             for (String host : controller.curator().cluster()) {
-                HostName hostname = HostName.from(host);
+                HostName hostname = HostName.of(host);
                 versions.computeIfAbsent(controller.curator().readControllerVersion(hostname), (k) -> new ArrayList<>())
                         .add(hostname);
             }

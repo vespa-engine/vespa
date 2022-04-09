@@ -280,7 +280,7 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
 
     private Optional<ZoneId> affectedZone(List<String> hosts) {
         NodeFilter affectedHosts = NodeFilter.all().hostnames(hosts.stream()
-                                                                   .map(HostName::from)
+                                                                   .map(HostName::of)
                                                                    .collect(Collectors.toSet()));
         for (var zone : getProdZones()) {
             var affectedHostsInZone = controller.serviceRegistry().configServer().nodeRepository().list(zone, affectedHosts);

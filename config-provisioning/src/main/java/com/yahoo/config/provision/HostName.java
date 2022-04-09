@@ -1,47 +1,27 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import java.util.Objects;
+import ai.vespa.http.DomainName;
+
+import static ai.vespa.validation.Validation.require;
+import static ai.vespa.validation.Validation.requireLength;
 
 /**
- * A host name
+ * Hostnames match {@link #domainNamePattern}, and are restricted to 64 characters in length.
  *
- * @author mortent
+ * @author jonmv
  */
-public class HostName implements Comparable<HostName> {
+public class HostName extends DomainName {
 
-    private final String name;
-
-    private HostName(String name) {
-        this.name = name;
+    private HostName(String value) {
+        super(requireLength(require( ! value.endsWith("."),
+                                     value, "hostname cannot end with '.'"),
+                            "hostname length", 1, 64),
+              "hostname");
     }
 
-    public String value() { return name; }
-
-    /** Create a {@link HostName} with a given name */
-    public static HostName from(String name) {
-        return new HostName(name);
-    }
-    
-    @Override
-    public int hashCode() {
-    	return name.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-    	if (!(obj instanceof HostName)) return false;
-    	return Objects.equals(((HostName)obj).value(), value());
-    }
-
-    @Override
-    public String toString() {
-        return name;
-    }
-
-    @Override
-    public int compareTo(HostName that) {
-        return this.name.compareTo(that.name);
+    public static HostName of(String value) {
+        return new HostName(value);
     }
 
 }

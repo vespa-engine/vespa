@@ -16,6 +16,7 @@ import com.yahoo.jrt.slobrok.api.BackOffPolicy;
 import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
 import java.util.logging.Level;
+
 import com.yahoo.net.HostName;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;

@@ -116,7 +116,7 @@ public class InfraDeployerImpl implements InfraDeployer {
 
                     duperModel.infraApplicationActivated(
                             application.getApplicationId(),
-                            hostSpecs.stream().map(HostSpec::hostname).map(HostName::from).collect(Collectors.toList()));
+                            hostSpecs.stream().map(HostSpec::hostname).map(HostName::of).collect(Collectors.toList()));
 
                     logger.log(Level.FINE, () -> generateActivationLogMessage(hostSpecs, application.getApplicationId()));
                 }

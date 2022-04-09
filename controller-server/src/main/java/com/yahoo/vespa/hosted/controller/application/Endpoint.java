@@ -160,8 +160,7 @@ public class Endpoint {
     }
 
     private static URI createUrl(String name, TenantAndApplicationId application, Optional<InstanceName> instance,
-                                 List<Target> targets, Scope scope, SystemName system, Port port, boolean legacy,
-                                 RoutingMethod routingMethod) {
+                                 List<Target> targets, Scope scope, SystemName system, Port port, boolean legacy) {
         String separator = ".";
         String portPart = port.isDefault() ? "" : ":" + port.port;
         return URI.create("https://" +
@@ -591,8 +590,7 @@ public class Endpoint {
                                 Objects.requireNonNull(scope, "scope must be non-null"),
                                 Objects.requireNonNull(system, "system must be non-null"),
                                 Objects.requireNonNull(port, "port must be non-null"),
-                                legacy,
-                                Objects.requireNonNull(routingMethod, "routingMethod must be non-null"));
+                                legacy);
             return new Endpoint(application,
                                 instance,
                                 endpointId,

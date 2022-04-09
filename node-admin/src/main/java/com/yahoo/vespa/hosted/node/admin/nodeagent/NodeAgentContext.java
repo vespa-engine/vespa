@@ -27,7 +27,7 @@ public interface NodeAgentContext extends TaskContext {
 
     /** @return hostname of the linux container this context applies to */
     default HostName hostname() {
-        return HostName.from(node().hostname());
+        return HostName.of(node().hostname());
     }
 
     default NodeType nodeType() {

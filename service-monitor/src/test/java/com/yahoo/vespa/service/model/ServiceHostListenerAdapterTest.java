@@ -100,7 +100,7 @@ public class ServiceHostListenerAdapterTest {
     }
 
     private Optional<ApplicationInfo> getDuperModelApplicationInfo(String hostname) {
-        return duperModel.getApplicationInfo(com.yahoo.config.provision.HostName.from(hostname));
+        return duperModel.getApplicationInfo(com.yahoo.config.provision.HostName.of(hostname));
     }
 
     private void removeAndVerify(ApplicationId id, boolean listenerInvoked) {

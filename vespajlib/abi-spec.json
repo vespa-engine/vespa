@@ -350,13 +350,13 @@
     "fields": []
   },
   "com.yahoo.net.HostName": {
-    "superClass": "ai.vespa.validation.PatternedStringWrapper",
+    "superClass": "java.lang.Object",
     "interfaces": [],
     "attributes": [
       "public"
     ],
     "methods": [
-      "public static com.yahoo.net.HostName of(java.lang.String)",
+      "public void <init>()",
       "public static synchronized java.lang.String getLocalhost()",
       "public static void setHostNameForTestingOnly(java.lang.String)"
     ],

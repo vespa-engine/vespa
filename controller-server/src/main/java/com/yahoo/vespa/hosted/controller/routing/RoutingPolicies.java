@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.routing;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
@@ -215,7 +215,7 @@ public class RoutingPolicies {
             }
             var weightedTarget = new WeightedAliasTarget(policy.canonicalName(), policy.dnsZone().get(),
                                                          policy.id().zone(), weight);
-            endpoints.computeIfAbsent(regionEndpoint, (k) -> new RegionEndpoint(new LatencyAliasTarget(HostName.from(regionEndpoint.dnsName()),
+            endpoints.computeIfAbsent(regionEndpoint, (k) -> new RegionEndpoint(new LatencyAliasTarget(DomainName.of(regionEndpoint.dnsName()),
                                                                                                        policy.dnsZone().get(),
                                                                                                        policy.id().zone())))
                      .zoneTargets()
