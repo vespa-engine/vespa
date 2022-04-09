@@ -274,9 +274,9 @@ template <typename BaseType>
 void DotProductExecutorBase<BaseType>::execute(uint32_t docId) {
     auto values = getAttributeValues(docId);
     size_t commonRange = std::min(values.size(), _queryVector.size());
-    static_assert(std::is_same<typename AT::ValueType, BaseType>::value);
+    static_assert(std::is_same_v<multivalue::ValueType_t<AT>, BaseType>);
     outputs().set_number(0, _multiplier.dotProduct(
-            &_queryVector[0], reinterpret_cast<const typename AT::ValueType *>(values.data()), commonRange));
+            &_queryVector[0], reinterpret_cast<const multivalue::ValueType_t<AT> *>(values.data()), commonRange));
 }
 
 template <typename A>
@@ -396,7 +396,7 @@ constexpr void sanity_check_reinterpret_cast_compatibility() {
     static_assert(IsNonWeightedType<AttributeValueType>::value);
     static_assert(sizeof(BaseType) == sizeof(AttributeValueType));
     static_assert(sizeof(BaseType) == sizeof(FillerValueType));
-    static_assert(std::is_same<BaseType, typename AttributeValueType::ValueType>::value);
+    static_assert(std::is_same_v<BaseType, multivalue::ValueType_t<AttributeValueType>>);
 }
 
 }

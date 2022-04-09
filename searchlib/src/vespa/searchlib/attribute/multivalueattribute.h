@@ -7,6 +7,7 @@
 #include "multi_value_mapping.h"
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchcommon/attribute/i_multi_value_read_view.h>
+#include <vespa/searchcommon/attribute/multi_value_traits.h>
 
 namespace search {
 
@@ -28,7 +29,7 @@ protected:
 
     using MultiValueType = M;
     using MultiValueMapping = attribute::MultiValueMapping<MultiValueType>;
-    typedef typename MultiValueType::ValueType            ValueType;
+    using ValueType = multivalue::ValueType_t<MultiValueType>;
     typedef std::vector<MultiValueType>                   ValueVector;
     using MultiValueArrayRef = vespalib::ConstArrayRef<MultiValueType>;
     typedef typename ValueVector::iterator                ValueVectorIterator;

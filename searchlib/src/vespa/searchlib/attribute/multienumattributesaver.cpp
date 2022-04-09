@@ -107,7 +107,7 @@ onSave(IAttributeSaveTarget &saveTarget)
 {
     bool compaction_broke_save = false;
     CountWriter countWriter(saveTarget);
-    WeightWriter<MultiValueType::_hasWeight> weightWriter(saveTarget);
+    WeightWriter<multivalue::is_WeightedValue_v<MultiValueType>> weightWriter(saveTarget);
     DatWriter datWriter(saveTarget, _enumSaver.get_enumerator(),
                         [this]() { return compaction_interferred(); });
     _enumSaver.writeUdat(saveTarget);
