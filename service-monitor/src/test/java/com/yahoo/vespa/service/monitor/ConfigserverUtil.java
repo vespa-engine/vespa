@@ -37,7 +37,7 @@ public class ConfigserverUtil {
             String configServerHostname3) {
         return new ConfigServerApplication().makeApplicationInfo(
                 Stream.of(configServerHostname1, configServerHostname2, configServerHostname3)
-                        .map(HostName::from).collect(Collectors.toList()));
+                      .map(HostName::of).collect(Collectors.toList()));
     }
 
     public static ApplicationInfo makeExampleConfigServer() {

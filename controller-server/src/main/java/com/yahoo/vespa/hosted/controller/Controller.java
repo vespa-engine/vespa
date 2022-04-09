@@ -283,7 +283,7 @@ public class Controller extends AbstractComponent {
 
     /** Returns the hostname of this controller */
     public com.yahoo.config.provision.HostName hostname() {
-        return com.yahoo.config.provision.HostName.from(hostnameSupplier.get());
+        return com.yahoo.config.provision.HostName.of(hostnameSupplier.get());
     }
 
     public SystemName system() {

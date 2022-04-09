@@ -30,12 +30,12 @@ public class OsVersionStatusSerializerTest {
         Map<OsVersion, List<NodeVersion>> versions = new LinkedHashMap<>();
 
         versions.put(new OsVersion(version1, CloudName.defaultName()), List.of(
-                new NodeVersion(HostName.from("node1"), ZoneId.from("prod", "us-west"), version1, version2, Optional.of(Instant.ofEpochMilli(11))),
-                new NodeVersion(HostName.from("node2"), ZoneId.from("prod", "us-east"), version1, version2, Optional.of(Instant.ofEpochMilli(22)))
+                new NodeVersion(HostName.of("node1"), ZoneId.from("prod", "us-west"), version1, version2, Optional.of(Instant.ofEpochMilli(11))),
+                new NodeVersion(HostName.of("node2"), ZoneId.from("prod", "us-east"), version1, version2, Optional.of(Instant.ofEpochMilli(22)))
         ));
         versions.put(new OsVersion(version2, CloudName.defaultName()), List.of(
-                new NodeVersion(HostName.from("node3"), ZoneId.from("prod", "us-west"), version2, version2, Optional.of(Instant.ofEpochMilli(33))),
-                new NodeVersion(HostName.from("node4"), ZoneId.from("prod", "us-east"), version2, version2, Optional.of(Instant.ofEpochMilli(44)))
+                new NodeVersion(HostName.of("node3"), ZoneId.from("prod", "us-west"), version2, version2, Optional.of(Instant.ofEpochMilli(33))),
+                new NodeVersion(HostName.of("node4"), ZoneId.from("prod", "us-east"), version2, version2, Optional.of(Instant.ofEpochMilli(44)))
         ));
 
         OsVersionStatusSerializer serializer = new OsVersionStatusSerializer(new OsVersionSerializer(), new NodeVersionSerializer());

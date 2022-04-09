@@ -135,8 +135,8 @@ public class ResourceMeterMaintainerTest {
                          Node.State.parked,
                          Node.State.active)
                      .map(state -> Node.builder()
-                                       .hostname(HostName.from("host" + state))
-                                       .parentHostname(HostName.from("parenthost" + state))
+                                       .hostname(HostName.of("host" + state))
+                                       .parentHostname(HostName.of("parenthost" + state))
                                        .state(state)
                                        .type(NodeType.tenant)
                                        .owner(ApplicationId.from("tenant1", "app1", "default"))

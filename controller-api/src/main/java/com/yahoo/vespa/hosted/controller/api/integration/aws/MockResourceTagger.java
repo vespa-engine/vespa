@@ -8,7 +8,6 @@ import com.yahoo.config.provision.zone.ZoneId;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * @author olaa

@@ -60,7 +60,7 @@ public class NodeRepositoryMock implements NodeRepository {
     @Override
     public void deleteNode(ZoneId zone, String hostname) {
         require(zone, hostname);
-        nodeRepository.get(zone).remove(HostName.from(hostname));
+        nodeRepository.get(zone).remove(HostName.of(hostname));
     }
 
     @Override
@@ -246,8 +246,8 @@ public class NodeRepositoryMock implements NodeRepository {
     /** Add a fixed set of nodes to given zone */
     public void addFixedNodes(ZoneId zone) {
         var nodeA = Node.builder()
-                        .hostname(HostName.from("hostA"))
-                        .parentHostname(HostName.from("parentHostA"))
+                        .hostname(HostName.of("hostA"))
+                        .parentHostname(HostName.of("parentHostA"))
                         .state(Node.State.active)
                         .type(NodeType.tenant)
                         .owner(ApplicationId.from("tenant1", "app1", "default"))
@@ -262,8 +262,8 @@ public class NodeRepositoryMock implements NodeRepository {
                         .exclusiveTo(ApplicationId.from("t1", "a1", "i1"))
                         .build();
         var nodeB = Node.builder()
-                        .hostname(HostName.from("hostB"))
-                        .parentHostname(HostName.from("parentHostB"))
+                        .hostname(HostName.of("hostB"))
+                        .parentHostname(HostName.of("parentHostB"))
                         .state(Node.State.active)
                         .type(NodeType.tenant)
                         .owner(ApplicationId.from("tenant2", "app2", "default"))
@@ -319,7 +319,7 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     private Node require(ZoneId zone, String hostname) {
-        return require(zone, HostName.from(hostname));
+        return require(zone, HostName.of(hostname));
     }
 
     private Node require(ZoneId zone, HostName hostname) {
@@ -329,7 +329,7 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     private void patchNodes(ZoneId zone, String hostname, UnaryOperator<Node> patcher) {
-        patchNodes(zone, Optional.of(HostName.from(hostname)), patcher);
+        patchNodes(zone, Optional.of(HostName.of(hostname)), patcher);
     }
 
     private void patchNodes(DeploymentId deployment, Optional<HostName> hostname, UnaryOperator<Node> patcher) {

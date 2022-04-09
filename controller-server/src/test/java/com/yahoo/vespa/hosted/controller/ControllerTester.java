@@ -239,7 +239,7 @@ public final class ControllerTester {
     /** Upgrade controller to given version */
     public void upgradeController(Version version, String commitSha, Instant commitDate) {
         for (var hostname : controller().curator().cluster()) {
-            upgradeController(HostName.from(hostname), version, commitSha, commitDate);
+            upgradeController(HostName.of(hostname), version, commitSha, commitDate);
         }
     }
 

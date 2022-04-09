@@ -38,7 +38,7 @@ public class StateV1HealthModelTest {
     private final Duration requestTimeout = Duration.ofSeconds(2);
     private final Duration keepAlive = Duration.ofSeconds(3);
     private final ProxyHostApplication proxyHostApplication = new ProxyHostApplication();
-    private final List<HostName> hostnames = Stream.of("host1", "host2").map(HostName::from).collect(Collectors.toList());
+    private final List<HostName> hostnames = Stream.of("host1", "host2").map(HostName::of).collect(Collectors.toList());
     private final ApplicationInfo proxyHostApplicationInfo = proxyHostApplication.makeApplicationInfo(hostnames);
 
     private final StateV1HealthModel model = new StateV1HealthModel(healthStaleness, requestTimeout, keepAlive, executor);

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.dns;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 
@@ -15,7 +16,7 @@ public class LatencyAliasTarget extends AliasTarget {
 
     private final ZoneId zone;
 
-    public LatencyAliasTarget(HostName name, String dnsZone, ZoneId zone) {
+    public LatencyAliasTarget(DomainName name, String dnsZone, ZoneId zone) {
         super(name, dnsZone, zone.value());
         this.zone = Objects.requireNonNull(zone);
     }
@@ -59,7 +60,7 @@ public class LatencyAliasTarget extends AliasTarget {
         if (!"latency".equals(parts[0])) {
             throw new IllegalArgumentException("Unexpected type '" + parts[0] + "'");
         }
-        return new LatencyAliasTarget(HostName.from(parts[1]), parts[2], ZoneId.from(parts[3]));
+        return new LatencyAliasTarget(HostName.of(parts[1]), parts[2], ZoneId.from(parts[3]));
     }
 
 }

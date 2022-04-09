@@ -530,7 +530,7 @@ public class Node {
         }
 
         public Builder hostname(String hostname) {
-            return hostname(HostName.from(hostname));
+            return hostname(HostName.of(hostname));
         }
 
         public Builder hostname(HostName hostname) {
@@ -539,7 +539,7 @@ public class Node {
         }
 
         public Builder parentHostname(String parentHostname) {
-            return parentHostname(HostName.from(parentHostname));
+            return parentHostname(HostName.of(parentHostname));
         }
 
         public Builder parentHostname(HostName parentHostname) {
