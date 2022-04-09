@@ -6,7 +6,7 @@ import ai.vespa.http.DomainName;
 import java.util.Objects;
 
 /**
- * The target of an {@link Record.Type#ALIAS} record. Contains record fields unique to aliases.
+ * The target of a {@link Record.Type#ALIAS} record. Contains record fields unique to aliases.
  *
  * @author mpolden
  */
