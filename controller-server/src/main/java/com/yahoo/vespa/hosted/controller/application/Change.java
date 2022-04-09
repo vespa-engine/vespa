@@ -127,7 +127,7 @@ public final class Change {
             changes.add("pin to " + platform.map(Version::toString).orElse("current platform"));
         else
             platform.ifPresent(version -> changes.add("upgrade to " + version.toString()));
-        application.ifPresent(version -> changes.add("application change to " + version.id()));
+        application.ifPresent(version -> changes.add("application change to " + version.stringId()));
         changes.setEmptyValue("no change");
         return changes.toString();
     }

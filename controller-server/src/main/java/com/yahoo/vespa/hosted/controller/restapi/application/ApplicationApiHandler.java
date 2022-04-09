@@ -1622,7 +1622,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         response.setString("nodes", withPathAndQuery("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/", "recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());
         response.setString("version", deployment.version().toFullString());
-        response.setString("revision", deployment.applicationVersion().id());
+        response.setString("revision", deployment.applicationVersion().stringId());
         Instant lastDeploymentStart = lastDeploymentStart(deploymentId.applicationId(), deployment);
         response.setLong("deployTimeEpochMs", lastDeploymentStart.toEpochMilli());
         controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zoneId())
@@ -1769,7 +1769,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Cursor root = slime.setObject();
         if ( ! instance.change().isEmpty()) {
             instance.change().platform().ifPresent(version -> root.setString("platform", version.toString()));
-            instance.change().application().ifPresent(applicationVersion -> root.setString("application", applicationVersion.id()));
+            instance.change().application().ifPresent(applicationVersion -> root.setString("application", applicationVersion.stringId()));
             root.setBool("pinned", instance.change().isPinned());
         }
         return new SlimeJsonResponse(slime);

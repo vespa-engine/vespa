@@ -94,7 +94,8 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
     }
 
     /** Returns a unique identifier for this version or "unknown" if version is not known */
-    public String id() {
+    // TODO jonmv: kill
+    public String stringId() {
         if (isUnknown()) return "unknown";
 
         return source.map(SourceRevision::commit).map(ApplicationVersion::abbreviateCommit)
@@ -168,7 +169,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
     @Override
     public String toString() {
-        return   "Application package version: " + id()
+        return "Application package version: " + stringId()
                + source.map(s -> ", " + s.toString()).orElse("")
                + authorEmail.map(e -> ", by " + e).orElse("")
                + compileVersion.map(v -> ", built against " + v).orElse("")

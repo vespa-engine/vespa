@@ -53,7 +53,7 @@ public class ApplicationStoreMock implements ApplicationStore {
         byte[] bytes = store.get(appId(tenantAndApplicationId.tenant(), tenantAndApplicationId.application())).get(applicationVersion);
         if (bytes == null)
             throw new IllegalArgumentException("No application package found for " + tenantAndApplicationId +
-                                               " with version " + applicationVersion.id());
+                                               " with version " + applicationVersion.stringId());
         return bytes;
     }
 

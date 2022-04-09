@@ -185,14 +185,14 @@ public class InternalStepRunner implements StepRunner {
         logger.log("Deploying platform version " +
                    versions.sourcePlatform().orElse(versions.targetPlatform()) +
                    " and application version " +
-                   versions.sourceApplication().orElse(versions.targetApplication()).id() + " ...");
+                   versions.sourceApplication().orElse(versions.targetApplication()).stringId() + " ...");
         return deployReal(id, true, logger);
     }
 
     private Optional<RunStatus> deployReal(RunId id, DualLogger logger) {
         Versions versions = controller.jobController().run(id).get().versions();
         logger.log("Deploying platform version " + versions.targetPlatform() +
-                   " and application version " + versions.targetApplication().id() + " ...");
+                   " and application version " + versions.targetApplication().stringId() + " ...");
         return deployReal(id, false, logger);
     }
 

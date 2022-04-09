@@ -104,8 +104,8 @@ public class Versions {
                                            .map(source -> source + " -> ").orElse(""),
                              targetPlatform,
                              sourceApplication.filter(source -> !source.equals(targetApplication))
-                                              .map(source -> source.id() + " -> ").orElse(""),
-                             targetApplication.id());
+                                              .map(source -> source.stringId() + " -> ").orElse(""),
+                             targetApplication.stringId());
     }
 
     /** Create versions using given change and application */

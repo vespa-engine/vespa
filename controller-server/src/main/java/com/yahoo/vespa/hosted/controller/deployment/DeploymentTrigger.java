@@ -495,7 +495,7 @@ public class DeploymentTrigger {
         public String toString() {
             return jobType + " for " + instanceId +
                    " on (" + versions.targetPlatform() + versions.sourcePlatform().map(version -> " <-- " + version).orElse("") +
-                   ", " + versions.targetApplication().id()  + versions.sourceApplication().map(version -> " <-- " + version.id()).orElse("") +
+                   ", " + versions.targetApplication().stringId() + versions.sourceApplication().map(version -> " <-- " + version.stringId()).orElse("") +
                    "), ready since " + availableSince;
         }
 
