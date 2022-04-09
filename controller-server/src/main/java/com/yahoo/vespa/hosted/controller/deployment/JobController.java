@@ -422,19 +422,15 @@ public class JobController {
                 logs.flush(id);
                 metric.jobFinished(run.id().job(), finishedRun.status());
 
-                DeploymentId deploymentId = new DeploymentId(unlockedRun.id().application(), unlockedRun.id().job().type().zone(controller.system()));
-                (unlockedRun.versions().targetApplication().isDeployedDirectly() ?
-                 Stream.of(unlockedRun.id().type()) :
-                 JobType.allIn(controller.system()).stream().filter(jobType -> !jobType.environment().isManuallyDeployed()))
-                        .flatMap(jobType -> controller.jobController().runs(unlockedRun.id().application(), jobType).values().stream())
-                        .mapToLong(r -> r.versions().targetApplication().buildNumber().orElse(Integer.MAX_VALUE))
-                        .min()
-                        .ifPresent(oldestBuild -> {
-                            if (unlockedRun.versions().targetApplication().isDeployedDirectly())
-                                controller.applications().applicationStore().pruneDevDiffs(deploymentId, oldestBuild);
-                            else
-                                controller.applications().applicationStore().pruneDiffs(deploymentId.applicationId().tenant(), deploymentId.applicationId().application(), oldestBuild);
-                        });
+                controller.jobController().runs(id.job()).values().stream()
+                          .mapToLong(r -> r.versions().targetApplication().buildNumber().orElse(Integer.MAX_VALUE))
+                          .min()
+                          .ifPresent(oldestBuild -> {
+                              if (unlockedRun.versions().targetApplication().isDeployedDirectly())
+                                  controller.applications().applicationStore().pruneDevDiffs(new DeploymentId(id.application(), id.job().type().zone(controller.system())), oldestBuild);
+                              else
+                                  controller.applications().applicationStore().pruneDiffs(id.application().tenant(), id.application().application(), oldestBuild);
+                          });
                 return finishedRun;
             });
         }
