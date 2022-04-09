@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
-import ai.vespa.http.DomainName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -78,7 +78,7 @@ public class LoadBalancerSerializer {
 
         Set<Real> reals = new LinkedHashSet<>();
         object.field(realsField).traverse((ArrayTraverser) (i, realObject) -> {
-            reals.add(new Real(DomainName.of(realObject.field(hostnameField).asString()),
+            reals.add(new Real(HostName.from(realObject.field(hostnameField).asString()),
                                realObject.field(ipAddressField).asString(),
                                (int) realObject.field(portField).asLong()));
 
@@ -90,7 +90,7 @@ public class LoadBalancerSerializer {
         Set<String> networks = new LinkedHashSet<>();
         object.field(networksField).traverse((ArrayTraverser) (i, network) -> networks.add(network.asString()));
 
-        Optional<DomainName> hostname = optionalString(object.field(hostnameField), Function.identity()).filter(s -> !s.isEmpty()).map(DomainName::of);
+        Optional<HostName> hostname = optionalString(object.field(hostnameField), Function.identity()).filter(s -> !s.isEmpty()).map(HostName::from);
         Optional<DnsZone> dnsZone = optionalString(object.field(dnsZoneField), DnsZone::new);
         Optional<LoadBalancerInstance> instance = hostname.map(h -> new LoadBalancerInstance(h, dnsZone, ports,
                                                                                              networks, reals));

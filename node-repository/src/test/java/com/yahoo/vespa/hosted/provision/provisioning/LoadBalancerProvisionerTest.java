@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import ai.vespa.http.DomainName;
 import com.google.common.collect.Iterators;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -91,7 +91,7 @@ public class LoadBalancerProvisionerTest {
         assertEquals(2, loadBalancer.instance().get().reals().size());
         assertTrue("Failed node is removed", loadBalancer.instance().get().reals().stream()
                                                          .map(Real::hostname)
-                                                         .map(DomainName::value)
+                                                         .map(HostName::value)
                                                          .noneMatch(hostname -> hostname.equals(toFail.hostname())));
         assertEquals(containers.get().get(0).hostname(), get(loadBalancer.instance().get().reals(), 0).hostname().value());
         assertEquals(containers.get().get(1).hostname(), get(loadBalancer.instance().get().reals(), 1).hostname().value());

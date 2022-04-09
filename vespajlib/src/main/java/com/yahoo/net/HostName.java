@@ -1,18 +1,39 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.net;
 
+import ai.vespa.http.DomainName;
+import ai.vespa.validation.PatternedStringWrapper;
+
 import java.util.Optional;
+import java.util.regex.Pattern;
+
+import static ai.vespa.validation.Validation.requireLength;
 
 /**
- * This class has utilities for getting the hostname of the system running the JVM.
+ * Hostnames match {@link #hostNamePattern}, and are restricted to 64 characters in length.
+ *
+ * This class also has utilities for getting the hostname of the system running the JVM.
  * Detection of the hostname is now done before starting any Vespa
  * programs and provided in the environment variable VESPA_HOSTNAME;
  * if that variable isn't set a default of "localhost" is always returned.
  *
  * @author arnej
+ * @author jonmv
  */
-public class HostName {
+public class HostName extends PatternedStringWrapper<HostName> {
 
-    private static String preferredHostName = null;
+    static final Pattern labelPattern = Pattern.compile("([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])");
+    static final Pattern hostNamePattern = Pattern.compile("(" + labelPattern + "\\.)*" + labelPattern);
+
+    private static HostName preferredHostName = null;
+
+    private HostName(String value) {
+        super(requireLength(value, "hostname length", 1, 64), hostNamePattern, "hostname");
+    }
+
+    public static HostName of(String value) {
+        return new HostName(value);
+    }
 
     /**
      * Return a public and fully qualified hostname for localhost that
@@ -24,19 +45,19 @@ public class HostName {
         if (preferredHostName == null) {
             preferredHostName = getPreferredHostName();
         }
-        return preferredHostName;
+        return preferredHostName.value();
     }
 
-    static private String getPreferredHostName() {
+    static private HostName getPreferredHostName() {
         Optional<String> vespaHostEnv = Optional.ofNullable(System.getenv("VESPA_HOSTNAME"));
         if (vespaHostEnv.isPresent() && ! vespaHostEnv.get().trim().isEmpty()) {
-            return vespaHostEnv.get().trim();
+            return of(vespaHostEnv.get().trim());
         }
-        return "localhost";
+        return of("localhost");
     }
 
     public static void setHostNameForTestingOnly(String hostName) {
-        preferredHostName = hostName;
+        preferredHostName = HostName.of(hostName);
     }
 
 }

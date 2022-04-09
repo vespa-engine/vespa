@@ -1066,10 +1066,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // TODO: Remove this method and use the loadbalancerName directly
         return Optional.ofNullable(loadbalancerName)
                 .orElseGet(
-                        () -> HostName.of(configServerSpecs.stream()
-                                                           .findFirst()
-                                                           .map(ConfigServerSpec::getHostName)
-                                                           .orElse("unknown") // Currently unable to test this, hence the unknown
+                        () -> HostName.from(configServerSpecs.stream()
+                                                    .findFirst()
+                                                    .map(ConfigServerSpec::getHostName)
+                                                    .orElse("unknown") // Currently unable to test this, hence the unknown
                         ));
     }
 

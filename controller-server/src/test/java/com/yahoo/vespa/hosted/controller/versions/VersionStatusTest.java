@@ -82,9 +82,9 @@ public class VersionStatusTest {
 
     @Test
     public void testControllerVersionIsVersionOfOldestController() {
-        HostName controller1 = HostName.of("controller-1");
-        HostName controller2 = HostName.of("controller-2");
-        HostName controller3 = HostName.of("controller-3");
+        HostName controller1 = HostName.from("controller-1");
+        HostName controller2 = HostName.from("controller-2");
+        HostName controller3 = HostName.from("controller-3");
         MockCuratorDb db = new MockCuratorDb(Stream.of(controller1, controller2, controller3)
                                                    .map(hostName -> hostName.value() + ":2222")
                                                    .collect(Collectors.joining(",")));
@@ -491,9 +491,9 @@ public class VersionStatusTest {
 
     @Test
     public void testCommitDetailsPreservation() {
-        HostName controller1 = HostName.of("controller-1");
-        HostName controller2 = HostName.of("controller-2");
-        HostName controller3 = HostName.of("controller-3");
+        HostName controller1 = HostName.from("controller-1");
+        HostName controller2 = HostName.from("controller-2");
+        HostName controller3 = HostName.from("controller-3");
         MockCuratorDb db = new MockCuratorDb(Stream.of(controller1, controller2, controller3)
                                                    .map(hostName -> hostName.value() + ":2222")
                                                    .collect(Collectors.joining(",")));

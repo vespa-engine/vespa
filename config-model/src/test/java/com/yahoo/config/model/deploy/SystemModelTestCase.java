@@ -2,12 +2,12 @@
 package com.yahoo.config.model.deploy;
 
 import com.yahoo.cloud.config.SentinelConfig;
-import com.yahoo.net.HostName;
 import com.yahoo.test.StandardConfig;
 import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.MapConfigModelRegistry;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.model.ConfigProducer;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
