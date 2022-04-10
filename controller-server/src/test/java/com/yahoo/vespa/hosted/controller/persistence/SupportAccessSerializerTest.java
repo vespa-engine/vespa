@@ -84,10 +84,8 @@ public class SupportAccessSerializerTest {
                 " \"state\": {\n" +
                 "  \"supportAccess\": \"NOT_ALLOWED\"\n" +
                 " },\n" +
-                " \"history\": [\n" +
-                " ],\n" +
-                " \"grants\": [\n" +
-                " ]\n" +
+                " \"history\": [ ],\n" +
+                " \"grants\": [ ]\n" +
                 "}\n");
     }
 
