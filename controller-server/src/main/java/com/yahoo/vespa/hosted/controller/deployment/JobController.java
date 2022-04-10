@@ -340,11 +340,7 @@ public class JobController {
 
     private DeploymentStatus deploymentStatus(Application application, Version systemVersion) {
         return new DeploymentStatus(application,
-                                    DeploymentStatus.jobsFor(application, controller.system()).stream()
-                                                    .collect(toMap(job -> job,
-                                                                   job -> jobStatus(job),
-                                                                   (j1, j2) -> { throw new IllegalArgumentException("Duplicate key " + j1.id()); },
-                                                                   LinkedHashMap::new)),
+                                    this::jobStatus,
                                     controller.system(),
                                     systemVersion,
                                     instance -> controller.applications().versionCompatibility(application.id().instance(instance)),
