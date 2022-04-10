@@ -47,7 +47,6 @@ public class ContainerTester {
 
     private static final boolean writeResponses = false;
 
-
     private final JDisc container;
     private final String responseFilePath;
     

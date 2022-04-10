@@ -369,9 +369,16 @@ class JobControllerApiHandlerHelper {
         }
 
         Cursor buildsArray = responseObject.setArray("builds");
-        application.revisions().withPackage().stream().sorted(reverseOrder()).forEach(version -> toSlime(buildsArray.addObject(), version));
+        application.revisions().withPackage().stream().sorted(reverseOrder()).forEach(version -> toRichSlime(buildsArray.addObject(), version));
 
         return new SlimeJsonResponse(slime);
+    }
+
+    static void toRichSlime(Cursor versionObject, ApplicationVersion version) {
+        toSlime(versionObject, version);
+        version.description().ifPresent(description -> versionObject.setString("description", description));
+        if (version.risk() != 0) versionObject.setLong("risk", version.risk());
+        versionObject.setBool("deployable", version.isDeployable());
     }
 
     static void toSlime(Cursor versionObject, ApplicationVersion version) {

@@ -1718,7 +1718,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     static MultiPartStreamer createApplicationSubmissionData(ApplicationPackage applicationPackage, long projectId) {
         return new MultiPartStreamer().addJson(EnvironmentResource.SUBMIT_OPTIONS, "{\"repository\":\"repository1\",\"branch\":\"master\",\"commit\":\"commit1\","
-                                                                                   + "\"projectId\":" + projectId + ",\"authorEmail\":\"a@b\"}")
+                                                                                   + "\"projectId\":" + projectId + ",\"authorEmail\":\"a@b\","
+                                                                                   + "\"description\":\"my best commit yet\",\"risk\":9001}")
                                       .addBytes(EnvironmentResource.APPLICATION_ZIP, applicationPackage.zippedContent())
                                       .addBytes(EnvironmentResource.APPLICATION_TEST_ZIP, "content".getBytes());
     }
