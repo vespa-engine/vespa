@@ -201,7 +201,7 @@ public class ContainerTester {
         return prefix + includedContent + postFix;
     }
 
-    private String writeTestFile(String name, byte[] content) {
+    private void writeTestFile(String name, byte[] content) {
         try {
             Files.write(Paths.get(responseFilePath, name), content);
         } catch (IOException e) {
