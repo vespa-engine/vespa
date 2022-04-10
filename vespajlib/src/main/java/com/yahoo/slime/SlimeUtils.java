@@ -106,8 +106,12 @@ public class SlimeUtils {
     }
 
     public static byte[] toJsonBytes(Inspector inspector) throws IOException {
+        return toJsonBytes(inspector, true);
+    }
+
+    public static byte[] toJsonBytes(Inspector inspector, boolean compact) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        new JsonFormat(true).encode(baos, inspector);
+        new JsonFormat(compact ? 0 : 2).encode(baos, inspector);
         return baos.toByteArray();
     }
 

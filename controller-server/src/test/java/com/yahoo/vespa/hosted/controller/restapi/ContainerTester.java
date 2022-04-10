@@ -117,16 +117,14 @@ public class ContainerTester {
             throw new UncheckedIOException(e);
         }
         try {
-            if (responseFilePath.endsWith(".json")) {
-                ByteArrayOutputStream expected = new ByteArrayOutputStream();
-                ByteArrayOutputStream actual = new ByteArrayOutputStream();
-                new JsonFormat(false).encode(expected, SlimeUtils.jsonToSlimeOrThrow(expectedResponse));
-                new JsonFormat(false).encode(actual, SlimeUtils.jsonToSlimeOrThrow(responseString));
-                if (writeResponses) writeTestFile(responseFilePath, expected.toByteArray());
-                else assertEquals(expected.toString(UTF_8), actual.toString(UTF_8));
+            if (responseFile.toString().endsWith(".json")) {
+                byte[] expected = SlimeUtils.toJsonBytes(SlimeUtils.jsonToSlimeOrThrow(expectedResponse).get(), false);
+                byte[] actual = SlimeUtils.toJsonBytes(SlimeUtils.jsonToSlimeOrThrow(responseString).get(), false);
+                if (writeResponses) writeTestFile(responseFile.toString(), actual);
+                else assertEquals(new String(expected, UTF_8), new String(actual, UTF_8));
             }
-            else{ // Not JSON? Let's do a verbatim comparison, then ...
-                if (writeResponses) writeTestFile(responseFilePath, expectedResponse.getBytes(UTF_8));
+            else { // Not JSON? Let's do a verbatim comparison, then ...
+                if (writeResponses) writeTestFile(responseFile.toString(), responseString.getBytes(UTF_8));
                 else assertEquals(expectedResponse, responseString);
             }
         }
