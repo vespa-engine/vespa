@@ -169,7 +169,7 @@ public class DeploymentContext {
     /** Completely deploy the current change */
     public DeploymentContext deploy() {
         Application application = application();
-        assertTrue("Application package submitted", application.latestVersion().isPresent());
+        assertTrue("Application package submitted", application.revisions().last().isPresent());
         assertFalse("Submission is not already deployed", application.instances().values().stream()
                                                                      .anyMatch(instance -> instance.deployments().values().stream()
                                                                                                      .anyMatch(deployment -> deployment.applicationVersion().equals(lastSubmission))));

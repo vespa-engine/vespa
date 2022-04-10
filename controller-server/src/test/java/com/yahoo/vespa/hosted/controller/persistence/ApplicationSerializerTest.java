@@ -153,12 +153,12 @@ public class ApplicationSerializerTest {
 
         assertEquals(original.id(), serialized.id());
         assertEquals(original.createdAt(), serialized.createdAt());
-        assertEquals(original.latestVersion(), serialized.latestVersion());
-        assertEquals(original.latestVersion().get().authorEmail(), serialized.latestVersion().get().authorEmail());
-        assertEquals(original.latestVersion().get().buildTime(), serialized.latestVersion().get().buildTime());
-        assertEquals(original.latestVersion().get().sourceUrl(), serialized.latestVersion().get().sourceUrl());
-        assertEquals(original.latestVersion().get().commit(), serialized.latestVersion().get().commit());
-        assertEquals(original.latestVersion().get().bundleHash(), serialized.latestVersion().get().bundleHash());
+        assertEquals(original.revisions().last(), serialized.revisions().last());
+        assertEquals(original.revisions().last().get().authorEmail(), serialized.revisions().last().get().authorEmail());
+        assertEquals(original.revisions().last().get().buildTime(), serialized.revisions().last().get().buildTime());
+        assertEquals(original.revisions().last().get().sourceUrl(), serialized.revisions().last().get().sourceUrl());
+        assertEquals(original.revisions().last().get().commit(), serialized.revisions().last().get().commit());
+        assertEquals(original.revisions().last().get().bundleHash(), serialized.revisions().last().get().bundleHash());
         assertEquals(original.revisions().withPackage(), serialized.revisions().withPackage());
         assertEquals(original.revisions().production(), serialized.revisions().production());
         assertEquals(original.revisions().development(), serialized.revisions().development());

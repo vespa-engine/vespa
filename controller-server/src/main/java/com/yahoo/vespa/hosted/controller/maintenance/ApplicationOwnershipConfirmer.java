@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -103,7 +102,7 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
             }
         }
         return new ApplicationSummary(app.id().defaultInstance(), app.activity().lastQueried(), app.activity().lastWritten(),
-                                      app.latestVersion().flatMap(version -> version.buildTime()), metrics);
+                                      app.revisions().last().flatMap(version -> version.buildTime()), metrics);
     }
 
     /** Escalate ownership issues which have not been closed before a defined amount of time has passed. */

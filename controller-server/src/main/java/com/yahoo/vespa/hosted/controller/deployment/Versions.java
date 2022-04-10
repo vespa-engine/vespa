@@ -144,7 +144,7 @@ public class Versions {
 
     private static ApplicationVersion defaultApplicationVersion(Application application) {
         return application.oldestDeployedApplication()
-                          .or(application::latestVersion)
+                          .or(() -> application.revisions().last())
                           .orElseThrow(() -> new IllegalStateException("no known prod revisions, but asked for one, for " + application));
     }
 

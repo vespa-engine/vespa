@@ -108,21 +108,6 @@ public class Application {
     /** Returns the known revisions for this application. */
     public RevisionHistory revisions() { return revisions; }
 
-    /** Returns the last submitted version of this application. */
-    public Optional<ApplicationVersion> latestVersion() {
-        return revisions().last();
-    }
-
-    /** Returns the currently deployed versions of the application, ordered from oldest to newest. */
-    public List<ApplicationVersion> versions() {
-        return revisions().withPackage();
-    }
-
-    /** Returns the currently deployable versions of the application */
-    public Collection<ApplicationVersion> deployableVersions(boolean ascending) {
-        return revisions().deployable(ascending);
-    }
-
     /**
      * Returns the last deployed validation overrides of this application,
      * or the empty validation overrides if it has never been deployed

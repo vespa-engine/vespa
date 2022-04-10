@@ -53,7 +53,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.collections.Iterables.reversed;
@@ -458,7 +457,7 @@ public class JobController {
         ApplicationController applications = controller.applications();
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         applications.lockApplicationOrThrow(id, application -> {
-            Optional<ApplicationVersion> previousVersion = application.get().latestVersion();
+            Optional<ApplicationVersion> previousVersion = application.get().revisions().last();
             Optional<ApplicationPackage> previousPackage = previousVersion.flatMap(previous -> applications.applicationStore().find(id.tenant(), id.application(), previous.buildNumber().getAsLong()))
                                                                           .map(ApplicationPackage::new);
             long previousBuild = previousVersion.map(latestVersion -> latestVersion.buildNumber().getAsLong()).orElse(0L);
@@ -504,7 +503,7 @@ public class JobController {
             controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed.get());
             controller.applications().applicationStore().pruneTesters(id.tenant(), id.application(), oldestDeployed.get());
 
-            for (ApplicationVersion version : application.get().versions())
+            for (ApplicationVersion version : application.get().revisions().withPackage())
                 if (version.compareTo(oldestDeployed.get()) < 0)
                     application = application.withRevisions(revisions -> revisions.with(version.withoutPackage()));
         }

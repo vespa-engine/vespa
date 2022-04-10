@@ -270,7 +270,7 @@ public class DeploymentStatus {
         StepStatus status = instanceSteps().get(instance);
         if (status == null) return Change.empty();
         boolean ascending = next == application.deploymentSpec().requireInstance(instance).revisionTarget();
-        for (ApplicationVersion version : application.deployableVersions(ascending)) {
+        for (ApplicationVersion version : application.revisions().deployable(ascending)) {
             if (status.dependenciesCompletedAt(Change.of(version), Optional.empty()).map(now::isBefore).orElse(true)) continue;
             Change change = Change.of(version);
             if (application.productionDeployments().getOrDefault(instance, List.of()).stream()

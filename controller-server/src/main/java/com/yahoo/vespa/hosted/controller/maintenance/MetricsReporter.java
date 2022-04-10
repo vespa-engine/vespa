@@ -167,7 +167,7 @@ public class MetricsReporter extends ControllerMaintainer {
         });
 
         for (Application application : applications.asList())
-            application.latestVersion()
+            application.revisions().last()
                        .flatMap(ApplicationVersion::buildTime)
                        .ifPresent(buildTime -> metric.set(DEPLOYMENT_BUILD_AGE_SECONDS,
                                                           controller().clock().instant().getEpochSecond() - buildTime.getEpochSecond(),

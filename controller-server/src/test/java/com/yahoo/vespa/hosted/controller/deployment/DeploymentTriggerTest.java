@@ -1380,7 +1380,7 @@ public class DeploymentTriggerTest {
         // Upgrade instance 1; upgrade rolls out first, with revision following.
         // The new platform won't roll out to the conservative instance until the normal one is upgraded.
         app1.submit(applicationPackage);
-        assertEquals(Change.of(version).with(app1.application().latestVersion().get()), app1.instance().change());
+        assertEquals(Change.of(version).with(app1.application().revisions().last().get()), app1.instance().change());
         // Upgrade platform.
         app2.runJob(systemTest);
         app1.runJob(stagingTest)
@@ -1443,7 +1443,7 @@ public class DeploymentTriggerTest {
         tester.triggerJobs();
         assertEquals(1, tester.jobs().active().size());
         assertEquals(Change.empty(), app1.instance().change());
-        assertEquals(Change.of(version).with(app1.application().latestVersion().get()), app2.instance().change());
+        assertEquals(Change.of(version).with(app1.application().revisions().last().get()), app2.instance().change());
 
         app2.runJob(productionEuWest1)
             .runJob(testEuWest1);
