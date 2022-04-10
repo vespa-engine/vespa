@@ -39,26 +39,12 @@ public class ApplicationList extends AbstractFilteringList<Application, Applicat
                        .collect(Collectors.toUnmodifiableList()));
     }
 
-    // ----------------------------------- Accessors
-
-    /** Returns the ids of the applications in this as an immutable list */
-    public List<TenantAndApplicationId> idList() {
-        return mapToList(Application::id);
-    }
-
     // ----------------------------------- Filters
 
     /** Returns the subset of applications which have at least one production deployment */
     public ApplicationList withProductionDeployment() {
         return matching(application -> application.instances().values().stream()
                                                     .anyMatch(instance -> instance.productionDeployments().size() > 0));
-    }
-
-    /** Returns the subset of applications which have at least one deployment on a lower version than the given one */
-    public ApplicationList onLowerVersionThan(Version version) {
-        return matching(application -> application.instances().values().stream()
-                                                    .flatMap(instance -> instance.productionDeployments().values().stream())
-                                                    .anyMatch(deployment -> deployment.version().isBefore(version)));
     }
 
     /** Returns the subset of applications with at least one declared job in deployment spec. */
@@ -72,45 +58,9 @@ public class ApplicationList extends AbstractFilteringList<Application, Applicat
         return matching(application -> application.projectId().isPresent());
     }
 
-    /** Returns the subset of applications that are allowed to upgrade at the given time */
-    public ApplicationList canUpgradeAt(Instant instant) {
-        return matching(application -> application.deploymentSpec().instances().stream()
-                                                    .allMatch(instance -> instance.canUpgradeAt(instant)));
-    }
-
-    /** Returns the subset of applications that have at least one assigned rotation */
-    public ApplicationList hasRotation() {
-        return matching(application -> application.instances().values().stream()
-                                                    .anyMatch(instance -> ! instance.rotations().isEmpty()));
-    }
-
-    /**
-     * Returns the subset of applications that hasn't pinned to an an earlier major version than the given one.
-     *
-     * @param targetMajorVersion the target major version which applications returned allows upgrading to
-     * @param defaultMajorVersion the default major version to assume for applications not specifying one
-     */
-    public ApplicationList allowMajorVersion(int targetMajorVersion, int defaultMajorVersion) {
-        return matching(application -> targetMajorVersion <= application.deploymentSpec().majorVersion()
-                                                                          .orElse(application.majorVersion()
-                                                                                             .orElse(defaultMajorVersion)));
-    }
-
     /** Returns the subset of application which have submitted a non-empty deployment spec. */
     public ApplicationList withDeploymentSpec() {
         return matching(application -> ! DeploymentSpec.empty.equals(application.deploymentSpec()));
-    }
-
-     // ----------------------------------- Sorting
-
-    /**
-     * Returns this list sorted by increasing deployed version.
-     * If multiple versions are deployed the oldest is used.
-     * Applications without any deployments are ordered first.
-     */
-    public ApplicationList byIncreasingDeployedVersion() {
-        return sortedBy(Comparator.comparing(application -> application.oldestDeployedPlatform()
-                                                                       .orElse(Version.emptyVersion)));
     }
 
 }
