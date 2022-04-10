@@ -1660,7 +1660,7 @@ public class DeploymentTriggerTest {
                 "        </prod>\n" +
                 "    </instance>\n" +
                 "    <instance id='gamma'>\n" +
-                "        <upgrade revision-change='when-clear' revision-target='next' />\n" +
+                "        <upgrade revision-change='when-clear' revision-target='next' min-risk='3' max-risk='6' />\n" +
                 "        <prod>\n" +
                 "            <region>us-east-3</region>\n" +
                 "            <test>us-east-3</test>\n" +
@@ -1671,11 +1671,11 @@ public class DeploymentTriggerTest {
         var alpha = tester.newDeploymentContext("t", "a", "alpha");
         var beta  = tester.newDeploymentContext("t", "a", "beta");
         var gamma = tester.newDeploymentContext("t", "a", "gamma");
-        alpha.submit(appPackage).deploy();
+        alpha.submit(appPackage, 0).deploy();
 
         // revision2 is submitted, and rolls through alpha.
         var revision1 = alpha.lastSubmission();
-        alpha.submit(appPackage);
+        alpha.submit(appPackage, 3); // Risk high enough that this may roll out alone to gamma.
         var revision2 = alpha.lastSubmission();
 
         alpha.runJob(systemTest).runJob(stagingTest)
@@ -1685,12 +1685,12 @@ public class DeploymentTriggerTest {
         // revision3 is submitted when revision2 is half-way.
         tester.outstandingChangeDeployer().run();
         beta.runJob(productionUsEast3);
-        alpha.submit(appPackage);
+        alpha.submit(appPackage, 2); // Will only roll out to gamma together with the next revision.
         var revision3 = alpha.lastSubmission();
         beta.runJob(testUsEast3);
         assertEquals(Optional.empty(), beta.instance().change().application());
 
-        // revision3 is the target for alpha, beta is done, version1 is the target for gamma.
+        // revision3 is the target for alpha, beta is done, revision2 is the target for gamma.
         tester.outstandingChangeDeployer().run();
         assertEquals(revision3, alpha.instance().change().application());
         assertEquals(Optional.empty(), beta.instance().change().application());
@@ -1704,11 +1704,11 @@ public class DeploymentTriggerTest {
         assertEquals(revision3, beta.instance().change().application());
 
         // revision5 supersedes revision4
-        alpha.submit(appPackage);
+        alpha.submit(appPackage, 3);
         var revision4 = alpha.lastSubmission();
         alpha.runJob(systemTest).runJob(stagingTest)
              .runJob(productionUsEast3);
-        alpha.submit(appPackage);
+        alpha.submit(appPackage, 2);
         var revision5 = alpha.lastSubmission();
         alpha.runJob(systemTest).runJob(stagingTest)
              .runJob(productionUsEast3).runJob(testUsEast3);
@@ -1716,8 +1716,8 @@ public class DeploymentTriggerTest {
         assertEquals(Optional.empty(), alpha.instance().change().application());
         assertEquals(revision3, beta.instance().change().application());
 
-        // revision6 rolls through alpha, and becomes the next target for beta
-        alpha.submit(appPackage);
+        // revision6 rolls through alpha, and becomes the next target for beta, which also completes revision3.
+        alpha.submit(appPackage, 6);
         var revision6 = alpha.lastSubmission();
         alpha.runJob(systemTest).runJob(stagingTest)
              .runJob(productionUsEast3)
@@ -1727,23 +1727,27 @@ public class DeploymentTriggerTest {
         assertEquals(Optional.empty(), alpha.instance().change().application());
         assertEquals(revision6, beta.instance().change().application());
 
-        // revision6 rolls through beta, but revision3 is the next target for gamma with "exclusive" revision upgrades
-        alpha.jobAborted(stagingTest).runJob(stagingTest);
-        beta.runJob(productionUsEast3).runJob(testUsEast3);
-
-        // revision 2 fails, but this does not bring on revision 3
+        // revision 2 fails in gamma, but this does not bring on revision 3
         gamma.failDeployment(productionUsEast3);
         tester.outstandingChangeDeployer().run();
-        assertEquals(Optional.empty(), beta.instance().change().application());
         assertEquals(revision2, gamma.instance().change().application());
 
-        // revision 2 completes
+        // revision 2 completes in gamma
         gamma.runJob(productionUsEast3)
              .runJob(testUsEast3);
         tester.outstandingChangeDeployer().run();
         assertEquals(Optional.empty(), alpha.instance().change().application());
+        assertEquals(Optional.empty(), gamma.instance().change().application()); // no other revisions after 3 are ready, so gamma waits
+
+        // revision6 rolls through beta, and revision3 is the next target for gamma with "when-clear" change-revision, now that 6 is blocking 4 and 5
+        alpha.jobAborted(stagingTest).runJob(stagingTest);
+        beta.runJob(productionUsEast3).runJob(testUsEast3);
         assertEquals(Optional.empty(), beta.instance().change().application());
-        assertEquals(revision3, gamma.instance().change().application());
+
+        tester.outstandingChangeDeployer().run();
+        assertEquals(Optional.empty(), alpha.instance().change().application());
+        assertEquals(Optional.empty(), beta.instance().change().application());
+        assertEquals(revision3, gamma.instance().change().application()); // revision4 never became ready, but 5 did, so 4 is skipped, and 3 rolls out alone instead.
 
         // revision 6 is next, once 3 is done
         // revision 3 completes
@@ -1751,6 +1755,18 @@ public class DeploymentTriggerTest {
              .runJob(testUsEast3);
         tester.outstandingChangeDeployer().run();
         assertEquals(revision6, gamma.instance().change().application());
+
+        // revision 7 becomes ready for gamma, but must wait for the idle time of 8 hours before being deployed
+        alpha.submit(appPackage, 1);
+        var revision7 = alpha.lastSubmission();
+        alpha.deploy();
+        tester.outstandingChangeDeployer();
+        assertEquals(Change.empty(), gamma.instance().change());
+        assertEquals(revision6.get(), gamma.deployment(ZoneId.from("prod.us-east-3")).applicationVersion());
+
+        tester.clock().advance(Duration.ofHours(8));
+        tester.outstandingChangeDeployer().run();
+        assertEquals(revision7, gamma.instance().change().application());
     }
 
     @Test

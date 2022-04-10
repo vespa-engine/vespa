@@ -258,7 +258,12 @@ public class DeploymentContext {
 
     /** Submit given application package for deployment */
     public DeploymentContext resubmit(ApplicationPackage applicationPackage) {
-        return submit(applicationPackage, Optional.of(defaultSourceRevision), salt.get());
+        return submit(applicationPackage, Optional.of(defaultSourceRevision), salt.get(), 0);
+    }
+
+    /** Submit given application package for deployment */
+    public DeploymentContext submit(ApplicationPackage applicationPackage, int risk) {
+        return submit(applicationPackage, Optional.of(defaultSourceRevision), salt.incrementAndGet(), risk);
     }
 
     /** Submit given application package for deployment */
@@ -268,22 +273,22 @@ public class DeploymentContext {
 
     /** Submit given application package for deployment */
     public DeploymentContext submit(ApplicationPackage applicationPackage, long salt) {
-        return submit(applicationPackage, Optional.of(defaultSourceRevision), salt);
+        return submit(applicationPackage, Optional.of(defaultSourceRevision), salt, 0);
     }
 
     /** Submit given application package for deployment */
     public DeploymentContext submit(ApplicationPackage applicationPackage, Optional<SourceRevision> sourceRevision) {
-        return submit(applicationPackage, sourceRevision, salt.incrementAndGet());
+        return submit(applicationPackage, sourceRevision, salt.incrementAndGet(), 0);
     }
 
     /** Submit given application package for deployment */
-    public DeploymentContext submit(ApplicationPackage applicationPackage, Optional<SourceRevision> sourceRevision, long salt) {
+    public DeploymentContext submit(ApplicationPackage applicationPackage, Optional<SourceRevision> sourceRevision, long salt, int risk) {
         var projectId = tester.controller().applications()
                               .requireApplication(applicationId)
                               .projectId()
                               .orElse(1000); // These are really set through submission, so just pick one if it hasn't been set.
         var testerpackage = new byte[]{ (byte) (salt >> 56), (byte) (salt >> 48), (byte) (salt >> 40), (byte) (salt >> 32), (byte) (salt >> 24), (byte) (salt >> 16), (byte) (salt >> 8), (byte) salt };
-        lastSubmission = jobs.submit(applicationId, sourceRevision, Optional.of("a@b"), Optional.empty(), projectId, applicationPackage, testerpackage, Optional.empty(), 0);
+        lastSubmission = jobs.submit(applicationId, sourceRevision, Optional.of("a@b"), Optional.empty(), projectId, applicationPackage, testerpackage, Optional.empty(), risk);
         return this;
     }
 

@@ -257,7 +257,8 @@ public class DeploymentStatus {
         DeploymentInstanceSpec spec = application.deploymentSpec().requireInstance(instance);
         boolean ascending = next == spec.revisionTarget();
         int cumulativeRisk = 0;
-        Instant readySince = Instant.MAX;
+        int skippedCumulativeRisk = 0;
+        Instant readySince = now;
         Change candidate = Change.empty();
         for (ApplicationVersion version : application.revisions().deployable(ascending)) {
             // A revision is only a candidate if it upgrades, and does not downgrade, this instance.
@@ -270,12 +271,14 @@ public class DeploymentStatus {
                 else return Change.empty(); // ... if the latest is already complete, there's nothing outstanding.
 
             // This revision contains something new, so start aggregating the risk score.
-            cumulativeRisk += version.risk();
+            skippedCumulativeRisk += version.risk();
             // If it's not yet ready to roll out, we keep looking.
             Optional<Instant> readyAt = status.dependenciesCompletedAt(Change.of(version), Optional.empty());
             if (readyAt.map(now::isBefore).orElse(true)) continue;
 
             // It's ready. If looking for the latest, max risk is 0, and we'll return now; otherwise, we _may_ keep on looking for more.
+            cumulativeRisk += skippedCumulativeRisk;
+            skippedCumulativeRisk = 0;
             if (cumulativeRisk >= spec.maxRisk())
                 return candidate.equals(Change.empty()) ? change : candidate; // If the first candidate exceeds max risk, we have to accept that.
 
@@ -284,7 +287,10 @@ public class DeploymentStatus {
             candidate = change;
         }
         // If min risk is ready, or max idle time has passed, we return the candidate. Otherwise, no outstanding change is ready.
-        return cumulativeRisk >= spec.minRisk() || readySince.isBefore(now.minus(Duration.ofHours(spec.maxIdleHours()))) ? candidate : Change.empty();
+        return      instanceJobs(instance).values().stream().allMatch(jobs -> jobs.lastTriggered().isEmpty())
+               ||   cumulativeRisk >= spec.minRisk()
+               || ! now.isBefore(readySince.plus(Duration.ofHours(spec.maxIdleHours())))
+               ? candidate : Change.empty();
     }
 
     /** Earliest instant when job was triggered with given versions, or both system and staging tests were successful. */
