@@ -18,7 +18,6 @@ public:
     operator T ()       const { return _v; }
     operator T & ()           { return _v; }
     int32_t weight()    const { return 1; }
-    void setWeight(int32_t w) { (void) w; }
     bool operator ==(const Value<T> & rhs) const { return _v == rhs._v; }
     bool operator <(const Value<T> & rhs) const { return _v < rhs._v; }
     bool operator >(const Value<T> & rhs) const { return _v > rhs._v; }
@@ -37,7 +36,6 @@ public:
     operator T ()         const { return _v; }
     operator T & ()             { return _v; }
     int32_t weight()      const { return _w; }
-    void setWeight(int32_t w)   { _w = w; }
 
     bool operator==(const WeightedValue<T> & rhs) const { return _v == rhs._v; }
     bool operator <(const WeightedValue<T> & rhs) const { return _v < rhs._v; }
