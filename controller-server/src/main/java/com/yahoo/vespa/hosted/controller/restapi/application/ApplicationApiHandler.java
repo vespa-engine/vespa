@@ -2732,6 +2732,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                   : Optional.empty();
         Optional<String> sourceUrl = optional("sourceUrl", submitOptions);
         Optional<String> authorEmail = optional("authorEmail", submitOptions);
+        Optional<String> description = optional("description", submitOptions);
+        int risk = (int) submitOptions.field("risk").asLong();
 
         sourceUrl.map(URI::create).ifPresent(url -> {
             if (url.getHost() == null || url.getScheme() == null)
@@ -2754,6 +2756,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                             sourceRevision,
                                                             authorEmail,
                                                             sourceUrl,
+                                                            description,
+                                                            risk,
                                                             projectId,
                                                             applicationPackage,
                                                             dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));
@@ -2761,7 +2765,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse removeAllProdDeployments(String tenant, String application) {
         JobControllerApiHandlerHelper.submitResponse(controller.jobController(), tenant, application,
-                Optional.empty(), Optional.empty(), Optional.empty(), 1,
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), 0, 1,
                 ApplicationPackage.deploymentRemoval(), new byte[0]);
         return new MessageResponse("All deployments removed");
     }

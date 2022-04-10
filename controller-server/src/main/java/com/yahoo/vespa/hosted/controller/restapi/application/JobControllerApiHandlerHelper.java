@@ -195,15 +195,10 @@ class JobControllerApiHandlerHelper {
      */
     static HttpResponse submitResponse(JobController jobController, String tenant, String application,
                                        Optional<SourceRevision> sourceRevision, Optional<String> authorEmail,
-                                       Optional<String> sourceUrl, long projectId,
+                                       Optional<String> sourceUrl, Optional<String> description, int risk, long projectId,
                                        ApplicationPackage applicationPackage, byte[] testPackage) {
-        ApplicationVersion version = jobController.submit(TenantAndApplicationId.from(tenant, application),
-                                                          sourceRevision,
-                                                          authorEmail,
-                                                          sourceUrl,
-                                                          projectId,
-                                                          applicationPackage,
-                                                          testPackage);
+        ApplicationVersion version = jobController.submit(TenantAndApplicationId.from(tenant, application), sourceRevision, authorEmail,
+                                                          sourceUrl, projectId, applicationPackage, testPackage, description, risk);
 
         return new MessageResponse(version.toString());
     }

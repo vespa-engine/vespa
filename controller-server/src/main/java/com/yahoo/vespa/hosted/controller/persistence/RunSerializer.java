@@ -186,8 +186,7 @@ class RunSerializer {
         boolean deployedDirectly = versionObject.field(deployedDirectlyField).asBool();
         Optional<String> bundleHash = SlimeUtils.optionalString(versionObject.field(bundleHashField));
 
-        return new ApplicationVersion(source, OptionalLong.of(buildNumber), authorEmail, compileVersion,
-                                      buildTime, sourceUrl, commit, deployedDirectly, bundleHash, false, false);
+        return new ApplicationVersion(source, OptionalLong.of(buildNumber), authorEmail, compileVersion, buildTime, sourceUrl, commit, deployedDirectly, bundleHash, false, false, Optional.empty(), 0);
     }
 
     // Don't change this — introduce a separate array instead.
@@ -264,7 +263,6 @@ class RunSerializer {
     private void toSlime(Version platformVersion, ApplicationVersion applicationVersion, Cursor versionsObject) {
         versionsObject.setString(platformVersionField, platformVersion.toString());
         applicationVersion.buildNumber().ifPresent(number -> versionsObject.setLong(buildField, number));
-        // TODO jonmv: Remove source revision.
         applicationVersion.source().map(SourceRevision::repository).ifPresent(repository -> versionsObject.setString(repositoryField, repository));
         applicationVersion.source().map(SourceRevision::branch).ifPresent(branch -> versionsObject.setString(branchField, branch));
         applicationVersion.source().map(SourceRevision::commit).ifPresent(commit -> versionsObject.setString(commitField, commit));

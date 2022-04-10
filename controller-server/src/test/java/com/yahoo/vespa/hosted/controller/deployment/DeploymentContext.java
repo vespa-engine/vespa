@@ -283,8 +283,7 @@ public class DeploymentContext {
                               .projectId()
                               .orElse(1000); // These are really set through submission, so just pick one if it hasn't been set.
         var testerpackage = new byte[]{ (byte) (salt >> 56), (byte) (salt >> 48), (byte) (salt >> 40), (byte) (salt >> 32), (byte) (salt >> 24), (byte) (salt >> 16), (byte) (salt >> 8), (byte) salt };
-        lastSubmission = jobs.submit(applicationId, sourceRevision, Optional.of("a@b"), Optional.empty(),
-                                     projectId, applicationPackage, testerpackage);
+        lastSubmission = jobs.submit(applicationId, sourceRevision, Optional.of("a@b"), Optional.empty(), projectId, applicationPackage, testerpackage, Optional.empty(), 0);
         return this;
     }
 
