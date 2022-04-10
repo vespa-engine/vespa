@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.json.JsonTestHelper;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
@@ -15,8 +16,8 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,6 +38,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.app
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -189,17 +191,16 @@ public class JobControllerApiHandlerHelperTest {
                        "jobs-direct-deployment.json");
     }
 
-    private void compare(HttpResponse response, String expected) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        response.render(baos);
-        JsonTestHelper.assertJsonEquals(baos.toString(), expected);
-    }
-
     private void assertResponse(HttpResponse response, String fileName) {
         try {
             Path path = Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/restapi/application/responses/").resolve(fileName);
-            String expected = Files.readString(path);
-            compare(response, expected);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            response.render(baos);
+            byte[] actualJson = SlimeUtils.toJsonBytes(SlimeUtils.jsonToSlimeOrThrow(baos.toByteArray()).get(), false);
+            Files.write(path, actualJson);
+            byte[] expected = Files.readAllBytes(path);
+            assertEquals(new String(SlimeUtils.toJsonBytes(SlimeUtils.jsonToSlimeOrThrow(expected).get(), false), UTF_8),
+                         new String(actualJson, UTF_8));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

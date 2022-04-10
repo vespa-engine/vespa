@@ -255,18 +255,31 @@ public class DeploymentStatus {
         StepStatus status = instanceSteps().get(instance);
         if (status == null) return Change.empty();
         boolean ascending = next == application.deploymentSpec().requireInstance(instance).revisionTarget();
+        int cumulativeRisk = 0;
+        Change candidate = Change.empty();
         for (ApplicationVersion version : application.revisions().deployable(ascending)) {
-            if (status.dependenciesCompletedAt(Change.of(version), Optional.empty()).map(now::isBefore).orElse(true)) continue;
+            // A revision is only a candidate if it upgrades, and does not downgrade, this instance.
             Change change = Change.of(version);
             if (application.productionDeployments().getOrDefault(instance, List.of()).stream()
                            .anyMatch(deployment -> change.downgrades(deployment.applicationVersion()))) continue;
             if ( ! application.require(instance).change().application().map(change::upgrades).orElse(true)) continue;
             if (hasCompleted(instance, change))
-                if (ascending) continue;
-                else break;
-            return change;
+                if (ascending) continue;    // Keep looking for the next revision which is an upgrade, or ...
+                else return Change.empty(); // ... if the latest is already complete, there's nothing outstanding.
+
+            // This revision contains something new, so start aggregating the risk score.
+            cumulativeRisk += version.risk();
+            // If it's not yet ready to roll out, we keep looking.
+            if (status.dependenciesCompletedAt(Change.of(version), Optional.empty()).map(now::isBefore).orElse(true)) continue;
+
+            // It's ready. If looking for the latest, max risk is 0, and we'll return now; otherwise, we _may_ keep on looking for more.
+            if (cumulativeRisk >= application.deploymentSpec().requireInstance(instance).maxRisk())
+                return candidate.equals(Change.empty()) ? change : candidate; // If the first candidate exceeds max risk, we have to accept that.
+
+            // Otherwise, we may note this as a candidate, and keep looking for a newer revision, unless that makes us exceed max risk.
+            candidate = change;
         }
-        return Change.empty();
+        return candidate;
     }
 
     /** Earliest instant when job was triggered with given versions, or both system and staging tests were successful. */
