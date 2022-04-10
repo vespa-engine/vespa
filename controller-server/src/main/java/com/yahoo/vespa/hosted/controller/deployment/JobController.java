@@ -236,7 +236,7 @@ public class JobController {
     }
 
     /** Returns all job types which have been run for the given application. */
-    public List<JobType> jobs(ApplicationId id) {
+    private List<JobType> jobs(ApplicationId id) {
         return JobType.allIn(controller.system()).stream()
                       .filter(type -> last(id, type).isPresent())
                       .collect(toUnmodifiableList());
@@ -464,14 +464,11 @@ public class JobController {
             byte[] diff = previousPackage.map(previous -> ApplicationPackageDiff.diff(previous, applicationPackage))
                                          .orElseGet(() -> ApplicationPackageDiff.diffAgainstEmpty(applicationPackage));
             applications.applicationStore().put(id.tenant(),
-                                                             id.application(),
-                                                             version.get(),
-                                                             applicationPackage.zippedContent(),
-                                                             diff);
-            applications.applicationStore().putTester(id.tenant(),
-                                                                   id.application(),
-                                                                   version.get(),
-                                                                   testPackageBytes);
+                                                id.application(),
+                                                version.get(),
+                                                applicationPackage.zippedContent(),
+                                                testPackageBytes,
+                                                diff);
             applications.applicationStore().putMeta(id.tenant(),
                                                                  id.application(),
                                                                  controller.clock().instant(),
@@ -492,7 +489,6 @@ public class JobController {
         Optional<ApplicationVersion> oldestDeployed = application.get().oldestDeployedApplication();
         if (oldestDeployed.isPresent()) {
             controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed.get());
-            controller.applications().applicationStore().pruneTesters(id.tenant(), id.application(), oldestDeployed.get());
 
             for (ApplicationVersion version : application.get().revisions().withPackage())
                 if (version.compareTo(oldestDeployed.get()) < 0)
