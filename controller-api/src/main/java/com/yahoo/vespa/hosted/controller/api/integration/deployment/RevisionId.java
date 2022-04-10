@@ -29,7 +29,7 @@ public class RevisionId implements Comparable<RevisionId> {
 
     public long number() { return number; }
 
-    private boolean isProduction() { return production; }
+    public boolean isProduction() { return production; }
 
     @Override
     public boolean equals(Object o) {

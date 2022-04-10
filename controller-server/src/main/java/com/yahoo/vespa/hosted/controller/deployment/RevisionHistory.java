@@ -56,19 +56,17 @@ public class RevisionHistory {
         return new RevisionHistory(production, development);
     }
 
-    /** Returns a copy of this with given production revision forgotten. */
-    public RevisionHistory without(RevisionId id) {
-        if ( ! production.containsKey(id)) return this;
-        TreeMap<RevisionId, ApplicationVersion> production = new TreeMap<>(this.production);
-        production.remove(id);
-        return new RevisionHistory(production, development);
+    /** Returns a copy of this without any production revisions older than the given. */
+    public RevisionHistory withoutOlderThan(RevisionId id) {
+        if (production.headMap(id).isEmpty()) return this;
+        return new RevisionHistory(production.tailMap(id, true), development);
     }
 
-    /** Returns a copy of this with the given development revision forgotten. */
-    public RevisionHistory without(RevisionId id, JobId job) {
-        if ( ! development.containsKey(job) || ! development.get(job).containsKey(id)) return this;
+    /** Returns a copy of this without any development revisions older than the given. */
+    public RevisionHistory withoutOlderThan(RevisionId id, JobId job) {
+        if ( ! development.containsKey(job) || development.get(job).headMap(id).isEmpty()) return this;
         NavigableMap<JobId, NavigableMap<RevisionId, ApplicationVersion>> development = new TreeMap<>(this.development);
-        development.get(job).remove(id);
+        development.compute(job, (__, revisions) -> revisions.tailMap(id, true));
         return new RevisionHistory(production, development);
     }
 
