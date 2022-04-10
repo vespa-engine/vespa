@@ -29,8 +29,7 @@
   },
   "status": "complete",
   "quota": 1.062,
-  "activity": {
-  },
+  "activity": { },
   "metrics": {
     "queriesPerSecond": 0.0,
     "writesPerSecond": 0.0,

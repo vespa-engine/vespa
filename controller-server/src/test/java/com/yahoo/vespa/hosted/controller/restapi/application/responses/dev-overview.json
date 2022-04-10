@@ -4,20 +4,22 @@
       "jobName": "dev-us-east-1",
       "runs": [
         {
+          "id": 2,
+          "url": "https://some.url:43/root/run/2",
+          "start": 0,
+          "status": "running",
           "versions": {
+            "targetPlatform": "6.1.0",
             "targetApplication": {
               "build": 2,
               "compileVersion": "6.1.0"
             },
-            "targetPlatform": "6.1.0",
+            "sourcePlatform": "6.1.0",
             "sourceApplication": {
               "build": 1,
               "compileVersion": "6.1.0"
-            },
-            "sourcePlatform": "6.1.0"
+            }
           },
-          "start": 0,
-          "id": 2,
           "steps": [
             {
               "name": "deployReal",
@@ -31,21 +33,21 @@
               "name": "copyVespaLogs",
               "status": "unfinished"
             }
-          ],
-          "url": "https://some.url:43/root/run/2",
-          "status": "running"
+          ]
         },
         {
+          "id": 1,
+          "url": "https://some.url:43/root/run/1",
+          "start": 0,
+          "end": 0,
+          "status": "success",
           "versions": {
+            "targetPlatform": "6.1.0",
             "targetApplication": {
               "build": 1,
               "compileVersion": "6.1.0"
-            },
-            "targetPlatform": "6.1.0"
+            }
           },
-          "start": 0,
-          "end": 0,
-          "id": 1,
           "steps": [
             {
               "name": "deployReal",
@@ -59,9 +61,7 @@
               "name": "copyVespaLogs",
               "status": "succeeded"
             }
-          ],
-          "url": "https://some.url:43/root/run/1",
-          "status": "success"
+          ]
         }
       ]
     }

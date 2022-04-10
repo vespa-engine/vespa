@@ -35,8 +35,7 @@
         "bob"
       ]
     ],
-    "applications": [
-    ],
+    "applications": [ ],
     "metaData": {
       "createdAtMillis": 1600000000000,
       "lastLoginByUserMillis": 1234,

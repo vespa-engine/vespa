@@ -208,14 +208,19 @@ public final class JsonFormat implements SlimeFormat {
         }
 
         private void separate(boolean useComma) throws IOException {
-            if (!head && useComma) {
+            boolean newline = ! head || useComma;
+            if ( ! head && useComma) {
                 out.append((byte)',');
             } else {
                 head = false;
             }
             if (indent != null) {
-                out.append((byte)'\n');
-                for (int lvl = 0; lvl < level; lvl++) { out.append(indent); }
+                if (newline) {
+                    out.append((byte) '\n');
+                    for (int lvl = 0; lvl < level; lvl++) { out.append(indent); }
+                } else {
+                    out.append((byte) ' ');
+                }
             }
         }
 

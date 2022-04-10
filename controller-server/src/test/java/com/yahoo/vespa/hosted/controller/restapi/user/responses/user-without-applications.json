@@ -8,8 +8,7 @@
     "nickname": "dev",
     "verified": false
   },
-  "tenants": {
-  },
+  "tenants": { },
   "operator": [
     "hostedOperator",
     "hostedSupporter",

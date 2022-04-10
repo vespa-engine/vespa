@@ -1,22 +1,19 @@
 {
   "tenant": "my-tenant",
   "application": "my-app",
-  "roleNames": [
-  ],
+  "roleNames": [ ],
   "users": [
     {
       "name": "administrator@tenant",
       "email": "administrator@tenant",
       "verified": false,
-      "roles": {
-      }
+      "roles": { }
     },
     {
       "name": "developer@tenant",
       "email": "developer@tenant",
       "verified": false,
-      "roles": {
-      }
+      "roles": { }
     }
   ]
 }

@@ -7,10 +7,8 @@
       "date": 0,
       "controllerVersion": false,
       "systemVersion": false,
-      "configServers": [
-      ],
-      "failingApplications": [
-      ],
+      "configServers": [ ],
+      "failingApplications": [ ],
       "productionApplications": [
         {
           "tenant": "tenant1",
@@ -31,8 +29,7 @@
           "productionSuccesses": 1
         }
       ],
-      "deployingApplications": [
-      ],
+      "deployingApplications": [ ],
       "applications": [
         {
           "tenant": "tenant1",
@@ -307,10 +304,8 @@
             }
           },
           "upgradeRuns": {
-            "system-test": {
-            },
-            "staging-test": {
-            },
+            "system-test": { },
+            "staging-test": { },
             "production-us-west-1": {
               "success": {
                 "number": 2,

@@ -12,8 +12,7 @@
   "instances": [
     {
       "instance": "default",
-      "deployments": [
-      ]
+      "deployments": [ ]
     },
     {
       "instance": "instance1",
@@ -25,19 +24,15 @@
           "commit": "commit1"
         }
       },
-      "changeBlockers": [
-      ],
+      "changeBlockers": [ ],
       "rotationId": "rotation-id-2",
-      "deployments": [
-      ]
+      "deployments": [ ]
     }
   ],
-  "pemDeployKeys": [
-  ],
+  "pemDeployKeys": [ ],
   "metrics": {
     "queryServiceQuality": 0.0,
     "writeServiceQuality": 0.0
   },
-  "activity": {
-  }
+  "activity": { }
 }

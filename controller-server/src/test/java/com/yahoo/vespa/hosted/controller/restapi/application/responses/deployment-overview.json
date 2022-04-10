@@ -5,8 +5,7 @@
   "steps": [
     {
       "type": "instance",
-      "dependencies": [
-      ],
+      "dependencies": [ ],
       "declared": true,
       "instance": "instance1",
       "readyAt": 0,
@@ -28,8 +27,7 @@
               "platform": "6.1.0"
             }
           ],
-          "blockers": [
-          ]
+          "blockers": [ ]
         },
         "application": {
           "application": {
@@ -50,15 +48,13 @@
               }
             }
           ],
-          "blockers": [
-          ]
+          "blockers": [ ]
         }
       }
     },
     {
       "type": "test",
-      "dependencies": [
-      ],
+      "dependencies": [ ],
       "declared": false,
       "instance": "instance1",
       "readyAt": 0,
@@ -66,8 +62,7 @@
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test",
       "environment": "test",
       "region": "test.us-east-1",
-      "toRun": [
-      ],
+      "toRun": [ ],
       "runs": [
         {
           "id": 2,
@@ -188,8 +183,7 @@
     },
     {
       "type": "test",
-      "dependencies": [
-      ],
+      "dependencies": [ ],
       "declared": false,
       "instance": "instance1",
       "readyAt": 0,
@@ -197,8 +191,7 @@
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/staging-test",
       "environment": "staging",
       "region": "staging.us-east-3",
-      "toRun": [
-      ],
+      "toRun": [ ],
       "runs": [
         {
           "id": 2,
@@ -554,8 +547,7 @@
       ],
       "declared": true,
       "instance": "instance2",
-      "deploying": {
-      },
+      "deploying": { },
       "latestVersions": {
         "platform": {
           "platform": "6.1.0",
@@ -566,8 +558,7 @@
               "platform": "6.1.0"
             }
           ],
-          "blockers": [
-          ]
+          "blockers": [ ]
         },
         "application": {
           "application": {
@@ -604,8 +595,7 @@
               }
             }
           ],
-          "blockers": [
-          ]
+          "blockers": [ ]
         }
       }
     },
@@ -633,8 +623,7 @@
           }
         }
       ],
-      "runs": [
-      ]
+      "runs": [ ]
     },
     {
       "type": "deployment",
@@ -660,8 +649,7 @@
           }
         }
       ],
-      "runs": [
-      ]
+      "runs": [ ]
     },
     {
       "type": "deployment",
@@ -687,8 +675,7 @@
           }
         }
       ],
-      "runs": [
-      ]
+      "runs": [ ]
     }
   ],
   "builds": [

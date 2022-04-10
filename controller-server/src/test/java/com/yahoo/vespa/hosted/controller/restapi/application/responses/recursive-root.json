@@ -171,8 +171,7 @@
             "region": "us-west-1"
           }
         ],
-        "pemDeployKeys": [
-        ],
+        "pemDeployKeys": [ ],
         "metrics": {
           "queryServiceQuality": 0.5,
           "writeServiceQuality": 0.7
@@ -211,8 +210,7 @@
         "bob"
       ]
     ],
-    "applications": [
-    ],
+    "applications": [ ],
     "metaData": {
       "createdAtMillis": 1600000000000,
       "lastLoginByUserMillis": 1234,

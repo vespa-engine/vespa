@@ -8,8 +8,7 @@
     "nickname": "dev",
     "verified": false
   },
-  "tenants": {
-  },
+  "tenants": { },
   "flags": [
     {
       "id": "enable-public-signup-flow",

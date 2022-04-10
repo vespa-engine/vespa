@@ -164,8 +164,7 @@
       "region": "us-west-1"
     }
   ],
-  "pemDeployKeys": [
-  ],
+  "pemDeployKeys": [ ],
   "metrics": {
     "queryServiceQuality": 0.5,
     "writeServiceQuality": 0.7
