@@ -1,8 +1,9 @@
 {
   "name": "",
   "email": "",
-  "website":"",
+  "website": "",
   "contactName": "administrator",
   "contactEmail": "administrator@tenant",
-  "contacts": []
+  "contacts": [
+  ]
 }

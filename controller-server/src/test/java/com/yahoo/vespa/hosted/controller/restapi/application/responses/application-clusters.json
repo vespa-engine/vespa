@@ -1,7 +1,7 @@
 {
   "clusters": {
     "default": {
-      "type":"container",
+      "type": "container",
       "min": {
         "nodes": 2,
         "groups": 1,
@@ -13,7 +13,7 @@
           "diskSpeed": "slow",
           "storageType": "remote"
         },
-        "cost": "(ignore)"
+        "cost": 0.09
       },
       "max": {
         "nodes": 2,
@@ -26,7 +26,7 @@
           "diskSpeed": "slow",
           "storageType": "remote"
         },
-        "cost": "(ignore)"
+        "cost": 0.35
       },
       "current": {
         "nodes": 2,
@@ -39,7 +39,7 @@
           "diskSpeed": "slow",
           "storageType": "remote"
         },
-        "cost": "(ignore)"
+        "cost": 0.18
       },
       "target": {
         "nodes": 2,
@@ -52,7 +52,7 @@
           "diskSpeed": "slow",
           "storageType": "remote"
         },
-        "cost": "(ignore)"
+        "cost": 0.24
       },
       "utilization": {
         "cpu": 0.1,
@@ -78,7 +78,7 @@
               "diskSpeed": "fast",
               "storageType": "any"
             },
-            "cost": "(ignore)"
+            "cost": 0.0
           },
           "to": {
             "nodes": 2,
@@ -91,7 +91,7 @@
               "diskSpeed": "slow",
               "storageType": "remote"
             },
-            "cost": "(ignore)"
+            "cost": 0.18
           },
           "at": 1234,
           "completion": 2234
@@ -101,7 +101,7 @@
       "autoscalingStatus": "Cluster is ideally scaled",
       "scalingDuration": 360000,
       "maxQueryGrowthRate": 0.7,
-      "currentQueryFractionOfMax":0.3
+      "currentQueryFractionOfMax": 0.3
     }
   }
 }

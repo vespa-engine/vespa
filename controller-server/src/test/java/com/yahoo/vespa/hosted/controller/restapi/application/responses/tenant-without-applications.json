@@ -3,8 +3,9 @@
   "type": "ATHENS",
   "athensDomain": "domain1",
   "property": "property1",
-  "applications": [ ],
-  "metaData":{
-    "createdAtMillis": "(ignore)"
+  "applications": [
+  ],
+  "metaData": {
+    "createdAtMillis": 1600000000000
   }
 }

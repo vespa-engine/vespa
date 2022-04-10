@@ -1,7 +1,7 @@
 {
   "isPublic": false,
   "isCd": false,
-  "hasTrialCapacity": (ignore),
+  "hasTrialCapacity": true,
   "user": {
     "name": "Joe Developer",
     "email": "dev@domail",
@@ -10,7 +10,7 @@
   },
   "tenants": {
     "sandbox": {
-      "supported": (ignore),
+      "supported": false,
       "roles": [
         "administrator",
         "developer",
@@ -18,7 +18,7 @@
       ]
     },
     "tenant1": {
-      "supported": (ignore),
+      "supported": false,
       "roles": [
         "administrator",
         "developer",
@@ -26,7 +26,7 @@
       ]
     },
     "tenant2": {
-      "supported": (ignore),
+      "supported": false,
       "roles": [
         "administrator",
         "developer",
@@ -34,5 +34,14 @@
       ]
     }
   },
-  "flags": [{"id":"enable-public-signup-flow","rules":[{"value":false}]}]
+  "flags": [
+    {
+      "id": "enable-public-signup-flow",
+      "rules": [
+        {
+          "value": false
+        }
+      ]
+    }
+  ]
 }

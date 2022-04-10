@@ -1,7 +1,7 @@
 {
   "notifications": [
     {
-      "at": "(ignore)",
+      "at": 1600000000000,
       "level": "error",
       "type": "deployment",
       "messages": [

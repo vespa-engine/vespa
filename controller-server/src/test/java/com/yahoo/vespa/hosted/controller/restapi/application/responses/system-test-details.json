@@ -4,351 +4,351 @@
   "log": {
     "deployTester": [
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "Deploying the tester container on platform 6.1 ..."
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "Deployment successful."
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "foo"
       }
     ],
     "installTester": [
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "host-tenant1.application1.instance1-t-test.us-east-1: unorchestrated"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "--- platform vespa/vespa:6.1"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "host-tenant1.application1.instance1-t-test.us-east-1: unorchestrated"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "--- platform vespa/vespa:6.1"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "host-tenant1.application1.instance1-t-test.us-east-1: unorchestrated"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "--- platform vespa/vespa:6.1"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "host-tenant1.application1.instance1-t-test.us-east-1: unorchestrated"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "--- platform vespa/vespa:6.1"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "host-tenant1.application1.instance1-t-test.us-east-1: unorchestrated"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "--- platform vespa/vespa:6.1"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "Tester container successfully installed!"
       }
     ],
     "deployReal": [
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "Deploying platform version 6.1 and application version 1.0.1-commit1 ..."
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "Deployment successful."
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "foo"
       }
     ],
     "installReal": [
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "######## Details for all nodes ########"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "host-tenant1.application1.instance1-test.us-east-1: unorchestrated"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "--- platform vespa/vespa:6.1"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "Waiting for convergence of 1 services across 1 nodes"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "1 application services upgrading"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "debug",
         "message": "host-tenant1.application1.instance1-test.us-east-1: unorchestrated"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "debug",
         "message": "--- platform vespa/vespa:6.1"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "debug",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "Waiting for convergence of 1 services across 1 nodes"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "1 application services upgrading"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "debug",
         "message": "host-tenant1.application1.instance1-test.us-east-1: unorchestrated"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "debug",
         "message": "--- platform vespa/vespa:6.1"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "debug",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "Waiting for convergence of 1 services across 1 nodes"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "1 application services upgrading"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "debug",
         "message": "host-tenant1.application1.instance1-test.us-east-1: unorchestrated"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "debug",
         "message": "--- platform vespa/vespa:6.1"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "debug",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "Waiting for convergence of 1 services across 1 nodes"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "1 application services upgrading"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "debug",
         "message": "host-tenant1.application1.instance1-test.us-east-1: unorchestrated"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "debug",
         "message": "--- platform vespa/vespa:6.1"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "debug",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "Waiting for convergence of 1 services across 1 nodes"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "1 application services upgrading"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "debug",
         "message": "host-tenant1.application1.instance1-test.us-east-1: unorchestrated"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "debug",
         "message": "--- platform vespa/vespa:6.1"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "debug",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "Waiting for convergence of 1 services across 1 nodes"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "1 application services upgrading"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "debug",
         "message": "host-tenant1.application1.instance1-test.us-east-1: unorchestrated"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "debug",
         "message": "--- platform vespa/vespa:6.1"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "debug",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "Found endpoints:"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "- test.us-east-1"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": " |-- https://instance1.application1.tenant1.us-east-1.test.vespa.oath.cloud/ (cluster 'default')"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "Installation succeeded!"
       }
     ],
     "startTests": [
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "Attempting to find endpoints ..."
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "Found endpoints:"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "- test.us-east-1"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": " |-- https://instance1.application1.tenant1.us-east-1.test.vespa.oath.cloud/ (cluster 'default')"
       },
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "Starting tests ..."
       }
     ],
     "endTests": [
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "Tests completed successfully."
       }
     ],
     "deactivateReal": [
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "Deactivating deployment of tenant1.application1.instance1 in test.us-east-1 ..."
       }
     ],
     "deactivateTester": [
       {
-        "at": "(ignore)",
+        "at": 1600000000000,
         "type": "info",
         "message": "Deactivating tester of tenant1.application1.instance1 in test.us-east-1 ..."
       }
@@ -358,43 +358,43 @@
   "steps": {
     "deployTester": {
       "status": "succeeded",
-      "startMillis": "(ignore)"
+      "startMillis": 1600000000000
     },
     "installTester": {
       "status": "succeeded",
-      "startMillis": "(ignore)"
+      "startMillis": 1600000000000
     },
     "deployReal": {
       "status": "succeeded",
-      "startMillis": "(ignore)"
+      "startMillis": 1600000000000
     },
     "installReal": {
       "status": "succeeded",
-      "startMillis": "(ignore)"
+      "startMillis": 1600000000000
     },
     "startTests": {
       "status": "succeeded",
-      "startMillis": "(ignore)"
+      "startMillis": 1600000000000
     },
     "endTests": {
       "status": "succeeded",
-      "startMillis": "(ignore)"
+      "startMillis": 1600000000000
     },
     "copyVespaLogs": {
       "status": "succeeded",
-      "startMillis": "(ignore)"
+      "startMillis": 1600000000000
     },
     "deactivateReal": {
       "status": "succeeded",
-      "startMillis": "(ignore)"
+      "startMillis": 1600000000000
     },
     "deactivateTester": {
       "status": "succeeded",
-      "startMillis": "(ignore)"
+      "startMillis": 1600000000000
     },
     "report": {
       "status": "succeeded",
-      "startMillis": "(ignore)"
+      "startMillis": 1600000000000
     }
   }
 }

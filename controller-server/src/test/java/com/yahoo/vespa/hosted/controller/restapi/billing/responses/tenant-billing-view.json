@@ -1,45 +1,48 @@
 {
-    "until":"2020-05-28",
-    "plan":"some-plan",
-    "planName":"Plan with id: some-plan",
-    "current":{
-        "amount":"123.00",
-        "status":"accrued",
-        "from":"2020-05-23",
-        "items":[
-            {
-                "id":"some-id",
-                "description":"description",
-                "amount":"123.00",
-                "plan":"some-plan",
-                "planName":"Plan with id: some-plan"
-            }
-        ]
-    },
-    "additional":{"items":[]},
-    "bills":[
+  "until": "2020-05-28",
+  "plan": "some-plan",
+  "planName": "Plan with id: some-plan",
+  "current": {
+    "amount": "123.00",
+    "status": "accrued",
+    "from": "2020-05-23",
+    "items": [
+      {
+        "id": "some-id",
+        "description": "description",
+        "amount": "123.00",
+        "plan": "some-plan",
+        "planName": "Plan with id: some-plan"
+      }
+    ]
+  },
+  "additional": {
+    "items": [
+    ]
+  },
+  "bills": [
+    {
+      "id": "id-1",
+      "from": "2020-05-23",
+      "to": "2020-05-28",
+      "amount": "123.00",
+      "status": "OPEN",
+      "statusHistory": [
         {
-            "id":"id-1",
-            "from":"2020-05-23",
-            "to":"2020-05-28",
-            "amount":"123.00",
-            "status":"OPEN",
-            "statusHistory":[
-                {
-                    "at":"2020-05-23",
-                    "status":"OPEN"
-                }
-            ],
-            "items":[
-                {
-                    "id":"some-id",
-                    "description":"description",
-                    "amount":"123.00",
-                    "plan":"some-plan",
-                    "planName":"Plan with id: some-plan"
-                }
-            ]
+          "at": "2020-05-23",
+          "status": "OPEN"
         }
-    ],
-    "collection":"AUTO"
+      ],
+      "items": [
+        {
+          "id": "some-id",
+          "description": "description",
+          "amount": "123.00",
+          "plan": "some-plan",
+          "planName": "Plan with id: some-plan"
+        }
+      ]
+    }
+  ],
+  "collection": "AUTO"
 }

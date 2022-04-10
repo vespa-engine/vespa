@@ -7,7 +7,7 @@
       "region": "us-east-3",
       "status": "in",
       "agent": "unknown",
-      "changedAt": "(ignore)"
+      "changedAt": 1497618757000
     },
     {
       "routingMethod": "sharedLayer4",
@@ -16,7 +16,7 @@
       "region": "us-west-1",
       "status": "in",
       "agent": "unknown",
-      "changedAt": "(ignore)"
+      "changedAt": 1497618757000
     },
     {
       "routingMethod": "sharedLayer4",
@@ -25,7 +25,7 @@
       "region": "us-east-3",
       "status": "in",
       "agent": "unknown",
-      "changedAt": "(ignore)"
+      "changedAt": 1497618757000
     },
     {
       "routingMethod": "sharedLayer4",
@@ -34,7 +34,7 @@
       "region": "us-west-1",
       "status": "in",
       "agent": "unknown",
-      "changedAt": "(ignore)"
+      "changedAt": 1497618757000
     }
   ]
 }

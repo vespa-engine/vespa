@@ -1,5 +1,222 @@
-
 [
-  @include(tenant1-recursive.json),
-  @include(tenant2.json)
+  {
+    "tenant": "tenant1",
+    "type": "ATHENS",
+    "athensDomain": "domain1",
+    "property": "property1",
+    "applications": [
+      {
+        "tenant": "tenant1",
+        "application": "application1",
+        "instance": "instance1",
+        "deployments": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/",
+        "sourceUrl": "repository1/tree/commit1",
+        "commit": "commit1",
+        "projectId": 123,
+        "deploying": {
+          "revision": {
+            "build": 1,
+            "compileVersion": "6.1.0",
+            "sourceUrl": "repository1/tree/commit1",
+            "commit": "commit1"
+          }
+        },
+        "changeBlockers": [
+          {
+            "versions": true,
+            "revisions": false,
+            "timeZone": "UTC",
+            "days": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "hours": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ]
+          }
+        ],
+        "rotationId": "rotation-id-1",
+        "instances": [
+          {
+            "tenant": "tenant1",
+            "application": "application1",
+            "instance": "instance1",
+            "environment": "dev",
+            "region": "us-east-1",
+            "endpoints": [
+              {
+                "cluster": "default",
+                "tls": true,
+                "url": "https://instance1.application1.tenant1.us-east-1.dev.vespa.oath.cloud/",
+                "scope": "zone",
+                "routingMethod": "sharedLayer4",
+                "legacy": false
+              }
+            ],
+            "clusters": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/dev/region/us-east-1/clusters",
+            "nodes": "http://localhost:8080/zone/v2/dev/us-east-1/nodes/v2/node/?recursive=true&application=tenant1.application1.instance1",
+            "yamasUrl": "http://monitoring-system.test/?environment=dev&region=us-east-1&application=tenant1.application1.instance1",
+            "version": "6.1.0",
+            "revision": "1.0.1",
+            "deployTimeEpochMs": 1600000000000,
+            "screwdriverId": "123",
+            "status": "complete",
+            "quota": 1.062,
+            "activity": {
+              "lastQueried": 1527848130000,
+              "lastWritten": 1527848130000,
+              "lastQueriesPerSecond": 1.0,
+              "lastWritesPerSecond": 2.0
+            },
+            "metrics": {
+              "queriesPerSecond": 1.0,
+              "writesPerSecond": 2.0,
+              "documentCount": 3.0,
+              "queryLatencyMillis": 4.0,
+              "writeLatencyMillis": 5.0,
+              "lastUpdated": 123123
+            }
+          },
+          {
+            "bcpStatus": {
+              "rotationStatus": "UNKNOWN"
+            },
+            "tenant": "tenant1",
+            "application": "application1",
+            "instance": "instance1",
+            "environment": "prod",
+            "region": "us-central-1",
+            "endpoints": [
+              {
+                "cluster": "default",
+                "tls": true,
+                "url": "https://instance1.application1.tenant1.us-central-1.vespa.oath.cloud/",
+                "scope": "zone",
+                "routingMethod": "sharedLayer4",
+                "legacy": false
+              },
+              {
+                "cluster": "foo",
+                "tls": true,
+                "url": "https://instance1.application1.tenant1.global.vespa.oath.cloud/",
+                "scope": "global",
+                "routingMethod": "sharedLayer4",
+                "legacy": false
+              },
+              {
+                "cluster": "foo",
+                "tls": true,
+                "url": "https://a0.application1.tenant1.us-central-1-r.vespa.oath.cloud/",
+                "scope": "application",
+                "routingMethod": "sharedLayer4",
+                "legacy": false
+              }
+            ],
+            "clusters": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/clusters",
+            "nodes": "http://localhost:8080/zone/v2/prod/us-central-1/nodes/v2/node/?recursive=true&application=tenant1.application1.instance1",
+            "yamasUrl": "http://monitoring-system.test/?environment=prod&region=us-central-1&application=tenant1.application1.instance1",
+            "version": "6.1.0",
+            "revision": "1.0.1-commit1",
+            "deployTimeEpochMs": 1600000000000,
+            "screwdriverId": "123",
+            "endpointStatus": [
+              {
+                "endpointId": "default",
+                "rotationId": "rotation-id-1",
+                "clusterId": "foo",
+                "status": "UNKNOWN",
+                "lastUpdated": 0
+              }
+            ],
+            "applicationVersion": {
+              "build": 1,
+              "compileVersion": "6.1.0",
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
+            },
+            "status": "complete",
+            "quota": 1.062,
+            "activity": {
+              "lastQueried": 1527848130000,
+              "lastWritten": 1527848130000,
+              "lastQueriesPerSecond": 1.0,
+              "lastWritesPerSecond": 2.0
+            },
+            "metrics": {
+              "queriesPerSecond": 1.0,
+              "writesPerSecond": 2.0,
+              "documentCount": 3.0,
+              "queryLatencyMillis": 4.0,
+              "writeLatencyMillis": 5.0,
+              "lastUpdated": 123123
+            }
+          },
+          {
+            "environment": "prod",
+            "region": "us-east-3"
+          },
+          {
+            "environment": "prod",
+            "region": "us-west-1"
+          }
+        ],
+        "pemDeployKeys": [
+        ],
+        "metrics": {
+          "queryServiceQuality": 0.5,
+          "writeServiceQuality": 0.7
+        },
+        "activity": {
+          "lastQueried": 1527848130000,
+          "lastWritten": 1527848130000,
+          "lastQueriesPerSecond": 1.0,
+          "lastWritesPerSecond": 2.0
+        },
+        "ownershipIssueId": "321",
+        "owner": "owner-username",
+        "deploymentIssueId": "123"
+      }
+    ],
+    "metaData": {
+      "createdAtMillis": 1600000000000,
+      "lastDeploymentToDevMillis": 1600000000000,
+      "lastSubmissionToProdMillis": 1000
+    }
+  },
+  {
+    "tenant": "tenant2",
+    "type": "ATHENS",
+    "athensDomain": "domain2",
+    "property": "property2",
+    "propertyId": "1234",
+    "propertyUrl": "www.properties.tld/1234",
+    "contactsUrl": "www.contacts.tld/1234",
+    "issueCreationUrl": "www.issues.tld/1234",
+    "contacts": [
+      [
+        "alice"
+      ],
+      [
+        "bob"
+      ]
+    ],
+    "applications": [
+    ],
+    "metaData": {
+      "createdAtMillis": 1600000000000,
+      "lastLoginByUserMillis": 1234,
+      "lastLoginByAdministratorMillis": 1234
+    }
+  }
 ]
