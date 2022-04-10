@@ -12,7 +12,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageDiff.diff;
-
 import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageDiff.diffAgainstEmpty;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;

@@ -3,11 +3,9 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * Steps that make up a deployment job. See {@link JobProfile} for preset profiles.

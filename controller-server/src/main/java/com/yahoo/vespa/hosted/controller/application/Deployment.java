@@ -2,8 +2,8 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.component.Version;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 
 import java.time.Instant;
 import java.util.Objects;

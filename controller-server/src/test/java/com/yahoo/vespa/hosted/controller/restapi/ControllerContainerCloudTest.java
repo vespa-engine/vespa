@@ -12,8 +12,6 @@ import com.yahoo.yolean.Exceptions;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 

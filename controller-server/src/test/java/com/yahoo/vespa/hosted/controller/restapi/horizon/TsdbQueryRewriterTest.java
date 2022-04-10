@@ -5,7 +5,6 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.vespa.hosted.controller.api.role.Role;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;

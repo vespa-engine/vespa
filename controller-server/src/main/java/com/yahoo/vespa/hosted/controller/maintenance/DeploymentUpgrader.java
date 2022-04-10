@@ -19,8 +19,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
-import static com.yahoo.collections.Iterables.reversed;
-
 /**
  * Upgrades instances in manually deployed zones to the system version, at a convenient time.
  * 

@@ -8,11 +8,9 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.logging.Level;
 

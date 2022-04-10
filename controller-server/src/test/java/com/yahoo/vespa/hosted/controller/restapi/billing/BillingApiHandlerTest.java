@@ -26,8 +26,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import static com.yahoo.application.container.handler.Request.Method.*;
-import static org.junit.Assert.*;
+import static com.yahoo.application.container.handler.Request.Method.DELETE;
+import static com.yahoo.application.container.handler.Request.Method.GET;
+import static com.yahoo.application.container.handler.Request.Method.PATCH;
+import static com.yahoo.application.container.handler.Request.Method.POST;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author olaa

@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.security.CloudTenantSpec;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Set;
 
