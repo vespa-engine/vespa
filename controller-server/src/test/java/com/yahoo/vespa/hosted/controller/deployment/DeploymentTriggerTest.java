@@ -1767,6 +1767,19 @@ public class DeploymentTriggerTest {
         tester.clock().advance(Duration.ofHours(8));
         tester.outstandingChangeDeployer().run();
         assertEquals(revision7, gamma.instance().change().application());
+
+        // revision 8 is has too low risk to roll out on its own, but will start rolling immediately when revision 9 is submitted
+        gamma.deploy();
+        alpha.submit(appPackage, 2);
+        var revision8 = alpha.lastSubmission();
+        alpha.deploy();
+        tester.outstandingChangeDeployer();
+        assertEquals(Change.empty(), gamma.instance().change());
+        assertEquals(revision7.get(), gamma.deployment(ZoneId.from("prod.us-east-3")).applicationVersion());
+
+        alpha.submit(appPackage, 5);
+        tester.outstandingChangeDeployer().run();
+        assertEquals(revision8, gamma.instance().change().application());
     }
 
     @Test

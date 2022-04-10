@@ -257,6 +257,7 @@ public class DeploymentStatus {
         DeploymentInstanceSpec spec = application.deploymentSpec().requireInstance(instance);
         boolean ascending = next == spec.revisionTarget();
         int cumulativeRisk = 0;
+        int nextRisk = 0;
         int skippedCumulativeRisk = 0;
         Instant readySince = now;
         Change candidate = Change.empty();
@@ -272,6 +273,7 @@ public class DeploymentStatus {
 
             // This revision contains something new, so start aggregating the risk score.
             skippedCumulativeRisk += version.risk();
+            nextRisk = nextRisk > 0 ? nextRisk : version.risk();
             // If it's not yet ready to roll out, we keep looking.
             Optional<Instant> readyAt = status.dependenciesCompletedAt(Change.of(version), Optional.empty());
             if (readyAt.map(now::isBefore).orElse(true)) continue;
@@ -279,6 +281,7 @@ public class DeploymentStatus {
             // It's ready. If looking for the latest, max risk is 0, and we'll return now; otherwise, we _may_ keep on looking for more.
             cumulativeRisk += skippedCumulativeRisk;
             skippedCumulativeRisk = 0;
+            nextRisk = 0;
             if (cumulativeRisk >= spec.maxRisk())
                 return candidate.equals(Change.empty()) ? change : candidate; // If the first candidate exceeds max risk, we have to accept that.
 
@@ -289,6 +292,7 @@ public class DeploymentStatus {
         // If min risk is ready, or max idle time has passed, we return the candidate. Otherwise, no outstanding change is ready.
         return      instanceJobs(instance).values().stream().allMatch(jobs -> jobs.lastTriggered().isEmpty())
                ||   cumulativeRisk >= spec.minRisk()
+               ||   cumulativeRisk + nextRisk > spec.maxRisk()
                || ! now.isBefore(readySince.plus(Duration.ofHours(spec.maxIdleHours())))
                ? candidate : Change.empty();
     }
