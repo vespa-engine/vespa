@@ -31,6 +31,7 @@ import org.junit.Test;
 import javax.security.auth.x500.X500Principal;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -52,7 +53,7 @@ public class EndpointCertificatesTest {
     private final SecretStoreMock secretStore = new SecretStoreMock();
     private final CuratorDb mockCuratorDb = tester.curator();
     private final ManualClock clock = tester.clock();
-    private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock();
+    private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock(new ManualClock());
     private final EndpointCertificateValidatorImpl endpointCertificateValidator = new EndpointCertificateValidatorImpl(secretStore, clock);
     private final EndpointCertificates endpointCertificates = new EndpointCertificates(tester.controller(), endpointCertificateMock, endpointCertificateValidator);
     private final KeyPair testKeyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 192);

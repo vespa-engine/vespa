@@ -46,6 +46,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainer;
 import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainerMock;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.MockChangeRequestClient;
 
+import java.time.Instant;
+
 /**
  * A mock implementation of a {@link ServiceRegistry} for testing purposes.
  *
@@ -58,7 +60,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final ConfigServerMock configServerMock;
     private final MemoryNameService memoryNameService = new MemoryNameService();
     private final MockMailer mockMailer = new MockMailer();
-    private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock();
+    private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock(clock);
     private final EndpointCertificateValidatorMock endpointCertificateValidatorMock = new EndpointCertificateValidatorMock();
     private final MockMeteringClient mockMeteringClient = new MockMeteringClient();
     private final MockContactRetriever mockContactRetriever = new MockContactRetriever();
@@ -91,6 +93,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
         this.zoneRegistryMock = new ZoneRegistryMock(system);
         this.configServerMock = new ConfigServerMock(zoneRegistryMock);
         this.mockTesterCloud = new MockTesterCloud(nameService());
+        this.clock.setInstant(Instant.ofEpochSecond(1600000000));
     }
 
     @Inject

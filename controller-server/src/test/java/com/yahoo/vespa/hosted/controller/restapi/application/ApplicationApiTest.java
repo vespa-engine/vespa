@@ -83,6 +83,7 @@ import java.io.File;
 import java.math.BigInteger;
 import java.net.URI;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -1606,6 +1607,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         );
 
         // Should be 1 available grant
+        tester.serviceRegistry().clock().advance(Duration.ofSeconds(1));
+        now = tester.serviceRegistry().clock().instant();
         List<SupportAccessGrant> activeGrants = tester.controller().supportAccess().activeGrantsFor(new DeploymentId(ApplicationId.fromSerializedForm("tenant1:application1:instance1"), zone));
         assertEquals(1, activeGrants.size());
 

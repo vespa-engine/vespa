@@ -174,7 +174,6 @@ class RunSerializer {
             return ApplicationVersion.unknown;
 
         long buildNumber = versionObject.field(buildField).asLong();
-        // TODO jonmv: Remove source revision
         Optional<SourceRevision> source = Optional.of(new SourceRevision(versionObject.field(repositoryField).asString(),
                                                                          versionObject.field(branchField).asString(),
                                                                          versionObject.field(commitField).asString()))

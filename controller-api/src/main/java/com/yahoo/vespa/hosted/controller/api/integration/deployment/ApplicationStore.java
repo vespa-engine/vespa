@@ -9,9 +9,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 /**
- * Store for the application and tester packages.
- *
- * This will replace ArtifactRepository for tenant applications.
+ * Store for the application and test packages, diffs, and other metadata.
  *
  * @author smorgrav
  * @author jonmv
