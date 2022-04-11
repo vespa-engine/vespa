@@ -460,6 +460,7 @@ public class NodeSerializer {
             case "failed" : return History.Event.Type.failed;
             case "deallocated" : return History.Event.Type.deallocated;
             case "down" : return History.Event.Type.down;
+            case "up" : return History.Event.Type.up;
             case "requested" : return History.Event.Type.requested;
             case "resized" : return History.Event.Type.resized;
             case "rebooted" : return History.Event.Type.rebooted;
@@ -486,6 +487,7 @@ public class NodeSerializer {
             case failed : return "failed";
             case deallocated : return "deallocated";
             case down : return "down";
+            case up : return "up";
             case requested: return "requested";
             case resized: return "resized";
             case rebooted: return "rebooted";
