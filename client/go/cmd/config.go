@@ -185,7 +185,7 @@ $ vespa config get --local
 					config.printOption(option)
 				}
 			} else {
-				config.printOption(args[0])
+				return config.printOption(args[0])
 			}
 			return nil
 		},
@@ -536,7 +536,17 @@ func (c *Config) set(option, value string) error {
 	return fmt.Errorf("invalid option or value: %s = %s", option, value)
 }
 
-func (c *Config) printOption(option string) {
+func (c *Config) checkOption(option string) error {
+	if _, ok := c.flags[option]; !ok {
+		return fmt.Errorf("invalid option: %s", option)
+	}
+	return nil
+}
+
+func (c *Config) printOption(option string) error {
+	if err := c.checkOption(option); err != nil {
+		return err
+	}
 	value, ok := c.get(option)
 	if !ok {
 		faintColor := color.New(color.FgWhite, color.Faint)
@@ -545,6 +555,7 @@ func (c *Config) printOption(option string) {
 		value = color.CyanString(value)
 	}
 	log.Printf("%s = %s", option, value)
+	return nil
 }
 
 func vespaCliHome(env map[string]string) (string, error) {
