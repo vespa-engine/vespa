@@ -396,7 +396,7 @@ public class DeploymentSpecXmlReader {
     }
 
     /**
-     * Returns the given attribute as an integer, or 0 if it is not present
+     * Returns the given attribute as an integer, or {@code empty()} if it is not present
      */
     private Optional<Integer> optionalIntegerAttribute(String attributeName, Element tag) {
         String value = tag.getAttribute(attributeName);

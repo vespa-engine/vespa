@@ -32,12 +32,9 @@ public class ConfigChangeActionsSlimeConverterTest {
         ConfigChangeActions actions = new ConfigChangeActionsBuilder().build();
         assertEquals(   "{\n" +
                         " \"configChangeActions\": {\n" +
-                        "  \"restart\": [\n" +
-                        "  ],\n" +
-                        "  \"refeed\": [\n" +
-                        "  ],\n" +
-                        "  \"reindex\": [\n" +
-                        "  ]\n" +
+                        "  \"restart\": [ ],\n" +
+                        "  \"refeed\": [ ],\n" +
+                        "  \"reindex\": [ ]\n" +
                         " }\n" +
                         "}\n",
                      toJson(actions));
@@ -77,10 +74,8 @@ public class ConfigChangeActionsSlimeConverterTest {
                         "    ]\n" +
                         "   }\n" +
                         "  ],\n" +
-                        "  \"refeed\": [\n" +
-                        "  ],\n" +
-                        "  \"reindex\": [\n" +
-                        "  ]\n" +
+                        "  \"refeed\": [ ],\n" +
+                        "  \"reindex\": [ ]\n" +
                         " }\n" +
                         "}\n",
                      toJson(actions));
@@ -93,8 +88,7 @@ public class ConfigChangeActionsSlimeConverterTest {
                 refeed(CHANGE_ID_2, CHANGE_MSG, DOC_TYPE_2, CLUSTER, SERVICE_TYPE).build();
         assertEquals("{\n" +
                         " \"configChangeActions\": {\n" +
-                        "  \"restart\": [\n" +
-                        "  ],\n" +
+                        "  \"restart\": [ ],\n" +
                         "  \"refeed\": [\n" +
                         "   {\n" +
                         "    \"name\": \"field-type-change\",\n" +
@@ -129,8 +123,7 @@ public class ConfigChangeActionsSlimeConverterTest {
                         "    ]\n" +
                         "   }\n" +
                         "  ],\n" +
-                        "  \"reindex\": [\n" +
-                        "  ]\n" +
+                        "  \"reindex\": [ ]\n" +
                         " }\n" +
                         "}\n",
                 toJson(actions));
@@ -143,10 +136,8 @@ public class ConfigChangeActionsSlimeConverterTest {
             assertEquals(
                     "{\n" +
                             " \"configChangeActions\": {\n" +
-                            "  \"restart\": [\n" +
-                            "  ],\n" +
-                            "  \"refeed\": [\n" +
-                            "  ],\n" +
+                            "  \"restart\": [ ],\n" +
+                            "  \"refeed\": [ ],\n" +
                             "  \"reindex\": [\n" +
                             "   {\n" +
                             "    \"name\": \"field-type-change\",\n" +
