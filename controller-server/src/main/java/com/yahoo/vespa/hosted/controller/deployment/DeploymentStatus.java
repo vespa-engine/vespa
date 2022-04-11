@@ -155,6 +155,8 @@ public class DeploymentStatus {
      * and any test jobs for any outstanding change, which will likely be needed to later deploy this change.
      */
     public Map<JobId, List<Job>> jobsToRun() {
+        if (application.revisions().last().isEmpty()) return Map.of();
+
         Map<InstanceName, Change> changes = new LinkedHashMap<>();
         for (InstanceName instance : application.deploymentSpec().instanceNames())
             changes.put(instance, application.require(instance).change());
