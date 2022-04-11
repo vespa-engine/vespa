@@ -568,8 +568,8 @@
       "protected void encodeThis(java.nio.ByteBuffer)"
     ],
     "fields": [
-      "public static int DefaultMaxEditDistance",
-      "public static int DefaultPrefixLength"
+      "public static int DEFAULT_MAX_EDIT_DISTANCE",
+      "public static int DEFAULT_PREFIX_LENGTH"
     ]
   },
   "com.yahoo.prelude.query.GeoLocationItem": {
