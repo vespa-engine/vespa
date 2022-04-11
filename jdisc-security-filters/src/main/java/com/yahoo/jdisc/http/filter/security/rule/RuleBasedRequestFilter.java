@@ -118,7 +118,7 @@ public class RuleBasedRequestFilter extends JsonSecurityRequestFilterBase {
             boolean methodMatches = methods.isEmpty() || methods.contains(method.toUpperCase());
             String host = uri.getHost();
             boolean hostnameMatches = hostnames.isEmpty() || (host != null && hostnames.contains(host));
-            Path pathMatcher = new Path(uri);
+            Path pathMatcher = Path.withoutValidation(uri);
             boolean pathMatches = pathGlobExpressions.isEmpty() || pathGlobExpressions.stream().anyMatch(pathMatcher::matches);
             return methodMatches && hostnameMatches && pathMatches;
         }
