@@ -13,6 +13,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Set;
 
+import static com.yahoo.slime.SlimeUtils.jsonToSlimeOrThrow;
+import static com.yahoo.slime.SlimeUtils.toJsonBytes;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -45,10 +48,9 @@ public class TsdbQueryRewriterTest {
         byte[] data = Files.readAllBytes(Paths.get("src/test/resources/horizon", initialFilename));
         data = TsdbQueryRewriter.rewrite(data, tenants, operator, SystemName.Public);
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        new JsonFormat(false).encode(baos, SlimeUtils.jsonToSlime(data));
-        String expectedJson = Files.readString(Paths.get("src/test/resources/horizon", expectedFilename));
+        String actualJson = new String(toJsonBytes(jsonToSlimeOrThrow(data).get(), false), UTF_8);
+        String expectedJson = new String(toJsonBytes(jsonToSlimeOrThrow(Files.readAllBytes(Paths.get("src/test/resources/horizon", expectedFilename))).get(), false), UTF_8);
 
-        assertEquals(expectedJson, baos.toString());
+        assertEquals(expectedJson, actualJson);
     }
 }
