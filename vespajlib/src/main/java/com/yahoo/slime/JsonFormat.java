@@ -29,7 +29,7 @@ public final class JsonFormat implements SlimeFormat {
     }
 
     public JsonFormat(boolean compact) {
-        this(compact ? 0 : 1);
+        this(compact ? 0 : 2);
     }
 
     @Override
