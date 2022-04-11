@@ -152,22 +152,23 @@ namespace {
 
 class DotProductExecutorByEnum final : public fef::FeatureExecutor {
 public:
+    using IWeightedSetEnumReadView = attribute::IWeightedSetEnumReadView;
     using V  = VectorBase<EnumHandle, EnumHandle, feature_t>;
 private:
-    const IWeightedIndexVector * _attribute;
+    const IWeightedSetEnumReadView* _weighted_set_enum_read_view;
     const V & _queryVector;
     const typename V::HashMap::const_iterator _end;
     std::unique_ptr<V>     _backing;
 public:
-    DotProductExecutorByEnum(const IWeightedIndexVector * attribute, const V & queryVector);
-    DotProductExecutorByEnum(const IWeightedIndexVector * attribute, std::unique_ptr<V> queryVector);
+    DotProductExecutorByEnum(const IWeightedSetEnumReadView* weighted_set_enum_read_view, const V & queryVector);
+    DotProductExecutorByEnum(const IWeightedSetEnumReadView* weighted_set_enum_read_view, std::unique_ptr<V> queryVector);
     ~DotProductExecutorByEnum() override;
     void execute(uint32_t docId) override;
 };
 
-DotProductExecutorByEnum::DotProductExecutorByEnum(const IWeightedIndexVector * attribute, const V & queryVector)
+DotProductExecutorByEnum::DotProductExecutorByEnum(const IWeightedSetEnumReadView* weighted_set_enum_read_view, const V & queryVector)
     : FeatureExecutor(),
-      _attribute(attribute),
+      _weighted_set_enum_read_view(weighted_set_enum_read_view),
       _queryVector(queryVector),
       _end(_queryVector.getDimMap().end()),
       _backing()
@@ -175,9 +176,9 @@ DotProductExecutorByEnum::DotProductExecutorByEnum(const IWeightedIndexVector * 
 }
 
 
-DotProductExecutorByEnum::DotProductExecutorByEnum(const IWeightedIndexVector * attribute, std::unique_ptr<V> queryVector)
+DotProductExecutorByEnum::DotProductExecutorByEnum(const IWeightedSetEnumReadView* weighted_set_enum_read_view, std::unique_ptr<V> queryVector)
     : FeatureExecutor(),
-      _attribute(attribute),
+      _weighted_set_enum_read_view(weighted_set_enum_read_view),
       _queryVector(*queryVector),
       _end(_queryVector.getDimMap().end()),
       _backing(std::move(queryVector))
@@ -189,9 +190,8 @@ DotProductExecutorByEnum::~DotProductExecutorByEnum() = default;
 void
 DotProductExecutorByEnum::execute(uint32_t docId) {
     feature_t val = 0;
-    const IWeightedIndexVector::WeightedIndex *values(nullptr);
-    uint32_t sz = _attribute->getEnumHandles(docId, values);
-    for (size_t i = 0; i < sz; ++i) {
+    auto values = _weighted_set_enum_read_view->get_raw_values(docId);
+    for (size_t i = 0; i < values.size(); ++i) {
         auto itr = _queryVector.getDimMap().find(values[i].value_ref().load_relaxed().ref());
         if (itr != _end) {
             val += values[i].weight() * itr->second;
@@ -202,16 +202,16 @@ DotProductExecutorByEnum::execute(uint32_t docId) {
 
 class SingleDotProductExecutorByEnum final : public fef::FeatureExecutor {
 public:
-    SingleDotProductExecutorByEnum(const IWeightedIndexVector * attribute, EnumHandle key, feature_t value)
-        : _attribute(attribute),
+    using IWeightedSeEnumReadView = attribute::IWeightedSetEnumReadView;
+    SingleDotProductExecutorByEnum(const IWeightedSetEnumReadView * weighted_set_enum_read_view, EnumHandle key, feature_t value)
+        : _weighted_set_enum_read_view(weighted_set_enum_read_view),
           _key(key),
           _value(value)
     {}
 
     void execute(uint32_t docId) override {
-        const IWeightedIndexVector::WeightedIndex *values(nullptr);
-        uint32_t sz = _attribute->getEnumHandles(docId, values);
-        for (size_t i = 0; i < sz; ++i) {
+        auto values = _weighted_set_enum_read_view->get_raw_values(docId);
+        for (size_t i = 0; i < values.size(); ++i) {
             if (values[i].value_ref().load_relaxed().ref() == _key) {
                 outputs().set_number(0, values[i].weight()*_value);
                 return;
@@ -220,7 +220,7 @@ public:
         outputs().set_number(0, 0);
     }
 private:
-    const IWeightedIndexVector * _attribute;
+    const IWeightedSetEnumReadView * _weighted_set_enum_read_view;
     EnumHandle                   _key;
     feature_t                    _value;
 };
@@ -562,19 +562,6 @@ get_multi_value_read_view(const IAttributeVector& attribute)
     return nullptr;
 }
 
-bool supportsGetEnumHandles(const IWeightedIndexVector * attr) noexcept {
-    if (attr == nullptr) return false;
-    try {
-        const IWeightedIndexVector::WeightedIndex * tmp = nullptr;
-        attr->getEnumHandles(0, tmp); // Throws if unsupported
-        return true;
-    } catch (const std::runtime_error & e) {
-        (void) e;
-        return false;
-    }
-}
-
-
 // Precondition: attribute->isImported() == false
 template <typename A>
 FeatureExecutor &
@@ -751,13 +738,14 @@ createFromObject(const IAttributeVector * attribute, const fef::Anything & objec
             if (vector.empty()) {
                 return stash.create<SingleZeroValueExecutor>();
             }
-            const auto * getEnumHandles = dynamic_cast<const IWeightedIndexVector *>(attribute);
-            if (supportsGetEnumHandles(getEnumHandles)) {
+            using VT = multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>;
+            auto* weighted_set_enum_read_view = get_multi_value_read_view<VT>(*attribute);
+            if (weighted_set_enum_read_view != nullptr) {
                 if (vector.getVector().size() == 1) {
                     const auto & elem = vector.getVector()[0];
-                    return stash.create<SingleDotProductExecutorByEnum>(getEnumHandles, elem.first, elem.second);
+                    return stash.create<SingleDotProductExecutorByEnum>(weighted_set_enum_read_view, elem.first, elem.second);
                 }
-                return stash.create<DotProductExecutorByEnum>(getEnumHandles, vector);
+                return stash.create<DotProductExecutorByEnum>(weighted_set_enum_read_view, vector);
             }
             return stash.create<DotProductExecutorByCopy<EnumVector, WeightedEnumContent>>(attribute, vector);
         } else {
@@ -845,13 +833,14 @@ createTypedWsetExecutor(const IAttributeVector * attribute, const Property & pro
             return stash.create<SingleZeroValueExecutor>();
         }
         vector->syncMap();
-        auto * getEnumHandles = dynamic_cast<const IWeightedIndexVector *>(attribute);
-        if (supportsGetEnumHandles(getEnumHandles)) {
+        using VT = multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>;
+        auto* weighted_set_enum_read_view = get_multi_value_read_view<VT>(*attribute);
+        if (weighted_set_enum_read_view != nullptr) {
             if (vector->getVector().size() == 1) {
                 const auto & elem = vector->getVector()[0];
-                return stash.create<SingleDotProductExecutorByEnum>(getEnumHandles, elem.first, elem.second);
+                return stash.create<SingleDotProductExecutorByEnum>(weighted_set_enum_read_view, elem.first, elem.second);
             }
-            return stash.create<DotProductExecutorByEnum>(getEnumHandles, std::move(vector));
+            return stash.create<DotProductExecutorByEnum>(weighted_set_enum_read_view, std::move(vector));
         }
         return stash.create<DotProductExecutorByCopy<EnumVector, WeightedEnumContent>>(attribute, std::move(vector));
     } else {
