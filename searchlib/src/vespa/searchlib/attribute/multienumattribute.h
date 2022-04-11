@@ -10,21 +10,6 @@
 
 namespace search {
 
-class IWeightedIndexVector {
-public:
-    virtual ~IWeightedIndexVector() = default;
-    using WeightedIndex = multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>;
-    /**
-     * Provides a reference to the underlying enum/weight pairs.
-     * This method should only be invoked if @ref getCollectionType(docId) returns CollectionType::WEIGHTED_SET.
-     *
-     * @param doc document identifier
-     * @param values Reference to values and weights
-     * @return the number of values for this document
-     **/
-    virtual uint32_t getEnumHandles(uint32_t doc, const WeightedIndex * & values) const;
-};
-
 class ReaderBase;
 
 /**
@@ -35,8 +20,7 @@ class ReaderBase;
  * M: MultiValueType
  */
 template <typename B, typename M>
-class MultiValueEnumAttribute : public MultiValueAttribute<B, M>,
-                                public IWeightedIndexVector
+class MultiValueEnumAttribute : public MultiValueAttribute<B, M>
 {
 protected:
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
@@ -75,8 +59,6 @@ protected:
 
 public:
     MultiValueEnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
-
-    uint32_t getEnumHandles(DocId doc, const IWeightedIndexVector::WeightedIndex * & values) const override final;
 
     void onCommit() override;
     void onUpdateStat() override;

@@ -7,18 +7,6 @@
 namespace search {
 
 template<typename T>
-uint32_t
-FloatingPointAttributeTemplate<T>::getRawValues(DocId, const multivalue::Value<T> * &) const {
-    throw std::runtime_error(getNativeClassName() + "::getRawValues() not implemented.");
-}
-
-template<typename T>
-uint32_t
-FloatingPointAttributeTemplate<T>::getRawValues(DocId, const multivalue::WeightedValue<T> * &) const {
-    throw std::runtime_error(getNativeClassName() + "::getRawValues() not implemented.");
-}
-
-template<typename T>
 FloatingPointAttributeTemplate<T>::FloatingPointAttributeTemplate(const vespalib::string & name)
     : FloatingPointAttributeTemplate(name, BasicType::fromType(T()))
 { }
