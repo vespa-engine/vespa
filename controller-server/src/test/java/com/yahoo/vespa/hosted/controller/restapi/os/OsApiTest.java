@@ -47,13 +47,17 @@ public class OsApiTest extends ControllerContainerTest {
     private ContainerTester tester;
     private List<OsUpgrader> osUpgraders;
 
+    @Override
+    protected SystemName system() {
+        return SystemName.cd;
+    }
+
     @Before
     public void before() {
         tester = new ContainerTester(container, responses);
         tester.serviceRegistry().clock().setInstant(Instant.ofEpochMilli(1234));
         addUserToHostedOperatorRole(operator);
-        zoneRegistryMock().setSystemName(SystemName.cd)
-                          .setZones(zone1, zone2, zone3)
+        zoneRegistryMock().setZones(zone1, zone2, zone3)
                           .reprovisionToUpgradeOsIn(zone3)
                           .setOsUpgradePolicy(cloud1, UpgradePolicy.builder().upgrade(zone1).upgrade(zone2).build())
                           .setOsUpgradePolicy(cloud2, UpgradePolicy.builder().upgrade(zone3).build());

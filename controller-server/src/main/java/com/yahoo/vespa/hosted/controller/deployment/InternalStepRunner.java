@@ -38,6 +38,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareRes
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
@@ -184,15 +185,15 @@ public class InternalStepRunner implements StepRunner {
         Versions versions = controller.jobController().run(id).get().versions();
         logger.log("Deploying platform version " +
                    versions.sourcePlatform().orElse(versions.targetPlatform()) +
-                   " and application version " +
-                   versions.sourceApplication().orElse(versions.targetApplication()).stringId() + " ...");
+                   " and application " +
+                   versions.sourceRevision().orElse(versions.targetRevision()) + " ...");
         return deployReal(id, true, logger);
     }
 
     private Optional<RunStatus> deployReal(RunId id, DualLogger logger) {
         Versions versions = controller.jobController().run(id).get().versions();
         logger.log("Deploying platform version " + versions.targetPlatform() +
-                   " and application version " + versions.targetApplication().stringId() + " ...");
+                   " and application " + versions.targetRevision() + " ...");
         return deployReal(id, false, logger);
     }
 
@@ -786,14 +787,14 @@ public class InternalStepRunner implements StepRunner {
 
         Application application = controller.applications().requireApplication(TenantAndApplicationId.from(run.id().application()));
         Notifications notifications = application.deploymentSpec().requireInstance(run.id().application().instance()).notifications();
-        boolean newCommit = application.require(run.id().application().instance()).change().application()
-                                    .map(run.versions().targetApplication()::equals)
+        boolean newCommit = application.require(run.id().application().instance()).change().revision()
+                                    .map(run.versions().targetRevision()::equals)
                                     .orElse(false);
         When when = newCommit ? failingCommit : failing;
 
         List<String> recipients = new ArrayList<>(notifications.emailAddressesFor(when));
         if (notifications.emailRolesFor(when).contains(author))
-            run.versions().targetApplication().authorEmail().ifPresent(recipients::add);
+            application.revisions().get(run.versions().targetRevision()).authorEmail().ifPresent(recipients::add);
 
         if (recipients.isEmpty())
             return;
@@ -904,7 +905,7 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns the application package for the tester application, assembled from a generated config, fat-jar and services.xml. */
     private ApplicationPackage testerPackage(RunId id) {
-        ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
+        RevisionId revision = controller.jobController().run(id).get().versions().targetRevision();
         DeploymentSpec spec = controller.applications().requireApplication(TenantAndApplicationId.from(id.application())).deploymentSpec();
 
         ZoneId zone = id.type().zone(controller.system());
@@ -914,7 +915,7 @@ public class InternalStepRunner implements StepRunner {
                                          useTesterCertificate,
                                          testerResourcesFor(zone, spec.requireInstance(id.application().instance())),
                                          controller.controllerConfig().steprunner().testerapp());
-        byte[] testPackage = controller.applications().applicationStore().getTester(id.application().tenant(), id.application().application(), version);
+        byte[] testPackage = controller.applications().applicationStore().getTester(id.application().tenant(), id.application().application(), revision);
         byte[] deploymentXml = deploymentXml(id.tester(),
                                              spec.athenzDomain(),
                                              spec.requireInstance(id.application().instance()).athenzService(zone.environment(), zone.region()));

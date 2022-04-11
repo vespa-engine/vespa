@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
@@ -107,7 +108,7 @@ public class DeploymentContext {
     private final JobRunner runner;
     private final DeploymentTester tester;
 
-    private ApplicationVersion lastSubmission = null;
+    private RevisionId lastSubmission = null;
     private boolean deferDnsUpdates = false;
 
     public DeploymentContext(ApplicationId instanceId, DeploymentTester tester) {
@@ -172,7 +173,7 @@ public class DeploymentContext {
         assertTrue("Application package submitted", application.revisions().last().isPresent());
         assertFalse("Submission is not already deployed", application.instances().values().stream()
                                                                      .anyMatch(instance -> instance.deployments().values().stream()
-                                                                                                     .anyMatch(deployment -> deployment.applicationVersion().equals(lastSubmission))));
+                                                                                                   .anyMatch(deployment -> deployment.revision().equals(lastSubmission))));
         completeRollout(application.deploymentSpec().instances().size() > 1);
         for (var instance : application().instances().values()) {
             assertFalse(instance.change().hasTargets());
@@ -187,7 +188,7 @@ public class DeploymentContext {
                           .anyMatch(instance -> instance.deployments().values().stream()
                                                         .anyMatch(deployment -> deployment.version().equals(version))));
         assertEquals(version, instance().change().platform().get());
-        assertFalse(instance().change().application().isPresent());
+        assertFalse(instance().change().revision().isPresent());
 
         completeRollout();
 
@@ -288,7 +289,7 @@ public class DeploymentContext {
                               .projectId()
                               .orElse(1000); // These are really set through submission, so just pick one if it hasn't been set.
         var testerpackage = new byte[]{ (byte) (salt >> 56), (byte) (salt >> 48), (byte) (salt >> 40), (byte) (salt >> 32), (byte) (salt >> 24), (byte) (salt >> 16), (byte) (salt >> 8), (byte) salt };
-        lastSubmission = jobs.submit(applicationId, sourceRevision, Optional.of("a@b"), Optional.empty(), projectId, applicationPackage, testerpackage, Optional.empty(), risk);
+        lastSubmission = jobs.submit(applicationId, sourceRevision, Optional.of("a@b"), Optional.empty(), projectId, applicationPackage, testerpackage, Optional.empty(), risk).id();
         return this;
     }
 
@@ -349,7 +350,7 @@ public class DeploymentContext {
     }
 
     /** Returns the last submitted application version */
-    public Optional<ApplicationVersion> lastSubmission() {
+    public Optional<RevisionId> lastSubmission() {
         return Optional.ofNullable(lastSubmission);
     }
 

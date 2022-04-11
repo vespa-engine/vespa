@@ -74,6 +74,7 @@ import java.util.logging.Handler;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -109,11 +110,11 @@ public final class ControllerTester {
     }
 
     public ControllerTester(ServiceRegistryMock serviceRegistryMock) {
-        this(new AthenzDbMock(), new MockCuratorDb(), defaultRotationsConfig(), serviceRegistryMock);
+        this(new AthenzDbMock(), new MockCuratorDb(serviceRegistryMock.zoneRegistry().system()), defaultRotationsConfig(), serviceRegistryMock);
     }
 
     public ControllerTester(RotationsConfig rotationsConfig, SystemName system) {
-        this(new AthenzDbMock(), new MockCuratorDb(), rotationsConfig, new ServiceRegistryMock(system));
+        this(new AthenzDbMock(), new MockCuratorDb(system), rotationsConfig, new ServiceRegistryMock(system));
     }
 
     public ControllerTester(MockCuratorDb curatorDb) {
@@ -121,11 +122,11 @@ public final class ControllerTester {
     }
 
     public ControllerTester() {
-        this(defaultRotationsConfig(), new MockCuratorDb());
+        this(defaultRotationsConfig(), new MockCuratorDb(new ServiceRegistryMock().zoneRegistry().system()));
     }
 
     public ControllerTester(SystemName system) {
-        this(new AthenzDbMock(), new MockCuratorDb(), defaultRotationsConfig(), new ServiceRegistryMock(system));
+        this(new AthenzDbMock(), new MockCuratorDb(system), defaultRotationsConfig(), new ServiceRegistryMock(system));
     }
 
     private ControllerTester(AthenzDbMock athenzDb, boolean inContainer, CuratorDb curator,
@@ -215,9 +216,9 @@ public final class ControllerTester {
     }
 
     /** Set the zones and system for this and bootstrap infrastructure nodes */
-    public ControllerTester setZones(List<ZoneId> zones, SystemName system) {
-        zoneRegistry().setZones(zones.stream().map(ZoneApiMock::from).collect(Collectors.toList()))
-                      .setSystemName(system);
+    public ControllerTester setZones(List<ZoneId> zones) {
+        ZoneApiMock.Builder builder = ZoneApiMock.newBuilder().withSystem(zoneRegistry().system());
+        zoneRegistry().setZones(zones.stream().map(zone -> builder.with(zone).build()).collect(Collectors.toList()));
         configServer().bootstrap(zones, SystemApplication.notController());
         return this;
     }

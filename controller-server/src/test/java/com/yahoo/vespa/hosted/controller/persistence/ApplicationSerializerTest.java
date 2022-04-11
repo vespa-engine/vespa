@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.SlimeUtils;
@@ -13,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
@@ -53,7 +55,7 @@ import static org.junit.Assert.assertEquals;
 
 public class ApplicationSerializerTest {
 
-    private static final ApplicationSerializer APPLICATION_SERIALIZER = new ApplicationSerializer();
+    private static final ApplicationSerializer APPLICATION_SERIALIZER = new ApplicationSerializer(SystemName.main);
     private static final Path testData = Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/persistence/testdata/");
     private static final ZoneId zone1 = ZoneId.from("prod", "us-west-1");
     private static final ZoneId zone2 = ZoneId.from("prod", "us-east-3");
@@ -83,21 +85,31 @@ public class ApplicationSerializerTest {
 
         OptionalLong projectId = OptionalLong.of(123L);
 
+        ApplicationId id1 = ApplicationId.from("t1", "a1", "i1");
+        ApplicationId id3 = ApplicationId.from("t1", "a1", "i3");
         List<Deployment> deployments = new ArrayList<>();
-        ApplicationVersion applicationVersion1 = new ApplicationVersion(Optional.of(new SourceRevision("git@github:org/repo.git", "branch1", "commit1")),
-                                                                        OptionalLong.of(31), Optional.of("william@shakespeare"),
-                                                                        Optional.of(Version.fromString("1.2.3")), Optional.of(Instant.ofEpochMilli(666)),
-                                                                        Optional.empty(), Optional.of("best commit"), true, Optional.of("hash1"),
-                                                                        true, false, Optional.of("~(˘▾˘)~"), 3);
+        ApplicationVersion applicationVersion1 = new ApplicationVersion(RevisionId.forProduction(31),
+                                                                        Optional.of(new SourceRevision("git@github:org/repo.git", "branch1", "commit1")),
+                                                                        Optional.of("william@shakespeare"),
+                                                                        Optional.of(Version.fromString("1.2.3")),
+                                                                        Optional.of(Instant.ofEpochMilli(666)),
+                                                                        Optional.empty(),
+                                                                        Optional.of("best commit"),
+                                                                        Optional.of("hash1"),
+                                                                        true,
+                                                                        false,
+                                                                        Optional.of("~(˘▾˘)~"),
+                                                                        3);
         assertEquals("https://github/org/repo/tree/commit1", applicationVersion1.sourceUrl().get());
 
-        ApplicationVersion applicationVersion2 = ApplicationVersion
-                .from(new SourceRevision("repo1", "branch1", "commit1"), 32, "a@b",
-                      Version.fromString("6.3.1"), Instant.ofEpochMilli(496));
+        ApplicationVersion applicationVersion2 = ApplicationVersion.from(RevisionId.forDevelopment(31, new JobId(id1, JobType.productionUsEast3)),
+                                                                         new SourceRevision("repo1", "branch1", "commit1"), "a@b",
+                                                                         Version.fromString("6.3.1"),
+                                                                         Instant.ofEpochMilli(496));
         Instant activityAt = Instant.parse("2018-06-01T10:15:30.00Z");
-        deployments.add(new Deployment(zone1, applicationVersion1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3),
+        deployments.add(new Deployment(zone1, applicationVersion1.id(), Version.fromString("1.2.3"), Instant.ofEpochMilli(3),
                                        DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none, OptionalDouble.empty()));
-        deployments.add(new Deployment(zone2, applicationVersion2, Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
+        deployments.add(new Deployment(zone2, applicationVersion2.id(), Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
                                        new DeploymentMetrics(2, 3, 4, 5, 6,
                                                              Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS)),
                                                              Map.of(DeploymentMetrics.Warning.all, 3)),
@@ -112,10 +124,8 @@ public class ApplicationSerializerTest {
                                                                        ZoneId.from("prod", "us-east-3"), RotationState.out),
                                                                 Instant.ofEpochMilli(42))));
 
-        ApplicationId id1 = ApplicationId.from("t1", "a1", "i1");
-        ApplicationId id3 = ApplicationId.from("t1", "a1", "i3");
         RevisionHistory revisions = RevisionHistory.ofRevisions(List.of(applicationVersion1),
-                                                                Map.of(new JobId(id3, JobType.devUsEast1), List.of(applicationVersion2)));
+                                                                Map.of(new JobId(id1, JobType.productionUsEast3), List.of(applicationVersion2)));
         List<Instance> instances = List.of(new Instance(id1,
                                                         deployments,
                                                         Map.of(JobType.systemTest, Instant.ofEpochMilli(333)),
@@ -140,7 +150,8 @@ public class ApplicationSerializerTest {
                                                new ApplicationMetrics(0.5, 0.9),
                                                Set.of(publicKey, otherPublicKey),
                                                projectId,
-                                               revisions, instances
+                                               revisions,
+                                               instances
         );
 
         Application serialized = APPLICATION_SERIALIZER.fromSlime(SlimeUtils.toJsonBytes(APPLICATION_SERIALIZER.toSlime(original)));

@@ -5,9 +5,10 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 
@@ -29,7 +30,7 @@ public class ApplicationStoreMock implements ApplicationStore {
 
     private static final byte[] tombstone = new byte[0];
 
-    private final Map<ApplicationId, Map<ApplicationVersion, byte[]>> store = new ConcurrentHashMap<>();
+    private final Map<ApplicationId, Map<RevisionId, byte[]>> store = new ConcurrentHashMap<>();
     private final Map<DeploymentId, byte[]> devStore = new ConcurrentHashMap<>();
     private final Map<ApplicationId, Map<Long, byte[]>> diffs = new ConcurrentHashMap<>();
     private final Map<DeploymentId, Map<Long, byte[]>> devDiffs = new ConcurrentHashMap<>();
@@ -45,15 +46,14 @@ public class ApplicationStoreMock implements ApplicationStore {
     }
 
     @Override
-    public byte[] get(DeploymentId deploymentId, ApplicationVersion applicationVersion) {
-        if (applicationVersion.isDeployedDirectly())
+    public byte[] get(DeploymentId deploymentId, RevisionId revisionId) {
+        if ( ! revisionId.isProduction())
             return requireNonNull(devStore.get(deploymentId));
 
         TenantAndApplicationId tenantAndApplicationId = TenantAndApplicationId.from(deploymentId.applicationId());
-        byte[] bytes = store.get(appId(tenantAndApplicationId.tenant(), tenantAndApplicationId.application())).get(applicationVersion);
+        byte[] bytes = store.get(appId(tenantAndApplicationId.tenant(), tenantAndApplicationId.application())).get(revisionId);
         if (bytes == null)
-            throw new IllegalArgumentException("No application package found for " + tenantAndApplicationId +
-                                               " with version " + applicationVersion.stringId());
+            throw new NotExistsException("No " + revisionId + " found for " + tenantAndApplicationId);
         return bytes;
     }
 
@@ -71,21 +71,20 @@ public class ApplicationStoreMock implements ApplicationStore {
     @Override
     public Optional<byte[]> find(TenantName tenant, ApplicationName application, long buildNumber) {
         return store.getOrDefault(appId(tenant, application), Map.of()).entrySet().stream()
-                    .filter(kv -> kv.getKey().buildNumber().orElse(Long.MIN_VALUE) == buildNumber)
+                    .filter(kv -> kv.getKey().number() == buildNumber)
                     .map(Map.Entry::getValue)
                     .findFirst();
     }
 
     @Override
-    public void put(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion, byte[] bytes, byte[] tests, byte[] diff) {
-        store.computeIfAbsent(appId(tenant, application), __ -> new ConcurrentHashMap<>()).put(applicationVersion, bytes);
-        store.computeIfAbsent(testerId(tenant, application), key -> new ConcurrentHashMap<>()) .put(applicationVersion, tests);
-        applicationVersion.buildNumber().ifPresent(buildNumber ->
-                diffs.computeIfAbsent(appId(tenant, application), __ -> new ConcurrentHashMap<>()).put(buildNumber, diff));
+    public void put(TenantName tenant, ApplicationName application, RevisionId revision, byte[] bytes, byte[] tests, byte[] diff) {
+        store.computeIfAbsent(appId(tenant, application), __ -> new ConcurrentHashMap<>()).put(revision, bytes);
+        store.computeIfAbsent(testerId(tenant, application), key -> new ConcurrentHashMap<>()) .put(revision, tests);
+        diffs.computeIfAbsent(appId(tenant, application), __ -> new ConcurrentHashMap<>()).put(revision.number(), diff);
     }
 
     @Override
-    public void prune(TenantName tenant, ApplicationName application, ApplicationVersion oldestToRetain) {
+    public void prune(TenantName tenant, ApplicationName application, RevisionId oldestToRetain) {
         store.getOrDefault(appId(tenant, application), Map.of()).keySet().removeIf(version -> version.compareTo(oldestToRetain) < 0);
         store.getOrDefault(testerId(tenant, application), Map.of()).keySet().removeIf(version -> version.compareTo(oldestToRetain) < 0);
     }
@@ -97,8 +96,8 @@ public class ApplicationStoreMock implements ApplicationStore {
     }
 
     @Override
-    public byte[] getTester(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion) {
-        return requireNonNull(store.get(testerId(tenant, application)).get(applicationVersion));
+    public byte[] getTester(TenantName tenant, ApplicationName application, RevisionId revision) {
+        return requireNonNull(store.get(testerId(tenant, application)).get(revision));
     }
 
 
@@ -114,10 +113,9 @@ public class ApplicationStoreMock implements ApplicationStore {
     }
 
     @Override
-    public void putDev(DeploymentId deploymentId, ApplicationVersion applicationVersion, byte[] applicationPackage, byte[] diff) {
+    public void putDev(DeploymentId deploymentId, RevisionId revision, byte[] applicationPackage, byte[] diff) {
         devStore.put(deploymentId, applicationPackage);
-        applicationVersion.buildNumber().ifPresent(buildNumber ->
-                devDiffs.computeIfAbsent(deploymentId, __ -> new ConcurrentHashMap<>()).put(buildNumber, diff));
+        devDiffs.computeIfAbsent(deploymentId, __ -> new ConcurrentHashMap<>()).put(revision.number(), diff);
     }
 
     @Override

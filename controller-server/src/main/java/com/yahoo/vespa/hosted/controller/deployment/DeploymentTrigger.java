@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -88,11 +89,11 @@ public class DeploymentTrigger {
             DeploymentStatus status = jobs.deploymentStatus(application.get());
             for (InstanceName instanceName : application.get().deploymentSpec().instanceNames()) {
                 Change outstanding = outstandingChange(status, instanceName);
-                if (   outstanding.hasTargets()
+                if (outstanding.hasTargets()
                     && status.instanceSteps().get(instanceName)
                              .readyAt(outstanding)
                              .map(readyAt -> ! readyAt.isAfter(clock.instant())).orElse(false)
-                    && acceptNewApplicationVersion(status, instanceName, outstanding.application().get())) {
+                    && acceptNewRevision(status, instanceName, outstanding.revision().get())) {
                     application = application.with(instanceName,
                                                    instance -> withRemainingChange(instance, outstanding.onTopOf(instance.change()), status));
                 }
@@ -104,7 +105,9 @@ public class DeploymentTrigger {
     /** Returns any outstanding change for the given instance, coupled with any necessary platform upgrade. */
     private Change outstandingChange(DeploymentStatus status, InstanceName instance) {
         Change outstanding = status.outstandingChange(instance);
-        Optional<Version> compileVersion = outstanding.application().flatMap(ApplicationVersion::compileVersion);
+        Optional<Version> compileVersion = outstanding.revision()
+                                                      .map(status.application().revisions()::get)
+                                                      .flatMap(ApplicationVersion::compileVersion);
 
         // If the outstanding revision requires a certain platform for compatibility, add that here.
         VersionCompatibility compatibility = applications().versionCompatibility(status.application().id().instance(instance));
@@ -234,7 +237,7 @@ public class DeploymentTrigger {
 
         DeploymentStatus status = jobs.deploymentStatus(application);
         Change change = instance.change();
-        if ( ! upgradeRevision && change.application().isPresent()) change = change.withoutApplication();
+        if ( ! upgradeRevision && change.revision().isPresent()) change = change.withoutApplication();
         if ( ! upgradePlatform && change.platform().isPresent()) change = change.withoutPlatform();
         Versions versions = Versions.from(change, application, status.deploymentFor(job), controller.readSystemVersion());
         DeploymentStatus.Job toTrigger = new DeploymentStatus.Job(job.type(), versions, Optional.of(controller.clock().instant()), instance.change());
@@ -255,9 +258,9 @@ public class DeploymentTrigger {
     private List<JobId> forceTriggerManualJob(JobId job, String reason) {
         Run last = jobs.last(job).orElseThrow(() -> new IllegalArgumentException(job + " has never been run"));
         Versions target = new Versions(controller.readSystemVersion(),
-                                       last.versions().targetApplication(),
+                                       last.versions().targetRevision(),
                                        Optional.of(last.versions().targetPlatform()),
-                                       Optional.of(last.versions().targetApplication()));
+                                       Optional.of(last.versions().targetRevision()));
         jobs.start(job.application(), job.type(), target, true, Optional.of(reason));
         return List.of(job);
     }
@@ -433,16 +436,16 @@ public class DeploymentTrigger {
 
     // ---------- Change management o_O ----------
 
-    private boolean acceptNewApplicationVersion(DeploymentStatus status, InstanceName instance, ApplicationVersion version) {
+    private boolean acceptNewRevision(DeploymentStatus status, InstanceName instance, RevisionId revision) {
         if (status.application().deploymentSpec().instance(instance).isEmpty()) return false; // Unknown instance.
-        boolean isChangingRevision = status.application().require(instance).change().application().isPresent();
+        boolean isChangingRevision = status.application().require(instance).change().revision().isPresent();
         DeploymentInstanceSpec spec = status.application().deploymentSpec().requireInstance(instance);
-        Predicate<ApplicationVersion> versionFilter = spec.revisionTarget() == DeploymentSpec.RevisionTarget.next
-                                                      ? failing -> status.application().require(instance).change().application().get().compareTo(failing) == 0
-                                                      : failing -> version.compareTo(failing) > 0;
+        Predicate<RevisionId> revisionFilter = spec.revisionTarget() == DeploymentSpec.RevisionTarget.next
+                                               ? failing -> status.application().require(instance).change().revision().get().compareTo(failing) == 0
+                                               : failing -> revision.compareTo(failing) > 0;
         switch (spec.revisionChange()) {
             case whenClear:   return ! isChangingRevision;
-            case whenFailing: return ! isChangingRevision || status.hasFailures(versionFilter);
+            case whenFailing: return ! isChangingRevision || status.hasFailures(revisionFilter);
             case always:      return true;
             default:          throw new IllegalStateException("Unknown revision upgrade policy");
         }
@@ -460,7 +463,7 @@ public class DeploymentTrigger {
     // ---------- Version and job helpers ----------
 
     private Job deploymentJob(Instance instance, Versions versions, JobType jobType, JobStatus jobStatus, Instant availableSince) {
-        return new Job(instance, versions, jobType, availableSince, jobStatus.isNodeAllocationFailure(), instance.change().application().isPresent());
+        return new Job(instance, versions, jobType, availableSince, jobStatus.isNodeAllocationFailure(), instance.change().revision().isPresent());
     }
 
     // ---------- Data containers ----------
@@ -495,7 +498,7 @@ public class DeploymentTrigger {
         public String toString() {
             return jobType + " for " + instanceId +
                    " on (" + versions.targetPlatform() + versions.sourcePlatform().map(version -> " <-- " + version).orElse("") +
-                   ", " + versions.targetApplication().stringId() + versions.sourceApplication().map(version -> " <-- " + version.stringId()).orElse("") +
+                   ", " + versions.targetRevision() + versions.sourceRevision().map(version -> " <-- " + version).orElse("") +
                    "), ready since " + availableSince;
         }
 

@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.inject.Inject;
+import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 
@@ -18,21 +20,21 @@ public class MockCuratorDb extends CuratorDb {
     private final MockCurator curator;
 
     @Inject
-    public MockCuratorDb() {
-        this("test-controller:2222");
+    public MockCuratorDb(ConfigserverConfig config) {
+        this("test-controller:2222", SystemName.from(config.system()));
     }
 
-    public MockCuratorDb(String zooKeeperEnsembleConnectionSpec) {
-        this(new MockCurator() {
-            @Override
-            public String zooKeeperEnsembleConnectionSpec() {
-                return zooKeeperEnsembleConnectionSpec;
-            }
-        });
+    public MockCuratorDb(SystemName system) {
+        this("test-controller:2222", system);
     }
 
-    public MockCuratorDb(MockCurator curator) {
-        super(curator, Duration.ofMillis(100), new InMemoryFlagSource());
+    public MockCuratorDb(String zooKeeperEnsembleConnectionSpec, SystemName system) {
+        this(new MockCurator() { @Override public String zooKeeperEnsembleConnectionSpec() { return zooKeeperEnsembleConnectionSpec; } },
+             system);
+    }
+
+    public MockCuratorDb(MockCurator curator, SystemName system) {
+        super(curator, Duration.ofMillis(100), new InMemoryFlagSource(), system);
         this.curator = curator;
     }
 

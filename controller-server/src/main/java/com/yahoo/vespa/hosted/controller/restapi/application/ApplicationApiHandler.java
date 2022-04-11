@@ -5,6 +5,7 @@ import ai.vespa.hosted.api.Signatures;
 import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Query;
+import ai.vespa.validation.Validation;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
@@ -259,7 +260,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying")) return deploying(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job")) return JobControllerApiHandlerHelper.jobTypeResponse(controller, appIdFromPath(path), request.getUri());
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.runResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)).descendingMap(), Optional.ofNullable(request.getProperty("limit")), request.getUri());
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.runResponse(controller.applications().requireApplication(TenantAndApplicationId.from(path.get("tenant"), path.get("application"))), controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)).descendingMap(), Optional.ofNullable(request.getProperty("limit")), request.getUri()); // (((＼（✘෴✘）／)))
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/package")) return devApplicationPackage(appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/diff/{number}")) return devApplicationPackageDiff(runIdFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/test-config")) return testConfig(appIdFromPath(path), jobTypeFromPath(path));
@@ -804,8 +805,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             throw new IllegalArgumentException("Only manually deployed zones have dev packages");
 
         ZoneId zone = type.zone(controller.system());
-        ApplicationVersion version = controller.jobController().last(id, type).get().versions().targetApplication();
-        byte[] applicationPackage = controller.applications().applicationStore().get(new DeploymentId(id, zone), version);
+        RevisionId revision = controller.jobController().last(id, type).get().versions().targetRevision();
+        byte[] applicationPackage = controller.applications().applicationStore().get(new DeploymentId(id, zone), revision);
         return new ZipResponse(id.toFullString() + "." + zone.value() + ".zip", applicationPackage);
     }
 
@@ -817,30 +818,27 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse applicationPackage(String tenantName, String applicationName, HttpRequest request) {
-        var tenantAndApplication = TenantAndApplicationId.from(tenantName, applicationName);
-        List<ApplicationVersion> versions = controller.applications().requireApplication(tenantAndApplication).revisions().withPackage();
-        if (versions.isEmpty())
-            throw new NotExistsException("No application package has been submitted for '" + tenantAndApplication + "'");
-
-        ApplicationVersion version = Optional.ofNullable(request.getProperty("build"))
-                .map(build -> {
-                    try {
-                        return Long.parseLong(build);
-                    } catch (NumberFormatException e) {
-                        throw new IllegalArgumentException("Invalid build number", e);
-                    }
-                })
-                .map(build -> versions.stream()
-                        .filter(ver -> ver.buildNumber().orElse(-1) == build)
-                        .findFirst()
-                        .orElseThrow(() -> new NotExistsException("No application package found for '" + tenantAndApplication + "' with build number " + build)))
-                .orElseGet(() -> versions.get(versions.size() - 1));
-
+        TenantAndApplicationId tenantAndApplication = TenantAndApplicationId.from(tenantName, applicationName);
+        long build;
+        String parameter = request.getProperty("build");
+        if (parameter != null)
+        try {
+            build = Validation.requireAtLeast(Long.parseLong(request.getProperty("build")), "build number", 1L);
+        }
+        catch (NumberFormatException e) {
+            throw new IllegalArgumentException("invalid value for request parameter 'build'", e);
+        }
+        else {
+            build = controller.applications().requireApplication(tenantAndApplication).revisions().last()
+                    .map(version -> version.id().number())
+                    .orElseThrow(() -> new NotExistsException("no application package has been submitted for " + tenantAndApplication));
+        }
+        RevisionId revision = RevisionId.forProduction(build);
         boolean tests = request.getBooleanProperty("tests");
         byte[] applicationPackage = tests ?
-                controller.applications().applicationStore().getTester(tenantAndApplication.tenant(), tenantAndApplication.application(), version) :
-                controller.applications().applicationStore().get(new DeploymentId(tenantAndApplication.defaultInstance(), ZoneId.defaultId()), version);
-        String filename = tenantAndApplication + (tests ? "-tests" : "-build") + version.buildNumber().getAsLong() + ".zip";
+                controller.applications().applicationStore().getTester(tenantAndApplication.tenant(), tenantAndApplication.application(), revision) :
+                controller.applications().applicationStore().get(new DeploymentId(tenantAndApplication.defaultInstance(), ZoneId.defaultId()), revision);
+        String filename = tenantAndApplication + (tests ? "-tests" : "-build") + revision.number() + ".zip";
         return new ZipResponse(filename, applicationPackage);
     }
 
@@ -1326,11 +1324,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         application.instances().values().stream().findFirst().ifPresent(instance -> {
             // Currently deploying change
             if ( ! instance.change().isEmpty())
-                toSlime(object.setObject("deploying"), instance.change());
+                toSlime(object.setObject("deploying"), instance.change(), application);
 
             // Outstanding change
             if ( ! status.outstandingChange(instance.name()).isEmpty())
-                toSlime(object.setObject("outstandingChange"), status.outstandingChange(instance.name()));
+                toSlime(object.setObject("outstandingChange"), status.outstandingChange(instance.name()), application);
         });
 
         application.majorVersion().ifPresent(majorVersion -> object.setLong("majorVersion", majorVersion));
@@ -1370,11 +1368,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                   .sortedJobs(status.instanceJobs(instance.name()).values());
 
             if ( ! instance.change().isEmpty())
-                toSlime(object.setObject("deploying"), instance.change());
+                toSlime(object.setObject("deploying"), instance.change(), status.application());
 
             // Outstanding change
             if ( ! status.outstandingChange(instance.name()).isEmpty())
-                toSlime(object.setObject("outstandingChange"), status.outstandingChange(instance.name()));
+                toSlime(object.setObject("outstandingChange"), status.outstandingChange(instance.name()), status.application());
 
             // Change blockers
             Cursor changeBlockers = object.setArray("changeBlockers");
@@ -1455,11 +1453,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                   .sortedJobs(status.instanceJobs(instance.name()).values());
 
             if ( ! instance.change().isEmpty())
-                toSlime(object.setObject("deploying"), instance.change());
+                toSlime(object.setObject("deploying"), instance.change(), application);
 
             // Outstanding change
             if ( ! status.outstandingChange(instance.name()).isEmpty())
-                toSlime(object.setObject("outstandingChange"), status.outstandingChange(instance.name()));
+                toSlime(object.setObject("outstandingChange"), status.outstandingChange(instance.name()), application);
 
             // Change blockers
             Cursor changeBlockers = object.setArray("changeBlockers");
@@ -1574,11 +1572,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private void toSlime(Cursor object, Change change) {
+    private void toSlime(Cursor object, Change change, Application application) {
         change.platform().ifPresent(version -> object.setString("version", version.toString()));
-        change.application()
-              .filter(version -> !version.isUnknown())
-              .ifPresent(version -> JobControllerApiHandlerHelper.toSlime(object.setObject("revision"), version));
+        change.revision().ifPresent(revision -> JobControllerApiHandlerHelper.toSlime(object.setObject("revision"), application.revisions().get(revision)));
     }
 
     private void toSlime(Endpoint endpoint, Cursor object) {
@@ -1623,7 +1619,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         response.setString("nodes", withPathAndQuery("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/", "recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());
         response.setString("version", deployment.version().toFullString());
-        response.setString("revision", deployment.applicationVersion().stringId());
+        response.setString("revision", application.revisions().get(deployment.revision()).stringId()); // TODO jonmv or freva:  ƪ(`▿▿▿▿´ƪ)
+        response.setLong("build", deployment.revision().number());
         Instant lastDeploymentStart = lastDeploymentStart(deploymentId.applicationId(), deployment);
         response.setLong("deployTimeEpochMs", lastDeploymentStart.toEpochMilli());
         controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zoneId())
@@ -1642,8 +1639,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                         .map(type -> new JobId(instance.id(), type))
                         .map(status.jobSteps()::get)
                         .ifPresent(stepStatus -> {
-                            JobControllerApiHandlerHelper.toSlime(
-                                    response.setObject("applicationVersion"), deployment.applicationVersion());
+                            JobControllerApiHandlerHelper.toSlime(response.setObject("applicationVersion"), application.revisions().get(deployment.revision()));
                             if ( ! status.jobsToRun().containsKey(stepStatus.job().get()))
                                 response.setString("status", "complete");
                             else if (stepStatus.readyAt(instance.change()).map(controller.clock().instant()::isBefore).orElse(true))
@@ -1770,7 +1766,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Cursor root = slime.setObject();
         if ( ! instance.change().isEmpty()) {
             instance.change().platform().ifPresent(version -> root.setString("platform", version.toString()));
-            instance.change().application().ifPresent(applicationVersion -> root.setString("application", applicationVersion.stringId()));
+            instance.change().revision().ifPresent(revision -> root.setString("application", revision.toString()));
             root.setBool("pinned", instance.change().isPinned());
         }
         return new SlimeJsonResponse(slime);
@@ -1915,18 +1911,19 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         StringBuilder response = new StringBuilder();
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
-            ApplicationVersion version = build == -1 ? application.get().revisions().last().get()
-                                                     : getApplicationVersion(application.get(), build);
-            Change change = Change.of(version);
+            RevisionId revision = build == -1 ? application.get().revisions().last().get().id()
+                                              : getRevision(application.get(), build);
+            Change change = Change.of(revision);
             controller.applications().deploymentTrigger().forceChange(id, change);
             response.append("Triggered ").append(change).append(" for ").append(id);
         });
         return new MessageResponse(response.toString());
     }
 
-    private ApplicationVersion getApplicationVersion(Application application, Long build) {
+    private RevisionId getRevision(Application application, long build) {
         return application.revisions().withPackage().stream()
-                          .filter(version -> version.buildNumber().stream().anyMatch(build::equals))
+                          .map(ApplicationVersion::id)
+                          .filter(version -> version.number() == build)
                           .findFirst()
                           .filter(version -> controller.applications().applicationStore().hasBuild(application.id().tenant(),
                                                                                                    application.id().application(),
@@ -2546,14 +2543,16 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         }
     }
 
+    /*
     private void toSlime(Run run, Cursor object) {
         object.setLong("id", run.id().number());
         object.setString("version", run.versions().targetPlatform().toFullString());
-        if ( ! run.versions().targetApplication().isUnknown())
-            JobControllerApiHandlerHelper.toSlime(object.setObject("revision"), run.versions().targetApplication());
+        if ( ! run.versions().targetRevision().isUnknown())
+            JobControllerApiHandlerHelper.toSlime(object.setObject("revision"), run.versions().targetRevision());
         object.setString("reason", "unknown reason");
         object.setLong("at", run.end().orElse(run.start()).toEpochMilli());
     }
+    */
 
     private Slime toSlime(InputStream jsonStream) {
         try {

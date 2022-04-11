@@ -41,9 +41,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     private final Map<CloudName, UpgradePolicy> osUpgradePolicies = new HashMap<>();
     private final Map<ZoneApi, List<RoutingMethod>> zoneRoutingMethods = new HashMap<>();
     private final Set<ZoneApi> reprovisionToUpgradeOs = new HashSet<>();
+    private final SystemName system; // Don't even think about making it non-final!   ƪ(`▿▿▿▿´ƪ)
+
+
 
     private List<? extends ZoneApi> zones;
-    private SystemName system;
     private UpgradePolicy upgradePolicy = null;
 
     /**
@@ -93,11 +95,6 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     public ZoneRegistryMock setZones(ZoneApi... zone) {
         return setZones(List.of(zone));
-    }
-
-    public ZoneRegistryMock setSystemName(SystemName system) {
-        this.system = system;
-        return this;
     }
 
     public ZoneRegistryMock setUpgradePolicy(UpgradePolicy upgradePolicy) {

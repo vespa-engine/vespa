@@ -322,7 +322,7 @@ public class RoutingPoliciesTest {
 
     @Test
     public void zone_routing_policies_without_dns_update() {
-        var tester = new RoutingPoliciesTester(new DeploymentTester(), SystemName.main, false);
+        var tester = new RoutingPoliciesTester(new DeploymentTester(), false);
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         tester.provisionLoadBalancers(1, context.instanceId(), true, zone1, zone2);
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
@@ -892,23 +892,21 @@ public class RoutingPoliciesTest {
         }
 
         public RoutingPoliciesTester(SystemName system) {
-            this(new DeploymentTester(system.isPublic()
-                                              ? new ControllerTester(new RotationsConfig.Builder().build(), system)
-                                              : new ControllerTester()),
-                 system,
+            this(new DeploymentTester(system.isPublic() ? new ControllerTester(new RotationsConfig.Builder().build(), system)
+                                                        : new ControllerTester(system)),
                  true);
         }
 
-        public RoutingPoliciesTester(DeploymentTester tester, SystemName system, boolean exclusiveRouting) {
+        public RoutingPoliciesTester(DeploymentTester tester, boolean exclusiveRouting) {
             this.tester = tester;
             List<ZoneId> zones;
-            if (system.isPublic()) {
+            if (tester.controller().system().isPublic()) {
                 zones = publicZones();
             } else {
                 zones = new ArrayList<>(tester.controllerTester().zoneRegistry().zones().all().ids()); // Default zones
                 zones.add(zone4); // Missing from default ZoneRegistryMock zones
             }
-            tester.controllerTester().setZones(zones, system);
+            tester.controllerTester().setZones(zones);
             if (exclusiveRouting) {
                 tester.controllerTester().setRoutingMethod(zones, RoutingMethod.exclusive);
             }

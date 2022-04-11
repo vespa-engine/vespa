@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -77,10 +78,7 @@ public class JobRunnerTest {
 
     private static final ApplicationPackage applicationPackage = new ApplicationPackage(new byte[0]);
     private static final Versions versions = new Versions(Version.fromString("1.2.3"),
-                                                          ApplicationVersion.from(new SourceRevision("repo",
-                                                                                                     "branch",
-                                                                                                     "bada55"),
-                                                                                  321),
+                                                          RevisionId.forProduction(321),
                                                           Optional.empty(),
                                                           Optional.empty());
 
@@ -95,7 +93,7 @@ public class JobRunnerTest {
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
         byte[] testPackageBytes = new byte[0];
-        jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), 2, applicationPackage, testPackageBytes, Optional.empty(), 0);
+        jobs.submit(appId, Optional.empty(), Optional.empty(), Optional.empty(), 2, applicationPackage, testPackageBytes, Optional.empty(), 0);
 
         start(jobs, id, systemTest);
         try {
@@ -127,7 +125,7 @@ public class JobRunnerTest {
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
         byte[] testPackageBytes = new byte[0];
-        jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), 2, applicationPackage, testPackageBytes, Optional.empty(), 0);
+        jobs.submit(appId, Optional.empty(), Optional.empty(), Optional.empty(), 2, applicationPackage, testPackageBytes, Optional.empty(), 0);
         Supplier<Run> run = () -> jobs.last(id, systemTest).get();
 
         start(jobs, id, systemTest);
@@ -235,7 +233,7 @@ public class JobRunnerTest {
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
         byte[] testPackageBytes = new byte[0];
-        jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), 2, applicationPackage, testPackageBytes, Optional.empty(), 0);
+        jobs.submit(appId, Optional.empty(), Optional.empty(), Optional.empty(), 2, applicationPackage, testPackageBytes, Optional.empty(), 0);
 
         RunId runId = new RunId(id, systemTest, 1);
         start(jobs, id, systemTest);
@@ -273,7 +271,7 @@ public class JobRunnerTest {
         ApplicationId instanceId = appId.defaultInstance();
         JobId jobId = new JobId(instanceId, systemTest);
         byte[] testPackageBytes = new byte[0];
-        jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), 2, applicationPackage, testPackageBytes, Optional.empty(), 0);
+        jobs.submit(appId, Optional.empty(), Optional.empty(), Optional.empty(), 2, applicationPackage, testPackageBytes, Optional.empty(), 0);
         assertFalse(jobs.lastSuccess(jobId).isPresent());
 
         for (int i = 0; i < jobs.historyLength(); i++) {
@@ -369,7 +367,7 @@ public class JobRunnerTest {
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
         byte[] testPackageBytes = new byte[0];
-        jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), 2, applicationPackage, testPackageBytes, Optional.empty(), 0);
+        jobs.submit(appId, Optional.empty(), Optional.empty(), Optional.empty(), 2, applicationPackage, testPackageBytes, Optional.empty(), 0);
 
         start(jobs, id, systemTest);
         tester.clock().advance(JobRunner.jobTimeout.plus(Duration.ofSeconds(1)));
@@ -387,7 +385,7 @@ public class JobRunnerTest {
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
         byte[] testPackageBytes = new byte[0];
-        jobs.submit(appId, versions.targetApplication().source(), Optional.empty(), Optional.empty(), 2, applicationPackage, testPackageBytes, Optional.empty(), 0);
+        jobs.submit(appId, Optional.empty(), Optional.empty(), Optional.empty(), 2, applicationPackage, testPackageBytes, Optional.empty(), 0);
 
         for (Step step : JobProfile.of(systemTest).steps())
             outcomes.put(step, running);

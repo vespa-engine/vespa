@@ -20,36 +20,26 @@ import static ai.vespa.validation.Validation.requireAtLeast;
  */
 public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
-    /** Should not be used, but may still exist in serialized data :S */
-    public static final ApplicationVersion unknown = new ApplicationVersion(Optional.empty(), OptionalLong.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, Optional.empty(), false, true, Optional.empty(), 0);
-
     // This never changes and is only used to create a valid semantic version number, as required by application bundles
     private static final String majorVersion = "1.0";
 
+    private final RevisionId id;
     private final Optional<SourceRevision> source;
     private final Optional<String> authorEmail;
-    private final OptionalLong buildNumber;
     private final Optional<Version> compileVersion;
     private final Optional<Instant> buildTime;
     private final Optional<String> sourceUrl;
     private final Optional<String> commit;
-    private final boolean deployedDirectly;
     private final Optional<String> bundleHash;
     private final boolean hasPackage;
     private final boolean shouldSkip;
     private final Optional<String> description;
     private final int risk;
 
-    public ApplicationVersion(Optional<SourceRevision> source, OptionalLong buildNumber, Optional<String> authorEmail,
+    public ApplicationVersion(RevisionId id, Optional<SourceRevision> source, Optional<String> authorEmail,
                               Optional<Version> compileVersion, Optional<Instant> buildTime, Optional<String> sourceUrl,
-                              Optional<String> commit, boolean deployedDirectly, Optional<String> bundleHash,
+                              Optional<String> commit, Optional<String> bundleHash,
                               boolean hasPackage, boolean shouldSkip, Optional<String> description, int risk) {
-        if (buildNumber.isEmpty() && (   source.isPresent() || authorEmail.isPresent() || compileVersion.isPresent()
-                                      || buildTime.isPresent() || sourceUrl.isPresent() || commit.isPresent()))
-            throw new IllegalArgumentException("Build number must be present if any other attribute is");
-
-        if (buildNumber.isPresent() && buildNumber.getAsLong() <= 0)
-            throw new IllegalArgumentException("Build number must be > 0");
 
         if (commit.isPresent() && commit.get().length() > 128)
             throw new IllegalArgumentException("Commit may not be longer than 128 characters");
@@ -60,14 +50,13 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
         if (compileVersion.isPresent() && compileVersion.get().equals(Version.emptyVersion))
             throw new IllegalArgumentException("The empty version is not a legal compile version.");
 
+        this.id = id;
         this.source = source;
-        this.buildNumber = buildNumber;
         this.authorEmail = authorEmail;
         this.compileVersion = compileVersion;
         this.buildTime = buildTime;
         this.sourceUrl = Objects.requireNonNull(sourceUrl, "sourceUrl cannot be null");
         this.commit = Objects.requireNonNull(commit, "commit cannot be null");
-        this.deployedDirectly = deployedDirectly;
         this.bundleHash = bundleHash;
         this.hasPackage = hasPackage;
         this.shouldSkip = shouldSkip;
@@ -76,44 +65,39 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
     }
 
     public RevisionId id() {
-        return isDeployedDirectly() ? RevisionId.forDevelopment(buildNumber().orElse(0))
-                                    : RevisionId.forProduction(buildNumber().orElseThrow());
+        return id;
     }
 
     /** Create an application package version from a completed build, without an author email */
-    public static ApplicationVersion from(SourceRevision source, long buildNumber) {
-        return new ApplicationVersion(Optional.of(source), OptionalLong.of(buildNumber), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), false, Optional.empty(), true, false, Optional.empty(), 0);
+    public static ApplicationVersion from(RevisionId id, SourceRevision source) {
+        return new ApplicationVersion(id, Optional.of(source), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), 0);
     }
 
     /** Creates a version from a completed build, an author email, and build metadata. */
-    public static ApplicationVersion from(SourceRevision source, long buildNumber, String authorEmail,
-                                          Version compileVersion, Instant buildTime) {
-        return new ApplicationVersion(Optional.of(source), OptionalLong.of(buildNumber), Optional.of(authorEmail), Optional.of(compileVersion), Optional.of(buildTime), Optional.empty(), Optional.empty(), false, Optional.empty(), true, false, Optional.empty(), 0);
+    public static ApplicationVersion from(RevisionId id, SourceRevision source, String authorEmail, Version compileVersion, Instant buildTime) {
+        return new ApplicationVersion(id, Optional.of(source), Optional.of(authorEmail), Optional.of(compileVersion), Optional.of(buildTime), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), 0);
     }
 
     /** Creates a minimal version for a development build. */
-    public static ApplicationVersion forDevelopment(long buildNumber, Optional<Version> compileVersion) {
-        return new ApplicationVersion(Optional.empty(), OptionalLong.of(buildNumber), Optional.empty(), compileVersion, Optional.empty(), Optional.empty(), Optional.empty(), true, Optional.empty(), true, false, Optional.empty(), 0);
+    public static ApplicationVersion forDevelopment(RevisionId id, Optional<Version> compileVersion) {
+        return new ApplicationVersion(id, Optional.empty(), Optional.empty(), compileVersion, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), 0);
     }
 
     /** Creates a version from a completed build, an author email, and build metadata. */
-    public static ApplicationVersion forProduction(Optional<SourceRevision> source, long buildNumber, Optional<String> authorEmail,
-                                                   Optional<Version> compileVersion, Optional<Instant> buildTime,
-                                                   Optional<String> sourceUrl, Optional<String> commit, boolean deployedDirectly,
-                                                   Optional<String> bundleHash, Optional<String> description, int risk) {
-        return new ApplicationVersion(source, OptionalLong.of(buildNumber), authorEmail, compileVersion, buildTime,
-                                      sourceUrl, commit, deployedDirectly, bundleHash, true, false, description, risk);
+    public static ApplicationVersion forProduction(RevisionId id, Optional<SourceRevision> source, Optional<String> authorEmail,
+                                                   Optional<Version> compileVersion, Optional<Instant> buildTime, Optional<String> sourceUrl,
+                                                   Optional<String> commit, Optional<String> bundleHash, Optional<String> description, int risk) {
+        return new ApplicationVersion(id, source, authorEmail, compileVersion, buildTime,
+                                      sourceUrl, commit, bundleHash, true, false, description, risk);
     }
 
     /** Returns a unique identifier for this version or "unknown" if version is not known */
     // TODO jonmv: kill
     public String stringId() {
-        if (isUnknown()) return "unknown";
-
         return source.map(SourceRevision::commit).map(ApplicationVersion::abbreviateCommit)
                 .or(this::commit)
-                .map(commit -> String.format("%s.%d-%s", majorVersion, buildNumber.getAsLong(), commit))
-                .orElseGet(() -> majorVersion + "." + buildNumber.getAsLong());
+                .map(commit -> String.format("%s.%d-%s", majorVersion, buildNumber().getAsLong(), commit))
+                .orElseGet(() -> majorVersion + "." + buildNumber().getAsLong());
     }
 
     /**
@@ -123,7 +107,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
     public Optional<SourceRevision> source() { return source; }
 
     /** Returns the build number that built this version */
-    public OptionalLong buildNumber() { return buildNumber; }
+    public OptionalLong buildNumber() { return OptionalLong.of(id.number()); }
 
     /** Returns the email of the author of commit of this version, if known */
     public Optional<String> authorEmail() { return authorEmail; }
@@ -154,19 +138,14 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
     /** Returns the commit name of this application version. */
     public Optional<String> commit() { return commit.or(() -> source.map(SourceRevision::commit)); }
 
-    /** Returns whether this is unknown */
-    public boolean isUnknown() {
-        return this.equals(unknown);
-    }
-
     /** Returns whether the application package for this version was deployed directly to zone */
     public boolean isDeployedDirectly() {
-        return deployedDirectly;
+        return ! id.isProduction();
     }
 
     /** Returns a copy of this without a package stored. */
     public ApplicationVersion withoutPackage() {
-        return new ApplicationVersion(source, buildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit, deployedDirectly, bundleHash, false, shouldSkip, description, risk);
+        return new ApplicationVersion(id, source, authorEmail, compileVersion, buildTime, sourceUrl, commit, bundleHash, false, shouldSkip, description, risk);
     }
 
     /** Whether we still have the package for this revision. */
@@ -176,7 +155,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
     /** Returns a copy of this which will not be rolled out to production. */
     public ApplicationVersion skipped() {
-        return new ApplicationVersion(source, buildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit, deployedDirectly, bundleHash, hasPackage, true, description, risk);
+        return new ApplicationVersion(id, source, authorEmail, compileVersion, buildTime, sourceUrl, commit, bundleHash, hasPackage, true, description, risk);
     }
 
     /** Whether we still have the package for this revision. */
@@ -204,23 +183,21 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
         if (this == o) return true;
         if ( ! (o instanceof ApplicationVersion)) return false;
         ApplicationVersion that = (ApplicationVersion) o;
-        return    Objects.equals(buildNumber, that.buildNumber)
-               && Objects.equals(commit(), that.commit())
-               && deployedDirectly == that.deployedDirectly;
+        return id.equals(that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(buildNumber, commit(), deployedDirectly);
+        return id.hashCode();
     }
 
     @Override
     public String toString() {
-        return "Application package version: " + stringId()
-               + source.map(s -> ", " + s.toString()).orElse("")
-               + authorEmail.map(e -> ", by " + e).orElse("")
-               + compileVersion.map(v -> ", built against " + v).orElse("")
-               + buildTime.map(t -> " at " + t).orElse("") ;
+        return id +
+               source.map(s -> ", " + s).orElse("") +
+               authorEmail.map(e -> ", by " + e).orElse("") +
+               compileVersion.map(v -> ", built against " + v).orElse("") +
+               buildTime.map(t -> " at " + t).orElse("") ;
     }
 
     /** Abbreviate given commit hash to 9 characters */
@@ -230,13 +207,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
     @Override
     public int compareTo(ApplicationVersion o) {
-        if (buildNumber().isEmpty() || o.buildNumber().isEmpty())
-            return Boolean.compare(buildNumber().isPresent(), o.buildNumber.isPresent()); // Unknown version sorts first
-
-        if (deployedDirectly != o.deployedDirectly)
-            return Boolean.compare( ! deployedDirectly, ! o.deployedDirectly); // Directly deployed versions sort first
-
-        return Long.compare(buildNumber().getAsLong(), o.buildNumber().getAsLong());
+        return id.compareTo(o.id);
     }
 
 }

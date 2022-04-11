@@ -12,48 +12,52 @@ import static ai.vespa.validation.Validation.requireAtLeast;
 public class RevisionId implements Comparable<RevisionId> {
 
     private final long number;
-    private final boolean production;
+    private final JobId job;
 
-    private RevisionId(long number, boolean production) {
+    private RevisionId(long number, JobId job) {
         this.number = number;
-        this.production = production;
+        this.job = job;
     }
 
     public static RevisionId forProduction(long number) {
-        return new RevisionId(requireAtLeast(number, "build number", 1L), true);
+        return new RevisionId(requireAtLeast(number, "build number", 1L), null);
     }
 
-    public static RevisionId forDevelopment(long number) {
-        return new RevisionId(requireAtLeast(number, "build number", 0L), false);
+    public static RevisionId forDevelopment(long number, JobId job) {
+        return new RevisionId(requireAtLeast(number, "build number", 0L), job);
     }
 
     public long number() { return number; }
 
-    public boolean isProduction() { return production; }
+    public boolean isProduction() { return job == null; }
+
+    /** Returns the job for this, if a development revision, or throws if this is a production revision. */
+    public JobId job() { return Objects.requireNonNull(job, "production revisions have no associated job"); }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         RevisionId that = (RevisionId) o;
-        return number == that.number && production == that.production;
+        return number == that.number && Objects.equals(job, that.job);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(number, production);
+        return Objects.hash(number, job);
     }
 
     /** Unknown, manual builds sort first, then known manual builds, then production builds, by increasing build number */
     @Override
     public int compareTo(RevisionId o) {
-        return production != o.production ? Boolean.compare(production, o.production)
-                                          : Long.compare(number, o.number);
+        return isProduction() != o.isProduction() ? Boolean.compare(isProduction(), o.isProduction())
+                                                  : Long.compare(number, o.number);
     }
 
     @Override
     public String toString() {
-        return (production ? "prod" : "dev") + " build " + number;
+        return isProduction() ? "build " + number
+                              : "dev build " + number + " for " + job.type() + " of " + job.application().instance();
     }
 
 }

@@ -259,7 +259,7 @@ public class MetricsReporterTest {
         var context = tester.newDeploymentContext()
                             .submit(applicationPackage)
                             .deploy();
-        assertEquals(1000, context.lastSubmission().get().buildTime().get().toEpochMilli());
+        assertEquals(1000, context.application().revisions().get(context.lastSubmission().get()).buildTime().get().toEpochMilli());
 
         MetricsReporter reporter = createReporter(tester.controller());
         reporter.maintain();
@@ -483,7 +483,6 @@ public class MetricsReporterTest {
     @Test
     public void tenant_counter() {
         var tester = new ControllerTester(SystemName.Public);
-        tester.zoneRegistry().setSystemName(SystemName.Public);
         tester.createTenant("foo", Tenant.Type.cloud);
         tester.createTenant("bar", Tenant.Type.cloud);
         tester.createTenant("fix", Tenant.Type.cloud);

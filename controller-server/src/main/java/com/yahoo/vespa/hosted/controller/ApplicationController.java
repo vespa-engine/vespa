@@ -27,7 +27,6 @@ import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
@@ -42,6 +41,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
@@ -163,25 +163,7 @@ public class ApplicationController {
                     for (InstanceName instance : application.get().deploymentSpec().instanceNames())
                         if ( ! application.get().instances().containsKey(instance))
                             application = withNewInstance(application, id.instance(instance));
-                    // TODO jonmv: remove when data is migrated
-                    // Each controller will know only about the revisions which we have packages for when they upgrade.
-                    // The last controller will populate any missing, historic data after it upgrades.
-                    // When all controllers are upgraded, we can start using the data, and remove this.
-                    Set<ApplicationVersion> production = new HashSet<>();
-                    Map<JobId, Set<ApplicationVersion>> development = new HashMap<>();
-                    for (InstanceName instance : application.get().instances().keySet()) {
-                        for (JobType type : JobType.allIn(controller.system())) {
-                            for (Run run : controller.jobController().runs(id.instance(instance), type).values()) {
-                                ApplicationVersion revision = run.versions().targetApplication();
-                                if ( ! revision.isDeployedDirectly()) production.add(revision);
-                                else development.computeIfAbsent(run.id().job(), __ -> new HashSet<>()).add(revision);
-                            }
-                        }
-                    }
-                    application = application.withRevisions(revisions -> {
-                        production.addAll(revisions.production()); // These are already properly set, and we want ot keep their hasPackage status.
-                        return RevisionHistory.ofRevisions(production, development); // All the added data is just written for now. We'll use it later.
-                    });
+
                     store(application);
                 });
                 count++;
@@ -485,7 +467,7 @@ public class ApplicationController {
                 throw new IllegalStateException("No deployment expected for " + job + " now, as no job is running");
 
             Version platform = run.versions().sourcePlatform().filter(__ -> deploySourceVersions).orElse(run.versions().targetPlatform());
-            ApplicationVersion revision = run.versions().sourceApplication().filter(__ -> deploySourceVersions).orElse(run.versions().targetApplication());
+            RevisionId revision = run.versions().sourceRevision().filter(__ -> deploySourceVersions).orElse(run.versions().targetRevision());
             ApplicationPackage applicationPackage = new ApplicationPackage(applicationStore.get(deployment, revision));
 
             try (Lock lock = lock(applicationId)) {
@@ -637,7 +619,7 @@ public class ApplicationController {
                                                            deploymentQuota, tenantSecretStores, operatorCertificates,
                                                            dryRun));
 
-            return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
+            return new ActivateResult(new com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                       applicationPackage.zippedContent().length);
         } finally {
             // Even if prepare fails, routing configuration may need to be updated

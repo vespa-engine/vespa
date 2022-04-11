@@ -7,6 +7,7 @@ import com.yahoo.component.Version;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
@@ -20,11 +21,13 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 import com.yahoo.vespa.hosted.controller.deployment.RetriggerEntry;
@@ -103,7 +106,6 @@ public class CuratorDb {
     private final ControllerVersionSerializer controllerVersionSerializer = new ControllerVersionSerializer();
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
-    private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
     private final RunSerializer runSerializer = new RunSerializer();
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
     private final OsVersionTargetSerializer osVersionTargetSerializer = new OsVersionTargetSerializer(osVersionSerializer);
@@ -112,6 +114,7 @@ public class CuratorDb {
     private final ZoneRoutingPolicySerializer zoneRoutingPolicySerializer = new ZoneRoutingPolicySerializer(routingPolicySerializer);
     private final AuditLogSerializer auditLogSerializer = new AuditLogSerializer();
     private final NameServiceQueueSerializer nameServiceQueueSerializer = new NameServiceQueueSerializer();
+    private final ApplicationSerializer applicationSerializer;
 
     private final Curator curator;
     private final Duration tryLockTimeout;
@@ -125,14 +128,15 @@ public class CuratorDb {
     private final Map<Path, Pair<Integer, NavigableMap<RunId, Run>>> cachedHistoricRuns = new ConcurrentHashMap<>();
 
     @Inject
-    public CuratorDb(Curator curator, FlagSource flagSource) {
-        this(curator, defaultTryLockTimeout, flagSource);
+    public CuratorDb(Curator curator, FlagSource flagSource, ServiceRegistry services) {
+        this(curator, defaultTryLockTimeout, flagSource, services.zoneRegistry().system());
     }
 
-    CuratorDb(Curator curator, Duration tryLockTimeout, FlagSource flagSource) {
+    CuratorDb(Curator curator, Duration tryLockTimeout, FlagSource flagSource, SystemName system) {
         this.curator = curator;
         this.tryLockTimeout = tryLockTimeout;
         this.lockScheme = Flags.CONTROLLER_LOCK_SCHEME.bindTo(flagSource);
+        this.applicationSerializer = new ApplicationSerializer(system);
     }
 
     /** Returns all hostnames configured to be part of this ZooKeeper cluster */
@@ -383,7 +387,7 @@ public class CuratorDb {
     }
 
     public Optional<Tenant> readTenant(TenantName name) {
-        return readSlime(tenantPath(name)).map(bytes -> tenantSerializer.tenantFrom(bytes));
+        return readSlime(tenantPath(name)).map(tenantSerializer::tenantFrom);
     }
 
     public List<Tenant> readTenants() {
@@ -415,7 +419,7 @@ public class CuratorDb {
                       .map(stat -> cachedApplications.compute(path, (__, old) ->
                               old != null && old.getFirst() == stat.getVersion()
                               ? old
-                              : new Pair<>(stat.getVersion(), read(path, applicationSerializer::fromSlime).get())).getSecond());
+                              : new Pair<>(stat.getVersion(), read(path, bytes -> applicationSerializer.fromSlime(bytes)).get())).getSecond());
     }
 
     public List<Application> readApplications(boolean canFail) {
@@ -458,13 +462,13 @@ public class CuratorDb {
 
     // -------------- Job Runs ------------------------------------------------
 
-    public void writeLastRun(Run run) {
-        curator.set(lastRunPath(run.id().application(), run.id().type()), asJson(runSerializer.toSlime(run)));
+    public void writeLastRun(Run run, Application application) {
+        curator.set(lastRunPath(run.id().application(), run.id().type()), asJson(runSerializer.toSlime(run, application)));
     }
 
-    public void writeHistoricRuns(ApplicationId id, JobType type, Iterable<Run> runs) {
+    public void writeHistoricRuns(ApplicationId id, JobType type, Iterable<Run> runs, Application application) {
         Path path = runsPath(id, type);
-        curator.set(path, asJson(runSerializer.toSlime(runs)));
+        curator.set(path, asJson(runSerializer.toSlime(runs, application)));
     }
 
     public Optional<Run> readLastRun(ApplicationId id, JobType type) {

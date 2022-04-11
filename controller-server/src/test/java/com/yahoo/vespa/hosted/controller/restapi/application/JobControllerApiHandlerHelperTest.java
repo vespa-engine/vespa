@@ -5,10 +5,9 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.test.json.JsonTestHelper;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -17,7 +16,6 @@ import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -67,14 +65,14 @@ public class JobControllerApiHandlerHelperTest {
 
         // Revision 1 gets deployed everywhere.
         app.submit(applicationPackage).deploy();
-        ApplicationVersion revision1 = app.lastSubmission().get();
+        RevisionId revision1 = app.lastSubmission().get();
         assertEquals(1000, tester.application().projectId().getAsLong());
         // System test includes test report
         assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(app.instanceId(), systemTest).get().id(), "0"), "system-test-log.json");
 
         tester.clock().advance(Duration.ofMillis(1000));
         // Revision 2 gets deployed everywhere except in us-east-3.
-        ApplicationVersion revision2 = app.submit(applicationPackage).lastSubmission().get();
+        RevisionId revision2 = app.submit(applicationPackage).lastSubmission().get();
         app.runJob(systemTest);
         app.runJob(stagingTest);
         app.runJob(productionUsCentral1);
@@ -91,9 +89,9 @@ public class JobControllerApiHandlerHelperTest {
         tester.clock().advance(Duration.ofHours(4).plusSeconds(1));
         tester.runner().run();
         assertEquals(installationFailed, tester.jobs().last(app.instanceId(), productionUsWest1).get().status());
-        assertEquals(revision2, app.deployment(productionUsCentral1.zone(tester.controller().system())).applicationVersion());
-        assertEquals(revision1, app.deployment(productionUsEast3.zone(tester.controller().system())).applicationVersion());
-        assertEquals(revision2, app.deployment(productionUsWest1.zone(tester.controller().system())).applicationVersion());
+        assertEquals(revision2, app.deployment(productionUsCentral1.zone(tester.controller().system())).revision());
+        assertEquals(revision1, app.deployment(productionUsEast3.zone(tester.controller().system())).revision());
+        assertEquals(revision2, app.deployment(productionUsWest1.zone(tester.controller().system())).revision());
 
         tester.clock().advance(Duration.ofMillis(1000));
 
@@ -133,14 +131,14 @@ public class JobControllerApiHandlerHelperTest {
         // Only us-east-3 is verified, on revision1.
         // staging-test has 5 runs: one success without sources on revision1, one success from revision1 to revision2,
         // one success from revision2 to revision3 and two failures from revision1 to revision3.
-        assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(app.instanceId(), stagingTest), Optional.empty(), URI.create("https://some.url:43/root")), "staging-runs.json");
+        assertResponse(JobControllerApiHandlerHelper.runResponse(app.application(), tester.jobs().runs(app.instanceId(), stagingTest), Optional.empty(), URI.create("https://some.url:43/root")), "staging-runs.json");
         assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(app.instanceId(), stagingTest).get().id(), "0"), "staging-test-log.json");
         assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(app.instanceId(), productionUsEast3).get().id(), "0"), "us-east-3-log-without-first.json");
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root/")), "overview.json");
 
         var userApp = tester.newDeploymentContext(app.instanceId().tenant().value(), app.instanceId().application().value(), "user");
         userApp.runJob(devAwsUsEast2a, applicationPackage);
-        assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(userApp.instanceId(), devAwsUsEast2a), Optional.empty(), URI.create("https://some.url:43/root")), "dev-aws-us-east-2a-runs.json");
+        assertResponse(JobControllerApiHandlerHelper.runResponse(app.application(), tester.jobs().runs(userApp.instanceId(), devAwsUsEast2a), Optional.empty(), URI.create("https://some.url:43/root")), "dev-aws-us-east-2a-runs.json");
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), userApp.instanceId(), URI.create("https://some.url:43/root/")), "overview-user-instance.json");
         assertResponse(JobControllerApiHandlerHelper.overviewResponse(tester.controller(), app.application().id(), URI.create("https://some.url:43/root/")), "deployment-overview-2.json");
     }
