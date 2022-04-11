@@ -24,10 +24,10 @@ remap_enum_store_refs(const EnumIndexRemapper& remapper, AttributeVector& v, att
         for (uint32_t doc = 0; doc < v.getNumDocs(); ++doc) {
             vespalib::ArrayRef<WeightedIndex> indices(multi_value_mapping.get_writable(doc));
             for (auto& entry : indices) {
-                EnumIndex ref = entry.value_ref().load_relaxed();
+                EnumIndex ref = multivalue::get_value_ref(entry).load_relaxed();
                 if (ref.valid() && filter.has(ref)) {
                     ref = remapper.remap(ref);
-                    entry.value_ref().store_release(ref);
+                    multivalue::get_value_ref(entry).store_release(ref);
                 }
             }
         }

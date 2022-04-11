@@ -60,10 +60,10 @@ MultiValueEnumAttribute<B, M>::applyValueChanges(const DocIndices& docIndices, E
         uint32_t valueCount = oldIndices.size();
         this->_mvMapping.set(doc_values.first, doc_values.second);
         for (uint32_t i = 0; i < doc_values.second.size(); ++i) {
-            updater.inc_ref_count(doc_values.second[i].value_ref().load_relaxed());
+            updater.inc_ref_count(multivalue::get_value_ref(doc_values.second[i]).load_relaxed());
         }
         for (uint32_t i = 0; i < valueCount; ++i) {
-            updater.dec_ref_count(oldIndices[i].value_ref().load_relaxed());
+            updater.dec_ref_count(multivalue::get_value_ref(oldIndices[i]).load_relaxed());
         }
     }
 }

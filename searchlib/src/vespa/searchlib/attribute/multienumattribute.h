@@ -74,7 +74,7 @@ public:
         if (indices.size() == 0) {
             return std::numeric_limits<uint32_t>::max();
         } else {
-            return indices[0].value_ref().load_acquire().ref();
+            return multivalue::get_value_ref(indices[0]).load_acquire().ref();
         }
     }
 
@@ -82,7 +82,7 @@ public:
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
-            e[i] = indices[i].value_ref().load_acquire().ref();
+            e[i] = multivalue::get_value_ref(indices[i]).load_acquire().ref();
         }
         return valueCount;
     }
@@ -90,7 +90,7 @@ public:
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
-            e[i] = WeightedEnum(indices[i].value_ref().load_acquire().ref(), multivalue::get_weight(indices[i]));
+            e[i] = WeightedEnum(multivalue::get_value_ref(indices[i]).load_acquire().ref(), multivalue::get_weight(indices[i]));
         }
         return valueCount;
     }

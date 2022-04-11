@@ -18,7 +18,7 @@ template <typename WeightedIndex>
 struct CompareValue {
     bool operator()(const WeightedIndex& lhs, const WeightedIndex& rhs) const
     {
-        return lhs.value_ref().load_relaxed() < rhs.value_ref().load_relaxed();
+        return multivalue::get_value_ref(lhs).load_relaxed() < multivalue::get_value_ref(rhs).load_relaxed();
     };
 };
 
@@ -178,7 +178,7 @@ private:
     {
         const WeightedIndex *srce = src + sz;
         for (const WeightedIndex *i = src; i < srce; ++i) {
-            dst.emplace_back(multivalue::ValueBuilder<WeightedIndex>::build(AtomicEntryRef(mapEnumIndex(i->value_ref().load_relaxed())), multivalue::get_weight(*i)));
+            dst.emplace_back(multivalue::ValueBuilder<WeightedIndex>::build(AtomicEntryRef(mapEnumIndex(multivalue::get_value_ref(*i).load_relaxed())), multivalue::get_weight(*i)));
         }
     }
 
@@ -205,10 +205,10 @@ class MergeDupIterator {
     Entry _entry;
     bool _valid;
     void merge() {
-        EnumIndex idx = _cur->value_ref().load_relaxed();
+        EnumIndex idx = multivalue::get_value_ref(*_cur).load_relaxed();
         int32_t weight = multivalue::get_weight(*_cur);
         ++_cur;
-        while (_cur != _end && _cur->value_ref().load_relaxed() == idx) {
+        while (_cur != _end && multivalue::get_value_ref(*_cur).load_relaxed() == idx) {
             // sum weights together. Overflow is not handled.
             weight += multivalue::get_weight(*_cur);
             ++_cur;
