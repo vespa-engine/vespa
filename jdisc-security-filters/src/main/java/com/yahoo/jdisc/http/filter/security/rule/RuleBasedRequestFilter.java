@@ -118,6 +118,8 @@ public class RuleBasedRequestFilter extends JsonSecurityRequestFilterBase {
             boolean methodMatches = methods.isEmpty() || methods.contains(method.toUpperCase());
             String host = uri.getHost();
             boolean hostnameMatches = hostnames.isEmpty() || (host != null && hostnames.contains(host));
+            // Path segments cannot be validated in this filter, as we don't know what API it protects.
+            // Specifically, /document/v1 must allow _any_ rest path segment, as there is no restriction on document IDs.
             boolean pathMatches = pathGlobExpressions.isEmpty() || pathGlobExpressions.stream().anyMatch(Path.withoutValidation(uri)::matches);
             return methodMatches && hostnameMatches && pathMatches;
         }
