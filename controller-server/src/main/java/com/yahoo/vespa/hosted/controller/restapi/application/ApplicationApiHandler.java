@@ -1642,7 +1642,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                         .ifPresent(stepStatus -> {
                             JobControllerApiHandlerHelper.toSlime(
                                     response.setObject("applicationVersion"), deployment.applicationVersion());
-                            if (!status.jobsToRun().containsKey(stepStatus.job().get()))
+                            if ( ! status.jobsToRun().containsKey(stepStatus.job().get()))
                                 response.setString("status", "complete");
                             else if (stepStatus.readyAt(instance.change()).map(controller.clock().instant()::isBefore).orElse(true))
                                 response.setString("status", "pending");
