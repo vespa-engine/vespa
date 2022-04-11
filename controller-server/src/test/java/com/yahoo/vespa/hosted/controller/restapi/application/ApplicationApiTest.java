@@ -1054,6 +1054,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     public void testDeployWithApplicationPackage() {
         // Setup
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
+        deploymentTester.controllerTester().upgradeController(new Version("6.2"));
 
         // POST (deploy) a system application with an application package
         MultiPartStreamer noAppEntity = createApplicationDeployData(Optional.empty());

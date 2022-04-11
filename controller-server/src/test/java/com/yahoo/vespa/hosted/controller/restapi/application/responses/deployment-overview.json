@@ -20,7 +20,7 @@
       "latestVersions": {
         "platform": {
           "platform": "6.1.0",
-          "at": 1649509163000,
+          "at": 1600000000000,
           "upgrade": true,
           "available": [
             {
@@ -551,7 +551,7 @@
       "latestVersions": {
         "platform": {
           "platform": "6.1.0",
-          "at": 1649509163000,
+          "at": 1600000000000,
           "upgrade": true,
           "available": [
             {

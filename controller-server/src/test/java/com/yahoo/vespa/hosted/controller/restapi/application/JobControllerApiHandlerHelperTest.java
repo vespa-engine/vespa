@@ -197,7 +197,7 @@ public class JobControllerApiHandlerHelperTest {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             response.render(baos);
             byte[] actualJson = SlimeUtils.toJsonBytes(SlimeUtils.jsonToSlimeOrThrow(baos.toByteArray()).get(), false);
-            Files.write(path, actualJson);
+            // Files.write(path, actualJson);
             byte[] expected = Files.readAllBytes(path);
             assertEquals(new String(SlimeUtils.toJsonBytes(SlimeUtils.jsonToSlimeOrThrow(expected).get(), false), UTF_8),
                          new String(actualJson, UTF_8));

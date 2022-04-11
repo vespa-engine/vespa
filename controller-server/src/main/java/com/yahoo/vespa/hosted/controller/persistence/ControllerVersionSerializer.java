@@ -4,10 +4,10 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.yahoo.component.Version;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 
 /**
- * Serializer for {@link com.yahoo.vespa.hosted.controller.versions.ControllerVersion}.
+ * Serializer for {@link ControllerVersion}.
  *
  * @author mpolden
  */

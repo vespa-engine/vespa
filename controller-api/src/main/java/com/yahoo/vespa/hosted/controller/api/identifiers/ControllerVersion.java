@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.versions;
+package com.yahoo.vespa.hosted.controller.api.identifiers;
 
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
@@ -15,8 +15,7 @@ import java.util.Objects;
 public class ControllerVersion implements Comparable<ControllerVersion> {
 
     /** The current version of this controller */
-    public static final ControllerVersion CURRENT = new ControllerVersion(Vtag.currentVersion, Vtag.commitSha,
-                                                                          Vtag.commitDate);
+    public static final ControllerVersion CURRENT = new ControllerVersion(Vtag.currentVersion, Vtag.commitSha, Vtag.commitDate);
 
     private final Version version;
     private final String commitSha;
